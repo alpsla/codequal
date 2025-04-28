@@ -18,7 +18,14 @@ jobs:
           node-version: '18.x'
           cache: 'yarn'
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: |
+          # Check if yarn.lock exists, if not create it
+          if [ ! -f "yarn.lock" ]; then
+            echo "No yarn.lock found, creating one..."
+            yarn install
+          else
+            yarn install --frozen-lockfile
+          fi
       - name: Run ESLint
         run: yarn lint
 
@@ -33,7 +40,14 @@ jobs:
           node-version: '18.x'
           cache: 'yarn'
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: |
+          # Check if yarn.lock exists, if not create it
+          if [ ! -f "yarn.lock" ]; then
+            echo "No yarn.lock found, creating one..."
+            yarn install
+          else
+            yarn install --frozen-lockfile
+          fi
       - name: Type check
         run: yarn tsc --noEmit
 
@@ -48,7 +62,14 @@ jobs:
           node-version: '18.x'
           cache: 'yarn'
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: |
+          # Check if yarn.lock exists, if not create it
+          if [ ! -f "yarn.lock" ]; then
+            echo "No yarn.lock found, creating one..."
+            yarn install
+          else
+            yarn install --frozen-lockfile
+          fi
       - name: Run tests
         run: yarn test
       - name: Upload coverage
@@ -67,7 +88,14 @@ jobs:
           node-version: '18.x'
           cache: 'yarn'
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: |
+          # Check if yarn.lock exists, if not create it
+          if [ ! -f "yarn.lock" ]; then
+            echo "No yarn.lock found, creating one..."
+            yarn install
+          else
+            yarn install --frozen-lockfile
+          fi
       - name: Build
         run: yarn build
   
@@ -82,7 +110,14 @@ jobs:
           node-version: '18.x'
           cache: 'yarn'
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: |
+          # Check if yarn.lock exists, if not create it
+          if [ ! -f "yarn.lock" ]; then
+            echo "No yarn.lock found, creating one..."
+            yarn install
+          else
+            yarn install --frozen-lockfile
+          fi
       
       # Load secrets from GitHub Actions secrets to environment variables
       - name: Set up environment variables
