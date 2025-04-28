@@ -16,10 +16,8 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18.x'
-          # Don't use yarn cache since we might not have a yarn.lock
-          cache: 'npm'
       - name: Install dependencies
-        run: npm ci || npm install
+        run: npm install
       - name: Run ESLint
         run: npm run lint
 
@@ -32,9 +30,8 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18.x'
-          cache: 'npm'
       - name: Install dependencies
-        run: npm ci || npm install
+        run: npm install
       - name: Type check
         run: npx tsc --noEmit
 
@@ -47,9 +44,8 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18.x'
-          cache: 'npm'
       - name: Install dependencies
-        run: npm ci || npm install
+        run: npm install
       - name: Run tests
         run: npm test
       - name: Upload coverage
@@ -66,9 +62,8 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18.x'
-          cache: 'npm'
       - name: Install dependencies
-        run: npm ci || npm install
+        run: npm install
       - name: Build
         run: npm run build
   
@@ -81,9 +76,8 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18.x'
-          cache: 'npm'
       - name: Install dependencies
-        run: npm ci || npm install
+        run: npm install
       
       # Load secrets from GitHub Actions secrets to environment variables
       - name: Set up environment variables
