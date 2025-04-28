@@ -4,23 +4,31 @@
 /**
  * Interface for Supabase response with data and error
  */
-type SupabaseResponse<T> = Promise<{
-  data: T | null;
+export type SupabaseResponse<T> = Promise<{
+  data: T;
   error: Error | null;
+  select: (columns?: string) => SupabaseResponse<T>;
+  single: () => SupabaseResponse<T>;
+  maybeSingle: () => SupabaseResponse<T>;
+  order: (column: string, options?: { ascending?: boolean }) => SupabaseResponse<T>;
+  limit: (count: number) => SupabaseResponse<T>;
+  eq: (column: string, value: unknown) => SupabaseResponse<T>;
+  neq: (column: string, value: unknown) => SupabaseResponse<T>;
+  ilike: (column: string, value: string) => SupabaseResponse<T>;
 }>;
 
 /**
  * Interface for Supabase query builder
  */
-interface SupabaseQueryBuilder {
-  select: (columns?: string) => SupabaseResponse<unknown[]>;
-  single: () => SupabaseResponse<unknown>;
-  maybeSingle: () => SupabaseResponse<unknown>;
-  order: (column: string, options?: { ascending?: boolean }) => SupabaseQueryBuilder;
-  limit: (count: number) => SupabaseQueryBuilder;
-  eq: (column: string, value: unknown) => SupabaseQueryBuilder;
-  neq: (column: string, value: unknown) => SupabaseQueryBuilder;
-  ilike: (column: string, value: string) => SupabaseQueryBuilder;
+interface SupabaseQueryBuilder<T> {
+  select: (columns?: string) => SupabaseResponse<T[]>;
+  single: () => SupabaseResponse<T>;
+  maybeSingle: () => SupabaseResponse<T>;
+  order: (column: string, options?: { ascending?: boolean }) => SupabaseQueryBuilder<T>;
+  limit: (count: number) => SupabaseQueryBuilder<T>;
+  eq: (column: string, value: unknown) => SupabaseQueryBuilder<T>;
+  neq: (column: string, value: unknown) => SupabaseQueryBuilder<T>;
+  ilike: (column: string, value: string) => SupabaseQueryBuilder<T>;
 }
 
 /**
@@ -34,37 +42,37 @@ interface SupabaseClientOptions {
 }
 
 interface SupabaseClient {
-  from(table: string): {
-    select: (columns?: string) => SupabaseResponse<unknown[]>;
-    insert: (data: Record<string, unknown>) => SupabaseResponse<unknown>;
-    update: (data: Record<string, unknown>) => SupabaseResponse<unknown>;
-    delete: () => SupabaseResponse<unknown>;
-    eq: (column: string, value: unknown) => SupabaseQueryBuilder;
-    neq: (column: string, value: unknown) => SupabaseQueryBuilder;
-    gt: (column: string, value: unknown) => SupabaseQueryBuilder;
-    lt: (column: string, value: unknown) => SupabaseQueryBuilder;
-    gte: (column: string, value: unknown) => SupabaseQueryBuilder;
-    lte: (column: string, value: unknown) => SupabaseQueryBuilder;
-    is: (column: string, value: unknown) => SupabaseQueryBuilder;
-    in: (column: string, values: unknown[]) => SupabaseQueryBuilder;
-    contains: (column: string, value: unknown) => SupabaseQueryBuilder;
-    containedBy: (column: string, value: unknown) => SupabaseQueryBuilder;
-    rangeLt: (column: string, range: unknown) => SupabaseQueryBuilder;
-    rangeGt: (column: string, range: unknown) => SupabaseQueryBuilder;
-    rangeGte: (column: string, range: unknown) => SupabaseQueryBuilder;
-    rangeLte: (column: string, range: unknown) => SupabaseQueryBuilder;
-    rangeAdjacent: (column: string, range: unknown) => SupabaseQueryBuilder;
-    overlaps: (column: string, value: unknown) => SupabaseQueryBuilder;
-    textSearch: (column: string, query: string, options?: { config?: string }) => SupabaseQueryBuilder;
-    filter: (column: string, operator: string, value: unknown) => SupabaseQueryBuilder;
-    match: (query: Record<string, unknown>) => SupabaseQueryBuilder;
-    single: () => SupabaseResponse<unknown>;
-    maybeSingle: () => SupabaseResponse<unknown>;
-    order: (column: string, options?: { ascending?: boolean }) => SupabaseQueryBuilder;
-    limit: (count: number) => SupabaseQueryBuilder;
-    range: (from: number, to: number) => SupabaseQueryBuilder;
-    abortSignal: (signal: AbortSignal) => SupabaseQueryBuilder;
-    ilike: (column: string, value: string) => SupabaseQueryBuilder;
+  from<T = any>(table: string): {
+    select: (columns?: string) => SupabaseResponse<T[]>;
+    insert: (data: Record<string, unknown>) => SupabaseResponse<T>;
+    update: (data: Record<string, unknown>) => SupabaseResponse<T>;
+    delete: () => SupabaseResponse<T>;
+    eq: (column: string, value: unknown) => SupabaseQueryBuilder<T>;
+    neq: (column: string, value: unknown) => SupabaseQueryBuilder<T>;
+    gt: (column: string, value: unknown) => SupabaseQueryBuilder<T>;
+    lt: (column: string, value: unknown) => SupabaseQueryBuilder<T>;
+    gte: (column: string, value: unknown) => SupabaseQueryBuilder<T>;
+    lte: (column: string, value: unknown) => SupabaseQueryBuilder<T>;
+    is: (column: string, value: unknown) => SupabaseQueryBuilder<T>;
+    in: (column: string, values: unknown[]) => SupabaseQueryBuilder<T>;
+    contains: (column: string, value: unknown) => SupabaseQueryBuilder<T>;
+    containedBy: (column: string, value: unknown) => SupabaseQueryBuilder<T>;
+    rangeLt: (column: string, range: unknown) => SupabaseQueryBuilder<T>;
+    rangeGt: (column: string, range: unknown) => SupabaseQueryBuilder<T>;
+    rangeGte: (column: string, range: unknown) => SupabaseQueryBuilder<T>;
+    rangeLte: (column: string, range: unknown) => SupabaseQueryBuilder<T>;
+    rangeAdjacent: (column: string, range: unknown) => SupabaseQueryBuilder<T>;
+    overlaps: (column: string, value: unknown) => SupabaseQueryBuilder<T>;
+    textSearch: (column: string, query: string, options?: { config?: string }) => SupabaseQueryBuilder<T>;
+    filter: (column: string, operator: string, value: unknown) => SupabaseQueryBuilder<T>;
+    match: (query: Record<string, unknown>) => SupabaseQueryBuilder<T>;
+    single: () => SupabaseResponse<T>;
+    maybeSingle: () => SupabaseResponse<T>;
+    order: (column: string, options?: { ascending?: boolean }) => SupabaseQueryBuilder<T>;
+    limit: (count: number) => SupabaseQueryBuilder<T>;
+    range: (from: number, to: number) => SupabaseQueryBuilder<T>;
+    abortSignal: (signal: AbortSignal) => SupabaseQueryBuilder<T>;
+    ilike: (column: string, value: string) => SupabaseQueryBuilder<T>;
   };
   auth: {
     signUp: (options: Record<string, unknown>) => SupabaseResponse<unknown>;
@@ -100,22 +108,99 @@ try {
     // Underscore prefix indicates unused params
     
     const mockQueryBuilder = {
-      select: () => Promise.resolve({ data: [], error: null }),
-      single: () => Promise.resolve({ data: null, error: null }),
-      maybeSingle: () => Promise.resolve({ data: null, error: null }),
+      select: () => Promise.resolve({ 
+        data: [], 
+        error: null,
+        select: () => mockQueryBuilder.select(),
+        single: () => mockQueryBuilder.single(),
+        maybeSingle: () => mockQueryBuilder.maybeSingle(),
+        order: () => mockQueryBuilder,
+        limit: () => mockQueryBuilder,
+        eq: () => mockQueryBuilder,
+        neq: () => mockQueryBuilder,
+        ilike: () => mockQueryBuilder,
+      }),
+      single: () => Promise.resolve({ 
+        data: null, 
+        error: null,
+        select: () => mockQueryBuilder.select(),
+        single: () => mockQueryBuilder.single(),
+        maybeSingle: () => mockQueryBuilder.maybeSingle(),
+        order: () => mockQueryBuilder,
+        limit: () => mockQueryBuilder,
+        eq: () => mockQueryBuilder,
+        neq: () => mockQueryBuilder,
+        ilike: () => mockQueryBuilder,
+      }),
+      maybeSingle: () => Promise.resolve({ 
+        data: null, 
+        error: null,
+        select: () => mockQueryBuilder.select(),
+        single: () => mockQueryBuilder.single(),
+        maybeSingle: () => mockQueryBuilder.maybeSingle(),
+        order: () => mockQueryBuilder,
+        limit: () => mockQueryBuilder,
+        eq: () => mockQueryBuilder,
+        neq: () => mockQueryBuilder,
+        ilike: () => mockQueryBuilder,
+      }),
       order: () => mockQueryBuilder,
       limit: () => mockQueryBuilder,
       eq: () => mockQueryBuilder,
       neq: () => mockQueryBuilder,
       ilike: () => mockQueryBuilder,
-    } as unknown as SupabaseQueryBuilder;
+    } as unknown as SupabaseQueryBuilder<any>;
     
     const mockResult = {
       from: () => ({
-        select: () => Promise.resolve({ data: [], error: null }),
-        insert: () => Promise.resolve({ data: null, error: null }),
-        update: () => Promise.resolve({ data: null, error: null }),
-        delete: () => Promise.resolve({ data: null, error: null }),
+        select: () => Promise.resolve({ 
+          data: [], 
+          error: null,
+          select: () => mockQueryBuilder.select(),
+          single: () => mockQueryBuilder.single(),
+          maybeSingle: () => mockQueryBuilder.maybeSingle(),
+          order: () => mockQueryBuilder,
+          limit: () => mockQueryBuilder,
+          eq: () => mockQueryBuilder,
+          neq: () => mockQueryBuilder,
+          ilike: () => mockQueryBuilder,
+        }),
+        insert: () => Promise.resolve({ 
+          data: null, 
+          error: null,
+          select: () => mockQueryBuilder.select(),
+          single: () => mockQueryBuilder.single(),
+          maybeSingle: () => mockQueryBuilder.maybeSingle(),
+          order: () => mockQueryBuilder,
+          limit: () => mockQueryBuilder,
+          eq: () => mockQueryBuilder,
+          neq: () => mockQueryBuilder,
+          ilike: () => mockQueryBuilder,
+        }),
+        update: () => Promise.resolve({ 
+          data: null, 
+          error: null,
+          select: () => mockQueryBuilder.select(),
+          single: () => mockQueryBuilder.single(),
+          maybeSingle: () => mockQueryBuilder.maybeSingle(),
+          order: () => mockQueryBuilder,
+          limit: () => mockQueryBuilder,
+          eq: () => mockQueryBuilder,
+          neq: () => mockQueryBuilder,
+          ilike: () => mockQueryBuilder,
+        }),
+        delete: () => Promise.resolve({ 
+          data: null, 
+          error: null,
+          select: () => mockQueryBuilder.select(),
+          single: () => mockQueryBuilder.single(),
+          maybeSingle: () => mockQueryBuilder.maybeSingle(),
+          order: () => mockQueryBuilder,
+          limit: () => mockQueryBuilder,
+          eq: () => mockQueryBuilder,
+          neq: () => mockQueryBuilder,
+          ilike: () => mockQueryBuilder,
+        }),
         eq: () => mockQueryBuilder,
         neq: () => mockQueryBuilder,
         gt: () => mockQueryBuilder,
@@ -135,8 +220,30 @@ try {
         textSearch: () => mockQueryBuilder,
         filter: () => mockQueryBuilder,
         match: () => mockQueryBuilder,
-        single: () => Promise.resolve({ data: null, error: null }),
-        maybeSingle: () => Promise.resolve({ data: null, error: null }),
+        single: () => Promise.resolve({ 
+          data: null, 
+          error: null,
+          select: () => mockQueryBuilder.select(),
+          single: () => mockQueryBuilder.single(),
+          maybeSingle: () => mockQueryBuilder.maybeSingle(),
+          order: () => mockQueryBuilder,
+          limit: () => mockQueryBuilder,
+          eq: () => mockQueryBuilder,
+          neq: () => mockQueryBuilder,
+          ilike: () => mockQueryBuilder,
+        }),
+        maybeSingle: () => Promise.resolve({ 
+          data: null, 
+          error: null,
+          select: () => mockQueryBuilder.select(),
+          single: () => mockQueryBuilder.single(),
+          maybeSingle: () => mockQueryBuilder.maybeSingle(),
+          order: () => mockQueryBuilder,
+          limit: () => mockQueryBuilder,
+          eq: () => mockQueryBuilder,
+          neq: () => mockQueryBuilder,
+          ilike: () => mockQueryBuilder,
+        }),
         order: () => mockQueryBuilder,
         limit: () => mockQueryBuilder,
         range: () => mockQueryBuilder,
@@ -144,12 +251,78 @@ try {
         ilike: () => mockQueryBuilder,
       }),
       auth: {
-        signUp: () => Promise.resolve({ data: null, error: null }),
-        signIn: () => Promise.resolve({ data: null, error: null }),
-        signOut: () => Promise.resolve({ data: null, error: null }),
-        getUser: () => Promise.resolve({ data: null, error: null }),
-        getSession: () => Promise.resolve({ data: null, error: null }),
-        refreshSession: () => Promise.resolve({ data: null, error: null }),
+        signUp: () => Promise.resolve({ 
+          data: null, 
+          error: null,
+          select: () => mockQueryBuilder.select(),
+          single: () => mockQueryBuilder.single(),
+          maybeSingle: () => mockQueryBuilder.maybeSingle(),
+          order: () => mockQueryBuilder,
+          limit: () => mockQueryBuilder,
+          eq: () => mockQueryBuilder,
+          neq: () => mockQueryBuilder,
+          ilike: () => mockQueryBuilder,
+        }),
+        signIn: () => Promise.resolve({ 
+          data: null, 
+          error: null,
+          select: () => mockQueryBuilder.select(),
+          single: () => mockQueryBuilder.single(),
+          maybeSingle: () => mockQueryBuilder.maybeSingle(),
+          order: () => mockQueryBuilder,
+          limit: () => mockQueryBuilder,
+          eq: () => mockQueryBuilder,
+          neq: () => mockQueryBuilder,
+          ilike: () => mockQueryBuilder,
+        }),
+        signOut: () => Promise.resolve({ 
+          data: null, 
+          error: null,
+          select: () => mockQueryBuilder.select(),
+          single: () => mockQueryBuilder.single(),
+          maybeSingle: () => mockQueryBuilder.maybeSingle(),
+          order: () => mockQueryBuilder,
+          limit: () => mockQueryBuilder,
+          eq: () => mockQueryBuilder,
+          neq: () => mockQueryBuilder,
+          ilike: () => mockQueryBuilder,
+        }),
+        getUser: () => Promise.resolve({ 
+          data: null, 
+          error: null,
+          select: () => mockQueryBuilder.select(),
+          single: () => mockQueryBuilder.single(),
+          maybeSingle: () => mockQueryBuilder.maybeSingle(),
+          order: () => mockQueryBuilder,
+          limit: () => mockQueryBuilder,
+          eq: () => mockQueryBuilder,
+          neq: () => mockQueryBuilder,
+          ilike: () => mockQueryBuilder,
+        }),
+        getSession: () => Promise.resolve({ 
+          data: null, 
+          error: null,
+          select: () => mockQueryBuilder.select(),
+          single: () => mockQueryBuilder.single(),
+          maybeSingle: () => mockQueryBuilder.maybeSingle(),
+          order: () => mockQueryBuilder,
+          limit: () => mockQueryBuilder,
+          eq: () => mockQueryBuilder,
+          neq: () => mockQueryBuilder,
+          ilike: () => mockQueryBuilder,
+        }),
+        refreshSession: () => Promise.resolve({ 
+          data: null, 
+          error: null,
+          select: () => mockQueryBuilder.select(),
+          single: () => mockQueryBuilder.single(),
+          maybeSingle: () => mockQueryBuilder.maybeSingle(),
+          order: () => mockQueryBuilder,
+          limit: () => mockQueryBuilder,
+          eq: () => mockQueryBuilder,
+          neq: () => mockQueryBuilder,
+          ilike: () => mockQueryBuilder,
+        }),
       },
     };
     

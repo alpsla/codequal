@@ -17,12 +17,14 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18.x'
-          # Remove cache configuration
       
       - name: Install dependencies
         run: npm install
       
-      - name: Build
+      - name: Make scripts executable
+        run: chmod +x scripts/*.sh
+      
+      - name: Build packages in order
         run: npm run build
       
       - name: Lint
@@ -50,7 +52,6 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18.x'
-          # Remove cache configuration
       
       - name: Install dependencies
         run: npm install
