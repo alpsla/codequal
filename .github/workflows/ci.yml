@@ -16,18 +16,12 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18.x'
-          cache: 'yarn'
+          # Don't use yarn cache since we might not have a yarn.lock
+          cache: 'npm'
       - name: Install dependencies
-        run: |
-          # Check if yarn.lock exists, if not create it
-          if [ ! -f "yarn.lock" ]; then
-            echo "No yarn.lock found, creating one..."
-            yarn install
-          else
-            yarn install --frozen-lockfile
-          fi
+        run: npm ci || npm install
       - name: Run ESLint
-        run: yarn lint
+        run: npm run lint
 
   type-check:
     name: Type Check
@@ -38,18 +32,11 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18.x'
-          cache: 'yarn'
+          cache: 'npm'
       - name: Install dependencies
-        run: |
-          # Check if yarn.lock exists, if not create it
-          if [ ! -f "yarn.lock" ]; then
-            echo "No yarn.lock found, creating one..."
-            yarn install
-          else
-            yarn install --frozen-lockfile
-          fi
+        run: npm ci || npm install
       - name: Type check
-        run: yarn tsc --noEmit
+        run: npx tsc --noEmit
 
   test:
     name: Test
@@ -60,18 +47,11 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18.x'
-          cache: 'yarn'
+          cache: 'npm'
       - name: Install dependencies
-        run: |
-          # Check if yarn.lock exists, if not create it
-          if [ ! -f "yarn.lock" ]; then
-            echo "No yarn.lock found, creating one..."
-            yarn install
-          else
-            yarn install --frozen-lockfile
-          fi
+        run: npm ci || npm install
       - name: Run tests
-        run: yarn test
+        run: npm test
       - name: Upload coverage
         uses: codecov/codecov-action@v3
         with:
@@ -86,18 +66,11 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18.x'
-          cache: 'yarn'
+          cache: 'npm'
       - name: Install dependencies
-        run: |
-          # Check if yarn.lock exists, if not create it
-          if [ ! -f "yarn.lock" ]; then
-            echo "No yarn.lock found, creating one..."
-            yarn install
-          else
-            yarn install --frozen-lockfile
-          fi
+        run: npm ci || npm install
       - name: Build
-        run: yarn build
+        run: npm run build
   
   dependency-scan:
     name: Scan Dependencies
@@ -108,16 +81,9 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18.x'
-          cache: 'yarn'
+          cache: 'npm'
       - name: Install dependencies
-        run: |
-          # Check if yarn.lock exists, if not create it
-          if [ ! -f "yarn.lock" ]; then
-            echo "No yarn.lock found, creating one..."
-            yarn install
-          else
-            yarn install --frozen-lockfile
-          fi
+        run: npm ci || npm install
       
       # Load secrets from GitHub Actions secrets to environment variables
       - name: Set up environment variables
