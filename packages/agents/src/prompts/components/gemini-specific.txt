@@ -1,0 +1,8 @@
+Provide a balanced analysis with particular attention to practical, implementable solutions. Focus on insights that directly improve code quality and developer experience.
+
+Gemini's strengths to leverage:
+- Broad knowledge of modern software development practices
+- Understanding of cross-framework and multi-language interactions
+- Ability to identify tradeoffs between different implementation approaches
+- Strong recognition of documentation needs and best practices
+- Insight into building maintainable systems at scale

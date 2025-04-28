@@ -1,0 +1,93 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/Users/alpinro/Code Prjects/codequal"
+      ]
+    },
+    "fetch": {
+      "command": "/Users/alpinro/.local/bin/uvx",
+      "args": [
+        "mcp-server-fetch",
+        "--ignore-robots-txt"
+      ]
+    },
+    "mcp-hfspace": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@llmindset/mcp-hfspace",
+        "--work-dir=/Users/alpinro/Code Prjects/",
+        "--HF_TOKEN=IIzSZkwOttvhOIbdyVAzZSLhdkyjOJXMlP",
+        "Qwen/Qwen2-72B-Instruct",
+        "black-forest-labs/Flux.1-dev",
+        "shuttleai/shuttle-3.1-aesthetic",
+        "hf-audio/whisper-large-v3-turbo",
+        "THUDM/CogVideoX-5b-I2V"
+      ]
+    },
+    "image-generator": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "together-mcp",
+        "--model=FLUX.1-schnell-Free"
+      ],
+      "env": {
+        "TOGETHER_API_KEY": "02b98e9e84c34802aaba93522d462d6dfcb96f817f5409138d89b5f97702d7ec"
+      }
+    },
+    "brave-search": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-brave-search"
+      ],
+      "env": {
+        "BRAVE_API_KEY": "BSAxRww8QtU9hyo9bddJlUlk8Q0KT0R"
+      }
+    },
+    "video-generator": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@llmindset/mcp-hfspace",
+        "--work-dir=/Users/alpinro/Code Prjects/",
+        "--HF_TOKEN=IIzSZkwOttvhOIbdyVAzZSLhdkyjOJXMlP",
+        "--model=THUDM/CogVideoX-5b-I2V"
+      ],
+      "env": {
+        "PYTORCH_CUDA_ALLOC_CONF": "max_split_size_mb:128"
+      }
+    },
+    "github": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-github",
+        "--repositories=[\"pr-reviewer-v2\", \"mcp_config_app\"]"
+      ],
+      "env": {
+        "GITHUB_TOKEN": "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",
+        "GITHUB_USERNAME": "alpsla"
+      }
+    },
+    "supabase": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@supabase/mcp-server-supabase@latest",
+        "--access-token",
+        "sbp_83e76165085863a9543167654de39576feee0dd2"
+      ],
+      "env": {
+        "SUPABASE_URL": "https://umqewdoskicccbfmmggj.supabase.co/rest/v1/",
+        "SUPABASE_SERVICE_ROLE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVtcWV3ZG9za2ljY2NiZm1tZ2dqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0MjczOTAzOCwiZXhwIjoyMDU4MzE1MDM4fQ.qyMjcm-kG4K-BwgJ4WtpLSm3K1belChM2Xz5Ma3MTMg",
+        "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVtcWV3ZG9za2ljY2NiZm1tZ2dqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI3MzkwMzgsImV4cCI6MjA1ODMxNTAzOH0.J7wJzKo0zTOjTDJBLpDB8ZqJejbu_0GbQQMN9SPyVXM"
+      }
+    }
+  }
+}
