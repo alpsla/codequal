@@ -20,6 +20,19 @@ export interface LoggerConfig {
 }
 
 /**
+ * Type for loggable data
+ */
+export type LoggableData = 
+  | string 
+  | number 
+  | boolean 
+  | null 
+  | undefined 
+  | Record<string, unknown> 
+  | Array<unknown> 
+  | Error;
+
+/**
  * Default logger configuration
  */
 const defaultConfig: LoggerConfig = {
@@ -93,7 +106,7 @@ export class Logger {
    * @param message Log message
    * @param data Additional data
    */
-  error(message: string, data?: unknown): void {
+  error(message: string, data?: LoggableData): void {
     if (this.config.level >= LogLevel.ERROR) {
       this.log('ERROR', message, data, this.config.useColors ? colors.red : undefined);
     }
@@ -104,7 +117,7 @@ export class Logger {
    * @param message Log message
    * @param data Additional data
    */
-  warn(message: string, data?: unknown): void {
+  warn(message: string, data?: LoggableData): void {
     if (this.config.level >= LogLevel.WARN) {
       this.log('WARN', message, data, this.config.useColors ? colors.yellow : undefined);
     }
@@ -115,7 +128,7 @@ export class Logger {
    * @param message Log message
    * @param data Additional data
    */
-  info(message: string, data?: unknown): void {
+  info(message: string, data?: LoggableData): void {
     if (this.config.level >= LogLevel.INFO) {
       this.log('INFO', message, data, this.config.useColors ? colors.green : undefined);
     }
@@ -126,7 +139,7 @@ export class Logger {
    * @param message Log message
    * @param data Additional data
    */
-  debug(message: string, data?: unknown): void {
+  debug(message: string, data?: LoggableData): void {
     if (this.config.level >= LogLevel.DEBUG) {
       this.log('DEBUG', message, data, this.config.useColors ? colors.cyan : undefined);
     }
@@ -137,7 +150,7 @@ export class Logger {
    * @param message Log message
    * @param data Additional data
    */
-  trace(message: string, data?: unknown): void {
+  trace(message: string, data?: LoggableData): void {
     if (this.config.level >= LogLevel.TRACE) {
       this.log('TRACE', message, data, this.config.useColors ? colors.magenta : undefined);
     }
@@ -150,7 +163,7 @@ export class Logger {
    * @param data Additional data
    * @param color Color code
    */
-  private log(level: string, message: string, data?: unknown, color?: string): void {
+  private log(level: string, message: string, data?: LoggableData, color?: string): void {
     const timestamp = this.config.includeTimestamp ? new Date().toISOString() : '';
     const contextStr = this.context ? `[${this.context}]` : '';
     

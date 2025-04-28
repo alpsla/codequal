@@ -86,7 +86,12 @@ export class SkillService {
         }
       }
     } catch (error) {
-      logger.error('Error initializing skill map:', error);
+      // Convert unknown error to proper error message
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : String(error);
+        
+      logger.error('Error initializing skill map:', { error: errorMessage });
     }
   }
   
@@ -139,7 +144,12 @@ export class SkillService {
         }
       }
     } catch (error) {
-      logger.error('Error updating user skills:', error);
+      // Convert unknown error to proper error message
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : String(error);
+        
+      logger.error('Error updating user skills:', { error: errorMessage });
     }
   }
   
