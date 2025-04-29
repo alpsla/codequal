@@ -1,5 +1,5 @@
 import { Agent, AnalysisResult } from '@codequal/core/types/agent';
-import { createLogger, Logger } from '@codequal/core/utils';
+import { createLogger, Logger, LoggableData } from '@codequal/core/utils';
 
 /**
  * Abstract base class for all agents
@@ -28,7 +28,7 @@ export abstract class BaseAgent implements Agent {
    * @param data PR data to analyze
    * @returns Analysis result
    */
-  abstract analyze(data: unknown): Promise<AnalysisResult>;
+  abstract analyze(data: any): Promise<AnalysisResult>;
   
   /**
    * Format the result in the standard format
@@ -42,7 +42,7 @@ export abstract class BaseAgent implements Agent {
    * @param message Log message
    * @param data Additional data
    */
-  protected log(message: string, data?: unknown): void {
+  protected log(message: string, data?: LoggableData): void {
     if (this.config.debug) {
       this.logger.debug(message, data);
     }
@@ -54,7 +54,12 @@ export abstract class BaseAgent implements Agent {
    * @returns Empty analysis result
    */
   protected handleError(error: unknown): AnalysisResult {
-    this.logger.error(`Error during analysis:`, error);
+    // Convert error to proper format for logging
+    const errorData: LoggableData = error instanceof Error 
+      ? error 
+      : { message: String(error) };
+      
+    this.logger.error(`Error during analysis:`, errorData);
     
     return {
       insights: [],

@@ -2,7 +2,6 @@ import { AgentProvider, AgentRole } from '@codequal/core/config/agent-registry';
 import { Agent } from '@codequal/core/types/agent';
 
 // Import agent implementations
-import { PrAgentInstance } from '../pr-agent/pr-agent';
 import { ClaudeAgent } from '../claude/claude-agent';
 import { MCPAgent } from '../mcp/mcp-agent';
 import { DeepSeekAgent } from '../deepseek/deepseek-agent';
