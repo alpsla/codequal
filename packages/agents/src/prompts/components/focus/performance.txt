@@ -1,0 +1,8 @@
+Focus on:
+- Algorithmic complexity and efficiency
+- Resource usage (memory, CPU, network, disk)
+- Caching opportunities and problems
+- Database query optimizations
+- Synchronous vs asynchronous operations
+- Unnecessary computations or operations
+- Performance bottlenecks

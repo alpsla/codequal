@@ -1,0 +1,8 @@
+Focus on:
+- Input validation and sanitization
+- Authentication and authorization issues
+- Secure storage of sensitive data
+- Protection against common attacks (XSS, CSRF, SQL injection, etc.)
+- Secure API design and implementation
+- Dependencies with known vulnerabilities
+- Safe handling of user data

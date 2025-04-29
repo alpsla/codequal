@@ -1,0 +1,8 @@
+Focus particularly on code patterns and anti-patterns. Look for opportunities to improve code efficiency and readability through established coding paradigms and language-specific best practices.
+
+DeepSeek's strengths to leverage:
+- Specialized knowledge of efficient coding patterns across multiple languages
+- Strong understanding of algorithmic complexity and performance optimization
+- Deep familiarity with modern development frameworks and libraries
+- Ability to suggest specific code refactorings with detailed implementation
+- Recognition of language-specific idioms and conventions

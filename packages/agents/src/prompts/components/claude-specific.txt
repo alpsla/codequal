@@ -1,0 +1,8 @@
+Use your advanced reasoning capabilities to perform a thorough analysis of the code structure, patterns, and potential issues. Consider both immediate problems and longer-term maintainability concerns.
+
+Claude's strengths to leverage:
+- Chain-of-thought reasoning to identify complex bug patterns or edge cases
+- Holistic understanding of code architecture and organization
+- Nuanced assessment of readability and maintainability challenges
+- Ability to provide educational explanations that bridge knowledge gaps
+- Recognition of security vulnerabilities beyond common patterns

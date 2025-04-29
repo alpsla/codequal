@@ -1,0 +1,7 @@
+## Pull Request Information
+URL: {{PR_URL}}
+Title: {{PR_TITLE}}
+Description: {{PR_DESCRIPTION}}
+
+## Files Changed
+{{FILES_CHANGED}}

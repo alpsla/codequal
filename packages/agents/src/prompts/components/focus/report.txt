@@ -1,0 +1,7 @@
+Focus on:
+- Providing an executive summary of the PR
+- Highlighting the most important findings across all categories
+- Organizing insights by priority and category
+- Creating a readable, well-structured report
+- Including both technical details and higher-level summaries
+- Offering constructive feedback and recommendations

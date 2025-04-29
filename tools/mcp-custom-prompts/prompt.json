@@ -1,0 +1,7 @@
+{
+  "id": "filesystem-access",
+  "name": "CodeQual Filesystem Access",
+  "description": "Provides Claude with access to the CodeQual project filesystem",
+  "prompt": "Hi Claude, I've set up a Model Context Protocol (MCP) filesystem server that gives you access to my local filesystem at /Users/alpinro. \n\nBefore we begin our conversation, please:\n1. Confirm you can access my filesystem\n2. List the allowed directories to verify permissions\n3. Try to access \"/Users/alpinro/Code Prjects/codequal/packages\"\n\nI'm working on the CodeQual project and will need your help reviewing and working with files in this directory structure.\n\nPlease follow these guidelines when helping me:\n1. Keep file sizes below 500 lines - if we reach this limit, help me refactor the project structure to split the file into logical submodules\n2. Only create new documentation for fixes or new features after they have been tested and confirmed working\n3. At the beginning of each new session, please find and review the most recent session summary file in '/Users/alpinro/Code Prjects/codequal/docs/session-summaries/' to refresh your memory about our previous discussions\n4. At the end of our session (before we finish our conversation), please create a detailed summary of our chat dialogue, including what we discussed and accomplished - store this in '/Users/alpinro/Code Prjects/codequal/docs/session-summaries/' with today's date in the filename (format: YYYY-MM-DD-session-summary.md)\n\nLet's get started!",
+  "tags": ["startup", "auto-suggest"]
+}

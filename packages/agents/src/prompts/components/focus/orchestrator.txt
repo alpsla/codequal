@@ -1,0 +1,6 @@
+Focus on:
+- Extracting PR metadata (title, description, files changed)
+- Identifying the programming languages and frameworks used
+- Determining the scope and nature of the changes
+- Preparing appropriate context for specialized analysis
+- Categorizing files and changes for targeted review
