@@ -1,4 +1,5 @@
 import { getSupabase } from '../supabase/client';
+import type { Tables } from '../supabase/client';
 
 /**
  * Interface for repository data
@@ -47,7 +48,7 @@ export class RepositoryModel {
     
     // If found, return it
     if (existingRepo) {
-      return this.mapToRepository(existingRepo);
+      return this.mapToRepository(existingRepo as Tables['repositories']);
     }
     
     // Otherwise, create a new repository
@@ -66,7 +67,11 @@ export class RepositoryModel {
       throw new Error(`Error creating repository: ${createError.message}`);
     }
     
-    return this.mapToRepository(newRepo);
+    if (!newRepo) {
+      throw new Error('Failed to create repository: No data returned');
+    }
+    
+    return this.mapToRepository(newRepo as Tables['repositories']);
   }
   
   /**
@@ -87,7 +92,11 @@ export class RepositoryModel {
       throw new Error(`Error getting repository: ${error.message}`);
     }
     
-    return this.mapToRepository(data);
+    if (!data) {
+      throw new Error(`Repository not found: ${id}`);
+    }
+    
+    return this.mapToRepository(data as Tables['repositories']);
   }
   
   /**
@@ -109,7 +118,11 @@ export class RepositoryModel {
       throw new Error(`Error getting repositories: ${error.message}`);
     }
     
-    return data.map(this.mapToRepository);
+    if (!data) {
+      return [];
+    }
+    
+    return data.map(item => this.mapToRepository(item as Tables['repositories']));
   }
   
   /**
@@ -117,15 +130,15 @@ export class RepositoryModel {
    * @param data Database record
    * @returns Repository
    */
-  private static mapToRepository(data: Record<string, unknown>): Repository {
+  private static mapToRepository(data: Tables['repositories']): Repository {
     return {
-      id: data.id as string,
-      provider: data.provider as string,
-      name: data.name as string,
-      url: data.url as string,
-      private: Boolean(data.private),
-      createdAt: new Date(data.created_at as string),
-      updatedAt: new Date(data.updated_at as string)
+      id: data.id,
+      provider: data.provider,
+      name: data.name,
+      url: data.url,
+      private: data.private,
+      createdAt: new Date(data.created_at),
+      updatedAt: new Date(data.updated_at)
     };
   }
 }

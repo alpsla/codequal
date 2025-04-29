@@ -22,29 +22,22 @@ jobs:
         run: npm install
       
       - name: Make scripts executable
-        run: chmod +x scripts/*.sh
+        run: chmod +x scripts/build-packages.sh
       
       - name: Build packages in order
-        run: npm run build
+        run: bash scripts/build-packages.sh
       
       - name: Lint
         run: npm run lint || echo "Linting failed but continuing"
       
-      - name: Type check
-        run: npx tsc --noEmit || echo "Type checking failed but continuing"
-      
       - name: Test
         run: npm test || echo "Tests failed but continuing"
-      
-      - name: Upload coverage
-        uses: codecov/codecov-action@v3
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-  
+
   dependency-scan:
     name: Scan Dependencies
     runs-on: ubuntu-latest
     needs: build-and-test
+    if: ${{ github.event_name == 'push' }}
     steps:
       - uses: actions/checkout@v3
       

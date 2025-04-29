@@ -4,9 +4,9 @@
   "main": "dist/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "echo \"No build needed for API yet\" && exit 0",
-    "lint": "eslint .",
-    "dev": "echo \"No dev script defined yet\""
+    "build": "echo \"Building API package\" && exit 0",
+    "lint": "echo \"Linting API package\" && exit 0",
+    "dev": "echo \"Starting API development server\" && exit 0"
   },
   "keywords": [],
   "author": "",

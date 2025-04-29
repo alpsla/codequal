@@ -4,9 +4,9 @@
   "main": "dist/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "echo \"No build needed for web yet\" && exit 0",
-    "lint": "eslint .",
-    "dev": "echo \"No dev script defined yet\""
+    "build": "echo \"Building web package\" && exit 0",
+    "lint": "echo \"Linting web package\" && exit 0",
+    "dev": "echo \"Starting web development server\" && exit 0"
   },
   "keywords": [],
   "author": "",

@@ -1,4 +1,5 @@
 import { getSupabase } from '../supabase/client';
+import type { Tables } from '../supabase/client';
 import { AgentProvider, AgentRole } from '@codequal/core/config/agent-registry';
 import { AnalysisResult } from '@codequal/core/types/agent';
 
@@ -71,7 +72,11 @@ export class PRReviewModel {
       throw new Error(`Error creating PR review: ${error.message}`);
     }
     
-    return this.mapToPRReview(data);
+    if (!data) {
+      throw new Error('Failed to create PR review: No data returned');
+    }
+    
+    return this.mapToPRReview(data as Tables['pr_reviews']);
   }
   
   /**
@@ -114,7 +119,11 @@ export class PRReviewModel {
       throw new Error(`Error storing analysis result: ${error.message}`);
     }
     
-    return this.mapToAnalysisResult(data);
+    if (!data) {
+      throw new Error('Failed to store analysis result: No data returned');
+    }
+    
+    return this.mapToAnalysisResult(data as Tables['analysis_results']);
   }
   
   /**
@@ -145,16 +154,22 @@ export class PRReviewModel {
       throw new Error(`Error storing combined result: ${error.message}`);
     }
     
+    if (!data) {
+      throw new Error('Failed to store combined result: No data returned');
+    }
+    
+    const record = data as Tables['combined_results'];
+    
     return {
-      id: data.id,
-      prReviewId: data.pr_review_id,
+      id: record.id,
+      prReviewId: record.pr_review_id,
       role: 'combined',
       provider: 'combined',
-      insights: data.insights,
-      suggestions: data.suggestions,
-      educational: data.educational,
-      metadata: data.metadata,
-      createdAt: new Date(data.created_at)
+      insights: record.insights,
+      suggestions: record.suggestions,
+      educational: record.educational || [],
+      metadata: record.metadata || {},
+      createdAt: new Date(record.created_at)
     };
   }
   
@@ -176,7 +191,11 @@ export class PRReviewModel {
       throw new Error(`Error getting PR review: ${error.message}`);
     }
     
-    return this.mapToPRReview(data);
+    if (!data) {
+      throw new Error(`PR review not found: ${id}`);
+    }
+    
+    return this.mapToPRReview(data as Tables['pr_reviews']);
   }
   
   /**
@@ -197,7 +216,11 @@ export class PRReviewModel {
       throw new Error(`Error getting PR reviews: ${error.message}`);
     }
     
-    return data.map(this.mapToPRReview);
+    if (!data) {
+      return [];
+    }
+    
+    return data.map(item => this.mapToPRReview(item as Tables['pr_reviews']));
   }
   
   /**
@@ -218,7 +241,11 @@ export class PRReviewModel {
       throw new Error(`Error getting analysis results: ${error.message}`);
     }
     
-    return data.map(this.mapToAnalysisResult);
+    if (!data) {
+      return [];
+    }
+    
+    return data.map(item => this.mapToAnalysisResult(item as Tables['analysis_results']));
   }
   
   /**
@@ -243,11 +270,17 @@ export class PRReviewModel {
       throw new Error(`Error getting combined result: ${error.message}`);
     }
     
+    if (!data) {
+      return null;
+    }
+    
+    const record = data as Tables['combined_results'];
+    
     return {
-      insights: data.insights,
-      suggestions: data.suggestions,
-      educational: data.educational,
-      metadata: data.metadata
+      insights: record.insights,
+      suggestions: record.suggestions,
+      educational: record.educational || [],
+      metadata: record.metadata || {}
     };
   }
   
@@ -256,7 +289,7 @@ export class PRReviewModel {
    * @param data Database record
    * @returns PR review
    */
-  private static mapToPRReview(data: any): PRReview {
+  private static mapToPRReview(data: Tables['pr_reviews']): PRReview {
     return {
       id: data.id,
       prUrl: data.pr_url,
@@ -274,7 +307,7 @@ export class PRReviewModel {
    * @param data Database record
    * @returns Analysis result record
    */
-  private static mapToAnalysisResult(data: any): AnalysisResultRecord {
+  private static mapToAnalysisResult(data: Tables['analysis_results']): AnalysisResultRecord {
     return {
       id: data.id,
       prReviewId: data.pr_review_id,
@@ -282,8 +315,8 @@ export class PRReviewModel {
       provider: data.provider,
       insights: data.insights,
       suggestions: data.suggestions,
-      educational: data.educational,
-      metadata: data.metadata,
+      educational: data.educational || [],
+      metadata: data.metadata || {},
       executionTimeMs: data.execution_time_ms,
       tokenCount: data.token_count,
       createdAt: new Date(data.created_at)

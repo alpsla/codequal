@@ -9,7 +9,6 @@
   "scripts": {
     "dev": "turbo run dev",
     "build": "bash scripts/build-packages.sh",
-    "build:turbo": "turbo run build",
     "lint": "turbo run lint",
     "test": "turbo run test"
   },

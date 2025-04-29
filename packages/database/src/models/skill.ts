@@ -1,4 +1,5 @@
 import { getSupabase } from '../supabase/client';
+import type { Tables } from '../supabase/client';
 
 /**
  * Interface for skill category
@@ -37,6 +38,21 @@ export interface SkillHistoryEntry {
 }
 
 /**
+ * Interface for joined skill data
+ */
+interface SkillWithCategory {
+  id: string;
+  user_id: string;
+  category_id: string;
+  level: number;
+  last_updated: string;
+  created_at: string;
+  skill_categories?: {
+    name?: string;
+  };
+}
+
+/**
  * Skill model for database operations
  */
 export class SkillModel {
@@ -56,7 +72,11 @@ export class SkillModel {
       throw new Error(`Error getting skill categories: ${error.message}`);
     }
     
-    return data.map(this.mapToSkillCategory);
+    if (!data) {
+      return [];
+    }
+    
+    return data.map(item => this.mapToSkillCategory(item as Tables['skill_categories']));
   }
   
   /**
@@ -77,7 +97,11 @@ export class SkillModel {
       throw new Error(`Error getting skill category: ${error.message}`);
     }
     
-    return this.mapToSkillCategory(data);
+    if (!data) {
+      throw new Error(`Skill category not found: ${id}`);
+    }
+    
+    return this.mapToSkillCategory(data as Tables['skill_categories']);
   }
   
   /**
@@ -100,15 +124,22 @@ export class SkillModel {
       throw new Error(`Error getting user skills: ${error.message}`);
     }
     
-    return data.map((item: Record<string, unknown>) => ({
-      id: item.id as string,
-      userId: item.user_id as string,
-      categoryId: item.category_id as string,
-      categoryName: item.skill_categories?.name as string | undefined,
-      level: Number(item.level),
-      lastUpdated: new Date(item.last_updated as string),
-      createdAt: new Date(item.created_at as string)
-    }));
+    if (!data) {
+      return [];
+    }
+    
+    return data.map((item: Record<string, unknown>) => {
+      const skillData = item as unknown as SkillWithCategory;
+      return {
+        id: skillData.id,
+        userId: skillData.user_id,
+        categoryId: skillData.category_id,
+        categoryName: skillData.skill_categories?.name,
+        level: Number(skillData.level),
+        lastUpdated: new Date(skillData.last_updated),
+        createdAt: new Date(skillData.created_at)
+      };
+    });
   }
   
   /**
@@ -127,7 +158,6 @@ export class SkillModel {
   ): Promise<DeveloperSkill> {
     const supabase = getSupabase();
     
-    // Start a transaction
     // Update skill level
     const { data: skillData, error: skillError } = await supabase
       .from('developer_skills')
@@ -146,6 +176,10 @@ export class SkillModel {
       throw new Error(`Error updating skill: ${skillError.message}`);
     }
     
+    if (!skillData) {
+      throw new Error(`Failed to update skill: ${skillId}`);
+    }
+    
     // Add history entry
     const { error: historyError } = await supabase
       .from('skill_history')
@@ -160,14 +194,16 @@ export class SkillModel {
       throw new Error(`Error adding skill history: ${historyError.message}`);
     }
     
+    const skill = skillData as unknown as SkillWithCategory;
+    
     return {
-      id: skillData.id as string,
-      userId: skillData.user_id as string,
-      categoryId: skillData.category_id as string,
-      categoryName: skillData.skill_categories?.name as string | undefined,
-      level: Number(skillData.level),
-      lastUpdated: new Date(skillData.last_updated as string),
-      createdAt: new Date(skillData.created_at as string)
+      id: skill.id,
+      userId: skill.user_id,
+      categoryId: skill.category_id,
+      categoryName: skill.skill_categories?.name,
+      level: Number(skill.level),
+      lastUpdated: new Date(skill.last_updated),
+      createdAt: new Date(skill.created_at)
     };
   }
   
@@ -189,7 +225,11 @@ export class SkillModel {
       throw new Error(`Error getting skill history: ${error.message}`);
     }
     
-    return data.map(this.mapToSkillHistoryEntry);
+    if (!data) {
+      return [];
+    }
+    
+    return data.map(item => this.mapToSkillHistoryEntry(item as Tables['skill_history']));
   }
   
   /**
@@ -197,13 +237,13 @@ export class SkillModel {
    * @param data Database record
    * @returns Skill category
    */
-  private static mapToSkillCategory(data: Record<string, unknown>): SkillCategory {
+  private static mapToSkillCategory(data: Tables['skill_categories']): SkillCategory {
     return {
-      id: data.id as string,
-      name: data.name as string,
-      description: data.description as string | undefined,
-      parentId: data.parent_id as string | undefined,
-      createdAt: new Date(data.created_at as string)
+      id: data.id,
+      name: data.name,
+      description: data.description,
+      parentId: data.parent_id,
+      createdAt: new Date(data.created_at)
     };
   }
   
@@ -212,14 +252,14 @@ export class SkillModel {
    * @param data Database record
    * @returns Skill history entry
    */
-  private static mapToSkillHistoryEntry(data: Record<string, unknown>): SkillHistoryEntry {
+  private static mapToSkillHistoryEntry(data: Tables['skill_history']): SkillHistoryEntry {
     return {
-      id: data.id as string,
-      skillId: data.skill_id as string,
+      id: data.id,
+      skillId: data.skill_id,
       level: Number(data.level),
-      evidenceType: data.evidence_type as string,
-      evidenceId: data.evidence_id as string | undefined,
-      createdAt: new Date(data.created_at as string)
+      evidenceType: data.evidence_type,
+      evidenceId: data.evidence_id,
+      createdAt: new Date(data.created_at)
     };
   }
 }
