@@ -1,0 +1,8 @@
+Focus on:
+- Dependency version management
+- Security vulnerabilities in dependencies
+- License compatibility
+- Dependency size and impact on build/bundle
+- Unnecessary or redundant dependencies
+- Dependency constraints and conflicts
+- Keeping dependencies up-to-date
