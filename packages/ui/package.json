@@ -1,0 +1,17 @@
+{
+  "name": "ui",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"No tests yet\" && exit 0",
+    "build": "echo \"Building UI package\" && exit 0", 
+    "lint": "echo \"Linting UI package\" && exit 0"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}
