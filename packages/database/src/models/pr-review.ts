@@ -4,6 +4,14 @@ import { AgentProvider, AgentRole } from '@codequal/core/config/agent-registry';
 import { AnalysisResult } from '@codequal/core/types/agent';
 
 /**
+ * Analysis mode for PR reviews
+ */
+export enum AnalysisMode {
+  QUICK = 'quick',
+  COMPREHENSIVE = 'comprehensive'
+}
+
+/**
  * Interface for PR review data
  */
 export interface PRReview {
@@ -13,6 +21,7 @@ export interface PRReview {
   prDescription?: string;
   repositoryId: string;
   userId: string;
+  analysisMode: AnalysisMode;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -43,6 +52,7 @@ export class PRReviewModel {
    * @param prUrl PR URL
    * @param repositoryId Repository ID
    * @param userId User ID
+   * @param analysisMode Analysis mode (quick or comprehensive)
    * @param prTitle PR title (optional)
    * @param prDescription PR description (optional)
    * @returns Created PR review
@@ -51,6 +61,7 @@ export class PRReviewModel {
     prUrl: string,
     repositoryId: string,
     userId: string,
+    analysisMode: AnalysisMode = AnalysisMode.QUICK,
     prTitle?: string,
     prDescription?: string
   ): Promise<PRReview> {
@@ -63,7 +74,8 @@ export class PRReviewModel {
         pr_title: prTitle,
         pr_description: prDescription,
         repository_id: repositoryId,
-        user_id: userId
+        user_id: userId,
+        analysis_mode: analysisMode
       })
       .select()
       .single();
@@ -297,6 +309,7 @@ export class PRReviewModel {
       prDescription: data.pr_description,
       repositoryId: data.repository_id,
       userId: data.user_id,
+      analysisMode: data.analysis_mode as AnalysisMode,
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at)
     };

@@ -9,9 +9,11 @@
   "scripts": {
     "dev": "turbo run dev",
     "build": "bash scripts/build-packages.sh",
+    "build:database": "bash scripts/build-database.sh",
     "clean-build": "bash scripts/clean-build.sh",
     "lint": "turbo run lint",
-    "test": "turbo run test"
+    "test": "turbo run test",
+    "setup:supabase": "bash scripts/setup-supabase.sh"
   },
   "repository": {
     "type": "git",
