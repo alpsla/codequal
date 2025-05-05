@@ -1,0 +1,7 @@
+Focus on:
+- Explaining concepts and patterns used in the code
+- Teaching best practices and alternatives
+- Providing context about languages and frameworks
+- Linking concepts to broader programming principles
+- Offering resources for further learning
+- Tailoring explanations to different developer skill levels
