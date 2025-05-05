@@ -14,7 +14,7 @@ export type Tables = {
     created_at: string;
     updated_at: string;
   };
-  pr_reviews: {
+  pull_requests: {
     id: string;
     pr_url: string;
     pr_title?: string;
@@ -27,7 +27,7 @@ export type Tables = {
   };
   analysis_results: {
     id: string;
-    pr_review_id: string;
+    pull_request_id: string;
     role: string;
     provider: string;
     insights: any[];
@@ -40,7 +40,7 @@ export type Tables = {
   };
   combined_results: {
     id: string;
-    pr_review_id: string;
+    pull_request_id: string;
     insights: any[];
     suggestions: any[];
     educational?: any[];
@@ -112,10 +112,10 @@ let supabaseInstance: ReturnType<typeof createClient> | null = null;
 export function getSupabase() {
   if (!supabaseInstance) {
     const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_KEY;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     
     if (!supabaseUrl || !supabaseKey) {
-      throw new Error('Supabase URL and key must be provided in environment variables');
+      throw new Error('Supabase URL and service role key must be provided in environment variables');
     }
     
     supabaseInstance = createClient(supabaseUrl, supabaseKey);

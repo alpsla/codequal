@@ -52,7 +52,9 @@ CodeQual requires the following environment variables:
 | Variable | Description | Required |
 |----------|-------------|----------|
 | SUPABASE_URL | URL for your Supabase project | Yes |
-| SUPABASE_KEY | API key for Supabase | Yes |
+| SUPABASE_SERVICE_ROLE_KEY | Service role key for Supabase | Yes |
+| PUBLIC_SUPABASE_ANON_KEY | Anonymous key for Supabase | No |
+| GITHUB_TOKEN | GitHub API token | No* |
 | OPENAI_API_KEY | OpenAI API key for GPT models | No* |
 | ANTHROPIC_API_KEY | Anthropic API key for Claude models | No* |
 | DEEPSEEK_API_KEY | DeepSeek API key | No* |
