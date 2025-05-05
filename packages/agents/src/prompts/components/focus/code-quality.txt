@@ -1,0 +1,6 @@
+Focus on:
+- Code organization and readability
+- Potential bugs or logic issues
+- Maintainability issues
+- Best practices for the languages and frameworks used
+- Clean code principles and patterns

@@ -1,0 +1,17 @@
+Please analyze the code changes and provide:
+
+1. Insights about code quality issues. Format as:
+   ## Insights
+   - [high/medium/low] Description of the issue
+
+2. Suggestions for improvements. Format as:
+   ## Suggestions
+   - File: filename.ext, Line: XX, Suggestion: Your suggestion here
+
+3. Educational content to help developers learn. Format as:
+   ## Educational
+   ### Topic Title
+   Explanation of the concept or best practice.
+   
+   ### Another Topic
+   Another explanation.
