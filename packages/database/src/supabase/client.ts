@@ -8,6 +8,9 @@ export type Tables = {
     name: string;
     url: string;
     private: boolean;
+    primary_language?: string;
+    languages?: Record<string, number>;
+    size?: number; // repository size in bytes
     created_at: string;
     updated_at: string;
   };
@@ -18,6 +21,7 @@ export type Tables = {
     pr_description?: string;
     repository_id: string;
     user_id: string;
+    analysis_mode: string; // 'quick' or 'comprehensive'
     created_at: string;
     updated_at: string;
   };
@@ -41,6 +45,36 @@ export type Tables = {
     suggestions: any[];
     educational?: any[];
     metadata?: Record<string, any>;
+    created_at: string;
+  };
+  repository_analysis: {
+    id: string;
+    repository_id: string;
+    analyzer: string; // e.g., 'deepwiki'
+    analysis_data: Record<string, any>;
+    metadata?: Record<string, any>;
+    cached_until: string; // TTL for cache
+    execution_time_ms?: number;
+    token_count?: number;
+    created_at: string;
+    updated_at: string;
+  };
+  calibration_runs: {
+    id: string;
+    run_id: string;
+    timestamp: string;
+    model_versions: Record<string, string>;
+    metrics: Record<string, any>[];
+    created_at: string;
+  };
+  calibration_test_results: {
+    id: string;
+    run_id: string;
+    repository_id: string;
+    size: string; // small, medium, large, enterprise
+    languages: string[];
+    architecture: string;
+    results: Record<string, Record<string, number>>;
     created_at: string;
   };
   skill_categories: {
