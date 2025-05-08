@@ -10,14 +10,15 @@
     "./models/*": "./dist/models/*.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && node scripts/post-build.js",
     "dev": "tsc -w",
     "lint": "eslint src",
     "test": "jest --passWithNoTests"
   },
   "dependencies": {
     "@codequal/core": "0.1.0",
-    "@supabase/supabase-js": "^2.39.0"
+    "@supabase/supabase-js": "^2.39.0",
+    "dotenv": "^16.0.3"
   },
   "devDependencies": {
     "@types/jest": "^29.5.0",

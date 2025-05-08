@@ -10,6 +10,9 @@ export interface Repository {
   name: string;
   url: string;
   private: boolean;
+  primaryLanguage?: string;
+  languages?: Record<string, number>;
+  size?: number; // Repository size in bytes
   createdAt: Date;
   updatedAt: Date;
 }
@@ -137,6 +140,9 @@ export class RepositoryModel {
       name: data.name,
       url: data.url,
       private: data.private,
+      primaryLanguage: data.primary_language,
+      languages: data.languages,
+      size: data.size,
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at)
     };

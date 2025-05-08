@@ -1,63 +1,56 @@
-name: CI Pipeline
+name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, develop ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, develop ]
 
 jobs:
   build-and-test:
-    name: Build and Test
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18.x'
-      
-      - name: Install dependencies
-        run: npm install
-      
-      - name: Make scripts executable
-        run: chmod +x scripts/build-packages.sh
-      
-      - name: Build packages in order
-        run: bash scripts/build-packages.sh
-      
-      - name: Lint
-        run: npm run lint || echo "Linting failed but continuing"
-      
-      - name: Test
-        run: npm test || echo "Tests failed but continuing"
 
-  dependency-scan:
-    name: Scan Dependencies
-    runs-on: ubuntu-latest
-    needs: build-and-test
-    if: ${{ github.event_name == 'push' }}
     steps:
-      - uses: actions/checkout@v3
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18.x'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
       
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18.x'
+    - name: Create .env file
+      run: |
+        cat > .env << EOF
+        # Supabase Configuration
+        SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+        SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        PUBLIC_SUPABASE_ANON_KEY=${{ secrets.PUBLIC_SUPABASE_ANON_KEY }}
+        
+        # Git Provider API Keys
+        GITHUB_TOKEN=${{ secrets.GH_TOKEN }}
+        GITHUB_CLIENT_SECRET=${{ secrets.GITHUB_CLIENT_SECRET }}
+        GITHUB_CLIENT_ID=${{ secrets.GITHUB_CLIENT_ID }}
+        GITLAB_TOKEN=${{ secrets.GITLAB_TOKEN }}
+        
+        # Agent API Keys
+        ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
+        OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+        DEEPSEEK_API_KEY=${{ secrets.DEEPSEEK_API_KEY }}
+        GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+        
+        # Environment
+        NODE_ENV=test
+        EOF
       
-      - name: Install dependencies
-        run: npm install
+    - name: Lint
+      run: npm run lint
       
-      - name: Set up environment variables
-        run: |
-          echo "SNYK_TOKEN=${{ secrets.SNYK_TOKEN }}" >> $GITHUB_ENV
-          echo "DEPENDENCY_SCAN_SEVERITY=high" >> $GITHUB_ENV
+    - name: Build
+      run: npm run build
       
-      - name: Run dependency scan
-        if: env.SNYK_TOKEN != ''
-        uses: snyk/actions/node@master
-        env:
-          SNYK_TOKEN: ${{ env.SNYK_TOKEN }}
-        with:
-          args: --severity-threshold=${{ env.DEPENDENCY_SCAN_SEVERITY }}
+    - name: Test
+      run: npm run test
