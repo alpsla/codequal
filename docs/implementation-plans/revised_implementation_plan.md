@@ -1,5 +1,5 @@
 # CodeQual Revised Implementation Plan
-**Last Updated: May 4, 2025**
+**Last Updated: May 6, 2025**
 
 ## Current Status (May 2025)
 
@@ -18,13 +18,15 @@ We have significantly improved the project foundation and made progress with age
 - ✅ Designed unified agent reporting format
 - ✅ Implemented Multi-Agent Factory with fallback functionality
 - ✅ Completed Agent Evaluation System with comprehensive testing
+- ✅ Completed Supabase integration for data persistence
+- ✅ Configured Grafana dashboards for visualization
 
 ## Revised Architecture
 
 Based on our latest design decisions, we are implementing a flexible, configuration-driven multi-agent architecture with adaptive agent selection. Key components include:
 
 1. **Agent Evaluation System**: Collects and utilizes performance data to select optimal agents for different contexts ✅
-2. **Multi-Agent Factory**: Creates agent configurations based on analysis needs
+2. **Multi-Agent Factory**: Creates agent configurations based on analysis needs ✅
 3. **Multi-Agent Orchestrator**: Analyzes repository/PR context and determines required roles and optimal agents
 4. **Prompt Generator**: Generates dynamic, context-aware prompts based on agent role and position
 5. **Multi-Agent Executor**: Runs configured agents with fallback capabilities
@@ -69,29 +71,44 @@ We are implementing a dual analysis mode to balance speed and depth:
   - ✅ Simple scoring for common programming languages
   - ✅ Used for early development and testing
 
-### 2. Supabase & Grafana Integration (Weeks 3-4)
-- ✅ Set up Supabase tables for repository and PR analysis storage
-- ✅ Designed and implemented database schema for two-tier analysis
-- ✅ Created repository analysis caching tables with TTL
-- ✅ Implemented calibration data storage for model performance tracking
-- ✅ Added database models for new tables and relationships
-- ✅ Verified integration with test data
-- 🔲 Configure PostgreSQL connection between Grafana and Supabase
-- 🔲 Create dashboard templates for both quick and comprehensive analysis
+### 2. Supabase & Grafana Integration (Weeks 3-4) ✅
+- ✅ **Database Implementation**
+  - ✅ Set up Supabase tables for repository and PR analysis storage
+  - ✅ Design and implement database schema for two-tier analysis
+  - ✅ Create repository analysis caching tables with TTL
+  - ✅ Implement calibration data storage for model performance tracking
+  - ✅ Add API integration for data exchange
+- ✅ **Visualization Setup**
+  - ✅ Configure PostgreSQL connection between Grafana and Supabase
+  - ✅ Create dashboard templates for both quick and comprehensive analysis
+  - ✅ Implement model performance tracking visualizations
+  - ✅ Set up automated dashboard updates
 
-### 3. Two-Tier Analysis Framework (Weeks 4-5)
-- 🔲 Implement system architecture supporting both analysis modes
-- 🔲 Create API endpoints for triggering each analysis mode
-- 🔲 Add intelligence to suggest appropriate mode based on context
-- 🔲 Build analysis mode switching capabilities
-- 🔲 Implement preliminary context-based selection logic
+### 3. Oracle Cloud Infrastructure Setup (Weeks 4-5)
+- 🔄 **Deployment Environment**
+  - 🔲 Create Oracle Cloud Free Tier account
+  - 🔲 Provision VM with 4 OCPUs and 24GB RAM
+  - 🔲 Set up Docker and Docker Compose environment
+  - 🔲 Configure security and networking for services
+- 🔄 **Application Deployment**
+  - 🔲 Configure Docker Compose for CodeQual services
+  - 🔲 Set up development environment on cloud infrastructure
+  - 🔲 Implement CI/CD pipeline for automated deployment
+  - 🔲 Configure Nginx for service routing
 
-### 4. DeepWiki Repository Analysis Integration (Weeks 5-6)
-- 🔲 Create DeepWiki API integration for full repository analysis
-- 🔲 Implement transformation layer for DeepWiki output
-- 🔲 Set up long-term caching for repository analysis results
-- 🔲 Implement internal refresh mechanism for repository analysis
-- 🔲 Test repository analysis with varying repository sizes and structures
+### 4. Two-Tier Analysis Framework (Weeks 5-6)
+- 🔄 **Repository Analysis Integration**
+  - 🔲 Implement DeepWiki as a repository analysis component in Multi-Agent Orchestrator
+  - 🔲 Configure DeepWiki for GitHub/GitLab repository access
+  - 🔲 Create API endpoints for repository analysis requests
+  - 🔲 Implement caching mechanism for repository analysis results
+  - 🔲 Test repository analysis with varying repository sizes and structures
+- 🔄 **Analysis Mode Implementation**
+  - 🔲 Create API endpoints for triggering both analysis modes
+  - 🔲 Implement system architecture supporting both modes
+  - 🔲 Add intelligence to suggest appropriate mode based on context
+  - 🔲 Build analysis mode switching capabilities
+  - 🔲 Implement preliminary context-based selection logic
 
 ### 5. PR Context Extraction (Weeks 6-7)
 - 🔲 Implement efficient PR metadata extraction from Git providers
@@ -185,6 +202,36 @@ We are implementing a dual analysis mode to balance speed and depth:
   - 🔲 Develop A/B testing framework for calibration validation
   - 🔲 Implement user feedback integration for model improvement
 
+## Deployment Architecture
+
+Our deployment architecture will leverage Oracle Cloud infrastructure:
+
+1. **Single VM Deployment**:
+   - Ubuntu 20.04+ VM on Oracle Cloud Free Tier
+   - 4 OCPUs, 24GB RAM, 200GB storage
+   - Docker and Docker Compose for containerization
+   - Nginx as reverse proxy for service routing
+
+2. **Service Configuration**:
+   - CodeQual application with integrated DeepWiki component
+   - Backend API services for analysis coordination
+   - Frontend for user interaction and result visualization
+   - Supabase for data persistence
+   - Grafana for monitoring and dashboards
+
+3. **Integration Architecture**:
+   - Multi-Agent Orchestrator coordinates analysis flow
+   - DeepWiki component handles repository analysis requests
+   - Results flow from repository analysis to PR analysis
+   - Unified reporting system combines insights
+   - Caching layer improves performance for repeated analyses
+
+4. **Data Flow**:
+   - Repository data fetched from GitHub/GitLab APIs
+   - Analysis results stored in Supabase
+   - Performance metrics tracked in time-series database
+   - Reports generated through unified API
+
 ## Model Calibration Against User Contexts
 
 Our model calibration is integrated throughout the development process to ensure optimal performance across different user contexts:
@@ -218,50 +265,43 @@ Our model calibration is integrated throughout the development process to ensure
   - Event-triggered recalibration for major model updates
   - User feedback integration for refinement
 
-## Next Steps (Week of May 4, 2025)
+## Next Steps (Week of May 6, 2025)
 
-1. **Begin Supabase & Grafana Integration**
-   - Set up database schema for repository and PR analysis
-   - Create initial tables for caching DeepWiki results
-   - Configure Grafana connection with PostgreSQL
-   - Explore dashboard templates for analysis results
-   - Set up calibration data storage in Supabase
+1. **Begin Oracle Cloud Infrastructure Setup**
+   - Create Oracle Cloud Free Tier account
+   - Provision VM with appropriate configuration
+   - Set up security and networking
+   - Configure Docker environment
 
-2. **Start Two-Tier Analysis Framework Design**
+2. **Start Two-Tier Analysis Framework Development**
    - Design API specifications for both analysis modes
    - Create interfaces for quick and comprehensive analysis
+   - Begin implementation of DeepWiki as a repository analysis component
+   - Define integration points between repository and PR analysis
+
+3. **Configure Repository Analysis Caching**
+   - Leverage existing Supabase tables for caching repository analysis results
+   - Implement cache invalidation strategies
+   - Create APIs for storing and retrieving repository context
+   - Test caching performance with various repository sizes
+
+4. **Implement Analysis Mode Switching**
+   - Create API endpoints for triggering each analysis mode
    - Begin implementation of mode-switching logic
-   - Define caching strategies for repository analysis
-   - Implement preliminary context-based selection logic
-
-3. **Research DeepWiki Integration**
-   - Explore DeepWiki API requirements and limitations
-   - Test sample repository analysis with DeepWiki
-   - Prototype transformation layer for DeepWiki output
-   - Evaluate performance for different repository sizes
-
-4. **Begin PR Context Extraction**
-   - Implement GitHub/GitLab API integrations
-   - Create PR metadata extraction utility
-   - Design lightweight PR context model
-   - Test performance with various PR sizes
-
-5. **Continue Multi-Agent Orchestrator Enhancement**
-   - Update orchestrator to handle two-tier analysis
-   - Implement dynamic role determination
-   - Create mode-specific agent configurations
-   - Test with sample repositories and PRs
+   - Define criteria for automatic mode recommendation
+   - Implement prototype for mode selection UI
 
 ## Success Metrics
 - ✅ Agent Evaluation System successfully selects optimal agents for different contexts
 - ✅ Multi-agent analysis works across all supported agent types
-- ✅ System supports both quick and comprehensive analysis modes
-- ✅ Repository analysis caching implemented for improved performance
-- ✅ Model calibration data storage implemented for ongoing optimization
-- 🔄 DeepWiki integration provides valuable repository context
+- ✅ Supabase & Grafana integration provides data persistence and visualization
+- 🔄 Oracle Cloud infrastructure successfully hosts CodeQual application
+- 🔄 DeepWiki component provides valuable repository context
+- 🔄 System supports both quick and comprehensive analysis modes
 - 🔄 PR analysis provides efficient, focused insights
 - 🔄 Result orchestration successfully organizes findings by importance
-- 🔄 Visualization components effectively communicate insights
+- 🔄 Repository analysis caching reduces repeated analysis time
 - 🔄 End-to-end performance meets target times (1-3 min for quick, 5-10 min for comprehensive)
 - 🔄 User interface provides clear choice between analysis modes
 - 🔄 Subscription system enables sustainable business model
+- 🔄 Model calibration successfully adapts to different user contexts

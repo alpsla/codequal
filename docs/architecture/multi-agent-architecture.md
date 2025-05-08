@@ -1,6 +1,6 @@
 # Multi-Agent Architecture for CodeQual
 
-**Last Updated: May 4, 2025**
+**Last Updated: May 6, 2025**
 
 ## Overview
 
@@ -15,6 +15,7 @@ The CodeQual project uses a flexible, adaptive multi-agent architecture to analy
 5. **Separation of concerns**: Each component has a single, well-defined responsibility
 6. **Adaptive selection**: Agent-role combinations are chosen based on context
 7. **Continuous learning**: Performance data drives ongoing optimization
+8. **Real-world calibration**: All models are calibrated using real repositories and PRs
 
 ## Two-Tier Analysis Architecture
 
@@ -174,7 +175,7 @@ Formats the orchestrated results into a polished final report for presentation.
 
 **Implementation Status:** Not started (planned for future phase)
 
-### 8. DeepWiki Integration 🔲
+### 8. DeepWiki Integration 🔄
 
 Connects with DeepWiki for comprehensive repository analysis.
 
@@ -185,9 +186,9 @@ Connects with DeepWiki for comprehensive repository analysis.
 - Handling repository updates and cache invalidation
 - Optimizing for performance across repository sizes
 
-**Implementation Status:** Not started (planned for next phase)
+**Implementation Status:** In progress (scheduled for next phase)
 
-### 9. Supabase & Grafana Integration 🔲
+### 9. Supabase & Grafana Integration ✅
 
 Provides data storage and visualization capabilities.
 
@@ -198,7 +199,7 @@ Provides data storage and visualization capabilities.
 - Powering visualization dashboards
 - Supporting business features like user management and billing
 
-**Implementation Status:** Not started (planned for next phase)
+**Implementation Status:** Complete with comprehensive implementation
 
 ## MCP Server Integration
 
@@ -559,83 +560,100 @@ interface ResultMetadata {
 }
 ```
 
-## Model Calibration for Dynamic Configuration
+## Real-Data Model Calibration
 
-A critical aspect of our system is proper model calibration to enable accurate dynamic configuration. This calibration should be performed at specific intervals and in response to certain triggers:
+A critical aspect of our system is model calibration using real-world repositories and PRs. This approach ensures our models perform optimally in diverse real-world scenarios.
+
+### Real-Data Calibration Approach
+
+1. **Production-like Data Collection**:
+   - Use actual open-source repositories of varying sizes and complexity
+   - Test with real PRs representing different change types
+   - Include repositories from diverse domains and technology stacks
+   - Ensure representation of different architecture patterns
+
+2. **Authentic Context Diversity**:
+   - Test models across multiple programming languages and frameworks
+   - Include monorepo, microservice, and serverless architectures
+   - Use repositories with different code organization patterns
+   - Test with PRs that represent real development workflows
+
+3. **Edge Case Discovery**:
+   - Identify natural edge cases from real repositories
+   - Test with uniquely structured codebases
+   - Analyze PRs with complex cross-file impacts
+   - Include PRs with security implications or performance concerns
+
+### Calibration Repository Types
+
+To ensure comprehensive coverage, our calibration suite includes these repository types:
+
+1. **Framework Repositories**:
+   - Major frontend frameworks (React, Angular, Vue)
+   - Backend frameworks (Django, Express, Spring)
+   - Mobile frameworks (React Native, Flutter)
+
+2. **Infrastructure Code**:
+   - DevOps automation (Ansible, Terraform)
+   - CI/CD configurations (GitHub Actions, Jenkins)
+   - Kubernetes and container orchestration
+
+3. **Mixed-Language Applications**:
+   - Full-stack applications with frontend/backend
+   - Cross-platform mobile applications
+   - Data processing pipelines with multiple technologies
+
+4. **Library and Utility Codebases**:
+   - Popular open-source libraries
+   - Utility packages across languages
+   - Standard tooling implementations
+
+### PR Type Diversity
+
+The calibration suite includes these PR types:
+
+1. **Feature Additions**:
+   - New functionality implementations
+   - API extensions and enhancements
+   - UI component additions
+
+2. **Bug Fixes**:
+   - Security vulnerability patches
+   - Performance bottleneck resolutions
+   - Functional correctness fixes
+
+3. **Refactoring Changes**:
+   - Code organization improvements
+   - Architectural modifications
+   - Technical debt reduction
+
+4. **Infrastructure Updates**:
+   - Dependency version upgrades
+   - Build system modifications
+   - Deployment configuration changes
 
 ### Calibration Schedule
 
 1. **Initial Calibration** (Before Launch):
-   - Comprehensive testing across 100+ repositories of various sizes and languages
-   - Evaluation of each model provider across all supported roles
+   - Comprehensive testing with 100+ real repositories
+   - Evaluation of agent performance across all PR types
    - Creation of baseline performance metrics
-   - Establishment of initial scoring weights
+   - Establishment of initial configuration parameters
 
-2. **Periodic Recalibration** (Every 3 Months):
-   - Scheduled re-evaluation of all models with updated test cases
-   - Incorporation of new language versions and frameworks
-   - Adjustment of scoring weights based on historical performance
-   - Update of language support tiers and specializations
+2. **Ongoing Recalibration**:
+   - Periodic re-evaluation with expanded repository set
+   - Continuous performance monitoring with real user data
+   - Adjustment based on feedback and changing code patterns
+   - Calibration triggered by model updates or user feedback
 
-3. **Event-Based Recalibration**:
-   - When a provider releases a major model version update
-   - When performance metrics show significant deviation from expected values
-   - When adding support for new languages or frameworks
-   - After collecting sufficient user feedback indicating potential improvements
-
-### Calibration Test Suite
-
-The calibration process should use a comprehensive test suite including:
-
-1. **Repository Collection**:
-   - Diverse set of repositories across all supported languages
-   - Various sizes (small, medium, large, enterprise)
-   - Different architectures (monolith, microservices, serverless)
-   - Open-source repositories with known issues and clean code
-
-2. **Synthetic Test Cases**:
-   - Repositories with artificially inserted issues of different types
-   - Custom PRs with specific characteristics to test detection capabilities
-   - Repositories with complex dependency structures
-   - Multi-language repositories to test cross-language analysis
-
-3. **Ground Truth Data**:
-   - Manual annotation of issues and their severities
-   - Expert-validated security vulnerabilities
-   - Performance bottlenecks verified through profiling
-   - Code quality issues validated against established standards
-
-### Calibration Process
-
-The calibration process should follow these steps:
-
-1. **Data Collection**:
-   - Run each model against the test suite
-   - Measure precision, recall, and F1 score for issue detection
-   - Track execution time, token usage, and cost metrics
-   - Collect qualitative assessments of report quality
-
-2. **Metric Calculation**:
-   - Calculate performance scores (0-100) for each context dimension
-   - Weight scores based on importance for each role
-   - Normalize scores across models for fair comparison
-   - Generate confidence intervals for reliability assessment
-
-3. **Parameter Optimization**:
-   - Determine optimal temperature settings for each model and role
-   - Calibrate token limits based on repository characteristics
-   - Fine-tune fallback thresholds and timeouts
-   - Optimize prompting strategies and templates
-
-4. **Validation**:
-   - Cross-validate using a held-out test set
-   - Perform A/B testing with representative user scenarios
-   - Verify calibration improves key performance indicators
-   - Test edge cases to ensure robustness
+3. **Context-Specific Tuning**:
+   - Custom calibration for industry-specific code patterns
+   - Adaptation to enterprise-specific architecture patterns
+   - Optimization for different team workflows and development practices
 
 ### Calibration Data Storage
 
-Calibration results should be stored in a structured format:
+Calibration results are stored in a structured format:
 
 ```typescript
 interface CalibrationRun {
@@ -673,80 +691,6 @@ interface CalibrationRun {
   };
 }
 ```
-
-### Dynamic Configuration Implementation
-
-The calibration data is then used to drive dynamic configuration through:
-
-1. **Context-Based Scoring**:
-   ```typescript
-   function scoreModelForContext(
-     model: AgentProvider,
-     role: AgentRole,
-     context: RepositoryContext,
-     prContext: PRContext
-   ): number {
-     const calibrationData = getLatestCalibrationData();
-     let score = 0;
-     
-     // Base score from role performance
-     score += calibrationData[model].rolePerformance[role].overallScore * WEIGHTS.ROLE_SCORE;
-     
-     // Language-specific score
-     for (const language of context.primaryLanguages) {
-       score += (calibrationData[model].rolePerformance[role].bestPerformingLanguages[language] || 50) 
-                * WEIGHTS.LANGUAGE_SCORE * context.languagePercentages[language];
-     }
-     
-     // Repository size score
-     const sizeCategory = categorizeSizeRepository(context.size);
-     score += calibrationData[model].repoCharacteristics.sizePerformance[sizeCategory] 
-              * WEIGHTS.SIZE_SCORE;
-     
-     // Additional context factors
-     // [Implementation for other factors]
-     
-     return score;
-   }
-   ```
-
-2. **Parameter Application**:
-   ```typescript
-   function getOptimizedParameters(
-     model: AgentProvider,
-     role: AgentRole,
-     context: RepositoryContext
-   ): Partial<AgentConfig> {
-     const calibrationData = getLatestCalibrationData();
-     const baseParams = calibrationData.optimizedParameters[model][role];
-     
-     // Adjust based on context
-     const sizeCategory = categorizeSizeRepository(context.size);
-     const complexityCategory = categorizeComplexity(context.complexity);
-     
-     // Token adjustment based on size
-     const tokenMultiplier = SIZE_TOKEN_MULTIPLIERS[sizeCategory];
-     const maxTokens = Math.min(
-       baseParams.maxTokens * tokenMultiplier,
-       MODEL_MAX_TOKENS[model]
-     );
-     
-     // Temperature adjustment based on complexity
-     const temperatureAdjustment = COMPLEXITY_TEMP_ADJUSTMENTS[complexityCategory];
-     const temperature = Math.max(
-       0.1,
-       Math.min(1.0, baseParams.temperature + temperatureAdjustment)
-     );
-     
-     return {
-       temperature,
-       maxTokens,
-       mcpParams: {
-         // MCP-specific optimizations
-       }
-     };
-   }
-   ```
 
 ## Workflow Examples
 
@@ -886,3 +830,23 @@ The repository analysis is integrated with PR review in the following ways:
    - Token usage monitoring and optimization
    - Intelligent scheduling of repository analysis during off-peak times
    - Configurable resource limits to prevent excessive costs
+
+## Oracle Cloud Deployment
+
+Our system is deployed on Oracle Cloud infrastructure to provide reliable and scalable performance.
+
+### Infrastructure Configuration
+
+- **Compute Resources**: Oracle Cloud VM with 4 OCPUs and 24GB RAM
+- **Storage**: 200GB block storage for application and data
+- **Operating System**: Ubuntu 20.04 LTS
+- **Containerization**: Docker and Docker Compose for service management
+- **Web Server**: Nginx for reverse proxy and routing
+
+### Deployment Architecture
+
+- **Web Application**: Frontend for user interaction and visualization
+- **API Server**: Backend for analysis coordination and data processing
+- **DeepWiki Component**: Integrated repository analysis functionality
+- **Database**: Supabase for data persistence and caching
+- **Monitoring**: Grafana dashboards for performance visualization
