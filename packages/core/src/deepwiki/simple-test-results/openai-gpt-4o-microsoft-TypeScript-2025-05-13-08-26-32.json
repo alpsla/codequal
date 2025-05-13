@@ -1,0 +1,10 @@
+The TypeScript repository is structured as follows:
+
+*   **Compiler:** Transforms TypeScript code to JavaScript. Key parts include the scanner (lexical analysis), parser (syntax analysis), binder (semantic analysis), type checker, and code emitter.
+*   **Language Service:** Provides editor features like auto-completion, signature help, and refactoring. It uses the compiler's core components.
+*   **Command-line Interface (CLI):** `tsc` is the primary interface for compiling TypeScript files. It invokes the compiler and language service.
+*   **Node Package Manager (NPM) Package:** Distributes the compiler, language service, and related tools.
+*   **Tests:** Includes unit tests, conformance tests, and performance tests to ensure the quality of the codebase.
+*   **Build System:** Uses a custom build system (written in TypeScript) to manage the compilation process.
+
+Key relationships: The CLI uses the compiler and language service. The language service leverages the compiler's core functionalities. The build system orchestrates the compilation and testing processes.
