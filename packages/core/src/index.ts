@@ -1,10 +1,13 @@
-// packages/core/src/index.ts
+/**
+ * Core Module
+ * 
+ * Export all core modules for use in other packages
+ */
 
-export * from './types/agent';
-export * from './config/agent-registry';
-export * from './config/models/model-versions';
-export * from './config/provider-groups';
-export * from './services/agent-factory';
-export * from './services/pr-review-service';
-// Re-export all utility functions
-export * from './utils';
+// Logging
+export * as logging from './logging';
+
+// DeepWiki Integration
+export * as deepwiki from './deepwiki';
+
+// Other core modules will be exported here as they are added

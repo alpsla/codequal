@@ -1,0 +1,21 @@
+The Express.js repository implements a minimalist, flexible Node.js web application framework.
+
+Main Components:
+
+*   **`lib/express.js`**: The core module that exports the `createApplication` function. This function initializes and returns an Express application instance.
+*   **`lib/application.js`**: Defines the `Application` class, which represents the Express application. It handles routing, middleware, settings, and various application-level configurations.
+*   **`lib/router/index.js`**: Implements the `Router` class, responsible for defining routes and handling incoming requests based on HTTP methods and URL paths.
+*   **`lib/middleware/init.js`**: Middleware function that initializes essential request properties like `req.res` and application settings.
+*   **`lib/request.js`**: Extends the Node.js `http.IncomingMessage` object, adding helper methods for request handling (e.g., accessing request headers, parameters, and body).
+*   **`lib/response.js`**: Extends the Node.js `http.ServerResponse` object, providing helper methods for sending responses (e.g., setting headers, sending JSON, and redirecting).
+*   **`lib/view.js`**: Implements the view rendering system, allowing the application to render dynamic content using template engines.
+*   **`lib/utils.js`**: Provides utility functions used throughout the framework.
+
+Relationships and Workflow:
+
+1.  **Application Creation**: The `express()` function (from `lib/express.js`) calls `createApplication()` to instantiate a new `Application` object (from `lib/application.js`).
+2.  **Middleware Integration**: Middleware functions are added to the application's middleware stack using methods like `app.use()`.
+3.  **Route Definition**: Routes are defined using methods like `app.get()`, `app.post()`, etc., which associate URL paths and HTTP methods with specific handler functions. These routes are managed by the `Router` (from `lib/router/index.js`).
+4.  **Request Handling**: When a request arrives, the application processes it through the middleware stack. The `init` middleware initializes the request and response objects.
+5.  **Routing**: The `Router` matches the incoming request's method and URL to the defined routes.
+6.  **Response Generation**: The route handler generates a response using the methods provided by the extended `response` object (from `lib/response.js`). The response is then sent back to the client.

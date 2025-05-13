@@ -1,0 +1,37 @@
+The Express.js repository implements a minimalist, flexible Node.js web application framework.
+
+Main Components:
+
+1.  **Core (index.js):**
+    *   The entry point that exports the `express` function.
+    *   Creates an instance of the `Application` object.
+2.  **Application:**
+    *   Manages routing, middleware, and settings.
+    *   Listens for incoming requests.
+    *   Uses a routing system to match requests to handlers.
+3.  **Router:**
+    *   Handles HTTP requests based on method and path.
+    *   Uses a stack of middleware functions for each route.
+    *   Supports route parameters and regular expressions.
+4.  **Middleware:**
+    *   Functions that intercept and process requests.
+    *   Can modify the request/response objects, terminate the request cycle, or pass control to the next middleware.
+    *   Examples: body parsing, cookie handling, static file serving.
+5.  **Request and Response Objects:**
+    *   Extend Node.js's built-in objects.
+    *   Provide methods for handling request data, setting headers, and sending responses.
+
+Relationships:
+
+*   The `express()` function returns an `Application` object.
+*   The `Application` uses a `Router` to define routes and handle requests.
+*   Each route in the `Router` is associated with a stack of `Middleware` functions.
+*   `Middleware` functions operate on `Request` and `Response` objects.
+
+Workflow:
+
+1.  A request arrives at the Express.js application.
+2.  The `Application` receives the request and passes it to the `Router`.
+3.  The `Router` finds the matching route based on the request method and path.
+4.  The `Middleware` functions associated with the route are executed in order.
+5.  The final `Middleware` function typically sends a response back to the client.

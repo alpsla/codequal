@@ -1,0 +1,8 @@
+The TypeScript repository is structured as a compiler, language service, and associated tools.
+
+*   **Compiler (`/src/compiler`)**: Transforms TypeScript code into JavaScript. Key steps include parsing, type checking, and code generation.
+*   **Language Service (`/src/services`)**: Provides editor features like auto-completion, refactoring, and go-to-definition. It uses the compiler's core functionalities.
+*   **Command-line Interface (`/src/tsc`)**: The `tsc` command-line compiler, which wraps the compiler and language service.
+*   **Type Definition Files (`/src/lib`)**: Standard TypeScript library definitions (e.g., `lib.d.ts`, `lib.es6.d.ts`) that provide type information for JavaScript APIs.
+*   **Tests (`/tests`)**: Comprehensive test suite for the compiler and language service.
+*   **Build System (`/scripts`)**: Uses Node.js scripts and configuration files (like `package.json`, `gulpfile.js`) to build, test, and package the TypeScript compiler.
