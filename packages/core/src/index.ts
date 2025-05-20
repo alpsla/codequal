@@ -11,7 +11,7 @@ export * as logging from './utils/logger';
 export * as deepwiki from './deepwiki';
 
 // Re-export types directly from their respective files
-export { 
+export type { 
   Agent, 
   AnalysisResult, 
   Insight, 
@@ -20,7 +20,7 @@ export {
   Resource 
 } from './types/agent';
 
-export {
+export type {
   RepositoryContext,
   AnalysisResultType,
   AnalysisSeverity,
@@ -31,23 +31,39 @@ export {
 
 export * from './types/evaluation';
 
-// Export model selection types
-export {
+// Export model selection types from ModelVersionSync
+// These exports avoid duplicating types from repository-model-config.ts
+export type {
   ModelTier,
-  RepositorySizeCategory,
-  TestingStatus,
   ModelCapabilities,
   ModelPricing,
-  ModelVersionInfo
+  ModelVersionInfo,
+  ModelProviderPlugin,
 } from './services/model-selection/ModelVersionSync';
 
+// Export regular exports from ModelVersionSync
 export {
-  RepositoryModelConfig
+  ModelVersionSync,
+  createDeepWikiModelConfig
+} from './services/model-selection/ModelVersionSync';
+
+// Export repository model config types
+export type {
+  RepositorySizeCategory,
+  TestingStatus,
+  RepositoryModelConfig,
+  RepositoryProvider,
+  ProviderModelConfig,
+  ModelTestResults
 } from './config/models/repository-model-config';
 
-// Other non-overlapping exports
-export * from './services/model-selection';
+// Export model version constants
 export * from './config/models/model-versions';
+
+// Export model selection services
+export * from './services/model-selection/RepositoryModelSelectionService';
+export * from './services/model-selection/RepositoryCalibrationService';
+export * from './services/model-selection/ModelConfigStore';
 
 // Services
 export * from './services/pr-review-service';
