@@ -38,6 +38,66 @@ To maintain consistency and simplify model version updates, we've implemented a 
    - Update the version in `model-versions.ts`
    - All references throughout the codebase automatically use the updated version
 
+## OpenRouter Integration
+DeepWiki OpenRouter Configuration Guide: /Users/alpinro/Code Prjects/codequal/docs/Deepwiki/Deepwikik Configuration.md'
+
+To access the latest model versions without direct provider integrations, we've implemented OpenRouter support, particularly for DeepWiki in our Kubernetes deployment.
+
+### DeepWiki Configuration
+
+DeepWiki is configured to use OpenRouter through the `generator.json` configuration file:
+
+```json
+"providers": {
+  "OpenRouter": {
+    "enabled": true,
+    "api_key_env": "OPENROUTER_API_KEY",
+    "default_model": "anthropic/claude-3-5-sonnet",
+    "available_models": [
+      "anthropic/claude-3-5-sonnet",
+      "openai/gpt-4o", 
+      "mistralai/mixtral-8x7b-instruct",
+      "google/gemini-1.5-pro"
+    ],
+    "parameters": {
+      "temperature": 0.7,
+      "top_p": 0.9,
+      "max_tokens": 4000
+    }
+  }
+}
+```
+
+### OpenRouter Benefits
+
+The integration offers several advantages:
+
+1. **Version Transparency**:
+   - Automatic access to the latest model versions
+   - Provider-agnostic model references (`provider/model-name`)
+   - No need to update configs when providers release new versions
+
+2. **Single API Access**:
+   - One API key for multiple providers
+   - Unified endpoint for all model requests
+   - Consistent response format across models
+
+3. **Cost Management**:
+   - No markup on most major models compared to direct pricing
+   - Unified billing across providers
+   - Transparent cost structure
+
+### Integration with Calibration System
+
+Our model selection system uses calibration data to determine the optimal model for each repository analysis:
+
+1. Repository characteristics are analyzed (language, size, complexity)
+2. Calibration data determines the optimal model
+3. The appropriate model is selected from available OpenRouter options
+4. Parameters are fine-tuned based on repository-specific needs
+
+Model updates and calibration follow procedures in `/docs/maintenance/model-management-procedures.md`.
+
 ## Setting Up PR-Agent
 
 To set up PR-Agent with different model providers:

@@ -1,3 +1,8 @@
+import { DeepWikiClient } from './DeepWikiClient';
+import { RepositorySizeDetector } from './RepositorySizeDetector';
+import { RepositoryCacheManager } from './RepositoryCacheManager';
+import { ThreeTierAnalysisService } from './ThreeTierAnalysisService';
+
 /**
  * Initialize the DeepWiki integration with environment variables
  * 
@@ -9,10 +14,10 @@
  */
 export function initializeDeepWikiWithEnvVars(options: {
   apiUrl: string;
-  logger: any;
+  logger: Record<string, unknown>;
   supabaseUrl?: string;
   supabaseKey?: string;
-  cacheConfig?: any;
+  cacheConfig?: Record<string, unknown>;
 }) {
   const {
     apiUrl,
@@ -40,15 +45,15 @@ export function initializeDeepWikiWithEnvVars(options: {
   });
   
   // Create client with API keys
-  const client = new (require('./DeepWikiClient')).DeepWikiClient(apiUrl, logger, apiKeys);
+  const client = new DeepWikiClient(apiUrl, logger, apiKeys);
   
   // Create size detector
-  const sizeDetector = new (require('./RepositorySizeDetector')).RepositorySizeDetector(logger);
+  const sizeDetector = new RepositorySizeDetector(logger);
   
   // Create cache manager if Supabase config is provided
   let cacheManager = null;
   if (supabaseUrl && supabaseKey) {
-    cacheManager = new (require('./RepositoryCacheManager')).RepositoryCacheManager(
+    cacheManager = new RepositoryCacheManager(
       supabaseUrl, 
       supabaseKey, 
       logger, 
@@ -57,7 +62,7 @@ export function initializeDeepWikiWithEnvVars(options: {
   }
   
   // Create analysis service
-  const analysisService = new (require('./ThreeTierAnalysisService')).ThreeTierAnalysisService(
+  const analysisService = new ThreeTierAnalysisService(
     client, 
     logger
   );

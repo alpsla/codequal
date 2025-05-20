@@ -1,5 +1,5 @@
 # CodeQual Revised Implementation Plan
-**Last Updated: May 12, 2025**
+**Last Updated: May 19, 2025**
 
 ## Current Status (May 2025)
 
@@ -23,6 +23,8 @@ We have significantly improved the project foundation and made progress with age
 - ✅ Completed detailed design of RAG integration framework
 - ✅ Deployed DeepWiki to DigitalOcean Kubernetes
 - ✅ Configured DeepWiki for repository analysis
+- ✅ Implemented specialized analysis with scoring metrics for repositories
+- ✅ Completed DeepWiki documentation and script consolidation
 
 ## Revised Architecture
 
@@ -36,7 +38,10 @@ Based on our latest design decisions, we are implementing a flexible, configurat
 6. **Result Orchestrator**: Combines and organizes results from multiple agents 🔲
 7. **Reporting Agent**: Formats results into polished final reports 🔲
 8. **DeepWiki Integration**: Provides repository analysis capabilities ✅
-9. **RAG Integration**: Enhances education, support, and knowledge base features 🔄 (Design complete, implementation in progress)
+9. **Selective RAG Framework**: Enhances education, support, and knowledge base features with targeted retrieval 🔄 (Design complete, implementation in progress)
+10. **Scoring and Assessment System**: Quantifies code quality, architecture, security, dependencies, and performance ✅
+11. **DeepWiki Chat Integration** (NEW): Enables interactive Q&A about repositories 🔲 (Initial exploration complete)
+12. **User Skill Tracking System** (NEW): Tracks and adapts to user expertise levels using SQL database 🔲 (Planning phase)
 
 This architecture allows any agent type to fulfill any functional role, with behavior determined by configuration and context rather than inheritance.
 
@@ -57,7 +62,7 @@ Based on our testing and analysis of DeepWiki capabilities, we've refined our ap
    - Provides architectural insights, dependency analysis, pattern consistency checking
    - Best for major features, architectural changes, or periodic reviews
 
-3. **Targeted Architectural Deep Dives** (NEW):
+3. **Targeted Architectural Deep Dives**:
    - Focused analysis on specific architectural aspects or concerns
    - Leverages DeepWiki Chat API for targeted inquiries
    - Supplements the standard analysis when needed
@@ -76,37 +81,171 @@ Our testing with DeepWiki has revealed both capabilities and limitations that ha
 - Has token limitations for very large repositories (~300,000 tokens maximum)
 - Requires API key configuration for model access (OpenAI and Google AI)
 - Supports both full repository analysis and targeted questions via chat API
+- **Already deployed and operational in our DigitalOcean Kubernetes cluster**
 
 ### Integration Approach
 
-1. **Client Service Creation**:
-   - Create a `DeepWikiClient` class for interacting with DeepWiki
+1. **Kubernetes-Native Integration** (IMPLEMENTED):
+   - Leverage existing DeepWiki deployment in DigitalOcean Kubernetes cluster
+   - Access DeepWiki console/CLI directly within Kubernetes pods
+   - Implement Kubernetes-aware service to interact with DeepWiki pods
+   - Utilize kubectl exec or similar mechanisms for command execution
+   - Monitor and log interactions using Kubernetes native tooling
+   - Integrate with existing Kubernetes observability stack
+
+2. **Client Service Creation**:
+   - Create a `DeepWikiKubernetesService` class for interacting with DeepWiki in K8s
    - Implement methods for repository analysis and targeted queries
    - Handle authentication, retries, and error cases
    - Support both full wiki generation and chat completions
 
-2. **Intelligent Analysis Flow**:
+3. **Intelligent Analysis Flow**:
    - Start with cached repository analysis when available
    - Generate initial PR analysis with repository context
    - Identify if deeper architectural analysis would be beneficial
    - Present options to users as architectural perspectives
    - Allow users to select perspectives for deeper analysis
 
-3. **Repository Size Handling**:
+4. **Repository Size Handling**:
    - Implement detection for repositories exceeding token limits
    - Create chunking strategies for large repositories
    - Prioritize critical components when faced with size constraints
    - Provide clear feedback to users about limitations
 
-4. **Result Storage and Caching**:
+5. **Result Storage and Caching**:
    - Design database schema for storing analysis results
    - Implement caching with appropriate invalidation strategies
    - Create APIs for efficient retrieval of cached analyses
    - Support incremental updates when repository changes
 
+## Selective RAG Framework
+
+Based on our latest architectural decisions, we're implementing a selective retrieval approach for the RAG framework:
+
+### Key Components
+
+1. **Query Analyzer**: 
+   - Analyzes user queries to identify key concepts, components, and intentions
+   - Determines what portions of the repository are relevant to the query
+   - Identifies appropriate metadata filters to narrow search space
+   - Enhances retrieval precision by focusing only on relevant repository areas
+
+2. **Metadata-Filtered Search**:
+   - Uses rich metadata to filter vector search (file types, components, etc.)
+   - Applies query-specific filters rather than searching entire repository
+   - Optimizes retrieval efficiency and reduces noise in results
+   - Increases result relevance through targeted searching
+
+3. **Enhanced Ranking System**:
+   - Implements sophisticated re-ranking based on query analysis
+   - Boosts scores for exact component matches
+   - Applies concept-based boosting for query-relevant content
+   - Sorts results based on enhanced relevance scoring
+
+4. **Incremental Update Strategy**:
+   - Supports efficient delta updates rather than full reindexing
+   - Tracks repository changes (commits, PRs, file changes)
+   - Processes only changed files instead of entire repository
+   - Maintains version information for each repository's index
+
+### Integration with Support System
+
+The RAG framework will provide targeted support by:
+
+1. **Knowledge Source Integration**:
+   - Combining general knowledge base content with repository-specific information
+   - Retrieving cross-repository patterns for common issues and best practices
+   - Selecting knowledge sources based on query type and context
+   - Applying appropriate weighting to different knowledge sources
+
+2. **User Skill Adaptation**:
+   - Tracking user expertise with SQL database (not vector storage)
+   - Adapting response detail level to user skill profile
+   - Progressively adjusting content complexity as user skills evolve
+   - Providing skill-appropriate explanations and examples
+
+## DeepWiki Chat Integration and POC
+
+Our proof-of-concept (POC) for DeepWiki Chat has provided valuable insights:
+
+### 1. Core Architecture (MCP Pattern)
+
+Our implemented POC follows the Message Control Program (MCP) pattern:
+- Centralized control flow for the entire chat process
+- Authentication and repository access verification
+- Selective context retrieval based on query analysis
+- Model selection with fallback capabilities
+- Response formatting and delivery
+
+### 2. Tiered Model Approach
+
+The POC demonstrated the viability of a tiered model approach:
+- **Primary Model**: DeepSeek Chat (good performance/cost balance)
+- **Fallback Models**: Gemini 2.5 Flash, Claude 3 Haiku
+- Cost-effective model selection for interactive chat vs. full analysis
+- Reliability through fallback mechanism when models are unavailable
+
+### 3. Multi-Repository Support
+
+The POC validated our approach to multi-repository support:
+- Repository selection capability for users with multiple repositories
+- Permission verification before processing chat requests
+- Repository-specific context retrieval
+- Cross-repository pattern identification for best practices
+
+### 4. Next Steps for Chat Implementation
+
+Building on the POC, our full implementation will include:
+- Integration with Supabase for authentication and user management
+- Implementation of selective RAG retrieval with metadata filtering
+- Real model integration with OpenRouter
+- User skill tracking and response adaptation
+
+## Scoring and Vector Database Integration
+
+We've implemented a comprehensive scoring system to quantify repository quality across multiple dimensions:
+
+### 1. Specialized Analysis Scoring (IMPLEMENTED)
+- Each specialized analysis (architecture, code quality, security, dependencies, performance) now includes:
+  - Overall category score (1-10 scale)
+  - Subcategory scoring with specific metrics
+  - Severity-based issue identification (high/medium/low)
+  - Scoring justifications and impact assessments
+
+### 2. Repository-Level Scoring
+- Combined overall repository score based on weighted category scores
+- Visualization-ready metrics for Grafana dashboards
+- Trend analysis for score changes over time
+- Benchmark comparisons with similar repositories
+
+### 3. Vector Database Integration
+- Scoring metadata is structured for vector database storage
+- Each analysis chunk includes:
+  - Repository metadata (name, language, size)
+  - Category and subcategory scores
+  - Identified issues with severity ratings
+  - File paths referenced in the analysis
+  - Storage classification (permanent vs. cached)
+  - Enhanced metadata for selective retrieval
+
+### 4. Two-Phase Storage Strategy
+- **Phase 1: Base Scoring** (IMPLEMENTED)
+  - Generate scores for each specialized analysis
+  - Store metadata with each analysis section
+  - Consolidate scores for repository-level assessment
+  
+- **Phase 2: Selective Vector Integration** (IN PROGRESS)
+  - Chunk analyses into 300-500 token segments
+  - Generate embeddings for each segment
+  - Store in Supabase with pgvector for similarity search
+  - Implement enhanced metadata for selective retrieval
+  - Create optimized filtering functions for targeted queries
+
+This scoring system provides a foundation for quantifiable repository quality assessment, trend visualization, and intelligent PR analysis.
+
 ## Implementation Priorities
 
-The implementation priorities have been structured to address critical dependencies properly, particularly ensuring that DeepWiki integration comes before database schema finalization and Orchestrator development. We've optimized the deployment phase by leveraging Terraform with Supabase.
+The implementation priorities have been structured to address critical dependencies properly. Based on our clarified approach, we've updated our priorities to focus on the foundational RAG framework and authentication systems before completing the chat implementation.
 
 ### Phase 1: Foundation (Already Completed)
 
@@ -146,144 +285,252 @@ The implementation priorities have been structured to address critical dependenc
   - 🔲 Implement Kubernetes configurations for larger deployments
   - 🔲 Set up container security scanning
 
-### 3. DeepWiki Integration (Weeks 5-6) ✅
+### 3. DeepWiki Kubernetes Integration (Weeks 5-6) ✅
 - ✅ **DeepWiki Deployment and Configuration**
   - ✅ Deploy DeepWiki to DigitalOcean Kubernetes cluster
   - ✅ Configure DeepWiki with GitHub access token
   - ✅ Set up API keys for AI functionality
   - ✅ Configure persistent storage and services
-- 🔄 **Repository Analysis Integration**
-  - ✅ Verify DeepWiki API functionality
-  - ✅ Test frontend and API operations
+- ✅ **Kubernetes Console/CLI Interface Analysis**
+  - ✅ Access the deployed DeepWiki pods in Kubernetes
+  - ✅ Explore the CLI capabilities directly in the Kubernetes pods
+  - ✅ Document available commands within the Kubernetes container
+  - ✅ Test running analysis commands inside the Kubernetes pod
+  - ✅ Create test scripts that can be executed against the deployed instance
+  - ✅ Explore configuration options available in the production environment
+  - ✅ Capture and analyze output formats from the Kubernetes pods
+  - ✅ Document authentication and API key management in Kubernetes
+- ✅ **Repository Analysis Integration**
+  - ✅ Verify DeepWiki API functionality in Kubernetes
+  - ✅ Test frontend and API operations in production
   - ✅ Confirm proper deployment and configuration
-  - 🔄 Create client integration code for CodeQual
-- 🔄 **DeepWiki API Integration** (NEW)
-  - 🔄 Implement DeepWikiClient class with appropriate methods
-  - 🔄 Create handlers for both wiki generation and chat completions
-  - 🔄 Add repository size detection and chunking strategies
-  - 🔄 Implement error handling and retry logic
-- 🔄 **DeepWiki Optimization**
-  - 🔲 Optimize performance for large repositories
-  - 🔲 Implement parallel processing for repository analysis
-  - 🔲 Create performance benchmarks
-  - 🔲 Add custom extensions for CodeQual-specific needs
+  - ✅ Create client integration code for CodeQual
+- ✅ **DeepWiki Output Structure Analysis**
+  - ✅ Document full analysis output structure from Kubernetes pods
+  - ✅ Analyze concise mode output differences
+  - ✅ Map output components to vector storage needs
+  - ✅ Identify optimal chunking boundaries
 
-### 4. Supabase & Database Schema Finalization (Weeks 6-7) 🔄
-- 🔄 **Schema Refinement Based on DeepWiki Output**
-  - 🔄 Analyze DeepWiki output structure
-  - 🔄 Design repository analysis storage schema
-  - 🔄 Create PR analysis schema aligned with DeepWiki output
-  - 🔲 Implement schema migrations using Terraform
-- 🔄 **Cache System Design**
-  - 🔄 Design repository analysis caching tables
-  - 🔄 Implement cache invalidation strategies
-  - 🔲 Create APIs for cache management
-  - 🔲 Build monitoring for cache performance
-- 🔄 **Visualization Enhancement**
-  - 🔄 Update Grafana dashboards based on final schema
-  - 🔄 Create visualization for repository analysis data
-  - 🔲 Implement performance monitoring visualizations
-  - 🔲 Create dashboards for system health monitoring
+### 4. Repository Analysis Scoring System (Weeks 6-7) ✅
+- ✅ **Scoring Framework Design**
+  - ✅ Define scoring metrics for each analysis category
+  - ✅ Create scale and criteria for score assignment
+  - ✅ Implement severity classification for issues
+  - ✅ Design metadata format for vector storage
+- ✅ **Specialized Analysis with Scoring**
+  - ✅ Enhance architecture analysis with scoring
+  - ✅ Add scoring to code quality analysis
+  - ✅ Implement security scoring metrics
+  - ✅ Create dependency scoring system
+  - ✅ Develop performance scoring framework
+- ✅ **Score Consolidation**
+  - ✅ Implement repository-level score calculation
+  - ✅ Create weighted scoring algorithm
+  - ✅ Design score visualization format for Grafana
+  - ✅ Build scoring trend tracking capability
 
-### Phase 3: Core Analysis Components
+### 5. DeepWiki Chat POC Development (Week 7) ✅
+- ✅ **Chat API Investigation**
+  - ✅ Investigate DeepWiki chat API endpoints
+  - ✅ Document parameters and response formats
+  - ✅ Test with OpenRouter integration
+  - ✅ Verify model fallback capabilities
+- ✅ **Proof of Concept Implementation**
+  - ✅ Create Message Control Program (MCP) architecture
+  - ✅ Implement cost-effective model selection with fallbacks
+  - ✅ Design authentication and repository access control
+  - ✅ Create mock data flow for proof-of-concept
+- ✅ **Documentation and Roadmap**
+  - ✅ Document chat API capabilities
+  - ✅ Create example prompts for effective repository Q&A
+  - ✅ Outline future implementation approach
+  - ✅ Document cost considerations for premium tier
 
-### 5. PR Context Extraction (Weeks 7-8) 🔄
-- 🔄 Implement efficient PR metadata extraction from Git providers
-- 🔲 Create lightweight PR context analyzer for quick mode
-- 🔲 Build PR + repository context connector for comprehensive mode
-- 🔲 Optimize file diff analysis for speed
-- 🔲 **Integration with DeepWiki**
-  - 🔲 Align PR context data with DeepWiki expected format
-  - 🔲 Create context transformation utilities
-  - 🔲 Implement combined context handling
-  - 🔲 Test context integration with real repositories
+### 6. Selective RAG Framework Implementation (Weeks 7-9) 🔄 (HIGHEST PRIORITY)
+- 🔄 **Query Analysis System**
+  - 🔄 Develop query analyzer for identifying key concepts and components
+  - 🔄 Create metadata filter generation based on query analysis
+  - 🔄 Implement intent classification for specialized retrievals
+  - 🔄 Build test suite for query analysis quality assessment
+- 🔄 **Enhanced Vector Database Schema**
+  - 🔄 Design rich metadata schema for selective filtering
+  - 🔄 Create tables for DeepWiki analyses and vectors using Terraform
+  - 🔄 Implement pgvector extension setup in Supabase
+  - 🔄 Design and test SQL functions for filtered similarity search
+- 🔄 **Selective Retrieval Implementation**
+  - 🔄 Develop filtered vector search capabilities
+  - 🔄 Implement metadata-based retrieval optimization
+  - 🔄 Create enhanced ranking algorithms based on query analysis
+  - 🔄 Build testing framework for retrieval relevance evaluation
+- 🔄 **Incremental Update System**
+  - 🔄 Implement repository change detection
+  - 🔄 Create delta processing for vector database updates
+  - 🔄 Develop versioning system for repository indices
+  - 🔄 Build performance monitoring for update operations
 
-### 6. Multi-Agent Orchestrator (Weeks 8-9) 🔄
+### 7. Supabase Authentication Integration (Weeks 9-10) 🔄 (HIGH PRIORITY)
+- 🔄 **Authentication Framework**
+  - 🔄 Implement Supabase Auth integration
+  - 🔄 Create user and organization models
+  - 🔄 Develop authentication middleware
+  - 🔄 Build session management system
+- 🔄 **Repository Access Control**
+  - 🔄 Implement multi-tier permission model
+  - 🔄 Create repository-user relationship management
+  - 🔄 Develop organization-based access inheritance
+  - 🔄 Build access verification middleware
+- 🔄 **User Skill Tracking Schema**
+  - 🔄 Design SQL schema for user skill profiles
+  - 🔄 Create APIs for skill level assessment and updating
+  - 🔄 Implement skill progression tracking
+  - 🔄 Build analytics for skill development visualization
+
+### 8. DeepWiki Kubernetes Service Implementation (Weeks 10-11) 🔄
+- 🔄 **Kubernetes-Native Service Development**
+  - 🔄 Create DeepWikiKubernetesService class for interacting with DeepWiki in the cluster
+  - 🔄 Implement Kubernetes API integration for pod access
+  - 🔄 Build command execution via kubectl exec or similar mechanisms
+  - 🔄 Implement output capture and parsing from pod execution
+  - 🔄 Add proper error handling for Kubernetes-specific scenarios
+  - 🔄 Implement configuration mapping from calibration results to pod commands
+  - 🔄 Build asynchronous execution and monitoring of Kubernetes processes
+- 🔄 **Configuration Management**
+  - 🔄 Create mapping from repository characteristics to DeepWiki parameters
+  - 🔄 Implement provider and model selection logic
+  - 🔄 Build validation for configuration parameters
+  - 🔄 Develop automated configuration generation
+- 🔄 **Vector Storage Implementation**
+  - 🔄 Build extraction logic for DeepWiki output formats from Kubernetes
+  - 🔄 Implement intelligent chunking strategies
+  - 🔄 Create enhanced metadata attachment for context preservation
+  - 🔲 Add support for different content types
+- 🔄 **Storage Process**
+  - 🔄 Create efficient batch embedding generation
+  - 🔄 Implement transaction-based storage process
+  - 🔲 Build validation and quality checks
+  - 🔲 Add monitoring for storage performance
+
+### Phase 3: Core Analysis Components (HIGH PRIORITY)
+
+### 9. PR Context Extraction and Integration (Weeks 9-10) 🔄 (HIGH PRIORITY)
+- 🔄 **PR Metadata Extraction**
+  - 🔄 Implement efficient PR metadata extraction from Git providers
+  - 🔄 Create PR content analyzer with change impact assessment
+  - 🔄 Build file change classification system
+  - 🔄 Develop PR relationship mapping to repository components
+- 🔄 **Analysis Integration**
+  - 🔄 Create lightweight PR context analyzer for quick mode
+  - 🔄 Build PR + repository context connector for comprehensive mode
+  - 🔄 Optimize file diff analysis for speed and accuracy
+  - 🔄 Implement relevance scoring for PR changes
+- 🔄 **DeepWiki Integration for PRs**
+  - 🔄 Format PR context data for DeepWiki in Kubernetes
+  - 🔄 Create context transformation utilities
+  - 🔄 Implement combined context handling
+  - 🔄 Test PR analysis integration with real repositories
+
+### 10. Multi-Agent Orchestrator (Weeks 10-11) 🔄 (HIGH PRIORITY)
 - 🔄 **Role Determination Logic**
   - 🔄 Implement context-based role determination
-  - 🔲 Create role detection for different analysis modes
-  - 🔲 Build detection for specialized roles (security, performance)
-  - 🔲 Implement context-aware role prioritization
-- 🔲 **DeepWiki Context Integration**
-  - 🔲 Create parsers for DeepWiki analysis output
-  - 🔲 Implement context extraction from DeepWiki results
-  - 🔲 Build context enrichment for agent prompts
-  - 🔲 Test with various repository types and languages
-- 🔲 **Three-Tier Analysis Orchestration** (NEW)
-  - 🔲 Implement workflow for PR-only analysis
-  - 🔲 Create workflow for repository-context analysis
-  - 🔲 Develop targeted deep dive analysis flow
-  - 🔲 Build perspective suggestion system
-  - 🔲 Test all three analysis approaches with real repositories
+  - 🔄 Create role detection for different analysis modes
+  - 🔄 Build detection for specialized roles (security, performance)
+  - 🔄 Implement context-aware role prioritization
+- 🔄 **DeepWiki Context Integration**
+  - 🔄 Create parsers for DeepWiki Kubernetes output
+  - 🔄 Implement context extraction from DeepWiki results
+  - 🔄 Build context enrichment for agent prompts
+  - 🔄 Test with various repository types and languages
+- 🔄 **Three-Tier Analysis Orchestration**
+  - 🔄 Implement workflow for PR-only analysis
+  - 🔄 Create workflow for repository-context analysis
+  - 🔄 Develop targeted deep dive analysis flow
+  - 🔄 Build perspective suggestion system
+  - 🔄 Test all three analysis approaches with real repositories
 
-### 7. Prompt Generator (Weeks 9-10) 🔄
+### 11. Multi-Agent Executor (Weeks 11-12) 🔄 (HIGH PRIORITY)
+- 🔄 **Execution Framework**
+  - 🔄 Implement core execution engine for agents
+  - 🔄 Build parallel execution capability
+  - 🔄 Add timeout and fallback mechanisms
+  - 🔄 Create execution monitoring and logging
+- 🔄 **Execution Strategies**
+  - 🔄 Implement strategy for quick mode (speed priority)
+  - 🔄 Build strategy for comprehensive mode (thoroughness priority)
+  - 🔄 Create strategy for targeted deep dives (focused depth)
+  - 🔄 Implement adaptive execution based on context
+  - 🔄 Implement resource optimization for token usage
+
+### 12. Prompt Generator and Result Orchestrator (Weeks 12-13) 🔄
 - 🔄 **Prompt Template System**
   - 🔄 Create base templates for each agent type
-  - 🔄 Implement role-specific instruction modules
-  - 🔲 Add position-specific instructions
-  - 🔲 Develop context-specific instruction generators
-- 🔲 **DeepWiki Context Integration**
-  - 🔲 Design prompts to effectively use DeepWiki repository insights
-  - 🔲 Create context-aware prompt enhancement
-  - 🔲 Build prompt optimization based on repository structure
-  - 🔲 Implement language-specific prompt adjustments
-- 🔲 **Dynamic Prompt Assembly**
-  - 🔲 Build dynamic prompt assembly system
-  - 🔲 Create prompt testing framework
-  - 🔲 Implement prompt versioning and evaluation
-  - 🔲 Test prompts across different agent types
+  - ✅ Implement role-specific instruction modules
+  - ✅ Add specialized prompts for focused analysis
+  - 🔄 Develop context-specific instruction generators
+- 🔄 **Result Organization**
+  - 🔄 Implement result collection from multiple agents
+  - 🔄 Build deduplication of similar findings
+  - 🔄 Create categorization by issue type/severity
+  - 🔄 Implement conflict resolution for contradictory findings
+- 🔄 **Result Prioritization**
+  - 🔄 Build prioritization based on severity and impact
+  - 🔄 Implement mode-specific result filtering
+  - 🔄 Create context-aware result ranking
+  - 🔄 Add custom prioritization rules for specific contexts
 
-### 8. Three-Tier Analysis Framework (Weeks 10-11) 🔲
-- 🔲 **Analysis Mode Implementation**
-  - 🔲 Create API endpoints for triggering all three analysis modes
-  - 🔲 Implement system architecture supporting all modes
-  - 🔲 Add intelligence to suggest appropriate mode based on context
-  - 🔲 Build analysis mode switching capabilities
-- 🔲 **Repository Analysis Caching**
-  - 🔲 Implement caching mechanism for repository analysis results
-  - 🔲 Create cache warming for frequently analyzed repositories
-  - 🔲 Build cache invalidation based on repository changes
-  - 🔲 Implement cache optimization strategies
-- 🔲 **Mode-Specific Configuration**
-  - 🔲 Create mode-specific agent configurations
-  - 🔲 Implement performance optimizations for quick mode
-  - 🔲 Build thoroughness enhancements for comprehensive mode
-  - 🔲 Develop specialized configurations for targeted deep dives
-  - 🔲 Test all modes with various repository types
+### 13. Complete DeepWiki Chat Implementation (Weeks 13-14) 🔄
+- 🔄 **Integration with Selective RAG**
+  - 🔄 Connect chat service to selective RAG framework
+  - 🔄 Implement enhanced metadata filtering for chat queries
+  - 🔄 Create real-time query analysis and optimization
+  - 🔄 Build performance monitoring for retrieval operations
+- 🔄 **Authentication and Access Control**
+  - 🔄 Integrate with Supabase authentication system
+  - 🔄 Implement repository permission verification
+  - 🔄 Create user context management for chat
+  - 🔄 Build secure session handling
+- 🔄 **Model Integration and Optimization**
+  - 🔄 Implement OpenRouter integration with fallback
+  - 🔄 Create model selection logic based on query complexity
+  - 🔄 Develop cost optimization strategies
+  - 🔄 Build token usage tracking and optimization
+- 🔄 **User Skill Adaptation**
+  - 🔄 Integrate with user skill tracking system
+  - 🔄 Implement response adaptation based on skill level
+  - 🔄 Create feedback loop for skill level refinement
+  - 🔄 Build analytics for skill progression tracking
 
-### 9. Multi-Agent Executor (Weeks 11-12) 🔲
-- 🔲 **Execution Framework**
-  - 🔲 Implement core execution engine for agents
-  - 🔲 Build parallel execution capability
-  - 🔲 Add timeout and fallback mechanisms
-  - 🔲 Create execution monitoring and logging
-- 🔲 **Execution Strategies**
-  - 🔲 Implement strategy for quick mode (speed priority)
-  - 🔲 Build strategy for comprehensive mode (thoroughness priority)
-  - 🔲 Create strategy for targeted deep dives (focused depth)
-  - 🔲 Implement adaptive execution based on context
-  - 🔲 Implement resource optimization for token usage
+### Phase 4: Enhancement and Refinement (MEDIUM PRIORITY)
 
-### 10. Result Orchestrator (Weeks 12-13) 🔲
-- 🔲 **Result Organization**
-  - 🔲 Implement result collection from multiple agents
-  - 🔲 Build deduplication of similar findings
-  - 🔲 Create categorization by issue type/severity
-  - 🔲 Implement conflict resolution for contradictory findings
-- 🔲 **Result Prioritization**
-  - 🔲 Build prioritization based on severity and impact
-  - 🔲 Implement mode-specific result filtering
-  - 🔲 Create context-aware result ranking
-  - 🔲 Add custom prioritization rules for specific contexts
-- 🔲 **DeepWiki Result Integration**
-  - 🔲 Create specialized handlers for DeepWiki insights
-  - 🔲 Build merging system for regular analysis and architectural perspectives
-  - 🔲 Implement hierarchical organization for complex architectural insights
-  - 🔲 Test combined results with various repository types
+### 14. Support System Integration (Weeks 14-15) 🔄 (MEDIUM PRIORITY)
+- 🔄 **Knowledge Base Integration**
+  - 🔄 Design knowledge base schema and structure
+  - 🔄 Create APIs for knowledge base management
+  - 🔄 Implement vectorization of support content
+  - 🔄 Build versioning system for knowledge base entries
+- 🔄 **Combined Retrieval System**
+  - 🔄 Implement multi-source knowledge retrieval
+  - 🔄 Create weighting systems for different knowledge sources
+  - 🔄 Develop cross-repository pattern identification
+  - 🔄 Build ranking system for combined results
+- 🔄 **Adaptive Response Generation**
+  - 🔄 Implement skill-level aware response formatting
+  - 🔄 Create beginner, intermediate, advanced, and expert adapters
+  - 🔄 Develop content simplification/enhancement based on skill level
+  - 🔄 Build educational resource integration for beginners
 
-### Phase 4: Enhancement and Refinement
+### 17. Caching and Performance Optimization (Weeks 19-20) 🔲
+- 🔲 **Caching Strategy**
+  - 🔲 Implement repository analysis caching
+  - 🔲 Create invalidation rules based on repository changes
+  - 🔲 Build optimization for frequently analyzed repositories
+  - 🔲 Add cache warming for important repositories
+- 🔲 **Performance Monitoring**
+  - 🔲 Create performance tracking for different tiers and repository types
+  - 🔲 Implement adaptive configuration based on performance metrics
+  - 🔲 Build visualization for performance analysis
+  - 🔲 Add alerting for performance degradation
 
-### 11. Reporting Agent (Weeks 13-14) 🔲
+### 18. Reporting Agent (Weeks 20-21) 🔲
 - 🔲 **Report Generation**
   - 🔲 Design report templates for all three analysis modes
   - 🔲 Implement PR comment integration with appropriate level of detail
@@ -294,19 +541,33 @@ The implementation priorities have been structured to address critical dependenc
   - 🔲 Include model selection rationale in reports
   - 🔲 Create customized reporting for different skill levels
   - 🔲 Implement code example inclusion system
-- 🔲 **Perspective-Based Reporting** (NEW)
+- 🔲 **Perspective-Based Reporting**
   - 🔲 Create specialized report sections for architectural perspectives
   - 🔲 Implement visualization of architectural insights
   - 🔲 Build interactive drill-down capabilities for complex insights
   - 🔲 Test perspective-based reports with user feedback
 
-### 12. RAG Implementation (Weeks 14-16) 🔄
-- 🔄 **Vector Database Setup**
-  - 🔄 Implement pgvector extension setup in Supabase using Terraform
-  - 🔄 Create embedding generation and storage system
-  - 🔲 Develop vector search capabilities for code patterns
-  - 🔲 Implement selective vector storage optimization
-- 🔲 **DeepWiki Knowledge Integration** (NEW)
+### 19. Score Visualization and Tracking (Weeks 21-22) 🔲
+- 🔲 **Grafana Dashboard Implementation**
+  - 🔲 Create repository score overview dashboard
+  - 🔲 Build category-specific score dashboards
+  - 🔲 Implement comparative views for repositories
+  - 🔲 Create team and organization-level visualizations
+- 🔲 **Trend Analysis**
+  - 🔲 Implement score history tracking
+  - 🔲 Build trend visualization for scores over time
+  - 🔲 Create alerts for significant score changes
+  - 🔲 Implement periodic report generation
+- 🔲 **Benchmarking System**
+  - 🔲 Build repository comparison functionality
+  - 🔲 Create industry and language-specific benchmarks
+  - 🔲 Implement percentile ranking for repositories
+  - 🔲 Develop recommendations based on benchmark analysis
+
+### Phase 5: User Experience and Business Features
+
+### 20. DeepWiki Knowledge Integration (Weeks 22-23) 🔲
+- 🔲 **Content Processing**
   - 🔲 Extract knowledge entities from DeepWiki analyses
   - 🔲 Process and vectorize repository-specific knowledge
   - 🔲 Build retrieval system for architectural insights
@@ -323,44 +584,23 @@ The implementation priorities have been structured to address critical dependenc
   - 🔲 Build adaptive content delivery based on user profiles
   - 🔲 Implement content population from multiple sources
 
-### 13. Model Calibration System (Weeks 16-17) 🔲
-- 🔲 **Comprehensive Model Calibration**
-  - 🔲 Full calibration across 100+ test repositories
-  - 🔲 Testing against all supported languages and frameworks
-  - 🔲 Evaluation across different repository architectures
-  - 🔲 Performance measurement for various PR types
-  - 🔲 Implementation of context-based scoring algorithms
-  - 🔲 Creation of baseline parameter settings
-- 🔲 **Ongoing Calibration Framework**
-  - 🔲 Build automated calibration pipeline
-  - 🔲 Set up periodic recalibration scheduling
-  - 🔲 Create event-based calibration triggers
-  - 🔲 Develop A/B testing framework for calibration validation
-  - 🔲 Implement user feedback integration for model improvement
-- 🔲 **DeepWiki Model Optimization** (NEW)
-  - 🔲 Test and calibrate repository size thresholds
-  - 🔲 Optimize token usage for different repository types
-  - 🔲 Evaluate performance of different models with DeepWiki
-  - 🔲 Create model selection guidelines for different scenarios
-
-### Phase 5: User Experience and Business Features
-
-### 14. Basic Testing UI (Weeks 17-18) 🔲
-- 🔲 Implement minimal web interface for testing functionality
-- 🔲 Create simple forms for repository URL and PR submission
-- 🔲 Add basic result display for testing
-- 🔲 Include analysis mode selection and cache management
-- 🔲 **Three-Tier Analysis UI** (NEW)
-  - 🔲 Create UI for selecting analysis depth
-  - 🔲 Implement interface for architectural perspective selection
-  - 🔲 Build results display for all analysis modes
-  - 🔲 Test user experience with different analysis paths
+### 21. Basic Testing UI (Weeks 23-24) 🔲
+- 🔲 **Analysis Selection Interface**
+  - 🔲 Create UI for tier selection
+  - 🔲 Implement recommendation system for optimal tier
+  - 🔲 Build progress monitoring and status updates
+  - 🔲 Add result previews and summaries
+- 🔲 **Result Visualization**
+  - 🔲 Implement visualization of architectural insights
+  - 🔲 Create interactive exploration of repository structure
+  - 🔲 Build relationship graphs for code components
+  - 🔲 Add customizable reporting options
 - 🔲 **Pre-launch Production Calibration**
   - 🔲 Final tuning of model selection algorithms
   - 🔲 Performance validation across all supported contexts
   - 🔲 Parameter optimization for production environment
 
-### 15. Full UI Design & Authentication (Weeks 18-20) 🔲
+### 22. Full UI Design & Authentication (Weeks 24-26) 🔲
 - 🔲 Design comprehensive user interface with modern UX principles
 - 🔲 Implement authentication system (OAuth, SSO options) using Supabase Auth
 - 🔲 Create user management with roles and permissions
@@ -369,7 +609,7 @@ The implementation priorities have been structured to address critical dependenc
 - 🔲 Create dashboard for analysis history and repository management
 - 🔲 Add model performance tracking and visualization
 
-### 16. Subscription & Payment System (Weeks 20-22) 🔲
+### 23. Subscription & Payment System (Weeks 26-28) 🔲
 - 🔲 Design tiered subscription plans (Free, Pro, Enterprise)
 - 🔲 Implement usage limits and feature restrictions by plan
 - 🔲 Integrate with payment processors (Stripe, PayPal) via Supabase Functions
@@ -378,7 +618,7 @@ The implementation priorities have been structured to address critical dependenc
 - 🔲 Add subscription lifecycle management
 - 🔲 Set up usage tracking and quota monitoring
 
-### 17. Support System & Documentation (Weeks 22-24) 🔲
+### 24. Support System & Documentation (Weeks 28-30) 🔲
 - 🔲 Implement in-app support ticket system
 - 🔲 Create RAG-powered chatbot for self-service support
 - 🔲 Build comprehensive product documentation
@@ -387,143 +627,39 @@ The implementation priorities have been structured to address critical dependenc
 - 🔲 Implement feedback collection and bug reporting
 - 🔲 Design admin dashboard for support management
 
-## Terraform-Powered Infrastructure
+## Next Steps (Week of May 19, 2025)
 
-Our infrastructure is defined and managed using Terraform with the Supabase provider, offering several key advantages:
+Based on our latest progress and findings, our immediate next steps are:
 
-### 1. Infrastructure as Code Benefits
-- **Version Control**: All infrastructure changes are tracked in Git
-- **Reproducibility**: Easily recreate environments with identical configuration
-- **Documentation**: Infrastructure is self-documented via Terraform code
-- **Consistency**: Dev, staging, and production environments stay in sync
-- **Rollback**: Easy reverting to previous infrastructure states if needed
+1. **Selective RAG Framework Implementation** (HIGHEST PRIORITY)
+   - Develop query analyzer for metadata-based filtering
+   - Create enhanced vector database schema with rich metadata
+   - Implement filtered similarity search capabilities
+   - Design incremental update system for repository changes
 
-### 2. Terraform-Supabase Integration
-- **Database Management**: Schema, tables, and functions defined as code
-- **Auth Configuration**: Authentication settings managed via Terraform
-- **Storage Management**: Bucket configuration and policies as code
-- **Functions Deployment**: Serverless functions defined and deployed via Terraform
-- **RLS Policies**: Row-level security policies defined as infrastructure
-- **Extensions**: Configure pgvector and other extensions automatically
+2. **Supabase Authentication Integration** (HIGH PRIORITY)
+   - Implement authentication framework with Supabase Auth
+   - Create repository access control with permission model
+   - Design user skill tracking schema using traditional SQL tables
+   - Build session management and security features
 
-### 3. Deployment Environments
-- **Development**: Individual developer environments with isolated databases
-- **Staging**: Pre-production environment for testing
-- **Production**: Optimized for performance and reliability
-- **On-Premises**: Configuration for enterprise self-hosted deployment
+3. **PR Context Extraction Enhancement** (HIGH PRIORITY)
+   - Improve PR metadata extraction from Git providers
+   - Develop PR context analyzer for quick mode analysis
+   - Create integration with DeepWiki for PR analysis
+   - Test with real-world PRs of varying complexity
 
-### 4. CI/CD Integration
-- Automated infrastructure validation on pull requests
-- Infrastructure deployment as part of CI/CD pipeline
-- Environment-specific configuration injected at deploy time
-- Automated testing of infrastructure changes
+4. **Multi-Agent Orchestrator Development** (HIGH PRIORITY)
+   - Complete context-based role determination
+   - Implement DeepWiki context integration for agents
+   - Build Three-Tier Analysis Orchestration workflow
+   - Create specialized prompts for different analysis tiers
 
-## Development Workflow
-
-We're implementing a hybrid development approach, optimized with Terraform:
-
-1. **Local Development**
-   - Local environment setup via Terraform
-   - Hot reloading for rapid iteration
-   - Local mocks with remote connections when needed
-
-2. **Cloud Integration**
-   - DeepWiki deployed to cloud via Terraform
-   - Supabase managed via Terraform provider
-   - Infrastructure defined once, deployed anywhere
-
-3. **Data Flow**
-   ```
-   Local CodeQual → Cloud DeepWiki → Supabase
-          ↑                   ↑           ↑
-   Local Testing      Repository Analysis   Data Storage
-                           ↑
-                     Terraform-managed
-   ```
-
-## Multi-Model Architecture
-
-To optimize performance across different languages and contexts, we will implement:
-
-1. **Static Model-Language Mapping**
-   - Predefined optimal models for common languages
-   - Default fallbacks for uncommon languages
-   - Embedding model selection based on language needs
-
-2. **Selective Calibration**
-   - Targeted calibration for edge cases
-   - Testing when standard mappings might not apply
-   - Optimization for multi-language repositories
-
-3. **Unified Orchestration**
-   - Language detection to guide model selection
-   - Context-aware agent configuration
-   - Model performance tracking and feedback
-
-## RAG Integration Strategy
-
-The implementation of RAG capabilities will focus on several key areas:
-
-1. **Vector Database Setup**
-   - Configure pgvector extension in Supabase via Terraform
-   - Create optimized schema for embeddings
-   - Implement efficient similarity search functions
-
-2. **Educational Content Enhancement**
-   - Find similar code examples for learning
-   - Generate context-aware tutorials
-   - Create customized learning resources
-
-3. **Documentation Support**
-   - Automatically identify documentation gaps
-   - Generate documentation based on code context
-   - Maintain knowledge base of code patterns
-
-4. **Hybrid Knowledge Retrieval**
-   - Implement multi-source knowledge integration
-   - Create smart content gap analysis
-   - Build sophisticated content enhancement pipeline
-   - Develop knowledge lifecycle management
-
-5. **Storage Optimization**
-   - Implement selective vector storage
-   - Create cleanup routines for outdated vectors
-   - Optimize storage based on importance scores
-   - Implement tiered storage for cost-performance balance
-
-## Next Steps (Week of May 12, 2025)
-
-Following our deployment and testing of DeepWiki, our immediate next steps are:
-
-1. **Complete DeepWiki Client Integration**
-   - Create DeepWikiClient class with methods for both wiki generation and chat completions
-   - Implement repository size detection and appropriate handling
-   - Add error handling, retries, and fallback mechanisms
-   - Test with various repository types and sizes
-
-2. **Implement Three-Tier Analysis Flow**
-   - Design initial PR analysis with repository context
-   - Create system for identifying beneficial architectural perspectives
-   - Build user interface for perspective selection
-   - Implement targeted query execution and result integration
-
-3. **Supabase Schema Design Based on DeepWiki Output**
-   - Analyze DeepWiki output structure in detail
-   - Design database schema to store both full analyses and targeted insights
-   - Create tables in Supabase for repository and PR analysis
-   - Implement storage and retrieval logic with caching
-
-4. **Continue PR Context Extraction Development**
-   - Complete PR metadata extraction from Git providers
-   - Begin design of context transformation for DeepWiki integration
-   - Start planning combined context handling
-   - Test integration with targeted architectural queries
-
-5. **Infrastructure Refinement**
-   - Complete Terraform configurations for all components
-   - Set up monitoring and logging for deployed services
-   - Implement resource optimization for production readiness
-   - Add DeepWiki API key management to infrastructure
+5. **DeepWiki Kubernetes Service Finalization** (MEDIUM PRIORITY)
+   - Complete the service for interacting with DeepWiki in Kubernetes
+   - Finalize Kubernetes API integration for pod access
+   - Implement robust error handling and retry logic
+   - Test with various repository sizes and types
 
 ## Success Metrics
 - ✅ Agent Evaluation System successfully selects optimal agents for different contexts
@@ -531,19 +667,32 @@ Following our deployment and testing of DeepWiki, our immediate next steps are:
 - ✅ Supabase integration provides basic data persistence
 - ✅ DeepWiki deployed and operational in DigitalOcean Kubernetes
 - ✅ DeepWiki API functionality verified and tested
+- ✅ Comprehensive scoring system implemented for repository analysis
+- ✅ Specialized analysis with scoring metrics integrated
+- ✅ DeepWiki console/CLI accessed directly in Kubernetes pods
+- ✅ Commands and parameters documented for production environment
+- ✅ Kubernetes-based repository analysis tested and verified
+- ✅ DeepWiki output structure analyzed and mapped to storage requirements
+- ✅ DeepWiki documentation and scripts consolidated for clarity
+- ✅ DeepWiki Chat POC implemented with Message Control Program architecture
 - 🔄 Terraform infrastructure deployment successful across environments
-- 🔄 DeepWiki client integration provides access to repository analyses
-- 🔄 Three-tier analysis approach offers flexible analysis options
-- 🔄 Database schema reflects DeepWiki output structure
+- 🔄 Vector database properly configured in Supabase
+- 🔄 Selective RAG framework implemented with metadata filtering
+- 🔄 Query analyzer developed for targeted retrieval
+- 🔄 Supabase authentication integrated with repository access control
+- 🔄 User skill tracking implemented with SQL database
 - 🔄 PR context extraction provides accurate metadata
-- 🔄 RAG integration design is complete with initial implementation in progress
-- 🔲 Multi-Agent Orchestrator correctly uses DeepWiki context
-- 🔲 Prompt Generator creates effective, DeepWiki-informed prompts
-- 🔲 Multi-Agent Executor runs agents efficiently with fallback support
-- 🔲 Result Orchestrator successfully organizes and prioritizes findings
+- 🔄 PR analysis integration with DeepWiki completed
+- 🔄 Three-tier analysis approach offers flexible analysis options
+- 🔄 Multi-Agent Orchestrator correctly performs role determination
+- 🔄 DeepWikiKubernetesService interfaces with DeepWiki in Kubernetes
+- 🔄 Multi-Agent Executor runs agents efficiently with fallback support
+- 🔄 Result Orchestrator successfully organizes and prioritizes findings
+- 🔄 Prompt Generator creates effective, specialized analysis prompts
+- 🔲 Support system integrates knowledge base with repository information
 - 🔲 Reporting Agent generates clear, actionable reports
-- 🔲 Three-Tier Analysis Framework supports all analysis modes
 - 🔲 End-to-end performance meets target times (1-3 min for quick, 5-10 min for comprehensive)
 - 🔲 User interface provides clear choice between analysis modes
+- 🔲 Score visualization provides actionable insights
 - 🔲 Subscription system enables sustainable business model
 - 🔲 Model calibration successfully adapts to different user contexts

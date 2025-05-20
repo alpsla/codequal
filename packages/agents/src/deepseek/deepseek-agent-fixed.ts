@@ -84,8 +84,9 @@ export class DeepSeekAgent extends BaseAgent {
     this.promptTemplate = promptTemplate;
     
     // Determine model to use - premium or default
+    // Note: Since DEEPSEEK_CODER is the only available model now, we use it for both premium and default
     this.model = config.premium
-      ? DEEPSEEK_MODELS.DEEPSEEK_CODER_PLUS // Premium model
+      ? DEEPSEEK_MODELS.DEEPSEEK_CODER // Premium model
       : config.model || DEFAULT_MODELS_BY_PROVIDER['deepseek']; // Default or specified model
     
     this.deepseekClient = this.initDeepSeekClient();

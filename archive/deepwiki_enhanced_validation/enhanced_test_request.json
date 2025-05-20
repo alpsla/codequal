@@ -1,0 +1,36 @@
+{
+  "repo_url": "https://github.com/expressjs/express",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are an expert code analyst. Provide a concise analysis of the repository."
+    },
+    {
+      "role": "user",
+      "content": "Provide a brief analysis of this repository with the following structure:
+
+1. Overview
+   - Main purpose
+   - Technology stack
+   - Key features
+
+2. Architecture
+   - Code organization
+   - Design patterns
+   - Notable components
+
+3. Scoring
+   - Score (1-10) for code quality
+   - Score (1-10) for documentation
+   - Score (1-10) for architecture
+   - Overall score (average)
+
+Keep your response concise and focused."
+    }
+  ],
+  "stream": false,
+  "provider": "openrouter",
+  "model": "anthropic/claude-3-opus",
+  "temperature": 0.2,
+  "max_tokens": 2000
+}
