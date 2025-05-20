@@ -1,7 +1,6 @@
 // Updated DeepWikiClient based on API testing results
 
-import axios from 'axios';
-import type { AxiosInstance, AxiosError } from 'axios';
+import axios, { AxiosInstance, AxiosError } from 'axios';
 import { Logger } from '../utils/logger';
 
 /**

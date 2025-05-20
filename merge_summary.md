@@ -39,6 +39,7 @@ This merge brings significant code quality improvements and cleanups to the Code
 
 - All linting passes with no errors (only expected warnings remain)
 - All tests are passing
+<<<<<<< HEAD
 - **DeepWiki repository analysis is fully implemented** with quality-focused improvements:
   - Verified with successful test runs on multiple repositories
   - Now using cost-effective `google/gemini-2.5-flash-preview-05-20` model by default
@@ -48,6 +49,8 @@ This merge brings significant code quality improvements and cleanups to the Code
   - Intelligent analysis prioritization by complexity
   - Maintained full analysis depth and quality
   - Fallback to `anthropic/claude-3-7-sonnet` when needed
+=======
+>>>>>>> 364853f (Project cleanup and code quality improvements)
 - Project structure is cleaner and more maintainable
 - Documentation is more comprehensive and better organized
 
@@ -68,6 +71,10 @@ After this merge:
 
 ```bash
 git checkout main
+<<<<<<< HEAD
 git merge clean_push_candidate
+=======
+git merge coniguration_development
+>>>>>>> 364853f (Project cleanup and code quality improvements)
 git push origin main
 ```
