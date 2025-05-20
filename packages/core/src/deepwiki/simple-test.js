@@ -7,6 +7,9 @@
  * with minimal dependencies - just needs Node.js
  */
 
+/* eslint-env node */
+/* eslint-disable no-console, @typescript-eslint/no-var-requires */
+
 const https = require('https');
 const http = require('http');
 const fs = require('fs');

@@ -1,0 +1,93 @@
+Based on our testing and the models' capabilities, here's a structured recommendation for different repositories to test across size categories and programming languages, along with model pairing recommendations:
+Test Repositories by Size
+Small Repositories (< 10,000 LOC)
+
+fastify/fastify-cli - JavaScript command-line tool (~5,000 LOC)
+sveltejs/svelte-hmr - JavaScript/TypeScript HMR implementation (~3,000 LOC)
+pallets/flask - Python web framework (core is ~7,000 LOC)
+go-chi/chi - Golang HTTP router (~4,000 LOC)
+javalin/javalin - Java/Kotlin web framework (~8,000 LOC)
+
+Medium Repositories (10,000 - 50,000 LOC)
+
+nestjs/nest - TypeScript backend framework (~30,000 LOC)
+django/django - Python web framework (~40,000 LOC)
+gin-gonic/gin - Golang web framework (~15,000 LOC)
+spring-projects/spring-boot - Java framework (~45,000 LOC)
+dotnet/aspnetcore - C# web framework (subset ~30,000 LOC)
+
+Large Repositories (> 50,000 LOC)
+
+tensorflow/tensorflow - C++/Python ML framework (millions of LOC)
+kubernetes/kubernetes - Golang container orchestration (~2M LOC)
+microsoft/TypeScript - TypeScript compiler (~300,000 LOC)
+facebook/react - JavaScript framework (~150,000 LOC)
+rust-lang/rust - Rust language (~500,000 LOC)
+
+Multi-Language Repositories
+
+electron/electron - C++/JavaScript/TypeScript
+VSCodeVim/Vim - TypeScript/JavaScript
+pytorch/pytorch - C++/Python/CUDA
+flutter/flutter - Dart/C++/Java/Objective-C
+prisma/prisma - TypeScript/Rust/Go
+
+Model Recommendations by Language
+JavaScript/TypeScript
+
+Best: anthropic/claude-3-opus - Excellent analysis of JS/TS patterns
+Fast Option: openai/gpt-4.1 - Good analysis with faster response time
+Value Option: anthropic/claude-3-haiku - Good for smaller codebases
+
+Python
+
+Best: openai/gpt-4.1 - Excellent understanding of Python patterns
+Fast Option: anthropic/claude-3-haiku - Good analysis with fast response
+Value Option: google/gemini-2.5-pro-preview - Works well with Python
+
+Go
+
+Best: anthropic/claude-3.7-sonnet - Strong understanding of Go idioms
+Fast Option: openai/gpt-4.1 - Good Go analysis with reasonable speed
+Value Option: google/gemini-2.5-pro-preview - Decent for smaller Go projects
+
+Java/Kotlin
+
+Best: openai/gpt-4.1 - Strong Java/Kotlin pattern recognition
+Fast Option: anthropic/claude-3-haiku - Good performance on Java
+Value Option: google/gemini-2.5-pro-preview - Works well with Java
+
+C++
+
+Best: deepseek/deepseek-coder - Specializes in complex code analysis
+Fast Option: openai/gpt-4.1 - Good understanding of C++ patterns
+Value Option: anthropic/claude-3-opus - Thorough but slower analysis
+
+C#/.NET
+
+Best: anthropic/claude-3-opus - Excellent .NET understanding
+Fast Option: openai/gpt-4.1 - Good performance with .NET patterns
+Value Option: anthropic/claude-3-haiku - Good for smaller .NET projects
+
+Rust
+
+Best: deepseek/deepseek-coder - Specialized for complex code analysis
+Fast Option: openai/gpt-4.1 - Good understanding of Rust patterns
+Value Option: anthropic/claude-3-opus - Thorough analysis of Rust code
+
+Repository Size vs Model Recommendations
+Small Repositories (< 10,000 LOC)
+
+Best Overall: anthropic/claude-3-haiku - Fast with good quality
+Best Value: google/gemini-2.5-pro-preview - Good results, very fast
+
+Medium Repositories (10,000 - 50,000 LOC)
+
+Best Overall: openai/gpt-4.1 - Great balance of depth and speed
+Best Value: anthropic/claude-3.7-sonnet - Excellent quality, moderate speed
+
+Large Repositories (> 50,000 LOC)
+
+Best Overall: anthropic/claude-3-opus - Most thorough analysis
+Best Value: openai/gpt-4.1 - Good balance of depth and speed
+For Code Focus: deepseek/deepseek-coder - Specialized in code patterns

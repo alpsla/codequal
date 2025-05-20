@@ -9,6 +9,9 @@
  *   node generate-report.js --metrics=/path/to/metrics-summary.json --output=/path/to/report.html
  */
 
+/* eslint-env node */
+/* eslint-disable no-console, @typescript-eslint/no-var-requires */
+
 const fs = require('fs');
 const path = require('path');
 
@@ -194,7 +197,7 @@ function generateReport(metrics) {
         ${Object.entries(metrics.providerModelSummary)
           .filter(([_, summary]) => summary.chatTests > 0)
           .sort((a, b) => b[1].chat.avgTokenCount - a[1].chat.avgTokenCount)
-          .map(([key, summary]) => `
+          .map(([_key, summary]) => `
             <tr>
               <td>${formatProviderModel(summary.provider, summary.model)}</td>
               <td>${summary.chatTests}</td>
@@ -225,7 +228,7 @@ function generateReport(metrics) {
         ${Object.entries(metrics.providerModelSummary)
           .filter(([_, summary]) => summary.wikiTests > 0)
           .sort((a, b) => b[1].wiki.avgSectionCount - a[1].wiki.avgSectionCount)
-          .map(([key, summary]) => `
+          .map(([_key, summary]) => `
             <tr>
               <td>${formatProviderModel(summary.provider, summary.model)}</td>
               <td>${summary.wikiTests}</td>
@@ -288,7 +291,7 @@ function generateReport(metrics) {
           backgroundColor: [
             ${Object.entries(metrics.providerModelSummary)
               .filter(([_, summary]) => summary.chatTests > 0)
-              .map(([_, summary]) => `'${getProviderColor(summary.provider)}'`)
+              .map(([_, summary]) => `'${getProviderColor(summary.provider, summary.model)}'`)
               .join(', ')}
           ],
           borderWidth: 1
@@ -328,7 +331,7 @@ function generateReport(metrics) {
           backgroundColor: [
             ${Object.entries(metrics.providerModelSummary)
               .filter(([_, summary]) => summary.wikiTests > 0)
-              .map(([_, summary]) => `'${getProviderColor(summary.provider)}'`)
+              .map(([_, summary]) => `'${getProviderColor(summary.provider, summary.model)}'`)
               .join(', ')}
           ],
           borderWidth: 1
@@ -341,7 +344,7 @@ function generateReport(metrics) {
           backgroundColor: [
             ${Object.entries(metrics.providerModelSummary)
               .filter(([_, summary]) => summary.wikiTests > 0)
-              .map(([_, summary]) => `'${getProviderColor(summary.provider, 0.7)}'`)
+              .map(([_, summary]) => `'${getProviderColor(summary.provider, summary.model, 0.7)}'`)
               .join(', ')}
           ],
           borderWidth: 1
@@ -399,10 +402,11 @@ function formatModel(model) {
 /**
  * Get color for provider
  * @param {string} provider Provider name
+ * @param {string} modelName Model name (optional)
  * @param {number} alpha Alpha value (optional)
  * @returns {string} Color string
  */
-function getProviderColor(provider, alpha = 1) {
+function getProviderColor(provider, modelName = '', alpha = 1) {
   const colors = {
     'openai': `rgba(65, 162, 255, ${alpha})`,
     'google': `rgba(234, 67, 53, ${alpha})`,
@@ -417,7 +421,7 @@ function getProviderColor(provider, alpha = 1) {
   }
   
   // Check for Anthropic models via OpenRouter
-  if (provider === 'openrouter' && (model || '').includes('claude')) {
+  if (provider === 'openrouter' && modelName.includes('claude')) {
     return colors.anthropic;
   }
   

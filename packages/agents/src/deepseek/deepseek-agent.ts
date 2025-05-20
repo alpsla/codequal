@@ -113,7 +113,7 @@ export class DeepSeekAgent extends BaseAgent {
     
     // Debug log to ensure model is properly initialized
     if (config.debug) {
-      console.log('DeepSeekAgent initialized with model:', this.model);
+      this.logger.info('DeepSeekAgent initialized with model:', { model: this.model });
     }
     
     this.deepseekClient = this.initDeepSeekClient();

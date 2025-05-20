@@ -1,0 +1,152 @@
+API Endpoints:
+GET /models/config
+  Description: Get available model providers and their models.
+
+This endpoint returns the configuration of available model providers and their
+respective models that can be used throughout the application.
+
+Returns:
+    ModelConfig: A configuration object containing providers and their models
+  Parameters: []
+
+POST /export/wiki
+  Description: Export wiki content as Markdown or JSON.
+
+Args:
+    request: The export request containing wiki pages and format
+
+Returns:
+    A downloadable file in the requested format
+  Parameters: []
+
+GET /local_repo/structure
+  Description: Return the file tree and README content for a local repository.
+  Parameters: [
+  {
+    "name": "path",
+    "in": "query",
+    "required": false,
+    "schema": {
+      "type": "string",
+      "description": "Path to local repository",
+      "title": "Path"
+    },
+    "description": "Path to local repository"
+  }
+]
+
+POST /chat/completions/stream
+  Description: Stream a chat completion response directly using Google Generative AI
+  Parameters: []
+
+GET /api/wiki_cache
+  Description: Retrieves cached wiki data (structure and generated pages) for a repository.
+  Parameters: [
+  {
+    "name": "owner",
+    "in": "query",
+    "required": true,
+    "schema": {
+      "type": "string",
+      "description": "Repository owner",
+      "title": "Owner"
+    },
+    "description": "Repository owner"
+  },
+  {
+    "name": "repo",
+    "in": "query",
+    "required": true,
+    "schema": {
+      "type": "string",
+      "description": "Repository name",
+      "title": "Repo"
+    },
+    "description": "Repository name"
+  },
+  {
+    "name": "repo_type",
+    "in": "query",
+    "required": true,
+    "schema": {
+      "type": "string",
+      "description": "Repository type (e.g., github, gitlab)",
+      "title": "Repo Type"
+    },
+    "description": "Repository type (e.g., github, gitlab)"
+  },
+  {
+    "name": "language",
+    "in": "query",
+    "required": true,
+    "schema": {
+      "type": "string",
+      "description": "Language of the wiki content",
+      "title": "Language"
+    },
+    "description": "Language of the wiki content"
+  }
+]
+
+POST /api/wiki_cache
+  Description: Stores generated wiki data (structure and pages) to the server-side cache.
+  Parameters: []
+
+DELETE /api/wiki_cache
+  Description: Deletes a specific wiki cache from the file system.
+  Parameters: [
+  {
+    "name": "owner",
+    "in": "query",
+    "required": true,
+    "schema": {
+      "type": "string",
+      "description": "Repository owner",
+      "title": "Owner"
+    },
+    "description": "Repository owner"
+  },
+  {
+    "name": "repo",
+    "in": "query",
+    "required": true,
+    "schema": {
+      "type": "string",
+      "description": "Repository name",
+      "title": "Repo"
+    },
+    "description": "Repository name"
+  },
+  {
+    "name": "repo_type",
+    "in": "query",
+    "required": true,
+    "schema": {
+      "type": "string",
+      "description": "Repository type (e.g., github, gitlab)",
+      "title": "Repo Type"
+    },
+    "description": "Repository type (e.g., github, gitlab)"
+  },
+  {
+    "name": "language",
+    "in": "query",
+    "required": true,
+    "schema": {
+      "type": "string",
+      "description": "Language of the wiki content",
+      "title": "Language"
+    },
+    "description": "Language of the wiki content"
+  }
+]
+
+GET /
+  Description: Root endpoint to check if the API is running
+  Parameters: []
+
+GET /api/processed_projects
+  Description: Lists all processed projects found in the wiki cache directory.
+Projects are identified by files named like: deepwiki_cache_{repo_type}_{owner}_{repo}_{language}.json
+  Parameters: []
+

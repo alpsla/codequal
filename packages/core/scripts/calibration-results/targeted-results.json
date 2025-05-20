@@ -1,0 +1,72 @@
+{
+  "categories": {
+    "javascript": {
+      "small": {
+        "jashkenas/underscore": {
+          "providers": {
+            "anthropic": {
+              "models": {
+                "claude-3-haiku-20240307": {
+                  "prompts": {
+                    "architecture": {
+                      "success": true,
+                      "responseTime": 4.856,
+                      "contentSize": 2988,
+                      "qualityScore": 6.444444444444445,
+                      "promptCategory": "architecture",
+                      "timestamp": "2025-05-13T21:25:16.581Z"
+                    }
+                  }
+                }
+              }
+            },
+            "openai": {
+              "models": {
+                "gpt-3.5-turbo": {
+                  "prompts": {
+                    "architecture": {
+                      "success": true,
+                      "responseTime": 5.946,
+                      "contentSize": 2660,
+                      "qualityScore": 6.555555555555556,
+                      "promptCategory": "architecture",
+                      "timestamp": "2025-05-13T21:25:43.451Z"
+                    }
+                  }
+                }
+              }
+            },
+            "gemini": {
+              "models": {
+                "gemini-pro-vision": {
+                  "prompts": {
+                    "architecture": {
+                      "success": false,
+                      "error": "404: {\"error\":{\"code\":404,\"message\":\"Gemini 1.0 Pro Vision has been deprecated on July 12, 2024. Consider switching to different model, for example gemini-1.5-flash.\",\"status\":\"NOT_FOUND\"}}",
+                      "timestamp": "2025-05-13T21:26:09.734Z"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "recommendations": {
+    "javascript": {
+      "small": {
+        "provider": "anthropic",
+        "model": "claude-3-haiku-20240307",
+        "performanceScore": 4.856,
+        "qualityScore": 6.444444444444445,
+        "combinedScore": 5.0234061930783245,
+        "promptCategory": "architecture",
+        "successRate": 1,
+        "testCount": 1,
+        "lastTested": "2025-05-13T21:25:16.583Z"
+      }
+    }
+  }
+}

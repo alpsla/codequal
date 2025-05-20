@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: deepwiki-debug-config
+  namespace: codequal-dev
+data:
+  debug.sh: |
+    #!/bin/bash
+    echo "DeepWiki Debug Information"
+    echo "=========================="
+    echo "Testing GitHub API access:"
+    curl -s -I https://api.github.com/repos/asyncfuncai/deepwiki-open
+    
+    echo -e "\nTesting model API access:"
+    # Test OpenAI API (just checking connection, not making a real request)
+    curl -s -I https://api.openai.com/v1/models
+    
+    echo -e "\nChecking environment variables:"
+    env | grep -E 'GITHUB|OPENAI|GOOGLE|SERVER'
+    
+    echo -e "\nChecking network connectivity:"
+    ping -c 3 github.com
+    ping -c 3 api.openai.com
+    
+    echo -e "\nChecking DNS resolution:"
+    nslookup github.com
+    nslookup api.openai.com
+    
+    echo -e "\nChecking storage access:"
+    ls -la /root/.adalflow
+    df -h

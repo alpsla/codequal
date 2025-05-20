@@ -9,6 +9,9 @@
  *   node manual-test.js --repo=owner/repo --mode=[wiki|chat] --provider=provider --model=model
  */
 
+/* eslint-env node */
+/* eslint-disable no-console, @typescript-eslint/no-var-requires */
+
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');

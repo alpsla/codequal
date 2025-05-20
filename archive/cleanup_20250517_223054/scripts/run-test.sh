@@ -1,0 +1,35 @@
+#!/bin/bash
+
+# Make the test script executable
+chmod +x /Users/alpinro/Code\ Prjects/codequal/packages/core/src/deepwiki/deepwiki-test.js
+
+# Display usage instructions
+echo "DeepWiki API Test Script"
+echo "======================="
+echo ""
+echo "This script allows you to manually test the DeepWiki API with different providers and models."
+echo ""
+echo "Usage examples:"
+echo ""
+echo "1. Chat completion with default provider/model:"
+echo "   node deepwiki-test.js --mode=chat --repo=pallets/click"
+echo ""
+echo "2. Chat completion with OpenAI GPT-4o:"
+echo "   node deepwiki-test.js --mode=chat --repo=pallets/click --provider=openai --model=gpt-4o"
+echo ""
+echo "3. Chat completion with Google Gemini:"
+echo "   node deepwiki-test.js --mode=chat --repo=pallets/click --provider=google --model=gemini-2.5-pro-preview-05-06"
+echo ""
+echo "4. Chat completion with Claude:"
+echo "   node deepwiki-test.js --mode=chat --repo=pallets/click --provider=openrouter --model=anthropic/claude-3.7-sonnet"
+echo ""
+echo "5. Wiki generation with default provider/model:"
+echo "   node deepwiki-test.js --mode=wiki --repo=pallets/click"
+echo ""
+echo "6. Wiki generation with specified provider/model:"
+echo "   node deepwiki-test.js --mode=wiki --repo=pallets/click --provider=openai --model=gpt-4o"
+echo ""
+echo "7. Custom architecture query:"
+echo "   node deepwiki-test.js --mode=chat --repo=pallets/click --query=\"What design patterns are used in this repository?\""
+echo ""
+echo "All test results will be saved in the test-results directory."

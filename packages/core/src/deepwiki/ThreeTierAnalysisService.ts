@@ -1,5 +1,5 @@
 import { DeepWikiClient, RepositoryContext, ModelConfig, DeepWikiProvider } from './DeepWikiClient';
-import { Logger } from '@codequal/core/logging';
+import { Logger } from '../utils/logger';
 
 /**
  * Analysis depth options for the three-tier approach
@@ -105,17 +105,17 @@ export interface AnalysisResult {
     /**
      * Repository wiki (for comprehensive analysis)
      */
-    repositoryWiki?: any;
+    repositoryWiki?: Record<string, unknown>;
     
     /**
      * PR analysis (for PR-related analysis)
      */
-    prAnalysis?: any;
+    prAnalysis?: Record<string, unknown>;
     
     /**
      * Targeted perspective results (for targeted analysis)
      */
-    perspectiveResults?: Record<TargetedPerspective, any>;
+    perspectiveResults?: Record<TargetedPerspective, Record<string, unknown>>;
   };
 }
 
@@ -136,6 +136,40 @@ export class ThreeTierAnalysisService {
     this.logger = logger;
     
     this.logger.info('ThreeTierAnalysisService initialized');
+  }
+  
+  /**
+   * Analyze a pull request
+   * @param repository Repository context
+   * @param prId Pull request ID
+   * @param options Analysis options
+   * @returns Analysis result
+   */
+  async analyzePR(
+    repository: RepositoryContext,
+    prId: string,
+    options: RepositoryAnalysisOptions
+  ): Promise<AnalysisResult> {
+    const prNumber = parseInt(prId.replace(/\D/g, ''), 10);
+    if (isNaN(prNumber)) {
+      throw new Error(`Invalid PR ID format: ${prId}`);
+    }
+    
+    const prOptions: PullRequestAnalysisOptions = {
+      ...options,
+      prNumber
+    };
+    
+    switch (options.depth) {
+      case AnalysisDepth.QUICK:
+        return this.performQuickPRAnalysis(repository, prOptions);
+      case AnalysisDepth.COMPREHENSIVE:
+        return this.performComprehensivePRAnalysis(repository, prOptions);
+      case AnalysisDepth.TARGETED:
+        return this.performTargetedPRAnalysis(repository, prOptions);
+      default:
+        return this.performQuickPRAnalysis(repository, prOptions);
+    }
   }
   
   /**
@@ -274,7 +308,7 @@ export class ThreeTierAnalysisService {
     }
     
     const repoUrl = this.buildRepoUrl(repository);
-    const perspectiveResults: Record<TargetedPerspective, any> = {} as any;
+    const perspectiveResults: Record<TargetedPerspective, Record<string, unknown>> = {} as Record<TargetedPerspective, Record<string, unknown>>;
     
     // Run analyses for each requested perspective
     for (const perspective of options.perspectives) {
@@ -350,7 +384,7 @@ export class ThreeTierAnalysisService {
     this.logger.info('Performing comprehensive PR analysis', { repository, prNumber: options.prNumber });
     
     // First, get the repository wiki (or use cache if available)
-    let repositoryWiki: any;
+    let repositoryWiki: Record<string, unknown>;
     
     if (options.useCache) {
       // Try to get from cache
@@ -430,7 +464,7 @@ export class ThreeTierAnalysisService {
     });
     
     // Now analyze each perspective
-    const perspectiveResults: Record<TargetedPerspective, any> = {} as any;
+    const perspectiveResults: Record<TargetedPerspective, Record<string, unknown>> = {} as Record<TargetedPerspective, Record<string, unknown>>;
     
     for (const perspective of options.perspectives) {
       this.logger.info(`Analyzing PR perspective: ${perspective}`, { 
