@@ -45,7 +45,9 @@ export interface AnalysisResult {
   insights: Array<Insight>;
   suggestions: Array<Suggestion>;
   educationalContent?: Array<EducationalContent>;
+  educational?: Array<EducationalContent>; // Alias for educationalContent used in database
   resources?: Array<Resource>;
+  metadata?: Record<string, any>; // Metadata field used in database
 }
 
 export interface Insight {
