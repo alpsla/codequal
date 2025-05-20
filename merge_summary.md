@@ -68,6 +68,6 @@ After this merge:
 
 ```bash
 git checkout main
-git merge coniguration_development
+git merge clean_push_candidate
 git push origin main
 ```
