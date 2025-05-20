@@ -14,31 +14,31 @@
  */
 
 // Client for interacting with DeepWiki API
-export * from './DeepWikiClient';
+export * from './DeepWikiClient.js';
 
 // Three-tier analysis service
-export * from './ThreeTierAnalysisService';
+export * from './ThreeTierAnalysisService.js';
 
 // Chat service for interactive repository exploration
-export * from './DeepWikiChatService';
+export * from './DeepWikiChatService.js';
 
 // Repository size detection utility
-export * from './RepositorySizeDetector';
+export * from './RepositorySizeDetector.js';
 
 // Cache management utility
-export * from './RepositoryCacheManager';
+export * from './RepositoryCacheManager.js';
 
 // Initialization helpers
-export * from './initialization';
+export * from './initialization.js';
 
 // Environment variable helpers
-export * from './env-helpers';
+export * from './env-helpers.js';
 
 // Export specific items from model-configs-update to avoid naming conflicts
 export { 
   ModelConfigManager,
   default as ModelConfigManagerDefault
-} from './model-configs-update';
+} from './model-configs-update.js';
 
 /**
  * Initialize the DeepWiki integration using the old syntax (deprecated)
@@ -63,17 +63,17 @@ export async function initializeDeepWiki(options: {
   } = options;
   
   // Create client
-  const { DeepWikiClient } = await import('./DeepWikiClient');
+  const { DeepWikiClient } = await import('./DeepWikiClient.js');
   const client = new DeepWikiClient(apiUrl, logger);
   
   // Create size detector
-  const { RepositorySizeDetector } = await import('./RepositorySizeDetector');
+  const { RepositorySizeDetector } = await import('./RepositorySizeDetector.js');
   const sizeDetector = new RepositorySizeDetector(logger);
   
   // Create cache manager if Supabase config is provided
   let cacheManager = null;
   if (supabaseUrl && supabaseKey) {
-    const { RepositoryCacheManager } = await import('./RepositoryCacheManager');
+    const { RepositoryCacheManager } = await import('./RepositoryCacheManager.js');
     cacheManager = new RepositoryCacheManager(
       supabaseUrl, 
       supabaseKey, 
@@ -83,14 +83,14 @@ export async function initializeDeepWiki(options: {
   }
   
   // Create analysis service
-  const { ThreeTierAnalysisService } = await import('./ThreeTierAnalysisService');
+  const { ThreeTierAnalysisService } = await import('./ThreeTierAnalysisService.js');
   const analysisService = new ThreeTierAnalysisService(
     client, 
     logger
   );
   
   // Create chat service
-  const { DeepWikiChatService } = await import('./DeepWikiChatService');
+  const { DeepWikiChatService } = await import('./DeepWikiChatService.js');
   const chatService = new DeepWikiChatService(
     client,
     logger
