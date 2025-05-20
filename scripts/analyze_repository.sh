@@ -27,6 +27,38 @@ fi
 # Extract repository name from URL
 REPO_NAME=$(basename "$REPO_URL" .git)
 
+# Function to setup or verify port forwarding
+setup_port_forwarding() {
+  # Check if port forwarding is already active
+  if ! nc -z localhost $PORT 2>/dev/null; then
+    echo "Port forwarding not active, setting up..."
+    # If port forwarding process exists, kill it
+    if [ -n "$PF_PID" ] && ps -p $PF_PID > /dev/null; then
+      echo "Terminating existing port forwarding (PID: $PF_PID)"
+      kill $PF_PID 2>/dev/null || true
+    fi
+    
+    # Set up new port forwarding
+    kubectl port-forward -n "$NAMESPACE" "pod/$ACTIVE_POD" "$PORT:$PORT" &
+    PF_PID=$!
+    
+    # Wait for port forwarding to establish
+    echo "Waiting for port forwarding to establish..."
+    sleep 5
+    
+    # Verify port forwarding is active
+    if ! nc -z localhost $PORT 2>/dev/null; then
+      echo "WARNING: Port forwarding setup failed, retrying once more..."
+      kill $PF_PID 2>/dev/null || true
+      kubectl port-forward -n "$NAMESPACE" "pod/$ACTIVE_POD" "$PORT:$PORT" &
+      PF_PID=$!
+      sleep 5
+    fi
+  else
+    echo "Port forwarding already active"
+  fi
+}
+
 # Get the active pod
 ACTIVE_POD=$(kubectl get pods -n "$NAMESPACE" | grep "$POD_SELECTOR" | grep Running | head -n 1 | awk '{print $1}')
 
@@ -36,6 +68,9 @@ if [ -z "$ACTIVE_POD" ]; then
 fi
 
 echo "Using pod: $ACTIVE_POD"
+
+# Global variable for port forwarding PID
+PF_PID=""
 
 # Function to run an analysis
 run_analysis() {
@@ -72,23 +107,22 @@ run_analysis() {
 }
 EOF
     
-    # Set up port forwarding
+    # Set up port forwarding using our helper function
     echo "Setting up port forwarding..."
-    kubectl port-forward -n "$NAMESPACE" "pod/$ACTIVE_POD" "$PORT:$PORT" &
-    PF_PID=$!
-    
-    # Wait for port forwarding to establish
-    sleep 5
+    setup_port_forwarding
     
     # Send request
     echo "Sending $analysis_type analysis request..."
     local raw_response="${OUTPUT_DIR}/${analysis_type}_raw.txt"
     
-    # Set timeout - longer for performance analysis
-    local timeout=300
+    # Set timeout - longer for potentially complex analyses
+    local timeout=300  # 5 minutes default
     if [ "$analysis_type" == "performance" ]; then
-      timeout=600  # 10 minutes for performance analysis
+      timeout=900  # 15 minutes for performance analysis
       echo "Using extended timeout ($timeout seconds) for performance analysis..."
+    elif [ "$analysis_type" == "dependencies" ]; then
+      timeout=600  # 10 minutes for dependencies analysis
+      echo "Using extended timeout ($timeout seconds) for dependencies analysis..."
     fi
     
     curl -s -X POST "http://localhost:$PORT/chat/completions/stream" \
@@ -127,22 +161,22 @@ EOF
 }
 EOF
           
-          # Set up port forwarding again
-          kubectl port-forward -n "$NAMESPACE" "pod/$ACTIVE_POD" "$PORT:$PORT" &
-          PF_PID=$!
-          
-          # Wait for port forwarding to establish
-          sleep 5
+          # Set up port forwarding using our helper function
+          echo "Setting up port forwarding for fallback model..."
+          setup_port_forwarding
           
           # Try with fallback model
           echo "Sending $analysis_type analysis request with fallback model $fallback_model..."
           local fallback_response="${OUTPUT_DIR}/${analysis_type}_${fallback_model//\//_}_raw.txt"
           
-          # Set timeout - longer for performance analysis
-          local timeout=300
+          # Set timeout - longer for potentially complex analyses
+          local timeout=300  # 5 minutes default
           if [ "$analysis_type" == "performance" ]; then
-            timeout=600  # 10 minutes for performance analysis
+            timeout=900  # 15 minutes for performance analysis
             echo "Using extended timeout ($timeout seconds) for performance analysis with fallback model..."
+          elif [ "$analysis_type" == "dependencies" ]; then
+            timeout=600  # 10 minutes for dependencies analysis
+            echo "Using extended timeout ($timeout seconds) for dependencies analysis with fallback model..."
           fi
           
           curl -s -X POST "http://localhost:$PORT/chat/completions/stream" \
@@ -255,16 +289,17 @@ After your analysis, provide:
 - Key strengths (bullet points)
 - Areas for improvement (bullet points)"
 
-DEPENDENCIES_PROMPT="Analyze the dependencies of this repository. Focus on:
-1. Direct dependencies and versions
-2. Dependency management
-3. Third-party integration
-4. Dependency quality and maintenance
+DEPENDENCIES_PROMPT="Briefly analyze the dependencies of this repository. Focus on:
+1. Direct dependencies and their versions
+2. How dependencies are managed
+3. Key third-party integrations
+
+Limit your analysis to the most critical findings.
 
 After your analysis, provide:
 - A score from 1-10 for dependency management
-- Key strengths (bullet points)
-- Areas for improvement (bullet points)"
+- 2-3 key strengths (bullet points)
+- 2-3 areas for improvement (bullet points)"
 
 PERFORMANCE_PROMPT="Briefly analyze the performance aspects of this repository. Focus on:
 1. Resource efficiency (memory, CPU)
@@ -281,21 +316,22 @@ After your analysis, provide:
 # Run each analysis
 echo "Starting specialized analyses of $REPO_NAME repository..."
 
-# Run performance analysis first since it's the most likely to timeout
+# Run analyses in order of complexity/time required (most complex first)
 echo "Running performance analysis first (most likely to timeout)..."
 run_analysis "performance" "$PERFORMANCE_PROMPT"
+sleep 10
+
+echo "Running dependencies analysis (second most likely to timeout)..."
+run_analysis "dependencies" "$DEPENDENCIES_PROMPT"
+sleep 10
+
+run_analysis "security" "$SECURITY_PROMPT"
 sleep 10
 
 run_analysis "architecture" "$ARCHITECTURE_PROMPT"
 sleep 10
 
 run_analysis "code_quality" "$CODE_QUALITY_PROMPT"
-sleep 10
-
-run_analysis "security" "$SECURITY_PROMPT"
-sleep 10
-
-run_analysis "dependencies" "$DEPENDENCIES_PROMPT"
 sleep 10
 
 # Extract and consolidate scores
@@ -376,25 +412,29 @@ else
     echo "## Overall Repository Score: 5.0 / 10 (default)" >> "$SCORING_FILE"
 fi
 
-# Add a note if performance analysis is missing
-if [ ! -f "${OUTPUT_DIR}/performance_analysis.md" ]; then
-    echo "" >> "$SCORING_FILE"
-    echo "## Note" >> "$SCORING_FILE"
-    echo "Performance analysis was not completed due to time constraints. Default score of 5/10 was used for overall calculation." >> "$SCORING_FILE"
-    
-    # Create a placeholder performance analysis file
-    echo "# Performance Analysis (Default)" > "${OUTPUT_DIR}/performance_analysis.md"
-    echo "" >> "${OUTPUT_DIR}/performance_analysis.md"
-    echo "Performance analysis could not be completed successfully." >> "${OUTPUT_DIR}/performance_analysis.md"
-    echo "" >> "${OUTPUT_DIR}/performance_analysis.md"
-    echo "### Performance Score: 5/10 (Default)" >> "${OUTPUT_DIR}/performance_analysis.md"
-    echo "" >> "${OUTPUT_DIR}/performance_analysis.md"
-    echo "### Key Strengths" >> "${OUTPUT_DIR}/performance_analysis.md"
-    echo "- (Not available)" >> "${OUTPUT_DIR}/performance_analysis.md"
-    echo "" >> "${OUTPUT_DIR}/performance_analysis.md"
-    echo "### Areas for Improvement" >> "${OUTPUT_DIR}/performance_analysis.md"
-    echo "- (Not available)" >> "${OUTPUT_DIR}/performance_analysis.md"
-fi
+# Add a note and default file for missing analyses
+for analysis_type in "performance" "dependencies"; do
+    if [ ! -f "${OUTPUT_DIR}/${analysis_type}_analysis.md" ]; then
+        display_name=$(echo "$analysis_type" | sed 's/_/ /g' | awk '{for(i=1;i<=NF;i++)sub(/./,toupper(substr($i,1,1)),$i)}1')
+        
+        echo "" >> "$SCORING_FILE"
+        echo "## Note" >> "$SCORING_FILE"
+        echo "${display_name} analysis was not completed due to time constraints. Default score of 5/10 was used for overall calculation." >> "$SCORING_FILE"
+        
+        # Create a placeholder analysis file
+        echo "# ${display_name} Analysis (Default)" > "${OUTPUT_DIR}/${analysis_type}_analysis.md"
+        echo "" >> "${OUTPUT_DIR}/${analysis_type}_analysis.md"
+        echo "${display_name} analysis could not be completed successfully." >> "${OUTPUT_DIR}/${analysis_type}_analysis.md"
+        echo "" >> "${OUTPUT_DIR}/${analysis_type}_analysis.md"
+        echo "### ${display_name} Score: 5/10 (Default)" >> "${OUTPUT_DIR}/${analysis_type}_analysis.md"
+        echo "" >> "${OUTPUT_DIR}/${analysis_type}_analysis.md"
+        echo "### Key Strengths" >> "${OUTPUT_DIR}/${analysis_type}_analysis.md"
+        echo "- (Not available)" >> "${OUTPUT_DIR}/${analysis_type}_analysis.md"
+        echo "" >> "${OUTPUT_DIR}/${analysis_type}_analysis.md"
+        echo "### Areas for Improvement" >> "${OUTPUT_DIR}/${analysis_type}_analysis.md"
+        echo "- (Not available)" >> "${OUTPUT_DIR}/${analysis_type}_analysis.md"
+    fi
+done
 
 echo "" >> "$SCORING_FILE"
 echo "## Strengths" >> "$SCORING_FILE"
@@ -468,25 +508,30 @@ if [ -f "$SCORING_FILE" ]; then
     echo "" >> "$COMBINED_FILE"
 fi
 
+# Define the order of analyses to ensure consistent output
+ORDERED_CATEGORIES=("architecture" "code_quality" "security" "performance" "dependencies")
+
 # Add each analysis section
-for analysis_type in "${CATEGORIES[@]}"; do
+for analysis_type in "${ORDERED_CATEGORIES[@]}"; do
     ANALYSIS_FILE="${OUTPUT_DIR}/${analysis_type}_analysis.md"
+    display_name=$(echo "$analysis_type" | sed 's/_/ /g' | awk '{for(i=1;i<=NF;i++)sub(/./,toupper(substr($i,1,1)),$i)}1')
+    echo "## $display_name Analysis" >> "$COMBINED_FILE"
+    echo "" >> "$COMBINED_FILE"
+    
     if [ -f "$ANALYSIS_FILE" ]; then
-        display_name=$(echo "$analysis_type" | sed 's/_/ /g' | awk '{for(i=1;i<=NF;i++)sub(/./,toupper(substr($i,1,1)),$i)}1')
-        echo "## $display_name Analysis" >> "$COMBINED_FILE"
-        echo "" >> "$COMBINED_FILE"
-        
         # Skip the model note line if it exists (it's already in the scoring table)
         if grep -q "performed with fallback model:" "$ANALYSIS_FILE"; then
             grep -v "performed with fallback model:" "$ANALYSIS_FILE" >> "$COMBINED_FILE"
         else
             cat "$ANALYSIS_FILE" >> "$COMBINED_FILE"
         fi
-        
-        echo "" >> "$COMBINED_FILE"
-        echo "---" >> "$COMBINED_FILE"
-        echo "" >> "$COMBINED_FILE"
+    else
+        echo "${display_name} analysis could not be completed. A default score of 5/10 was used." >> "$COMBINED_FILE"
     fi
+    
+    echo "" >> "$COMBINED_FILE"
+    echo "---" >> "$COMBINED_FILE"
+    echo "" >> "$COMBINED_FILE"
 done
 
 echo ""
