@@ -84,12 +84,19 @@ EOF
     echo "Sending $analysis_type analysis request..."
     local raw_response="${OUTPUT_DIR}/${analysis_type}_raw.txt"
     
+    # Set timeout - longer for performance analysis
+    local timeout=300
+    if [ "$analysis_type" == "performance" ]; then
+      timeout=600  # 10 minutes for performance analysis
+      echo "Using extended timeout ($timeout seconds) for performance analysis..."
+    fi
+    
     curl -s -X POST "http://localhost:$PORT/chat/completions/stream" \
       -H "Content-Type: application/json" \
       -H "Accept: application/json" \
       -o "$raw_response" \
       -d @"$request_file" \
-      --max-time 300
+      --max-time $timeout
     
     RESULT=$?
     
@@ -131,12 +138,19 @@ EOF
           echo "Sending $analysis_type analysis request with fallback model $fallback_model..."
           local fallback_response="${OUTPUT_DIR}/${analysis_type}_${fallback_model//\//_}_raw.txt"
           
+          # Set timeout - longer for performance analysis
+          local timeout=300
+          if [ "$analysis_type" == "performance" ]; then
+            timeout=600  # 10 minutes for performance analysis
+            echo "Using extended timeout ($timeout seconds) for performance analysis with fallback model..."
+          fi
+          
           curl -s -X POST "http://localhost:$PORT/chat/completions/stream" \
             -H "Content-Type: application/json" \
             -H "Accept: application/json" \
             -o "$fallback_response" \
             -d @"$request_file" \
-            --max-time 300
+            --max-time $timeout
           
           FALLBACK_RESULT=$?
           
@@ -252,19 +266,26 @@ After your analysis, provide:
 - Key strengths (bullet points)
 - Areas for improvement (bullet points)"
 
-PERFORMANCE_PROMPT="Analyze the performance of this repository. Focus on:
-1. Resource usage
-2. Optimization techniques
-3. Concurrency and I/O handling
-4. Caching strategies
+PERFORMANCE_PROMPT="Briefly analyze the performance aspects of this repository. Focus on:
+1. Resource efficiency (memory, CPU)
+2. Key optimization techniques
+3. Response time considerations
+
+Limit your analysis to the most critical findings.
 
 After your analysis, provide:
 - A score from 1-10 for performance
-- Key strengths (bullet points)
-- Areas for improvement (bullet points)"
+- 2-3 key strengths (bullet points)
+- 2-3 areas for improvement (bullet points)"
 
 # Run each analysis
 echo "Starting specialized analyses of $REPO_NAME repository..."
+
+# Run performance analysis first since it's the most likely to timeout
+echo "Running performance analysis first (most likely to timeout)..."
+run_analysis "performance" "$PERFORMANCE_PROMPT"
+sleep 10
+
 run_analysis "architecture" "$ARCHITECTURE_PROMPT"
 sleep 10
 
@@ -275,9 +296,6 @@ run_analysis "security" "$SECURITY_PROMPT"
 sleep 10
 
 run_analysis "dependencies" "$DEPENDENCIES_PROMPT"
-sleep 10
-
-run_analysis "performance" "$PERFORMANCE_PROMPT"
 sleep 10
 
 # Extract and consolidate scores
