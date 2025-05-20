@@ -17,10 +17,8 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: '18.x'
-        cache: 'npm'
-    
-    - name: Configure npm
-      run: npm config get cache --no-workspaces
+        # Disable npm caching to avoid ENOWORKSPACES error
+        # cache: 'npm'
         
     - name: Install dependencies
       run: npm ci --no-workspaces
