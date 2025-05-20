@@ -22,6 +22,7 @@
     "uuid": "^9.0.1"
   },
   "devDependencies": {
+    "@types/dotenv": "^6.1.1",
     "@types/jest": "^29.5.0",
     "@types/node": "^18.19.87",
     "@types/uuid": "^9.0.8",
