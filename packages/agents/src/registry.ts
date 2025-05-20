@@ -27,12 +27,12 @@ export interface AgentRegistry {
  */
 export function getAgentRegistry(): AgentRegistry {
   return {
-    providerSupportsRole(provider: AgentProvider, role: AgentRole): boolean {
+    providerSupportsRole(_provider: AgentProvider, _role: AgentRole): boolean {
       // This is a mock implementation for testing
       return true;
     },
     
-    getProvidersSupportingRole(role: AgentRole): AgentProvider[] {
+    getProvidersSupportingRole(_role: AgentRole): AgentProvider[] {
       // This is a mock implementation for testing
       return [
         AgentProvider.CLAUDE,

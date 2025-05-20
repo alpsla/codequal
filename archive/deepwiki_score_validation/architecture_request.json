@@ -1,0 +1,104 @@
+{
+  "repo_url": "https://github.com/facebook/react",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are an expert code analyst specializing in architecture analysis. Provide a detailed, specific analysis with file paths and code examples when possible. Focus on providing concrete examples rather than general observations. End your analysis with a scoring assessment to quantify the strengths and weaknesses you've identified."
+    },
+    {
+      "role": "user",
+      "content": "Perform an architecture-focused analysis of this repository using the following structured format:
+
+## System Architecture
+- High-level architectural style (e.g., microservices, monolith, event-driven)
+- System boundaries and integration points
+- Major subsystems and their responsibilities
+- Communication patterns between components
+- Data flow throughout the system
+
+## Architectural Patterns
+- Architectural patterns identified with specific implementations
+- Pattern effectiveness and appropriateness
+- Architectural layers and separation of concerns
+- Cross-cutting concerns handling
+
+## Component Design
+- Major components and their design approaches
+- Interface designs and contracts
+- Component coupling and cohesion
+- Dependency management
+- Component reusability assessment
+
+## Data Architecture
+- Data models and schemas
+- Data storage approaches
+- Data access patterns
+- State management
+- Caching strategies
+
+## Scalability & Distribution
+- Scalability design elements
+- Distribution patterns
+- Concurrency models
+- Resource management
+
+## Architectural Quality Attributes
+- Maintainability assessment
+- Extensibility capabilities
+- Testability design
+- Performance architecture
+- Security architecture
+- Reliability features
+
+## Architectural Evolution
+- Evidence of architectural refactoring
+- Evolutionary patterns observed
+- Architecture debt indicators
+- Migration patterns
+
+## Improvement Recommendations
+- Architectural refactoring opportunities
+- Modernization suggestions
+- Pattern implementations to improve
+- Architectural debt to address
+
+Please provide specific examples with file paths and code patterns where relevant. Format your response in a structured way suitable for vector database storage and retrieval.
+
+After your analysis, please provide a scoring assessment for this repository.
+
+1. Rate each area on a scale of 1-10 (10 being best):
+   - Score each subcategory in your analysis
+   - Provide brief justification for each score
+   - Identify high, medium, and low priority issues
+
+2. Create a summary table with the following format:
+   | Category | Score (1-10) | Key Strengths | Key Issues |
+   |----------|--------------|---------------|------------|
+   | Category1 | 8 | Strength1, Strength2 | Issue1, Issue2 |
+
+3. Include vector-ready metadata in this JSON format:
+```json
+{
+  "repository": "react",
+  "analysis_date": "2025-05-17T15:10:03Z",
+  "analysis_type": "architecture",
+  "scores": {
+    "overall": 8,
+    "subcategories": [
+      {"name": "Subcategory1", "score": 9, "strengths": ["Strength1"], "issues": []},
+      {"name": "Subcategory2", "score": 7, "strengths": [], "issues": ["Issue1"]}
+    ],
+    "issues": [
+      {"name": "Issue1", "severity": "high", "score_impact": -1, "file_paths": ["/path/file1"]}
+    ]
+  }
+}
+```"
+    }
+  ],
+  "stream": false,
+  "provider": "openrouter",
+  "model": "anthropic/claude-3-opus",
+  "temperature": 0.2,
+  "max_tokens": 4000
+}

@@ -10,7 +10,8 @@ import {
   shouldUseSecondaryAgent,
   SecondaryAgentDecisionCriteria
 } from './agent-evaluation-data';
-import { AgentConfig, AgentPosition, AnalysisStrategy } from '../types';
+import { AgentConfig } from '../types';
+import { AgentPosition } from '../types/types';
 
 /**
  * Result from the agent selection process
@@ -596,7 +597,7 @@ export class AgentSelector {
     primaryAgents: AgentConfig[],
     secondaryAgents: AgentConfig[],
     repoContext: RepositoryContext,
-    prContext: PRContext
+    _prContext: PRContext
   ): number {
     // Base confidence from primary agents
     let baseConfidence = primaryAgents.reduce((sum, agent) => {
@@ -637,7 +638,7 @@ export class AgentSelector {
     fallbackAgents: AgentConfig[],
     useMCP: boolean,
     repoContext: RepositoryContext,
-    prContext: PRContext
+    _prContext: PRContext
   ): string {
     const primaryProviderName = this.getProviderDisplayName(primaryAgent.provider);
     const primaryRoleName = this.getRoleDisplayName(primaryAgent.role);

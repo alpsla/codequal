@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: deepwiki-api-keys
+  namespace: codequal-dev
+type: Opaque
+data:
+  OPENROUTER_API_KEY: c2stb3ItdjEtZGVhYWYxZTkxYzI4ZWI0MmQxNzYwYTRjMjM3NzE0M2Y2MTNiNWI0ZTc1MjM2MmQ5OTg4NDJiMTM1NmY2OGMwYQ==

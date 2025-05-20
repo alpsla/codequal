@@ -1,0 +1,16 @@
+provider,model,task,duration_seconds,size_bytes,output_file
+openai,gpt-4o,architecture,9.0,1783,/Users/alpinro/Code Prjects/codequal/packages/core/src/deepwiki/comprehensive-test-results/openai-gpt-4o-architecture-2025-05-12-22-42-45.json
+openai,gpt-4o,patterns,10.0,2790,/Users/alpinro/Code Prjects/codequal/packages/core/src/deepwiki/comprehensive-test-results/openai-gpt-4o-patterns-2025-05-12-22-42-45.json
+openai,gpt-4o,code-quality,8.0,1747,/Users/alpinro/Code Prjects/codequal/packages/core/src/deepwiki/comprehensive-test-results/openai-gpt-4o-code-quality-2025-05-12-22-42-45.json
+openai,gpt-4o,dependency-analysis,9.0,2182,/Users/alpinro/Code Prjects/codequal/packages/core/src/deepwiki/comprehensive-test-results/openai-gpt-4o-dependency-analysis-2025-05-12-22-42-45.json
+openai,gpt-4o,security,14.0,2462,/Users/alpinro/Code Prjects/codequal/packages/core/src/deepwiki/comprehensive-test-results/openai-gpt-4o-security-2025-05-12-22-42-45.json
+google,gemini-2.5-pro-preview-05-06,architecture,29.0,5172,/Users/alpinro/Code Prjects/codequal/packages/core/src/deepwiki/comprehensive-test-results/google-gemini-2.5-pro-preview-05-06-architecture-2025-05-12-22-42-45.json
+google,gemini-2.5-pro-preview-05-06,patterns,23.0,6651,/Users/alpinro/Code Prjects/codequal/packages/core/src/deepwiki/comprehensive-test-results/google-gemini-2.5-pro-preview-05-06-patterns-2025-05-12-22-42-45.json
+google,gemini-2.5-pro-preview-05-06,code-quality,30.0,6245,/Users/alpinro/Code Prjects/codequal/packages/core/src/deepwiki/comprehensive-test-results/google-gemini-2.5-pro-preview-05-06-code-quality-2025-05-12-22-42-45.json
+google,gemini-2.5-pro-preview-05-06,dependency-analysis,18.0,3663,/Users/alpinro/Code Prjects/codequal/packages/core/src/deepwiki/comprehensive-test-results/google-gemini-2.5-pro-preview-05-06-dependency-analysis-2025-05-12-22-42-45.json
+google,gemini-2.5-pro-preview-05-06,security,66.0,6442,/Users/alpinro/Code Prjects/codequal/packages/core/src/deepwiki/comprehensive-test-results/google-gemini-2.5-pro-preview-05-06-security-2025-05-12-22-42-45.json
+anthropic,claude-3-7-sonnet,architecture,0,88,/Users/alpinro/Code Prjects/codequal/packages/core/src/deepwiki/comprehensive-test-results/anthropic-claude-3-7-sonnet-architecture-2025-05-12-22-42-45.json
+anthropic,claude-3-7-sonnet,patterns,0,88,/Users/alpinro/Code Prjects/codequal/packages/core/src/deepwiki/comprehensive-test-results/anthropic-claude-3-7-sonnet-patterns-2025-05-12-22-42-45.json
+anthropic,claude-3-7-sonnet,code-quality,0,88,/Users/alpinro/Code Prjects/codequal/packages/core/src/deepwiki/comprehensive-test-results/anthropic-claude-3-7-sonnet-code-quality-2025-05-12-22-42-45.json
+anthropic,claude-3-7-sonnet,dependency-analysis,1.0,88,/Users/alpinro/Code Prjects/codequal/packages/core/src/deepwiki/comprehensive-test-results/anthropic-claude-3-7-sonnet-dependency-analysis-2025-05-12-22-42-45.json
+anthropic,claude-3-7-sonnet,security,0,88,/Users/alpinro/Code Prjects/codequal/packages/core/src/deepwiki/comprehensive-test-results/anthropic-claude-3-7-sonnet-security-2025-05-12-22-42-45.json

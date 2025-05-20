@@ -1,0 +1,76 @@
+{
+  "javascript": {
+    "small": {
+      "jashkenas/underscore": {
+        "anthropic/claude-3-haiku-20240307": {
+          "categories": {
+            "architecture": {
+              "error": "Request failed with status code 401",
+              "timestamp": "2025-05-13T21:39:42.011Z"
+            },
+            "dependencies": {
+              "error": "Request failed with status code 401",
+              "timestamp": "2025-05-13T21:39:42.263Z"
+            },
+            "patterns": {
+              "error": "Request failed with status code 401",
+              "timestamp": "2025-05-13T21:39:42.334Z"
+            },
+            "codeQuality": {
+              "error": "Request failed with status code 401",
+              "timestamp": "2025-05-13T21:39:42.393Z"
+            }
+          }
+        },
+        "anthropic/claude-3-sonnet-20240229": {
+          "categories": {
+            "architecture": {
+              "error": "Request failed with status code 401",
+              "timestamp": "2025-05-13T21:39:42.468Z"
+            },
+            "dependencies": {
+              "error": "Request failed with status code 401",
+              "timestamp": "2025-05-13T21:39:42.539Z"
+            },
+            "patterns": {
+              "error": "Request failed with status code 401",
+              "timestamp": "2025-05-13T21:39:42.607Z"
+            },
+            "codeQuality": {
+              "error": "Request failed with status code 401",
+              "timestamp": "2025-05-13T21:39:42.846Z"
+            }
+          }
+        },
+        "openai/gpt-3.5-turbo": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 4.7,
+              "responseTime": 6.811,
+              "contentSize": 2456,
+              "timestamp": "2025-05-13T21:39:49.659Z"
+            },
+            "dependencies": {
+              "qualityScore": 6.53,
+              "responseTime": 3.339,
+              "contentSize": 2171,
+              "timestamp": "2025-05-13T21:39:52.999Z"
+            },
+            "patterns": {
+              "qualityScore": 5.5,
+              "responseTime": 4.907,
+              "contentSize": 2253,
+              "timestamp": "2025-05-13T21:39:57.908Z"
+            },
+            "codeQuality": {
+              "qualityScore": 4.165,
+              "responseTime": 3.979,
+              "contentSize": 2176,
+              "timestamp": "2025-05-13T21:40:01.888Z"
+            }
+          }
+        }
+      }
+    }
+  }
+}

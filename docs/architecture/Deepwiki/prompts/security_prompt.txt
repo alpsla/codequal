@@ -1,0 +1,58 @@
+Perform a security-focused analysis of this repository using the following structured format:
+
+## Authentication & Authorization
+- Authentication mechanisms assessment
+- Authorization models and implementation
+- Session management
+- Identity handling
+- Permission systems
+
+## Data Protection
+- Sensitive data handling
+- Input validation and sanitization
+- Output encoding
+- Data encryption approaches
+- PII/PHI handling compliance
+
+## Common Vulnerabilities
+- Injection vulnerabilities (SQL, NoSQL, command, etc.)
+- Cross-site scripting (XSS) concerns
+- Cross-site request forgery (CSRF) protections
+- Server-side request forgery (SSRF) risks
+- Insecure deserialization
+- XML external entities (XXE)
+- Security misconfiguration issues
+
+## API Security
+- API authentication mechanisms
+- Rate limiting implementation
+- Request validation
+- Error response security
+- API exposure controls
+
+## Dependency Security
+- Dependency management approach
+- Known vulnerable dependencies
+- Outdated dependencies
+- Supply chain security considerations
+
+## Configuration & Environment
+- Secret management
+- Environment configuration security
+- Default configurations
+- Debug/development features in production
+- Error handling information exposure
+
+## Infrastructure Security
+- Deployment security considerations
+- Container security (if applicable)
+- Network security controls
+- Cloud service security (if applicable)
+
+## Security Recommendations
+- Critical vulnerabilities to address
+- Security improvements by priority
+- Security testing recommendations
+- Security architecture enhancements
+
+Please provide specific examples with file paths and code patterns where relevant. Structure your response for easy parsing and storage in a vector database.

@@ -1,0 +1,17 @@
+The Flask repository follows a modular architecture with these main components:
+
+*   **Flask Core**: The base WSGI application. It handles routing, request handling, and response processing. Key modules include `flask.app`, `flask.config`, `flask.request`, `flask.response`, `flask.url_for`, and `flask.g`.
+*   **Extensions**: Flask's functionality is extended through extensions. These are typically found in the `flask_` namespace (e.g., `flask_sqlalchemy`, `flask_wtf`). Extensions provide features like database integration, form handling, and authentication.
+*   **Werkzeug**: Flask relies on Werkzeug for WSGI utilities. This includes request and response objects, routing, and other low-level utilities. Werkzeug is a separate library but is a core dependency.
+*   **Jinja2**: Flask uses Jinja2 as its default templating engine. It allows developers to create dynamic HTML pages by embedding Python code within templates.
+*   **Click**: Flask uses Click for writing command-line interfaces. This is used for the `flask` command-line tool, which provides commands for running the development server, running tests, and more.
+
+Here's how these components relate:
+
+1.  A user sends a request to the Flask application.
+2.  Werkzeug handles the incoming request and provides request objects.
+3.  Flask's routing mechanism (based on Werkzeug's routing) matches the URL to a specific view function.
+4.  The view function processes the request, interacts with models (potentially using extensions like Flask-SQLAlchemy), and renders a template using Jinja2.
+5.  Flask creates a response object (using Werkzeug) and sends it back to the user.
+6.  Extensions enhance different parts of this process, such as handling forms, managing user sessions, or providing database integration.
+7.  The `flask` command-line tool (built with Click) provides a way to manage and run the application.

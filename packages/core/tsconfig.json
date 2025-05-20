@@ -7,7 +7,12 @@
       "declaration": true,
       "paths": {
         "@codequal/core/*": ["./src/*"]
-      }
+      },
+      "skipLibCheck": true,
+      "resolveJsonModule": true,
+      "allowSyntheticDefaultImports": true,
+      "isolatedModules": true,
+      "noEmitOnError": false
     },
     "include": ["src/**/*"],
     "exclude": ["node_modules", "dist", "**/*.test.ts"]

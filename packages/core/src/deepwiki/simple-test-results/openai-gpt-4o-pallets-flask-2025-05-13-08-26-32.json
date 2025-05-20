@@ -1,0 +1,15 @@
+The Flask repository follows a modular design, built around a core and extensions.
+
+*   **Core:** The core provides basic routing, request handling, and response functionalities.
+*   **Extensions:** Extensions enhance Flask's capabilities with features like database integration, authentication, and security.
+
+Key components include:
+
+*   `Flask()`: The application object, central to configuring and running the application.
+*   `Blueprint`: For organizing routes and views into reusable components.
+*   `Request`: Encapsulates incoming HTTP requests.
+*   `Response`: Represents HTTP responses.
+*   `Session`: Manages user sessions.
+*   `g`: A context local variable for storing data during a request.
+
+The architecture relies on Werkzeug for WSGI compliance and Jinja2 for templating. Requests are routed to view functions, which process data and return responses, often rendered using Jinja2 templates. Middleware can be added to modify requests and responses. Extensions integrate by hooking into the application context and providing additional functionality.

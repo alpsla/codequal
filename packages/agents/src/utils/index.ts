@@ -27,16 +27,21 @@ export function createLogger(name: string): Logger {
   return {
     debug(message: string, data?: LoggableData): void {
       if (process.env.DEBUG === 'true') {
+        // Using global console for logging, but this would be replaced with a proper logger in production
+        // eslint-disable-next-line no-console
         console.log(`[DEBUG] [${name}]`, message, data !== undefined ? data : '');
       }
     },
     info(message: string, data?: LoggableData): void {
+      // eslint-disable-next-line no-console
       console.log(`[INFO] [${name}]`, message, data !== undefined ? data : '');
     },
     warn(message: string, data?: LoggableData): void {
+      // eslint-disable-next-line no-console
       console.warn(`[WARN] [${name}]`, message, data !== undefined ? data : '');
     },
     error(message: string, data?: LoggableData): void {
+      // eslint-disable-next-line no-console
       console.error(`[ERROR] [${name}]`, message, data !== undefined ? data : '');
     },
   };

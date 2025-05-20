@@ -1,0 +1,13 @@
+{
+  "timestamp": "2025-05-16T17:44:42.125Z",
+  "apiUrl": "http://localhost:8001",
+  "connected": true,
+  "providerResults": {
+    "openai": false,
+    "anthropic": false,
+    "google": false,
+    "deepseek": false
+  },
+  "workingProviders": [],
+  "chatEndpoint": "http://localhost:8001/chat/completions"
+}

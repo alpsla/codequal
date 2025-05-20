@@ -6,9 +6,9 @@ import { createLogger, LoggableData } from '@codequal/core/utils';
 
 // Define Gemini models 
 const GEMINI_MODELS = {
-  GEMINI_1_5_FLASH: 'gemini-1.5-flash',
-  GEMINI_1_5_PRO: 'gemini-1.5-pro',
-  GEMINI_2_5_PRO: 'gemini-2.5-pro',
+  GEMINI_1_5_FLASH: 'gemini-1.5-flash', // For backwards compatibility
+  GEMINI_1_5_PRO: 'gemini-2.5-pro-preview-05-06', // Updated to use 2.5 model
+  GEMINI_2_5_PRO: 'gemini-2.5-pro-preview-05-06',
   // Legacy models
   GEMINI_PRO: 'gemini-pro',
   GEMINI_ULTRA: 'gemini-ultra'
@@ -16,17 +16,17 @@ const GEMINI_MODELS = {
 
 // Define pricing information
 const GEMINI_PRICING = {
-  [GEMINI_MODELS.GEMINI_1_5_FLASH]: { input: 0.35, output: 1.05 },
-  [GEMINI_MODELS.GEMINI_1_5_PRO]: { input: 3.50, output: 10.50 },
-  [GEMINI_MODELS.GEMINI_2_5_PRO]: { input: 7.00, output: 21.00 },
+  [GEMINI_MODELS.GEMINI_1_5_FLASH]: { input: 0.35, output: 1.05 }, // Flash pricing
+  [GEMINI_MODELS.GEMINI_1_5_PRO]: { input: 7.00, output: 21.00 }, // Updated for 2.5 Pro
+  [GEMINI_MODELS.GEMINI_2_5_PRO]: { input: 7.00, output: 21.00 }, // 2.5 Pro pricing
   // Legacy models
-  [GEMINI_MODELS.GEMINI_PRO]: { input: 3.50, output: 10.50 },
-  [GEMINI_MODELS.GEMINI_ULTRA]: { input: 7.00, output: 21.00 }
+  [GEMINI_MODELS.GEMINI_PRO]: { input: 3.50, output: 10.50 }, // Old 1.0 pricing
+  [GEMINI_MODELS.GEMINI_ULTRA]: { input: 7.00, output: 21.00 } // Legacy Ultra pricing
 };
 
-// Define premium models
-const PREMIUM_MODELS_BY_PROVIDER = {
-  'gemini': GEMINI_MODELS.GEMINI_2_5_PRO
+// Define premium models for local use (this is different from the core module version)
+const LOCAL_PREMIUM_MODELS_BY_PROVIDER = {
+  'google': GEMINI_MODELS.GEMINI_2_5_PRO
 };
 
 /**
@@ -115,10 +115,10 @@ export class GeminiAgent extends BaseAgent {
     this.promptTemplate = promptTemplate;
     
     // Set the default model (cost-effective option)
-    this.model = config.model || DEFAULT_MODELS_BY_PROVIDER['gemini'];
+    this.model = config.model || DEFAULT_MODELS_BY_PROVIDER['google'];
     
     // Set the premium model
-    this.premiumModel = PREMIUM_MODELS_BY_PROVIDER['gemini'];
+    this.premiumModel = LOCAL_PREMIUM_MODELS_BY_PROVIDER['google'];
     
     this.geminiClient = this.initGeminiClient();
   }

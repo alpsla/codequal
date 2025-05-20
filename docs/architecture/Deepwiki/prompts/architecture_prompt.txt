@@ -1,0 +1,56 @@
+Perform an architecture-focused analysis of this repository using the following structured format:
+
+## System Architecture
+- High-level architectural style (e.g., microservices, monolith, event-driven)
+- System boundaries and integration points
+- Major subsystems and their responsibilities
+- Communication patterns between components
+- Data flow throughout the system
+
+## Architectural Patterns
+- Architectural patterns identified with specific implementations
+- Pattern effectiveness and appropriateness
+- Architectural layers and separation of concerns
+- Cross-cutting concerns handling
+
+## Component Design
+- Major components and their design approaches
+- Interface designs and contracts
+- Component coupling and cohesion
+- Dependency management
+- Component reusability assessment
+
+## Data Architecture
+- Data models and schemas
+- Data storage approaches
+- Data access patterns
+- State management
+- Caching strategies
+
+## Scalability & Distribution
+- Scalability design elements
+- Distribution patterns
+- Concurrency models
+- Resource management
+
+## Architectural Quality Attributes
+- Maintainability assessment
+- Extensibility capabilities
+- Testability design
+- Performance architecture
+- Security architecture
+- Reliability features
+
+## Architectural Evolution
+- Evidence of architectural refactoring
+- Evolutionary patterns observed
+- Architecture debt indicators
+- Migration patterns
+
+## Improvement Recommendations
+- Architectural refactoring opportunities
+- Modernization suggestions
+- Pattern implementations to improve
+- Architectural debt to address
+
+Please provide specific examples with file paths and code patterns where relevant. Format your response in a structured way suitable for vector database storage and retrieval.

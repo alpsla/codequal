@@ -10,7 +10,7 @@
     "./models/*": "./dist/models/*.js"
   },
   "scripts": {
-    "build": "tsc && node scripts/post-build.js",
+    "build": "tsc --skipLibCheck && node scripts/post-build.js",
     "dev": "tsc -w",
     "lint": "eslint src",
     "test": "jest --passWithNoTests"
@@ -18,9 +18,11 @@
   "dependencies": {
     "@codequal/core": "0.1.0",
     "@supabase/supabase-js": "^2.39.0",
-    "dotenv": "^16.0.3"
+    "axios": "^1.9.0",
+    "dotenv": "^16.5.0"
   },
   "devDependencies": {
+    "@types/dotenv": "^6.1.1",
     "@types/jest": "^29.5.0",
     "@types/node": "^18.15.0",
     "@typescript-eslint/eslint-plugin": "^5.54.1",

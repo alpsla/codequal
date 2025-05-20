@@ -1,0 +1,44 @@
+Click's architecture revolves around decorators, core objects representing the CLI structure, and a central context object managing state during invocation.
+
+### Core Components
+
+1.    **`click.decorators`**: Provides the primary user-facing API (`@click.command`, `@click.group`, `@click.option`, `@click.argument`, etc.). These decorators wrap functions and configure the underlying core objects.
+2.    **`click.core`**: Contains the fundamental building blocks:
+    *   `Command`: Represents a single command. It holds parameters and the callback function to execute.
+    *   `Group`: A subclass of `Command` that can contain other commands or groups, enabling nesting. It acts as a `MultiCommand`.
+    *   `Parameter`: Base class for inputs.
+        *   `Option`: Represents optional parameters (e.g., `--verbose`).
+        *   `Argument`: Represents positional parameters.
+    *   `Context`: A crucial object created for each command invocation. It holds parsed parameters, maintains links to parent contexts (forming a stack), stores arbitrary application data (`ctx.obj`), and provides methods for controlling execution flow (`invoke`, `exit`).
+3.    **`click.types`**: Defines parameter types (`INT`, `STRING`, `Path`, `File`, `Choice`, etc.). These handle input value conversion, validation, and representation in help text. Custom types can be created by subclassing `ParamType`.
+4.    **`click.parser`**: Handles the low-level parsing of command-line strings into arguments and options based on the `Parameter` definitions of a `Command`.
+5.    **`click.formatting`**: Responsible for generating help pages using metadata from `Command`, `Group`, and `Parameter` objects. `HelpFormatter` is the main class here.
+6.    **`click.utils`**: Provides utility functions for common CLI tasks like printing output (`echo`, `secho`), prompting (`prompt`, `confirm`), clearing the screen (`clear`), etc.
+7.    **`click.testing`**: Includes `CliRunner` and `Result` classes to facilitate testing Click applications by invoking commands programmatically and asserting their output and exit codes.
+8.  **`click.shell_completion`**: Implements logic for generating shell completion scripts (e.g., for Bash, Zsh, Fish).
+
+### Relationships and Workflow
+
+1.    **Definition**: Decorators (`@command`, `@option`, etc.) are used on functions. They instantiate `Command`, `Group`, `Option`, and `Argument` objects behind the scenes, associating parameters with command callbacks.
+2.    **Invocation**: When the script is run, Click identifies the entry point command.
+3.    **Context Creation**: A `Context` object is created for the command being invoked.
+4.    **Parsing**: The `Context` uses the `click.parser` (specifically `OptionParser`) to parse the command-line arguments according to the `Option` and `Argument` objects attached to the command.
+5.    **Type Conversion/Validation**: As parameters are parsed, their associated `click.types` objects are used to convert the string values to the correct Python types and perform validation. Errors here raise exceptions like `BadParameter`.
+6.  **Callback Execution**:
+    *   The `Context` calls the command's decorated function (the callback).
+    *   Parsed parameters (after type conversion) are passed as keyword arguments to the callback.
+    *   Decorators like `@click.pass_context` or `@click.pass_obj` modify the callback signature to receive the `Context` or `ctx.obj`, respectively.
+    *   For groups, if a subcommand is identified, a new child `Context` is created, linked to the parent, and the process repeats for the subcommand.
+7.  **State Management**: The `Context` object holds the state for the current invocation level. Nested commands create child contexts, allowing subcommands to access parent state (`ctx.parent`) or shared data (`ctx.find_object`).
+8.  **Output/Interaction**: Callbacks use `click.utils` (like `click.echo`) for output and interaction.
+9.  **Help Generation**: If `--help` is passed, the `click.formatting` module is used by the `Context` to generate and display the help screen instead of executing the callback.
+
+### Key Design Decisions & Patterns
+
+*   **Declarative Interface**: Using decorators makes defining CLIs intuitive and separates the command structure from the application logic.
+*   **Composability**: The `Group` mechanism allows arbitrary nesting of commands, facilitating complex applications (as discussed in `docs/complex.rst`).
+*   **Context Object**: The `Context` acts as a central mediator and state carrier, enabling communication between commands and managing the invocation lifecycle. It avoids global state.
+*   **Explicit Parameter Types**: A dedicated type system enforces validation and conversion consistently.
+*   **Separation of Concerns**: Parsing, formatting, type handling, and execution logic are handled by distinct components.
+*   **Opinionated Defaults**: Click makes choices about help formatting and behavior to ensure consistency across Click applications, sometimes limiting configurability (as discussed in `docs/why.rst`).
+*   **Testing Support**: Built-in testing utilities (`CliRunner`) simplify writing tests for CLI applications.

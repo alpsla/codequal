@@ -26,6 +26,7 @@
     "url": "https://github.com/alpsla/codequal/issues"
   },
   "devDependencies": {
+    "@types/dotenv": "^6.1.1",
     "@types/jest": "^29.5.14",
     "@typescript-eslint/eslint-plugin": "^5.54.1",
     "@typescript-eslint/parser": "^5.54.1",

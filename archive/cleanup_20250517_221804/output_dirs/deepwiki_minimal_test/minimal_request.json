@@ -1,0 +1,12 @@
+{
+  "repo_url": "https://github.com/expressjs/express",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Analyze this repository and give a one paragraph summary."
+    }
+  ],
+  "stream": false,
+  "provider": "openrouter",
+  "model": "anthropic/claude-3-opus"
+}

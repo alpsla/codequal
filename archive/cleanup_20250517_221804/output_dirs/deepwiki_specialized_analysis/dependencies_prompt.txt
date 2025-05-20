@@ -1,0 +1,44 @@
+Perform a dependency-focused analysis of this repository using the following structured format:
+
+## Direct Dependencies
+- List all direct dependencies with their versions from package.json or equivalent
+- Categorize dependencies by type (runtime, development, peer, etc.)
+- Identify each dependency's purpose in the project
+
+## Dependency Management
+- Analyze dependency management approach
+- Review dependency injection mechanisms
+- Evaluate dependency loading and initialization
+- Assess lazy loading and dynamic importing strategies
+
+## Dependency Quality
+- Identify outdated or deprecated dependencies
+- Flag potentially vulnerable dependencies
+- Evaluate dependency maintenance status
+- Assess compatibility issues or version conflicts
+
+## Dependency Architecture
+- Analyze module dependency graph structure
+- Identify dependency coupling patterns
+- Assess circular dependencies
+- Evaluate import/export patterns
+
+## Third-Party Integration
+- Review integration patterns with major libraries
+- Analyze middleware or plugin systems
+- Assess API client implementations
+- Evaluate external service integration approaches
+
+## Dependency Optimization
+- Identify opportunities for dependency consolidation
+- Assess bundle size impact of dependencies
+- Review tree-shaking effectiveness
+- Evaluate dependency loading performance
+
+## Recommendations
+- Dependency update priorities
+- Architectural improvements for dependency management
+- Replacement suggestions for problematic dependencies
+- Testing recommendations for dependency updates
+
+Please provide specific examples with file paths and code snippets where relevant. Structure your response for easy parsing and storage in a vector database.
