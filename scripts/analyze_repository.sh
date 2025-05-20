@@ -387,7 +387,7 @@ if [ ! -f "${OUTPUT_DIR}/performance_analysis.md" ]; then
     echo "" >> "${OUTPUT_DIR}/performance_analysis.md"
     echo "Performance analysis could not be completed successfully." >> "${OUTPUT_DIR}/performance_analysis.md"
     echo "" >> "${OUTPUT_DIR}/performance_analysis.md"
-    echo "## Score: 5/10 (Default)" >> "${OUTPUT_DIR}/performance_analysis.md"
+    echo "### Performance Score: 5/10 (Default)" >> "${OUTPUT_DIR}/performance_analysis.md"
     echo "" >> "${OUTPUT_DIR}/performance_analysis.md"
     echo "### Key Strengths" >> "${OUTPUT_DIR}/performance_analysis.md"
     echo "- (Not available)" >> "${OUTPUT_DIR}/performance_analysis.md"
