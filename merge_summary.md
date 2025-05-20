@@ -39,12 +39,13 @@ This merge brings significant code quality improvements and cleanups to the Code
 
 - All linting passes with no errors (only expected warnings remain)
 - All tests are passing
-- DeepWiki repository analysis is working with improvements:
+- DeepWiki repository analysis is working with quality-focused improvements:
   - Now using cost-effective `google/gemini-2.5-flash-preview-05-20` model by default
-  - Extended timeouts for complex analyses (15 min for performance, 10 min for dependencies)
+  - Maximum timeouts (30 min for complex analyses, 15 min for others)
+  - Comprehensive retry system with 3x attempts for reliability
   - Robust port-forwarding with automatic recovery
-  - Analysis prioritization by complexity
-  - Simplified prompts for faster processing
+  - Intelligent analysis prioritization by complexity
+  - Maintained full analysis depth and quality
   - Fallback to `anthropic/claude-3-7-sonnet` when needed
 - Project structure is cleaner and more maintainable
 - Documentation is more comprehensive and better organized
