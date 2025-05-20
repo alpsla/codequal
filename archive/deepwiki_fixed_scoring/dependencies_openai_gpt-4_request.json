@@ -1,0 +1,22 @@
+{
+  "repo_url": "https://github.com/expressjs/express",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Analyze the dependencies of this repository. Focus on:
+1. Direct dependencies and versions
+2. Dependency management
+3. Third-party integration
+4. Dependency quality and maintenance
+
+After your analysis, provide:
+- A score from 1-10 for dependency management
+- Key strengths (bullet points)
+- Areas for improvement (bullet points)"
+    }
+  ],
+  "stream": false,
+  "provider": "openrouter",
+  "model": "openai/gpt-4",
+  "temperature": 0.2
+}

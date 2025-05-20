@@ -7,7 +7,7 @@ export interface Agent {
    * @param data PR data to analyze
    * @returns Analysis result
    */
-  analyze(data: any): Promise<AnalysisResult>;
+  analyze(data: Record<string, unknown>): Promise<AnalysisResult>;
 }
 
 /**
@@ -32,7 +32,7 @@ export interface AnalysisResult {
   /**
    * Additional metadata
    */
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 /**

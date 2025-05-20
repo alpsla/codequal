@@ -1,0 +1,58 @@
+{
+  "javascript": {
+    "small": {
+      "jashkenas/underscore": {
+        "openai/gpt-3.5-turbo": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 6.54,
+              "responseTime": 3.358,
+              "contentSize": 2338,
+              "timestamp": "2025-05-13T21:48:00.801Z"
+            },
+            "dependencies": {
+              "qualityScore": 6.27,
+              "responseTime": 4.41,
+              "contentSize": 2434,
+              "timestamp": "2025-05-13T21:48:05.212Z"
+            },
+            "patterns": {
+              "qualityScore": 6.02,
+              "responseTime": 4.656,
+              "contentSize": 3073,
+              "timestamp": "2025-05-13T21:48:09.868Z"
+            },
+            "codeQuality": {
+              "qualityScore": 4.390000000000001,
+              "responseTime": 3.481,
+              "contentSize": 2051,
+              "timestamp": "2025-05-13T21:48:13.352Z"
+            }
+          }
+        },
+        "openai/gpt-4o": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 7.4350000000000005,
+              "responseTime": 12.226,
+              "contentSize": 3717,
+              "timestamp": "2025-05-13T21:48:25.579Z"
+            },
+            "dependencies": {
+              "qualityScore": 5.85,
+              "responseTime": 19.809,
+              "contentSize": 4197,
+              "timestamp": "2025-05-13T21:48:45.389Z"
+            },
+            "patterns": {
+              "qualityScore": 7.44,
+              "responseTime": 14.173,
+              "contentSize": 4084,
+              "timestamp": "2025-05-13T21:48:59.565Z"
+            }
+          }
+        }
+      }
+    }
+  }
+}

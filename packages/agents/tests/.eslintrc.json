@@ -1,0 +1,16 @@
+{
+  "root": true,
+  "extends": ["../../.eslintrc.json"],
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "project": "../tsconfig.test.json",
+    "tsconfigRootDir": ".",
+    "sourceType": "module",
+    "ecmaVersion": 2020
+  },
+  "rules": {
+    "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/no-non-null-assertion": "off",
+    "jest/expect-expect": "off"
+  }
+}

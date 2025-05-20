@@ -17,10 +17,11 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: '18.x'
-        cache: 'npm'
+        # Disable npm caching to avoid ENOWORKSPACES error
+        # cache: 'npm'
         
     - name: Install dependencies
-      run: npm ci
+      run: npm ci --no-workspaces
       
     - name: Create .env file
       run: |
@@ -47,10 +48,10 @@ jobs:
         EOF
       
     - name: Lint
-      run: npm run lint
+      run: npm run lint --no-workspaces
       
     - name: Build
-      run: npm run build
+      run: npm run build --no-workspaces
       
     - name: Test
-      run: npm run test
+      run: npm run test --no-workspaces

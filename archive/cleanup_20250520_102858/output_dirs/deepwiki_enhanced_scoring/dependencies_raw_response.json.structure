@@ -1,0 +1,19 @@
+JSON Keys at root level: ['detail']
+
+Full JSON structure:
+{
+  "detail": [
+    {
+      "type": "json_invalid",
+      "loc": [
+        "body",
+        2640
+      ],
+      "msg": "JSON decode error",
+      "input": {},
+      "ctx": {
+        "error": "Expecting ',' delimiter"
+      }
+    }
+  ]
+}

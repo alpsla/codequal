@@ -1,0 +1,22 @@
+{
+  "repo_url": "https://github.com/cli/cli",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Analyze the code safety of this repository. Focus on:
+1. Input handling practices
+2. Authentication methods
+3. Data protection
+4. Error handling
+
+After your analysis, provide:
+- A score from 1-10 for overall code safety
+- Key strengths (bullet points)
+- Areas for improvement (bullet points)"
+    }
+  ],
+  "stream": false,
+  "provider": "openrouter",
+  "model": "deepseek/deepseek-coder",
+  "temperature": 0.2
+}

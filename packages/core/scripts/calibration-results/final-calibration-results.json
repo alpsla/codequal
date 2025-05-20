@@ -1,0 +1,961 @@
+{
+  "javascript": {
+    "small": {
+      "jashkenas/underscore": {
+        "anthropic/claude-3-haiku-20240307": {
+          "categories": {
+            "architecture": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T21:58:29.148Z"
+            },
+            "dependencies": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T21:58:29.221Z"
+            },
+            "patterns": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T21:58:29.300Z"
+            },
+            "codeQuality": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T21:58:29.403Z"
+            }
+          }
+        },
+        "anthropic/claude-3-sonnet-20240229": {
+          "categories": {
+            "architecture": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T21:58:29.491Z"
+            },
+            "dependencies": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T21:58:29.566Z"
+            },
+            "patterns": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T21:58:29.633Z"
+            },
+            "codeQuality": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T21:58:29.695Z"
+            }
+          }
+        },
+        "openai/gpt-3.5-turbo": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 6.795,
+              "responseTime": 5.402,
+              "contentSize": 2635,
+              "timestamp": "2025-05-13T21:58:35.099Z"
+            },
+            "dependencies": {
+              "qualityScore": 6.59,
+              "responseTime": 3.535,
+              "contentSize": 2148,
+              "timestamp": "2025-05-13T21:58:38.634Z"
+            },
+            "patterns": {
+              "qualityScore": 6.460000000000001,
+              "responseTime": 3.258,
+              "contentSize": 2121,
+              "timestamp": "2025-05-13T21:58:41.892Z"
+            },
+            "codeQuality": {
+              "qualityScore": 4.695,
+              "responseTime": 4.431,
+              "contentSize": 2487,
+              "timestamp": "2025-05-13T21:58:46.324Z"
+            }
+          }
+        },
+        "openai/gpt-4o": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 7.915,
+              "responseTime": 18.911,
+              "contentSize": 4351,
+              "timestamp": "2025-05-13T21:59:05.237Z"
+            },
+            "dependencies": {
+              "qualityScore": 7.54,
+              "responseTime": 18.167,
+              "contentSize": 3620,
+              "timestamp": "2025-05-13T21:59:23.405Z"
+            },
+            "patterns": {
+              "qualityScore": 6.5,
+              "responseTime": 18.425,
+              "contentSize": 4358,
+              "timestamp": "2025-05-13T21:59:41.831Z"
+            },
+            "codeQuality": {
+              "qualityScore": 4.985,
+              "responseTime": 16.197,
+              "contentSize": 3317,
+              "timestamp": "2025-05-13T21:59:58.029Z"
+            }
+          }
+        }
+      }
+    },
+    "medium": {
+      "expressjs/express": {
+        "anthropic/claude-3-haiku-20240307": {
+          "categories": {
+            "architecture": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T21:59:58.550Z"
+            },
+            "dependencies": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T21:59:58.624Z"
+            },
+            "patterns": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T21:59:58.706Z"
+            },
+            "codeQuality": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T21:59:58.780Z"
+            }
+          }
+        },
+        "anthropic/claude-3-sonnet-20240229": {
+          "categories": {
+            "architecture": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T21:59:58.852Z"
+            },
+            "dependencies": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T21:59:58.931Z"
+            },
+            "patterns": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T21:59:58.992Z"
+            },
+            "codeQuality": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T21:59:59.152Z"
+            }
+          }
+        },
+        "openai/gpt-3.5-turbo": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 5.2,
+              "responseTime": 5.193,
+              "contentSize": 3285,
+              "timestamp": "2025-05-13T22:00:04.345Z"
+            },
+            "dependencies": {
+              "qualityScore": 6.215,
+              "responseTime": 4.789,
+              "contentSize": 2206,
+              "timestamp": "2025-05-13T22:00:09.135Z"
+            },
+            "patterns": {
+              "qualityScore": 4.949999999999999,
+              "responseTime": 6.426,
+              "contentSize": 2895,
+              "timestamp": "2025-05-13T22:00:15.561Z"
+            },
+            "codeQuality": {
+              "qualityScore": 4.51,
+              "responseTime": 3.907,
+              "contentSize": 2349,
+              "timestamp": "2025-05-13T22:00:19.469Z"
+            }
+          }
+        },
+        "openai/gpt-4o": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 8.355,
+              "responseTime": 23.267,
+              "contentSize": 4703,
+              "timestamp": "2025-05-13T22:00:42.738Z"
+            },
+            "dependencies": {
+              "qualityScore": 7.635,
+              "responseTime": 21.98,
+              "contentSize": 3790,
+              "timestamp": "2025-05-13T22:01:04.719Z"
+            },
+            "patterns": {
+              "qualityScore": 7.66,
+              "responseTime": 19.864,
+              "contentSize": 4014,
+              "timestamp": "2025-05-13T22:01:24.585Z"
+            },
+            "codeQuality": {
+              "qualityScore": 5.51,
+              "responseTime": 18.446,
+              "contentSize": 3906,
+              "timestamp": "2025-05-13T22:01:43.031Z"
+            }
+          }
+        }
+      }
+    },
+    "large": {
+      "facebook/react": {
+        "anthropic/claude-3-haiku-20240307": {
+          "categories": {
+            "architecture": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:01:43.319Z"
+            },
+            "dependencies": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:01:43.524Z"
+            },
+            "patterns": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:01:43.635Z"
+            },
+            "codeQuality": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:01:43.711Z"
+            }
+          }
+        },
+        "anthropic/claude-3-sonnet-20240229": {
+          "categories": {
+            "architecture": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:01:43.836Z"
+            },
+            "dependencies": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:01:43.925Z"
+            },
+            "patterns": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:01:43.990Z"
+            },
+            "codeQuality": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:01:44.055Z"
+            }
+          }
+        },
+        "openai/gpt-3.5-turbo": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 6.555,
+              "responseTime": 4.476,
+              "contentSize": 2289,
+              "timestamp": "2025-05-13T22:01:48.531Z"
+            },
+            "dependencies": {
+              "qualityScore": 6.715,
+              "responseTime": 4.879,
+              "contentSize": 2429,
+              "timestamp": "2025-05-13T22:01:53.411Z"
+            },
+            "patterns": {
+              "qualityScore": 4.0649999999999995,
+              "responseTime": 4.888,
+              "contentSize": 2932,
+              "timestamp": "2025-05-13T22:01:58.300Z"
+            },
+            "codeQuality": {
+              "qualityScore": 4.395,
+              "responseTime": 3.73,
+              "contentSize": 2183,
+              "timestamp": "2025-05-13T22:02:02.032Z"
+            }
+          }
+        },
+        "openai/gpt-4o": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 8.32,
+              "responseTime": 22.91,
+              "contentSize": 4652,
+              "timestamp": "2025-05-13T22:02:24.943Z"
+            },
+            "dependencies": {
+              "qualityScore": 7.9350000000000005,
+              "responseTime": 26.5,
+              "contentSize": 4187,
+              "timestamp": "2025-05-13T22:02:51.444Z"
+            },
+            "patterns": {
+              "qualityScore": 6.765000000000001,
+              "responseTime": 19.076,
+              "contentSize": 3961,
+              "timestamp": "2025-05-13T22:03:10.522Z"
+            },
+            "codeQuality": {
+              "qualityScore": 7.51,
+              "responseTime": 18.782,
+              "contentSize": 3595,
+              "timestamp": "2025-05-13T22:03:29.305Z"
+            }
+          }
+        }
+      }
+    }
+  },
+  "bestModels": {
+    "javascript": {
+      "small": {
+        "model": "openai/gpt-3.5-turbo",
+        "score": 6.878849999999999,
+        "timestamp": "2025-05-13T21:59:58.030Z"
+      },
+      "medium": {
+        "model": "openai/gpt-3.5-turbo",
+        "score": 6.145249999999999,
+        "timestamp": "2025-05-13T22:01:43.033Z"
+      },
+      "large": {
+        "model": "openai/gpt-3.5-turbo",
+        "score": 6.353425,
+        "timestamp": "2025-05-13T22:03:29.307Z"
+      }
+    },
+    "typescript": {
+      "small": {
+        "model": "openai/gpt-3.5-turbo",
+        "score": 6.565849999999999,
+        "timestamp": "2025-05-13T22:05:03.838Z"
+      },
+      "medium": {
+        "model": "openai/gpt-4o",
+        "score": 6.2938,
+        "timestamp": "2025-05-13T22:06:33.509Z"
+      },
+      "large": {
+        "model": "openai/gpt-3.5-turbo",
+        "score": 6.4098749999999995,
+        "timestamp": "2025-05-13T22:07:56.584Z"
+      }
+    },
+    "python": {
+      "small": {
+        "model": "openai/gpt-3.5-turbo",
+        "score": 6.2772749999999995,
+        "timestamp": "2025-05-13T22:09:31.841Z"
+      },
+      "medium": {
+        "model": "openai/gpt-3.5-turbo",
+        "score": 6.5153,
+        "timestamp": "2025-05-13T22:11:11.044Z"
+      },
+      "large": {
+        "model": "openai/gpt-3.5-turbo",
+        "score": 6.562524999999999,
+        "timestamp": "2025-05-13T22:13:01.142Z"
+      }
+    }
+  },
+  "typescript": {
+    "small": {
+      "type-challenges/type-challenges": {
+        "anthropic/claude-3-haiku-20240307": {
+          "categories": {
+            "architecture": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:03:29.740Z"
+            },
+            "dependencies": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:03:29.818Z"
+            },
+            "patterns": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:03:29.904Z"
+            },
+            "codeQuality": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:03:29.973Z"
+            }
+          }
+        },
+        "anthropic/claude-3-sonnet-20240229": {
+          "categories": {
+            "architecture": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:03:30.039Z"
+            },
+            "dependencies": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:03:30.180Z"
+            },
+            "patterns": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:03:30.263Z"
+            },
+            "codeQuality": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:03:30.433Z"
+            }
+          }
+        },
+        "openai/gpt-3.5-turbo": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 6.7,
+              "responseTime": 3.729,
+              "contentSize": 2475,
+              "timestamp": "2025-05-13T22:03:34.163Z"
+            },
+            "dependencies": {
+              "qualityScore": 5.95,
+              "responseTime": 3.272,
+              "contentSize": 1766,
+              "timestamp": "2025-05-13T22:03:37.436Z"
+            },
+            "patterns": {
+              "qualityScore": 5.655,
+              "responseTime": 5.41,
+              "contentSize": 2070,
+              "timestamp": "2025-05-13T22:03:42.847Z"
+            },
+            "codeQuality": {
+              "qualityScore": 4.609999999999999,
+              "responseTime": 5.36,
+              "contentSize": 2611,
+              "timestamp": "2025-05-13T22:03:48.209Z"
+            }
+          }
+        },
+        "openai/gpt-4o": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 7.734999999999999,
+              "responseTime": 17.631,
+              "contentSize": 4021,
+              "timestamp": "2025-05-13T22:04:05.841Z"
+            },
+            "dependencies": {
+              "qualityScore": 7.57,
+              "responseTime": 24.113,
+              "contentSize": 3733,
+              "timestamp": "2025-05-13T22:04:29.956Z"
+            },
+            "patterns": {
+              "qualityScore": 6.620000000000001,
+              "responseTime": 18.095,
+              "contentSize": 3817,
+              "timestamp": "2025-05-13T22:04:48.052Z"
+            },
+            "codeQuality": {
+              "qualityScore": 5.545,
+              "responseTime": 15.784,
+              "contentSize": 3723,
+              "timestamp": "2025-05-13T22:05:03.837Z"
+            }
+          }
+        }
+      }
+    },
+    "medium": {
+      "nestjs/nest": {
+        "anthropic/claude-3-haiku-20240307": {
+          "categories": {
+            "architecture": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:05:04.207Z"
+            },
+            "dependencies": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:05:04.297Z"
+            },
+            "patterns": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:05:04.379Z"
+            },
+            "codeQuality": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:05:04.726Z"
+            }
+          }
+        },
+        "anthropic/claude-3-sonnet-20240229": {
+          "categories": {
+            "architecture": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:05:04.815Z"
+            },
+            "dependencies": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:05:04.890Z"
+            },
+            "patterns": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:05:04.966Z"
+            },
+            "codeQuality": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:05:05.036Z"
+            }
+          }
+        },
+        "openai/gpt-3.5-turbo": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 4.655,
+              "responseTime": 3.859,
+              "contentSize": 2534,
+              "timestamp": "2025-05-13T22:05:08.896Z"
+            },
+            "dependencies": {
+              "qualityScore": 4.77,
+              "responseTime": 3.93,
+              "contentSize": 2518,
+              "timestamp": "2025-05-13T22:05:12.827Z"
+            },
+            "patterns": {
+              "qualityScore": 3.69,
+              "responseTime": 4.735,
+              "contentSize": 1879,
+              "timestamp": "2025-05-13T22:05:17.562Z"
+            },
+            "codeQuality": {
+              "qualityScore": 5.015000000000001,
+              "responseTime": 5.954,
+              "contentSize": 3007,
+              "timestamp": "2025-05-13T22:05:23.518Z"
+            }
+          }
+        },
+        "openai/gpt-4o": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 8.17,
+              "responseTime": 16.24,
+              "contentSize": 4881,
+              "timestamp": "2025-05-13T22:05:39.758Z"
+            },
+            "dependencies": {
+              "qualityScore": 7.699999999999999,
+              "responseTime": 19.816,
+              "contentSize": 4126,
+              "timestamp": "2025-05-13T22:05:59.574Z"
+            },
+            "patterns": {
+              "qualityScore": 7.395,
+              "responseTime": 18.067,
+              "contentSize": 4261,
+              "timestamp": "2025-05-13T22:06:17.642Z"
+            },
+            "codeQuality": {
+              "qualityScore": 5.555,
+              "responseTime": 15.865,
+              "contentSize": 3953,
+              "timestamp": "2025-05-13T22:06:33.508Z"
+            }
+          }
+        }
+      }
+    },
+    "large": {
+      "microsoft/TypeScript": {
+        "anthropic/claude-3-haiku-20240307": {
+          "categories": {
+            "architecture": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:06:33.877Z"
+            },
+            "dependencies": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:06:33.940Z"
+            },
+            "patterns": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:06:34.035Z"
+            },
+            "codeQuality": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:06:34.112Z"
+            }
+          }
+        },
+        "anthropic/claude-3-sonnet-20240229": {
+          "categories": {
+            "architecture": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:06:34.248Z"
+            },
+            "dependencies": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:06:34.345Z"
+            },
+            "patterns": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:06:34.410Z"
+            },
+            "codeQuality": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:06:34.478Z"
+            }
+          }
+        },
+        "openai/gpt-3.5-turbo": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 4.735,
+              "responseTime": 3.428,
+              "contentSize": 2720,
+              "timestamp": "2025-05-13T22:06:37.906Z"
+            },
+            "dependencies": {
+              "qualityScore": 6.27,
+              "responseTime": 3.036,
+              "contentSize": 1894,
+              "timestamp": "2025-05-13T22:06:40.943Z"
+            },
+            "patterns": {
+              "qualityScore": 6.28,
+              "responseTime": 3.98,
+              "contentSize": 2245,
+              "timestamp": "2025-05-13T22:06:44.923Z"
+            },
+            "codeQuality": {
+              "qualityScore": 4.195,
+              "responseTime": 3.521,
+              "contentSize": 2240,
+              "timestamp": "2025-05-13T22:06:48.445Z"
+            }
+          }
+        },
+        "openai/gpt-4o": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 7.99,
+              "responseTime": 18.634,
+              "contentSize": 4543,
+              "timestamp": "2025-05-13T22:07:07.079Z"
+            },
+            "dependencies": {
+              "qualityScore": 5.365,
+              "responseTime": 17.535,
+              "contentSize": 3605,
+              "timestamp": "2025-05-13T22:07:24.615Z"
+            },
+            "patterns": {
+              "qualityScore": 4.805,
+              "responseTime": 17.594,
+              "contentSize": 3624,
+              "timestamp": "2025-05-13T22:07:42.210Z"
+            },
+            "codeQuality": {
+              "qualityScore": 7.305,
+              "responseTime": 14.372,
+              "contentSize": 3432,
+              "timestamp": "2025-05-13T22:07:56.583Z"
+            }
+          }
+        }
+      }
+    }
+  },
+  "python": {
+    "small": {
+      "pallets/click": {
+        "anthropic/claude-3-haiku-20240307": {
+          "categories": {
+            "architecture": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:07:56.872Z"
+            },
+            "dependencies": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:07:56.937Z"
+            },
+            "patterns": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:07:57.021Z"
+            },
+            "codeQuality": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:07:57.091Z"
+            }
+          }
+        },
+        "anthropic/claude-3-sonnet-20240229": {
+          "categories": {
+            "architecture": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:07:57.168Z"
+            },
+            "dependencies": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:07:57.247Z"
+            },
+            "patterns": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:07:57.329Z"
+            },
+            "codeQuality": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:07:57.447Z"
+            }
+          }
+        },
+        "openai/gpt-3.5-turbo": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 6.765,
+              "responseTime": 4.24,
+              "contentSize": 2475,
+              "timestamp": "2025-05-13T22:08:01.687Z"
+            },
+            "dependencies": {
+              "qualityScore": 5.535,
+              "responseTime": 4.705,
+              "contentSize": 1694,
+              "timestamp": "2025-05-13T22:08:06.393Z"
+            },
+            "patterns": {
+              "qualityScore": 3.99,
+              "responseTime": 4.244,
+              "contentSize": 2578,
+              "timestamp": "2025-05-13T22:08:10.638Z"
+            },
+            "codeQuality": {
+              "qualityScore": 4.89,
+              "responseTime": 3.98,
+              "contentSize": 2643,
+              "timestamp": "2025-05-13T22:08:14.619Z"
+            }
+          }
+        },
+        "openai/gpt-4o": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 7.9,
+              "responseTime": 27.549,
+              "contentSize": 4252,
+              "timestamp": "2025-05-13T22:08:42.170Z"
+            },
+            "dependencies": {
+              "qualityScore": 7.25,
+              "responseTime": 12.606,
+              "contentSize": 3450,
+              "timestamp": "2025-05-13T22:08:54.777Z"
+            },
+            "patterns": {
+              "qualityScore": 6.765000000000001,
+              "responseTime": 18.36,
+              "contentSize": 3915,
+              "timestamp": "2025-05-13T22:09:13.139Z"
+            },
+            "codeQuality": {
+              "qualityScore": 7.725,
+              "responseTime": 18.698,
+              "contentSize": 3908,
+              "timestamp": "2025-05-13T22:09:31.840Z"
+            }
+          }
+        }
+      }
+    },
+    "medium": {
+      "pallets/flask": {
+        "anthropic/claude-3-haiku-20240307": {
+          "categories": {
+            "architecture": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:09:32.135Z"
+            },
+            "dependencies": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:09:32.202Z"
+            },
+            "patterns": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:09:32.268Z"
+            },
+            "codeQuality": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:09:32.331Z"
+            }
+          }
+        },
+        "anthropic/claude-3-sonnet-20240229": {
+          "categories": {
+            "architecture": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:09:32.414Z"
+            },
+            "dependencies": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:09:32.495Z"
+            },
+            "patterns": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:09:32.628Z"
+            },
+            "codeQuality": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:09:32.705Z"
+            }
+          }
+        },
+        "openai/gpt-3.5-turbo": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 5.23,
+              "responseTime": 4.903,
+              "contentSize": 3182,
+              "timestamp": "2025-05-13T22:09:37.608Z"
+            },
+            "dependencies": {
+              "qualityScore": 6.305,
+              "responseTime": 3.325,
+              "contentSize": 1994,
+              "timestamp": "2025-05-13T22:09:40.934Z"
+            },
+            "patterns": {
+              "qualityScore": 6.47,
+              "responseTime": 3.958,
+              "contentSize": 2248,
+              "timestamp": "2025-05-13T22:09:44.892Z"
+            },
+            "codeQuality": {
+              "qualityScore": 4.29,
+              "responseTime": 3.267,
+              "contentSize": 2134,
+              "timestamp": "2025-05-13T22:09:48.160Z"
+            }
+          }
+        },
+        "openai/gpt-4o": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 7.77,
+              "responseTime": 17.614,
+              "contentSize": 4145,
+              "timestamp": "2025-05-13T22:10:05.775Z"
+            },
+            "dependencies": {
+              "qualityScore": 7.59,
+              "responseTime": 17.873,
+              "contentSize": 3861,
+              "timestamp": "2025-05-13T22:10:23.649Z"
+            },
+            "patterns": {
+              "qualityScore": 7.98,
+              "responseTime": 29.907,
+              "contentSize": 4232,
+              "timestamp": "2025-05-13T22:10:53.557Z"
+            },
+            "codeQuality": {
+              "qualityScore": 5.255,
+              "responseTime": 17.486,
+              "contentSize": 3426,
+              "timestamp": "2025-05-13T22:11:11.043Z"
+            }
+          }
+        }
+      }
+    },
+    "large": {
+      "django/django": {
+        "anthropic/claude-3-haiku-20240307": {
+          "categories": {
+            "architecture": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:11:11.395Z"
+            },
+            "dependencies": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:11:11.474Z"
+            },
+            "patterns": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:11:11.572Z"
+            },
+            "codeQuality": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:11:11.694Z"
+            }
+          }
+        },
+        "anthropic/claude-3-sonnet-20240229": {
+          "categories": {
+            "architecture": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:11:11.843Z"
+            },
+            "dependencies": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:11:11.923Z"
+            },
+            "patterns": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:11:12.064Z"
+            },
+            "codeQuality": {
+              "error": "Request failed with status code 400",
+              "timestamp": "2025-05-13T22:11:12.128Z"
+            }
+          }
+        },
+        "openai/gpt-3.5-turbo": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 6.9399999999999995,
+              "responseTime": 4.633,
+              "contentSize": 2917,
+              "timestamp": "2025-05-13T22:11:16.762Z"
+            },
+            "dependencies": {
+              "qualityScore": 6.609999999999999,
+              "responseTime": 5.442,
+              "contentSize": 2415,
+              "timestamp": "2025-05-13T22:11:22.205Z"
+            },
+            "patterns": {
+              "qualityScore": 4.96,
+              "responseTime": 4.456,
+              "contentSize": 2934,
+              "timestamp": "2025-05-13T22:11:26.661Z"
+            },
+            "codeQuality": {
+              "qualityScore": 4.42,
+              "responseTime": 3.478,
+              "contentSize": 2121,
+              "timestamp": "2025-05-13T22:11:30.140Z"
+            }
+          }
+        },
+        "openai/gpt-4o": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 8.31,
+              "responseTime": 18.268,
+              "contentSize": 4659,
+              "timestamp": "2025-05-13T22:11:48.409Z"
+            },
+            "dependencies": {
+              "qualityScore": 5.1,
+              "responseTime": 29.026,
+              "contentSize": 3103,
+              "timestamp": "2025-05-13T22:12:17.436Z"
+            },
+            "patterns": {
+              "qualityScore": 7.37,
+              "responseTime": 19.682,
+              "contentSize": 4075,
+              "timestamp": "2025-05-13T22:12:37.119Z"
+            },
+            "codeQuality": {
+              "qualityScore": 5.9399999999999995,
+              "responseTime": 24.02,
+              "contentSize": 4429,
+              "timestamp": "2025-05-13T22:13:01.140Z"
+            }
+          }
+        }
+      }
+    }
+  }
+}

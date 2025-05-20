@@ -1,0 +1,21 @@
+The Express.js repository implements a minimalist, flexible Node.js web application framework.
+
+### Main Components
+
+*   **`lib/express.js`**: The core module that exports the `createApplication` function. This function is responsible for creating an instance of the Express application.
+*   **`lib/application.js`**: Defines the `Application` object, which represents the Express application. It includes methods for routing HTTP requests, configuring middleware, rendering HTML views, and managing server settings.
+*   **`lib/router/index.js`**: Implements the `Router` class, which handles routing HTTP requests to the appropriate middleware functions. It supports route parameters, middleware stacks, and multiple HTTP methods.
+*   **`lib/middleware/init.js`**: Sets up essential middleware for the application, such as `req.res` and application settings.
+*   **`lib/request.js`**: Extends the Node.js `http.IncomingMessage` object to add utility methods for handling HTTP requests. It provides properties for accessing request headers, query parameters, and request body.
+*   **`lib/response.js`**: Extends the Node.js `http.ServerResponse` object to add utility methods for sending HTTP responses. It includes methods for setting response headers, sending JSON data, rendering views, and redirecting requests.
+*   **`lib/view.js`**: Implements the `View` class, which handles rendering HTML templates. It supports multiple template engines and provides caching mechanisms for improved performance.
+
+### Relationships and Workflow
+
+1.  **Application Creation**: The `express()` function (from `lib/express.js`) is called to create a new Express application instance. This function returns an `Application` object (defined in `lib/application.js`).
+2.  **Middleware Registration**: Middleware functions are registered using methods like `app.use()`, `app.get()`, `app.post()`, etc. These methods associate middleware with specific routes or apply them globally to all requests.
+3.  **Request Handling**: When the Express application receives an HTTP request, it processes the request through the registered middleware stack.
+4.  **Routing**: The `Router` (from `lib/router/index.js`) matches the incoming request's method and path against the defined routes. If a match is found, the associated middleware functions are executed in order.
+5.  **Request and Response Objects**: The `request` (from `lib/request.js`) and `response` (from `lib/response.js`) objects are passed to each middleware function. These objects provide methods for accessing request data and sending responses to the client.
+6.  **Response Generation**: Middleware functions can modify the request or response objects, send data to the client, render views (using `lib/view.js`), or pass control to the next middleware function in the stack.
+7.  **Server Listening**: The Express application listens for incoming HTTP requests on a specified port. When a request is received, the application processes it through the middleware stack and sends a response back to the client.

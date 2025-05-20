@@ -6,14 +6,9 @@
     "composite": true,
     "declaration": true,
     "paths": {
-      "@codequal/database/*": ["./src/*"],
-      "@codequal/core": ["../core/src"],
-      "@codequal/core/*": ["../core/src/*"]
+      "@codequal/database/*": ["./src/*"]
     }
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts"],
-  "references": [
-    { "path": "../core" }
-  ]
+  "exclude": ["node_modules", "dist", "**/*.test.ts"]
 }

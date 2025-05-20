@@ -1,0 +1,82 @@
+Perform a performance-focused analysis of this repository using the following structured format:
+
+## Performance-Critical Areas
+- Identify high-traffic or resource-intensive components
+- Analyze main execution paths and bottlenecks
+- Assess computational complexity of key algorithms
+- Evaluate browser/runtime performance considerations
+
+## Resource Management
+- Review memory allocation and garbage collection
+- Analyze resource pooling and caching strategies
+- Evaluate resource cleanup and disposal
+- Assess memory leaks and resource exhaustion prevention
+
+## Concurrency & Parallelism
+- Analyze threading or async/await patterns
+- Evaluate lock usage and synchronization
+- Assess race condition prevention
+- Review worker or background job implementations
+
+## I/O Performance
+- Evaluate database query efficiency
+- Analyze network request batching and optimization
+- Review file system operations
+- Assess API call patterns and optimization
+
+## Rendering & UI Performance
+- Analyze render cycles and optimization (if applicable)
+- Evaluate UI component efficiency
+- Assess animations and transitions
+- Review DOM manipulation patterns
+
+## Caching Strategies
+- Review data caching implementations
+- Analyze cache invalidation strategies
+- Evaluate memoization usage
+- Assess HTTP caching configuration
+
+## Performance Testing
+- Review existing performance tests
+- Identify missing performance test areas
+- Evaluate performance metrics collection
+- Assess performance regression detection
+
+## Optimization Recommendations
+- Prioritized performance improvements
+- Algorithm optimization opportunities
+- Caching implementation suggestions
+- Resource management enhancements
+
+Please provide specific examples with file paths and code snippets where relevant.
+
+After your analysis, please provide a scoring assessment for this repository.
+
+1. Rate each area on a scale of 1-10 (10 being best):
+   - Score each subcategory in your analysis
+   - Provide brief justification for each score
+   - Identify high, medium, and low priority issues
+
+2. Create a summary table with the following format:
+   | Category | Score (1-10) | Key Strengths | Key Issues |
+   |----------|--------------|---------------|------------|
+   | Category1 | 8 | Strength1, Strength2 | Issue1, Issue2 |
+
+3. Include vector-ready metadata in this JSON format:
+```json
+{
+  "repository": "react",
+  "analysis_date": "2025-05-17T15:11:07Z",
+  "analysis_type": "performance",
+  "scores": {
+    "overall": 8,
+    "subcategories": [
+      {"name": "Subcategory1", "score": 9, "strengths": ["Strength1"], "issues": []},
+      {"name": "Subcategory2", "score": 7, "strengths": [], "issues": ["Issue1"]}
+    ],
+    "issues": [
+      {"name": "Issue1", "severity": "high", "score_impact": -1, "file_paths": ["/path/file1"]}
+    ]
+  }
+}
+```

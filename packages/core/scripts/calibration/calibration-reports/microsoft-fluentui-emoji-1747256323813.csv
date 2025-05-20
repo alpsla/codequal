@@ -1,0 +1,5 @@
+repository,language,size_category,provider,model,weighted_score,quality_score,response_time_ms,cost_estimate,quality_component_raw,cost_component_raw,speed_component_raw,timestamp
+microsoft/fluentui-emoji,javascript,small,openai,gpt-4o,0.0000,0.8075,12074,0.773000,0.8075,0.773000,12074,2025-05-14T20:58:33.308Z
+microsoft/fluentui-emoji,javascript,small,deepseek,deepseek-coder,0.0000,0.8075,15537,0.216750,0.8075,0.216750,15537,2025-05-14T20:58:38.282Z
+microsoft/fluentui-emoji,javascript,small,openai,gpt-4o,0.0000,0.8075,19934,0.848000,0.8075,0.848000,19934,2025-05-14T20:58:40.640Z
+microsoft/fluentui-emoji,javascript,small,deepseek,deepseek-coder,0.0000,0.8075,20565,0.306000,0.8075,0.306000,20565,2025-05-14T20:58:43.812Z

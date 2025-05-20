@@ -1,0 +1,22 @@
+{
+  "repo_url": "https://github.com/cli/cli",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Analyze the architecture of this repository. Focus on:
+1. Overall design patterns
+2. Code organization
+3. Component relationships
+4. Modularity and extensibility
+
+After your analysis, provide:
+- A score from 1-10 for the architecture
+- Key strengths (bullet points)
+- Areas for improvement (bullet points)"
+    }
+  ],
+  "stream": false,
+  "provider": "openrouter",
+  "model": "deepseek/deepseek-coder",
+  "temperature": 0.2
+}

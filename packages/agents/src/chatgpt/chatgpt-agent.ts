@@ -311,7 +311,7 @@ export class ChatGPTAgent extends BaseAgent {
         const severity = severityMatch ? severityMatch[1].toLowerCase() as 'high' | 'medium' | 'low' : 'medium';
         // Remove the severity tag and any leading whitespace or dash/bullet characters
         const message = item.replace(/\[(high|medium|low)\]/i, '')
-                           .replace(/^[\s\-]+/, '')
+                           .replace(/^[\s-]+/, '')
                            .trim();
         
         if (message) {

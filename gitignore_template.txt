@@ -1,0 +1,71 @@
+# Enhanced .gitignore Template for Preventing Secret Leaks
+
+# Environment files with secrets
+.env
+.env.local
+.env.*.local
+.env.development
+.env.test
+.env.production
+.env.bak
+.env.*bak
+.env.backup
+*.env
+env.json
+config.json
+secrets.json
+
+# API key files
+**/apikey*
+**/*_key.*
+**/*_token.*
+**/token.*
+**/credentials.*
+**/secrets.*
+*api_key*
+*token*
+*secret*
+
+# Specific configuration files that might contain secrets
+**/anthropic.json
+**/openai.json
+**/google.json
+**/gemini.json
+**/deepseek.json
+**/deepwiki-api-keys.yaml
+**/deploy-secrets.yaml
+**/k8s-secrets.yaml
+**/kubernetes-secrets.yaml
+
+# Calibration directories
+**/calibration/.env*
+**/calibration/*.json
+
+# Personal directories
+**/.vscode/*
+**/.idea/*
+**/.DS_Store
+
+# Build artifacts
+**/node_modules
+**/dist
+**/build
+**/.next
+**/*.tsbuildinfo
+**/coverage
+
+# Temporary files and logs
+**/tmp/
+**/temp/
+**/logs/
+**/*.log
+**/npm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*
+
+# Swap files
+**/*.swp
+**/*.swo
+
+# Add this template to your existing .gitignore file.
+# Review carefully to ensure it doesn't exclude necessary files.
