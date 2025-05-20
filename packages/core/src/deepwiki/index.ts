@@ -34,6 +34,9 @@ export * from './initialization.js';
 // Environment variable helpers
 export * from './env-helpers.js';
 
+// Import Logger type
+import { Logger } from '../utils/logger';
+
 // Export specific items from model-configs-update to avoid naming conflicts
 export { 
   ModelConfigManager,
@@ -51,7 +54,7 @@ export async function initializeDeepWiki(options: {
   apiUrl: string;
   supabaseUrl?: string;
   supabaseKey?: string;
-  logger: Record<string, unknown>;
+  logger: Logger;
   cacheConfig?: Record<string, unknown>;
 }) {
   const {

@@ -1,6 +1,7 @@
 // Updated DeepWikiClient based on API testing results
 
-import axios, { AxiosInstance } from 'axios';
+import axios from 'axios';
+import type { AxiosInstance, AxiosError } from 'axios';
 import { Logger } from '../utils/logger';
 
 /**
@@ -378,8 +379,9 @@ export class DeepWikiClient {
    */
   private handleApiError(error: unknown, defaultMessage: string): Error {
     if (axios.isAxiosError(error)) {
-      const status = error.response?.status;
-      const data = error.response?.data;
+      const axiosError = error as AxiosError;
+      const status = axiosError.response?.status;
+      const data = axiosError.response?.data as Record<string, any>;
       
       if (status === 413) {
         return new Error('Repository is too large for analysis. Please try a smaller repository or use chunked analysis.');

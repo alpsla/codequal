@@ -2,6 +2,7 @@ import { DeepWikiClient } from './DeepWikiClient';
 import { RepositorySizeDetector } from './RepositorySizeDetector';
 import { RepositoryCacheManager } from './RepositoryCacheManager';
 import { ThreeTierAnalysisService } from './ThreeTierAnalysisService';
+import { Logger } from '../utils/logger';
 
 /**
  * Initialize the DeepWiki integration with environment variables
@@ -14,7 +15,7 @@ import { ThreeTierAnalysisService } from './ThreeTierAnalysisService';
  */
 export function initializeDeepWikiWithEnvVars(options: {
   apiUrl: string;
-  logger: Record<string, unknown>;
+  logger: Logger;
   supabaseUrl?: string;
   supabaseKey?: string;
   cacheConfig?: Record<string, unknown>;
@@ -45,7 +46,7 @@ export function initializeDeepWikiWithEnvVars(options: {
   });
   
   // Create client with API keys
-  const client = new DeepWikiClient(apiUrl, logger, apiKeys);
+  const client = new DeepWikiClient(apiUrl, logger);
   
   // Create size detector
   const sizeDetector = new RepositorySizeDetector(logger);
