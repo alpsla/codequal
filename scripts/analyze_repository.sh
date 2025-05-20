@@ -4,8 +4,8 @@
 
 # Default parameters
 REPO_URL="${1:-https://github.com/expressjs/express}"
-MODEL="${2:-anthropic/claude-3-7-sonnet}"
-FALLBACK_MODELS="${3:-openai/gpt-4.1}"
+MODEL="${2:-google/gemini-2.5-flash}"
+FALLBACK_MODELS="${3:-anthropic/claude-3-7-sonnet}"
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 BASE_DIR="/Users/alpinro/Code Prjects/codequal"
 OUTPUT_DIR="$BASE_DIR/reports/report_$TIMESTAMP"
