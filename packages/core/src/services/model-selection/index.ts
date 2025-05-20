@@ -13,10 +13,14 @@ export * from './ModelConfigStore';
 // Export specific items from ModelVersionSync to avoid naming conflicts
 export {
   ModelVersionSync,
+  createDeepWikiModelConfig
+} from './ModelVersionSync';
+
+// Export types from ModelVersionSync
+export type {
   ModelVersionInfo,
   ModelCapabilities,
   ModelPricing,
   ModelTier,
-  ModelProviderPlugin,
-  createDeepWikiModelConfig
+  ModelProviderPlugin
 } from './ModelVersionSync';
