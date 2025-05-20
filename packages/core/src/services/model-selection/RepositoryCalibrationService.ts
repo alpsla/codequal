@@ -10,24 +10,53 @@
 import { Logger } from '../../utils/logger';
 import { RepositoryContext } from '../../types/repository';
 import { RepositoryModelConfig, RepositorySizeCategory, TestingStatus } from '../../config/models/repository-model-config';
-import { ModelConfig } from '../../deepwiki/DeepWikiClient';
+import { ModelConfig, DeepWikiProvider, DeepWikiClient } from '../../deepwiki/DeepWikiClient';
 import { CalibrationDecision } from './RepositoryModelSelectionService';
+
+import { ModelConfigurationFactory } from './ModelConfigurationFactory';
+import { ModelConfigStore } from './ModelConfigStore';
 
 /**
  * Provider types to test during calibration
+ * This is a subset of DeepWikiProvider that includes additional models
  */
-export type CalibrationProvider = 'openai' | 'anthropic' | 'google' | 'deepseek' | 'openrouter';
+export type CalibrationProvider = DeepWikiProvider | 'deepseek';
 
 /**
- * Model names by provider to test during calibration
+ * Default model names by provider to test during calibration
+ * These are used as a fallback if the ModelConfigurationFactory is not available
  */
-export const CALIBRATION_MODELS: Record<CalibrationProvider, string[]> = {
+export const DEFAULT_CALIBRATION_MODELS: Record<CalibrationProvider, string[]> = {
   'openai': ['gpt-4o'],
   'anthropic': ['claude-3-7-sonnet'],
   'google': ['gemini-2.5-pro-preview-05-06'],
   'deepseek': ['deepseek-coder', 'deepseek-coder-plus'],
-  'openrouter': ['anthropic/claude-3.7-sonnet', 'openai/gpt-4o']
+  'openrouter': ['anthropic/claude-3.7-sonnet', 'openai/gpt-4o'],
+  'ollama': ['qwen3:8b', 'llama3:8b']
 };
+
+/**
+ * Get the calibration models from the central registry or fallback to defaults
+ * 
+ * @param factory Optional ModelConfigurationFactory instance
+ * @returns Record of provider to model names for calibration
+ */
+export function getCalibrationModels(
+  factory?: ModelConfigurationFactory
+): Record<CalibrationProvider, string[]> {
+  if (factory) {
+    // Get calibration models from the factory
+    return factory.getCalibrationModels() as Record<CalibrationProvider, string[]>;
+  }
+  
+  // Fallback to defaults
+  return DEFAULT_CALIBRATION_MODELS;
+}
+
+/**
+ * Current calibration models (updated dynamically)
+ */
+export let CALIBRATION_MODELS = DEFAULT_CALIBRATION_MODELS;
 
 /**
  * Calibration test result
@@ -36,7 +65,7 @@ export interface CalibrationTestResult {
   /**
    * Model configuration used
    */
-  modelConfig: ModelConfig<any>;
+  modelConfig: ModelConfig<DeepWikiProvider>;
   
   /**
    * Response time in seconds
@@ -110,17 +139,31 @@ export class RepositoryCalibrationService {
   };
   
   /**
+   * Configuration factory for model selection
+   */
+  private configFactory?: ModelConfigurationFactory;
+  
+  /**
    * Constructor
    * @param logger Logger instance
    * @param deepWikiClient DeepWiki client for repository analysis
    * @param configStore Configuration store for updating results
+   * @param modelConfigFactory Optional model configuration factory
    */
   constructor(
     private logger: Logger,
-    private deepWikiClient: any, // Replace with proper type when available
-    private configStore: any // Replace with proper type when available
+    private deepWikiClient: DeepWikiClient,
+    private configStore: ModelConfigStore,
+    modelConfigFactory?: ModelConfigurationFactory
   ) {
     this.logger.info('RepositoryCalibrationService initialized');
+    this.configFactory = modelConfigFactory;
+    
+    // Update calibration models if factory is provided
+    if (this.configFactory) {
+      CALIBRATION_MODELS = getCalibrationModels(this.configFactory);
+      this.logger.info('Calibration models updated from model configuration factory');
+    }
   }
   
   /**
@@ -168,8 +211,8 @@ export class RepositoryCalibrationService {
             const testResult = await this.runCalibrationTest(
               repository,
               {
-                provider: provider as any,
-                model: modelName as any
+                provider: provider,
+                model: modelName
               },
               fullOptions.timeout
             );
@@ -182,12 +225,12 @@ export class RepositoryCalibrationService {
           // Add error result
           results[modelKey].push({
             modelConfig: {
-              provider: provider as any,
-              model: modelName as any
+              provider: provider,
+              model: modelName
             },
             responseTime: 0,
             responseSize: 0,
-            error: error.message,
+            error: error instanceof Error ? error.message : String(error),
             timestamp: new Date().toISOString()
           });
         }
@@ -196,7 +239,7 @@ export class RepositoryCalibrationService {
     
     // Calculate averages and determine the best model
     const averages = this.calculateAverages(results);
-    const recommendedConfig = this.determineOptimalModel(averages, sizeCategory);
+    const recommendedConfig = this.determineOptimalModel(averages, sizeCategory, repository.language);
     
     // Update configuration if requested
     if (fullOptions.updateConfig) {
@@ -231,7 +274,7 @@ export class RepositoryCalibrationService {
    */
   private async runCalibrationTest(
     repository: RepositoryContext,
-    modelConfig: ModelConfig<any>,
+    modelConfig: ModelConfig<CalibrationProvider>,
     timeout: number
   ): Promise<CalibrationTestResult> {
     this.logger.info('Running calibration test', {
@@ -265,7 +308,8 @@ export class RepositoryCalibrationService {
       const responseTime = (endTime - startTime) / 1000;
       
       // Extract response content and calculate size
-      const responseContent = result.choices?.[0]?.message?.content || '';
+      const choices = result.choices as Array<{ message?: { content?: string } }> || [];
+      const responseContent = choices.length > 0 && choices[0]?.message?.content || '';
       const responseSize = new TextEncoder().encode(responseContent).length;
       
       this.logger.info('Calibration test completed', {
@@ -292,7 +336,7 @@ export class RepositoryCalibrationService {
         modelConfig,
         responseTime: 0,
         responseSize: 0,
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         timestamp: new Date().toISOString()
       };
     }
@@ -307,13 +351,19 @@ export class RepositoryCalibrationService {
   private calculateAverages(
     results: Record<string, CalibrationTestResult[]>
   ): Record<string, {
-    modelConfig: ModelConfig<any>;
+    modelConfig: ModelConfig<DeepWikiProvider>;
     avgResponseTime: number;
     avgResponseSize: number;
     avgQualityScore?: number;
     successRate: number;
   }> {
-    const averages: Record<string, any> = {};
+    const averages: Record<string, {
+      modelConfig: ModelConfig<DeepWikiProvider>;
+      avgResponseTime: number;
+      avgResponseSize: number;
+      avgQualityScore?: number;
+      successRate: number;
+    }> = {};
     
     for (const [modelKey, modelResults] of Object.entries(results)) {
       // Filter out errors
@@ -335,7 +385,7 @@ export class RepositoryCalibrationService {
       
       // Calculate quality score if available
       let avgQualityScore;
-      const qualityScores = successfulResults.filter(r => r.qualityScore !== undefined).map(r => r.qualityScore);
+      const qualityScores = successfulResults.filter(r => r.qualityScore !== undefined).map(r => r.qualityScore) as number[];
       if (qualityScores.length > 0) {
         avgQualityScore = qualityScores.reduce((sum, score) => sum + score, 0) / qualityScores.length;
       }
@@ -360,17 +410,19 @@ export class RepositoryCalibrationService {
    * 
    * @param averages Average test results by model
    * @param sizeCategory Repository size category
+   * @param language Repository language
    * @returns Recommended model configuration
    */
   private determineOptimalModel(
     averages: Record<string, {
-      modelConfig: ModelConfig<any>;
+      modelConfig: ModelConfig<DeepWikiProvider>;
       avgResponseTime: number;
       avgResponseSize: number;
       avgQualityScore?: number;
       successRate: number;
     }>,
-    sizeCategory: RepositorySizeCategory
+    sizeCategory: RepositorySizeCategory,
+    language = 'default'
   ): RepositoryModelConfig {
     const models = Object.values(averages);
     
@@ -378,7 +430,32 @@ export class RepositoryCalibrationService {
     const reliableModels = models.filter(m => m.successRate > 0.8);
     
     if (reliableModels.length === 0) {
-      // No reliable models, return default for size category
+      // No reliable models, check if we can use the config factory for a recommendation
+      if (this.configFactory) {
+        const recommendedModel = this.configFactory.createRepositoryModelConfig({
+          language,
+          sizeCategory,
+          tags: []
+        });
+        
+        if (recommendedModel) {
+          this.logger.info('Using model recommendation from ModelConfigurationFactory', {
+            language,
+            sizeCategory,
+            provider: recommendedModel.provider,
+            model: recommendedModel.model
+          });
+          
+          // Update to indicate it's a recommendation, not a tested model
+          if (recommendedModel.testResults) {
+            recommendedModel.testResults.status = TestingStatus.PARTIAL;
+          }
+          recommendedModel.notes += ' (Recommended from capabilities, not from calibration)';
+          return recommendedModel;
+        }
+      }
+      
+      // Fallback to default
       this.logger.warn('No reliable models found during calibration', { sizeCategory });
       return {
         provider: 'openai',
@@ -433,7 +510,7 @@ export class RepositoryCalibrationService {
         testCount: reliableModels.length,
         lastTested: new Date().toISOString()
       },
-      notes: `Selected based on calibration for ${sizeCategory} repository size`
+      notes: `Selected based on calibration for ${language}/${sizeCategory} repository size`
     };
   }
   

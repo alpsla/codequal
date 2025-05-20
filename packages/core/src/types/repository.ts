@@ -98,7 +98,7 @@ export interface RepositoryContext {
   /**
    * Custom metadata (optional)
    */
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -178,7 +178,7 @@ export interface PullRequestContext {
   /**
    * Custom metadata
    */
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 /**

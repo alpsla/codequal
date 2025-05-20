@@ -1,0 +1,3 @@
+# Ignore migration JavaScript files that are meant to be run in Node.js directly
+src/migrations/*.js
+src/migrations/**/*.js

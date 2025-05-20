@@ -1,6 +1,23 @@
 import axios from 'axios';
-import { Logger } from '@codequal/core/logging';
+import { Logger } from '../utils/logger';
 import { RepositoryContext } from './DeepWikiClient';
+
+/**
+ * GitHub repository information interface
+ */
+interface GitHubRepositoryInfo {
+  size: number; // Size in KB
+  default_branch: string;
+  language: string;
+  stargazers_count: number;
+  forks_count: number;
+  open_issues_count: number;
+  visibility: string;
+  pushed_at: string;
+  created_at: string;
+  updated_at: string;
+  [key: string]: unknown;
+}
 
 /**
  * Repository size information
@@ -120,7 +137,7 @@ export class RepositorySizeDetector {
       return result;
     } catch (error) {
       this.logger.error('Error detecting repository size', { repository, error });
-      throw new Error(`Failed to detect repository size: ${error.message}`);
+      throw new Error(`Failed to detect repository size: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
   
@@ -129,7 +146,7 @@ export class RepositorySizeDetector {
    * @param repository Repository context
    * @returns Repository size info
    */
-  async detectGitLabRepositorySize(repository: RepositoryContext): Promise<RepositorySizeInfo> {
+  async detectGitLabRepositorySize(_repository: RepositoryContext): Promise<RepositorySizeInfo> {
     // GitLab implementation would be similar to GitHub
     // This is a placeholder for future implementation
     throw new Error('GitLab repository size detection not yet implemented');
@@ -153,12 +170,13 @@ export class RepositorySizeDetector {
     }
   }
   
+
   /**
    * Fetch repository information from GitHub API
    * @param repository Repository context
    * @returns GitHub repository info
    */
-  private async fetchGitHubRepositoryInfo(repository: RepositoryContext): Promise<any> {
+  private async fetchGitHubRepositoryInfo(repository: RepositoryContext): Promise<GitHubRepositoryInfo> {
     const url = `https://api.github.com/repos/${repository.owner}/${repository.repo}`;
     
     try {
@@ -175,7 +193,7 @@ export class RepositorySizeDetector {
       return response.data;
     } catch (error) {
       this.logger.error('Error fetching GitHub repository info', { url, error });
-      throw new Error(`Failed to fetch GitHub repository info: ${error.message}`);
+      throw new Error(`Failed to fetch GitHub repository info: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
   
@@ -211,7 +229,7 @@ export class RepositorySizeDetector {
       return languagePercentages;
     } catch (error) {
       this.logger.error('Error fetching GitHub language breakdown', { url, error });
-      throw new Error(`Failed to fetch GitHub language breakdown: ${error.message}`);
+      throw new Error(`Failed to fetch GitHub language breakdown: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
   

@@ -10,6 +10,9 @@
  *   node example-usage.js --repo=owner/repo --pr=123 --mode=[quick|comprehensive|targeted]
  */
 
+/* eslint-env node */
+/* eslint-disable no-console, @typescript-eslint/no-var-requires */
+
 const { initializeDeepWikiIntegration } = require('../lib/deepwiki');
 const { AnalysisDepth, TargetedPerspective } = require('../lib/deepwiki/ThreeTierAnalysisService');
 const fs = require('fs');

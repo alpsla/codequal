@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deepwiki-fixed
+  namespace: codequal-dev
+  labels:
+    app: deepwiki-fixed
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: deepwiki-fixed
+  template:
+    metadata:
+      labels:
+        app: deepwiki-fixed
+    spec:
+      containers:
+      - name: deepwiki
+        image: codequal/deepwiki:v0.1.8
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8001
+          name: api
+        - containerPort: 80
+          name: frontend
+        resources:
+          requests:
+            memory: "4Gi"
+            cpu: "1"
+          limits:
+            memory: "8Gi"
+            cpu: "2"
+        env:
+        - name: DEBUG
+          value: "true"
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: api-keys
+              key: openai-api-key
+        - name: ANTHROPIC_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: api-keys
+              key: anthropic-api-key
+        - name: GOOGLE_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: api-keys
+              key: google-gemini-api-key
+        - name: DEEPSEEK_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: api-keys
+              key: deepseek-api-key
+        volumeMounts:
+        - name: deepwiki-data
+          mountPath: /root/.adalflow
+      volumes:
+      - name: deepwiki-data
+        persistentVolumeClaim:
+          # Use the larger 30Gi volume
+          claimName: deepwiki-data-new

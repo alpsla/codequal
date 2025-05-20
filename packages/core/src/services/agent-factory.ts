@@ -37,7 +37,7 @@ export class AgentFactory {
     
     // Dynamically import and instantiate the appropriate agent based on provider group
     switch (providerGroup) {
-      case ProviderGroup.DEEPSEEK:
+      case ProviderGroup.DEEPSEEK: {
         // Using dynamic import to avoid circular dependencies
         // eslint-disable-next-line @typescript-eslint/no-var-requires
         const { DeepSeekAgent } = require('@codequal/agents');
@@ -45,36 +45,42 @@ export class AgentFactory {
           ...config,
           model: resolvedProvider // Pass the specific model if one was provided
         });
+      }
         
-      case ProviderGroup.GEMINI:
+      case ProviderGroup.GEMINI: {
         // eslint-disable-next-line @typescript-eslint/no-var-requires
         const { GeminiAgent } = require('@codequal/agents');
         return new GeminiAgent(`gemini_${role}_template`, {
           ...config,
           model: resolvedProvider // Pass the specific model if one was provided
         });
+      }
         
-      case ProviderGroup.CLAUDE:
+      case ProviderGroup.CLAUDE: {
         // eslint-disable-next-line @typescript-eslint/no-var-requires
         const { ClaudeAgent } = require('@codequal/agents');
         return new ClaudeAgent(`claude_${role}_template`, config);
+      }
         
-      case ProviderGroup.OPENAI:
+      case ProviderGroup.OPENAI: {
         // eslint-disable-next-line @typescript-eslint/no-var-requires
         const { OpenAIAgent } = require('@codequal/agents');
         return new OpenAIAgent(`openai_${role}_template`, config);
+      }
         
       // Remove SNYK provider as it's no longer used
       // If we need to add it back in the future:
-      // case ProviderGroup.SNYK:
+      // case ProviderGroup.SNYK: {
       //   // eslint-disable-next-line @typescript-eslint/no-var-requires
       //   const { SnykAgent } = require('@codequal/agents');
       //   return new SnykAgent(role, config);
+      // }
         
-      case ProviderGroup.MCP:
+      case ProviderGroup.MCP: {
         // eslint-disable-next-line @typescript-eslint/no-var-requires
         const { MCPAgent } = require('@codequal/agents');
         return new MCPAgent(role, resolvedProvider, config);
+      }
         
       default:
         throw new Error(`Unsupported agent provider: ${provider}`);

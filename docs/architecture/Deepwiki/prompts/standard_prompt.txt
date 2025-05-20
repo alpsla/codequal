@@ -1,0 +1,54 @@
+Perform a comprehensive analysis of this repository using the following structured format:
+
+## Architecture Overview
+Provide a high-level architectural overview of the repository, including main system components and how they interact.
+
+## Component Analysis
+Analyze the key components and modules of the codebase:
+- Component name and purpose
+- Responsibility boundaries
+- Dependencies and interactions
+- Quality assessment
+
+## Code Quality Assessment
+Assess the overall code quality:
+- Code organization and structure
+- Naming conventions and consistency
+- Test coverage and quality
+- Error handling and edge cases
+- Documentation quality
+
+## Design Patterns
+Identify the design patterns used in the codebase:
+- Patterns identified (with locations)
+- Effectiveness of pattern implementation
+- Suggestions for pattern improvements
+
+## Technical Debt
+Identify areas of technical debt:
+- Code smells and anti-patterns
+- Duplicate code or logic
+- Complex or hard-to-maintain sections
+- Outdated dependencies or techniques
+
+## Security Analysis
+Analyze potential security issues:
+- Authentication and authorization concerns
+- Data validation issues
+- Potential vulnerabilities
+- Security best practices implementation
+
+## Performance Considerations
+Identify performance-critical aspects:
+- Potential bottlenecks
+- Optimization opportunities
+- Resource usage patterns
+
+## Recommendations
+Provide prioritized recommendations:
+- High-priority improvements
+- Refactoring opportunities
+- Architectural enhancements
+- Testing improvements
+
+Please ensure your analysis is specific, citing actual file paths and code examples where relevant. Structure your response for easy parsing and storage in a vector database.

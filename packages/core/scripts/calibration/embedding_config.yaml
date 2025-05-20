@@ -1,0 +1,8 @@
+# Global embedding configuration
+default_embedding_model: text-embedding-ada-002
+embedding_dimension: 1536
+normalize_embeddings: true
+
+# Use the same embedding model across all operations
+openrouter:
+  embedding_model: text-embedding-ada-002

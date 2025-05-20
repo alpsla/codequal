@@ -12,7 +12,7 @@ export class AgentFactory {
    * @param options Configuration options
    * @returns Agent instance
    */
-  static createAgent(provider: AgentProvider, role: AgentRole, options?: Record<string, any>): Promise<Agent> {
+  static createAgent(_provider: AgentProvider, _role: AgentRole, _options?: Record<string, any>): Promise<Agent> {
     // This is a mock interface for testing - actual implementation will be in each provider's factory
     throw new Error("Not implemented - this is a mock interface for testing");
   }

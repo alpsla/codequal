@@ -88,7 +88,7 @@ export class PRReviewModel {
       throw new Error('Failed to create PR review: No data returned');
     }
     
-    return this.mapToPRReview(data as Tables['pr_reviews']);
+    return this.mapToPRReview(data as any);
   }
   
   /**
@@ -114,7 +114,7 @@ export class PRReviewModel {
     const { data, error } = await supabase
       .from('analysis_results')
       .insert({
-        pr_review_id: prReviewId,
+        pull_request_id: prReviewId,
         role: role,
         provider: provider,
         insights: result.insights,
@@ -153,7 +153,7 @@ export class PRReviewModel {
     const { data, error } = await supabase
       .from('combined_results')
       .insert({
-        pr_review_id: prReviewId,
+        pull_request_id: prReviewId,
         insights: result.insights,
         suggestions: result.suggestions,
         educational: result.educational || [],
@@ -174,7 +174,7 @@ export class PRReviewModel {
     
     return {
       id: record.id,
-      prReviewId: record.pr_review_id,
+      prReviewId: record.pull_request_id,
       role: 'combined',
       provider: 'combined',
       insights: record.insights,
@@ -207,7 +207,7 @@ export class PRReviewModel {
       throw new Error(`PR review not found: ${id}`);
     }
     
-    return this.mapToPRReview(data as Tables['pr_reviews']);
+    return this.mapToPRReview(data as any);
   }
   
   /**
@@ -232,7 +232,7 @@ export class PRReviewModel {
       return [];
     }
     
-    return data.map(item => this.mapToPRReview(item as Tables['pr_reviews']));
+    return data.map(item => this.mapToPRReview(item as any));
   }
   
   /**
@@ -246,7 +246,7 @@ export class PRReviewModel {
     const { data, error } = await supabase
       .from('analysis_results')
       .select()
-      .eq('pr_review_id', prReviewId)
+      .eq('pull_request_id', prReviewId)
       .order('created_at', { ascending: true });
     
     if (error) {
@@ -271,7 +271,7 @@ export class PRReviewModel {
     const { data, error } = await supabase
       .from('combined_results')
       .select()
-      .eq('pr_review_id', prReviewId)
+      .eq('pull_request_id', prReviewId)
       .single();
     
     if (error) {
@@ -301,7 +301,7 @@ export class PRReviewModel {
    * @param data Database record
    * @returns PR review
    */
-  private static mapToPRReview(data: Tables['pr_reviews']): PRReview {
+  private static mapToPRReview(data: any): PRReview {
     return {
       id: data.id,
       prUrl: data.pr_url,
@@ -323,7 +323,7 @@ export class PRReviewModel {
   private static mapToAnalysisResult(data: Tables['analysis_results']): AnalysisResultRecord {
     return {
       id: data.id,
-      prReviewId: data.pr_review_id,
+      prReviewId: data.pull_request_id,
       role: data.role,
       provider: data.provider,
       insights: data.insights,

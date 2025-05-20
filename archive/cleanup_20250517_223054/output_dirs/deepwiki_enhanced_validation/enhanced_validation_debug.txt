@@ -1,0 +1,23 @@
+Note: Unnecessary use of -X or --request, POST is already inferred.
+*   Trying 127.0.0.1:8001...
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0* Connected to localhost (127.0.0.1) port 8001 (#0)
+> POST /chat/completions/stream HTTP/1.1
+> Host: localhost:8001
+> User-Agent: curl/7.86.0
+> Content-Type: application/json
+> Accept: application/json
+> Content-Length: 776
+> 
+} [776 bytes data]
+* Mark bundle as not supporting multiuse
+< HTTP/1.1 200 OK
+< date: Sat, 17 May 2025 15:31:07 GMT
+< server: uvicorn
+< content-type: text/event-stream; charset=utf-8
+< Transfer-Encoding: chunked
+< 
+100   776    0     0  100   776      0    927 --:--:-- --:--:-- --:--:--   931100   776    0     0  100   776      0    422  0:00:01  0:00:01 --:--:--   422100   776    0     0  100   776      0    272  0:00:02  0:00:02 --:--:--   273100   776    0     0  100   776      0    201  0:00:03  0:00:03 --:--:--   201100   776    0     0  100   776      0    159  0:00:04  0:00:04 --:--:--   160100   776    0     0  100   776      0    132  0:00:05  0:00:05 --:--:--     0100   776    0     0  100   776      0    113  0:00:06  0:00:06 --:--:--     0100   776    0     0  100   776      0     98  0:00:07  0:00:07 --:--:--     0100   776    0     0  100   776      0     87  0:00:08  0:00:08 --:--:--     0100   776    0     0  100   776      0     78  0:00:09  0:00:09 --:--:--     0100   776    0     0  100   776      0     71  0:00:10  0:00:10 --:--:--     0100   776    0     0  100   776      0     65  0:00:11  0:00:11 --:--:--     0{ [906 bytes data]
+100  1670    0   894  100   776     75     65  0:00:11  0:00:11 --:--:--   222
+* Connection #0 to host localhost left intact

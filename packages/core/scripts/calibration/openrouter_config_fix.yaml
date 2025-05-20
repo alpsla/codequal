@@ -1,0 +1,30 @@
+
+enabled: true
+api_key: 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
+api_base: https://openrouter.ai/api/v1
+embedding_model: text-embedding-ada-002
+embedding_dimension: 1536
+
+# Define models with correct naming format
+models:
+  - name: deepseek/deepseek-coder
+    max_tokens: 16384
+    supports_functions: false
+    supports_vision: false
+  - name: deepseek/deepseek-coder-v2
+    max_tokens: 16384
+    supports_functions: false
+    supports_vision: false
+  - name: anthropic/claude-3-7-sonnet
+    max_tokens: 16384
+    supports_functions: true
+    supports_vision: true
+  - name: anthropic/claude-3-opus
+    max_tokens: 32768
+    supports_functions: true
+    supports_vision: true
+  - name: openai/gpt-4o
+    max_tokens: 8192
+    supports_functions: true
+    supports_vision: true
+  

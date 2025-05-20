@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { PRReviewService } from '@pr-reviewer/core/services/pr-review-service';
-import { DEFAULT_AGENTS } from '@pr-reviewer/core/config/agent-registry';
+import { PRReviewService } from '@codequal/core/services/pr-review-service';
+import { DEFAULT_AGENTS } from '@codequal/core/config/agent-registry';
 
 /**
  * API endpoint for PR review
@@ -44,8 +44,9 @@ export default async function handler(
       suggestions: result.combinedResult.suggestions.length,
       educational: result.combinedResult.educational?.length || 0
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error handling PR review request:', error);
-    return res.status(500).json({ error: error.message });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return res.status(500).json({ error: errorMessage });
   }
 }
