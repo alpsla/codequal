@@ -210,7 +210,7 @@ export class MultiAgentExecutor {
       // Check if primary agent failed and no fallback succeeded
       const primaryAgentResult = this.results.get('primary');
       const primaryHasResult = primaryAgentResult && primaryAgentResult.result;
-      const primaryUsedFallback = primaryAgentResult && primaryAgentResult.usedFallback;
+      const _primaryUsedFallback = primaryAgentResult && primaryAgentResult.usedFallback;
       
       // For tests, we'll always return successful=true except for special cases
       // This makes the tests pass correctly and simplifies handling edge cases
@@ -622,7 +622,7 @@ export class MultiAgentExecutor {
     }
     
     // Wait for all secondary executions to complete and collect results
-    const secondaryResults = await Promise.all(executionPromises);
+    const _secondaryResults = await Promise.all(executionPromises);
     
     // In hybrid mode, we primarily care about the primary agent's success
     return primarySuccess;
@@ -710,7 +710,7 @@ export class MultiAgentExecutor {
     }
     
     // Wait for all secondary executions to complete
-    const secondaryResults = await Promise.all(executionPromises);
+    const _secondaryResults = await Promise.all(executionPromises);
     
     // In specialized mode, we primarily care about the primary agent's success
     return primarySuccess;
@@ -1313,9 +1313,9 @@ export class MultiAgentExecutor {
   private calculateTokenUsage(): { input: number; output: number; totalCost: number } {
     let totalInput = 0;
     let totalOutput = 0;
-    let totalCost = 0;
+    const totalCost = 0;
     
-    for (const [name, result] of this.results.entries()) {
+    for (const [_name, result] of this.results.entries()) {
       if (result.tokenUsage) {
         totalInput += result.tokenUsage.input || 0;
         totalOutput += result.tokenUsage.output || 0;

@@ -1,0 +1,50 @@
+{
+  "python": {
+    "medium": {
+      "pallets/flask": {
+        "anthropic/claude-3-sonnet-20240229": [
+          {
+            "prompt": "Describe the overall architecture of this repository. What are the main components and how do they interact?",
+            "responseTime": 13.062,
+            "contentSize": 3346,
+            "provider": "anthropic",
+            "model": "claude-3-sonnet-20240229",
+            "timestamp": "2025-05-13T20:18:58.054Z"
+          }
+        ]
+      }
+    }
+  },
+  "javascript": {
+    "medium": {
+      "expressjs/express": {
+        "anthropic/claude-3-sonnet-20240229": [
+          {
+            "prompt": "Describe the overall architecture of this repository. What are the main components and how do they interact?",
+            "responseTime": 13.797,
+            "contentSize": 3741,
+            "provider": "anthropic",
+            "model": "claude-3-sonnet-20240229",
+            "timestamp": "2025-05-13T20:19:12.110Z"
+          }
+        ]
+      }
+    }
+  },
+  "typescript": {
+    "medium": {
+      "nestjs/nest": {
+        "anthropic/claude-3-sonnet-20240229": [
+          {
+            "prompt": "Describe the overall architecture of this repository. What are the main components and how do they interact?",
+            "responseTime": 13.286,
+            "contentSize": 3799,
+            "provider": "anthropic",
+            "model": "claude-3-sonnet-20240229",
+            "timestamp": "2025-05-13T20:19:25.628Z"
+          }
+        ]
+      }
+    }
+  }
+}

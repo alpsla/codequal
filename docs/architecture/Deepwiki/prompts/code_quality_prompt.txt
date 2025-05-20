@@ -1,0 +1,61 @@
+Perform a code quality analysis of this repository using the following structured format:
+
+## Code Structure Assessment
+- Directory organization and modularity
+- File organization patterns
+- Code separation and layering
+- Naming conventions (files, classes, methods, variables)
+- Consistency of structure
+
+## Implementation Quality
+- Code readability
+- Method length and complexity
+- Class design and responsibilities
+- Function design and parameters
+- Error handling approaches
+- Null/undefined handling
+- Resource management
+- Type safety and data validation
+
+## Clean Code Assessment
+- DRY principle adherence (Don't Repeat Yourself)
+- SOLID principles implementation
+- Cyclomatic complexity hotspots
+- Cognitive complexity assessment
+- Code comments quality and necessity
+- Magic numbers and hardcoded values
+
+## Testing Quality
+- Test coverage overview
+- Test organization and naming
+- Unit test quality
+- Integration test approaches
+- Test data management
+- Edge case coverage
+- Mock/stub usage patterns
+
+## Documentation
+- API documentation completeness
+- Code documentation quality
+- Developer guides and onboarding documentation
+- Architecture documentation
+- Comment quality and relevance
+
+## Quality Issues
+- Code duplication
+- Outdated patterns or libraries
+- Inconsistent code styles
+- Complex conditional logic
+- Long methods or classes
+- Poor variable naming
+- Inadequate error handling
+- Missing tests for critical functionality
+
+## Improvement Recommendations
+- Top code quality issues to address
+- Refactoring opportunities
+- Testing improvements
+- Documentation enhancements
+- Tooling suggestions
+
+Please provide specific examples with file paths and code snippets where relevant. Structure your response for easy parsing and storage in a vector database.

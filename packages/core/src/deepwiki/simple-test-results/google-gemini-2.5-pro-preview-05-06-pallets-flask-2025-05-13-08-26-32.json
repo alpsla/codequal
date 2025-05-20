@@ -1,0 +1,16 @@
+The Flask repository follows a modular architecture.
+
+*   **Flask**: The core framework, responsible for request routing, session management, and middleware handling. It uses Werkzeug for WSGI utilities and Jinja2 for templating.
+*   **Werkzeug**: A WSGI toolkit providing utilities for handling requests, responses, headers, and other HTTP-related functionalities. Flask relies on Werkzeug for its WSGI server and request/response objects.
+*   **Jinja2**: A templating engine used for rendering dynamic HTML pages. Flask integrates with Jinja2 to allow developers to create templates with placeholders that are filled with data during request processing.
+*   **Extensions**: Flask extensions provide additional functionality, such as database integration (Flask-SQLAlchemy), form handling (Flask-WTF), and authentication (Flask-Login). Extensions are typically installed separately and integrated into a Flask application.
+
+The main components work together as follows:
+
+1.  A client sends an HTTP request to the Flask application.
+2.  Werkzeug receives the request and passes it to Flask.
+3.  Flask's routing mechanism matches the request URL to a specific view function.
+4.  The view function processes the request and may interact with models or other services.
+5.  The view function renders a template using Jinja2, passing data to be displayed.
+6.  Flask creates an HTTP response from the rendered template or other data.
+7.  Werkzeug sends the response back to the client.

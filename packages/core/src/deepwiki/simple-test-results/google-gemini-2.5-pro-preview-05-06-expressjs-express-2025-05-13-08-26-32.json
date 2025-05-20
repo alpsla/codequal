@@ -1,0 +1,24 @@
+The Express repository implements a minimalist, unopinionated web framework for Node.js.
+
+Main Components:
+
+*   **`lib/express.js`**: The core module that exports the `createApplication` function, which initializes and returns an Express application instance.
+*   **`lib/application.js`**: Defines the `Application` class, which extends the `EventEmitter`. It handles routing, middleware, settings, and mounting of other applications.
+*   **`lib/router/index.js`**: Implements the `Router` class, responsible for defining routes and handling requests based on HTTP methods and paths. It uses a stack of middleware and route handlers.
+*   **`lib/middleware/init.js`**: A middleware function that sets up essential request properties like `req.res` and application-level settings.
+*   **`lib/request.js`**: Extends the Node.js `http.IncomingMessage` object to add request-specific helper methods and properties.
+*   **`lib/response.js`**: Extends the Node.js `http.ServerResponse` object to add response-specific helper methods for sending various types of responses (e.g., JSON, files, redirects).
+*   **`lib/route.js`**: Defines the `Route` class, representing a single route with associated handlers.
+*   **`lib/router/layer.js`**: Defines the `Layer` class, used within the router to encapsulate middleware or route handlers with their associated path.
+*   **`lib/view.js`**: Implements the `View` class, responsible for rendering templates using a specified engine.
+
+Relationships and Workflow:
+
+1.  An Express application is created by calling `express()`, which returns an instance of the `Application` class.
+2.  Middleware functions are connected using methods like `app.use()`. Middleware can modify the request/response objects or terminate the request-response cycle.
+3.  Routes are defined using methods like `app.get()`, `app.post()`, etc., which associate a path and HTTP method with a route handler function.  These methods use the `Router` to add routes.
+4.  When a request is received, the application's router attempts to match the request's method and path against the defined routes.
+5.  If a match is found, the associated middleware and route handlers are executed in order.  The `Layer` objects in the `Router`'s stack are traversed.
+6.  Request and response objects are passed through the middleware chain, allowing each middleware to modify them or send a response.
+7.  The final route handler typically sends a response to the client, completing the request-response cycle.
+8.  The `View` class is used to render templates, integrating with template engines to generate dynamic HTML.

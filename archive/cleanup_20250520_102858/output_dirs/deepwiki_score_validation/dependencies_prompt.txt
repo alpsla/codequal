@@ -1,0 +1,75 @@
+Perform a dependency-focused analysis of this repository using the following structured format:
+
+## Direct Dependencies
+- List all direct dependencies with their versions from package.json or equivalent
+- Categorize dependencies by type (runtime, development, peer, etc.)
+- Identify each dependency's purpose in the project
+
+## Dependency Management
+- Analyze dependency management approach
+- Review dependency injection mechanisms
+- Evaluate dependency loading and initialization
+- Assess lazy loading and dynamic importing strategies
+
+## Dependency Quality
+- Identify outdated or deprecated dependencies
+- Flag potentially vulnerable dependencies
+- Evaluate dependency maintenance status
+- Assess compatibility issues or version conflicts
+
+## Dependency Architecture
+- Analyze module dependency graph structure
+- Identify dependency coupling patterns
+- Assess circular dependencies
+- Evaluate import/export patterns
+
+## Third-Party Integration
+- Review integration patterns with major libraries
+- Analyze middleware or plugin systems
+- Assess API client implementations
+- Evaluate external service integration approaches
+
+## Dependency Optimization
+- Identify opportunities for dependency consolidation
+- Assess bundle size impact of dependencies
+- Review tree-shaking effectiveness
+- Evaluate dependency loading performance
+
+## Recommendations
+- Dependency update priorities
+- Architectural improvements for dependency management
+- Replacement suggestions for problematic dependencies
+- Testing recommendations for dependency updates
+
+Please provide specific examples with file paths and code snippets where relevant.
+
+After your analysis, please provide a scoring assessment for this repository.
+
+1. Rate each area on a scale of 1-10 (10 being best):
+   - Score each subcategory in your analysis
+   - Provide brief justification for each score
+   - Identify high, medium, and low priority issues
+
+2. Create a summary table with the following format:
+   | Category | Score (1-10) | Key Strengths | Key Issues |
+   |----------|--------------|---------------|------------|
+   | Category1 | 8 | Strength1, Strength2 | Issue1, Issue2 |
+
+3. Include vector-ready metadata in this JSON format:
+```json
+{
+  "repository": "react",
+  "analysis_date": "2025-05-17T15:10:51Z",
+  "analysis_type": "dependencies",
+  "scores": {
+    "overall": 8,
+    "subcategories": [
+      {"name": "Subcategory1", "score": 9, "strengths": ["Strength1"], "issues": []},
+      {"name": "Subcategory2", "score": 7, "strengths": [], "issues": ["Issue1"]}
+    ],
+    "issues": [
+      {"name": "Issue1", "severity": "high", "score_impact": -1, "file_paths": ["/path/file1"]}
+    ]
+  }
+}
+```

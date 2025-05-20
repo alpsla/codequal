@@ -1,0 +1,39 @@
+{
+  "timestamp": "2025-05-14T20:45:18.172Z",
+  "apiUrl": "http://localhost:8001",
+  "results": {
+    "openai": {
+      "success": true,
+      "elapsedTime": 2,
+      "response": "Hello"
+    },
+    "anthropic": {
+      "success": false,
+      "error": "Request failed with status code 500",
+      "errorDetails": {
+        "message": "Request failed with status code 500",
+        "code": "ERR_BAD_RESPONSE",
+        "status": 500,
+        "data": {
+          "detail": "Error preparing retriever: Configuration for provider 'anthropic' not found"
+        }
+      }
+    },
+    "google": {
+      "success": false,
+      "error": "API key not provided"
+    },
+    "deepseek": {
+      "success": false,
+      "error": "Request failed with status code 500",
+      "errorDetails": {
+        "message": "Request failed with status code 500",
+        "code": "ERR_BAD_RESPONSE",
+        "status": 500,
+        "data": {
+          "detail": "Error preparing retriever: Configuration for provider 'deepseek' not found"
+        }
+      }
+    }
+  }
+}

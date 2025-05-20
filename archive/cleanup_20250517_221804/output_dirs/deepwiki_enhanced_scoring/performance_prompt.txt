@@ -1,0 +1,51 @@
+Perform a performance-focused analysis of this repository using the following structured format:
+
+## Performance-Critical Areas
+- Identify high-traffic or resource-intensive components
+- Analyze main execution paths and bottlenecks
+- Assess computational complexity of key algorithms
+- Evaluate browser/runtime performance considerations
+
+## Resource Management
+- Review memory allocation and garbage collection
+- Analyze resource pooling and caching strategies
+- Evaluate resource cleanup and disposal
+- Assess memory leaks and resource exhaustion prevention
+
+## Concurrency & Parallelism
+- Analyze threading or async/await patterns
+- Evaluate lock usage and synchronization
+- Assess race condition prevention
+- Review worker or background job implementations
+
+## I/O Performance
+- Evaluate database query efficiency
+- Analyze network request batching and optimization
+- Review file system operations
+- Assess API call patterns and optimization
+
+## Rendering & UI Performance
+- Analyze render cycles and optimization (if applicable)
+- Evaluate UI component efficiency
+- Assess animations and transitions
+- Review DOM manipulation patterns
+
+## Caching Strategies
+- Review data caching implementations
+- Analyze cache invalidation strategies
+- Evaluate memoization usage
+- Assess HTTP caching configuration
+
+## Performance Testing
+- Review existing performance tests
+- Identify missing performance test areas
+- Evaluate performance metrics collection
+- Assess performance regression detection
+
+## Optimization Recommendations
+- Prioritized performance improvements
+- Algorithm optimization opportunities
+- Caching implementation suggestions
+- Resource management enhancements
+
+Please provide specific examples with file paths and code snippets where relevant.

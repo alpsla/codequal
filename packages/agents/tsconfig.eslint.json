@@ -6,6 +6,13 @@
   },
   "include": [
     "src/**/*",
+    "src/**/**/*",
+    "src/**/**/**/*",
+    "src/**/__tests__/**/*",
+    "src/**/__tests__/**/**/*",
+    "src/multi-agent/__tests__/**/*",
+    "src/multi-agent/__tests__/**/**/*",
+    "src/multi-agent/evaluation/__tests__/**/*",
     "tests/**/*", 
     "tests/**/**/*",
     ".eslintrc.js",

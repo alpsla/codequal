@@ -1,7 +1,8 @@
 // Import only types from other packages
 import { AgentSelection, AgentProvider, AgentRole, DEFAULT_AGENTS } from '../config/agent-registry';
-import type { AnalysisResult } from '../types/agent';
+import type { AnalysisResult, Insight, Suggestion, EducationalContent } from '../types/agent';
 import { SkillService } from './skill-service';
+import { createLogger } from '../utils/logger';
 
 // Import interfaces for external modules
 interface AgentFactoryInterface {
@@ -12,15 +13,40 @@ interface AgentInterface {
   analyze(data: unknown): Promise<AnalysisResult>;
 }
 
+// Define proper types instead of using 'any'
+interface PRReviewData {
+  id: string;
+  prUrl: string;
+  repositoryId: string;
+  userId: string;
+  prTitle?: string;
+  prDescription?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface AnalysisResultData {
+  id: string;
+  prReviewId: string;
+  role: string;
+  provider: string;
+  insights: Insight[];
+  suggestions: Suggestion[];
+  educational: EducationalContent[];
+  metadata?: Record<string, unknown>;
+  executionTime: number;
+  createdAt: Date;
+}
+
 interface PRReviewModelInterface {
   create(prUrl: string, repositoryId: string, userId: string): Promise<{ id: string }>;
   update(id: string, data: Record<string, unknown>): Promise<void>;
   storeAnalysisResult(prReviewId: string, role: AgentRole, provider: AgentProvider, result: AnalysisResult, executionTime: number): Promise<void>;
   storeCombinedResult(prReviewId: string, result: AnalysisResult): Promise<void>;
-  getById(id: string): Promise<any>;
-  getAnalysisResults(prReviewId: string): Promise<any[]>;
+  getById(id: string): Promise<PRReviewData>;
+  getAnalysisResults(prReviewId: string): Promise<AnalysisResultData[]>;
   getCombinedResult(prReviewId: string): Promise<AnalysisResult | null>;
-  getByUserId(userId: string): Promise<any[]>;
+  getByUserId(userId: string): Promise<PRReviewData[]>;
 }
 
 interface RepositoryModelInterface {
@@ -40,6 +66,7 @@ const RepositoryModel: RepositoryModelInterface = require('../../../database/src
  */
 export class PRReviewService {
   private skillService: SkillService;
+  private logger = createLogger('PRReviewService');
   
   constructor() {
     this.skillService = new SkillService();
@@ -87,7 +114,7 @@ export class PRReviewService {
       );
       
       // 5. Fetch PR data
-      console.log(`Fetching data for PR: ${prUrl}`);
+      this.logger.info(`Fetching data for PR: ${prUrl}`);
       const startOrchestrationTime = Date.now();
       const prData = await orchestrator.analyze({ url: prUrl });
       const orchestrationTime = Date.now() - startOrchestrationTime;
@@ -110,7 +137,7 @@ export class PRReviewService {
       // 8. Analyze PR with each specialized agent
       const analysisResults: Record<AgentRole, AnalysisResult> = {
         [AgentRole.ORCHESTRATOR]: prData
-      } as any;
+      } as Record<AgentRole, AnalysisResult>;
       
       // Run all specialized agents in parallel for efficiency
       const analysisPromises = Object.values(AgentRole)
@@ -123,7 +150,7 @@ export class PRReviewService {
               {}
             );
             
-            console.log(`Analyzing PR with ${role} agent (${agentSelection[role]})`);
+            this.logger.info(`Analyzing PR with ${role} agent (${agentSelection[role]})`);
             const startTime = Date.now();
             const result = await agent.analyze(prData);
             const executionTime = Date.now() - startTime;
@@ -139,7 +166,7 @@ export class PRReviewService {
             
             return { role, result };
           } catch (error) {
-            console.error(`Error analyzing PR with ${role} agent:`, error);
+            this.logger.error(`Error analyzing PR with ${role} agent:`, error instanceof Error ? error : String(error));
             // Return empty result for this agent
             return { 
               role, 
@@ -187,7 +214,7 @@ export class PRReviewService {
         combinedResult
       };
     } catch (error) {
-      console.error('Error analyzing PR:', error);
+      this.logger.error('Error analyzing PR:', error instanceof Error ? error : String(error));
       throw error;
     }
   }
@@ -203,7 +230,7 @@ export class PRReviewService {
     url: string;
   } {
     // GitHub PR URL pattern: https://github.com/owner/repo/pull/123
-    const githubPattern = /https:\/\/github\.com\/([^\/]+)\/([^\/]+)\/pull\/\d+/;
+    const githubPattern = /https:\/\/github\.com\/([^/]+)\/([^/]+)\/pull\/\d+/;
     const githubMatch = prUrl.match(githubPattern);
     
     if (githubMatch) {
@@ -217,7 +244,7 @@ export class PRReviewService {
     }
     
     // GitLab PR URL pattern: https://gitlab.com/owner/repo/-/merge_requests/123
-    const gitlabPattern = /https:\/\/gitlab\.com\/([^\/]+)\/([^\/]+)\/-\/merge_requests\/\d+/;
+    const gitlabPattern = /https:\/\/gitlab\.com\/([^/]+)\/([^/]+)\/-\/merge_requests\/\d+/;
     const gitlabMatch = prUrl.match(gitlabPattern);
     
     if (gitlabMatch) {
@@ -299,7 +326,7 @@ export class PRReviewService {
    * @returns PR review with results
    */
   async getPRReview(prReviewId: string): Promise<{
-    prReview: any;
+    prReview: PRReviewData;
     analysisResults: Record<string, AnalysisResult>;
     combinedResult: AnalysisResult;
   }> {
@@ -339,7 +366,7 @@ export class PRReviewService {
    * @param userId User ID
    * @returns PR reviews
    */
-  async getUserPRReviews(userId: string): Promise<any[]> {
+  async getUserPRReviews(userId: string): Promise<PRReviewData[]> {
     return PRReviewModel.getByUserId(userId);
   }
 }

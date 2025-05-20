@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: deepwiki-frontend
+  namespace: codequal-dev
+  labels:
+    app: deepwiki
+spec:
+  selector:
+    app: deepwiki
+  ports:
+  - name: frontend
+    port: 80
+    targetPort: 3000
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: deepwiki-api
+  namespace: codequal-dev
+  labels:
+    app: deepwiki
+spec:
+  selector:
+    app: deepwiki
+  ports:
+  - name: api
+    port: 8001
+    targetPort: 8001
+  type: ClusterIP

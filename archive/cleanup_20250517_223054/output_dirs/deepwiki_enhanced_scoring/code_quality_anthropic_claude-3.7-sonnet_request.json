@@ -1,0 +1,22 @@
+{
+  "repo_url": "https://github.com/expressjs/express",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Analyze the code quality of this repository. Focus on:
+1. Code style and consistency
+2. Error handling
+3. Documentation
+4. Testing approach
+
+After your analysis, provide:
+- A score from 1-10 for code quality
+- Key strengths (bullet points)
+- Areas for improvement (bullet points)"
+    }
+  ],
+  "stream": false,
+  "provider": "openrouter",
+  "model": "anthropic/claude-3.7-sonnet",
+  "temperature": 0.2
+}

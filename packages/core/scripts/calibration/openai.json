@@ -1,0 +1,16 @@
+{
+  "api_key": "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",
+  "embedding_model": "text-embedding-ada-002",
+  "embedding_dimensions": 1536,
+  "models": [
+    {
+      "id": "gpt-4o",
+      "name": "GPT-4o",
+      "parameters": {
+        "temperature": 0.7,
+        "max_tokens": 4096
+      }
+    }
+  ],
+  "default_model": "gpt-4o"
+}

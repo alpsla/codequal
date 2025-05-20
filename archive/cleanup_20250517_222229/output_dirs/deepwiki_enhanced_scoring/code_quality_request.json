@@ -1,0 +1,109 @@
+{
+  "repo_url": "https://github.com/expressjs/express",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are an expert code analyst specializing in code_quality analysis. Provide a detailed, specific analysis with file paths and code examples when possible. Focus on providing concrete examples rather than general observations. End your analysis with a scoring assessment to quantify the strengths and weaknesses you've identified."
+    },
+    {
+      "role": "user",
+      "content": "Perform a code quality analysis of this repository using the following structured format:
+
+## Code Structure Assessment
+- Directory organization and modularity
+- File organization patterns
+- Code separation and layering
+- Naming conventions (files, classes, methods, variables)
+- Consistency of structure
+
+## Implementation Quality
+- Code readability
+- Method length and complexity
+- Class design and responsibilities
+- Function design and parameters
+- Error handling approaches
+- Null/undefined handling
+- Resource management
+- Type safety and data validation
+
+## Clean Code Assessment
+- DRY principle adherence (Don't Repeat Yourself)
+- SOLID principles implementation
+- Cyclomatic complexity hotspots
+- Cognitive complexity assessment
+- Code comments quality and necessity
+- Magic numbers and hardcoded values
+
+## Testing Quality
+- Test coverage overview
+- Test organization and naming
+- Unit test quality
+- Integration test approaches
+- Test data management
+- Edge case coverage
+- Mock/stub usage patterns
+
+## Documentation
+- API documentation completeness
+- Code documentation quality
+- Developer guides and onboarding documentation
+- Architecture documentation
+- Comment quality and relevance
+
+## Quality Issues
+- Code duplication
+- Outdated patterns or libraries
+- Inconsistent code styles
+- Complex conditional logic
+- Long methods or classes
+- Poor variable naming
+- Inadequate error handling
+- Missing tests for critical functionality
+
+## Improvement Recommendations
+- Top code quality issues to address
+- Refactoring opportunities
+- Testing improvements
+- Documentation enhancements
+- Tooling suggestions
+
+Please provide specific examples with file paths and code snippets where relevant. Structure your response for easy parsing and storage in a vector database.
+
+After your analysis, please provide a scoring assessment for this repository.
+
+1. Rate each area on a scale of 1-10 (10 being best):
+   - Score each subcategory in your analysis
+   - Provide brief justification for each score
+   - Identify high, medium, and low priority issues
+
+2. Create a summary table with the following format:
+   | Category | Score (1-10) | Key Strengths | Key Issues |
+   |----------|--------------|---------------|------------|
+   | Category1 | 8 | Strength1, Strength2 | Issue1, Issue2 |
+
+3. Include vector-ready metadata in this JSON format:
+```json
+{
+  "repository": "express",
+  "analysis_date": "2025-05-17T15:32:28Z",
+  "analysis_type": "code_quality",
+  "scores": {
+    "overall": 8,
+    "subcategories": [
+      {"name": "Subcategory1", "score": 9, "strengths": ["Strength1"], "issues": []},
+      {"name": "Subcategory2", "score": 7, "strengths": [], "issues": ["Issue1"]}
+    ],
+    "issues": [
+      {"name": "Issue1", "severity": "high", "score_impact": -1, "file_paths": ["/path/file1"]}
+    ]
+  }
+}
+```"
+    }
+  ],
+  "stream": false,
+  "provider": "openrouter",
+  "model": "anthropic/claude-3-opus",
+  "temperature": 0.2,
+  "max_tokens": 4000
+}

@@ -1,0 +1,7 @@
+The Flask repository follows a modular design, with key components that handle different aspects of web application development.
+
+*   **Werkzeug:** A WSGI toolkit that provides low-level utilities for handling requests, responses, and other HTTP-related functionalities. Flask uses Werkzeug for its core server and request/response objects.
+*   **Jinja2:** A template engine used for rendering dynamic web pages. Flask integrates Jinja2 to allow developers to create templates with placeholders that are filled with data during request processing.
+*   **Itsdangerous:** Used for securely signing data, particularly for session management and other security-sensitive operations. Flask uses itsdangerous to ensure the integrity and authenticity of data stored in cookies.
+*   **Click:** A library for creating command-line interfaces. Flask uses Click to provide a command-line interface for managing Flask applications, such as running the development server or executing database migrations.
+*   **Flask Extensions:** Flask supports a wide variety of extensions that add functionality such as database integration, authentication, and API development. These extensions are typically installed separately and integrated into Flask applications as needed.
