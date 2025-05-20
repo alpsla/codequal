@@ -5,12 +5,10 @@ set -e  # Exit on error
 
 echo "Building packages in sequential order..."
 
-# Build core package (ignoring TypeScript errors)
-echo "Building core package (with --force)..."
-cd packages/core
-# Run tsc with --force flag to ignore errors
-npx tsc --skipLibCheck || true
-cd ../..
+# Build core package using forced build script
+echo "Building core package (with forced declarations)..."
+# Run custom script to ensure declarations are generated
+node scripts/utils/build-core-forced.js
 
 # Build database package
 echo "Building database package..."
