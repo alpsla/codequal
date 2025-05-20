@@ -4,8 +4,8 @@
 
 # Default parameters
 REPO_URL="${1:-https://github.com/expressjs/express}"
-MODEL="${2:-deepseek/deepseek-coder}"
-FALLBACK_MODELS="${3:-google/gemini-2.5-pro-preview-05-06}"
+MODEL="${2:-anthropic/claude-3-7-sonnet}"
+FALLBACK_MODELS="${3:-openai/gpt-4.1}"
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 BASE_DIR="/Users/alpinro/Code Prjects/codequal"
 OUTPUT_DIR="$BASE_DIR/reports/report_$TIMESTAMP"
@@ -356,6 +356,26 @@ if [ $CATEGORY_COUNT -gt 0 ]; then
 else
     echo "" >> "$SCORING_FILE"
     echo "## Overall Repository Score: 5.0 / 10 (default)" >> "$SCORING_FILE"
+fi
+
+# Add a note if performance analysis is missing
+if [ ! -f "${OUTPUT_DIR}/performance_analysis.md" ]; then
+    echo "" >> "$SCORING_FILE"
+    echo "## Note" >> "$SCORING_FILE"
+    echo "Performance analysis was not completed due to time constraints. Default score of 5/10 was used for overall calculation." >> "$SCORING_FILE"
+    
+    # Create a placeholder performance analysis file
+    echo "# Performance Analysis (Default)" > "${OUTPUT_DIR}/performance_analysis.md"
+    echo "" >> "${OUTPUT_DIR}/performance_analysis.md"
+    echo "Performance analysis could not be completed successfully." >> "${OUTPUT_DIR}/performance_analysis.md"
+    echo "" >> "${OUTPUT_DIR}/performance_analysis.md"
+    echo "## Score: 5/10 (Default)" >> "${OUTPUT_DIR}/performance_analysis.md"
+    echo "" >> "${OUTPUT_DIR}/performance_analysis.md"
+    echo "### Key Strengths" >> "${OUTPUT_DIR}/performance_analysis.md"
+    echo "- (Not available)" >> "${OUTPUT_DIR}/performance_analysis.md"
+    echo "" >> "${OUTPUT_DIR}/performance_analysis.md"
+    echo "### Areas for Improvement" >> "${OUTPUT_DIR}/performance_analysis.md"
+    echo "- (Not available)" >> "${OUTPUT_DIR}/performance_analysis.md"
 fi
 
 echo "" >> "$SCORING_FILE"
