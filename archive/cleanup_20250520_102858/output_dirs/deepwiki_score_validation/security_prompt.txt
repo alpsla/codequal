@@ -1,0 +1,89 @@
+Perform a security-focused analysis of this repository using the following structured format:
+
+## Authentication & Authorization
+- Authentication mechanisms assessment
+- Authorization models and implementation
+- Session management
+- Identity handling
+- Permission systems
+
+## Data Protection
+- Sensitive data handling
+- Input validation and sanitization
+- Output encoding
+- Data encryption approaches
+- PII/PHI handling compliance
+
+## Common Vulnerabilities
+- Injection vulnerabilities (SQL, NoSQL, command, etc.)
+- Cross-site scripting (XSS) concerns
+- Cross-site request forgery (CSRF) protections
+- Server-side request forgery (SSRF) risks
+- Insecure deserialization
+- XML external entities (XXE)
+- Security misconfiguration issues
+
+## API Security
+- API authentication mechanisms
+- Rate limiting implementation
+- Request validation
+- Error response security
+- API exposure controls
+
+## Dependency Security
+- Dependency management approach
+- Known vulnerable dependencies
+- Outdated dependencies
+- Supply chain security considerations
+
+## Configuration & Environment
+- Secret management
+- Environment configuration security
+- Default configurations
+- Debug/development features in production
+- Error handling information exposure
+
+## Infrastructure Security
+- Deployment security considerations
+- Container security (if applicable)
+- Network security controls
+- Cloud service security (if applicable)
+
+## Security Recommendations
+- Critical vulnerabilities to address
+- Security improvements by priority
+- Security testing recommendations
+- Security architecture enhancements
+
+Please provide specific examples with file paths and code patterns where relevant. Structure your response for easy parsing and storage in a vector database.
+
+After your analysis, please provide a scoring assessment for this repository.
+
+1. Rate each area on a scale of 1-10 (10 being best):
+   - Score each subcategory in your analysis
+   - Provide brief justification for each score
+   - Identify high, medium, and low priority issues
+
+2. Create a summary table with the following format:
+   | Category | Score (1-10) | Key Strengths | Key Issues |
+   |----------|--------------|---------------|------------|
+   | Category1 | 8 | Strength1, Strength2 | Issue1, Issue2 |
+
+3. Include vector-ready metadata in this JSON format:
+```json
+{
+  "repository": "react",
+  "analysis_date": "2025-05-17T15:10:36Z",
+  "analysis_type": "security",
+  "scores": {
+    "overall": 8,
+    "subcategories": [
+      {"name": "Subcategory1", "score": 9, "strengths": ["Strength1"], "issues": []},
+      {"name": "Subcategory2", "score": 7, "strengths": [], "issues": ["Issue1"]}
+    ],
+    "issues": [
+      {"name": "Issue1", "severity": "high", "score_impact": -1, "file_paths": ["/path/file1"]}
+    ]
+  }
+}
+```

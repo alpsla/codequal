@@ -1,0 +1,22 @@
+{
+  "repo_url": "https://github.com/expressjs/express",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Analyze the security of this repository. Focus on:
+1. Authentication and authorization
+2. Input validation
+3. Common vulnerabilities
+4. Sensitive data handling
+
+After your analysis, provide:
+- A score from 1-10 for security
+- Key strengths (bullet points)
+- Areas for improvement (bullet points)"
+    }
+  ],
+  "stream": false,
+  "provider": "openrouter",
+  "model": "anthropic/claude-3-opus",
+  "temperature": 0.2
+}

@@ -1,0 +1,16 @@
+{
+  "api_key": "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",
+  "embedding_model": "text-embedding-ada-002",
+  "embedding_dimensions": 1536,
+  "models": [
+    {
+      "id": "claude-3-7-sonnet",
+      "name": "Claude 3.7 Sonnet",
+      "parameters": {
+        "temperature": 0.7,
+        "max_tokens": 4096
+      }
+    }
+  ],
+  "default_model": "claude-3-7-sonnet"
+}

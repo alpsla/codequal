@@ -14,6 +14,9 @@
  *   node deepwiki-test.js --mode=wiki --repo=pallets/click --provider=google --model=gemini-2.5-pro-preview-05-06
  */
 
+/* eslint-env node */
+/* eslint-disable no-console, @typescript-eslint/no-var-requires */
+
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');

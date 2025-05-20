@@ -8,9 +8,15 @@
  * 
  * This configuration is used by both DeepWiki integration and other components that
  * need to select optimal models for specific repository contexts.
+ * 
+ * Last updated: May 13, 2025
  */
 
-import { ModelConfig } from '../../deepwiki/DeepWikiClient';
+// Define our own ModelConfig interface to avoid circular dependencies
+export interface ProviderModelConfig<T = string> {
+  provider: T;
+  model: string;
+}
 
 /**
  * Repository size categories
@@ -25,7 +31,8 @@ export type RepositoryProvider =
   | 'google' 
   | 'anthropic' 
   | 'deepseek' 
-  | 'openrouter';
+  | 'openrouter'
+  | 'ollama';
 
 /**
  * Configuration for testing status of language-model combinations
@@ -53,7 +60,7 @@ export interface ModelTestResults {
  * Full model configuration for a repository context
  */
 export interface RepositoryModelConfig<T extends RepositoryProvider = RepositoryProvider> 
-  extends ModelConfig<T> {
+  extends ProviderModelConfig<T> {
   testResults?: ModelTestResults;
   notes?: string;
 }
@@ -82,7 +89,7 @@ export const REPOSITORY_MODEL_CONFIGS: Record<
     },
     'medium': {
       provider: 'anthropic',
-      model: 'claude-3-7-sonnet',
+      model: 'claude-3.7-sonnet',
       testResults: {
         avgResponseTime: 3.0,
         avgResponseSize: 1883,
@@ -95,7 +102,7 @@ export const REPOSITORY_MODEL_CONFIGS: Record<
     },
     'large': {
       provider: 'anthropic',
-      model: 'claude-3-7-sonnet',
+      model: 'claude-3.7-sonnet',
       testResults: {
         avgResponseTime: 3.5,
         avgResponseSize: 2032,
@@ -123,7 +130,7 @@ export const REPOSITORY_MODEL_CONFIGS: Record<
     },
     'medium': {
       provider: 'anthropic',
-      model: 'claude-3-7-sonnet',
+      model: 'claude-3.7-sonnet',
       testResults: {
         avgResponseTime: 4.0,
         avgResponseSize: 3051,
@@ -136,7 +143,7 @@ export const REPOSITORY_MODEL_CONFIGS: Record<
     },
     'large': {
       provider: 'anthropic',
-      model: 'claude-3-7-sonnet',
+      model: 'claude-3.7-sonnet',
       testResults: {
         avgResponseTime: 4.5,
         avgResponseSize: 2950,
@@ -205,7 +212,7 @@ export const REPOSITORY_MODEL_CONFIGS: Record<
     },
     'medium': {
       provider: 'deepseek',
-      model: 'deepseek-coder-plus',
+      model: 'deepseek-coder', // Updated model name
       testResults: {
         status: TestingStatus.PLANNED,
         avgResponseTime: 0,
@@ -217,7 +224,7 @@ export const REPOSITORY_MODEL_CONFIGS: Record<
     },
     'large': {
       provider: 'anthropic',
-      model: 'claude-3-7-sonnet',
+      model: 'claude-3.7-sonnet',
       testResults: {
         status: TestingStatus.PLANNED,
         avgResponseTime: 0,
@@ -243,7 +250,7 @@ export const REPOSITORY_MODEL_CONFIGS: Record<
     },
     'medium': {
       provider: 'deepseek',
-      model: 'deepseek-coder-plus',
+      model: 'deepseek-coder', // Updated model name
       testResults: {
         status: TestingStatus.PLANNED,
         avgResponseTime: 0,
@@ -281,7 +288,7 @@ export const REPOSITORY_MODEL_CONFIGS: Record<
     },
     'medium': {
       provider: 'deepseek',
-      model: 'deepseek-coder-plus',
+      model: 'deepseek-coder', // Updated model name
       testResults: {
         status: TestingStatus.PLANNED,
         avgResponseTime: 0,
@@ -289,11 +296,11 @@ export const REPOSITORY_MODEL_CONFIGS: Record<
         testCount: 0,
         lastTested: '2025-05-10',
       },
-      notes: 'Test priority high - DeepSeek's code focus should work well with Go'
+      notes: 'Test priority high - DeepSeek\'s code focus should work well with Go'
     },
     'large': {
       provider: 'anthropic',
-      model: 'claude-3-7-sonnet',
+      model: 'claude-3.7-sonnet',
       testResults: {
         status: TestingStatus.PLANNED,
         avgResponseTime: 0,
@@ -319,7 +326,7 @@ export const REPOSITORY_MODEL_CONFIGS: Record<
     },
     'medium': {
       provider: 'anthropic',
-      model: 'claude-3-7-sonnet',
+      model: 'claude-3.7-sonnet',
       testResults: {
         status: TestingStatus.PLANNED,
         avgResponseTime: 0,
@@ -331,7 +338,7 @@ export const REPOSITORY_MODEL_CONFIGS: Record<
     },
     'large': {
       provider: 'anthropic',
-      model: 'claude-3-7-sonnet',
+      model: 'claude-3.7-sonnet',
       testResults: {
         status: TestingStatus.PLANNED,
         avgResponseTime: 0,
@@ -353,11 +360,11 @@ export const REPOSITORY_MODEL_CONFIGS: Record<
         testCount: 0,
         lastTested: '',
       },
-      notes: 'High priority for testing given Rust's popularity'
+      notes: 'High priority for testing given Rust\'s popularity'
     },
     'medium': {
       provider: 'deepseek',
-      model: 'deepseek-coder-plus',
+      model: 'deepseek-coder', // Updated model name
       testResults: {
         status: TestingStatus.PLANNED,
         avgResponseTime: 0,
@@ -395,7 +402,7 @@ export const REPOSITORY_MODEL_CONFIGS: Record<
     },
     'medium': {
       provider: 'anthropic',
-      model: 'claude-3-7-sonnet',
+      model: 'claude-3.7-sonnet',
       testResults: {
         status: TestingStatus.PLANNED,
         avgResponseTime: 0,
@@ -407,7 +414,7 @@ export const REPOSITORY_MODEL_CONFIGS: Record<
     },
     'large': {
       provider: 'anthropic',
-      model: 'claude-3-7-sonnet',
+      model: 'claude-3.7-sonnet',
       testResults: {
         status: TestingStatus.PLANNED,
         avgResponseTime: 0,
@@ -435,7 +442,7 @@ export const REPOSITORY_MODEL_CONFIGS: Record<
     },
     'medium': {
       provider: 'anthropic',
-      model: 'claude-3-7-sonnet',
+      model: 'claude-3.7-sonnet',
       testResults: {
         avgResponseTime: 3.3,
         avgResponseSize: 2032,
@@ -513,37 +520,13 @@ export const DEEPSEEK_CONFIGS_TO_TEST: Record<string, RepositoryModelConfig> = {
     provider: 'deepseek',
     model: 'deepseek-coder',
     testResults: {
-      status: TestingStatus.PLANNED,
-      avgResponseTime: 0,
-      avgResponseSize: 0,
-      testCount: 0,
-      lastTested: '',
+      status: TestingStatus.TESTED, // Updated to TESTED based on validation results
+      avgResponseTime: 7.69,
+      avgResponseSize: 1200, // Estimated based on sample
+      testCount: 1,
+      lastTested: '2025-05-13',
     },
-    notes: 'Base DeepSeek Coder model - test for general code analysis'
-  },
-  'deepseek-coder-plus': {
-    provider: 'deepseek',
-    model: 'deepseek-coder-plus',
-    testResults: {
-      status: TestingStatus.PLANNED,
-      avgResponseTime: 0,
-      avgResponseSize: 0,
-      testCount: 0,
-      lastTested: '',
-    },
-    notes: 'Enhanced DeepSeek model - test for detailed code understanding'
-  },
-  'deepseek-coder-lite': {
-    provider: 'deepseek',
-    model: 'deepseek-coder-lite',
-    testResults: {
-      status: TestingStatus.PLANNED,
-      avgResponseTime: 0,
-      avgResponseSize: 0,
-      testCount: 0,
-      lastTested: '',
-    },
-    notes: 'Smaller DeepSeek model - test for speed and smaller repositories'
+    notes: 'Base DeepSeek Coder model - validated working on May 13, 2025'
   }
 };
 

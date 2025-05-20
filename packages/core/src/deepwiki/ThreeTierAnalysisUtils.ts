@@ -6,10 +6,10 @@
  * prepare analysis results for storage and presentation.
  */
 
-import { RepositoryModelSelectionService, AnalysisTier, ModelSelectionStrategy } from '../services/RepositoryModelSelectionService';
-import { RepositoryContext, AnalysisResult, AnalysisResultType, PRFile } from '../types/repository';
+import { RepositoryModelSelectionService, AnalysisTier } from '../services/RepositoryModelSelectionService';
+import { RepositoryContext, AnalysisResult, AnalysisResultType } from '../types/repository';
 import { Logger } from '../utils/logger';
-import { ModelConfig } from './DeepWikiClient';
+import { ModelConfig, DeepWikiProvider } from './DeepWikiClient';
 
 /**
  * Report structure for repository analysis
@@ -176,12 +176,12 @@ export interface ReportVisualization {
   /**
    * Visualization data
    */
-  data: any;
+  data: Record<string, unknown>;
   
   /**
    * Configuration for rendering
    */
-  config: any;
+  config: Record<string, unknown>;
   
   /**
    * Description of the visualization
@@ -271,7 +271,7 @@ export interface VectorChunk {
     /**
      * Custom metadata
      */
-    [key: string]: any;
+    [key: string]: unknown;
   };
   
   /**
@@ -335,7 +335,7 @@ export class ThreeTierAnalysisUtils {
   getModelConfigForRepository(
     repository: RepositoryContext,
     tier: AnalysisTier
-  ): ModelConfig<any> {
+  ): ModelConfig<DeepWikiProvider> {
     const modelConfig = this.modelSelectionService.getModelForRepository(repository, tier);
     
     return {
@@ -355,7 +355,7 @@ export class ThreeTierAnalysisUtils {
     repository: RepositoryContext,
     prSizeBytes: number,
     tier: AnalysisTier
-  ): ModelConfig<any> {
+  ): ModelConfig<DeepWikiProvider> {
     const modelConfig = this.modelSelectionService.getModelForPR(repository, prSizeBytes, tier);
     
     return {
@@ -563,7 +563,7 @@ export class ThreeTierAnalysisUtils {
    * @param deepWikiVisualizations DeepWiki visualization data
    * @returns Report visualizations
    */
-  convertDeepWikiVisualizations(deepWikiVisualizations: any[]): ReportVisualization[] {
+  convertDeepWikiVisualizations(deepWikiVisualizations: Record<string, unknown>[]): ReportVisualization[] {
     const visualizations: ReportVisualization[] = [];
     
     for (const viz of deepWikiVisualizations) {
@@ -642,9 +642,9 @@ export class ThreeTierAnalysisUtils {
    * @returns Our visualization config
    * @private
    */
-  private convertVisualizationConfig(deepWikiViz: any): any {
+  private convertVisualizationConfig(deepWikiViz: Record<string, unknown>): Record<string, unknown> {
     // Start with a base configuration
-    const config: any = {
+    const config: Record<string, unknown> = {
       responsive: true,
       maintainAspectRatio: true,
       ...deepWikiViz.config

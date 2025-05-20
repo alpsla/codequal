@@ -16,7 +16,7 @@ export function deepClone<T>(obj: T): T {
  * @param value Value to check
  * @returns True if empty
  */
-export function isEmpty(value: any): boolean {
+export function isEmpty(value: unknown): boolean {
   if (value === null || value === undefined) {
     return true;
   }

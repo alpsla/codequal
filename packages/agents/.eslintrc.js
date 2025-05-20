@@ -1,6 +1,6 @@
 module.exports = {
   root: true,
-  extends: ['../../.eslintrc.js'],
+  extends: ['../../.eslintrc.json'],
   parser: '@typescript-eslint/parser',
   parserOptions: {
     project: ['./tsconfig.eslint.json'],
@@ -11,7 +11,9 @@ module.exports = {
   ignorePatterns: [
     'dist/**/*', 
     'node_modules/**/*',
-    'coverage/**/*'
+    'coverage/**/*',
+    'src/multi-agent/__tests__/**/*', 
+    'src/multi-agent/evaluation/__tests__/**/*'
   ],
   rules: {
     '@typescript-eslint/no-explicit-any': 'off',

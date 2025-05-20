@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deepwiki
+  namespace: codequal-dev
+  labels:
+    app: deepwiki
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: deepwiki
+  template:
+    metadata:
+      labels:
+        app: deepwiki
+    spec:
+      containers:
+      - name: deepwiki
+        image: ghcr.io/asyncfuncai/deepwiki-open:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
+          name: frontend
+        - containerPort: 8001
+          name: api
+        env:
+        - name: SERVER_BASE_URL
+          value: http://deepwiki-api:8001
+        - name: NEXT_PUBLIC_SERVER_BASE_URL
+          value: http://deepwiki-api:8001
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              key: OPENAI_API_KEY
+              name: openai-api-key
+        - name: GOOGLE_API_KEY
+          valueFrom:
+            secretKeyRef:
+              key: GOOGLE_API_KEY
+              name: google-ai-api-key
+        - name: GITHUB_TOKEN
+          value: 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
+        envFrom:
+        - secretRef:
+            name: deepwiki-env
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1"
+          limits:
+            memory: "4Gi"
+            cpu: "2"
+        volumeMounts:
+        - mountPath: /root/.adalflow
+          name: deepwiki-data
+      volumes:
+      - name: deepwiki-data
+        persistentVolumeClaim:
+          claimName: deepwiki-data-new
+      imagePullSecrets:
+      - name: codequal

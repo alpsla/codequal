@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deepwiki-fixed-30gb
+  namespace: codequal-dev
+  labels:
+    app: deepwiki-fixed-30gb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: deepwiki-fixed-30gb
+  template:
+    metadata:
+      labels:
+        app: deepwiki-fixed-30gb
+    spec:
+      containers:
+      - name: deepwiki
+        image: deepwiki:latest
+        imagePullPolicy: Always
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "0.5"
+          limits:
+            memory: "4Gi"
+            cpu: "1"
+        ports:
+        - containerPort: 8001
+          name: http
+        volumeMounts:
+        - name: deepwiki-data
+          mountPath: /root/.adalflow
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: PORT
+          value: "8001"
+        - name: STORAGE_DIR
+          value: "/root/.adalflow"
+      volumes:
+      - name: deepwiki-data
+        persistentVolumeClaim:
+          # Use the 30Gi volume
+          claimName: deepwiki-data-new
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: deepwiki-fixed-30gb
+  namespace: codequal-dev
+spec:
+  selector:
+    app: deepwiki-fixed-30gb
+  ports:
+  - port: 8001
+    targetPort: 8001
+    name: http
+  type: ClusterIP

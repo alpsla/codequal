@@ -10,7 +10,8 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { 
   RepositoryModelConfig, 
   RepositorySizeCategory, 
-  TestingStatus 
+  TestingStatus,
+  RepositoryProvider
 } from '../../config/models/repository-model-config';
 import { CalibrationTestResult } from './RepositoryCalibrationService';
 import { Logger } from '../../utils/logger';
@@ -40,7 +41,7 @@ interface ModelConfigRecord {
 /**
  * Interface for calibration results database table
  */
-interface CalibrationResultRecord {
+interface _CalibrationResultRecord {
   id: string;
   language: string;
   size_category: string;
@@ -70,6 +71,35 @@ export class ModelConfigStore {
   ) {
     this.supabase = createClient(supabaseUrl, supabaseKey);
     this.logger.info('ModelConfigStore initialized');
+  }
+  
+  /**
+   * Initialize the store
+   * Verifies connection to the database and table existence
+   * 
+   * @returns Promise that resolves when initialized
+   */
+  async init(): Promise<void> {
+    try {
+      // Verify connection by testing a simple query
+      const { error } = await this.supabase
+        .from('model_configurations')
+        .select('id')
+        .limit(1);
+      
+      if (error) {
+        this.logger.error('Error initializing ModelConfigStore', { error });
+        throw new Error(`Failed to initialize ModelConfigStore: ${error.message}`);
+      }
+      
+      this.logger.info('ModelConfigStore initialized successfully', {
+        connectedToDatabase: true,
+        tablesAvailable: true
+      });
+    } catch (error) {
+      this.logger.error('Unexpected error initializing ModelConfigStore', { error });
+      throw new Error(`Failed to initialize ModelConfigStore: ${error}`);
+    }
   }
   
   /**
@@ -117,8 +147,8 @@ export class ModelConfigStore {
       const record = data[0] as ModelConfigRecord;
       
       return {
-        provider: record.provider as any,
-        model: record.model as any,
+        provider: record.provider as RepositoryProvider,
+        model: record.model,
         testResults: {
           status: record.test_results.status as TestingStatus,
           avgResponseTime: record.test_results.avgResponseTime,
@@ -236,28 +266,57 @@ export class ModelConfigStore {
       // Normalize language
       const normalizedLang = language.toLowerCase();
       
-      // Store calibration results
-      const { error } = await this.supabase
-        .from('calibration_results')
-        .insert({
-          language: normalizedLang,
-          size_category: sizeCategory,
-          results,
-          created_at: new Date().toISOString()
-        });
+      this.logger.info('Storing calibration results in database', { 
+        language: normalizedLang, 
+        sizeCategory,
+        resultCount: Object.keys(results).length
+      });
       
-      if (error) {
+      // Check if an entry already exists for this language and size
+      const { data: existingData } = await this.supabase
+        .from('calibration_results')
+        .select('id')
+        .eq('language', normalizedLang)
+        .eq('size_category', sizeCategory)
+        .limit(1);
+        
+      let result;
+      
+      if (existingData && existingData.length > 0) {
+        // Update existing calibration result
+        result = await this.supabase
+          .from('calibration_results')
+          .update({
+            results,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingData[0].id);
+      } else {
+        // Insert new calibration result
+        result = await this.supabase
+          .from('calibration_results')
+          .insert({
+            language: normalizedLang,
+            size_category: sizeCategory,
+            results,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+      }
+      
+      if (result.error) {
         this.logger.error('Error storing calibration results', { 
           language: normalizedLang, 
           sizeCategory, 
-          error 
+          error: result.error 
         });
         return false;
       }
       
-      this.logger.info('Stored calibration results', { 
-        language: normalizedLang, 
-        sizeCategory
+      this.logger.info('Successfully stored calibration results', {
+        language: normalizedLang,
+        sizeCategory,
+        resultCount: Object.keys(results).length
       });
       
       return true;
@@ -360,8 +419,8 @@ export class ModelConfigStore {
         
         // Add configuration
         configs[language][sizeCategory] = {
-          provider: record.provider as any,
-          model: record.model as any,
+          provider: record.provider as RepositoryProvider,
+          model: record.model,
           testResults: {
             status: record.test_results.status as TestingStatus,
             avgResponseTime: record.test_results.avgResponseTime,

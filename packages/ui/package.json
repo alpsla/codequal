@@ -7,11 +7,15 @@
   },
   "scripts": {
     "test": "echo \"No tests yet\" && exit 0",
-    "build": "echo \"Building UI package\" && exit 0", 
+    "build": "echo \"Building UI package\" && exit 0",
     "lint": "echo \"Linting UI package\" && exit 0"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": ""
+  "description": "",
+  "dependencies": {
+    "axios": "^1.9.0",
+    "dotenv": "^16.5.0"
+  }
 }

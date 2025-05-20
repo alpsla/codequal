@@ -25,7 +25,7 @@ export function PRReviewForm() {
     }
     
     // GitHub or GitLab PR URL validation
-    const validUrl = /https:\/\/(github|gitlab)\.com\/[^\/]+\/[^\/]+(\/pull\/\d+|\/\-\/merge_requests\/\d+)/;
+    const validUrl = /https:\/\/(github|gitlab)\.com\/[^/]+\/[^/]+(\/pull\/\d+|\/merge_requests\/\d+)/;
     if (!validUrl.test(prUrl)) {
       setError('Invalid PR URL. Must be a GitHub or GitLab PR URL.');
       return;
@@ -65,8 +65,9 @@ export function PRReviewForm() {
       
       // Redirect to results page
       router.push(`/results/${result.prReviewId}`);
-    } catch (error: any) {
-      setError(error.message);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      setError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }

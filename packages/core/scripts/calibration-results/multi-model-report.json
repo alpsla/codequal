@@ -1,0 +1,5093 @@
+{
+  "small": {
+    "pallets/click": {
+      "language": "python",
+      "complexity": "low",
+      "models": {
+        "anthropic/claude-3-opus-20240229": {
+          "model": "claude-3-opus-20240229",
+          "provider": "anthropic",
+          "display": "Claude 3 Opus",
+          "tier": "premium",
+          "prompts": {
+            "architecture": {
+              "success": true,
+              "contentSize": 3418,
+              "responseTime": 23.29,
+              "timestamp": "2025-05-13T20:55:20.203Z"
+            }
+          }
+        }
+      }
+    }
+  },
+  "javascript": {
+    "large": {
+      "facebook/react": {
+        "anthropic/claude-3-opus-20240229": {
+          "categories": {
+            "architecture": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T00:30:28.415Z"
+            },
+            "codeQuality": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T00:30:28.504Z"
+            },
+            "security": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T00:30:28.577Z"
+            },
+            "bestPractices": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T00:30:28.643Z"
+            },
+            "performance": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T00:30:28.730Z"
+            }
+          }
+        },
+        "anthropic/claude-3-sonnet-20240229": {
+          "categories": {
+            "architecture": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T00:30:29.008Z"
+            },
+            "codeQuality": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T00:30:29.088Z"
+            },
+            "security": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T00:30:29.193Z"
+            },
+            "bestPractices": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T00:30:29.255Z"
+            },
+            "performance": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T00:30:29.341Z"
+            }
+          }
+        },
+        "anthropic/claude-3-haiku-20240307": {
+          "categories": {
+            "architecture": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T00:30:29.766Z"
+            },
+            "codeQuality": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T00:30:29.839Z"
+            },
+            "security": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T00:30:29.904Z"
+            },
+            "bestPractices": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T00:30:30.068Z"
+            },
+            "performance": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T00:30:30.182Z"
+            }
+          }
+        },
+        "anthropic/claude-3.5-sonnet-20240620": {
+          "categories": {
+            "architecture": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T00:30:30.589Z"
+            },
+            "codeQuality": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T00:30:30.652Z"
+            },
+            "security": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T00:30:30.726Z"
+            },
+            "bestPractices": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T00:30:30.787Z"
+            },
+            "performance": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T00:30:30.853Z"
+            }
+          }
+        },
+        "openai/gpt-4o": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 18.561,
+              "contentSize": 5261,
+              "timestamp": "2025-05-14T00:30:49.416Z"
+            },
+            "codeQuality": {
+              "qualityScore": 9,
+              "responseTime": 15.185,
+              "contentSize": 4273,
+              "timestamp": "2025-05-14T00:31:04.602Z"
+            },
+            "security": {
+              "qualityScore": 7,
+              "responseTime": 14.772,
+              "contentSize": 3656,
+              "timestamp": "2025-05-14T00:31:19.375Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 13.993,
+              "contentSize": 4709,
+              "timestamp": "2025-05-14T00:31:33.369Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 19.272,
+              "contentSize": 4852,
+              "timestamp": "2025-05-14T00:31:52.641Z"
+            }
+          },
+          "combinedScore": 7.5243400000000005,
+          "avgQuality": 8.8,
+          "avgResponseTime": 16.3566
+        },
+        "openai/gpt-4-turbo": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 18.148,
+              "contentSize": 3826,
+              "timestamp": "2025-05-14T00:32:10.789Z"
+            },
+            "codeQuality": {
+              "qualityScore": 9,
+              "responseTime": 22.944,
+              "contentSize": 4006,
+              "timestamp": "2025-05-14T00:32:33.736Z"
+            },
+            "security": {
+              "qualityScore": 7,
+              "responseTime": 22.144,
+              "contentSize": 4035,
+              "timestamp": "2025-05-14T00:32:55.880Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 27.217,
+              "contentSize": 4633,
+              "timestamp": "2025-05-14T00:33:23.099Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 17.208,
+              "contentSize": 4316,
+              "timestamp": "2025-05-14T00:33:40.308Z"
+            }
+          },
+          "combinedScore": 7.00678,
+          "avgQuality": 8.8,
+          "avgResponseTime": 21.5322
+        },
+        "openai/gpt-4": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 9,
+              "responseTime": 22.817,
+              "contentSize": 3638,
+              "timestamp": "2025-05-14T00:34:03.127Z"
+            },
+            "codeQuality": {
+              "qualityScore": 6,
+              "responseTime": 13.604,
+              "contentSize": 2169,
+              "timestamp": "2025-05-14T00:34:16.733Z"
+            },
+            "security": {
+              "qualityScore": 5,
+              "responseTime": 19.623,
+              "contentSize": 2708,
+              "timestamp": "2025-05-14T00:34:36.357Z"
+            },
+            "bestPractices": {
+              "qualityScore": 8,
+              "responseTime": 30.981,
+              "contentSize": 3151,
+              "timestamp": "2025-05-14T00:35:07.340Z"
+            },
+            "performance": {
+              "qualityScore": 8,
+              "responseTime": 21.957,
+              "contentSize": 2884,
+              "timestamp": "2025-05-14T00:35:29.298Z"
+            }
+          },
+          "combinedScore": 5.86036,
+          "avgQuality": 7.2,
+          "avgResponseTime": 21.7964
+        },
+        "google/gemini-1.5-pro": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 16.955,
+              "contentSize": 4713,
+              "timestamp": "2025-05-14T00:35:46.255Z"
+            },
+            "codeQuality": {
+              "qualityScore": 9,
+              "responseTime": 16.797,
+              "contentSize": 4801,
+              "timestamp": "2025-05-14T00:36:03.053Z"
+            },
+            "security": {
+              "qualityScore": 8,
+              "responseTime": 16.314,
+              "contentSize": 4549,
+              "timestamp": "2025-05-14T00:36:19.369Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 15.873,
+              "contentSize": 4616,
+              "timestamp": "2025-05-14T00:36:35.245Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 19.066,
+              "contentSize": 5253,
+              "timestamp": "2025-05-14T00:36:54.314Z"
+            }
+          },
+          "combinedScore": 7.5999,
+          "avgQuality": 9,
+          "avgResponseTime": 17.000999999999998
+        },
+        "google/gemini-1.5-flash": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 7.241,
+              "contentSize": 5337,
+              "timestamp": "2025-05-14T00:37:01.557Z"
+            },
+            "codeQuality": {
+              "qualityScore": 7,
+              "responseTime": 5.934,
+              "contentSize": 4348,
+              "timestamp": "2025-05-14T00:37:07.491Z"
+            },
+            "security": {
+              "qualityScore": 8,
+              "responseTime": 6.378,
+              "contentSize": 4840,
+              "timestamp": "2025-05-14T00:37:13.871Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 6.607,
+              "contentSize": 4977,
+              "timestamp": "2025-05-14T00:37:20.479Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 6.687,
+              "contentSize": 5152,
+              "timestamp": "2025-05-14T00:37:27.167Z"
+            }
+          },
+          "combinedScore": 8.363059999999999,
+          "avgQuality": 8.6,
+          "avgResponseTime": 6.5694
+        },
+        "deepseek/deepseek-coder": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 38.953,
+              "contentSize": 4195,
+              "timestamp": "2025-05-14T00:38:06.121Z"
+            },
+            "codeQuality": {
+              "qualityScore": 8,
+              "responseTime": 33.858,
+              "contentSize": 3987,
+              "timestamp": "2025-05-14T00:38:39.982Z"
+            },
+            "security": {
+              "qualityScore": 8,
+              "responseTime": 42.789,
+              "contentSize": 4532,
+              "timestamp": "2025-05-14T00:39:22.774Z"
+            },
+            "bestPractices": {
+              "qualityScore": 8,
+              "responseTime": 38.774,
+              "contentSize": 4463,
+              "timestamp": "2025-05-14T00:40:01.549Z"
+            },
+            "performance": {
+              "qualityScore": 8,
+              "responseTime": 38.508,
+              "contentSize": 3769,
+              "timestamp": "2025-05-14T00:40:40.058Z"
+            }
+          },
+          "combinedScore": 5.88,
+          "avgQuality": 8.4,
+          "avgResponseTime": 38.57640000000001
+        },
+        "deepseek/deepseek-chat": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 42.752,
+              "contentSize": 4370,
+              "timestamp": "2025-05-14T00:41:22.815Z"
+            },
+            "codeQuality": {
+              "qualityScore": 7,
+              "responseTime": 34.347,
+              "contentSize": 3573,
+              "timestamp": "2025-05-14T00:41:57.163Z"
+            },
+            "security": {
+              "qualityScore": 7,
+              "responseTime": 38.912,
+              "contentSize": 3973,
+              "timestamp": "2025-05-14T00:42:36.076Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 46.259,
+              "contentSize": 4729,
+              "timestamp": "2025-05-14T00:43:22.335Z"
+            },
+            "performance": {
+              "qualityScore": 8,
+              "responseTime": 45.704,
+              "contentSize": 4525,
+              "timestamp": "2025-05-14T00:44:08.041Z"
+            }
+          },
+          "combinedScore": 5.739999999999999,
+          "avgQuality": 8.2,
+          "avgResponseTime": 41.5948
+        },
+        "openrouter/anthropic/claude-3-opus-20240229": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 30.729,
+              "contentSize": 4287,
+              "timestamp": "2025-05-14T00:44:38.772Z"
+            },
+            "codeQuality": {
+              "qualityScore": 7,
+              "responseTime": 21.768,
+              "contentSize": 3557,
+              "timestamp": "2025-05-14T00:45:00.542Z"
+            },
+            "security": {
+              "qualityScore": 7,
+              "responseTime": 25.84,
+              "contentSize": 4137,
+              "timestamp": "2025-05-14T00:45:26.383Z"
+            },
+            "bestPractices": {
+              "qualityScore": 6,
+              "responseTime": 25.057,
+              "contentSize": 3621,
+              "timestamp": "2025-05-14T00:45:51.442Z"
+            },
+            "performance": {
+              "qualityScore": 8,
+              "responseTime": 29.247,
+              "contentSize": 4174,
+              "timestamp": "2025-05-14T00:46:20.690Z"
+            }
+          },
+          "combinedScore": 5.667179999999999,
+          "avgQuality": 7.6,
+          "avgResponseTime": 26.528200000000005
+        },
+        "openrouter/anthropic/claude-3-sonnet-20240229": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 15.691,
+              "contentSize": 4195,
+              "timestamp": "2025-05-14T00:46:36.382Z"
+            },
+            "codeQuality": {
+              "qualityScore": 6,
+              "responseTime": 11.849,
+              "contentSize": 3176,
+              "timestamp": "2025-05-14T00:46:48.232Z"
+            },
+            "security": {
+              "qualityScore": 9,
+              "responseTime": 15.501,
+              "contentSize": 4074,
+              "timestamp": "2025-05-14T00:47:03.734Z"
+            },
+            "bestPractices": {
+              "qualityScore": 7,
+              "responseTime": 10.441,
+              "contentSize": 2945,
+              "timestamp": "2025-05-14T00:47:14.177Z"
+            },
+            "performance": {
+              "qualityScore": 8,
+              "responseTime": 12.348,
+              "contentSize": 3469,
+              "timestamp": "2025-05-14T00:47:26.525Z"
+            }
+          },
+          "combinedScore": 7.283399999999999,
+          "avgQuality": 8,
+          "avgResponseTime": 13.166
+        },
+        "openrouter/openai/gpt-4o": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 18.939,
+              "contentSize": 5253,
+              "timestamp": "2025-05-14T00:47:45.465Z"
+            },
+            "codeQuality": {
+              "qualityScore": 9,
+              "responseTime": 19.005,
+              "contentSize": 3917,
+              "timestamp": "2025-05-14T00:48:04.471Z"
+            },
+            "security": {
+              "qualityScore": 7,
+              "responseTime": 15.126,
+              "contentSize": 4271,
+              "timestamp": "2025-05-14T00:48:19.599Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 15.58,
+              "contentSize": 4556,
+              "timestamp": "2025-05-14T00:48:35.182Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 17.646,
+              "contentSize": 4617,
+              "timestamp": "2025-05-14T00:48:52.831Z"
+            }
+          },
+          "combinedScore": 7.43408,
+          "avgQuality": 8.8,
+          "avgResponseTime": 17.2592
+        },
+        "openrouter/google/gemini-1.5-pro": {
+          "categories": {
+            "architecture": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T00:48:52.932Z"
+            },
+            "codeQuality": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T00:48:53.005Z"
+            },
+            "security": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T00:48:53.148Z"
+            },
+            "bestPractices": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T00:48:53.215Z"
+            },
+            "performance": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T00:48:53.390Z"
+            }
+          }
+        },
+        "bestModel": {
+          "modelKey": "google/gemini-1.5-flash",
+          "score": 8.363059999999999,
+          "timestamp": "2025-05-14T00:48:53.391Z"
+        }
+      }
+    },
+    "medium": {
+      "facebook/react-native": {
+        "anthropic/claude-3-opus-20240229": {
+          "categories": {
+            "architecture": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T03:04:06.176Z"
+            },
+            "codeQuality": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T03:04:06.252Z"
+            },
+            "security": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T03:04:06.325Z"
+            },
+            "bestPractices": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T03:04:06.389Z"
+            },
+            "performance": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T03:04:06.450Z"
+            }
+          }
+        },
+        "anthropic/claude-3-sonnet-20240229": {
+          "categories": {
+            "architecture": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T03:04:06.527Z"
+            },
+            "codeQuality": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T03:04:06.589Z"
+            },
+            "security": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T03:04:06.649Z"
+            },
+            "bestPractices": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T03:04:06.709Z"
+            },
+            "performance": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T03:04:06.781Z"
+            }
+          }
+        },
+        "anthropic/claude-3-haiku-20240307": {
+          "categories": {
+            "architecture": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T03:04:06.853Z"
+            },
+            "codeQuality": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T03:04:06.912Z"
+            },
+            "security": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T03:04:06.971Z"
+            },
+            "bestPractices": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T03:04:07.284Z"
+            },
+            "performance": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T03:04:07.351Z"
+            }
+          }
+        },
+        "anthropic/claude-3.5-sonnet-20240620": {
+          "categories": {
+            "architecture": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T03:04:07.465Z"
+            },
+            "codeQuality": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T03:04:07.530Z"
+            },
+            "security": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T03:04:07.597Z"
+            },
+            "bestPractices": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T03:04:07.660Z"
+            },
+            "performance": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T03:04:07.720Z"
+            }
+          }
+        },
+        "openai/gpt-4o": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 17.279,
+              "contentSize": 5419,
+              "timestamp": "2025-05-14T03:04:25.000Z"
+            },
+            "codeQuality": {
+              "qualityScore": 9,
+              "responseTime": 12.257,
+              "contentSize": 4314,
+              "timestamp": "2025-05-14T03:04:37.258Z"
+            },
+            "security": {
+              "qualityScore": 9,
+              "responseTime": 15.733,
+              "contentSize": 4594,
+              "timestamp": "2025-05-14T03:04:52.992Z"
+            },
+            "bestPractices": {
+              "qualityScore": 8,
+              "responseTime": 20.301,
+              "contentSize": 4417,
+              "timestamp": "2025-05-14T03:05:13.295Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 18.973,
+              "contentSize": 4577,
+              "timestamp": "2025-05-14T03:05:32.270Z"
+            }
+          },
+          "combinedScore": 7.60914,
+          "avgQuality": 9,
+          "avgResponseTime": 16.9086
+        },
+        "openai/gpt-4-turbo": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 23.993,
+              "contentSize": 5314,
+              "timestamp": "2025-05-14T03:05:56.266Z"
+            },
+            "codeQuality": {
+              "qualityScore": 7,
+              "responseTime": 16.341,
+              "contentSize": 3880,
+              "timestamp": "2025-05-14T03:06:12.609Z"
+            },
+            "security": {
+              "qualityScore": 7,
+              "responseTime": 18.802,
+              "contentSize": 4104,
+              "timestamp": "2025-05-14T03:06:31.418Z"
+            },
+            "bestPractices": {
+              "qualityScore": 8,
+              "responseTime": 21.763,
+              "contentSize": 4142,
+              "timestamp": "2025-05-14T03:06:53.182Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 23.449,
+              "contentSize": 4543,
+              "timestamp": "2025-05-14T03:07:16.632Z"
+            }
+          },
+          "combinedScore": 6.653039999999999,
+          "avgQuality": 8.2,
+          "avgResponseTime": 20.8696
+        },
+        "openai/gpt-4": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 7,
+              "responseTime": 17.8,
+              "contentSize": 3296,
+              "timestamp": "2025-05-14T03:07:34.433Z"
+            },
+            "codeQuality": {
+              "qualityScore": 6,
+              "responseTime": 17.347,
+              "contentSize": 2829,
+              "timestamp": "2025-05-14T03:07:51.781Z"
+            },
+            "security": {
+              "qualityScore": 5,
+              "responseTime": 13.677,
+              "contentSize": 2125,
+              "timestamp": "2025-05-14T03:08:05.460Z"
+            },
+            "bestPractices": {
+              "qualityScore": 7,
+              "responseTime": 15.004,
+              "contentSize": 2904,
+              "timestamp": "2025-05-14T03:08:20.464Z"
+            },
+            "performance": {
+              "qualityScore": 6,
+              "responseTime": 13.841,
+              "contentSize": 2917,
+              "timestamp": "2025-05-14T03:08:34.307Z"
+            }
+          },
+          "combinedScore": 5.78662,
+          "avgQuality": 6.2,
+          "avgResponseTime": 15.5338
+        },
+        "google/gemini-1.5-pro": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 15.687,
+              "contentSize": 4273,
+              "timestamp": "2025-05-14T03:08:49.995Z"
+            },
+            "codeQuality": {
+              "qualityScore": 7,
+              "responseTime": 14.279,
+              "contentSize": 4264,
+              "timestamp": "2025-05-14T03:09:04.276Z"
+            },
+            "security": {
+              "qualityScore": 9,
+              "responseTime": 14.595,
+              "contentSize": 4387,
+              "timestamp": "2025-05-14T03:09:18.873Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 15.819,
+              "contentSize": 4646,
+              "timestamp": "2025-05-14T03:09:34.694Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 15.86,
+              "contentSize": 4921,
+              "timestamp": "2025-05-14T03:09:50.556Z"
+            }
+          },
+          "combinedScore": 7.6352,
+          "avgQuality": 8.8,
+          "avgResponseTime": 15.248000000000001
+        },
+        "google/gemini-1.5-flash": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 9,
+              "responseTime": 6.495,
+              "contentSize": 5135,
+              "timestamp": "2025-05-14T03:09:57.053Z"
+            },
+            "codeQuality": {
+              "qualityScore": 9,
+              "responseTime": 5.363,
+              "contentSize": 4010,
+              "timestamp": "2025-05-14T03:10:02.416Z"
+            },
+            "security": {
+              "qualityScore": 8,
+              "responseTime": 5.804,
+              "contentSize": 4284,
+              "timestamp": "2025-05-14T03:10:08.223Z"
+            },
+            "bestPractices": {
+              "qualityScore": 8,
+              "responseTime": 4.889,
+              "contentSize": 3409,
+              "timestamp": "2025-05-14T03:10:13.114Z"
+            },
+            "performance": {
+              "qualityScore": 10,
+              "responseTime": 7.358,
+              "contentSize": 5658,
+              "timestamp": "2025-05-14T03:10:20.474Z"
+            }
+          },
+          "combinedScore": 8.56182,
+          "avgQuality": 8.8,
+          "avgResponseTime": 5.9818
+        },
+        "deepseek/deepseek-coder": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 44.361,
+              "contentSize": 4061,
+              "timestamp": "2025-05-14T03:11:04.836Z"
+            },
+            "codeQuality": {
+              "qualityScore": 8,
+              "responseTime": 48.346,
+              "contentSize": 4282,
+              "timestamp": "2025-05-14T03:11:53.185Z"
+            },
+            "security": {
+              "qualityScore": 8,
+              "responseTime": 45.65,
+              "contentSize": 4261,
+              "timestamp": "2025-05-14T03:12:38.836Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 41.881,
+              "contentSize": 3798,
+              "timestamp": "2025-05-14T03:13:20.718Z"
+            },
+            "performance": {
+              "qualityScore": 8,
+              "responseTime": 45.353,
+              "contentSize": 3844,
+              "timestamp": "2025-05-14T03:14:06.073Z"
+            }
+          },
+          "combinedScore": 6.02,
+          "avgQuality": 8.6,
+          "avgResponseTime": 45.1182
+        },
+        "deepseek/deepseek-chat": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 49.707,
+              "contentSize": 4708,
+              "timestamp": "2025-05-14T03:14:55.783Z"
+            },
+            "codeQuality": {
+              "qualityScore": 8,
+              "responseTime": 74.983,
+              "contentSize": 4779,
+              "timestamp": "2025-05-14T03:16:10.770Z"
+            },
+            "security": {
+              "qualityScore": 8,
+              "responseTime": 45.155,
+              "contentSize": 4086,
+              "timestamp": "2025-05-14T03:16:55.927Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 41.217,
+              "contentSize": 3948,
+              "timestamp": "2025-05-14T03:17:37.145Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 54.256,
+              "contentSize": 4633,
+              "timestamp": "2025-05-14T03:18:31.404Z"
+            }
+          },
+          "combinedScore": 6.16,
+          "avgQuality": 8.8,
+          "avgResponseTime": 53.063599999999994
+        },
+        "openrouter/anthropic/claude-3-opus-20240229": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 9,
+              "responseTime": 27.206,
+              "contentSize": 4410,
+              "timestamp": "2025-05-14T03:18:58.612Z"
+            },
+            "codeQuality": {
+              "qualityScore": 8,
+              "responseTime": 28.994,
+              "contentSize": 3730,
+              "timestamp": "2025-05-14T03:19:27.607Z"
+            },
+            "security": {
+              "qualityScore": 9,
+              "responseTime": 25.099,
+              "contentSize": 4098,
+              "timestamp": "2025-05-14T03:19:52.708Z"
+            },
+            "bestPractices": {
+              "qualityScore": 6,
+              "responseTime": 23.515,
+              "contentSize": 3285,
+              "timestamp": "2025-05-14T03:20:16.224Z"
+            },
+            "performance": {
+              "qualityScore": 8,
+              "responseTime": 25.332,
+              "contentSize": 4300,
+              "timestamp": "2025-05-14T03:20:41.557Z"
+            }
+          },
+          "combinedScore": 5.9970799999999995,
+          "avgQuality": 8,
+          "avgResponseTime": 26.029200000000003
+        },
+        "openrouter/anthropic/claude-3-sonnet-20240229": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 9,
+              "responseTime": 13.058,
+              "contentSize": 3783,
+              "timestamp": "2025-05-14T03:20:54.620Z"
+            },
+            "codeQuality": {
+              "qualityScore": 7,
+              "responseTime": 12.676,
+              "contentSize": 3349,
+              "timestamp": "2025-05-14T03:21:07.299Z"
+            },
+            "security": {
+              "qualityScore": 7,
+              "responseTime": 12.56,
+              "contentSize": 3516,
+              "timestamp": "2025-05-14T03:21:19.860Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 14.342,
+              "contentSize": 4244,
+              "timestamp": "2025-05-14T03:21:34.205Z"
+            },
+            "performance": {
+              "qualityScore": 8,
+              "responseTime": 11.977,
+              "contentSize": 3387,
+              "timestamp": "2025-05-14T03:21:46.183Z"
+            }
+          },
+          "combinedScore": 7.30774,
+          "avgQuality": 8,
+          "avgResponseTime": 12.9226
+        },
+        "openrouter/openai/gpt-4o": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 21.984,
+              "contentSize": 5117,
+              "timestamp": "2025-05-14T03:22:08.168Z"
+            },
+            "codeQuality": {
+              "qualityScore": 9,
+              "responseTime": 14.386,
+              "contentSize": 4223,
+              "timestamp": "2025-05-14T03:22:22.555Z"
+            },
+            "security": {
+              "qualityScore": 9,
+              "responseTime": 21.526,
+              "contentSize": 5119,
+              "timestamp": "2025-05-14T03:22:44.083Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 18.885,
+              "contentSize": 4207,
+              "timestamp": "2025-05-14T03:23:02.970Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 22.085,
+              "contentSize": 4744,
+              "timestamp": "2025-05-14T03:23:25.058Z"
+            }
+          },
+          "combinedScore": 7.462679999999999,
+          "avgQuality": 9.2,
+          "avgResponseTime": 19.773200000000003
+        },
+        "openrouter/google/gemini-1.5-pro": {
+          "categories": {
+            "architecture": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T03:23:25.174Z"
+            },
+            "codeQuality": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T03:23:25.281Z"
+            },
+            "security": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T03:23:25.373Z"
+            },
+            "bestPractices": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T03:23:25.485Z"
+            },
+            "performance": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T03:23:25.573Z"
+            }
+          }
+        },
+        "bestModel": {
+          "modelKey": "google/gemini-1.5-flash",
+          "score": 8.56182,
+          "timestamp": "2025-05-14T03:23:25.574Z"
+        }
+      }
+    }
+  },
+  "python": {
+    "large": {
+      "django/django": {
+        "anthropic/claude-3-opus-20240229": {
+          "categories": {
+            "architecture": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T00:48:53.849Z"
+            },
+            "codeQuality": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T00:48:53.925Z"
+            },
+            "security": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T00:48:54.000Z"
+            },
+            "bestPractices": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T00:48:54.108Z"
+            },
+            "performance": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T00:48:54.210Z"
+            }
+          }
+        },
+        "anthropic/claude-3-sonnet-20240229": {
+          "categories": {
+            "architecture": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T00:48:54.289Z"
+            },
+            "codeQuality": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T00:48:54.353Z"
+            },
+            "security": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T00:48:54.421Z"
+            },
+            "bestPractices": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T00:48:54.591Z"
+            },
+            "performance": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T00:48:54.674Z"
+            }
+          }
+        },
+        "anthropic/claude-3-haiku-20240307": {
+          "categories": {
+            "architecture": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T00:48:54.756Z"
+            },
+            "codeQuality": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T00:48:54.851Z"
+            },
+            "security": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T00:48:54.918Z"
+            },
+            "bestPractices": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T00:48:55.004Z"
+            },
+            "performance": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T00:48:55.113Z"
+            }
+          }
+        },
+        "anthropic/claude-3.5-sonnet-20240620": {
+          "categories": {
+            "architecture": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T00:48:55.213Z"
+            },
+            "codeQuality": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T00:48:55.278Z"
+            },
+            "security": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T00:48:55.374Z"
+            },
+            "bestPractices": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T00:48:55.439Z"
+            },
+            "performance": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T00:48:55.509Z"
+            }
+          }
+        },
+        "openai/gpt-4o": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 13.696,
+              "contentSize": 4377,
+              "timestamp": "2025-05-14T00:49:09.206Z"
+            },
+            "codeQuality": {
+              "qualityScore": 10,
+              "responseTime": 20.628,
+              "contentSize": 4798,
+              "timestamp": "2025-05-14T00:49:29.835Z"
+            },
+            "security": {
+              "qualityScore": 9,
+              "responseTime": 15.92,
+              "contentSize": 4613,
+              "timestamp": "2025-05-14T00:49:45.757Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 15.26,
+              "contentSize": 4407,
+              "timestamp": "2025-05-14T00:50:01.018Z"
+            },
+            "performance": {
+              "qualityScore": 10,
+              "responseTime": 12.048,
+              "contentSize": 3884,
+              "timestamp": "2025-05-14T00:50:13.066Z"
+            }
+          },
+          "combinedScore": 8.16896,
+          "avgQuality": 9.6,
+          "avgResponseTime": 15.5104
+        },
+        "openai/gpt-4-turbo": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 17.62,
+              "contentSize": 4274,
+              "timestamp": "2025-05-14T00:50:30.688Z"
+            },
+            "codeQuality": {
+              "qualityScore": 8,
+              "responseTime": 16.852,
+              "contentSize": 3929,
+              "timestamp": "2025-05-14T00:50:47.540Z"
+            },
+            "security": {
+              "qualityScore": 8,
+              "responseTime": 17.895,
+              "contentSize": 4082,
+              "timestamp": "2025-05-14T00:51:05.435Z"
+            },
+            "bestPractices": {
+              "qualityScore": 8,
+              "responseTime": 15.47,
+              "contentSize": 4269,
+              "timestamp": "2025-05-14T00:51:20.907Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 15.713,
+              "contentSize": 3947,
+              "timestamp": "2025-05-14T00:51:36.621Z"
+            }
+          },
+          "combinedScore": 7.348999999999999,
+          "avgQuality": 8.6,
+          "avgResponseTime": 16.71
+        },
+        "openai/gpt-4": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 8,
+              "responseTime": 18.419,
+              "contentSize": 2807,
+              "timestamp": "2025-05-14T00:51:55.040Z"
+            },
+            "codeQuality": {
+              "qualityScore": 7,
+              "responseTime": 20.46,
+              "contentSize": 2676,
+              "timestamp": "2025-05-14T00:52:15.502Z"
+            },
+            "security": {
+              "qualityScore": 6,
+              "responseTime": 12.285,
+              "contentSize": 2277,
+              "timestamp": "2025-05-14T00:52:27.789Z"
+            },
+            "bestPractices": {
+              "qualityScore": 7,
+              "responseTime": 18.158,
+              "contentSize": 2888,
+              "timestamp": "2025-05-14T00:52:45.947Z"
+            },
+            "performance": {
+              "qualityScore": 7,
+              "responseTime": 17.816,
+              "contentSize": 3114,
+              "timestamp": "2025-05-14T00:53:03.763Z"
+            }
+          },
+          "combinedScore": 6.157239999999999,
+          "avgQuality": 7,
+          "avgResponseTime": 17.4276
+        },
+        "google/gemini-1.5-pro": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 18.363,
+              "contentSize": 5104,
+              "timestamp": "2025-05-14T00:53:22.126Z"
+            },
+            "codeQuality": {
+              "qualityScore": 8,
+              "responseTime": 15.378,
+              "contentSize": 4457,
+              "timestamp": "2025-05-14T00:53:37.505Z"
+            },
+            "security": {
+              "qualityScore": 9,
+              "responseTime": 17.761,
+              "contentSize": 5305,
+              "timestamp": "2025-05-14T00:53:55.267Z"
+            },
+            "bestPractices": {
+              "qualityScore": 8,
+              "responseTime": 14.554,
+              "contentSize": 4562,
+              "timestamp": "2025-05-14T00:54:09.821Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 17.292,
+              "contentSize": 5327,
+              "timestamp": "2025-05-14T00:54:27.114Z"
+            }
+          },
+          "combinedScore": 7.493040000000001,
+          "avgQuality": 8.8,
+          "avgResponseTime": 16.6696
+        },
+        "google/gemini-1.5-flash": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 7.911,
+              "contentSize": 5897,
+              "timestamp": "2025-05-14T00:54:35.029Z"
+            },
+            "codeQuality": {
+              "qualityScore": 7,
+              "responseTime": 5.945,
+              "contentSize": 4204,
+              "timestamp": "2025-05-14T00:54:40.975Z"
+            },
+            "security": {
+              "qualityScore": 10,
+              "responseTime": 6.742,
+              "contentSize": 4995,
+              "timestamp": "2025-05-14T00:54:47.717Z"
+            },
+            "bestPractices": {
+              "qualityScore": 8,
+              "responseTime": 5.756,
+              "contentSize": 4295,
+              "timestamp": "2025-05-14T00:54:53.474Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 7.161,
+              "contentSize": 5533,
+              "timestamp": "2025-05-14T00:55:00.635Z"
+            }
+          },
+          "combinedScore": 8.4897,
+          "avgQuality": 8.8,
+          "avgResponseTime": 6.703
+        },
+        "deepseek/deepseek-coder": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 49.747,
+              "contentSize": 4891,
+              "timestamp": "2025-05-14T00:55:50.384Z"
+            },
+            "codeQuality": {
+              "qualityScore": 8,
+              "responseTime": 38.486,
+              "contentSize": 3603,
+              "timestamp": "2025-05-14T00:56:28.874Z"
+            },
+            "security": {
+              "qualityScore": 8,
+              "responseTime": 40.549,
+              "contentSize": 3930,
+              "timestamp": "2025-05-14T00:57:09.424Z"
+            },
+            "bestPractices": {
+              "qualityScore": 8,
+              "responseTime": 37.655,
+              "contentSize": 3724,
+              "timestamp": "2025-05-14T00:57:47.081Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 55.442,
+              "contentSize": 4801,
+              "timestamp": "2025-05-14T00:58:42.526Z"
+            }
+          },
+          "combinedScore": 6.02,
+          "avgQuality": 8.6,
+          "avgResponseTime": 44.375800000000005
+        },
+        "deepseek/deepseek-chat": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 56.185,
+              "contentSize": 5260,
+              "timestamp": "2025-05-14T00:59:38.713Z"
+            },
+            "codeQuality": {
+              "qualityScore": 9,
+              "responseTime": 48.818,
+              "contentSize": 4660,
+              "timestamp": "2025-05-14T01:00:27.533Z"
+            },
+            "security": {
+              "qualityScore": 8,
+              "responseTime": 49.328,
+              "contentSize": 5087,
+              "timestamp": "2025-05-14T01:01:16.863Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 40.993,
+              "contentSize": 3931,
+              "timestamp": "2025-05-14T01:01:57.856Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 60.974,
+              "contentSize": 5664,
+              "timestamp": "2025-05-14T01:02:58.831Z"
+            }
+          },
+          "combinedScore": 6.3,
+          "avgQuality": 9,
+          "avgResponseTime": 51.2596
+        },
+        "openrouter/anthropic/claude-3-opus-20240229": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 9,
+              "responseTime": 28.395,
+              "contentSize": 4113,
+              "timestamp": "2025-05-14T01:03:27.229Z"
+            },
+            "codeQuality": {
+              "qualityScore": 7,
+              "responseTime": 23.446,
+              "contentSize": 3443,
+              "timestamp": "2025-05-14T01:03:50.677Z"
+            },
+            "security": {
+              "qualityScore": 8,
+              "responseTime": 25.43,
+              "contentSize": 3360,
+              "timestamp": "2025-05-14T01:04:16.107Z"
+            },
+            "bestPractices": {
+              "qualityScore": 7,
+              "responseTime": 25.038,
+              "contentSize": 3965,
+              "timestamp": "2025-05-14T01:04:41.147Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 26.363,
+              "contentSize": 4046,
+              "timestamp": "2025-05-14T01:05:07.510Z"
+            }
+          },
+          "combinedScore": 6.02656,
+          "avgQuality": 8,
+          "avgResponseTime": 25.7344
+        },
+        "openrouter/anthropic/claude-3-sonnet-20240229": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 18.006,
+              "contentSize": 4810,
+              "timestamp": "2025-05-14T01:05:25.517Z"
+            },
+            "codeQuality": {
+              "qualityScore": 8,
+              "responseTime": 13.613,
+              "contentSize": 3722,
+              "timestamp": "2025-05-14T01:05:39.131Z"
+            },
+            "security": {
+              "qualityScore": 9,
+              "responseTime": 17.344,
+              "contentSize": 4815,
+              "timestamp": "2025-05-14T01:05:56.476Z"
+            },
+            "bestPractices": {
+              "qualityScore": 7,
+              "responseTime": 12.309,
+              "contentSize": 3377,
+              "timestamp": "2025-05-14T01:06:08.786Z"
+            },
+            "performance": {
+              "qualityScore": 7,
+              "responseTime": 14.871,
+              "contentSize": 3509,
+              "timestamp": "2025-05-14T01:06:23.658Z"
+            }
+          },
+          "combinedScore": 7.217139999999999,
+          "avgQuality": 8.2,
+          "avgResponseTime": 15.2286
+        },
+        "openrouter/openai/gpt-4o": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 20.004,
+              "contentSize": 5335,
+              "timestamp": "2025-05-14T01:06:43.663Z"
+            },
+            "codeQuality": {
+              "qualityScore": 7,
+              "responseTime": 16.878,
+              "contentSize": 3840,
+              "timestamp": "2025-05-14T01:07:00.543Z"
+            },
+            "security": {
+              "qualityScore": 8,
+              "responseTime": 14.226,
+              "contentSize": 5074,
+              "timestamp": "2025-05-14T01:07:14.769Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 12.114,
+              "contentSize": 4506,
+              "timestamp": "2025-05-14T01:07:26.884Z"
+            },
+            "performance": {
+              "qualityScore": 10,
+              "responseTime": 17.343,
+              "contentSize": 4053,
+              "timestamp": "2025-05-14T01:07:44.229Z"
+            }
+          },
+          "combinedScore": 7.5487,
+          "avgQuality": 8.8,
+          "avgResponseTime": 16.113000000000003
+        },
+        "openrouter/google/gemini-1.5-pro": {
+          "categories": {
+            "architecture": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T01:07:44.321Z"
+            },
+            "codeQuality": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T01:07:44.388Z"
+            },
+            "security": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T01:07:44.469Z"
+            },
+            "bestPractices": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T01:07:44.545Z"
+            },
+            "performance": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T01:07:44.718Z"
+            }
+          }
+        },
+        "bestModel": {
+          "modelKey": "google/gemini-1.5-flash",
+          "score": 8.4897,
+          "timestamp": "2025-05-14T01:07:44.719Z"
+        }
+      }
+    },
+    "small": {
+      "pallets/flask": {
+        "anthropic/claude-3-opus-20240229": {
+          "categories": {
+            "architecture": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T03:23:25.999Z"
+            },
+            "codeQuality": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T03:23:26.062Z"
+            },
+            "security": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T03:23:26.124Z"
+            },
+            "bestPractices": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T03:23:26.187Z"
+            },
+            "performance": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T03:23:26.252Z"
+            }
+          }
+        },
+        "anthropic/claude-3-sonnet-20240229": {
+          "categories": {
+            "architecture": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T03:23:26.363Z"
+            },
+            "codeQuality": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T03:23:26.430Z"
+            },
+            "security": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T03:23:26.493Z"
+            },
+            "bestPractices": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T03:23:26.558Z"
+            },
+            "performance": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T03:23:26.626Z"
+            }
+          }
+        },
+        "anthropic/claude-3-haiku-20240307": {
+          "categories": {
+            "architecture": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T03:23:26.684Z"
+            },
+            "codeQuality": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T03:23:26.974Z"
+            },
+            "security": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T03:23:27.295Z"
+            },
+            "bestPractices": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T03:23:27.379Z"
+            },
+            "performance": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T03:23:27.439Z"
+            }
+          }
+        },
+        "anthropic/claude-3.5-sonnet-20240620": {
+          "categories": {
+            "architecture": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T03:23:27.501Z"
+            },
+            "codeQuality": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T03:23:27.613Z"
+            },
+            "security": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T03:23:27.779Z"
+            },
+            "bestPractices": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T03:23:27.846Z"
+            },
+            "performance": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T03:23:27.910Z"
+            }
+          }
+        },
+        "openai/gpt-4o": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 19.085,
+              "contentSize": 4979,
+              "timestamp": "2025-05-14T03:23:46.996Z"
+            },
+            "codeQuality": {
+              "qualityScore": 9,
+              "responseTime": 20.523,
+              "contentSize": 3932,
+              "timestamp": "2025-05-14T03:24:07.520Z"
+            },
+            "security": {
+              "qualityScore": 7,
+              "responseTime": 14.438,
+              "contentSize": 4445,
+              "timestamp": "2025-05-14T03:24:21.961Z"
+            },
+            "bestPractices": {
+              "qualityScore": 8,
+              "responseTime": 12.855,
+              "contentSize": 3935,
+              "timestamp": "2025-05-14T03:24:34.818Z"
+            },
+            "performance": {
+              "qualityScore": 10,
+              "responseTime": 17.859,
+              "contentSize": 4856,
+              "timestamp": "2025-05-14T03:24:52.678Z"
+            }
+          },
+          "combinedScore": 7.464799999999999,
+          "avgQuality": 8.8,
+          "avgResponseTime": 16.952000000000005
+        },
+        "openai/gpt-4-turbo": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 9,
+              "responseTime": 26.434,
+              "contentSize": 4579,
+              "timestamp": "2025-05-14T03:25:19.113Z"
+            },
+            "codeQuality": {
+              "qualityScore": 8,
+              "responseTime": 18.642,
+              "contentSize": 4386,
+              "timestamp": "2025-05-14T03:25:37.757Z"
+            },
+            "security": {
+              "qualityScore": 8,
+              "responseTime": 16.891,
+              "contentSize": 4325,
+              "timestamp": "2025-05-14T03:25:54.649Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 22.142,
+              "contentSize": 4216,
+              "timestamp": "2025-05-14T03:26:16.792Z"
+            },
+            "performance": {
+              "qualityScore": 8,
+              "responseTime": 17.56,
+              "contentSize": 4267,
+              "timestamp": "2025-05-14T03:26:34.354Z"
+            }
+          },
+          "combinedScore": 6.84662,
+          "avgQuality": 8.4,
+          "avgResponseTime": 20.3338
+        },
+        "openai/gpt-4": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 8,
+              "responseTime": 17.764,
+              "contentSize": 2950,
+              "timestamp": "2025-05-14T03:26:52.121Z"
+            },
+            "codeQuality": {
+              "qualityScore": 5,
+              "responseTime": 14.774,
+              "contentSize": 1987,
+              "timestamp": "2025-05-14T03:27:06.896Z"
+            },
+            "security": {
+              "qualityScore": 6,
+              "responseTime": 14.914,
+              "contentSize": 2672,
+              "timestamp": "2025-05-14T03:27:21.811Z"
+            },
+            "bestPractices": {
+              "qualityScore": 7,
+              "responseTime": 12.684,
+              "contentSize": 2641,
+              "timestamp": "2025-05-14T03:27:34.497Z"
+            },
+            "performance": {
+              "qualityScore": 6,
+              "responseTime": 15.695,
+              "contentSize": 2996,
+              "timestamp": "2025-05-14T03:27:50.194Z"
+            }
+          },
+          "combinedScore": 5.96338,
+          "avgQuality": 6.4,
+          "avgResponseTime": 15.166199999999998
+        },
+        "google/gemini-1.5-pro": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 15.557,
+              "contentSize": 4172,
+              "timestamp": "2025-05-14T03:28:05.753Z"
+            },
+            "codeQuality": {
+              "qualityScore": 8,
+              "responseTime": 15.748,
+              "contentSize": 4551,
+              "timestamp": "2025-05-14T03:28:21.503Z"
+            },
+            "security": {
+              "qualityScore": 9,
+              "responseTime": 18.527,
+              "contentSize": 5468,
+              "timestamp": "2025-05-14T03:28:40.031Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 13.892,
+              "contentSize": 4111,
+              "timestamp": "2025-05-14T03:28:53.924Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 19.888,
+              "contentSize": 5489,
+              "timestamp": "2025-05-14T03:29:13.813Z"
+            }
+          },
+          "combinedScore": 7.62776,
+          "avgQuality": 9,
+          "avgResponseTime": 16.7224
+        },
+        "google/gemini-1.5-flash": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 6.75,
+              "contentSize": 5233,
+              "timestamp": "2025-05-14T03:29:20.565Z"
+            },
+            "codeQuality": {
+              "qualityScore": 9,
+              "responseTime": 5.7,
+              "contentSize": 4529,
+              "timestamp": "2025-05-14T03:29:26.266Z"
+            },
+            "security": {
+              "qualityScore": 8,
+              "responseTime": 5.945,
+              "contentSize": 4840,
+              "timestamp": "2025-05-14T03:29:32.212Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 5.548,
+              "contentSize": 4303,
+              "timestamp": "2025-05-14T03:29:37.761Z"
+            },
+            "performance": {
+              "qualityScore": 8,
+              "responseTime": 7.114,
+              "contentSize": 5467,
+              "timestamp": "2025-05-14T03:29:44.878Z"
+            }
+          },
+          "combinedScore": 8.53886,
+          "avgQuality": 8.8,
+          "avgResponseTime": 6.211399999999999
+        },
+        "deepseek/deepseek-coder": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 45.184,
+              "contentSize": 4383,
+              "timestamp": "2025-05-14T03:30:30.063Z"
+            },
+            "codeQuality": {
+              "qualityScore": 7,
+              "responseTime": 37.737,
+              "contentSize": 3522,
+              "timestamp": "2025-05-14T03:31:07.803Z"
+            },
+            "security": {
+              "qualityScore": 9,
+              "responseTime": 51.532,
+              "contentSize": 4394,
+              "timestamp": "2025-05-14T03:31:59.336Z"
+            },
+            "bestPractices": {
+              "qualityScore": 8,
+              "responseTime": 36.816,
+              "contentSize": 3511,
+              "timestamp": "2025-05-14T03:32:36.154Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 60.022,
+              "contentSize": 5289,
+              "timestamp": "2025-05-14T03:33:36.177Z"
+            }
+          },
+          "combinedScore": 6.02,
+          "avgQuality": 8.6,
+          "avgResponseTime": 46.258199999999995
+        },
+        "deepseek/deepseek-chat": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 54.119,
+              "contentSize": 5023,
+              "timestamp": "2025-05-14T03:34:30.300Z"
+            },
+            "codeQuality": {
+              "qualityScore": 8,
+              "responseTime": 42.655,
+              "contentSize": 3837,
+              "timestamp": "2025-05-14T03:35:12.956Z"
+            },
+            "security": {
+              "qualityScore": 8,
+              "responseTime": 58.994,
+              "contentSize": 5044,
+              "timestamp": "2025-05-14T03:36:11.953Z"
+            },
+            "bestPractices": {
+              "qualityScore": 8,
+              "responseTime": 50.504,
+              "contentSize": 3875,
+              "timestamp": "2025-05-14T03:37:02.459Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 50.486,
+              "contentSize": 4334,
+              "timestamp": "2025-05-14T03:37:52.949Z"
+            }
+          },
+          "combinedScore": 6.02,
+          "avgQuality": 8.6,
+          "avgResponseTime": 51.3516
+        },
+        "openrouter/anthropic/claude-3-opus-20240229": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 9,
+              "responseTime": 29.051,
+              "contentSize": 3633,
+              "timestamp": "2025-05-14T03:38:22.001Z"
+            },
+            "codeQuality": {
+              "qualityScore": 7,
+              "responseTime": 24.471,
+              "contentSize": 3528,
+              "timestamp": "2025-05-14T03:38:46.473Z"
+            },
+            "security": {
+              "qualityScore": 9,
+              "responseTime": 25.96,
+              "contentSize": 3823,
+              "timestamp": "2025-05-14T03:39:12.435Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 26.569,
+              "contentSize": 3669,
+              "timestamp": "2025-05-14T03:39:39.006Z"
+            },
+            "performance": {
+              "qualityScore": 8,
+              "responseTime": 31.146,
+              "contentSize": 4528,
+              "timestamp": "2025-05-14T03:40:10.153Z"
+            }
+          },
+          "combinedScore": 6.13606,
+          "avgQuality": 8.4,
+          "avgResponseTime": 27.4394
+        },
+        "openrouter/anthropic/claude-3-sonnet-20240229": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 14.823,
+              "contentSize": 3879,
+              "timestamp": "2025-05-14T03:40:24.979Z"
+            },
+            "codeQuality": {
+              "qualityScore": 7,
+              "responseTime": 12.749,
+              "contentSize": 3712,
+              "timestamp": "2025-05-14T03:40:37.729Z"
+            },
+            "security": {
+              "qualityScore": 8,
+              "responseTime": 13.931,
+              "contentSize": 3679,
+              "timestamp": "2025-05-14T03:40:51.662Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 16.106,
+              "contentSize": 4364,
+              "timestamp": "2025-05-14T03:41:07.772Z"
+            },
+            "performance": {
+              "qualityScore": 8,
+              "responseTime": 15.005,
+              "contentSize": 3858,
+              "timestamp": "2025-05-14T03:41:22.778Z"
+            }
+          },
+          "combinedScore": 7.42772,
+          "avgQuality": 8.4,
+          "avgResponseTime": 14.5228
+        },
+        "openrouter/openai/gpt-4o": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 13.586,
+              "contentSize": 4852,
+              "timestamp": "2025-05-14T03:41:36.365Z"
+            },
+            "codeQuality": {
+              "qualityScore": 7,
+              "responseTime": 12.599,
+              "contentSize": 4424,
+              "timestamp": "2025-05-14T03:41:48.967Z"
+            },
+            "security": {
+              "qualityScore": 8,
+              "responseTime": 14.545,
+              "contentSize": 4448,
+              "timestamp": "2025-05-14T03:42:03.513Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 14.483,
+              "contentSize": 4441,
+              "timestamp": "2025-05-14T03:42:17.998Z"
+            },
+            "performance": {
+              "qualityScore": 8,
+              "responseTime": 12.794,
+              "contentSize": 4382,
+              "timestamp": "2025-05-14T03:42:30.793Z"
+            }
+          },
+          "combinedScore": 7.5198599999999995,
+          "avgQuality": 8.4,
+          "avgResponseTime": 13.601400000000002
+        },
+        "openrouter/google/gemini-1.5-pro": {
+          "categories": {
+            "architecture": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T03:42:30.890Z"
+            },
+            "codeQuality": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T03:42:30.977Z"
+            },
+            "security": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T03:42:31.054Z"
+            },
+            "bestPractices": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T03:42:31.138Z"
+            },
+            "performance": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T03:42:31.214Z"
+            }
+          }
+        },
+        "bestModel": {
+          "modelKey": "google/gemini-1.5-flash",
+          "score": 8.53886,
+          "timestamp": "2025-05-14T03:42:31.215Z"
+        }
+      }
+    }
+  },
+  "rust": {
+    "large": {
+      "rust-lang/rust": {
+        "anthropic/claude-3-opus-20240229": {
+          "categories": {
+            "architecture": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:07:45.140Z"
+            },
+            "codeQuality": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:07:45.210Z"
+            },
+            "security": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:07:45.289Z"
+            },
+            "bestPractices": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:07:45.363Z"
+            },
+            "performance": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:07:45.432Z"
+            }
+          }
+        },
+        "anthropic/claude-3-sonnet-20240229": {
+          "categories": {
+            "architecture": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:07:45.500Z"
+            },
+            "codeQuality": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:07:45.556Z"
+            },
+            "security": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:07:45.629Z"
+            },
+            "bestPractices": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:07:45.697Z"
+            },
+            "performance": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:07:45.756Z"
+            }
+          }
+        },
+        "anthropic/claude-3-haiku-20240307": {
+          "categories": {
+            "architecture": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:07:45.841Z"
+            },
+            "codeQuality": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:07:45.923Z"
+            },
+            "security": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:07:45.987Z"
+            },
+            "bestPractices": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:07:46.065Z"
+            },
+            "performance": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:07:46.146Z"
+            }
+          }
+        },
+        "anthropic/claude-3.5-sonnet-20240620": {
+          "categories": {
+            "architecture": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:07:46.210Z"
+            },
+            "codeQuality": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:07:46.277Z"
+            },
+            "security": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:07:46.362Z"
+            },
+            "bestPractices": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:07:46.426Z"
+            },
+            "performance": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:07:46.513Z"
+            }
+          }
+        },
+        "openai/gpt-4o": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 9,
+              "responseTime": 15.086,
+              "contentSize": 4327,
+              "timestamp": "2025-05-14T01:08:01.599Z"
+            },
+            "codeQuality": {
+              "qualityScore": 8,
+              "responseTime": 13.685,
+              "contentSize": 4462,
+              "timestamp": "2025-05-14T01:08:15.284Z"
+            },
+            "security": {
+              "qualityScore": 7,
+              "responseTime": 13.417,
+              "contentSize": 5026,
+              "timestamp": "2025-05-14T01:08:28.701Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 11.432,
+              "contentSize": 4386,
+              "timestamp": "2025-05-14T01:08:40.134Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 16.967,
+              "contentSize": 5073,
+              "timestamp": "2025-05-14T01:08:57.102Z"
+            }
+          },
+          "combinedScore": 7.46826,
+          "avgQuality": 8.4,
+          "avgResponseTime": 14.1174
+        },
+        "openai/gpt-4-turbo": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 9,
+              "responseTime": 24.815,
+              "contentSize": 4478,
+              "timestamp": "2025-05-14T01:09:21.919Z"
+            },
+            "codeQuality": {
+              "qualityScore": 9,
+              "responseTime": 16.057,
+              "contentSize": 4451,
+              "timestamp": "2025-05-14T01:09:37.978Z"
+            },
+            "security": {
+              "qualityScore": 8,
+              "responseTime": 20.214,
+              "contentSize": 4430,
+              "timestamp": "2025-05-14T01:09:58.197Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 57.959,
+              "contentSize": 4249,
+              "timestamp": "2025-05-14T01:10:56.158Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 21.15,
+              "contentSize": 4222,
+              "timestamp": "2025-05-14T01:11:17.310Z"
+            }
+          },
+          "combinedScore": 6.3561000000000005,
+          "avgQuality": 8.8,
+          "avgResponseTime": 28.038999999999998
+        },
+        "openai/gpt-4": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 8,
+              "responseTime": 32.264,
+              "contentSize": 3026,
+              "timestamp": "2025-05-14T01:11:49.575Z"
+            },
+            "codeQuality": {
+              "qualityScore": 6,
+              "responseTime": 24.328,
+              "contentSize": 2769,
+              "timestamp": "2025-05-14T01:12:13.905Z"
+            },
+            "security": {
+              "qualityScore": 7,
+              "responseTime": 16.089,
+              "contentSize": 2723,
+              "timestamp": "2025-05-14T01:12:29.996Z"
+            },
+            "bestPractices": {
+              "qualityScore": 8,
+              "responseTime": 12.603,
+              "contentSize": 2297,
+              "timestamp": "2025-05-14T01:12:42.606Z"
+            },
+            "performance": {
+              "qualityScore": 7,
+              "responseTime": 15.587,
+              "contentSize": 2551,
+              "timestamp": "2025-05-14T01:12:58.195Z"
+            }
+          },
+          "combinedScore": 6.02258,
+          "avgQuality": 7.2,
+          "avgResponseTime": 20.1742
+        },
+        "google/gemini-1.5-pro": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 17.353,
+              "contentSize": 4662,
+              "timestamp": "2025-05-14T01:13:15.549Z"
+            },
+            "codeQuality": {
+              "qualityScore": 8,
+              "responseTime": 17.892,
+              "contentSize": 4988,
+              "timestamp": "2025-05-14T01:13:33.443Z"
+            },
+            "security": {
+              "qualityScore": 8,
+              "responseTime": 18.499,
+              "contentSize": 5002,
+              "timestamp": "2025-05-14T01:13:51.944Z"
+            },
+            "bestPractices": {
+              "qualityScore": 10,
+              "responseTime": 18.674,
+              "contentSize": 5227,
+              "timestamp": "2025-05-14T01:14:10.620Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 17,
+              "contentSize": 4890,
+              "timestamp": "2025-05-14T01:14:27.622Z"
+            }
+          },
+          "combinedScore": 7.51164,
+          "avgQuality": 9,
+          "avgResponseTime": 17.8836
+        },
+        "google/gemini-1.5-flash": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 7.598,
+              "contentSize": 5476,
+              "timestamp": "2025-05-14T01:14:35.220Z"
+            },
+            "codeQuality": {
+              "qualityScore": 8,
+              "responseTime": 5.624,
+              "contentSize": 4113,
+              "timestamp": "2025-05-14T01:14:40.845Z"
+            },
+            "security": {
+              "qualityScore": 9,
+              "responseTime": 6.361,
+              "contentSize": 4837,
+              "timestamp": "2025-05-14T01:14:47.207Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 5.667,
+              "contentSize": 4435,
+              "timestamp": "2025-05-14T01:14:52.876Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 6.404,
+              "contentSize": 4953,
+              "timestamp": "2025-05-14T01:14:59.281Z"
+            }
+          },
+          "combinedScore": 8.66692,
+          "avgQuality": 9,
+          "avgResponseTime": 6.3308
+        },
+        "deepseek/deepseek-coder": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 48.288,
+              "contentSize": 4131,
+              "timestamp": "2025-05-14T01:15:47.569Z"
+            },
+            "codeQuality": {
+              "qualityScore": 9,
+              "responseTime": 46.45,
+              "contentSize": 4424,
+              "timestamp": "2025-05-14T01:16:34.021Z"
+            },
+            "security": {
+              "qualityScore": 8,
+              "responseTime": 48.595,
+              "contentSize": 4564,
+              "timestamp": "2025-05-14T01:17:22.619Z"
+            },
+            "bestPractices": {
+              "error": "No response received from server",
+              "timestamp": "2025-05-14T01:17:58.791Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 61.502,
+              "contentSize": 5353,
+              "timestamp": "2025-05-14T01:19:00.294Z"
+            }
+          },
+          "combinedScore": 6.3,
+          "avgQuality": 9,
+          "avgResponseTime": 51.20875
+        },
+        "deepseek/deepseek-chat": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 51.236,
+              "contentSize": 4467,
+              "timestamp": "2025-05-14T01:19:51.533Z"
+            },
+            "codeQuality": {
+              "qualityScore": 9,
+              "responseTime": 40.06,
+              "contentSize": 3921,
+              "timestamp": "2025-05-14T01:20:31.597Z"
+            },
+            "security": {
+              "qualityScore": 9,
+              "responseTime": 51.728,
+              "contentSize": 4844,
+              "timestamp": "2025-05-14T01:21:23.326Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 52.124,
+              "contentSize": 5085,
+              "timestamp": "2025-05-14T01:22:15.453Z"
+            },
+            "performance": {
+              "qualityScore": 8,
+              "responseTime": 41.298,
+              "contentSize": 3732,
+              "timestamp": "2025-05-14T01:22:56.753Z"
+            }
+          },
+          "combinedScore": 6.3,
+          "avgQuality": 9,
+          "avgResponseTime": 47.2892
+        },
+        "openrouter/anthropic/claude-3-opus-20240229": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 9,
+              "responseTime": 27.484,
+              "contentSize": 3708,
+              "timestamp": "2025-05-14T01:23:24.240Z"
+            },
+            "codeQuality": {
+              "qualityScore": 7,
+              "responseTime": 30.711,
+              "contentSize": 4084,
+              "timestamp": "2025-05-14T01:23:54.952Z"
+            },
+            "security": {
+              "qualityScore": 5,
+              "responseTime": 24.269,
+              "contentSize": 3560,
+              "timestamp": "2025-05-14T01:24:19.223Z"
+            },
+            "bestPractices": {
+              "qualityScore": 8,
+              "responseTime": 24.779,
+              "contentSize": 3347,
+              "timestamp": "2025-05-14T01:24:44.004Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 29.292,
+              "contentSize": 4249,
+              "timestamp": "2025-05-14T01:25:13.298Z"
+            }
+          },
+          "combinedScore": 5.5893,
+          "avgQuality": 7.6,
+          "avgResponseTime": 27.307
+        },
+        "openrouter/anthropic/claude-3-sonnet-20240229": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 15.277,
+              "contentSize": 4188,
+              "timestamp": "2025-05-14T01:25:28.578Z"
+            },
+            "codeQuality": {
+              "qualityScore": 6,
+              "responseTime": 12.695,
+              "contentSize": 3193,
+              "timestamp": "2025-05-14T01:25:41.273Z"
+            },
+            "security": {
+              "qualityScore": 7,
+              "responseTime": 14.75,
+              "contentSize": 3979,
+              "timestamp": "2025-05-14T01:25:56.025Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 15.56,
+              "contentSize": 4104,
+              "timestamp": "2025-05-14T01:26:11.587Z"
+            },
+            "performance": {
+              "qualityScore": 8,
+              "responseTime": 16.05,
+              "contentSize": 4249,
+              "timestamp": "2025-05-14T01:26:27.637Z"
+            }
+          },
+          "combinedScore": 7.113359999999999,
+          "avgQuality": 8,
+          "avgResponseTime": 14.866400000000002
+        },
+        "openrouter/openai/gpt-4o": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 9,
+              "responseTime": 18.576,
+              "contentSize": 5242,
+              "timestamp": "2025-05-14T01:26:46.215Z"
+            },
+            "codeQuality": {
+              "qualityScore": 8,
+              "responseTime": 13.411,
+              "contentSize": 4022,
+              "timestamp": "2025-05-14T01:26:59.627Z"
+            },
+            "security": {
+              "qualityScore": 7,
+              "responseTime": 22.875,
+              "contentSize": 4763,
+              "timestamp": "2025-05-14T01:27:22.507Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 13.373,
+              "contentSize": 4486,
+              "timestamp": "2025-05-14T01:27:35.881Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 19.526,
+              "contentSize": 4934,
+              "timestamp": "2025-05-14T01:27:55.409Z"
+            }
+          },
+          "combinedScore": 7.1247799999999994,
+          "avgQuality": 8.4,
+          "avgResponseTime": 17.5522
+        },
+        "openrouter/google/gemini-1.5-pro": {
+          "categories": {
+            "architecture": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T01:27:55.559Z"
+            },
+            "codeQuality": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T01:27:55.680Z"
+            },
+            "security": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T01:27:55.793Z"
+            },
+            "bestPractices": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T01:27:55.900Z"
+            },
+            "performance": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T01:27:56.012Z"
+            }
+          }
+        },
+        "bestModel": {
+          "modelKey": "google/gemini-1.5-flash",
+          "score": 8.66692,
+          "timestamp": "2025-05-14T01:27:56.012Z"
+        }
+      }
+    }
+  },
+  "go": {
+    "large": {
+      "golang/go": {
+        "anthropic/claude-3-opus-20240229": {
+          "categories": {
+            "architecture": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:27:56.508Z"
+            },
+            "codeQuality": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:27:56.577Z"
+            },
+            "security": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:27:56.664Z"
+            },
+            "bestPractices": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:27:56.735Z"
+            },
+            "performance": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:27:56.842Z"
+            }
+          }
+        },
+        "anthropic/claude-3-sonnet-20240229": {
+          "categories": {
+            "architecture": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:27:56.914Z"
+            },
+            "codeQuality": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:27:56.977Z"
+            },
+            "security": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:27:57.045Z"
+            },
+            "bestPractices": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:27:57.106Z"
+            },
+            "performance": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:27:57.178Z"
+            }
+          }
+        },
+        "anthropic/claude-3-haiku-20240307": {
+          "categories": {
+            "architecture": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:27:57.253Z"
+            },
+            "codeQuality": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:27:57.321Z"
+            },
+            "security": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:27:57.416Z"
+            },
+            "bestPractices": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:27:57.481Z"
+            },
+            "performance": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:27:57.572Z"
+            }
+          }
+        },
+        "anthropic/claude-3.5-sonnet-20240620": {
+          "categories": {
+            "architecture": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:27:57.646Z"
+            },
+            "codeQuality": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:27:57.701Z"
+            },
+            "security": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:27:57.760Z"
+            },
+            "bestPractices": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:27:57.831Z"
+            },
+            "performance": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:27:57.896Z"
+            }
+          }
+        },
+        "openai/gpt-4o": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 18.33,
+              "contentSize": 4343,
+              "timestamp": "2025-05-14T01:28:16.228Z"
+            },
+            "codeQuality": {
+              "qualityScore": 9,
+              "responseTime": 15.93,
+              "contentSize": 4481,
+              "timestamp": "2025-05-14T01:28:32.158Z"
+            },
+            "security": {
+              "qualityScore": 8,
+              "responseTime": 19.989,
+              "contentSize": 4899,
+              "timestamp": "2025-05-14T01:28:52.149Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 18.288,
+              "contentSize": 4550,
+              "timestamp": "2025-05-14T01:29:10.440Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 15.581,
+              "contentSize": 4708,
+              "timestamp": "2025-05-14T01:29:26.023Z"
+            }
+          },
+          "combinedScore": 7.53764,
+          "avgQuality": 9,
+          "avgResponseTime": 17.6236
+        },
+        "openai/gpt-4-turbo": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 9,
+              "responseTime": 18.463,
+              "contentSize": 4215,
+              "timestamp": "2025-05-14T01:29:44.487Z"
+            },
+            "codeQuality": {
+              "qualityScore": 9,
+              "responseTime": 13.996,
+              "contentSize": 4052,
+              "timestamp": "2025-05-14T01:29:58.485Z"
+            },
+            "security": {
+              "qualityScore": 8,
+              "responseTime": 22.214,
+              "contentSize": 4344,
+              "timestamp": "2025-05-14T01:30:20.700Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 16.045,
+              "contentSize": 3948,
+              "timestamp": "2025-05-14T01:30:36.746Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 32.512,
+              "contentSize": 4236,
+              "timestamp": "2025-05-14T01:31:09.259Z"
+            }
+          },
+          "combinedScore": 7.0954,
+          "avgQuality": 8.8,
+          "avgResponseTime": 20.646
+        },
+        "openai/gpt-4": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 8,
+              "responseTime": 15.942,
+              "contentSize": 2836,
+              "timestamp": "2025-05-14T01:31:25.202Z"
+            },
+            "codeQuality": {
+              "qualityScore": 6,
+              "responseTime": 15.994,
+              "contentSize": 2674,
+              "timestamp": "2025-05-14T01:31:41.198Z"
+            },
+            "security": {
+              "qualityScore": 5,
+              "responseTime": 14.362,
+              "contentSize": 2223,
+              "timestamp": "2025-05-14T01:31:55.561Z"
+            },
+            "bestPractices": {
+              "qualityScore": 8,
+              "responseTime": 20.613,
+              "contentSize": 3475,
+              "timestamp": "2025-05-14T01:32:16.175Z"
+            },
+            "performance": {
+              "qualityScore": 7,
+              "responseTime": 15.159,
+              "contentSize": 2502,
+              "timestamp": "2025-05-14T01:32:31.337Z"
+            }
+          },
+          "combinedScore": 6.1186,
+          "avgQuality": 6.8,
+          "avgResponseTime": 16.414
+        },
+        "google/gemini-1.5-pro": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 9,
+              "responseTime": 16.248,
+              "contentSize": 4501,
+              "timestamp": "2025-05-14T01:32:47.586Z"
+            },
+            "codeQuality": {
+              "qualityScore": 8,
+              "responseTime": 17.721,
+              "contentSize": 5052,
+              "timestamp": "2025-05-14T01:33:05.308Z"
+            },
+            "security": {
+              "qualityScore": 8,
+              "responseTime": 18.387,
+              "contentSize": 5426,
+              "timestamp": "2025-05-14T01:33:23.696Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 15.387,
+              "contentSize": 4373,
+              "timestamp": "2025-05-14T01:33:39.085Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 15.492,
+              "contentSize": 4566,
+              "timestamp": "2025-05-14T01:33:54.577Z"
+            }
+          },
+          "combinedScore": 7.3553,
+          "avgQuality": 8.6,
+          "avgResponseTime": 16.647
+        },
+        "google/gemini-1.5-flash": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 9,
+              "responseTime": 6.728,
+              "contentSize": 4765,
+              "timestamp": "2025-05-14T01:34:01.307Z"
+            },
+            "codeQuality": {
+              "qualityScore": 9,
+              "responseTime": 5.227,
+              "contentSize": 3787,
+              "timestamp": "2025-05-14T01:34:06.535Z"
+            },
+            "security": {
+              "qualityScore": 8,
+              "responseTime": 5.725,
+              "contentSize": 4443,
+              "timestamp": "2025-05-14T01:34:12.261Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 5.581,
+              "contentSize": 4277,
+              "timestamp": "2025-05-14T01:34:17.842Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 6.094,
+              "contentSize": 4755,
+              "timestamp": "2025-05-14T01:34:23.937Z"
+            }
+          },
+          "combinedScore": 8.5729,
+          "avgQuality": 8.8,
+          "avgResponseTime": 5.871
+        },
+        "deepseek/deepseek-coder": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 9,
+              "responseTime": 43.9,
+              "contentSize": 3716,
+              "timestamp": "2025-05-14T01:35:07.838Z"
+            },
+            "codeQuality": {
+              "qualityScore": 8,
+              "responseTime": 42.949,
+              "contentSize": 4169,
+              "timestamp": "2025-05-14T01:35:50.789Z"
+            },
+            "security": {
+              "qualityScore": 8,
+              "responseTime": 44.525,
+              "contentSize": 4340,
+              "timestamp": "2025-05-14T01:36:35.315Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 54.727,
+              "contentSize": 4803,
+              "timestamp": "2025-05-14T01:37:30.045Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 51.282,
+              "contentSize": 4903,
+              "timestamp": "2025-05-14T01:38:21.329Z"
+            }
+          },
+          "combinedScore": 6.02,
+          "avgQuality": 8.6,
+          "avgResponseTime": 47.4766
+        },
+        "deepseek/deepseek-chat": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 8,
+              "responseTime": 40.815,
+              "contentSize": 3558,
+              "timestamp": "2025-05-14T01:39:02.147Z"
+            },
+            "codeQuality": {
+              "qualityScore": 9,
+              "responseTime": 44.449,
+              "contentSize": 3941,
+              "timestamp": "2025-05-14T01:39:46.600Z"
+            },
+            "security": {
+              "qualityScore": 9,
+              "responseTime": 50.564,
+              "contentSize": 5087,
+              "timestamp": "2025-05-14T01:40:37.165Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 49.11,
+              "contentSize": 4878,
+              "timestamp": "2025-05-14T01:41:26.278Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 49.009,
+              "contentSize": 4574,
+              "timestamp": "2025-05-14T01:42:15.289Z"
+            }
+          },
+          "combinedScore": 6.16,
+          "avgQuality": 8.8,
+          "avgResponseTime": 46.7894
+        },
+        "openrouter/anthropic/claude-3-opus-20240229": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 9,
+              "responseTime": 46.819,
+              "contentSize": 4135,
+              "timestamp": "2025-05-14T01:43:02.110Z"
+            },
+            "codeQuality": {
+              "qualityScore": 6,
+              "responseTime": 38.693,
+              "contentSize": 3170,
+              "timestamp": "2025-05-14T01:43:40.804Z"
+            },
+            "security": {
+              "qualityScore": 6,
+              "responseTime": 22.328,
+              "contentSize": 3128,
+              "timestamp": "2025-05-14T01:44:03.135Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 29.371,
+              "contentSize": 4035,
+              "timestamp": "2025-05-14T01:44:32.510Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 30.166,
+              "contentSize": 4137,
+              "timestamp": "2025-05-14T01:45:02.677Z"
+            }
+          },
+          "combinedScore": 5.46,
+          "avgQuality": 7.8,
+          "avgResponseTime": 33.4754
+        },
+        "openrouter/anthropic/claude-3-sonnet-20240229": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 15.569,
+              "contentSize": 3888,
+              "timestamp": "2025-05-14T01:45:18.248Z"
+            },
+            "codeQuality": {
+              "qualityScore": 8,
+              "responseTime": 18.39,
+              "contentSize": 4957,
+              "timestamp": "2025-05-14T01:45:36.639Z"
+            },
+            "security": {
+              "qualityScore": 8,
+              "responseTime": 12.693,
+              "contentSize": 3432,
+              "timestamp": "2025-05-14T01:45:49.333Z"
+            },
+            "bestPractices": {
+              "qualityScore": 8,
+              "responseTime": 13.676,
+              "contentSize": 3639,
+              "timestamp": "2025-05-14T01:46:03.011Z"
+            },
+            "performance": {
+              "qualityScore": 8,
+              "responseTime": 14.187,
+              "contentSize": 3480,
+              "timestamp": "2025-05-14T01:46:17.201Z"
+            }
+          },
+          "combinedScore": 7.3896999999999995,
+          "avgQuality": 8.4,
+          "avgResponseTime": 14.903
+        },
+        "openrouter/openai/gpt-4o": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 9,
+              "responseTime": 18.673,
+              "contentSize": 4777,
+              "timestamp": "2025-05-14T01:46:35.875Z"
+            },
+            "codeQuality": {
+              "qualityScore": 8,
+              "responseTime": 12.349,
+              "contentSize": 3550,
+              "timestamp": "2025-05-14T01:46:48.225Z"
+            },
+            "security": {
+              "qualityScore": 7,
+              "responseTime": 15.619,
+              "contentSize": 4292,
+              "timestamp": "2025-05-14T01:47:03.847Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 19.992,
+              "contentSize": 4184,
+              "timestamp": "2025-05-14T01:47:23.840Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 19.727,
+              "contentSize": 4961,
+              "timestamp": "2025-05-14T01:47:43.569Z"
+            }
+          },
+          "combinedScore": 7.1528,
+          "avgQuality": 8.4,
+          "avgResponseTime": 17.272
+        },
+        "openrouter/google/gemini-1.5-pro": {
+          "categories": {
+            "architecture": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T01:47:43.658Z"
+            },
+            "codeQuality": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T01:47:43.739Z"
+            },
+            "security": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T01:47:43.896Z"
+            },
+            "bestPractices": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T01:47:43.970Z"
+            },
+            "performance": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T01:47:44.060Z"
+            }
+          }
+        },
+        "bestModel": {
+          "modelKey": "google/gemini-1.5-flash",
+          "score": 8.5729,
+          "timestamp": "2025-05-14T01:47:44.061Z"
+        }
+      }
+    }
+  },
+  "kotlin": {
+    "large": {
+      "JetBrains/kotlin": {
+        "anthropic/claude-3-opus-20240229": {
+          "categories": {
+            "architecture": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:47:44.530Z"
+            },
+            "codeQuality": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:47:44.626Z"
+            },
+            "security": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:47:44.696Z"
+            },
+            "bestPractices": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:47:44.860Z"
+            },
+            "performance": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:47:44.954Z"
+            }
+          }
+        },
+        "anthropic/claude-3-sonnet-20240229": {
+          "categories": {
+            "architecture": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:47:45.038Z"
+            },
+            "codeQuality": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:47:45.266Z"
+            },
+            "security": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:47:45.381Z"
+            },
+            "bestPractices": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:47:45.446Z"
+            },
+            "performance": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:47:45.514Z"
+            }
+          }
+        },
+        "anthropic/claude-3-haiku-20240307": {
+          "categories": {
+            "architecture": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:47:45.578Z"
+            },
+            "codeQuality": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:47:45.649Z"
+            },
+            "security": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:47:45.729Z"
+            },
+            "bestPractices": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:47:45.789Z"
+            },
+            "performance": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:47:45.862Z"
+            }
+          }
+        },
+        "anthropic/claude-3.5-sonnet-20240620": {
+          "categories": {
+            "architecture": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:47:45.930Z"
+            },
+            "codeQuality": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:47:45.989Z"
+            },
+            "security": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:47:46.054Z"
+            },
+            "bestPractices": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:47:46.123Z"
+            },
+            "performance": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T01:47:46.218Z"
+            }
+          }
+        },
+        "openai/gpt-4o": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 9,
+              "responseTime": 14.164,
+              "contentSize": 4290,
+              "timestamp": "2025-05-14T01:48:00.383Z"
+            },
+            "codeQuality": {
+              "qualityScore": 8,
+              "responseTime": 30.717,
+              "contentSize": 4458,
+              "timestamp": "2025-05-14T01:48:31.104Z"
+            },
+            "security": {
+              "qualityScore": 8,
+              "responseTime": 23.558,
+              "contentSize": 4895,
+              "timestamp": "2025-05-14T01:48:54.665Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 16.616,
+              "contentSize": 4529,
+              "timestamp": "2025-05-14T01:49:11.283Z"
+            },
+            "performance": {
+              "qualityScore": 8,
+              "responseTime": 17.729,
+              "contentSize": 5287,
+              "timestamp": "2025-05-14T01:49:29.015Z"
+            }
+          },
+          "combinedScore": 6.82432,
+          "avgQuality": 8.4,
+          "avgResponseTime": 20.5568
+        },
+        "openai/gpt-4-turbo": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 26.588,
+              "contentSize": 4497,
+              "timestamp": "2025-05-14T01:49:55.605Z"
+            },
+            "codeQuality": {
+              "qualityScore": 7,
+              "responseTime": 17.599,
+              "contentSize": 3635,
+              "timestamp": "2025-05-14T01:50:13.204Z"
+            },
+            "security": {
+              "qualityScore": 6,
+              "responseTime": 22.396,
+              "contentSize": 4050,
+              "timestamp": "2025-05-14T01:50:35.602Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 17.174,
+              "contentSize": 4194,
+              "timestamp": "2025-05-14T01:50:52.778Z"
+            },
+            "performance": {
+              "qualityScore": 8,
+              "responseTime": 16.851,
+              "contentSize": 4532,
+              "timestamp": "2025-05-14T01:51:09.631Z"
+            }
+          },
+          "combinedScore": 6.58784,
+          "avgQuality": 8,
+          "avgResponseTime": 20.1216
+        },
+        "openai/gpt-4": {
+          "categories": {
+            "architecture": {
+              "error": "500: {\"error\":{\"message\":\"The server had an error while processing your request. Sorry about that!\",\"type\":\"server_error\",\"param\":null,\"code\":null}}",
+              "timestamp": "2025-05-14T01:51:25.373Z"
+            },
+            "codeQuality": {
+              "qualityScore": 7,
+              "responseTime": 12.835,
+              "contentSize": 2660,
+              "timestamp": "2025-05-14T01:51:38.209Z"
+            },
+            "security": {
+              "qualityScore": 5,
+              "responseTime": 12.456,
+              "contentSize": 2316,
+              "timestamp": "2025-05-14T01:51:50.666Z"
+            },
+            "bestPractices": {
+              "qualityScore": 8,
+              "responseTime": 17.46,
+              "contentSize": 3507,
+              "timestamp": "2025-05-14T01:52:08.126Z"
+            },
+            "performance": {
+              "qualityScore": 8,
+              "responseTime": 12.774,
+              "contentSize": 2349,
+              "timestamp": "2025-05-14T01:52:20.900Z"
+            }
+          },
+          "combinedScore": 6.511874999999999,
+          "avgQuality": 7,
+          "avgResponseTime": 13.881250000000001
+        },
+        "google/gemini-1.5-pro": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 9,
+              "responseTime": 15.753,
+              "contentSize": 4383,
+              "timestamp": "2025-05-14T01:52:36.654Z"
+            },
+            "codeQuality": {
+              "qualityScore": 8,
+              "responseTime": 17.066,
+              "contentSize": 4846,
+              "timestamp": "2025-05-14T01:52:53.720Z"
+            },
+            "security": {
+              "qualityScore": 7,
+              "responseTime": 16.098,
+              "contentSize": 4383,
+              "timestamp": "2025-05-14T01:53:09.822Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 14.927,
+              "contentSize": 4040,
+              "timestamp": "2025-05-14T01:53:24.749Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 18.883,
+              "contentSize": 5156,
+              "timestamp": "2025-05-14T01:53:43.633Z"
+            }
+          },
+          "combinedScore": 7.22546,
+          "avgQuality": 8.4,
+          "avgResponseTime": 16.5454
+        },
+        "google/gemini-1.5-flash": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 9,
+              "responseTime": 7.049,
+              "contentSize": 4982,
+              "timestamp": "2025-05-14T01:53:50.683Z"
+            },
+            "codeQuality": {
+              "qualityScore": 7,
+              "responseTime": 5.522,
+              "contentSize": 4131,
+              "timestamp": "2025-05-14T01:53:56.206Z"
+            },
+            "security": {
+              "qualityScore": 8,
+              "responseTime": 5.806,
+              "contentSize": 4497,
+              "timestamp": "2025-05-14T01:54:02.014Z"
+            },
+            "bestPractices": {
+              "qualityScore": 8,
+              "responseTime": 6.218,
+              "contentSize": 4814,
+              "timestamp": "2025-05-14T01:54:08.233Z"
+            },
+            "performance": {
+              "qualityScore": 8,
+              "responseTime": 6.695,
+              "contentSize": 5446,
+              "timestamp": "2025-05-14T01:54:14.929Z"
+            }
+          },
+          "combinedScore": 7.9742,
+          "avgQuality": 8,
+          "avgResponseTime": 6.258000000000001
+        },
+        "deepseek/deepseek-coder": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 47.668,
+              "contentSize": 4836,
+              "timestamp": "2025-05-14T01:55:02.598Z"
+            },
+            "codeQuality": {
+              "qualityScore": 7,
+              "responseTime": 40.359,
+              "contentSize": 3760,
+              "timestamp": "2025-05-14T01:55:42.959Z"
+            },
+            "security": {
+              "qualityScore": 8,
+              "responseTime": 43.425,
+              "contentSize": 4071,
+              "timestamp": "2025-05-14T01:56:26.387Z"
+            },
+            "bestPractices": {
+              "qualityScore": 8,
+              "responseTime": 41.149,
+              "contentSize": 4302,
+              "timestamp": "2025-05-14T01:57:07.537Z"
+            },
+            "performance": {
+              "qualityScore": 8,
+              "responseTime": 47.972,
+              "contentSize": 4696,
+              "timestamp": "2025-05-14T01:57:55.512Z"
+            }
+          },
+          "combinedScore": 5.739999999999999,
+          "avgQuality": 8.2,
+          "avgResponseTime": 44.1146
+        },
+        "deepseek/deepseek-chat": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 54.763,
+              "contentSize": 4952,
+              "timestamp": "2025-05-14T01:58:50.278Z"
+            },
+            "codeQuality": {
+              "qualityScore": 8,
+              "responseTime": 42.59,
+              "contentSize": 4079,
+              "timestamp": "2025-05-14T01:59:32.871Z"
+            },
+            "security": {
+              "qualityScore": 7,
+              "responseTime": 41.205,
+              "contentSize": 3808,
+              "timestamp": "2025-05-14T02:00:14.077Z"
+            },
+            "bestPractices": {
+              "qualityScore": 10,
+              "responseTime": 41.309,
+              "contentSize": 4101,
+              "timestamp": "2025-05-14T02:00:55.387Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 50.484,
+              "contentSize": 4715,
+              "timestamp": "2025-05-14T02:01:45.872Z"
+            }
+          },
+          "combinedScore": 6.16,
+          "avgQuality": 8.8,
+          "avgResponseTime": 46.0702
+        },
+        "openrouter/anthropic/claude-3-opus-20240229": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 9,
+              "responseTime": 42.033,
+              "contentSize": 3980,
+              "timestamp": "2025-05-14T02:02:27.909Z"
+            },
+            "codeQuality": {
+              "qualityScore": 6,
+              "responseTime": 19.206,
+              "contentSize": 2547,
+              "timestamp": "2025-05-14T02:02:47.117Z"
+            },
+            "security": {
+              "qualityScore": 8,
+              "responseTime": 31.696,
+              "contentSize": 4318,
+              "timestamp": "2025-05-14T02:03:18.815Z"
+            },
+            "bestPractices": {
+              "qualityScore": 7,
+              "responseTime": 26.145,
+              "contentSize": 3432,
+              "timestamp": "2025-05-14T02:03:44.962Z"
+            },
+            "performance": {
+              "qualityScore": 8,
+              "responseTime": 24.948,
+              "contentSize": 4071,
+              "timestamp": "2025-05-14T02:04:09.911Z"
+            }
+          },
+          "combinedScore": 5.439439999999999,
+          "avgQuality": 7.6,
+          "avgResponseTime": 28.8056
+        },
+        "openrouter/anthropic/claude-3-sonnet-20240229": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 9,
+              "responseTime": 12.849,
+              "contentSize": 3364,
+              "timestamp": "2025-05-14T02:04:22.760Z"
+            },
+            "codeQuality": {
+              "qualityScore": 8,
+              "responseTime": 13.845,
+              "contentSize": 3482,
+              "timestamp": "2025-05-14T02:04:36.607Z"
+            },
+            "security": {
+              "qualityScore": 7,
+              "responseTime": 13.439,
+              "contentSize": 3764,
+              "timestamp": "2025-05-14T02:04:50.048Z"
+            },
+            "bestPractices": {
+              "qualityScore": 8,
+              "responseTime": 14.877,
+              "contentSize": 4060,
+              "timestamp": "2025-05-14T02:05:04.928Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 16.525,
+              "contentSize": 4331,
+              "timestamp": "2025-05-14T02:05:21.454Z"
+            }
+          },
+          "combinedScore": 7.3092999999999995,
+          "avgQuality": 8.2,
+          "avgResponseTime": 14.306999999999999
+        },
+        "openrouter/openai/gpt-4o": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 9,
+              "responseTime": 15.355,
+              "contentSize": 4794,
+              "timestamp": "2025-05-14T02:05:36.809Z"
+            },
+            "codeQuality": {
+              "qualityScore": 9,
+              "responseTime": 21.075,
+              "contentSize": 4988,
+              "timestamp": "2025-05-14T02:05:57.887Z"
+            },
+            "security": {
+              "qualityScore": 9,
+              "responseTime": 12.983,
+              "contentSize": 3832,
+              "timestamp": "2025-05-14T02:06:10.872Z"
+            },
+            "bestPractices": {
+              "qualityScore": 8,
+              "responseTime": 18.386,
+              "contentSize": 4916,
+              "timestamp": "2025-05-14T02:06:29.260Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 14.975,
+              "contentSize": 5126,
+              "timestamp": "2025-05-14T02:06:44.236Z"
+            }
+          },
+          "combinedScore": 7.50452,
+          "avgQuality": 8.8,
+          "avgResponseTime": 16.554799999999997
+        },
+        "openrouter/google/gemini-1.5-pro": {
+          "categories": {
+            "architecture": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T02:06:44.371Z"
+            },
+            "codeQuality": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T02:06:44.482Z"
+            },
+            "security": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T02:06:44.586Z"
+            },
+            "bestPractices": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T02:06:44.675Z"
+            },
+            "performance": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T02:06:44.761Z"
+            }
+          }
+        },
+        "bestModel": {
+          "modelKey": "google/gemini-1.5-flash",
+          "score": 7.9742,
+          "timestamp": "2025-05-14T02:06:44.762Z"
+        }
+      }
+    }
+  },
+  "typescript": {
+    "large": {
+      "microsoft/TypeScript": {
+        "anthropic/claude-3-opus-20240229": {
+          "categories": {
+            "architecture": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:06:45.204Z"
+            },
+            "codeQuality": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:06:45.272Z"
+            },
+            "security": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:06:45.340Z"
+            },
+            "bestPractices": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:06:45.404Z"
+            },
+            "performance": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:06:45.472Z"
+            }
+          }
+        },
+        "anthropic/claude-3-sonnet-20240229": {
+          "categories": {
+            "architecture": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:06:45.561Z"
+            },
+            "codeQuality": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:06:45.635Z"
+            },
+            "security": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:06:45.697Z"
+            },
+            "bestPractices": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:06:45.781Z"
+            },
+            "performance": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:06:45.841Z"
+            }
+          }
+        },
+        "anthropic/claude-3-haiku-20240307": {
+          "categories": {
+            "architecture": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:06:45.956Z"
+            },
+            "codeQuality": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:06:46.018Z"
+            },
+            "security": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:06:46.085Z"
+            },
+            "bestPractices": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:06:46.188Z"
+            },
+            "performance": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:06:46.261Z"
+            }
+          }
+        },
+        "anthropic/claude-3.5-sonnet-20240620": {
+          "categories": {
+            "architecture": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:06:46.316Z"
+            },
+            "codeQuality": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:06:46.376Z"
+            },
+            "security": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:06:46.441Z"
+            },
+            "bestPractices": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:06:46.514Z"
+            },
+            "performance": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:06:46.653Z"
+            }
+          }
+        },
+        "openai/gpt-4o": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 9,
+              "responseTime": 17.735,
+              "contentSize": 4549,
+              "timestamp": "2025-05-14T02:07:04.390Z"
+            },
+            "codeQuality": {
+              "qualityScore": 8,
+              "responseTime": 18.028,
+              "contentSize": 4225,
+              "timestamp": "2025-05-14T02:07:22.418Z"
+            },
+            "security": {
+              "qualityScore": 9,
+              "responseTime": 18.936,
+              "contentSize": 4489,
+              "timestamp": "2025-05-14T02:07:41.355Z"
+            },
+            "bestPractices": {
+              "qualityScore": 8,
+              "responseTime": 13.906,
+              "contentSize": 4141,
+              "timestamp": "2025-05-14T02:07:55.264Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 16.052,
+              "contentSize": 4841,
+              "timestamp": "2025-05-14T02:08:11.317Z"
+            }
+          },
+          "combinedScore": 7.326859999999999,
+          "avgQuality": 8.6,
+          "avgResponseTime": 16.931400000000004
+        },
+        "openai/gpt-4-turbo": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 9,
+              "responseTime": 15.224,
+              "contentSize": 4482,
+              "timestamp": "2025-05-14T02:08:26.542Z"
+            },
+            "codeQuality": {
+              "qualityScore": 8,
+              "responseTime": 19.275,
+              "contentSize": 4489,
+              "timestamp": "2025-05-14T02:08:45.819Z"
+            },
+            "security": {
+              "qualityScore": 7,
+              "responseTime": 20.402,
+              "contentSize": 4268,
+              "timestamp": "2025-05-14T02:09:06.224Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 22.403,
+              "contentSize": 4225,
+              "timestamp": "2025-05-14T02:09:28.628Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 17.301,
+              "contentSize": 4190,
+              "timestamp": "2025-05-14T02:09:45.933Z"
+            }
+          },
+          "combinedScore": 6.9879,
+          "avgQuality": 8.4,
+          "avgResponseTime": 18.921
+        },
+        "openai/gpt-4": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 8,
+              "responseTime": 21.002,
+              "contentSize": 2898,
+              "timestamp": "2025-05-14T02:10:06.936Z"
+            },
+            "codeQuality": {
+              "qualityScore": 5,
+              "responseTime": 13.952,
+              "contentSize": 2359,
+              "timestamp": "2025-05-14T02:10:20.890Z"
+            },
+            "security": {
+              "qualityScore": 6,
+              "responseTime": 13.861,
+              "contentSize": 2538,
+              "timestamp": "2025-05-14T02:10:34.753Z"
+            },
+            "bestPractices": {
+              "qualityScore": 6,
+              "responseTime": 22.391,
+              "contentSize": 3027,
+              "timestamp": "2025-05-14T02:10:57.144Z"
+            },
+            "performance": {
+              "qualityScore": 7,
+              "responseTime": 16.07,
+              "contentSize": 2918,
+              "timestamp": "2025-05-14T02:11:13.214Z"
+            }
+          },
+          "combinedScore": 5.73448,
+          "avgQuality": 6.4,
+          "avgResponseTime": 17.455199999999998
+        },
+        "google/gemini-1.5-pro": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 16.778,
+              "contentSize": 4596,
+              "timestamp": "2025-05-14T02:11:29.992Z"
+            },
+            "codeQuality": {
+              "qualityScore": 8,
+              "responseTime": 16.093,
+              "contentSize": 5080,
+              "timestamp": "2025-05-14T02:11:46.086Z"
+            },
+            "security": {
+              "qualityScore": 8,
+              "responseTime": 15.882,
+              "contentSize": 4644,
+              "timestamp": "2025-05-14T02:12:01.968Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 14.227,
+              "contentSize": 4028,
+              "timestamp": "2025-05-14T02:12:16.196Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 16.47,
+              "contentSize": 4534,
+              "timestamp": "2025-05-14T02:12:32.666Z"
+            }
+          },
+          "combinedScore": 7.571000000000001,
+          "avgQuality": 8.8,
+          "avgResponseTime": 15.889999999999997
+        },
+        "google/gemini-1.5-flash": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 7.164,
+              "contentSize": 5435,
+              "timestamp": "2025-05-14T02:12:39.832Z"
+            },
+            "codeQuality": {
+              "qualityScore": 8,
+              "responseTime": 5.436,
+              "contentSize": 3962,
+              "timestamp": "2025-05-14T02:12:45.269Z"
+            },
+            "security": {
+              "qualityScore": 8,
+              "responseTime": 5.758,
+              "contentSize": 4389,
+              "timestamp": "2025-05-14T02:12:51.029Z"
+            },
+            "bestPractices": {
+              "qualityScore": 8,
+              "responseTime": 5.71,
+              "contentSize": 4338,
+              "timestamp": "2025-05-14T02:12:56.740Z"
+            },
+            "performance": {
+              "qualityScore": 8,
+              "responseTime": 6.439,
+              "contentSize": 5021,
+              "timestamp": "2025-05-14T02:13:03.181Z"
+            }
+          },
+          "combinedScore": 8.26986,
+          "avgQuality": 8.4,
+          "avgResponseTime": 6.1014
+        },
+        "deepseek/deepseek-coder": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 48.854,
+              "contentSize": 4622,
+              "timestamp": "2025-05-14T02:13:52.035Z"
+            },
+            "codeQuality": {
+              "qualityScore": 10,
+              "responseTime": 53.765,
+              "contentSize": 4898,
+              "timestamp": "2025-05-14T02:14:45.804Z"
+            },
+            "security": {
+              "qualityScore": 9,
+              "responseTime": 48.535,
+              "contentSize": 4600,
+              "timestamp": "2025-05-14T02:15:34.341Z"
+            },
+            "bestPractices": {
+              "qualityScore": 8,
+              "responseTime": 43.576,
+              "contentSize": 3221,
+              "timestamp": "2025-05-14T02:16:17.919Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 60.561,
+              "contentSize": 5068,
+              "timestamp": "2025-05-14T02:17:18.483Z"
+            }
+          },
+          "combinedScore": 6.4399999999999995,
+          "avgQuality": 9.2,
+          "avgResponseTime": 51.0582
+        },
+        "deepseek/deepseek-chat": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 51.089,
+              "contentSize": 4991,
+              "timestamp": "2025-05-14T02:18:09.575Z"
+            },
+            "codeQuality": {
+              "qualityScore": 9,
+              "responseTime": 45.243,
+              "contentSize": 3926,
+              "timestamp": "2025-05-14T02:18:54.820Z"
+            },
+            "security": {
+              "qualityScore": 9,
+              "responseTime": 48.395,
+              "contentSize": 4736,
+              "timestamp": "2025-05-14T02:19:43.218Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 45.352,
+              "contentSize": 4314,
+              "timestamp": "2025-05-14T02:20:28.572Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 43.015,
+              "contentSize": 3896,
+              "timestamp": "2025-05-14T02:21:11.589Z"
+            }
+          },
+          "combinedScore": 6.4399999999999995,
+          "avgQuality": 9.2,
+          "avgResponseTime": 46.6188
+        },
+        "openrouter/anthropic/claude-3-opus-20240229": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 8,
+              "responseTime": 29.211,
+              "contentSize": 4121,
+              "timestamp": "2025-05-14T02:21:40.802Z"
+            },
+            "codeQuality": {
+              "qualityScore": 7,
+              "responseTime": 24.584,
+              "contentSize": 3520,
+              "timestamp": "2025-05-14T02:22:05.387Z"
+            },
+            "security": {
+              "qualityScore": 8,
+              "responseTime": 25.219,
+              "contentSize": 3688,
+              "timestamp": "2025-05-14T02:22:30.608Z"
+            },
+            "bestPractices": {
+              "qualityScore": 7,
+              "responseTime": 23.341,
+              "contentSize": 3511,
+              "timestamp": "2025-05-14T02:22:53.950Z"
+            },
+            "performance": {
+              "qualityScore": 8,
+              "responseTime": 26.525,
+              "contentSize": 3867,
+              "timestamp": "2025-05-14T02:23:20.477Z"
+            }
+          },
+          "combinedScore": 5.742399999999999,
+          "avgQuality": 7.6,
+          "avgResponseTime": 25.776000000000003
+        },
+        "openrouter/anthropic/claude-3-sonnet-20240229": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 9,
+              "responseTime": 12.146,
+              "contentSize": 3474,
+              "timestamp": "2025-05-14T02:23:32.627Z"
+            },
+            "codeQuality": {
+              "qualityScore": 8,
+              "responseTime": 13.355,
+              "contentSize": 3843,
+              "timestamp": "2025-05-14T02:23:45.985Z"
+            },
+            "security": {
+              "qualityScore": 9,
+              "responseTime": 14.408,
+              "contentSize": 3931,
+              "timestamp": "2025-05-14T02:24:00.394Z"
+            },
+            "bestPractices": {
+              "qualityScore": 7,
+              "responseTime": 11.225,
+              "contentSize": 3068,
+              "timestamp": "2025-05-14T02:24:11.621Z"
+            },
+            "performance": {
+              "qualityScore": 8,
+              "responseTime": 13.8,
+              "contentSize": 3910,
+              "timestamp": "2025-05-14T02:24:25.423Z"
+            }
+          },
+          "combinedScore": 7.441319999999999,
+          "avgQuality": 8.2,
+          "avgResponseTime": 12.986799999999999
+        },
+        "openrouter/openai/gpt-4o": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 13.265,
+              "contentSize": 4532,
+              "timestamp": "2025-05-14T02:24:38.692Z"
+            },
+            "codeQuality": {
+              "qualityScore": 9,
+              "responseTime": 11.149,
+              "contentSize": 4088,
+              "timestamp": "2025-05-14T02:24:49.857Z"
+            },
+            "security": {
+              "qualityScore": 8,
+              "responseTime": 16.723,
+              "contentSize": 4658,
+              "timestamp": "2025-05-14T02:25:06.583Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 16.858,
+              "contentSize": 4405,
+              "timestamp": "2025-05-14T02:25:23.445Z"
+            },
+            "performance": {
+              "qualityScore": 8,
+              "responseTime": 17.925,
+              "contentSize": 4639,
+              "timestamp": "2025-05-14T02:25:41.372Z"
+            }
+          },
+          "combinedScore": 7.6416,
+          "avgQuality": 8.8,
+          "avgResponseTime": 15.184000000000001
+        },
+        "openrouter/google/gemini-1.5-pro": {
+          "categories": {
+            "architecture": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T02:25:41.496Z"
+            },
+            "codeQuality": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T02:25:41.577Z"
+            },
+            "security": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T02:25:41.665Z"
+            },
+            "bestPractices": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T02:25:41.751Z"
+            },
+            "performance": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T02:25:41.848Z"
+            }
+          }
+        },
+        "bestModel": {
+          "modelKey": "google/gemini-1.5-flash",
+          "score": 8.26986,
+          "timestamp": "2025-05-14T02:25:41.848Z"
+        }
+      }
+    }
+  },
+  "java": {
+    "large": {
+      "spring-projects/spring-framework": {
+        "anthropic/claude-3-opus-20240229": {
+          "categories": {
+            "architecture": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:25:42.246Z"
+            },
+            "codeQuality": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:25:42.310Z"
+            },
+            "security": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:25:42.502Z"
+            },
+            "bestPractices": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:25:42.572Z"
+            },
+            "performance": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:25:42.708Z"
+            }
+          }
+        },
+        "anthropic/claude-3-sonnet-20240229": {
+          "categories": {
+            "architecture": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:25:42.790Z"
+            },
+            "codeQuality": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:25:42.854Z"
+            },
+            "security": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:25:42.923Z"
+            },
+            "bestPractices": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:25:42.991Z"
+            },
+            "performance": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:25:43.063Z"
+            }
+          }
+        },
+        "anthropic/claude-3-haiku-20240307": {
+          "categories": {
+            "architecture": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:25:43.127Z"
+            },
+            "codeQuality": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:25:43.254Z"
+            },
+            "security": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:25:43.320Z"
+            },
+            "bestPractices": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:25:43.383Z"
+            },
+            "performance": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:25:43.441Z"
+            }
+          }
+        },
+        "anthropic/claude-3.5-sonnet-20240620": {
+          "categories": {
+            "architecture": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:25:43.503Z"
+            },
+            "codeQuality": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:25:43.709Z"
+            },
+            "security": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:25:43.766Z"
+            },
+            "bestPractices": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:25:43.825Z"
+            },
+            "performance": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:25:43.921Z"
+            }
+          }
+        },
+        "openai/gpt-4o": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 9,
+              "responseTime": 14.819,
+              "contentSize": 4602,
+              "timestamp": "2025-05-14T02:25:58.740Z"
+            },
+            "codeQuality": {
+              "qualityScore": 7,
+              "responseTime": 12.22,
+              "contentSize": 4041,
+              "timestamp": "2025-05-14T02:26:10.961Z"
+            },
+            "security": {
+              "qualityScore": 8,
+              "responseTime": 11.306,
+              "contentSize": 4509,
+              "timestamp": "2025-05-14T02:26:22.268Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 11.751,
+              "contentSize": 4399,
+              "timestamp": "2025-05-14T02:26:34.020Z"
+            },
+            "performance": {
+              "qualityScore": 10,
+              "responseTime": 14.258,
+              "contentSize": 4997,
+              "timestamp": "2025-05-14T02:26:48.280Z"
+            }
+          },
+          "combinedScore": 7.73292,
+          "avgQuality": 8.6,
+          "avgResponseTime": 12.8708
+        },
+        "openai/gpt-4-turbo": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 21.896,
+              "contentSize": 4487,
+              "timestamp": "2025-05-14T02:27:10.178Z"
+            },
+            "codeQuality": {
+              "qualityScore": 8,
+              "responseTime": 17.774,
+              "contentSize": 3899,
+              "timestamp": "2025-05-14T02:27:27.953Z"
+            },
+            "security": {
+              "qualityScore": 7,
+              "responseTime": 17.216,
+              "contentSize": 3847,
+              "timestamp": "2025-05-14T02:27:45.170Z"
+            },
+            "bestPractices": {
+              "qualityScore": 8,
+              "responseTime": 19.137,
+              "contentSize": 4021,
+              "timestamp": "2025-05-14T02:28:04.310Z"
+            },
+            "performance": {
+              "qualityScore": 8,
+              "responseTime": 19.923,
+              "contentSize": 4748,
+              "timestamp": "2025-05-14T02:28:24.233Z"
+            }
+          },
+          "combinedScore": 6.821079999999999,
+          "avgQuality": 8.2,
+          "avgResponseTime": 19.1892
+        },
+        "openai/gpt-4": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 8,
+              "responseTime": 20.889,
+              "contentSize": 3009,
+              "timestamp": "2025-05-14T02:28:45.127Z"
+            },
+            "codeQuality": {
+              "qualityScore": 5,
+              "responseTime": 20.135,
+              "contentSize": 2341,
+              "timestamp": "2025-05-14T02:29:05.262Z"
+            },
+            "security": {
+              "qualityScore": 8,
+              "responseTime": 20.288,
+              "contentSize": 3128,
+              "timestamp": "2025-05-14T02:29:25.554Z"
+            },
+            "bestPractices": {
+              "qualityScore": 6,
+              "responseTime": 19.456,
+              "contentSize": 2599,
+              "timestamp": "2025-05-14T02:29:45.012Z"
+            },
+            "performance": {
+              "qualityScore": 7,
+              "responseTime": 22.706,
+              "contentSize": 3261,
+              "timestamp": "2025-05-14T02:30:07.719Z"
+            }
+          },
+          "combinedScore": 5.690519999999999,
+          "avgQuality": 6.8,
+          "avgResponseTime": 20.6948
+        },
+        "google/gemini-1.5-pro": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 19.176,
+              "contentSize": 5432,
+              "timestamp": "2025-05-14T02:30:26.896Z"
+            },
+            "codeQuality": {
+              "qualityScore": 8,
+              "responseTime": 15.083,
+              "contentSize": 4692,
+              "timestamp": "2025-05-14T02:30:41.980Z"
+            },
+            "security": {
+              "qualityScore": 9,
+              "responseTime": 15.983,
+              "contentSize": 5030,
+              "timestamp": "2025-05-14T02:30:57.964Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 13.744,
+              "contentSize": 4163,
+              "timestamp": "2025-05-14T02:31:11.708Z"
+            },
+            "performance": {
+              "qualityScore": 10,
+              "responseTime": 17.631,
+              "contentSize": 5058,
+              "timestamp": "2025-05-14T02:31:29.340Z"
+            }
+          },
+          "combinedScore": 7.807659999999999,
+          "avgQuality": 9.2,
+          "avgResponseTime": 16.3234
+        },
+        "google/gemini-1.5-flash": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 6.475,
+              "contentSize": 4958,
+              "timestamp": "2025-05-14T02:31:35.816Z"
+            },
+            "codeQuality": {
+              "qualityScore": 9,
+              "responseTime": 6.494,
+              "contentSize": 4754,
+              "timestamp": "2025-05-14T02:31:42.310Z"
+            },
+            "security": {
+              "qualityScore": 9,
+              "responseTime": 6.461,
+              "contentSize": 4983,
+              "timestamp": "2025-05-14T02:31:48.771Z"
+            },
+            "bestPractices": {
+              "qualityScore": 10,
+              "responseTime": 6.268,
+              "contentSize": 4824,
+              "timestamp": "2025-05-14T02:31:55.040Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 6.991,
+              "contentSize": 5139,
+              "timestamp": "2025-05-14T02:32:02.031Z"
+            }
+          },
+          "combinedScore": 8.92622,
+          "avgQuality": 9.4,
+          "avgResponseTime": 6.5378
+        },
+        "deepseek/deepseek-coder": {
+          "categories": {
+            "architecture": {
+              "error": "No response received from server",
+              "timestamp": "2025-05-14T02:32:42.779Z"
+            },
+            "codeQuality": {
+              "qualityScore": 7,
+              "responseTime": 39.177,
+              "contentSize": 3746,
+              "timestamp": "2025-05-14T02:33:21.957Z"
+            },
+            "security": {
+              "qualityScore": 8,
+              "responseTime": 54.195,
+              "contentSize": 5087,
+              "timestamp": "2025-05-14T02:34:16.154Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 45.943,
+              "contentSize": 4169,
+              "timestamp": "2025-05-14T02:35:02.100Z"
+            },
+            "performance": {
+              "qualityScore": 8,
+              "responseTime": 55.875,
+              "contentSize": 5086,
+              "timestamp": "2025-05-14T02:35:57.978Z"
+            }
+          },
+          "combinedScore": 5.6,
+          "avgQuality": 8,
+          "avgResponseTime": 48.7975
+        },
+        "deepseek/deepseek-chat": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 51.115,
+              "contentSize": 4811,
+              "timestamp": "2025-05-14T02:36:49.098Z"
+            },
+            "codeQuality": {
+              "qualityScore": 8,
+              "responseTime": 52.993,
+              "contentSize": 4452,
+              "timestamp": "2025-05-14T02:37:42.093Z"
+            },
+            "security": {
+              "qualityScore": 8,
+              "responseTime": 40.284,
+              "contentSize": 3924,
+              "timestamp": "2025-05-14T02:38:22.380Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 45.904,
+              "contentSize": 4491,
+              "timestamp": "2025-05-14T02:39:08.285Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 54.544,
+              "contentSize": 5037,
+              "timestamp": "2025-05-14T02:40:02.831Z"
+            }
+          },
+          "combinedScore": 6.16,
+          "avgQuality": 8.8,
+          "avgResponseTime": 48.967999999999996
+        },
+        "openrouter/anthropic/claude-3-opus-20240229": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 9,
+              "responseTime": 31.282,
+              "contentSize": 4269,
+              "timestamp": "2025-05-14T02:40:34.116Z"
+            },
+            "codeQuality": {
+              "qualityScore": 7,
+              "responseTime": 24.573,
+              "contentSize": 3575,
+              "timestamp": "2025-05-14T02:40:58.691Z"
+            },
+            "security": {
+              "qualityScore": 7,
+              "responseTime": 26.66,
+              "contentSize": 3631,
+              "timestamp": "2025-05-14T02:41:25.356Z"
+            },
+            "bestPractices": {
+              "qualityScore": 8,
+              "responseTime": 22.94,
+              "contentSize": 3697,
+              "timestamp": "2025-05-14T02:41:48.298Z"
+            },
+            "performance": {
+              "qualityScore": 8,
+              "responseTime": 32.483,
+              "contentSize": 4820,
+              "timestamp": "2025-05-14T02:42:20.782Z"
+            }
+          },
+          "combinedScore": 5.70124,
+          "avgQuality": 7.8,
+          "avgResponseTime": 27.5876
+        },
+        "openrouter/anthropic/claude-3-sonnet-20240229": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 20.15,
+              "contentSize": 4927,
+              "timestamp": "2025-05-14T02:42:40.933Z"
+            },
+            "codeQuality": {
+              "qualityScore": 6,
+              "responseTime": 13.553,
+              "contentSize": 3754,
+              "timestamp": "2025-05-14T02:42:54.489Z"
+            },
+            "security": {
+              "qualityScore": 8,
+              "responseTime": 16.015,
+              "contentSize": 4476,
+              "timestamp": "2025-05-14T02:43:10.504Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 17.392,
+              "contentSize": 4668,
+              "timestamp": "2025-05-14T02:43:27.899Z"
+            },
+            "performance": {
+              "qualityScore": 8,
+              "responseTime": 27.731,
+              "contentSize": 3403,
+              "timestamp": "2025-05-14T02:43:55.631Z"
+            }
+          },
+          "combinedScore": 6.8431799999999985,
+          "avgQuality": 8.2,
+          "avgResponseTime": 18.968200000000003
+        },
+        "openrouter/openai/gpt-4o": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 13.465,
+              "contentSize": 4529,
+              "timestamp": "2025-05-14T02:44:09.097Z"
+            },
+            "codeQuality": {
+              "qualityScore": 9,
+              "responseTime": 11.177,
+              "contentSize": 3934,
+              "timestamp": "2025-05-14T02:44:20.276Z"
+            },
+            "security": {
+              "qualityScore": 9,
+              "responseTime": 14.058,
+              "contentSize": 4655,
+              "timestamp": "2025-05-14T02:44:34.337Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 12.631,
+              "contentSize": 4450,
+              "timestamp": "2025-05-14T02:44:46.969Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 15.915,
+              "contentSize": 5418,
+              "timestamp": "2025-05-14T02:45:02.884Z"
+            }
+          },
+          "combinedScore": 8.09508,
+          "avgQuality": 9.2,
+          "avgResponseTime": 13.449200000000001
+        },
+        "openrouter/google/gemini-1.5-pro": {
+          "categories": {
+            "architecture": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T02:45:03.017Z"
+            },
+            "codeQuality": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T02:45:03.116Z"
+            },
+            "security": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T02:45:03.209Z"
+            },
+            "bestPractices": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T02:45:03.321Z"
+            },
+            "performance": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T02:45:03.428Z"
+            }
+          }
+        },
+        "bestModel": {
+          "modelKey": "google/gemini-1.5-flash",
+          "score": 8.92622,
+          "timestamp": "2025-05-14T02:45:03.429Z"
+        }
+      }
+    }
+  },
+  "php": {
+    "medium": {
+      "laravel/laravel": {
+        "anthropic/claude-3-opus-20240229": {
+          "categories": {
+            "architecture": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:45:03.897Z"
+            },
+            "codeQuality": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:45:04.021Z"
+            },
+            "security": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:45:04.089Z"
+            },
+            "bestPractices": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:45:04.154Z"
+            },
+            "performance": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:45:04.548Z"
+            }
+          }
+        },
+        "anthropic/claude-3-sonnet-20240229": {
+          "categories": {
+            "architecture": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:45:04.617Z"
+            },
+            "codeQuality": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:45:04.703Z"
+            },
+            "security": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:45:04.778Z"
+            },
+            "bestPractices": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:45:04.848Z"
+            },
+            "performance": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:45:04.903Z"
+            }
+          }
+        },
+        "anthropic/claude-3-haiku-20240307": {
+          "categories": {
+            "architecture": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:45:04.968Z"
+            },
+            "codeQuality": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:45:05.026Z"
+            },
+            "security": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:45:05.343Z"
+            },
+            "bestPractices": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:45:05.415Z"
+            },
+            "performance": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:45:05.491Z"
+            }
+          }
+        },
+        "anthropic/claude-3.5-sonnet-20240620": {
+          "categories": {
+            "architecture": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:45:05.564Z"
+            },
+            "codeQuality": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:45:05.627Z"
+            },
+            "security": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:45:05.769Z"
+            },
+            "bestPractices": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:45:05.841Z"
+            },
+            "performance": {
+              "error": "401: {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+              "timestamp": "2025-05-14T02:45:05.904Z"
+            }
+          }
+        },
+        "openai/gpt-4o": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 18.67,
+              "contentSize": 4844,
+              "timestamp": "2025-05-14T02:45:24.575Z"
+            },
+            "codeQuality": {
+              "qualityScore": 8,
+              "responseTime": 13.423,
+              "contentSize": 4248,
+              "timestamp": "2025-05-14T02:45:37.999Z"
+            },
+            "security": {
+              "qualityScore": 9,
+              "responseTime": 12.794,
+              "contentSize": 3906,
+              "timestamp": "2025-05-14T02:45:50.794Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 13.52,
+              "contentSize": 3856,
+              "timestamp": "2025-05-14T02:46:04.317Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 18.138,
+              "contentSize": 4832,
+              "timestamp": "2025-05-14T02:46:22.455Z"
+            }
+          },
+          "combinedScore": 7.7691,
+          "avgQuality": 9,
+          "avgResponseTime": 15.309000000000001
+        },
+        "openai/gpt-4-turbo": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 9,
+              "responseTime": 28.292,
+              "contentSize": 4550,
+              "timestamp": "2025-05-14T02:46:50.748Z"
+            },
+            "codeQuality": {
+              "qualityScore": 9,
+              "responseTime": 19.657,
+              "contentSize": 3620,
+              "timestamp": "2025-05-14T02:47:10.407Z"
+            },
+            "security": {
+              "qualityScore": 8,
+              "responseTime": 13.414,
+              "contentSize": 3648,
+              "timestamp": "2025-05-14T02:47:23.823Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 14.101,
+              "contentSize": 4111,
+              "timestamp": "2025-05-14T02:47:37.926Z"
+            },
+            "performance": {
+              "qualityScore": 8,
+              "responseTime": 17.435,
+              "contentSize": 4577,
+              "timestamp": "2025-05-14T02:47:55.362Z"
+            }
+          },
+          "combinedScore": 7.16202,
+          "avgQuality": 8.6,
+          "avgResponseTime": 18.5798
+        },
+        "openai/gpt-4": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 7,
+              "responseTime": 16.42,
+              "contentSize": 2892,
+              "timestamp": "2025-05-14T02:48:11.783Z"
+            },
+            "codeQuality": {
+              "qualityScore": 8,
+              "responseTime": 13.357,
+              "contentSize": 2260,
+              "timestamp": "2025-05-14T02:48:25.141Z"
+            },
+            "security": {
+              "qualityScore": 7,
+              "responseTime": 17.47,
+              "contentSize": 2653,
+              "timestamp": "2025-05-14T02:48:42.614Z"
+            },
+            "bestPractices": {
+              "qualityScore": 7,
+              "responseTime": 12.827,
+              "contentSize": 2081,
+              "timestamp": "2025-05-14T02:48:55.442Z"
+            },
+            "performance": {
+              "qualityScore": 7,
+              "responseTime": 14.594,
+              "contentSize": 2549,
+              "timestamp": "2025-05-14T02:49:10.038Z"
+            }
+          },
+          "combinedScore": 6.54664,
+          "avgQuality": 7.2,
+          "avgResponseTime": 14.933599999999998
+        },
+        "google/gemini-1.5-pro": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 8,
+              "responseTime": 15.156,
+              "contentSize": 4586,
+              "timestamp": "2025-05-14T02:49:25.195Z"
+            },
+            "codeQuality": {
+              "qualityScore": 7,
+              "responseTime": 15.175,
+              "contentSize": 4395,
+              "timestamp": "2025-05-14T02:49:40.373Z"
+            },
+            "security": {
+              "qualityScore": 10,
+              "responseTime": 17.541,
+              "contentSize": 5249,
+              "timestamp": "2025-05-14T02:49:57.915Z"
+            },
+            "bestPractices": {
+              "qualityScore": 8,
+              "responseTime": 14.138,
+              "contentSize": 4333,
+              "timestamp": "2025-05-14T02:50:12.056Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 16.387,
+              "contentSize": 4452,
+              "timestamp": "2025-05-14T02:50:28.444Z"
+            }
+          },
+          "combinedScore": 7.31206,
+          "avgQuality": 8.4,
+          "avgResponseTime": 15.679399999999998
+        },
+        "google/gemini-1.5-flash": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 9,
+              "responseTime": 6.535,
+              "contentSize": 4742,
+              "timestamp": "2025-05-14T02:50:34.980Z"
+            },
+            "codeQuality": {
+              "qualityScore": 7,
+              "responseTime": 5.784,
+              "contentSize": 4157,
+              "timestamp": "2025-05-14T02:50:40.766Z"
+            },
+            "security": {
+              "qualityScore": 10,
+              "responseTime": 6.464,
+              "contentSize": 4806,
+              "timestamp": "2025-05-14T02:50:47.233Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 5.744,
+              "contentSize": 4113,
+              "timestamp": "2025-05-14T02:50:52.978Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 6.853,
+              "contentSize": 5182,
+              "timestamp": "2025-05-14T02:50:59.833Z"
+            }
+          },
+          "combinedScore": 8.532399999999999,
+          "avgQuality": 8.8,
+          "avgResponseTime": 6.276000000000001
+        },
+        "deepseek/deepseek-coder": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 55.98,
+              "contentSize": 4803,
+              "timestamp": "2025-05-14T02:51:55.815Z"
+            },
+            "codeQuality": {
+              "qualityScore": 9,
+              "responseTime": 43.63,
+              "contentSize": 3944,
+              "timestamp": "2025-05-14T02:52:39.447Z"
+            },
+            "security": {
+              "qualityScore": 9,
+              "responseTime": 70.196,
+              "contentSize": 5974,
+              "timestamp": "2025-05-14T02:53:49.644Z"
+            },
+            "bestPractices": {
+              "qualityScore": 8,
+              "responseTime": 38.93,
+              "contentSize": 3501,
+              "timestamp": "2025-05-14T02:54:28.577Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 47.486,
+              "contentSize": 3782,
+              "timestamp": "2025-05-14T02:55:16.065Z"
+            }
+          },
+          "combinedScore": 6.3,
+          "avgQuality": 9,
+          "avgResponseTime": 51.2444
+        },
+        "deepseek/deepseek-chat": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 52.241,
+              "contentSize": 4869,
+              "timestamp": "2025-05-14T02:56:08.309Z"
+            },
+            "codeQuality": {
+              "qualityScore": 7,
+              "responseTime": 42.039,
+              "contentSize": 3744,
+              "timestamp": "2025-05-14T02:56:50.353Z"
+            },
+            "security": {
+              "qualityScore": 9,
+              "responseTime": 54.155,
+              "contentSize": 4838,
+              "timestamp": "2025-05-14T02:57:44.509Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 43.058,
+              "contentSize": 4083,
+              "timestamp": "2025-05-14T02:58:27.570Z"
+            },
+            "performance": {
+              "qualityScore": 8,
+              "responseTime": 51.097,
+              "contentSize": 3879,
+              "timestamp": "2025-05-14T02:59:18.668Z"
+            }
+          },
+          "combinedScore": 6.02,
+          "avgQuality": 8.6,
+          "avgResponseTime": 48.518
+        },
+        "openrouter/anthropic/claude-3-opus-20240229": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 28.102,
+              "contentSize": 3839,
+              "timestamp": "2025-05-14T02:59:46.772Z"
+            },
+            "codeQuality": {
+              "qualityScore": 7,
+              "responseTime": 25.387,
+              "contentSize": 3751,
+              "timestamp": "2025-05-14T03:00:12.161Z"
+            },
+            "security": {
+              "qualityScore": 7,
+              "responseTime": 20.229,
+              "contentSize": 2571,
+              "timestamp": "2025-05-14T03:00:32.392Z"
+            },
+            "bestPractices": {
+              "qualityScore": 8,
+              "responseTime": 25.988,
+              "contentSize": 3518,
+              "timestamp": "2025-05-14T03:00:58.383Z"
+            },
+            "performance": {
+              "qualityScore": 8,
+              "responseTime": 29.163,
+              "contentSize": 3916,
+              "timestamp": "2025-05-14T03:01:27.548Z"
+            }
+          },
+          "combinedScore": 6.022619999999999,
+          "avgQuality": 8,
+          "avgResponseTime": 25.7738
+        },
+        "openrouter/anthropic/claude-3-sonnet-20240229": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 16.361,
+              "contentSize": 4512,
+              "timestamp": "2025-05-14T03:01:43.911Z"
+            },
+            "codeQuality": {
+              "qualityScore": 5,
+              "responseTime": 11.815,
+              "contentSize": 3080,
+              "timestamp": "2025-05-14T03:01:55.727Z"
+            },
+            "security": {
+              "qualityScore": 7,
+              "responseTime": 12.146,
+              "contentSize": 3355,
+              "timestamp": "2025-05-14T03:02:07.874Z"
+            },
+            "bestPractices": {
+              "qualityScore": 8,
+              "responseTime": 9.834,
+              "contentSize": 2649,
+              "timestamp": "2025-05-14T03:02:17.709Z"
+            },
+            "performance": {
+              "qualityScore": 6,
+              "responseTime": 12.229,
+              "contentSize": 3567,
+              "timestamp": "2025-05-14T03:02:29.939Z"
+            }
+          },
+          "combinedScore": 6.7923,
+          "avgQuality": 7.2,
+          "avgResponseTime": 12.477
+        },
+        "openrouter/openai/gpt-4o": {
+          "categories": {
+            "architecture": {
+              "qualityScore": 10,
+              "responseTime": 15.707,
+              "contentSize": 4538,
+              "timestamp": "2025-05-14T03:02:45.647Z"
+            },
+            "codeQuality": {
+              "qualityScore": 9,
+              "responseTime": 15.558,
+              "contentSize": 4309,
+              "timestamp": "2025-05-14T03:03:01.206Z"
+            },
+            "security": {
+              "qualityScore": 9,
+              "responseTime": 21.05,
+              "contentSize": 4417,
+              "timestamp": "2025-05-14T03:03:22.257Z"
+            },
+            "bestPractices": {
+              "qualityScore": 9,
+              "responseTime": 16.732,
+              "contentSize": 4870,
+              "timestamp": "2025-05-14T03:03:38.990Z"
+            },
+            "performance": {
+              "qualityScore": 9,
+              "responseTime": 25.979,
+              "contentSize": 5414,
+              "timestamp": "2025-05-14T03:04:04.971Z"
+            }
+          },
+          "combinedScore": 7.539479999999999,
+          "avgQuality": 9.2,
+          "avgResponseTime": 19.0052
+        },
+        "openrouter/google/gemini-1.5-pro": {
+          "categories": {
+            "architecture": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T03:04:05.074Z"
+            },
+            "codeQuality": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T03:04:05.292Z"
+            },
+            "security": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T03:04:05.377Z"
+            },
+            "bestPractices": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T03:04:05.469Z"
+            },
+            "performance": {
+              "error": "400: {\"error\":{\"message\":\"google/gemini-1.5-pro is not a valid model ID\",\"code\":400},\"user_id\":\"user_2x2XIk4va2XYnlDmvnOjXIgYaUQ\"}",
+              "timestamp": "2025-05-14T03:04:05.700Z"
+            }
+          }
+        },
+        "bestModel": {
+          "modelKey": "google/gemini-1.5-flash",
+          "score": 8.532399999999999,
+          "timestamp": "2025-05-14T03:04:05.702Z"
+        }
+      }
+    }
+  },
+  "bestModels": {
+    "small": {},
+    "javascript": {
+      "large": {
+        "modelKey": "google/gemini-1.5-flash",
+        "score": 8.363059999999999,
+        "timestamp": "2025-05-14T03:42:31.215Z"
+      },
+      "medium": {
+        "modelKey": "google/gemini-1.5-flash",
+        "score": 8.56182,
+        "timestamp": "2025-05-14T03:42:31.215Z"
+      }
+    },
+    "python": {
+      "large": {
+        "modelKey": "google/gemini-1.5-flash",
+        "score": 8.4897,
+        "timestamp": "2025-05-14T03:42:31.215Z"
+      },
+      "small": {
+        "modelKey": "google/gemini-1.5-flash",
+        "score": 8.53886,
+        "timestamp": "2025-05-14T03:42:31.215Z"
+      }
+    },
+    "rust": {
+      "large": {
+        "modelKey": "google/gemini-1.5-flash",
+        "score": 8.66692,
+        "timestamp": "2025-05-14T03:42:31.215Z"
+      }
+    },
+    "go": {
+      "large": {
+        "modelKey": "google/gemini-1.5-flash",
+        "score": 8.5729,
+        "timestamp": "2025-05-14T03:42:31.215Z"
+      }
+    },
+    "kotlin": {
+      "large": {
+        "modelKey": "google/gemini-1.5-flash",
+        "score": 7.9742,
+        "timestamp": "2025-05-14T03:42:31.215Z"
+      }
+    },
+    "typescript": {
+      "large": {
+        "modelKey": "google/gemini-1.5-flash",
+        "score": 8.26986,
+        "timestamp": "2025-05-14T03:42:31.215Z"
+      }
+    },
+    "java": {
+      "large": {
+        "modelKey": "google/gemini-1.5-flash",
+        "score": 8.92622,
+        "timestamp": "2025-05-14T03:42:31.215Z"
+      }
+    },
+    "php": {
+      "medium": {
+        "modelKey": "google/gemini-1.5-flash",
+        "score": 8.532399999999999,
+        "timestamp": "2025-05-14T03:42:31.215Z"
+      }
+    }
+  }
+}

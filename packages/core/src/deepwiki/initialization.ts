@@ -1,6 +1,6 @@
 import { DeepWikiClient, RepositorySizeDetector, ThreeTierAnalysisService } from './';
 import { RepositoryCacheManager } from './RepositoryCacheManager';
-import { Logger } from '@codequal/core/logging';
+import { Logger } from '../utils/logger';
 
 /**
  * DeepWiki integration initialization options
@@ -69,11 +69,11 @@ export function initializeDeepWikiIntegration(options: DeepWikiIntegrationOption
   logger.info('Initializing DeepWiki integration', {
     apiUrl,
     hasSupabase: !!(supabaseUrl && supabaseKey),
-    availableProviders: apiKeys ? Object.keys(apiKeys).filter(k => !!apiKeys[k]) : []
+    availableProviders: apiKeys ? Object.keys(apiKeys).filter(k => !!apiKeys[k as keyof typeof apiKeys]) : []
   });
   
   // Create DeepWiki client
-  const client = new DeepWikiClient(apiUrl, logger, apiKeys);
+  const client = new DeepWikiClient(apiUrl, logger);
   
   // Create repository size detector
   const sizeDetector = new RepositorySizeDetector(logger);

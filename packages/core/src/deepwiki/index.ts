@@ -3,11 +3,12 @@
  * 
  * This module exports all components for integrating with DeepWiki.
  * The DeepWiki integration provides repository analysis capabilities
- * with three analysis depths:
+ * with three analysis depths and a chat interface for repository exploration:
  * 
  * 1. Quick analysis: Fast, PR-only analysis
  * 2. Comprehensive analysis: Full repository + PR analysis
  * 3. Targeted analysis: Deep dives into specific architectural perspectives
+ * 4. Chat interface: Interactive exploration of repository knowledge
  * 
  * @module @codequal/core/deepwiki
  */
@@ -17,6 +18,9 @@ export * from './DeepWikiClient';
 
 // Three-tier analysis service
 export * from './ThreeTierAnalysisService';
+
+// Chat service for interactive repository exploration
+export * from './DeepWikiChatService';
 
 // Repository size detection utility
 export * from './RepositorySizeDetector';
@@ -30,8 +34,11 @@ export * from './initialization';
 // Environment variable helpers
 export * from './env-helpers';
 
-// Export model configs update with test results
-export * from './model-configs-update';
+// Export specific items from model-configs-update to avoid naming conflicts
+export { 
+  ModelConfigManager,
+  default as ModelConfigManagerDefault
+} from './model-configs-update';
 
 /**
  * Initialize the DeepWiki integration using the old syntax (deprecated)
@@ -40,12 +47,12 @@ export * from './model-configs-update';
  * @param options Configuration options
  * @returns DeepWiki integration components
  */
-export function initializeDeepWiki(options: {
+export async function initializeDeepWiki(options: {
   apiUrl: string;
   supabaseUrl?: string;
   supabaseKey?: string;
-  logger: any;
-  cacheConfig?: any;
+  logger: Record<string, unknown>;
+  cacheConfig?: Record<string, unknown>;
 }) {
   const {
     apiUrl,
@@ -56,15 +63,18 @@ export function initializeDeepWiki(options: {
   } = options;
   
   // Create client
-  const client = new (require('./DeepWikiClient')).DeepWikiClient(apiUrl, logger);
+  const { DeepWikiClient } = await import('./DeepWikiClient');
+  const client = new DeepWikiClient(apiUrl, logger);
   
   // Create size detector
-  const sizeDetector = new (require('./RepositorySizeDetector')).RepositorySizeDetector(logger);
+  const { RepositorySizeDetector } = await import('./RepositorySizeDetector');
+  const sizeDetector = new RepositorySizeDetector(logger);
   
   // Create cache manager if Supabase config is provided
   let cacheManager = null;
   if (supabaseUrl && supabaseKey) {
-    cacheManager = new (require('./RepositoryCacheManager')).RepositoryCacheManager(
+    const { RepositoryCacheManager } = await import('./RepositoryCacheManager');
+    cacheManager = new RepositoryCacheManager(
       supabaseUrl, 
       supabaseKey, 
       logger, 
@@ -73,8 +83,16 @@ export function initializeDeepWiki(options: {
   }
   
   // Create analysis service
-  const analysisService = new (require('./ThreeTierAnalysisService')).ThreeTierAnalysisService(
+  const { ThreeTierAnalysisService } = await import('./ThreeTierAnalysisService');
+  const analysisService = new ThreeTierAnalysisService(
     client, 
+    logger
+  );
+  
+  // Create chat service
+  const { DeepWikiChatService } = await import('./DeepWikiChatService');
+  const chatService = new DeepWikiChatService(
+    client,
     logger
   );
   
@@ -82,6 +100,7 @@ export function initializeDeepWiki(options: {
     client,
     sizeDetector,
     cacheManager,
-    analysisService
+    analysisService,
+    chatService
   };
 }

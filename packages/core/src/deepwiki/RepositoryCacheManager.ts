@@ -1,7 +1,27 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { Logger } from '@codequal/core/logging';
+import { Logger } from '../utils/logger';
 import { RepositoryContext } from './DeepWikiClient';
 import { AnalysisResult } from './ThreeTierAnalysisService';
+
+// Extend AnalysisResult for our cache needs
+interface ExtendedAnalysisResult extends AnalysisResult {
+  primaryLanguage?: string;
+}
+
+// Define interfaces for cache data
+export interface CacheData {
+  analysis_id?: string;
+  is_cache_valid?: boolean;
+  latest_commit_hash?: string;
+  latest_analysis_timestamp?: string;
+  commits_since_analysis?: number;
+  significant_changes_detected?: boolean;
+  cache_expiry?: string;
+  last_commit_hash?: string;
+  expiry_date?: string;
+  cached_at?: string;
+  [key: string]: unknown;
+}
 
 /**
  * Cache status information
@@ -167,7 +187,7 @@ export class RepositoryCacheManager {
       };
     } catch (error) {
       this.logger.error('Error checking cache status', { repository, branch, error });
-      throw new Error(`Failed to check cache status: ${error.message}`);
+      throw new Error(`Failed to check cache status: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
   
@@ -177,7 +197,7 @@ export class RepositoryCacheManager {
    * @param branch Repository branch
    * @returns Cached analysis or null if not found
    */
-  async getCachedAnalysis(repository: RepositoryContext, branch: string): Promise<any | null> {
+  async getCachedAnalysis(repository: RepositoryContext, branch: string): Promise<ExtendedAnalysisResult | null> {
     try {
       this.logger.info('Getting cached analysis', { repository, branch });
       
@@ -233,7 +253,7 @@ export class RepositoryCacheManager {
       return data.content;
     } catch (error) {
       this.logger.error('Error getting cached analysis', { repository, branch, error });
-      throw new Error(`Failed to get cached analysis: ${error.message}`);
+      throw new Error(`Failed to get cached analysis: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
   
@@ -251,7 +271,7 @@ export class RepositoryCacheManager {
     repository: RepositoryContext,
     branch: string,
     commitHash: string,
-    result: any,
+    result: ExtendedAnalysisResult,
     provider: string,
     model: string
   ): Promise<boolean> {
@@ -359,7 +379,7 @@ export class RepositoryCacheManager {
       return true;
     } catch (error) {
       this.logger.error('Error storing analysis in cache', { repository, branch, error });
-      throw new Error(`Failed to store analysis in cache: ${error.message}`);
+      throw new Error(`Failed to store analysis in cache: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
   
@@ -392,7 +412,7 @@ export class RepositoryCacheManager {
       return true;
     } catch (error) {
       this.logger.error('Error invalidating cache', { repository, branch, error });
-      throw new Error(`Failed to invalidate cache: ${error.message}`);
+      throw new Error(`Failed to invalidate cache: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
   
@@ -489,7 +509,7 @@ export class RepositoryCacheManager {
       };
     } catch (error) {
       this.logger.error('Error updating commit count', { repository, branch, error });
-      throw new Error(`Failed to update commit count: ${error.message}`);
+      throw new Error(`Failed to update commit count: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
   
@@ -526,9 +546,10 @@ export class RepositoryCacheManager {
    * @param cacheData Cache data
    * @returns Whether cache should be invalidated and reason
    */
-  private shouldInvalidateCache(cacheData: any): { invalidate: boolean, reason: string } | false {
+  private shouldInvalidateCache(cacheData: CacheData): { invalidate: boolean, reason: string } | false {
     // Check commit count
     if (this.invalidationOptions.maxCommitsBeforeInvalidation && 
+        cacheData.commits_since_analysis !== undefined &&
         cacheData.commits_since_analysis >= this.invalidationOptions.maxCommitsBeforeInvalidation) {
       return {
         invalidate: true,
@@ -547,7 +568,7 @@ export class RepositoryCacheManager {
     
     // Check age
     if (this.invalidationOptions.maxAgeMs) {
-      const analysisTimestamp = new Date(cacheData.latest_analysis_timestamp).getTime();
+      const analysisTimestamp = cacheData.latest_analysis_timestamp ? new Date(cacheData.latest_analysis_timestamp as string).getTime() : 0;
       const currentTime = new Date().getTime();
       const ageMs = currentTime - analysisTimestamp;
       
@@ -561,7 +582,7 @@ export class RepositoryCacheManager {
     
     // Check expiry
     if (cacheData.cache_expiry) {
-      const expiryTimestamp = new Date(cacheData.cache_expiry).getTime();
+      const expiryTimestamp = cacheData.cache_expiry ? new Date(cacheData.cache_expiry as string).getTime() : 0;
       const currentTime = new Date().getTime();
       
       if (currentTime >= expiryTimestamp) {

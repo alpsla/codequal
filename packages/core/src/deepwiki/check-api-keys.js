@@ -3,6 +3,9 @@
  * This script tests loading API keys from environment variables and using them with DeepWikiClient
  */
 
+/* eslint-env node */
+/* eslint-disable no-console, @typescript-eslint/no-var-requires */
+
 const dotenv = require('dotenv');
 const path = require('path');
 const fs = require('fs');
