@@ -111,28 +111,65 @@ EOF
     echo "Setting up port forwarding..."
     setup_port_forwarding
     
-    # Send request
+    # Send request with retry logic
     echo "Sending $analysis_type analysis request..."
     local raw_response="${OUTPUT_DIR}/${analysis_type}_raw.txt"
     
-    # Set timeout - longer for potentially complex analyses
-    local timeout=300  # 5 minutes default
-    if [ "$analysis_type" == "performance" ]; then
-      timeout=900  # 15 minutes for performance analysis
-      echo "Using extended timeout ($timeout seconds) for performance analysis..."
-    elif [ "$analysis_type" == "dependencies" ]; then
-      timeout=600  # 10 minutes for dependencies analysis
-      echo "Using extended timeout ($timeout seconds) for dependencies analysis..."
+    # Set timeout - extended for all analyses to ensure quality
+    local timeout=900  # 15 minutes default for all analyses
+    if [ "$analysis_type" == "performance" ] || [ "$analysis_type" == "dependencies" ]; then
+      timeout=1800  # 30 minutes for complex analyses (performance/dependencies)
+      echo "Using maximum timeout ($timeout seconds) for $analysis_type analysis..."
+    else
+      echo "Using extended timeout ($timeout seconds) for $analysis_type analysis..."
     fi
     
-    curl -s -X POST "http://localhost:$PORT/chat/completions/stream" \
-      -H "Content-Type: application/json" \
-      -H "Accept: application/json" \
-      -o "$raw_response" \
-      -d @"$request_file" \
-      --max-time $timeout
+    # Implement retry mechanism for resilience
+    local max_retries=3
+    local retry_count=0
+    local success=false
     
-    RESULT=$?
+    while [ $retry_count -lt $max_retries ] && [ "$success" != "true" ]; do
+      if [ $retry_count -gt 0 ]; then
+        echo "Retry attempt $retry_count for $analysis_type analysis..."
+        # Make sure port forwarding is active for the retry
+        setup_port_forwarding
+        sleep 2  # Brief pause before retry
+      fi
+      
+      # Perform the request
+      curl -s -X POST "http://localhost:$PORT/chat/completions/stream" \
+        -H "Content-Type: application/json" \
+        -H "Accept: application/json" \
+        -o "$raw_response" \
+        -d @"$request_file" \
+        --max-time $timeout
+      
+      CURL_RESULT=$?
+      
+      # Check if successful
+      if [ $CURL_RESULT -eq 0 ] && [ -f "$raw_response" ] && [ -s "$raw_response" ]; then
+        if ! grep -q "error\|Error\|API_KEY\|cannot access\|free variable" "$raw_response" || grep -q "score\|Score\|[0-9]/10\|[0-9] out of 10" "$raw_response"; then
+          success=true
+          break
+        fi
+      fi
+      
+      # Increment retry counter
+      retry_count=$((retry_count + 1))
+      
+      if [ $retry_count -lt $max_retries ]; then
+        echo "Request failed, will retry in 10 seconds..."
+        sleep 10
+      fi
+    done
+    
+    # Set RESULT based on final success status
+    if [ "$success" = "true" ]; then
+      RESULT=0
+    else
+      RESULT=1
+    fi
     
     # Terminate port forwarding
     kill $PF_PID 2>/dev/null || true
@@ -169,24 +206,61 @@ EOF
           echo "Sending $analysis_type analysis request with fallback model $fallback_model..."
           local fallback_response="${OUTPUT_DIR}/${analysis_type}_${fallback_model//\//_}_raw.txt"
           
-          # Set timeout - longer for potentially complex analyses
-          local timeout=300  # 5 minutes default
-          if [ "$analysis_type" == "performance" ]; then
-            timeout=900  # 15 minutes for performance analysis
-            echo "Using extended timeout ($timeout seconds) for performance analysis with fallback model..."
-          elif [ "$analysis_type" == "dependencies" ]; then
-            timeout=600  # 10 minutes for dependencies analysis
-            echo "Using extended timeout ($timeout seconds) for dependencies analysis with fallback model..."
+          # Set timeout - extended for all analyses to ensure quality
+          local timeout=900  # 15 minutes default for all analyses
+          if [ "$analysis_type" == "performance" ] || [ "$analysis_type" == "dependencies" ]; then
+            timeout=1800  # 30 minutes for complex analyses (performance/dependencies)
+            echo "Using maximum timeout ($timeout seconds) for $analysis_type analysis with fallback model..."
+          else
+            echo "Using extended timeout ($timeout seconds) for $analysis_type analysis with fallback model..."
           fi
           
-          curl -s -X POST "http://localhost:$PORT/chat/completions/stream" \
-            -H "Content-Type: application/json" \
-            -H "Accept: application/json" \
-            -o "$fallback_response" \
-            -d @"$request_file" \
-            --max-time $timeout
+          # Implement retry mechanism for fallback resilience
+          local max_retries=3
+          local retry_count=0
+          local fallback_success=false
           
-          FALLBACK_RESULT=$?
+          while [ $retry_count -lt $max_retries ] && [ "$fallback_success" != "true" ]; do
+            if [ $retry_count -gt 0 ]; then
+              echo "Retry attempt $retry_count for $analysis_type analysis with fallback model..."
+              # Make sure port forwarding is active for the retry
+              setup_port_forwarding
+              sleep 2  # Brief pause before retry
+            fi
+            
+            # Perform the request
+            curl -s -X POST "http://localhost:$PORT/chat/completions/stream" \
+              -H "Content-Type: application/json" \
+              -H "Accept: application/json" \
+              -o "$fallback_response" \
+              -d @"$request_file" \
+              --max-time $timeout
+            
+            CURL_RESULT=$?
+            
+            # Check if successful
+            if [ $CURL_RESULT -eq 0 ] && [ -f "$fallback_response" ] && [ -s "$fallback_response" ]; then
+              if ! grep -q "error\|Error\|API_KEY\|cannot access\|free variable" "$fallback_response" || grep -q "score\|Score\|[0-9]/10\|[0-9] out of 10" "$fallback_response"; then
+                fallback_success=true
+                break
+              fi
+            fi
+            
+            # Increment retry counter
+            retry_count=$((retry_count + 1))
+            
+            if [ $retry_count -lt $max_retries ]; then
+              echo "Fallback request failed, will retry in 10 seconds..."
+              sleep 10
+            fi
+          done
+          
+          # Set FALLBACK_RESULT based on final success status
+          if [ "$fallback_success" = "true" ]; then
+            FALLBACK_RESULT=0
+          else
+            FALLBACK_RESULT=1
+          fi
           
           # Terminate port forwarding
           kill $PF_PID 2>/dev/null || true
@@ -289,29 +363,27 @@ After your analysis, provide:
 - Key strengths (bullet points)
 - Areas for improvement (bullet points)"
 
-DEPENDENCIES_PROMPT="Briefly analyze the dependencies of this repository. Focus on:
-1. Direct dependencies and their versions
-2. How dependencies are managed
-3. Key third-party integrations
-
-Limit your analysis to the most critical findings.
+DEPENDENCIES_PROMPT="Analyze the dependencies of this repository. Focus on:
+1. Direct dependencies and versions
+2. Dependency management
+3. Third-party integration
+4. Dependency quality and maintenance
 
 After your analysis, provide:
 - A score from 1-10 for dependency management
-- 2-3 key strengths (bullet points)
-- 2-3 areas for improvement (bullet points)"
+- Key strengths (bullet points)
+- Areas for improvement (bullet points)"
 
-PERFORMANCE_PROMPT="Briefly analyze the performance aspects of this repository. Focus on:
-1. Resource efficiency (memory, CPU)
-2. Key optimization techniques
-3. Response time considerations
-
-Limit your analysis to the most critical findings.
+PERFORMANCE_PROMPT="Analyze the performance of this repository. Focus on:
+1. Resource usage
+2. Optimization techniques
+3. Concurrency and I/O handling
+4. Caching strategies
 
 After your analysis, provide:
 - A score from 1-10 for performance
-- 2-3 key strengths (bullet points)
-- 2-3 areas for improvement (bullet points)"
+- Key strengths (bullet points)
+- Areas for improvement (bullet points)"
 
 # Run each analysis
 echo "Starting specialized analyses of $REPO_NAME repository..."
