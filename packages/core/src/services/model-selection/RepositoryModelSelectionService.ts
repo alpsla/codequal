@@ -453,4 +453,4 @@ export class RepositoryModelSelectionService {
 }
 
 // Export enums and interfaces
-export { RepositoryModelConfig, RepositorySizeCategory, TestingStatus };
+export type { RepositoryModelConfig, RepositorySizeCategory, TestingStatus };

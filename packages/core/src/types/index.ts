@@ -3,7 +3,7 @@
  */
 
 // Re-export specific agent types
-export { 
+export type { 
   Agent, 
   AnalysisResult, 
   Insight, 
@@ -13,7 +13,7 @@ export {
 } from './agent';
 
 // Re-export specific repository types
-export {
+export type {
   RepositoryContext,
   AnalysisResultType,
   AnalysisSeverity,
