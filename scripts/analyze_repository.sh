@@ -4,7 +4,7 @@
 
 # Default parameters
 REPO_URL="${1:-https://github.com/expressjs/express}"
-MODEL="${2:-google/gemini-2.5-flash}"
+MODEL="${2:-google/gemini-2.5-flash-preview-05-20}"
 FALLBACK_MODELS="${3:-anthropic/claude-3-7-sonnet}"
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 BASE_DIR="/Users/alpinro/Code Prjects/codequal"
