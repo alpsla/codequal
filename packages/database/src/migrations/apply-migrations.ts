@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { config } from 'dotenv';
 import { getSupabase } from '../supabase/client';
-import { createLogger } from '@codequal/core/utils';
+import { createLogger } from '../shims/core-types';
 
 // Load environment variables from .env file
 config();
