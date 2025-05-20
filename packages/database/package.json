@@ -10,7 +10,7 @@
     "./models/*": "./dist/models/*.js"
   },
   "scripts": {
-    "build": "tsc && node scripts/post-build.js",
+    "build": "tsc --skipLibCheck && node scripts/post-build.js",
     "dev": "tsc -w",
     "lint": "eslint src",
     "test": "jest --passWithNoTests"
