@@ -1,7 +1,6 @@
 import { getSupabase } from '../supabase/client';
 import type { Tables } from '../supabase/client';
-import { AgentProvider, AgentRole } from '@codequal/core/config/agent-registry';
-import { AnalysisResult } from '@codequal/core/types/agent';
+import { AgentProvider, AgentRole, AnalysisResult } from '../shims/core-types';
 
 /**
  * Analysis mode for PR reviews
