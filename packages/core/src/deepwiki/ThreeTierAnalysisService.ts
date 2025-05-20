@@ -384,7 +384,7 @@ export class ThreeTierAnalysisService {
     this.logger.info('Performing comprehensive PR analysis', { repository, prNumber: options.prNumber });
     
     // First, get the repository wiki (or use cache if available)
-    let repositoryWiki: Record<string, unknown>;
+    let repositoryWiki: Record<string, unknown> | undefined;
     
     if (options.useCache) {
       // Try to get from cache

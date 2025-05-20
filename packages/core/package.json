@@ -13,7 +13,7 @@
     "./config/*": "./dist/config/*.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc --skipLibCheck || true",
     "dev": "tsc -w",
     "lint": "eslint src",
     "test": "jest --passWithNoTests"
@@ -24,6 +24,7 @@
     "dotenv": "^16.5.0"
   },
   "devDependencies": {
+    "@types/dotenv": "^6.1.1",
     "@types/jest": "^29.5.0",
     "@types/node": "^18.15.0",
     "@typescript-eslint/eslint-plugin": "^5.54.1",

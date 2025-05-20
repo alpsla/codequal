@@ -1,4 +1,5 @@
 import axios from 'axios';
+import type { AxiosResponse, AxiosError } from 'axios';
 import { Logger } from '../utils/logger';
 import { RepositoryContext } from './DeepWikiClient';
 
@@ -182,7 +183,7 @@ export class RepositorySizeDetector {
     try {
       this.logger.debug('Fetching GitHub repository info', { url });
       
-      const response = await axios.get(url, {
+      const response = await axios.get<GitHubRepositoryInfo>(url, {
         headers: {
           'Accept': 'application/vnd.github.v3+json',
           // If a GitHub token is available, use it to avoid rate limits
@@ -208,7 +209,7 @@ export class RepositorySizeDetector {
     try {
       this.logger.debug('Fetching GitHub language breakdown', { url });
       
-      const response = await axios.get(url, {
+      const response = await axios.get<Record<string, number>>(url, {
         headers: {
           'Accept': 'application/vnd.github.v3+json',
           // If a GitHub token is available, use it to avoid rate limits
@@ -218,11 +219,11 @@ export class RepositorySizeDetector {
       
       // Convert byte counts to percentages
       const languages = response.data;
-      const totalBytes = Object.values<number>(languages).reduce((sum, bytes) => sum + bytes, 0);
+      const totalBytes = Object.values(languages).reduce((sum, bytes) => sum + bytes, 0);
       
       const languagePercentages: Record<string, number> = {};
       
-      for (const [language, bytes] of Object.entries<number>(languages)) {
+      for (const [language, bytes] of Object.entries(languages)) {
         languagePercentages[language] = Number(((bytes / totalBytes) * 100).toFixed(2));
       }
       
