@@ -39,7 +39,10 @@ This merge brings significant code quality improvements and cleanups to the Code
 
 - All linting passes with no errors (only expected warnings remain)
 - All tests are passing
-- DeepWiki repository analysis is working correctly with anthropic/claude-3-7-sonnet model
+- DeepWiki repository analysis is working with improvements:
+  - Now using cost-effective `google/gemini-2.5-flash-preview-05-20` model by default
+  - Improved handling of performance analysis with extended timeouts
+  - Fallback to `anthropic/claude-3-7-sonnet` when needed
 - Project structure is cleaner and more maintainable
 - Documentation is more comprehensive and better organized
 
