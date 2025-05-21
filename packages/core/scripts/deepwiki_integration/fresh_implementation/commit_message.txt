@@ -1,0 +1,17 @@
+feat(deepwiki): Implement fresh DeepWiki OpenRouter integration
+
+This commit introduces a completely fresh implementation of the DeepWiki OpenRouter integration
+after encountering persistent issues with the previous approach. The new implementation focuses
+on simplicity, reliability, and maintainability.
+
+Key features:
+- Three-parameter approach (repo URL, primary model, fallback models)
+- Robust model fallback mechanism
+- Comprehensive testing and validation capabilities
+- Clean TypeScript integration for the orchestrator
+- Detailed documentation and implementation plan
+
+This implementation avoids the issues encountered previously while providing all the necessary
+functionality for effective repository analysis.
+
+Related: #[issue-number]
