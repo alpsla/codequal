@@ -272,7 +272,7 @@ export class DeepWikiKubernetesService {
         endTime,
         duration,
         options,
-        output: parsedOutput
+        output: parsedOutput && typeof parsedOutput === 'object' ? parsedOutput as Record<string, unknown> : {}
       };
     } catch (error: unknown) {
       const endTime = new Date();
@@ -327,7 +327,11 @@ export class DeepWikiKubernetesService {
         answer: parsedOutput.answer,
         timeTaken,
         repositoryContext: query.repositoryContext,
-        usage: parsedOutput.usage
+        usage: parsedOutput && typeof parsedOutput === 'object' && parsedOutput.usage && typeof parsedOutput.usage === 'object' ? {
+          promptTokens: typeof parsedOutput.usage.promptTokens === 'number' ? parsedOutput.usage.promptTokens : 0,
+          completionTokens: typeof parsedOutput.usage.completionTokens === 'number' ? parsedOutput.usage.completionTokens : 0,
+          totalTokens: typeof parsedOutput.usage.totalTokens === 'number' ? parsedOutput.usage.totalTokens : 0
+        } : undefined
       };
     } catch (error: unknown) {
       const timeTaken = Date.now() - startTime;

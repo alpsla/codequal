@@ -2,7 +2,8 @@ import { BaseAgent } from '../base/base-agent';
 import { AnalysisResult, Insight, Suggestion, EducationalContent } from '@codequal/core';
 import { loadPromptTemplate } from '../prompts/prompt-loader';
 import { DEFAULT_MODELS_BY_PROVIDER, DEEPSEEK_MODELS, DEEPSEEK_PRICING } from '@codequal/core/config/models/model-versions';
-import { createLogger, LoggableData } from '@codequal/core/utils';
+import { createLogger } from '@codequal/core/utils';
+import { formatError } from '../utils/error-utils';
 
 /**
  * DeepSeek client interface
@@ -170,11 +171,7 @@ export class DeepSeekAgent extends BaseAgent {
           
           return data.choices[0].message.content;
         } catch (error) {
-          const errorData: LoggableData = error instanceof Error 
-            ? error 
-            : { message: String(error) };
-          
-          logger.error('DeepSeek API error:', errorData);
+          logger.error('DeepSeek API error:', formatError(error));
           throw error;
         }
       }

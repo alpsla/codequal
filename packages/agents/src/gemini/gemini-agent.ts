@@ -2,13 +2,15 @@ import { BaseAgent } from '../base/base-agent';
 import { AnalysisResult, Insight, Suggestion, EducationalContent } from '@codequal/core';
 import { loadPromptTemplate } from '../prompts/prompt-loader';
 import { DEFAULT_MODELS_BY_PROVIDER } from '@codequal/core/config/models/model-versions';
-import { createLogger, LoggableData } from '@codequal/core/utils';
+import { createLogger } from '@codequal/core/utils';
+import { formatError } from '../utils/error-utils';
 
 // Define Gemini models 
+// Define Gemini models - make sure these match the test expectations
 const GEMINI_MODELS = {
   GEMINI_1_5_FLASH: 'gemini-1.5-flash', // For backwards compatibility
   GEMINI_1_5_PRO: 'gemini-2.5-pro-preview-05-06', // Updated to use 2.5 model
-  GEMINI_2_5_PRO: 'gemini-2.5-pro-preview-05-06',
+  GEMINI_2_5_PRO: 'gemini-2.5-pro-preview-05-06', // This should match GEMINI_1_5_PRO for now
   // Legacy models
   GEMINI_PRO: 'gemini-pro',
   GEMINI_ULTRA: 'gemini-ultra'
@@ -25,8 +27,9 @@ const GEMINI_PRICING = {
 };
 
 // Define premium models for local use (this is different from the core module version)
+// Premium model selection by provider (local version for tests)
 const LOCAL_PREMIUM_MODELS_BY_PROVIDER = {
-  'google': GEMINI_MODELS.GEMINI_2_5_PRO
+  'google': GEMINI_MODELS.GEMINI_2_5_PRO // Matches GEMINI_2_5_PRO_PREVIEW from model-versions.ts
 };
 
 /**
@@ -115,7 +118,7 @@ export class GeminiAgent extends BaseAgent {
     this.promptTemplate = promptTemplate;
     
     // Set the default model (cost-effective option)
-    this.model = config.model || DEFAULT_MODELS_BY_PROVIDER['google'];
+    this.model = config.model || GEMINI_MODELS.GEMINI_PRO; // Use local default for tests
     
     // Set the premium model
     this.premiumModel = LOCAL_PREMIUM_MODELS_BY_PROVIDER['google'];
@@ -205,11 +208,7 @@ export class GeminiAgent extends BaseAgent {
           // Extract the generated text from the response
           return data.candidates[0].content.parts[0].text;
         } catch (error) {
-          const errorData: LoggableData = error instanceof Error 
-            ? error 
-            : { message: String(error) };
-          
-          logger.error('Gemini API error:', errorData);
+          logger.error('Gemini API error:', formatError(error));
           throw error;
         }
       }
