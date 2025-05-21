@@ -2,7 +2,8 @@ import { AgentProvider, AgentRole } from '@codequal/core/config/agent-registry';
 import { AnalysisResult } from '@codequal/core';
 import { AgentFactory } from './agent-factory';
 import { Agent } from '@codequal/core/types/agent';
-import { createLogger, LoggableData } from '@codequal/core/utils';
+import { createLogger } from '@codequal/core/utils';
+import { formatError } from '../utils/error-utils';
 
 /**
  * Multi-agent strategy options
@@ -169,7 +170,7 @@ export abstract class MultiAgent implements Agent {
    * @param data Additional data
    */
   log(message: string, data?: unknown): void {
-    this.logger.info(message, data instanceof Error ? data : (typeof data === 'object' ? data : { value: data }));
+    this.logger.info(message, data instanceof Error ? data : (typeof data === 'object' ? data as Record<string, unknown> : { value: data }));
   }
   
   /**
@@ -178,7 +179,7 @@ export abstract class MultiAgent implements Agent {
    * @param error Error object
    */
   error(message: string, error: unknown): void {
-    this.logger.error(message, error instanceof Error ? error : { message: String(error) } as LoggableData);
+    this.logger.error(message, formatError(error));
   }
 }
 
@@ -198,7 +199,7 @@ export class ParallelMultiAgent extends MultiAgent {
       // Start all analysis tasks in parallel
       const allAgents = [this.primaryAgent, ...this.secondaryAgents];
       const results = await Promise.all(
-        allAgents.map(agent => agent.analyze(data).catch(error => {
+        allAgents.map(agent => agent.analyze(data as Record<string, unknown>).catch(error => {
           this.error(`Error in agent analysis:`, error);
           return null; // Return null for failed agents
         }))
@@ -213,7 +214,7 @@ export class ParallelMultiAgent extends MultiAgent {
       this.error('Error in parallel multi-agent analysis', error);
       
       // Fallback to primary agent if multi-agent approach fails
-      return this.primaryAgent.analyze(data);
+      return this.primaryAgent.analyze(data as Record<string, unknown>);
     }
   }
   
@@ -335,7 +336,7 @@ export class SequentialMultiAgent extends MultiAgent {
   async analyze(data: unknown): Promise<AnalysisResult> {
     try {
       // Start with primary agent
-      let result = await this.primaryAgent.analyze(data);
+      let result = await this.primaryAgent.analyze(data as Record<string, unknown>);
       
       // Pass result to each secondary agent for enhancement
       for (const agent of this.secondaryAgents) {
@@ -347,7 +348,7 @@ export class SequentialMultiAgent extends MultiAgent {
           };
           
           // Get enhanced result
-          const enhancedResult = await agent.analyze(enhancedData);
+          const enhancedResult = await agent.analyze(enhancedData as Record<string, unknown>);
           
           // Merge results
           result = this.mergeResults(result, enhancedResult);
@@ -373,7 +374,7 @@ export class SequentialMultiAgent extends MultiAgent {
       this.error('Error in sequential multi-agent analysis', error);
       
       // Fallback to primary agent if multi-agent approach fails
-      return this.primaryAgent.analyze(data);
+      return this.primaryAgent.analyze(data as Record<string, unknown>);
     }
   }
   
@@ -461,14 +462,14 @@ export class SpecializedMultiAgent extends MultiAgent {
       };
       
       // Run primary agent
-      const primaryResult = await this.primaryAgent.analyze(primaryData).catch(error => {
-        this.error(`Error in primary ${this.config.role} analysis with ${this.config.primaryProvider}`, error as LoggableData);
+      const primaryResult = await this.primaryAgent.analyze(primaryData as Record<string, unknown>).catch(error => {
+        this.error(`Error in primary ${this.config.role} analysis with ${this.config.primaryProvider}`, error);
         return null;
       });
       
       // If primary analysis failed, return empty result or fall back to first secondary agent
       if (!primaryResult) {
-        return this.secondaryAgents[0]?.analyze(data) || {
+        return this.secondaryAgents[0]?.analyze(data as Record<string, unknown>) || {
           insights: [],
           suggestions: [],
           educational: [],
@@ -492,8 +493,8 @@ export class SpecializedMultiAgent extends MultiAgent {
       // Run secondary agents with enriched context
       const secondaryResults = await Promise.all(
         this.secondaryAgents.map(agent => 
-          agent.analyze(secondaryData).catch(error => {
-            this.error(`Error in secondary ${this.config.role} analysis`, error as LoggableData);
+          agent.analyze(secondaryData as Record<string, unknown>).catch(error => {
+            this.error(`Error in secondary ${this.config.role} analysis`, error);
             return null;
           })
         )
@@ -510,10 +511,10 @@ export class SpecializedMultiAgent extends MultiAgent {
       // Combine results
       return this.combineSpecializedResults(allResults);
     } catch (error) {
-      this.error('Error in specialized multi-agent analysis', error as LoggableData);
+      this.error('Error in specialized multi-agent analysis', error);
       
       // Fallback to primary agent if multi-agent approach fails
-      return this.primaryAgent.analyze(data);
+      return this.primaryAgent.analyze(data as Record<string, unknown>);
     }
   }
   

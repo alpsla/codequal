@@ -1,5 +1,6 @@
 import { Agent } from '@codequal/core/types/agent';
-import { createLogger, LoggableData } from '@codequal/core/utils';
+import { createLogger } from '@codequal/core/utils';
+import { formatError } from '../utils/error-utils';
 import { AgentFactory } from '../factory/agent-factory';
 import { v4 as uuidv4 } from 'uuid';
 import { 
@@ -144,7 +145,7 @@ export class MultiAgentExecutor {
     };
     
     if (this.options.debug) {
-      this.logger.info('Initialized with configuration:', this.config);
+      this.logger.info('Initialized with configuration:', JSON.stringify(this.config, null, 2));
     }
   }
   
@@ -268,7 +269,7 @@ export class MultiAgentExecutor {
       
       return result;
     } catch (error) {
-      this.logger.error('Error executing multi-agent analysis:', error as LoggableData);
+      this.logger.error('Error executing multi-agent analysis:', formatError(error));
       
       // Create error result
       return {
@@ -437,7 +438,9 @@ export class MultiAgentExecutor {
         this.logger.info('Executing repository provider agent');
       }
       
-      const result = await repoProviderAgent.analyze(this.repositoryData);
+      // Clone repository data to avoid reference issues
+      const repoDataCopy = JSON.parse(JSON.stringify(this.repositoryData));
+      const result = await repoProviderAgent.analyze(repoDataCopy);
       const endTime = Date.now();
       
       // Store result
@@ -456,7 +459,7 @@ export class MultiAgentExecutor {
       
       return result;
     } catch (error) {
-      this.logger.error('Error executing repository provider agent:', error as LoggableData);
+      this.logger.error('Error executing repository provider agent:', formatError(error));
       
       // Store error
       this.results.set('repository-provider', {
@@ -765,7 +768,7 @@ export class MultiAgentExecutor {
       
       return result;
     } catch (error) {
-      this.logger.error('Error executing orchestrator agent:', error as LoggableData);
+      this.logger.error('Error executing orchestrator agent:', formatError(error));
       
       // Store error
       this.results.set('orchestrator', {
@@ -831,7 +834,7 @@ export class MultiAgentExecutor {
       
       return result;
     } catch (error) {
-      this.logger.error('Error executing reporter agent:', error as LoggableData);
+      this.logger.error('Error executing reporter agent:', formatError(error));
       
       // Store error
       this.results.set('reporter', {
@@ -894,7 +897,7 @@ export class MultiAgentExecutor {
         this.logger.info(`Repository interaction agent completed in ${endTime - startTime}ms`);
       }
     } catch (error) {
-      this.logger.error('Error executing repository interaction agent:', error as LoggableData);
+      this.logger.error('Error executing repository interaction agent:', formatError(error));
       
       // Store error
       this.results.set('repository-interaction', {
@@ -983,7 +986,7 @@ export class MultiAgentExecutor {
       
       return true; // Agent executed successfully
     } catch (error) {
-      this.logger.error(`Error executing agent ${name}:`, error as LoggableData);
+      this.logger.error(`Error executing agent ${name}:`, formatError(error));
       
       // Get agent configuration
       let config: AgentConfig;
@@ -1297,7 +1300,7 @@ export class MultiAgentExecutor {
         };
       } catch (fallbackError) {
         // Log fallback error but continue to next fallback
-        this.logger.error(`Fallback agent ${fallbackConfig.agentType || fallbackConfig.provider} failed:`, fallbackError as LoggableData);
+        this.logger.error(`Fallback agent ${fallbackConfig.agentType || fallbackConfig.provider} failed:`, formatError(fallbackError));
       }
     }
     

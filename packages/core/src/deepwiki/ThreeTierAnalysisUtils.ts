@@ -571,12 +571,12 @@ export class ThreeTierAnalysisUtils {
         // Convert DeepWiki chart format to our standard format
         const reportViz: ReportVisualization = {
           id: `viz_${visualizations.length}`,
-          title: viz.title || 'Visualization',
-          type: this.mapVisualizationType(viz.type),
-          chartType: this.mapChartType(viz.chartType),
-          data: viz.data,
+          title: typeof viz.title === 'string' ? viz.title : 'Visualization',
+          type: this.mapVisualizationType(typeof viz.type === 'string' ? viz.type : 'chart'),
+          chartType: this.mapChartType(typeof viz.chartType === 'string' ? viz.chartType : ''),
+          data: typeof viz.data === 'object' && viz.data !== null ? viz.data as Record<string, unknown> : {},
           config: this.convertVisualizationConfig(viz),
-          description: viz.description
+          description: typeof viz.description === 'string' ? viz.description : undefined
         };
         
         visualizations.push(reportViz);
@@ -647,7 +647,7 @@ export class ThreeTierAnalysisUtils {
     const config: Record<string, unknown> = {
       responsive: true,
       maintainAspectRatio: true,
-      ...deepWikiViz.config
+      ...(typeof deepWikiViz.config === 'object' && deepWikiViz.config !== null ? deepWikiViz.config as Record<string, unknown> : {})
     };
     
     // Add type-specific configurations
@@ -775,7 +775,9 @@ export class ThreeTierAnalysisUtils {
    */
   private generateTableHtml(visualization: ReportVisualization): string {
     // Extract data for the table
-    const { headers, rows } = visualization.data;
+    const data = visualization.data;
+    const headers = Array.isArray(data.headers) ? data.headers : [];
+    const rows = Array.isArray(data.rows) ? data.rows : [];
     
     // Generate HTML for the table
     let tableHtml = `
@@ -790,7 +792,7 @@ export class ThreeTierAnalysisUtils {
     
     // Add headers
     for (const header of headers) {
-      tableHtml += `<th>${header}</th>`;
+      tableHtml += `<th>${String(header)}</th>`;
     }
     
     tableHtml += `
@@ -801,11 +803,13 @@ export class ThreeTierAnalysisUtils {
     
     // Add rows
     for (const row of rows) {
-      tableHtml += '<tr>';
-      for (const cell of row) {
-        tableHtml += `<td>${cell}</td>`;
+      if (Array.isArray(row)) {
+        tableHtml += '<tr>';
+        for (const cell of row) {
+          tableHtml += `<td>${String(cell)}</td>`;
+        }
+        tableHtml += '</tr>';
       }
-      tableHtml += '</tr>';
     }
     
     tableHtml += `
@@ -826,7 +830,9 @@ export class ThreeTierAnalysisUtils {
    */
   private generateCodeHtml(visualization: ReportVisualization): string {
     // Extract code and language
-    const { code, language } = visualization.data;
+    const data = visualization.data;
+    const code = typeof data.code === 'string' ? data.code : '';
+    const language = typeof data.language === 'string' ? data.language : '';
     
     // Generate HTML for the code with syntax highlighting
     return `
@@ -846,7 +852,11 @@ export class ThreeTierAnalysisUtils {
    */
   private generateImageHtml(visualization: ReportVisualization): string {
     // Extract image data
-    const { src, alt, width, height } = visualization.data;
+    const data = visualization.data;
+    const src = typeof data.src === 'string' ? data.src : '';
+    const alt = typeof data.alt === 'string' ? data.alt : '';
+    const width = typeof data.width === 'number' || typeof data.width === 'string' ? data.width : undefined;
+    const height = typeof data.height === 'number' || typeof data.height === 'string' ? data.height : undefined;
     
     // Generate HTML for the image
     return `

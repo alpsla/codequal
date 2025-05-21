@@ -1,29 +1,20 @@
-# DeepWiki Documentation
+# DeepWiki Integration Documentation
 
-This is the centralized documentation for the DeepWiki integration in the CodeQual project.
+This directory contains documentation for the DeepWiki integration with CodeQual.
 
-## Main Documentation
+## Fresh Implementation
 
-- [README](./final/README.md) - Main OpenRouter integration documentation
-- [Model Fallback Guide](./final/Model_Fallback_Guide.md) - Detailed guide for using model fallback
-- [DeepWiki OpenRouter Integration](./final/DeepWiki_OpenRouter_Integration.md) - Comprehensive integration documentation
+The current implementation uses a simplified three-parameter approach:
+1. Repository URL
+2. Primary model (with provider prefix)
+3. Fallback models (optional)
 
-## Scripts
+Key documents:
+- [Fresh Implementation Plan](./implementation/DeepWiki_OpenRouter_Fresh_Implementation_Plan.md)
+- [Fresh Implementation Summary](./implementation/DeepWiki_OpenRouter_Fresh_Implementation_Summary.md)
 
-All DeepWiki scripts have been consolidated in a single directory:
-- `/scripts/deepwiki/` - Central location for all DeepWiki integration scripts
-- `/deepwiki_analyze_repository.sh` - Main repository analysis script at the root level
+## Archive
 
-## Configuration
+Previous documentation has been archived in the [archive](./archive/) directory.
 
-DeepWiki is configured to use OpenRouter exclusively, with automatic fallback capabilities if the primary model fails. See the Model Fallback Guide for details on configuring and using this feature.
-
-## Usage
-
-For basic repository analysis:
-
-```bash
-./deepwiki_analyze_repository.sh <repo_url> [primary_model]
-```
-
-For more advanced usage with fallback model customization, see the scripts directory.
+Last updated: Wed May 21 15:34:14 EDT 2025
