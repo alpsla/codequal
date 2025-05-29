@@ -37,7 +37,7 @@ jobs:
         echo "Core package built, checking dist..."
         ls -la dist/
         echo "Checking exports are available..."
-        node -e "console.log(Object.keys(require('./dist/index.js')))"
+        node -e "const exports = require('./dist/index.js'); console.log('Core exports:', Object.keys(exports)); console.log('Has getEmbeddingConfig:', !!exports.getEmbeddingConfig);"
       
     - name: Create .env file
       run: |

@@ -4,8 +4,8 @@
  * Export all core modules for use in other packages
  */
 
-// Logging
-export * as logging from './utils';
+// Logging - temporarily disabled
+// export * as logging from './utils';
 
 // DeepWiki Integration
 export * as deepwiki from './deepwiki';
