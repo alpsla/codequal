@@ -5,12 +5,30 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
-    ".": "./dist/index.js",
-    "./utils": "./dist/utils/index.js",
-    "./types/*": "./dist/types/*.js",
-    "./config/models/model-versions": "./dist/config/models/model-versions.js",
-    "./config/agent-registry": "./dist/config/agent-registry.js",
-    "./config/*": "./dist/config/*.js"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./utils": {
+      "types": "./dist/utils/index.d.ts",
+      "default": "./dist/utils/index.js"
+    },
+    "./types/*": {
+      "types": "./dist/types/*.d.ts",
+      "default": "./dist/types/*.js"
+    },
+    "./config/models/model-versions": {
+      "types": "./dist/config/models/model-versions.d.ts",
+      "default": "./dist/config/models/model-versions.js"
+    },
+    "./config/agent-registry": {
+      "types": "./dist/config/agent-registry.d.ts",
+      "default": "./dist/config/agent-registry.js"
+    },
+    "./config/*": {
+      "types": "./dist/config/*.d.ts",
+      "default": "./dist/config/*.js"
+    }
   },
   "scripts": {
     "build": "tsc --skipLibCheck",
@@ -21,7 +39,8 @@
   "dependencies": {
     "@kubernetes/client-node": "^1.2.0",
     "axios": "^1.9.0",
-    "dotenv": "^16.5.0"
+    "dotenv": "^16.5.0",
+    "ws": "^8.18.2"
   },
   "devDependencies": {
     "@types/dotenv": "^6.1.1",
