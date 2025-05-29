@@ -7,8 +7,8 @@
 // Logging - temporarily disabled
 // export * as logging from './utils';
 
-// DeepWiki Integration
-export * as deepwiki from './deepwiki';
+// DeepWiki Integration - temporarily disabled due to module issues
+// export * as deepwiki from './deepwiki';
 
 // Re-export types directly from their respective files
 export type { 
