@@ -153,7 +153,7 @@ export class EmbeddingService {
         });
         
         // Place results in correct positions
-        response.data.forEach((item, idx) => {
+        response.data.forEach((item: any, idx: number) => {
           const originalIndex = uncachedIndices[idx];
           embeddings[originalIndex] = item.embedding;
           tokenCounts[originalIndex] = response.usage?.prompt_tokens || 

@@ -22,7 +22,7 @@ export class EmbeddingService {
         dimensions: this.config.openai.dimensions,
       });
       
-      return response.data.map(item => item.embedding);
+      return response.data.map((item: any) => item.embedding);
     } catch (error) {
       console.error('Embedding generation failed:', error);
       throw error;
