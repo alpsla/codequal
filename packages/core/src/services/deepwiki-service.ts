@@ -122,9 +122,9 @@ export class DeepWikiService {
     const fallbackModelsStr = fallbackModels.length > 0 ? fallbackModels.join(',') : '';
     
     try {
-      console.log(`Analyzing repository: ${repositoryUrl}`);
-      console.log(`Primary model: ${primaryModel}`);
-      console.log(`Fallback models: ${fallbackModelsStr || 'None'}`);
+      this.logger.info(`Analyzing repository: ${repositoryUrl}`);
+      this.logger.info(`Primary model: ${primaryModel}`);
+      this.logger.info(`Fallback models: ${fallbackModelsStr || 'None'}`);
       
       // Execute the analysis script
       await execAsync(
@@ -221,10 +221,12 @@ async function exampleUsage() {
   });
   
   if (result.success) {
-    console.log(`Analysis completed successfully using model: ${result.modelUsed}`);
-    console.log(result.result);
+    // Log success for debugging
+    // console.log(`Analysis completed successfully using model: ${result.modelUsed}`);
+    // console.log(result.result);
   } else {
-    console.error(`Analysis failed: ${result.error}`);
+    // Log error for debugging
+    // console.error(`Analysis failed: ${result.error}`);
   }
 }
 

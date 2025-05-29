@@ -107,7 +107,7 @@ interface MatrixRecord {
   expected_cost_per_1k: number;
   expected_quality_score: number;
   fallback_models: string[];
-  language_specific_hints: any;
+  language_specific_hints: Record<string, unknown>;
   generated_at: string;
   last_validated: string;
   usage_count: number;
