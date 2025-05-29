@@ -60,6 +60,21 @@ export type {
 // Export model version constants
 export * from './config/models/model-versions';
 
+// Explicitly export model constants for better CI compatibility
+export {
+  OPENAI_MODELS,
+  ANTHROPIC_MODELS,
+  DEEPSEEK_MODELS,
+  DEEPSEEK_PRICING,
+  GEMINI_MODELS,
+  GEMINI_PRICING,
+  OPENAI_PRICING,
+  OPENROUTER_MODELS,
+  MCP_MODELS,
+  DEFAULT_MODELS_BY_PROVIDER,
+  PREMIUM_MODELS_BY_PROVIDER
+} from './config/models/model-versions';
+
 // Export model selection services
 export * from './services/model-selection/RepositoryModelSelectionService';
 export * from './services/model-selection/RepositoryCalibrationService';
@@ -84,7 +99,14 @@ export {
 // Config exports
 export * from './config/agent-registry';
 
+// Explicitly export agent config for better CI compatibility
+export { AgentProvider, AgentRole } from './config/agent-registry';
+
 // Utils
 export * from './utils';
+
+// Explicitly export utils for better CI compatibility
+export { createLogger } from './utils/logger';
+export type { Logger, LoggableData } from './utils/logger';
 
 // Other core modules will be exported here as they are added
