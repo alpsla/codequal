@@ -7,6 +7,8 @@
  */
 
 export * from './RepositoryModelSelectionService';
+// Export specific enums for better compatibility
+export { AnalysisTier, ModelSelectionStrategy } from './RepositoryModelSelectionService';
 export * from './RepositoryCalibrationService';
 export * from './ModelConfigStore';
 

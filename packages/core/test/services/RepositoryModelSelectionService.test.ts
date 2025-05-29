@@ -10,9 +10,9 @@ import sinon from 'sinon';
 import { 
   AnalysisTier, 
   ModelSelectionStrategy,
-  RepositoryModelSelectionService 
-} from '../../src/services/model-selection';
-import { RepositoryContext } from '../../src/types/repository';
+  RepositoryModelSelectionService,
+  RepositoryContext
+} from '../../src/index';
 
 describe('RepositoryModelSelectionService', () => {
   let service: RepositoryModelSelectionService;

@@ -80,6 +80,9 @@ export * from './services/model-selection/RepositoryModelSelectionService';
 export * from './services/model-selection/RepositoryCalibrationService';
 export * from './services/model-selection/ModelConfigStore';
 
+// Explicitly export model selection enums for better CI compatibility
+export { AnalysisTier, ModelSelectionStrategy } from './services/model-selection/RepositoryModelSelectionService';
+
 // Services
 // export * from './services/pr-review-service'; // Temporarily disabled due to database dependency
 
