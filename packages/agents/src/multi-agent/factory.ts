@@ -156,13 +156,13 @@ export class MultiAgentFactory {
     name: string,
     strategy: AnalysisStrategy,
     primaryAgentSelection: {
-      provider: AgentProvider,
-      role: AgentRole,
+      provider: keyof typeof AgentProvider,
+      role: keyof typeof AgentRole,
       position?: AgentPosition
     },
     secondaryAgentSelections: Array<{
-      provider: AgentProvider,
-      role: AgentRole,
+      provider: keyof typeof AgentProvider,
+      role: keyof typeof AgentRole,
       position?: AgentPosition
     }> = [],
     options: {
@@ -234,18 +234,18 @@ export class MultiAgentFactory {
     name: string,
     strategy: AnalysisStrategy,
     primaryConfig: {
-      provider: AgentProvider,
-      role: AgentRole,
+      provider: keyof typeof AgentProvider,
+      role: keyof typeof AgentRole,
       position: AgentPosition
     },
     secondaryConfigs: Array<{
-      provider: AgentProvider,
-      role: AgentRole,
+      provider: keyof typeof AgentProvider,
+      role: keyof typeof AgentRole,
       position: AgentPosition
     }>,
     fallbackConfigs?: Array<{
-      provider: AgentProvider,
-      role: AgentRole,
+      provider: keyof typeof AgentProvider,
+      role: keyof typeof AgentRole,
       position: AgentPosition,
       priority?: number
     }>,
