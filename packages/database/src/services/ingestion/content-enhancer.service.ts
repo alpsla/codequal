@@ -99,7 +99,7 @@ export class ContentEnhancer {
     if (position === 'start') {
       // Get sentences from the beginning
       let tokens = 0;
-      let selectedSentences: string[] = [];
+      const selectedSentences: string[] = [];
       
       for (const sentence of sentences) {
         const sentenceTokens = this.estimateTokenCount(sentence);
@@ -114,7 +114,7 @@ export class ContentEnhancer {
     } else {
       // Get sentences from the end
       let tokens = 0;
-      let selectedSentences: string[] = [];
+      const selectedSentences: string[] = [];
       
       for (let i = sentences.length - 1; i >= 0; i--) {
         const sentence = sentences[i];
@@ -388,7 +388,7 @@ export class ContentEnhancer {
     // First, temporarily replace code blocks to avoid splitting them
     const codeBlocks: string[] = [];
     const codeBlockPattern = /```[\s\S]*?```/g;
-    let textWithoutCode = text.replace(codeBlockPattern, (match) => {
+    const textWithoutCode = text.replace(codeBlockPattern, (match) => {
       codeBlocks.push(match);
       return `__CODE_BLOCK_${codeBlocks.length - 1}__`;
     });

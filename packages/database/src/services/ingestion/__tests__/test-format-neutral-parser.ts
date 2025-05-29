@@ -137,7 +137,7 @@ function testParser(modelName: string, content: string) {
     let totalFindings = 0;
     let findingsWithCode = 0;
     let findingsWithFile = 0;
-    let findingsBySeverity: Record<string, number> = {
+    const findingsBySeverity: Record<string, number> = {
       critical: 0,
       high: 0,
       medium: 0,

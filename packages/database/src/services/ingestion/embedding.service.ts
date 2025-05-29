@@ -219,7 +219,7 @@ export class EmbeddingService {
   findTopSimilar(
     queryEmbedding: number[],
     embeddings: number[][],
-    k: number = 5
+    k = 5
   ): { index: number; similarity: number }[] {
     const similarities = embeddings.map((embedding, index) => ({
       index,

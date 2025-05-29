@@ -365,7 +365,7 @@ export class UnifiedSearchService {
     threshold: number,
     limit: number,
     repositoryId?: string,
-    enableFiltering: boolean = true,
+    enableFiltering = true,
     filters?: UnifiedSearchOptions['filters']
   ): Promise<SearchResult[]> {
     // Build the RPC call for similarity search

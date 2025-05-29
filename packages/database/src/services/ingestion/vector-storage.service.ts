@@ -380,7 +380,7 @@ export class VectorStorageService {
     sourceChunkId: string,
     targetChunkId: string,
     relationshipType: 'sequential' | 'hierarchical' | 'reference' | 'similar',
-    strength: number = 1.0
+    strength = 1.0
   ): Promise<void> {
     const { error } = await this.supabase
       .from('chunk_relationships')
@@ -402,7 +402,7 @@ export class VectorStorageService {
   async getRelatedChunks(
     chunkId: string,
     relationshipType?: string,
-    minStrength: number = 0.5
+    minStrength = 0.5
   ): Promise<Array<{
     chunk: VectorRecord;
     relationshipType: string;

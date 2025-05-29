@@ -361,7 +361,7 @@ export class DataProcessingPipeline {
   private async createSimilarityRelationships(
     chunks: EnhancedChunk[],
     repositoryId: string,
-    threshold: number = 0.85
+    threshold = 0.85
   ): Promise<void> {
     // Get embeddings for all chunks
     const chunkEmbeddings = await Promise.all(
