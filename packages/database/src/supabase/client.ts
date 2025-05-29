@@ -30,10 +30,10 @@ export type Tables = {
     pull_request_id: string;
     role: string;
     provider: string;
-    insights: any[];
-    suggestions: any[];
-    educational?: any[];
-    metadata?: Record<string, any>;
+    insights: unknown[];
+    suggestions: unknown[];
+    educational?: unknown[];
+    metadata?: Record<string, unknown>;
     execution_time_ms?: number;
     token_count?: number;
     created_at: string;
@@ -41,18 +41,18 @@ export type Tables = {
   combined_results: {
     id: string;
     pull_request_id: string;
-    insights: any[];
-    suggestions: any[];
-    educational?: any[];
-    metadata?: Record<string, any>;
+    insights: unknown[];
+    suggestions: unknown[];
+    educational?: unknown[];
+    metadata?: Record<string, unknown>;
     created_at: string;
   };
   repository_analysis: {
     id: string;
     repository_id: string;
     analyzer: string; // e.g., 'deepwiki'
-    analysis_data: Record<string, any>;
-    metadata?: Record<string, any>;
+    analysis_data: Record<string, unknown>;
+    metadata?: Record<string, unknown>;
     cached_until: string; // TTL for cache
     execution_time_ms?: number;
     token_count?: number;
@@ -64,7 +64,7 @@ export type Tables = {
     run_id: string;
     timestamp: string;
     model_versions: Record<string, string>;
-    metrics: Record<string, any>[];
+    metrics: Record<string, unknown>[];
     created_at: string;
   };
   calibration_test_results: {

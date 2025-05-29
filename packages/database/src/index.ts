@@ -95,9 +95,9 @@ export class DatabaseService {
   static async storeRepositoryAnalysis(
     repositoryId: string,
     analyzer: RepositoryAnalyzer,
-    analysisData: Record<string, any>,
+    analysisData: Record<string, unknown>,
     cacheTTL?: number,
-    metadata?: Record<string, any>,
+    metadata?: Record<string, unknown>,
     executionTimeMs?: number,
     tokenCount?: number
   ) {
@@ -120,7 +120,7 @@ export class DatabaseService {
   static async storeCalibrationRun(
     runId: string,
     modelVersions: Record<string, string>,
-    metrics: Record<string, any>[]
+    metrics: Record<string, unknown>[]
   ) {
     return CalibrationModelImpl.storeCalibrationRun(runId, modelVersions, metrics);
   }

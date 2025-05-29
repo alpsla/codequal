@@ -24,3 +24,11 @@ export type {
   ModelTier,
   ModelProviderPlugin
 } from './ModelVersionSync';
+
+// Export Dynamic Model Configuration Matrix services
+export * from './ModelConfigurationMatrix';
+export * from './MatrixBasedOrchestrator';
+export * from './ResearchAgent';
+export * from './MatrixFiller';
+export * from './MaintenanceScheduler';
+export * from './PRAnalysisStrategy';

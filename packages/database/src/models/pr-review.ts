@@ -1,6 +1,21 @@
 import { getSupabase } from '../supabase/client';
 import type { Tables } from '../supabase/client';
-import { AgentProvider, AgentRole, AnalysisResult } from '../shims/core-types';
+import { AgentProvider, AgentRole, AnalysisResult, Insight, Suggestion, EducationalContent } from '../shims/core-types';
+
+/**
+ * Type for PR review database record
+ */
+type PRReviewRecord = {
+  id: string;
+  pr_url: string;
+  pr_title?: string;
+  pr_description?: string;
+  repository_id: string;
+  user_id: string;
+  analysis_mode: string;
+  created_at: string;
+  updated_at: string;
+};
 
 /**
  * Analysis mode for PR reviews
@@ -33,10 +48,10 @@ export interface AnalysisResultRecord {
   prReviewId: string;
   role: string;
   provider: string;
-  insights: any[];
-  suggestions: any[];
-  educational?: any[];
-  metadata?: Record<string, any>;
+  insights: Insight[];
+  suggestions: Suggestion[];
+  educational?: EducationalContent[];
+  metadata?: Record<string, unknown>;
   executionTimeMs?: number;
   tokenCount?: number;
   createdAt: Date;
@@ -87,7 +102,7 @@ export class PRReviewModel {
       throw new Error('Failed to create PR review: No data returned');
     }
     
-    return this.mapToPRReview(data as any);
+    return this.mapToPRReview(data as PRReviewRecord);
   }
   
   /**
@@ -176,9 +191,9 @@ export class PRReviewModel {
       prReviewId: record.pull_request_id,
       role: 'combined',
       provider: 'combined',
-      insights: record.insights,
-      suggestions: record.suggestions,
-      educational: record.educational || [],
+      insights: record.insights as Insight[],
+      suggestions: record.suggestions as Suggestion[],
+      educational: (record.educational || []) as EducationalContent[],
       metadata: record.metadata || {},
       createdAt: new Date(record.created_at)
     };
@@ -206,7 +221,7 @@ export class PRReviewModel {
       throw new Error(`PR review not found: ${id}`);
     }
     
-    return this.mapToPRReview(data as any);
+    return this.mapToPRReview(data as PRReviewRecord);
   }
   
   /**
@@ -231,7 +246,7 @@ export class PRReviewModel {
       return [];
     }
     
-    return data.map(item => this.mapToPRReview(item as any));
+    return data.map(item => this.mapToPRReview(item as PRReviewRecord));
   }
   
   /**
@@ -288,9 +303,9 @@ export class PRReviewModel {
     const record = data as Tables['combined_results'];
     
     return {
-      insights: record.insights,
-      suggestions: record.suggestions,
-      educational: record.educational || [],
+      insights: record.insights as Insight[],
+      suggestions: record.suggestions as Suggestion[],
+      educational: (record.educational || []) as EducationalContent[],
       metadata: record.metadata || {}
     };
   }
@@ -300,7 +315,7 @@ export class PRReviewModel {
    * @param data Database record
    * @returns PR review
    */
-  private static mapToPRReview(data: any): PRReview {
+  private static mapToPRReview(data: PRReviewRecord): PRReview {
     return {
       id: data.id,
       prUrl: data.pr_url,
@@ -325,9 +340,9 @@ export class PRReviewModel {
       prReviewId: data.pull_request_id,
       role: data.role,
       provider: data.provider,
-      insights: data.insights,
-      suggestions: data.suggestions,
-      educational: data.educational || [],
+      insights: data.insights as Insight[],
+      suggestions: data.suggestions as Suggestion[],
+      educational: (data.educational || []) as EducationalContent[],
       metadata: data.metadata || {},
       executionTimeMs: data.execution_time_ms,
       tokenCount: data.token_count,

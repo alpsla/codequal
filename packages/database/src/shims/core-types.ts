@@ -2,18 +2,22 @@
 
 // Logger interface from core/utils
 export interface Logger {
-  debug(message: string, data?: any): void;
-  info(message: string, data?: any): void;
-  warn(message: string, data?: any): void;
-  error(message: string, data?: any): void;
+  debug(message: string, data?: unknown): void;
+  info(message: string, data?: unknown): void;
+  warn(message: string, data?: unknown): void;
+  error(message: string, data?: unknown): void;
 }
 
 export function createLogger(name: string): Logger {
   return {
-    debug: (message: string, data?: any) => console.log(`[DEBUG] [${name}]`, message, data || ''),
-    info: (message: string, data?: any) => console.log(`[INFO] [${name}]`, message, data || ''),
-    warn: (message: string, data?: any) => console.warn(`[WARN] [${name}]`, message, data || ''),
-    error: (message: string, data?: any) => console.error(`[ERROR] [${name}]`, message, data || '')
+    // eslint-disable-next-line no-console
+    debug: (message: string, data?: unknown) => console.log(`[DEBUG] [${name}]`, message, data || ''),
+    // eslint-disable-next-line no-console
+    info: (message: string, data?: unknown) => console.log(`[INFO] [${name}]`, message, data || ''),
+    // eslint-disable-next-line no-console
+    warn: (message: string, data?: unknown) => console.warn(`[WARN] [${name}]`, message, data || ''),
+    // eslint-disable-next-line no-console
+    error: (message: string, data?: unknown) => console.error(`[ERROR] [${name}]`, message, data || '')
   };
 }
 
@@ -47,7 +51,7 @@ export interface AnalysisResult {
   educationalContent?: Array<EducationalContent>;
   educational?: Array<EducationalContent>; // Alias for educationalContent used in database
   resources?: Array<Resource>;
-  metadata?: Record<string, any>; // Metadata field used in database
+  metadata?: Record<string, unknown>; // Metadata field used in database
 }
 
 export interface Insight {

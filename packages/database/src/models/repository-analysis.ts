@@ -16,8 +16,8 @@ export interface RepositoryAnalysis {
   id: string;
   repositoryId: string;
   analyzer: RepositoryAnalyzer;
-  analysisData: Record<string, any>;
-  metadata?: Record<string, any>;
+  analysisData: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
   cachedUntil: Date;
   executionTimeMs?: number;
   tokenCount?: number;
@@ -109,9 +109,9 @@ export class RepositoryAnalysisModel {
   static async store(
     repositoryId: string,
     analyzer: RepositoryAnalyzer,
-    analysisData: Record<string, any>,
+    analysisData: Record<string, unknown>,
     cacheTTL: number = 24 * 60 * 60, // 24 hours in seconds
-    metadata?: Record<string, any>,
+    metadata?: Record<string, unknown>,
     executionTimeMs?: number,
     tokenCount?: number
   ): Promise<RepositoryAnalysis> {
