@@ -3,7 +3,7 @@ import { HierarchicalChunker } from './chunking.service';
 import { ContentEnhancer } from './content-enhancer.service';
 import { EmbeddingService } from './embedding.service';
 import { VectorStorageService } from './vector-storage.service';
-import { getVectorConfig } from '@codequal/core/config/vector-database.config';
+import { getVectorConfig } from '@codequal/core';
 import { Chunk, EnhancedChunk, EnhancementContext, SourceType } from './types';
 
 export interface ProcessingOptions {

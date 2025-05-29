@@ -68,4 +68,7 @@ export * from './services/model-selection/ModelConfigStore';
 // Services
 export * from './services/pr-review-service';
 
+// Vector Database Configuration
+export * from './config/vector-database.config';
+
 // Other core modules will be exported here as they are added

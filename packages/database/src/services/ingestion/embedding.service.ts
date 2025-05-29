@@ -1,5 +1,5 @@
-import { OpenAI } from 'openai';
-import { getEmbeddingConfig } from '@codequal/core/config/vector-database.config';
+import OpenAI from 'openai';
+import { getEmbeddingConfig } from '@codequal/core';
 import { EnhancedChunk } from './types';
 
 interface EmbeddingResult {

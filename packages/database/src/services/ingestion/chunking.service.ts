@@ -5,7 +5,7 @@ import {
   Section,
   AnalysisItem
 } from './types';
-import { getChunkingConfig } from '@codequal/core/config/vector-database.config';
+import { getChunkingConfig } from '@codequal/core';
 
 export class HierarchicalChunker {
   private config = getChunkingConfig();

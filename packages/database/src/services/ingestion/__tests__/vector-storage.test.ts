@@ -16,7 +16,7 @@ jest.mock('@supabase/supabase-js', () => ({
 }));
 
 // Mock config
-jest.mock('@codequal/core/config/vector-database.config', () => ({
+jest.mock('@codequal/core', () => ({
   getVectorConfig: () => ({
     storage: {
       batchSize: 500,

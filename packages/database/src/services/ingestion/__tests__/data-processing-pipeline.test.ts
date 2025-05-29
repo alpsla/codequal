@@ -9,7 +9,7 @@ jest.mock('../embedding.service');
 jest.mock('../vector-storage.service');
 
 // Mock config
-jest.mock('@codequal/core/config/vector-database.config', () => ({
+jest.mock('@codequal/core', () => ({
   getVectorConfig: () => ({
     processing: {
       maxConcurrency: 2,

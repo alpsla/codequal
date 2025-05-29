@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { getVectorConfig } from '@codequal/core/config/vector-database.config';
+import { getVectorConfig } from '@codequal/core';
 import { EnhancedChunk } from './types';
 
 interface VectorRecord {

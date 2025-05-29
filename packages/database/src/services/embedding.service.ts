@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import { getEmbeddingConfig, updateEmbeddingModel } from '@codequal/core/config/vector-database.config';
+import { getEmbeddingConfig, updateEmbeddingModel } from '@codequal/core';
 
 export class EmbeddingService {
   private openai: OpenAI;

@@ -1,6 +1,6 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { OpenAI } from 'openai';
-import { getVectorConfig } from '@codequal/core/config/vector-database.config';
+import OpenAI from 'openai';
+import { getVectorConfig } from '@codequal/core';
 
 export interface SearchResult {
   id: string;

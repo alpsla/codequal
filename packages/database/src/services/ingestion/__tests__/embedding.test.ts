@@ -15,7 +15,7 @@ jest.mock('openai', () => {
 });
 
 // Mock config
-jest.mock('@codequal/core/config/vector-database.config', () => ({
+jest.mock('@codequal/core', () => ({
   getEmbeddingConfig: () => ({
     provider: 'openai',
     openai: {

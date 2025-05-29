@@ -1,5 +1,5 @@
 import { Chunk, EnhancedChunk, EnhancementContext, WindowContext } from './types';
-import { getEnhancementConfig } from '@codequal/core/config/vector-database.config';
+import { getEnhancementConfig } from '@codequal/core';
 
 export class ContentEnhancer {
   private config = getEnhancementConfig();
