@@ -29,7 +29,7 @@ export type {
   RepositoryType
 } from './types/repository';
 
-export * from './types/evaluation';
+export type { ModelVersion, AgentRoleEvaluationParameters } from './types/evaluation';
 
 // Export model selection types from ModelVersionSync
 // These exports avoid duplicating types from repository-model-config.ts
