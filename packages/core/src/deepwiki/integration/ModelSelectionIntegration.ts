@@ -17,6 +17,7 @@ import {
 } from '../../services/model-selection';
 import { ModelVersionSync } from '../../services/model-selection/ModelVersionSync';
 import { RepositoryContext } from '../../types/repository';
+import { RepositoryModelConfig } from '../../config/models/repository-model-config';
 import { Logger } from '../../utils/logger';
 import { ModelConfig, DeepWikiProvider } from '../DeepWikiClient';
 

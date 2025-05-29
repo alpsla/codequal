@@ -567,15 +567,15 @@ export class SpecializedMultiAgent extends MultiAgent {
     const uniqueEducational = new Set<string>();
     
     // Add primary items to sets
-    results[0].insights?.forEach(item => 
+    results[0].insights?.forEach((item: any) => 
       uniqueInsights.add(JSON.stringify(item))
     );
     
-    results[0].suggestions?.forEach(item => 
+    results[0].suggestions?.forEach((item: any) => 
       uniqueSuggestions.add(JSON.stringify(item))
     );
     
-    results[0].educational?.forEach(item => 
+    results[0].educational?.forEach((item: any) => 
       uniqueEducational.add(JSON.stringify(item))
     );
     
