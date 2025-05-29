@@ -14,7 +14,6 @@ export interface ValidationResult {
  * Validator for multi-agent configurations
  */
 export class MultiAgentValidator {
-  private static logger = createLogger('MultiAgentValidator');
   
   /**
    * Validate a multi-agent configuration

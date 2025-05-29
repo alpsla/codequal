@@ -1,5 +1,5 @@
 import { ClaudeAgent } from '../src/claude/claude-agent';
-import { ANTHROPIC_MODELS } from '@codequal/core/config/models/model-versions';
+import { ANTHROPIC_MODELS } from '@codequal/core';
 import { loadPromptTemplate } from '../src/prompts/prompt-loader';
 
 // Test subclass to access protected members

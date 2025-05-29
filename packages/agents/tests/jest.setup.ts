@@ -52,3 +52,15 @@ jest.mock('../src/prompts/prompt-loader', () => ({
 // Add environment variables
 process.env.ANTHROPIC_API_KEY = 'test-api-key';
 process.env.OPENAI_API_KEY = 'test-api-key';
+
+// Import and ensure enums are loaded properly before other modules
+import * as core from '@codequal/core';
+
+// Verify enums are available
+if (!core.AgentRole || !core.AgentProvider) {
+  throw new Error('Core enums not properly loaded. AgentRole and AgentProvider must be available.');
+}
+
+// Global setup to ensure enums are available everywhere
+(global as any).AgentRole = core.AgentRole;
+(global as any).AgentProvider = core.AgentProvider;

@@ -5,7 +5,9 @@
     "target": "es2020",
     "sourceMap": true,
     "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
+    "moduleResolution": "node",
     "types": ["jest", "node", "uuid"],
     "typeRoots": ["./node_modules/@types", "../../node_modules/@types", "./src/types"]
   },

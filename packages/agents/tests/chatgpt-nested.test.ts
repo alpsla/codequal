@@ -1,6 +1,6 @@
 import { ChatGPTAgent } from '../src/chatgpt/chatgpt-agent';
 import { loadPromptTemplate } from '../src/prompts/prompt-loader';
-import { OPENAI_MODELS } from '@codequal/core/config/models/model-versions';
+import { OPENAI_MODELS } from '@codequal/core';
 
 // Create a test subclass to access protected/private members
 class TestChatGPTAgent extends ChatGPTAgent {

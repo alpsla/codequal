@@ -1,0 +1,142 @@
+DeepWiki API Investigation
+=========================================
+
+Using pod: deepwiki-fixed-5b95f566b8-wh4h4 in namespace: codequal-dev
+
+1. Checking DeepWiki installation:
+total 740
+drwxr-xr-x  9 root root   4096 May 17 03:31 .
+drwxr-xr-x 17 root root   4096 May 20 18:54 ..
+-rw-r--r--  1 root root    572 May 17 03:31 .dockerignore
+drwxr-xr-x  8 root root   4096 May 17 03:31 .git
+drwxr-xr-x  3 root root   4096 May 17 03:31 .github
+-rw-r--r--  1 root root    678 May 17 03:31 .gitignore
+-rw-r--r--  1 root root      5 May 17 03:31 .python-version
+drwxr-xr-x  2 root root   4096 May 17 03:31 .vscode
+-rw-r--r--  1 root root   2616 May 17 03:31 Dockerfile
+-rw-r--r--  1 root root   1066 May 17 03:31 LICENSE
+-rw-r--r--  1 root root   4882 May 17 03:31 Ollama-instruction.md
+-rw-r--r--  1 root root  15168 May 17 03:31 README.es.md
+-rw-r--r--  1 root root  22871 May 17 03:31 README.ja.md
+-rw-r--r--  1 root root  18105 May 17 03:31 README.kr.md
+-rw-r--r--  1 root root  17700 May 17 03:31 README.md
+-rw-r--r--  1 root root  19327 May 17 03:31 README.vi.md
+-rw-r--r--  1 root root  13475 May 17 03:31 README.zh.md
+drwxr-xr-x  3 root root   4096 May 17 03:31 api
+-rw-r--r--  1 root root    392 May 17 03:31 docker-compose.yml
+
+2. Checking API directory:
+total 284
+drwxr-xr-x 1 root root  4096 May 22 22:57 .
+drwxr-xr-x 1 root root  4096 May 22 08:59 ..
+-rw-r--r-- 1 root root  6001 May 22 03:45 README.md
+-rw-r--r-- 1 root root    49 May 22 03:45 __init__.py
+drwxr-xr-x 2 root root  4096 May 22 22:57 __pycache__
+-rw-r--r-- 1 root root 21116 May 22 03:45 api.py
+drwxr-xr-x 2 root root  4096 May 22 03:45 config
+-rw-r--r-- 1 root root  8493 May 22 03:45 config.py
+-rw-r--r-- 1 root root 34744 May 22 03:45 data_pipeline.py
+drwxr-xr-x 2 root root  4096 May 22 18:19 logs
+-rw-r--r-- 1 root root  2009 May 22 03:45 main.py
+-rw-r--r-- 1 root root  2754 May 22 03:45 ollama_patch.py
+-rw-r--r-- 1 root root 25615 May 22 03:45 openai_client.py
+-rw-r--r-- 1 root root 28634 May 22 03:45 openrouter_client.py
+-rw-r--r-- 1 root root 20273 May 22 03:45 rag.py
+-rw-r--r-- 1 root root   276 May 22 03:45 requirements.txt
+-rw-r--r-- 1 root root 35484 May 22 03:45 simple_chat.py
+-rw-r--r-- 1 root root  2123 May 22 03:45 test_api.py
+-rw-r--r-- 1  501 root  9280 May 22 22:57 together_client.py
+
+3. Testing API endpoints:
+
+Testing health endpoint:
+{"detail":"Not Found"}
+Testing root endpoint:
+{"message":"Welcome to Streaming API","version":"1.0.0","endpoints":{"Chat":["POST /chat/completions/stream - Streaming chat completion (HTTP)","WebSocket /ws/chat - WebSocket chat completion"],"Wiki":["POST /export/wiki - Export wiki content as Markdown or JSON","GET /api/wiki_cache - Retrieve cached wiki data","POST /api/wiki_cache - Store wiki data to cache"],"LocalRepo":["GET /local_repo/structure - Get structure of a local repository (with path parameter)"]}}
+Testing API info:
+{"detail":"Not Found"}
+4. Looking for API routes:
+/app/api/config.py
+/app/api/ollama_patch.py
+/app/api/main.py
+/app/api/test_api.py
+/app/api/rag.py
+/app/api/__init__.py
+/app/api/api.py
+/app/api/websocket_wiki.py
+/app/api/openai_client.py
+/app/api/data_pipeline.py
+/app/api/openrouter_client.py
+/app/api/simple_chat.py
+/app/api/together_client.py
+
+5. Checking server configuration:
+const nextConfig = {"env":{},"webpack":null,"eslint":{"ignoreDuringBuilds":false},"typescript":{"ignoreBuildErrors":false,"tsconfigPath":"tsconfig.json"},"distDir":"./.next","cleanDistDir":true,"assetPrefix":"","cacheMaxMemorySize":52428800,"configOrigin":"next.config.ts","useFileSystemPublicRoutes":true,"generateEtags":true,"pageExtensions":["tsx","ts","jsx","js"],"poweredByHeader":true,"compress":true,"images":{"deviceSizes":[640,750,828,1080,1200,1920,2048,3840],"imageSizes":[16,32,48,64,96,128,256,384],"path":"/_next/image","loader":"default","loaderFile":"","domains":[],"disableStaticImages":false,"minimumCacheTTL":60,"formats":["image/webp"],"dangerouslyAllowSVG":false,"contentSecurityPolicy":"script-src 'none'; frame-src 'none'; sandbox;","contentDispositionType":"attachment","remotePatterns":[],"unoptimized":false},"devIndicators":{"position":"bottom-left"},"onDemandEntries":{"maxInactiveAge":60000,"pagesBufferLength":5},"amp":{"canonicalBase":""},"basePath":"","sassOptions":{},"trailingSlash":false,"i18n":null,"productionBrowserSourceMaps":false,"excludeDefaultMomentLocales":true,"serverRuntimeConfig":{},"publicRuntimeConfig":{},"reactProductionProfiling":false,"reactStrictMode":null,"reactMaxHeadersLength":6000,"httpAgentOptions":{"keepAlive":true},"logging":{},"expireTime":31536000,"staticPageGenerationTimeout":60,"output":"standalone","modularizeImports":{"@mui/icons-material":{"transform":"@mui/icons-material/{{member}}"},"lodash":{"transform":"lodash/{{member}}"}},"outputFileTracingRoot":"/app","experimental":{"nodeMiddleware":false,"cacheLife":{"default":{"stale":300,"revalidate":900,"expire":4294967294},"seconds":{"stale":0,"revalidate":1,"expire":60},"minutes":{"stale":300,"revalidate":60,"expire":3600},"hours":{"stale":300,"revalidate":3600,"expire":86400},"days":{"stale":300,"revalidate":86400,"expire":604800},"weeks":{"stale":300,"revalidate":604800,"expire":2592000},"max":{"stale":300,"revalidate":2592000,"expire":4294967294}},"cacheHandlers":{},"cssChunking":true,"multiZoneDraftMode":false,"appNavFailHandling":false,"prerenderEarlyExit":true,"serverMinification":true,"serverSourceMaps":false,"linkNoTouchStart":false,"caseSensitiveRoutes":false,"clientSegmentCache":false,"dynamicOnHover":false,"preloadEntriesOnStart":true,"clientRouterFilter":true,"clientRouterFilterRedirects":false,"fetchCacheKeyPrefix":"","middlewarePrefetch":"flexible","optimisticClientCache":true,"manualClientBasePath":false,"cpus":3,"memoryBasedWorkersCount":false,"imgOptConcurrency":null,"imgOptTimeoutInSeconds":7,"imgOptMaxInputPixels":268402689,"imgOptSequentialRead":null,"isrFlushToDisk":true,"workerThreads":false,"optimizeCss":false,"nextScriptWorkers":false,"scrollRestoration":false,"externalDir":false,"disableOptimizedLoading":false,"gzipSize":true,"craCompat":false,"esmExternals":true,"fullySpecified":false,"swcTraceProfiling":false,"forceSwcTransforms":false,"largePageDataBytes":128000,"typedRoutes":false,"typedEnv":false,"parallelServerCompiles":false,"parallelServerBuildTraces":false,"ppr":false,"authInterrupts":false,"webpackMemoryOptimizations":false,"optimizeServerReact":true,"useEarlyImport":false,"viewTransition":false,"routerBFCache":false,"staleTimes":{"dynamic":0,"static":300},"serverComponentsHmrCache":true,"staticGenerationMaxConcurrency":8,"staticGenerationMinPagesPerWorker":25,"dynamicIO":false,"inlineCss":false,"useCache":false,"optimizePackageImports":["lucide-react","date-fns","lodash-es","ramda","antd","react-bootstrap","ahooks","@ant-design/icons","@headlessui/react","@headlessui-float/react","@heroicons/react/20/solid","@heroicons/react/24/solid","@heroicons/react/24/outline","@visx/visx","@tremor/react","rxjs","@mui/material","@mui/icons-material","recharts","react-use","effect","@effect/schema","@effect/platform","@effect/platform-node","@effect/platform-browser","@effect/platform-bun","@effect/sql","@effect/sql-mssql","@effect/sql-mysql2","@effect/sql-pg","@effect/sql-squlite-node","@effect/sql-squlite-bun","@effect/sql-squlite-wasm","@effect/sql-squlite-react-native","@effect/rpc","@effect/rpc-http","@effect/typeclass","@effect/experimental","@effect/opentelemetry","@material-ui/core","@material-ui/icons","@tabler/icons-react","mui-core","react-icons/ai","react-icons/bi","react-icons/bs","react-icons/cg","react-icons/ci","react-icons/di","react-icons/fa","react-icons/fa6","react-icons/fc","react-icons/fi","react-icons/gi","react-icons/go","react-icons/gr","react-icons/hi","react-icons/hi2","react-icons/im","react-icons/io","react-icons/io5","react-icons/lia","react-icons/lib","react-icons/lu","react-icons/md","react-icons/pi","react-icons/ri","react-icons/rx","react-icons/si","react-icons/sl","react-icons/tb","react-icons/tfi","react-icons/ti","react-icons/vsc","react-icons/wi"],"trustHostHeader":false,"isExperimentalCompile":false},"htmlLimitedBots":"Mediapartners-Google|Slurp|DuckDuckBot|baiduspider|yandex|sogou|bitlybot|tumblr|vkShare|quora link preview|redditbot|ia_archiver|Bingbot|BingPreview|applebot|facebookexternalhit|facebookcatalog|Twitterbot|LinkedInBot|Slackbot|Discordbot|WhatsApp|SkypeUriPreview|Yeti","bundlePagesRouterDependencies":false,"configFileName":"next.config.ts","turbopack":{"root":"/app"},"_originalRewrites":{"beforeFiles":[],"afterFiles":[{"source":"/api/wiki_cache/:path*","destination":"http://localhost:8001/api/wiki_cache/:path*"},{"source":"/export/wiki/:path*","destination":"http://localhost:8001/export/wiki/:path*"},{"source":"/api/wiki_cache","destination":"http://localhost:8001/api/wiki_cache"},{"source":"/local_repo/structure","destination":"http://localhost:8001/local_repo/structure"}],"fallback":[]}}
+const { startServer } = require('next/dist/server/lib/start-server')
+
+6. Testing repository analysis endpoint:
+Trying POST to /api/analyze:
+{"detail":"Not Found"}
+Trying POST to /analyze:
+{"detail":"Not Found"}
+7. Checking Python API implementation:
+import uvicorn
+import os
+import sys
+import logging
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+# --- Unified Logging Configuration ---
+# Determine the project's base directory (assuming main.py is in 'api' subdirectory)
+# Adjust if your structure is different, e.g., if main.py is at the root.
+# This assumes 'api/main.py', so logs will be in 'api/logs/application.log'
+LOG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
+os.makedirs(LOG_DIR, exist_ok=True)
+LOG_FILE_PATH = os.path.join(LOG_DIR, "application.log")
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(lineno)d %(filename)s:%(funcName)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.FileHandler(LOG_FILE_PATH),
+        logging.StreamHandler()  # Also keep logging to console
+    ],
+    force=True  # Ensure this configuration takes precedence and clears any existing handlers
+)
+
+# Get a logger for this main module (optional, but good practice)
+logger = logging.getLogger(__name__)
+
+
+8. Checking for DeepWiki Python module:
+total 740
+drwxr-xr-x  9 root root   4096 May 17 03:31 .
+drwxr-xr-x 17 root root   4096 May 20 18:54 ..
+-rw-r--r--  1 root root    572 May 17 03:31 .dockerignore
+drwxr-xr-x  8 root root   4096 May 17 03:31 .git
+drwxr-xr-x  3 root root   4096 May 17 03:31 .github
+-rw-r--r--  1 root root    678 May 17 03:31 .gitignore
+-rw-r--r--  1 root root      5 May 17 03:31 .python-version
+drwxr-xr-x  2 root root   4096 May 17 03:31 .vscode
+-rw-r--r--  1 root root   2616 May 17 03:31 Dockerfile
+-rw-r--r--  1 root root   1066 May 17 03:31 LICENSE
+-rw-r--r--  1 root root   4882 May 17 03:31 Ollama-instruction.md
+-rw-r--r--  1 root root  15168 May 17 03:31 README.es.md
+-rw-r--r--  1 root root  22871 May 17 03:31 README.ja.md
+-rw-r--r--  1 root root  18105 May 17 03:31 README.kr.md
+-rw-r--r--  1 root root  17700 May 17 03:31 README.md
+-rw-r--r--  1 root root  19327 May 17 03:31 README.vi.md
+-rw-r--r--  1 root root  13475 May 17 03:31 README.zh.md
+drwxr-xr-x  3 root root   4096 May 17 03:31 api
+-rw-r--r--  1 root root    392 May 17 03:31 docker-compose.yml
+
+9. Testing DeepWiki directly:
+/opt/venv/bin/python: No module named deepwiki
+command terminated with exit code 1
+
+=========================================
+API Investigation Complete
+=========================================

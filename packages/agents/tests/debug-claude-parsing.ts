@@ -1,6 +1,6 @@
 
 import { ClaudeAgent } from '../src/claude/claude-agent';
-import { Insight, Suggestion } from '@codequal/core/types/agent';
+import { Insight, Suggestion } from '@codequal/core';
 
 // Mock Claude API response
 const mockClaudeResponse = `

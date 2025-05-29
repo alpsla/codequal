@@ -2,7 +2,7 @@
  * This script creates missing template files for all agent roles and providers
  */
 
-import { AgentRole } from '@codequal/core/config/agent-registry';
+import { AgentRole } from '@codequal/core';
 import * as fs from 'fs';
 import * as path from 'path';
 

@@ -239,47 +239,49 @@ export class AgentFactory {
   /**
    * MCP server configurations for different providers
    */
-  private static readonly MCP_SERVER_CONFIGURATIONS: Record<string, MCPServerConfig> = {
-    // Default MCP services
-    [AgentProvider.MCP_CODE_REVIEW]: {
-      url: 'http://localhost:8080',
-      apiKey: process.env.MCP_API_KEY
-    },
-    [AgentProvider.MCP_DEPENDENCY]: {
-      url: 'http://localhost:8080',
-      apiKey: process.env.MCP_API_KEY
-    },
-    [AgentProvider.MCP_CODE_CHECKER]: {
-      url: 'http://localhost:8080',
-      apiKey: process.env.MCP_API_KEY
-    },
-    [AgentProvider.MCP_REPORTER]: {
-      url: 'http://localhost:8080',
-      apiKey: process.env.MCP_API_KEY
-    },
-    
-    // Model-specific MCP services
-    [AgentProvider.MCP_GEMINI]: {
-      url: 'http://localhost:8081',
-      apiKey: process.env.MCP_GEMINI_API_KEY
-    },
-    [AgentProvider.MCP_OPENAI]: {
-      url: 'http://localhost:8082',
-      apiKey: process.env.MCP_OPENAI_API_KEY
-    },
-    [AgentProvider.MCP_GROK]: {
-      url: 'http://localhost:8083',
-      apiKey: process.env.MCP_GROK_API_KEY
-    },
-    [AgentProvider.MCP_LLAMA]: {
-      url: 'http://localhost:8084',
-      apiKey: process.env.MCP_LLAMA_API_KEY
-    },
-    [AgentProvider.MCP_DEEPSEEK]: {
-      url: 'http://localhost:8085',
-      apiKey: process.env.MCP_DEEPSEEK_API_KEY
-    }
-  };
+  private static getMCPServerConfigurations(): Record<string, MCPServerConfig> {
+    return {
+      // Default MCP services
+      [AgentProvider.MCP_CODE_REVIEW]: {
+        url: 'http://localhost:8080',
+        apiKey: process.env.MCP_API_KEY
+      },
+      [AgentProvider.MCP_DEPENDENCY]: {
+        url: 'http://localhost:8080',
+        apiKey: process.env.MCP_API_KEY
+      },
+      [AgentProvider.MCP_CODE_CHECKER]: {
+        url: 'http://localhost:8080',
+        apiKey: process.env.MCP_API_KEY
+      },
+      [AgentProvider.MCP_REPORTER]: {
+        url: 'http://localhost:8080',
+        apiKey: process.env.MCP_API_KEY
+      },
+      
+      // Model-specific MCP services
+      [AgentProvider.MCP_GEMINI]: {
+        url: 'http://localhost:8081',
+        apiKey: process.env.MCP_GEMINI_API_KEY
+      },
+      [AgentProvider.MCP_OPENAI]: {
+        url: 'http://localhost:8082',
+        apiKey: process.env.MCP_OPENAI_API_KEY
+      },
+      [AgentProvider.MCP_GROK]: {
+        url: 'http://localhost:8083',
+        apiKey: process.env.MCP_GROK_API_KEY
+      },
+      [AgentProvider.MCP_LLAMA]: {
+        url: 'http://localhost:8084',
+        apiKey: process.env.MCP_LLAMA_API_KEY
+      },
+      [AgentProvider.MCP_DEEPSEEK]: {
+        url: 'http://localhost:8085',
+        apiKey: process.env.MCP_DEEPSEEK_API_KEY
+      }
+    };
+  }
   
   /**
    * Default MCP server configuration
@@ -297,7 +299,7 @@ export class AgentFactory {
   private static getMCPServerForProvider(provider: AgentProvider | ProviderGroup): MCPServerConfig {
     // We need to use a more defensive approach to indexing
     if (typeof provider === 'string') {
-      const serverConfig = Object.entries(this.MCP_SERVER_CONFIGURATIONS)
+      const serverConfig = Object.entries(AgentFactory.getMCPServerConfigurations())
         .find(([key]) => key === provider)?.[1];
       
       if (serverConfig) {
@@ -311,39 +313,43 @@ export class AgentFactory {
   /**
    * Default MCP tool mappings for each role
    */
-  private static readonly DEFAULT_MCP_TOOLS: Record<AgentRole, string> = {
-    [AgentRole.ORCHESTRATOR]: 'orchestrator',
-    [AgentRole.CODE_QUALITY]: 'code-quality',
-    [AgentRole.SECURITY]: 'security-check',
-    [AgentRole.PERFORMANCE]: 'performance-analysis',
-    [AgentRole.DEPENDENCY]: 'dependency-check',
-    [AgentRole.EDUCATIONAL]: 'educational-content',
-    [AgentRole.REPORT_GENERATION]: 'report-generator'
-  };
+  private static getDefaultMCPTools(): Record<AgentRole, string> {
+    return {
+      [AgentRole.ORCHESTRATOR]: 'orchestrator',
+      [AgentRole.CODE_QUALITY]: 'code-quality',
+      [AgentRole.SECURITY]: 'security-check',
+      [AgentRole.PERFORMANCE]: 'performance-analysis',
+      [AgentRole.DEPENDENCY]: 'dependency-check',
+      [AgentRole.EDUCATIONAL]: 'educational-content',
+      [AgentRole.REPORT_GENERATION]: 'report-generator'
+    };
+  }
   
   /**
    * Provider-specific MCP tool overrides
    */
-  private static readonly PROVIDER_SPECIFIC_MCP_TOOLS: Record<string, Partial<Record<AgentRole, string>>> = {
-    [AgentProvider.MCP_CODE_REVIEW]: {
-      [AgentRole.CODE_QUALITY]: 'code-review'
-    },
-    [AgentProvider.MCP_DEPENDENCY]: {
-      [AgentRole.DEPENDENCY]: 'dependency-analyzer'
-    },
-    [AgentProvider.MCP_CODE_CHECKER]: {
-      [AgentRole.CODE_QUALITY]: 'code-checker',
-      [AgentRole.SECURITY]: 'security-analyzer'
-    },
-    [AgentProvider.MCP_REPORTER]: {
-      [AgentRole.REPORT_GENERATION]: 'pr-report'
-    },
-    [AgentProvider.MCP_GEMINI]: {},
-    [AgentProvider.MCP_OPENAI]: {},
-    [AgentProvider.MCP_GROK]: {},
-    [AgentProvider.MCP_LLAMA]: {},
-    [AgentProvider.MCP_DEEPSEEK]: {}
-  };
+  private static getProviderSpecificMCPTools(): Record<string, Partial<Record<AgentRole, string>>> {
+    return {
+      [AgentProvider.MCP_CODE_REVIEW]: {
+        [AgentRole.CODE_QUALITY]: 'code-review'
+      },
+      [AgentProvider.MCP_DEPENDENCY]: {
+        [AgentRole.DEPENDENCY]: 'dependency-analyzer'
+      },
+      [AgentProvider.MCP_CODE_CHECKER]: {
+        [AgentRole.CODE_QUALITY]: 'code-checker',
+        [AgentRole.SECURITY]: 'security-analyzer'
+      },
+      [AgentProvider.MCP_REPORTER]: {
+        [AgentRole.REPORT_GENERATION]: 'pr-report'
+      },
+      [AgentProvider.MCP_GEMINI]: {},
+      [AgentProvider.MCP_OPENAI]: {},
+      [AgentProvider.MCP_GROK]: {},
+      [AgentProvider.MCP_LLAMA]: {},
+      [AgentProvider.MCP_DEEPSEEK]: {}
+    };
+  }
   
   /**
    * Get MCP tool name for a provider and role
@@ -356,7 +362,7 @@ export class AgentFactory {
     let toolMapping: Partial<Record<AgentRole, string>> = {};
     
     if (typeof provider === 'string') {
-      const entry = Object.entries(this.PROVIDER_SPECIFIC_MCP_TOOLS)
+      const entry = Object.entries(AgentFactory.getProviderSpecificMCPTools())
         .find(([key]) => key === provider);
         
       if (entry) {
@@ -365,21 +371,23 @@ export class AgentFactory {
     }
     
     // Get the tool name for this role, or use the default
-    return toolMapping[role] || this.DEFAULT_MCP_TOOLS[role] || 'default-tool';
+    return toolMapping[role] || AgentFactory.getDefaultMCPTools()[role] || 'default-tool';
   }
   
   /**
    * Recommended providers for each role
    */
-  private static readonly RECOMMENDED_PROVIDERS: Record<AgentRole, AgentProvider> = {
-    [AgentRole.ORCHESTRATOR]: AgentProvider.CLAUDE,
-    [AgentRole.CODE_QUALITY]: AgentProvider.DEEPSEEK_CODER,
-    [AgentRole.SECURITY]: AgentProvider.DEEPSEEK_CODER,
-    [AgentRole.PERFORMANCE]: AgentProvider.DEEPSEEK_CODER,
-    [AgentRole.DEPENDENCY]: AgentProvider.DEEPSEEK_CODER,
-    [AgentRole.EDUCATIONAL]: AgentProvider.CLAUDE,
-    [AgentRole.REPORT_GENERATION]: AgentProvider.OPENAI
-  };
+  private static getRecommendedProviders(): Record<AgentRole, AgentProvider> {
+    return {
+      [AgentRole.ORCHESTRATOR]: AgentProvider.CLAUDE,
+      [AgentRole.CODE_QUALITY]: AgentProvider.DEEPSEEK_CODER,
+      [AgentRole.SECURITY]: AgentProvider.DEEPSEEK_CODER,
+      [AgentRole.PERFORMANCE]: AgentProvider.DEEPSEEK_CODER,
+      [AgentRole.DEPENDENCY]: AgentProvider.DEEPSEEK_CODER,
+      [AgentRole.EDUCATIONAL]: AgentProvider.CLAUDE,
+      [AgentRole.REPORT_GENERATION]: AgentProvider.OPENAI
+    };
+  }
   
   /**
    * Get recommended provider for a role
@@ -387,6 +395,6 @@ export class AgentFactory {
    * @returns Recommended provider
    */
   private static getRecommendedProviderForRole(role: AgentRole): AgentProvider {
-    return this.RECOMMENDED_PROVIDERS[role] || AgentProvider.CLAUDE;
+    return AgentFactory.getRecommendedProviders()[role] || AgentProvider.CLAUDE;
   }
 }

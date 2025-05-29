@@ -1,5 +1,4 @@
-import { Agent, AnalysisResult, Insight, Suggestion } from '@codequal/core/types/agent';
-import { createLogger } from '@codequal/core/utils';
+import { Agent, AnalysisResult, Insight, Suggestion, createLogger } from '@codequal/core';
 
 /**
  * Interface for PR-Agent configuration

@@ -1,5 +1,5 @@
 import { DeepSeekAgent } from '../src/deepseek/deepseek-agent';
-import { DEEPSEEK_MODELS } from '@codequal/core/config/models/model-versions';
+import { DEEPSEEK_MODELS } from '@codequal/core';
 import { loadPromptTemplate } from '../src/prompts/prompt-loader';
 
 // Set up fetch mock without implementation initially

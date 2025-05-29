@@ -47,62 +47,66 @@ export class MultiAgentManager {
   }
   
   /**
-   * Default multi-agent configurations for each role
+   * Get default multi-agent configurations for each role (lazy initialization)
    */
-  private static readonly RECOMMENDED_CONFIGURATIONS: Record<AgentRole, MultiAgentConfig> = {
-    [AgentRole.SECURITY]: {
-      strategy: MultiAgentStrategy.SPECIALIZED,
-      primaryProvider: AgentProvider.DEEPSEEK_CODER,
-      secondaryProviders: [AgentProvider.CLAUDE],
-      role: AgentRole.SECURITY
-    },
-    [AgentRole.CODE_QUALITY]: {
-      strategy: MultiAgentStrategy.PARALLEL,
-      primaryProvider: AgentProvider.DEEPSEEK_CODER,
-      secondaryProviders: [AgentProvider.CLAUDE, AgentProvider.OPENAI],
-      role: AgentRole.CODE_QUALITY
-    },
-    [AgentRole.PERFORMANCE]: {
-      strategy: MultiAgentStrategy.SEQUENTIAL,
-      primaryProvider: AgentProvider.DEEPSEEK_CODER,
-      secondaryProviders: [AgentProvider.CLAUDE],
-      role: AgentRole.PERFORMANCE
-    },
-    [AgentRole.DEPENDENCY]: {
-      strategy: MultiAgentStrategy.PARALLEL,
-      primaryProvider: AgentProvider.DEEPSEEK_CODER,
-      secondaryProviders: [AgentProvider.CLAUDE],
-      role: AgentRole.DEPENDENCY
-    },
-    [AgentRole.EDUCATIONAL]: {
-      strategy: MultiAgentStrategy.PARALLEL,
-      primaryProvider: AgentProvider.CLAUDE,
-      secondaryProviders: [AgentProvider.DEEPSEEK_CODER],
-      role: AgentRole.EDUCATIONAL
-    },
-    [AgentRole.ORCHESTRATOR]: {
-      strategy: MultiAgentStrategy.SPECIALIZED,
-      primaryProvider: AgentProvider.CLAUDE,
-      secondaryProviders: [AgentProvider.OPENAI],
-      role: AgentRole.ORCHESTRATOR
-    },
-    [AgentRole.REPORT_GENERATION]: {
-      strategy: MultiAgentStrategy.SEQUENTIAL,
-      primaryProvider: AgentProvider.CLAUDE,
-      secondaryProviders: [AgentProvider.OPENAI],
-      role: AgentRole.REPORT_GENERATION
-    }
-  };
+  private static getRecommendedConfigurations(): Record<AgentRole, MultiAgentConfig> {
+    return {
+      [AgentRole.SECURITY]: {
+        strategy: MultiAgentStrategy.SPECIALIZED,
+        primaryProvider: AgentProvider.DEEPSEEK_CODER,
+        secondaryProviders: [AgentProvider.CLAUDE],
+        role: AgentRole.SECURITY
+      },
+      [AgentRole.CODE_QUALITY]: {
+        strategy: MultiAgentStrategy.PARALLEL,
+        primaryProvider: AgentProvider.DEEPSEEK_CODER,
+        secondaryProviders: [AgentProvider.CLAUDE, AgentProvider.OPENAI],
+        role: AgentRole.CODE_QUALITY
+      },
+      [AgentRole.PERFORMANCE]: {
+        strategy: MultiAgentStrategy.SEQUENTIAL,
+        primaryProvider: AgentProvider.DEEPSEEK_CODER,
+        secondaryProviders: [AgentProvider.CLAUDE],
+        role: AgentRole.PERFORMANCE
+      },
+      [AgentRole.DEPENDENCY]: {
+        strategy: MultiAgentStrategy.PARALLEL,
+        primaryProvider: AgentProvider.DEEPSEEK_CODER,
+        secondaryProviders: [AgentProvider.CLAUDE],
+        role: AgentRole.DEPENDENCY
+      },
+      [AgentRole.EDUCATIONAL]: {
+        strategy: MultiAgentStrategy.PARALLEL,
+        primaryProvider: AgentProvider.CLAUDE,
+        secondaryProviders: [AgentProvider.DEEPSEEK_CODER],
+        role: AgentRole.EDUCATIONAL
+      },
+      [AgentRole.ORCHESTRATOR]: {
+        strategy: MultiAgentStrategy.SPECIALIZED,
+        primaryProvider: AgentProvider.CLAUDE,
+        secondaryProviders: [AgentProvider.OPENAI],
+        role: AgentRole.ORCHESTRATOR
+      },
+      [AgentRole.REPORT_GENERATION]: {
+        strategy: MultiAgentStrategy.SEQUENTIAL,
+        primaryProvider: AgentProvider.CLAUDE,
+        secondaryProviders: [AgentProvider.OPENAI],
+        role: AgentRole.REPORT_GENERATION
+      }
+    };
+  }
 
   /**
-   * Default multi-agent configuration to use when no specific configuration is found
+   * Get default multi-agent configuration (lazy initialization)
    */
-  private static readonly DEFAULT_CONFIGURATION: MultiAgentConfig = {
-    strategy: MultiAgentStrategy.PARALLEL,
-    primaryProvider: AgentProvider.CLAUDE,
-    secondaryProviders: [AgentProvider.OPENAI],
-    role: AgentRole.CODE_QUALITY // Will be overridden in the method
-  };
+  private static getDefaultConfiguration(): MultiAgentConfig {
+    return {
+      strategy: MultiAgentStrategy.PARALLEL,
+      primaryProvider: AgentProvider.CLAUDE,
+      secondaryProviders: [AgentProvider.OPENAI],
+      role: AgentRole.CODE_QUALITY // Will be overridden in the method
+    };
+  }
 
   /**
    * Get a recommended multi-agent strategy for a role
@@ -111,8 +115,9 @@ export class MultiAgentManager {
    */
   getRecommendedStrategyForRole(role: AgentRole): MultiAgentConfig {
     // Get the recommended configuration for this role, or use the default if not found
-    const config = MultiAgentManager.RECOMMENDED_CONFIGURATIONS[role] || 
-      { ...MultiAgentManager.DEFAULT_CONFIGURATION, role };
+    const recommendedConfigs = MultiAgentManager.getRecommendedConfigurations();
+    const config = recommendedConfigs[role] || 
+      { ...MultiAgentManager.getDefaultConfiguration(), role };
     
     // Return a copy of the configuration to prevent modification of the static reference
     return { ...config };

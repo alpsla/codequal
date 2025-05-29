@@ -3,7 +3,7 @@
  * based on the roles and providers defined in the agent registry.
  */
 
-import { AgentProvider, AgentRole } from '@codequal/core//src/config/agent-registry';
+import { AgentProvider, AgentRole } from '@codequal/core';
 import * as fs from 'fs';
 import * as path from 'path';
 

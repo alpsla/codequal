@@ -147,16 +147,44 @@ export interface SecondaryAgentDecisionCriteria {
  * Default temperatures by role
  * Used to optimize agent configuration
  */
-// Default temperatures for each agent role
-export const defaultTemperatures: Record<AgentRole, number> = {
-  [AgentRole.CODE_QUALITY]: 0.2,   // More deterministic
-  [AgentRole.SECURITY]: 0.3,       // Balanced
-  [AgentRole.PERFORMANCE]: 0.25,   // More deterministic
-  [AgentRole.EDUCATIONAL]: 0.5,    // More creative
-  [AgentRole.ORCHESTRATOR]: 0.3,   // Balanced
-  [AgentRole.DEPENDENCY]: 0.3,     // Balanced
-  [AgentRole.REPORT_GENERATION]: 0.4 // Slightly creative
-};
+// Default temperatures for each agent role - using lazy initialization to avoid enum evaluation during module loading
+let _defaultTemperatures: Record<AgentRole, number> | undefined;
+
+export function getDefaultTemperatures(): Record<AgentRole, number> {
+  if (!_defaultTemperatures) {
+    _defaultTemperatures = {
+      [AgentRole.CODE_QUALITY]: 0.2,   // More deterministic
+      [AgentRole.SECURITY]: 0.3,       // Balanced
+      [AgentRole.PERFORMANCE]: 0.25,   // More deterministic
+      [AgentRole.EDUCATIONAL]: 0.5,    // More creative
+      [AgentRole.ORCHESTRATOR]: 0.3,   // Balanced
+      [AgentRole.DEPENDENCY]: 0.3,     // Balanced
+      [AgentRole.REPORT_GENERATION]: 0.4 // Slightly creative
+    };
+  }
+  return _defaultTemperatures;
+}
+
+// Export as a getter for backward compatibility
+export const defaultTemperatures = new Proxy({} as Record<AgentRole, number>, {
+  get(target, prop) {
+    return getDefaultTemperatures()[prop as AgentRole];
+  },
+  ownKeys(target) {
+    return Object.keys(getDefaultTemperatures());
+  },
+  getOwnPropertyDescriptor(target, prop) {
+    const temps = getDefaultTemperatures();
+    if (prop in temps) {
+      return {
+        enumerable: true,
+        configurable: true,
+        value: temps[prop as AgentRole]
+      };
+    }
+    return undefined;
+  }
+});
 
 /**
  * Determines if a secondary agent should be used based on context
@@ -278,13 +306,14 @@ const createDefaultAgentData = (): Partial<AgentRoleEvaluationParameters> => ({
   }
 });
 
-// Create the mock agent evaluation data for all providers
-export const mockAgentEvaluationData: Record<AgentProvider, Partial<AgentRoleEvaluationParameters>> = {
-  // MCP options
-  [AgentProvider.MCP_CODE_REVIEW]: createDefaultAgentData(),
-  [AgentProvider.MCP_DEPENDENCY]: createDefaultAgentData(),
-  [AgentProvider.MCP_CODE_CHECKER]: createDefaultAgentData(),
-  [AgentProvider.MCP_REPORTER]: createDefaultAgentData(),
+// Create the mock agent evaluation data for all providers (lazy initialization)
+export function getMockAgentEvaluationData(): Record<AgentProvider, Partial<AgentRoleEvaluationParameters>> {
+  return {
+    // MCP options
+    [AgentProvider.MCP_CODE_REVIEW]: createDefaultAgentData(),
+    [AgentProvider.MCP_DEPENDENCY]: createDefaultAgentData(),
+    [AgentProvider.MCP_CODE_CHECKER]: createDefaultAgentData(),
+    [AgentProvider.MCP_REPORTER]: createDefaultAgentData(),
   
   // Direct LLM providers
   [AgentProvider.CLAUDE]: {
@@ -598,10 +627,42 @@ export const mockAgentEvaluationData: Record<AgentProvider, Partial<AgentRoleEva
   [AgentProvider.GEMINI_1_5_PRO]: createDefaultAgentData(),
   [AgentProvider.GEMINI_2_5_FLASH]: createDefaultAgentData(),
   [AgentProvider.BITO]: createDefaultAgentData(),
-  [AgentProvider.CODE_RABBIT]: createDefaultAgentData(),
-  [AgentProvider.MCP_GEMINI]: createDefaultAgentData(),
-  [AgentProvider.MCP_OPENAI]: createDefaultAgentData(),
-  [AgentProvider.MCP_GROK]: createDefaultAgentData(),
-  [AgentProvider.MCP_LLAMA]: createDefaultAgentData(),
-  [AgentProvider.MCP_DEEPSEEK]: createDefaultAgentData()
-};
+    [AgentProvider.CODE_RABBIT]: createDefaultAgentData(),
+    [AgentProvider.MCP_GEMINI]: createDefaultAgentData(),
+    [AgentProvider.MCP_OPENAI]: createDefaultAgentData(),
+    [AgentProvider.MCP_GROK]: createDefaultAgentData(),
+    [AgentProvider.MCP_LLAMA]: createDefaultAgentData(),
+    [AgentProvider.MCP_DEEPSEEK]: createDefaultAgentData()
+  };
+}
+
+// Export with lazy initialization to avoid enum evaluation during module loading
+let _mockAgentEvaluationData: Record<AgentProvider, Partial<AgentRoleEvaluationParameters>> | undefined;
+
+export const mockAgentEvaluationData = new Proxy({} as Record<AgentProvider, Partial<AgentRoleEvaluationParameters>>, {
+  get(target, prop) {
+    if (!_mockAgentEvaluationData) {
+      _mockAgentEvaluationData = getMockAgentEvaluationData();
+    }
+    return _mockAgentEvaluationData[prop as AgentProvider];
+  },
+  ownKeys(target) {
+    if (!_mockAgentEvaluationData) {
+      _mockAgentEvaluationData = getMockAgentEvaluationData();
+    }
+    return Object.keys(_mockAgentEvaluationData);
+  },
+  getOwnPropertyDescriptor(target, prop) {
+    if (!_mockAgentEvaluationData) {
+      _mockAgentEvaluationData = getMockAgentEvaluationData();
+    }
+    if (prop in _mockAgentEvaluationData) {
+      return {
+        enumerable: true,
+        configurable: true,
+        value: _mockAgentEvaluationData[prop as AgentProvider]
+      };
+    }
+    return undefined;
+  }
+});

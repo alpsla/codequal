@@ -264,49 +264,51 @@ jest.mock('../registry', () => {
   const { AgentPosition, AnalysisStrategy } = require('../types');
   
   // Simple test config
-  const mockStandardConfig = {
-    name: 'Code Quality Standard',
-    strategy: AnalysisStrategy.PARALLEL,
-    agents: [
-      {
-        provider: AgentProvider.CLAUDE,
-        role: AgentRole.CODE_QUALITY,
-        position: AgentPosition.PRIMARY,
-        parameters: {},
-        agentType: AgentProvider.CLAUDE
-      },
-      {
-        provider: AgentProvider.OPENAI,
-        role: AgentRole.CODE_QUALITY,
-        position: AgentPosition.SECONDARY,
-        parameters: {},
-        agentType: AgentProvider.OPENAI
-      }
-    ],
-    fallbackEnabled: true,
-    fallbackAgents: [
-      {
-        provider: AgentProvider.DEEPSEEK_CODER,
-        role: AgentRole.CODE_QUALITY,
-        position: AgentPosition.FALLBACK,
-        parameters: {},
-        agentType: AgentProvider.DEEPSEEK_CODER
-      }
-    ],
-    combineResults: true,
-    maxConcurrentAgents: 3
-  };
+  function getMockStandardConfig() {
+    return {
+      name: 'Code Quality Standard',
+      strategy: AnalysisStrategy.PARALLEL,
+      agents: [
+        {
+          provider: AgentProvider.CLAUDE,
+          role: AgentRole.CODE_QUALITY,
+          position: AgentPosition.PRIMARY,
+          parameters: {},
+          agentType: AgentProvider.CLAUDE
+        },
+        {
+          provider: AgentProvider.OPENAI,
+          role: AgentRole.CODE_QUALITY,
+          position: AgentPosition.SECONDARY,
+          parameters: {},
+          agentType: AgentProvider.OPENAI
+        }
+      ],
+      fallbackEnabled: true,
+      fallbackAgents: [
+        {
+          provider: AgentProvider.DEEPSEEK_CODER,
+          role: AgentRole.CODE_QUALITY,
+          position: AgentPosition.FALLBACK,
+          parameters: {},
+          agentType: AgentProvider.DEEPSEEK_CODER
+        }
+      ],
+      combineResults: true,
+      maxConcurrentAgents: 3
+    };
+  }
   
   const mockRegistry = {
     getConfig: jest.fn((name) => {
       if (name === 'codeQualityStandard') {
-        return mockStandardConfig;
+        return getMockStandardConfig();
       }
       return null;
     }),
-    getAllConfigs: jest.fn().mockReturnValue({ codeQualityStandard: mockStandardConfig }),
+    getAllConfigs: jest.fn().mockImplementation(() => ({ codeQualityStandard: getMockStandardConfig() })),
     registerConfig: jest.fn(),
-    findConfigs: jest.fn().mockReturnValue([mockStandardConfig])
+    findConfigs: jest.fn().mockImplementation(() => [getMockStandardConfig()])
   };
   
   return {

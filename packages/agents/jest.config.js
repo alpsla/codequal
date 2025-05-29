@@ -20,5 +20,8 @@ module.exports = {
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
     '!src/**/*.d.ts'
+  ],
+  transformIgnorePatterns: [
+    'node_modules/(?!(@codequal)/)'
   ]
 };

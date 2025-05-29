@@ -68,54 +68,63 @@ export const createMockFallbackAgent = () => ({
   })
 });
 
-// Test configuration
-export const testConfig = {
-  name: 'Test Config',
-  strategy: AnalysisStrategy.PARALLEL,
-  agents: [
-    {
-      provider: AgentProvider.CLAUDE,
-      agentType: AgentProvider.CLAUDE,
-      role: AgentRole.CODE_QUALITY,
-      position: AgentPosition.PRIMARY,
-      parameters: {
-        model: 'claude-3-sonnet-20240229'
+// Test configuration (lazy initialization)
+export function getTestConfig() {
+  return {
+    name: 'Test Config',
+    strategy: AnalysisStrategy.PARALLEL,
+    agents: [
+      {
+        provider: AgentProvider.CLAUDE,
+        agentType: AgentProvider.CLAUDE,
+        role: AgentRole.CODE_QUALITY,
+        position: AgentPosition.PRIMARY,
+        parameters: {
+          model: 'claude-3-sonnet-20240229'
+        }
+      },
+      {
+        provider: AgentProvider.OPENAI,
+        agentType: AgentProvider.OPENAI,
+        role: AgentRole.CODE_QUALITY,
+        position: AgentPosition.SECONDARY,
+        parameters: {
+          model: 'gpt-4o-2024-05-13'
+        }
+      },
+      {
+        provider: AgentProvider.DEEPSEEK_CODER,
+        agentType: AgentProvider.DEEPSEEK_CODER,
+        role: AgentRole.CODE_QUALITY,
+        position: AgentPosition.SECONDARY,
+        parameters: {
+          model: 'deepseek-coder-33b-instruct'
+        }
       }
-    },
-    {
-      provider: AgentProvider.OPENAI,
-      agentType: AgentProvider.OPENAI,
-      role: AgentRole.CODE_QUALITY,
-      position: AgentPosition.SECONDARY,
-      parameters: {
-        model: 'gpt-4o-2024-05-13'
+    ],
+    fallbackEnabled: true,
+    combineResults: false, // Add combine results property
+    fallbackAgents: [
+      {
+        provider: AgentProvider.GEMINI_2_5_PRO,
+        agentType: AgentProvider.GEMINI_2_5_PRO,
+        role: AgentRole.CODE_QUALITY,
+        position: AgentPosition.FALLBACK,
+        priority: 2,
+        parameters: {
+          model: 'gemini-2.5-pro'
+        }
       }
-    },
-    {
-      provider: AgentProvider.DEEPSEEK_CODER,
-      agentType: AgentProvider.DEEPSEEK_CODER,
-      role: AgentRole.CODE_QUALITY,
-      position: AgentPosition.SECONDARY,
-      parameters: {
-        model: 'deepseek-coder-33b-instruct'
-      }
-    }
-  ],
-  fallbackEnabled: true,
-  combineResults: false, // Add combine results property
-  fallbackAgents: [
-    {
-      provider: AgentProvider.GEMINI_2_5_PRO,
-      agentType: AgentProvider.GEMINI_2_5_PRO,
-      role: AgentRole.CODE_QUALITY,
-      position: AgentPosition.FALLBACK,
-      priority: 2,
-      parameters: {
-        model: 'gemini-2.5-pro'
-      }
-    }
-  ]
-};
+    ]
+  };
+}
+
+// Export for backward compatibility - lazy loading
+export const testConfig = new Proxy({} as any, {
+  get(target, prop) {
+    return getTestConfig()[prop as keyof ReturnType<typeof getTestConfig>];
+  }
+});
 
 // Repository data for testing
 export const testRepositoryData = {
@@ -172,9 +181,9 @@ export function createTestSetup() {
   });
   
   // Force reset the test config to ensure it's in a clean state
-  const freshConfig = JSON.parse(JSON.stringify(testConfig));
+  const freshConfig = JSON.parse(JSON.stringify(getTestConfig()));
   freshConfig.fallbackEnabled = true;
-  freshConfig.strategy = testConfig.strategy;
+  freshConfig.strategy = freshConfig.strategy;
   
   // Setup factory and executor after the mock is ready
   const factory = new MultiAgentFactory();

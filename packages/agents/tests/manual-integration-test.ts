@@ -16,7 +16,7 @@
  */
 
 import { AgentFactory, ProviderGroup } from '../src/factory/agent-factory';
-import { AgentRole } from '@codequal/core/config/agent-registry';
+import { AgentRole } from '@codequal/core';
 import * as fs from 'fs';
 import * as path from 'path';
 
