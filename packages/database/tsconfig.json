@@ -4,13 +4,7 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "composite": true,
-    "declaration": true,
-    "baseUrl": "../..",
-    "paths": {
-      "@codequal/database/*": ["packages/database/src/*"],
-      "@codequal/core": ["packages/core/src"],
-      "@codequal/core/*": ["packages/core/src/*"]
-    }
+    "declaration": true
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "**/*.test.ts", "**/__tests__/**"],

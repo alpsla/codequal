@@ -9,6 +9,7 @@
       "skipLibCheck": true,
       "declaration": true,
       "composite": true,
+      "baseUrl": ".",
       "paths": {
         "@codequal/core": ["packages/core/src"],
         "@codequal/core/*": ["packages/core/src/*"],
@@ -20,7 +21,7 @@
         "@codequal/testing/*": ["packages/testing/src/*"],
         "@codequal/ui": ["packages/ui/src"],
         "@codequal/ui/*": ["packages/ui/src/*"]
-    },
+      }
     },
     "files": []
   }
