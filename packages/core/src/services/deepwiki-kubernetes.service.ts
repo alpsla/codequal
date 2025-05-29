@@ -502,14 +502,14 @@ export class DeepWikiKubernetesService {
    * @param output Raw output from the analysis
    * @returns Parsed output
    */
-  private async parseAnalysisOutput(output: string): Promise<Record<string, unknown> | string> {
+  private async parseAnalysisOutput(output: string): Promise<Record<string, unknown>> {
     // This implementation will be updated based on the actual output format
     try {
       // Try to parse as JSON
       return JSON.parse(output);
     } catch (error: unknown) {
-      // If not JSON, return as is
-      return output;
+      // If not JSON, return as a wrapped string object
+      return { raw: output };
     }
   }
   
@@ -519,14 +519,35 @@ export class DeepWikiKubernetesService {
    * @param output Raw output from the chat query
    * @returns Parsed output
    */
-  private async parseChatOutput(output: string): Promise<{ answer: string; usage?: Record<string, unknown> }> {
+  private async parseChatOutput(output: string): Promise<{ 
+    answer: string; 
+    usage?: { promptTokens: number; completionTokens: number; totalTokens: number; } 
+  }> {
     // This implementation will be updated based on the actual output format
     try {
       // Try to parse as JSON
       const parsed = JSON.parse(output);
+      
+      // Type guard for usage property
+      let usage: { promptTokens: number; completionTokens: number; totalTokens: number; } | undefined;
+      if (parsed.usage && 
+          typeof parsed.usage === 'object' &&
+          'promptTokens' in parsed.usage &&
+          'completionTokens' in parsed.usage &&
+          'totalTokens' in parsed.usage &&
+          typeof parsed.usage.promptTokens === 'number' &&
+          typeof parsed.usage.completionTokens === 'number' &&
+          typeof parsed.usage.totalTokens === 'number') {
+        usage = {
+          promptTokens: parsed.usage.promptTokens,
+          completionTokens: parsed.usage.completionTokens,
+          totalTokens: parsed.usage.totalTokens
+        };
+      }
+      
       return {
         answer: parsed.answer || parsed.text || parsed.result || output,
-        usage: parsed.usage
+        usage
       };
     } catch (error: unknown) {
       // If not JSON, return as is

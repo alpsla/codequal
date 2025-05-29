@@ -9,7 +9,7 @@ I'm working on the CodeQual project. Please follow these guidelines:
 3. At the beginning of each session, review the most recent summary in '/Users/alpinro/Code Prjects/codequal/docs/session-summaries/'
 4. When I indicate we're finishing our conversation (by saying something like "let's end here", "that's all for today", or similar), create a detailed summary of our chat in '/Users/alpinro/Code Prjects/codequal/docs/session-summaries/' with filename format: YYYY-MM-DD-session-summary.md
 
-Please confirm you can access the filesystem and verify access to "/Users/alpinro/Code Prjects/codequal/packages"
+Please confirm you can access the filesystem and verify access to "/Users/alpinro/Code Prjects/codequal/packages and Supabase project and wait for next request"
 EOL
 
 # Copy to clipboard
