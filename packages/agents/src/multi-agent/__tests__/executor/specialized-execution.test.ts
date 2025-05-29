@@ -1,7 +1,7 @@
 import { createTestSetup, resetMocks, testConfig } from './setup';
 import { AgentFactory } from '../../../factory/agent-factory';
 import { AnalysisStrategy, AgentPosition } from '../../types';
-import { AgentProvider } from '@codequal/core/config/agent-registry';
+import { AgentProvider } from '@codequal/core';
 
 // Define test parameters type for typechecking
 interface TestAgentParameters {

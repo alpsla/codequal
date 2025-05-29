@@ -1,6 +1,6 @@
 import { AgentFactory } from '../../factory/agent-factory';
 import { AgentPosition, AnalysisStrategy } from '../types';
-import { AgentProvider, AgentRole } from '@codequal/core/config/agent-registry';
+import { AgentProvider, AgentRole } from '@codequal/core';
 import { MultiAgentFactory } from '../factory';
 import { MultiAgentExecutor } from '../executor';
 

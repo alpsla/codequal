@@ -1,6 +1,6 @@
 // @ts-nocheck
-import { Agent } from '@codequal/core/types/agent';
-import { AgentProvider, AgentRole } from '@codequal/core/config/agent-registry';
+import { Agent } from '@codequal/core';
+import { AgentProvider, AgentRole } from '@codequal/core';
 import { MultiAgentFactory } from '../factory';
 import { MultiAgentExecutor } from '../executor';
 import { AgentPosition, AnalysisStrategy, RepositoryData, MultiAgentConfig } from '../types';

@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { AgentProvider, AgentRole } from '@codequal/core/config/agent-registry';
+import { AgentProvider, AgentRole } from '@codequal/core';
 import { AgentSelector } from '../agent-selector';
 import { 
   RepositoryContext, 

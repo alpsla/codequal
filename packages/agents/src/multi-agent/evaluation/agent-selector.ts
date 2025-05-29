@@ -1,5 +1,4 @@
-import { AgentProvider, AgentRole } from '@codequal/core/config/agent-registry';
-import { createLogger } from '@codequal/core/utils';
+import { AgentProvider, AgentRole, createLogger } from '@codequal/core';
 import { 
   AgentRoleEvaluationParameters, 
   RepositoryContext, 

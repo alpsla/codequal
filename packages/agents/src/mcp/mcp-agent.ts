@@ -1,8 +1,7 @@
 import { BaseAgent } from '../base/base-agent';
-import { AnalysisResult, Insight, Suggestion } from '@codequal/core/types/agent';
+import { AnalysisResult, Insight, Suggestion, AgentProvider, AgentRole } from '@codequal/core';
 // AgentProvider and AgentRole are used in documentation only
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { AgentProvider, AgentRole } from '@codequal/core/config/agent-registry';
 
 /**
  * PR data structure

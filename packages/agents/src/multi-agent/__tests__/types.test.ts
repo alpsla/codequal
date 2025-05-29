@@ -8,7 +8,7 @@ import {
   MultiAgentResult,
   AgentResultDetails
 } from '../types';
-import { AgentProvider, AgentRole } from '@codequal/core/config/agent-registry';
+import { AgentProvider, AgentRole } from '@codequal/core';
 
 describe('Multi-Agent Types', () => {
   describe('Enums', () => {

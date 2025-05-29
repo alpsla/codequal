@@ -1,5 +1,4 @@
-import { AgentProvider, AgentRole } from '@codequal/core/config/agent-registry';
-import { AnalysisResult } from '@codequal/core';
+import { AgentProvider, AgentRole, AnalysisResult } from '@codequal/core';
 
 /**
  * Defines the position of an agent within a multi-agent system

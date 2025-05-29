@@ -1,8 +1,6 @@
 import { BaseAgent } from '../base/base-agent';
-import { AnalysisResult, Insight, Suggestion, EducationalContent } from '@codequal/core';
+import { AnalysisResult, Insight, Suggestion, EducationalContent, DEFAULT_MODELS_BY_PROVIDER, createLogger, LoggableData } from '@codequal/core';
 import { loadPromptTemplate } from '../prompts/prompt-loader';
-import { DEFAULT_MODELS_BY_PROVIDER } from '@codequal/core/config/models/model-versions';
-import { createLogger, LoggableData } from '@codequal/core/utils';
 
 // Define constants for DeepSeek models since the type definitions might be outdated
 const DEEPSEEK_MODELS = {

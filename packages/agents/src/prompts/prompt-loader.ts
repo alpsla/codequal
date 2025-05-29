@@ -2,8 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 // These imports are used in documentation only
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { AgentProvider, AgentRole } from '@codequal/core/config/agent-registry';
-import { createLogger } from '@codequal/core/utils';
+import { AgentProvider, AgentRole, createLogger } from '@codequal/core';
 
 /**
  * Logger for prompt loader

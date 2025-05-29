@@ -1,6 +1,6 @@
 import { MultiAgentRegistry, getMultiAgentRegistry } from '../registry';
 import { AnalysisStrategy, AgentPosition } from '../types';
-import { AgentProvider, AgentRole } from '@codequal/core/config/agent-registry';
+import { AgentProvider, AgentRole } from '@codequal/core';
 
 // Mock dependencies
 jest.mock('../factory', () => {
@@ -51,7 +51,7 @@ jest.mock('../factory', () => {
 });
 
 // Mock the logger
-jest.mock('@codequal/core/utils/logger', () => ({
+jest.mock('@codequal/core', () => ({
   createLogger: jest.fn().mockReturnValue({
     info: jest.fn(),
     error: jest.fn(),

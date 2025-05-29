@@ -1,7 +1,7 @@
 /**
  * Error handling utility functions
  */
-import { LoggableData } from '@codequal/core/utils';
+import { LoggableData } from '@codequal/core';
 
 /**
  * Convert an unknown error to a LoggableData type for logging

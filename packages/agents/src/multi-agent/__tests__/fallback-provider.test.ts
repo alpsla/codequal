@@ -1,9 +1,8 @@
 // @ts-nocheck
-import { AgentProvider, AgentRole } from '@codequal/core/config/agent-registry';
+import { AgentProvider, AgentRole, createLogger } from '@codequal/core';
 import { MultiAgentFactory } from '../factory';
 import { MultiAgentExecutor } from '../executor';
 import { AgentPosition, AnalysisStrategy, MultiAgentConfig, RepositoryData } from '../types';
-import { createLogger } from '@codequal/core/utils';
 
 // No need to add this mock since it's already further down in the file
 
@@ -34,7 +33,7 @@ const mockAgentResponses = {
 };
 
 // Mock createLogger to avoid logger initialization issues
-jest.mock('@codequal/core/utils', () => {
+jest.mock('@codequal/core', () => {
   return {
     createLogger: jest.fn().mockImplementation(() => ({
       info: jest.fn(),
@@ -46,7 +45,7 @@ jest.mock('@codequal/core/utils', () => {
 });
 
 // Mock Agent class
-jest.mock('@codequal/core/types/agent', () => {
+jest.mock('@codequal/core', () => {
   return {
     Agent: jest.fn().mockImplementation(() => {
       return {

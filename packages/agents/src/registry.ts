@@ -1,5 +1,5 @@
 // Mock registry for testing
-import { AgentProvider, AgentRole } from '@codequal/core/config/agent-registry';
+import { AgentProvider, AgentRole } from '@codequal/core';
 
 /**
  * Agent registry interface

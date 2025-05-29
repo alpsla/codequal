@@ -1,5 +1,4 @@
-import { AgentProvider, AgentRole } from '@codequal/core/config/agent-registry';
-import { Agent } from '@codequal/core/types/agent';
+import { AgentProvider, AgentRole, Agent } from '@codequal/core';
 import { MultiAgentManager, MultiAgentStrategy } from './multi-agent-strategy';
 
 // Import agent implementations

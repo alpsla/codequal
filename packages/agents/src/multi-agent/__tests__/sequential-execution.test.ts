@@ -1,8 +1,7 @@
-import { AgentProvider, AgentRole } from '@codequal/core/config/agent-registry';
+import { AgentProvider, AgentRole, createLogger } from '@codequal/core';
 import { MultiAgentFactory } from '../factory';
 import { MultiAgentExecutor } from '../executor';
 import { AgentPosition, AnalysisStrategy, MultiAgentConfig, RepositoryData } from '../types';
-import { createLogger } from '@codequal/core/utils';
 
 // Mock agent responses for testing
 const mockAgentResponses = {
@@ -35,7 +34,7 @@ const mockAgentResponses = {
 };
 
 // Mock agent for testing
-jest.mock('@codequal/core/types/agent', () => {
+jest.mock('@codequal/core', () => {
   return {
     Agent: jest.fn().mockImplementation(() => {
       return {

@@ -1,5 +1,5 @@
 import { MultiAgentConfig, AgentConfig, AgentPosition, AnalysisStrategy } from './types';
-import { createLogger } from '@codequal/core/utils';
+import { createLogger } from '@codequal/core';
 
 /**
  * Result of a validation operation

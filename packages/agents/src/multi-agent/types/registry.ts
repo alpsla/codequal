@@ -1,4 +1,4 @@
-import { AgentProvider, AgentRole } from '@codequal/core/config/agent-registry';
+import { AgentProvider, AgentRole } from '@codequal/core';
 import { AnalysisStrategy, MultiAgentConfig } from './types';
 import { MultiAgent, MultiAgentOptions } from './agent';
 

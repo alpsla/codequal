@@ -1,5 +1,4 @@
-import { AgentProvider, AgentRole } from '@codequal/core/config/agent-registry';
-import { AnalysisResult } from '@codequal/core';
+import { AgentProvider, AgentRole, AnalysisResult } from '@codequal/core';
 import { AgentConfig, AgentPosition, RepositoryData } from './types';
 
 /**

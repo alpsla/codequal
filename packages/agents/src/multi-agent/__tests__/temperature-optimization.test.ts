@@ -1,4 +1,4 @@
-import { AgentProvider, AgentRole } from '@codequal/core/config/agent-registry';
+import { AgentProvider, AgentRole } from '@codequal/core';
 import { MultiAgentFactory } from '../factory';
 import { AgentPosition, AnalysisStrategy, AgentConfig } from '../types';
 import { defaultTemperatures } from '../evaluation/agent-evaluation-data';

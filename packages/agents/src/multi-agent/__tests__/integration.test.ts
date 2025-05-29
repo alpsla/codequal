@@ -2,7 +2,7 @@ import { MultiAgentFactory } from '../factory';
 import { MultiAgentExecutor } from '../executor';
 import { getMultiAgentRegistry } from '../registry';
 import { AgentPosition, AnalysisStrategy, RepositoryData } from '../types';
-import { AgentProvider, AgentRole } from '@codequal/core/config/agent-registry';
+import { AgentProvider, AgentRole } from '@codequal/core';
 import { Agent } from '../../agent';
 import { AgentFactory } from '../../factory';
 
@@ -103,7 +103,7 @@ jest.mock('../validator', () => ({
 }));
 
 // Mock the logger
-jest.mock('@codequal/core/utils/logger', () => ({
+jest.mock('@codequal/core', () => ({
   createLogger: jest.fn().mockReturnValue({
     info: jest.fn(),
     error: jest.fn(),
@@ -260,7 +260,7 @@ jest.mock('../executor', () => {
 
 // Keep a simplified registry mock
 jest.mock('../registry', () => {
-  const { AgentProvider, AgentRole } = require('@codequal/core/config/agent-registry');
+  const { AgentProvider, AgentRole } = require('@codequal/core');
   const { AgentPosition, AnalysisStrategy } = require('../types');
   
   // Simple test config

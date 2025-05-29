@@ -1,5 +1,5 @@
 import { Agent } from './agent';
-import { AgentProvider, AgentRole } from '@codequal/core/config/agent-registry';
+import { AgentProvider, AgentRole } from '@codequal/core';
 
 /**
  * Factory for creating agents

@@ -1,5 +1,4 @@
-import { Agent } from '@codequal/core/types/agent';
-import { createLogger } from '@codequal/core/utils';
+import { Agent, createLogger } from '@codequal/core';
 import { formatError } from '../utils/error-utils';
 import { AgentFactory } from '../factory/agent-factory';
 import { v4 as uuidv4 } from 'uuid';

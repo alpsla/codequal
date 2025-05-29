@@ -1,5 +1,4 @@
-import { Agent, AnalysisResult } from '@codequal/core';
-import { createLogger, Logger, LoggableData } from '@codequal/core/utils';
+import { Agent, AnalysisResult, createLogger, Logger, LoggableData } from '@codequal/core';
 
 /**
  * Abstract base class for all agents

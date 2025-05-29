@@ -1,8 +1,7 @@
 import { MultiAgentFactory } from '../factory';
 import { AgentPosition, AnalysisStrategy, AgentConfig, MultiAgentConfig } from '../types';
-import { AgentProvider, AgentRole } from '@codequal/core/config/agent-registry';
+import { AgentProvider, AgentRole, Agent } from '@codequal/core';
 import { AgentFactory } from '../../factory/agent-factory';
-import { Agent } from '@codequal/core/types/agent';
 import { MultiAgentValidator } from '../validator';
 
 // Mock dependencies

@@ -1,8 +1,6 @@
 import { BaseAgent } from '../base/base-agent';
-import { AnalysisResult, Insight, Suggestion, EducationalContent } from '@codequal/core/types/agent';
+import { AnalysisResult, Insight, Suggestion, EducationalContent, DEFAULT_MODELS_BY_PROVIDER, createLogger, LoggableData } from '@codequal/core';
 import { loadPromptTemplate } from '../prompts/prompt-loader';
-import { DEFAULT_MODELS_BY_PROVIDER } from '@codequal/core/config/models/model-versions';
-import { createLogger, LoggableData } from '@codequal/core/utils';
 import Anthropic from '@anthropic-ai/sdk';
 
 // Define Anthropic models

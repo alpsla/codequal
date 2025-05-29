@@ -1,7 +1,6 @@
-import { AgentProvider, AgentRole } from '@codequal/core/config/agent-registry';
+import { AgentProvider, AgentRole, createLogger } from '@codequal/core';
 import { AgentPosition, AnalysisStrategy, MultiAgentConfig } from './types';
 import { MultiAgentFactory } from './factory';
-import { createLogger } from '@codequal/core/utils';
 
 /**
  * Registry of predefined multi-agent configurations

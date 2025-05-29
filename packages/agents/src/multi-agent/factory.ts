@@ -1,9 +1,7 @@
 import { AgentFactory } from '../factory/agent-factory';
-import { Agent } from '@codequal/core/types/agent';
+import { Agent, AgentProvider, AgentRole, createLogger } from '@codequal/core';
 import { AgentConfig, MultiAgentConfig, AgentPosition, AnalysisStrategy } from './types';
 import { MultiAgentValidator } from './validator';
-import { AgentProvider, AgentRole } from '@codequal/core/config/agent-registry';
-import { createLogger } from '@codequal/core/utils';
 import { AgentSelector } from './evaluation/agent-selector';
 import { RepositoryContext, PRContext, UserPreferences } from './evaluation/agent-evaluation-data';
 

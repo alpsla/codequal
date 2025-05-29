@@ -1,4 +1,4 @@
-import { AgentProvider, AgentRole } from '@codequal/core/config/agent-registry';
+import { AgentProvider, AgentRole } from '@codequal/core';
 import { AgentPosition } from '../../types';
 import { 
   AgentSelector,

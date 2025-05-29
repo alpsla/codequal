@@ -1,8 +1,6 @@
 import { BaseAgent } from '../base/base-agent';
-import { AnalysisResult, Insight, Suggestion, EducationalContent } from '@codequal/core/types/agent';
+import { AnalysisResult, Insight, Suggestion, EducationalContent, DEFAULT_MODELS_BY_PROVIDER, createLogger, LoggableData } from '@codequal/core';
 import { loadPromptTemplate } from '../prompts/prompt-loader';
-import { DEFAULT_MODELS_BY_PROVIDER } from '@codequal/core/config/models/model-versions';
-import { createLogger, LoggableData } from '@codequal/core/utils';
 import OpenAI from 'openai';
 
 /**
@@ -136,7 +134,7 @@ export class ChatGPTAgent extends BaseAgent {
     
     // Import OPENAI_MODELS directly to avoid unused import warning
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { GPT_3_5_TURBO } = require('@codequal/core/config/models/model-versions').OPENAI_MODELS;
+    const { GPT_3_5_TURBO } = require('@codequal/core').OPENAI_MODELS;
     this.model = config.model || DEFAULT_MODELS_BY_PROVIDER['openai'] || GPT_3_5_TURBO;
     
     this.openaiClient = this.initOpenAIClient();

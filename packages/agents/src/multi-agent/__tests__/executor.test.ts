@@ -17,7 +17,7 @@ jest.mock('../validator', () => ({
   }
 }));
 
-jest.mock('@codequal/core/utils', () => ({
+jest.mock('@codequal/core', () => ({
   createLogger: jest.fn().mockImplementation(() => ({
     info: jest.fn(),
     error: jest.fn(),
