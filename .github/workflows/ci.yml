@@ -21,7 +21,7 @@ jobs:
         # cache: 'npm'
         
     - name: Install dependencies
-      run: npm ci --no-workspaces
+      run: npm ci
       
     - name: Create .env file
       run: |
@@ -48,10 +48,10 @@ jobs:
         EOF
       
     - name: Lint
-      run: npm run lint --no-workspaces
+      run: npm run lint
       
     - name: Build
-      run: npm run build --no-workspaces
+      run: npm run build
       
     - name: Test
-      run: npm run test --no-workspaces
+      run: npm run test
