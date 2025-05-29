@@ -3,6 +3,7 @@ import { HierarchicalChunker } from '../chunking.service';
 import { loadRealDeepWikiReport } from '../deepwiki-parser';
 import { InputSource } from '../types';
 import * as path from 'path';
+import * as fs from 'fs';
 
 describe('Real DeepWiki Report Processing', () => {
   let preprocessor: PreprocessingService;
@@ -10,13 +11,26 @@ describe('Real DeepWiki Report Processing', () => {
   
   const realReportPath = '/Users/alpinro/Code Prjects/codequal/archive/deepwiki_comprehensive_archive_20250523_210530/scripts/deepwiki-integration/analysis-results/express-google-gemini-2.5-flash-preview-05-20-thinking-20250523_124906/express_comprehensive_analysis.md';
   const gpt4ReportPath = '/Users/alpinro/Code Prjects/codequal/archive/deepwiki_comprehensive_archive_20250523_210530/scripts/deepwiki-integration/analysis-results/comprehensive-fallback-express-20250523_141551/attempt-4-openai-gpt-4-turbo/express_comprehensive_analysis.md';
+  
+  // Helper function to check if file exists
+  const fileExists = (filePath: string): boolean => {
+    try {
+      return fs.existsSync(filePath);
+    } catch {
+      return false;
+    }
+  };
 
   beforeEach(() => {
     preprocessor = new PreprocessingService();
     chunker = new HierarchicalChunker();
   });
 
-  describe('Processing Real Express.js Analysis', () => {
+  // Only run these tests if the required files exist
+  const shouldRunRealTests = fileExists(realReportPath);
+  const describeOrSkip = shouldRunRealTests ? describe : describe.skip;
+  
+  describeOrSkip('Processing Real Express.js Analysis', () => {
     it('should successfully parse and process the real DeepWiki report', async () => {
       // Load and parse the real report
       const deepwikiReport = await loadRealDeepWikiReport(realReportPath);
@@ -327,7 +341,11 @@ describe('Real DeepWiki Report Processing', () => {
     });
   });
 
-  describe('Processing GPT-4 Turbo Express.js Analysis', () => {
+  // Only run GPT-4 tests if the required files exist
+  const shouldRunGpt4Tests = fileExists(gpt4ReportPath);
+  const describeOrSkipGpt4 = shouldRunGpt4Tests ? describe : describe.skip;
+  
+  describeOrSkipGpt4('Processing GPT-4 Turbo Express.js Analysis', () => {
     it('should successfully parse and process the GPT-4 Turbo DeepWiki report', async () => {
       // Load and parse the GPT-4 Turbo report
       const deepwikiReport = await loadRealDeepWikiReport(gpt4ReportPath);
@@ -443,6 +461,13 @@ export async function runRealDataDemo() {
   const reportPath = '/Users/alpinro/Code Prjects/codequal/archive/deepwiki_comprehensive_archive_20250523_210530/scripts/deepwiki-integration/analysis-results/express-google-gemini-2.5-flash-preview-05-20-thinking-20250523_124906/express_comprehensive_analysis.md';
   
   try {
+    // Check if file exists first
+    if (!fileExists(reportPath)) {
+      console.warn('⚠️  Report file not found, skipping demo');
+      console.warn(`   Expected path: ${reportPath}`);
+      return;
+    }
+    
     // Load report
     console.log('📄 Loading DeepWiki report...');
     const deepwikiReport = await loadRealDeepWikiReport(reportPath);
