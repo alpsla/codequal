@@ -5,7 +5,6 @@ import { Logger } from '../utils/logger';
 import { 
   RepositoryAnalysisRequest, 
   RepositoryAnalysisResult, 
-  AnalysisTier, 
   DeepWikiConfig 
 } from './deepwiki/types';
 
@@ -68,14 +67,19 @@ export class DeepWikiKubernetesService {
         });
 
         const readyPods = response.items.filter(
-          (pod: any) => pod.status?.phase === 'Running' && 
-          pod.status.containerStatuses?.some((status: any) => status.ready)
+          (pod: k8s.V1Pod) => pod.status?.phase === 'Running' && 
+          pod.status.containerStatuses?.some((status: k8s.V1ContainerStatus) => status.ready)
         );
 
         if (readyPods.length > 0) {
           // Select a random pod to distribute load
           const randomIndex = Math.floor(Math.random() * readyPods.length);
-          return readyPods[randomIndex].metadata!.name!;
+          const selectedPod = readyPods[randomIndex];
+          const podName = selectedPod.metadata?.name;
+          if (!podName) {
+            throw new Error('Selected pod has no name');
+          }
+          return podName;
         }
       } catch (error) {
         this.logger.warn('Failed to get pod using K8s API, falling back to kubectl', { error });

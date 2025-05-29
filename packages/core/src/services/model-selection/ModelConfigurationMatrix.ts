@@ -350,7 +350,7 @@ export class ModelConfigurationMatrixService {
     const configId = this.generateConfigId(params);
     
     // Updated model selection logic with 2025 models
-    let provider = 'openrouter';
+    const provider = 'openrouter';
     let model = 'google/gemini-2.5-flash';
     let modelPath = 'openrouter/google/gemini-2.5-flash';
     

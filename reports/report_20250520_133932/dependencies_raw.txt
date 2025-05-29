@@ -1,1 +1,0 @@
-{"detail":"Error preparing retriever: All embeddings should be of the same size"}

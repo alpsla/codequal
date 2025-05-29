@@ -1,5 +1,4 @@
 import axios from 'axios';
-import type { AxiosResponse, AxiosError } from 'axios';
 import { Logger } from '../utils/logger';
 import { RepositoryContext } from './DeepWikiClient';
 

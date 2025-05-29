@@ -254,25 +254,25 @@ export class ModelSelectionIntegration {
    * @param config Model configuration
    * @returns Standardized model configuration
    */
-  private standardizeModelConfig(config: any): ModelConfig<DeepWikiProvider> {
+  private standardizeModelConfig(config: unknown): ModelConfig<DeepWikiProvider> {
     try {
       // Convert from RepositoryModelConfig to ModelConfig<DeepWikiProvider>
-      const deepWikiConfig: ModelConfig<DeepWikiProvider> = {
-        provider: config.provider as DeepWikiProvider,
-        model: config.model as any
+      const _deepWikiConfig: ModelConfig<DeepWikiProvider> = {
+        provider: (config as Record<string, unknown>).provider as DeepWikiProvider,
+        model: (config as Record<string, unknown>).model as string
       };
       
       const result = this.modelVersionSync.standardizeModelConfig(config);
       return {
         provider: result.provider as DeepWikiProvider,
-        model: result.model as any
+        model: result.model as string
       };
     } catch (error) {
       this.logger.warn('Error standardizing model config', { error });
       // Convert to correct type and return
       return {
-        provider: config.provider as DeepWikiProvider,
-        model: config.model as any
+        provider: (config as Record<string, unknown>).provider as DeepWikiProvider,
+        model: (config as Record<string, unknown>).model as string
       };
     }
   }

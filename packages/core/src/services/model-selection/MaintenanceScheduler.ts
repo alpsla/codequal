@@ -89,7 +89,7 @@ export class MaintenanceScheduler {
     }
   };
 
-  private isRunning: boolean = false;
+  private isRunning = false;
   private scheduledTasks: NodeJS.Timeout[] = [];
 
   constructor(
