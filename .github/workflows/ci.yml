@@ -50,8 +50,20 @@ jobs:
     - name: Lint
       run: npm run lint --no-workspaces
       
-    - name: Build
-      run: npm run build --no-workspaces
+    - name: Build core package first
+      run: |
+        echo "Building core package first to ensure proper type exports..."
+        cd packages/core
+        npm run build || (echo "Core build failed" && exit 1)
+        echo "Verifying core build output..."
+        ls -la dist/
+        ls -la dist/utils/ || echo "No utils directory"
+        ls -la dist/types/ || echo "No types directory"
+        ls -la dist/config/ || echo "No config directory"
+        cd ../..
+    
+    - name: Build all other packages
+      run: npx turbo run build --filter='!@codequal/core'
       
     - name: Test
       run: npm run test --no-workspaces
