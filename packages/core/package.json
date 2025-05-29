@@ -13,7 +13,7 @@
     "./config/*": "./dist/config/*.js"
   },
   "scripts": {
-    "build": "tsc --skipLibCheck || true",
+    "build": "tsc --skipLibCheck",
     "dev": "tsc -w",
     "lint": "eslint src",
     "test": "jest --passWithNoTests"

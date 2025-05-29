@@ -394,20 +394,20 @@ export class SequentialMultiAgent extends MultiAgent {
     const existingEducational = new Set<string>();
     
     // Add existing items to sets
-    primary.insights?.forEach(item => 
+    primary.insights?.forEach((item: any) => 
       existingInsights.add(JSON.stringify(item))
     );
     
-    primary.suggestions?.forEach(item => 
+    primary.suggestions?.forEach((item: any) => 
       existingSuggestions.add(JSON.stringify(item))
     );
     
-    primary.educational?.forEach(item => 
+    primary.educational?.forEach((item: any) => 
       existingEducational.add(JSON.stringify(item))
     );
     
     // Add new insights
-    enhanced.insights?.forEach(item => {
+    enhanced.insights?.forEach((item: any) => {
       const key = JSON.stringify(item);
       if (!existingInsights.has(key)) {
         merged.insights = merged.insights || [];
@@ -416,7 +416,7 @@ export class SequentialMultiAgent extends MultiAgent {
     });
     
     // Add new suggestions
-    enhanced.suggestions?.forEach(item => {
+    enhanced.suggestions?.forEach((item: any) => {
       const key = JSON.stringify(item);
       if (!existingSuggestions.has(key)) {
         merged.suggestions = merged.suggestions || [];
@@ -425,7 +425,7 @@ export class SequentialMultiAgent extends MultiAgent {
     });
     
     // Add new educational content
-    enhanced.educational?.forEach(item => {
+    enhanced.educational?.forEach((item: any) => {
       const key = JSON.stringify(item);
       if (!existingEducational.has(key)) {
         merged.educational = merged.educational || [];
@@ -462,7 +462,7 @@ export class SpecializedMultiAgent extends MultiAgent {
       };
       
       // Run primary agent
-      const primaryResult = await this.primaryAgent.analyze(primaryData as Record<string, unknown>).catch(error => {
+      const primaryResult = await this.primaryAgent.analyze(primaryData as Record<string, unknown>).catch((error: any) => {
         this.error(`Error in primary ${this.config.role} analysis with ${this.config.primaryProvider}`, error);
         return null;
       });
@@ -493,7 +493,7 @@ export class SpecializedMultiAgent extends MultiAgent {
       // Run secondary agents with enriched context
       const secondaryResults = await Promise.all(
         this.secondaryAgents.map(agent => 
-          agent.analyze(secondaryData as Record<string, unknown>).catch(error => {
+          agent.analyze(secondaryData as Record<string, unknown>).catch((error: any) => {
             this.error(`Error in secondary ${this.config.role} analysis`, error);
             return null;
           })
@@ -501,7 +501,7 @@ export class SpecializedMultiAgent extends MultiAgent {
       );
       
       // Filter out null results
-      const validSecondaryResults = secondaryResults.filter(result => 
+      const validSecondaryResults = secondaryResults.filter((result: any) => 
         result !== null
       ) as AnalysisResult[];
       
