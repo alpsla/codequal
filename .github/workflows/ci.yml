@@ -50,13 +50,6 @@ jobs:
     - name: Lint
       run: npm run lint --no-workspaces
       
-    - name: Build core package first
-      run: |
-        echo "Building core package first to ensure proper type exports..."
-        cd packages/core
-        npm run build
-        cd ../..
-    
     - name: Build all packages
       run: npx turbo run build
       
