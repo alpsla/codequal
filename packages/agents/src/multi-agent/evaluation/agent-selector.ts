@@ -263,7 +263,7 @@ export class AgentSelector {
     prContext: PRContext,
     preferences?: UserPreferences
   ): Record<AgentProvider, number> {
-    const scores: Record<AgentProvider, number> = Object.values(AgentProvider).reduce((acc: Record<AgentProvider, number>, provider) => {
+    const scores: Record<AgentProvider, number> = Object.values(AgentProvider).reduce((acc: Record<AgentProvider, number>, provider: AgentProvider) => {
       acc[provider] = 0;
       return acc;
     }, {} as Record<AgentProvider, number>);
