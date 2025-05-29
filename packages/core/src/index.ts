@@ -71,6 +71,16 @@ export * from './services/model-selection/ModelConfigStore';
 // Vector Database Configuration
 export * from './config/vector-database.config';
 
+// Explicitly export vector database functions for better CI compatibility
+export {
+  getVectorConfig,
+  getEmbeddingConfig,
+  getChunkingConfig,
+  getEnhancementConfig,
+  getSearchConfig,
+  updateEmbeddingModel
+} from './config/vector-database.config';
+
 // Config exports
 export * from './config/agent-registry';
 
