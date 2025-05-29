@@ -11,8 +11,8 @@
     "typeRoots": ["./node_modules/@types", "../../node_modules/@types"],
     "paths": {
       "@codequal/database/*": ["./src/*"],
-      "@codequal/core": ["../core/src"],
-      "@codequal/core/*": ["../core/src/*"]
+      "@codequal/core": ["../core/dist"],
+      "@codequal/core/*": ["../core/dist/*"]
     }
   },
   "include": ["src/**/*"],
