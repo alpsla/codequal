@@ -271,5 +271,5 @@ if (passedTests === Object.keys(results).length) {
   console.log(`${colors.cyan}It uses generic patterns to extract findings from any LLM output.${colors.reset}`);
 } else {
   console.log(`\n${colors.red}⚠️  Some formats failed to parse correctly${colors.reset}`);
-  process.exit(1);
+  throw new Error('Some formats failed to parse correctly');
 }

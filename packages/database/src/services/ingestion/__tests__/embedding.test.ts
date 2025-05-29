@@ -3,15 +3,13 @@ import { EnhancedChunk } from '../types';
 
 // Mock OpenAI
 jest.mock('openai', () => {
-  return {
-    OpenAI: jest.fn().mockImplementation(() => {
-      return {
-        embeddings: {
-          create: jest.fn()
-        }
-      };
-    })
-  };
+  return jest.fn().mockImplementation(() => {
+    return {
+      embeddings: {
+        create: jest.fn()
+      }
+    };
+  });
 });
 
 // Mock config

@@ -1,7 +1,7 @@
-import { PreprocessingService } from '../preprocessing.service';
-import { HierarchicalChunker } from '../chunking.service';
-import { ContentEnhancer } from '../content-enhancer.service';
-import { Chunk, EnhancementContext, InputSource, PreprocessedContent } from '../types';
+import { PreprocessingService } from '../../src/services/ingestion/preprocessing.service';
+import { HierarchicalChunker } from '../../src/services/ingestion/chunking.service';
+import { ContentEnhancer } from '../../src/services/ingestion/content-enhancer.service';
+import { Chunk, EnhancementContext, InputSource, PreprocessedContent } from '../../src/services/ingestion/types';
 
 /**
  * Unit tests for the ingestion pipeline components

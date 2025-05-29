@@ -185,7 +185,7 @@ async function testPipelineWithoutExternalServices() {
   } catch (error) {
     logError(`Test failed: ${error instanceof Error ? error.message : String(error)}`);
     console.error(error);
-    process.exit(1);
+    throw error; // Re-throw instead of process.exit
   }
 }
 

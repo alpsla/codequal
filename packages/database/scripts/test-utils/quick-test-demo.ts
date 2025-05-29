@@ -1,6 +1,6 @@
-import { PreprocessingService } from './preprocessing.service';
-import { HierarchicalChunker } from './chunking.service';
-import { InputSource, DeepWikiReport, ArchitectureAnalysis, CodeQualityAnalysis, SecurityAnalysis, DependencyAnalysis, PerformanceAnalysis, AnalysisMetadata, SourceMetadata } from './types';
+import { PreprocessingService } from '../../src/services/ingestion/preprocessing.service';
+import { HierarchicalChunker } from '../../src/services/ingestion/chunking.service';
+import { InputSource, DeepWikiReport, ArchitectureAnalysis, CodeQualityAnalysis, SecurityAnalysis, DependencyAnalysis, PerformanceAnalysis, AnalysisMetadata, SourceMetadata } from '../../src/services/ingestion/types';
 
 // Simple test data
 const testInput: InputSource = {

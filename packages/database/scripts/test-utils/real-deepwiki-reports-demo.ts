@@ -428,7 +428,7 @@ async function main() {
   } catch (error) {
     logError(`Test suite failed: ${error instanceof Error ? error.message : String(error)}`);
     console.error(error);
-    process.exit(1);
+    throw error; // Re-throw instead of process.exit
   }
 }
 
