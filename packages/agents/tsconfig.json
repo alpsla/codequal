@@ -10,8 +10,8 @@
       "typeRoots": ["./node_modules/@types", "../../node_modules/@types", "./src/types"],
       "paths": {
         "@codequal/agents/*": ["./src/*"],
-        "@codequal/core": ["../core/src"],
-        "@codequal/core/*": ["../core/src/*"]
+        "@codequal/core": ["../core/dist"],
+        "@codequal/core/*": ["../core/dist/*"]
       }
     },
     "include": ["src/**/*"],
