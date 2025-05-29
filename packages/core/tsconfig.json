@@ -5,9 +5,9 @@
       "rootDir": "./src",
       "composite": true,
       "declaration": true,
-      "paths": {
-        "@codequal/core/*": ["./src/*"]
-      },
+      "module": "CommonJS",
+      "target": "ES2020",
+      "moduleResolution": "node",
       "skipLibCheck": true,
       "resolveJsonModule": true,
       "allowSyntheticDefaultImports": true,

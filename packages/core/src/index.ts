@@ -57,8 +57,8 @@ export type {
   ModelTestResults
 } from './config/models/repository-model-config';
 
-// Export model version constants - temporarily disabled for CI debugging
-// export * from './config/models/model-versions';
+// Export model version constants
+export * from './config/models/model-versions';
 
 // Export model selection services
 export * from './services/model-selection/RepositoryModelSelectionService';
