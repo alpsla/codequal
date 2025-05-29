@@ -23,6 +23,13 @@ jobs:
     - name: Install dependencies
       run: npm ci
       
+    - name: Verify workspace installation
+      run: |
+        echo "Checking @codequal/core installation..."
+        ls -la node_modules/@codequal/core || echo "Core not found in root node_modules"
+        ls -la packages/core/node_modules || echo "No node_modules in core package"
+        npm ls @codequal/core || echo "Core dependency not found"
+      
     - name: Create .env file
       run: |
         cat > .env << EOF
