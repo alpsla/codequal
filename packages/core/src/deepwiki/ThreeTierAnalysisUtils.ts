@@ -571,12 +571,12 @@ export class ThreeTierAnalysisUtils {
         // Convert DeepWiki chart format to our standard format
         const reportViz: ReportVisualization = {
           id: `viz_${visualizations.length}`,
-          title: viz.title || 'Visualization',
-          type: this.mapVisualizationType(viz.type),
-          chartType: this.mapChartType(viz.chartType),
-          data: viz.data,
+          title: (viz.title as string) || 'Visualization',
+          type: this.mapVisualizationType(viz.type as string),
+          chartType: this.mapChartType(viz.chartType as string),
+          data: (viz.data as Record<string, unknown>) || {},
           config: this.convertVisualizationConfig(viz),
-          description: viz.description
+          description: viz.description as string | undefined
         };
         
         visualizations.push(reportViz);
@@ -594,7 +594,7 @@ export class ThreeTierAnalysisUtils {
    * @returns Our visualization type
    * @private
    */
-  private mapVisualizationType(deepWikiType: string): 'chart' | 'graph' | 'table' | 'code' | 'image' {
+  private mapVisualizationType(deepWikiType: string | undefined): 'chart' | 'graph' | 'table' | 'code' | 'image' {
     const typeMap: Record<string, 'chart' | 'graph' | 'table' | 'code' | 'image'> = {
       'chart': 'chart',
       'graph': 'graph',
@@ -610,7 +610,7 @@ export class ThreeTierAnalysisUtils {
       'heatmap': 'chart'
     };
     
-    return typeMap[deepWikiType] || 'chart';
+    return (deepWikiType && typeMap[deepWikiType]) || 'chart';
   }
   
   /**
@@ -619,7 +619,7 @@ export class ThreeTierAnalysisUtils {
    * @returns Our chart type
    * @private
    */
-  private mapChartType(deepWikiChartType: string): 'bar' | 'line' | 'pie' | 'radar' | 'heatmap' | 'scatter' | 'network' | undefined {
+  private mapChartType(deepWikiChartType: string | undefined): 'bar' | 'line' | 'pie' | 'radar' | 'heatmap' | 'scatter' | 'network' | undefined {
     const chartTypeMap: Record<string, 'bar' | 'line' | 'pie' | 'radar' | 'heatmap' | 'scatter' | 'network'> = {
       'bar': 'bar',
       'line': 'line',
@@ -647,7 +647,7 @@ export class ThreeTierAnalysisUtils {
     const config: Record<string, unknown> = {
       responsive: true,
       maintainAspectRatio: true,
-      ...deepWikiViz.config
+      ...(deepWikiViz.config as Record<string, unknown> || {})
     };
     
     // Add type-specific configurations
@@ -775,7 +775,7 @@ export class ThreeTierAnalysisUtils {
    */
   private generateTableHtml(visualization: ReportVisualization): string {
     // Extract data for the table
-    const { headers, rows } = visualization.data;
+    const { headers, rows } = visualization.data as { headers?: unknown[], rows?: unknown[][] };
     
     // Generate HTML for the table
     let tableHtml = `
@@ -789,8 +789,10 @@ export class ThreeTierAnalysisUtils {
     `;
     
     // Add headers
-    for (const header of headers) {
-      tableHtml += `<th>${header}</th>`;
+    if (headers && Array.isArray(headers)) {
+      for (const header of headers) {
+        tableHtml += `<th>${header}</th>`;
+      }
     }
     
     tableHtml += `
@@ -800,12 +802,16 @@ export class ThreeTierAnalysisUtils {
     `;
     
     // Add rows
-    for (const row of rows) {
-      tableHtml += '<tr>';
-      for (const cell of row) {
-        tableHtml += `<td>${cell}</td>`;
+    if (rows && Array.isArray(rows)) {
+      for (const row of rows) {
+        tableHtml += '<tr>';
+        if (Array.isArray(row)) {
+          for (const cell of row) {
+            tableHtml += `<td>${cell}</td>`;
+          }
+        }
+        tableHtml += '</tr>';
       }
-      tableHtml += '</tr>';
     }
     
     tableHtml += `
@@ -826,14 +832,14 @@ export class ThreeTierAnalysisUtils {
    */
   private generateCodeHtml(visualization: ReportVisualization): string {
     // Extract code and language
-    const { code, language } = visualization.data;
+    const { code, language } = visualization.data as { code?: string, language?: string };
     
     // Generate HTML for the code with syntax highlighting
     return `
       <div class="visualization code-visualization">
         <h3>${visualization.title}</h3>
         ${visualization.description ? `<p>${visualization.description}</p>` : ''}
-        <pre><code class="language-${language || 'plaintext'}">${code}</code></pre>
+        <pre><code class="language-${language || 'plaintext'}">${code || ''}</code></pre>
       </div>
     `;
   }
@@ -846,7 +852,7 @@ export class ThreeTierAnalysisUtils {
    */
   private generateImageHtml(visualization: ReportVisualization): string {
     // Extract image data
-    const { src, alt, width, height } = visualization.data;
+    const { src, alt, width, height } = visualization.data as { src?: string, alt?: string, width?: string | number, height?: string | number };
     
     // Generate HTML for the image
     return `
@@ -854,7 +860,7 @@ export class ThreeTierAnalysisUtils {
         <h3>${visualization.title}</h3>
         ${visualization.description ? `<p>${visualization.description}</p>` : ''}
         <div class="image-container">
-          <img src="${src}" alt="${alt || visualization.title}" ${width ? `width="${width}"` : ''} ${height ? `height="${height}"` : ''}>
+          <img src="${src || ''}" alt="${alt || visualization.title}" ${width ? `width="${width}"` : ''} ${height ? `height="${height}"` : ''}>
         </div>
       </div>
     `;
