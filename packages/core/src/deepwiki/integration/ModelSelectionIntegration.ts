@@ -262,7 +262,7 @@ export class ModelSelectionIntegration {
         model: (config as Record<string, unknown>).model as string
       };
       
-      const result = this.modelVersionSync.standardizeModelConfig(config);
+      const result = this.modelVersionSync.standardizeModelConfig(config as RepositoryModelConfig);
       return {
         provider: result.provider as DeepWikiProvider,
         model: result.model as string

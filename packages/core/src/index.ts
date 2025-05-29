@@ -71,4 +71,10 @@ export * from './services/pr-review-service';
 // Vector Database Configuration
 export * from './config/vector-database.config';
 
+// Config exports
+export * from './config/agent-registry';
+
+// Utils
+export * from './utils';
+
 // Other core modules will be exported here as they are added

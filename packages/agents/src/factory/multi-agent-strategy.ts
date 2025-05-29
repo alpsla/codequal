@@ -199,14 +199,14 @@ export class ParallelMultiAgent extends MultiAgent {
       // Start all analysis tasks in parallel
       const allAgents = [this.primaryAgent, ...this.secondaryAgents];
       const results = await Promise.all(
-        allAgents.map(agent => agent.analyze(data as Record<string, unknown>).catch(error => {
+        allAgents.map(agent => agent.analyze(data as Record<string, unknown>).catch((error: any) => {
           this.error(`Error in agent analysis:`, error);
           return null; // Return null for failed agents
         }))
       );
       
       // Filter out null results
-      const validResults = results.filter(result => result !== null) as AnalysisResult[];
+      const validResults = results.filter((result: any) => result !== null) as AnalysisResult[];
       
       // Combine results
       return this.combineResults(validResults);
@@ -246,15 +246,15 @@ export class ParallelMultiAgent extends MultiAgent {
     const uniqueEducational = new Set<string>();
     
     // Add existing items to sets
-    results[0].insights?.forEach(item => 
+    results[0].insights?.forEach((item: any) => 
       uniqueInsights.add(JSON.stringify(item))
     );
     
-    results[0].suggestions?.forEach(item => 
+    results[0].suggestions?.forEach((item: any) => 
       uniqueSuggestions.add(JSON.stringify(item))
     );
     
-    results[0].educational?.forEach(item => 
+    results[0].educational?.forEach((item: any) => 
       uniqueEducational.add(JSON.stringify(item))
     );
     
@@ -263,7 +263,7 @@ export class ParallelMultiAgent extends MultiAgent {
       const result = results[i];
       
       // Add unique insights
-      result.insights?.forEach(item => {
+      result.insights?.forEach((item: any) => {
         const key = JSON.stringify(item);
         if (!uniqueInsights.has(key)) {
           uniqueInsights.add(key);
@@ -273,7 +273,7 @@ export class ParallelMultiAgent extends MultiAgent {
       });
       
       // Add unique suggestions
-      result.suggestions?.forEach(item => {
+      result.suggestions?.forEach((item: any) => {
         const key = JSON.stringify(item);
         if (!uniqueSuggestions.has(key)) {
           uniqueSuggestions.add(key);
@@ -283,7 +283,7 @@ export class ParallelMultiAgent extends MultiAgent {
       });
       
       // Add unique educational content
-      result.educational?.forEach(item => {
+      result.educational?.forEach((item: any) => {
         const key = JSON.stringify(item);
         if (!uniqueEducational.has(key)) {
           uniqueEducational.add(key);
@@ -295,7 +295,7 @@ export class ParallelMultiAgent extends MultiAgent {
     
     // Sort insights by severity (high -> medium -> low)
     if (combined.insights) {
-      combined.insights.sort((a, b) => {
+      combined.insights.sort((a: any, b: any) => {
         const severityOrder: Record<string, number> = {
           high: 0,
           medium: 1,
@@ -584,7 +584,7 @@ export class SpecializedMultiAgent extends MultiAgent {
       const result = results[i];
       
       // Add unique insights
-      result.insights?.forEach(item => {
+      result.insights?.forEach((item: any) => {
         const key = JSON.stringify(item);
         if (!uniqueInsights.has(key)) {
           uniqueInsights.add(key);
@@ -594,7 +594,7 @@ export class SpecializedMultiAgent extends MultiAgent {
       });
       
       // Add unique suggestions
-      result.suggestions?.forEach(item => {
+      result.suggestions?.forEach((item: any) => {
         const key = JSON.stringify(item);
         if (!uniqueSuggestions.has(key)) {
           uniqueSuggestions.add(key);
@@ -604,7 +604,7 @@ export class SpecializedMultiAgent extends MultiAgent {
       });
       
       // Add unique educational content
-      result.educational?.forEach(item => {
+      result.educational?.forEach((item: any) => {
         const key = JSON.stringify(item);
         if (!uniqueEducational.has(key)) {
           uniqueEducational.add(key);
@@ -616,7 +616,7 @@ export class SpecializedMultiAgent extends MultiAgent {
     
     // Sort insights by severity (high -> medium -> low)
     if (combined.insights) {
-      combined.insights.sort((a, b) => {
+      combined.insights.sort((a: any, b: any) => {
         const severityOrder: Record<string, number> = {
           high: 0,
           medium: 1,

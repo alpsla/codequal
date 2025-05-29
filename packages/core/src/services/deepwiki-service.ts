@@ -67,6 +67,7 @@ export interface AnalysisResult {
  */
 export class DeepWikiService {
   private scriptPath: string;
+  private logger = console; // Simple logger using console
   
   /**
    * Create a new DeepWikiService
