@@ -5,7 +5,7 @@
  */
 
 // Logging
-export * as logging from './utils/logger';
+export * as logging from './utils';
 
 // DeepWiki Integration
 export * as deepwiki from './deepwiki';
@@ -66,7 +66,7 @@ export * from './services/model-selection/RepositoryCalibrationService';
 export * from './services/model-selection/ModelConfigStore';
 
 // Services
-export * from './services/pr-review-service';
+// export * from './services/pr-review-service'; // Temporarily disabled due to database dependency
 
 // Vector Database Configuration
 export * from './config/vector-database.config';
