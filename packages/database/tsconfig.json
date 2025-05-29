@@ -5,11 +5,11 @@
     "rootDir": "./src",
     "composite": true,
     "declaration": true,
-    "baseUrl": ".",
+    "baseUrl": "../..",
     "paths": {
-      "@codequal/database/*": ["./src/*"],
-      "@codequal/core": ["../core/dist/index"],
-      "@codequal/core/*": ["../core/dist/*"]
+      "@codequal/database/*": ["packages/database/src/*"],
+      "@codequal/core": ["packages/core/src"],
+      "@codequal/core/*": ["packages/core/src/*"]
     }
   },
   "include": ["src/**/*"],
