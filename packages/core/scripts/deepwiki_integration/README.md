@@ -1,18 +1,13 @@
-# DeepWiki OpenRouter Integration
+# DeepWiki Integration
 
-This directory contains scripts and configurations for the DeepWiki OpenRouter integration.
+This directory contains scripts for integrating with DeepWiki for repository analysis.
 
-## Fresh Implementation
+## Current Approach: Native Providers
 
-The current implementation uses a simplified three-parameter approach:
-1. Repository URL
-2. Primary model (with provider prefix)
-3. Fallback models (optional)
+The current implementation uses DeepWiki's native provider clients directly, without going through OpenRouter. This provides better compatibility with DeepWiki's internal architecture.
 
-For details, see the [fresh implementation](./fresh_implementation/README.md) directory.
+See the [native_providers](./native_providers) directory for the current implementation.
 
-## Archive
+## Archived Implementations
 
-Previous implementations and scripts have been archived in the [archive](./archive/) directory.
-
-Last cleaned up: Wed May 21 15:34:14 EDT 2025
+Previous attempts to integrate with DeepWiki via OpenRouter have been archived due to persistent issues with API authentication and compatibility with DeepWiki's internal architecture.

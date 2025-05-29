@@ -8,13 +8,13 @@ import {
   AnalysisTier, 
   DeepWikiConfig 
 } from './deepwiki/types';
+import fetch from 'node-fetch';
 
 const execAsync = promisify(exec);
 
 /**
- * Service for interacting with DeepWiki in a Kubernetes environment using CLI commands
- * Rather than trying to use WebSockets (which may not be supported), this service
- * executes commands directly in the pod.
+ * Service for interacting with DeepWiki in a Kubernetes environment using REST API
+ * This alternative approach uses port-forwarding to connect to the DeepWiki REST API
  */
 export class DeepWikiKubernetesService {
   private k8sApi: k8s.CoreV1Api;
@@ -23,13 +23,16 @@ export class DeepWikiKubernetesService {
   private podLabelSelector: string;
   private specificPodName: string | null = null;
   private logger: Logger;
+  private portForwardProcess: any = null;
+  private localPort: number;
 
   constructor(logger: Logger, config: DeepWikiConfig) {
     this.logger = logger;
     this.config = config;
-    this.namespace = config.namespace || 'codequal-dev'; // Default to codequal-dev namespace
-    this.podLabelSelector = config.podLabelSelector || 'app=deepwiki-fixed'; // Updated label selector
+    this.namespace = config.namespace || 'codequal-dev';
+    this.podLabelSelector = config.podLabelSelector || 'app=deepwiki-fixed';
     this.specificPodName = config.specificPodName || null;
+    this.localPort = config.localPort || 8000;
     
     // Initialize Kubernetes client
     const kc = new k8s.KubeConfig();
@@ -37,6 +40,22 @@ export class DeepWikiKubernetesService {
     this.k8sApi = kc.makeApiClient(k8s.CoreV1Api);
     
     this.logger.info(`DeepWikiKubernetesService initialized with namespace ${this.namespace}`);
+    
+    // Set up cleanup on exit
+    process.on('exit', () => {
+      this.cleanupPortForward();
+    });
+    
+    // Handle unexpected shutdowns
+    process.on('SIGINT', () => {
+      this.cleanupPortForward();
+      process.exit(0);
+    });
+    
+    process.on('SIGTERM', () => {
+      this.cleanupPortForward();
+      process.exit(0);
+    });
   }
 
   /**
@@ -65,9 +84,9 @@ export class DeepWikiKubernetesService {
       try {
         const response = await this.k8sApi.listNamespacedPod({
           namespace: this.namespace
-        });
+        }) as any;
 
-        const readyPods = response.items.filter(
+        const readyPods = response.body.items.filter(
           (pod: any) => pod.status?.phase === 'Running' && 
           pod.status.containerStatuses?.some((status: any) => status.ready)
         );
@@ -94,12 +113,11 @@ export class DeepWikiKubernetesService {
     } catch (error) {
       this.logger.error('Failed to get DeepWiki pod name', { error });
       
-      // Try to list all pods for debugging
+      // Try to find a pod with "deepwiki" in the name
       try {
         const { stdout } = await execAsync(`kubectl get pods -n ${this.namespace}`);
         this.logger.debug(`Available pods in namespace: ${stdout}`);
         
-        // If the selector failed, try to find a pod with "deepwiki" in the name
         if (stdout.includes('deepwiki')) {
           const { stdout: deepwikiPod } = await execAsync(
             `kubectl get pods -n ${this.namespace} | grep deepwiki | awk '{print $1}' | head -1`
@@ -119,29 +137,110 @@ export class DeepWikiKubernetesService {
   }
 
   /**
-   * Analyze a repository using DeepWiki CLI
+   * Setup port-forwarding to the DeepWiki pod
+   */
+  private async setupPortForward(): Promise<void> {
+    // Clean up any existing port-forward
+    this.cleanupPortForward();
+    
+    // Get DeepWiki pod name
+    const podName = await this.getDeepWikiPodName();
+    this.logger.info(`Setting up port-forward to pod ${podName} on port ${this.localPort}`);
+    
+    // Set up port-forwarding
+    this.portForwardProcess = exec(
+      `kubectl port-forward -n ${this.namespace} ${podName} ${this.localPort}:8000`,
+      { maxBuffer: 1024 * 1024 * 10 }
+    );
+    
+    // Log any errors
+    this.portForwardProcess.stderr.on('data', (data: string) => {
+      this.logger.warn(`Port-forward stderr: ${data}`);
+    });
+    
+    // Wait for port-forward to be ready
+    await new Promise<void>((resolve, reject) => {
+      let stdout = '';
+      let stderr = '';
+      
+      this.portForwardProcess.stdout.on('data', (data: string) => {
+        stdout += data.toString();
+        if (stdout.includes('Forwarding from')) {
+          resolve();
+        }
+      });
+      
+      this.portForwardProcess.stderr.on('data', (data: string) => {
+        stderr += data.toString();
+        if (stderr.includes('Forwarding from')) {
+          resolve();
+        }
+      });
+      
+      this.portForwardProcess.on('error', (error: Error) => {
+        reject(error);
+      });
+      
+      // Resolve after a timeout even if we don't see the expected output
+      setTimeout(resolve, 3000);
+    });
+    
+    // Give it a moment to stabilize
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  }
+  
+  /**
+   * Clean up port-forwarding
+   */
+  private cleanupPortForward(): void {
+    if (this.portForwardProcess) {
+      try {
+        this.portForwardProcess.kill();
+        this.logger.info('Port-forward process terminated');
+      } catch (error) {
+        this.logger.warn(`Error killing port-forward process: ${error}`);
+      }
+      this.portForwardProcess = null;
+    }
+  }
+
+  /**
+   * Analyze a repository using DeepWiki REST API
    */
   public async analyzeRepository(request: RepositoryAnalysisRequest): Promise<RepositoryAnalysisResult> {
     try {
-      // Get DeepWiki pod name
-      const podName = await this.getDeepWikiPodName();
-      this.logger.info(`Using DeepWiki pod: ${podName}`);
-
-      // Build the CLI command
-      const command = this.buildAnalysisCommand(request);
-      this.logger.info(`Executing command in pod: ${command}`);
-
-      // Execute the command in the pod
-      const { stdout, stderr } = await execAsync(
-        `kubectl exec -n ${this.namespace} ${podName} -- ${command}`
-      );
-
-      if (stderr) {
-        this.logger.warn(`Command produced stderr: ${stderr}`);
+      // Set up port-forwarding
+      await this.setupPortForward();
+      
+      // Prepare request body
+      const requestBody = {
+        repositoryUrl: request.repositoryUrl,
+        repositoryName: request.repositoryName,
+        branch: request.branch || 'main',
+        depth: this.getTierDepth(request.tier),
+        includeFiles: request.includeFiles || [],
+        excludePatterns: request.excludePatterns || [],
+        customPrompts: request.customPrompts || {},
+        model: request.model || this.config.defaultModel || 'gpt-4'
+      };
+      
+      this.logger.info(`Sending repository analysis request: ${JSON.stringify(requestBody)}`);
+      
+      // Send request to DeepWiki API
+      const response = await fetch(`http://localhost:${this.localPort}/api/analyze`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}: ${await response.text()}`);
       }
-
-      // Parse the results
-      const results = this.parseAnalysisOutput(stdout);
+      
+      // Parse the response
+      const results = await response.json();
       
       // Calculate scores from the analysis results
       const scores = this.calculateScores(results);
@@ -159,73 +258,25 @@ export class DeepWikiKubernetesService {
         repository: request.repositoryUrl 
       });
       throw new Error(`Repository analysis failed: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      // Clean up port-forwarding
+      this.cleanupPortForward();
     }
   }
   
   /**
-   * Build the CLI command for repository analysis
+   * Map analysis tier to depth level
    */
-  private buildAnalysisCommand(request: RepositoryAnalysisRequest): string {
-    // This should be updated based on the actual DeepWiki CLI interface
-    let command = 'deepwiki analyze';
-    
-    // Add repository URL
-    command += ` '${request.repositoryUrl}'`;
-    
-    // Add branch if specified
-    if (request.branch) {
-      command += ` --branch '${request.branch}'`;
-    }
-    
-    // Add analysis depth based on tier
-    switch (request.tier) {
+  private getTierDepth(tier: AnalysisTier): string {
+    switch (tier) {
       case 'quick':
-        command += ' --depth shallow';
-        break;
+        return 'shallow';
       case 'comprehensive':
-        command += ' --depth deep';
-        break;
+        return 'deep';
       case 'targeted':
-        command += ' --depth focused';
-        break;
+        return 'focused';
       default:
-        command += ' --depth standard';
-    }
-    
-    // Add model if specified
-    if (request.model) {
-      command += ` --model '${request.model}'`;
-    } else if (this.config.defaultModel) {
-      command += ` --model '${this.config.defaultModel}'`;
-    }
-    
-    // Add include files if specified
-    if (request.includeFiles && request.includeFiles.length > 0) {
-      command += ` --include '${request.includeFiles.join(',')}'`;
-    }
-    
-    // Add exclude patterns if specified
-    if (request.excludePatterns && request.excludePatterns.length > 0) {
-      command += ` --exclude '${request.excludePatterns.join(',')}'`;
-    }
-    
-    // Add output format
-    command += ' --format json';
-    
-    return command;
-  }
-  
-  /**
-   * Parse the output from the DeepWiki CLI
-   */
-  private parseAnalysisOutput(output: string): any {
-    try {
-      return JSON.parse(output);
-    } catch (error) {
-      this.logger.error('Failed to parse analysis output', { error, output });
-      
-      // If it's not valid JSON, return the raw output
-      return { rawOutput: output };
+        return 'standard';
     }
   }
   
@@ -282,7 +333,7 @@ export class DeepWikiKubernetesService {
       };
       
       scores.overall = Object.keys(weights).reduce((sum, category) => {
-        return sum + scores.categories[category as keyof typeof scores.categories] * weights[category as keyof typeof weights];
+        return sum + (scores.categories as any)[category] * (weights as any)[category];
       }, 0);
       
       return scores;
@@ -348,48 +399,23 @@ export class DeepWikiKubernetesService {
   }
   
   /**
-   * Execute a command inside a DeepWiki pod
-   * Useful for debug and maintenance operations
-   */
-  public async executeCommand(command: string): Promise<string> {
-    try {
-      // Get DeepWiki pod name
-      const podName = await this.getDeepWikiPodName();
-      this.logger.info(`Executing command in pod ${podName}: ${command}`);
-      
-      // Execute command in pod
-      const { stdout, stderr } = await execAsync(
-        `kubectl exec -n ${this.namespace} ${podName} -- ${command}`
-      );
-      
-      if (stderr) {
-        this.logger.warn(`Command produced stderr: ${stderr}`);
-      }
-      
-      return stdout;
-    } catch (error) {
-      this.logger.error('Failed to execute command in pod', { error });
-      throw new Error(`Failed to execute command: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-  
-  /**
    * Health check for DeepWiki service
    */
   public async healthCheck(): Promise<boolean> {
     try {
-      // Get DeepWiki pod name
-      const podName = await this.getDeepWikiPodName();
+      // Set up port-forwarding
+      await this.setupPortForward();
       
-      // Check if pod is responsive
-      await execAsync(
-        `kubectl exec -n ${this.namespace} ${podName} -- echo "Health check"`
-      );
+      // Check if API is responsive
+      const response = await fetch(`http://localhost:${this.localPort}/api/health`);
       
-      return true;
+      return response.ok;
     } catch (error) {
       this.logger.error('DeepWiki health check failed', { error });
       return false;
+    } finally {
+      // Clean up port-forwarding
+      this.cleanupPortForward();
     }
   }
   
@@ -403,26 +429,29 @@ export class DeepWikiKubernetesService {
         `kubectl get pods -n ${this.namespace} -l ${this.podLabelSelector} -o jsonpath='{range .items[*]}{.metadata.name}{": "}{.status.phase}{", "}{.status.podIP}{"\n"}{end}'`
       );
       
-      // Get DeepWiki version (if available)
+      // Set up port-forwarding
+      await this.setupPortForward();
+      
+      // Get DeepWiki version
       let version = 'unknown';
       try {
-        const podName = await this.getDeepWikiPodName();
-        const { stdout: versionOutput } = await execAsync(
-          `kubectl exec -n ${this.namespace} ${podName} -- deepwiki --version 2>/dev/null || echo "Version not available"`
-        );
-        version = versionOutput.trim();
+        const response = await fetch(`http://localhost:${this.localPort}/api/version`);
+        if (response.ok) {
+          const versionData = await response.json();
+          version = versionData.version || 'unknown';
+        }
       } catch (e) {
         // Ignore errors
       }
       
-      // Get available commands
-      let commands: string[] = [];
+      // Get available APIs
+      let apis = [];
       try {
-        const podName = await this.getDeepWikiPodName();
-        const { stdout: helpOutput } = await execAsync(
-          `kubectl exec -n ${this.namespace} ${podName} -- deepwiki help 2>/dev/null || echo "Help not available"`
-        );
-        commands = helpOutput.split('\n').filter((line: string) => line.trim().length > 0);
+        const response = await fetch(`http://localhost:${this.localPort}/api`);
+        if (response.ok) {
+          const apiData = await response.json();
+          apis = apiData.endpoints || [];
+        }
       } catch (e) {
         // Ignore errors
       }
@@ -435,11 +464,14 @@ export class DeepWikiKubernetesService {
         version,
         namespace: this.namespace,
         selector: this.podLabelSelector,
-        commands
+        apis
       };
     } catch (error) {
       this.logger.error('Failed to get deployment info', { error });
       throw new Error(`Failed to get deployment info: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      // Clean up port-forwarding
+      this.cleanupPortForward();
     }
   }
 }

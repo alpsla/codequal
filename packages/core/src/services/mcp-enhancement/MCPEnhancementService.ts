@@ -1,5 +1,10 @@
 import { ModelConfig, GeneratedConfiguration } from '../model-selection/ModelConfigurationMatrix';
-import { InfrastructureAgentConfig } from '../model-selection/InfrastructureAgents';
+
+interface InfrastructureAgentConfig {
+  agentType: string;
+  primaryModel: ModelConfig;
+  mcpTools?: MCPToolConfig;
+}
 
 export interface MCPToolConfig {
   webSearch?: boolean;

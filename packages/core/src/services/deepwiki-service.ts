@@ -83,7 +83,7 @@ export class DeepWikiService {
     try {
       await execAsync(`chmod +x "${this.scriptPath}"`);
     } catch (error) {
-      console.error(`Error making script executable: ${error.message}`);
+      console.error(`Error making script executable: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
   
@@ -110,10 +110,10 @@ export class DeepWikiService {
       await mkdirAsync(outputDir, { recursive: true });
     } catch (error) {
       // Ignore error if directory already exists
-      if (error.code !== 'EEXIST') {
+      if (error && typeof error === 'object' && 'code' in error && error.code !== 'EEXIST') {
         return {
           success: false,
-          error: `Failed to create output directory: ${error.message}`
+          error: `Failed to create output directory: ${error instanceof Error ? error.message : String(error)}`
         };
       }
     }
@@ -150,7 +150,7 @@ export class DeepWikiService {
         modelUsed: result.model_used || primaryModel
       };
     } catch (error) {
-      console.error(`Error analyzing repository: ${error.message}`);
+      console.error(`Error analyzing repository: ${error instanceof Error ? error.message : String(error)}`);
       
       // Check if error output was created
       try {
@@ -168,7 +168,7 @@ export class DeepWikiService {
       
       return {
         success: false,
-        error: error.message || 'Unknown error occurred'
+        error: error instanceof Error ? error.message : 'Unknown error occurred'
       };
     }
   }
@@ -194,7 +194,7 @@ export class DeepWikiService {
       // Check if validation passed
       return stdout.includes('All validation checks passed');
     } catch (error) {
-      console.error(`Validation failed: ${error.message}`);
+      console.error(`Validation failed: ${error instanceof Error ? error.message : String(error)}`);
       return false;
     }
   }
