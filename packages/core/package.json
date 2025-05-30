@@ -34,7 +34,7 @@
     "build": "tsc --skipLibCheck",
     "dev": "tsc -w",
     "lint": "eslint src",
-    "test": "jest --passWithNoTests"
+    "test": "jest --passWithNoTests --testPathIgnorePatterns=test/"
   },
   "dependencies": {
     "@kubernetes/client-node": "^1.2.0",
