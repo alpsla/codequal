@@ -1,5 +1,5 @@
 import { AgentProvider, AgentRole } from '@codequal/core/config/agent-registry';
-import { AnalysisResult } from '@codequal/core';
+import { AnalysisResult, Insight, Suggestion, EducationalContent } from '@codequal/core';
 import { AgentFactory } from './agent-factory';
 import { Agent } from '@codequal/core/types/agent';
 import { createLogger, LoggableData } from '@codequal/core/utils';
@@ -161,7 +161,7 @@ export abstract class MultiAgent implements Agent {
    * @param data Data to analyze
    * @returns Analysis result
    */
-  abstract analyze(data: unknown): Promise<AnalysisResult>;
+  abstract analyze(data: Record<string, unknown>): Promise<AnalysisResult>;
   
   /**
    * Log an informational message
@@ -169,7 +169,7 @@ export abstract class MultiAgent implements Agent {
    * @param data Additional data
    */
   log(message: string, data?: unknown): void {
-    this.logger.info(message, data instanceof Error ? data : (typeof data === 'object' ? data : { value: data }));
+    this.logger.info(message, data instanceof Error ? data : (typeof data === 'object' && data !== null ? data as LoggableData : { value: data }));
   }
   
   /**
@@ -193,19 +193,19 @@ export class ParallelMultiAgent extends MultiAgent {
    * @param data Data to analyze
    * @returns Combined analysis result
    */
-  async analyze(data: unknown): Promise<AnalysisResult> {
+  async analyze(data: Record<string, unknown>): Promise<AnalysisResult> {
     try {
       // Start all analysis tasks in parallel
       const allAgents = [this.primaryAgent, ...this.secondaryAgents];
       const results = await Promise.all(
-        allAgents.map(agent => agent.analyze(data).catch(error => {
+        allAgents.map((agent: Agent) => agent.analyze(data).catch((error: unknown) => {
           this.error(`Error in agent analysis:`, error);
           return null; // Return null for failed agents
         }))
       );
       
       // Filter out null results
-      const validResults = results.filter(result => result !== null) as AnalysisResult[];
+      const validResults = results.filter((result): result is AnalysisResult => result !== null);
       
       // Combine results
       return this.combineResults(validResults);
@@ -245,15 +245,15 @@ export class ParallelMultiAgent extends MultiAgent {
     const uniqueEducational = new Set<string>();
     
     // Add existing items to sets
-    results[0].insights?.forEach(item => 
+    results[0].insights?.forEach((item: Insight) => 
       uniqueInsights.add(JSON.stringify(item))
     );
     
-    results[0].suggestions?.forEach(item => 
+    results[0].suggestions?.forEach((item: Suggestion) => 
       uniqueSuggestions.add(JSON.stringify(item))
     );
     
-    results[0].educational?.forEach(item => 
+    results[0].educational?.forEach((item: EducationalContent) => 
       uniqueEducational.add(JSON.stringify(item))
     );
     
@@ -262,7 +262,7 @@ export class ParallelMultiAgent extends MultiAgent {
       const result = results[i];
       
       // Add unique insights
-      result.insights?.forEach(item => {
+      result.insights?.forEach((item: Insight) => {
         const key = JSON.stringify(item);
         if (!uniqueInsights.has(key)) {
           uniqueInsights.add(key);
@@ -272,7 +272,7 @@ export class ParallelMultiAgent extends MultiAgent {
       });
       
       // Add unique suggestions
-      result.suggestions?.forEach(item => {
+      result.suggestions?.forEach((item: Suggestion) => {
         const key = JSON.stringify(item);
         if (!uniqueSuggestions.has(key)) {
           uniqueSuggestions.add(key);
@@ -282,7 +282,7 @@ export class ParallelMultiAgent extends MultiAgent {
       });
       
       // Add unique educational content
-      result.educational?.forEach(item => {
+      result.educational?.forEach((item: EducationalContent) => {
         const key = JSON.stringify(item);
         if (!uniqueEducational.has(key)) {
           uniqueEducational.add(key);
@@ -294,7 +294,7 @@ export class ParallelMultiAgent extends MultiAgent {
     
     // Sort insights by severity (high -> medium -> low)
     if (combined.insights) {
-      combined.insights.sort((a, b) => {
+      combined.insights.sort((a: Insight, b: Insight) => {
         const severityOrder: Record<string, number> = {
           high: 0,
           medium: 1,
@@ -332,7 +332,7 @@ export class SequentialMultiAgent extends MultiAgent {
    * @param data Data to analyze
    * @returns Enhanced analysis result
    */
-  async analyze(data: unknown): Promise<AnalysisResult> {
+  async analyze(data: Record<string, unknown>): Promise<AnalysisResult> {
     try {
       // Start with primary agent
       let result = await this.primaryAgent.analyze(data);
@@ -393,20 +393,20 @@ export class SequentialMultiAgent extends MultiAgent {
     const existingEducational = new Set<string>();
     
     // Add existing items to sets
-    primary.insights?.forEach(item => 
+    primary.insights?.forEach((item: Insight) => 
       existingInsights.add(JSON.stringify(item))
     );
     
-    primary.suggestions?.forEach(item => 
+    primary.suggestions?.forEach((item: Suggestion) => 
       existingSuggestions.add(JSON.stringify(item))
     );
     
-    primary.educational?.forEach(item => 
+    primary.educational?.forEach((item: EducationalContent) => 
       existingEducational.add(JSON.stringify(item))
     );
     
     // Add new insights
-    enhanced.insights?.forEach(item => {
+    enhanced.insights?.forEach((item: Insight) => {
       const key = JSON.stringify(item);
       if (!existingInsights.has(key)) {
         merged.insights = merged.insights || [];
@@ -415,7 +415,7 @@ export class SequentialMultiAgent extends MultiAgent {
     });
     
     // Add new suggestions
-    enhanced.suggestions?.forEach(item => {
+    enhanced.suggestions?.forEach((item: Suggestion) => {
       const key = JSON.stringify(item);
       if (!existingSuggestions.has(key)) {
         merged.suggestions = merged.suggestions || [];
@@ -424,7 +424,7 @@ export class SequentialMultiAgent extends MultiAgent {
     });
     
     // Add new educational content
-    enhanced.educational?.forEach(item => {
+    enhanced.educational?.forEach((item: EducationalContent) => {
       const key = JSON.stringify(item);
       if (!existingEducational.has(key)) {
         merged.educational = merged.educational || [];
@@ -447,7 +447,7 @@ export class SpecializedMultiAgent extends MultiAgent {
    * @param data Data to analyze
    * @returns Combined analysis result with domain-specific insights
    */
-  async analyze(data: unknown): Promise<AnalysisResult> {
+  async analyze(data: Record<string, unknown>): Promise<AnalysisResult> {
     try {
       // Run primary agent first with specialized context
       const prData = data as { files?: Array<{ filename: string; content?: string }> };
@@ -468,7 +468,7 @@ export class SpecializedMultiAgent extends MultiAgent {
       
       // If primary analysis failed, return empty result or fall back to first secondary agent
       if (!primaryResult) {
-        return this.secondaryAgents[0]?.analyze(data) || {
+        return this.secondaryAgents[0]?.analyze(data as Record<string, unknown>) || {
           insights: [],
           suggestions: [],
           educational: [],
@@ -491,8 +491,8 @@ export class SpecializedMultiAgent extends MultiAgent {
       
       // Run secondary agents with enriched context
       const secondaryResults = await Promise.all(
-        this.secondaryAgents.map(agent => 
-          agent.analyze(secondaryData).catch(error => {
+        this.secondaryAgents.map((agent: Agent) => 
+          agent.analyze(secondaryData).catch((error: unknown) => {
             this.error(`Error in secondary ${this.config.role} analysis`, error as LoggableData);
             return null;
           })
@@ -500,9 +500,9 @@ export class SpecializedMultiAgent extends MultiAgent {
       );
       
       // Filter out null results
-      const validSecondaryResults = secondaryResults.filter(result => 
+      const validSecondaryResults = secondaryResults.filter((result): result is AnalysisResult => 
         result !== null
-      ) as AnalysisResult[];
+      );
       
       // Combine all agent results
       const allResults = [primaryResult, ...validSecondaryResults];
@@ -566,15 +566,15 @@ export class SpecializedMultiAgent extends MultiAgent {
     const uniqueEducational = new Set<string>();
     
     // Add primary items to sets
-    results[0].insights?.forEach(item => 
+    results[0].insights?.forEach((item: Insight) => 
       uniqueInsights.add(JSON.stringify(item))
     );
     
-    results[0].suggestions?.forEach(item => 
+    results[0].suggestions?.forEach((item: Suggestion) => 
       uniqueSuggestions.add(JSON.stringify(item))
     );
     
-    results[0].educational?.forEach(item => 
+    results[0].educational?.forEach((item: EducationalContent) => 
       uniqueEducational.add(JSON.stringify(item))
     );
     
@@ -583,7 +583,7 @@ export class SpecializedMultiAgent extends MultiAgent {
       const result = results[i];
       
       // Add unique insights
-      result.insights?.forEach(item => {
+      result.insights?.forEach((item: Insight) => {
         const key = JSON.stringify(item);
         if (!uniqueInsights.has(key)) {
           uniqueInsights.add(key);
@@ -593,7 +593,7 @@ export class SpecializedMultiAgent extends MultiAgent {
       });
       
       // Add unique suggestions
-      result.suggestions?.forEach(item => {
+      result.suggestions?.forEach((item: Suggestion) => {
         const key = JSON.stringify(item);
         if (!uniqueSuggestions.has(key)) {
           uniqueSuggestions.add(key);
@@ -603,7 +603,7 @@ export class SpecializedMultiAgent extends MultiAgent {
       });
       
       // Add unique educational content
-      result.educational?.forEach(item => {
+      result.educational?.forEach((item: EducationalContent) => {
         const key = JSON.stringify(item);
         if (!uniqueEducational.has(key)) {
           uniqueEducational.add(key);
@@ -615,7 +615,7 @@ export class SpecializedMultiAgent extends MultiAgent {
     
     // Sort insights by severity (high -> medium -> low)
     if (combined.insights) {
-      combined.insights.sort((a, b) => {
+      combined.insights.sort((a: Insight, b: Insight) => {
         const severityOrder: Record<string, number> = {
           high: 0,
           medium: 1,

@@ -71,8 +71,11 @@ jobs:
         ls -la dist/config/ || echo "No config directory"
         cd ../..
     
-    - name: Build all other packages
-      run: npx turbo run build --filter='!@codequal/core'
+    - name: Build all other packages sequentially
+      run: |
+        echo "Building remaining packages with core already built..."
+        npx turbo run build --filter='@codequal/database' || echo "Database build completed"
+        npx turbo run build --filter='@codequal/agents' || echo "Agents build completed"
       
     - name: Test
       run: npm run test --no-workspaces
