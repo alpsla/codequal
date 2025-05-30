@@ -1,14 +1,11 @@
-// Import database client - in production this would be injected
-// For now we'll use a placeholder interface
-export interface SupabaseClient {
-  rpc(functionName: string, params: any): Promise<{ data: any; error: any }>;
-  from(table: string): any;
-}
+import { SupabaseClient as SupabaseJSClient } from '@supabase/supabase-js';
 
-// This would be injected in real usage
-const getSupabase = (): SupabaseClient => {
-  throw new Error('Supabase client not configured. Please inject a configured client.');
-};
+// Compatible interface for our RAG services
+interface SupabaseClient {
+  from(table: string): any;
+  rpc(functionName: string, params: any): Promise<{ data: any; error: any }>;
+}
+import { getSupabaseClient } from '../supabase/supabase-client.factory';
 import { createLogger } from '../../utils/logger';
 import { 
   QueryAnalyzer, 
@@ -103,10 +100,10 @@ export class SelectiveRAGService {
   
   constructor(
     private embeddingService: EmbeddingService,
-    supabaseClient?: SupabaseClient
+    supabaseClient?: SupabaseJSClient
   ) {
     this.queryAnalyzer = new QueryAnalyzer();
-    this.supabase = supabaseClient || getSupabase();
+    this.supabase = (supabaseClient || getSupabaseClient()) as any;
   }
   
   /**

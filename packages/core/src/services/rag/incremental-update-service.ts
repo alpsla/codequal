@@ -1,13 +1,5 @@
-// Mock Supabase client interface
-interface SupabaseClient {
-  from(table: string): any;
-  rpc(functionName: string, params: any): Promise<{ data: any; error: any }>;
-}
-
-// Mock for now - in production this would be injected
-const getSupabase = (): SupabaseClient => {
-  throw new Error('Supabase client not configured. Please inject a configured client.');
-};
+import { SupabaseClient } from '@supabase/supabase-js';
+import { getSupabaseClient } from '../supabase/supabase-client.factory';
 import { createLogger } from '../../utils/logger';
 
 /**
@@ -154,7 +146,7 @@ export interface ContentAnalysisService {
  */
 export class IncrementalUpdateService {
   private logger = createLogger('IncrementalUpdateService');
-  private supabase = getSupabase();
+  private supabase = getSupabaseClient();
   
   constructor(
     private embeddingService: EmbeddingService,

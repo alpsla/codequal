@@ -13,7 +13,16 @@
     "clean-build": "bash scripts/clean-build.sh",
     "lint": "npx turbo run lint",
     "test": "npx turbo run test",
-    "setup:supabase": "bash scripts/setup-supabase.sh"
+    "setup:supabase": "bash scripts/setup-supabase.sh",
+    "deploy:rag": "bash scripts/deploy-rag-production.sh",
+    "validate": "bash scripts/validate-ci-local.sh",
+    "validate:strict": "bash scripts/validate-ci-local.sh --max-warnings 0",
+    "validate:fast": "bash scripts/validate-ci-local.sh --skip-tests",
+    "validate:package": "bash scripts/validate-ci-local.sh --package",
+    "setup:hooks": "bash scripts/setup-git-hooks.sh",
+    "setup:ci": "bash scripts/setup-local-ci.sh",
+    "pre-commit": "bash scripts/validate-ci-local.sh --max-warnings 5",
+    "pre-push": "bash scripts/validate-ci-local.sh --max-warnings 0"
   },
   "repository": {
     "type": "git",
