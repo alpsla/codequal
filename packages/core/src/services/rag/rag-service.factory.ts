@@ -28,7 +28,7 @@ export function getRAGService(): SelectiveRAGService {
       logger.info('RAG service initialized successfully');
     } catch (error) {
       logger.error('Failed to initialize RAG service', { error });
-      const message = error instanceof Error ? error.message : 'Unknown error';
+      const message = error instanceof Error ? error.message : String(error);
       throw new Error(`RAG service initialization failed: ${message}`);
     }
   }

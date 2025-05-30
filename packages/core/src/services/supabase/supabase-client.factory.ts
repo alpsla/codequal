@@ -43,7 +43,7 @@ export function getSupabaseClient(): SupabaseClient {
 export function createSupabaseClient(options?: {
   supabaseUrl?: string;
   supabaseKey?: string;
-  schema?: string;
+  schema?: 'public';
 }): SupabaseClient {
   const url = options?.supabaseUrl || process.env.SUPABASE_URL;
   const key = options?.supabaseKey || process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -58,7 +58,7 @@ export function createSupabaseClient(options?: {
       autoRefreshToken: false,
     },
     db: {
-      schema: (options?.schema || 'public') as 'public',
+      schema: options?.schema || 'public',
     },
   });
 }

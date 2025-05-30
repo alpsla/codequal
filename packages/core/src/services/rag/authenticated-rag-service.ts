@@ -5,7 +5,7 @@
  * Provides secure, user-aware retrieval-augmented generation capabilities.
  */
 
-import { SupabaseClient, User } from '@supabase/supabase-js';
+import { SupabaseClient as SupabaseJSClient, User } from '@supabase/supabase-js';
 import { SelectiveRAGService, RAGSearchResult, EducationalContentResult, SearchOptions } from './selective-rag-service';
 import { QueryAnalyzer, AnalyzedQuery, UserContext, RepositoryContext, DifficultyLevel } from './query-analyzer';
 import { getSupabaseClient } from '../supabase/supabase-client.factory';
@@ -64,12 +64,12 @@ export interface EmbeddingService {
 export class AuthenticatedRAGService {
   private ragService: SelectiveRAGService;
   private queryAnalyzer: QueryAnalyzer;
-  private supabase: SupabaseClient;
+  private supabase: SupabaseJSClient;
   private logger = createLogger('AuthenticatedRAGService');
 
   constructor(
     embeddingService: EmbeddingService,
-    supabaseClient?: SupabaseClient
+    supabaseClient?: SupabaseJSClient
   ) {
     this.supabase = supabaseClient || getSupabaseClient();
     this.ragService = new SelectiveRAGService(embeddingService, this.supabase);
@@ -104,7 +104,8 @@ export class AuthenticatedRAGService {
       // Step 2: Get repository context with access verification
       let repositoryContext: RepositoryContext | undefined;
       if (repositoryId) {
-        repositoryContext = await this.getRepositoryContextWithAuth(repositoryId, user) || undefined;
+        const repoContext = await this.getRepositoryContextWithAuth(repositoryId, user);
+        repositoryContext = repoContext || undefined;
         if (!repositoryContext && options.respect_repository_access !== false) {
           throw new Error('User does not have access to the specified repository');
         }
@@ -218,7 +219,7 @@ export class AuthenticatedRAGService {
       const preferences = user.user_metadata || {};
 
       return {
-        skillLevel: this.determineOverallSkillLevel(userSkills || []) as DifficultyLevel,
+        skillLevel: this.determineOverallSkillLevel(userSkills || []) as DifficultyLevel | undefined,
         preferredLanguages: preferences.preferred_languages || [],
         recentRepositories: [], // TODO: Fetch from user data
         searchHistory: [] // TODO: Fetch from user data
@@ -229,7 +230,7 @@ export class AuthenticatedRAGService {
       
       // Return default context on error
       return {
-        skillLevel: DifficultyLevel.INTERMEDIATE,
+        skillLevel: DifficultyLevel.INTERMEDIATE as DifficultyLevel | undefined,
         preferredLanguages: [],
         recentRepositories: [],
         searchHistory: []
@@ -525,7 +526,7 @@ export class AuthenticatedRAGService {
 // Helper function to create authenticated RAG service
 export function createAuthenticatedRAGService(
   embeddingService: EmbeddingService,
-  supabaseClient?: SupabaseClient
+  supabaseClient?: SupabaseJSClient
 ): AuthenticatedRAGService {
   return new AuthenticatedRAGService(embeddingService, supabaseClient);
 }
