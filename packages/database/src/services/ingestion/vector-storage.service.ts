@@ -1,6 +1,29 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { getVectorConfig } from '@codequal/core/config/vector-database.config';
 import { EnhancedChunk } from './types';
+
+// Vector database configuration
+interface VectorConfig {
+  supabaseUrl: string;
+  supabaseKey: string;
+  embeddingDimensions: number;
+  batchSize: number;
+  storage: {
+    batchSize: number;
+  };
+}
+
+// Mock config - in production this would be injected
+const getVectorConfig = (): VectorConfig => {
+  return {
+    supabaseUrl: process.env.SUPABASE_URL || '',
+    supabaseKey: process.env.SUPABASE_ANON_KEY || '',
+    embeddingDimensions: 1536,
+    batchSize: 100,
+    storage: {
+      batchSize: 100
+    }
+  };
+};
 
 interface VectorRecord {
   id: string;
