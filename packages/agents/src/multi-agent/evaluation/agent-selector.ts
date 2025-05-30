@@ -264,13 +264,16 @@ export class AgentSelector {
     prContext: PRContext,
     preferences?: UserPreferences
   ): Record<AgentProvider, number> {
-    const scores: Record<AgentProvider, number> = Object.values(AgentProvider).reduce((acc, provider) => {
-      acc[provider] = 0;
-      return acc;
-    }, {} as Record<AgentProvider, number>);
+    const scores: Record<AgentProvider, number> = Object.values(AgentProvider).reduce(
+      (acc: Record<AgentProvider, number>, provider: AgentProvider) => {
+        acc[provider] = 0;
+        return acc;
+      },
+      {} as Record<AgentProvider, number>
+    );
     
     // Iterate through each agent provider
-    for (const provider of Object.values(AgentProvider)) {
+    for (const provider of Object.values(AgentProvider) as AgentProvider[]) {
       const evaluation = this.evaluationData[provider];
       if (!evaluation || !evaluation.rolePerformance) {
         continue;
