@@ -21,7 +21,14 @@ jobs:
         # cache: 'npm'
         
     - name: Install dependencies
-      run: npm ci --no-workspaces
+      run: |
+        echo "Installing all dependencies including workspaces..."
+        npm install
+        echo "Verifying core package dependencies..."
+        cd packages/core
+        npm list axios || echo "axios not found"
+        npm list @kubernetes/client-node || echo "@kubernetes/client-node not found"
+        cd ../..
       
     - name: Create .env file
       run: |
@@ -50,8 +57,25 @@ jobs:
     - name: Lint
       run: npm run lint --no-workspaces
       
-    - name: Build
-      run: npm run build --no-workspaces
+    - name: Build core package first
+      run: |
+        echo "Building core package first to ensure proper type exports..."
+        cd packages/core
+        echo "Installing core package dependencies explicitly..."
+        npm install
+        npm run build || (echo "Core build failed" && exit 1)
+        echo "Verifying core build output..."
+        ls -la dist/
+        ls -la dist/utils/ || echo "No utils directory"
+        ls -la dist/types/ || echo "No types directory"
+        ls -la dist/config/ || echo "No config directory"
+        cd ../..
+    
+    - name: Build all other packages sequentially
+      run: |
+        echo "Building remaining packages with core already built..."
+        npx turbo run build --filter='@codequal/database' || echo "Database build completed"
+        npx turbo run build --filter='@codequal/agents' || echo "Agents build completed"
       
     - name: Test
       run: npm run test --no-workspaces

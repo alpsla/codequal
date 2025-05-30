@@ -1,5 +1,4 @@
 import axios from 'axios';
-import type { AxiosResponse, AxiosError } from 'axios';
 import { Logger } from '../utils/logger';
 import { RepositoryContext } from './DeepWikiClient';
 
@@ -219,12 +218,12 @@ export class RepositorySizeDetector {
       
       // Convert byte counts to percentages
       const languages = response.data;
-      const totalBytes = Object.values(languages).reduce((sum, bytes) => sum + bytes, 0);
+      const totalBytes = Object.values(languages).reduce((sum: number, bytes: number) => sum + bytes, 0);
       
       const languagePercentages: Record<string, number> = {};
       
       for (const [language, bytes] of Object.entries(languages)) {
-        languagePercentages[language] = Number(((bytes / totalBytes) * 100).toFixed(2));
+        languagePercentages[language] = Number(((bytes as number / totalBytes) * 100).toFixed(2));
       }
       
       return languagePercentages;

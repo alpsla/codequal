@@ -144,7 +144,7 @@ export class MultiAgentExecutor {
     };
     
     if (this.options.debug) {
-      this.logger.info('Initialized with configuration:', this.config);
+      this.logger.info('Initialized with configuration:', this.config as unknown as LoggableData);
     }
   }
   
@@ -437,7 +437,7 @@ export class MultiAgentExecutor {
         this.logger.info('Executing repository provider agent');
       }
       
-      const result = await repoProviderAgent.analyze(this.repositoryData);
+      const result = await repoProviderAgent.analyze(this.repositoryData as unknown as Record<string, unknown>);
       const endTime = Date.now();
       
       // Store result

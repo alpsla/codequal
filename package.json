@@ -7,12 +7,12 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "turbo run dev",
+    "dev": "npx turbo run dev",
     "build": "bash scripts/build-packages.sh",
-    "build:database": "bash scripts/build-database.sh",
+    "build:database": "bash scripts/build-database.sh", 
     "clean-build": "bash scripts/clean-build.sh",
-    "lint": "turbo run lint",
-    "test": "turbo run test",
+    "lint": "npx turbo run lint",
+    "test": "npx turbo run test",
     "setup:supabase": "bash scripts/setup-supabase.sh"
   },
   "repository": {
@@ -34,7 +34,7 @@
     "eslint-config-prettier": "^8.8.0",
     "prettier": "^2.8.4",
     "ts-jest": "^29.3.2",
-    "turbo": "^1.10.0",
+    "turbo": "^2.0.0",
     "typescript": "^5.0.0"
   },
   "homepage": "https://github.com/alpsla/codequal#readme",
@@ -42,5 +42,6 @@
     "@modelcontextprotocol/sdk": "^1.10.2",
     "@supabase/supabase-js": "^2.49.4",
     "yaml": "^2.3.1"
-  }
+  },
+  "packageManager": "npm@10.8.2"
 }
