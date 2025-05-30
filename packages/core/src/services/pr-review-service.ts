@@ -56,9 +56,9 @@ interface RepositoryModelInterface {
 // Import implementations (to be injected in a production environment)
 // In a real application, you would use dependency injection
 /* eslint-disable @typescript-eslint/no-var-requires */
-const AgentFactory: AgentFactoryInterface = require('../../../agents/src/factory/agent-factory').AgentFactory;
-const PRReviewModel: PRReviewModelInterface = require('../../../database/src/models/pr-review').PRReviewModel;
-const RepositoryModel: RepositoryModelInterface = require('../../../database/src/models/repository').RepositoryModel;
+const AgentFactory: AgentFactoryInterface = require('../../../agents/dist/factory/agent-factory').AgentFactory;
+const PRReviewModel: PRReviewModelInterface = require('../../../database/dist/models/pr-review').PRReviewModel;
+const RepositoryModel: RepositoryModelInterface = require('../../../database/dist/models/repository').RepositoryModel;
 /* eslint-enable @typescript-eslint/no-var-requires */
 
 /**
