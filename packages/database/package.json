@@ -13,7 +13,7 @@
     "build": "tsc --skipLibCheck && node scripts/post-build.js",
     "dev": "tsc -w",
     "lint": "eslint src",
-    "test": "jest --passWithNoTests"
+    "test": "jest --passWithNoTests --testPathIgnorePatterns=dist/"
   },
   "dependencies": {
     "@codequal/core": "0.1.0",
