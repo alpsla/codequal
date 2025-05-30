@@ -23,7 +23,7 @@ jobs:
     - name: Install dependencies
       run: |
         echo "Installing all dependencies including workspaces..."
-        npm ci
+        npm install
         echo "Verifying core package dependencies..."
         cd packages/core
         npm list axios || echo "axios not found"
