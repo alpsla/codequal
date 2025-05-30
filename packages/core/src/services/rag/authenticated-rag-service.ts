@@ -7,9 +7,9 @@
 
 import { SupabaseClient, User } from '@supabase/supabase-js';
 import { SelectiveRAGService, RAGSearchResult, EducationalContentResult, SearchOptions } from './selective-rag-service';
-import { QueryAnalyzer, AnalyzedQuery, UserContext, RepositoryContext } from './query-analyzer';
-import { getSupabase } from '@codequal/database/supabase/client';
-import { createLogger } from '@codequal/core/utils';
+import { QueryAnalyzer, AnalyzedQuery, UserContext, RepositoryContext, DifficultyLevel } from './query-analyzer';
+import { getSupabase } from '../../../database/src/supabase/client';
+import { createLogger } from '../../utils/logger';
 
 // Types for authenticated RAG operations
 export interface AuthenticatedUser {
@@ -130,7 +130,7 @@ export class AuthenticatedRAGService {
       };
 
       // Step 5: Perform RAG search
-      const { results, educational } = await this.ragService.search(
+      const searchResponse = await this.ragService.search(
         analyzedQuery,
         repositoryContext,
         enhancedOptions
@@ -138,7 +138,7 @@ export class AuthenticatedRAGService {
 
       // Step 6: Filter results based on user access permissions
       const authenticatedResults = await this.filterResultsByAccess(
-        results,
+        searchResponse.documentResults,
         user,
         options.respect_repository_access !== false
       );
@@ -154,20 +154,21 @@ export class AuthenticatedRAGService {
         query,
         analyzedQuery,
         user,
+        userContext,
         repositoryId,
         adaptedResults.length,
-        results.length,
+        searchResponse.documentResults.length,
         searchDuration,
         options.log_search_analytics !== false
       );
 
       return {
         results: adaptedResults,
-        educational,
+        educational: searchResponse.educationalResults,
         userContext,
         analytics: {
           query_id: queryId,
-          total_results: results.length,
+          total_results: searchResponse.documentResults.length,
           filtered_results: adaptedResults.length,
           search_duration_ms: searchDuration
         }
@@ -217,7 +218,7 @@ export class AuthenticatedRAGService {
 
       return {
         userId: user.id,
-        skillLevel: this.determineOverallSkillLevel(userSkills || []),
+        skillLevel: this.determineOverallSkillLevel(userSkills || []) as DifficultyLevel,
         languages,
         frameworks: preferences.frameworks || {},
         preferences: {
@@ -236,7 +237,7 @@ export class AuthenticatedRAGService {
       // Return default context on error
       return {
         userId: user.id,
-        skillLevel: 'intermediate',
+        skillLevel: DifficultyLevel.INTERMEDIATE,
         languages: {},
         frameworks: {},
         preferences: {
@@ -277,12 +278,9 @@ export class AuthenticatedRAGService {
 
       return {
         repositoryId: repository.id,
-        name: repository.name,
         primaryLanguage: repository.primary_language,
-        languages: repository.languages ? Object.keys(repository.languages) : [],
-        frameworks: this.extractFrameworksFromRepository(repository),
-        size: repository.size || 0,
-        lastAnalyzed: repository.updated_at
+        frameworkStack: this.extractFrameworksFromRepository(repository),
+        repositorySize: repository.size || 0
       };
 
     } catch (error) {
@@ -343,14 +341,14 @@ export class AuthenticatedRAGService {
     return results.map(result => {
       // Determine appropriate skill level for this result
       const language = result.metadata?.language || result.metadata?.programming_language;
-      const userSkillInLanguage = language ? userContext.languages[language] : null;
-      const overallSkill = userSkillInLanguage || userContext.skillLevel;
+      const isPreferredLanguage = language && userContext.preferredLanguages?.includes(language);
+      const overallSkill = userContext.skillLevel;
 
       return {
         ...result,
         adapted_for_skill_level: overallSkill as any,
         // Optionally modify content based on skill level
-        content: this.adaptContentForSkillLevel(result.content, overallSkill, userContext)
+        adaptedContent: this.adaptContentForSkillLevel(result.contentChunk, overallSkill, userContext)
       };
     });
   }
@@ -362,6 +360,7 @@ export class AuthenticatedRAGService {
     originalQuery: string,
     analyzedQuery: AnalyzedQuery,
     user: AuthenticatedUser,
+    userContext: UserContext,
     repositoryId: string | undefined,
     resultCount: number,
     totalResults: number,
@@ -381,8 +380,8 @@ export class AuthenticatedRAGService {
           repository_id: repositoryId,
           user_context: {
             user_id: user.id,
-            skill_level: analyzedQuery.userContext?.skillLevel,
-            languages: analyzedQuery.languages,
+            skill_level: userContext?.skillLevel,
+            languages: analyzedQuery.programmingLanguage ? [analyzedQuery.programmingLanguage] : [],
             frameworks: analyzedQuery.frameworks
           },
           result_count: resultCount,
@@ -471,13 +470,9 @@ export class AuthenticatedRAGService {
    */
   private adaptContentForSkillLevel(
     content: string,
-    skillLevel: string,
+    skillLevel: DifficultyLevel | undefined,
     userContext: UserContext
   ): string {
-    if (!userContext.preferences.verboseExplanations) {
-      return content;
-    }
-
     // For now, return content as-is
     // In a full implementation, you might:
     // - Add beginner-friendly explanations for complex terms
