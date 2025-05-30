@@ -8,7 +8,7 @@
 import { SupabaseClient, User } from '@supabase/supabase-js';
 import { SelectiveRAGService, RAGSearchResult, EducationalContentResult, SearchOptions } from './selective-rag-service';
 import { QueryAnalyzer, AnalyzedQuery, UserContext, RepositoryContext, DifficultyLevel } from './query-analyzer';
-import { getSupabase } from '../../../database/src/supabase/client';
+import { getSupabaseClient } from '../supabase/supabase-client.factory';
 import { createLogger } from '../../utils/logger';
 
 // Types for authenticated RAG operations
@@ -71,7 +71,7 @@ export class AuthenticatedRAGService {
     embeddingService: EmbeddingService,
     supabaseClient?: SupabaseClient
   ) {
-    this.supabase = supabaseClient || getSupabase();
+    this.supabase = supabaseClient || getSupabaseClient();
     this.ragService = new SelectiveRAGService(embeddingService, this.supabase);
     this.queryAnalyzer = new QueryAnalyzer();
   }
@@ -104,7 +104,7 @@ export class AuthenticatedRAGService {
       // Step 2: Get repository context with access verification
       let repositoryContext: RepositoryContext | undefined;
       if (repositoryId) {
-        repositoryContext = await this.getRepositoryContextWithAuth(repositoryId, user);
+        repositoryContext = await this.getRepositoryContextWithAuth(repositoryId, user) || undefined;
         if (!repositoryContext && options.respect_repository_access !== false) {
           throw new Error('User does not have access to the specified repository');
         }
@@ -131,7 +131,8 @@ export class AuthenticatedRAGService {
 
       // Step 5: Perform RAG search
       const searchResponse = await this.ragService.search(
-        analyzedQuery,
+        query,
+        userContext,
         repositoryContext,
         enhancedOptions
       );
@@ -217,18 +218,10 @@ export class AuthenticatedRAGService {
       const preferences = user.user_metadata || {};
 
       return {
-        userId: user.id,
         skillLevel: this.determineOverallSkillLevel(userSkills || []) as DifficultyLevel,
-        languages,
-        frameworks: preferences.frameworks || {},
-        preferences: {
-          verboseExplanations: preferences.verbose_explanations ?? true,
-          includeExamples: preferences.include_examples ?? true,
-          maxComplexity: preferences.max_complexity || 'intermediate',
-          preferredLanguages: preferences.preferred_languages || []
-        },
-        domains,
-        recentInteractions: userSkills?.map(s => s.last_interaction_at).filter(Boolean) || []
+        preferredLanguages: preferences.preferred_languages || [],
+        recentRepositories: [], // TODO: Fetch from user data
+        searchHistory: [] // TODO: Fetch from user data
       };
 
     } catch (error) {
@@ -236,18 +229,10 @@ export class AuthenticatedRAGService {
       
       // Return default context on error
       return {
-        userId: user.id,
         skillLevel: DifficultyLevel.INTERMEDIATE,
-        languages: {},
-        frameworks: {},
-        preferences: {
-          verboseExplanations: true,
-          includeExamples: true,
-          maxComplexity: 'intermediate',
-          preferredLanguages: []
-        },
-        domains: {},
-        recentInteractions: []
+        preferredLanguages: [],
+        recentRepositories: [],
+        searchHistory: []
       };
     }
   }
@@ -341,14 +326,12 @@ export class AuthenticatedRAGService {
     return results.map(result => {
       // Determine appropriate skill level for this result
       const language = result.metadata?.language || result.metadata?.programming_language;
-      const isPreferredLanguage = language && userContext.preferredLanguages?.includes(language);
+      const isPreferredLanguage = language && typeof language === 'string' && userContext.preferredLanguages?.includes(language);
       const overallSkill = userContext.skillLevel;
 
       return {
         ...result,
-        adapted_for_skill_level: overallSkill as any,
-        // Optionally modify content based on skill level
-        adaptedContent: this.adaptContentForSkillLevel(result.contentChunk, overallSkill, userContext)
+        adapted_for_skill_level: overallSkill as any
       };
     });
   }
