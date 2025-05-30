@@ -30,7 +30,7 @@ interface SkillModelInterface {
 
 // Import implementation (to be injected in a production environment)
 /* eslint-disable @typescript-eslint/no-var-requires */
-const SkillModel: SkillModelInterface = require('../../../database/src/models/skill').SkillModel;
+const SkillModel: SkillModelInterface = require('../../../database/dist/models/skill').SkillModel;
 /* eslint-enable @typescript-eslint/no-var-requires */
 
 // Create logger

@@ -1,14 +1,8 @@
 import { GeminiAgent } from '../src/gemini/gemini-agent';
 import { loadPromptTemplate } from '../src/prompts/prompt-loader';
 
-// Define GEMINI_MODELS directly since it's now defined in the implementation file
-const GEMINI_MODELS = {
-  GEMINI_1_5_FLASH: 'gemini-1.5-flash',
-  GEMINI_1_5_PRO: 'gemini-1.5-pro',
-  GEMINI_2_5_PRO: 'gemini-2.5-pro',
-  GEMINI_2_5_FLASH: 'gemini-2.5-flash',
-  GEMINI_PRO: 'gemini-pro'
-};
+// Import GEMINI_MODELS from core package to match the actual implementation
+import { GEMINI_MODELS } from '@codequal/core/config/models/model-versions';
 
 // Mock fetch API for Gemini calls
 global.fetch = jest.fn().mockImplementation(() => 
@@ -89,8 +83,8 @@ describe('GeminiAgent', () => {
 
   test('initializes with default model if not specified', () => {
     const agent = new GeminiAgent('gemini_code_quality_template');
-    // The actual implementation uses GEMINI_PRO as default, not GEMINI_2_5_FLASH
-    expect((agent as any).model).toBe(GEMINI_MODELS.GEMINI_PRO);
+    // The actual implementation uses GEMINI_2_5_FLASH as default
+    expect((agent as any).model).toBe(GEMINI_MODELS.GEMINI_2_5_FLASH);
   });
 
   test('initializes with specified model', () => {
@@ -104,8 +98,8 @@ describe('GeminiAgent', () => {
     const agent = new GeminiAgent('gemini_code_quality_template', {
       premium: true
     });
-    // Check that premiumModel is set correctly
-    expect((agent as any).premiumModel).toBe(GEMINI_MODELS.GEMINI_2_5_PRO);
+    // Check that premiumModel is set correctly (uses the preview version)
+    expect((agent as any).premiumModel).toBe('gemini-2.5-pro-preview-05-06');
   });
 
   test('throws error if API key is not provided', () => {

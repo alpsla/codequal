@@ -1,5 +1,5 @@
 import { getSupabase } from '../supabase/client';
-import type { Tables } from '../supabase/client';
+import { Tables } from '../supabase/client';
 
 /**
  * Interface for skill category
