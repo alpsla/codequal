@@ -8,8 +8,12 @@ export class OpenAIEmbeddingService implements EmbeddingService {
   private cache = new Map<string, number[]>();
 
   constructor(apiKey?: string) {
+    const key = apiKey || process.env.OPENAI_API_KEY;
+    if (!key) {
+      throw new Error('OpenAI API key is required');
+    }
     this.openai = new OpenAI({
-      apiKey: apiKey || process.env.OPENAI_API_KEY,
+      apiKey: key,
     });
   }
 
@@ -51,7 +55,8 @@ export class OpenAIEmbeddingService implements EmbeddingService {
       return embedding;
     } catch (error) {
       this.logger.error('Failed to generate embedding', { error });
-      throw new Error(`Embedding generation failed: ${error.message}`);
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Embedding generation failed: ${message}`);
     }
   }
 
@@ -86,7 +91,8 @@ export class OpenAIEmbeddingService implements EmbeddingService {
       return embeddings;
     } catch (error) {
       this.logger.error('Failed to generate batch embeddings', { error });
-      throw new Error(`Batch embedding generation failed: ${error.message}`);
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Batch embedding generation failed: ${message}`);
     }
   }
 

@@ -1,6 +1,6 @@
 import { SelectiveRAGService } from './selective-rag-service';
 import { OpenAIEmbeddingService } from '../embeddings/openai-embedding.service';
-import { getSupabaseClient } from '../supabase/supabase-client.factory';
+import { getSupabaseClient, createSupabaseClient } from '../supabase/supabase-client.factory';
 import { createLogger } from '../../utils/logger';
 
 const logger = createLogger('RAGServiceFactory');
@@ -28,7 +28,8 @@ export function getRAGService(): SelectiveRAGService {
       logger.info('RAG service initialized successfully');
     } catch (error) {
       logger.error('Failed to initialize RAG service', { error });
-      throw new Error(`RAG service initialization failed: ${error.message}`);
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`RAG service initialization failed: ${message}`);
     }
   }
   

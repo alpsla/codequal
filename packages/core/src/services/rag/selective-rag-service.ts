@@ -1,14 +1,4 @@
-// Import database client - in production this would be injected
-// For now we'll use a placeholder interface
-export interface SupabaseClient {
-  rpc(functionName: string, params: any): Promise<{ data: any; error: any }>;
-  from(table: string): any;
-}
-
-// This would be injected in real usage
-const getSupabase = (): SupabaseClient => {
-  throw new Error('Supabase client not configured. Please inject a configured client.');
-};
+import { SupabaseClient } from '@supabase/supabase-js';
 import { createLogger } from '../../utils/logger';
 import { 
   QueryAnalyzer, 
