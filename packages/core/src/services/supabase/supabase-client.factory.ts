@@ -58,7 +58,7 @@ export function createSupabaseClient(options?: {
       autoRefreshToken: false,
     },
     db: {
-      schema: options?.schema || 'public',
+      schema: (options?.schema || 'public') as 'public',
     },
   });
 }

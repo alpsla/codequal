@@ -1,4 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js';
+import { getSupabaseClient } from '../supabase/supabase-client.factory';
 import { createLogger } from '../../utils/logger';
 import { 
   QueryAnalyzer, 
@@ -96,7 +97,7 @@ export class SelectiveRAGService {
     supabaseClient?: SupabaseClient
   ) {
     this.queryAnalyzer = new QueryAnalyzer();
-    this.supabase = supabaseClient || getSupabase();
+    this.supabase = supabaseClient || getSupabaseClient();
   }
   
   /**
