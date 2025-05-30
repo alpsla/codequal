@@ -36,7 +36,10 @@ export class OpenAIEmbeddingService implements EmbeddingService {
         dimensions: 1536, // Match our vector database dimension
       });
 
-      const embedding = response.data[0].embedding;
+      const embedding = response.data[0]?.embedding;
+      if (!embedding) {
+        throw new Error('No embedding data received from OpenAI');
+      }
       
       // Cache the result
       this.cache.set(cacheKey, embedding);
@@ -57,7 +60,7 @@ export class OpenAIEmbeddingService implements EmbeddingService {
       return embedding;
     } catch (error) {
       this.logger.error('Failed to generate embedding', { error });
-      const message = error instanceof Error ? error.message : 'Unknown error';
+      const message = error instanceof Error ? error.message : String(error);
       throw new Error(`Embedding generation failed: ${message}`);
     }
   }
@@ -93,7 +96,7 @@ export class OpenAIEmbeddingService implements EmbeddingService {
       return embeddings;
     } catch (error) {
       this.logger.error('Failed to generate batch embeddings', { error });
-      const message = error instanceof Error ? error.message : 'Unknown error';
+      const message = error instanceof Error ? error.message : String(error);
       throw new Error(`Batch embedding generation failed: ${message}`);
     }
   }

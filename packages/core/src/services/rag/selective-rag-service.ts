@@ -1,4 +1,10 @@
-import { SupabaseClient } from '@supabase/supabase-js';
+import { SupabaseClient as SupabaseJSClient } from '@supabase/supabase-js';
+
+// Compatible interface for our RAG services
+interface SupabaseClient {
+  from(table: string): any;
+  rpc(functionName: string, params: any): Promise<{ data: any; error: any }>;
+}
 import { getSupabaseClient } from '../supabase/supabase-client.factory';
 import { createLogger } from '../../utils/logger';
 import { 
@@ -94,10 +100,10 @@ export class SelectiveRAGService {
   
   constructor(
     private embeddingService: EmbeddingService,
-    supabaseClient?: SupabaseClient
+    supabaseClient?: SupabaseJSClient
   ) {
     this.queryAnalyzer = new QueryAnalyzer();
-    this.supabase = supabaseClient || getSupabaseClient();
+    this.supabase = (supabaseClient || getSupabaseClient()) as any;
   }
   
   /**
