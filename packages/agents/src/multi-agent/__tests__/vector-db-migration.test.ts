@@ -154,6 +154,11 @@ describe('Vector DB Migration Integration', () => {
   });
 
   describe('VectorStorageService', () => {
+    beforeEach(() => {
+      // Clear all mocks before each test
+      jest.clearAllMocks();
+    });
+    
     it('should implement replace strategy for repository analysis', async () => {
       const storageService = new VectorStorageService(mockRAGService);
       
