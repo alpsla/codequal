@@ -90,6 +90,11 @@ describe('Vector DB Migration Integration', () => {
     insertChunks: jest.fn().mockResolvedValue(true)
   };
 
+  beforeEach(() => {
+    // Clear all mocks before each test to prevent state interference
+    jest.clearAllMocks();
+  });
+
   describe('EnhancedMultiAgentExecutor with Vector DB', () => {
     it('should initialize with VectorContextService (no DeepWiki dependencies)', () => {
       expect(() => {
@@ -154,11 +159,6 @@ describe('Vector DB Migration Integration', () => {
   });
 
   describe('VectorStorageService', () => {
-    beforeEach(() => {
-      // Clear all mocks before each test
-      jest.clearAllMocks();
-    });
-    
     it('should implement replace strategy for repository analysis', async () => {
       const storageService = new VectorStorageService(mockRAGService);
       
