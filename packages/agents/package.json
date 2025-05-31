@@ -8,7 +8,8 @@
     "test-build": "rm -rf ./dist ./src/codewhisperer* && tsc",
     "build": "echo 'Building...' && rm -rf ./dist ./src/codewhisperer* && tsc && echo 'Build completed successfully!'",
     "dev": "tsc -w",
-    "lint": "eslint src --fix",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
     "test": "jest --testPathIgnorePatterns=tests/archive/",
     "test:watch": "jest --watch"
   },
