@@ -805,6 +805,13 @@ export class EnhancedMultiAgentExecutor {
     agentConfig: AgentConfig,
     additionalContext?: Record<string, any>
   ): Promise<any> {
+    // Prepare agent context with Vector DB data
+    const enhancedContext = await this.prepareAgentContext(
+      agentConfig.role,
+      'user-123', // TODO: Replace with real authenticated user
+      additionalContext
+    );
+    
     // This is a placeholder for the actual agent execution
     // The real implementation would use the existing agent factory
     
@@ -813,13 +820,13 @@ export class EnhancedMultiAgentExecutor {
         reject(new Error(`Agent execution timeout: ${agentConfig.provider}`));
       }, this.options.agentTimeout);
       
-      // Simulate agent execution
+      // Simulate agent execution with Vector DB context
       setTimeout(() => {
         clearTimeout(timeout);
         resolve({
           agentConfig,
-          analysis: 'Mock analysis result',
-          context: additionalContext
+          analysis: 'Mock analysis result with Vector DB context',
+          context: enhancedContext
         });
       }, Math.random() * 1000 + 500); // Random delay 0.5-1.5s
     });
