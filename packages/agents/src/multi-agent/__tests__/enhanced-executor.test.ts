@@ -168,6 +168,7 @@ describe('EnhancedMultiAgentExecutor', () => {
       const executor = new EnhancedMultiAgentExecutor(
         parallelConfig,
         mockRepositoryData,
+        mockVectorContextService,
         { timeout: 20000 }
       );
       
@@ -184,6 +185,7 @@ describe('EnhancedMultiAgentExecutor', () => {
       const executor = new EnhancedMultiAgentExecutor(
         sequentialConfig,
         mockRepositoryData,
+        mockVectorContextService,
         { timeout: 20000 }
       );
       
@@ -214,6 +216,7 @@ describe('EnhancedMultiAgentExecutor', () => {
       const executor = new EnhancedMultiAgentExecutor(
         specializedConfig,
         mockRepositoryData,
+        mockVectorContextService,
         { timeout: 20000 }
       );
       
@@ -257,6 +260,7 @@ describe('EnhancedMultiAgentExecutor', () => {
       const executor = new EnhancedMultiAgentExecutor(
         mockAgentConfig,
         mockRepositoryData,
+        mockVectorContextService,
         {
           timeout: 20000,
           onProgress: (progress: ExecutionProgress) => {
@@ -282,6 +286,7 @@ describe('EnhancedMultiAgentExecutor', () => {
       const executor = new EnhancedMultiAgentExecutor(
         mockAgentConfig,
         mockRepositoryData,
+        mockVectorContextService,
         { 
           agentTimeout: 100, // Very short timeout
           timeout: 5000
@@ -300,6 +305,7 @@ describe('EnhancedMultiAgentExecutor', () => {
       const executor = new EnhancedMultiAgentExecutor(
         mockAgentConfig,
         mockRepositoryData,
+        mockVectorContextService,
         { timeout: 10000 }
       );
       
@@ -316,6 +322,7 @@ describe('EnhancedMultiAgentExecutor', () => {
       const executor = new EnhancedMultiAgentExecutor(
         mockAgentConfig,
         mockRepositoryData,
+        mockVectorContextService,
         { 
           enableMetrics: true,
           timeout: 20000
@@ -334,6 +341,7 @@ describe('EnhancedMultiAgentExecutor', () => {
       const executor = new EnhancedMultiAgentExecutor(
         mockAgentConfig,
         mockRepositoryData,
+        mockVectorContextService,
         { timeout: 20000 }
       );
       
@@ -586,6 +594,7 @@ describe('Enhanced Executor Integration', () => {
     const executor = new EnhancedMultiAgentExecutor(
       mockAgentConfig,
       mockRepositoryData,
+      mockVectorContextService,
       {
         timeout: 30000,
         enableMetrics: true,
@@ -614,6 +623,7 @@ describe('Enhanced Executor Integration', () => {
     const executor = new EnhancedMultiAgentExecutor(
       mockAgentConfig,
       mockRepositoryData,
+      mockVectorContextService,
       {
         timeout: 30000,
         modelBlacklist: mockBlacklist,
@@ -657,6 +667,7 @@ describe('Enhanced Executor Integration', () => {
     const executor = new EnhancedMultiAgentExecutor(
       complexConfig,
       mockRepositoryData,
+      mockVectorContextService,
       { timeout: 30000 }
     );
     
