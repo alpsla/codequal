@@ -237,8 +237,8 @@ export class VectorStorageService {
       };
 
       // Create chunks for findings
-      result.findings.forEach((finding, findingIndex) => {
-        const chunkId = `${repositoryId}-${result.type}-finding-${resultIndex}-${findingIndex}`;
+      sanitizedResult.findings.forEach((finding, findingIndex) => {
+        const chunkId = `${repositoryId}-${sanitizedResult.type}-finding-${resultIndex}-${findingIndex}`;
         
         chunks.push({
           id: chunkId,
@@ -271,12 +271,12 @@ export class VectorStorageService {
       }
 
       // Create chunks for recommendations
-      result.recommendations.forEach((recommendation, recIndex) => {
-        const recId = `${repositoryId}-${result.type}-recommendation-${resultIndex}-${recIndex}`;
+      sanitizedResult.recommendations.forEach((recommendation, recIndex) => {
+        const recId = `${repositoryId}-${sanitizedResult.type}-recommendation-${resultIndex}-${recIndex}`;
         
         chunks.push({
           id: recId,
-          content: `${result.type} Recommendation: ${recommendation}`,
+          content: `${sanitizedResult.type} Recommendation: ${recommendation}`,
           metadata: {
             ...baseMetadata,
             content_type: 'recommendation',
@@ -286,12 +286,12 @@ export class VectorStorageService {
       });
 
       // Create chunk for metrics (if significant)
-      if (result.metrics && Object.keys(result.metrics).length > 0) {
-        const metricsId = `${repositoryId}-${result.type}-metrics-${resultIndex}`;
+      if (sanitizedResult.metrics && Object.keys(sanitizedResult.metrics).length > 0) {
+        const metricsId = `${repositoryId}-${sanitizedResult.type}-metrics-${resultIndex}`;
         
         chunks.push({
           id: metricsId,
-          content: this.formatMetricsContent(result.type, result.metrics),
+          content: this.formatMetricsContent(sanitizedResult.type, sanitizedResult.metrics),
           metadata: {
             ...baseMetadata,
             content_type: 'metrics',
