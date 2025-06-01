@@ -1,4 +1,5 @@
 import { createLogger } from '@codequal/core/utils';
+import { AuthenticatedUser, SecurityEvent, AuthenticationError } from './types/auth';
 
 /**
  * Analysis result for Vector DB storage
@@ -63,7 +64,7 @@ export class VectorStorageService {
   async storeAnalysisResults(
     repositoryId: string,
     analysisResults: AnalysisResult[],
-    userId: string,
+    authenticatedUser: AuthenticatedUser,
     options: {
       language?: string;
       framework?: string;
@@ -72,14 +73,12 @@ export class VectorStorageService {
   ): Promise<{ stored: number; errors: number }> {
     
     // 🔒 SECURITY: Validate repository access before any operations
-    const hasAccess = await this.validateRepositoryAccess(repositoryId, userId, 'write');
-    if (!hasAccess) {
-      throw new Error(`Access denied: User ${userId} does not have write access to repository ${repositoryId}`);
-    }
+    await this.validateRepositoryAccess(repositoryId, authenticatedUser, 'write');
+    
     this.logger.info('Storing analysis results with replace strategy', {
       repositoryId,
       resultsCount: analysisResults.length,
-      userId,
+      userId: authenticatedUser.id,
       replaceExisting: options.replaceExisting ?? true
     });
 
@@ -89,14 +88,14 @@ export class VectorStorageService {
     try {
       // Step 1: Delete existing analysis if replace strategy
       if (options.replaceExisting !== false) {
-        await this.deleteRepositoryAnalysis(repositoryId, userId);
+        await this.deleteRepositoryAnalysis(repositoryId, authenticatedUser.id);
       }
 
       // Step 2: Create and insert new chunks
       const chunks = this.createAnalysisChunks(
         repositoryId, 
         analysisResults, 
-        userId, 
+        authenticatedUser.id, 
         options
       );
 
@@ -154,35 +153,50 @@ export class VectorStorageService {
    */
   private async validateRepositoryAccess(
     repositoryId: string,
-    userId: string,
+    authenticatedUser: AuthenticatedUser,
     accessType: 'read' | 'write' = 'read'
-  ): Promise<boolean> {
-    try {
-      // 🔒 SECURITY: Use existing repository access validation
-      // This should match the logic in AuthenticatedRAGService
-      
-      // For now, check basic repository ownership/access
-      // In production, this would check more granular permissions
-      const hasAccess = await this.authenticatedRAGService.validateRepositoryAccess?.(repositoryId, userId, accessType);
-      
-      if (hasAccess !== undefined) {
-        return hasAccess;
-      }
-      
-      // Fallback: check if user has any access to repository
-      // This assumes repositories table has proper access control
-      this.logger.warn('Using fallback repository access check', { repositoryId, userId });
-      return true; // Will be properly implemented with actual access control
-      
-    } catch (error) {
-      this.logger.error('Repository access validation failed', {
+  ): Promise<void> {
+    const repositoryPermissions = authenticatedUser.permissions.repositories[repositoryId];
+    
+    if (!repositoryPermissions || !repositoryPermissions[accessType]) {
+      const securityEvent: SecurityEvent = {
+        type: 'ACCESS_DENIED',
+        userId: authenticatedUser.id,
+        sessionId: authenticatedUser.session.fingerprint,
         repositoryId,
-        userId,
+        ipAddress: authenticatedUser.session.ipAddress,
+        userAgent: authenticatedUser.session.userAgent,
+        timestamp: new Date(),
+        details: {
+          service: 'VectorStorageService',
+          reason: `Repository ${accessType} access denied`,
+          requiredPermission: accessType,
+          userPermissions: repositoryPermissions || {}
+        },
+        severity: 'high'
+      };
+
+      this.logger.error('Repository access denied in VectorStorageService', {
+        userId: authenticatedUser.id,
+        repositoryId,
         accessType,
-        error: error instanceof Error ? error.message : String(error)
+        userPermissions: repositoryPermissions
       });
-      return false;
+
+      // TODO: Log security event to audit system
+      // await this.logSecurityEvent(securityEvent);
+
+      throw new Error(
+        `${AuthenticationError.REPOSITORY_ACCESS_DENIED}: User ${authenticatedUser.id} does not have ${accessType} access to repository ${repositoryId}`
+      );
     }
+
+    this.logger.debug('Repository access validated for VectorStorageService', {
+      userId: authenticatedUser.id,
+      repositoryId,
+      accessType,
+      granted: true
+    });
   }
 
   /**

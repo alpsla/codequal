@@ -6,7 +6,12 @@ import {
   AnalysisStrategy,
   MultiAgentConfig, 
   MultiAgentResult, 
-  RepositoryData 
+  RepositoryData,
+  AuthenticatedUser,
+  AuthenticationContext,
+  RepositoryAccessResult,
+  SecurityEvent,
+  AuthenticationError
 } from './types';
 import { MultiAgentValidator } from './validator';
 import { VectorContextService } from './vector-context-service';
@@ -430,6 +435,7 @@ export class EnhancedMultiAgentExecutor {
   private readonly logger = createLogger('EnhancedMultiAgentExecutor');
   private readonly config: MultiAgentConfig;
   private readonly repositoryData: RepositoryData;
+  private readonly authenticatedUser: AuthenticatedUser;
   private readonly options: Required<Omit<EnhancedExecutionOptions, 'modelBlacklist'>> & { modelBlacklist?: ModelBlacklistManager };
   
   private readonly resourceManager: SmartResourceManager;
@@ -444,6 +450,7 @@ export class EnhancedMultiAgentExecutor {
     config: MultiAgentConfig,
     repositoryData: RepositoryData,
     vectorContextService: VectorContextService,
+    authenticatedUser: AuthenticatedUser,
     options: EnhancedExecutionOptions = {}
   ) {
     // Validate configuration
@@ -459,6 +466,10 @@ export class EnhancedMultiAgentExecutor {
     this.config = config;
     this.repositoryData = repositoryData;
     this.vectorContextService = vectorContextService;
+    this.authenticatedUser = authenticatedUser;
+    
+    // 🔒 SECURITY: Validate repository access before proceeding
+    this.validateRepositoryAccess();
     
     // Set default options with smart resource management
     this.options = {
@@ -808,7 +819,7 @@ export class EnhancedMultiAgentExecutor {
     // Prepare agent context with Vector DB data
     const enhancedContext = await this.prepareAgentContext(
       agentConfig.role,
-      'user-123', // TODO: Replace with real authenticated user
+      this.authenticatedUser,
       additionalContext
     );
     
@@ -838,7 +849,7 @@ export class EnhancedMultiAgentExecutor {
    */
   private async prepareAgentContext(
     agentRole: string,
-    userId: string,
+    authenticatedUser: AuthenticatedUser,
     additionalContext?: Record<string, any>
   ): Promise<EnhancedAgentContext> {
     try {
@@ -849,7 +860,7 @@ export class EnhancedMultiAgentExecutor {
       const vectorContext = await this.vectorContextService.getRepositoryContext(
         repositoryId,
         agentRole as any,
-        userId,
+        authenticatedUser,
         {
           maxResults: 10,
           minSimilarity: 0.7,
@@ -861,7 +872,7 @@ export class EnhancedMultiAgentExecutor {
       const crossRepoPatterns = await this.vectorContextService.getCrossRepositoryPatterns(
         agentRole as any,
         `${agentRole} analysis patterns`,
-        userId,
+        authenticatedUser,
         {
           maxResults: 5,
           excludeRepositoryId: repositoryId,
@@ -1003,5 +1014,83 @@ export class EnhancedMultiAgentExecutor {
       successfulFallbacks: fallbackResults.filter(r => !r.error).length,
       failedFallbacks: fallbackResults.filter(r => r.error).length
     };
+  }
+
+  /**
+   * Validate repository access for the authenticated user
+   * 🔒 SECURITY: Ensures user has permission to access the repository
+   */
+  private validateRepositoryAccess(): void {
+    const repositoryId = `${this.repositoryData.owner}/${this.repositoryData.repo}`;
+    
+    // Check if user has read access to the repository
+    const repositoryPermissions = this.authenticatedUser.permissions.repositories[repositoryId];
+    
+    if (!repositoryPermissions || !repositoryPermissions.read) {
+      const securityEvent: SecurityEvent = {
+        type: 'ACCESS_DENIED',
+        userId: this.authenticatedUser.id,
+        sessionId: this.authenticatedUser.session.fingerprint,
+        repositoryId,
+        ipAddress: this.authenticatedUser.session.ipAddress,
+        userAgent: this.authenticatedUser.session.userAgent,
+        timestamp: new Date(),
+        details: {
+          reason: 'Repository access denied',
+          requiredPermission: 'read',
+          userPermissions: repositoryPermissions || {}
+        },
+        severity: 'high'
+      };
+
+      this.logger.error('Repository access denied', {
+        userId: this.authenticatedUser.id,
+        repositoryId,
+        permissions: repositoryPermissions
+      });
+
+      throw new Error(`${AuthenticationError.REPOSITORY_ACCESS_DENIED}: User ${this.authenticatedUser.id} does not have read access to repository ${repositoryId}`);
+    }
+
+    // Validate session is still active
+    if (new Date() > this.authenticatedUser.session.expiresAt) {
+      const securityEvent: SecurityEvent = {
+        type: 'SESSION_EXPIRED',
+        userId: this.authenticatedUser.id,
+        sessionId: this.authenticatedUser.session.fingerprint,
+        repositoryId,
+        ipAddress: this.authenticatedUser.session.ipAddress,
+        userAgent: this.authenticatedUser.session.userAgent,
+        timestamp: new Date(),
+        details: {
+          reason: 'Session expired during execution',
+          expiresAt: this.authenticatedUser.session.expiresAt,
+          currentTime: new Date()
+        },
+        severity: 'medium'
+      };
+
+      this.logger.warn('Session expired during execution', {
+        userId: this.authenticatedUser.id,
+        expiresAt: this.authenticatedUser.session.expiresAt
+      });
+
+      throw new Error(`${AuthenticationError.EXPIRED_SESSION}: User session expired at ${this.authenticatedUser.session.expiresAt}`);
+    }
+
+    this.logger.debug('Repository access validated', {
+      userId: this.authenticatedUser.id,
+      repositoryId,
+      permissions: repositoryPermissions
+    });
+  }
+
+  /**
+   * Log security events for audit purposes
+   * 🔒 SECURITY: Comprehensive audit logging for compliance
+   */
+  private async logSecurityEvent(event: SecurityEvent): Promise<void> {
+    // TODO: Integrate with actual security logging service
+    this.logger.info('Security event logged', event);
   }
 }
