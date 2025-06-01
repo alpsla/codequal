@@ -7,7 +7,10 @@ import {
   MultiAgentConfig, 
   AnalysisStrategy, 
   AgentPosition,
-  RepositoryData 
+  RepositoryData,
+  AuthenticatedUser,
+  UserRole,
+  UserStatus
 } from '../types';
 import { AgentProvider, AgentRole } from '@codequal/core/config/agent-registry';
 
@@ -90,6 +93,39 @@ describe('Vector DB Migration Integration', () => {
     insertChunks: jest.fn().mockResolvedValue(true)
   };
 
+  // Mock AuthenticatedUser for testing
+  const mockAuthenticatedUser: AuthenticatedUser = {
+    id: 'test-user-123',
+    email: 'test@example.com',
+    name: 'Test User',
+    role: UserRole.USER,
+    status: UserStatus.ACTIVE,
+    permissions: {
+      repositories: {
+        'test-org/test-repo': {
+          read: true,
+          write: true,
+          admin: false
+        }
+      },
+      organizations: ['test-org'],
+      globalPermissions: [],
+      quotas: {
+        requestsPerHour: 1000,
+        maxConcurrentExecutions: 5,
+        storageQuotaMB: 1000
+      }
+    },
+    session: {
+      token: 'test-token',
+      expiresAt: new Date(Date.now() + 3600000),
+      fingerprint: 'test-fingerprint',
+      ipAddress: '127.0.0.1',
+      userAgent: 'test-agent'
+    },
+    organizationId: 'test-org'
+  };
+
   beforeEach(() => {
     // Clear all mocks before each test to prevent state interference
     jest.clearAllMocks();
@@ -102,6 +138,7 @@ describe('Vector DB Migration Integration', () => {
           mockAgentConfig,
           mockRepositoryData,
           mockVectorContextService,
+          mockAuthenticatedUser,
           { timeout: 5000 }
         );
       }).not.toThrow();
@@ -112,6 +149,7 @@ describe('Vector DB Migration Integration', () => {
         mockAgentConfig,
         mockRepositoryData,
         mockVectorContextService,
+        mockAuthenticatedUser,
         { timeout: 10000 }
       );
 
@@ -128,6 +166,7 @@ describe('Vector DB Migration Integration', () => {
         mockAgentConfig,
         mockRepositoryData,
         mockVectorContextService,
+        mockAuthenticatedUser,
         { timeout: 5000 }
       );
 
@@ -138,7 +177,7 @@ describe('Vector DB Migration Integration', () => {
       expect(mockVectorContextService.getRepositoryContext).toHaveBeenCalledWith(
         'test-org/test-repo',
         AgentRole.CODE_QUALITY,
-        expect.any(String),
+        mockAuthenticatedUser,
         expect.objectContaining({
           maxResults: 10,
           minSimilarity: 0.7,
@@ -149,7 +188,7 @@ describe('Vector DB Migration Integration', () => {
       expect(mockVectorContextService.getCrossRepositoryPatterns).toHaveBeenCalledWith(
         AgentRole.CODE_QUALITY,
         expect.stringContaining('analysis patterns'),
-        expect.any(String),
+        mockAuthenticatedUser,
         expect.objectContaining({
           maxResults: 5,
           excludeRepositoryId: 'test-org/test-repo'
@@ -185,12 +224,12 @@ describe('Vector DB Migration Integration', () => {
       const result = await storageService.storeAnalysisResults(
         'test-org/test-repo',
         analysisResults,
-        'user-123'
+        mockAuthenticatedUser
       );
 
       expect(result.stored).toBeGreaterThan(0);
       expect(result.errors).toBe(0);
-      expect(mockRAGService.deleteByRepository).toHaveBeenCalledWith('test-org/test-repo', 'user-123');
+      expect(mockRAGService.deleteByRepository).toHaveBeenCalledWith('test-org/test-repo', mockAuthenticatedUser.id);
       expect(mockRAGService.insertChunks).toHaveBeenCalled();
     });
 
@@ -220,7 +259,7 @@ describe('Vector DB Migration Integration', () => {
       await storageService.storeAnalysisResults(
         'test-org/test-repo',
         analysisResults,
-        'user-123'
+        mockAuthenticatedUser
       );
 
       // Verify chunks were created with proper structure
@@ -267,6 +306,7 @@ describe('Vector DB Migration Integration', () => {
         mockAgentConfig,
         mockRepositoryData,
         mockVectorContextService,
+        mockAuthenticatedUser,
         { timeout: 5000 }
       );
 

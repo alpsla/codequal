@@ -13,6 +13,38 @@ export { EducationalAgent } from './educational-agent';
 export { VectorContextService, createVectorContextService } from './vector-context-service';
 export { VectorStorageService, createVectorStorageService } from './vector-storage-service';
 
+// Authentication and Security
+export { 
+  MultiAgentAuthMiddleware, 
+  createMultiAgentAuthMiddleware,
+  createExpressAuthMiddleware 
+} from './auth-middleware';
+export { 
+  MockAuthenticationServiceImpl,
+  createMockAuthenticationService 
+} from './mock-auth-service';
+export {
+  SupabaseAuthenticationService,
+  createSupabaseAuthenticationService,
+  SubscriptionTier,
+  defaultSupabaseAuthConfig,
+  productionSupabaseAuthConfig
+} from './supabase-auth-service';
+export {
+  SecurityLoggingService,
+  createSecurityLoggingService,
+  defaultSecurityLoggingConfig,
+  productionSecurityLoggingConfig
+} from './security-logging-service';
+
+// Legacy Support (Deprecated)
+export { 
+  LegacyMultiAgentExecutor,
+  createLegacyMultiAgentExecutor,
+  MigrationChecker,
+  GradualMigrationHelper
+} from './legacy-executor';
+
 // Strategy implementations
 export * from './execution-strategies';
 
