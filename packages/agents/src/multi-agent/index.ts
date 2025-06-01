@@ -23,6 +23,19 @@ export {
   MockAuthenticationServiceImpl,
   createMockAuthenticationService 
 } from './mock-auth-service';
+export {
+  SupabaseAuthenticationService,
+  createSupabaseAuthenticationService,
+  SubscriptionTier,
+  defaultSupabaseAuthConfig,
+  productionSupabaseAuthConfig
+} from './supabase-auth-service';
+export {
+  SecurityLoggingService,
+  createSecurityLoggingService,
+  defaultSecurityLoggingConfig,
+  productionSecurityLoggingConfig
+} from './security-logging-service';
 
 // Legacy Support (Deprecated)
 export { 

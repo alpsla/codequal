@@ -40,12 +40,12 @@ interface MockUserDatabase {
  */
 export class MockAuthenticationServiceImpl implements MockAuthenticationService {
   private readonly logger = createLogger('MockAuthenticationService');
-  private readonly mockUsers: MockUserDatabase = new Map();
+  private readonly mockUsers = new Map<string, { user: AuthenticatedUser; rateLimits: { [operation: string]: { count: number; resetTime: Date; }; }; }>();
   private readonly securityEvents: SecurityEvent[] = [];
   
   // Configuration for mock behavior
-  private simulateExpiredSession = false;
-  private simulateInvalidToken = false;
+  private _simulateExpiredSession = false;
+  private _simulateInvalidToken = false;
   private rateLimitStatuses: Map<string, boolean> = new Map();
 
   constructor() {
@@ -63,17 +63,17 @@ export class MockAuthenticationServiceImpl implements MockAuthenticationService 
     this.logger.debug('Validating session', { token: token.substring(0, 10) + '...', requestContext });
 
     // Simulate invalid token
-    if (this.simulateInvalidToken || !token || token === 'invalid-token') {
+    if (this._simulateInvalidToken || !token || token === 'invalid-token') {
       throw new Error(`${AuthenticationError.INVALID_TOKEN}: Invalid or missing token`);
     }
 
     // Simulate expired session
-    if (this.simulateExpiredSession || token === 'expired-token') {
+    if (this._simulateExpiredSession || token === 'expired-token') {
       throw new Error(`${AuthenticationError.EXPIRED_SESSION}: Session has expired`);
     }
 
     // Find user by token
-    for (const [userId, userData] of Object.entries(this.mockUsers)) {
+    for (const [userId, userData] of this.mockUsers.entries()) {
       if (userData.user.session.token === token) {
         // Update session info with current request
         userData.user.session.ipAddress = requestContext.ipAddress;
@@ -98,7 +98,7 @@ export class MockAuthenticationServiceImpl implements MockAuthenticationService 
   async refreshSession(refreshToken: string): Promise<AuthenticatedUser> {
     this.logger.debug('Refreshing session', { refreshToken: refreshToken.substring(0, 10) + '...' });
 
-    for (const [userId, userData] of Object.entries(this.mockUsers)) {
+    for (const [userId, userData] of this.mockUsers.entries()) {
       if (userData.user.session.refreshToken === refreshToken) {
         // Generate new tokens
         const newToken = `mock-token-${Date.now()}-${Math.random().toString(36).substring(7)}`;
@@ -161,7 +161,7 @@ export class MockAuthenticationServiceImpl implements MockAuthenticationService 
    * Check rate limits for a user
    */
   async checkRateLimit(userId: string, operation: string): Promise<{ allowed: boolean; resetTime: Date }> {
-    const userData = this.mockUsers[userId];
+    const userData = this.mockUsers.get(userId);
     if (!userData) {
       return { allowed: false, resetTime: new Date() };
     }
@@ -206,7 +206,7 @@ export class MockAuthenticationServiceImpl implements MockAuthenticationService 
    * Invalidate a user session
    */
   async invalidateSession(sessionId: string): Promise<void> {
-    for (const [userId, userData] of Object.entries(this.mockUsers)) {
+    for (const [userId, userData] of this.mockUsers.entries()) {
       if (userData.user.session.fingerprint === sessionId) {
         userData.user.session.expiresAt = new Date(0); // Set to past date
         this.logger.debug('Session invalidated', { userId, sessionId });
@@ -255,10 +255,10 @@ export class MockAuthenticationServiceImpl implements MockAuthenticationService 
       }
     };
 
-    this.mockUsers[userId] = {
+    this.mockUsers.set(userId, {
       user,
       rateLimits: {}
-    };
+    });
 
     this.logger.debug('Test user created', { userId, email: user.email });
     return user;
@@ -268,7 +268,7 @@ export class MockAuthenticationServiceImpl implements MockAuthenticationService 
    * Simulate an expired session for testing
    */
   simulateExpiredSession(): void {
-    this.simulateExpiredSession = true;
+    this._simulateExpiredSession = true;
     this.logger.debug('Expired session simulation enabled');
   }
 
@@ -276,7 +276,7 @@ export class MockAuthenticationServiceImpl implements MockAuthenticationService 
    * Simulate an invalid token for testing
    */
   simulateInvalidToken(): void {
-    this.simulateInvalidToken = true;
+    this._simulateInvalidToken = true;
     this.logger.debug('Invalid token simulation enabled');
   }
 
@@ -307,7 +307,7 @@ export class MockAuthenticationServiceImpl implements MockAuthenticationService 
    * Get mock user by ID (for testing)
    */
   getMockUser(userId: string): AuthenticatedUser | undefined {
-    return this.mockUsers[userId]?.user;
+    return this.mockUsers.get(userId)?.user;
   }
 
   /**
@@ -317,8 +317,8 @@ export class MockAuthenticationServiceImpl implements MockAuthenticationService 
     this.mockUsers.clear();
     this.securityEvents.length = 0;
     this.rateLimitStatuses.clear();
-    this.simulateExpiredSession = false;
-    this.simulateInvalidToken = false;
+    this._simulateExpiredSession = false;
+    this._simulateInvalidToken = false;
     this.initializeTestUsers();
     this.logger.debug('Mock authentication service reset');
   }
@@ -386,8 +386,8 @@ export class MockAuthenticationServiceImpl implements MockAuthenticationService 
       }
     };
 
-    this.mockUsers['admin-user-123'] = { user: adminUser, rateLimits: {} };
-    this.mockUsers['user-123'] = { user: regularUser, rateLimits: {} };
+    this.mockUsers.set('admin-user-123', { user: adminUser, rateLimits: {} });
+    this.mockUsers.set('user-123', { user: regularUser, rateLimits: {} });
 
     this.logger.debug('Default test users initialized', {
       adminUser: adminUser.id,

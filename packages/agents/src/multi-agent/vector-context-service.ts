@@ -104,13 +104,13 @@ export class VectorContextService {
       const recentAnalysis = await this.searchRepositoryContent(
         repositoryId,
         config,
-        userId,
+        authenticatedUser.id,
         options
       );
 
       // Get historical patterns if requested
       const historicalPatterns = options.includeHistorical 
-        ? await this.searchHistoricalPatterns(repositoryId, config, userId)
+        ? await this.searchHistoricalPatterns(repositoryId, config, authenticatedUser.id)
         : [];
 
       // Calculate confidence based on data quality and recency
@@ -201,7 +201,7 @@ export class VectorContextService {
         exclude_repository_id: options.excludeRepositoryId
       };
 
-      const results = await this.authenticatedRAGService.search(searchOptions, userId);
+      const results = await this.authenticatedRAGService.search(searchOptions, authenticatedUser.id);
       
       const mappedResults = results.map((result: any) => this.mapToVectorSearchResult(result));
       

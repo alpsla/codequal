@@ -8,8 +8,6 @@ import {
   MultiAgentResult, 
   RepositoryData,
   AuthenticatedUser,
-  AuthenticationContext,
-  RepositoryAccessResult,
   SecurityEvent,
   AuthenticationError
 } from './types';
@@ -1027,7 +1025,7 @@ export class EnhancedMultiAgentExecutor {
     const repositoryPermissions = this.authenticatedUser.permissions.repositories[repositoryId];
     
     if (!repositoryPermissions || !repositoryPermissions.read) {
-      const securityEvent: SecurityEvent = {
+      const _securityEvent: SecurityEvent = {
         type: 'ACCESS_DENIED',
         userId: this.authenticatedUser.id,
         sessionId: this.authenticatedUser.session.fingerprint,
@@ -1054,7 +1052,7 @@ export class EnhancedMultiAgentExecutor {
 
     // Validate session is still active
     if (new Date() > this.authenticatedUser.session.expiresAt) {
-      const securityEvent: SecurityEvent = {
+      const _securityEvent: SecurityEvent = {
         type: 'SESSION_EXPIRED',
         userId: this.authenticatedUser.id,
         sessionId: this.authenticatedUser.session.fingerprint,
@@ -1091,6 +1089,6 @@ export class EnhancedMultiAgentExecutor {
    */
   private async logSecurityEvent(event: SecurityEvent): Promise<void> {
     // TODO: Integrate with actual security logging service
-    this.logger.info('Security event logged', event);
+    this.logger.info('Security event logged', event as any);
   }
 }

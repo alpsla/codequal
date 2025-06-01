@@ -176,6 +176,7 @@ describe('EnhancedMultiAgentExecutor', () => {
         config,
         mockRepositoryData,
         mockVectorContextService,
+        mockAuthenticatedUser,
         { maxConcurrentAgents: 3, timeout: 10000 }
       );
       
@@ -188,6 +189,7 @@ describe('EnhancedMultiAgentExecutor', () => {
         mockAgentConfig,
         mockRepositoryData,
         mockVectorContextService,
+        mockAuthenticatedUser,
         { 
           modelTokenLimits: { 'claude': 1000 }, // Very low budget
           maxConcurrentAgents: 1
@@ -207,6 +209,7 @@ describe('EnhancedMultiAgentExecutor', () => {
         parallelConfig,
         mockRepositoryData,
         mockVectorContextService,
+        mockAuthenticatedUser,
         { timeout: 20000 }
       );
       
@@ -224,6 +227,7 @@ describe('EnhancedMultiAgentExecutor', () => {
         sequentialConfig,
         mockRepositoryData,
         mockVectorContextService,
+        mockAuthenticatedUser,
         { timeout: 20000 }
       );
       
@@ -255,6 +259,7 @@ describe('EnhancedMultiAgentExecutor', () => {
         specializedConfig,
         mockRepositoryData,
         mockVectorContextService,
+        mockAuthenticatedUser,
         { timeout: 20000 }
       );
       
@@ -272,6 +277,7 @@ describe('EnhancedMultiAgentExecutor', () => {
         mockAgentConfig,
         mockRepositoryData,
         mockVectorContextService,
+        mockAuthenticatedUser,
         {
           timeout: 20000,
           onProgress: (progress: ExecutionProgress) => {
@@ -299,6 +305,7 @@ describe('EnhancedMultiAgentExecutor', () => {
         mockAgentConfig,
         mockRepositoryData,
         mockVectorContextService,
+        mockAuthenticatedUser,
         {
           timeout: 20000,
           onProgress: (progress: ExecutionProgress) => {
@@ -325,6 +332,7 @@ describe('EnhancedMultiAgentExecutor', () => {
         mockAgentConfig,
         mockRepositoryData,
         mockVectorContextService,
+        mockAuthenticatedUser,
         { 
           agentTimeout: 100, // Very short timeout
           timeout: 5000
@@ -344,6 +352,7 @@ describe('EnhancedMultiAgentExecutor', () => {
         mockAgentConfig,
         mockRepositoryData,
         mockVectorContextService,
+        mockAuthenticatedUser,
         { timeout: 10000 }
       );
       
@@ -361,6 +370,7 @@ describe('EnhancedMultiAgentExecutor', () => {
         mockAgentConfig,
         mockRepositoryData,
         mockVectorContextService,
+        mockAuthenticatedUser,
         { 
           enableMetrics: true,
           timeout: 20000
@@ -380,6 +390,7 @@ describe('EnhancedMultiAgentExecutor', () => {
         mockAgentConfig,
         mockRepositoryData,
         mockVectorContextService,
+        mockAuthenticatedUser,
         { timeout: 20000 }
       );
       
@@ -403,7 +414,7 @@ describe('EnhancedMultiAgentExecutor', () => {
       } as any;
       
       expect(() => {
-        new EnhancedMultiAgentExecutor(invalidConfig, mockRepositoryData, mockVectorContextService);
+        new EnhancedMultiAgentExecutor(invalidConfig, mockRepositoryData, mockVectorContextService, mockAuthenticatedUser);
       }).toThrow();
     });
     
@@ -424,7 +435,7 @@ describe('EnhancedMultiAgentExecutor', () => {
       };
       
       expect(() => {
-        new EnhancedMultiAgentExecutor(configWithFallback, mockRepositoryData, mockVectorContextService);
+        new EnhancedMultiAgentExecutor(configWithFallback, mockRepositoryData, mockVectorContextService, mockAuthenticatedUser);
       }).not.toThrow();
     });
   });
@@ -633,6 +644,7 @@ describe('Enhanced Executor Integration', () => {
       mockAgentConfig,
       mockRepositoryData,
       mockVectorContextService,
+      mockAuthenticatedUser,
       {
         timeout: 30000,
         enableMetrics: true,
@@ -662,6 +674,7 @@ describe('Enhanced Executor Integration', () => {
       mockAgentConfig,
       mockRepositoryData,
       mockVectorContextService,
+      mockAuthenticatedUser,
       {
         timeout: 30000,
         modelBlacklist: mockBlacklist,
@@ -706,6 +719,7 @@ describe('Enhanced Executor Integration', () => {
       complexConfig,
       mockRepositoryData,
       mockVectorContextService,
+      mockAuthenticatedUser,
       { timeout: 30000 }
     );
     
