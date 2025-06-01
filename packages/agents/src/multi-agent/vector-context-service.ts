@@ -1,6 +1,7 @@
 import { createLogger } from '@codequal/core/utils';
 import { AgentRole } from '@codequal/core/config/agent-registry';
 import { VectorSearchResult, RepositoryVectorContext } from './enhanced-executor';
+import { AuthenticatedUser, SecurityEvent, AuthenticationError } from './types/auth';
 
 /**
  * Agent-specific search configuration for Vector DB queries
@@ -77,7 +78,7 @@ export class VectorContextService {
   async getRepositoryContext(
     repositoryId: string,
     agentRole: AgentRole,
-    userId: string,
+    authenticatedUser: AuthenticatedUser,
     options: {
       maxResults?: number;
       minSimilarity?: number;
@@ -89,10 +90,13 @@ export class VectorContextService {
       throw new Error(`No search configuration for agent role: ${agentRole}`);
     }
 
+    // 🔒 SECURITY: Validate repository access before proceeding
+    await this.validateRepositoryAccess(authenticatedUser, repositoryId, 'read');
+
     this.logger.debug('Getting repository context', {
       repositoryId,
       role: agentRole,
-      userId
+      userId: authenticatedUser.id
     });
 
     try {
@@ -147,7 +151,7 @@ export class VectorContextService {
   async getCrossRepositoryPatterns(
     agentRole: AgentRole,
     searchQuery: string,
-    userId: string,
+    authenticatedUser: AuthenticatedUser,
     options: {
       maxResults?: number;
       excludeRepositoryId?: string;
@@ -163,10 +167,12 @@ export class VectorContextService {
 
     try {
       // 🔒 SECURITY: First get user's accessible repositories
-      const userAccessibleRepos = await this.getUserAccessibleRepositories(userId);
+      const userAccessibleRepos = this.getUserAccessibleRepositories(authenticatedUser);
       
       if (userAccessibleRepos.length === 0) {
-        this.logger.warn('User has no accessible repositories for cross-repo patterns', { userId });
+        this.logger.warn('User has no accessible repositories for cross-repo patterns', { 
+          userId: authenticatedUser.id 
+        });
         return [];
       }
 
@@ -177,7 +183,7 @@ export class VectorContextService {
 
       if (targetRepositories.length === 0) {
         this.logger.debug('No other accessible repositories for cross-repo patterns', { 
-          userId, 
+          userId: authenticatedUser.id, 
           excludeRepo: options.excludeRepositoryId 
         });
         return [];
@@ -416,33 +422,6 @@ export class VectorContextService {
     return `${finding.type}: ${finding.description}${finding.suggestion ? ` Suggestion: ${finding.suggestion}` : ''}`;
   }
 
-  /**
-   * Get user's accessible repositories from existing security layer
-   * 🔒 SECURITY: Uses authenticated RAG service's access control
-   */
-  private async getUserAccessibleRepositories(userId: string): Promise<string[]> {
-    try {
-      // 🔒 SECURITY: Leverage existing repository access control
-      // This should call the same logic as AuthenticatedRAGService.filterResultsByAccess
-      const { data: userRepos, error } = await this.supabase
-        .from('repositories')
-        .select('id')
-        .eq('user_id', userId);
-
-      if (error) {
-        this.logger.warn('Failed to fetch user accessible repositories', { error, userId });
-        return [];
-      }
-
-      return userRepos?.map((repo: any) => repo.id) || [];
-    } catch (error) {
-      this.logger.error('Error getting user accessible repositories', {
-        userId,
-        error: error instanceof Error ? error.message : String(error)
-      });
-      return [];
-    }
-  }
 
   /**
    * Sanitize cross-repository results to prevent data leakage
@@ -506,6 +485,79 @@ export class VectorContextService {
       confidenceScore: 0,
       lastUpdated: new Date()
     };
+  }
+
+  /**
+   * Validate repository access for authenticated user
+   * 🔒 SECURITY: Ensures user has required permission for repository
+   */
+  private async validateRepositoryAccess(
+    authenticatedUser: AuthenticatedUser,
+    repositoryId: string,
+    permission: 'read' | 'write' | 'admin'
+  ): Promise<void> {
+    const repositoryPermissions = authenticatedUser.permissions.repositories[repositoryId];
+    
+    if (!repositoryPermissions || !repositoryPermissions[permission]) {
+      const securityEvent: SecurityEvent = {
+        type: 'ACCESS_DENIED',
+        userId: authenticatedUser.id,
+        sessionId: authenticatedUser.session.fingerprint,
+        repositoryId,
+        ipAddress: authenticatedUser.session.ipAddress,
+        userAgent: authenticatedUser.session.userAgent,
+        timestamp: new Date(),
+        details: {
+          service: 'VectorContextService',
+          reason: `Repository ${permission} access denied`,
+          requiredPermission: permission,
+          userPermissions: repositoryPermissions || {}
+        },
+        severity: 'high'
+      };
+
+      this.logger.error('Repository access denied in VectorContextService', {
+        userId: authenticatedUser.id,
+        repositoryId,
+        permission,
+        userPermissions: repositoryPermissions
+      });
+
+      // TODO: Log security event to audit system
+      // await this.logSecurityEvent(securityEvent);
+
+      throw new Error(
+        `${AuthenticationError.REPOSITORY_ACCESS_DENIED}: User ${authenticatedUser.id} does not have ${permission} access to repository ${repositoryId}`
+      );
+    }
+
+    this.logger.debug('Repository access validated', {
+      userId: authenticatedUser.id,
+      repositoryId,
+      permission,
+      granted: true
+    });
+  }
+
+  /**
+   * Get user's accessible repositories for cross-repository searches
+   * 🔒 SECURITY: Only returns repositories user has read access to
+   */
+  private getUserAccessibleRepositories(authenticatedUser: AuthenticatedUser): string[] {
+    const accessibleRepos: string[] = [];
+    
+    for (const [repositoryId, permissions] of Object.entries(authenticatedUser.permissions.repositories)) {
+      if (permissions.read) {
+        accessibleRepos.push(repositoryId);
+      }
+    }
+
+    this.logger.debug('Found accessible repositories', {
+      userId: authenticatedUser.id,
+      repositoryCount: accessibleRepos.length
+    });
+
+    return accessibleRepos;
   }
 }
 
