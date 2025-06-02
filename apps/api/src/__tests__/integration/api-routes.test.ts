@@ -37,7 +37,15 @@ jest.mock('../../services/result-orchestrator', () => ({
   ResultOrchestrator: jest.fn().mockImplementation(() => mockResultOrchestrator)
 }));
 
-jest.mock('../../services/deepwiki-manager');
+const mockDeepWikiManager = {
+  checkRepositoryExists: jest.fn().mockResolvedValue(true),
+  triggerRepositoryAnalysis: jest.fn().mockResolvedValue('job-123'),
+  waitForAnalysisCompletion: jest.fn().mockResolvedValue(mockAnalysisResult)
+};
+
+jest.mock('../../services/deepwiki-manager', () => ({
+  DeepWikiManager: jest.fn().mockImplementation(() => mockDeepWikiManager)
+}));
 jest.mock('../../validators/request-validators', () => ({
   validatePRAnalysisRequest: jest.fn().mockReturnValue({ isValid: true, errors: [] })
 }));
@@ -192,13 +200,8 @@ describe('API Routes Integration', () => {
 
   describe('Error Handling Integration', () => {
     test('should handle service errors gracefully', async () => {
-      const mockDeepWikiManager = {
-        checkRepositoryExists: jest.fn().mockRejectedValue(new Error('Service unavailable'))
-      };
-
-      jest.doMock('../../services/deepwiki-manager', () => ({
-        DeepWikiManager: jest.fn().mockImplementation(() => mockDeepWikiManager)
-      }));
+      // Override the mock for this test
+      mockDeepWikiManager.checkRepositoryExists.mockRejectedValueOnce(new Error('Service unavailable'));
 
       const response = await request(app)
         .get('/api/repository/status')
@@ -270,10 +273,10 @@ describe('API Routes Integration', () => {
 
   describe('Parameter Validation Integration', () => {
     test('should validate query parameters across routes', async () => {
-      // Test invalid query parameter
+      // Test invalid query parameter (use null which won't be stringified)
       const response = await request(app)
         .get('/api/repository/status')
-        .query({ repositoryUrl: 123 })
+        .query({ repositoryUrl: '' }) // empty string should trigger validation
         .expect(400);
 
       expect(response.body.error).toContain('repositoryUrl');

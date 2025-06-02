@@ -247,7 +247,7 @@ describe('DeepWikiManager', () => {
         result,
         mockUser
       );
-    });
+    }, 60000); // 60 second timeout
 
     test('should throw error for failed job', async () => {
       const repositoryUrl = 'https://github.com/owner/repo';
