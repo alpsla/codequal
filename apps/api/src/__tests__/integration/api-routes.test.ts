@@ -34,8 +34,8 @@ describe('API Routes Integration', () => {
     
     // Add all routes
     app.use('/api', resultOrchestratorRoutes);
-    app.use('/api', repositoryRoutes);
-    app.use('/api', analysisRoutes);
+    app.use('/api/repository', repositoryRoutes);
+    app.use('/api/analysis', analysisRoutes);
     
     // Add health check endpoint
     app.get('/health', (req, res) => {

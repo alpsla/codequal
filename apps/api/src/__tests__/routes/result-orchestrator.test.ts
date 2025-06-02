@@ -16,8 +16,51 @@ jest.mock('../../validators/request-validators', () => ({
   validatePRAnalysisRequest: jest.fn().mockReturnValue({ isValid: true, errors: [] })
 }));
 
+const mockAnalysisResult = {
+  analysisId: 'test-analysis-123',
+  status: 'complete',
+  repository: {
+    url: 'https://github.com/owner/repo',
+    name: 'repo',
+    primaryLanguage: 'typescript'
+  },
+  pr: {
+    number: 123,
+    title: 'Test PR',
+    changedFiles: 5
+  },
+  analysis: {
+    mode: 'comprehensive',
+    agentsUsed: ['security', 'architecture'],
+    totalFindings: 10,
+    processingTime: 30000
+  },
+  findings: {
+    security: [],
+    architecture: [],
+    performance: [],
+    codeQuality: []
+  },
+  educationalContent: [],
+  metrics: {
+    severity: { critical: 0, high: 2, medium: 5, low: 3 },
+    confidence: 0.85,
+    coverage: 90
+  },
+  report: {
+    summary: 'Analysis completed successfully',
+    recommendations: [],
+    prComment: 'No critical issues found'
+  },
+  metadata: {
+    timestamp: new Date(),
+    modelVersions: {},
+    processingSteps: []
+  }
+};
+
 const mockResultOrchestrator = {
-  analyzePR: jest.fn()
+  analyzePR: jest.fn().mockResolvedValue(mockAnalysisResult)
 };
 
 jest.mock('../../services/result-orchestrator', () => ({
@@ -142,18 +185,38 @@ describe('Result Orchestrator Routes', () => {
         new Error('Analysis service unavailable')
       );
 
+      // The route should still return 200 initially since error handling is async
       const response = await request(app)
         .post('/api/analyze-pr')
         .send(validRequest)
-        .expect(500);
+        .expect(200);
 
       expect(response.body).toMatchObject({
-        error: 'Internal server error',
-        message: expect.any(String)
+        analysisId: expect.any(String),
+        status: 'queued',
+        estimatedTime: expect.any(Number)
       });
+
+      // Wait a bit for async error handling
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Check progress to see if error was captured
+      const progressResponse = await request(app)
+        .get(`/api/analysis/${response.body.analysisId}/progress`)
+        .expect(200);
+
+      expect(progressResponse.body.status).toBe('failed');
+      expect(progressResponse.body.error).toBe('Analysis service unavailable');
     });
 
     test('should track analysis progress internally', async () => {
+      // Mock with a delayed promise to keep it in processing state
+      mockResultOrchestrator.analyzePR.mockImplementationOnce(
+        () => new Promise(resolve => 
+          setTimeout(() => resolve(mockAnalysisResult), 1000)
+        )
+      );
+
       const response = await request(app)
         .post('/api/analyze-pr')
         .send(validRequest)
@@ -161,7 +224,7 @@ describe('Result Orchestrator Routes', () => {
 
       const analysisId = response.body.analysisId;
 
-      // Check that analysis can be tracked
+      // Check that analysis can be tracked immediately (should be queued)
       const progressResponse = await request(app)
         .get(`/api/analysis/${analysisId}/progress`)
         .expect(200);
