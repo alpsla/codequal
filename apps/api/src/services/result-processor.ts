@@ -628,7 +628,7 @@ export class ResultProcessor {
     const intersection = new Set([...set1].filter(token => set2.has(token)));
     const union = new Set([...set1, ...set2]);
     
-    let jaccardSim = intersection.size / union.size;
+    const jaccardSim = intersection.size / union.size;
     
     // Boost score for important token matches
     const importantTokens = ['sql', 'injection', 'vulnerability', 'security', 'memory', 'performance'];
@@ -683,7 +683,7 @@ export class ResultProcessor {
     return 1.0 - (actualDiff / maxDiff);
   }
 
-  private safeStringValue(value: any, defaultValue: string = ''): string {
+  private safeStringValue(value: any, defaultValue = ''): string {
     if (value === null || value === undefined) return defaultValue;
     if (typeof value === 'string') return value.trim();
     if (typeof value === 'number' || typeof value === 'boolean') return String(value);

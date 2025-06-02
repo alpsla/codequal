@@ -3,8 +3,10 @@ import 'jest';
 
 // Extend Jest matchers
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace jest {
     interface Expect {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       oneOf(expected: any[]): any;
     }
   }
@@ -12,6 +14,7 @@ declare global {
 
 // Custom matcher for oneOf
 expect.extend({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   oneOf(received: any, expected: any[]) {
     const pass = expected.includes(received);
     if (pass) {

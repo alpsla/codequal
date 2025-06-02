@@ -397,7 +397,7 @@ export class ResultOrchestrator {
   }
 
   private extractRepositoryName(url: string): string {
-    const match = url.match(/\/([^\/]+)\.git$/) || url.match(/\/([^\/]+)$/);
+    const match = url.match(/\/([^/]+)\.git$/) || url.match(/\/([^/]+)$/);
     return match ? match[1] : 'Unknown Repository';
   }
 

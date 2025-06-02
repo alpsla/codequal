@@ -329,7 +329,7 @@ export class DeepWikiManager {
    * Extract repository name from URL
    */
   private extractRepositoryName(url: string): string {
-    const match = url.match(/\/([^\/]+)\.git$/) || url.match(/\/([^\/]+)$/);
+    const match = url.match(/\/([^/]+)\.git$/) || url.match(/\/([^/]+)$/);
     return match ? match[1] : 'unknown-repository';
   }
 }
