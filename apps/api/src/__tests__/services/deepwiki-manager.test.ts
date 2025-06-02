@@ -219,8 +219,12 @@ describe('DeepWikiManager', () => {
       // Start waiting for completion
       const completionPromise = manager.waitForAnalysisCompletion(repositoryUrl);
 
-      // Complete the job
-      jest.advanceTimersByTime(6000);
+      // Advance timers to complete the job (analysis completion timer runs after ~5s + random delay)
+      jest.advanceTimersByTime(6000); // Complete the analysis job
+      await Promise.resolve(); // Allow microtasks to complete
+
+      // Advance timers for the polling interval (polls every 5s)
+      jest.advanceTimersByTime(5000); // Run the first poll check
       await Promise.resolve(); // Allow microtasks to complete
 
       const result = await completionPromise;
