@@ -211,7 +211,7 @@ export class PRContextService {
     repo: string;
   } {
     // GitHub patterns
-    const githubMatch = url.match(/github\.com[\/:]([^\/]+)\/([^\/]+?)(?:\.git)?(?:\/.*)?$/);
+    const githubMatch = url.match(/github\.com[/:]([^/]+)\/([^/]+?)(?:\.git)?(?:\/.*)?$/);
     if (githubMatch) {
       return {
         platform: 'github',
@@ -221,7 +221,7 @@ export class PRContextService {
     }
 
     // GitLab patterns
-    const gitlabMatch = url.match(/gitlab\.com[\/:]([^\/]+)\/([^\/]+?)(?:\.git)?(?:\/.*)?$/);
+    const gitlabMatch = url.match(/gitlab\.com[/:]([^/]+)\/([^/]+?)(?:\.git)?(?:\/.*)?$/);
     if (gitlabMatch) {
       return {
         platform: 'gitlab',
@@ -232,7 +232,7 @@ export class PRContextService {
 
     // Check for other common platforms (unsupported)
     if (url.includes('bitbucket.org') || url.includes('gitlab.') || url.includes('github.')) {
-      const match = url.match(/[\/:]([^\/]+)\/([^\/]+?)(?:\.git)?(?:\/.*)?$/);
+      const match = url.match(/[/:]([^/]+)\/([^/]+?)(?:\.git)?(?:\/.*)?$/);
       if (match) {
         return {
           platform: 'unknown',

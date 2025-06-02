@@ -10,7 +10,7 @@ export interface PRAnalysisRequest {
   githubToken?: string;
 }
 
-export function validatePRAnalysisRequest(body: any): ValidationResult {
+export function validatePRAnalysisRequest(body: unknown): ValidationResult {
   const errors: string[] = [];
 
   // Check required fields
@@ -57,16 +57,16 @@ export function validateRepositoryUrl(url: string): boolean {
 function isValidRepositoryUrl(url: string): boolean {
   // GitHub patterns
   const githubPatterns = [
-    /^https:\/\/github\.com\/[^\/]+\/[^\/]+$/,
-    /^https:\/\/github\.com\/[^\/]+\/[^\/]+\.git$/,
-    /^git@github\.com:[^\/]+\/[^\/]+\.git$/
+    /^https:\/\/github\.com\/[^/]+\/[^/]+$/,
+    /^https:\/\/github\.com\/[^/]+\/[^/]+\.git$/,
+    /^git@github\.com:[^/]+\/[^/]+\.git$/
   ];
 
   // GitLab patterns
   const gitlabPatterns = [
-    /^https:\/\/gitlab\.com\/[^\/]+\/[^\/]+$/,
-    /^https:\/\/gitlab\.com\/[^\/]+\/[^\/]+\.git$/,
-    /^git@gitlab\.com:[^\/]+\/[^\/]+\.git$/
+    /^https:\/\/gitlab\.com\/[^/]+\/[^/]+$/,
+    /^https:\/\/gitlab\.com\/[^/]+\/[^/]+\.git$/,
+    /^git@gitlab\.com:[^/]+\/[^/]+\.git$/
   ];
 
   const allPatterns = [...githubPatterns, ...gitlabPatterns];
