@@ -4,6 +4,8 @@
       "outDir": "./dist",
       "rootDir": "./src",
       "baseUrl": "./",
+      "isolatedModules": true,
+      "skipLibCheck": true,
       "paths": {
         "@codequal/api/*": ["./src/*"],
         "@codequal/core/*": ["../../packages/core/src/*"],
