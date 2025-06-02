@@ -16,7 +16,27 @@ jest.mock('../../middleware/auth-middleware', () => ({
 }));
 
 // Mock all services
-jest.mock('../../services/result-orchestrator');
+const mockAnalysisResult = {
+  analysisId: 'test-analysis-123',
+  status: 'complete',
+  repository: { url: 'https://github.com/owner/repo', name: 'repo', primaryLanguage: 'typescript' },
+  pr: { number: 123, title: 'Test PR', changedFiles: 5 },
+  analysis: { mode: 'comprehensive', agentsUsed: ['security'], totalFindings: 0, processingTime: 1000 },
+  findings: { security: [], architecture: [], performance: [], codeQuality: [] },
+  educationalContent: [],
+  metrics: { severity: { critical: 0, high: 0, medium: 0, low: 0 }, confidence: 0.9, coverage: 95 },
+  report: { summary: 'No issues found', recommendations: [], prComment: 'All good!' },
+  metadata: { timestamp: new Date(), modelVersions: {}, processingSteps: [] }
+};
+
+const mockResultOrchestrator = {
+  analyzePR: jest.fn().mockResolvedValue(mockAnalysisResult)
+};
+
+jest.mock('../../services/result-orchestrator', () => ({
+  ResultOrchestrator: jest.fn().mockImplementation(() => mockResultOrchestrator)
+}));
+
 jest.mock('../../services/deepwiki-manager');
 jest.mock('../../validators/request-validators', () => ({
   validatePRAnalysisRequest: jest.fn().mockReturnValue({ isValid: true, errors: [] })
@@ -68,18 +88,6 @@ describe('API Routes Integration', () => {
 
   describe('Result Orchestrator Integration', () => {
     test('should handle PR analysis request through full stack', async () => {
-      const mockResultOrchestrator = {
-        analyzePR: jest.fn().mockResolvedValue({
-          analysisId: 'test-analysis-123',
-          status: 'complete',
-          findings: { security: [], architecture: [] }
-        })
-      };
-
-      jest.doMock('../../services/result-orchestrator', () => ({
-        ResultOrchestrator: jest.fn().mockImplementation(() => mockResultOrchestrator)
-      }));
-
       const validRequest = {
         repositoryUrl: 'https://github.com/owner/repo',
         prNumber: 123,
