@@ -11,6 +11,8 @@ export interface AuthenticatedUser {
   email: string;
   organizationId?: string;
   permissions: string[];
+  role: string;
+  status: string;
   session: {
     token: string;
     expiresAt: Date;
@@ -66,6 +68,8 @@ export const authMiddleware = async (
         email: userData.user.email,
         organizationId: userData.user.user_metadata?.organization_id,
         permissions: userData.user.user_metadata?.permissions || [],
+        role: userData.user.user_metadata?.role || 'user',
+        status: 'active',
         session: {
           token,
           expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
@@ -88,6 +92,8 @@ export const authMiddleware = async (
       email: session.session.user.email,
       organizationId: session.session.user.user_metadata?.organization_id,
       permissions: session.session.user.user_metadata?.permissions || [],
+      role: session.session.user.user_metadata?.role || 'user',
+      status: 'active',
       session: {
         token: session.session.access_token,
         expiresAt: new Date(session.session.expires_at! * 1000)

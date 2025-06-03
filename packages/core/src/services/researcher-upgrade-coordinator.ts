@@ -387,11 +387,12 @@ export class ResearcherUpgradeCoordinator {
     upgrade.oldModel = oldStats.model;
 
     // Perform upgrade via researcher agent
+    const newModelIdentifier = `${upgrade.newProvider}/${upgrade.newModel}`;
     const upgradeResult = await this.researcherAgent.upgradeResearcher(
-      upgrade.newProvider,
-      upgrade.newModel,
-      upgrade.newVersion,
-      upgrade.reason
+      newModelIdentifier,
+      upgrade.oldModel,
+      false, // force
+      false  // preserveCache
     );
 
     if (!upgradeResult.success) {

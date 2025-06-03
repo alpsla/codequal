@@ -90,7 +90,7 @@ export class MCPContextManager {
       user_context: {
         user_id: this.authenticatedUser.id,
         role: this.authenticatedUser.role,
-        permissions: this.authenticatedUser.permissions || [],
+        permissions: Array.isArray(this.authenticatedUser.permissions) ? this.authenticatedUser.permissions : [],
         organization_id: this.authenticatedUser.organizationId
       },
       repository_context: {

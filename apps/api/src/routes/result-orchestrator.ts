@@ -2,7 +2,6 @@ import { Router, Request, Response } from 'express';
 import { checkRepositoryAccess } from '../middleware/auth-middleware';
 import { ResultOrchestrator } from '../services/result-orchestrator';
 import { validatePRAnalysisRequest, validateAnalysisMode } from '../validators/request-validators';
-import '../types/express';
 
 export const resultOrchestratorRoutes = Router();
 
@@ -41,6 +40,12 @@ resultOrchestratorRoutes.post('/analyze-pr', async (req: Request, res: Response)
 
     const request: PRAnalysisRequest = req.body;
     const user = req.user;
+
+    if (!user) {
+      return res.status(401).json({ 
+        error: 'Authentication required' 
+      });
+    }
 
     // Check repository access
     const hasAccess = await checkRepositoryAccess(user, request.repositoryUrl);
@@ -121,6 +126,12 @@ resultOrchestratorRoutes.get('/analysis/:id/progress', (req: Request, res: Respo
     const analysisId = req.params.id;
     const user = req.user;
 
+    if (!user) {
+      return res.status(401).json({ 
+        error: 'Authentication required' 
+      });
+    }
+
     const analysis = activeAnalyses.get(analysisId);
     if (!analysis) {
       return res.status(404).json({ 
@@ -171,6 +182,12 @@ resultOrchestratorRoutes.delete('/analysis/:id', (req: Request, res: Response) =
   try {
     const analysisId = req.params.id;
     const user = req.user;
+
+    if (!user) {
+      return res.status(401).json({ 
+        error: 'Authentication required' 
+      });
+    }
 
     const analysis = activeAnalyses.get(analysisId);
     if (!analysis) {
