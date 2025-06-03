@@ -14,7 +14,7 @@ import { Logger, createLogger } from '../../../core/src/utils';
 import { 
   ModelVersionSync, 
   ModelVersionInfo, 
-  CANONICAL_MODEL_VERSIONS,
+  // CANONICAL_MODEL_VERSIONS, // Available but not used in this context
   ModelCapabilities,
   ModelPricing,
   ModelTier,
@@ -821,7 +821,7 @@ export class ResearcherAgent {
    * Generate configuration recommendations using role-specific cross-market research
    */
   private async generateConfigurationRecommendations(
-    scoredModels: ModelResearchResult[]
+    _scoredModels: ModelResearchResult[]
   ): Promise<ConfigurationUpdate[]> {
     const updates: ConfigurationUpdate[] = [];
     
@@ -1828,7 +1828,7 @@ Apply the cached [${this.researcherCache?.templateId}] with these parameters.`;
    * Generate meta-research prompt for the researcher to evaluate itself
    */
   private generateMetaResearchPrompt(currentModel: ModelVersionInfo): string {
-    const currentYear = new Date().getFullYear();
+    const _currentYear = new Date().getFullYear();
     
     return `You are currently ${currentModel.provider} ${currentModel.model}, serving as the RESEARCHER agent for CodeQual. Your task is to research whether you should be replaced by a newer/better model for RESEARCH TASKS.
 

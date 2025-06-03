@@ -10,8 +10,9 @@
 
 import { AuthenticatedUser } from '@codequal/core/types';
 import { Logger, createLogger } from '@codequal/core/utils';
-import { ResearcherAgent, ResearchConfig, ConfigurationUpdate } from './researcher-agent';
+import { ResearcherAgent, ResearchConfig } from './researcher-agent';
 import { VectorContextService } from '../multi-agent/vector-context-service';
+import { CANONICAL_MODEL_VERSIONS } from '@codequal/core/services/model-selection/ModelVersionSync';
 
 /**
  * Research operation result
@@ -146,37 +147,32 @@ export class ResearcherService {
       throw new Error(`Operation ${operationId} not found`);
     }
     
-    try {
-      // Create RESEARCHER agent
-      const researcherAgent = new ResearcherAgent(this.authenticatedUser, config);
-      
-      // Conduct research and update
-      const result = await researcherAgent.conductResearchAndUpdate();
-      
-      // Update operation with results
-      operation.status = 'completed';
-      operation.completedAt = new Date();
-      operation.configurationsUpdated = result.summary.configurationsUpdated;
-      operation.totalCostSavings = result.summary.totalCostSavings;
-      operation.performanceImprovements = result.summary.performanceImprovements;
-      
-      // Store results in Vector DB if available
-      if (this.vectorContextService) {
-        await this.storeResearchResults(operationId, result);
-      }
-      
-      // Move to history
-      this.researchHistory.push(operation);
-      this.activeOperations.delete(operationId);
-      
-      this.logger.info('✅ Research operation completed successfully', {
-        operationId,
-        summary: result.summary
-      });
-      
-    } catch (error) {
-      throw error;
+    // Create RESEARCHER agent
+    const researcherAgent = new ResearcherAgent(this.authenticatedUser, config);
+    
+    // Conduct research and update
+    const result = await researcherAgent.conductResearchAndUpdate();
+    
+    // Update operation with results
+    operation.status = 'completed';
+    operation.completedAt = new Date();
+    operation.configurationsUpdated = result.summary.configurationsUpdated;
+    operation.totalCostSavings = result.summary.totalCostSavings;
+    operation.performanceImprovements = result.summary.performanceImprovements;
+    
+    // Store results in Vector DB if available
+    if (this.vectorContextService) {
+      await this.storeResearchResults(operationId, result);
     }
+    
+    // Move to history
+    this.researchHistory.push(operation);
+    this.activeOperations.delete(operationId);
+    
+    this.logger.info('✅ Research operation completed successfully', {
+      operationId,
+      summary: result.summary
+    });
   }
   
   /**
@@ -309,7 +305,7 @@ export class ResearcherService {
       // This would typically query the Vector DB for current configurations
       // For now, we'll generate a summary based on available data
       
-      const configurations = Object.values(require('@codequal/core/services/model-selection/ModelVersionSync').CANONICAL_MODEL_VERSIONS);
+      const configurations = Object.values(CANONICAL_MODEL_VERSIONS);
       
       const configurationsByProvider: Record<string, number> = {};
       const configurationsByRole: Record<string, number> = {};

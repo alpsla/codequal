@@ -499,7 +499,7 @@ export class VectorContextService {
     const repositoryPermissions = authenticatedUser.permissions.repositories[repositoryId];
     
     if (!repositoryPermissions || !repositoryPermissions[permission]) {
-      const securityEvent: SecurityEvent = {
+      const _securityEvent: SecurityEvent = {
         type: 'ACCESS_DENIED',
         userId: authenticatedUser.id,
         sessionId: authenticatedUser.session.fingerprint,
