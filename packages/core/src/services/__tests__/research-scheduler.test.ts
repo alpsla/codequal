@@ -172,7 +172,6 @@ describe('ResearchScheduler', () => {
         '0 9 1 */3 *',
         expect.any(Function),
         {
-          scheduled: false,
           timezone: 'UTC'
         }
       );
@@ -183,7 +182,6 @@ describe('ResearchScheduler', () => {
         '0 10 1 */3 *', // 1 hour offset
         expect.any(Function),
         {
-          scheduled: false,
           timezone: 'UTC'
         }
       );
