@@ -15,22 +15,22 @@ export enum ProviderGroup {
  * Map individual model providers to their provider group
  */
 export const PROVIDER_TO_GROUP: Record<AgentProvider, ProviderGroup> = {
-  // OpenAI providers
+  // Main providers  
+  [AgentProvider.ANTHROPIC]: ProviderGroup.CLAUDE,
   [AgentProvider.OPENAI]: ProviderGroup.OPENAI,
+  [AgentProvider.GOOGLE]: ProviderGroup.GEMINI,
+  [AgentProvider.DEEPSEEK]: ProviderGroup.DEEPSEEK,
+  [AgentProvider.OPENROUTER]: ProviderGroup.OPENAI, // OpenRouter provides access to multiple providers
   
-  // Claude providers
+  // Legacy providers (backward compatibility)
   [AgentProvider.CLAUDE]: ProviderGroup.CLAUDE,
-  
-  // DeepSeek providers
+  [AgentProvider.GEMINI_1_5_PRO]: ProviderGroup.GEMINI,
+  [AgentProvider.GEMINI_2_5_PRO]: ProviderGroup.GEMINI,
+  [AgentProvider.GEMINI_2_5_FLASH]: ProviderGroup.GEMINI,
   [AgentProvider.DEEPSEEK_CODER]: ProviderGroup.DEEPSEEK,
   [AgentProvider.DEEPSEEK_CODER_LITE]: ProviderGroup.DEEPSEEK,
   [AgentProvider.DEEPSEEK_CODER_PLUS]: ProviderGroup.DEEPSEEK,
   [AgentProvider.DEEPSEEK_CHAT]: ProviderGroup.DEEPSEEK,
-  
-  // Gemini providers
-  [AgentProvider.GEMINI_1_5_PRO]: ProviderGroup.GEMINI,
-  [AgentProvider.GEMINI_2_5_PRO]: ProviderGroup.GEMINI,
-  [AgentProvider.GEMINI_2_5_FLASH]: ProviderGroup.GEMINI,
   
   // MCP providers
   [AgentProvider.MCP_CODE_REVIEW]: ProviderGroup.MCP,
@@ -43,9 +43,9 @@ export const PROVIDER_TO_GROUP: Record<AgentProvider, ProviderGroup> = {
   [AgentProvider.MCP_LLAMA]: ProviderGroup.MCP,
   [AgentProvider.MCP_DEEPSEEK]: ProviderGroup.MCP,
   
-  // Other providers
-  [AgentProvider.BITO]: ProviderGroup.OPENAI, // Assuming Bito is based on OpenAI
-  [AgentProvider.CODE_RABBIT]: ProviderGroup.OPENAI // Assuming CodeRabbit is based on OpenAI
+  // External services
+  [AgentProvider.BITO]: ProviderGroup.OPENAI,
+  [AgentProvider.CODE_RABBIT]: ProviderGroup.OPENAI
 };
 
 /**
