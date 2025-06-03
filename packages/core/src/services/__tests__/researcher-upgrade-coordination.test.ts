@@ -641,7 +641,7 @@ describe('Researcher Upgrade Coordination', () => {
       const originalProcessRequestNormally = (upgradeCoordinator as any).processRequestNormally;
       (upgradeCoordinator as any).processRequestNormally = jest.fn().mockImplementation(() => {
         // eslint-disable-next-line @typescript-eslint/no-empty-function
-        return new Promise(() => {}); // Never resolves
+        return new Promise(() => {}); // Never resolves - intentional for timeout testing
       });
 
       // Start a request
