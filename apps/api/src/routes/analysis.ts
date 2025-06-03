@@ -1,5 +1,5 @@
-import { Router, Response } from 'express';
-import { AuthenticatedRequest } from '../middleware/auth-middleware';
+import { Router, Request, Response } from 'express';
+import '../types/express.d.ts';
 
 export const analysisRoutes = Router();
 
@@ -10,13 +10,13 @@ const analysisHistory = new Map<string, any[]>();
  * GET /api/analysis/history
  * Get user's analysis history
  */
-analysisRoutes.get('/history', async (req: AuthenticatedRequest, res: Response) => {
+analysisRoutes.get('/history', async (req: Request, res: Response): Promise<void> => {
   try {
-    const user = req.user;
+    const user = req.user!;
     const { limit = 20, offset = 0, repositoryUrl } = req.query;
     
     // Get user's analysis history
-    const userHistory = analysisHistory.get(user.id) || [];
+    const userHistory = analysisHistory.get(user!.id) || [];
     
     // Filter by repository if specified
     let filteredHistory = userHistory;
@@ -66,13 +66,13 @@ analysisRoutes.get('/history', async (req: AuthenticatedRequest, res: Response) 
  * GET /api/analysis/:id/results
  * Get detailed analysis results
  */
-analysisRoutes.get('/:id/results', async (req: AuthenticatedRequest, res: Response) => {
+analysisRoutes.get('/:id/results', async (req: Request, res: Response) => {
   try {
     const { id: analysisId } = req.params;
     const user = req.user;
     
     // Find analysis in user's history
-    const userHistory = analysisHistory.get(user.id) || [];
+    const userHistory = analysisHistory.get(user!.id) || [];
     const analysis = userHistory.find(a => a.analysisId === analysisId);
     
     if (!analysis) {
@@ -97,14 +97,14 @@ analysisRoutes.get('/:id/results', async (req: AuthenticatedRequest, res: Respon
  * GET /api/analysis/:id/report
  * Get formatted report for analysis
  */
-analysisRoutes.get('/:id/report', async (req: AuthenticatedRequest, res: Response) => {
+analysisRoutes.get('/:id/report', async (req: Request, res: Response) => {
   try {
     const { id: analysisId } = req.params;
     const { format = 'json' } = req.query;
     const user = req.user;
     
     // Find analysis in user's history
-    const userHistory = analysisHistory.get(user.id) || [];
+    const userHistory = analysisHistory.get(user!.id) || [];
     const analysis = userHistory.find(a => a.analysisId === analysisId);
     
     if (!analysis) {
@@ -149,11 +149,17 @@ analysisRoutes.get('/:id/report', async (req: AuthenticatedRequest, res: Respons
  * POST /api/analysis/:id/feedback
  * Submit feedback on analysis results
  */
-analysisRoutes.post('/:id/feedback', async (req: AuthenticatedRequest, res: Response) => {
+analysisRoutes.post('/:id/feedback', async (req: Request, res: Response) => {
   try {
     const { id: analysisId } = req.params;
     const { rating, helpful, comments, findingFeedback } = req.body;
     const user = req.user;
+    
+    if (!user) {
+      return res.status(401).json({ 
+        error: 'Authentication required' 
+      });
+    }
     
     // Validate feedback data
     if (rating && (typeof rating !== 'number' || rating < 1 || rating > 5)) {
@@ -209,13 +215,13 @@ analysisRoutes.post('/:id/feedback', async (req: AuthenticatedRequest, res: Resp
  * GET /api/analysis/stats
  * Get user's analysis statistics
  */
-analysisRoutes.get('/stats', async (req: AuthenticatedRequest, res: Response) => {
+analysisRoutes.get('/stats', async (req: Request, res: Response) => {
   try {
-    const user = req.user;
+    const user = req.user!;
     const { timeRange = '30d' } = req.query;
     
     // Get user's analysis history
-    const userHistory = analysisHistory.get(user.id) || [];
+    const userHistory = analysisHistory.get(user!.id) || [];
     
     // Filter by time range
     const cutoffDate = new Date();

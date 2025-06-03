@@ -13,6 +13,7 @@ import {
 } from './types';
 import { MultiAgentValidator } from './validator';
 import { VectorContextService } from './vector-context-service';
+import { MCPContextManager, MCPCoordinationStrategy } from './mcp-context-manager';
 
 /**
  * Vector DB search result for agent context
@@ -109,6 +110,9 @@ export interface EnhancedExecutionOptions {
   
   /** Model blacklist manager */
   modelBlacklist?: ModelBlacklistManager;
+  
+  /** Enable Model Context Protocol (MCP) coordination (default: true) */
+  enableMCP?: boolean;
 }
 
 /**
@@ -439,6 +443,7 @@ export class EnhancedMultiAgentExecutor {
   private readonly resourceManager: SmartResourceManager;
   private readonly performanceMonitor: PerformanceMonitor;
   private readonly vectorContextService: VectorContextService;
+  private readonly mcpContextManager: MCPContextManager;
   
   private agents: Map<string, Agent> = new Map();
   private results: Map<string, EnhancedAgentExecutionResult> = new Map();
@@ -466,6 +471,19 @@ export class EnhancedMultiAgentExecutor {
     this.vectorContextService = vectorContextService;
     this.authenticatedUser = authenticatedUser;
     
+    // Initialize MCP Context Manager for multi-agent coordination
+    this.mcpContextManager = new MCPContextManager(
+      authenticatedUser,
+      {
+        repositoryId: `${repositoryData.owner}/${repositoryData.repo}`,
+        recentAnalysis: [],
+        historicalPatterns: [],
+        similarIssues: [],
+        confidenceScore: 0.8,
+        lastUpdated: new Date()
+      }
+    );
+    
     // 🔒 SECURITY: Validate repository access before proceeding
     this.validateRepositoryAccess();
     
@@ -486,6 +504,7 @@ export class EnhancedMultiAgentExecutor {
       context: options.context ?? {},
       priorityBasedExecution: options.priorityBasedExecution ?? true,
       enableMetrics: options.enableMetrics ?? true,
+      enableMCP: options.enableMCP ?? true,
       onProgress: options.onProgress || (() => { /* Progress callback will be implemented */ }),
       resourceStrategy: options.resourceStrategy ?? 'balanced',
       modelBlacklist: options.modelBlacklist
@@ -537,22 +556,39 @@ export class EnhancedMultiAgentExecutor {
       // Initialize agents
       await this.initializeAgents();
       
-      // Execute based on strategy
-      const strategy = this.config.strategy || AnalysisStrategy.PARALLEL;
+      // Update MCP context with repository information
+      const primaryLanguage = this.detectPrimaryLanguage();
+      if (primaryLanguage) {
+        this.mcpContextManager.updateRepositoryContext(
+          `${this.repositoryData.owner}/${this.repositoryData.repo}`,
+          primaryLanguage,
+          this.determineSizeCategory()
+        );
+      }
+
+      // Execute using MCP-aware coordination strategies
+      const analysisMode = this.determineAnalysisMode();
       let executionResult: any;
       
-      switch (strategy) {
-        case AnalysisStrategy.PARALLEL:
-          executionResult = await this.executeParallelStrategy();
-          break;
-        case AnalysisStrategy.SEQUENTIAL:
-          executionResult = await this.executeSequentialStrategy();
-          break;
-        case AnalysisStrategy.SPECIALIZED:
-          executionResult = await this.executeSpecializedStrategy();
-          break;
-        default:
-          executionResult = await this.executeParallelStrategy();
+      if (this.options.enableMCP !== false) {
+        // Use MCP coordination strategy
+        executionResult = await this.executeMCPCoordinatedStrategy(analysisMode);
+      } else {
+        // Fall back to traditional strategy execution
+        const strategy = this.config.strategy || AnalysisStrategy.PARALLEL;
+        switch (strategy) {
+          case AnalysisStrategy.PARALLEL:
+            executionResult = await this.executeParallelStrategy();
+            break;
+          case AnalysisStrategy.SEQUENTIAL:
+            executionResult = await this.executeSequentialStrategy();
+            break;
+          case AnalysisStrategy.SPECIALIZED:
+            executionResult = await this.executeSpecializedStrategy();
+            break;
+          default:
+            executionResult = await this.executeParallelStrategy();
+        }
       }
       
       this.updateProgress('complete');
@@ -1090,5 +1126,271 @@ export class EnhancedMultiAgentExecutor {
   private async logSecurityEvent(event: SecurityEvent): Promise<void> {
     // TODO: Integrate with actual security logging service
     this.logger.info('Security event logged', event as any);
+  }
+
+  /**
+   * Determine analysis mode based on configuration and context
+   */
+  private determineAnalysisMode(): string {
+    switch (this.config.strategy) {
+      case AnalysisStrategy.PARALLEL:
+        return this.config.agents.length <= 2 ? 'quick' : 'comprehensive';
+      case AnalysisStrategy.SEQUENTIAL:
+        return 'comprehensive';
+      case AnalysisStrategy.SPECIALIZED:
+        return 'deep';
+      default:
+        return 'comprehensive';
+    }
+  }
+
+  /**
+   * Execute agents using MCP coordination strategy
+   */
+  private async executeMCPCoordinatedStrategy(analysisMode: string): Promise<any> {
+    const coordinationStrategy = this.mcpContextManager.getCoordinationStrategy(analysisMode);
+    
+    this.logger.info('Executing MCP-coordinated strategy', {
+      analysisMode,
+      strategyName: coordinationStrategy.name,
+      totalAgents: coordinationStrategy.execution_order.length
+    });
+
+    const results: Record<string, any> = {};
+    const startTime = Date.now();
+
+    try {
+      // Execute agents based on parallel groups and dependencies
+      for (const parallelGroup of coordinationStrategy.parallel_groups) {
+        const groupPromises: Promise<any>[] = [];
+        
+        for (const agentName of parallelGroup) {
+          // Check if agent is available to execute
+          const nextAgents = this.mcpContextManager.getNextAgentsToExecute(coordinationStrategy);
+          
+          if (nextAgents.includes(agentName)) {
+            this.mcpContextManager.registerAgent(agentName);
+            
+            const agentPromise = this.executeAgentWithMCPContext(agentName, coordinationStrategy)
+              .then(result => {
+                this.mcpContextManager.completeAgent(agentName, result);
+                results[agentName] = result;
+                return result;
+              })
+              .catch(error => {
+                this.logger.error(`Agent ${agentName} failed in MCP execution`, { error: error.message });
+                throw error;
+              });
+            
+            groupPromises.push(agentPromise);
+          }
+        }
+        
+        // Wait for current parallel group to complete before moving to next group
+        if (groupPromises.length > 0) {
+          await Promise.allSettled(groupPromises);
+        }
+      }
+
+      const totalDuration = Date.now() - startTime;
+      
+      this.logger.info('MCP-coordinated execution completed', {
+        totalDuration,
+        completedAgents: Object.keys(results).length,
+        analysisMode
+      });
+
+      return {
+        strategy: 'mcp_coordinated',
+        analysisMode,
+        coordinationStrategy: coordinationStrategy.name,
+        agentResults: results,
+        mcpContext: this.mcpContextManager.getContext(),
+        progressSummary: this.mcpContextManager.getProgressSummary(),
+        totalDuration
+      };
+
+    } catch (error) {
+      this.logger.error('MCP-coordinated execution failed', { 
+        error: error instanceof Error ? error.message : 'Unknown error',
+        analysisMode,
+        completedAgents: Object.keys(results).length
+      });
+      throw error;
+    } finally {
+      // Clean up MCP resources
+      this.mcpContextManager.cleanup();
+    }
+  }
+
+  /**
+   * Execute individual agent with MCP context
+   */
+  private async executeAgentWithMCPContext(
+    agentName: string, 
+    coordinationStrategy: MCPCoordinationStrategy
+  ): Promise<any> {
+    const agentConfig = this.config.agents.find(a => a.role === agentName);
+    if (!agentConfig) {
+      throw new Error(`Agent configuration not found for: ${agentName}`);
+    }
+
+    const mcpContext = this.mcpContextManager.getContext();
+    
+    // Subscribe agent to MCP messages for cross-agent coordination
+    this.mcpContextManager.subscribe(agentName, (message) => {
+      this.logger.debug(`Agent ${agentName} received MCP message`, {
+        messageType: message.type,
+        sourceAgent: message.source_agent
+      });
+    });
+
+    try {
+      // Enhance agent context with MCP shared findings
+      const baseContext = await this.prepareAgentContext(
+        agentName,
+        this.authenticatedUser
+      );
+      const enhancedContext = {
+        ...baseContext,
+        mcpContext: mcpContext,
+        sharedFindings: mcpContext.shared_findings,
+        crossAgentInsights: mcpContext.shared_findings.cross_agent_insights,
+        coordinationStrategy: coordinationStrategy.name
+      };
+
+      // Execute agent with enhanced context
+      const result = await this.executeAgentWithTimeout(
+        agentConfig,
+        enhancedContext
+      );
+
+      // Add any cross-agent insights discovered during execution
+      if (result.crossAgentInsights) {
+        for (const insight of result.crossAgentInsights) {
+          this.mcpContextManager.addCrossAgentInsight(
+            agentName,
+            insight.targetAgent || 'all',
+            insight.data
+          );
+        }
+      }
+
+      return result;
+
+    } finally {
+      // Unsubscribe from MCP messages
+      this.mcpContextManager.unsubscribe(agentName);
+    }
+  }
+
+  /**
+   * Get MCP context manager for external access
+   */
+  public getMCPContextManager(): MCPContextManager {
+    return this.mcpContextManager;
+  }
+
+  /**
+   * Get current MCP coordination status
+   */
+  public getMCPStatus(): {
+    isEnabled: boolean;
+    currentContext: any;
+    progressSummary: any;
+  } {
+    return {
+      isEnabled: this.options.enableMCP !== false,
+      currentContext: this.mcpContextManager.getContext(),
+      progressSummary: this.mcpContextManager.getProgressSummary()
+    };
+  }
+
+  /**
+   * Detect primary language from repository files
+   */
+  private detectPrimaryLanguage(): string | null {
+    if (!this.repositoryData.files || this.repositoryData.files.length === 0) {
+      return null;
+    }
+
+    const languageCount: Record<string, number> = {};
+    
+    for (const file of this.repositoryData.files) {
+      const extension = file.path.split('.').pop()?.toLowerCase();
+      if (!extension) continue;
+
+      let language: string | null = null;
+      switch (extension) {
+        case 'ts':
+        case 'tsx':
+          language = 'typescript';
+          break;
+        case 'js':
+        case 'jsx':
+          language = 'javascript';
+          break;
+        case 'py':
+          language = 'python';
+          break;
+        case 'java':
+          language = 'java';
+          break;
+        case 'go':
+          language = 'go';
+          break;
+        case 'rs':
+          language = 'rust';
+          break;
+        case 'cpp':
+        case 'cc':
+        case 'cxx':
+          language = 'cpp';
+          break;
+        case 'c':
+          language = 'c';
+          break;
+        case 'cs':
+          language = 'csharp';
+          break;
+        case 'php':
+          language = 'php';
+          break;
+        case 'rb':
+          language = 'ruby';
+          break;
+      }
+
+      if (language) {
+        languageCount[language] = (languageCount[language] || 0) + 1;
+      }
+    }
+
+    // Return the most common language
+    let maxCount = 0;
+    let primaryLanguage: string | null = null;
+    for (const [lang, count] of Object.entries(languageCount)) {
+      if (count > maxCount) {
+        maxCount = count;
+        primaryLanguage = lang;
+      }
+    }
+
+    return primaryLanguage;
+  }
+
+  /**
+   * Determine repository size category based on file count
+   */
+  private determineSizeCategory(): 'small' | 'medium' | 'large' {
+    const fileCount = this.repositoryData.files?.length || 0;
+    
+    if (fileCount <= 10) {
+      return 'small';
+    } else if (fileCount <= 50) {
+      return 'medium';
+    } else {
+      return 'large';
+    }
   }
 }

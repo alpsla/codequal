@@ -1,5 +1,6 @@
 import { AuthenticatedUser } from '../middleware/auth-middleware';
-import { VectorContextService } from '@codequal/agents/multi-agent/vector-context-service';
+import { VectorContextService, createVectorContextService } from '@codequal/agents/multi-agent/vector-context-service';
+import { AuthenticatedUser as AgentAuthenticatedUser, UserRole, UserStatus, UserPermissions } from '@codequal/agents/multi-agent/types/auth';
 
 export interface AnalysisJob {
   jobId: string;
@@ -44,15 +45,14 @@ export class DeepWikiManager {
    */
   async checkRepositoryExists(repositoryUrl: string): Promise<boolean> {
     try {
-      const existing = await this.vectorContextService.searchSimilarContext(
+      const existing = await this.vectorContextService.getRepositoryContext(
         repositoryUrl,
-        { 
-          threshold: 0.95, // High threshold for exact repository match
-          limit: 1 
-        }
+        'orchestrator' as any, // Using orchestrator role for general queries
+        this.authenticatedUser as any, // Type compatibility
+        { minSimilarity: 0.95 }
       );
 
-      return existing.length > 0;
+      return existing.recentAnalysis.length > 0;
     } catch (error) {
       console.error('Repository existence check failed:', error);
       return false;
@@ -246,10 +246,10 @@ export class DeepWikiManager {
    */
   private async storeAnalysisResults(repositoryUrl: string, results: AnalysisResults): Promise<void> {
     try {
-      await this.vectorContextService.storeRepositoryContext(
+      await this.vectorContextService.storeAnalysisResults(
         repositoryUrl,
-        results,
-        this.authenticatedUser
+        [results],
+        this.authenticatedUser.id
       );
 
       console.log(`Analysis results stored in Vector DB for ${repositoryUrl}`);
@@ -331,5 +331,110 @@ export class DeepWikiManager {
   private extractRepositoryName(url: string): string {
     const match = url.match(/\/([^/]+)\.git$/) || url.match(/\/([^/]+)$/);
     return match ? match[1] : 'unknown-repository';
+  }
+
+  /**
+   * Convert API AuthenticatedUser to Agent AuthenticatedUser
+   */
+  private convertToAgentUser(apiUser: AuthenticatedUser): AgentAuthenticatedUser {
+    // Create user permissions structure expected by agents package
+    const permissions: UserPermissions = {
+      repositories: {
+        // For now, grant access to all repositories the user has access to
+        // In production, this would be populated from the database
+        '*': {
+          read: true,
+          write: false,
+          admin: false
+        }
+      },
+      organizations: apiUser.organizationId ? [apiUser.organizationId] : [],
+      globalPermissions: apiUser.permissions || [],
+      quotas: {
+        requestsPerHour: 1000,
+        maxConcurrentExecutions: 5,
+        storageQuotaMB: 1000
+      }
+    };
+
+    // Map API role to Agent UserRole
+    let role: UserRole;
+    switch (apiUser.role) {
+      case 'admin':
+        role = UserRole.ADMIN;
+        break;
+      case 'system_admin':
+        role = UserRole.SYSTEM_ADMIN;
+        break;
+      case 'org_owner':
+        role = UserRole.ORG_OWNER;
+        break;
+      case 'org_member':
+        role = UserRole.ORG_MEMBER;
+        break;
+      case 'service_account':
+        role = UserRole.SERVICE_ACCOUNT;
+        break;
+      default:
+        role = UserRole.USER;
+    }
+
+    // Map API status to Agent UserStatus
+    let status: UserStatus;
+    switch (apiUser.status) {
+      case 'suspended':
+        status = UserStatus.SUSPENDED;
+        break;
+      case 'pending_verification':
+        status = UserStatus.PENDING_VERIFICATION;
+        break;
+      case 'password_reset_required':
+        status = UserStatus.PASSWORD_RESET_REQUIRED;
+        break;
+      case 'locked':
+        status = UserStatus.LOCKED;
+        break;
+      default:
+        status = UserStatus.ACTIVE;
+    }
+
+    return {
+      id: apiUser.id,
+      email: apiUser.email,
+      organizationId: apiUser.organizationId,
+      permissions,
+      session: {
+        token: apiUser.session.token,
+        expiresAt: apiUser.session.expiresAt,
+        fingerprint: 'api-session',
+        ipAddress: '127.0.0.1',
+        userAgent: 'CodeQual API'
+      },
+      role,
+      status
+    };
+  }
+
+  /**
+   * Create mock RAG service for VectorContextService
+   */
+  private createMockRAGService(): any {
+    return {
+      search: async (options: any, userId: string) => {
+        // Return empty results for now
+        // In production, this would be the actual RAG service
+        return [];
+      },
+      supabase: {
+        // Mock supabase client
+        from: () => ({
+          select: () => ({
+            eq: () => ({
+              eq: () => Promise.resolve({ data: [], error: null })
+            })
+          })
+        })
+      }
+    };
   }
 }

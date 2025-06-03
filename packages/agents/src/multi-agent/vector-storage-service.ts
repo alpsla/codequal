@@ -159,7 +159,7 @@ export class VectorStorageService {
     const repositoryPermissions = authenticatedUser.permissions.repositories[repositoryId];
     
     if (!repositoryPermissions || !repositoryPermissions[accessType]) {
-      const securityEvent: SecurityEvent = {
+      const _securityEvent: SecurityEvent = {
         type: 'ACCESS_DENIED',
         userId: authenticatedUser.id,
         sessionId: authenticatedUser.session.fingerprint,

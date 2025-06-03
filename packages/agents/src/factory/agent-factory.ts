@@ -174,7 +174,8 @@ export class AgentFactory {
       [AgentRole.PERFORMANCE]: 'claude_performance_analysis_template',
       [AgentRole.DEPENDENCY]: 'claude_dependency_analysis_template',
       [AgentRole.EDUCATIONAL]: 'claude_educational_content_template',
-      [AgentRole.REPORT_GENERATION]: 'claude_report_generation_template'
+      [AgentRole.REPORT_GENERATION]: 'claude_report_generation_template',
+      [AgentRole.RESEARCHER]: 'claude_researcher_template'
     };
     
     return prompts[role] || 'claude_default_template';
@@ -193,7 +194,8 @@ export class AgentFactory {
       [AgentRole.PERFORMANCE]: 'openai_performance_analysis_template',
       [AgentRole.DEPENDENCY]: 'openai_dependency_analysis_template',
       [AgentRole.EDUCATIONAL]: 'openai_educational_content_template',
-      [AgentRole.REPORT_GENERATION]: 'openai_report_generation_template'
+      [AgentRole.REPORT_GENERATION]: 'openai_report_generation_template',
+      [AgentRole.RESEARCHER]: 'openai_researcher_template'
     };
     
     return prompts[role] || 'openai_default_template';
@@ -212,7 +214,8 @@ export class AgentFactory {
       [AgentRole.PERFORMANCE]: 'deepseek_performance_analysis_template',
       [AgentRole.DEPENDENCY]: 'deepseek_dependency_analysis_template',
       [AgentRole.EDUCATIONAL]: 'deepseek_educational_content_template',
-      [AgentRole.REPORT_GENERATION]: 'deepseek_report_generation_template'
+      [AgentRole.REPORT_GENERATION]: 'deepseek_report_generation_template',
+      [AgentRole.RESEARCHER]: 'deepseek_researcher_template'
     };
     
     return prompts[role] || 'deepseek_default_template';
@@ -231,7 +234,8 @@ export class AgentFactory {
       [AgentRole.PERFORMANCE]: 'gemini_performance_analysis_template',
       [AgentRole.DEPENDENCY]: 'gemini_dependency_analysis_template',
       [AgentRole.EDUCATIONAL]: 'gemini_educational_content_template',
-      [AgentRole.REPORT_GENERATION]: 'gemini_report_generation_template'
+      [AgentRole.REPORT_GENERATION]: 'gemini_report_generation_template',
+      [AgentRole.RESEARCHER]: 'gemini_researcher_template'
     };
     
     return prompts[role] || 'gemini_default_template';
@@ -319,7 +323,8 @@ export class AgentFactory {
     [AgentRole.PERFORMANCE]: 'performance-analysis',
     [AgentRole.DEPENDENCY]: 'dependency-check',
     [AgentRole.EDUCATIONAL]: 'educational-content',
-    [AgentRole.REPORT_GENERATION]: 'report-generator'
+    [AgentRole.REPORT_GENERATION]: 'report-generator',
+    [AgentRole.RESEARCHER]: 'researcher'
   };
   
   /**
@@ -379,7 +384,8 @@ export class AgentFactory {
     [AgentRole.PERFORMANCE]: AgentProvider.DEEPSEEK_CODER,
     [AgentRole.DEPENDENCY]: AgentProvider.DEEPSEEK_CODER,
     [AgentRole.EDUCATIONAL]: AgentProvider.CLAUDE,
-    [AgentRole.REPORT_GENERATION]: AgentProvider.OPENAI
+    [AgentRole.REPORT_GENERATION]: AgentProvider.OPENAI,
+    [AgentRole.RESEARCHER]: AgentProvider.GOOGLE
   };
   
   /**

@@ -13,29 +13,40 @@ export interface PRAnalysisRequest {
 export function validatePRAnalysisRequest(body: unknown): ValidationResult {
   const errors: string[] = [];
 
+  // Type guard - ensure body is an object
+  if (!body || typeof body !== 'object') {
+    errors.push('Request body must be an object');
+    return {
+      isValid: false,
+      errors
+    };
+  }
+
+  const request = body as Record<string, any>;
+
   // Check required fields
-  if (!body.repositoryUrl) {
+  if (!request.repositoryUrl) {
     errors.push('repositoryUrl is required');
-  } else if (typeof body.repositoryUrl !== 'string') {
+  } else if (typeof request.repositoryUrl !== 'string') {
     errors.push('repositoryUrl must be a string');
-  } else if (!isValidRepositoryUrl(body.repositoryUrl)) {
+  } else if (!isValidRepositoryUrl(request.repositoryUrl)) {
     errors.push('repositoryUrl must be a valid GitHub or GitLab repository URL');
   }
 
-  if (body.prNumber === undefined || body.prNumber === null) {
+  if (request.prNumber === undefined || request.prNumber === null) {
     errors.push('prNumber is required');
-  } else if (!Number.isInteger(body.prNumber) || body.prNumber <= 0) {
+  } else if (!Number.isInteger(request.prNumber) || request.prNumber <= 0) {
     errors.push('prNumber must be a positive integer');
   }
 
-  if (!body.analysisMode) {
+  if (!request.analysisMode) {
     errors.push('analysisMode is required');
-  } else if (!['quick', 'comprehensive', 'deep'].includes(body.analysisMode)) {
+  } else if (!['quick', 'comprehensive', 'deep'].includes(request.analysisMode)) {
     errors.push('analysisMode must be one of: quick, comprehensive, deep');
   }
 
   // Check optional fields
-  if (body.githubToken && typeof body.githubToken !== 'string') {
+  if (request.githubToken && typeof request.githubToken !== 'string') {
     errors.push('githubToken must be a string if provided');
   }
 

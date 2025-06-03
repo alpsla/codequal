@@ -1,4 +1,6 @@
--- Supabase Query Optimization Scripts
+{
+  `path`: `/Users/alpinro/Code Prjects/codequal/docs/database-optimizations/optimization-scripts-supabase.sql`,
+  `content`: `-- Supabase Query Optimization Scripts - Fixed for Supabase Editor
 -- Run these scripts in order to optimize database performance
 
 -- =============================================================================
@@ -30,12 +32,12 @@ RETURNS TABLE(name text, abbrev text, utc_offset interval, is_dst boolean)
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
-AS $$
+AS '
 BEGIN
   -- Check if cache is fresh (less than 24 hours old)
   IF EXISTS (
     SELECT 1 FROM cached_timezones 
-    WHERE cached_at > now() - interval '24 hours'
+    WHERE cached_at > now() - interval ''24 hours''
     LIMIT 1
   ) THEN
     RETURN QUERY SELECT c.name, c.abbrev, c.utc_offset, c.is_dst 
@@ -53,7 +55,7 @@ BEGIN
     ORDER BY c.name;
   END IF;
 END;
-$$;
+';
 
 -- Grant appropriate permissions
 GRANT SELECT ON public.cached_timezones TO authenticated;
@@ -90,7 +92,7 @@ CREATE OR REPLACE FUNCTION public.log_slow_query(
   p_execution_time_ms float
 ) RETURNS void
 LANGUAGE plpgsql
-AS $$
+AS '
 DECLARE
   v_query_hash text;
   v_query_pattern text;
@@ -106,10 +108,10 @@ BEGIN
   -- Extract query pattern (remove specific values)
   v_query_pattern := regexp_replace(
     regexp_replace(
-      regexp_replace(p_query_text, '\$\d+', '$?', 'g'),  -- Replace parameters
-      '''[^'']*''', '''?''', 'g'  -- Replace string literals
+      regexp_replace(p_query_text, ''\\$\\d+'', ''$?'', ''g''),  -- Replace parameters
+      ''''[^'''']*'''', ''''?'''', ''g''  -- Replace string literals
     ),
-    '\d+', '?', 'g'  -- Replace numbers
+    ''\\d+'', ''?'', ''g''  -- Replace numbers
   );
   
   INSERT INTO public.query_performance_log (
@@ -128,7 +130,7 @@ BEGIN
     total_time_ms = query_performance_log.total_time_ms + p_execution_time_ms,
     last_executed = now();
 END;
-$$;
+';
 
 -- Grant permissions
 GRANT INSERT, UPDATE ON public.query_performance_log TO authenticated;
@@ -189,11 +191,11 @@ GRANT SELECT ON public.v_active_repositories TO authenticated;
 CREATE OR REPLACE FUNCTION public.cleanup_old_performance_logs()
 RETURNS void
 LANGUAGE plpgsql
-AS $$
+AS '
 BEGIN
   -- Delete logs older than 30 days with low impact
   DELETE FROM public.query_performance_log
-  WHERE created_at < now() - interval '30 days'
+  WHERE created_at < now() - interval ''30 days''
     AND avg_time_ms < 500
     AND calls_count < 10;
     
@@ -207,52 +209,50 @@ BEGIN
     created_at
   )
   SELECT 
-    'ARCHIVE_' || query_hash,
-    'ARCHIVED: ' || query_pattern,
+    ''ARCHIVE_'' || query_hash,
+    ''ARCHIVED: '' || query_pattern,
     avg_time_ms,
     calls_count,
     total_time_ms,
     now()
   FROM public.query_performance_log
-  WHERE created_at < now() - interval '90 days'
+  WHERE created_at < now() - interval ''90 days''
     AND avg_time_ms > 1000
   ON CONFLICT (query_hash) DO NOTHING;
   
   -- Delete the original old slow queries
   DELETE FROM public.query_performance_log
-  WHERE created_at < now() - interval '90 days'
-    AND query_hash NOT LIKE 'ARCHIVE_%';
+  WHERE created_at < now() - interval ''90 days''
+    AND query_hash NOT LIKE ''ARCHIVE_%'';
 END;
-$$;
-
--- Schedule cleanup (using pg_cron if available)
--- SELECT cron.schedule('cleanup-performance-logs', '0 2 * * *', 'SELECT public.cleanup_old_performance_logs();');
+';
 
 -- =============================================================================
 -- STEP 6: RLS Policies Update
 -- =============================================================================
 
--- Update RLS policies for new tables
+-- Enable RLS for new tables
 ALTER TABLE public.cached_timezones ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.query_performance_log ENABLE ROW LEVEL SECURITY;
 
 -- Policy for cached_timezones (read-only for all authenticated users)
-CREATE POLICY "Timezones are viewable by authenticated users" 
+CREATE POLICY \"Timezones are viewable by authenticated users\" 
 ON public.cached_timezones FOR SELECT 
 TO authenticated 
 USING (true);
 
--- Policy for query_performance_log (admins only)
-CREATE POLICY "Performance logs viewable by admins" 
-ON public.query_performance_log FOR ALL 
+-- Policy for query_performance_log (viewable by all authenticated users, but only system can insert)
+CREATE POLICY \"Performance logs viewable by authenticated users\" 
+ON public.query_performance_log FOR SELECT
 TO authenticated 
-USING (
-  auth.uid() IN (
-    SELECT user_id FROM public.user_profiles 
-    WHERE subscription_tier = 'enterprise' 
-    OR email LIKE '%@codequal.dev'
-  )
-);
+USING (true);
+
+-- Policy for system to insert/update performance logs
+CREATE POLICY \"System can manage performance logs\"
+ON public.query_performance_log FOR ALL
+TO postgres
+USING (true)
+WITH CHECK (true);
 
 -- =============================================================================
 -- STEP 7: Quick Wins - Immediate Optimizations
@@ -281,7 +281,7 @@ SELECT
   MAX(cached_at) as last_updated
 FROM public.cached_timezones;
 
--- Check slow queries
+-- Check slow queries (this will be empty initially)
 SELECT 
   query_pattern,
   calls_count,
@@ -303,3 +303,5 @@ SELECT
 FROM pg_stat_user_indexes
 WHERE schemaname = 'public'
 ORDER BY idx_scan DESC;
+`
+}

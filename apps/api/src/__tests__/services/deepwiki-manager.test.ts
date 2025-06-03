@@ -1,11 +1,13 @@
 // Mock VectorContextService before any imports
 const mockVectorContextService = {
-  searchSimilarContext: jest.fn(),
-  storeRepositoryContext: jest.fn(),
-  getLastAnalysisDate: jest.fn()
+  getRepositoryContext: jest.fn(),
+  storeAnalysisResults: jest.fn()
 };
 
+const mockCreateVectorContextService = jest.fn(() => mockVectorContextService);
+
 jest.mock('@codequal/agents/multi-agent/vector-context-service', () => ({
+  createVectorContextService: mockCreateVectorContextService,
   VectorContextService: jest.fn().mockImplementation(() => mockVectorContextService)
 }));
 
@@ -31,21 +33,35 @@ describe('DeepWikiManager', () => {
 
   describe('Repository Existence Check', () => {
     test('should return true when repository exists in Vector DB', async () => {
-      mockVectorContextService.searchSimilarContext.mockResolvedValueOnce([
-        { id: 'repo-1', similarity: 0.98 }
-      ]);
+      mockVectorContextService.getRepositoryContext.mockResolvedValueOnce({
+        repositoryId: 'https://github.com/owner/repo',
+        recentAnalysis: [{ id: 'analysis-1', content: 'test' }],
+        historicalPatterns: [],
+        similarIssues: [],
+        confidenceScore: 0.9,
+        lastUpdated: new Date()
+      });
 
       const result = await manager.checkRepositoryExists('https://github.com/owner/repo');
 
       expect(result).toBe(true);
-      expect(mockVectorContextService.searchSimilarContext).toHaveBeenCalledWith(
+      expect(mockVectorContextService.getRepositoryContext).toHaveBeenCalledWith(
         'https://github.com/owner/repo',
-        { threshold: 0.95, limit: 1 }
+        'orchestrator',
+        expect.any(Object),
+        { minSimilarity: 0.95 }
       );
     });
 
     test('should return false when repository does not exist', async () => {
-      mockVectorContextService.searchSimilarContext.mockResolvedValueOnce([]);
+      mockVectorContextService.getRepositoryContext.mockResolvedValueOnce({
+        repositoryId: 'https://github.com/owner/new-repo',
+        recentAnalysis: [],
+        historicalPatterns: [],
+        similarIssues: [],
+        confidenceScore: 0,
+        lastUpdated: new Date()
+      });
 
       const result = await manager.checkRepositoryExists('https://github.com/owner/new-repo');
 
@@ -53,7 +69,7 @@ describe('DeepWikiManager', () => {
     });
 
     test('should return false on search error', async () => {
-      mockVectorContextService.searchSimilarContext.mockRejectedValueOnce(
+      mockVectorContextService.getRepositoryContext.mockRejectedValueOnce(
         new Error('Database connection failed')
       );
 
@@ -63,11 +79,22 @@ describe('DeepWikiManager', () => {
     });
 
     test('should use high similarity threshold for exact matches', async () => {
+      mockVectorContextService.getRepositoryContext.mockResolvedValueOnce({
+        repositoryId: 'https://github.com/owner/repo',
+        recentAnalysis: [],
+        historicalPatterns: [],
+        similarIssues: [],
+        confidenceScore: 0,
+        lastUpdated: new Date()
+      });
+
       await manager.checkRepositoryExists('https://github.com/owner/repo');
 
-      expect(mockVectorContextService.searchSimilarContext).toHaveBeenCalledWith(
+      expect(mockVectorContextService.getRepositoryContext).toHaveBeenCalledWith(
         expect.any(String),
-        expect.objectContaining({ threshold: 0.95 })
+        'orchestrator',
+        expect.any(Object),
+        expect.objectContaining({ minSimilarity: 0.95 })
       );
     });
   });
@@ -246,10 +273,10 @@ describe('DeepWikiManager', () => {
       });
 
       // Should store results in Vector DB
-      expect(mockVectorContextService.storeRepositoryContext).toHaveBeenCalledWith(
+      expect(mockVectorContextService.storeAnalysisResults).toHaveBeenCalledWith(
         repositoryUrl,
-        result,
-        mockUser
+        [result],
+        expect.any(String)
       );
     }, 60000); // 60 second timeout
 
@@ -354,7 +381,7 @@ describe('DeepWikiManager', () => {
     });
 
     test('should handle Vector DB connection errors', async () => {
-      mockVectorContextService.searchSimilarContext.mockRejectedValueOnce(
+      mockVectorContextService.getRepositoryContext.mockRejectedValueOnce(
         new Error('Connection timeout')
       );
 
