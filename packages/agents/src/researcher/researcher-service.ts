@@ -267,7 +267,7 @@ export class ResearcherService {
   /**
    * Get research operation history
    */
-  async getOperationHistory(limit: number = 10): Promise<ResearchOperation[]> {
+  async getOperationHistory(limit = 10): Promise<ResearchOperation[]> {
     return this.researchHistory
       .sort((a, b) => b.startedAt.getTime() - a.startedAt.getTime())
       .slice(0, limit);
@@ -276,7 +276,7 @@ export class ResearcherService {
   /**
    * Start scheduled research operations
    */
-  async startScheduledResearch(intervalHours: number = 24): Promise<void> {
+  async startScheduledResearch(intervalHours = 24): Promise<void> {
     this.logger.info(`🕐 Starting scheduled research every ${intervalHours} hours`);
     
     // Initial research run

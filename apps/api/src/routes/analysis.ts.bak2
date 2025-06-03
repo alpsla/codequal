@@ -1,5 +1,5 @@
-import { Router, Request, Response } from 'express';
-import '../types/express';
+import { Router, Response, RequestHandler } from 'express';
+import { AuthenticatedRequest } from '../middleware/auth-middleware';
 
 export const analysisRoutes = Router();
 
@@ -10,13 +10,13 @@ const analysisHistory = new Map<string, any[]>();
  * GET /api/analysis/history
  * Get user's analysis history
  */
-analysisRoutes.get('/history', async (req: Request, res: Response): Promise<void> => {
+analysisRoutes.get('/history', (async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const user = req.user!;
+    const user = req.user;
     const { limit = 20, offset = 0, repositoryUrl } = req.query;
     
     // Get user's analysis history
-    const userHistory = analysisHistory.get(user!.id) || [];
+    const userHistory = analysisHistory.get(user.id) || [];
     
     // Filter by repository if specified
     let filteredHistory = userHistory;
@@ -60,19 +60,19 @@ analysisRoutes.get('/history', async (req: Request, res: Response): Promise<void
       message: error instanceof Error ? error.message : 'Unknown error'
     });
   }
-});
+}) as RequestHandler);
 
 /**
  * GET /api/analysis/:id/results
  * Get detailed analysis results
  */
-analysisRoutes.get('/:id/results', async (req: Request, res: Response) => {
+analysisRoutes.get('/:id/results', (async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id: analysisId } = req.params;
     const user = req.user;
     
     // Find analysis in user's history
-    const userHistory = analysisHistory.get(user!.id) || [];
+    const userHistory = analysisHistory.get(user.id) || [];
     const analysis = userHistory.find(a => a.analysisId === analysisId);
     
     if (!analysis) {
@@ -91,20 +91,20 @@ analysisRoutes.get('/:id/results', async (req: Request, res: Response) => {
       message: error instanceof Error ? error.message : 'Unknown error'
     });
   }
-});
+}) as RequestHandler);
 
 /**
  * GET /api/analysis/:id/report
  * Get formatted report for analysis
  */
-analysisRoutes.get('/:id/report', async (req: Request, res: Response) => {
+analysisRoutes.get('/:id/report', (async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id: analysisId } = req.params;
     const { format = 'json' } = req.query;
     const user = req.user;
     
     // Find analysis in user's history
-    const userHistory = analysisHistory.get(user!.id) || [];
+    const userHistory = analysisHistory.get(user.id) || [];
     const analysis = userHistory.find(a => a.analysisId === analysisId);
     
     if (!analysis) {
@@ -149,7 +149,7 @@ analysisRoutes.get('/:id/report', async (req: Request, res: Response) => {
  * POST /api/analysis/:id/feedback
  * Submit feedback on analysis results
  */
-analysisRoutes.post('/:id/feedback', async (req: Request, res: Response) => {
+analysisRoutes.post('/:id/feedback', async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id: analysisId } = req.params;
     const { rating, helpful, comments, findingFeedback } = req.body;
@@ -163,7 +163,7 @@ analysisRoutes.post('/:id/feedback', async (req: Request, res: Response) => {
     }
 
     // Find analysis in user's history
-    const userHistory = analysisHistory.get(user!.id) || [];
+    const userHistory = analysisHistory.get(user.id) || [];
     const analysis = userHistory.find(a => a.analysisId === analysisId);
     
     if (!analysis) {
@@ -209,13 +209,13 @@ analysisRoutes.post('/:id/feedback', async (req: Request, res: Response) => {
  * GET /api/analysis/stats
  * Get user's analysis statistics
  */
-analysisRoutes.get('/stats', async (req: Request, res: Response) => {
+analysisRoutes.get('/stats', async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const user = req.user!;
+    const user = req.user;
     const { timeRange = '30d' } = req.query;
     
     // Get user's analysis history
-    const userHistory = analysisHistory.get(user!.id) || [];
+    const userHistory = analysisHistory.get(user.id) || [];
     
     // Filter by time range
     const cutoffDate = new Date();

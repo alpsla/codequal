@@ -219,7 +219,7 @@ export class PerformanceMonitor {
   /**
    * Get performance statistics
    */
-  async getPerformanceStats(limit: number = 10): Promise<any[]> {
+  async getPerformanceStats(limit = 10): Promise<any[]> {
     const { data, error } = await this.supabase
       .from('query_performance_log')
       .select('*')
@@ -263,19 +263,24 @@ export class OptimizedQueries {
   async getRepositoryById(id: string) {
     return this.deduplicator.deduplicate(
       `repo_${id}`,
-      () => this.supabase
-        .from('repositories')
-        .select(`
-          id,
-          name,
-          owner,
-          platform,
-          primary_language,
-          last_analyzed_at,
-          size
-        `)
-        .eq('id', id)
-        .single()
+      async () => {
+        const { data, error } = await this.supabase
+          .from('repositories')
+          .select(`
+            id,
+            name,
+            owner,
+            platform,
+            primary_language,
+            last_analyzed_at,
+            size
+          `)
+          .eq('id', id)
+          .single();
+        
+        if (error) throw error;
+        return data;
+      }
     );
   }
 
@@ -283,18 +288,23 @@ export class OptimizedQueries {
    * Get active repositories with pagination
    */
   async getActiveRepositories(
-    page: number = 0,
-    pageSize: number = 20
+    page = 0,
+    pageSize = 20
   ) {
     const offset = page * pageSize;
     
     return this.deduplicator.deduplicate(
       `active_repos_${page}_${pageSize}`,
-      () => this.supabase
-        .from('v_active_repositories')
-        .select('*')
-        .order('last_analyzed_at', { ascending: false })
-        .range(offset, offset + pageSize - 1)
+      async () => {
+        const { data, error } = await this.supabase
+          .from('v_active_repositories')
+          .select('*')
+          .order('last_analyzed_at', { ascending: false })
+          .range(offset, offset + pageSize - 1);
+        
+        if (error) throw error;
+        return data;
+      }
     );
   }
 
@@ -304,7 +314,7 @@ export class OptimizedQueries {
   async getPRReviews(
     repositoryId: string,
     state?: 'open' | 'closed',
-    limit: number = 50
+    limit = 50
   ) {
     const key = `pr_reviews_${repositoryId}_${state || 'all'}_${limit}`;
     
@@ -338,7 +348,7 @@ export class OptimizedQueries {
   async searchAnalysisChunks(
     repositoryId: string,
     query: string,
-    limit: number = 10
+    limit = 10
   ) {
     // This would typically use a vector similarity search
     // For now, using text search as placeholder

@@ -1,7 +1,8 @@
-import { Router, Response } from 'express';
-import { AuthenticatedRequest, checkRepositoryAccess } from '../middleware/auth-middleware';
+import { Router, Request, Response } from 'express';
+import { checkRepositoryAccess } from '../middleware/auth-middleware';
 import { ResultOrchestrator } from '../services/result-orchestrator';
 import { validatePRAnalysisRequest, validateAnalysisMode } from '../validators/request-validators';
+import '../types/express';
 
 export const resultOrchestratorRoutes = Router();
 
@@ -27,7 +28,7 @@ interface AnalysisResponse {
  * POST /api/analyze-pr
  * Main endpoint for PR analysis requests
  */
-resultOrchestratorRoutes.post('/analyze-pr', async (req: AuthenticatedRequest, res: Response) => {
+resultOrchestratorRoutes.post('/analyze-pr', async (req: Request, res: Response) => {
   try {
     // Validate request body
     const validationResult = validatePRAnalysisRequest(req.body);
@@ -115,7 +116,7 @@ resultOrchestratorRoutes.post('/analyze-pr', async (req: AuthenticatedRequest, r
  * GET /api/analysis/:id/progress
  * Check analysis progress and get results
  */
-resultOrchestratorRoutes.get('/analysis/:id/progress', (req: AuthenticatedRequest, res: Response) => {
+resultOrchestratorRoutes.get('/analysis/:id/progress', (req: Request, res: Response) => {
   try {
     const analysisId = req.params.id;
     const user = req.user;
@@ -166,7 +167,7 @@ resultOrchestratorRoutes.get('/analysis/:id/progress', (req: AuthenticatedReques
  * DELETE /api/analysis/:id
  * Cancel an ongoing analysis
  */
-resultOrchestratorRoutes.delete('/analysis/:id', (req: AuthenticatedRequest, res: Response) => {
+resultOrchestratorRoutes.delete('/analysis/:id', (req: Request, res: Response) => {
   try {
     const analysisId = req.params.id;
     const user = req.user;
