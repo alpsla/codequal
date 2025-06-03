@@ -129,6 +129,12 @@ export class ResearchScheduler {
    * Schedule quarterly research (both context and meta-research)
    */
   private scheduleQuarterlyResearch(): void {
+    // Prevent duplicate scheduling
+    if (this.scheduledTasks.has('quarterly_context')) {
+      this.logger.warn('Quarterly research already scheduled');
+      return;
+    }
+
     // Schedule quarterly context research (repository model configurations)
     const contextTask = cron.schedule(
       this.config.quarterlyCron,
@@ -197,7 +203,7 @@ export class ResearchScheduler {
 
       this.logger.info('🔄 Starting quarterly context research', { jobId });
 
-      const result = await this.researcherAgent.conductResearchAndUpdate();
+      const result = await this.researcherAgent.conductResearchAndUpdate({});
 
       job.status = 'completed';
       job.completedAt = new Date();
@@ -205,8 +211,8 @@ export class ResearchScheduler {
 
       this.logger.info('✅ Quarterly context research completed', {
         jobId,
-        modelsResearched: result.summary.modelsResearched,
-        configurationsUpdated: result.summary.configurationsUpdated,
+        modelsResearched: result.data?.summary?.modelsResearched || 0,
+        configurationsUpdated: result.data?.summary?.configurationsUpdated || 0,
         duration: job.completedAt.getTime() - job.startedAt!.getTime()
       });
 
@@ -261,18 +267,18 @@ export class ResearchScheduler {
 
       this.logger.info('✅ Quarterly meta-research completed', {
         jobId,
-        shouldUpgrade: result.recommendation.shouldUpgrade,
-        urgency: result.upgradeRecommendation.urgency,
-        confidence: result.confidence,
+        shouldUpgrade: result.upgradeRecommendation?.shouldUpgrade || false,
+        urgency: result.upgradeRecommendation?.urgency || 'low',
+        confidence: result.metadata?.confidence || 0.5,
         duration: job.completedAt.getTime() - job.startedAt!.getTime()
       });
 
       // Log high-priority upgrade recommendations
-      if (result.recommendation.shouldUpgrade && result.upgradeRecommendation.urgency === 'high') {
+      if (result.upgradeRecommendation?.shouldUpgrade && result.upgradeRecommendation?.urgency === 'high') {
         this.logger.warn('🚨 High-priority researcher upgrade recommended', {
-          currentModel: `${result.currentModel.provider}/${result.currentModel.model}`,
-          recommendedModel: result.recommendation.primary?.model,
-          improvement: result.upgradeRecommendation.expectedImprovement
+          currentModel: result.currentModel || 'unknown',
+          recommendedModel: result.recommendation || 'unknown',
+          improvement: result.upgradeRecommendation?.expectedImprovement || 'unknown'
         });
       }
 
@@ -544,10 +550,13 @@ export class ResearchScheduler {
 
   private getNextRunTime(cronExpression: string): string | null {
     try {
-      const task = cron.schedule(cronExpression, () => {});
-      // This is a simplified implementation
-      // In production, use a proper cron parser library
-      return 'Next run calculated by cron library';
+      // Use cron.validate to check if expression is valid without creating a task
+      if (cron.validate(cronExpression)) {
+        // Return a mock next run time for now
+        // In production, use a proper cron parser library like 'cron-parser'
+        return `Next run: ${cronExpression} (calculated)`;
+      }
+      return null;
     } catch (error) {
       return null;
     }

@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import '../types/express';
+import '../types/express.d.ts';
 
 export const analysisRoutes = Router();
 
@@ -155,6 +155,12 @@ analysisRoutes.post('/:id/feedback', async (req: Request, res: Response) => {
     const { rating, helpful, comments, findingFeedback } = req.body;
     const user = req.user;
     
+    if (!user) {
+      return res.status(401).json({ 
+        error: 'Authentication required' 
+      });
+    }
+    
     // Validate feedback data
     if (rating && (typeof rating !== 'number' || rating < 1 || rating > 5)) {
       return res.status(400).json({ 
@@ -163,7 +169,7 @@ analysisRoutes.post('/:id/feedback', async (req: Request, res: Response) => {
     }
 
     // Find analysis in user's history
-    const userHistory = analysisHistory.get(user!.id) || [];
+    const userHistory = analysisHistory.get(user.id) || [];
     const analysis = userHistory.find(a => a.analysisId === analysisId);
     
     if (!analysis) {

@@ -475,7 +475,7 @@ export class EnhancedMultiAgentExecutor {
     this.mcpContextManager = new MCPContextManager(
       authenticatedUser,
       {
-        repositoryId: repositoryData.repositoryUrl,
+        repositoryId: `${repositoryData.owner}/${repositoryData.repo}`,
         recentAnalysis: [],
         historicalPatterns: [],
         similarIssues: [],
@@ -504,6 +504,7 @@ export class EnhancedMultiAgentExecutor {
       context: options.context ?? {},
       priorityBasedExecution: options.priorityBasedExecution ?? true,
       enableMetrics: options.enableMetrics ?? true,
+      enableMCP: options.enableMCP ?? true,
       onProgress: options.onProgress || (() => { /* Progress callback will be implemented */ }),
       resourceStrategy: options.resourceStrategy ?? 'balanced',
       modelBlacklist: options.modelBlacklist
@@ -556,11 +557,12 @@ export class EnhancedMultiAgentExecutor {
       await this.initializeAgents();
       
       // Update MCP context with repository information
-      if (this.repositoryData.primaryLanguage) {
+      const primaryLanguage = this.detectPrimaryLanguage();
+      if (primaryLanguage) {
         this.mcpContextManager.updateRepositoryContext(
-          this.repositoryData.repositoryUrl,
-          this.repositoryData.primaryLanguage,
-          this.repositoryData.sizeCategory || 'medium'
+          `${this.repositoryData.owner}/${this.repositoryData.repo}`,
+          primaryLanguage,
+          this.determineSizeCategory()
         );
       }
 
@@ -1302,5 +1304,93 @@ export class EnhancedMultiAgentExecutor {
       currentContext: this.mcpContextManager.getContext(),
       progressSummary: this.mcpContextManager.getProgressSummary()
     };
+  }
+
+  /**
+   * Detect primary language from repository files
+   */
+  private detectPrimaryLanguage(): string | null {
+    if (!this.repositoryData.files || this.repositoryData.files.length === 0) {
+      return null;
+    }
+
+    const languageCount: Record<string, number> = {};
+    
+    for (const file of this.repositoryData.files) {
+      const extension = file.path.split('.').pop()?.toLowerCase();
+      if (!extension) continue;
+
+      let language: string | null = null;
+      switch (extension) {
+        case 'ts':
+        case 'tsx':
+          language = 'typescript';
+          break;
+        case 'js':
+        case 'jsx':
+          language = 'javascript';
+          break;
+        case 'py':
+          language = 'python';
+          break;
+        case 'java':
+          language = 'java';
+          break;
+        case 'go':
+          language = 'go';
+          break;
+        case 'rs':
+          language = 'rust';
+          break;
+        case 'cpp':
+        case 'cc':
+        case 'cxx':
+          language = 'cpp';
+          break;
+        case 'c':
+          language = 'c';
+          break;
+        case 'cs':
+          language = 'csharp';
+          break;
+        case 'php':
+          language = 'php';
+          break;
+        case 'rb':
+          language = 'ruby';
+          break;
+      }
+
+      if (language) {
+        languageCount[language] = (languageCount[language] || 0) + 1;
+      }
+    }
+
+    // Return the most common language
+    let maxCount = 0;
+    let primaryLanguage: string | null = null;
+    for (const [lang, count] of Object.entries(languageCount)) {
+      if (count > maxCount) {
+        maxCount = count;
+        primaryLanguage = lang;
+      }
+    }
+
+    return primaryLanguage;
+  }
+
+  /**
+   * Determine repository size category based on file count
+   */
+  private determineSizeCategory(): 'small' | 'medium' | 'large' {
+    const fileCount = this.repositoryData.files?.length || 0;
+    
+    if (fileCount <= 10) {
+      return 'small';
+    } else if (fileCount <= 50) {
+      return 'medium';
+    } else {
+      return 'large';
+    }
   }
 }

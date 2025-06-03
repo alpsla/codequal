@@ -80,12 +80,22 @@ describe('ResearchScheduler', () => {
   let mockUser: AuthenticatedUser;
   let scheduler: ResearchScheduler;
   let mockScheduledTask: jest.Mocked<cron.ScheduledTask>;
+  
+  beforeAll(() => {
+    // Reset mock call history at the start
+    jest.clearAllMocks();
+  });
 
   beforeEach(() => {
     jest.clearAllMocks();
     mockConductResearchAndUpdate.mockClear();
     mockConductMetaResearch.mockClear();
     mockHandleResearchRequest.mockClear();
+    
+    // Clear cron mock specifically
+    if (mockCron.schedule) {
+      mockCron.schedule.mockClear();
+    }
 
     mockUser = {
       id: 'test-user',
@@ -102,7 +112,18 @@ describe('ResearchScheduler', () => {
 
     mockCron.schedule.mockReturnValue(mockScheduledTask);
 
-    scheduler = new ResearchScheduler(mockUser);
+    // Create mock researcher agent
+    const mockResearcherAgent = {
+      conductResearchAndUpdate: mockConductResearchAndUpdate,
+      conductMetaResearch: mockConductMetaResearch,
+      getCacheStats: jest.fn().mockReturnValue({
+        model: 'google/gemini-2.5-flash',
+        requestCount: 5,
+        isActive: true
+      })
+    };
+
+    scheduler = new ResearchScheduler(mockUser, mockResearcherAgent);
   });
 
   describe('Scheduler Initialization', () => {
@@ -115,7 +136,17 @@ describe('ResearchScheduler', () => {
     });
 
     test('should initialize with custom configuration', () => {
-      const customScheduler = new ResearchScheduler(mockUser, undefined, {
+      const mockResearcherAgent = {
+        conductResearchAndUpdate: mockConductResearchAndUpdate,
+        conductMetaResearch: mockConductMetaResearch,
+        getCacheStats: jest.fn().mockReturnValue({
+          model: 'google/gemini-2.5-flash',
+          requestCount: 5,
+          isActive: true
+        })
+      };
+
+      const customScheduler = new ResearchScheduler(mockUser, mockResearcherAgent, {
         quarterlyCron: '0 8 1 */3 *',
         timezone: 'America/New_York',
         maxConcurrentJobs: 5

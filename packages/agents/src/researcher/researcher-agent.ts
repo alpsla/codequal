@@ -974,7 +974,7 @@ export class ResearcherAgent {
       }
     };
 
-    const recommendation = roleOptimalModels[agentRole] || roleOptimalModels.codeQuality;
+    const recommendation = roleOptimalModels[agentRole as keyof typeof roleOptimalModels] || roleOptimalModels.codeQuality;
     
     // Return mock model info - in production this would be real discovered models
     return {
@@ -1786,7 +1786,7 @@ Apply the cached [${this.researcherCache?.templateId}] with these parameters.`;
 • Detail Level (5%): Thorough analysis`
     };
     
-    return criteria[agentRole] || criteria.performance;
+    return criteria[agentRole as keyof typeof criteria] || criteria.performance;
   }
   
   /**
@@ -1931,7 +1931,7 @@ Find the BEST model for AI model research tasks, even if it means recommending y
   private simulateMetaResearchResponse(currentModel: ModelVersionInfo): MetaResearchResult {
     // Simulate what the current researcher might say about itself
     const isOlderModel = new Date(currentModel.releaseDate || '2025-01-01') < new Date('2025-05-01');
-    const shouldUpgrade = isOlderModel || currentModel.capabilities?.reasoning < 9.0;
+    const shouldUpgrade = isOlderModel || (currentModel.capabilities?.reasoning || 0) < 9.0;
     
     return {
       currentModel: {
@@ -2133,7 +2133,7 @@ Find the BEST model for AI model research tasks, even if it means recommending y
       requestCount: this.researcherCache.requestCount,
       sessionId: this.researcherCache.sessionId,
       templateId: this.researcherCache.templateId,
-      dbConfigId: this.researcherCache.dbConfigId,
+      dbConfigId: this.researcherCache.dbConfigId || null,
       tokensSaved
     };
   }

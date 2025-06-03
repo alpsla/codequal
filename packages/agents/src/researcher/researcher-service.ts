@@ -190,26 +190,24 @@ export class ResearcherService {
     
     try {
       // Store research summary
-      await this.vectorContextService.storeContext(
+      await this.vectorContextService.storeAnalysisResults(
         `research_operation_${operationId}`,
-        'researcher',
-        {
+        [{
           operationId,
           timestamp: new Date().toISOString(),
           type: 'research_results',
           summary: result.summary,
           configurationsUpdated: result.configurationUpdates.length,
           modelsResearched: result.researchResults.length
-        },
-        [`research`, `operation`, `model_updates`]
+        }],
+        this.authenticatedUser.id
       );
       
       // Store individual configuration updates
       for (const update of result.configurationUpdates) {
-        await this.vectorContextService.storeContext(
+        await this.vectorContextService.storeAnalysisResults(
           `config_update_${operationId}_${update.context.language}_${update.context.sizeCategory}_${update.context.agentRole}`,
-          'configuration_update',
-          {
+          [{
             operationId,
             context: update.context,
             previousModel: update.currentModel,
@@ -218,14 +216,8 @@ export class ResearcherService {
             expectedImprovement: update.expectedImprovement,
             priority: update.priority,
             timestamp: new Date().toISOString()
-          },
-          [
-            `config_update`,
-            `${update.context.language}`,
-            `${update.context.sizeCategory}`,
-            `${update.context.agentRole}`,
-            `priority_${update.priority}`
-          ]
+          }],
+          this.authenticatedUser.id
         );
       }
       
@@ -325,19 +317,21 @@ export class ResearcherService {
       let costCount = 0;
       
       for (const config of configurations) {
+        const modelConfig = config as any; // Type assertion for configuration object
+        
         // Count by provider
-        configurationsByProvider[config.provider] = (configurationsByProvider[config.provider] || 0) + 1;
+        configurationsByProvider[modelConfig.provider] = (configurationsByProvider[modelConfig.provider] || 0) + 1;
         
         // Count by preferred roles
-        if (config.preferredFor) {
-          for (const role of config.preferredFor) {
+        if (modelConfig.preferredFor) {
+          for (const role of modelConfig.preferredFor) {
             configurationsByRole[role] = (configurationsByRole[role] || 0) + 1;
           }
         }
         
         // Calculate average cost
-        if (config.pricing) {
-          totalCost += (config.pricing.input + config.pricing.output) / 2;
+        if (modelConfig.pricing) {
+          totalCost += (modelConfig.pricing.input + modelConfig.pricing.output) / 2;
           costCount++;
         }
       }
