@@ -614,6 +614,7 @@ codequal_auth_rate_per_minute ${metrics.auth.rate}
     const level = event.severity === 'critical' || event.severity === 'high' ? 'error' :
                   event.severity === 'medium' ? 'warn' : 'info';
     
+    // eslint-disable-next-line no-console
     console[level]('[SECURITY]', {
       eventId: event.eventId,
       type: event.type,
