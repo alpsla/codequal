@@ -9,6 +9,8 @@ import { storeAnalysisInHistory } from '../routes/analysis';
 import { EnhancedMultiAgentExecutor } from '@codequal/agents/multi-agent/enhanced-executor';
 import { ModelVersionSync } from '@codequal/core/services/model-selection/ModelVersionSync';
 import { VectorContextService } from '@codequal/agents/multi-agent/vector-context-service';
+import { createLogger } from '@codequal/core/utils';
+import { AuthenticatedUser as AgentAuthenticatedUser, UserRole, UserStatus, UserPermissions } from '@codequal/agents/multi-agent/types/auth';
 
 export interface PRAnalysisRequest {
   repositoryUrl: string;
@@ -27,6 +29,13 @@ export interface PRContext {
   primaryLanguage: string;
   repositorySize: 'small' | 'medium' | 'large';
   analysisMode: string;
+  baseBranch?: string;
+  files?: Array<{
+    path: string;
+    content?: string;
+    diff?: string;
+    previousContent?: string;
+  }>;
 }
 
 export interface RepositoryStatus {
@@ -89,11 +98,20 @@ export class ResultOrchestrator {
   private prContextService: PRContextService;
   private resultProcessor: ResultProcessor;
   private educationalService: EducationalContentService;
+  private agentAuthenticatedUser: AgentAuthenticatedUser;
 
   constructor(private authenticatedUser: AuthenticatedUser) {
     // Initialize services with authenticated user context
-    this.modelVersionSync = new ModelVersionSync();
-    this.vectorContextService = new VectorContextService(authenticatedUser);
+    const logger = createLogger('ResultOrchestrator');
+    this.modelVersionSync = new ModelVersionSync(logger);
+    
+    // Convert API AuthenticatedUser to Agent AuthenticatedUser
+    this.agentAuthenticatedUser = this.convertToAgentUser(authenticatedUser);
+    
+    // Create mock RAG service for VectorContextService
+    const mockRAGService = this.createMockRAGService();
+    this.vectorContextService = new VectorContextService(mockRAGService);
+    
     this.deepWikiManager = new DeepWikiManager(authenticatedUser);
     this.prContextService = new PRContextService();
     this.resultProcessor = new ResultProcessor();
@@ -235,8 +253,14 @@ export class ResultOrchestrator {
       };
     }
 
-    // Get last analysis timestamp
-    const lastAnalyzed = await this.vectorContextService.getLastAnalysisDate(repositoryUrl);
+    // Get repository context which may include last analysis info
+    const existingContext = await this.vectorContextService.getRepositoryContext(
+      repositoryUrl,
+      'orchestrator' as any,
+      this.authenticatedUser as any
+    );
+    const lastAnalyzed = existingContext.lastUpdated ? 
+      new Date(existingContext.lastUpdated) : undefined;
     
     // Determine freshness (this is simplified - in production would use threshold evaluation)
     const daysSinceAnalysis = lastAnalyzed ? 
@@ -289,13 +313,43 @@ export class ResultOrchestrator {
    */
   private async coordinateAgents(context: PRContext, orchestratorModel: any): Promise<any> {
     // Get repository context from Vector DB
-    const repositoryContext = await this.vectorContextService.searchSimilarContext(
+    const repositoryContext = await this.vectorContextService.getRepositoryContext(
       context.repositoryUrl,
-      { threshold: 0.9, limit: 5 }
+      'orchestrator' as any,
+      this.agentAuthenticatedUser,
+      { minSimilarity: 0.9 }
     );
 
+    // Create repository data for the executor
+    const repositoryData = {
+      owner: context.repositoryUrl.split('/')[3],
+      repo: context.repositoryUrl.split('/')[4],
+      prNumber: context.prNumber,
+      branch: context.baseBranch,
+      files: context.files?.map((f: any) => ({
+        path: f.path,
+        content: f.content || '',
+        diff: f.diff,
+        previousContent: f.previousContent
+      })) || []
+    };
+
+    // Create multi-agent config
+    const multiAgentConfig = {
+      name: 'PR Analysis',
+      strategy: 'parallel' as any,
+      agents: [] as any[],
+      fallbackEnabled: true
+    };
+
     // Create enhanced multi-agent executor
-    const executor = new EnhancedMultiAgentExecutor(this.authenticatedUser);
+    const executor = new EnhancedMultiAgentExecutor(
+      multiAgentConfig,
+      repositoryData,
+      this.vectorContextService,
+      this.agentAuthenticatedUser,
+      { debug: false }
+    );
 
     // Select agents based on analysis mode
     const selectedAgents = this.selectAgentsForAnalysis(context.analysisMode);
@@ -303,13 +357,11 @@ export class ResultOrchestrator {
     // Configure agents with repository context
     const agentConfigurations = await this.configureAgents(selectedAgents, context);
 
-    // Execute agents in parallel
-    const results = await executor.executeAgents({
-      agents: agentConfigurations,
-      repositoryContext,
-      prContext: context,
-      orchestratorModel
-    });
+    // Update the config with selected agents
+    multiAgentConfig.agents = agentConfigurations;
+
+    // Execute agents
+    const results = await executor.execute();
 
     return results;
   }
@@ -489,5 +541,110 @@ export class ResultOrchestrator {
     comment += "*Full analysis available in the detailed report.*";
     
     return comment;
+  }
+
+  /**
+   * Convert API AuthenticatedUser to Agent AuthenticatedUser
+   */
+  private convertToAgentUser(apiUser: AuthenticatedUser): AgentAuthenticatedUser {
+    // Create user permissions structure expected by agents package
+    const permissions: UserPermissions = {
+      repositories: {
+        // For now, grant access to all repositories the user has access to
+        // In production, this would be populated from the database
+        '*': {
+          read: true,
+          write: false,
+          admin: false
+        }
+      },
+      organizations: apiUser.organizationId ? [apiUser.organizationId] : [],
+      globalPermissions: apiUser.permissions || [],
+      quotas: {
+        requestsPerHour: 1000,
+        maxConcurrentExecutions: 5,
+        storageQuotaMB: 1000
+      }
+    };
+
+    // Map API role to Agent UserRole
+    let role: UserRole;
+    switch (apiUser.role) {
+      case 'admin':
+        role = UserRole.ADMIN;
+        break;
+      case 'system_admin':
+        role = UserRole.SYSTEM_ADMIN;
+        break;
+      case 'org_owner':
+        role = UserRole.ORG_OWNER;
+        break;
+      case 'org_member':
+        role = UserRole.ORG_MEMBER;
+        break;
+      case 'service_account':
+        role = UserRole.SERVICE_ACCOUNT;
+        break;
+      default:
+        role = UserRole.USER;
+    }
+
+    // Map API status to Agent UserStatus
+    let status: UserStatus;
+    switch (apiUser.status) {
+      case 'suspended':
+        status = UserStatus.SUSPENDED;
+        break;
+      case 'pending_verification':
+        status = UserStatus.PENDING_VERIFICATION;
+        break;
+      case 'password_reset_required':
+        status = UserStatus.PASSWORD_RESET_REQUIRED;
+        break;
+      case 'locked':
+        status = UserStatus.LOCKED;
+        break;
+      default:
+        status = UserStatus.ACTIVE;
+    }
+
+    return {
+      id: apiUser.id,
+      email: apiUser.email,
+      organizationId: apiUser.organizationId,
+      permissions,
+      session: {
+        token: apiUser.session.token,
+        expiresAt: apiUser.session.expiresAt,
+        fingerprint: 'api-session',
+        ipAddress: '127.0.0.1',
+        userAgent: 'CodeQual API'
+      },
+      role,
+      status
+    };
+  }
+
+  /**
+   * Create mock RAG service for VectorContextService
+   */
+  private createMockRAGService(): any {
+    return {
+      search: async (options: any, userId: string) => {
+        // Return empty results for now
+        // In production, this would be the actual RAG service
+        return [];
+      },
+      supabase: {
+        // Mock supabase client
+        from: () => ({
+          select: () => ({
+            eq: () => ({
+              eq: () => Promise.resolve({ data: [], error: null })
+            })
+          })
+        })
+      }
+    };
   }
 }

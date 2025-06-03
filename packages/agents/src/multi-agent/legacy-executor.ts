@@ -274,7 +274,7 @@ export class MigrationChecker {
   /**
    * Generate migration plan for a specific codebase
    */
-  static generateMigrationPlan(projectPath: string): {
+  static generateMigrationPlan(_projectPath: string): {
     priority: 'high' | 'medium' | 'low';
     estimatedEffort: string;
     steps: string[];

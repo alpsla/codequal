@@ -13,7 +13,10 @@ module.exports = {
     'node_modules/**/*',
     'coverage/**/*',
     'src/multi-agent/__tests__/**/*', 
-    'src/multi-agent/evaluation/__tests__/**/*'
+    'src/multi-agent/evaluation/__tests__/**/*',
+    'src/multi-agent/examples/**/*',
+    'src/researcher/*.d.ts',
+    'src/researcher/*.js'
   ],
   rules: {
     '@typescript-eslint/no-explicit-any': 'off',

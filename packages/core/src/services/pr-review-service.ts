@@ -1,5 +1,6 @@
 // Import only types from other packages
-import { AgentSelection, AgentProvider, AgentRole, DEFAULT_AGENTS } from '../config/agent-registry';
+import { AgentSelection, AgentProvider, AgentRole } from '../config/agent-registry';
+import { getDefaultAgentSelection } from './agent-configuration-service';
 import type { AnalysisResult, Insight, Suggestion, EducationalContent } from '../types/agent';
 import { SkillService } from './skill-service';
 import { createLogger } from '../utils/logger';
@@ -82,7 +83,7 @@ export class PRReviewService {
   async analyzePR(
     prUrl: string,
     userId: string,
-    agentSelection: AgentSelection = DEFAULT_AGENTS
+    agentSelection?: AgentSelection
   ): Promise<{
     prReviewId: string;
     analysisResults: Record<AgentRole, AnalysisResult>;
@@ -91,6 +92,9 @@ export class PRReviewService {
     try {
       // 1. Extract repository information from PR URL
       const repoInfo = this.extractRepositoryInfo(prUrl);
+      
+      // 1.5. Get agent selection using dynamic system
+      const effectiveAgentSelection = agentSelection || getDefaultAgentSelection();
       
       // 2. Find or create repository
       const repository = await RepositoryModel.findOrCreate(
@@ -109,7 +113,7 @@ export class PRReviewService {
       // 4. Create orchestrator agent to fetch PR data
       const orchestrator = AgentFactory.createAgent(
         AgentRole.ORCHESTRATOR,
-        agentSelection[AgentRole.ORCHESTRATOR],
+        effectiveAgentSelection[AgentRole.ORCHESTRATOR],
         {}
       );
       
@@ -129,7 +133,7 @@ export class PRReviewService {
       await PRReviewModel.storeAnalysisResult(
         prReview.id,
         AgentRole.ORCHESTRATOR,
-        agentSelection[AgentRole.ORCHESTRATOR],
+        effectiveAgentSelection[AgentRole.ORCHESTRATOR],
         prData,
         orchestrationTime
       );
@@ -141,16 +145,21 @@ export class PRReviewService {
       
       // Run all specialized agents in parallel for efficiency
       const analysisPromises = Object.values(AgentRole)
-        .filter(role => role !== AgentRole.ORCHESTRATOR)
+        .filter(role => role !== AgentRole.ORCHESTRATOR && role !== AgentRole.RESEARCHER) // Skip orchestrator and researcher
         .map(async (role) => {
           try {
+            const selectedProvider = effectiveAgentSelection[role];
+            if (!selectedProvider) {
+              throw new Error(`No provider selected for role ${role}`);
+            }
+            
             const agent = AgentFactory.createAgent(
               role,
-              agentSelection[role],
+              selectedProvider,
               {}
             );
             
-            this.logger.info(`Analyzing PR with ${role} agent (${agentSelection[role]})`);
+            this.logger.info(`Analyzing PR with ${role} agent (${selectedProvider})`);
             const startTime = Date.now();
             const result = await agent.analyze(prData);
             const executionTime = Date.now() - startTime;
@@ -159,7 +168,7 @@ export class PRReviewService {
             await PRReviewModel.storeAnalysisResult(
               prReview.id,
               role,
-              agentSelection[role],
+              selectedProvider,
               result,
               executionTime
             );

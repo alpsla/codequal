@@ -7,7 +7,6 @@
 
 import { createLogger } from '@codequal/core/utils';
 import { 
-  AuthenticationService,
   MockAuthenticationService,
   AuthenticatedUser,
   UserPermissions,
@@ -21,7 +20,7 @@ import {
 /**
  * Mock user database for testing
  */
-interface MockUserDatabase {
+interface _MockUserDatabase {
   [userId: string]: {
     user: AuthenticatedUser;
     rateLimits: {

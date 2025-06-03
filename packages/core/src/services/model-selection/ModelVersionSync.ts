@@ -235,6 +235,28 @@ export const CANONICAL_MODEL_VERSIONS: Record<string, ModelVersionInfo> = {
     preferredFor: ['medium_repositories', 'java', 'c', 'cpp', 'rust']
   },
   
+  // Google Gemini 2.5 Flash for RESEARCHER agent
+  'google/gemini-2.5-flash': {
+    provider: 'google',
+    model: 'gemini-2.5-flash',
+    versionId: 'gemini-2.5-flash-20250602',
+    releaseDate: '2025-06-02',
+    description: 'Google Gemini 2.5 Flash - Optimized for RESEARCHER agent: fast model research, cost analysis, and configuration updates',
+    capabilities: {
+      codeQuality: 8.5,
+      speed: 9.2,
+      contextWindow: 100000,
+      reasoning: 8.8,
+      detailLevel: 8.0
+    },
+    pricing: {
+      input: 0.075,
+      output: 0.30
+    },
+    tier: ModelTier.STANDARD,
+    preferredFor: ['researcher', 'model_research', 'cost_optimization', 'configuration_updates', 'scheduled_tasks']
+  },
+
   // OpenRouter models
   'openrouter/anthropic/claude-3.7-sonnet': {
     provider: 'openrouter',

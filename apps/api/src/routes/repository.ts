@@ -1,6 +1,7 @@
-import { Router, Response } from 'express';
-import { AuthenticatedRequest, checkRepositoryAccess } from '../middleware/auth-middleware';
+import { Router, Request, Response } from 'express';
+import { checkRepositoryAccess } from '../middleware/auth-middleware';
 import { DeepWikiManager } from '../services/deepwiki-manager';
+import '../types/express.d.ts';
 
 export const repositoryRoutes = Router();
 
@@ -8,7 +9,7 @@ export const repositoryRoutes = Router();
  * GET /api/repository/status
  * Check repository analysis status in Vector DB
  */
-repositoryRoutes.get('/status', async (req: AuthenticatedRequest, res: Response) => {
+repositoryRoutes.get('/status', async (req: Request, res: Response) => {
   try {
     const { repositoryUrl } = req.query;
     
@@ -18,7 +19,7 @@ repositoryRoutes.get('/status', async (req: AuthenticatedRequest, res: Response)
       });
     }
 
-    const user = req.user;
+    const user = req.user!;
 
     // Check repository access
     const hasAccess = await checkRepositoryAccess(user, repositoryUrl);
@@ -61,7 +62,7 @@ repositoryRoutes.get('/status', async (req: AuthenticatedRequest, res: Response)
  * POST /api/repository/analyze
  * Manually trigger repository analysis
  */
-repositoryRoutes.post('/analyze', async (req: AuthenticatedRequest, res: Response) => {
+repositoryRoutes.post('/analyze', async (req: Request, res: Response) => {
   try {
     const { repositoryUrl, force = false } = req.body;
     
@@ -71,7 +72,7 @@ repositoryRoutes.post('/analyze', async (req: AuthenticatedRequest, res: Respons
       });
     }
 
-    const user = req.user;
+    const user = req.user!;
 
     // Check repository access
     const hasAccess = await checkRepositoryAccess(user, repositoryUrl);
@@ -120,9 +121,9 @@ repositoryRoutes.post('/analyze', async (req: AuthenticatedRequest, res: Respons
  * GET /api/repository/jobs
  * Get active repository analysis jobs for user
  */
-repositoryRoutes.get('/jobs', async (req: AuthenticatedRequest, res: Response) => {
+repositoryRoutes.get('/jobs', async (req: Request, res: Response) => {
   try {
-    const user = req.user;
+    const user = req.user!;
     const deepWikiManager = new DeepWikiManager(user);
     
     const activeJobs = await deepWikiManager.getActiveJobs();
@@ -151,10 +152,10 @@ repositoryRoutes.get('/jobs', async (req: AuthenticatedRequest, res: Response) =
  * GET /api/repository/job/:jobId
  * Get specific job status
  */
-repositoryRoutes.get('/job/:jobId', async (req: AuthenticatedRequest, res: Response) => {
+repositoryRoutes.get('/job/:jobId', async (req: Request, res: Response) => {
   try {
     const { jobId } = req.params;
-    const user = req.user;
+    const user = req.user!;
     
     const deepWikiManager = new DeepWikiManager(user);
     const job = await deepWikiManager.getJobStatus(jobId);
@@ -191,10 +192,10 @@ repositoryRoutes.get('/job/:jobId', async (req: AuthenticatedRequest, res: Respo
  * DELETE /api/repository/job/:jobId
  * Cancel a repository analysis job
  */
-repositoryRoutes.delete('/job/:jobId', async (req: AuthenticatedRequest, res: Response) => {
+repositoryRoutes.delete('/job/:jobId', async (req: Request, res: Response) => {
   try {
     const { jobId } = req.params;
-    const user = req.user;
+    const user = req.user!;
     
     const deepWikiManager = new DeepWikiManager(user);
     const cancelled = await deepWikiManager.cancelJob(jobId);

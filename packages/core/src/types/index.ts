@@ -24,3 +24,20 @@ export type {
 
 // Evaluation types don't overlap with others so we can export all
 export * from './evaluation';
+
+// Re-export authentication types
+export type {
+  AuthenticatedUser,
+  UserSkillProfile,
+  UserRepository,
+  AuthenticatedSearchOptions
+} from '../services/rag/authenticated-rag-service';
+
+// Re-export researcher types
+export type {
+  IResearcherAgent,
+  ResearchParams,
+  ResearchResult,
+  ResearchCapabilities,
+  ResearchSchedule
+} from './researcher';

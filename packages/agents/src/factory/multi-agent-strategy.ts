@@ -93,6 +93,12 @@ export class MultiAgentManager {
       primaryProvider: AgentProvider.CLAUDE,
       secondaryProviders: [AgentProvider.OPENAI],
       role: AgentRole.REPORT_GENERATION
+    },
+    [AgentRole.RESEARCHER]: {
+      strategy: MultiAgentStrategy.SPECIALIZED,
+      primaryProvider: AgentProvider.GOOGLE,
+      secondaryProviders: [AgentProvider.CLAUDE],
+      role: AgentRole.RESEARCHER
     }
   };
 
@@ -530,7 +536,8 @@ export class SpecializedMultiAgent extends MultiAgent {
       [AgentRole.DEPENDENCY]: 'dependency_analysis',
       [AgentRole.EDUCATIONAL]: 'educational_content',
       [AgentRole.ORCHESTRATOR]: 'orchestration',
-      [AgentRole.REPORT_GENERATION]: 'report_generation'
+      [AgentRole.REPORT_GENERATION]: 'report_generation',
+      [AgentRole.RESEARCHER]: 'research_analysis'
     };
     
     return focusAreas[role] || String(role);
