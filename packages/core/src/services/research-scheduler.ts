@@ -8,9 +8,8 @@
 
 import * as cron from 'node-cron';
 import { Logger, createLogger } from '../utils';
-import { ResearcherAgent } from '../../../agents/src/researcher/researcher-agent';
 import { ResearcherUpgradeCoordinator } from './researcher-upgrade-coordinator';
-import { AuthenticatedUser } from '../types';
+import { AuthenticatedUser, IResearcherAgent, ResearchParams, ResearchResult } from '../types';
 
 export interface SchedulerConfig {
   /**
@@ -73,7 +72,7 @@ export class ResearchScheduler {
 
   constructor(
     private authenticatedUser: AuthenticatedUser,
-    private researcherAgent?: ResearcherAgent,
+    private researcherAgent: IResearcherAgent,
     config: SchedulerConfig = {}
   ) {
     this.logger = createLogger('ResearchScheduler');
@@ -85,9 +84,6 @@ export class ResearchScheduler {
       maxConcurrentJobs: config.maxConcurrentJobs || 2,
       ...config
     };
-
-    // Initialize researcher agent if not provided
-    this.researcherAgent = researcherAgent || new ResearcherAgent(authenticatedUser);
     
     // Initialize upgrade coordinator
     this.upgradeCoordinator = new ResearcherUpgradeCoordinator(
@@ -302,7 +298,7 @@ export class ResearchScheduler {
     language: string,
     sizeCategory: string,
     agentRole: string,
-    reason: string = 'Missing configuration requested by orchestrator',
+    reason = 'Missing configuration requested by orchestrator',
     urgency: 'normal' | 'high' | 'critical' = 'normal'
   ): Promise<string> {
     const jobId = this.generateJobId('unscheduled');
@@ -502,7 +498,7 @@ export class ResearchScheduler {
   /**
    * Get recent jobs
    */
-  getRecentJobs(limit: number = 10): ResearchJob[] {
+  getRecentJobs(limit = 10): ResearchJob[] {
     return Array.from(this.jobs.values())
       .sort((a, b) => b.scheduledAt.getTime() - a.scheduledAt.getTime())
       .slice(0, limit);

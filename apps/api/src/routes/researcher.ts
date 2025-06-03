@@ -9,10 +9,11 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { AuthenticatedUser, AuthenticatedRequest } from '../middleware/auth-middleware';
+import { AuthenticatedUser } from '../middleware/auth-middleware';
 import { ResearcherService } from '@codequal/agents/researcher/researcher-service';
 import { VectorContextService } from '@codequal/agents/multi-agent/vector-context-service';
 import { ResearchConfig } from '@codequal/agents/researcher/researcher-agent';
+import '../types/express';
 
 const router = Router();
 
@@ -26,7 +27,7 @@ function createResearcherService(user: AuthenticatedUser): ResearcherService {
  * POST /api/researcher/trigger
  * Trigger a manual research operation
  */
-router.post('/trigger', async (req: AuthenticatedRequest, res: Response) => {
+router.post('/trigger', async (req: Request, res: Response) => {
   try {
     const user = req.user as AuthenticatedUser;
     const config: Partial<ResearchConfig> = req.body.config || {};
@@ -67,7 +68,7 @@ router.post('/trigger', async (req: AuthenticatedRequest, res: Response) => {
  * GET /api/researcher/operations/:operationId
  * Get status of a specific research operation
  */
-router.get('/operations/:operationId', async (req: AuthenticatedRequest, res: Response) => {
+router.get('/operations/:operationId', async (req: Request, res: Response) => {
   try {
     const user = req.user as AuthenticatedUser;
     const { operationId } = req.params;
@@ -100,7 +101,7 @@ router.get('/operations/:operationId', async (req: AuthenticatedRequest, res: Re
  * GET /api/researcher/operations
  * Get all active research operations
  */
-router.get('/operations', async (req: AuthenticatedRequest, res: Response) => {
+router.get('/operations', async (req: Request, res: Response) => {
   try {
     const user = req.user as AuthenticatedUser;
     
@@ -128,7 +129,7 @@ router.get('/operations', async (req: AuthenticatedRequest, res: Response) => {
  * GET /api/researcher/history
  * Get research operation history
  */
-router.get('/history', async (req: AuthenticatedRequest, res: Response) => {
+router.get('/history', async (req: Request, res: Response) => {
   try {
     const user = req.user as AuthenticatedUser;
     const limit = parseInt(req.query.limit as string) || 10;
@@ -164,7 +165,7 @@ router.get('/history', async (req: AuthenticatedRequest, res: Response) => {
  * GET /api/researcher/configuration-overview
  * Get current configuration overview
  */
-router.get('/configuration-overview', async (req: AuthenticatedRequest, res: Response) => {
+router.get('/configuration-overview', async (req: Request, res: Response) => {
   try {
     const user = req.user as AuthenticatedUser;
     
@@ -189,7 +190,7 @@ router.get('/configuration-overview', async (req: AuthenticatedRequest, res: Res
  * GET /api/researcher/recommendations
  * Get recommended optimizations
  */
-router.get('/recommendations', async (req: AuthenticatedRequest, res: Response) => {
+router.get('/recommendations', async (req: Request, res: Response) => {
   try {
     const user = req.user as AuthenticatedUser;
     
@@ -214,7 +215,7 @@ router.get('/recommendations', async (req: AuthenticatedRequest, res: Response) 
  * POST /api/researcher/schedule
  * Start or update scheduled research operations
  */
-router.post('/schedule', async (req: AuthenticatedRequest, res: Response) => {
+router.post('/schedule', async (req: Request, res: Response) => {
   try {
     const user = req.user as AuthenticatedUser;
     const { intervalHours } = req.body;
@@ -251,7 +252,7 @@ router.post('/schedule', async (req: AuthenticatedRequest, res: Response) => {
  * GET /api/researcher/status
  * Get overall RESEARCHER system status
  */
-router.get('/status', async (req: AuthenticatedRequest, res: Response) => {
+router.get('/status', async (req: Request, res: Response) => {
   try {
     const user = req.user as AuthenticatedUser;
     

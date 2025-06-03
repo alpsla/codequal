@@ -1265,7 +1265,7 @@ export class ResearcherAgent {
   /**
    * Schedule regular research updates for repository model configurations
    */
-  async scheduleRegularUpdates(intervalHours: number = 24): Promise<void> {
+  async scheduleRegularUpdates(intervalHours = 24): Promise<void> {
     this.logger.info(`🕐 Scheduling regular repository model updates every ${intervalHours} hours`);
     
     // Set up interval for regular research (repository context analysis)
@@ -1283,7 +1283,7 @@ export class ResearcherAgent {
    * Schedule quarterly meta-research to evaluate the researcher itself
    * Based on realistic AI model release patterns (major releases every 3-4 months)
    */
-  async scheduleQuarterlyMetaResearch(intervalDays: number = 90): Promise<void> {
+  async scheduleQuarterlyMetaResearch(intervalDays = 90): Promise<void> {
     this.logger.info(`🗓️ Scheduling quarterly meta-research every ${intervalDays} days`);
     this.logger.info('📊 Meta-research evaluates if researcher model should be upgraded');
     

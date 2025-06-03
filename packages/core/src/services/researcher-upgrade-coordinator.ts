@@ -6,8 +6,7 @@
  */
 
 import { Logger, createLogger } from '../utils';
-import { ResearcherAgent } from '../../../agents/src/researcher/researcher-agent';
-import { AuthenticatedUser } from '../types';
+import { AuthenticatedUser, IResearcherAgent } from '../types';
 import { RepositorySizeCategory } from './model-selection/ModelVersionSync';
 
 export interface ResearchRequest {
@@ -49,7 +48,7 @@ export interface UpgradeOperation {
  */
 export class ResearcherUpgradeCoordinator {
   private logger: Logger;
-  private researcherAgent: ResearcherAgent;
+  private researcherAgent: IResearcherAgent;
   
   // State management
   private upgradeInProgress = false;
@@ -66,10 +65,10 @@ export class ResearcherUpgradeCoordinator {
 
   constructor(
     authenticatedUser: AuthenticatedUser,
-    researcherAgent?: ResearcherAgent
+    researcherAgent: IResearcherAgent
   ) {
     this.logger = createLogger('ResearcherUpgradeCoordinator');
-    this.researcherAgent = researcherAgent || new ResearcherAgent(authenticatedUser);
+    this.researcherAgent = researcherAgent;
     
     this.logger.info('Researcher Upgrade Coordinator initialized', {
       maxConcurrentRequests: this.maxConcurrentRequests,
@@ -85,7 +84,7 @@ export class ResearcherUpgradeCoordinator {
     sizeCategory: RepositorySizeCategory,
     agentRole: string,
     frameworks: string[] = [],
-    complexity: number = 2.0,
+    complexity = 2.0,
     urgency: 'normal' | 'high' | 'critical' = 'normal'
   ): Promise<{
     requestId: string;
@@ -485,7 +484,7 @@ export class ResearcherUpgradeCoordinator {
 
       // Resume upgrade phase
       if (this.currentUpgrade) {
-        this.currentUpgrade.phase = pausedPhase;
+        this.currentUpgrade.phase = pausedPhase || 'context-validation';
       }
 
       this.logger.info('Critical request completed, resuming upgrade', {
@@ -498,7 +497,7 @@ export class ResearcherUpgradeCoordinator {
     } catch (error) {
       // Resume upgrade even if critical request failed
       if (this.currentUpgrade) {
-        this.currentUpgrade.phase = pausedPhase;
+        this.currentUpgrade.phase = pausedPhase || 'context-validation';
       }
 
       this.logger.error('Critical request failed', {
