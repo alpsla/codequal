@@ -155,7 +155,8 @@ export const defaultTemperatures: Record<AgentRole, number> = {
   [AgentRole.EDUCATIONAL]: 0.5,    // More creative
   [AgentRole.ORCHESTRATOR]: 0.3,   // Balanced
   [AgentRole.DEPENDENCY]: 0.3,     // Balanced
-  [AgentRole.REPORT_GENERATION]: 0.4 // Slightly creative
+  [AgentRole.REPORT_GENERATION]: 0.4, // Slightly creative
+  [AgentRole.RESEARCHER]: 0.35     // Balanced with slight creativity for discovery
 };
 
 /**
@@ -268,6 +269,17 @@ const createDefaultAgentData = (): Partial<AgentRoleEvaluationParameters> => ({
       bestPerformingLanguages: {},
       bestFileTypes: {},
       bestScenarios: {}
+    },
+    [AgentRole.RESEARCHER]: {
+      overallScore: 85,
+      specialties: ['Model Research', 'Market Analysis', 'Dynamic Discovery'],
+      weaknesses: ['Implementation Details'],
+      bestPerformingLanguages: {
+        'researcher': 90,
+        'analysis': 85
+      },
+      bestFileTypes: {},
+      bestScenarios: {}
     }
   },
   languageSupport: {
@@ -354,6 +366,17 @@ export const mockAgentEvaluationData: Record<AgentProvider, Partial<AgentRoleEva
         bestPerformingLanguages: {},
         bestFileTypes: {},
         bestScenarios: {}
+      },
+      [AgentRole.RESEARCHER]: {
+        overallScore: 94,
+        specialties: ['Model Discovery', 'Cross-Market Analysis', 'Reasoning'],
+        weaknesses: ['Implementation Details'],
+        bestPerformingLanguages: {
+          'researcher': 95,
+          'analysis': 92
+        },
+        bestFileTypes: {},
+        bestScenarios: {}
       }
     },
     languageSupport: {
@@ -428,6 +451,17 @@ export const mockAgentEvaluationData: Record<AgentProvider, Partial<AgentRoleEva
         specialties: ['Technical Writing', 'Code Comments'],
         weaknesses: [],
         bestPerformingLanguages: {},
+        bestFileTypes: {},
+        bestScenarios: {}
+      },
+      [AgentRole.RESEARCHER]: {
+        overallScore: 88,
+        specialties: ['Model Evaluation', 'Market Research', 'Data Analysis'],
+        weaknesses: ['Complex Reasoning'],
+        bestPerformingLanguages: {
+          'researcher': 90,
+          'analysis': 85
+        },
         bestFileTypes: {},
         bestScenarios: {}
       }
@@ -506,6 +540,17 @@ export const mockAgentEvaluationData: Record<AgentProvider, Partial<AgentRoleEva
         bestPerformingLanguages: {},
         bestFileTypes: {},
         bestScenarios: {}
+      },
+      [AgentRole.RESEARCHER]: {
+        overallScore: 87,
+        specialties: ['Technical Analysis', 'Performance Research', 'Code Understanding'],
+        weaknesses: ['Market Research'],
+        bestPerformingLanguages: {
+          'researcher': 88,
+          'analysis': 90
+        },
+        bestFileTypes: {},
+        bestScenarios: {}
       }
     },
     languageSupport: {
@@ -582,6 +627,17 @@ export const mockAgentEvaluationData: Record<AgentProvider, Partial<AgentRoleEva
         bestPerformingLanguages: {},
         bestFileTypes: {},
         bestScenarios: {}
+      },
+      [AgentRole.RESEARCHER]: {
+        overallScore: 91,
+        specialties: ['Comprehensive Analysis', 'Market Intelligence', 'Cost-Benefit Research'],
+        weaknesses: ['Deep Technical Implementation'],
+        bestPerformingLanguages: {
+          'researcher': 93,
+          'analysis': 89
+        },
+        bestFileTypes: {},
+        bestScenarios: {}
       }
     },
     languageSupport: {
@@ -592,6 +648,10 @@ export const mockAgentEvaluationData: Record<AgentProvider, Partial<AgentRoleEva
     }
   },
   // Add all remaining providers
+  [AgentProvider.ANTHROPIC]: createDefaultAgentData(),
+  [AgentProvider.GOOGLE]: createDefaultAgentData(),
+  [AgentProvider.DEEPSEEK]: createDefaultAgentData(),
+  [AgentProvider.OPENROUTER]: createDefaultAgentData(),
   [AgentProvider.DEEPSEEK_CODER_LITE]: createDefaultAgentData(),
   [AgentProvider.DEEPSEEK_CODER_PLUS]: createDefaultAgentData(),
   [AgentProvider.DEEPSEEK_CHAT]: createDefaultAgentData(),
