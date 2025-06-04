@@ -143,21 +143,32 @@ export class SelectiveRAGService {
       );
       
       // Search documents with intelligent filtering
-      const documentResults = await this.searchDocuments(
-        analyzedQuery,
-        queryEmbedding,
-        repositoryContext,
-        options
-      );
+      let documentResults: RAGSearchResult[] = [];
+      try {
+        documentResults = await this.searchDocuments(
+          analyzedQuery,
+          queryEmbedding,
+          repositoryContext,
+          options
+        );
+      } catch (error) {
+        this.logger.error('Document search failed', { error });
+        documentResults = [];
+      }
       
       // Search educational content if requested or beneficial
       let educationalResults: EducationalContentResult[] = [];
       if (this.shouldIncludeEducationalContent(analyzedQuery, options)) {
-        educationalResults = await this.searchEducationalContent(
-          analyzedQuery,
-          queryEmbedding,
-          options
-        );
+        try {
+          educationalResults = await this.searchEducationalContent(
+            analyzedQuery,
+            queryEmbedding,
+            options
+          );
+        } catch (error) {
+          this.logger.error('Educational content search failed', { error });
+          educationalResults = [];
+        }
       }
       
       // Generate search insights

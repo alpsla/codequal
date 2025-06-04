@@ -14,6 +14,9 @@ import { ResearcherAgent, ResearchConfig } from './researcher-agent';
 import { VectorContextService } from '../multi-agent/vector-context-service';
 import { CANONICAL_MODEL_VERSIONS } from '@codequal/core/services/model-selection/ModelVersionSync';
 
+// Special repository UUID for storing researcher configurations
+const RESEARCHER_CONFIG_REPO_ID = '00000000-0000-0000-0000-000000000001';
+
 /**
  * Research operation result
  */
@@ -78,7 +81,8 @@ export class ResearcherService {
   ) {
     this.logger = createLogger('ResearcherService');
     this.logger.info('RESEARCHER Service initialized', {
-      userId: this.authenticatedUser.id
+      userId: this.authenticatedUser.id,
+      configRepoId: RESEARCHER_CONFIG_REPO_ID
     });
   }
   
@@ -176,7 +180,7 @@ export class ResearcherService {
   }
   
   /**
-   * Store research results in Vector DB
+   * Store research results in Vector DB using the proper repository UUID
    */
   private async storeResearchResults(
     operationId: string,
@@ -185,48 +189,98 @@ export class ResearcherService {
     if (!this.vectorContextService) return;
     
     try {
-      // Store research summary
-      await this.vectorContextService.storeAnalysisResults(
-        `research_operation_${operationId}`,
-        [{
-          operationId,
-          timestamp: new Date().toISOString(),
-          type: 'research_results',
-          summary: result.summary,
-          configurationsUpdated: result.configurationUpdates.length,
-          modelsResearched: result.researchResults.length
+      // Transform configuration updates to analysis results format
+      const analysisResults = result.configurationUpdates.map((update: any) => ({
+        type: 'model_configuration',
+        severity: 'high', // Model configs are high priority
+        findings: [{
+          type: `${update.context.language}/${update.context.sizeCategory}/${update.context.agentRole}`,
+          severity: 'high',
+          location: 'model_config',
+          description: JSON.stringify({
+            provider: update.recommendedModel.provider,
+            model: update.recommendedModel.model,
+            versionId: update.recommendedModel.versionId,
+            capabilities: update.recommendedModel.capabilities,
+            pricing: update.recommendedModel.pricing,
+            tier: update.recommendedModel.tier,
+            preferredFor: update.recommendedModel.preferredFor,
+            reason: update.reason,
+            previousModel: update.currentModel ? {
+              provider: update.currentModel.provider,
+              model: update.currentModel.model
+            } : null
+          }),
+          suggestion: update.reason
         }],
+        metrics: {
+          ...update.expectedImprovement,
+          priority: update.priority,
+          operationId: operationId
+        },
+        recommendations: [
+          update.reason,
+          `Expected improvement: ${JSON.stringify(update.expectedImprovement)}`
+        ],
+        summary: `Optimal model configuration for ${update.context.language}/${update.context.sizeCategory}/${update.context.agentRole}: ${update.recommendedModel.provider}/${update.recommendedModel.model}`,
+        categories: [
+          'model_configuration',
+          update.context.language,
+          update.context.sizeCategory,
+          update.context.agentRole,
+          update.recommendedModel.provider
+        ]
+      }));
+
+      // Add a summary result for the entire operation
+      analysisResults.push({
+        type: 'research_operation_summary',
+        severity: 'high',
+        findings: [{
+          type: 'operation_summary',
+          severity: 'high',
+          location: 'research_operation',
+          description: JSON.stringify({
+            operationId,
+            timestamp: new Date().toISOString(),
+            modelsResearched: result.summary.modelsResearched,
+            configurationsUpdated: result.summary.configurationsUpdated,
+            totalCostSavings: result.summary.totalCostSavings,
+            performanceImprovements: result.summary.performanceImprovements
+          }),
+          suggestion: `Research operation completed with ${result.summary.configurationsUpdated} configuration updates`
+        }],
+        metrics: result.summary,
+        recommendations: [
+          `Updated ${result.summary.configurationsUpdated} model configurations`,
+          `Achieved ${result.summary.totalCostSavings}% average cost savings`,
+          `Improved performance for ${result.summary.performanceImprovements} configurations`
+        ],
+        summary: `Research operation ${operationId} completed successfully`,
+        categories: ['research_operation', 'summary']
+      });
+
+      // Store all results in the researcher configuration repository
+      await this.vectorContextService.storeAnalysisResults(
+        RESEARCHER_CONFIG_REPO_ID, // Use the proper UUID
+        analysisResults,
         this.authenticatedUser.id
       );
       
-      // Store individual configuration updates
-      for (const update of result.configurationUpdates) {
-        await this.vectorContextService.storeAnalysisResults(
-          `config_update_${operationId}_${update.context.language}_${update.context.sizeCategory}_${update.context.agentRole}`,
-          [{
-            operationId,
-            context: update.context,
-            previousModel: update.currentModel,
-            newModel: update.recommendedModel,
-            reason: update.reason,
-            expectedImprovement: update.expectedImprovement,
-            priority: update.priority,
-            timestamp: new Date().toISOString()
-          }],
-          this.authenticatedUser.id
-        );
-      }
-      
       this.logger.info('📝 Stored research results in Vector DB', {
         operationId,
-        updatesStored: result.configurationUpdates.length
+        repositoryId: RESEARCHER_CONFIG_REPO_ID,
+        configurationsStored: result.configurationUpdates.length,
+        totalResults: analysisResults.length
       });
       
     } catch (error) {
       this.logger.error('❌ Failed to store research results', {
         operationId,
-        error
+        repositoryId: RESEARCHER_CONFIG_REPO_ID,
+        error: error instanceof Error ? error.message : String(error)
       });
+      throw error;
     }
   }
   
