@@ -1,0 +1,222 @@
+/**
+ * Enhanced Researcher Agent with Vector DB Integration
+ * 
+ * This patch adds Vector DB configuration loading to the ResearcherAgent
+ * to be applied to the existing researcher-agent.ts file
+ */
+
+// Add this import at the top of researcher-agent.ts
+import { initializeResearcherFromVectorDB, storeResearcherConfigInVectorDB, StoredResearcherConfig } from './load-researcher-config';
+
+// Add this method to the ResearcherAgent class after the constructor:
+
+  /**
+   * Initialize researcher configuration from Vector DB
+   * This should be called before using the researcher
+   */
+  async initializeFromVectorDB(): Promise<boolean> {
+    try {
+      this.logger.info('🔄 Initializing researcher from Vector DB');
+      
+      // Load and apply configuration from Vector DB
+      const initialized = await initializeResearcherFromVectorDB(this.authenticatedUser);
+      
+      if (initialized) {
+        // Reinitialize cache with the new configuration
+        this.initializePersistentCache();
+        this.logger.info('✅ Researcher initialized with Vector DB configuration');
+      } else {
+        this.logger.info('ℹ️ Using default researcher configuration');
+      }
+      
+      return initialized;
+    } catch (error) {
+      this.logger.error('❌ Failed to initialize from Vector DB', { error });
+      return false;
+    }
+  }
+
+// Modify the upgradeResearcher method to also store in Vector DB:
+
+  /**
+   * Explicitly upgrade the researcher model with atomic DB-cache coordination
+   * AND store the configuration in Vector DB
+   */
+  async upgradeResearcher(
+    newProvider: string,
+    newModel: string,
+    newVersion: string,
+    reason: string,
+    capabilities?: ModelCapabilities,
+    pricing?: ModelPricing,
+    tier?: ModelTier
+  ): Promise<{
+    success: boolean;
+    oldModel: string;
+    newModel: string;
+    requiresRecaching: boolean;
+    dbConfigId?: string;
+    vectorDbStored?: boolean;
+  }> {
+    if (!this.researcherCache) {
+      throw new Error('No researcher cache to upgrade');
+    }
+    
+    const oldModel = `${this.researcherCache.currentModel.provider}/${this.researcherCache.currentModel.model}`;
+    const newModelId = `${newProvider}/${newModel}`;
+    
+    this.logger.info('🔄 UPGRADING RESEARCHER', {
+      from: oldModel,
+      to: newModelId,
+      version: newVersion,
+      reason,
+      requestsUsed: this.researcherCache.requestCount
+    });
+    
+    try {
+      // Step 1: Save new configuration to database first (atomic operation)
+      const dbConfigId = await this.saveDBConfig({
+        provider: newProvider,
+        model: newModel,
+        version: newVersion,
+        reason,
+        capabilities,
+        pricing,
+        tier
+      });
+      
+      this.logger.info('✅ DB configuration updated', { dbConfigId });
+      
+      // Step 2: Store in Vector DB for persistence
+      const vectorDbConfig: StoredResearcherConfig = {
+        provider: newProvider,
+        model: newModel,
+        versionId: newVersion,
+        capabilities: capabilities || {},
+        pricing: pricing || { input: 1.0, output: 3.0 },
+        tier: tier || ModelTier.STANDARD,
+        preferredFor: ['researcher', 'model_research', 'cost_optimization'],
+        reason,
+        previousModel: {
+          provider: this.researcherCache.currentModel.provider,
+          model: this.researcherCache.currentModel.model
+        }
+      };
+      
+      const vectorDbStored = await storeResearcherConfigInVectorDB(
+        this.authenticatedUser,
+        vectorDbConfig,
+        `upgrade_${Date.now()}`
+      );
+      
+      if (vectorDbStored) {
+        this.logger.info('✅ Configuration stored in Vector DB');
+      } else {
+        this.logger.warn('⚠️ Failed to store in Vector DB but continuing');
+      }
+      
+      // Step 3: Update ModelVersionSync
+      const modelInfo = await this.findModelInfo(newProvider, newModel, newVersion);
+      if (modelInfo) {
+        const updated = this.modelVersionSync.updateModelVersion(modelInfo);
+        if (updated) {
+          this.logger.info('✅ Updated CANONICAL_MODEL_VERSIONS');
+        }
+      }
+      
+      // Step 4: Invalidate current cache
+      this.researcherCache.isActive = false;
+      this.saveCache();
+      this.logger.info('❌ Cache invalidated');
+      
+      // Step 5: Cache will be rebuilt on next use via syncCacheWithDB()
+      // This ensures lazy synchronization and consistency
+      
+      this.logger.info('✅ RESEARCHER UPGRADE COMPLETED', {
+        oldModel,
+        newModel: newModelId,
+        dbConfigId,
+        vectorDbStored,
+        cacheInvalidated: true,
+        willRebuildOnNextUse: true
+      });
+      
+      return {
+        success: true,
+        oldModel,
+        newModel: newModelId,
+        requiresRecaching: true,
+        dbConfigId,
+        vectorDbStored
+      };
+      
+    } catch (error) {
+      this.logger.error('❌ RESEARCHER UPGRADE FAILED', { 
+        error: error instanceof Error ? error.message : String(error),
+        oldModel, 
+        newModel: newModelId 
+      });
+      
+      // Restore old cache on failure
+      if (this.researcherCache) {
+        this.researcherCache.isActive = true;
+        this.saveCache();
+        this.logger.info('🔄 Cache restored after upgrade failure');
+      }
+      
+      return {
+        success: false,
+        oldModel,
+        newModel: newModelId,
+        requiresRecaching: false,
+        vectorDbStored: false
+      };
+    }
+  }
+
+// Add this method to handle automatic upgrades based on meta-research:
+
+  /**
+   * Process meta-research results and upgrade if recommended
+   */
+  async processMetaResearchResults(metaResult: MetaResearchResult): Promise<boolean> {
+    if (!metaResult.recommendation.shouldUpgrade || !metaResult.recommendation.primary) {
+      this.logger.info('ℹ️ No upgrade recommended by meta-research');
+      return false;
+    }
+    
+    const { primary } = metaResult.recommendation;
+    const { urgency } = metaResult.upgradeRecommendation;
+    
+    // Only auto-upgrade for high urgency recommendations with high confidence
+    if (urgency === 'high' && metaResult.confidence >= 0.9) {
+      this.logger.warn('🚨 HIGH URGENCY: Auto-upgrading researcher based on meta-research');
+      
+      const upgradeResult = await this.upgradeResearcher(
+        primary.provider,
+        primary.model,
+        primary.version,
+        primary.whyBetterForResearch,
+        // Use discovered capabilities if available
+        undefined,
+        undefined,
+        undefined
+      );
+      
+      return upgradeResult.success;
+    } else {
+      // Log recommendation for manual review
+      this.logger.info('📋 Meta-research recommends upgrade (manual review required)', {
+        urgency,
+        confidence: metaResult.confidence,
+        currentModel: `${metaResult.currentModel.provider}/${metaResult.currentModel.model}`,
+        recommendedModel: `${primary.provider}/${primary.model}`,
+        reason: primary.whyBetterForResearch
+      });
+      
+      // Store recommendation in Vector DB for later review
+      await this.storeMetaResearchResult(metaResult);
+      
+      return false;
+    }
+  }

@@ -20,7 +20,7 @@
         "@codequal/testing/*": ["packages/testing/src/*"],
         "@codequal/ui": ["packages/ui/src"],
         "@codequal/ui/*": ["packages/ui/src/*"]
-    },
+    }
     },
     "files": []
   }
