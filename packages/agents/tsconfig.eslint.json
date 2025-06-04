@@ -13,11 +13,13 @@
     "src/multi-agent/__tests__/**/*",
     "src/multi-agent/__tests__/**/**/*",
     "src/multi-agent/evaluation/__tests__/**/*",
+    "src/prompts/generators/__tests__/**/*",
     "tests/**/*", 
     "tests/**/**/*",
     ".eslintrc.js",
     "jest.config.js",
     "**/*.js",
     "**/*.ts"
-  ]
+  ],
+  "exclude": ["node_modules", "dist", "**/*.bak", "**/*.bak*", "**/codewhisperer*"]
 }

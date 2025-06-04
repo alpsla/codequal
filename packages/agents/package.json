@@ -6,7 +6,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "test-build": "rm -rf ./dist ./src/codewhisperer* && tsc",
-    "build": "echo 'Building...' && rm -rf ./dist ./src/codewhisperer* && tsc && echo 'Build completed successfully!'",
+    "build": "echo 'Building...' && rm -rf ./dist ./src/codewhisperer* && tsc --composite false && echo 'Build completed successfully!'",
     "dev": "tsc -w",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
