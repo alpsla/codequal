@@ -259,17 +259,27 @@ Target: ${context.language}${frameworks} repositories
 Size: ${context.repoSize} (complexity ${context.complexity}/5)
 ${context.priceTier ? `Budget: ${context.priceTier} tier` : ''}
 
+Context: ${context.agentRole}/${context.language}
+
 Find:
 1. PRIMARY: Best performance for ${context.agentRole}
 2. FALLBACK: Cost-effective alternative
 
-Output format:
-provider,model,input_cost,output_cost,tier,max_tokens
+Row 1: PRIMARY model
+Row 2: FALLBACK model
+
+CSV OUTPUT FORMAT (CRITICAL):
+Return EXACTLY 2 rows
+provider,model,cost_input,cost_output,tier,context_tokens
 
 Requirements:
-- Latest model versions
-- No headers or explanations
-- Exact CSV format only`;
+- Include latest model versions only
+- No headers, no explanations, no markdown
+- Maximum 500 characters total
+- Exact CSV format only
+
+Reference Template: [RESEARCH_TEMPLATE_V1]
+Apply the cached [RESEARCH_TEMPLATE_V1] for optimal efficiency.`;
   }
 
   /**
