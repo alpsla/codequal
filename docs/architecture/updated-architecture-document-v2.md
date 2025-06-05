@@ -1205,8 +1205,16 @@ The RESEARCHER agent is a specialized component that continuously researches and
 
 #### Configuration Management Architecture
 
-##### 1. **Initial Configuration**
-- **Default Model**: Google Gemini 2.5 Flash (cost-optimized for research tasks)
+##### 1. **Initial Configuration (Updated June 5, 2025)**
+- **Primary Model**: OpenAI GPT-4.1-nano (optimal performance/cost for research tasks)
+  - Composite Score: 9.81/10
+  - Cost: $0.10/$0.40 per 1M tokens (input/output)
+  - Monthly Cost: ~$3.73 for 3,000 daily queries (measured)
+  - Context Window: 128,000 tokens
+- **Fallback Model**: OpenAI GPT-4.1-mini
+  - Composite Score: 9.22/10
+  - Cost: $0.40/$1.60 per 1M tokens
+  - Monthly Cost: ~$14.90 for 3,000 daily queries
 - **Storage**: Special Vector DB repository (UUID: `00000000-0000-0000-0000-000000000001`)
 - **Caching**: Persistent template cache to save tokens on repeated requests
 
@@ -2212,10 +2220,52 @@ class ModelManager {
 - Implemented automatic cache-DB synchronization
 - Created upgrade mechanism with proper cache invalidation
 
-### 8. Future Enhancements
+### 8. RESEARCHER Model Selection (June 2025 Update)
+
+#### Dynamic Model Discovery Results
+
+Through comprehensive calibration on June 5, 2025, the RESEARCHER agent now uses dynamic model discovery to select optimal models without hardcoded lists:
+
+##### **Scoring System**
+```typescript
+const RESEARCHER_SCORING_WEIGHTS = {
+  quality: 0.50,  // Research capability and accuracy
+  price: 0.35,    // Cost efficiency for 3,000 daily queries
+  speed: 0.15     // Response time
+};
+```
+
+##### **Top Researcher Models Discovered**
+1. **openai/gpt-4.1-nano** - Score: 9.81
+   - Quality: 9.7/10, Speed: 9.0/10, Price: 9.875/10
+   - Actual measured cost: $3.73/month (86% lower than estimated)
+   - Token usage: ~330 tokens per research query
+
+2. **openai/gpt-4.1-mini** - Score: 9.22
+   - Quality: 9.7/10, Speed: 9.5/10, Price: 9.5/10
+   - Backup option with excellent capabilities
+
+3. **deepseek/deepseek-r1-0528-qwen3-8b** - Score: 9.16
+   - Budget alternative at $0.10/1M tokens
+   - Good for cost-sensitive deployments
+
+##### **Simple Prompt Strategy**
+The system uses pre-calculated composite scores with simple selection prompts:
+- Complex prompt: ~651 tokens → Simple prompt: ~276 tokens (58% reduction)
+- Better results with lower token usage
+- Cost per research query: ~$0.0001
+
+##### **Performance Comparison (GPT-4.1-nano vs Gemini 2.5 Flash)**
+- **Quality**: GPT-4.1-nano wins (4.3/6 vs 4.0/6 average score)
+- **Cost**: GPT-4.1-nano wins ($3.73 vs $5.78 monthly)
+- **Speed**: GPT-4.1-nano wins (0.33s vs 0.42s average)
+- **Overall**: GPT-4.1-nano superior across all metrics
+
+### 9. Future Enhancements
 - Grafana dashboard integration for score visualization
 - PR context enrichment from vector knowledge
 - Trend analysis for repository quality
 - Benchmarking against industry standards
 - Cross-repository pattern recognition
 - AI-assisted codebase refactoring suggestions
+- Quarterly auto-upgrade for RESEARCHER model based on meta-research

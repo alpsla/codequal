@@ -9,7 +9,7 @@
  * - Loop context updates
  */
 
-import { LoopPromptGenerator, LoopContext, LoopBatch } from '../loop-prompt-generator';
+import { LoopPromptGenerator, LoopContext } from '../loop-prompt-generator';
 import { ResearchContext } from '../researcher-prompt-generator';
 
 describe('LoopPromptGenerator', () => {
@@ -329,11 +329,6 @@ describe('LoopPromptGenerator', () => {
 
     it('should provide reasonable cost estimates', () => {
       const summary = generator.generateProcessingSummary();
-      
-      // Check actual values for debugging
-      console.log('Total combinations:', summary.totalCombinations);
-      console.log('Estimated tokens:', summary.estimatedTokens);
-      console.log('Estimated cost:', summary.estimatedCost);
       
       // For more contexts than expected - update the expectation
       expect(summary.estimatedCost).toBeLessThan(1.00); // Should be less than $1
