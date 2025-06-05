@@ -9,7 +9,7 @@
  * - Token estimation
  */
 
-import { ResearcherPromptGenerator, ResearchContext, PromptGeneratorConfig } from '../researcher-prompt-generator';
+import { ResearcherPromptGenerator, ResearchContext } from '../researcher-prompt-generator';
 
 describe('ResearcherPromptGenerator', () => {
   let generator: ResearcherPromptGenerator;
