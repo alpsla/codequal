@@ -15,3 +15,7 @@ export * from './multi-agent';
 
 // Prompts
 export * from './prompts/prompt-loader';
+
+// Researcher
+export * from './researcher/researcher-agent';
+export * from './researcher/researcher-service';
