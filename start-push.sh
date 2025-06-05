@@ -1,0 +1,17 @@
+#!/bin/bash
+chmod +x /Users/alpinro/Code\ Prjects/codequal/push-preparation.sh
+echo "✅ Push preparation script is ready!"
+echo ""
+echo "To prepare and push your changes, run:"
+echo "  ./push-preparation.sh"
+echo ""
+echo "This interactive script will:"
+echo "1. Optionally clean up exploratory files"
+echo "2. Build all packages"
+echo "3. Run tests"
+echo "4. Show git status"
+echo "5. Stage changes"
+echo "6. Commit with a descriptive message"
+echo "7. Push to origin"
+echo ""
+echo "You can skip any step if needed."

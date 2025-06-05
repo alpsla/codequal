@@ -221,31 +221,62 @@ export class LoopPromptGenerator {
   }
 
   /**
-   * Generate CSV-optimized prompt for specific context
+   * Generate optimized prompt for specific context (token-efficient)
    */
-  generateCSVPrompt(context: ResearchContext): string {
-    // Use the sophisticated prompt template but ensure CSV output
-    const basePrompt = this.baseGenerator.generateContextualPrompt(context);
-    
-    // Add CSV-specific instructions
-    const csvInstructions = `
+  generateOptimizedPrompt(context: ResearchContext, variant: 'minimal' | 'structured' = 'minimal'): string {
+    if (variant === 'minimal') {
+      return this.generateMinimalPrompt(context);
+    } else {
+      return this.generateStructuredPrompt(context);
+    }
+  }
 
-**CSV OUTPUT FORMAT (CRITICAL):**
-Return EXACTLY 2 rows in this format:
-provider,model,cost_input,cost_output,tier,context_tokens
+  /**
+   * Generate minimal prompt variant (lowest token usage)
+   */
+  private generateMinimalPrompt(context: ResearchContext): string {
+    return `Find 2 AI models for ${context.agentRole} analysis of ${context.language} code (${context.repoSize} repos, complexity ${context.complexity}/5).
 
-Example:
-xai,grok-3,5.0,15.0,PREMIUM,100000
-anthropic,claude-3.5-sonnet,3.0,15.0,PREMIUM,200000
+Output CSV only:
+provider,model,input_cost,output_cost,tier,max_tokens
 
 Requirements:
-- Row 1: PRIMARY model (best for ${context.agentRole}/${context.language})
-- Row 2: FALLBACK model (reliable alternative)
-- No headers, no explanations, no markdown
-- Maximum 500 characters total
-- Include latest model versions only`;
+- Row 1: Best model for ${context.agentRole}
+- Row 2: Cost-effective alternative
+- Latest versions only
+- No headers/explanations`;
+  }
 
-    return basePrompt.content + csvInstructions;
+  /**
+   * Generate structured prompt variant (balanced efficiency)
+   */
+  private generateStructuredPrompt(context: ResearchContext): string {
+    const frameworks = context.frameworks.length > 0 ? ` with ${context.frameworks.join('/')}` : '';
+    
+    return `Research AI models for ${context.agentRole} analysis.
+
+Target: ${context.language}${frameworks} repositories
+Size: ${context.repoSize} (complexity ${context.complexity}/5)
+${context.priceTier ? `Budget: ${context.priceTier} tier` : ''}
+
+Find:
+1. PRIMARY: Best performance for ${context.agentRole}
+2. FALLBACK: Cost-effective alternative
+
+Output format:
+provider,model,input_cost,output_cost,tier,max_tokens
+
+Requirements:
+- Latest model versions
+- No headers or explanations
+- Exact CSV format only`;
+  }
+
+  /**
+   * Generate CSV-optimized prompt for specific context (legacy)
+   */
+  generateCSVPrompt(context: ResearchContext): string {
+    return this.generateOptimizedPrompt(context, 'structured');
   }
 
   /**
