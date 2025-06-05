@@ -162,7 +162,7 @@ export class ResearcherService {
     operation.completedAt = new Date();
     operation.configurationsUpdated = result.summary.configurationsUpdated;
     operation.totalCostSavings = result.summary.totalCostSavings;
-    operation.performanceImprovements = result.summary.performanceImprovements;
+    operation.performanceImprovements = Object.values(result.summary.performanceImprovements).reduce((sum, val) => sum + val, 0);
     
     // Store results in Vector DB if available
     if (this.vectorContextService) {
