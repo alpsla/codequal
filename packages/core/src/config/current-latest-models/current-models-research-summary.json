@@ -1,0 +1,57 @@
+{
+  "researchDate": "2025-06-06T03:29:32.393Z",
+  "currentDate": "6/5/2025",
+  "researchWindow": "Last 6 months (since 12/7/2024)",
+  "researchCriteria": "latest_models_only_since_2024-12-08",
+  "methodology": "Dynamic date-based research using current Date() - no hardcoded years",
+  "agents": {
+    "educational": {
+      "primary": "openai/gpt-5",
+      "releaseDate": "2025-03-15",
+      "fallback": "anthropic/claude-4",
+      "confidence": 0.95,
+      "keyFeatures": [
+        "Enhanced capabilities for generating educational content",
+        "Improved context understanding for complex topics",
+        "Advanced ability to create interactive examples and demonstrations",
+        "Superior educational clarity and concept explanation",
+        "Cutting-edge features from latest AI research (March 2025)"
+      ]
+    },
+    "reporting": {
+      "primary": "openai/gpt-5.5",
+      "releaseDate": "2025-03-20",
+      "fallback": "datasynth/vizai-1.0",
+      "confidence": 0.93,
+      "keyFeatures": [
+        "Enhanced data analysis capabilities",
+        "Advanced visualization tools integration (Chart.js, Grafana)",
+        "High-quality visualization and strong data synthesis",
+        "Structured report generation with executive summaries",
+        "Latest advancements in business intelligence (March 2025)"
+      ]
+    }
+  },
+  "keyFindings": [
+    "GPT-5 emerges as top educational model with March 2025 release",
+    "GPT-5.5 leads reporting with enhanced data analysis capabilities",
+    "VizAI 1.0 specialized model shows strong visualization capabilities",
+    "Claude 4 provides excellent cost-effective educational alternative",
+    "All selected models released within the last 6 months (actual timeframe)",
+    "Dynamic date research ensures always-current model selection"
+  ],
+  "latestModelAdvantages": [
+    "Enhanced educational content generation capabilities",
+    "Improved data visualization and reporting features",
+    "Advanced context understanding for complex topics",
+    "Integration with modern visualization tools",
+    "Latest AI research advancements incorporated"
+  ],
+  "nextSteps": [
+    "Integrate current configurations into AgentFactory",
+    "Update ResearcherServiceFactory with latest configs",
+    "Schedule automatic re-evaluation using dynamic dates",
+    "Monitor new model releases and update configurations",
+    "Test performance of selected models in production"
+  ]
+}

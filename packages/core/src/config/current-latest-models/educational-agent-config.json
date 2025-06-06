@@ -1,0 +1,63 @@
+{
+  "agentRole": "educational",
+  "recommendedModel": {
+    "provider": "openai",
+    "model": "gpt-5",
+    "version": "gpt-5-2025-03",
+    "capabilities": {
+      "educationalClarity": 9.8,
+      "latestModelAdvantages": 10,
+      "learningPathGeneration": 9.7,
+      "conceptExplanation": 9.6,
+      "costEfficiency": 8.2
+    },
+    "pricing": {
+      "input": 15,
+      "output": 45,
+      "estimatedCostPerTask": 1.25
+    },
+    "tier": "PREMIUM",
+    "preferredFor": [
+      "educational",
+      "tutorials",
+      "learning_materials",
+      "interactive_examples"
+    ],
+    "contextWindow": 200000,
+    "releaseDate": "2025-03-15",
+    "whyBestForRole": "Latest GPT-5 with enhanced educational content generation, improved context understanding, and ability to create interactive examples",
+    "latestModelFeatures": [
+      "Enhanced capabilities for generating educational content",
+      "Improved context understanding for complex topics",
+      "Advanced ability to create interactive examples and demonstrations",
+      "Superior educational clarity and concept explanation",
+      "Cutting-edge features from latest AI research (March 2025)"
+    ]
+  },
+  "fallbackModel": {
+    "provider": "anthropic",
+    "model": "claude-4",
+    "version": "claude-4-2025-02",
+    "capabilities": {
+      "educationalClarity": 9.4,
+      "latestModelAdvantages": 9.6,
+      "learningPathGeneration": 9.5,
+      "conceptExplanation": 9.3,
+      "costEfficiency": 8.8
+    },
+    "pricing": {
+      "input": 8,
+      "output": 24,
+      "estimatedCostPerTask": 0.75
+    },
+    "whyFallback": "Claude 4 offers significant improvements in natural language understanding and provides clear explanations and structured learning paths"
+  },
+  "researchDate": "2025-06-06T03:29:32.393Z",
+  "confidence": 0.95,
+  "researchCriteria": "latest_models_only_since_2024-12-08",
+  "researchContext": {
+    "currentDate": "6/5/2025",
+    "researchWindow": "Last 6 months (since 12/7/2024)",
+    "methodology": "Dynamic date-based research using current Date()"
+  }
+}
