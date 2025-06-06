@@ -5,7 +5,7 @@
  * optimal AI models, considering quality, recency, cost, and performance.
  */
 
-export const RESEARCH_PROMPTS = {
+const RESEARCH_PROMPTS = {
   
   /**
    * Specialized Agent Requirement Research - Find best cross-market model for specific needs
@@ -195,6 +195,108 @@ Find the SINGLE BEST AI model across ALL providers for CODE QUALITY analysis tas
 
 Find the single best model across all providers for comprehensive code quality analysis.`,
 
+  EDUCATIONAL_AGENT_RESEARCH: (() => {
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.toLocaleString('default', { month: 'long' });
+    
+    return `Find the SINGLE BEST AI model across ALL providers for EDUCATIONAL CONTENT generation tasks.
+
+**CRITICAL REQUIREMENT: LATEST MODELS ONLY**
+- Focus EXCLUSIVELY on models released in the last 6 months (since ${currentMonth} ${currentYear - 1})
+- Prioritize models with the most recent training data (${currentYear} releases)
+- Do NOT consider older models even if they were previously good
+- Check for newest educational AI capabilities and features released in ${currentYear}
+
+**EDUCATIONAL AGENT REQUIREMENTS:**
+- Generate clear learning materials and tutorials
+- Create step-by-step code walkthroughs and explanations
+- Identify educational opportunities and knowledge gaps
+- Suggest learning paths for code improvement
+- Create interactive examples and demonstrations
+- Explain complex concepts in simple, accessible terms
+
+**LATEST MODEL DISCOVERY (${currentMonth} ${currentYear}):**
+Search for the newest models from ALL providers released in ${currentYear}:
+- OpenAI: Latest GPT-4.1, GPT-4.o, or newer models with educational capabilities
+- Anthropic: Newest Claude 4 Sonnet or latest Claude models optimized for teaching
+- Google: Most recent Gemini Pro models with educational features
+- Meta: Latest Llama 3+ models with instruction-following
+- Emerging providers: Search for new AI companies with educational focus
+- Specialized models: Look for models specifically trained for educational content
+
+**CURRENT YEAR CONTEXT:** ${currentYear}
+**RESEARCH DATE:** ${currentDate.toISOString().split('T')[0]}
+
+**ROLE-SPECIFIC EVALUATION:**
+- **Educational Clarity** (35%): Creates clear, easy-to-understand explanations
+- **Latest Model Advantages** (25%): Benefits from recent ${currentYear} training and improvements
+- **Learning Path Generation** (20%): Suggests structured learning approaches
+- **Concept Explanation Quality** (15%): Explains complex topics simply
+- **Cost Efficiency** (5%): Good value for educational content generation
+
+**EDUCATIONAL SPECIALIZATIONS:**
+- Beginner-friendly explanations of advanced concepts
+- Code-to-learning-material conversion
+- Interactive tutorial generation
+- Concept visualization and analogies
+- Progressive skill building pathways
+- Language-agnostic programming principles
+
+Cross-market research to find the absolute best LATEST model for educational content generation available in ${currentMonth} ${currentYear}.`;
+  })(),
+
+  REPORTING_AGENT_RESEARCH: (() => {
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.toLocaleString('default', { month: 'long' });
+    
+    return `Find the SINGLE BEST AI model across ALL providers for REPORTING AND VISUALIZATION tasks.
+
+**CRITICAL REQUIREMENT: LATEST MODELS ONLY**
+- Focus EXCLUSIVELY on models released in the last 6 months (since ${currentMonth} ${currentYear - 1})
+- Prioritize models with the most recent training data (${currentYear} releases)
+- Do NOT consider older models even if they were previously good
+- Check for newest data visualization and reporting AI capabilities released in ${currentYear}
+
+**REPORTING AGENT REQUIREMENTS:**
+- Generate comprehensive visual reports and dashboards
+- Create charts, graphs, and diagrams (Grafana, Mermaid, Chart.js)
+- Synthesize data into actionable insights
+- Structure reports with clear executive summaries
+- Generate automated reporting templates
+- Visualize trends, metrics, and performance data
+
+**LATEST MODEL DISCOVERY (${currentMonth} ${currentYear}):**
+Search for the newest models from ALL providers released in ${currentYear}:
+- OpenAI: Latest GPT-4.1, GPT-4.o, or newer models with data analysis and visualization capabilities
+- Anthropic: Newest Claude 4 Sonnet or latest Claude models optimized for report generation
+- Google: Most recent Gemini Pro models with data synthesis features
+- Meta: Latest Llama 3+ models with analytical capabilities
+- Emerging providers: Search for new AI companies specializing in data visualization
+- Specialized models: Look for models trained specifically for business intelligence
+
+**CURRENT YEAR CONTEXT:** ${currentYear}
+**RESEARCH DATE:** ${currentDate.toISOString().split('T')[0]}
+
+**ROLE-SPECIFIC EVALUATION:**
+- **Visualization Quality** (30%): Creates effective charts and visual reports
+- **Latest Model Advantages** (25%): Benefits from recent ${currentYear} training and improvements
+- **Data Synthesis** (20%): Combines multiple data sources meaningfully
+- **Report Structure** (15%): Organizes information logically and clearly
+- **Chart and Graph Generation** (10%): Creates appropriate visual representations
+
+**REPORTING SPECIALIZATIONS:**
+- Grafana dashboard configuration and setup
+- Mermaid diagram generation (flowcharts, sequence diagrams)
+- Chart.js and D3.js visualization creation
+- Executive summary and stakeholder communication
+- Automated report scheduling and distribution
+- KPI identification and tracking visualization
+
+Cross-market analysis to find the absolute best LATEST model for comprehensive reporting and visualization available in ${currentMonth} ${currentYear}.`;
+  })(),
+
 
   /**
    * Dynamic Discovery Prompt - No hardcoded models
@@ -372,4 +474,9 @@ export const RESEARCH_CONFIGS = {
   }
 };
 
+// Export individual prompts for easier importing
+export const EDUCATIONAL_AGENT_RESEARCH = RESEARCH_PROMPTS.EDUCATIONAL_AGENT_RESEARCH;
+export const REPORTING_AGENT_RESEARCH = RESEARCH_PROMPTS.REPORTING_AGENT_RESEARCH;
+
+export { RESEARCH_PROMPTS };
 export default RESEARCH_PROMPTS;
