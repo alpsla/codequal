@@ -71,12 +71,12 @@ export interface ResearchOperation {
  * RESEARCHER Service implementation
  */
 export class ResearcherService {
-  private logger: Logger;
+  protected logger: Logger;
   private activeOperations: Map<string, ResearchOperation> = new Map();
   private researchHistory: ResearchOperation[] = [];
   
   constructor(
-    private authenticatedUser: AuthenticatedUser,
+    protected authenticatedUser: AuthenticatedUser,
     private vectorContextService?: VectorContextService
   ) {
     this.logger = createLogger('ResearcherService');

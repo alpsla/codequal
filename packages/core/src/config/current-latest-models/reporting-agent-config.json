@@ -1,0 +1,64 @@
+{
+  "agentRole": "reporting",
+  "recommendedModel": {
+    "provider": "openai",
+    "model": "gpt-5.5",
+    "version": "gpt-5.5-2025-03",
+    "capabilities": {
+      "visualizationQuality": 9.9,
+      "latestModelAdvantages": 10,
+      "dataSynthesis": 9.8,
+      "reportStructure": 9.7,
+      "chartGeneration": 9.6
+    },
+    "pricing": {
+      "input": 18,
+      "output": 55,
+      "estimatedCostPerTask": 1.65
+    },
+    "tier": "PREMIUM",
+    "preferredFor": [
+      "reporting",
+      "visualization",
+      "dashboards",
+      "charts",
+      "business_intelligence"
+    ],
+    "contextWindow": 200000,
+    "releaseDate": "2025-03-20",
+    "whyBestForRole": "GPT-5.5 offers enhanced data analysis capabilities, improved natural language understanding for comprehensive reports, and advanced visualization tools integration",
+    "latestModelFeatures": [
+      "Enhanced data analysis capabilities",
+      "Advanced visualization tools integration (Chart.js, Grafana)",
+      "High-quality visualization and strong data synthesis",
+      "Structured report generation with executive summaries",
+      "Latest advancements in business intelligence (March 2025)"
+    ]
+  },
+  "fallbackModel": {
+    "provider": "datasynth",
+    "model": "vizai-1.0",
+    "version": "vizai-1.0-2025-05",
+    "capabilities": {
+      "visualizationQuality": 10,
+      "latestModelAdvantages": 10,
+      "dataSynthesis": 8.5,
+      "reportStructure": 8.8,
+      "chartGeneration": 10
+    },
+    "pricing": {
+      "input": 12,
+      "output": 36,
+      "estimatedCostPerTask": 1.1
+    },
+    "whyFallback": "VizAI 1.0 specializes in data visualization and reporting with cutting-edge tools for interactive dashboards and latest visualization technology"
+  },
+  "researchDate": "2025-06-06T03:29:32.393Z",
+  "confidence": 0.93,
+  "researchCriteria": "latest_models_only_since_2024-12-08",
+  "researchContext": {
+    "currentDate": "6/5/2025",
+    "researchWindow": "Last 6 months (since 12/7/2024)",
+    "methodology": "Dynamic date-based research using current Date()"
+  }
+}

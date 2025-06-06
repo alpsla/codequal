@@ -39,6 +39,11 @@ export interface ResearchConfig {
    * Force refresh even if recent research exists
    */
   forceRefresh?: boolean;
+  
+  /**
+   * Custom research prompt for specialized agents
+   */
+  customPrompt?: string;
 }
 
 /**
