@@ -1,4 +1,4 @@
-import { AgentProvider, AgentRole } from '../config/agent-registry';
+import { AgentRole, AgentProvider } from '../config/agent-registry';
 import { ProviderGroup, PROVIDER_TO_GROUP, DEFAULT_MODEL_BY_GROUP } from '../config/provider-groups';
 import { Agent } from '../types/agent';
 

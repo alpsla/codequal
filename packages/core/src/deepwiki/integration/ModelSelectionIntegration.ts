@@ -264,14 +264,14 @@ export class ModelSelectionIntegration {
       
       const result = this.modelVersionSync.standardizeModelConfig(config);
       return {
-        provider: result.provider as DeepWikiProvider,
+        provider: result.provider as unknown as DeepWikiProvider,
         model: result.model as any
       };
     } catch (error) {
       this.logger.warn('Error standardizing model config', { error });
       // Convert to correct type and return
       return {
-        provider: config.provider as DeepWikiProvider,
+        provider: config.provider as unknown as DeepWikiProvider,
         model: config.model as any
       };
     }

@@ -94,7 +94,7 @@ export class PRReviewService {
       const repoInfo = this.extractRepositoryInfo(prUrl);
       
       // 1.5. Get agent selection using dynamic system
-      const effectiveAgentSelection = agentSelection || getDefaultAgentSelection();
+      const effectiveAgentSelection = agentSelection || await getDefaultAgentSelection();
       
       // 2. Find or create repository
       const repository = await RepositoryModel.findOrCreate(
