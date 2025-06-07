@@ -101,9 +101,13 @@ const mockUseResearcherForContext = jest.fn().mockImplementation(async () => {
   
   // If cache is out of sync, trigger sync
   if (cacheTime < dbTime && dbConfig.provider && dbConfig.model) {
-    mockCurrentModel = `${dbConfig.provider}/${dbConfig.model}`;
+    const newModel = `${dbConfig.provider}/${dbConfig.model}`;
+    // Only change session ID if the model actually changed
+    if (newModel !== mockCurrentModel) {
+      mockSessionId = `session_${Date.now()}`;
+    }
+    mockCurrentModel = newModel;
     mockDbConfigId = dbConfig.id || mockDbConfigId;
-    mockSessionId = `session_${Date.now()}`;
   }
   
   // Increment request count when used
