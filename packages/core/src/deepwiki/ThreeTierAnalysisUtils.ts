@@ -8,6 +8,7 @@
 
 import { RepositoryModelSelectionService, AnalysisTier } from '../services/RepositoryModelSelectionService';
 import { RepositoryContext, AnalysisResult, AnalysisResultType } from '../types/repository';
+import { RepositoryProvider } from '../config/models/repository-model-config';
 import { Logger } from '../utils/logger';
 import { ModelConfig, DeepWikiProvider } from './DeepWikiClient';
 
@@ -327,6 +328,24 @@ export class ThreeTierAnalysisUtils {
   }
   
   /**
+   * Map RepositoryProvider to DeepWikiProvider
+   * @param repositoryProvider Repository provider
+   * @returns DeepWiki provider
+   */
+  private mapRepositoryProviderToDeepWiki(repositoryProvider: RepositoryProvider): DeepWikiProvider {
+    // For now, default to openai for all repository providers
+    // This can be extended based on specific requirements
+    switch (repositoryProvider) {
+      case RepositoryProvider.GITHUB:
+      case RepositoryProvider.GITLAB:
+      case RepositoryProvider.BITBUCKET:
+      case RepositoryProvider.OTHER:
+      default:
+        return 'openai';
+    }
+  }
+  
+  /**
    * Get model configuration for repository analysis
    * @param repository Repository context
    * @param tier Analysis tier
@@ -339,8 +358,8 @@ export class ThreeTierAnalysisUtils {
     const modelConfig = this.modelSelectionService.getModelForRepository(repository, tier);
     
     return {
-      provider: modelConfig.provider,
-      model: modelConfig.model
+      provider: this.mapRepositoryProviderToDeepWiki(modelConfig.provider),
+      model: modelConfig.model || 'gpt-4o'
     };
   }
   
@@ -359,8 +378,8 @@ export class ThreeTierAnalysisUtils {
     const modelConfig = this.modelSelectionService.getModelForPR(repository, prSizeBytes, tier);
     
     return {
-      provider: modelConfig.provider,
-      model: modelConfig.model
+      provider: this.mapRepositoryProviderToDeepWiki(modelConfig.provider),
+      model: modelConfig.model || 'gpt-4o'
     };
   }
   

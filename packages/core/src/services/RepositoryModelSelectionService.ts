@@ -7,7 +7,7 @@
  * optimal model selection decisions.
  */
 
-import { REPOSITORY_MODEL_CONFIGS, RepositoryModelConfig, RepositorySizeCategory } from '../config/models/repository-model-config';
+import { REPOSITORY_MODEL_CONFIGS, RepositoryModelConfig, RepositorySizeCategory, TestingStatus } from '../config/models/repository-model-config';
 import { RepositoryContext } from '../types/repository';
 import { Logger } from '../utils/logger';
 
@@ -152,20 +152,21 @@ export class RepositoryModelSelectionService {
     const normalizedLang = language?.toLowerCase() || 'default';
     
     // Get the baseline configuration
-    const config = REPOSITORY_MODEL_CONFIGS[normalizedLang]?.[sizeCategory] 
-      || REPOSITORY_MODEL_CONFIGS.default[sizeCategory];
+    const repositoryConfigs = REPOSITORY_MODEL_CONFIGS as any;
+    const config = repositoryConfigs[normalizedLang]?.[sizeCategory] 
+      || repositoryConfigs.default?.[sizeCategory];
     
     // For performance strategy, prioritize OpenAI for speed
     if (strategy === ModelSelectionStrategy.PERFORMANCE) {
       // Small repositories always use OpenAI for speed
-      if (sizeCategory === 'small') {
-        return REPOSITORY_MODEL_CONFIGS.default.small;
+      if (sizeCategory === RepositorySizeCategory.SMALL) {
+        return repositoryConfigs.default?.[RepositorySizeCategory.SMALL] || config;
       }
       
       // For medium repositories, use OpenAI if testing status is not completed
-      if (sizeCategory === 'medium' && 
-          config.testResults?.status !== 'tested') {
-        return REPOSITORY_MODEL_CONFIGS.default.small;
+      if (sizeCategory === RepositorySizeCategory.MEDIUM && 
+          config.testResults?.status !== TestingStatus.TESTED) {
+        return repositoryConfigs.default?.[RepositorySizeCategory.SMALL] || config;
       }
       
       // Return the standard config for this language/size
@@ -176,9 +177,9 @@ export class RepositoryModelSelectionService {
     if (strategy === ModelSelectionStrategy.DETAIL) {
       // For medium/large repositories, use Claude for maximum detail
       // unless the language has a tested configuration
-      if ((sizeCategory === 'medium' || sizeCategory === 'large') && 
-          config.testResults?.status !== 'tested') {
-        return REPOSITORY_MODEL_CONFIGS.default.medium; // Claude has best detail for unknown langs
+      if ((sizeCategory === RepositorySizeCategory.MEDIUM || sizeCategory === RepositorySizeCategory.LARGE) && 
+          config.testResults?.status !== TestingStatus.TESTED) {
+        return repositoryConfigs.default?.[RepositorySizeCategory.MEDIUM] || config; // Claude has best detail for unknown langs
       }
       
       // Return the standard config for this language/size
@@ -197,11 +198,11 @@ export class RepositoryModelSelectionService {
    */
   private getSizeCategory(sizeBytes: number): RepositorySizeCategory {
     if (sizeBytes < 5 * 1024 * 1024) { // Less than 5MB
-      return 'small';
+      return RepositorySizeCategory.SMALL;
     } else if (sizeBytes < 50 * 1024 * 1024) { // Between 5MB and 50MB
-      return 'medium';
+      return RepositorySizeCategory.MEDIUM;
     } else {
-      return 'large';
+      return RepositorySizeCategory.LARGE;
     }
   }
   

@@ -1,0 +1,39 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "NodeNext", 
+    "moduleResolution": "NodeNext",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "declaration": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "downlevelIteration": true,
+    "resolveJsonModule": true,
+    "paths": {
+      "@codequal/core": ["packages/core/src"],
+      "@codequal/core/*": ["packages/core/src/*"],
+      "@codequal/agents": ["packages/agents/src"],
+      "@codequal/agents/*": ["packages/agents/src/*"],
+      "@codequal/database": ["packages/database/src"],
+      "@codequal/database/*": ["packages/database/src/*"],
+      "@codequal/testing": ["packages/testing/src"],
+      "@codequal/testing/*": ["packages/testing/src/*"],
+      "@codequal/ui": ["packages/ui/src"],
+      "@codequal/ui/*": ["packages/ui/src/*"],
+      "@codequal/mcp-hybrid": ["packages/mcp-hybrid/src"],
+      "@codequal/mcp-hybrid/*": ["packages/mcp-hybrid/src/*"]
+    }
+  },
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "**/*.spec.ts"
+  ]
+}

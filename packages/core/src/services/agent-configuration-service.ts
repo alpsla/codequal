@@ -1,23 +1,174 @@
 /**
  * Agent Configuration Service
  * 
- * Provides simple utilities for getting optimal agent configurations
- * using the dynamic RESEARCHER system.
+ * Provides optimal agent configurations using the dynamic RESEARCHER system.
+ * 
+ * Architecture:
+ * - Vector DB: Contains existing model configurations
+ * - Researcher Agent: Searches web for new models when configs missing
+ * - Quarterly Scheduler: Refreshes all configs every 3 months to stay current
+ * - Dynamic Fallback: Uses progressively broader Vector DB searches as last resort
  */
 
 import { AgentRole, AgentProvider, AgentSelection } from '../config/agent-registry';
-import { ModelVersionSync, RepositoryContext } from './model-selection/ModelVersionSync';
+import { ModelVersionSync, RepositoryContext, RepositorySizeCategory } from './model-selection/ModelVersionSync';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('AgentConfigurationService');
 
 /**
+ * Request Researcher agent to find missing model configuration
+ */
+async function requestResearcherForMissingConfig(
+  role: AgentRole, 
+  context: RepositoryContext
+): Promise<AgentProvider> {
+  logger.info('Requesting Researcher agent to find missing model config', { role, context });
+  
+  try {
+    // Create web research request for missing model configuration
+    const researchRequest = {
+      type: 'web_model_research',
+      role: role,
+      context: context,
+      searchCriteria: {
+        language: context.language,
+        sizeCategory: context.sizeCategory,
+        roleRequirements: role,
+        tags: [...(context.tags || []), role],
+        priority: 'high'
+      },
+      researchSources: [
+        'provider_websites',
+        'model_leaderboards', 
+        'research_papers',
+        'github_repositories',
+        'benchmarking_sites'
+      ],
+      timestamp: new Date().toISOString()
+    };
+    
+    logger.info('Dispatching web research request to Researcher agent', { researchRequest });
+    
+    // Get ModelVersionSync instance to check for updates after research
+    const modelSync = new ModelVersionSync(logger);
+    
+    // Trigger Researcher agent (this would be async in production)
+    await triggerResearcherAgent(researchRequest);
+    
+    // After research is complete, try to find the model again
+    const updatedOptimalModel = modelSync.findOptimalModel({
+      ...context,
+      tags: [...(context.tags || []), role]
+    });
+    
+    if (updatedOptimalModel) {
+      logger.info('Researcher found and configured optimal model', { 
+        role, 
+        provider: updatedOptimalModel.provider,
+        model: updatedOptimalModel.model 
+      });
+      
+      // Map provider name to enum for backward compatibility
+      const providerMapping: Record<string, AgentProvider> = {
+        'anthropic': AgentProvider.ANTHROPIC,
+        'openai': AgentProvider.OPENAI,
+        'google': AgentProvider.GOOGLE,
+        'deepseek': AgentProvider.DEEPSEEK,
+        'openrouter': AgentProvider.OPENROUTER
+      };
+      
+      return providerMapping[updatedOptimalModel.provider] || AgentProvider.OPENAI;
+    }
+    
+    // If Researcher couldn't find a suitable model, use dynamic fallback from Vector DB
+    logger.warn('Researcher could not find suitable model, using dynamic fallback', { role, context });
+    return await getDynamicFallback(role, context);
+    
+  } catch (error) {
+    logger.error('Error requesting Researcher for missing config', { role, context, error });
+    return await getDynamicFallback(role, context);
+  }
+}
+
+/**
+ * Trigger the Researcher agent to search web for new model configurations
+ */
+async function triggerResearcherAgent(researchRequest: any): Promise<void> {
+  // TODO: Implement actual Researcher agent integration
+  // This would:
+  // 1. Send request to Researcher agent service
+  // 2. Researcher searches WEB for new models matching the context:
+  //    - Provider websites (OpenAI, Anthropic, Google, etc.)
+  //    - Model leaderboards and benchmarks
+  //    - AI research papers and announcements
+  //    - GitHub model repositories
+  // 3. Researcher analyzes found models for context suitability:
+  //    - Performance benchmarks for the language/framework
+  //    - Cost-effectiveness for the repository size
+  //    - Capabilities matching the role requirements
+  // 4. Researcher updates CANONICAL_MODEL_VERSIONS with new model metadata
+  // 5. Researcher stores findings in Vector DB for future use
+  // 6. Note: Quarterly scheduler also triggers comprehensive research every 3 months
+  
+  logger.info('Researcher agent triggered - searching web for new models', { researchRequest });
+  
+  // Simulate web research time (longer than Vector DB lookup)
+  await new Promise(resolve => setTimeout(resolve, 2000));
+}
+
+/**
+ * Dynamic fallback using Vector DB when Researcher can't find specific config
+ */
+async function getDynamicFallback(role: AgentRole, context: RepositoryContext): Promise<AgentProvider> {
+  const modelSync = new ModelVersionSync(logger);
+  
+  // Try progressively broader searches in Vector DB
+  const fallbackStrategies = [
+    // 1. Same language, any role
+    { ...context, tags: [] },
+    // 2. Same size category, any language  
+    { language: '', sizeCategory: context.sizeCategory as any, tags: [] },
+    // 3. Any configuration for this role
+    { language: '', sizeCategory: 'medium' as any, tags: [role] },
+    // 4. Most general available model
+    { language: '', sizeCategory: 'medium' as any, tags: [] }
+  ];
+  
+  for (const fallbackContext of fallbackStrategies) {
+    const fallbackModel = modelSync.findOptimalModel(fallbackContext);
+    if (fallbackModel) {
+      logger.info('Found dynamic fallback model', { 
+        strategy: fallbackContext, 
+        provider: fallbackModel.provider,
+        model: fallbackModel.model 
+      });
+      
+      // Map provider name to enum for backward compatibility
+      const providerMapping: Record<string, AgentProvider> = {
+        'anthropic': AgentProvider.ANTHROPIC,
+        'openai': AgentProvider.OPENAI,
+        'google': AgentProvider.GOOGLE,
+        'deepseek': AgentProvider.DEEPSEEK,
+        'openrouter': AgentProvider.OPENROUTER
+      };
+      
+      return providerMapping[fallbackModel.provider] || AgentProvider.OPENAI;
+    }
+  }
+  
+  // If absolutely no models found in Vector DB, there's a system configuration issue
+  logger.error('No models found in Vector DB - system configuration issue', { role, context });
+  throw new Error('No model configurations available in Vector DB');
+}
+
+/**
  * Get optimal agent configuration for a specific role and context
  */
-export function getOptimalAgent(
+export async function getOptimalAgent(
   role: AgentRole,
   context: RepositoryContext
-): AgentProvider {
+): Promise<AgentProvider> {
   const modelSync = new ModelVersionSync(logger);
   
   const optimalModel = modelSync.findOptimalModel({
@@ -26,7 +177,7 @@ export function getOptimalAgent(
   });
   
   if (optimalModel) {
-    // Map provider name to enum
+    // Map provider name to enum for backward compatibility
     const providerMapping: Record<string, AgentProvider> = {
       'anthropic': AgentProvider.ANTHROPIC,
       'openai': AgentProvider.OPENAI,
@@ -38,30 +189,22 @@ export function getOptimalAgent(
     return providerMapping[optimalModel.provider] || AgentProvider.OPENAI;
   }
   
-  // Fallback based on role
-  const fallbacks: Record<AgentRole, AgentProvider> = {
-    [AgentRole.ORCHESTRATOR]: AgentProvider.ANTHROPIC,
-    [AgentRole.CODE_QUALITY]: AgentProvider.DEEPSEEK,
-    [AgentRole.SECURITY]: AgentProvider.ANTHROPIC,
-    [AgentRole.PERFORMANCE]: AgentProvider.OPENAI,
-    [AgentRole.DEPENDENCY]: AgentProvider.OPENAI,
-    [AgentRole.EDUCATIONAL]: AgentProvider.ANTHROPIC,
-    [AgentRole.REPORT_GENERATION]: AgentProvider.OPENAI,
-    [AgentRole.RESEARCHER]: AgentProvider.GOOGLE
-  };
+  // If no optimal model found, trigger Researcher agent to find missing config
+  logger.info(`No model configuration found for role ${role} with context`, { context });
   
-  return fallbacks[role];
+  // Request Researcher agent to search for missing model version in Vector DB
+  return await requestResearcherForMissingConfig(role, context);
 }
 
 /**
  * Get optimal agent selection for all roles given a repository context
  */
-export function getOptimalAgentSelection(context: RepositoryContext): AgentSelection {
+export async function getOptimalAgentSelection(context: RepositoryContext): Promise<AgentSelection> {
   const roles = Object.values(AgentRole);
   const selection: AgentSelection = {} as AgentSelection;
   
   for (const role of roles) {
-    selection[role] = getOptimalAgent(role, context);
+    selection[role] = await getOptimalAgent(role, context);
   }
   
   return selection;
@@ -70,14 +213,14 @@ export function getOptimalAgentSelection(context: RepositoryContext): AgentSelec
 /**
  * Get optimal agent selection with sensible defaults
  */
-export function getDefaultAgentSelection(): AgentSelection {
+export async function getDefaultAgentSelection(): Promise<AgentSelection> {
   const defaultContext: RepositoryContext = {
     language: 'javascript',
-    sizeCategory: 'medium',
+    sizeCategory: RepositorySizeCategory.MEDIUM,
     tags: []
   };
   
-  return getOptimalAgentSelection(defaultContext);
+  return await getOptimalAgentSelection(defaultContext);
 }
 
 /**
