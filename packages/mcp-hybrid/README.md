@@ -1,249 +1,210 @@
-# MCP Hybrid Integration System
+# MCP Hybrid System
+
+PR-focused tool integration system for CodeQual agents. Provides intelligent tool selection and execution for enhanced code analysis.
 
 ## Overview
 
-The MCP Hybrid Integration System provides a unified interface for integrating both Model Context Protocol (MCP) tools and direct tool integrations into CodeQual's multi-agent architecture. This system is designed to work seamlessly with dynamically updated agent models and role-based configurations.
+The MCP Hybrid system provides comprehensive tool coverage for all agent roles, with each role having at least 2 tools (primary and fallback):
 
-## Architecture Overview
+### Tool Distribution by Role:
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    MCP Hybrid System                         │
-├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  ┌─────────────────┐    ┌──────────────────┐               │
-│  │  Tool Registry  │    │ Context Matcher  │               │
-│  │                 │    │                  │               │
-│  │ - MCP Tools     │◄───┤ - Language      │               │
-│  │ - Direct Tools  │    │ - Framework     │               │
-│  │ - Capabilities  │    │ - Repository    │               │
-│  └─────────────────┘    │ - Agent Role    │               │
-│           ▲             └──────────────────┘               │
-│           │                      ▲                          │
-│           │                      │                          │
-│  ┌────────┴────────┐    ┌───────┴────────┐               │
-│  │ Tool Executor   │    │  Vector DB     │               │
-│  │                 │    │  Integration   │               │
-│  │ - MCP Client    │    │                │               │
-│  │ - Direct Runner │    │ - Agent Config │               │
-│  │ - Fallback     │    │ - Tool Config  │               │
-│  └─────────────────┘    └────────────────┘               │
-│                                                              │
-└─────────────────────────────────────────────────────────────┘
-```
+**Security** (3 tools):
+- MCP-Scan - Security verification
+- Semgrep MCP - Code security scanning  
+- SonarQube - General security checks
+
+**Code Quality** (3 tools):
+- ESLint MCP - JavaScript/TypeScript linting
+- SonarQube - Multi-language quality (30+ languages)
+- Prettier - Code formatting
+
+**Architecture** (3 tools):
+- Dependency Cruiser - Dependency analysis
+- Madge - Circular dependency detection
+- Git MCP - File structure analysis
+
+**Performance** (3 tools):
+- Lighthouse - Web performance metrics
+- SonarQube - Code complexity
+- Bundlephobia - Bundle size analysis
+
+**Educational** (4 tools):
+- Context MCP - Vector DB & web knowledge retrieval
+- Knowledge Graph MCP - Learning path identification
+- MCP Memory - Progress tracking
+- Web Search MCP - External resources
+
+**Reporting** (4 tools):
+- Chart.js MCP - Data visualization
+- Mermaid MCP - Diagram generation
+- Markdown PDF MCP - Report formatting
+- Grafana - Dashboard integration
 
 ## Key Features
 
-### 1. **Dynamic Model Compatibility**
-- Tools are associated with agent roles, not specific models
-- When RESEARCHER updates model configurations, tool mappings remain intact
-- Tool selection based on capabilities, not model names
+- **PR-Focused**: Designed specifically for analyzing pull requests, not full repositories
+- **Role-Based Tool Selection**: Tools are mapped to agent roles, not specific models
+- **Dynamic Model Compatibility**: Works seamlessly when RESEARCHER agent updates models
+- **Isolated Execution**: Each tool runs in an isolated workspace with resource limits
+- **Graceful Degradation**: Falls back to LLM-only analysis if tools fail
 
-### 2. **Context-Aware Tool Selection**
-- Tools are matched based on:
-  - Repository language and framework
-  - Agent role (security, performance, etc.)
-  - File types being analyzed
-  - Repository size and complexity
-  - User permissions and organization settings
+## Installation
 
-### 3. **Language-Specific Tool Routing**
-- ESLint MCP → Only for JavaScript/TypeScript files
-- Semgrep MCP → Multi-language with language detection
-- SonarQube MCP → 30+ languages with automatic routing
-- Direct tools → Language-specific implementations
+```bash
+# Install dependencies
+npm install
 
-### 4. **Graceful Degradation**
-- If MCP tool unavailable → Try direct tool
-- If direct tool unavailable → Fallback to LLM analysis
-- Always maintain analysis capability
+# Install MCP tools
+npm run install-tools
 
-## Core Components
+# Verify security
+npm run verify-security
 
-### 1. Tool Registry (`/src/registry/`)
-- Manages both MCP and direct tool configurations
-- Stores tool capabilities and requirements
-- Handles tool availability checking
+# Check health
+npm run health-check
+```
 
-### 2. Context Matcher (`/src/context/`)
-- Matches tools to repository context
-- Integrates with Vector DB for configurations
-- Considers user permissions and settings
+## Architecture
 
-### 3. Tool Executor (`/src/executor/`)
-- Unified interface for MCP and direct tools
-- Handles authentication and configuration
-- Manages timeouts and retries
+### Core Components
 
-### 4. Integration Adapters (`/src/adapters/`)
-- MCP tool adapters for each integrated server
-- Direct tool adapters for gap-filling tools
-- Common interface for all tool types
+1. **Tool Registry** - Manages tool registration and discovery
+2. **Tool Manager** - Handles server-side execution with isolation
+3. **Context Selector** - Intelligent tool selection based on context
+4. **Tool Adapters** - Integrate specific tools with the system
 
-## Implementation Plan
-
-### Phase 1: Core Infrastructure (Week 1)
-1. **Tool Registry Implementation**
-   - Define interfaces for tool capabilities
-   - Create registry with dynamic loading
-   - Implement availability checking
-
-2. **Context Matching System**
-   - Create context analyzer for repositories
-   - Integrate with Vector DB configurations
-   - Build matching algorithm
-
-3. **Base Executor Framework**
-   - Unified tool execution interface
-   - Error handling and fallback logic
-   - Metrics and logging
-
-### Phase 2: MCP Tool Integration (Week 2)
-1. **ESLint MCP Adapter**
-   - JavaScript/TypeScript specific
-   - Integrate with code quality agent role
-
-2. **SonarQube MCP Adapter**
-   - Multi-language support
-   - Enterprise configuration options
-
-3. **Semgrep MCP Adapter**
-   - Security-focused integration
-   - Custom rule support
-
-4. **GitHub MCP Adapter**
-   - Repository context provider
-   - PR and issue integration
-
-### Phase 3: Direct Tool Integration (Week 3)
-1. **Test Coverage Tools**
-   - Jest, pytest-cov, go test adapters
-   - Language-specific routing
-
-2. **Performance Profiling**
-   - Node.js, Python, Go profilers
-   - Resource usage analysis
-
-3. **Documentation Generation**
-   - JSDoc, Sphinx, Doxygen adapters
-   - Markdown generation
-
-### Phase 4: Advanced Features (Post-MVP)
-1. **Tool Recommendation Engine**
-   - Suggest best tools for repository
-   - Cost/benefit analysis
-
-2. **Custom MCP Server Development**
-   - Fill critical gaps with custom servers
-   - Open-source contributions
-
-3. **Tool Performance Optimization**
-   - Caching and result reuse
-   - Parallel tool execution
-
-## Configuration Schema
+### Tool Execution Flow
 
 ```typescript
-interface MCPHybridConfig {
-  // Tool definitions
-  tools: {
-    mcp: MCPToolConfig[];
-    direct: DirectToolConfig[];
-  };
-  
-  // Context matching rules
-  contextRules: {
-    language: LanguageToolMapping[];
-    framework: FrameworkToolMapping[];
-    agentRole: RoleToolMapping[];
-  };
-  
-  // Execution settings
-  execution: {
-    timeout: number;
-    maxRetries: number;
-    fallbackStrategy: 'direct' | 'llm' | 'skip';
-  };
-  
-  // Integration with Vector DB
-  vectorDB: {
-    configRepositoryId: string;
-    syncInterval: number;
-  };
-}
+// 1. Agent requests tools for analysis
+const tools = await toolSelector.selectTools(agentRole, context);
+
+// 2. Execute tools with PR context
+const results = await toolManager.executeTool(tool, context);
+
+// 3. Enhance agent analysis with tool results
+const enhancedAnalysis = agent.analyzeWithTools(context, results);
 ```
 
 ## Usage Example
 
 ```typescript
-// Initialize MCP Hybrid System
-const mcpHybrid = new MCPHybridSystem({
-  authenticatedUser,
-  vectorService,
-  logger
-});
+import { 
+  toolRegistry,
+  toolManager,
+  toolSelector,
+  mcpScanAdapter,
+  mcpDocsServiceAdapter
+} from '@codequal/mcp-hybrid';
 
-// Analyze with automatic tool selection
-const result = await mcpHybrid.analyze({
-  agentRole: 'security',
-  repository: {
-    language: 'typescript',
-    framework: 'express',
-    files: changedFiles
+// Register tools
+toolRegistry.register(mcpScanAdapter);
+toolRegistry.register(mcpDocsServiceAdapter);
+
+// Initialize tool manager
+await toolManager.initialize();
+
+// Select tools for educational agent
+const tools = await toolSelector.selectTools('educational', {
+  agentRole: 'educational',
+  pr: {
+    prNumber: 123,
+    files: [/* PR files */]
   },
-  context: repositoryContext
+  repository: {
+    languages: ['typescript'],
+    frameworks: ['react']
+  }
 });
 
-// Result includes tool-enhanced analysis
-console.log(result.toolsUsed); // ['semgrep-mcp', 'eslint-mcp']
-console.log(result.insights); // Combined insights from tools + LLM
+// Execute selected tools
+for (const tool of tools.primary) {
+  const result = await toolManager.executeTool(tool, context);
+  console.log(`Tool ${tool.id}: ${result.success ? 'Success' : 'Failed'}`);
+}
 ```
 
-## Integration with Existing Systems
+## Tool-First Agent Pattern
 
-### 1. **Multi-Agent Executor**
-- MCP Hybrid becomes a service available to all agents
-- Agents request tool analysis through unified interface
-- Results integrated into agent responses
+Agents use tools FIRST to get concrete data, then analyze with that context:
 
-### 2. **RESEARCHER Agent**
-- Tool configurations stored separately from model configs
-- Tools mapped to roles, not specific models
-- Automatic compatibility when models update
+```typescript
+class ToolAwareAgent extends BaseAgent {
+  async analyze(context: AnalysisContext): Promise<AnalysisResult> {
+    // 1. Get tools for this role
+    const tools = await toolSelector.selectTools(this.role, context);
+    
+    // 2. Run tools to get concrete data
+    const toolResults = await this.runTools(tools, context);
+    
+    // 3. Create enhanced prompt with tool results
+    const prompt = this.buildPromptWithToolResults(context, toolResults);
+    
+    // 4. Agent analyzes WITH tool results as context
+    return this.model.complete(prompt);
+  }
+}
+```
 
-### 3. **Vector DB**
-- Tool configurations stored with metadata
-- Repository-specific tool preferences
-- Historical tool performance data
+## Security
 
-## Challenges and Solutions
+- All tools are verified with MCP-Scan before execution
+- Isolated workspaces prevent cross-contamination
+- Resource limits prevent DoS attacks
+- Temporary workspaces are cleaned up automatically
 
-### Challenge 1: Dynamic Model Updates
-**Solution**: Decouple tools from models by mapping to agent roles instead. When RESEARCHER updates models, tools continue working with new models.
+## Configuration
 
-### Challenge 2: Language-Specific Tools
-**Solution**: Implement smart routing based on file extensions, repository metadata, and Vector DB configurations.
+Tools can be configured via environment variables:
 
-### Challenge 3: Tool Availability
-**Solution**: Runtime availability checking with graceful degradation chain: MCP → Direct → LLM.
+```bash
+# Enable/disable specific tools
+export ENABLE_ESLINT_MCP=true
+export ENABLE_SONARQUBE=true
 
-### Challenge 4: Configuration Complexity
-**Solution**: Hierarchical configuration with defaults, repository overrides, and user preferences.
+# External tool URLs
+export SONARQUBE_URL=http://localhost:9000
+```
 
-### Challenge 5: Performance Impact
-**Solution**: Parallel tool execution where possible, result caching, and smart tool selection to avoid redundant analysis.
+## Development
 
-## Next Steps
+```bash
+# Build TypeScript
+npm run build
 
-1. Review and approve architecture design
-2. Set up development environment for MCP tools
-3. Create base interfaces and types
-4. Begin Phase 1 implementation
-5. Prepare test repositories for validation
+# Run tests
+npm test
 
-## Resources
+# Lint code
+npm run lint
 
-- [MCP Specification](https://spec.modelcontextprotocol.io)
-- [MCP Tools Research Document](/docs/research/MCP%20RESEARCH.md)
-- [Integration Architecture](/docs/architecture/mcp-integration-architecture.md)
-- [Direct Tool Integration Guide](/docs/guides/mcp-direct-tool-integration-guide.md)
+# Type check
+npm run type-check
+```
+
+## Adding New Tools
+
+1. Create adapter in `src/adapters/mcp/` or `src/adapters/direct/`
+2. Implement the `Tool` interface
+3. Register in the tool registry
+4. Update role mappings
+5. Add to installation script
+
+## Troubleshooting
+
+### Tool Not Found
+- Run `npm run health-check` to verify installation
+- Check tool-specific requirements (Python for Git MCP, etc.)
+
+### Security Verification Failed
+- Ensure MCP-Scan is installed: `npm install -g mcp-scan`
+- Run `npm run verify-security` to check all tools
+
+### Performance Issues
+- Check resource limits in `MCPToolManager`
+- Monitor persistent tool processes
+- Review timeout settings
+
+## License
+
+MIT

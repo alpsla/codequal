@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { RepositorySizeCategory } from '@codequal/core/services/model-selection/ModelVersionSync';
 
 export interface PRDetails {
   number: number;
@@ -178,7 +179,7 @@ export class PRContextService {
   /**
    * Estimate repository size category
    */
-  async estimateRepositorySize(repositoryUrl: string): Promise<'small' | 'medium' | 'large'> {
+  async estimateRepositorySize(repositoryUrl: string): Promise<RepositorySizeCategory> {
     try {
       const repoInfo = this.parseRepositoryUrl(repositoryUrl);
       
@@ -190,16 +191,16 @@ export class PRContextService {
         
         const sizeKB = response.data.size; // GitHub returns size in KB
         
-        if (sizeKB < 1000) return 'small';      // < 1MB
-        if (sizeKB < 50000) return 'medium';    // < 50MB
-        return 'large';                         // >= 50MB
+        if (sizeKB < 1000) return RepositorySizeCategory.SMALL;      // < 1MB
+        if (sizeKB < 50000) return RepositorySizeCategory.MEDIUM;    // < 50MB
+        return RepositorySizeCategory.LARGE;                         // >= 50MB
       }
       
       // Default to medium if we can't determine size
-      return 'medium';
+      return RepositorySizeCategory.MEDIUM;
     } catch (error) {
       console.error('Failed to estimate repository size:', error);
-      return 'medium';
+      return RepositorySizeCategory.MEDIUM;
     }
   }
 

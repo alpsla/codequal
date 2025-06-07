@@ -52,9 +52,7 @@ export type {
   RepositorySizeCategory,
   TestingStatus,
   RepositoryModelConfig,
-  RepositoryProvider,
-  ProviderModelConfig,
-  ModelTestResults
+  RepositoryProvider
 } from './config/models/repository-model-config';
 
 // Export model version constants
@@ -64,6 +62,13 @@ export * from './config/models/model-versions';
 export * from './services/model-selection/RepositoryModelSelectionService';
 export * from './services/model-selection/RepositoryCalibrationService';
 export * from './services/model-selection/ModelConfigStore';
+
+// Export agent registry types  
+export {
+  AgentProvider,
+  AgentRole,
+  type AgentSelection
+} from './config/agent-registry';
 
 // Services
 export * from './services/pr-review-service';

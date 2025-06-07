@@ -7,7 +7,7 @@ import { storeAnalysisInHistory } from '../routes/analysis';
 
 // Import existing packages
 import { EnhancedMultiAgentExecutor } from '@codequal/agents/multi-agent/enhanced-executor';
-import { ModelVersionSync } from '@codequal/core/services/model-selection/ModelVersionSync';
+import { ModelVersionSync, RepositorySizeCategory } from '@codequal/core/services/model-selection/ModelVersionSync';
 import { VectorContextService } from '@codequal/agents/multi-agent/vector-context-service';
 import { createLogger } from '@codequal/core/utils';
 import { AuthenticatedUser as AgentAuthenticatedUser, UserRole, UserStatus, UserPermissions } from '@codequal/agents/multi-agent/types/auth';
@@ -27,7 +27,7 @@ export interface PRContext {
   diff: any;
   changedFiles: string[];
   primaryLanguage: string;
-  repositorySize: 'small' | 'medium' | 'large';
+  repositorySize: RepositorySizeCategory;
   analysisMode: string;
   baseBranch?: string;
   files?: Array<{

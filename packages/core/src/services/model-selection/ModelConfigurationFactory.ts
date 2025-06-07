@@ -46,9 +46,17 @@ export class ModelConfigurationFactory {
         return null;
       }
       
-      // Create a repository model config
+      // Create a repository model config with all required properties
       return {
+        id: `auto-${Date.now()}`,
+        repository_url: '',
+        repository_name: '',
         provider: model.provider as RepositoryProvider,
+        primary_language: context.language,
+        languages: [context.language],
+        size_category: context.sizeCategory,
+        framework_stack: [],
+        complexity_score: 0.5,
         model: model.model,
         testResults: {
           status: TestingStatus.TESTED,
@@ -58,7 +66,12 @@ export class ModelConfigurationFactory {
           testCount: 1,
           lastTested: new Date().toISOString()
         },
-        notes: `Auto-selected based on capabilities for ${context.language}/${context.sizeCategory}`
+        notes: `Auto-selected based on capabilities for ${context.language}/${context.sizeCategory}`,
+        optimal_models: {},
+        testing_status: TestingStatus.TESTED,
+        last_calibration: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       };
     } catch (error) {
       this.logger.error('Error creating repository model config', { context, error });
@@ -189,13 +202,19 @@ export class ModelConfigurationFactory {
     
     // Update the static configuration with the generated one
     for (const [language, sizeConfigs] of Object.entries(updatedConfigs)) {
-      if (!REPOSITORY_MODEL_CONFIGS[language]) {
-        REPOSITORY_MODEL_CONFIGS[language] = {} as Record<RepositorySizeCategory, RepositoryModelConfig>;
+      // Create a mutable copy of REPOSITORY_MODEL_CONFIGS
+      const mutableConfigs = { ...REPOSITORY_MODEL_CONFIGS } as any;
+      
+      if (!mutableConfigs[language]) {
+        mutableConfigs[language] = {} as Record<RepositorySizeCategory, RepositoryModelConfig>;
       }
       
       for (const [sizeCategory, config] of Object.entries(sizeConfigs)) {
-        REPOSITORY_MODEL_CONFIGS[language][sizeCategory as RepositorySizeCategory] = config;
+        mutableConfigs[language][sizeCategory as RepositorySizeCategory] = config;
       }
+      
+      // Update the original reference
+      Object.assign(REPOSITORY_MODEL_CONFIGS, mutableConfigs);
     }
     
     this.logger.info('Static REPOSITORY_MODEL_CONFIGS updated with latest configurations');
