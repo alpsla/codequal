@@ -8,15 +8,15 @@
 
 // Import directly from relative paths to avoid path resolution issues
 import { Logger } from '../../utils/logger';
+import { 
+  RepositorySizeCategory, 
+  TestingStatus, 
+  RepositoryModelConfig,
+  RepositoryProvider
+} from '../../config/models/repository-model-config';
 
-// Define repository model configuration types here to avoid circular imports
-export type RepositorySizeCategory = 'small' | 'medium' | 'large';
-
-export enum TestingStatus {
-  UNTESTED = 'untested',
-  PLANNED = 'planned',
-  TESTED = 'tested'
-}
+// Export types for other modules
+export { RepositorySizeCategory } from '../../config/models/repository-model-config';
 
 export interface TestResults {
   status: TestingStatus;
@@ -25,13 +25,6 @@ export interface TestResults {
   qualityScore?: number;
   testCount: number;
   lastTested: string;
-}
-
-export interface RepositoryModelConfig {
-  provider: string;
-  model: string;
-  testResults?: TestResults;
-  notes?: string;
 }
 
 /**
@@ -525,7 +518,7 @@ export class ModelVersionSync {
    * @returns Standardized model configuration
    */
   standardizeModelConfig(config: RepositoryModelConfig): RepositoryModelConfig {
-    const canonicalVersion = this.getCanonicalVersion(config.provider, config.model);
+    const canonicalVersion = this.getCanonicalVersion(config.provider as string, config.model || '');
     
     if (!canonicalVersion) {
       this.logger.warn(`No canonical version found for ${config.provider}/${config.model}`);
@@ -536,7 +529,7 @@ export class ModelVersionSync {
     const standardizedConfig = { ...config };
     
     // Ensure model name and provider match the canonical version
-    standardizedConfig.provider = canonicalVersion.provider;
+    standardizedConfig.provider = canonicalVersion.provider as RepositoryProvider;
     standardizedConfig.model = canonicalVersion.model;
     
     return standardizedConfig;
@@ -723,13 +716,14 @@ export class ModelVersionSync {
     
     // Base scores for different size categories
     const sizeWeights: Record<RepositorySizeCategory, Record<string, number>> = {
-      'small': { codeQuality: 0.3, speed: 0.4, contextWindow: 0.1, reasoning: 0.1, detailLevel: 0.1 },
-      'medium': { codeQuality: 0.4, speed: 0.2, contextWindow: 0.1, reasoning: 0.2, detailLevel: 0.1 },
-      'large': { codeQuality: 0.3, speed: 0.1, contextWindow: 0.2, reasoning: 0.2, detailLevel: 0.2 }
+      [RepositorySizeCategory.SMALL]: { codeQuality: 0.3, speed: 0.4, contextWindow: 0.1, reasoning: 0.1, detailLevel: 0.1 },
+      [RepositorySizeCategory.MEDIUM]: { codeQuality: 0.4, speed: 0.2, contextWindow: 0.1, reasoning: 0.2, detailLevel: 0.1 },
+      [RepositorySizeCategory.LARGE]: { codeQuality: 0.3, speed: 0.1, contextWindow: 0.2, reasoning: 0.2, detailLevel: 0.2 },
+      [RepositorySizeCategory.EXTRA_LARGE]: { codeQuality: 0.3, speed: 0.1, contextWindow: 0.2, reasoning: 0.3, detailLevel: 0.1 }
     };
     
     // Get weights for this size category
-    const weights = sizeWeights[context.sizeCategory] || sizeWeights.medium;
+    const weights = sizeWeights[context.sizeCategory] || sizeWeights[RepositorySizeCategory.MEDIUM];
     
     // Calculate weighted score
     let score = 0;
@@ -757,7 +751,7 @@ export class ModelVersionSync {
     try {
       const configMap: Record<string, Record<RepositorySizeCategory, RepositoryModelConfig>> = {};
       const languages = ['javascript', 'typescript', 'python', 'java', 'ruby', 'go', 'rust', 'csharp', 'php', 'default'];
-      const sizeCategories: RepositorySizeCategory[] = ['small', 'medium', 'large'];
+      const sizeCategories: RepositorySizeCategory[] = [RepositorySizeCategory.SMALL, RepositorySizeCategory.MEDIUM, RepositorySizeCategory.LARGE];
       
       // Generate configurations for each language and size category
       for (const language of languages) {
@@ -772,7 +766,15 @@ export class ModelVersionSync {
           
           if (model) {
             configMap[language][sizeCategory] = {
-              provider: model.provider as string,
+              id: `auto-${Date.now()}-${language}-${sizeCategory}`,
+              repository_url: '',
+              repository_name: '',
+              provider: model.provider as RepositoryProvider,
+              primary_language: language,
+              languages: [language],
+              size_category: sizeCategory,
+              framework_stack: [],
+              complexity_score: 0.5,
               model: model.model as string,
               testResults: {
                 status: TestingStatus.TESTED,
@@ -781,23 +783,41 @@ export class ModelVersionSync {
                 testCount: 0,
                 lastTested: new Date().toISOString()
               },
-              notes: `Auto-selected based on model capabilities for ${language}/${sizeCategory}`
+              notes: `Auto-selected based on model capabilities for ${language}/${sizeCategory}`,
+              optimal_models: {},
+              testing_status: TestingStatus.TESTED,
+              last_calibration: new Date().toISOString(),
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
             };
           } else {
             // Fallback to default
             const defaultModel = CANONICAL_MODEL_VERSIONS['openai/gpt-4o'];
             if (defaultModel) {
               configMap[language][sizeCategory] = {
-                provider: defaultModel.provider as string,
+                id: `default-${Date.now()}-${language}-${sizeCategory}`,
+                repository_url: '',
+                repository_name: '',
+                provider: defaultModel.provider as RepositoryProvider,
+                primary_language: language,
+                languages: [language],
+                size_category: sizeCategory,
+                framework_stack: [],
+                complexity_score: 0.5,
                 model: defaultModel.model as string,
                 testResults: {
-                  status: TestingStatus.UNTESTED,
+                  status: TestingStatus.NOT_TESTED,
                   avgResponseTime: 0,
                   avgResponseSize: 0,
                   testCount: 0,
                   lastTested: new Date().toISOString()
                 },
-                notes: `Default model (optimal model not found)`
+                notes: `Default model (optimal model not found)`,
+                optimal_models: {},
+                testing_status: TestingStatus.NOT_TESTED,
+                last_calibration: null,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
               };
             }
           }

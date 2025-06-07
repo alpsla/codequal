@@ -1,4 +1,4 @@
-import { AgentProvider, AgentRole } from '../config/agent-registry';
+import { AgentRole, AgentProvider } from '../config/agent-registry';
 
 /**
  * Represents the model version with its capabilities

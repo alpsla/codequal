@@ -147,7 +147,15 @@ export class ModelConfigStore {
       const record = data[0] as ModelConfigRecord;
       
       return {
+        id: record.id,
+        repository_url: '',
+        repository_name: '',
         provider: record.provider as RepositoryProvider,
+        primary_language: normalizedLang,
+        languages: [normalizedLang],
+        size_category: sizeCategory,
+        framework_stack: [],
+        complexity_score: 0.5,
         model: record.model,
         testResults: {
           status: record.test_results.status as TestingStatus,
@@ -157,7 +165,12 @@ export class ModelConfigStore {
           testCount: record.test_results.testCount,
           lastTested: record.test_results.lastTested
         },
-        notes: record.notes
+        notes: record.notes,
+        optimal_models: {},
+        testing_status: record.test_results.status as TestingStatus,
+        last_calibration: record.test_results.lastTested,
+        created_at: record.created_at,
+        updated_at: record.updated_at
       };
     } catch (error) {
       this.logger.error('Unexpected error getting model configuration', { 
@@ -419,7 +432,15 @@ export class ModelConfigStore {
         
         // Add configuration
         configs[language][sizeCategory] = {
+          id: record.id,
+          repository_url: '',
+          repository_name: '',
           provider: record.provider as RepositoryProvider,
+          primary_language: language,
+          languages: [language],
+          size_category: sizeCategory,
+          framework_stack: [],
+          complexity_score: 0.5,
           model: record.model,
           testResults: {
             status: record.test_results.status as TestingStatus,
@@ -429,7 +450,12 @@ export class ModelConfigStore {
             testCount: record.test_results.testCount,
             lastTested: record.test_results.lastTested
           },
-          notes: record.notes
+          notes: record.notes,
+          optimal_models: {},
+          testing_status: record.test_results.status as TestingStatus,
+          last_calibration: record.test_results.lastTested,
+          created_at: record.created_at,
+          updated_at: record.updated_at
         };
       }
       

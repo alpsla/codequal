@@ -9,7 +9,7 @@
 
 import { Logger } from '../../utils/logger';
 import { RepositoryContext } from '../../types/repository';
-import { RepositoryModelConfig, RepositorySizeCategory, TestingStatus } from '../../config/models/repository-model-config';
+import { RepositoryModelConfig, RepositorySizeCategory, TestingStatus, RepositoryProvider } from '../../config/models/repository-model-config';
 import { ModelConfig, DeepWikiProvider, DeepWikiClient } from '../../deepwiki/DeepWikiClient';
 import { CalibrationDecision } from './RepositoryModelSelectionService';
 
@@ -458,7 +458,15 @@ export class RepositoryCalibrationService {
       // Fallback to default
       this.logger.warn('No reliable models found during calibration', { sizeCategory });
       return {
-        provider: 'openai',
+        id: `calibration-default-${Date.now()}`,
+        repository_url: '',
+        repository_name: '',
+        provider: RepositoryProvider.OTHER,
+        primary_language: language,
+        languages: [language],
+        size_category: sizeCategory,
+        framework_stack: [],
+        complexity_score: 0.5,
         model: 'gpt-4o',
         testResults: {
           status: TestingStatus.PARTIAL,
@@ -467,7 +475,12 @@ export class RepositoryCalibrationService {
           testCount: 0,
           lastTested: new Date().toISOString()
         },
-        notes: 'Default model due to no reliable alternatives during calibration'
+        notes: 'Default model due to no reliable alternatives during calibration',
+        optimal_models: {},
+        testing_status: TestingStatus.PARTIAL,
+        last_calibration: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       };
     }
     
@@ -498,9 +511,31 @@ export class RepositoryCalibrationService {
       }, reliableModels[0]);
     }
     
+    // Map DeepWikiProvider to RepositoryProvider
+    const mapProvider = (deepWikiProvider: DeepWikiProvider): RepositoryProvider => {
+      switch (deepWikiProvider) {
+        case 'openai':
+        case 'anthropic':
+        case 'google':
+        case 'deepseek':
+        case 'openrouter':
+        case 'ollama':
+        default:
+          return RepositoryProvider.OTHER;
+      }
+    };
+    
     // Create recommended config
     return {
-      provider: selectedModel.modelConfig.provider,
+      id: `calibration-${Date.now()}`,
+      repository_url: '',
+      repository_name: '',
+      provider: mapProvider(selectedModel.modelConfig.provider),
+      primary_language: language,
+      languages: [language],
+      size_category: sizeCategory,
+      framework_stack: [],
+      complexity_score: 0.5,
       model: selectedModel.modelConfig.model,
       testResults: {
         status: TestingStatus.TESTED,
@@ -510,7 +545,12 @@ export class RepositoryCalibrationService {
         testCount: reliableModels.length,
         lastTested: new Date().toISOString()
       },
-      notes: `Selected based on calibration for ${language}/${sizeCategory} repository size`
+      notes: `Selected based on calibration for ${language}/${sizeCategory} repository size`,
+      optimal_models: {},
+      testing_status: TestingStatus.TESTED,
+      last_calibration: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     };
   }
   
@@ -569,11 +609,11 @@ export class RepositoryCalibrationService {
    */
   private getSizeCategory(sizeBytes: number): RepositorySizeCategory {
     if (sizeBytes < 5 * 1024 * 1024) { // Less than 5MB
-      return 'small';
+      return RepositorySizeCategory.SMALL;
     } else if (sizeBytes < 50 * 1024 * 1024) { // Between 5MB and 50MB
-      return 'medium';
+      return RepositorySizeCategory.MEDIUM;
     } else {
-      return 'large';
+      return RepositorySizeCategory.LARGE;
     }
   }
 }
