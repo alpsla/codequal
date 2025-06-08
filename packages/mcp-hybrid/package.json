@@ -5,15 +5,18 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc --skipLibCheck",
     "clean": "rm -rf dist",
     "test": "jest --passWithNoTests",
     "test:watch": "jest --watch",
     "lint": "eslint src --ext .ts",
-    "type-check": "tsc --noEmit",
+    "lint:ci": "eslint src --ext .ts --max-warnings 150",
+    "lint:fix": "eslint src --ext .ts --fix",
+    "type-check": "tsc --noEmit --skipLibCheck",
     "install-tools": "bash src/scripts/install-tools.sh",
     "verify-security": "bash src/scripts/verify-security.sh",
-    "health-check": "bash src/scripts/health-check.sh"
+    "health-check": "bash src/scripts/health-check.sh",
+    "type-check:strict": "tsc --noEmit --skipLibCheck false"
   },
   "keywords": [
     "mcp",

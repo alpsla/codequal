@@ -32,3 +32,21 @@ When updating procedures:
 3. Update this README when adding new documentation
 
 Last Updated: May 15, 2025
+
+CI validation commands
+Basic CI validation:
+  bash scripts/validate-ci-local.sh
+
+  Or for the other validation options:
+
+  # Strict validation (no warnings allowed)
+  bash scripts/validate-ci-local.sh --max-warnings 0
+
+  # Fast validation (skip tests)  
+  bash scripts/validate-ci-local.sh --skip-tests
+
+  # Package-specific validation
+  bash scripts/validate-ci-local.sh --package
+
+  The script is warning about uncommitted changes. You can either commit the changes first or proceed with validation as-is. The script will still run the full
+  CI validation process.

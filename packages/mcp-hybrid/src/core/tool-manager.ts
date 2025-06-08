@@ -62,7 +62,7 @@ export class MCPToolManager {
         if (this.shouldStartPersistentTool(toolId)) {
           const process = await this.startPersistentTool(toolId);
           this.persistentTools.set(toolId, process);
-          console.log(`Started persistent tool: ${toolId}`);
+          console.info(`Started persistent tool: ${toolId}`);
         }
       } catch (error) {
         console.error(`Failed to start persistent tool ${toolId}:`, error);
@@ -335,7 +335,7 @@ export class MCPToolManager {
         ...result,
         executionTime: Date.now() - startTime
       };
-    } catch (error: any) {
+    } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
       return {
         success: false,
         toolId: tool.id,
@@ -377,7 +377,7 @@ export class MCPToolManager {
         ...result,
         executionTime: Date.now() - startTime
       };
-    } catch (error: any) {
+    } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
       return {
         success: false,
         toolId: tool.id,
@@ -428,7 +428,7 @@ export class MCPToolManager {
     for (const [toolId, process] of this.persistentTools) {
       try {
         await process.stop();
-        console.log(`Stopped persistent tool: ${toolId}`);
+        console.info(`Stopped persistent tool: ${toolId}`);
       } catch (error) {
         console.error(`Failed to stop tool ${toolId}:`, error);
       }

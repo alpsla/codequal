@@ -122,7 +122,7 @@ export class TestReportGenerator {
       
       return reportPath;
     } catch (error) {
-      logger.error('Error generating test report:', error);
+      logger.error('Error generating test report:', error as Error);
       throw error;
     }
   }
