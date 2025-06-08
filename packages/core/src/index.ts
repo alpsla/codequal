@@ -6,6 +6,7 @@
 
 // Logging
 export * as logging from './utils/logger';
+export { createLogger } from './utils/logger';
 
 // DeepWiki Integration
 export * as deepwiki from './deepwiki';

@@ -209,7 +209,7 @@ export class PrettierDirectAdapter extends DirectToolAdapter {
           formattingRate: formattedCount / (formattedCount + needsFormattingCount)
         }
       };
-    } catch (error: any) {
+    } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
       return {
         success: false,
         toolId: this.id,
@@ -338,7 +338,7 @@ export class DependencyCruiserDirectAdapter extends DirectToolAdapter {
           circularDependencies: violations.filter(v => v.rule === 'no-circular').length
         }
       };
-    } catch (error: any) {
+    } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
       return {
         success: false,
         toolId: this.id,

@@ -21,6 +21,7 @@ export { mcpScanAdapter } from './adapters/mcp/mcp-scan';
 export { mcpDocsServiceAdapter } from './adapters/mcp/docs-service';
 export { contextMCPAdapter } from './adapters/mcp/context-mcp';
 export { chartJSMCPAdapter } from './adapters/mcp/chartjs-mcp';
+export { eslintMCPAdapter } from './adapters/mcp/eslint-mcp';
 
 // Direct adapters
 export { 
@@ -31,12 +32,35 @@ export {
 
 // Integration components
 export {
-  ToolAwareAgent,
+  AgentToolService,
   ParallelAgentExecutor,
-  SecurityToolAwareAgent,
+  agentToolService,
+  parallelAgentExecutor,
   AgentResult,
   ParallelExecutionOptions
 } from './integration/tool-aware-agent';
+
+export {
+  AgentToolEnhancer,
+  ToolEnhancedAgent,
+  AgentEnhancementConfig,
+  ToolIntegratedMultiAgentExecutor,
+  integrateToolsWithAgent
+} from './integration/agent-enhancer';
+
+export {
+  ToolEnhancedOrchestrator,
+  toolEnhancedOrchestrator,
+  OrchestratorFlow,
+  ORCHESTRATOR_TOOL_MAPPING
+} from './integration/orchestrator-flow';
+
+export {
+  MultiAgentToolIntegration,
+  MultiAgentToolConfig,
+  createToolEnhancedExecutor,
+  MCPHybridIntegration
+} from './integration/multi-agent-integration';
 
 // Re-export commonly used types for convenience
 export type {

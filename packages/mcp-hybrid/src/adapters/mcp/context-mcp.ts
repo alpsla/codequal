@@ -114,7 +114,7 @@ export class ContextMCPAdapter implements Tool {
           relevanceScore: this.calculateAverageRelevance(vectorResults)
         }
       };
-    } catch (error: any) {
+    } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
       return {
         success: false,
         toolId: this.id,
