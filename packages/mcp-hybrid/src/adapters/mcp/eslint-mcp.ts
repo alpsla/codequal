@@ -161,7 +161,7 @@ export class ESLintMCPAdapter implements Tool {
         findings,
         metrics
       };
-    } catch (error: any) // eslint-disable-line @typescript-eslint/no-explicit-any { // eslint-disable-line @typescript-eslint/no-explicit-any
+    } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
       return {
         success: false,
         toolId: this.id,
@@ -348,7 +348,7 @@ export class ESLintMCPAdapter implements Tool {
   /**
    * Execute MCP command
    */
-  private async executeMCPCommand(command: any) // eslint-disable-line @typescript-eslint/no-explicit-any: Promise<any> {
+  private async executeMCPCommand(command: any): Promise<any> { // eslint-disable-line @typescript-eslint/no-explicit-any
     return new Promise((resolve, reject) => {
       if (!this.mcpProcess) {
         reject(new Error('ESLint MCP server not initialized'));

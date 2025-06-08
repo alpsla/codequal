@@ -114,7 +114,7 @@ export class ChartJSMCPAdapter implements Tool {
           visualizationTypes: [...new Set(chartConfigs.map(c => c.type))].length
         }
       };
-    } catch (error: any) // eslint-disable-line @typescript-eslint/no-explicit-any { // eslint-disable-line @typescript-eslint/no-explicit-any
+    } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
       return {
         success: false,
         toolId: this.id,

@@ -49,12 +49,11 @@ export class MultiAgentToolIntegration {
    * Enhance the multi-agent executor's createAgent method
    * This wraps agents with tool capabilities
    */
-  enhanceExecutor(executor: any) // eslint-disable-line @typescript-eslint/no-explicit-any: void {
-    const self = this;
+  enhanceExecutor(executor: any): void { // eslint-disable-line @typescript-eslint/no-explicit-any
     const originalCreateAgent = executor.createAgent.bind(executor);
     
     // Override createAgent method
-    executor.createAgent = async function(agentConfig: any, name: string) { // eslint-disable-line @typescript-eslint/no-explicit-any
+    executor.createAgent = async (agentConfig: any, name: string) => { // eslint-disable-line @typescript-eslint/no-explicit-any
       // Create agent using original method
       const agent = await originalCreateAgent(agentConfig, name);
       
@@ -62,17 +61,17 @@ export class MultiAgentToolIntegration {
       // agentContexts includes dependencies and scoring for each role
       
       // Skip if tools are disabled
-      if (!self.config.enableTools) {
+      if (!this.config.enableTools) {
         return agent;
       }
       
       // Enhance agent with tool capabilities
-      return self.wrapAgentWithTools(agent, agentConfig, name);
+      return this.wrapAgentWithTools(agent, agentConfig, name);
     };
     
     // Add tool result collection method
-    executor.collectToolResults = function() {
-      return self.toolResults;
+    executor.collectToolResults = () => {
+      return this.toolResults;
     };
     
     this.logger.info('Multi-agent executor enhanced with tool capabilities');
@@ -87,31 +86,30 @@ export class MultiAgentToolIntegration {
    * Wrap an agent with tool execution capabilities
    */
   private wrapAgentWithTools(agent: any, agentConfig: any, name: string): any { // eslint-disable-line @typescript-eslint/no-explicit-any
-    const self = this;
     const originalAnalyze = agent.analyze.bind(agent);
     
     // Create enhanced analyze method
-    agent.analyze = async function(data: any) // eslint-disable-line @typescript-eslint/no-explicit-any { // eslint-disable-line @typescript-eslint/no-explicit-any
-      self.logger.info(`Running tools FIRST for ${name} (${agentConfig.role})`);
+    agent.analyze = async (data: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+      this.logger.info(`Running tools FIRST for ${name} (${agentConfig.role})`);
       
       try {
         // Step 1: Create analysis context from data
-        const context = self.createAnalysisContext(agentConfig, data);
+        const context = this.createAnalysisContext(agentConfig, data);
         
         // Step 2: Run tools FIRST to get concrete findings
         const toolResults = await agentToolService.runToolsForRole(
           agentConfig.role,
           context,
           {
-            timeout: self.config.toolTimeout,
-            maxParallel: self.config.maxParallelToolsPerAgent
+            timeout: this.config.toolTimeout,
+            maxParallel: this.config.maxParallelToolsPerAgent
           }
         );
         
-        self.logger.info(`Tools completed for ${name}: ${toolResults.toolsExecuted.length} tools, ${toolResults.findings.length} findings`);
+        this.logger.info(`Tools completed for ${name}: ${toolResults.toolsExecuted.length} tools, ${toolResults.findings.length} findings`);
         
         // Store tool results
-        self.toolResults.set(name, toolResults);
+        this.toolResults.set(name, toolResults);
         
         // Step 3: Prepare enhanced data with tool results and agent context
         const enhancedData = {
@@ -131,7 +129,7 @@ export class MultiAgentToolIntegration {
         };
         
         // Step 4: Agent analyzes based on tool results and context
-        self.logger.info(`${name} analyzing with tool results and context`);
+        this.logger.info(`${name} analyzing with tool results and context`);
         const result = await originalAnalyze(enhancedData);
         
         // Agent result is a compiled report, not raw tool findings
@@ -147,7 +145,7 @@ export class MultiAgentToolIntegration {
         
         return result;
       } catch (error) {
-        self.logger.error(`Tool execution failed for ${name}:`, error as Error);
+        this.logger.error(`Tool execution failed for ${name}:`, error as Error);
         
         // Fall back to original analysis without tools
         return originalAnalyze(data);
@@ -175,7 +173,7 @@ export class MultiAgentToolIntegration {
         baseBranch: pr.base?.ref || data.baseBranch || 'main',
         targetBranch: pr.head?.ref || data.targetBranch || 'feature',
         author: pr.user?.login || data.author || '',
-        files: files.map((f: any) // eslint-disable-line @typescript-eslint/no-explicit-any => ({
+        files: files.map((f: any) => ({ // eslint-disable-line @typescript-eslint/no-explicit-any
           path: f.filename || f.path,
           content: f.content || '',
           changeType: f.status === 'removed' ? 'deleted' : 
@@ -206,7 +204,7 @@ export class MultiAgentToolIntegration {
   private detectLanguages(files: any[]): string[] { // eslint-disable-line @typescript-eslint/no-explicit-any
     const languages = new Set<string>();
     
-    files.forEach((file: any) // eslint-disable-line @typescript-eslint/no-explicit-any => {
+    files.forEach((file: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
       const ext = (file.filename || file.path || '').split('.').pop()?.toLowerCase();
       switch (ext) {
         case 'js':
@@ -241,7 +239,7 @@ export class MultiAgentToolIntegration {
   private detectFrameworks(files: any[]): string[] { // eslint-disable-line @typescript-eslint/no-explicit-any
     const frameworks = new Set<string>();
     
-    files.forEach((file: any) // eslint-disable-line @typescript-eslint/no-explicit-any => {
+    files.forEach((file: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
       const content = file.content || '';
       const filename = file.filename || file.path || '';
       

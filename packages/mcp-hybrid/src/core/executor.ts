@@ -255,7 +255,7 @@ export class ToolExecutor {
           console.info('Stopping execution due to failFast strategy');
           break;
         }
-      } catch (error: any) // eslint-disable-line @typescript-eslint/no-explicit-any { // eslint-disable-line @typescript-eslint/no-explicit-any
+      } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
         results.push({
           success: false,
           toolId: tool.id,
@@ -303,7 +303,7 @@ export class ToolExecutor {
       ]);
       
       return result;
-    } catch (error: any) // eslint-disable-line @typescript-eslint/no-explicit-any { // eslint-disable-line @typescript-eslint/no-explicit-any
+    } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
       return {
         success: false,
         toolId: tool.id,

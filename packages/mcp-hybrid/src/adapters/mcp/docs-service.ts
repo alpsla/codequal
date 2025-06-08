@@ -149,7 +149,7 @@ export class MCPDocsServiceAdapter implements Tool {
           improvementSuggestions: metrics.suggestions.length
         }
       };
-    } catch (error: any) // eslint-disable-line @typescript-eslint/no-explicit-any { // eslint-disable-line @typescript-eslint/no-explicit-any
+    } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
       return {
         success: false,
         toolId: this.id,
@@ -251,7 +251,7 @@ export class MCPDocsServiceAdapter implements Tool {
   /**
    * Parse MCP docs service result
    */
-  private parseMCPDocsResult(result: any) // eslint-disable-line @typescript-eslint/no-explicit-any: DocumentationMetrics {
+  private parseMCPDocsResult(result: any): DocumentationMetrics { // eslint-disable-line @typescript-eslint/no-explicit-any
     return {
       coverage: result.coverage || 0,
       quality: result.quality || 0,

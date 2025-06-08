@@ -142,7 +142,7 @@ export class GrafanaDirectAdapter extends DirectToolAdapter {
           panelsCreated: panels.length
         }
       };
-    } catch (error: any) // eslint-disable-line @typescript-eslint/no-explicit-any { // eslint-disable-line @typescript-eslint/no-explicit-any
+    } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
       return {
         success: false,
         toolId: this.id,

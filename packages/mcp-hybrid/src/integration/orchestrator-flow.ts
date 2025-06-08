@@ -139,14 +139,14 @@ export class ToolEnhancedOrchestrator {
   /**
    * Analyze PR complexity based on files and changes
    */
-  private analyzePRComplexity(gitMCPResult: any) // eslint-disable-line @typescript-eslint/no-explicit-any: any {
+  private analyzePRComplexity(gitMCPResult: any): any { // eslint-disable-line @typescript-eslint/no-explicit-any
     const files = gitMCPResult.prData.files || [];
     
     // Language detection
     const languageCounts = new Map<string, number>();
     const frameworks = new Set<string>();
     
-    files.forEach((file: any) // eslint-disable-line @typescript-eslint/no-explicit-any => {
+    files.forEach((file: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
       const ext = file.path.split('.').pop()?.toLowerCase();
       const lang = this.getLanguageFromExtension(ext);
       if (lang) {
@@ -263,7 +263,7 @@ export class ToolEnhancedOrchestrator {
   /**
    * Extract specialized contexts for each agent from repo report
    */
-  private extractSpecializedContexts(repoReport: any) // eslint-disable-line @typescript-eslint/no-explicit-any: Map<AgentRole, any> {
+  private extractSpecializedContexts(repoReport: any): Map<AgentRole, any> { // eslint-disable-line @typescript-eslint/no-explicit-any
     const contexts = new Map<AgentRole, any>();
     
     // Extract specific context for each agent role
@@ -419,17 +419,17 @@ export class ToolEnhancedOrchestrator {
   }
   
   private extractRepoName(prUrl: string): string {
-    const match = prUrl.match(/\/([^\/]+)\/pull\//);
+    const match = prUrl.match(/\/([^/]+)\/pull\//);
     return match ? match[1] : '';
   }
   
   private extractOwner(prUrl: string): string {
-    const match = prUrl.match(/github\.com\/([^\/]+)\//);
+    const match = prUrl.match(/github\.com\/([^/]+)\//);
     return match ? match[1] : '';
   }
   
   private extractRepoUrl(prUrl: string): string {
-    const match = prUrl.match(/(https:\/\/github\.com\/[^\/]+\/[^\/]+)/);
+    const match = prUrl.match(/(https:\/\/github\.com\/[^/]+\/[^/]+)/);
     return match ? match[1] : '';
   }
   

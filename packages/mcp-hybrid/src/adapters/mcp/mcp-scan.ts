@@ -89,7 +89,7 @@ export class MCPScanAdapter implements Tool {
           info: findings.filter(f => f.severity === 'low' || f.severity === 'info').length
         }
       };
-    } catch (error: any) // eslint-disable-line @typescript-eslint/no-explicit-any { // eslint-disable-line @typescript-eslint/no-explicit-any
+    } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
       return {
         success: false,
         toolId: this.id,
@@ -230,7 +230,7 @@ export class MCPScanAdapter implements Tool {
   /**
    * Parse security findings from scan results
    */
-  private parseSecurityFindings(scanResults: any) // eslint-disable-line @typescript-eslint/no-explicit-any: ToolFinding[] {
+  private parseSecurityFindings(scanResults: any): ToolFinding[] { // eslint-disable-line @typescript-eslint/no-explicit-any
     const findings: ToolFinding[] = [];
     
     // Parse vulnerabilities
