@@ -213,7 +213,7 @@ export class ContextAwareToolSelector {
             reason: 'Tool health check failed'
           });
         }
-      } catch (error: any) {
+      } catch (error: any) // eslint-disable-line @typescript-eslint/no-explicit-any { // eslint-disable-line @typescript-eslint/no-explicit-any
         excluded.push({
           toolId: tool.id,
           reason: `Tool unavailable: ${error.message}`

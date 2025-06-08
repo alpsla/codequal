@@ -87,7 +87,7 @@ export class ToolRegistry {
     this.tools.set(tool.id, tool);
     
     // Update role mappings
-    metadata.supportedRoles.forEach(role => {
+    metadata.supportedRoles.forEach((role) => {
       if (!this.roleMapping.has(role)) {
         this.roleMapping.set(role, new Set());
       }
@@ -96,7 +96,7 @@ export class ToolRegistry {
     
     // Update language mappings
     if (metadata.supportedLanguages.length > 0) {
-      metadata.supportedLanguages.forEach(lang => {
+      metadata.supportedLanguages.forEach((lang) => {
         if (!this.languageMapping.has(lang)) {
           this.languageMapping.set(lang, new Set());
         }
@@ -108,7 +108,7 @@ export class ToolRegistry {
       this.languageMapping.get('*')!.add(tool.id);
     }
     
-    console.log(`Registered tool: ${tool.id} (${tool.type})`);
+    console.info(`Registered tool: ${tool.id} (${tool.type})`);
   }
   
   /**
@@ -121,19 +121,19 @@ export class ToolRegistry {
     const metadata = tool.getMetadata();
     
     // Remove from role mappings
-    metadata.supportedRoles.forEach(role => {
+    metadata.supportedRoles.forEach((role) => {
       this.roleMapping.get(role)?.delete(toolId);
     });
     
     // Remove from language mappings
-    this.languageMapping.forEach(toolSet => {
+    this.languageMapping.forEach((toolSet) => {
       toolSet.delete(toolId);
     });
     
     // Remove from main registry
     this.tools.delete(toolId);
     
-    console.log(`Unregistered tool: ${toolId}`);
+    console.info(`Unregistered tool: ${toolId}`);
     return true;
   }
   
@@ -195,8 +195,7 @@ export class ToolRegistry {
   /**
    * Check if a tool is registered
    */
-  hasT
-(toolId: string): boolean {
+  hasTool(toolId: string): boolean {
     return this.tools.has(toolId);
   }
   
@@ -220,7 +219,7 @@ export class ToolRegistry {
     const byLanguage: Record<string, number> = {};
     
     // Count by type
-    tools.forEach(tool => {
+    tools.forEach((tool) => {
       byType[tool.type]++;
     });
     

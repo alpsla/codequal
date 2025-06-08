@@ -14,9 +14,9 @@ The MCP Hybrid system provides comprehensive tool coverage for all agent roles, 
 - SonarQube - General security checks
 
 **Code Quality** (3 tools):
-- ESLint MCP - JavaScript/TypeScript linting
+- ESLint MCP - JavaScript/TypeScript linting (✅ Implemented)
 - SonarQube - Multi-language quality (30+ languages)
-- Prettier - Code formatting
+- Prettier - Code formatting (✅ Implemented)
 
 **Architecture** (3 tools):
 - Dependency Cruiser - Dependency analysis
@@ -181,6 +181,36 @@ npm run lint
 # Type check
 npm run type-check
 ```
+
+## Implemented Tools
+
+### ESLint MCP Adapter
+
+The ESLint MCP adapter provides comprehensive JavaScript/TypeScript linting for the Code Quality role.
+
+**Features:**
+- Automatic framework detection (React, Vue, Angular)
+- TypeScript support with @typescript-eslint
+- Auto-fix suggestions for common issues
+- Custom ESLint configuration support
+- Detailed metrics (errors, warnings, fixable issues)
+
+**Usage:**
+```typescript
+import { eslintMCPAdapter } from '@codequal/mcp-hybrid';
+
+// Check if ESLint can analyze the PR
+if (eslintMCPAdapter.canAnalyze(context)) {
+  const result = await eslintMCPAdapter.analyze(context);
+  console.log(`Found ${result.findings.length} issues`);
+  console.log(`Auto-fixable: ${result.metrics.fixableIssues}`);
+}
+```
+
+**Supported File Types:**
+- `.js`, `.jsx` - JavaScript
+- `.ts`, `.tsx` - TypeScript
+- `.mjs`, `.cjs` - ES/CommonJS modules
 
 ## Adding New Tools
 

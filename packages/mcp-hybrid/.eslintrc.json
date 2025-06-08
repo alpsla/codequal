@@ -1,0 +1,32 @@
+{
+  "extends": "../../.eslintrc.json",
+  "rules": {
+    "@typescript-eslint/no-explicit-any": ["warn", {
+      "ignoreRestArgs": true,
+      "fixToUnknown": false
+    }],
+    "no-console": ["warn", { 
+      "allow": ["warn", "error", "info", "debug"] 
+    }],
+    "@typescript-eslint/no-unused-vars": ["warn", { 
+      "argsIgnorePattern": "^_",
+      "varsIgnorePattern": "^_",
+      "caughtErrorsIgnorePattern": "^_"
+    }],
+    "@typescript-eslint/explicit-module-boundary-types": "off",
+    "@typescript-eslint/ban-ts-comment": ["warn", {
+      "ts-expect-error": "allow-with-description",
+      "ts-ignore": false,
+      "ts-nocheck": false,
+      "ts-check": false
+    }]
+  },
+  "overrides": [
+    {
+      "files": ["*.test.ts", "*.spec.ts"],
+      "rules": {
+        "@typescript-eslint/no-explicit-any": "off"
+      }
+    }
+  ]
+}
