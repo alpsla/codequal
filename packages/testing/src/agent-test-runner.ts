@@ -439,7 +439,7 @@ export class AgentTestRunner {
         // Track cost if enabled
         if (this.config.trackCosts) {
           this.costTracker.trackCall(
-            selection[role],
+            selection[role]!,
             role,
             name,
             this.estimateTokenCount(JSON.stringify(prData)),
