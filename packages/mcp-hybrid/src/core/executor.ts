@@ -107,7 +107,7 @@ export class ToolExecutor {
             progress.results.set(tool.id, result);
             
             if (result.success) {
-              console.log(`✓ Tool ${tool.id} completed in ${result.executionTime}ms`);
+              console.info(`✓ Tool ${tool.id} completed in ${result.executionTime}ms`);
             } else {
               progress.failed++;
               console.error(`✗ Tool ${tool.id} failed: ${result.error?.message}`);
@@ -152,7 +152,7 @@ export class ToolExecutor {
     const results: ToolResult[] = [];
     
     // First, execute all primary tools in parallel
-    console.log('Executing primary tools in parallel...');
+    console.info('Executing primary tools in parallel...');
     const primaryPromises = tools.primary.map(tool => 
       this.executeSingleTool(tool, context, strategy.timeout)
         .then(result => {
@@ -193,7 +193,7 @@ export class ToolExecutor {
     
     // If too many primary tools failed, execute fallbacks
     if (primaryFailures > tools.primary.length / 2 && tools.fallback.length > 0) {
-      console.log('Executing fallback tools due to primary failures...');
+      console.info('Executing fallback tools due to primary failures...');
       
       const fallbackPromises = tools.fallback.map(tool => 
         this.executeSingleTool(tool, context, strategy.timeout)
@@ -252,10 +252,10 @@ export class ToolExecutor {
         progress.results.set(tool.id, result);
         
         if (strategy.failFast && !result.success) {
-          console.log('Stopping execution due to failFast strategy');
+          console.info('Stopping execution due to failFast strategy');
           break;
         }
-      } catch (error: any) {
+      } catch (error: any) // eslint-disable-line @typescript-eslint/no-explicit-any { // eslint-disable-line @typescript-eslint/no-explicit-any
         results.push({
           success: false,
           toolId: tool.id,
@@ -303,7 +303,7 @@ export class ToolExecutor {
       ]);
       
       return result;
-    } catch (error: any) {
+    } catch (error: any) // eslint-disable-line @typescript-eslint/no-explicit-any { // eslint-disable-line @typescript-eslint/no-explicit-any
       return {
         success: false,
         toolId: tool.id,

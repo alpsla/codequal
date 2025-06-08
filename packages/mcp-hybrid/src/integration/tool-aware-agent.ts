@@ -1,6 +1,6 @@
 /**
- * Tool-Aware Agent Implementation
- * Agents that use tools during analysis with parallel execution
+ * Tool-Aware Agent Integration
+ * Provides tool execution services for existing CodeQual agents
  */
 
 import {
@@ -8,10 +8,12 @@ import {
   ToolResult,
   AnalysisContext,
   AgentRole,
-  ConsolidatedToolResults
+  ConsolidatedToolResults,
+  ToolFinding
 } from '../core/interfaces';
 import { toolSelector } from '../context/selector';
-import { toolExecutor, ExecutionStrategy } from '../core/executor';
+import { toolExecutor } from '../core/executor';
+import { logging } from '@codequal/core';
 
 export interface AgentResult {
   role: AgentRole;
@@ -22,184 +24,233 @@ export interface AgentResult {
 }
 
 export interface ParallelExecutionOptions {
-  runToolsFirst: boolean;
-  toolStrategy?: ExecutionStrategy;
-  agentTimeout?: number;
+  strategy?: 'parallel-all' | 'parallel-by-role' | 'sequential';
+  maxParallel?: number;
+  timeout?: number;
 }
 
 /**
- * Base class for tool-aware agents
+ * Tool execution service for agents
+ * This service is used by the enhanced multi-agent executor
  */
-export abstract class ToolAwareAgent {
-  constructor(
-    protected role: AgentRole,
-    protected model: any // Model config
-  ) {}
+export class AgentToolService {
+  private logger = logging.createLogger('AgentToolService');
   
   /**
-   * Analyze with tools - can run tools and agent analysis in parallel
+   * Run tools for a specific agent role
+   * @param role Agent role
+   * @param context Analysis context
+   * @param options Execution options
    */
-  async analyzeWithTools(
+  async runToolsForRole(
+    role: AgentRole,
     context: AnalysisContext,
-    options: ParallelExecutionOptions = { runToolsFirst: true }
-  ): Promise<AgentResult> {
-    const startTime = Date.now();
-    
-    if (options.runToolsFirst) {
-      // Traditional approach: Tools first, then agent
-      return this.analyzeSequentially(context, options);
-    } else {
-      // Advanced approach: Tools and agent in parallel
-      return this.analyzeInParallel(context, options);
-    }
-  }
-  
-  /**
-   * Sequential execution: Tools first, then agent with results
-   */
-  private async analyzeSequentially(
-    context: AnalysisContext,
-    options: ParallelExecutionOptions
-  ): Promise<AgentResult> {
-    const startTime = Date.now();
-    
-    // 1. Select tools for this agent role
-    const selectedTools = await toolSelector.selectTools(this.role, context);
-    
-    console.log(`[${this.role}] Selected ${selectedTools.primary.length} primary tools, ${selectedTools.fallback.length} fallback tools`);
-    
-    // 2. Execute tools in parallel
-    const toolResults = await toolExecutor.executeTools(
-      selectedTools,
-      context,
-      options.toolStrategy || { mode: 'parallel-all', maxConcurrency: 10 }
-    );
-    
-    console.log(`[${this.role}] Tools executed in ${toolResults.executionTime}ms`);
-    
-    // 3. Run agent analysis with tool results
-    const agentAnalysis = await this.analyzeWithContext(context, toolResults);
-    
-    return {
-      role: this.role,
-      analysis: agentAnalysis,
-      toolResults,
-      executionTime: Date.now() - startTime,
-      modelUsed: this.model.name || 'unknown'
-    };
-  }
-  
-  /**
-   * Parallel execution: Tools and agent run simultaneously
-   */
-  private async analyzeInParallel(
-    context: AnalysisContext,
-    options: ParallelExecutionOptions
-  ): Promise<AgentResult> {
-    const startTime = Date.now();
-    
-    // 1. Select tools
-    const selectedTools = await toolSelector.selectTools(this.role, context);
-    
-    // 2. Start both tool execution and agent analysis in parallel
-    const [toolResults, agentAnalysis] = await Promise.all([
+    options: ParallelExecutionOptions = {}
+  ): Promise<ConsolidatedToolResults> {
+    try {
+      // Select tools for this role
+      const selectedTools = await toolSelector.selectTools(role, context);
+      
+      this.logger.info(
+        `Selected ${selectedTools.primary.length} primary and ${selectedTools.fallback.length} fallback tools for ${role} agent`
+      );
+      
       // Execute tools
-      toolExecutor.executeTools(
+      const results = await toolExecutor.executeTools(
         selectedTools,
         context,
-        options.toolStrategy || { mode: 'parallel-all', maxConcurrency: 10 }
-      ),
+        {
+          mode: (options.strategy || 'parallel-by-role') as 'parallel-all' | 'parallel-by-role' | 'sequential',
+          maxConcurrency: options.maxParallel || 3,
+          timeout: options.timeout || 30000
+        }
+      );
       
-      // Run agent analysis without tool results (base analysis)
-      this.analyzeWithContext(context, null)
-    ]);
-    
-    // 3. If we have tool results, enhance the agent analysis
-    const finalAnalysis = toolResults.findings.length > 0
-      ? await this.enhanceAnalysis(agentAnalysis, toolResults)
-      : agentAnalysis;
-    
-    return {
-      role: this.role,
-      analysis: finalAnalysis,
-      toolResults,
-      executionTime: Date.now() - startTime,
-      modelUsed: this.model.name || 'unknown'
-    };
+      this.logger.info(
+        `Tool execution complete for ${role}: ${results.toolsExecuted.length} succeeded, ${results.toolsFailed.length} failed`
+      );
+      
+      return results;
+    } catch (error) {
+      this.logger.error(`Error running tools for ${role}:`, error as Error);
+      
+      // Return empty results on error
+      return {
+        findings: [],
+        metrics: {},
+        toolsExecuted: [],
+        toolsFailed: [],
+        executionTime: 0
+      };
+    }
   }
   
   /**
-   * Analyze with optional tool context
+   * Format tool results for inclusion in agent prompt
+   * @param results Tool execution results
+   * @param role Agent role for context
    */
-  protected abstract analyzeWithContext(
-    context: AnalysisContext,
-    toolResults: ConsolidatedToolResults | null
-  ): Promise<any>;
+  formatToolResultsForPrompt(
+    results: ConsolidatedToolResults,
+    role: AgentRole
+  ): string {
+    const sections: string[] = [];
+    
+    // Add header
+    sections.push(`=== Tool Analysis Results for ${role} ===\n`);
+    
+    // Summary statistics
+    sections.push('Summary:');
+    sections.push(`- Tools executed: ${results.toolsExecuted.length}`);
+    sections.push(`- Total findings: ${results.findings.length}`);
+    sections.push(`- Execution time: ${results.executionTime}ms`);
+    
+    // Group findings by severity
+    const bySeverity = this.groupFindingsBySeverity(results.findings);
+    if (Object.keys(bySeverity).length > 0) {
+      sections.push('\nFindings by Severity:');
+      
+      ['critical', 'high', 'medium', 'low', 'info'].forEach(severity => {
+        const findings = bySeverity[severity];
+        if (findings && findings.length > 0) {
+          sections.push(`\n${severity.toUpperCase()} (${findings.length}):`);
+          
+          // Show top 5 findings for each severity
+          findings.slice(0, 5).forEach(f => {
+            const location = f.file ? `${f.file}:${f.line || '?'}` : 'General';
+            sections.push(`- [${location}] ${f.message}`);
+            if (f.ruleId) {
+              sections.push(`  Rule: ${f.ruleId}`);
+            }
+          });
+          
+          if (findings.length > 5) {
+            sections.push(`  ... and ${findings.length - 5} more`);
+          }
+        }
+      });
+    }
+    
+    // Add metrics
+    if (Object.keys(results.metrics).length > 0) {
+      sections.push('\nMetrics:');
+      Object.entries(results.metrics).forEach(([key, value]) => {
+        sections.push(`- ${this.formatMetricName(key)}: ${value}`);
+      });
+    }
+    
+    // Tool execution details
+    sections.push('\nTool Execution:');
+    sections.push(`- Successful: ${results.toolsExecuted.join(', ') || 'None'}`);
+    if (results.toolsFailed.length > 0) {
+      sections.push(`- Failed: ${results.toolsFailed.map(f => `${f.toolId} (${f.error})`).join(', ')}`);
+    }
+    
+    return sections.join('\n');
+  }
   
   /**
-   * Enhance analysis with tool results (for parallel execution)
+   * Create a summary object for agent consumption
    */
-  protected async enhanceAnalysis(
-    baseAnalysis: any,
-    toolResults: ConsolidatedToolResults
-  ): Promise<any> {
-    // Default implementation - subclasses can override
-    return {
-      ...baseAnalysis,
-      enhanced: true,
-      toolFindings: toolResults.findings.length,
-      toolMetrics: toolResults.metrics
+  createToolSummary(results: ConsolidatedToolResults): Record<string, any> {
+    const summary: Record<string, any> = {
+      totalFindings: results.findings.length,
+      findingsBySeverity: {},
+      findingsByCategory: {},
+      metrics: results.metrics,
+      toolsExecuted: results.toolsExecuted,
+      executionTime: results.executionTime
     };
+    
+    // Count by severity
+    results.findings.forEach(f => {
+      summary.findingsBySeverity[f.severity] = 
+        (summary.findingsBySeverity[f.severity] || 0) + 1;
+      summary.findingsByCategory[f.category] = 
+        (summary.findingsByCategory[f.category] || 0) + 1;
+    });
+    
+    // Extract auto-fixable count
+    summary.autoFixableCount = results.findings.filter(f => f.autoFixable).length;
+    
+    // Extract critical issues
+    summary.criticalIssues = results.findings
+      .filter(f => f.severity === 'critical' || f.severity === 'high')
+      .slice(0, 10)
+      .map(f => ({
+        message: f.message,
+        file: f.file,
+        line: f.line,
+        ruleId: f.ruleId
+      }));
+    
+    return summary;
+  }
+  
+  /**
+   * Group findings by severity
+   */
+  private groupFindingsBySeverity(
+    findings: ToolFinding[]
+  ): Record<string, ToolFinding[]> {
+    const grouped: Record<string, ToolFinding[]> = {};
+    
+    findings.forEach(finding => {
+      if (!grouped[finding.severity]) {
+        grouped[finding.severity] = [];
+      }
+      grouped[finding.severity].push(finding);
+    });
+    
+    return grouped;
+  }
+  
+  /**
+   * Format metric name for display
+   */
+  private formatMetricName(name: string): string {
+    return name
+      .replace(/([A-Z])/g, ' $1')
+      .replace(/_/g, ' ')
+      .trim()
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
   }
 }
 
 /**
- * Parallel execution coordinator for multiple agents
+ * Parallel execution coordinator for multiple agents with tools
  */
 export class ParallelAgentExecutor {
+  private logger = logging.createLogger('ParallelAgentExecutor');
+  private toolService = new AgentToolService();
+  
   /**
-   * Execute multiple agents with their tools in parallel
+   * Execute tools for multiple agents in parallel
+   * Returns a map of role to tool results
    */
-  async executeAgents(
-    agents: Map<AgentRole, ToolAwareAgent>,
+  async executeToolsForAgents(
+    agentRoles: AgentRole[],
     context: AnalysisContext,
-    options: {
-      parallelAgents: boolean;
-      parallelTools: boolean;
-      toolStrategy?: ExecutionStrategy;
-    } = { parallelAgents: true, parallelTools: true }
-  ): Promise<Map<AgentRole, AgentResult>> {
-    const results = new Map<AgentRole, AgentResult>();
+    options: ParallelExecutionOptions = {}
+  ): Promise<Map<AgentRole, ConsolidatedToolResults>> {
+    const results = new Map<AgentRole, ConsolidatedToolResults>();
     
-    if (options.parallelAgents) {
-      // Execute all agents in parallel
-      console.log('Executing all agents in parallel...');
-      
-      const agentPromises = Array.from(agents.entries()).map(async ([role, agent]) => {
-        const result = await agent.analyzeWithTools(context, {
-          runToolsFirst: true,
-          toolStrategy: options.toolStrategy
-        });
-        return { role, result };
-      });
-      
-      const agentResults = await Promise.all(agentPromises);
-      
-      agentResults.forEach(({ role, result }) => {
-        results.set(role, result);
-      });
-    } else {
-      // Execute agents sequentially
-      console.log('Executing agents sequentially...');
-      
-      for (const [role, agent] of agents) {
-        const result = await agent.analyzeWithTools(context, {
-          runToolsFirst: true,
-          toolStrategy: options.toolStrategy
-        });
-        results.set(role, result);
-      }
-    }
+    this.logger.info(`Executing tools for ${agentRoles.length} agents in parallel`);
+    
+    // Execute tools for all agents in parallel
+    const toolPromises = agentRoles.map(async role => {
+      const toolResults = await this.toolService.runToolsForRole(role, context, options);
+      return { role, toolResults };
+    });
+    
+    const toolExecutions = await Promise.all(toolPromises);
+    
+    // Store results
+    toolExecutions.forEach(({ role, toolResults }) => {
+      results.set(role, toolResults);
+    });
     
     // Log summary
     this.logExecutionSummary(results);
@@ -208,120 +259,33 @@ export class ParallelAgentExecutor {
   }
   
   /**
-   * Execute agents with maximum parallelism
-   */
-  async executeMaxParallel(
-    agents: Map<AgentRole, ToolAwareAgent>,
-    context: AnalysisContext
-  ): Promise<Map<AgentRole, AgentResult>> {
-    console.log('🚀 Executing with maximum parallelism...');
-    
-    // All agents run in parallel, each agent's tools also run in parallel
-    return this.executeAgents(agents, context, {
-      parallelAgents: true,
-      parallelTools: true,
-      toolStrategy: {
-        mode: 'parallel-all',
-        maxConcurrency: 20,
-        timeout: 30000
-      }
-    });
-  }
-  
-  /**
    * Log execution summary
    */
-  private logExecutionSummary(results: Map<AgentRole, AgentResult>): void {
-    console.log('\n📊 Execution Summary:');
-    console.log('====================');
-    
+  private logExecutionSummary(results: Map<AgentRole, ConsolidatedToolResults>): void {
     let totalTools = 0;
     let totalFindings = 0;
     let totalTime = 0;
     
+    const summary: string[] = ['Tool Execution Summary:'];
+    
     results.forEach((result, role) => {
-      const toolCount = result.toolResults?.toolsExecuted.length || 0;
-      const findingCount = result.toolResults?.findings.length || 0;
+      const toolCount = result.toolsExecuted.length;
+      const findingCount = result.findings.length;
       
-      console.log(`\n${role}:`);
-      console.log(`  - Execution time: ${result.executionTime}ms`);
-      console.log(`  - Tools executed: ${toolCount}`);
-      console.log(`  - Findings: ${findingCount}`);
-      console.log(`  - Model: ${result.modelUsed}`);
+      summary.push(`  ${role}: ${toolCount} tools, ${findingCount} findings, ${result.executionTime}ms`);
       
       totalTools += toolCount;
       totalFindings += findingCount;
       totalTime = Math.max(totalTime, result.executionTime);
     });
     
-    console.log('\n📈 Totals:');
-    console.log(`  - Total agents: ${results.size}`);
-    console.log(`  - Total tools: ${totalTools}`);
-    console.log(`  - Total findings: ${totalFindings}`);
-    console.log(`  - Total time: ${totalTime}ms`);
-    console.log(`  - Average time per agent: ${Math.round(totalTime / results.size)}ms`);
+    summary.push(`Total: ${results.size} agents, ${totalTools} tools, ${totalFindings} findings`);
+    summary.push(`Execution time: ${totalTime}ms`);
+    
+    this.logger.info(summary.join('\n'));
   }
 }
 
-/**
- * Example implementation of a tool-aware agent
- */
-export class SecurityToolAwareAgent extends ToolAwareAgent {
-  constructor(model: any) {
-    super('security', model);
-  }
-  
-  protected async analyzeWithContext(
-    context: AnalysisContext,
-    toolResults: ConsolidatedToolResults | null
-  ): Promise<any> {
-    // Build prompt based on whether we have tool results
-    const prompt = toolResults
-      ? this.buildPromptWithTools(context, toolResults)
-      : this.buildBasePrompt(context);
-    
-    // Call model (mock implementation)
-    const analysis = await this.model.complete(prompt);
-    
-    return {
-      securityIssues: analysis.issues || [],
-      recommendations: analysis.recommendations || [],
-      riskScore: analysis.riskScore || 0,
-      toolsUsed: toolResults?.toolsExecuted || []
-    };
-  }
-  
-  private buildPromptWithTools(
-    context: AnalysisContext,
-    toolResults: ConsolidatedToolResults
-  ): string {
-    return `
-Analyze the security of this PR with the following tool findings:
-
-Tool Results:
-${toolResults.findings.map(f => `- [${f.severity}] ${f.message}`).join('\n')}
-
-Metrics:
-${Object.entries(toolResults.metrics).map(([k, v]) => `- ${k}: ${v}`).join('\n')}
-
-PR Context:
-- Files changed: ${context.pr.files.length}
-- Primary language: ${context.repository.primaryLanguage}
-
-Provide security analysis including risk score and recommendations.
-`;
-  }
-  
-  private buildBasePrompt(context: AnalysisContext): string {
-    return `
-Analyze the security of this PR:
-
-PR Context:
-- Files changed: ${context.pr.files.length}
-- Primary language: ${context.repository.primaryLanguage}
-- Changes: ${context.pr.files.map(f => f.path).join(', ')}
-
-Provide security analysis including risk score and recommendations.
-`;
-  }
-}
+// Export singleton instances for easy use
+export const agentToolService = new AgentToolService();
+export const parallelAgentExecutor = new ParallelAgentExecutor();
