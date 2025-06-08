@@ -335,7 +335,7 @@ export class MCPToolManager {
         ...result,
         executionTime: Date.now() - startTime
       };
-    } catch (error: any) // eslint-disable-line @typescript-eslint/no-explicit-any { // eslint-disable-line @typescript-eslint/no-explicit-any
+    } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
       return {
         success: false,
         toolId: tool.id,
@@ -377,7 +377,7 @@ export class MCPToolManager {
         ...result,
         executionTime: Date.now() - startTime
       };
-    } catch (error: any) // eslint-disable-line @typescript-eslint/no-explicit-any { // eslint-disable-line @typescript-eslint/no-explicit-any
+    } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
       return {
         success: false,
         toolId: tool.id,
