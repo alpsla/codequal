@@ -6,7 +6,7 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "echo \"No tests yet\" && exit 0",
+    "test": "echo \"No tests yet\"",
     "build": "echo \"Building UI package\" && exit 0",
     "lint": "echo \"Linting UI package\" && exit 0"
   },
