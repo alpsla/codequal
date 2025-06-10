@@ -1,10 +1,10 @@
 // @ts-nocheck
-import { Agent } from '@codequal/core/types/agent';
+import { Agent } from '../agent';
 import { AgentProvider, AgentRole } from '@codequal/core/config/agent-registry';
 import { MultiAgentFactory } from '../factory';
 import { MultiAgentExecutor } from '../executor';
 import { AgentPosition, AnalysisStrategy, RepositoryData } from '../types';
-import { AnalysisResult, Insight } from '@codequal/core';
+import { AnalysisResult, Insight } from '../../../core/src';
 
 // Mock agent implementations
 const createMockAgent = (mockResult: any) => {

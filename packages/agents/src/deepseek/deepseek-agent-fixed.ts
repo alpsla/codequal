@@ -1,5 +1,5 @@
 import { BaseAgent } from '../base/base-agent';
-import { AnalysisResult, Insight, Suggestion, EducationalContent } from '@codequal/core';
+import { AnalysisResult, Insight, Suggestion, EducationalContent } from '../../../core/src';
 import { loadPromptTemplate } from '../prompts/prompt-loader';
 import { DEFAULT_MODELS_BY_PROVIDER, DEEPSEEK_MODELS, DEEPSEEK_PRICING } from '@codequal/core/config/models/model-versions';
 import { createLogger, LoggableData } from '@codequal/core/utils';

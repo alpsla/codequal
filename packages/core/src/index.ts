@@ -45,7 +45,8 @@ export type {
 // Export regular exports from ModelVersionSync
 export {
   ModelVersionSync,
-  createDeepWikiModelConfig
+  createDeepWikiModelConfig,
+  CANONICAL_MODEL_VERSIONS
 } from './services/model-selection/ModelVersionSync';
 
 // Export repository model config types
