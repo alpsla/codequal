@@ -1230,7 +1230,7 @@ export class EnhancedMultiAgentExecutor {
     agentName: string, 
     coordinationStrategy: MCPCoordinationStrategy
   ): Promise<any> {
-    const agentConfig = this.config.agents.find(a => a.role === agentName);
+    const agentConfig = this.config.agents.find(a => a.role.toString() === agentName);
     if (!agentConfig) {
       throw new Error(`Agent configuration not found for: ${agentName}`);
     }
