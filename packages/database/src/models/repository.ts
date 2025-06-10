@@ -125,7 +125,7 @@ export class RepositoryModel {
       return [];
     }
     
-    return data.map(item => this.mapToRepository(item as Tables['repositories']));
+    return data.map((item: any) => this.mapToRepository(item as Tables['repositories']));
   }
   
   /**

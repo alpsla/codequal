@@ -12,7 +12,7 @@ import { AuthenticatedUser } from '@codequal/core/types';
 import { Logger, createLogger } from '@codequal/core/utils';
 import { ResearcherAgent, ResearchConfig } from './researcher-agent';
 import { VectorContextService } from '../multi-agent/vector-context-service';
-import { CANONICAL_MODEL_VERSIONS } from '@codequal/core/services/model-selection/ModelVersionSync';
+import { CANONICAL_MODEL_VERSIONS } from '@codequal/core';
 
 // Special repository UUID for storing researcher configurations
 const RESEARCHER_CONFIG_REPO_ID = '00000000-0000-0000-0000-000000000001';

@@ -76,7 +76,7 @@ export class SkillModel {
       return [];
     }
     
-    return data.map(item => this.mapToSkillCategory(item as Tables['skill_categories']));
+    return data.map((item: any) => this.mapToSkillCategory(item as Tables['skill_categories']));
   }
   
   /**
@@ -229,7 +229,7 @@ export class SkillModel {
       return [];
     }
     
-    return data.map(item => this.mapToSkillHistoryEntry(item as Tables['skill_history']));
+    return data.map((item: any) => this.mapToSkillHistoryEntry(item as Tables['skill_history']));
   }
   
   /**

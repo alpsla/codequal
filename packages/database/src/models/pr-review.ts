@@ -231,7 +231,7 @@ export class PRReviewModel {
       return [];
     }
     
-    return data.map(item => this.mapToPRReview(item as any));
+    return data.map((item: any) => this.mapToPRReview(item));
   }
   
   /**
@@ -256,7 +256,7 @@ export class PRReviewModel {
       return [];
     }
     
-    return data.map(item => this.mapToAnalysisResult(item as Tables['analysis_results']));
+    return data.map((item: any) => this.mapToAnalysisResult(item as Tables['analysis_results']));
   }
   
   /**

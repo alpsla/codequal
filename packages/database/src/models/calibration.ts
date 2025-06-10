@@ -182,7 +182,7 @@ export class CalibrationModel {
       return [];
     }
     
-    return data.map(item => this.mapToCalibrationTestResult(item as Tables['calibration_test_results']));
+    return data.map((item: any) => this.mapToCalibrationTestResult(item as Tables['calibration_test_results']));
   }
   
   /**

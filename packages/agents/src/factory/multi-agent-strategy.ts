@@ -1,7 +1,7 @@
 import { AgentProvider, AgentRole } from '@codequal/core/config/agent-registry';
-import { AnalysisResult } from '@codequal/core';
+import { AnalysisResult } from '../../../core/src';
 import { AgentFactory } from './agent-factory';
-import { Agent, Insight, Suggestion, EducationalContent } from '@codequal/core/types/agent';
+import { Agent, Insight, Suggestion, EducationalContent } from '../agent';
 import { createLogger, LoggableData } from '@codequal/core/utils';
 
 /**
