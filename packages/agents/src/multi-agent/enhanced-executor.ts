@@ -1,4 +1,4 @@
-import { Agent } from '@codequal/core/types/agent';
+import { Agent } from '../agent';
 import { createLogger, LoggableData } from '@codequal/core/utils';
 import { v4 as uuidv4 } from 'uuid';
 import { 
@@ -1230,7 +1230,7 @@ export class EnhancedMultiAgentExecutor {
     agentName: string, 
     coordinationStrategy: MCPCoordinationStrategy
   ): Promise<any> {
-    const agentConfig = this.config.agents.find(a => a.role === agentName);
+    const agentConfig = this.config.agents.find(a => a.role.toString() === agentName);
     if (!agentConfig) {
       throw new Error(`Agent configuration not found for: ${agentName}`);
     }

@@ -1,6 +1,37 @@
-import { AgentRole } from '@codequal/core/config/agent-registry';
-import { VectorSearchResult, RepositoryVectorContext } from '@codequal/agents/multi-agent/enhanced-executor';
-import { AuthenticatedUser } from '@codequal/agents/multi-agent/types';
+// Define AuthenticatedUser type locally to avoid import issues
+export interface AuthenticatedUser {
+  id: string;
+  email?: string;
+  role?: string;
+  permissions?: any;
+  organizationId?: string;
+}
+
+import { AgentRole } from '@codequal/core';
+
+// Define types locally to avoid circular dependencies
+export interface VectorSearchResult {
+  content: string;
+  metadata: {
+    repository_id: string;
+    content_type: string;
+    analysis_type: string;
+    severity: string;
+    importance_score: number;
+    created_at: string;
+    [key: string]: any;
+  };
+  similarity_score: number;
+}
+
+export interface RepositoryVectorContext {
+  repositoryId: string;
+  recentAnalysis: VectorSearchResult[];
+  historicalPatterns: VectorSearchResult[];
+  similarIssues: VectorSearchResult[];
+  confidenceScore: number;
+  lastUpdated: Date;
+}
 
 /**
  * Mock Vector Context Service for integration tests

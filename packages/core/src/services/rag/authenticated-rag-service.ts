@@ -206,7 +206,7 @@ export class AuthenticatedRAGService {
       const languages: Record<string, string> = {};
       const domains: Record<string, string> = {};
       
-      userSkills?.forEach(skill => {
+      userSkills?.forEach((skill: any) => {
         if (skill.language) {
           languages[skill.language] = skill.skill_level;
         }
@@ -309,7 +309,7 @@ export class AuthenticatedRAGService {
       }));
     }
 
-    const accessibleRepoIds = new Set(userRepos?.map(repo => repo.id) || []);
+    const accessibleRepoIds = new Set(userRepos?.map((repo: any) => repo.id) || []);
 
     return results.map(result => ({
       ...result,
@@ -505,7 +505,7 @@ export class AuthenticatedRAGService {
         return [];
       }
 
-      return (data || []).map(repo => ({
+      return (data || []).map((repo: any) => ({
         id: repo.id,
         name: repo.name,
         url: repo.url,

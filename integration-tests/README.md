@@ -40,7 +40,49 @@
 - Resource exhaustion handling
 - Partial failure recovery
 
+## Phase 3: Agent Integration ✅ COMPLETE
+
+### Test Results
+- 3 test files created
+- Tests use existing Vector DB data (no mocking)
+- Handle missing configuration scenarios
+- Execute without MCP tools (not implemented yet)
+
+### Tests Implemented
+1. **agent-integration-vectordb.test.ts** - Retrieve configurations from existing RESEARCHER data
+2. **agent-execution-without-tools.test.ts** - Agent analysis without tool results
+3. **agent-context-enrichment.test.ts** - Context retrieval and cross-repo patterns
+
+### Key Validations
+- RESEARCHER configurations exist and are accessible
+- Missing configurations trigger RESEARCHER requests
+- Agents can analyze without tools (lower confidence)
+- Context enrichment from Vector DB works
+
 ### Next Steps
-- Phase 3: Agent Integration
-- Phase 4: Tool Integration
+- Phase 4: Tool Integration (when MCP tools implemented)
 - Phase 5: End-to-End Flows
+
+
+CodeQual Multi-Agent Framework Architecture
+🎯 Core Flow Overview
+mermaidgraph TD
+    A[User submits PR URL] --> B[Orchestrator Agent]
+    B --> C{Analyze PR Metadata}
+    C --> D[Extract Repo URL]
+    D --> E{Check Vector DB}
+    E -->|Exists| F[Pull Context for Agents]
+    E -->|Not Exists| G[Request DeepWiki Analysis]
+    G --> H[Store in Vector DB]
+    H --> F
+    F --> I[Distribute to Specialized Agents]
+    I --> J[MCP Tools Analysis]
+    J --> K[Agent Analysis]
+    K --> L[Compile Results]
+    L --> M[Educational Agent]
+    L --> N[Reporting Agent]
+    M --> O[Final Report]
+    N --> O
+    O --> P[Return to User]
+
+    Multi-agent framework can be described in couple words like: First we initiate orchestrator agent , next orchestrator getting the PR URL and analyze (maybe with help of the tool to pull PR metadata like language/s, number of files, complexity, framework from github/gitlab or in future from other providers and based on that picks right config for Deepwiki and specialized agent  analysis), next it identifies REPO URL and check our Vector DB if we have REPO report result, if yes it pulls our context for each specialized agent as input parameter and summary for itself for analysis or all specialized reports + Summary of Repo report, if no report in db it asks Deepwiki to generate it and after it stored in the db returned to the orchestrator. After report is compiled, orchestrator sends it to 2 agents Educator and Reporter agents which prepare final version of the product which returns to the orchestrator and the will be presented to user on app. Each agent before analysis, allows MCP tool make first analysis and share the result as related to the agent role pice of Deepwiki report and final analysis performed by the agent on top of these reports.  So Deepwiki will be set up by orchestrator and pick related model version from the openrouter to analyze the repo

@@ -140,16 +140,16 @@ export class MCPContextManager {
     this.coordinationStrategies.comprehensive = {
       name: 'Comprehensive Analysis',
       description: 'Thorough analysis with intelligent agent coordination',
-      execution_order: ['security', 'architecture', 'performance', 'codeQuality'],
+      execution_order: ['security', 'codeQuality', 'performance', 'dependency'],
       dependency_graph: {
-        'architecture': ['security'], // Architecture depends on security findings
-        'performance': ['architecture'], // Performance analysis uses architecture insights
-        'codeQuality': [] // Code quality runs independently
+        'codeQuality': ['security'], // Code quality depends on security findings
+        'performance': ['security', 'codeQuality'], // Performance depends on security and code quality
+        'dependency': ['security'] // Dependency analysis depends on security
       },
       parallel_groups: [
-        ['security', 'codeQuality'], // Run these in parallel first
-        ['architecture'], // Then architecture (depends on security)
-        ['performance'] // Finally performance (depends on architecture)
+        ['security'], // Security first
+        ['codeQuality', 'dependency'], // Then these in parallel
+        ['performance'] // Finally performance
       ],
       timeout_per_agent: 120000, // 2 minutes
       fallback_strategy: 'progressive_timeout'
@@ -159,17 +159,16 @@ export class MCPContextManager {
     this.coordinationStrategies.deep = {
       name: 'Deep Analysis',
       description: 'Extensive analysis with cross-agent collaboration',
-      execution_order: ['security', 'architecture', 'performance', 'codeQuality', 'dependencies'],
+      execution_order: ['security', 'codeQuality', 'performance', 'dependency'],
       dependency_graph: {
-        'architecture': ['security'],
-        'performance': ['architecture', 'security'],
-        'codeQuality': ['security'],
-        'dependencies': ['security', 'architecture']
+        'codeQuality': ['security'], // Code quality depends on security
+        'performance': ['security', 'codeQuality'], // Performance depends on both
+        'dependency': ['security'] // Dependency depends on security
       },
       parallel_groups: [
         ['security'], // Security first (everything depends on it)
-        ['architecture', 'codeQuality'], // These can run after security
-        ['performance', 'dependencies'] // These depend on earlier results
+        ['codeQuality', 'dependency'], // These can run after security
+        ['performance'] // Performance depends on earlier results
       ],
       timeout_per_agent: 300000, // 5 minutes
       fallback_strategy: 'best_effort_completion'
