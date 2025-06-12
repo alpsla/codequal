@@ -23,20 +23,24 @@ export class ToolRegistry {
   /**
    * Initialize role mappings with primary and fallback tools
    * Each role has at least 2 tools for redundancy
+   * UPDATED: June 11, 2025 - Added new Phase 2 direct tools
    */
   private initializeRoleMappings(): void {
     // Security role tools
     this.roleMapping.set('security', new Set([
-      'mcp-scan',        // Primary: security verification
-      'semgrep-mcp',     // Primary: code security scanning
-      'sonarqube'        // Fallback: general security checks
+      'mcp-scan',           // Primary: security verification
+      'semgrep-mcp',        // Primary: code security scanning
+      'npm-audit-direct',   // Primary: vulnerability scanning (NEW)
+      'sonarqube'           // Fallback: general security checks
     ]));
     
     // Code quality role tools
     this.roleMapping.set('codeQuality', new Set([
-      'eslint-mcp',      // Primary: JS/TS linting
-      'sonarqube',       // Primary: multi-language quality
-      'prettier-direct'  // Fallback: formatting checks
+      'eslint-direct',      // Primary: JS/TS linting
+      'jscpd-direct',       // Primary: copy-paste detection (NEW)
+      'sonarjs-direct',     // Primary: advanced quality rules (NEW)
+      'prettier-direct',    // Primary: formatting checks
+      'sonarqube'           // Fallback: multi-language quality
     ]));
     
     // Architecture role tools
@@ -48,16 +52,17 @@ export class ToolRegistry {
     
     // Performance role tools
     this.roleMapping.set('performance', new Set([
-      'lighthouse-direct',    // Primary: web performance
-      'sonarqube',           // Primary: code complexity
-      'bundlephobia-direct'  // Fallback: bundle size analysis
+      'lighthouse-direct',         // Primary: web performance (when implemented)
+      'bundlephobia-direct',       // Primary: bundle size analysis (NEW)
+      'sonarqube',                // Primary: code complexity
+      'sonarjs-direct'            // Fallback: complexity metrics (NEW)
     ]));
     
-    // Dependency role tools
+    // Dependency role tools (focused on package management)
     this.roleMapping.set('dependency', new Set([
-      'npm-audit-direct',     // Primary: security audit
-      'license-checker-direct', // Primary: license compliance
-      'outdated-direct'       // Fallback: version checks
+      'npm-audit-direct',          // Primary: security vulnerabilities (NEW)
+      'license-checker-direct',    // Primary: license compliance (NEW)
+      'npm-outdated-direct'        // Primary: version currency (NEW)
     ]));
     
     // Educational role tools

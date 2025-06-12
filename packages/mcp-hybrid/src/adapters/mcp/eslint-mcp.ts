@@ -3,11 +3,10 @@
  * Primary code quality tool for JavaScript/TypeScript analysis
  */
 
-import { spawn, ChildProcess } from 'child_process';
 import * as path from 'path';
 import * as fs from 'fs/promises';
+import { BaseMCPAdapter } from './base-mcp-adapter';
 import {
-  Tool,
   ToolResult,
   ToolFinding,
   AnalysisContext,
@@ -57,10 +56,9 @@ interface ESLintResult {
   }>;
 }
 
-export class ESLintMCPAdapter implements Tool {
+export class ESLintMCPAdapter extends BaseMCPAdapter {
   readonly id = 'eslint-mcp';
   readonly name = 'ESLint MCP';
-  readonly type = 'mcp' as const;
   readonly version = '9.0.0';
   
   readonly capabilities: ToolCapability[] = [
@@ -94,8 +92,7 @@ export class ESLintMCPAdapter implements Tool {
     }
   };
   
-  private mcpProcess?: ChildProcess;
-  private isInitialized = false;
+  protected readonly mcpServerArgs = ['@eslint/mcp'];
   
   /**
    * Check if tool can analyze given context
@@ -115,41 +112,24 @@ export class ESLintMCPAdapter implements Tool {
    */
   async analyze(context: AnalysisContext): Promise<ToolResult> {
     const startTime = Date.now();
-    const findings: ToolFinding[] = [];
     
     try {
       // Initialize MCP server if not already running
-      if (!this.isInitialized) {
-        await this.initialize();
-      }
+      await this.initializeMCPServer();
       
       // Filter files for ESLint analysis
-      const jstsFiles = context.pr.files.filter(file => {
-        const ext = path.extname(file.path).toLowerCase();
-        const supported = ['.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs'];
-        return supported.includes(ext) && file.changeType !== 'deleted';
-      });
+      const supportedExtensions = ['.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs'];
+      const jstsFiles = this.filterSupportedFiles(context.pr.files, supportedExtensions);
       
       if (jstsFiles.length === 0) {
-        return {
-          success: true,
-          toolId: this.id,
-          executionTime: Date.now() - startTime,
-          findings: [],
-          metrics: {
-            filesAnalyzed: 0,
-            errors: 0,
-            warnings: 0,
-            fixable: 0
-          }
-        };
+        return this.createEmptyResult(startTime);
       }
       
-      // Run ESLint on each file
+      // Run ESLint on files
       const results = await this.runESLint(jstsFiles, context);
       
       // Parse results into findings
-      findings.push(...this.parseESLintResults(results));
+      const findings = this.parseESLintResults(results);
       
       // Calculate metrics
       const metrics = this.calculateMetrics(results);
@@ -161,44 +141,12 @@ export class ESLintMCPAdapter implements Tool {
         findings,
         metrics
       };
-    } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
-      return {
-        success: false,
-        toolId: this.id,
-        executionTime: Date.now() - startTime,
-        error: {
-          code: 'ESLINT_FAILED',
-          message: error.message,
-          recoverable: true
-        }
-      };
+    } catch (error) {
+      return this.createErrorResult(
+        error instanceof Error ? error : new Error(String(error)),
+        startTime
+      );
     }
-  }
-  
-  /**
-   * Initialize ESLint MCP server
-   */
-  private async initialize(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      // Start ESLint MCP server
-      this.mcpProcess = spawn('npx', ['@eslint/mcp'], {
-        stdio: ['pipe', 'pipe', 'pipe'],
-        env: {
-          ...process.env,
-          NODE_ENV: 'production'
-        }
-      });
-      
-      this.mcpProcess.on('error', (error) => {
-        reject(new Error(`Failed to start ESLint MCP server: ${error.message}`));
-      });
-      
-      // Wait for server to be ready
-      setTimeout(() => {
-        this.isInitialized = true;
-        resolve();
-      }, 2000);
-    });
   }
   
   /**
@@ -209,20 +157,13 @@ export class ESLintMCPAdapter implements Tool {
     context: AnalysisContext
   ): Promise<ESLintResult[]> {
     const results: ESLintResult[] = [];
-    
-    // Create temporary directory for analysis
-    const tempDir = `/tmp/eslint-${context.userContext.userId}-${Date.now()}`;
-    await fs.mkdir(tempDir, { recursive: true });
+    const tempDir = await this.createTempDirectory(context);
     
     try {
       // Write files to temp directory
-      for (const file of files) {
-        const filePath = path.join(tempDir, file.path);
-        await fs.mkdir(path.dirname(filePath), { recursive: true });
-        await fs.writeFile(filePath, file.content);
-      }
+      await this.writeFilesToTemp(files, tempDir);
       
-      // Check if there's a custom ESLint config in the PR
+      // Check for custom ESLint config in PR
       const configFile = context.pr.files.find(f => 
         f.path === '.eslintrc.js' || 
         f.path === '.eslintrc.json' ||
@@ -240,9 +181,9 @@ export class ESLintMCPAdapter implements Tool {
       }
       
       // Run ESLint via MCP
-      const eslintResults = await this.executeMCPCommand({
-        command: 'lint',
-        args: {
+      const eslintResults = await this.executeMCPCommand<ESLintResult[]>({
+        method: 'lint',
+        params: {
           files: files.map(f => path.join(tempDir, f.path)),
           format: 'json',
           fix: false // Don't auto-fix for analysis
@@ -267,7 +208,7 @@ export class ESLintMCPAdapter implements Tool {
       }
     } finally {
       // Cleanup temp directory
-      await fs.rm(tempDir, { recursive: true, force: true });
+      await this.cleanupTempDirectory(tempDir);
     }
     
     return results;
@@ -280,7 +221,7 @@ export class ESLintMCPAdapter implements Tool {
     const frameworks = context.repository.frameworks || [];
     const isTypeScript = context.repository.languages.includes('typescript');
     
-    const config: any = { // eslint-disable-line @typescript-eslint/no-explicit-any
+    const config: Record<string, any> = {
       env: {
         browser: true,
         es2021: true,
@@ -343,53 +284,6 @@ export class ESLintMCPAdapter implements Tool {
     // Write config file
     const configPath = path.join(tempDir, '.eslintrc.json');
     await fs.writeFile(configPath, JSON.stringify(config, null, 2));
-  }
-  
-  /**
-   * Execute MCP command
-   */
-  private async executeMCPCommand(command: any): Promise<any> { // eslint-disable-line @typescript-eslint/no-explicit-any
-    return new Promise((resolve, reject) => {
-      if (!this.mcpProcess) {
-        reject(new Error('ESLint MCP server not initialized'));
-        return;
-      }
-      
-      // Send command to MCP server
-      const request = {
-        jsonrpc: '2.0',
-        method: command.command,
-        params: command.args,
-        id: Date.now()
-      };
-      
-      this.mcpProcess.stdin?.write(JSON.stringify(request) + '\n');
-      
-      // Handle response
-      const handleResponse = (data: Buffer) => {
-        try {
-          const response = JSON.parse(data.toString());
-          if (response.id === request.id) {
-            if (response.error) {
-              reject(new Error(response.error.message));
-            } else {
-              resolve(response.result);
-            }
-            this.mcpProcess?.stdout?.off('data', handleResponse);
-          }
-        } catch (error) {
-          // Partial data, wait for more
-        }
-      };
-      
-      this.mcpProcess.stdout?.on('data', handleResponse);
-      
-      // Timeout
-      setTimeout(() => {
-        this.mcpProcess?.stdout?.off('data', handleResponse);
-        reject(new Error('ESLint MCP command timeout'));
-      }, this.requirements.timeout);
-    });
   }
   
   /**
@@ -489,48 +383,6 @@ export class ESLintMCPAdapter implements Tool {
         ? (totalErrors + totalWarnings) / results.length 
         : 0
     };
-  }
-  
-  /**
-   * Map ESLint severity to tool severity
-   */
-  private mapSeverity(eslintSeverity: 1 | 2): ToolFinding['severity'] {
-    return eslintSeverity === 2 ? 'high' : 'medium';
-  }
-  
-  /**
-   * Health check
-   */
-  async healthCheck(): Promise<boolean> {
-    try {
-      // Check if we can run eslint
-      return new Promise((resolve) => {
-        const child = spawn('npx', ['eslint', '--version'], {
-          timeout: 5000
-        });
-        
-        child.on('close', (code) => {
-          resolve(code === 0);
-        });
-        
-        child.on('error', () => {
-          resolve(false);
-        });
-      });
-    } catch {
-      return false;
-    }
-  }
-  
-  /**
-   * Cleanup when shutting down
-   */
-  async cleanup(): Promise<void> {
-    if (this.mcpProcess) {
-      this.mcpProcess.kill();
-      this.mcpProcess = undefined;
-      this.isInitialized = false;
-    }
   }
   
   /**

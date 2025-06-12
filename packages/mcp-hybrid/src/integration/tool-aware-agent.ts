@@ -48,17 +48,23 @@ export class AgentToolService {
     options: ParallelExecutionOptions = {}
   ): Promise<ConsolidatedToolResults> {
     try {
-      // Select tools for this role
-      const selectedTools = await toolSelector.selectTools(role, context);
+      // ENSURE agentRole is set in context for role-based filtering
+      const contextWithRole: AnalysisContext = {
+        ...context,
+        agentRole: role  // Override/ensure the role is set
+      };
+      
+      // Select tools for this role using enhanced context
+      const selectedTools = await toolSelector.selectTools(role, contextWithRole);
       
       this.logger.info(
         `Selected ${selectedTools.primary.length} primary and ${selectedTools.fallback.length} fallback tools for ${role} agent`
       );
       
-      // Execute tools
+      // Execute tools with role-aware context
       const results = await toolExecutor.executeTools(
         selectedTools,
-        context,
+        contextWithRole,  // Pass context with role
         {
           mode: (options.strategy || 'parallel-by-role') as 'parallel-all' | 'parallel-by-role' | 'sequential',
           maxConcurrency: options.maxParallel || 3,
@@ -241,7 +247,12 @@ export class ParallelAgentExecutor {
     
     // Execute tools for all agents in parallel
     const toolPromises = agentRoles.map(async role => {
-      const toolResults = await this.toolService.runToolsForRole(role, context, options);
+      // Ensure each role execution has the role set in context
+      const roleContext: AnalysisContext = {
+        ...context,
+        agentRole: role
+      };
+      const toolResults = await this.toolService.runToolsForRole(role, roleContext, options);
       return { role, toolResults };
     });
     
