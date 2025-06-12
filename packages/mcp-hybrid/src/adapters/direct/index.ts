@@ -21,18 +21,18 @@ export { NpmOutdatedDirectAdapter, npmOutdatedDirectAdapter } from './npm-outdat
 export { BundlephobiaDirectAdapter, bundlephobiaDirectAdapter } from './bundlephobia-direct';
 export { SonarJSDirectAdapter, sonarJSDirectAdapter } from './sonarjs-direct';
 
+// Import all adapters for factory functions
+import { eslintDirectAdapter } from './eslint-direct';
+import { prettierDirectAdapter, dependencyCruiserDirectAdapter } from './base-adapter';
+import { GrafanaDirectAdapter } from './grafana-adapter';
+import { npmOutdatedDirectAdapter } from './npm-outdated-direct';
+import { bundlephobiaDirectAdapter } from './bundlephobia-direct';
+import { sonarJSDirectAdapter } from './sonarjs-direct';
+
 /**
  * Factory function to create all available direct adapters
  */
 export function createAllDirectAdapters() {
-  // Import the singleton instances
-  const { eslintDirectAdapter } = require('./eslint-direct');
-  const { prettierDirectAdapter, dependencyCruiserDirectAdapter } = require('./base-adapter');
-  const { GrafanaDirectAdapter } = require('./grafana-adapter');
-  const { npmOutdatedDirectAdapter } = require('./npm-outdated-direct');
-  const { bundlephobiaDirectAdapter } = require('./bundlephobia-direct');
-  const { sonarJSDirectAdapter } = require('./sonarjs-direct');
-  
   return [
     // Existing working adapters
     eslintDirectAdapter,

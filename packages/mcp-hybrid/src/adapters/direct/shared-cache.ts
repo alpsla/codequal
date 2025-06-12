@@ -18,7 +18,9 @@ export class SharedToolResultsCache {
   private cache = new Map<string, CachedResult>();
   private readonly maxAge = 300000; // 5 minutes
   
-  private constructor() {}
+  private constructor() {
+    // Private constructor for singleton pattern
+  }
   
   static getInstance(): SharedToolResultsCache {
     if (!SharedToolResultsCache.instance) {
