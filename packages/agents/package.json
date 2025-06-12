@@ -4,6 +4,32 @@
   "type": "commonjs",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./researcher/researcher-service": {
+      "types": "./dist/researcher/researcher-service.d.ts",
+      "default": "./dist/researcher/researcher-service.js"
+    },
+    "./researcher/researcher-agent": {
+      "types": "./dist/researcher/researcher-agent.d.ts",
+      "default": "./dist/researcher/researcher-agent.js"
+    },
+    "./multi-agent/vector-context-service": {
+      "types": "./dist/multi-agent/vector-context-service.d.ts",
+      "default": "./dist/multi-agent/vector-context-service.js"
+    },
+    "./multi-agent/enhanced-executor": {
+      "types": "./dist/multi-agent/enhanced-executor.d.ts",
+      "default": "./dist/multi-agent/enhanced-executor.js"
+    },
+    "./multi-agent/types/auth": {
+      "types": "./dist/multi-agent/types/auth.d.ts",
+      "default": "./dist/multi-agent/types/auth.js"
+    }
+  },
   "scripts": {
     "test-build": "rm -rf ./dist ./src/codewhisperer* && tsc",
     "build": "echo 'Building...' && rm -rf ./dist ./src/codewhisperer* && tsc --composite false && echo 'Build completed successfully!'",

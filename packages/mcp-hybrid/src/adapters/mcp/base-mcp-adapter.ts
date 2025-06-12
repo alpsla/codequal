@@ -28,7 +28,7 @@ export abstract class BaseMCPAdapter extends EventEmitter implements Tool {
   
   protected mcpProcess?: ChildProcess;
   protected isInitialized = false;
-  protected mcpServerCommand: string = 'npx';
+  protected mcpServerCommand = 'npx';
   protected abstract mcpServerArgs: string[];
   
   constructor() {
