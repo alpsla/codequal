@@ -3,10 +3,9 @@
  * Security scanning tool that must run first to verify other tools
  */
 
-import { spawn } from 'child_process';
 import * as path from 'path';
+import { BaseMCPAdapter } from './base-mcp-adapter';
 import {
-  Tool,
   ToolResult,
   ToolFinding,
   AnalysisContext,
@@ -16,10 +15,48 @@ import {
   AgentRole
 } from '../../core/interfaces';
 
-export class MCPScanAdapter implements Tool {
+interface SecurityVulnerability {
+  id: string;
+  severity: 'critical' | 'high' | 'medium' | 'low' | 'info';
+  type: string;
+  message: string;
+  file?: string;
+  line?: number;
+  column?: number;
+  endLine?: number;
+  endColumn?: number;
+  cwe?: string;
+  owasp?: string;
+  fixAvailable?: boolean;
+  reference?: string;
+}
+
+interface ToolVerificationResult {
+  toolId: string;
+  safe: boolean;
+  version?: string;
+  lastUpdated?: string;
+  vulnerabilities?: string[];
+  warnings?: string[];
+  recommendation?: string;
+}
+
+interface MCPScanResponse {
+  vulnerabilities: SecurityVulnerability[];
+  toolVerifications?: ToolVerificationResult[];
+  summary: {
+    filesScanned: number;
+    vulnerabilitiesFound: number;
+    criticalCount: number;
+    highCount: number;
+    mediumCount: number;
+    lowCount: number;
+  };
+}
+
+export class MCPScanAdapter extends BaseMCPAdapter {
   readonly id = 'mcp-scan';
   readonly name = 'MCP Security Scanner';
-  readonly type = 'mcp' as const;
   readonly version = '1.0.0';
   
   readonly capabilities: ToolCapability[] = [
@@ -34,11 +71,17 @@ export class MCPScanAdapter implements Tool {
       category: 'security',
       languages: [],
       fileTypes: []
+    },
+    {
+      name: 'vulnerability-detection',
+      category: 'security',
+      languages: [],
+      fileTypes: []
     }
   ];
   
   readonly requirements: ToolRequirements = {
-    minFiles: 1,
+    minFiles: 0, // Can scan tools even without files
     executionMode: 'on-demand',
     timeout: 30000, // 30 seconds
     authentication: {
@@ -47,12 +90,15 @@ export class MCPScanAdapter implements Tool {
     }
   };
   
+  protected readonly mcpServerArgs = ['@codequal/mcp-scan'];
+  
   /**
    * Check if tool can analyze given context
    */
   canAnalyze(context: AnalysisContext): boolean {
-    // MCP-Scan can analyze any context with at least one file
-    return context.pr.files.length > 0;
+    // MCP-Scan is always available for security role
+    // Or when there are files to scan
+    return context.agentRole === 'security' || context.pr.files.length > 0;
   }
   
   /**
@@ -60,286 +106,295 @@ export class MCPScanAdapter implements Tool {
    */
   async analyze(context: AnalysisContext): Promise<ToolResult> {
     const startTime = Date.now();
-    const findings: ToolFinding[] = [];
     
     try {
-      // Run security scan on PR files
-      const scanResults = await this.runSecurityScan(context);
+      // Initialize MCP server if not already running
+      await this.initializeMCPServer();
       
-      // Parse results into findings
-      findings.push(...this.parseSecurityFindings(scanResults));
+      // Prepare files for scanning
+      const filesToScan = this.filterSupportedFiles(
+        context.pr.files,
+        [] // All file types supported
+      );
       
-      // If this is for tool verification, also scan tools
-      if (context.vectorDBConfig?.enabledTools) {
-        const toolScanResults = await this.scanTools(
-          context.vectorDBConfig.enabledTools
-        );
-        findings.push(...this.parseToolFindings(toolScanResults));
-      }
+      // Create temp directory and write files
+      const tempDir = await this.createTempDirectory(context);
       
-      return {
-        success: true,
-        toolId: this.id,
-        executionTime: Date.now() - startTime,
-        findings,
-        metrics: {
-          filesScanned: context.pr.files.length,
-          securityIssues: findings.filter(f => f.severity === 'critical' || f.severity === 'high').length,
-          warnings: findings.filter(f => f.severity === 'medium').length,
-          info: findings.filter(f => f.severity === 'low' || f.severity === 'info').length
-        }
-      };
-    } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
-      return {
-        success: false,
-        toolId: this.id,
-        executionTime: Date.now() - startTime,
-        error: {
-          code: 'SCAN_FAILED',
-          message: error.message,
-          recoverable: true
-        }
-      };
-    }
-  }
-  
-  /**
-   * Run security scan on PR files
-   */
-  private async runSecurityScan(context: AnalysisContext): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const args = [
-        'scan',
-        '--format', 'json',
-        '--severity', 'low',
-        '--timeout', '30s'
-      ];
-      
-      // Add file paths
-      const filePaths = context.pr.files
-        .filter(f => f.changeType !== 'deleted')
-        .map(f => f.path);
-      
-      if (filePaths.length === 0) {
-        resolve({ vulnerabilities: [] });
-        return;
-      }
-      
-      args.push(...filePaths);
-      
-      const child = spawn('npx', ['mcp-scan', ...args], {
-        cwd: process.cwd(),
-        timeout: this.requirements.timeout
-      });
-      
-      let stdout = '';
-      let stderr = '';
-      
-      child.stdout.on('data', (data) => {
-        stdout += data.toString();
-      });
-      
-      child.stderr.on('data', (data) => {
-        stderr += data.toString();
-      });
-      
-      child.on('close', (code) => {
-        if (code === 0) {
-          try {
-            const result = JSON.parse(stdout);
-            resolve(result);
-          } catch {
-            // Fallback for non-JSON output
-            resolve({ vulnerabilities: [], rawOutput: stdout });
-          }
-        } else {
-          reject(new Error(`MCP-Scan failed with code ${code}: ${stderr}`));
-        }
-      });
-      
-      child.on('error', (error) => {
-        reject(error);
-      });
-    });
-  }
-  
-  /**
-   * Scan tools for security issues
-   */
-  private async scanTools(toolIds: string[]): Promise<any> {
-    // Scan each tool for known vulnerabilities
-    const results = [];
-    
-    for (const toolId of toolIds) {
       try {
-        const scanResult = await this.scanSingleTool(toolId);
-        results.push({ toolId, ...scanResult });
-      } catch (error) {
-        console.error(`Failed to scan tool ${toolId}:`, error);
-        results.push({
-          toolId,
-          error: error instanceof Error ? error.message : String(error),
-          safe: false
-        });
+        if (filesToScan.length > 0) {
+          await this.writeFilesToTemp(filesToScan, tempDir);
+        }
+        
+        // Run security scan via MCP
+        const scanResults = await this.performSecurityScan(
+          tempDir,
+          filesToScan,
+          context
+        );
+        
+        // Parse results into findings
+        const findings = this.parseSecurityFindings(scanResults, filesToScan);
+        
+        // Calculate metrics
+        const metrics = this.calculateMetrics(scanResults);
+        
+        return {
+          success: true,
+          toolId: this.id,
+          executionTime: Date.now() - startTime,
+          findings,
+          metrics
+        };
+      } finally {
+        // Cleanup temp directory
+        await this.cleanupTempDirectory(tempDir);
       }
+    } catch (error) {
+      return this.createErrorResult(
+        error instanceof Error ? error : new Error(String(error)),
+        startTime
+      );
     }
-    
-    return results;
   }
   
   /**
-   * Scan a single tool
+   * Perform security scan via MCP
    */
-  private async scanSingleTool(toolId: string): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const child = spawn('npx', [
-        'mcp-scan',
-        'verify-tool',
-        toolId,
-        '--format', 'json'
-      ], {
-        timeout: 10000 // 10 seconds per tool
-      });
-      
-      let stdout = '';
-      
-      child.stdout.on('data', (data) => {
-        stdout += data.toString();
-      });
-      
-      child.on('close', (code) => {
-        if (code === 0) {
-          try {
-            const result = JSON.parse(stdout);
-            resolve(result);
-          } catch {
-            resolve({ safe: true, message: 'Tool verified' });
-          }
-        } else {
-          resolve({ safe: false, message: 'Verification failed' });
-        }
-      });
-      
-      child.on('error', () => {
-        // If mcp-scan doesn't support tool verification, assume safe
-        resolve({ safe: true, message: 'Tool verification not available' });
-      });
+  private async performSecurityScan(
+    tempDir: string,
+    files: Array<{ path: string; content: string }>,
+    context: AnalysisContext
+  ): Promise<MCPScanResponse> {
+    // Prepare scan parameters
+    const scanParams: Record<string, unknown> = {
+      directory: tempDir,
+      files: files.map(f => path.join(tempDir, f.path)),
+      scanType: 'comprehensive',
+      includeDevDependencies: true,
+      checkPatterns: true,
+      detectSecrets: true,
+      detectHardcodedCredentials: true
+    };
+    
+    // If context includes tools to verify, add them
+    if (context.vectorDBConfig?.enabledTools) {
+      scanParams.verifyTools = context.vectorDBConfig.enabledTools;
+    }
+    
+    // Add language-specific rules
+    if (context.repository.languages.length > 0) {
+      scanParams.languages = context.repository.languages;
+    }
+    
+    // Execute scan via MCP
+    const response = await this.executeMCPCommand<MCPScanResponse>({
+      method: 'scan',
+      params: scanParams
     });
+    
+    return response;
   }
   
   /**
    * Parse security findings from scan results
    */
-  private parseSecurityFindings(scanResults: any): ToolFinding[] { // eslint-disable-line @typescript-eslint/no-explicit-any
+  private parseSecurityFindings(
+    scanResults: MCPScanResponse,
+    scannedFiles: Array<{ path: string; content: string }>
+  ): ToolFinding[] {
     const findings: ToolFinding[] = [];
     
     // Parse vulnerabilities
     if (scanResults.vulnerabilities && Array.isArray(scanResults.vulnerabilities)) {
       for (const vuln of scanResults.vulnerabilities) {
-        findings.push({
+        const finding: ToolFinding = {
           type: 'issue',
           severity: this.mapSeverity(vuln.severity),
           category: 'security',
-          message: vuln.message || vuln.description,
+          message: vuln.message,
           file: vuln.file,
           line: vuln.line,
           column: vuln.column,
-          ruleId: vuln.rule || vuln.cwe,
-          documentation: vuln.documentation || vuln.reference
-        });
+          ruleId: vuln.id || vuln.cwe,
+          documentation: this.generateDocumentation(vuln)
+        };
+        
+        // Add fix information if available
+        if (vuln.fixAvailable) {
+          finding.autoFixable = true;
+          finding.fix = {
+            description: `Apply security fix for ${vuln.type}`,
+            changes: [] // Would need specific fix details
+          };
+        }
+        
+        findings.push(finding);
       }
     }
     
-    // Parse other security issues
-    if (scanResults.issues && Array.isArray(scanResults.issues)) {
-      for (const issue of scanResults.issues) {
-        findings.push({
-          type: 'issue',
-          severity: this.mapSeverity(issue.level),
-          category: 'security',
-          message: issue.message,
-          file: issue.location?.file,
-          line: issue.location?.line,
-          ruleId: issue.id
-        });
+    // Parse tool verification results
+    if (scanResults.toolVerifications && Array.isArray(scanResults.toolVerifications)) {
+      for (const toolResult of scanResults.toolVerifications) {
+        if (!toolResult.safe) {
+          findings.push({
+            type: 'issue',
+            severity: 'critical',
+            category: 'security',
+            message: `⚠️ Tool '${toolResult.toolId}' failed security verification`,
+            ruleId: 'unsafe-tool',
+            documentation: this.generateToolVerificationDoc(toolResult)
+          });
+        } else if (toolResult.warnings && toolResult.warnings.length > 0) {
+          for (const warning of toolResult.warnings) {
+            findings.push({
+              type: 'suggestion',
+              severity: 'medium',
+              category: 'security',
+              message: `Tool '${toolResult.toolId}': ${warning}`,
+              ruleId: 'tool-warning'
+            });
+          }
+        }
       }
+    }
+    
+    // Add summary finding if critical issues found
+    const criticalCount = scanResults.summary.criticalCount;
+    if (criticalCount > 0) {
+      findings.unshift({
+        type: 'issue',
+        severity: 'critical',
+        category: 'security',
+        message: `🚨 ${criticalCount} critical security ${criticalCount === 1 ? 'issue' : 'issues'} found!`,
+        ruleId: 'security-summary',
+        documentation: 'Immediate action required. Review and fix all critical security issues before merging.'
+      });
     }
     
     return findings;
   }
   
   /**
-   * Parse tool verification findings
+   * Generate documentation for vulnerability
    */
-  private parseToolFindings(toolResults: any[]): ToolFinding[] { // eslint-disable-line @typescript-eslint/no-explicit-any
-    const findings: ToolFinding[] = [];
+  private generateDocumentation(vuln: SecurityVulnerability): string {
+    const parts: string[] = [];
     
-    for (const result of toolResults) {
-      if (!result.safe) {
-        findings.push({
-          type: 'issue',
-          severity: 'high',
-          category: 'security',
-          message: `Tool ${result.toolId} failed security verification: ${result.message || 'Unknown issue'}`,
-          ruleId: 'tool-security'
-        });
-      }
-      
-      if (result.warnings && Array.isArray(result.warnings)) {
-        for (const warning of result.warnings) {
-          findings.push({
-            type: 'suggestion',
-            severity: 'medium',
-            category: 'security',
-            message: `Tool ${result.toolId}: ${warning}`,
-            ruleId: 'tool-warning'
-          });
-        }
-      }
+    parts.push(`**${vuln.type}**`);
+    parts.push('');
+    parts.push(vuln.message);
+    
+    if (vuln.cwe) {
+      parts.push('');
+      parts.push(`**CWE:** ${vuln.cwe}`);
     }
     
-    return findings;
+    if (vuln.owasp) {
+      parts.push(`**OWASP:** ${vuln.owasp}`);
+    }
+    
+    if (vuln.reference) {
+      parts.push('');
+      parts.push(`**Reference:** ${vuln.reference}`);
+    }
+    
+    if (vuln.fixAvailable) {
+      parts.push('');
+      parts.push('✅ **Automated fix available**');
+    }
+    
+    return parts.join('\n');
+  }
+  
+  /**
+   * Generate tool verification documentation
+   */
+  private generateToolVerificationDoc(result: ToolVerificationResult): string {
+    const parts: string[] = [];
+    
+    parts.push(`Tool ${result.toolId} verification failed.`);
+    
+    if (result.vulnerabilities && result.vulnerabilities.length > 0) {
+      parts.push('');
+      parts.push('**Known vulnerabilities:**');
+      result.vulnerabilities.forEach(v => parts.push(`- ${v}`));
+    }
+    
+    if (result.recommendation) {
+      parts.push('');
+      parts.push(`**Recommendation:** ${result.recommendation}`);
+    }
+    
+    return parts.join('\n');
+  }
+  
+  /**
+   * Calculate metrics from scan results
+   */
+  private calculateMetrics(scanResults: MCPScanResponse): Record<string, number> {
+    const summary = scanResults.summary;
+    
+    return {
+      filesScanned: summary.filesScanned,
+      totalVulnerabilities: summary.vulnerabilitiesFound,
+      criticalIssues: summary.criticalCount,
+      highIssues: summary.highCount,
+      mediumIssues: summary.mediumCount,
+      lowIssues: summary.lowCount,
+      securityScore: this.calculateSecurityScore(summary),
+      toolsVerified: scanResults.toolVerifications?.length || 0,
+      unsafeTools: scanResults.toolVerifications?.filter(t => !t.safe).length || 0
+    };
+  }
+  
+  /**
+   * Calculate security score (0-100)
+   */
+  private calculateSecurityScore(summary: MCPScanResponse['summary']): number {
+    // Simple scoring algorithm
+    const weights = {
+      critical: 25,
+      high: 10,
+      medium: 5,
+      low: 1
+    };
+    
+    const deductions = 
+      summary.criticalCount * weights.critical +
+      summary.highCount * weights.high +
+      summary.mediumCount * weights.medium +
+      summary.lowCount * weights.low;
+    
+    const score = Math.max(0, 100 - deductions);
+    return Math.round(score);
   }
   
   /**
    * Map severity levels
    */
-  private mapSeverity(level: string): ToolFinding['severity'] {
-    switch (level?.toLowerCase()) {
-      case 'critical':
-      case 'error':
-        return 'critical';
-      case 'high':
-      case 'warning':
-        return 'high';
-      case 'medium':
-      case 'moderate':
-        return 'medium';
-      case 'low':
-      case 'minor':
-        return 'low';
-      default:
-        return 'info';
-    }
+  protected mapSeverity(severity: string): ToolFinding['severity'] {
+    const severityMap: Record<string, ToolFinding['severity']> = {
+      'critical': 'critical',
+      'high': 'high',
+      'medium': 'medium',
+      'low': 'low',
+      'info': 'info'
+    };
+    
+    return severityMap[severity.toLowerCase()] || 'info';
   }
   
   /**
-   * Health check
+   * Override filterSupportedFiles to support all file types
    */
-  async healthCheck(): Promise<boolean> {
-    return new Promise((resolve) => {
-      const child = spawn('npx', ['mcp-scan', '--version'], {
-        timeout: 5000
-      });
-      
-      child.on('close', (code) => {
-        resolve(code === 0);
-      });
-      
-      child.on('error', () => {
-        resolve(false);
-      });
-    });
+  protected filterSupportedFiles(
+    files: Array<{ path: string; content: string; changeType: string }>,
+    supportedExtensions: string[]
+  ): Array<{ path: string; content: string }> {
+    // MCP-Scan supports all file types, so we don't filter by extension
+    return files
+      .filter(file => file.changeType !== 'deleted')
+      .map(({ path, content }) => ({ path, content }));
   }
   
   /**
@@ -349,14 +404,14 @@ export class MCPScanAdapter implements Tool {
     return {
       id: this.id,
       name: this.name,
-      description: 'MCP Security Scanner for code and tool verification',
+      description: 'MCP Security Scanner for comprehensive vulnerability detection and tool verification',
       author: 'CodeQual',
       homepage: 'https://github.com/codequal/mcp-scan',
       documentationUrl: 'https://docs.codequal.com/tools/mcp-scan',
       supportedRoles: ['security'] as AgentRole[],
       supportedLanguages: [], // All languages
       supportedFrameworks: [],
-      tags: ['security', 'scanning', 'verification'],
+      tags: ['security', 'scanning', 'verification', 'vulnerabilities', 'cwe', 'owasp'],
       securityVerified: true,
       lastVerified: new Date('2025-06-07')
     };

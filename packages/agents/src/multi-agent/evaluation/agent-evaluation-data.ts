@@ -152,6 +152,7 @@ export const defaultTemperatures: Record<AgentRole, number> = {
   [AgentRole.CODE_QUALITY]: 0.2,   // More deterministic
   [AgentRole.SECURITY]: 0.3,       // Balanced
   [AgentRole.PERFORMANCE]: 0.25,   // More deterministic
+  [AgentRole.ARCHITECTURE]: 0.3,   // Balanced for structural analysis
   [AgentRole.EDUCATIONAL]: 0.5,    // More creative
   [AgentRole.ORCHESTRATOR]: 0.3,   // Balanced
   [AgentRole.DEPENDENCY]: 0.3,     // Balanced
@@ -242,6 +243,14 @@ const createDefaultAgentData = (): Partial<AgentRoleEvaluationParameters> => ({
       overallScore: 75,
       specialties: ['Basic Performance Analysis'],
       weaknesses: ['Advanced Optimization'],
+      bestPerformingLanguages: {},
+      bestFileTypes: {},
+      bestScenarios: {}
+    },
+    [AgentRole.ARCHITECTURE]: {
+      overallScore: 80,
+      specialties: ['Architecture Analysis', 'Design Patterns'],
+      weaknesses: ['Complex System Design'],
       bestPerformingLanguages: {},
       bestFileTypes: {},
       bestScenarios: {}
@@ -343,6 +352,14 @@ export const mockAgentEvaluationData: Record<AgentProvider, Partial<AgentRoleEva
         bestFileTypes: {},
         bestScenarios: {}
       },
+      [AgentRole.ARCHITECTURE]: {
+        overallScore: 82,
+        specialties: ['System Architecture', 'Design Patterns'],
+        weaknesses: ['Complex Distributed Systems'],
+        bestPerformingLanguages: {},
+        bestFileTypes: {},
+        bestScenarios: {}
+      },
       [AgentRole.DEPENDENCY]: {
         overallScore: 88,
         specialties: ['Dependency Resolution', 'Version Management'],
@@ -426,6 +443,14 @@ export const mockAgentEvaluationData: Record<AgentProvider, Partial<AgentRoleEva
         overallScore: 82,
         specialties: ['Memory Usage', 'Execution Efficiency'],
         weaknesses: [],
+        bestPerformingLanguages: {},
+        bestFileTypes: {},
+        bestScenarios: {}
+      },
+      [AgentRole.ARCHITECTURE]: {
+        overallScore: 84,
+        specialties: ['System Design', 'API Architecture'],
+        weaknesses: ['Complex Distributed Systems'],
         bestPerformingLanguages: {},
         bestFileTypes: {},
         bestScenarios: {}
@@ -517,6 +542,14 @@ export const mockAgentEvaluationData: Record<AgentProvider, Partial<AgentRoleEva
         bestFileTypes: {},
         bestScenarios: {}
       },
+      [AgentRole.ARCHITECTURE]: {
+        overallScore: 78,
+        specialties: ['System Architecture', 'Low-level Design'],
+        weaknesses: ['High-level Business Architecture'],
+        bestPerformingLanguages: {},
+        bestFileTypes: {},
+        bestScenarios: {}
+      },
       [AgentRole.DEPENDENCY]: {
         overallScore: 79,
         specialties: ['System Dependency Analysis', 'Binary Compatibility'],
@@ -600,6 +633,14 @@ export const mockAgentEvaluationData: Record<AgentProvider, Partial<AgentRoleEva
         overallScore: 87,
         specialties: ['Resource Utilization', 'Concurrency'],
         weaknesses: [],
+        bestPerformingLanguages: {},
+        bestFileTypes: {},
+        bestScenarios: {}
+      },
+      [AgentRole.ARCHITECTURE]: {
+        overallScore: 86,
+        specialties: ['Modern Architecture', 'Cloud Design Patterns'],
+        weaknesses: ['Legacy System Architecture'],
         bestPerformingLanguages: {},
         bestFileTypes: {},
         bestScenarios: {}

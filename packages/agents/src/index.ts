@@ -9,6 +9,7 @@ export * from './gemini/gemini-agent';
 
 // Specialized Agents
 export * from './specialized/dependency-agent';
+export * from './specialized/architecture-agent';
 
 // Factory
 export * from './factory/agent-factory';

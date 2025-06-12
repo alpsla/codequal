@@ -3,9 +3,8 @@
  * Retrieves relevant context from Vector DB and web for educational purposes
  */
 
-import { spawn } from 'child_process';
+import { BaseMCPAdapter } from './base-mcp-adapter';
 import {
-  Tool,
   ToolResult,
   ToolFinding,
   AnalysisContext,
@@ -20,18 +19,25 @@ interface ContextSearchResult {
   title: string;
   content: string;
   relevanceScore: number;
+  url?: string;
   metadata: {
     skillLevel?: string;
     topics?: string[];
     difficulty?: string;
     learningPath?: string;
+    timestamp?: string;
   };
 }
 
-export class ContextMCPAdapter implements Tool {
+interface MCPContextResponse {
+  results: ContextSearchResult[];
+  totalResults: number;
+  searchTime: number;
+}
+
+export class ContextMCPAdapter extends BaseMCPAdapter {
   readonly id = 'context-mcp';
   readonly name = 'Context Retrieval MCP';
-  readonly type = 'mcp' as const;
   readonly version = '1.0.0';
   
   readonly capabilities: ToolCapability[] = [
@@ -65,6 +71,8 @@ export class ContextMCPAdapter implements Tool {
     }
   };
   
+  protected readonly mcpServerArgs = ['@codequal/context-mcp'];
+  
   /**
    * Check if tool can analyze given context
    */
@@ -79,28 +87,43 @@ export class ContextMCPAdapter implements Tool {
    */
   async analyze(context: AnalysisContext): Promise<ToolResult> {
     const startTime = Date.now();
-    const findings: ToolFinding[] = [];
     
     try {
+      // Initialize MCP server if not already running
+      await this.initializeMCPServer();
+      
       // Extract key concepts from PR
       const concepts = this.extractConcepts(context);
       
-      // Search Vector DB for relevant educational content
-      const vectorResults = await this.searchVectorDB(concepts, context);
+      if (concepts.length === 0) {
+        // Return with all expected metrics
+        return {
+          success: true,
+          toolId: this.id,
+          executionTime: Date.now() - startTime,
+          findings: [],
+          metrics: {
+            contextSourcesFound: 0,
+            skillGapsIdentified: 0,
+            learningResourcesFound: 0,
+            relevanceScore: 0,
+            searchTime: 0
+          }
+        };
+      }
       
-      // Search web for additional resources
-      const webResults = await this.searchWeb(concepts, context);
+      // Search for educational content via MCP
+      const searchResults = await this.searchForContext(concepts, context);
       
-      // Identify skill gaps and learning opportunities
-      const skillGaps = this.identifySkillGaps(context, vectorResults);
+      // Identify skill gaps
+      const skillGaps = this.identifySkillGaps(context, searchResults.results);
       
       // Generate educational findings
-      findings.push(...this.generateEducationalFindings(
-        vectorResults,
-        webResults,
+      const findings = this.generateEducationalFindings(
+        searchResults.results,
         skillGaps,
         context
-      ));
+      );
       
       return {
         success: true,
@@ -108,23 +131,18 @@ export class ContextMCPAdapter implements Tool {
         executionTime: Date.now() - startTime,
         findings,
         metrics: {
-          contextSourcesFound: vectorResults.length + webResults.length,
+          contextSourcesFound: searchResults.totalResults,
           skillGapsIdentified: skillGaps.length,
           learningResourcesFound: findings.filter(f => f.type === 'info').length,
-          relevanceScore: this.calculateAverageRelevance(vectorResults)
+          relevanceScore: this.calculateAverageRelevance(searchResults.results),
+          searchTime: searchResults.searchTime
         }
       };
-    } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
-      return {
-        success: false,
-        toolId: this.id,
-        executionTime: Date.now() - startTime,
-        error: {
-          code: 'CONTEXT_RETRIEVAL_FAILED',
-          message: error.message,
-          recoverable: true
-        }
-      };
+    } catch (error) {
+      return this.createErrorResult(
+        error instanceof Error ? error : new Error(String(error)),
+        startTime
+      );
     }
   }
   
@@ -136,14 +154,16 @@ export class ContextMCPAdapter implements Tool {
     
     // Extract from PR title and description
     const titleWords = context.pr.title.toLowerCase().split(/\s+/);
-    const descWords = context.pr.description.toLowerCase().split(/\s+/);
+    const descWords = (context.pr.description || '').toLowerCase().split(/\s+/);
     
     // Common programming concepts to look for
     const programmingConcepts = [
       'api', 'database', 'authentication', 'security', 'performance',
       'testing', 'deployment', 'ci/cd', 'react', 'vue', 'angular',
       'typescript', 'javascript', 'python', 'async', 'promise',
-      'hook', 'component', 'service', 'controller', 'model'
+      'hook', 'component', 'service', 'controller', 'model',
+      'graphql', 'rest', 'websocket', 'microservice', 'docker',
+      'kubernetes', 'aws', 'azure', 'gcp', 'terraform'
     ];
     
     // Find matching concepts
@@ -163,65 +183,43 @@ export class ContextMCPAdapter implements Tool {
       concepts.add(framework.toLowerCase());
     });
     
+    // Extract from file paths
+    context.pr.files.forEach(file => {
+      const pathParts = file.path.split('/');
+      pathParts.forEach(part => {
+        if (programmingConcepts.includes(part.toLowerCase())) {
+          concepts.add(part.toLowerCase());
+        }
+      });
+    });
+    
     return Array.from(concepts);
   }
   
   /**
-   * Search Vector DB for educational content
+   * Search for context via MCP
    */
-  private async searchVectorDB(
+  private async searchForContext(
     concepts: string[],
     context: AnalysisContext
-  ): Promise<ContextSearchResult[]> {
-    // In real implementation, this would call the actual context-mcp tool
-    // For now, return mock results
+  ): Promise<MCPContextResponse> {
+    // Call MCP server to search for context
+    const response = await this.executeMCPCommand<MCPContextResponse>({
+      method: 'searchContext',
+      params: {
+        query: concepts.join(' '),
+        sources: ['vectorDB', 'web', 'documentation'],
+        filters: {
+          repository: context.repository.name,
+          languages: context.repository.languages,
+          frameworks: context.repository.frameworks,
+          userLevel: 'intermediate' // Could be determined from user profile
+        },
+        limit: 10
+      }
+    });
     
-    const results: ContextSearchResult[] = [];
-    
-    // Simulate Vector DB search
-    for (const concept of concepts.slice(0, 3)) { // Top 3 concepts
-      results.push({
-        source: 'vectorDB',
-        title: `Best practices for ${concept}`,
-        content: `Educational content about ${concept} from internal knowledge base...`,
-        relevanceScore: 0.85,
-        metadata: {
-          skillLevel: 'intermediate',
-          topics: [concept, 'best-practices'],
-          difficulty: 'medium'
-        }
-      });
-    }
-    
-    return results;
-  }
-  
-  /**
-   * Search web for educational resources
-   */
-  private async searchWeb(
-    concepts: string[],
-    context: AnalysisContext
-  ): Promise<ContextSearchResult[]> {
-    // Would integrate with web-search-mcp
-    const results: ContextSearchResult[] = [];
-    
-    // Simulate web search
-    if (concepts.length > 0) {
-      results.push({
-        source: 'web',
-        title: `${concepts[0]} tutorial for beginners`,
-        content: `External tutorial resource...`,
-        relevanceScore: 0.75,
-        metadata: {
-          skillLevel: 'beginner',
-          topics: concepts,
-          learningPath: 'fundamentals'
-        }
-      });
-    }
-    
-    return results;
+    return response;
   }
   
   /**
@@ -229,31 +227,67 @@ export class ContextMCPAdapter implements Tool {
    */
   private identifySkillGaps(
     context: AnalysisContext,
-    vectorResults: ContextSearchResult[]
+    searchResults: ContextSearchResult[]
   ): string[] {
     const gaps: string[] = [];
-    
-    // Check for common patterns that indicate skill gaps
     const prFiles = context.pr.files;
     
     // No tests added?
-    if (!prFiles.some(f => f.path.includes('test') || f.path.includes('spec'))) {
+    const hasTestFiles = prFiles.some(f => 
+      f.path.includes('test') || 
+      f.path.includes('spec') || 
+      f.path.endsWith('.test.ts') ||
+      f.path.endsWith('.test.js')
+    );
+    
+    if (!hasTestFiles && prFiles.some(f => f.changeType === 'added')) {
       gaps.push('Unit testing');
     }
     
     // No documentation?
-    if (!prFiles.some(f => f.path.endsWith('.md') || f.path.includes('docs'))) {
+    const hasDocumentation = prFiles.some(f => 
+      f.path.endsWith('.md') || 
+      f.path.includes('docs') ||
+      f.content.includes('/**') // JSDoc
+    );
+    
+    if (!hasDocumentation && prFiles.length > 3) {
       gaps.push('Documentation practices');
     }
     
     // Complex code without comments?
-    const hasComplexCode = prFiles.some(f => 
-      f.content.split('\n').length > 100 && 
-      !f.content.includes('/**') && 
-      !f.content.includes('//')
-    );
+    const hasComplexCode = prFiles.some(f => {
+      if (f.changeType === 'deleted') return false;
+      const lines = f.content.split('\n');
+      const codeLines = lines.filter(l => l.trim() && !l.trim().startsWith('//')).length;
+      const commentLines = lines.filter(l => l.trim().startsWith('//') || l.includes('/*')).length;
+      return codeLines > 50 && commentLines < 5;
+    });
+    
     if (hasComplexCode) {
       gaps.push('Code commenting');
+    }
+    
+    // No error handling?
+    const hasErrorHandling = prFiles.some(f => 
+      f.content.includes('try') || 
+      f.content.includes('catch') || 
+      f.content.includes('.catch') ||
+      f.content.includes('error')
+    );
+    
+    if (!hasErrorHandling && prFiles.some(f => f.content.includes('async'))) {
+      gaps.push('Error handling');
+    }
+    
+    // TypeScript but no types?
+    if (context.repository.languages.includes('typescript')) {
+      const hasAnyType = prFiles.some(f => 
+        f.path.endsWith('.ts') && f.content.includes(': any')
+      );
+      if (hasAnyType) {
+        gaps.push('TypeScript typing');
+      }
     }
     
     return gaps;
@@ -263,49 +297,115 @@ export class ContextMCPAdapter implements Tool {
    * Generate educational findings
    */
   private generateEducationalFindings(
-    vectorResults: ContextSearchResult[],
-    webResults: ContextSearchResult[],
+    searchResults: ContextSearchResult[],
     skillGaps: string[],
     context: AnalysisContext
   ): ToolFinding[] {
     const findings: ToolFinding[] = [];
     
-    // Add relevant educational resources
-    vectorResults.forEach(result => {
+    // Group results by source
+    const vectorDBResults = searchResults.filter(r => r.source === 'vectorDB');
+    const webResults = searchResults.filter(r => r.source === 'web');
+    const docResults = searchResults.filter(r => r.source === 'documentation');
+    
+    // Add relevant educational resources from Vector DB
+    vectorDBResults.slice(0, 3).forEach(result => {
       findings.push({
         type: 'info',
         severity: 'info',
         category: 'documentation',
-        message: `Educational resource found: "${result.title}" (relevance: ${result.relevanceScore.toFixed(2)})`,
-        ruleId: 'educational-resource',
+        message: `📚 Internal resource: "${result.title}"`,
+        ruleId: 'educational-resource-internal',
         documentation: result.content
+        // Removed metadata property - not part of ToolFinding interface
+      });
+    });
+    
+    // Add external resources
+    webResults.slice(0, 2).forEach(result => {
+      findings.push({
+        type: 'info',
+        severity: 'info',
+        category: 'documentation',
+        message: `🌐 External tutorial: "${result.title}"`,
+        ruleId: 'educational-resource-external',
+        documentation: result.url ? `${result.content}\n\nRead more: ${result.url}` : result.content
+        // Removed metadata property - not part of ToolFinding interface
       });
     });
     
     // Add skill gap findings
     skillGaps.forEach(gap => {
+      // Find related resources for the gap
+      const relatedResource = searchResults.find(r => 
+        r.content.toLowerCase().includes(gap.toLowerCase()) ||
+        r.title.toLowerCase().includes(gap.toLowerCase())
+      );
+      
       findings.push({
         type: 'suggestion',
         severity: 'low',
         category: 'documentation',
-        message: `Learning opportunity identified: ${gap}`,
+        message: `💡 Learning opportunity: ${gap}`,
         ruleId: 'skill-gap',
-        documentation: `Consider improving your ${gap} skills for better code quality`
+        documentation: relatedResource 
+          ? `Consider improving your ${gap} skills. Related resource: "${relatedResource.title}"`
+          : `Consider improving your ${gap} skills for better code quality`
       });
     });
     
-    // Add learning path suggestions
-    if (skillGaps.length > 0) {
+    // Add learning path if multiple gaps
+    if (skillGaps.length > 2) {
       findings.push({
         type: 'info',
         severity: 'info',
         category: 'documentation',
-        message: `Suggested learning path: ${skillGaps.join(' → ')}`,
-        ruleId: 'learning-path'
+        message: `🎯 Suggested learning path based on this PR`,
+        ruleId: 'learning-path',
+        documentation: this.generateLearningPath(skillGaps, searchResults)
+      });
+    }
+    
+    // Add best practices reminder if relevant
+    if (context.pr.files.length > 5) {
+      findings.push({
+        type: 'info',
+        severity: 'info',
+        category: 'documentation',
+        message: `📋 Best practices for large PRs`,
+        ruleId: 'best-practices',
+        documentation: 'Consider breaking large PRs into smaller, focused changes for easier review. Each PR should ideally address a single concern or feature.'
       });
     }
     
     return findings;
+  }
+  
+  /**
+   * Generate learning path documentation
+   */
+  private generateLearningPath(gaps: string[], resources: ContextSearchResult[]): string {
+    let path = 'Based on the identified areas for improvement, here\'s a suggested learning path:\n\n';
+    
+    gaps.forEach((gap, index) => {
+      path += `${index + 1}. **${gap}**\n`;
+      const relatedResources = resources.filter(r => 
+        r.title.toLowerCase().includes(gap.toLowerCase()) ||
+        r.metadata.topics?.some(t => t.toLowerCase().includes(gap.toLowerCase()))
+      );
+      
+      if (relatedResources.length > 0) {
+        path += `   - Start with: "${relatedResources[0].title}"\n`;
+        if (relatedResources[0].metadata.difficulty) {
+          path += `   - Difficulty: ${relatedResources[0].metadata.difficulty}\n`;
+        }
+      }
+      path += '\n';
+    });
+    
+    path += '\n💡 Pro tip: Focus on one area at a time for better retention!';
+    
+    return path;
   }
   
   /**
@@ -318,29 +418,20 @@ export class ContextMCPAdapter implements Tool {
   }
   
   /**
-   * Health check
-   */
-  async healthCheck(): Promise<boolean> {
-    // Check if context-mcp service is available
-    // In real implementation, would check actual service
-    return true;
-  }
-  
-  /**
    * Get tool metadata
    */
   getMetadata(): ToolMetadata {
     return {
       id: this.id,
       name: this.name,
-      description: 'Retrieves educational context from Vector DB and web sources',
+      description: 'Retrieves educational context from Vector DB and web sources using MCP',
       author: 'CodeQual',
       homepage: 'https://github.com/codequal/context-mcp',
       documentationUrl: 'https://docs.codequal.com/tools/context-mcp',
-      supportedRoles: ['educational'] as AgentRole[],
+      supportedRoles: ['educational', 'reporting'] as AgentRole[],
       supportedLanguages: [], // All languages
       supportedFrameworks: [],
-      tags: ['education', 'context', 'knowledge', 'learning'],
+      tags: ['education', 'context', 'knowledge', 'learning', 'vectordb', 'rag'],
       securityVerified: true,
       lastVerified: new Date('2025-06-07')
     };
