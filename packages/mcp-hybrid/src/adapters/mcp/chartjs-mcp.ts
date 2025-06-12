@@ -27,14 +27,14 @@ interface ChartConfiguration {
       borderColor?: string;
     }>;
   };
-  options?: any;
+  options?: Record<string, unknown>;
 }
 
 interface VisualizationResult {
   chartConfig: ChartConfiguration;
   imageUrl?: string;
   svgContent?: string;
-  jsonData: any;
+  jsonData: Record<string, unknown>;
 }
 
 export class ChartJSMCPAdapter implements Tool {
@@ -114,14 +114,14 @@ export class ChartJSMCPAdapter implements Tool {
           visualizationTypes: [...new Set(chartConfigs.map(c => c.type))].length
         }
       };
-    } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
+    } catch (error) {
       return {
         success: false,
         toolId: this.id,
         executionTime: Date.now() - startTime,
         error: {
           code: 'VISUALIZATION_FAILED',
-          message: error.message,
+          message: error instanceof Error ? error.message : String(error),
           recoverable: true
         }
       };
@@ -131,8 +131,8 @@ export class ChartJSMCPAdapter implements Tool {
   /**
    * Extract metrics from PR for visualization
    */
-  private extractMetrics(context: AnalysisContext): Record<string, any> {
-    const metrics: Record<string, any> = {};
+  private extractMetrics(context: AnalysisContext): Record<string, unknown> {
+    const metrics: Record<string, unknown> = {};
     
     // File change metrics
     metrics.fileChanges = {
@@ -181,13 +181,14 @@ export class ChartJSMCPAdapter implements Tool {
    * Generate visualizations based on metrics
    */
   private async generateVisualizations(
-    metrics: Record<string, any>,
+    metrics: Record<string, unknown>,
     context: AnalysisContext
   ): Promise<VisualizationResult[]> {
     const visualizations: VisualizationResult[] = [];
     
     // File changes visualization
-    if (metrics.fileChanges) {
+    const fileChanges = metrics.fileChanges as { added: number; modified: number; deleted: number };
+    if (fileChanges) {
       visualizations.push({
         chartConfig: {
           type: 'doughnut',
@@ -197,39 +198,41 @@ export class ChartJSMCPAdapter implements Tool {
             datasets: [{
               label: 'Files',
               data: [
-                metrics.fileChanges.added,
-                metrics.fileChanges.modified,
-                metrics.fileChanges.deleted
+                fileChanges.added,
+                fileChanges.modified,
+                fileChanges.deleted
               ],
               backgroundColor: ['#4CAF50', '#2196F3', '#F44336']
             }]
           }
         },
-        jsonData: metrics.fileChanges
+        jsonData: { fileChanges }
       });
     }
     
     // Language distribution
-    if (metrics.languages && Object.keys(metrics.languages).length > 0) {
+    const languages = metrics.languages as Record<string, number>;
+    if (languages && Object.keys(languages).length > 0) {
       visualizations.push({
         chartConfig: {
           type: 'bar',
           title: 'Language Distribution',
           data: {
-            labels: Object.keys(metrics.languages),
+            labels: Object.keys(languages),
             datasets: [{
               label: 'File Count',
-              data: Object.values(metrics.languages),
+              data: Object.values(languages),
               backgroundColor: '#2196F3'
             }]
           }
         },
-        jsonData: metrics.languages
+        jsonData: { languages }
       });
     }
     
-    // Lines changed over time (if we had timeline data)
-    if (metrics.linesChanged) {
+    // Lines changed
+    const linesChanged = metrics.linesChanged as { additions: number; deletions: number; net: number };
+    if (linesChanged) {
       visualizations.push({
         chartConfig: {
           type: 'bar',
@@ -239,9 +242,9 @@ export class ChartJSMCPAdapter implements Tool {
             datasets: [{
               label: 'Lines',
               data: [
-                metrics.linesChanged.additions,
-                metrics.linesChanged.deletions,
-                metrics.linesChanged.net
+                linesChanged.additions,
+                linesChanged.deletions,
+                linesChanged.net
               ],
               backgroundColor: ['#4CAF50', '#F44336', '#FF9800']
             }]
@@ -254,12 +257,13 @@ export class ChartJSMCPAdapter implements Tool {
             }
           }
         },
-        jsonData: metrics.linesChanged
+        jsonData: { linesChanged }
       });
     }
     
     // Complexity radar chart
-    if (metrics.complexity) {
+    const complexity = metrics.complexity as { files: number; commits: number; authors: number };
+    if (complexity) {
       const maxValues = { files: 50, commits: 10, authors: 5 };
       visualizations.push({
         chartConfig: {
@@ -270,9 +274,9 @@ export class ChartJSMCPAdapter implements Tool {
             datasets: [{
               label: 'Current PR',
               data: [
-                (metrics.complexity.files / maxValues.files) * 100,
-                (metrics.complexity.commits / maxValues.commits) * 100,
-                (metrics.complexity.authors / maxValues.authors) * 100
+                (complexity.files / maxValues.files) * 100,
+                (complexity.commits / maxValues.commits) * 100,
+                (complexity.authors / maxValues.authors) * 100
               ],
               backgroundColor: 'rgba(33, 150, 243, 0.2)',
               borderColor: '#2196F3'
@@ -287,7 +291,7 @@ export class ChartJSMCPAdapter implements Tool {
             }
           }
         },
-        jsonData: metrics.complexity
+        jsonData: { complexity }
       });
     }
     
@@ -315,7 +319,7 @@ export class ChartJSMCPAdapter implements Tool {
    */
   private generateReportingFindings(
     chartConfigs: ChartConfiguration[],
-    metrics: Record<string, any>
+    metrics: Record<string, unknown>
   ): ToolFinding[] {
     const findings: ToolFinding[] = [];
     
@@ -342,7 +346,8 @@ export class ChartJSMCPAdapter implements Tool {
     });
     
     // Add insights based on visualizations
-    if (metrics.linesChanged && metrics.linesChanged.net > 500) {
+    const linesChanged = metrics.linesChanged as { net: number } | undefined;
+    if (linesChanged && linesChanged.net > 500) {
       findings.push({
         type: 'info',
         severity: 'medium',
@@ -352,7 +357,8 @@ export class ChartJSMCPAdapter implements Tool {
       });
     }
     
-    if (metrics.complexity && metrics.complexity.files > 20) {
+    const complexity = metrics.complexity as { files: number } | undefined;
+    if (complexity && complexity.files > 20) {
       findings.push({
         type: 'info',
         severity: 'medium',
@@ -368,19 +374,22 @@ export class ChartJSMCPAdapter implements Tool {
   /**
    * Generate metrics summary
    */
-  private generateMetricsSummary(metrics: Record<string, any>): string {
+  private generateMetricsSummary(metrics: Record<string, unknown>): string {
     const summary: string[] = [];
     
-    if (metrics.fileChanges) {
-      summary.push(`Files: ${metrics.fileChanges.added} added, ${metrics.fileChanges.modified} modified, ${metrics.fileChanges.deleted} deleted`);
+    const fileChanges = metrics.fileChanges as { added: number; modified: number; deleted: number } | undefined;
+    if (fileChanges) {
+      summary.push(`Files: ${fileChanges.added} added, ${fileChanges.modified} modified, ${fileChanges.deleted} deleted`);
     }
     
-    if (metrics.linesChanged) {
-      summary.push(`Lines: +${metrics.linesChanged.additions} -${metrics.linesChanged.deletions} (net: ${metrics.linesChanged.net})`);
+    const linesChanged = metrics.linesChanged as { additions: number; deletions: number; net: number } | undefined;
+    if (linesChanged) {
+      summary.push(`Lines: +${linesChanged.additions} -${linesChanged.deletions} (net: ${linesChanged.net})`);
     }
     
-    if (metrics.languages) {
-      const langs = Object.keys(metrics.languages).join(', ');
+    const languages = metrics.languages as Record<string, number> | undefined;
+    if (languages) {
+      const langs = Object.keys(languages).join(', ');
       summary.push(`Languages: ${langs}`);
     }
     

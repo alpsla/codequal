@@ -51,6 +51,7 @@ export enum AgentRole {
   CODE_QUALITY = 'codeQuality',
   SECURITY = 'security',
   PERFORMANCE = 'performance',
+  ARCHITECTURE = 'architecture',
   DEPENDENCY = 'dependency',
   EDUCATIONAL = 'educational',
   REPORT_GENERATION = 'reportGeneration',
@@ -65,6 +66,7 @@ export interface AgentSelection {
   [AgentRole.CODE_QUALITY]: AgentProvider;
   [AgentRole.SECURITY]: AgentProvider;
   [AgentRole.PERFORMANCE]: AgentProvider;
+  [AgentRole.ARCHITECTURE]: AgentProvider;
   [AgentRole.DEPENDENCY]: AgentProvider;
   [AgentRole.EDUCATIONAL]: AgentProvider;
   [AgentRole.REPORT_GENERATION]: AgentProvider;

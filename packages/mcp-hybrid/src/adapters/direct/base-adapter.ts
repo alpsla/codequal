@@ -94,14 +94,19 @@ export abstract class DirectToolAdapter implements Tool {
    */
   protected parseJsonOutput(output: string): any {
     try {
-      // Remove any non-JSON content before/after
-      const jsonMatch = output.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
-      if (jsonMatch) {
-        return JSON.parse(jsonMatch[0]);
-      }
-      return null;
+      // First try to parse as-is
+      return JSON.parse(output);
     } catch {
-      return null;
+      try {
+        // Remove any non-JSON content before/after
+        const jsonMatch = output.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+        if (jsonMatch) {
+          return JSON.parse(jsonMatch[0]);
+        }
+        return null;
+      } catch {
+        return null;
+      }
     }
   }
   

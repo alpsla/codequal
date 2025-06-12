@@ -1,144 +1,118 @@
-# Session Summary: December 19, 2024 - MCP Tools Integration Architecture & Implementation
+# Session Summary: December 19, 2024 - Real Adapter Testing
 
 ## Overview
-We designed and implemented a comprehensive MCP (Model Context Protocol) tools integration system for CodeQual, including automatic circuit breakers, health tracking, and gradual recovery mechanisms. The system is designed to enhance PR analysis with concrete tool findings while maintaining reliability through self-healing capabilities.
+Today's session focused on fixing and running real (non-mocked) tests for MCP and Direct adapters in the CodeQual project. We made significant progress on Direct adapters while identifying that MCP adapters require server dependencies that are not currently available.
 
-## Key Accomplishments
+## Major Accomplishments
 
-### 1. Architecture Clarification
-- **Two-Layer System**: 
-  - Layer 1: DeepWiki analyzes entire repository → stores in Vector DB
-  - Layer 2: MCP tools analyze only PR changed files → provide concrete findings
-- **Tool-First Approach**: Tools run first, agents synthesize findings with DeepWiki context
-- **No Duplication**: Minimal changes to existing multi-agent flow
+### 1. Fixed Prettier Direct Adapter Tests ✅
+**Issue**: Tests were failing because Prettier was trying to check files that didn't exist on disk.
 
-### 2. Circuit Breaker System Design
-- **Automatic Tool Management**: Tools disable themselves based on failure thresholds
-- **Configurable Profiles**: Different thresholds for dev/staging/production
-- **No Manual Intervention**: System self-heals without admin involvement
-- **Smart Recovery**: Gradual testing before re-enabling failed tools
+**Solution**: Created `real-prettier-execution-fixed.test.ts` that:
+- Writes test files to a temporary directory
+- Updates file paths in the context to point to actual files
+- Properly cleans up after tests
 
-### 3. Health Tracking System
-- **Comprehensive Metrics**: Success rate, execution time, failure patterns
-- **Vector DB Storage**: Historical data for trend analysis
-- **Real-time Monitoring**: Dashboard integration ready
-- **Failure Pattern Analysis**: Identifies systemic issues
+**Result**: All 5 tests passing successfully
 
-### 4. Configuration Structure
-Created centralized configuration in `@codequal/core/config/`:
+### 2. Fixed Dependency Cruiser TypeScript Errors ✅
+**Issue**: Template literals inside string content were causing TypeScript compilation errors.
 
-```
-/packages/core/src/config/
-├── maintenance/
-│   ├── circuit-breaker.config.ts  # Circuit breaker thresholds
-│   ├── recovery.config.ts         # Gradual recovery settings
-│   ├── thresholds.config.ts       # Environment profiles
-│   └── monitoring.config.ts       # Alerts and metrics
-└── mcp-tools/
-    ├── tool-registry.config.ts    # Tool definitions (9 tools)
-    └── execution.config.ts        # Execution settings
-```
+**Solution**: 
+- Changed template literals to string concatenation (`'user:' + id` instead of `` `user:${id}` ``)
+- Fixed all 12 TypeScript errors in the test file
 
-### 5. Tool Selection (9 Core Tools)
-- **Security**: mcp-scan, semgrep-mcp, sonarqube
-- **Code Quality**: eslint-mcp, sonarqube
-- **Architecture**: structure-analyzer, git-mcp
-- **Specialized**: dependency-mcp, perf-analyzer, mcp-docs-service
+**Result**: Code compiles successfully, dependency-cruiser is available for testing
 
-### 6. Documentation Updates
-- Updated `README.md` with complete architecture and features
-- Enhanced `IMPLEMENTATION_PLAN.md` with configuration integration
-- Added gradual recovery explanation with visual flow
+### 3. Identified MCP Server Dependency Issue 🔍
+**Finding**: All MCP adapter tests (Chart.js, Context, MCP-Scan, Docs Service) require actual MCP servers to be running.
 
-## Technical Decisions
+**Current Status**: 
+- No MCP server packages found in node_modules
+- MCP servers would need to be installed, built from source, or mocked
 
-### 1. Server-Side Execution
-- All tools run on server, not client
-- Isolated workspaces per user
-- Resource limits enforced
-- Docker sandboxing for security
+### 4. Created Diagnostic Scripts 🛠️
+Created several helper scripts to diagnose tool availability:
+- `test-prettier-availability.sh` - Checks if Prettier is installed
+- `test-dependency-cruiser-availability.sh` - Checks dependency-cruiser
+- `check-mcp-servers.sh` - Looks for MCP server installations
+- `test-grafana-connection.sh` - Tests Grafana API connectivity
 
-### 2. Integration Approach
-- Minimal changes to existing code
-- ToolAwareAgent wrapper pattern
-- Reuses all existing infrastructure
-- Optional feature flag enablement
+## Current Test Status
 
-### 3. Gradual Recovery Process
-- **CLOSED** → Normal operation
-- **OPEN** → Tool disabled after failures
-- **HALF-OPEN** → Testing recovery with limited requests
-- Recovery decision based on success rate (80% threshold)
+### Working Tests ✅
+1. **ESLint MCP** - Already working (from previous sessions)
+2. **Prettier Direct** - Fixed and all 5 tests passing
 
-### 4. Configuration Philosophy
-- Environment-based profiles (dev/staging/prod)
-- Tool-specific overrides where needed
-- Centralized in core package for reusability
-- Type-safe with full TypeScript support
+### Ready to Test 🔧
+1. **Dependency Cruiser Direct** - TypeScript errors fixed, tool is available
+2. **Grafana Direct** - Has environment variables configured
 
-## Implementation Status
-
-### Completed:
-- ✅ Complete architecture design
-- ✅ Circuit breaker system design
-- ✅ Health tracking system design
-- ✅ Configuration structure in `@codequal/core/config`
-- ✅ Tool registry with 9 core tools
-- ✅ Gradual recovery mechanism
-- ✅ Documentation updates
-
-### Next Steps:
-1. Implement MCPToolManager class
-2. Create MCPCircuitBreaker implementation
-3. Build ToolAwareAgent wrapper
-4. Integrate with existing multi-agent flow
-5. Add health tracking to Vector DB
-6. Build monitoring dashboard
+### Blocked by Dependencies ❌
+1. **Chart.js MCP** - Requires MCP server
+2. **Context MCP** - Requires MCP server
+3. **MCP-Scan** - Requires MCP server
+4. **Docs Service** - Requires MCP server
 
 ## Key Insights
 
-### 1. Minimal Disruption
-The design ensures minimal changes to existing code. Only need to:
-- Add ToolAwareAgent wrapper
-- Update factory to use wrapper when tools enabled
-- No changes to orchestration or result handling
+1. **Real Tests Need Real Files**: Direct adapter tests must write actual files to disk for tools like Prettier and dependency-cruiser to analyze them.
 
-### 2. Self-Healing System
-The automatic circuit breaker with gradual recovery ensures:
-- Tools manage themselves without manual intervention
-- System remains stable even with tool failures
-- Automatic recovery when issues resolve
+2. **MCP vs Direct Architecture**: 
+   - Direct adapters: Call tools directly via command line
+   - MCP adapters: Communicate with MCP servers via JSON-RPC protocol
 
-### 3. Production-Ready Design
-- Comprehensive error handling
-- Resource management
-- Security considerations
-- Monitoring and alerting
-- Audit trails in Vector DB
+3. **Global Tool Installation**: Dependency-cruiser shows a warning about global installation but still works for testing.
 
-## Files Created/Modified
-
-### Created:
-- `/packages/core/src/config/maintenance/circuit-breaker.config.ts`
-- `/packages/core/src/config/maintenance/recovery.config.ts`
-- `/packages/core/src/config/maintenance/thresholds.config.ts`
-- `/packages/core/src/config/maintenance/monitoring.config.ts`
-- `/packages/core/src/config/maintenance/index.ts`
-- `/packages/core/src/config/mcp-tools/tool-registry.config.ts`
-- `/packages/core/src/config/mcp-tools/execution.config.ts`
-- `/packages/core/src/config/mcp-tools/index.ts`
-
-### Modified:
-- `/packages/core/src/config/index.ts` - Added exports for new configs
-- `/packages/mcp-hybrid/README.md` - Complete rewrite with new features
-- `/packages/mcp-hybrid/IMPLEMENTATION_PLAN.md` - Added configuration integration
+4. **Grafana Implementation**: The current Grafana adapter mostly returns mock data rather than making real API calls.
 
 ## Recommendations
 
-1. **Start Simple**: Begin with ESLint and one other tool to validate the system
-2. **Monitor Closely**: Use development profile initially, even in staging
-3. **Gradual Rollout**: Enable tools one by one, monitoring health
-4. **Documentation**: Create runbooks for common failure scenarios
-5. **Team Training**: Ensure team understands circuit breaker behavior
+### Immediate Actions
+1. Run the dependency-cruiser test now that TypeScript errors are fixed
+2. Test Grafana adapter with the configured environment variables
+3. Focus on Direct adapters since they don't require additional server infrastructure
 
-This session established a robust, self-healing tool integration system that enhances CodeQual's analysis capabilities while maintaining system stability and reliability.
+### Future Improvements
+1. Consider implementing mock MCP servers for testing
+2. Document MCP server setup requirements
+3. Enhance Grafana adapter to make real API calls
+4. Add CI/CD configuration to handle tool availability
+
+## Files Created/Modified
+
+### Test Files
+- `/src/adapters/__tests__/real-prettier-execution-fixed.test.ts` - Fixed Prettier tests
+- `/src/adapters/direct/__tests__/dependency-cruiser-simplified.test.ts` - Simplified DC test
+
+### Scripts
+- `test-prettier-availability.sh`
+- `test-dependency-cruiser-availability.sh`  
+- `check-mcp-servers.sh`
+- `test-grafana-connection.sh`
+- `run-single-real-test.sh` (updated)
+- `run-all-real-tests.sh` (updated)
+
+### Documentation
+- `/docs/real-adapter-testing-summary.md` - Comprehensive testing guide
+- `/docs/real-test-status-summary.md` - Current status overview
+
+## Next Steps
+
+1. **Test Dependency Cruiser**: 
+   ```bash
+   ./run-single-real-test.sh dependency-cruiser
+   ```
+
+2. **Test Grafana Adapter**:
+   ```bash
+   ./run-single-real-test.sh grafana
+   ```
+
+3. **Consider MCP Strategy**:
+   - Skip MCP tests for now
+   - Or implement mock servers
+   - Or document how to install real MCP servers
+
+## Summary
+We successfully fixed the Direct adapter tests, with Prettier fully working and Dependency Cruiser ready to test. The main blocker for complete test coverage is the availability of MCP servers, which would need to be addressed based on project requirements.
