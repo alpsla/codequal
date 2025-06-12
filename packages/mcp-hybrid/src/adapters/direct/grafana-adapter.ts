@@ -123,7 +123,7 @@ export class GrafanaDirectAdapter extends DirectToolAdapter {
           category: 'documentation',
           message: `Created new Grafana dashboard: ${dashboardUrl}`,
           ruleId: 'grafana-create',
-          documentation: 'New dashboard created for repository monitoring'
+          documentation: `New dashboard created for repository monitoring with codequal integration and ${context.repository.primaryLanguage || 'general'} language support`
         });
       }
       

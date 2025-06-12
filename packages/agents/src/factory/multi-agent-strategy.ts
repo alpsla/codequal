@@ -70,6 +70,12 @@ export class MultiAgentManager {
       secondaryProviders: [AgentProvider.CLAUDE],
       role: AgentRole.PERFORMANCE
     },
+    [AgentRole.ARCHITECTURE]: {
+      strategy: MultiAgentStrategy.SPECIALIZED,
+      primaryProvider: AgentProvider.CLAUDE,
+      secondaryProviders: [AgentProvider.DEEPSEEK_CODER],
+      role: AgentRole.ARCHITECTURE
+    },
     [AgentRole.DEPENDENCY]: {
       strategy: MultiAgentStrategy.PARALLEL,
       primaryProvider: AgentProvider.DEEPSEEK_CODER,
@@ -533,6 +539,7 @@ export class SpecializedMultiAgent extends MultiAgent {
       [AgentRole.SECURITY]: 'security_analysis',
       [AgentRole.CODE_QUALITY]: 'code_quality_analysis',
       [AgentRole.PERFORMANCE]: 'performance_analysis',
+      [AgentRole.ARCHITECTURE]: 'architecture_analysis',
       [AgentRole.DEPENDENCY]: 'dependency_analysis',
       [AgentRole.EDUCATIONAL]: 'educational_content',
       [AgentRole.ORCHESTRATOR]: 'orchestration',

@@ -1,0 +1,131 @@
+# Architecture Analysis Task
+
+## Primary Objective
+Analyze the architectural design and structure of the codebase to identify issues related to modularity, coupling, cohesion, dependency management, and overall system design quality.
+
+## Analysis Scope
+
+### 1. Dependency Architecture
+- **Circular Dependencies**: Identify and assess circular dependency chains
+- **Dependency Depth**: Analyze dependency tree depth and complexity
+- **Module Coupling**: Evaluate coupling between modules and components
+- **Orphan Modules**: Find unused or disconnected modules
+
+### 2. Architectural Patterns
+- **Layer Violations**: Detect violations of architectural layers (presentation, business, data)
+- **Pattern Consistency**: Check for consistent use of architectural patterns
+- **Separation of Concerns**: Evaluate proper separation of responsibilities
+- **Component Boundaries**: Assess clarity and enforcement of component boundaries
+
+### 3. Structural Quality
+- **Module Cohesion**: Evaluate how well module contents belong together
+- **Interface Design**: Assess quality of module interfaces and contracts
+- **Abstraction Levels**: Check for appropriate levels of abstraction
+- **Code Organization**: Evaluate directory structure and file organization
+
+### 4. Complexity Analysis
+- **Cyclomatic Complexity**: Identify overly complex modules
+- **Dependency Complexity**: Assess complexity of dependency relationships
+- **Structural Complexity**: Evaluate overall system structure complexity
+- **Cognitive Load**: Estimate difficulty of understanding the architecture
+
+## Analysis Guidelines
+
+### Severity Classification
+- **Critical**: Circular dependencies, severe layer violations, broken architectural patterns
+- **High**: High coupling, poor separation of concerns, complex dependency chains
+- **Medium**: Moderate complexity, inconsistent patterns, unclear boundaries
+- **Low**: Minor organizational issues, style inconsistencies
+
+### Focus Areas
+1. **Maintainability**: How easy is it to modify and extend the codebase?
+2. **Testability**: How well does the architecture support testing?
+3. **Scalability**: Can the architecture handle growth in features and team size?
+4. **Understandability**: How easy is it for new developers to understand the system?
+
+## Expected Insights
+
+### Circular Dependencies
+```
+INSIGHT: Circular dependency detected between ModuleA → ModuleB → ModuleC → ModuleA
+IMPACT: Makes modules tightly coupled and difficult to test in isolation
+SUGGESTION: Extract shared functionality to a separate module or use dependency injection
+```
+
+### Layer Violations
+```
+INSIGHT: Presentation layer directly accessing data layer, bypassing business logic
+LOCATION: src/components/UserList.tsx imports from src/database/users.ts
+SUGGESTION: Route data access through appropriate service layer
+```
+
+### High Coupling
+```
+INSIGHT: Module X has 15+ direct dependencies, indicating high coupling
+METRICS: Afferent coupling: 8, Efferent coupling: 15, Instability: 0.65
+SUGGESTION: Consider breaking down the module or introducing interfaces
+```
+
+## Integration with Tools
+
+When tool results are available (dependency-cruiser, madge, etc.), incorporate their findings:
+
+1. **From Dependency Analysis Tools**:
+   - Circular dependency cycles
+   - Orphan modules
+   - Dependency graphs and metrics
+
+2. **From Complexity Tools**:
+   - Cyclomatic complexity per module
+   - Dependency depth metrics
+   - Module size metrics
+
+3. **From DeepWiki Context**:
+   - Documented architectural patterns
+   - Intended layer structure
+   - Design decisions and constraints
+
+## Response Structure
+
+Provide architectural insights in this format:
+
+```json
+{
+  "insights": [
+    {
+      "type": "circular-dependency|layer-violation|high-coupling|orphan-module|complexity",
+      "severity": "critical|high|medium|low",
+      "message": "Clear description of the architectural issue",
+      "location": {
+        "file": "path/to/file",
+        "line": 1
+      }
+    }
+  ],
+  "metrics": {
+    "circularDependencies": 0,
+    "layerViolations": 0,
+    "orphanModules": 0,
+    "averageCoupling": 0.0,
+    "architectureHealth": 8.5
+  },
+  "recommendations": [
+    {
+      "priority": "critical|high|medium|low",
+      "category": "architecture|maintainability|scalability",
+      "action": "Specific action to improve architecture",
+      "rationale": "Why this matters",
+      "effort": "low|medium|high",
+      "impact": "low|medium|high"
+    }
+  ]
+}
+```
+
+## Key Principles
+
+1. **Prioritize Maintainability**: Focus on issues that make the code hard to maintain
+2. **Consider Evolution**: Think about how the architecture supports future changes
+3. **Balance Idealism and Pragmatism**: Suggest practical improvements
+4. **Provide Clear Paths**: Always suggest concrete ways to improve the architecture
+5. **Respect Existing Patterns**: Work within established architectural decisions when possible

@@ -16,6 +16,9 @@ export { toolExecutor, ToolExecutor, ExecutionStrategy, executionExamples } from
 // Context selector
 export { toolSelector, ContextAwareToolSelector } from './context/selector';
 
+// Base adapters
+export { BaseMCPAdapter } from './adapters/mcp/base-mcp-adapter';
+
 // MCP adapters
 export { mcpScanAdapter } from './adapters/mcp/mcp-scan';
 export { mcpDocsServiceAdapter } from './adapters/mcp/docs-service';
@@ -29,6 +32,9 @@ export {
   prettierDirectAdapter,
   dependencyCruiserDirectAdapter 
 } from './adapters/direct/base-adapter';
+
+// Grafana adapter
+export { grafanaDirectAdapter } from './adapters/direct/grafana-adapter';
 
 // Integration components
 export {

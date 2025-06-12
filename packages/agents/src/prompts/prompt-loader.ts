@@ -129,6 +129,8 @@ function getRoleTypeFromTemplateName(templateName: string): string {
     return 'security';
   } else if (templateName.includes('performance')) {
     return 'performance';
+  } else if (templateName.includes('architecture')) {
+    return 'architecture';
   } else if (templateName.includes('dependency')) {
     return 'dependency';
   } else if (templateName.includes('educational')) {
@@ -154,6 +156,8 @@ function getFocusComponentFromTemplateName(templateName: string): string {
     return 'security';
   } else if (templateName.includes('performance')) {
     return 'performance';
+  } else if (templateName.includes('architecture')) {
+    return 'architecture';
   } else if (templateName.includes('dependency')) {
     return 'dependencies';
   } else if (templateName.includes('educational')) {
