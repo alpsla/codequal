@@ -133,7 +133,10 @@ export class ESLintDirectAdapter extends DirectToolAdapter {
         };
       } finally {
         // Cleanup temp directory
-        await fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});
+        await fs.rm(tempDir, { recursive: true, force: true }).catch(err => {
+          // Ignore cleanup errors
+          console.warn('Failed to cleanup temp directory:', err);
+        });
       }
     } catch (error) {
       return {
