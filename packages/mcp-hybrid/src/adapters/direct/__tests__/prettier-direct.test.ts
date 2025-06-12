@@ -13,7 +13,7 @@ describe('Prettier Direct Adapter', () => {
   let adapter: PrettierDirectAdapter;
   let mockSpawn: jest.MockedFunction<typeof spawn>;
   
-  const createMockProcess = (code: number = 0, stdout: string = '', stderr: string = '') => {
+  const createMockProcess = (code = 0, stdout = '', stderr = '') => {
     const process = new EventEmitter() as any;
     process.stdout = new EventEmitter();
     process.stderr = new EventEmitter();

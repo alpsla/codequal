@@ -29,6 +29,12 @@ cd packages/cli
 npm run build
 cd ../..
 
+# Build MCP Hybrid package
+echo "Building MCP Hybrid package..."
+cd packages/mcp-hybrid
+npm run build
+cd ../..
+
 # Build remaining packages (these have dummy build scripts)
 echo "Building UI package..."
 cd packages/ui

@@ -1,6 +1,8 @@
 import { spawn } from 'child_process';
-import * as k8s from '@kubernetes/client-node';
 import { Logger } from '../utils/logger';
+
+// Use dynamic import for Kubernetes client to avoid module resolution issues
+let k8s: any;
 
 // Repository configuration interface used in various places
 // (prefixed with underscore to indicate it's not currently used but may be needed later)
@@ -199,12 +201,13 @@ export interface DeepWikiChatResult {
  * Service for interacting with DeepWiki deployed in Kubernetes
  */
 export class DeepWikiKubernetesService {
-  private readonly kc: k8s.KubeConfig;
-  private readonly k8sExecApi: k8s.CoreV1Api;
+  private readonly kc: any;
+  private readonly k8sExecApi: any;
   private readonly namespace: string;
   private readonly podName: string;
   private readonly containerName: string;
   private readonly logger: Logger;
+  private k8sInitialized = false;
   
   /**
    * Creates a new DeepWikiKubernetesService
@@ -222,11 +225,6 @@ export class DeepWikiKubernetesService {
   ) {
     this.logger = logger;
     
-    // Initialize Kubernetes client
-    this.kc = new k8s.KubeConfig();
-    this.kc.loadFromDefault();
-    this.k8sExecApi = this.kc.makeApiClient(k8s.CoreV1Api);
-    
     // Set DeepWiki pod details from options or use defaults
     this.namespace = options?.namespace || 'default';
     this.podName = options?.podName || 'deepwiki';
@@ -236,12 +234,32 @@ export class DeepWikiKubernetesService {
   }
   
   /**
+   * Initialize Kubernetes client lazily
+   */
+  private async initializeK8s(): Promise<void> {
+    if (this.k8sInitialized) return;
+    
+    try {
+      k8s = await import('@kubernetes/client-node');
+      const kc = new k8s.KubeConfig();
+      kc.loadFromDefault();
+      (this as any).kc = kc;
+      (this as any).k8sExecApi = kc.makeApiClient(k8s.CoreV1Api);
+      this.k8sInitialized = true;
+    } catch (error) {
+      this.logger.warn('Kubernetes client not available', { error: error instanceof Error ? error.message : String(error) });
+      throw new Error('Kubernetes client initialization failed');
+    }
+  }
+  
+  /**
    * Analyzes a repository using DeepWiki
    * 
    * @param options Analysis options
    * @returns Analysis result
    */
   public async analyzeRepository(options: DeepWikiAnalysisOptions): Promise<DeepWikiAnalysisResult> {
+    await this.initializeK8s();
     this.logger.info(`Starting DeepWiki analysis for ${options.repositoryUrl}`);
     
     const startTime = new Date();
@@ -303,6 +321,7 @@ export class DeepWikiKubernetesService {
    * @returns Chat query result
    */
   public async queryChat(query: DeepWikiChatQuery): Promise<DeepWikiChatResult> {
+    await this.initializeK8s();
     this.logger.info(`Starting DeepWiki chat query: ${query.question}`);
     
     const startTime = Date.now();
@@ -561,6 +580,7 @@ export class DeepWikiKubernetesService {
    * @returns Pod status
    */
   public async getPodStatus(): Promise<Record<string, unknown>> {
+    await this.initializeK8s();
     try {
       // Real implementation that communicates with Kubernetes
       const response = await this.k8sExecApi.readNamespacedPod({
