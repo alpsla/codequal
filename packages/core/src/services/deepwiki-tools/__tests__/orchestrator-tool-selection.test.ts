@@ -62,6 +62,15 @@ describe('Orchestrator Tool Selection', () => {
     } as MockEnhancedDeepWikiManager;
   });
 
+  afterEach(() => {
+    jest.clearAllMocks();
+    jest.resetAllMocks();
+  });
+
+  afterAll(() => {
+    jest.restoreAllMocks();
+  });
+
   describe('Tool Selection Logic', () => {
     it('should request all tools for JavaScript/TypeScript repository', async () => {
       const repositoryUrl = 'https://github.com/example/js-project';
