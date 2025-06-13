@@ -1,0 +1,11 @@
+# Ignore compiled output
+**/dist/**
+**/build/**
+**/node_modules/**
+
+# Ignore test output
+**/.next/**
+**/coverage/**
+
+# Ignore generated files
+**/*.d.ts

@@ -15,3 +15,9 @@ export * from './pr-review-service';
 
 // Export skill service
 export * from './skill-service';
+
+// Export DeepWiki services
+export * from './deepwiki-kubernetes.service';
+
+// Export DeepWiki tools integration
+export * from './deepwiki-tools';
