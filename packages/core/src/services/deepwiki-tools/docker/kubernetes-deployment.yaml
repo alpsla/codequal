@@ -1,93 +1,189 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: deepwiki-tools-config
-  namespace: default
-data:
-  tools-enabled: "true"
-  tools-timeout: "60000"
-  tools-parallel: "true"
-  enabled-tools: |
-    npm-audit
-    license-checker
-    madge
-    dependency-cruiser
-    npm-outdated
-  tool-agent-mapping: |
-    npm-audit: security
-    license-checker: security,dependency
-    madge: architecture
-    dependency-cruiser: architecture
-    npm-outdated: dependency
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: deepwiki
+  name: deepwiki-with-tools
   namespace: default
+  labels:
+    app: deepwiki-with-tools
+    version: v2.0.0
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
-      app: deepwiki
+      app: deepwiki-with-tools
   template:
     metadata:
       labels:
-        app: deepwiki
+        app: deepwiki-with-tools
+        version: v2.0.0
     spec:
       containers:
-      - name: deepwiki
-        image: your-registry/deepwiki-with-tools:latest
-        envFrom:
-        - configMapRef:
-            name: deepwiki-tools-config
+      - name: deepwiki-with-tools
+        image: deepwiki-with-tools:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          name: http
+        - containerPort: 8081
+          name: metrics
         env:
+        - name: NODE_ENV
+          value: "production"
         - name: TOOLS_ENABLED
-          valueFrom:
-            configMapKeyRef:
-              name: deepwiki-tools-config
-              key: tools-enabled
+          value: "true"
         - name: TOOLS_TIMEOUT
-          valueFrom:
-            configMapKeyRef:
-              name: deepwiki-tools-config
-              key: tools-timeout
+          value: "60000"
         - name: TOOLS_PARALLEL
-          valueFrom:
-            configMapKeyRef:
-              name: deepwiki-tools-config
-              key: tools-parallel
+          value: "true"
+        - name: TOOLS_MAX_BUFFER
+          value: "20971520"
+        - name: DEEPWIKI_LOG_LEVEL
+          value: "info"
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 2
         volumeMounts:
         - name: workspace
           mountPath: /workspace
-        - name: tools
-          mountPath: /tools
-        resources:
-          requests:
-            memory: "2Gi"
-            cpu: "1"
-          limits:
-            memory: "4Gi"
-            cpu: "2"
+        - name: tool-results
+          mountPath: /tmp/tool-results
+        - name: deepwiki-config
+          mountPath: /app/config
+          readOnly: true
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1001
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          capabilities:
+            drop:
+            - ALL
       volumes:
       - name: workspace
         emptyDir:
           sizeLimit: 10Gi
-      - name: tools
+      - name: tool-results
+        emptyDir:
+          sizeLimit: 1Gi
+      - name: deepwiki-config
         configMap:
-          name: deepwiki-tools-config
-          defaultMode: 0755
+          name: deepwiki-config
+      serviceAccountName: deepwiki-service-account
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: deepwiki
+  name: deepwiki-with-tools
   namespace: default
+  labels:
+    app: deepwiki-with-tools
 spec:
   selector:
-    app: deepwiki
+    app: deepwiki-with-tools
   ports:
-  - port: 8080
+  - name: http
+    port: 80
     targetPort: 8080
     protocol: TCP
+  - name: metrics
+    port: 8081
+    targetPort: 8081
+    protocol: TCP
   type: ClusterIP
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: deepwiki-service-account
+  namespace: default
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: deepwiki-role
+  namespace: default
+rules:
+- apiGroups: [""]
+  resources: ["pods", "services", "configmaps"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["pods/exec"]
+  verbs: ["create"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: deepwiki-role-binding
+  namespace: default
+subjects:
+- kind: ServiceAccount
+  name: deepwiki-service-account
+  namespace: default
+roleRef:
+  kind: Role
+  name: deepwiki-role
+  apiGroup: rbac.authorization.k8s.io
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: deepwiki-config
+  namespace: default
+data:
+  config.yaml: |
+    server:
+      host: "0.0.0.0"
+      port: 8080
+      metricsPort: 8081
+    
+    tools:
+      enabled: true
+      timeout: 60000
+      parallel: true
+      maxBuffer: 20971520
+      enabledByDefault:
+        - npm-audit
+        - license-checker
+        - madge
+        - dependency-cruiser
+        - npm-outdated
+    
+    logging:
+      level: info
+      format: json
+    
+    workspace:
+      baseDir: /workspace
+      cleanup: true
+      maxSize: 10737418240
+    
+    storage:
+      resultsTempDir: /tmp/tool-results
+      maxResultSize: 1073741824

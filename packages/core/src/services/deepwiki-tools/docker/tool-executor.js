@@ -2,341 +2,298 @@
 
 /**
  * Tool Executor for DeepWiki
- * This script is executed within the DeepWiki pod to run analysis tools
+ * This script is called from within the Docker container to execute analysis tools
  */
 
-const { exec } = require('child_process');
+const { spawn } = require('child_process');
 const fs = require('fs').promises;
 const path = require('path');
 
-// Tool execution functions
-const tools = {
-  'npm-audit': runNpmAudit,
-  'license-checker': runLicenseChecker,
-  'madge': runMadge,
-  'dependency-cruiser': runDependencyCruiser,
-  'npm-outdated': runNpmOutdated
-};
-
-async function main() {
-  const args = process.argv.slice(2);
-  
-  if (args.length < 1) {
-    console.error('Usage: tool-executor.js <repository-path> [tools]');
-    process.exit(1);
+class ToolExecutor {
+  constructor() {
+    this.timeout = parseInt(process.env.TOOLS_TIMEOUT || '60000');
+    this.maxBuffer = parseInt(process.env.TOOLS_MAX_BUFFER || '20971520');
+    this.parallel = process.env.TOOLS_PARALLEL !== 'false';
   }
-  
-  const repoPath = args[0];
-  const requestedTools = args[1] ? args[1].split(',') : Object.keys(tools);
-  
-  console.log(`Running tools in: ${repoPath}`);
-  console.log(`Tools to run: ${requestedTools.join(', ')}`);
-  
-  const results = {
-    timestamp: new Date().toISOString(),
-    repository: repoPath,
-    results: {}
-  };
-  
-  // Detect applicable tools
-  const applicableTools = await detectApplicableTools(repoPath, requestedTools);
-  
-  // Run tools in parallel
-  const toolPromises = applicableTools.map(async (toolName) => {
+
+  /**
+   * Execute tools for a repository
+   */
+  async executeTools(repositoryPath, enabledTools) {
+    console.log(`Executing tools for repository: ${repositoryPath}`);
+    console.log(`Enabled tools: ${enabledTools.join(', ')}`);
+
+    const results = {};
+    const startTime = Date.now();
+
+    try {
+      // Check if repository exists
+      await fs.access(repositoryPath);
+      
+      // Check for package.json to determine if it's a Node.js project
+      const packageJsonPath = path.join(repositoryPath, 'package.json');
+      let hasPackageJson = false;
+      
+      try {
+        await fs.access(packageJsonPath);
+        hasPackageJson = true;
+      } catch {
+        console.log('No package.json found, skipping npm-based tools');
+      }
+
+      // Execute tools based on availability
+      if (this.parallel) {
+        const promises = enabledTools.map(tool => 
+          this.executeTool(tool, repositoryPath, hasPackageJson)
+        );
+        const toolResults = await Promise.allSettled(promises);
+        
+        toolResults.forEach((result, index) => {
+          const toolName = enabledTools[index];
+          if (result.status === 'fulfilled') {
+            results[toolName] = result.value;
+          } else {
+            results[toolName] = {
+              toolId: toolName,
+              success: false,
+              error: result.reason instanceof Error ? result.reason.message : String(result.reason),
+              executionTime: 0
+            };
+          }
+        });
+      } else {
+        // Sequential execution
+        for (const tool of enabledTools) {
+          try {
+            results[tool] = await this.executeTool(tool, repositoryPath, hasPackageJson);
+          } catch (error) {
+            results[tool] = {
+              toolId: tool,
+              success: false,
+              error: error instanceof Error ? error.message : String(error),
+              executionTime: 0
+            };
+          }
+        }
+      }
+
+      const endTime = Date.now();
+      const totalTime = endTime - startTime;
+
+      return {
+        timestamp: new Date().toISOString(),
+        repository: repositoryPath,
+        totalExecutionTime: totalTime,
+        results
+      };
+
+    } catch (error) {
+      console.error('Tool execution failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Execute a single tool
+   */
+  async executeTool(toolName, repositoryPath, hasPackageJson) {
     const startTime = Date.now();
     
+    console.log(`Executing tool: ${toolName}`);
+
     try {
-      const output = await tools[toolName](repoPath);
-      results.results[toolName] = {
+      // Skip npm-based tools if no package.json
+      if (['npm-audit', 'npm-outdated'].includes(toolName) && !hasPackageJson) {
+        return {
+          toolId: toolName,
+          success: false,
+          error: 'No package.json found - skipping npm-based tool',
+          executionTime: Date.now() - startTime
+        };
+      }
+
+      const result = await this.runToolCommand(toolName, repositoryPath);
+      const endTime = Date.now();
+
+      return {
+        toolId: toolName,
         success: true,
-        executionTime: Date.now() - startTime,
-        output,
-        metadata: extractMetadata(toolName, output)
+        output: result.output,
+        executionTime: endTime - startTime,
+        metadata: this.extractMetadata(toolName, result.output)
       };
+
     } catch (error) {
-      results.results[toolName] = {
+      const endTime = Date.now();
+      
+      return {
+        toolId: toolName,
         success: false,
-        executionTime: Date.now() - startTime,
-        error: error.message
+        error: error instanceof Error ? error.message : String(error),
+        executionTime: endTime - startTime
       };
     }
-  });
-  
-  await Promise.all(toolPromises);
-  
-  // Output results as JSON
-  console.log(JSON.stringify(results, null, 2));
+  }
+
+  /**
+   * Run a tool command
+   */
+  async runToolCommand(toolName, repositoryPath) {
+    return new Promise((resolve, reject) => {
+      let command, args;
+
+      switch (toolName) {
+        case 'npm-audit':
+          command = 'npm';
+          args = ['audit', '--json'];
+          break;
+        case 'license-checker':
+          command = 'license-checker';
+          args = ['--json'];
+          break;
+        case 'madge':
+          command = 'madge';
+          args = ['--json', '--circular', '.'];
+          break;
+        case 'dependency-cruiser':
+          command = 'depcruise';
+          args = ['--output-type', 'json', '.'];
+          break;
+        case 'npm-outdated':
+          command = 'npm';
+          args = ['outdated', '--json'];
+          break;
+        default:
+          reject(new Error(`Unknown tool: ${toolName}`));
+          return;
+      }
+
+      const child = spawn(command, args, {
+        cwd: repositoryPath,
+        timeout: this.timeout,
+        maxBuffer: this.maxBuffer
+      });
+
+      let stdout = '';
+      let stderr = '';
+
+      child.stdout.on('data', (data) => {
+        stdout += data.toString();
+      });
+
+      child.stderr.on('data', (data) => {
+        stderr += data.toString();
+      });
+
+      child.on('close', (code) => {
+        // Some tools return non-zero exit codes even on success
+        if (toolName === 'npm-audit' && code === 1) {
+          // npm audit returns 1 when vulnerabilities are found
+          code = 0;
+        }
+        if (toolName === 'npm-outdated' && code === 1) {
+          // npm outdated returns 1 when outdated packages are found
+          code = 0;
+        }
+
+        if (code === 0 || stdout.length > 0) {
+          resolve({
+            output: stdout,
+            stderr: stderr,
+            exitCode: code
+          });
+        } else {
+          reject(new Error(`Tool ${toolName} failed with exit code ${code}: ${stderr}`));
+        }
+      });
+
+      child.on('error', (error) => {
+        reject(error);
+      });
+    });
+  }
+
+  /**
+   * Extract metadata from tool output
+   */
+  extractMetadata(toolName, output) {
+    try {
+      const data = JSON.parse(output);
+      
+      switch (toolName) {
+        case 'npm-audit':
+          return {
+            totalVulnerabilities: data.metadata?.vulnerabilities?.total || 0,
+            vulnerabilities: data.metadata?.vulnerabilities || {}
+          };
+        case 'license-checker':
+          return {
+            totalPackages: Object.keys(data).length,
+            riskyLicenses: Object.values(data).filter(pkg => 
+              pkg.licenses && ['GPL', 'AGPL'].some(risk => pkg.licenses.includes(risk))
+            ).length
+          };
+        case 'madge':
+          return {
+            circularDependencies: Array.isArray(data) ? data.length : 0
+          };
+        case 'dependency-cruiser':
+          return {
+            violations: data.summary?.violations || 0
+          };
+        case 'npm-outdated':
+          const packages = Object.keys(data);
+          return {
+            totalOutdated: packages.length,
+            majorUpdates: packages.filter(pkg => 
+              data[pkg].current && data[pkg].wanted && 
+              parseInt(data[pkg].wanted.split('.')[0]) > parseInt(data[pkg].current.split('.')[0])
+            ).length,
+            minorUpdates: packages.filter(pkg => 
+              data[pkg].current && data[pkg].wanted && 
+              parseInt(data[pkg].wanted.split('.')[1]) > parseInt(data[pkg].current.split('.')[1])
+            ).length
+          };
+        default:
+          return {};
+      }
+    } catch (error) {
+      console.warn(`Failed to parse ${toolName} output as JSON:`, error.message);
+      return {};
+    }
+  }
 }
 
-async function detectApplicableTools(repoPath, requestedTools) {
-  const applicable = [];
+// Main execution
+async function main() {
+  const repositoryPath = process.argv[2];
+  const enabledToolsStr = process.argv[3];
+  const timeout = process.argv[4];
+
+  if (!repositoryPath || !enabledToolsStr) {
+    console.error('Usage: node tool-executor.js <repository_path> <enabled_tools> [timeout]');
+    process.exit(1);
+  }
+
+  const enabledTools = enabledToolsStr.split(',').map(tool => tool.trim());
+  
+  if (timeout) {
+    process.env.TOOLS_TIMEOUT = timeout;
+  }
+
+  const executor = new ToolExecutor();
   
   try {
-    // Check for package.json
-    const hasPackageJson = await fileExists(path.join(repoPath, 'package.json'));
-    
-    if (hasPackageJson) {
-      if (requestedTools.includes('npm-audit')) {
-        const hasLockFile = await fileExists(path.join(repoPath, 'package-lock.json'));
-        if (hasLockFile) {
-          applicable.push('npm-audit');
-        }
-      }
-      
-      if (requestedTools.includes('license-checker')) {
-        applicable.push('license-checker');
-      }
-      
-      if (requestedTools.includes('npm-outdated')) {
-        applicable.push('npm-outdated');
-      }
-    }
-    
-    // Check for JavaScript files
-    const hasJsFiles = await hasJavaScriptFiles(repoPath);
-    if (hasJsFiles) {
-      if (requestedTools.includes('madge')) {
-        applicable.push('madge');
-      }
-      
-      if (requestedTools.includes('dependency-cruiser')) {
-        applicable.push('dependency-cruiser');
-      }
-    }
+    const results = await executor.executeTools(repositoryPath, enabledTools);
+    console.log(JSON.stringify(results, null, 2));
   } catch (error) {
-    console.error('Error detecting applicable tools:', error);
-  }
-  
-  return applicable;
-}
-
-async function runNpmAudit(repoPath) {
-  return new Promise((resolve, reject) => {
-    exec('npm audit --json', { cwd: repoPath, maxBuffer: 10 * 1024 * 1024 }, (error, stdout) => {
-      // npm audit exits with error if vulnerabilities found, but we still want the output
-      if (stdout) {
-        try {
-          resolve(JSON.parse(stdout));
-        } catch (e) {
-          resolve({ error: 'Failed to parse npm audit output' });
-        }
-      } else {
-        reject(new Error(error?.message || 'npm audit failed'));
-      }
-    });
-  });
-}
-
-async function runLicenseChecker(repoPath) {
-  return new Promise((resolve, reject) => {
-    exec('npx license-checker --json --production', { cwd: repoPath, maxBuffer: 10 * 1024 * 1024 }, (error, stdout) => {
-      if (error) {
-        reject(error);
-      } else {
-        try {
-          resolve(JSON.parse(stdout));
-        } catch (e) {
-          resolve({ error: 'Failed to parse license-checker output' });
-        }
-      }
-    });
-  });
-}
-
-async function runMadge(repoPath) {
-  const srcDir = await findSourceDirectory(repoPath);
-  
-  return new Promise((resolve, reject) => {
-    exec(`npx madge --circular --json "${srcDir}"`, { cwd: repoPath, maxBuffer: 10 * 1024 * 1024 }, (error, stdout) => {
-      if (error) {
-        reject(error);
-      } else {
-        try {
-          resolve(JSON.parse(stdout));
-        } catch (e) {
-          resolve([]);
-        }
-      }
-    });
-  });
-}
-
-async function runDependencyCruiser(repoPath) {
-  const srcDir = await findSourceDirectory(repoPath);
-  const configFile = await findDepCruiserConfig(repoPath);
-  
-  let command = `npx dependency-cruiser "${srcDir}" --output-type json`;
-  if (configFile) {
-    command += ` --config "${configFile}"`;
-  }
-  
-  return new Promise((resolve, reject) => {
-    exec(command, { cwd: repoPath, maxBuffer: 10 * 1024 * 1024 }, (error, stdout) => {
-      if (error) {
-        reject(error);
-      } else {
-        try {
-          resolve(JSON.parse(stdout));
-        } catch (e) {
-          resolve({ error: 'Failed to parse dependency-cruiser output' });
-        }
-      }
-    });
-  });
-}
-
-async function runNpmOutdated(repoPath) {
-  return new Promise((resolve, reject) => {
-    exec('npm outdated --json', { cwd: repoPath, maxBuffer: 10 * 1024 * 1024 }, (error, stdout) => {
-      // npm outdated exits with error if packages are outdated, but we still want the output
-      if (stdout) {
-        try {
-          resolve(JSON.parse(stdout));
-        } catch (e) {
-          resolve({});
-        }
-      } else {
-        resolve({});
-      }
-    });
-  });
-}
-
-function extractMetadata(toolName, output) {
-  const metadata = {};
-  
-  switch (toolName) {
-    case 'npm-audit':
-      if (output.metadata?.vulnerabilities) {
-        metadata.vulnerabilities = output.metadata.vulnerabilities;
-        metadata.totalVulnerabilities = output.metadata.vulnerabilities.total || 0;
-      }
-      break;
-      
-    case 'license-checker':
-      if (typeof output === 'object') {
-        const licenses = new Set();
-        const riskyLicenses = [];
-        
-        Object.entries(output).forEach(([pkg, info]) => {
-          const license = info.licenses || 'Unknown';
-          licenses.add(license);
-          
-          if (/GPL|AGPL|LGPL/i.test(license)) {
-            riskyLicenses.push(pkg);
-          }
-        });
-        
-        metadata.totalPackages = Object.keys(output).length;
-        metadata.uniqueLicenses = licenses.size;
-        metadata.riskyLicenses = riskyLicenses.length;
-      }
-      break;
-      
-    case 'madge':
-      if (Array.isArray(output)) {
-        metadata.circularDependencies = output.length;
-        metadata.hasCircularDeps = output.length > 0;
-      }
-      break;
-      
-    case 'dependency-cruiser':
-      if (output.summary) {
-        metadata.violations = output.summary.violations || 0;
-        metadata.totalModules = output.summary.totalCruised || 0;
-      }
-      break;
-      
-    case 'npm-outdated':
-      if (typeof output === 'object') {
-        metadata.totalOutdated = Object.keys(output).length;
-        
-        let major = 0, minor = 0, patch = 0;
-        Object.values(output).forEach(pkg => {
-          if (pkg.current && pkg.latest) {
-            const [currMajor, currMinor] = pkg.current.split('.');
-            const [latestMajor, latestMinor] = pkg.latest.split('.');
-            
-            if (currMajor !== latestMajor) {
-              major++;
-            } else if (currMinor !== latestMinor) {
-              minor++;
-            } else {
-              patch++;
-            }
-          }
-        });
-        
-        metadata.majorUpdates = major;
-        metadata.minorUpdates = minor;
-        metadata.patchUpdates = patch;
-      }
-      break;
-  }
-  
-  return metadata;
-}
-
-async function fileExists(filePath) {
-  try {
-    await fs.access(filePath);
-    return true;
-  } catch {
-    return false;
+    console.error('Execution failed:', error);
+    process.exit(1);
   }
 }
 
-async function hasJavaScriptFiles(repoPath) {
-  try {
-    const entries = await fs.readdir(repoPath, { withFileTypes: true });
-    
-    for (const entry of entries) {
-      if (entry.isDirectory() && ['src', 'lib', 'app', 'components'].includes(entry.name)) {
-        return true;
-      }
-      if (entry.isFile() && /\.(js|jsx|ts|tsx)$/.test(entry.name)) {
-        return true;
-      }
-    }
-    
-    return false;
-  } catch {
-    return false;
-  }
+if (require.main === module) {
+  main();
 }
 
-async function findSourceDirectory(repoPath) {
-  const dirs = ['src', 'lib', 'app', 'source'];
-  
-  for (const dir of dirs) {
-    const dirPath = path.join(repoPath, dir);
-    if (await fileExists(dirPath)) {
-      return dirPath;
-    }
-  }
-  
-  return repoPath;
-}
-
-async function findDepCruiserConfig(repoPath) {
-  const configs = [
-    '.dependency-cruiser.js',
-    '.dependency-cruiser.json',
-    'dependency-cruiser.config.js'
-  ];
-  
-  for (const config of configs) {
-    const configPath = path.join(repoPath, config);
-    if (await fileExists(configPath)) {
-      return configPath;
-    }
-  }
-  
-  return null;
-}
-
-// Run main function
-main().catch(error => {
-  console.error('Tool executor failed:', error);
-  process.exit(1);
-});
+module.exports = ToolExecutor;
