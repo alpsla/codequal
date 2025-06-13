@@ -1,7 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types, @typescript-eslint/no-unused-vars, no-console */
+
 import { ToolRunnerService } from '../tool-runner.service';
 import { ToolResultStorageService } from '../tool-result-storage.service';
-import { VectorStorageService } from '@codequal/database/services/ingestion/vector-storage.service';
+import { VectorStorageService } from '@codequal/database';
 import { Logger } from '../../../utils/logger';
 import * as fs from 'fs/promises';
 import * as path from 'path';

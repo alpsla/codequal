@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/ban-types */
+
+
 /**
  * Type definitions for DeepWiki tools
  * These types mirror the database package types to avoid circular dependencies

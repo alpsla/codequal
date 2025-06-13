@@ -375,9 +375,22 @@ describe('SelectiveRAGService', () => {
     });
 
     it('should continue with document search if educational search fails', async () => {
+      // Mock document search to succeed
       mockSupabase.rpc
         .mockResolvedValueOnce({
-          data: [{ id: 1, similarity: 0.8 }],
+          data: [{
+            id: 1,
+            repository_id: 1,
+            file_path: 'test.ts',
+            content_chunk: 'test content',
+            content_type: 'code',
+            content_language: 'typescript',
+            importance_score: 0.5,
+            similarity: 0.8,
+            metadata: {},
+            framework_references: [],
+            updated_at: new Date().toISOString()
+          }],
           error: null
         })
         .mockRejectedValueOnce(new Error('Educational search failed'));
