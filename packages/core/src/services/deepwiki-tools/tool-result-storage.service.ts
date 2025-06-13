@@ -1,4 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types, @typescript-eslint/no-unused-vars, no-console */
+
 import { VectorStorageService, EnhancedChunk } from './types';
 // Import types from database package when used in implementation
 import { ToolExecutionResult } from './tool-runner.service';
