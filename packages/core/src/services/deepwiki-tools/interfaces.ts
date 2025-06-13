@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Interfaces for DeepWiki tools to avoid circular dependencies
  */
