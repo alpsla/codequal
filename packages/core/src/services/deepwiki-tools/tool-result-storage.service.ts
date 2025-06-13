@@ -1,4 +1,5 @@
-import type { VectorStorageService, EnhancedChunk } from '@codequal/database';
+import { VectorStorageService, EnhancedChunk } from './types';
+// Import types from database package when used in implementation
 import { ToolExecutionResult } from './tool-runner.service';
 import { v4 as uuidv4 } from 'uuid';
 
