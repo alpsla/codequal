@@ -1,4 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types, @typescript-eslint/no-unused-vars, no-console */
+
 /**
  * Phased Testing Script for DeepWiki Tool Integration
  * Tests each tool with real repositories and provides detailed output for review
