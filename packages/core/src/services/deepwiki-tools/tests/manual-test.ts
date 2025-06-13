@@ -5,7 +5,7 @@
 
 import { ToolRunnerService } from '../tool-runner.service';
 import { ToolResultStorageService } from '../tool-result-storage.service';
-import { VectorStorageService } from '@codequal/database';
+import type { VectorStorageService } from '@codequal/database';
 import { Logger } from '../../../utils/logger';
 import * as path from 'path';
 
