@@ -11,6 +11,8 @@
 export * from './tool-runner.service';
 export * from './deepwiki-with-tools.service';
 export * from './tool-result-storage.service';
+export * from './repository-clone-integration.service';
+export * from './webhook-handler.service';
 
 /**
  * Tools that run in DeepWiki (need full repository):
