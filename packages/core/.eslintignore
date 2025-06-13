@@ -1,0 +1,11 @@
+# Ignore JavaScript utility and test files
+src/deepwiki/*.js
+src/services/deepwiki-tools/**/*.js
+
+# Ignore all dist directories
+**/dist/**
+**/build/**
+
+# Ignore Docker and utility JavaScript files  
+src/services/deepwiki-tools/docker/*.js
+src/services/deepwiki-tools/tests/*.js
