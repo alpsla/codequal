@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { DeepWikiKubernetesService, DeepWikiAnalysisOptions, DeepWikiAnalysisResult } from '../deepwiki-kubernetes.service';
 import { ToolRunnerService, ToolExecutionResult } from './tool-runner.service';
 import { Logger } from '../../utils/logger';

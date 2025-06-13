@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Manual test script for DeepWiki tool integration
  * Run this to validate the deployment manually

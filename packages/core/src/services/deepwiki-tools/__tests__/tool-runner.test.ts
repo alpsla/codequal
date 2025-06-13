@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ToolRunnerService } from '../tool-runner.service';
 import { Logger } from '../../../utils/logger';
 import * as path from 'path';

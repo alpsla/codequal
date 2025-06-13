@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Orchestrator Tool Selection Test Suite
  * Tests that orchestrator correctly requests tool execution based on repository characteristics
