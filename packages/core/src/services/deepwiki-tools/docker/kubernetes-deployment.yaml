@@ -1,0 +1,93 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: deepwiki-tools-config
+  namespace: default
+data:
+  tools-enabled: "true"
+  tools-timeout: "60000"
+  tools-parallel: "true"
+  enabled-tools: |
+    npm-audit
+    license-checker
+    madge
+    dependency-cruiser
+    npm-outdated
+  tool-agent-mapping: |
+    npm-audit: security
+    license-checker: security,dependency
+    madge: architecture
+    dependency-cruiser: architecture
+    npm-outdated: dependency
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deepwiki
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: deepwiki
+  template:
+    metadata:
+      labels:
+        app: deepwiki
+    spec:
+      containers:
+      - name: deepwiki
+        image: your-registry/deepwiki-with-tools:latest
+        envFrom:
+        - configMapRef:
+            name: deepwiki-tools-config
+        env:
+        - name: TOOLS_ENABLED
+          valueFrom:
+            configMapKeyRef:
+              name: deepwiki-tools-config
+              key: tools-enabled
+        - name: TOOLS_TIMEOUT
+          valueFrom:
+            configMapKeyRef:
+              name: deepwiki-tools-config
+              key: tools-timeout
+        - name: TOOLS_PARALLEL
+          valueFrom:
+            configMapKeyRef:
+              name: deepwiki-tools-config
+              key: tools-parallel
+        volumeMounts:
+        - name: workspace
+          mountPath: /workspace
+        - name: tools
+          mountPath: /tools
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1"
+          limits:
+            memory: "4Gi"
+            cpu: "2"
+      volumes:
+      - name: workspace
+        emptyDir:
+          sizeLimit: 10Gi
+      - name: tools
+        configMap:
+          name: deepwiki-tools-config
+          defaultMode: 0755
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: deepwiki
+  namespace: default
+spec:
+  selector:
+    app: deepwiki
+  ports:
+  - port: 8080
+    targetPort: 8080
+    protocol: TCP
+  type: ClusterIP
