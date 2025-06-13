@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Phased Testing Script for DeepWiki Tool Integration
  * Tests each tool with real repositories and provides detailed output for review

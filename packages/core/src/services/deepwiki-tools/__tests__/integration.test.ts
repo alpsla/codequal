@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ToolRunnerService } from '../tool-runner.service';
 import { ToolResultStorageService } from '../tool-result-storage.service';
 import { VectorStorageService } from '@codequal/database/services/ingestion/vector-storage.service';

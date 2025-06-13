@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Standalone Tool Testing Script
  * Tests tools without database dependencies

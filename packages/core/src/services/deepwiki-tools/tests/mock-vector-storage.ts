@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Mock VectorStorageService for testing
  * This is a temporary workaround until the database package is properly built
