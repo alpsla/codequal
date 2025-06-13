@@ -1,54 +1,92 @@
-# Environment variables
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+.nyc_output/
+test-results/
+test_logs.txt
+*.log
+
+# Production
+build/
+dist/
+out/
+.next/
+
+# Misc
+.DS_Store
+*.pem
 .env
-.env.*
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 
-# Claude settings
-**/.claude/settings.local.json
-
-# Dependencies
-node_modules/
-.pnp/
-.pnp.js
-
-# Build outputs
-dist/
-build/
-out/
-.next/
-
-# Testing
-coverage/
-
-# Logs
-logs/
-*.log
+# Debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
 
-# Editor directories and files
-.idea/
+# IDE
 .vscode/
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+.idea/
+*.swp
+*.swo
+*~
+
+# TypeScript
+*.tsbuildinfo
+.tsc-out/
+
+# Build artifacts
+.turbo/
+.cache/
+.parcel-cache/
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+*.old
+*_old
+*-copy
 
 # OS files
 .DS_Store
 Thumbs.db
 
-# Temporary files
-*.tmp
-*.temp
-*.tsbuildinfo
-*.tsbuildinfo
+# Archive directory
+archive/
+
+# ESLint
+.eslintcache
+eslint-results.json
+
+# Helper scripts (temporary)
 test-*.sh
-run-*.sh
-temp/
-.cleanup-temp/
+quick-*.sh
+check-*.sh
+analyze-*.sh
+review-*.sh
+organize-*.sh
+complete-*.sh
+final-*.sh
+comprehensive-*.sh
+deep-*.sh
+
+# Examples directory (if not needed in repo)
+examples/
+
+# Backup files
+*.bak
+*.backup
+
+# Lock files (keep package-lock.json)
+yarn.lock
+pnpm-lock.yaml
