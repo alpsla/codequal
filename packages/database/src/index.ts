@@ -26,6 +26,10 @@ export type { SkillCategory, DeveloperSkill, SkillHistoryEntry } from './models/
 export type { RepositoryAnalysis } from './models/repository-analysis';
 export type { CalibrationRun, CalibrationTestResult } from './models/calibration';
 
+// Export ingestion services
+export { VectorStorageService } from './services/ingestion/vector-storage.service';
+export type { EnhancedChunk, ChunkMetadata, VectorRecord } from './services/ingestion/types';
+
 // Database service for easier access to models
 export class DatabaseService {
   // Repositories
