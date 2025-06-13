@@ -1,4 +1,4 @@
-import { VectorStorageService, EnhancedChunk } from '@codequal/database';
+import type { VectorStorageService, EnhancedChunk } from '@codequal/database';
 import { ToolExecutionResult } from './tool-runner.service';
 import { v4 as uuidv4 } from 'uuid';
 

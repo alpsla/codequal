@@ -4,7 +4,7 @@
  */
 
 import { ToolExecutionResult } from './tool-runner.service';
-import { VectorStorageService } from '@codequal/database';
+import type { VectorStorageService } from '@codequal/database';
 import { Logger } from '../../utils/logger';
 
 export interface ToolReviewStatus {
