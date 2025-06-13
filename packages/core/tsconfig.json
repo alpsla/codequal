@@ -1,19 +1,29 @@
 {
-    "extends": "../../tsconfig.json",
-    "compilerOptions": {
-      "outDir": "./dist",
-      "rootDir": "./src",
-      "composite": true,
-      "declaration": true,
-      "paths": {
-        "@codequal/core/*": ["./src/*"]
-      },
-      "skipLibCheck": true,
-      "resolveJsonModule": true,
-      "allowSyntheticDefaultImports": true,
-      "isolatedModules": true,
-      "noEmitOnError": false
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "composite": true,
+    "declaration": true,
+    "paths": {
+      "@codequal/core/*": [
+        "./src/*"
+      ]
     },
-    "include": ["src/**/*"],
-    "exclude": ["node_modules", "dist", "**/*.test.ts"]
-  }
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "isolatedModules": true,
+    "noEmitOnError": false
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "**/tests/**",
+    "**/__tests__/**"
+  ]
+}
