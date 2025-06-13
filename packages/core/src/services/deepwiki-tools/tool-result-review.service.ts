@@ -1,10 +1,11 @@
+import { VectorStorageService } from './types';
 /**
  * Tool Result Review Service
  * Provides functionality to review and approve tool results before they're used by agents
  */
 
 import { ToolExecutionResult } from './tool-runner.service';
-import type { VectorStorageService } from '@codequal/database';
+// Import types from database package when used in implementation
 import { Logger } from '../../utils/logger';
 
 export interface ToolReviewStatus {
