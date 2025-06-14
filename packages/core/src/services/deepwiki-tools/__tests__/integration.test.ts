@@ -9,21 +9,9 @@ import { promisify } from 'util';
 
 const execAsync = promisify(exec);
 
-// Mock the database dependency to avoid Supabase in tests
-jest.mock('@codequal/database', () => ({
-  VectorStorageService: jest.fn(),
-  EnhancedChunk: jest.fn()
-}));
-
-// Mock the tool result storage service
-jest.mock('../tool-result-storage.service', () => ({
-  ToolResultStorageService: jest.fn().mockImplementation((vectorStorage: any, embeddingService: any) => ({
-    storeToolResults: jest.fn().mockResolvedValue(undefined)
-  }))
-}));
-
-// Import after mocks are set up
-const { ToolResultStorageService } = require('../tool-result-storage.service');
+// These will use the manual mocks in __mocks__ directories
+jest.mock('@codequal/database');
+jest.mock('../tool-result-storage.service');
 
 /**
  * Integration test for DeepWiki Tool Runner
@@ -66,15 +54,12 @@ describe('DeepWiki Tool Integration', () => {
       })
     };
     
-    const mockEmbeddingService = {
-      generateEmbedding: jest.fn().mockResolvedValue(new Array(1536).fill(0))
-    };
-    
     // Create mocked tool storage
-    toolStorage = new ToolResultStorageService(vectorStorage, mockEmbeddingService);
+    toolStorage = {
+      storeToolResults: jest.fn().mockResolvedValue(undefined)
+    };
 
     // Create test repository
-    testRepoPath = path.join(__dirname, 'test-repo');
     await setupTestRepository(testRepoPath);
   });
 
