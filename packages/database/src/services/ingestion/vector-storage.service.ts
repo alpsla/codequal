@@ -218,8 +218,47 @@ export class VectorStorageService {
   }
   
   /**
+   * Search by metadata fields
+   * This is a simple metadata search without vector similarity
+   */
+  async searchByMetadata(
+    criteria: Record<string, any>,
+    limit = 10
+  ): Promise<VectorRecord[]> {
+    let query = this.supabase
+      .from('analysis_chunks')
+      .select('*');
+    
+    // Apply each criteria as a filter
+    Object.entries(criteria).forEach(([key, value]) => {
+      if (key.includes('.')) {
+        // Handle nested metadata fields
+        const [parent, child] = key.split('.');
+        query = query.eq(`${parent}->>${child}`, value);
+      } else if (key === 'repository_url') {
+        // Map repository_url to repository_id if needed
+        query = query.eq('repository_id', value);
+      } else {
+        // Direct field match
+        query = query.eq(key, value);
+      }
+    });
+    
+    // Apply limit
+    query = query.limit(limit);
+    
+    const { data, error } = await query;
+    
+    if (error) {
+      throw new Error(`Failed to search by metadata: ${error.message}`);
+    }
+    
+    return data || [];
+  }
+  
+  /**
    * Search functionality has been moved to UnifiedSearchService
-   * @deprecated Use UnifiedSearchService.search() instead
+   * @deprecated Use UnifiedSearchService.search() instead for vector similarity search
    */
   
   /**
