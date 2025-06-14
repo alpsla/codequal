@@ -255,7 +255,7 @@ export class ToolResultRetrievalService {
       );
       
       // Convert chunks to tool result data
-      const toolResults: ToolResultData[] = chunks.map(chunk => ({
+      const toolResults: ToolResultData[] = chunks.map((chunk: any) => ({
         toolId: chunk.metadata.tool_id || chunk.metadata.tool_name,
         agentRole: chunk.metadata.agent_role,
         content: chunk.content || '',
