@@ -2,7 +2,7 @@
 
 import { DeepWikiWithToolsService } from './deepwiki-with-tools.service';
 import { ToolResultStorageService } from './tool-result-storage.service';
-import { VectorStorageService } from '@codequal/database/services/ingestion/vector-storage.service';
+import { VectorStorageService } from '@codequal/database';
 import { Logger } from '../../utils/logger';
 
 /**
@@ -61,7 +61,7 @@ export interface RepositoryCloneEvent {
 /**
  * Tool execution configuration for repository events
  */
-export interface ToolExecutionConfig {
+export interface RepositoryToolExecutionConfig {
   /**
    * Whether to run tools automatically after clone
    */
@@ -104,7 +104,7 @@ export class RepositoryCloneIntegrationService {
   /**
    * Default tool execution configuration
    */
-  private defaultConfig: ToolExecutionConfig = {
+  private defaultConfig: RepositoryToolExecutionConfig = {
     enabled: true,
     triggerEvents: ['push', 'pull_request', 'scheduled'],
     enabledTools: [
@@ -147,7 +147,7 @@ export class RepositoryCloneIntegrationService {
    */
   async handleRepositoryCloneEvent(
     event: RepositoryCloneEvent,
-    config: Partial<ToolExecutionConfig> = {}
+    config: Partial<RepositoryToolExecutionConfig> = {}
   ): Promise<{
     success: boolean;
     jobId?: string;
@@ -220,7 +220,7 @@ export class RepositoryCloneIntegrationService {
    */
   private shouldExecuteTools(
     event: RepositoryCloneEvent,
-    config: ToolExecutionConfig
+    config: RepositoryToolExecutionConfig
   ): boolean {
     // Check if tool execution is enabled
     if (!config.enabled) {
@@ -243,7 +243,7 @@ export class RepositoryCloneIntegrationService {
    */
   private async waitForRepositoryAvailability(
     repositoryUrl: string,
-    maxWaitTime: number = 60000 // 1 minute
+    maxWaitTime = 60000 // 1 minute
   ): Promise<void> {
     const startTime = Date.now();
     const checkInterval = 5000; // 5 seconds
@@ -282,7 +282,7 @@ export class RepositoryCloneIntegrationService {
    */
   private async executeToolsForRepository(
     event: RepositoryCloneEvent,
-    config: ToolExecutionConfig
+    config: RepositoryToolExecutionConfig
   ): Promise<{
     success: boolean;
     jobId?: string;
@@ -334,9 +334,8 @@ export class RepositoryCloneIntegrationService {
         toolResults,
         {
           prNumber: event.pullRequestNumber,
-          eventType: event.eventType,
-          commitSha: event.commitSha,
-          triggeredBy: event.triggeredBy?.id
+          commitHash: event.commitSha,
+          scheduledRun: event.eventType === 'scheduled'
         }
       );
       
@@ -371,7 +370,7 @@ export class RepositoryCloneIntegrationService {
    */
   async configureToolExecution(
     repositoryUrl: string,
-    config: Partial<ToolExecutionConfig>
+    config: Partial<RepositoryToolExecutionConfig>
   ): Promise<void> {
     // TODO: Store configuration in database for per-repository settings
     this.logger.info('Tool execution configured for repository', {

@@ -21,3 +21,6 @@ export * from './deepwiki-kubernetes.service';
 
 // Export DeepWiki tools integration
 export * from './deepwiki-tools';
+
+// Export scheduling services
+export * from './scheduling';

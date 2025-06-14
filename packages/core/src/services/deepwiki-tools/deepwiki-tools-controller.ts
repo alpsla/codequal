@@ -2,7 +2,7 @@
 
 import { WebhookHandlerService, WebhookProcessingResult } from './webhook-handler.service';
 import { RepositoryCloneIntegrationService } from './repository-clone-integration.service';
-import { VectorStorageService } from '@codequal/database/services/ingestion/vector-storage.service';
+import { VectorStorageService } from '@codequal/database';
 import { Logger } from '../../utils/logger';
 
 /**
