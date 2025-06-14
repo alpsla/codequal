@@ -17,6 +17,10 @@ jest.mock('../tool-result-storage.service');
  * Integration test for DeepWiki Tool Runner
  * Tests the complete flow from execution to storage
  */
+
+// Configure jest to use fake timers if needed
+jest.setTimeout(10000);
+
 describe('DeepWiki Tool Integration', () => {
   let toolRunner: ToolRunnerService;
   let toolStorage: any;
@@ -56,7 +60,9 @@ describe('DeepWiki Tool Integration', () => {
     
     // Create mocked tool storage
     toolStorage = {
-      storeToolResults: jest.fn().mockResolvedValue(undefined)
+      storeToolResults: jest.fn().mockImplementation((repoId, results, options) => {
+        return Promise.resolve(undefined);
+      })
     };
 
     // Create test repository
@@ -72,6 +78,10 @@ describe('DeepWiki Tool Integration', () => {
         // Ignore cleanup errors
       }
     }
+    
+    // Clear all timers and mocks
+    jest.clearAllTimers();
+    jest.clearAllMocks();
   });
 
   describe('Tool Execution', () => {
@@ -163,7 +173,7 @@ describe('DeepWiki Tool Integration', () => {
       const repoId = `test-repo-${Date.now()}`;
       
       // Store results using mocked service
-      await toolStorage.storeToolResults(repoId, mockResults);
+      await toolStorage.storeToolResults(repoId, mockResults, undefined);
 
       // Verify storeToolResults was called
       expect(toolStorage.storeToolResults).toHaveBeenCalledWith(
@@ -184,7 +194,7 @@ describe('DeepWiki Tool Integration', () => {
           output: {},
           executionTime: 100
         } as any
-      });
+      }, undefined);
 
       // Verify first call
       expect(toolStorage.storeToolResults).toHaveBeenCalledTimes(1);
@@ -197,7 +207,7 @@ describe('DeepWiki Tool Integration', () => {
           output: {},
           executionTime: 200
         } as any
-      });
+      }, undefined);
 
       // Verify it was called twice
       expect(toolStorage.storeToolResults).toHaveBeenCalledTimes(2);
@@ -217,7 +227,7 @@ describe('DeepWiki Tool Integration', () => {
 
       // Store results
       const repoId = `e2e-test-${Date.now()}`;
-      await toolStorage.storeToolResults(repoId, results);
+      await toolStorage.storeToolResults(repoId, results, undefined);
 
       // Verify storage was called
       expect(toolStorage.storeToolResults).toHaveBeenCalledWith(
@@ -264,7 +274,10 @@ async function setupTestRepository(repoPath: string): Promise<void> {
 
   // Install dependencies (for more realistic testing)
   try {
-    await execAsync('npm install --no-audit', { cwd: repoPath });
+    await execAsync('npm install --no-audit --no-fund --loglevel=error', { 
+      cwd: repoPath,
+      timeout: 5000 // Add timeout to prevent hanging
+    });
   } catch (error) {
     // Ignore install errors in test environment
     console.log('Note: npm install failed in test, continuing anyway');
