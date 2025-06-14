@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, no-console */
 import { Router, Request, Response } from 'express';
 import { RepositorySchedulerService } from '@codequal/core/services/scheduling';
-import { WebhookHandlerService } from '@codequal/core/services';
+import { WebhookHandlerService } from '@codequal/core/services/deepwiki-tools';
 import { createLogger } from '@codequal/core/utils';
 import { authMiddleware } from '../middleware/auth-middleware';
 

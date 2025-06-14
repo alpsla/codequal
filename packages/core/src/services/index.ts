@@ -19,8 +19,8 @@ export * from './skill-service';
 // Export DeepWiki services
 export * from './deepwiki-kubernetes.service';
 
-// Export DeepWiki tools integration
-export * from './deepwiki-tools';
+// Note: DeepWiki tools are not exported from main services to avoid cyclic dependency
+// Import directly from './deepwiki-tools' if needed
 
 // Export scheduling services
 export * from './scheduling';
