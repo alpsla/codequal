@@ -75,6 +75,7 @@ export class EnhancedDeepWikiManager {
     this.logger = logger || this.createDefaultLogger();
     this.vectorContextService = new VectorContextService(authenticatedUser);
     this.deepWikiService = new DeepWikiWithToolsService(this.logger);
+    
     this.toolStorageService = new ToolResultStorageService(
       this.vectorStorageService,
       this.embeddingService

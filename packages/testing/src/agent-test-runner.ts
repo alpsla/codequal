@@ -427,10 +427,15 @@ export class AgentTestRunner {
         
         // Create agent for this role
         const roleStartTime = Date.now();
-        const agent = AgentFactory.createAgent(role, selection[role], {});
+        const provider = selection[role];
+        if (!provider) {
+          console.warn(`No provider configured for role ${role}, skipping`);
+          continue;
+        }
+        const agent = AgentFactory.createAgent(role, provider, {});
         
         // Analyze PR
-        const analysisResult = await agent.analyze(prData);
+        const analysisResult = await agent.analyze(prData as unknown as Record<string, unknown>);
         const roleEndTime = Date.now();
         
         configResult.roleResults[role] = analysisResult;

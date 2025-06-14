@@ -7,6 +7,8 @@ import { authMiddleware } from './middleware/auth-middleware';
 import { resultOrchestratorRoutes } from './routes/result-orchestrator';
 import { repositoryRoutes } from './routes/repository';
 import { analysisRoutes } from './routes/analysis';
+import webhookRoutes from './routes/webhooks';
+import scheduleRoutes from './routes/schedules';
 import { errorHandler } from './middleware/error-handler';
 import { requestLogger } from './middleware/request-logger';
 
@@ -43,11 +45,15 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Webhook routes (no authentication required for external webhooks)
+app.use('/api/webhooks', webhookRoutes);
+
 // API routes with authentication
 app.use('/api', authMiddleware);
 app.use('/api', resultOrchestratorRoutes);
 app.use('/api/repository', repositoryRoutes);
 app.use('/api/analysis', analysisRoutes);
+app.use('/api', scheduleRoutes);
 
 // Error handling
 app.use(errorHandler);
