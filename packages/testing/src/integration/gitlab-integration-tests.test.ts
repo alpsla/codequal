@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // Fix import path to use relative path from testing package
 import { PRContextService } from '../../../../apps/api/src/services/pr-context-service';
 import { createClient } from '@supabase/supabase-js';

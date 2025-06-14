@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { VectorStorageService } from '@codequal/database';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
