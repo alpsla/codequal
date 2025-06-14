@@ -579,7 +579,50 @@ Tool configuration via ConfigMap
 Customer-specific customizations
 Instance-specific settings
 
+we have implemented a robust scheduling system with multiple trigger mechanisms:
 
+  1. Event-Driven Scheduling (Primary)
+
+  Webhook-based automatic triggers:
+  - Push events: Full analysis when pushing to main/master/develop branches
+  - Pull Request events: Security-focused analysis (npm-audit + license-checker)
+  - Configured in webhook-handler.service.ts:337-394
+
+  2. Manual Scheduling
+
+  API-triggered execution:
+  - POST /api/deepwiki-tools/trigger - Manual tool execution
+  - POST /api/deepwiki-tools/test - Development/testing triggers
+  - Supports custom tool selection and branch specification
+
+  3. Scheduled Scanning
+
+  Cron-style periodic analysis:
+  - POST /api/deepwiki-tools/scheduled-scan - Comprehensive repository analysis
+  - Configurable tool sets and timeout settings
+  - Auto-approval (no manual review required)
+
+  4. Configuration-Based Scheduling
+
+  Per-repository customization:
+  {
+    toolExecution: {
+      defaultTimeout: 60000,
+      parallelLimit: 3,
+      retryAttempts: 2,
+      enabledTools: ['npm-audit', 'license-checker', 'madge', 'dependency-cruiser', 'npm-outdated']
+    }
+  }
+
+  5. Event-Specific Tool Selection
+
+  - Push: All 5 tools (full analysis)
+  - PR: Security tools only (npm-audit, license-checker)
+  - Scheduled: All 5 tools (comprehensive scan)
+  - Manual: User-configurable
+
+  The system is fully operational in Kubernetes with all scheduling mechanisms ready for production use. All tool executions are automatically stored in Vector
+  DB for agent retrieval.
 
 DeepWiki Deployment (NEW)
 

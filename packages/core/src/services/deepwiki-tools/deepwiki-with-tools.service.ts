@@ -133,39 +133,13 @@ export class DeepWikiWithToolsService extends DeepWikiKubernetesService {
     enabledTools: string[];
     timeout?: number;
   }): string {
-    // This command will be executed in the DeepWiki pod
-    // It needs to invoke the tool runner with the appropriate configuration
+    // Use the deployed tool-executor.js in the DeepWiki pod
+    const toolsString = config.enabledTools.join(',');
+    const timeout = config.timeout || 60000;
     
-    const toolConfig = {
-      repositoryPath: config.repositoryPath,
-      enabledTools: config.enabledTools,
-      timeout: config.timeout || 60000
-    };
-    
-    // Create a Node.js script that runs the tools
-    // In production, this would invoke the actual tool runner service
-    const script = `
-      const { ToolRunnerService } = require('./tool-runner.service');
-      const logger = { 
-        info: console.log, 
-        warn: console.warn, 
-        error: console.error 
-      };
-      
-      const runner = new ToolRunnerService(logger);
-      const config = ${JSON.stringify(toolConfig)};
-      
-      runner.runTools(config)
-        .then(results => {
-          console.log(JSON.stringify({ success: true, results }));
-        })
-        .catch(error => {
-          console.log(JSON.stringify({ success: false, error: error.message }));
-        });
-    `;
-    
-    // Execute via node
-    return `node -e '${script.replace(/'/g, "\\'")}'`;
+    // Command to execute the tool-executor.js directly
+    // This uses the tool-executor.js we deployed to /tools/
+    return `cd ${config.repositoryPath} && node /tools/tool-executor.js ${config.repositoryPath} "${toolsString}" ${timeout}`;
   }
   
   /**
@@ -173,26 +147,60 @@ export class DeepWikiWithToolsService extends DeepWikiKubernetesService {
    */
   private parseToolOutput(output: string): Record<string, ToolExecutionResult> {
     try {
-      const parsed = JSON.parse(output);
+      // The tool-executor.js outputs format: 
+      // {
+      //   "timestamp": "...",
+      //   "repository": "...",
+      //   "totalExecutionTime": 1000,
+      //   "results": {
+      //     "tool-name": { toolId, success, output, executionTime, metadata }
+      //   }
+      // }
       
-      if (parsed.success && parsed.results) {
-        return parsed.results;
+      // Extract JSON from output (skip any console logs before JSON)
+      const lines = output.trim().split('\n');
+      let jsonLine = '';
+      
+      // Find the JSON output (starts with '{')
+      for (const line of lines) {
+        if (line.trim().startsWith('{')) {
+          jsonLine = line.trim();
+          break;
+        }
+      }
+      
+      if (!jsonLine) {
+        throw new Error('No JSON output found in tool execution');
+      }
+      
+      const parsed = JSON.parse(jsonLine);
+      
+      if (parsed.results) {
+        // Convert the tool results to the expected format
+        const toolResults: Record<string, ToolExecutionResult> = {};
+        
+        for (const [toolId, result] of Object.entries(parsed.results)) {
+          const toolResult = result as any;
+          toolResults[toolId] = {
+            toolId: toolResult.toolId || toolId,
+            success: toolResult.success || false,
+            output: toolResult.output,
+            error: toolResult.error,
+            executionTime: toolResult.executionTime || 0,
+            metadata: toolResult.metadata
+          };
+        }
+        
+        return toolResults;
       } else {
-        return {
-          error: {
-            toolId: 'tool-runner',
-            success: false,
-            error: parsed.error || 'Unknown error',
-            executionTime: 0
-          }
-        };
+        throw new Error('Invalid tool output format');
       }
     } catch (error) {
       return {
         error: {
           toolId: 'tool-runner',
           success: false,
-          error: 'Failed to parse tool output',
+          error: `Failed to parse tool output: ${error instanceof Error ? error.message : String(error)}`,
           executionTime: 0
         }
       };

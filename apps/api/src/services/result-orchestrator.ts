@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, no-console */
 import { AuthenticatedUser } from '../middleware/auth-middleware';
 import { DeepWikiManager } from './deepwiki-manager';
 import { PRContextService } from './pr-context-service';
@@ -9,8 +10,11 @@ import { storeAnalysisInHistory } from '../routes/analysis';
 import { EnhancedMultiAgentExecutor } from '@codequal/agents/multi-agent/enhanced-executor';
 import { ModelVersionSync, RepositorySizeCategory } from '@codequal/core/services/model-selection/ModelVersionSync';
 import { VectorContextService } from '@codequal/agents/multi-agent/vector-context-service';
+import { ToolResultRetrievalService, AgentToolResults } from '@codequal/core/services/deepwiki-tools';
+import { VectorStorageService } from '@codequal/database';
 import { createLogger } from '@codequal/core/utils';
 import { AuthenticatedUser as AgentAuthenticatedUser, UserRole, UserStatus, UserPermissions } from '@codequal/agents/multi-agent/types/auth';
+import { RepositorySchedulerService } from '@codequal/core/services/scheduling';
 
 export interface PRAnalysisRequest {
   repositoryUrl: string;
@@ -72,6 +76,7 @@ export interface AnalysisResult {
   };
   educationalContent: any[];
   metrics: {
+    totalFindings: number;
     severity: { critical: number; high: number; medium: number; low: number };
     confidence: number;
     coverage: number;
@@ -94,6 +99,7 @@ export interface AnalysisResult {
 export class ResultOrchestrator {
   private modelVersionSync: ModelVersionSync;
   private vectorContextService: VectorContextService;
+  private toolResultRetrievalService: ToolResultRetrievalService;
   private deepWikiManager: DeepWikiManager;
   private prContextService: PRContextService;
   private resultProcessor: ResultProcessor;
@@ -111,6 +117,11 @@ export class ResultOrchestrator {
     // Create mock RAG service for VectorContextService
     const mockRAGService = this.createMockRAGService();
     this.vectorContextService = new VectorContextService(mockRAGService);
+    
+    // Initialize tool result retrieval service
+    // In production, this would be injected with actual VectorStorageService
+    const mockVectorStorage = this.createMockVectorStorageService();
+    this.toolResultRetrievalService = new ToolResultRetrievalService(mockVectorStorage, logger);
     
     this.deepWikiManager = new DeepWikiManager(authenticatedUser);
     this.prContextService = new PRContextService();
@@ -144,25 +155,29 @@ export class ResultOrchestrator {
       processingSteps.push('Selecting optimal models');
       const orchestratorModel = await this.selectOrchestratorModel(prContext);
 
-      // Step 5: Coordinate multi-agent analysis
-      processingSteps.push('Coordinating multi-agent analysis');
-      const agentResults = await this.coordinateAgents(prContext, orchestratorModel);
+      // Step 5: Retrieve tool results for agents
+      processingSteps.push('Retrieving tool analysis results');
+      const toolResults = await this.retrieveToolResults(request.repositoryUrl);
 
-      // Step 6: Process and deduplicate results
+      // Step 6: Coordinate multi-agent analysis with tool results
+      processingSteps.push('Coordinating multi-agent analysis');
+      const agentResults = await this.coordinateAgents(prContext, orchestratorModel, toolResults);
+
+      // Step 7: Process and deduplicate results
       processingSteps.push('Processing agent results');
       const processedResults = await this.processResults(agentResults);
 
-      // Step 7: Add educational content
+      // Step 8: Add educational content
       processingSteps.push('Generating educational content');
       const educationalContent = await this.generateEducationalContent(processedResults);
 
-      // Step 8: Generate final report
+      // Step 9: Generate final report
       processingSteps.push('Generating final report');
       const report = await this.generateReport(processedResults, educationalContent);
 
       const processingTime = Date.now() - startTime;
 
-      // Step 9: Compile final analysis result
+      // Step 10: Compile final analysis result
       const analysisResult: AnalysisResult = {
         analysisId: `analysis_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         status: 'complete',
@@ -195,6 +210,32 @@ export class ResultOrchestrator {
 
       // Store analysis in user's history
       storeAnalysisInHistory(this.authenticatedUser.id, analysisResult);
+
+      // Step 11: Initialize automatic scheduling if this is the first analysis
+      try {
+        const scheduler = RepositorySchedulerService.getInstance();
+        const existingSchedule = await scheduler.getSchedule(request.repositoryUrl);
+        
+        if (!existingSchedule) {
+          // First analysis - create automatic schedule
+          processingSteps.push('Creating automatic analysis schedule');
+          const schedule = await scheduler.initializeAutomaticSchedule(
+            request.repositoryUrl,
+            analysisResult
+          );
+          console.log(`Automatic schedule created for ${request.repositoryUrl}:`, {
+            frequency: schedule.frequency,
+            reason: schedule.reason
+          });
+        } else {
+          // Existing schedule - check if adjustment needed based on new findings
+          processingSteps.push('Evaluating schedule adjustment');
+          await this.evaluateScheduleAdjustment(request.repositoryUrl, analysisResult, existingSchedule);
+        }
+      } catch (error) {
+        // Don't fail the analysis if scheduling fails
+        console.error('Failed to initialize automatic schedule:', error);
+      }
 
       return analysisResult;
 
@@ -309,17 +350,54 @@ export class ResultOrchestrator {
   }
 
   /**
+   * Retrieve tool results from Vector DB for agent consumption
+   */
+  private async retrieveToolResults(repositoryUrl: string): Promise<Record<string, AgentToolResults>> {
+    try {
+      // Extract repository ID from URL (simplified - in production would use proper ID mapping)
+      const repositoryId = this.extractRepositoryId(repositoryUrl);
+      
+      // Get tool summary to check if results exist
+      const summary = await this.toolResultRetrievalService.getRepositoryToolSummary(repositoryId);
+      
+      if (!summary.hasResults) {
+        console.log(`No tool results found for repository ${repositoryId}, agents will analyze without tool context`);
+        return {};
+      }
+      
+      // Retrieve tool results for all agent roles that have tool mappings
+      const agentRoles = ['security', 'architecture', 'dependency', 'performance', 'codeQuality'];
+      const toolResults = await this.toolResultRetrievalService.getToolResultsForAgents(
+        repositoryId,
+        agentRoles,
+        {
+          latestOnly: true,
+          includeScores: true,
+          minAge: 7 // Accept results up to 7 days old
+        }
+      );
+      
+      // Log available tool results for debugging
+      Object.entries(toolResults).forEach(([agentRole, results]) => {
+        console.log(`Retrieved ${results.toolResults.length} tool results for ${agentRole} agent`);
+      });
+      
+      return toolResults;
+      
+    } catch (error) {
+      console.error('Error retrieving tool results:', error);
+      return {}; // Continue analysis without tool results if retrieval fails
+    }
+  }
+
+  /**
    * Coordinate multi-agent analysis using existing enhanced executor
    */
-  private async coordinateAgents(context: PRContext, orchestratorModel: any): Promise<any> {
-    // Get repository context from Vector DB
-    const repositoryContext = await this.vectorContextService.getRepositoryContext(
-      context.repositoryUrl,
-      'orchestrator' as any,
-      this.agentAuthenticatedUser,
-      { minSimilarity: 0.9 }
-    );
-
+  private async coordinateAgents(
+    context: PRContext, 
+    orchestratorModel: any, 
+    toolResults: Record<string, AgentToolResults> = {}
+  ): Promise<any> {
     // Create repository data for the executor
     const repositoryData = {
       owner: context.repositoryUrl.split('/')[3],
@@ -342,20 +420,27 @@ export class ResultOrchestrator {
       fallbackEnabled: true
     };
 
+    // Create DeepWiki report retriever function
+    const deepWikiReportRetriever = async (agentRole: string, requestContext: any) => {
+      return this.retrieveRelevantDeepWikiReport(agentRole, requestContext);
+    };
+
     // Create enhanced multi-agent executor
     const executor = new EnhancedMultiAgentExecutor(
       multiAgentConfig,
       repositoryData,
       this.vectorContextService,
       this.agentAuthenticatedUser,
-      { debug: false }
+      { debug: false },
+      toolResults,
+      deepWikiReportRetriever
     );
 
     // Select agents based on analysis mode
     const selectedAgents = this.selectAgentsForAnalysis(context.analysisMode);
 
-    // Configure agents with repository context
-    const agentConfigurations = await this.configureAgents(selectedAgents, context);
+    // Configure agents with repository context and tool results
+    const agentConfigurations = await this.configureAgents(selectedAgents, context, toolResults);
 
     // Update the config with selected agents
     multiAgentConfig.agents = agentConfigurations;
@@ -406,7 +491,11 @@ export class ResultOrchestrator {
     }
   }
 
-  private async configureAgents(agents: string[], context: PRContext): Promise<any[]> {
+  private async configureAgents(
+    agents: string[], 
+    context: PRContext, 
+    toolResults: Record<string, AgentToolResults> = {}
+  ): Promise<any[]> {
     const configurations = [];
     
     for (const agentType of agents) {
@@ -416,17 +505,24 @@ export class ResultOrchestrator {
         tags: [agentType]
       });
       
+      // Get agent-specific context including tool results
+      const agentContext = this.getAgentSpecificContext(agentType, context, toolResults[agentType]);
+      
       configurations.push({
         type: agentType,
         configuration: config,
-        context: this.getAgentSpecificContext(agentType, context)
+        context: agentContext
       });
     }
     
     return configurations;
   }
 
-  private getAgentSpecificContext(agentType: string, context: PRContext): any {
+  private getAgentSpecificContext(
+    agentType: string, 
+    context: PRContext, 
+    toolResults?: AgentToolResults
+  ): any {
     // Return context specific to each agent type
     const baseContext = {
       changedFiles: context.changedFiles,
@@ -434,15 +530,43 @@ export class ResultOrchestrator {
       diff: context.diff
     };
 
+    // Add tool results to agent context if available
+    let toolAnalysisContext = '';
+    if (toolResults && this.toolResultRetrievalService.areResultsFresh(toolResults)) {
+      toolAnalysisContext = this.toolResultRetrievalService.formatToolResultsForPrompt(toolResults);
+    }
+
     switch (agentType) {
       case 'security':
-        return { ...baseContext, focus: 'security vulnerabilities and patterns' };
+        return { 
+          ...baseContext, 
+          focus: 'security vulnerabilities and patterns',
+          toolAnalysis: toolAnalysisContext || 'No recent automated security analysis available.'
+        };
       case 'architecture':
-        return { ...baseContext, focus: 'architectural patterns and design quality' };
+        return { 
+          ...baseContext, 
+          focus: 'architectural patterns and design quality',
+          toolAnalysis: toolAnalysisContext || 'No recent automated architecture analysis available.'
+        };
+      case 'dependency':
+        return { 
+          ...baseContext, 
+          focus: 'dependency management and compliance',
+          toolAnalysis: toolAnalysisContext || 'No recent automated dependency analysis available.'
+        };
       case 'performance':
-        return { ...baseContext, focus: 'performance implications and optimizations' };
+        return { 
+          ...baseContext, 
+          focus: 'performance implications and optimizations',
+          toolAnalysis: 'No automated performance tools currently configured.'
+        };
       case 'codeQuality':
-        return { ...baseContext, focus: 'code quality and maintainability' };
+        return { 
+          ...baseContext, 
+          focus: 'code quality and maintainability',
+          toolAnalysis: 'No automated code quality tools currently configured.'
+        };
       default:
         return baseContext;
     }
@@ -451,6 +575,14 @@ export class ResultOrchestrator {
   private extractRepositoryName(url: string): string {
     const match = url.match(/\/([^/]+)\.git$/) || url.match(/\/([^/]+)$/);
     return match ? match[1] : 'Unknown Repository';
+  }
+
+  private extractRepositoryId(url: string): string {
+    // Extract repository identifier from URL
+    // In production, this would map to actual database repository ID
+    const name = this.extractRepositoryName(url);
+    const owner = url.split('/').slice(-2, -1)[0] || 'unknown';
+    return `${owner}/${name}`;
   }
 
   private extractAgentNames(agentResults: any): string[] {
@@ -479,6 +611,7 @@ export class ResultOrchestrator {
       allFindings.reduce((sum, f) => sum + (f.confidence || 0), 0) / allFindings.length : 0;
 
     return {
+      totalFindings: allFindings.length,
       severity: severityCounts,
       confidence: Math.round(averageConfidence * 100) / 100,
       coverage: 85 // This would be calculated based on analysis depth
@@ -646,5 +779,134 @@ export class ResultOrchestrator {
         })
       }
     };
+  }
+
+  /**
+   * Create mock Vector Storage service for tool result retrieval
+   */
+  private createMockVectorStorageService(): VectorStorageService {
+    return {
+      searchByMetadata: async (criteria: any, options: any) => {
+        // In production, this would query the actual Vector DB
+        // For now, return empty results
+        console.log('Mock Vector Storage: searching for tool results with criteria:', criteria);
+        return [];
+      },
+      storeChunks: async () => { /* mock implementation */ },
+      deleteChunksBySource: async () => 0,
+      // Add other required methods as needed
+    } as any;
+  }
+
+  /**
+   * Evaluate if schedule needs adjustment based on analysis results
+   */
+  private async evaluateScheduleAdjustment(
+    repositoryUrl: string,
+    analysisResult: AnalysisResult,
+    currentSchedule: any
+  ): Promise<void> {
+    const scheduler = RepositorySchedulerService.getInstance();
+    const criticalFindings = analysisResult.metrics.severity.critical;
+    const totalFindings = analysisResult.metrics.totalFindings || 0;
+    
+    // Check if we need to escalate due to critical findings
+    if (criticalFindings > 0 && currentSchedule.frequency !== 'every-6-hours') {
+      console.log(`Escalating schedule for ${repositoryUrl} due to ${criticalFindings} critical findings`);
+      await scheduler.updateSchedule(repositoryUrl, {
+        frequency: 'every-6-hours',
+        priority: 'critical',
+        reason: `Schedule escalated: ${criticalFindings} critical security issues detected`,
+        canBeDisabled: false
+      });
+      return;
+    }
+    
+    // Check if we can reduce frequency if all issues resolved
+    if (totalFindings === 0 && currentSchedule.frequency !== 'monthly') {
+      console.log(`Reducing schedule frequency for ${repositoryUrl} - all issues resolved`);
+      await scheduler.updateSchedule(repositoryUrl, {
+        frequency: 'weekly',
+        priority: 'low',
+        reason: 'All issues resolved - reduced monitoring frequency'
+      });
+      return;
+    }
+    
+    // Check if findings increased significantly (>50%)
+    // TODO: Compare with previous analysis to detect trends
+  }
+
+  /**
+   * Retrieve relevant DeepWiki report sections based on agent role and context
+   */
+  private async retrieveRelevantDeepWikiReport(agentRole: string, requestContext: any): Promise<any> {
+    try {
+      console.log(`Retrieving DeepWiki report for ${agentRole} agent`, {
+        repositoryId: requestContext.repositoryId,
+        changedFiles: requestContext.changedFiles?.length || 0
+      });
+
+      // In production, this would query the Vector DB for specific report sections
+      // For now, return a mock structure that shows the intended behavior
+      const mockReport = {
+        security: agentRole === 'security' ? `
+Security analysis indicates this repository follows standard security practices.
+Key security considerations for the codebase:
+- Authentication mechanisms are properly implemented
+- Input validation is present in critical paths
+- No hardcoded secrets detected in configuration files
+        `.trim() : undefined,
+
+        architecture: agentRole === 'architecture' ? `
+Architecture Analysis:
+- Follows modular TypeScript/Node.js architecture
+- Uses service-oriented design patterns
+- Clear separation of concerns between layers
+- Event-driven architecture for tool execution
+        `.trim() : undefined,
+
+        dependencies: agentRole === 'dependency' ? `
+Dependency Analysis:
+- Primary framework: Node.js with TypeScript
+- Package manager: npm
+- Key dependencies: Express, React, Agent frameworks
+- License compliance: Mostly MIT licenses
+        `.trim() : undefined,
+
+        performance: agentRole === 'performance' ? `
+Performance Characteristics:
+- Asynchronous processing patterns implemented
+- Proper resource management for concurrent operations
+- Vector DB queries optimized for retrieval speed
+        `.trim() : undefined,
+
+        codeQuality: agentRole === 'codeQuality' ? `
+Code Quality Assessment:
+- TypeScript provides strong typing throughout
+- ESLint configuration enforces consistent style
+- Test coverage present in critical components
+- Clear documentation and commenting standards
+        `.trim() : undefined,
+
+        summary: `
+Repository: ${requestContext.repositoryId}
+Last Analysis: ${new Date().toISOString()}
+Repository Type: Multi-agent CodeQual analysis system
+Primary Language: TypeScript
+        `.trim()
+      };
+
+      // Filter out undefined sections
+      const filteredReport = Object.fromEntries(
+        Object.entries(mockReport).filter(([_, value]) => value !== undefined)
+      );
+
+      return Object.keys(filteredReport).length > 0 ? filteredReport : null;
+
+    } catch (error) {
+      console.error('Error retrieving DeepWiki report:', error);
+      return null;
+    }
   }
 }

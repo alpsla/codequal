@@ -10,10 +10,15 @@ export interface EnhancedChunk {
   id: string;
   content: string;
   enhancedContent?: string;
-  type: string;
+  type?: string;
   metadata: ChunkMetadata;
   windowContext?: string;
-  filePath?: string;
+  filePath: string;
+  startLine?: number;
+  endLine?: number;
+  repository?: string;
+  language?: string;
+  importance?: number;
 }
 
 export interface ChunkMetadata {
@@ -38,12 +43,17 @@ export interface VectorStorageService {
     repositoryId: string,
     sourceType: string,
     sourceId: string,
-    storageType: 'permanent' | 'cached'
-  ): Promise<void>;
+    storageType?: 'permanent' | 'cached' | 'temporary'
+  ): Promise<any>;
   
   deleteChunksBySource(
     sourceType: string,
     sourceId: string,
     repositoryId: string
   ): Promise<number>;
+  
+  searchByMetadata?(
+    criteria: Record<string, any>,
+    limit?: number
+  ): Promise<any[]>;
 }

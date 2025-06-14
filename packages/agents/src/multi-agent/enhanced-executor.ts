@@ -439,6 +439,8 @@ export class EnhancedMultiAgentExecutor {
   private readonly repositoryData: RepositoryData;
   private readonly authenticatedUser: AuthenticatedUser;
   private readonly options: Required<Omit<EnhancedExecutionOptions, 'modelBlacklist'>> & { modelBlacklist?: ModelBlacklistManager };
+  private readonly toolResults: Record<string, any>;
+  private readonly deepWikiReportRetriever?: (agentRole: string, context: any) => Promise<any>;
   
   private readonly resourceManager: SmartResourceManager;
   private readonly performanceMonitor: PerformanceMonitor;
@@ -454,7 +456,9 @@ export class EnhancedMultiAgentExecutor {
     repositoryData: RepositoryData,
     vectorContextService: VectorContextService,
     authenticatedUser: AuthenticatedUser,
-    options: EnhancedExecutionOptions = {}
+    options: EnhancedExecutionOptions = {},
+    toolResults: Record<string, any> = {},
+    deepWikiReportRetriever?: (agentRole: string, context: any) => Promise<any>
   ) {
     // Validate configuration
     const validation = MultiAgentValidator.validateConfig(config);
@@ -470,6 +474,8 @@ export class EnhancedMultiAgentExecutor {
     this.repositoryData = repositoryData;
     this.vectorContextService = vectorContextService;
     this.authenticatedUser = authenticatedUser;
+    this.toolResults = toolResults;
+    this.deepWikiReportRetriever = deepWikiReportRetriever;
     
     // Initialize MCP Context Manager for multi-agent coordination
     this.mcpContextManager = new MCPContextManager(
@@ -919,16 +925,64 @@ export class EnhancedMultiAgentExecutor {
         }
       );
 
+      // Get tool results for this agent role if available
+      const agentToolResults = this.toolResults[agentRole];
+      let toolAnalysisContext = '';
+      
+      if (agentToolResults) {
+        // Format tool results for agent consumption
+        toolAnalysisContext = this.formatToolResultsForAgent(agentToolResults);
+        this.logger.debug('Added tool results to agent context', {
+          role: agentRole,
+          toolCount: agentToolResults.toolResults?.length || 0,
+          hasResults: !!agentToolResults
+        });
+      }
+
+      // Get relevant DeepWiki report sections for this agent role
+      let deepWikiContext = '';
+      if (this.deepWikiReportRetriever) {
+        try {
+          const requestContext = {
+            agentRole,
+            changedFiles: this.repositoryData.files?.map(f => f.path) || [],
+            prContext: additionalContext,
+            repositoryId: `${this.repositoryData.owner}/${this.repositoryData.repo}`
+          };
+          
+          const relevantReport = await this.deepWikiReportRetriever(agentRole, requestContext);
+          if (relevantReport) {
+            deepWikiContext = this.formatDeepWikiReportForAgent(agentRole, relevantReport);
+            this.logger.debug('Added DeepWiki report context to agent', {
+              role: agentRole,
+              hasReport: !!relevantReport,
+              reportSections: Object.keys(relevantReport || {}).length
+            });
+          }
+        } catch (error) {
+          this.logger.warn('Failed to retrieve DeepWiki report for agent', {
+            role: agentRole,
+            error: error instanceof Error ? error.message : String(error)
+          });
+        }
+      }
+
       const enhancedContext: EnhancedAgentContext = {
         prData: this.repositoryData,
         vectorContext,
         crossRepoPatterns,
         additionalContext: {
           ...additionalContext,
+          toolAnalysis: toolAnalysisContext,
+          deepWikiAnalysis: deepWikiContext,
+          hasToolResults: !!agentToolResults,
+          hasDeepWikiReport: !!deepWikiContext,
           dataQuality: {
             vectorConfidence: vectorContext.confidenceScore,
             crossRepoMatches: crossRepoPatterns.length,
-            hasRecentData: vectorContext.recentAnalysis.length > 0
+            hasRecentData: vectorContext.recentAnalysis.length > 0,
+            hasToolData: !!agentToolResults,
+            hasRepositoryAnalysis: !!deepWikiContext
           }
         }
       };
@@ -1392,5 +1446,193 @@ export class EnhancedMultiAgentExecutor {
     } else {
       return 'large';
     }
+  }
+
+  /**
+   * Format tool results for agent consumption
+   */
+  private formatToolResultsForAgent(agentToolResults: any): string {
+    if (!agentToolResults || !agentToolResults.toolResults) {
+      return 'No automated tool analysis available.';
+    }
+
+    let formatted = `## Automated Tool Analysis Results\n\n`;
+    formatted += `**Last Analysis:** ${new Date(agentToolResults.lastExecuted).toLocaleString()}\n`;
+    formatted += `**Tools Executed:** ${agentToolResults.toolResults.length}\n\n`;
+
+    if (agentToolResults.summary?.keyFindings?.length > 0) {
+      formatted += `**Key Findings:**\n`;
+      agentToolResults.summary.keyFindings.forEach((finding: string) => {
+        formatted += `- ${finding}\n`;
+      });
+      formatted += '\n';
+    }
+
+    // Add detailed tool results
+    agentToolResults.toolResults.forEach((result: any) => {
+      formatted += `### ${result.toolId.toUpperCase()} Analysis\n`;
+      if (result.metadata.score !== undefined) {
+        formatted += `**Score:** ${result.metadata.score}/10\n`;
+      }
+      formatted += `${result.content}\n\n`;
+    });
+
+    formatted += `*Use this automated analysis to inform your assessment of the current PR changes.*\n`;
+
+    return formatted;
+  }
+
+  /**
+   * Format DeepWiki report sections for specific agent role
+   */
+  private formatDeepWikiReportForAgent(agentRole: string, report: any): string {
+    if (!report) {
+      return 'No repository analysis report available.';
+    }
+
+    let formatted = `## Repository Analysis Report\n\n`;
+
+    // Include role-specific sections
+    switch (agentRole) {
+      case 'security':
+        formatted += this.formatSecurityReportSection(report);
+        break;
+      case 'architecture':
+        formatted += this.formatArchitectureReportSection(report);
+        break;
+      case 'dependency':
+        formatted += this.formatDependencyReportSection(report);
+        break;
+      case 'performance':
+        formatted += this.formatPerformanceReportSection(report);
+        break;
+      case 'codeQuality':
+        formatted += this.formatCodeQualityReportSection(report);
+        break;
+      default:
+        formatted += this.formatGeneralReportSection(report);
+    }
+
+    formatted += `\n*Use this repository context to understand the broader codebase when analyzing PR changes.*\n`;
+
+    return formatted;
+  }
+
+  /**
+   * Format security-specific sections from DeepWiki report
+   */
+  private formatSecurityReportSection(report: any): string {
+    let section = '';
+    
+    if (report.security) {
+      section += `### Security Analysis\n${report.security}\n\n`;
+    }
+    
+    if (report.dependencies?.security) {
+      section += `### Dependency Security\n${report.dependencies.security}\n\n`;
+    }
+    
+    if (report.vulnerabilities) {
+      section += `### Known Vulnerabilities\n${report.vulnerabilities}\n\n`;
+    }
+    
+    return section || '### No Security Analysis Available\n\n';
+  }
+
+  /**
+   * Format architecture-specific sections from DeepWiki report
+   */
+  private formatArchitectureReportSection(report: any): string {
+    let section = '';
+    
+    if (report.architecture) {
+      section += `### Architecture Overview\n${report.architecture}\n\n`;
+    }
+    
+    if (report.structure) {
+      section += `### Code Structure\n${report.structure}\n\n`;
+    }
+    
+    if (report.patterns) {
+      section += `### Design Patterns\n${report.patterns}\n\n`;
+    }
+    
+    return section || '### No Architecture Analysis Available\n\n';
+  }
+
+  /**
+   * Format dependency-specific sections from DeepWiki report
+   */
+  private formatDependencyReportSection(report: any): string {
+    let section = '';
+    
+    if (report.dependencies) {
+      section += `### Dependencies Analysis\n${report.dependencies}\n\n`;
+    }
+    
+    if (report.packages) {
+      section += `### Package Management\n${report.packages}\n\n`;
+    }
+    
+    if (report.licenses) {
+      section += `### License Information\n${report.licenses}\n\n`;
+    }
+    
+    return section || '### No Dependency Analysis Available\n\n';
+  }
+
+  /**
+   * Format performance-specific sections from DeepWiki report
+   */
+  private formatPerformanceReportSection(report: any): string {
+    let section = '';
+    
+    if (report.performance) {
+      section += `### Performance Analysis\n${report.performance}\n\n`;
+    }
+    
+    if (report.optimization) {
+      section += `### Optimization Opportunities\n${report.optimization}\n\n`;
+    }
+    
+    return section || '### No Performance Analysis Available\n\n';
+  }
+
+  /**
+   * Format code quality sections from DeepWiki report
+   */
+  private formatCodeQualityReportSection(report: any): string {
+    let section = '';
+    
+    if (report.codeQuality) {
+      section += `### Code Quality Analysis\n${report.codeQuality}\n\n`;
+    }
+    
+    if (report.maintainability) {
+      section += `### Maintainability\n${report.maintainability}\n\n`;
+    }
+    
+    if (report.testing) {
+      section += `### Testing Coverage\n${report.testing}\n\n`;
+    }
+    
+    return section || '### No Code Quality Analysis Available\n\n';
+  }
+
+  /**
+   * Format general sections from DeepWiki report
+   */
+  private formatGeneralReportSection(report: any): string {
+    let section = '';
+    
+    if (report.summary) {
+      section += `### Repository Summary\n${report.summary}\n\n`;
+    }
+    
+    if (report.overview) {
+      section += `### Overview\n${report.overview}\n\n`;
+    }
+    
+    return section || '### No General Analysis Available\n\n';
   }
 }
