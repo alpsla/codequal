@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { VectorStorageService } from '@codequal/database';
 // Fix import paths to use relative paths from testing package
 import { EducationalAgent, CompiledFindings } from '../../../agents/src/multi-agent/educational-agent';
