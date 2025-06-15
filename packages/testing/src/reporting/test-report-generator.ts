@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { createLogger } from '@codequal/core';
+import { createLogger } from '@codequal/core/utils';
 
 // Create a logger for this file
 const logger = createLogger('TestReportGenerator');
