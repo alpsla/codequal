@@ -5,6 +5,7 @@
     "rootDir": "./src",
     "composite": true,
     "declaration": true,
+    "isolatedModules": true,
     "paths": {
       "@codequal/testing/*": ["./src/*"],
       "@codequal/core/*": ["../core/src/*"],

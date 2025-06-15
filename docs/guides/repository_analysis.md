@@ -39,7 +39,6 @@ The script generates several output files in a timestamped directory under `/rep
 - `repository_scoring.md`: Summary of scores across all categories
 - `comprehensive_analysis.md`: Combined report with all analyses
 
-A symlink to the latest report is created at `/reports/latest` for easy access.
 
 ## Fallback Mechanism
 
