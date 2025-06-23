@@ -33,14 +33,16 @@ const mockSkillModel = {
 
 import { SkillModel } from '@codequal/database/models/skill';
 
+const mockSkillModel = {
+  getUserSkills: jest.fn(),
+  updateSkill: jest.fn(),
+  createSkill: jest.fn(),
+  recordSkillHistory: jest.fn(),
+  getSkillHistory: jest.fn()
+};
+
 jest.mock('@codequal/database/models/skill', () => ({
-  SkillModel: {
-    getUserSkills: jest.fn(),
-    updateSkill: jest.fn(),
-    createSkill: jest.fn(),
-    recordSkillHistory: jest.fn(),
-    getSkillHistory: jest.fn()
-  }
+  SkillModel: mockSkillModel
 }));
 
 jest.mock('@codequal/core/utils', () => ({
@@ -66,7 +68,7 @@ describe('Skill Tracking System - Simplified E2E Tests', () => {
   describe('Core Skill Assessment Workflow', () => {
     it('should assess skills from PR analysis and track progression', async () => {
       // Mock current user skills
-      SkillModel.getUserSkills.mockResolvedValue([
+      mockSkillModel.getUserSkills.mockResolvedValue([
         { categoryId: 'security', level: 4, confidence: 0.8 },
         { categoryId: 'codeQuality', level: 6, confidence: 0.9 }
       ]);

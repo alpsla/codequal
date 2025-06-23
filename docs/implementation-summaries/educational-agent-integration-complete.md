@@ -104,6 +104,14 @@ While the Educational Agent doesn't have its own tools, it intelligently process
 
 While not implemented yet, potential educational tools could include:
 
+0. ** Context 7**
+ Up-to-date, version-specific documentation
+ Real, working code examples from the source
+Concise, relevant information with no filler
+
+Free for personal use
+   Integration with Model Context Protocol (MCP) servers and tools
+
 1. **Documentation Generators**
    - JSDoc/TypeDoc integration
    - API documentation tools

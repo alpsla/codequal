@@ -229,8 +229,73 @@ export class EducationalAgent {
   }
   
   /**
-   * NEW: Analyze recommendations and generate educational content
-   * This is the preferred method that uses structured recommendations
+   * NEW: Analyze recommendations with orchestrator-provided tool results
+   * This follows the proper architectural pattern where tools are managed by orchestrator
+   */
+  async analyzeFromRecommendationsWithTools(
+    recommendations: RecommendationModule,
+    toolResults: any
+  ): Promise<EducationalResult> {
+    this.logger.info('Starting recommendation-based educational analysis with tool results', {
+      totalRecommendations: recommendations.summary.totalRecommendations,
+      focusAreas: recommendations.summary.focusAreas,
+      hasSkillTracking: !!this.skillTrackingService,
+      toolResultsProvided: {
+        documentation: toolResults?.documentation?.length || 0,
+        examples: toolResults?.workingExamples?.length || 0,
+        versions: toolResults?.versionInfo?.length || 0
+      }
+    });
+
+    // Get user's current skills for personalized content
+    let userSkills: DeveloperSkill[] = [];
+    if (this.skillTrackingService) {
+      try {
+        userSkills = await this.skillTrackingService.getCurrentSkills();
+        this.logger.info('Retrieved user skills for personalization', {
+          skillCount: userSkills.length,
+          skills: userSkills.map(s => `${s.categoryName}: ${s.level}/10`)
+        });
+      } catch (error) {
+        this.logger.warn('Failed to retrieve user skills, proceeding without personalization', {
+          error: error instanceof Error ? error.message : error
+        });
+      }
+    }
+
+    // Use the learning path guidance from recommendations (skill-aware)
+    const learningPath = await this.createSkillAwareLearningPath(recommendations, userSkills);
+    
+    // Generate educational content based on recommendations, skills, and tool results
+    const educationalContent = await this.gatherSkillAwareEducationalContentWithTools(
+      recommendations, 
+      userSkills,
+      toolResults
+    );
+    
+    // Identify skill gaps from recommendation learning contexts and current skills
+    const skillGaps = await this.identifyComprehensiveSkillGaps(recommendations, userSkills);
+    
+    // Track educational engagement
+    if (this.skillTrackingService) {
+      await this.trackEducationalEngagement(recommendations, userSkills);
+    }
+    
+    return {
+      learningPath,
+      explanations: educationalContent.explanations,
+      tutorials: educationalContent.tutorials,
+      bestPractices: educationalContent.bestPractices,
+      additionalResources: educationalContent.resources,
+      skillGaps,
+      relatedTopics: this.extractRelatedTopics(recommendations),
+      recommendedNextSteps: await this.generateSkillAwareNextSteps(recommendations, userSkills)
+    };
+  }
+
+  /**
+   * LEGACY: Analyze recommendations and generate educational content
+   * Kept for backward compatibility
    */
   async analyzeFromRecommendations(recommendations: RecommendationModule): Promise<EducationalResult> {
     this.logger.info('Starting recommendation-based educational analysis', {
@@ -389,6 +454,111 @@ export class EducationalAgent {
       difficulty: maxDifficulty,
       estimatedTime: this.calculateSkillAwareTime(recommendations, userSkills)
     };
+  }
+
+  /**
+   * Gather educational content with orchestrator-provided tool results
+   */
+  private async gatherSkillAwareEducationalContentWithTools(
+    recommendations: RecommendationModule,
+    userSkills: DeveloperSkill[],
+    toolResults: any
+  ): Promise<any> {
+    const explanations: EducationalExplanation[] = [];
+    const tutorials: Tutorial[] = [];
+    const bestPractices: BestPractice[] = [];
+    const resources: AdditionalResource[] = [];
+
+    // Get skill levels for content adaptation
+    const skillLevels = userSkills.reduce((acc, skill) => {
+      acc[skill.categoryId] = skill.level;
+      return acc;
+    }, {} as Record<string, number>);
+
+    // Process tool results first
+    if (toolResults) {
+      // Add documentation from tool results
+      toolResults.documentation?.forEach((doc: any) => {
+        const explanation: EducationalExplanation = {
+          concept: doc.topic,
+          simpleExplanation: doc.content.substring(0, 500) + '...',
+          technicalDetails: doc.content,
+          whyItMatters: `Up-to-date documentation from ${doc.source}`,
+          examples: []
+        };
+        explanations.push(explanation);
+        
+        // Add as resource
+        resources.push({
+          type: 'documentation',
+          title: doc.topic,
+          url: doc.url,
+          description: `Latest documentation for ${doc.topic}`,
+          difficulty: 'intermediate',
+          estimatedTime: '10-20 minutes'
+        });
+      });
+
+      // Add working examples from tool results
+      toolResults.workingExamples?.forEach((example: any) => {
+        const tutorial: Tutorial = {
+          title: example.title,
+          description: example.description || '',
+          difficulty: example.difficulty,
+          estimatedTime: '15-30 minutes',
+          steps: [{
+            stepNumber: 1,
+            title: 'Example Implementation',
+            description: example.explanation || '',
+            codeExample: example.code
+          }],
+          prerequisites: [],
+          outcome: 'Understanding through working example'
+        };
+        tutorials.push(tutorial);
+      });
+
+      // Add version info as resources
+      toolResults.versionInfo?.forEach((version: any) => {
+        if (version.currentVersion !== version.latestVersion) {
+          resources.push({
+            type: 'documentation',
+            title: `Update ${version.packageName}`,
+            description: `Current: ${version.currentVersion}, Latest: ${version.latestVersion}`,
+            difficulty: 'beginner',
+            estimatedTime: '5-10 minutes'
+          });
+        }
+      });
+    }
+
+    // Then process recommendations as before
+    for (const rec of recommendations.recommendations) {
+      const skillLevel: number = skillLevels[rec.category] || 1;
+      
+      // Generate skill-adapted explanation
+      const explanation = await this.createSkillAdaptedExplanation(rec, skillLevel);
+      if (explanation) {
+        explanations.push(explanation);
+      }
+
+      // Generate skill-adapted tutorial
+      const tutorial = this.createSkillAdaptedTutorial(rec, skillLevel);
+      if (tutorial) {
+        tutorials.push(tutorial);
+      }
+
+      // Generate skill-adapted best practice
+      const bestPractice = this.createSkillAdaptedBestPractice(rec, skillLevel);
+      if (bestPractice) {
+        bestPractices.push(bestPractice);
+      }
+
+      // Add skill-level appropriate resources
+      resources.push(...this.getSkillAppropriateResources(rec, skillLevel));
+    }
+
+    return { explanations, tutorials, bestPractices, resources };
   }
 
   /**

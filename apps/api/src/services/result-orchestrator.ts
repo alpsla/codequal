@@ -4,6 +4,7 @@ import { DeepWikiManager } from './deepwiki-manager';
 import { PRContextService } from './pr-context-service';
 import { ResultProcessor } from './result-processor';
 import { EducationalContentService } from './educational-content-service';
+import { EducationalToolOrchestrator } from './educational-tool-orchestrator';
 import { storeAnalysisInHistory } from '../routes/analysis';
 
 // Import existing packages
@@ -114,6 +115,7 @@ export class ResultOrchestrator {
   private prContextService: PRContextService;
   private resultProcessor: ResultProcessor;
   private educationalService: EducationalContentService;
+  private educationalToolOrchestrator: EducationalToolOrchestrator;
   private educationalAgent: EducationalAgent;
   private reporterAgent: ReporterAgent;
   private recommendationService: RecommendationService;
@@ -140,6 +142,10 @@ export class ResultOrchestrator {
     this.prContextService = new PRContextService();
     this.resultProcessor = new ResultProcessor();
     this.educationalService = new EducationalContentService(authenticatedUser);
+    this.educationalToolOrchestrator = new EducationalToolOrchestrator(
+      authenticatedUser,
+      this.toolResultRetrievalService
+    );
     
     // Initialize Educational and Reporter agents
     this.educationalAgent = new EducationalAgent(mockVectorStorage, null, authenticatedUser);
@@ -194,9 +200,21 @@ export class ResultOrchestrator {
         deepWikiSummary
       );
 
-      // Step 9: Generate educational content using Educational Agent (NEW APPROACH)
-      processingSteps.push('Generating educational content from recommendations');
-      const educationalResult = await this.educationalAgent.analyzeFromRecommendations(recommendationModule);
+      // Step 9: Execute educational tools with compiled findings
+      processingSteps.push('Executing educational tools with compiled context');
+      const educationalToolResults = await this.educationalToolOrchestrator.executeEducationalTools(
+        processedResults,
+        recommendationModule,
+        deepWikiSummary,
+        { prContext, processedResults }
+      );
+
+      // Step 10: Generate educational content using Educational Agent with tool results
+      processingSteps.push('Generating educational content from compiled analysis');
+      const educationalResult = await this.educationalAgent.analyzeFromRecommendationsWithTools(
+        recommendationModule,
+        educationalToolResults
+      );
 
       // Step 10: Compile educational data for Reporter Agent
       processingSteps.push('Compiling educational data');
@@ -965,6 +983,51 @@ export class ResultOrchestrator {
     
     // Check if findings increased significantly (>50%)
     // TODO: Compare with previous analysis to detect trends
+  }
+
+  /**
+   * Extract educational topics from recommendations
+   */
+  private extractEducationalTopics(recommendationModule: any): string[] {
+    const topics = new Set<string>();
+    
+    // Extract from recommendations
+    recommendationModule.recommendations.forEach((rec: any) => {
+      topics.add(rec.category);
+      topics.add(rec.title);
+      rec.learningContext?.relatedConcepts?.forEach((concept: string) => {
+        topics.add(concept);
+      });
+    });
+    
+    // Extract from focus areas
+    recommendationModule.summary?.focusAreas?.forEach((area: string) => {
+      topics.add(area);
+    });
+    
+    return Array.from(topics).slice(0, 10); // Limit to prevent cost explosion
+  }
+
+  /**
+   * Extract package names from PR context
+   */
+  private extractPackageNames(prContext: PRContext): string[] {
+    const packages = new Set<string>();
+    
+    // Extract from changed files
+    prContext.files?.forEach(file => {
+      if (file.path === 'package.json' && file.content) {
+        try {
+          const packageJson = JSON.parse(file.content);
+          Object.keys(packageJson.dependencies || {}).forEach(pkg => packages.add(pkg));
+          Object.keys(packageJson.devDependencies || {}).forEach(pkg => packages.add(pkg));
+        } catch {
+          // Ignore parse errors
+        }
+      }
+    });
+    
+    return Array.from(packages).slice(0, 10); // Limit to control costs
   }
 
   /**
