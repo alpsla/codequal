@@ -17,13 +17,17 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: '18.x'
-        cache: 'npm'
+        # Disable cache to avoid workspace conflicts
+        # cache: 'npm'
         
     - name: Install dependencies
       run: |
         echo "Installing all dependencies including workspaces..."
-        # Install dependencies with workspace support
-        npm ci || npm install
+        # Delete package-lock.json and node_modules to avoid workspace conflicts
+        rm -f package-lock.json
+        rm -rf node_modules
+        # Use npm install with workspace support
+        npm install --workspaces --include-workspace-root
         echo "Verifying core package dependencies..."
         cd packages/core
         npm list axios || echo "axios not found"
