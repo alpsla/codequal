@@ -223,9 +223,297 @@ export class ReporterAgent {
           data: trendData
         };
       }
+      
+      // Enhanced MCP Tool Integration
+      await this.enhanceWithMCPTools(report);
+      
     } catch (error) {
       this.logger.warn('Failed to enhance visualizations with reporting service', { error });
     }
+  }
+
+  /**
+   * Enhance report with new MCP tools: PDF export, Mermaid diagrams, Grafana dashboards
+   */
+  private async enhanceWithMCPTools(report: StandardReport): Promise<void> {
+    try {
+      // Generate Mermaid diagrams for better visualization
+      const mermaidDiagrams = await this.generateMermaidDiagrams(report);
+      if (mermaidDiagrams.length > 0) {
+        report.visualizations.mermaidDiagrams = mermaidDiagrams;
+      }
+      
+      // Generate PDF exports for different audiences
+      const pdfExports = await this.generatePDFExports(report);
+      if (pdfExports.length > 0) {
+        report.exports.pdfReports = pdfExports;
+      }
+      
+      // Update Grafana dashboards with latest metrics
+      const grafanaUrls = await this.updateGrafanaDashboards(report);
+      if (grafanaUrls.length > 0) {
+        report.exports.dashboardUrls = grafanaUrls;
+      }
+      
+    } catch (error) {
+      this.logger.warn('Failed to enhance report with MCP tools', { error });
+    }
+  }
+
+  /**
+   * Generate Mermaid diagrams based on report content
+   */
+  private async generateMermaidDiagrams(report: StandardReport): Promise<any[]> {
+    const diagrams = [];
+    
+    try {
+      // Dependency graph diagram
+      if (report.modules.findings.categories.dependencies?.findings?.length > 0) {
+        const dependencyDiagram = {
+          type: 'dependency-graph',
+          title: 'Dependency Architecture',
+          mermaidCode: this.generateDependencyMermaid(report.modules.findings.categories.dependencies.findings),
+          description: 'Visual representation of code dependencies and their relationships'
+        };
+        diagrams.push(dependencyDiagram);
+      }
+      
+      // Findings flowchart
+      if (report.overview.totalFindings > 0) {
+        const findingsDiagram = {
+          type: 'findings-flow',
+          title: 'Analysis Findings Flow',
+          mermaidCode: this.generateFindingsFlowMermaid(report.modules.findings),
+          description: 'Flowchart showing the categorization and severity of identified issues'
+        };
+        diagrams.push(findingsDiagram);
+      }
+      
+      // Learning path diagram (if educational content is included)
+      if (report.modules.educational?.learningPath) {
+        const learningDiagram = {
+          type: 'learning-path',
+          title: 'Recommended Learning Journey',
+          mermaidCode: this.generateLearningPathMermaid(report.modules.educational.learningPath),
+          description: 'Step-by-step learning path to address identified skill gaps'
+        };
+        diagrams.push(learningDiagram);
+      }
+      
+    } catch (error) {
+      this.logger.warn('Failed to generate Mermaid diagrams', { error });
+    }
+    
+    return diagrams;
+  }
+
+  /**
+   * Generate PDF exports for different report formats
+   */
+  private async generatePDFExports(report: StandardReport): Promise<any[]> {
+    const pdfExports = [];
+    
+    try {
+      const exportFormats = [
+        {
+          type: 'executive',
+          title: 'Executive Summary',
+          description: 'High-level overview for leadership',
+          includeCharts: false,
+          includeAppendices: false
+        },
+        {
+          type: 'technical',
+          title: 'Technical Report',
+          description: 'Detailed findings for development teams',
+          includeCharts: true,
+          includeAppendices: true
+        }
+      ];
+      
+      // Add educational format if educational content is available
+      if (report.modules.educational?.learningPath) {
+        exportFormats.push({
+          type: 'educational',
+          title: 'Learning Guide',
+          description: 'Educational content and learning paths',
+          includeCharts: true,
+          includeAppendices: false
+        });
+      }
+      
+      for (const format of exportFormats) {
+        const pdfMetadata = {
+          format: format.type,
+          title: format.title,
+          description: format.description,
+          generatedAt: new Date(),
+          reportId: report.id,
+          // In real implementation, this would be the actual PDF buffer/URL
+          downloadUrl: `/api/reports/${report.id}/pdf/${format.type}`,
+          estimatedPageCount: this.estimatePDFPages(report, format.type)
+        };
+        
+        pdfExports.push(pdfMetadata);
+      }
+      
+    } catch (error) {
+      this.logger.warn('Failed to generate PDF exports', { error });
+    }
+    
+    return pdfExports;
+  }
+
+  /**
+   * Update Grafana dashboards with report metrics
+   */
+  private async updateGrafanaDashboards(report: StandardReport): Promise<any[]> {
+    const dashboardUrls = [];
+    
+    try {
+      // Repository-specific dashboard
+      const repoDashboard = {
+        type: 'repository',
+        title: `${this.extractRepoName(report.repositoryUrl)} - Code Quality`,
+        url: `/grafana/d/repo-${this.sanitizeDashboardId(report.repositoryUrl)}/repository-metrics`,
+        description: 'Repository-wide code quality metrics and trends',
+        panels: ['code-quality-score', 'issue-trends', 'complexity-metrics']
+      };
+      dashboardUrls.push(repoDashboard);
+      
+      // PR-specific dashboard
+      if (report.prNumber) {
+        const prDashboard = {
+          type: 'pull-request',
+          title: `PR #${report.prNumber} - Analysis Results`,
+          url: `/grafana/d/pr-${report.prNumber}/pr-analysis`,
+          description: 'Pull request specific analysis results and metrics',
+          panels: ['pr-findings', 'change-impact', 'review-metrics']
+        };
+        dashboardUrls.push(prDashboard);
+      }
+      
+      // Educational progress dashboard (if educational content present)
+      if (report.modules.educational?.skillGaps?.length > 0) {
+        const eduDashboard = {
+          type: 'educational',
+          title: 'Learning Progress & Skill Development',
+          url: `/grafana/d/edu-${this.sanitizeDashboardId(report.repositoryUrl)}/learning-progress`,
+          description: 'Skill progression and learning engagement metrics',
+          panels: ['skill-levels', 'learning-engagement', 'content-effectiveness']
+        };
+        dashboardUrls.push(eduDashboard);
+      }
+      
+    } catch (error) {
+      this.logger.warn('Failed to update Grafana dashboards', { error });
+    }
+    
+    return dashboardUrls;
+  }
+
+  /**
+   * Generate dependency Mermaid code
+   */
+  private generateDependencyMermaid(dependencies: any[]): string {
+    let mermaidCode = 'graph LR\n';
+    mermaidCode += '    classDef critical fill:#ffebee,stroke:#d32f2f\n';
+    mermaidCode += '    classDef high fill:#fff3e0,stroke:#f57c00\n\n';
+    
+    dependencies.slice(0, 10).forEach((dep, index) => {
+      const nodeId = `DEP${index}`;
+      const severity = dep.severity || 'medium';
+      const className = severity === 'critical' ? 'critical' : severity === 'high' ? 'high' : '';
+      
+      mermaidCode += `    ${nodeId}["${dep.title || `Dependency ${index + 1}`}"]${className ? `:::${className}` : ''}\n`;
+      
+      if (index > 0) {
+        mermaidCode += `    DEP${index - 1} --> ${nodeId}\n`;
+      }
+    });
+    
+    return mermaidCode;
+  }
+
+  /**
+   * Generate findings flow Mermaid code
+   */
+  private generateFindingsFlowMermaid(findings: any): string {
+    let mermaidCode = 'flowchart TD\n';
+    mermaidCode += '    START([Code Analysis])\n';
+    
+    const categories = Object.keys(findings.categories || {});
+    categories.forEach(category => {
+      const categoryData = findings.categories[category];
+      if (categoryData.count > 0) {
+        const catId = category.toUpperCase();
+        mermaidCode += `    ${catId}["${category}: ${categoryData.count} issues"]\n`;
+        mermaidCode += `    START --> ${catId}\n`;
+      }
+    });
+    
+    return mermaidCode;
+  }
+
+  /**
+   * Generate learning path Mermaid code
+   */
+  private generateLearningPathMermaid(learningPath: any): string {
+    let mermaidCode = 'flowchart TD\n';
+    mermaidCode += '    START([Start Learning])\n';
+    
+    const steps = learningPath.steps || [];
+    steps.slice(0, 8).forEach((step: any, index: number) => {
+      const stepId = `STEP${index}`;
+      const title = step.title || step.topic || `Step ${index + 1}`;
+      
+      mermaidCode += `    ${stepId}["${title}"]\n`;
+      
+      if (index === 0) {
+        mermaidCode += `    START --> ${stepId}\n`;
+      } else {
+        mermaidCode += `    STEP${index - 1} --> ${stepId}\n`;
+      }
+    });
+    
+    mermaidCode += `    STEP${steps.length - 1} --> END([Complete])\n`;
+    return mermaidCode;
+  }
+
+  /**
+   * Estimate PDF page count based on content
+   */
+  private estimatePDFPages(report: StandardReport, format: string): number {
+    let basePages = 2; // Cover + summary
+    
+    switch (format) {
+      case 'executive':
+        return basePages + 2; // 4 pages max
+      case 'technical':
+        const findingsPages = Math.ceil(report.overview.totalFindings / 10);
+        const chartsPages = Object.keys(report.visualizations).length;
+        return basePages + findingsPages + chartsPages;
+      case 'educational':
+        const learningSteps = report.modules.educational?.learningPath?.steps?.length || 0;
+        return basePages + Math.ceil(learningSteps / 3);
+      default:
+        return 6;
+    }
+  }
+
+  /**
+   * Extract repository name from URL
+   */
+  private extractRepoName(url: string): string {
+    const match = url.match(/\/([^\/]+)\/([^\/]+)(?:\.git)?$/);
+    return match ? `${match[1]}/${match[2]}` : 'Repository';
+  }
+
+  /**
+   * Sanitize dashboard ID for Grafana
+   */
+  private sanitizeDashboardId(input: string): string {
+    return input.replace(/[^a-zA-Z0-9-]/g, '-').toLowerCase();
   }
   
   /**

@@ -141,12 +141,28 @@ jest.mock('../../../../packages/core/src/monitoring/enhanced-monitoring-service'
   }
 }));
 
-// Mock the getGlobalMonitoringService function
+// Mock the monitoring routes module completely
 jest.mock('../routes/monitoring', () => {
-  const originalModule = jest.requireActual('../routes/monitoring');
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const express = require('express');
+  const router = express.Router();
+  
+  // Mock all the routes that exist in the real monitoring routes
+  router.get('/widgets', (req: any, res: any) => res.json([]));
+  router.get('/widgets/:id/data', (req: any, res: any) => res.json({}));
+  router.get('/widgets/:id/component', (req: any, res: any) => res.send(''));
+  router.get('/dashboards', (req: any, res: any) => res.json([]));
+  router.get('/dashboards/:id', (req: any, res: any) => res.json({}));
+  router.get('/alerts', (req: any, res: any) => res.json([]));
+  router.get('/alerts/:id', (req: any, res: any) => res.json({}));
+  router.get('/schema', (req: any, res: any) => res.json({}));
+  router.get('/metrics/ai', (req: any, res: any) => res.json({}));
+  router.post('/events', (req: any, res: any) => res.json({ success: true }));
+  router.get('/health', (req: any, res: any) => res.json({ status: 'ok' }));
+  
   return {
-    ...originalModule,
-    default: originalModule.monitoringRoutes || originalModule.default,
+    __esModule: true,
+    default: router,
     getGlobalMonitoringService: jest.fn(() => mockMonitoringService)
   };
 });

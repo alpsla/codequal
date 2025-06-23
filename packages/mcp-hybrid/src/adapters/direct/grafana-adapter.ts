@@ -256,6 +256,87 @@ export class GrafanaDirectAdapter extends DirectToolAdapter {
         });
         break;
         
+      case 'educational':
+        // Skill tracking and learning engagement panels
+        panels.push({
+          id: panelId++,
+          title: 'Skill Level Progression',
+          type: 'graph',
+          gridPos: { x: 0, y: 0, w: 12, h: 8 },
+          targets: [{
+            datasource: 'Supabase',
+            query: `
+              SELECT 
+                created_at as time,
+                skill_level as "Skill Level",
+                category_id as metric
+              FROM developer_skills
+              WHERE user_id = '${context.userContext?.userId || 'unknown'}'
+              ORDER BY created_at
+            `,
+            refId: 'A'
+          }]
+        });
+        
+        panels.push({
+          id: panelId++,
+          title: 'Learning Engagement Metrics',
+          type: 'stat',
+          gridPos: { x: 0, y: 8, w: 6, h: 4 },
+          targets: [{
+            datasource: 'Supabase',
+            query: `
+              SELECT 
+                AVG(engagement_score) as "Avg Engagement",
+                COUNT(*) as "Sessions",
+                SUM(time_spent) as "Total Time (min)"
+              FROM learning_engagements
+              WHERE user_id = '${context.userContext?.userId || 'unknown'}'
+              AND created_at >= NOW() - INTERVAL '30 days'
+            `,
+            refId: 'A'
+          }]
+        });
+        
+        panels.push({
+          id: panelId++,
+          title: 'Skill Gaps Analysis',
+          type: 'heatmap',
+          gridPos: { x: 6, y: 8, w: 6, h: 4 },
+          targets: [{
+            datasource: 'Supabase',
+            query: `
+              SELECT 
+                category_id as skill,
+                (required_level - current_level) as gap,
+                priority_score
+              FROM skill_gap_analysis
+              WHERE user_id = '${context.userContext?.userId || 'unknown'}'
+              ORDER BY priority_score DESC
+            `,
+            refId: 'A'
+          }]
+        });
+        
+        panels.push({
+          id: panelId++,
+          title: 'Educational Content Effectiveness',
+          type: 'gauge',
+          gridPos: { x: 12, y: 0, w: 6, h: 8 },
+          targets: [{
+            datasource: 'Supabase',
+            query: `
+              SELECT 
+                AVG(effectiveness_rating) as "Content Effectiveness"
+              FROM educational_content_feedback
+              WHERE user_id = '${context.userContext?.userId || 'unknown'}'
+              AND created_at >= NOW() - INTERVAL '30 days'
+            `,
+            refId: 'A'
+          }]
+        });
+        break;
+        
       case 'performance':
         // Performance panels
         panels.push({
