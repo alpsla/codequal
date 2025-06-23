@@ -473,7 +473,7 @@ export class ResultProcessor {
     return 0.8; // Default confidence
   }
 
-  private determineCategory(agentName: string, finding: any): string {
+  private determineCategory(agentName: string, _finding: any): string {
     // Map agent names to categories (including agent suffixes)
     const agentCategoryMap: Record<string, string> = {
       'security': 'security',
@@ -593,14 +593,12 @@ export class ResultProcessor {
     // Also check word-level matches
     const words1 = str1.split(/\s+/);
     const words2 = str2.split(/\s+/);
-    let wordMatches = 0;
     let totalWordLength = 0;
     
     for (const word1 of words1) {
       if (word1.length > 2) { // Ignore short words
         for (const word2 of words2) {
           if (word1 === word2) {
-            wordMatches++;
             totalWordLength += word1.length;
             break;
           }

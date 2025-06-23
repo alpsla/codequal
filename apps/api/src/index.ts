@@ -9,8 +9,11 @@ import { repositoryRoutes } from './routes/repository';
 import { analysisRoutes } from './routes/analysis';
 import webhookRoutes from './routes/webhooks';
 import scheduleRoutes from './routes/schedules';
+import monitoringRoutes, { getGlobalMonitoringService } from './routes/monitoring';
+import reportRoutes from './routes/reports';
 import { errorHandler } from './middleware/error-handler';
 import { requestLogger } from './middleware/request-logger';
+import { monitoringMiddleware, analysisMonitoringMiddleware } from './middleware/monitoring-middleware';
 
 // Load environment variables
 dotenv.config();
@@ -35,7 +38,10 @@ app.use(compression());
 // Request logging
 app.use(requestLogger);
 
-// Health check endpoint
+// Monitoring middleware (collect metrics for all requests)
+app.use(monitoringMiddleware);
+
+// Basic health check endpoint (lightweight)
 app.get('/health', (req, res) => {
   res.json({ 
     status: 'healthy', 
@@ -45,15 +51,36 @@ app.get('/health', (req, res) => {
   });
 });
 
+
+// Prometheus metrics endpoint (no authentication required)
+app.get('/metrics', (req, res) => {
+  try {
+    const service = getGlobalMonitoringService();
+    const metrics = service.getPrometheusMetrics();
+    
+    res.set('Content-Type', 'text/plain; version=0.0.4; charset=utf-8');
+    res.send(metrics);
+  } catch (error) {
+    console.error('Error getting Prometheus metrics:', error);
+    res.status(500).json({ 
+      error: 'Failed to get metrics',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 // Webhook routes (no authentication required for external webhooks)
 app.use('/api/webhooks', webhookRoutes);
 
 // API routes with authentication
 app.use('/api', authMiddleware);
+app.use('/api', analysisMonitoringMiddleware); // Additional monitoring for analysis endpoints
 app.use('/api', resultOrchestratorRoutes);
 app.use('/api/repository', repositoryRoutes);
 app.use('/api/analysis', analysisRoutes);
 app.use('/api', scheduleRoutes);
+app.use('/api', reportRoutes);
+app.use('/api/monitoring', monitoringRoutes);
 
 // Error handling
 app.use(errorHandler);
