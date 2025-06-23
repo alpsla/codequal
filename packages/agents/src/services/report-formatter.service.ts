@@ -36,6 +36,12 @@ export interface StandardReport {
     learningPathProgress: ChartData;
     trendAnalysis?: ChartData;
     dependencyGraph?: GraphData;
+    mermaidDiagrams?: Array<{
+      type: string;
+      title: string;
+      mermaidCode: string;
+      description: string;
+    }>;
   };
   
   // Export formats
@@ -45,6 +51,21 @@ export interface StandardReport {
     slackFormat: string;
     markdownReport: string;
     jsonReport: string;
+    pdfReports?: Array<{
+      format: string;
+      title: string;
+      description: string;
+      downloadUrl: string;
+      estimatedPageCount: number;
+      generatedAt: Date;
+    }>;
+    dashboardUrls?: Array<{
+      type: string;
+      title: string;
+      url: string;
+      description: string;
+      panels: string[];
+    }>;
   };
   
   // Metadata

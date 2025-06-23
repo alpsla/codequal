@@ -12,6 +12,8 @@ export { MCPDocsServiceAdapter } from './docs-service';
 export { ESLintMCPAdapter } from './eslint-mcp';
 export { ESLintMCPAdapterFixed } from './eslint-mcp-fixed';
 export { MCPScanAdapter } from './mcp-scan';
+export { MarkdownPDFMCPAdapter } from './markdown-pdf-mcp';
+export { MermaidMCPAdapter } from './mermaid-mcp';
 
 // Type exports
 export type {
@@ -26,3 +28,15 @@ export type {
   WorkingCodeExample,
   ExampleValidationResult
 } from './working-examples-mcp';
+
+export type {
+  PDFExportOptions,
+  PDFGenerationResult
+} from './markdown-pdf-mcp';
+
+export type {
+  MermaidDiagramConfig,
+  DependencyGraph,
+  LearningPath,
+  MermaidGenerationResult
+} from './mermaid-mcp';
