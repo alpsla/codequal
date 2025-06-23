@@ -386,7 +386,7 @@ export class ReportFormatterService {
     this.logger.info('Formatting standardized report', {
       reportId,
       repositoryUrl: analysisResult.repository.url,
-      totalFindings: analysisResult.metrics.totalFindings
+      totalFindings: analysisResult.metrics?.totalFindings
     });
     
     // Build the standardized report structure
@@ -432,9 +432,9 @@ export class ReportFormatterService {
    * Build overview section
    */
   private buildOverview(analysisResult: any, recommendationModule: any, educationalData: any): StandardReport['overview'] {
-    const totalFindings = analysisResult.metrics.totalFindings || 0;
-    const criticalCount = analysisResult.metrics.severity.critical || 0;
-    const highCount = analysisResult.metrics.severity.high || 0;
+    const totalFindings = analysisResult.metrics?.totalFindings || 0;
+    const criticalCount = analysisResult.metrics?.severity?.critical || 0;
+    const highCount = analysisResult.metrics?.severity?.high || 0;
     
     // Calculate analysis score (0-100)
     const analysisScore = this.calculateAnalysisScore(analysisResult);
@@ -453,17 +453,17 @@ export class ReportFormatterService {
     
     // Calculate remediation time
     const estimatedRemediationTime = this.calculateRemediationTime(
-      recommendationModule.recommendations,
-      educationalData.educational.learningPath
+      recommendationModule.recommendations || [],
+      educationalData.educational?.learningPath
     );
     
     return {
-      executiveSummary: analysisResult.report.summary,
+      executiveSummary: analysisResult.report?.summary || analysisResult.summary || 'Analysis completed successfully.',
       analysisScore,
       riskLevel,
       totalFindings,
-      totalRecommendations: recommendationModule.summary.totalRecommendations,
-      learningPathAvailable: educationalData.educational.learningPath.totalSteps > 0,
+      totalRecommendations: recommendationModule.summary?.totalRecommendations || 0,
+      learningPathAvailable: educationalData.educational?.learningPath?.totalSteps > 0,
       estimatedRemediationTime
     };
   }
@@ -501,7 +501,7 @@ export class ReportFormatterService {
    * Build a finding category
    */
   private buildFindingCategory(name: string, findings: any[], icon: string): FindingCategory {
-    const formattedFindings: Finding[] = findings.map((f, index) => ({
+    const formattedFindings: Finding[] = (findings || []).map((f, index) => ({
       id: `finding_${name}_${index}`,
       title: f.title || f.issue || f.description || 'Untitled Finding',
       description: f.description || f.message || '',
@@ -555,7 +555,7 @@ export class ReportFormatterService {
       description: educationalData.learningPath.description,
       difficulty: educationalData.learningPath.difficulty,
       estimatedTime: educationalData.learningPath.estimatedTime,
-      steps: educationalData.learningPath.steps.map((step: any, index: number) => ({
+      steps: (educationalData.learningPath?.steps || []).map((step: any, index: number) => ({
         id: `step_${index + 1}`,
         order: index + 1,
         title: step.topic,
@@ -575,7 +575,7 @@ export class ReportFormatterService {
     };
     
     // Build skill gaps
-    const skillGaps: SkillGap[] = educationalData.insights.skillGaps.map((gap: any) => ({
+    const skillGaps: SkillGap[] = (educationalData.insights?.skillGaps || []).map((gap: any) => ({
       skill: gap.skill,
       currentLevel: gap.currentLevel || 3,
       requiredLevel: gap.requiredLevel || 7,
@@ -677,10 +677,10 @@ export class ReportFormatterService {
           labels: ['Critical', 'High', 'Medium', 'Low'],
           datasets: [{
             data: [
-              analysisResult.metrics.severity.critical || 0,
-              analysisResult.metrics.severity.high || 0,
-              analysisResult.metrics.severity.medium || 0,
-              analysisResult.metrics.severity.low || 0
+              analysisResult.metrics?.severity?.critical || 0,
+              analysisResult.metrics?.severity?.high || 0,
+              analysisResult.metrics?.severity?.medium || 0,
+              analysisResult.metrics?.severity?.low || 0
             ],
             backgroundColor: ['#dc3545', '#fd7e14', '#ffc107', '#28a745']
           }]
@@ -703,13 +703,13 @@ export class ReportFormatterService {
         type: 'radar',
         title: 'Skill Development Areas',
         data: {
-          labels: educationalData.educational.insights.skillGaps.map((g: any) => g.skill),
+          labels: (educationalData.educational?.insights?.skillGaps || []).map((g: any) => g.skill),
           datasets: [{
             label: 'Current Level',
-            data: educationalData.educational.insights.skillGaps.map((g: any) => g.currentLevel || 3)
+            data: (educationalData.educational?.insights?.skillGaps || []).map((g: any) => g.currentLevel || 3)
           }, {
             label: 'Required Level',
-            data: educationalData.educational.insights.skillGaps.map((g: any) => g.requiredLevel || 7)
+            data: (educationalData.educational?.insights?.skillGaps || []).map((g: any) => g.requiredLevel || 7)
           }]
         }
       }
@@ -732,16 +732,16 @@ export class ReportFormatterService {
   // Helper methods
   
   private calculateAnalysisScore(analysisResult: any): number {
-    const totalFindings = analysisResult.metrics.totalFindings || 0;
-    const criticalCount = analysisResult.metrics.severity.critical || 0;
-    const highCount = analysisResult.metrics.severity.high || 0;
+    const totalFindings = analysisResult.metrics?.totalFindings || 0;
+    const criticalCount = analysisResult.metrics?.severity?.critical || 0;
+    const highCount = analysisResult.metrics?.severity?.high || 0;
     
     // Base score starts at 100 and decreases based on findings
     let score = 100;
     score -= criticalCount * 15;
     score -= highCount * 10;
-    score -= (analysisResult.metrics.severity.medium || 0) * 5;
-    score -= (analysisResult.metrics.severity.low || 0) * 2;
+    score -= (analysisResult.metrics?.severity?.medium || 0) * 5;
+    score -= (analysisResult.metrics?.severity?.low || 0) * 2;
     
     // Ensure score stays within 0-100 range
     return Math.max(0, Math.min(100, score));
@@ -830,7 +830,7 @@ export class ReportFormatterService {
     
     return Object.entries(grouped).map(([category, recs]) => ({
       name: this.formatCategoryName(category),
-      recommendations: (recs as any[]).map((rec: any) => this.formatRecommendation(rec)),
+      recommendations: ((recs as any[]) || []).map((rec: any) => this.formatRecommendation(rec)),
       estimatedEffort: this.calculateCategoryEffort(recs as any[]),
       impactScore: this.calculateCategoryImpact(recs as any[])
     }));
@@ -885,7 +885,7 @@ export class ReportFormatterService {
       phases.push({
         name: 'Phase 1: Critical Issues',
         description: 'Address critical security and stability issues immediately',
-        recommendations: criticalRecs.map(r => r.id),
+        recommendations: (criticalRecs || []).map(r => r.id),
         estimatedDuration: '1 week',
         dependencies: []
       });
@@ -895,7 +895,7 @@ export class ReportFormatterService {
       phases.push({
         name: 'Phase 2: High Priority',
         description: 'Resolve high-priority issues affecting functionality',
-        recommendations: highRecs.map(r => r.id),
+        recommendations: (highRecs || []).map(r => r.id),
         estimatedDuration: '2 weeks',
         dependencies: criticalRecs.length > 0 ? ['Phase 1: Critical Issues'] : []
       });
@@ -905,9 +905,9 @@ export class ReportFormatterService {
       phases.push({
         name: 'Phase 3: Improvements',
         description: 'Implement improvements for better maintainability',
-        recommendations: mediumRecs.map(r => r.id),
+        recommendations: (mediumRecs || []).map(r => r.id),
         estimatedDuration: '3 weeks',
-        dependencies: phases.map(p => p.name)
+        dependencies: (phases || []).map(p => p.name)
       });
     }
     
@@ -915,7 +915,7 @@ export class ReportFormatterService {
       phases.push({
         name: 'Phase 4: Optimizations',
         description: 'Optional optimizations and nice-to-have features',
-        recommendations: lowRecs.map(r => r.id),
+        recommendations: (lowRecs || []).map(r => r.id),
         estimatedDuration: '2 weeks',
         dependencies: []
       });
@@ -974,7 +974,7 @@ export class ReportFormatterService {
   }
   
   private formatEducationalItems(items: any[], type: string): EducationalItem[] {
-    return items.map((item, index) => ({
+    return (items || []).map((item, index) => ({
       id: item.id || `edu_${type}_${index}`,
       title: item.title || item.topic,
       description: item.description || '',
@@ -1002,7 +1002,7 @@ export class ReportFormatterService {
     const certifications: Certification[] = [];
     
     // Map topics to relevant certifications
-    if (topics.some(t => t.toLowerCase().includes('security'))) {
+    if ((topics || []).some(t => t.toLowerCase().includes('security'))) {
       certifications.push({
         name: 'Certified Secure Software Lifecycle Professional (CSSLP)',
         provider: 'ISC2',
@@ -1011,7 +1011,7 @@ export class ReportFormatterService {
       });
     }
     
-    if (topics.some(t => t.toLowerCase().includes('cloud') || t.toLowerCase().includes('aws'))) {
+    if ((topics || []).some(t => t.toLowerCase().includes('cloud') || t.toLowerCase().includes('aws'))) {
       certifications.push({
         name: 'AWS Certified Developer',
         provider: 'Amazon',
@@ -1104,11 +1104,11 @@ export class ReportFormatterService {
     const insights: Insight[] = [];
     
     // Security insight
-    if (analysisResult.metrics.severity.critical > 0) {
+    if (analysisResult.metrics?.severity?.critical > 0) {
       insights.push({
         id: 'insight_1',
         title: 'Critical Security Vulnerabilities Detected',
-        description: `Found ${analysisResult.metrics.severity.critical} critical security issues that require immediate attention`,
+        description: `Found ${analysisResult.metrics?.severity?.critical} critical security issues that require immediate attention`,
         significance: 'high',
         category: 'security',
         evidence: ['npm-audit results', 'Static analysis findings']
@@ -1151,7 +1151,7 @@ export class ReportFormatterService {
   private generatePredictions(analysisResult: any): Prediction[] {
     const predictions: Prediction[] = [];
     
-    if (analysisResult.metrics.severity.high > 5) {
+    if (analysisResult.metrics?.severity?.high > 5) {
       predictions.push({
         metric: 'Technical Debt',
         prediction: 'Technical debt likely to increase without intervention',
@@ -1225,17 +1225,17 @@ export class ReportFormatterService {
 **Analysis Date:** ${new Date().toLocaleString()}
 
 ## Executive Summary
-${analysisResult.report.summary}
+${analysisResult.report?.summary || analysisResult.summary || "Analysis completed"}
 
 ## Key Findings
-- Total Issues: ${analysisResult.metrics.totalFindings}
-- Critical: ${analysisResult.metrics.severity.critical}
-- High: ${analysisResult.metrics.severity.high}
-- Medium: ${analysisResult.metrics.severity.medium}
-- Low: ${analysisResult.metrics.severity.low}
+- Total Issues: ${analysisResult.metrics?.totalFindings}
+- Critical: ${analysisResult.metrics?.severity?.critical}
+- High: ${analysisResult.metrics?.severity?.high}
+- Medium: ${analysisResult.metrics?.severity?.medium}
+- Low: ${analysisResult.metrics?.severity?.low}
 
 ## Top Recommendations
-${recommendationModule.recommendations.slice(0, 5).map((r: any) => `- ${r.title}`).join('\n')}
+${(recommendationModule.recommendations || []).slice(0, 5).map((r: any) => `- ${r.title}`).join('\n')}
 
 ## Learning Path
 ${educationalData.educational.learningPath.totalSteps} steps identified for skill development
@@ -1246,15 +1246,15 @@ View the full report in your CodeQual dashboard for detailed analysis and intera
   }
   
   private generateSlackFormat(analysisResult: any, recommendationModule: any): string {
-    const emoji = analysisResult.metrics.severity.critical > 0 ? '🚨' : 
-                  analysisResult.metrics.severity.high > 0 ? '⚠️' : '✅';
+    const emoji = analysisResult.metrics?.severity?.critical > 0 ? '🚨' : 
+                  analysisResult.metrics?.severity?.high > 0 ? '⚠️' : '✅';
     
     return `
 ${emoji} *CodeQual Analysis Complete*
 *Repo:* ${analysisResult.repository.name} | *PR:* #${analysisResult.pr.number}
 
-*Findings:* ${analysisResult.metrics.totalFindings} total
-🔴 Critical: ${analysisResult.metrics.severity.critical} | 🟠 High: ${analysisResult.metrics.severity.high}
+*Findings:* ${analysisResult.metrics?.totalFindings} total
+🔴 Critical: ${analysisResult.metrics?.severity?.critical} | 🟠 High: ${analysisResult.metrics?.severity?.high}
 
 *Top Priority:* ${recommendationModule.recommendations[0]?.title || 'No critical issues'}
 
@@ -1282,14 +1282,14 @@ ${emoji} *CodeQual Analysis Complete*
 ## Findings Overview
 | Severity | Count |
 |----------|-------|
-| Critical | ${analysisResult.metrics.severity.critical} |
-| High     | ${analysisResult.metrics.severity.high} |
-| Medium   | ${analysisResult.metrics.severity.medium} |
-| Low      | ${analysisResult.metrics.severity.low} |
-| **Total**| **${analysisResult.metrics.totalFindings}** |
+| Critical | ${analysisResult.metrics?.severity?.critical} |
+| High     | ${analysisResult.metrics?.severity?.high} |
+| Medium   | ${analysisResult.metrics?.severity?.medium} |
+| Low      | ${analysisResult.metrics?.severity?.low} |
+| **Total**| **${analysisResult.metrics?.totalFindings}** |
 
 ## Recommendations
-${recommendationModule.recommendations.map((r: any) => `
+${(recommendationModule.recommendations || []).map((r: any) => `
 ### ${r.title}
 - **Priority:** ${r.priority.level}
 - **Category:** ${r.category}
@@ -1303,7 +1303,7 @@ ${recommendationModule.recommendations.map((r: any) => `
 **Total Steps:** ${educationalData.educational.learningPath.totalSteps}
 
 ### Learning Steps
-${educationalData.educational.learningPath.steps.map((step: any, i: number) => 
+${(educationalData.educational?.learningPath?.steps || []).map((step: any, i: number) => 
   `${i + 1}. ${step.topic}`
 ).join('\n')}
 
