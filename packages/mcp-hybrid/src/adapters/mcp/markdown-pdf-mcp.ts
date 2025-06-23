@@ -661,7 +661,7 @@ ${300 + plainText.length}
   }
 
   private extractRepoName(url: string): string {
-    const match = url.match(/\/([^\/]+)\/([^\/]+)(?:\.git)?$/);
+    const match = url.match(/\/([^/]+)\/([^/]+)(?:\.git)?$/);
     return match ? `${match[1]}/${match[2]}` : 'Unknown Repository';
   }
 

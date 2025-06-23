@@ -88,7 +88,7 @@ describe('Grafana Adapter - Skill Tracking Integration', () => {
 
       // Mock the panel creation to capture SQL queries
       let capturedPanels: any[] = [];
-      jest.spyOn(adapter as any, 'createRoleSpecificPanels').mockImplementation(async (ctx) => {
+      jest.spyOn(adapter as any, 'createRoleSpecificPanels').mockImplementation(async (_ctx) => {
         const panels = await (adapter as any).createRoleSpecificPanels.mock.results[0].value;
         capturedPanels = panels;
         return panels;
@@ -233,7 +233,6 @@ describe('Grafana Adapter - Skill Tracking Integration', () => {
       };
 
       // Mock panel creation to validate configuration
-      const mockPanels: any[] = [];
       jest.spyOn(adapter as any, 'createRoleSpecificPanels').mockImplementation(async () => {
         // Simulate the educational panels
         return [
@@ -284,7 +283,7 @@ describe('Grafana Adapter - Skill Tracking Integration', () => {
         ];
       });
 
-      const result = await adapter.analyze(context);
+      await adapter.analyze(context);
 
       // Validate that all panels have required properties
       const panels = await (adapter as any).createRoleSpecificPanels(context);

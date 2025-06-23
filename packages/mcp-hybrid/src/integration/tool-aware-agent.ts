@@ -4,8 +4,6 @@
  */
 
 import {
-  Tool,
-  ToolResult,
   AnalysisContext,
   AgentRole,
   ConsolidatedToolResults,
