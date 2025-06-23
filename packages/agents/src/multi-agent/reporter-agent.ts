@@ -484,18 +484,20 @@ export class ReporterAgent {
    * Estimate PDF page count based on content
    */
   private estimatePDFPages(report: StandardReport, format: string): number {
-    let basePages = 2; // Cover + summary
+    const basePages = 2; // Cover + summary
     
     switch (format) {
       case 'executive':
         return basePages + 2; // 4 pages max
-      case 'technical':
+      case 'technical': {
         const findingsPages = Math.ceil(report.overview.totalFindings / 10);
         const chartsPages = Object.keys(report.visualizations).length;
         return basePages + findingsPages + chartsPages;
-      case 'educational':
+      }
+      case 'educational': {
         const learningSteps = report.modules.educational?.learningPath?.steps?.length || 0;
         return basePages + Math.ceil(learningSteps / 3);
+      }
       default:
         return 6;
     }
@@ -505,7 +507,7 @@ export class ReporterAgent {
    * Extract repository name from URL
    */
   private extractRepoName(url: string): string {
-    const match = url.match(/\/([^\/]+)\/([^\/]+)(?:\.git)?$/);
+    const match = url.match(/\/([^/]+)\/([^/]+)(?:\.git)?$/);
     return match ? `${match[1]}/${match[2]}` : 'Repository';
   }
 
