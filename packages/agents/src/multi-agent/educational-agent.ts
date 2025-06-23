@@ -396,7 +396,7 @@ export class EducationalAgent {
     }, {} as Record<string, number>);
 
     // Sort recommendations based on skill levels (prioritize weak areas)
-    const skillAwareOrder = learningPathGuidance.suggestedOrder.map(recId => {
+    const skillAwareOrder = (learningPathGuidance?.suggestedOrder || []).map(recId => {
       const rec = recommendations.recommendations.find(r => r.id === recId);
       if (!rec) return { id: recId, priority: 50 };
       
