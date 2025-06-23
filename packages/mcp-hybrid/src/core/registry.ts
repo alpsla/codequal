@@ -67,10 +67,13 @@ export class ToolRegistry {
     
     // Educational role tools
     this.roleMapping.set('educational', new Set([
-      'context-mcp',          // Primary: retrieves context from Vector DB & web
-      'knowledge-graph-mcp',  // Primary: identifies learning paths
-      'mcp-memory',          // Fallback: stores/retrieves learning progress
-      'web-search-mcp'       // Fallback: finds educational resources
+      'context-mcp',              // Primary: retrieves context from Vector DB & web
+      'context7-mcp',             // Primary: real-time documentation & version info (Context 7)
+      'working-examples-mcp',     // Primary: real working code examples
+      'mcp-docs-service',         // Primary: documentation analysis
+      'knowledge-graph-mcp',      // Secondary: identifies learning paths
+      'mcp-memory',              // Fallback: stores/retrieves learning progress
+      'web-search-mcp'           // Fallback: finds educational resources
     ]));
     
     // Reporting role tools

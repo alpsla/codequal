@@ -32,7 +32,11 @@ export class MCPToolManager {
   private readonly ON_DEMAND_TOOL_IDS = new Set([
     'mcp-scan',
     'git-mcp',
-    'mcp-docs-service'
+    'mcp-docs-service',
+    'context7-mcp',           // Context 7 documentation service
+    'working-examples-mcp',   // Working code examples service
+    'chartjs-mcp',           // Chart generation for reporting
+    'context-mcp'            // Vector DB context retrieval
   ]);
   
   constructor() {
@@ -207,6 +211,21 @@ export class MCPToolManager {
           break;
         case 'mcp-docs-service':
           command = 'npm run mcp-docs-service -- --version';
+          break;
+        case 'context7-mcp':
+          command = 'npx -y @upstash/context7-mcp --version';
+          break;
+        case 'working-examples-mcp':
+          // Custom implementation - check if node is available
+          command = 'node --version';
+          break;
+        case 'chartjs-mcp':
+          // Chart.js MCP - check if node is available
+          command = 'node --version';
+          break;
+        case 'context-mcp':
+          // Vector DB context retrieval - check if node is available
+          command = 'node --version';
           break;
         default:
           return false;

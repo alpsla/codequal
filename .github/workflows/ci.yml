@@ -17,13 +17,13 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: '18.x'
-        # Disable npm caching to avoid ENOWORKSPACES error
-        # cache: 'npm'
+        cache: 'npm'
         
     - name: Install dependencies
       run: |
         echo "Installing all dependencies including workspaces..."
-        npm install
+        # Install dependencies with workspace support
+        npm ci || npm install
         echo "Verifying core package dependencies..."
         cd packages/core
         npm list axios || echo "axios not found"
