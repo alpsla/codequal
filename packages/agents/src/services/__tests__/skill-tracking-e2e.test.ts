@@ -160,10 +160,15 @@ describe('Skill Tracking System - End-to-End Tests', () => {
       };
 
       // Test skill integration with results - using available method
-      const skillContext = await skillIntegrationService.integrateSkillTracking(processedResults, {
-        userId: mockAuthenticatedUser.id,
-        prNumber: 123
-      });
+      const skillContext = await skillIntegrationService.integrateSkillTracking(
+        processedResults,
+        {
+          userId: mockAuthenticatedUser.id,
+          prNumber: 123,
+          repository: 'test-repo'
+        },
+        processedResults
+      );
 
       expect(skillContext).toMatchObject({
         userSkillLevels: expect.objectContaining({
@@ -386,13 +391,16 @@ describe('Skill Tracking System - End-to-End Tests', () => {
 
     it('should validate skill level boundaries', async () => {
       const invalidAssessment = {
-        categoryId: 'security',
         category: 'security',
-        skillLevel: 15, // Invalid: > 10
-        demonstratedLevel: 15,
+        demonstratedLevel: 15, // Invalid: > 10
         confidence: 1.5, // Invalid: > 1.0
-        evidence: ['test'],
-        timestamp: new Date()
+        evidence: {
+          type: 'pr_analysis' as const,
+          sourceId: 'test-pr-123',
+          description: 'Test assessment',
+          severity: 'high' as const,
+          complexity: 8
+        }
       };
 
       // Should normalize invalid values

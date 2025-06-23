@@ -24,8 +24,7 @@ describe('Reporter Agent - Standard Report Generation', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     
-    const searchMock = jest.fn();
-    searchMock.mockResolvedValue([
+    const searchMock = jest.fn().mockResolvedValue([
       {
         id: 'resource1',
         title: 'Security Best Practices Guide',

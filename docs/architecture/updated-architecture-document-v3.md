@@ -1,5 +1,5 @@
 CodeQual Architecture Document
-Last Updated: June 15, 2025 (Enhanced Monitoring Service & Observability Implementation)
+Last Updated: June 23, 2025 (Educational Agent MCP Integration & Architectural Flow Corrections)
 System Overview Please review the file model-version-management.md
 CodeQual is a flexible, multi-agent system for comprehensive code analysis, quality assessment, and improvement. The system leverages a combination of specialized AI agents, vector database storage, MCP (Model Context Protocol) tools, and a scoring system to deliver actionable insights for developers and teams.
 Core Components
@@ -16,7 +16,7 @@ Agent Roles
 
 Orchestrator: PR analysis, complexity detection, DeepWiki request generation
 Analysis Agents: Security, Code Quality, Architecture, Performance, Dependencies
-Final Stage Agents: Educational, Reporting
+Post-Analysis Agents: Educational (with MCP tools), Reporting (with MCP tools)
 Support Agents: Repository Data Provider, Repository Interaction Provider
 Research Agent: Model configuration researcher and optimizer
 
@@ -235,11 +235,34 @@ Local tools run for PR-specific insights
 Agents analyze based on all available data
 Reports compiled by agents
 
-5. Final Report Generation
+5. Post-Analysis Agent Flow (Educational & Reporting)
 
-Educational Agent: Creates learning materials from findings
-Reporting Agent: Generates standardized reports for UI consumption
-Tool metrics included in dashboards
+**Educational Agent Architectural Flow (Updated June 23, 2025):**
+
+The Educational Agent operates in a post-analysis phase with orchestrator-managed tool execution:
+
+1. **Specialized Agents Complete**: Security, Architecture, Performance, Dependencies execute with their MCP tools
+2. **Orchestrator Compiles**: All findings + DeepWiki summary + Recommendation module
+3. **Educational Tool Orchestrator**: Executes educational MCP tools with compiled context
+4. **Educational Agent**: Receives tool results + compiled findings for educational content generation
+
+**Educational MCP Tools Integration:**
+- `context7-mcp`: Real-time documentation search with version-specific information
+- `working-examples-mcp`: Validated code examples based on compiled findings
+- `context-mcp`: Vector DB educational content retrieval
+- `mcp-docs-service`: Documentation analysis and gap identification
+
+**Cost Control & Data Storage Strategy:**
+- **Tiered Storage**: Cache-only (24h TTL), User limits (50MB), Curated content
+- **Topic Extraction**: Max 10 topics from compiled findings (not generic)
+- **Package Analysis**: Max 10 packages from actual codebase analysis
+- **Cache-First**: Check cache before external tool execution
+- **Context-Aware**: Educational tools receive specific analysis findings as context
+
+**Reporting Agent Flow:**
+- Reporting Agent: Generates standardized reports with MCP tool integration
+- Chart generation, PDF export, Grafana skill trend integration
+- Tool metrics included in dashboards
 
 6. DeepWiki Integration (Enhanced June 2025)
 The system integrates with DeepWiki for comprehensive repository analysis:

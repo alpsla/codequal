@@ -12,7 +12,14 @@ import { SkillAwareRAGService } from '../../services/skill-aware-rag-service';
 const mockAuthenticatedUser = {
   id: 'test-user-123',
   email: 'test@example.com',
-  name: 'Test Developer'
+  name: 'Test Developer',
+  permissions: ['read', 'write'],
+  role: 'developer',
+  status: 'active',
+  session: {
+    token: 'mock-token',
+    expiresAt: new Date(Date.now() + 86400000)
+  }
 };
 
 // Mock vector database

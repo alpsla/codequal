@@ -646,12 +646,12 @@ describe('Reporter Agent - End-to-End Workflow Tests', () => {
       expect(mockSkillTrackingService.getCurrentSkills).toHaveBeenCalled();
 
       // Verify skill-aware content generation
-      expect(educationalResult.educational.learningPath.difficulty).toBe('guided'); // Adjusted for beginner security skills
+      expect(educationalResult.learningPath.difficulty).toBe('beginner'); // Adjusted for beginner security skills
 
       // Generate report that includes skill progression
       const report = await reporterAgent.generateStandardReport(
         analysisWithSkills,
-        { educational: educationalResult.educational, metadata: {} },
+        { educational: educationalResult, metadata: {} },
         { summary: { totalRecommendations: 1 }, recommendations: [] },
         { type: 'full-report', includeEducational: true, educationalDepth: 'comprehensive' }
       );
