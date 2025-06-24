@@ -1,5 +1,5 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const { describe, it, expect, jest, beforeEach, afterEach } = globalThis;
+const { describe, it, expect, beforeEach, afterEach } = globalThis;
 import request from 'supertest';
 import { ResultOrchestrator } from '../../../../apps/api/src/services/result-orchestrator';
 import { createClient } from '@supabase/supabase-js';

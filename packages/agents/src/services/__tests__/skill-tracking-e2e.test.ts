@@ -34,7 +34,15 @@ const mockSkillModel = {
 
 // Mock database module
 jest.mock('@codequal/database/models/skill', () => ({
-  SkillModel: mockSkillModel
+  SkillModel: {
+    createCategory: jest.fn(),
+    createSkill: jest.fn(),
+    updateSkill: jest.fn(),
+    getSkillsByUser: jest.fn(),
+    getUserSkills: jest.fn(),
+    getSkillHistory: jest.fn(),
+    recordSkillHistory: jest.fn()
+  }
 }));
 
 describe('Skill Tracking System - End-to-End Tests', () => {
@@ -263,7 +271,7 @@ describe('Skill Tracking System - End-to-End Tests', () => {
         { categoryId: 'security', level: 5, confidence: 0.85 }
       ];
 
-      mockSkillModel.getSkillsByUser
+      mockSkillModel.getUserSkills
         .mockResolvedValueOnce(initialSkills)
         .mockResolvedValueOnce(improvedSkills);
 
@@ -279,7 +287,7 @@ describe('Skill Tracking System - End-to-End Tests', () => {
 
       // Get initial skills
       const initial = await skillTrackingService.getCurrentSkills();
-      expect(initial[0].level).toBe(3);
+      expect(initial[0]?.level).toBe(3);
 
       // Simulate skill improvement through learning
       const improvement = {
@@ -301,7 +309,7 @@ describe('Skill Tracking System - End-to-End Tests', () => {
 
       // Get updated skills
       const updated = await skillTrackingService.getCurrentSkills();
-      expect(updated[0].level).toBe(5);
+      expect(updated[0]?.level).toBe(5);
 
       // Verify skill history was recorded
       expect(mockSkillModel.recordSkillHistory).toHaveBeenCalledWith(

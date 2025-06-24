@@ -385,15 +385,15 @@ export class ReportFormatterService {
     
     this.logger.info('Formatting standardized report', {
       reportId,
-      repositoryUrl: analysisResult.repository.url,
+      repositoryUrl: analysisResult.repository?.url || 'unknown',
       totalFindings: analysisResult.metrics?.totalFindings
     });
     
     // Build the standardized report structure
     const report: StandardReport = {
       id: reportId,
-      repositoryUrl: analysisResult.repository.url,
-      prNumber: analysisResult.pr.number,
+      repositoryUrl: analysisResult.repository?.url || 'unknown',
+      prNumber: analysisResult.pr?.number || 0,
       timestamp: new Date(),
       
       // Overview Section
@@ -416,11 +416,11 @@ export class ReportFormatterService {
       
       // Metadata
       metadata: {
-        analysisMode: analysisResult.analysis.mode,
-        agentsUsed: analysisResult.analysis.agentsUsed,
+        analysisMode: analysisResult.analysis?.mode || 'unknown',
+        agentsUsed: analysisResult.analysis?.agentsUsed || [],
         toolsExecuted: this.extractToolsExecuted(analysisResult),
-        processingTime: analysisResult.analysis.processingTime,
-        modelVersions: analysisResult.metadata.modelVersions,
+        processingTime: analysisResult.analysis?.processingTime || 0,
+        modelVersions: analysisResult.metadata?.modelVersions || {},
         reportVersion: '1.0.0'
       }
     };
@@ -463,7 +463,7 @@ export class ReportFormatterService {
       riskLevel,
       totalFindings,
       totalRecommendations: recommendationModule.summary?.totalRecommendations || 0,
-      learningPathAvailable: educationalData.educational?.learningPath?.totalSteps > 0,
+      learningPathAvailable: (educationalData.educational?.learningPath?.totalSteps || 0) > 0,
       estimatedRemediationTime
     };
   }
@@ -534,8 +534,8 @@ export class ReportFormatterService {
     const implementationPlan = this.buildImplementationPlan(recommendationModule.recommendations);
     
     return {
-      summary: recommendationModule.summary.description,
-      totalRecommendations: recommendationModule.summary.totalRecommendations,
+      summary: recommendationModule.summary?.description || 'No recommendations available',
+      totalRecommendations: recommendationModule.summary?.totalRecommendations || 0,
       categories,
       priorityMatrix,
       implementationPlan
@@ -546,16 +546,16 @@ export class ReportFormatterService {
    * Build educational module
    */
   private buildEducationalModule(compiledEducationalData: any): EducationalModule {
-    const educationalData = compiledEducationalData.educational;
+    const educationalData = compiledEducationalData?.educational || {};
     
     // Build learning path
     const learningPath: LearningPath = {
       id: 'learning_path_1',
       title: 'Personalized Learning Path',
-      description: educationalData.learningPath.description,
-      difficulty: educationalData.learningPath.difficulty,
-      estimatedTime: educationalData.learningPath.estimatedTime,
-      steps: (educationalData.learningPath?.steps || []).map((step: any, index: number) => ({
+      description: educationalData?.learningPath?.description || 'Customized learning path based on analysis',
+      difficulty: educationalData?.learningPath?.difficulty || 'intermediate',
+      estimatedTime: educationalData?.learningPath?.estimatedTime || 'Variable',
+      steps: (educationalData?.learningPath?.steps || []).map((step: any, index: number) => ({
         id: `step_${index + 1}`,
         order: index + 1,
         title: step.topic,
@@ -568,10 +568,10 @@ export class ReportFormatterService {
     
     // Organize content
     const content = {
-      explanations: this.formatEducationalItems(educationalData.content.explanations, 'explanation'),
-      tutorials: this.formatEducationalItems(educationalData.content.tutorials, 'tutorial'),
-      bestPractices: this.formatEducationalItems(educationalData.content.bestPractices, 'best-practice'),
-      resources: this.formatEducationalItems(educationalData.content.resources, 'resource')
+      explanations: this.formatEducationalItems(educationalData.content?.explanations, 'explanation'),
+      tutorials: this.formatEducationalItems(educationalData.content?.tutorials, 'tutorial'),
+      bestPractices: this.formatEducationalItems(educationalData.content?.bestPractices, 'best-practice'),
+      resources: this.formatEducationalItems(educationalData.content?.resources, 'resource')
     };
     
     // Build skill gaps
@@ -584,7 +584,7 @@ export class ReportFormatterService {
     }));
     
     // Add relevant certifications
-    const certifications = this.suggestCertifications(educationalData.insights.relatedTopics);
+    const certifications = this.suggestCertifications(educationalData.insights?.relatedTopics || []);
     
     return {
       summary: `Comprehensive learning path with ${learningPath.steps.length} steps to address identified issues`,
@@ -721,7 +721,7 @@ export class ReportFormatterService {
    */
   private buildExportFormats(analysisResult: any, recommendationModule: any, educationalData: any): StandardReport['exports'] {
     return {
-      prComment: analysisResult.report.prComment,
+      prComment: analysisResult.report?.prComment || 'No PR comment available',
       emailFormat: this.generateEmailFormat(analysisResult, recommendationModule, educationalData),
       slackFormat: this.generateSlackFormat(analysisResult, recommendationModule),
       markdownReport: this.generateMarkdownReport(analysisResult, recommendationModule, educationalData),
@@ -751,7 +751,7 @@ export class ReportFormatterService {
     let totalHours = 0;
     
     // Add time from recommendations
-    recommendations.forEach(rec => {
+    (recommendations || []).forEach(rec => {
       if (rec.estimatedEffort) {
         const hours = this.parseTimeToHours(rec.estimatedEffort);
         totalHours += hours;
@@ -819,7 +819,7 @@ export class ReportFormatterService {
   }
   
   private groupRecommendationsByCategory(recommendations: any[]): RecommendationCategory[] {
-    const grouped = recommendations.reduce((acc, rec) => {
+    const grouped = (recommendations || []).reduce((acc, rec) => {
       const category = rec.category || 'general';
       if (!acc[category]) {
         acc[category] = [];
@@ -863,7 +863,7 @@ export class ReportFormatterService {
       low: []
     };
     
-    recommendations.forEach(rec => {
+    (recommendations || []).forEach(rec => {
       const formatted = this.formatRecommendation(rec);
       const level = rec.priority?.level || 'medium';
       matrix[level as keyof PriorityMatrix].push(formatted);
@@ -874,10 +874,11 @@ export class ReportFormatterService {
   
   private buildImplementationPlan(recommendations: any[]): ImplementationPlan {
     // Group recommendations into logical phases
-    const criticalRecs = recommendations.filter(r => r.priority?.level === 'critical');
-    const highRecs = recommendations.filter(r => r.priority?.level === 'high');
-    const mediumRecs = recommendations.filter(r => r.priority?.level === 'medium');
-    const lowRecs = recommendations.filter(r => r.priority?.level === 'low');
+    const recs = recommendations || [];
+    const criticalRecs = recs.filter(r => r.priority?.level === 'critical');
+    const highRecs = recs.filter(r => r.priority?.level === 'high');
+    const mediumRecs = recs.filter(r => r.priority?.level === 'medium');
+    const lowRecs = recs.filter(r => r.priority?.level === 'low');
     
     const phases: Phase[] = [];
     
@@ -989,9 +990,10 @@ export class ReportFormatterService {
   }
   
   private determineStepType(topic: string): 'concept' | 'practice' | 'assessment' {
-    if (topic.toLowerCase().includes('understanding') || topic.toLowerCase().includes('basics')) {
+    const topicLower = topic?.toLowerCase() || '';
+    if (topicLower.includes('understanding') || topicLower.includes('basics')) {
       return 'concept';
-    } else if (topic.toLowerCase().includes('implement') || topic.toLowerCase().includes('practice')) {
+    } else if (topicLower.includes('implement') || topicLower.includes('practice')) {
       return 'practice';
     } else {
       return 'assessment';
@@ -1116,14 +1118,14 @@ export class ReportFormatterService {
     }
     
     // Learning opportunity insight
-    if (recommendationModule.summary.totalRecommendations > 5) {
+    if (recommendationModule?.summary?.totalRecommendations > 5) {
       insights.push({
         id: 'insight_2',
         title: 'Significant Learning Opportunity',
         description: 'Multiple areas identified for skill development and code improvement',
         significance: 'medium',
         category: 'education',
-        evidence: [`${recommendationModule.summary.totalRecommendations} recommendations generated`]
+        evidence: [`${recommendationModule?.summary?.totalRecommendations || 0} recommendations generated`]
       });
     }
     
@@ -1167,8 +1169,8 @@ export class ReportFormatterService {
   private generateContextualAdvice(analysisResult: any, recommendationModule: any): ContextualAdvice[] {
     const advice: ContextualAdvice[] = [];
     
-    if (analysisResult.repository.primaryLanguage === 'JavaScript' || 
-        analysisResult.repository.primaryLanguage === 'TypeScript') {
+    if (analysisResult.repository?.primaryLanguage === 'JavaScript' || 
+        analysisResult.repository?.primaryLanguage === 'TypeScript') {
       advice.push({
         context: 'JavaScript/TypeScript Project',
         advice: 'Consider implementing stricter TypeScript configurations and ESLint rules',
@@ -1220,8 +1222,8 @@ export class ReportFormatterService {
     return `
 # CodeQual Analysis Report
 
-**Repository:** ${analysisResult.repository.name}
-**PR #${analysisResult.pr.number}:** ${analysisResult.pr.title}
+**Repository:** ${analysisResult.repository?.name || 'unknown'}
+**PR #${analysisResult.pr?.number || 0}:** ${analysisResult.pr?.title || 'Unknown PR'}
 **Analysis Date:** ${new Date().toLocaleString()}
 
 ## Executive Summary
@@ -1238,8 +1240,8 @@ ${analysisResult.report?.summary || analysisResult.summary || "Analysis complete
 ${(recommendationModule.recommendations || []).slice(0, 5).map((r: any) => `- ${r.title}`).join('\n')}
 
 ## Learning Path
-${educationalData.educational.learningPath.totalSteps} steps identified for skill development
-Estimated time: ${educationalData.educational.learningPath.estimatedTime}
+${educationalData.educational?.learningPath?.totalSteps || 0} steps identified for skill development
+Estimated time: ${educationalData.educational?.learningPath?.estimatedTime || 'Variable'}
 
 View the full report in your CodeQual dashboard for detailed analysis and interactive visualizations.
     `.trim();
@@ -1251,14 +1253,14 @@ View the full report in your CodeQual dashboard for detailed analysis and intera
     
     return `
 ${emoji} *CodeQual Analysis Complete*
-*Repo:* ${analysisResult.repository.name} | *PR:* #${analysisResult.pr.number}
+*Repo:* ${analysisResult.repository?.name || 'unknown'} | *PR:* #${analysisResult.pr?.number || 0}
 
 *Findings:* ${analysisResult.metrics?.totalFindings} total
 🔴 Critical: ${analysisResult.metrics?.severity?.critical} | 🟠 High: ${analysisResult.metrics?.severity?.high}
 
-*Top Priority:* ${recommendationModule.recommendations[0]?.title || 'No critical issues'}
+*Top Priority:* ${recommendationModule?.recommendations?.[0]?.title || 'No critical issues'}
 
-<${analysisResult.repository.url}/pull/${analysisResult.pr.number}|View Full Report>
+<${analysisResult.repository?.url || '#'}/pull/${analysisResult.pr?.number || 0}|View Full Report>
     `.trim();
   }
   
@@ -1267,17 +1269,17 @@ ${emoji} *CodeQual Analysis Complete*
 # CodeQual Analysis Report
 
 ## Repository Information
-- **Repository:** ${analysisResult.repository.name}
-- **URL:** ${analysisResult.repository.url}
-- **Primary Language:** ${analysisResult.repository.primaryLanguage}
-- **PR Number:** #${analysisResult.pr.number}
-- **PR Title:** ${analysisResult.pr.title}
-- **Changed Files:** ${analysisResult.pr.changedFiles}
+- **Repository:** ${analysisResult.repository?.name || 'unknown'}
+- **URL:** ${analysisResult.repository?.url || 'unknown'}
+- **Primary Language:** ${analysisResult.repository?.primaryLanguage || 'unknown'}
+- **PR Number:** #${analysisResult.pr?.number || 0}
+- **PR Title:** ${analysisResult.pr?.title || 'Unknown PR'}
+- **Changed Files:** ${analysisResult.pr?.changedFiles || 0}
 
 ## Analysis Summary
-- **Mode:** ${analysisResult.analysis.mode}
-- **Processing Time:** ${analysisResult.analysis.processingTime}ms
-- **Agents Used:** ${analysisResult.analysis.agentsUsed.join(', ')}
+- **Mode:** ${analysisResult.analysis?.mode || 'unknown'}
+- **Processing Time:** ${analysisResult.analysis?.processingTime || 0}ms
+- **Agents Used:** ${(analysisResult.analysis?.agentsUsed || []).join(', ')}
 
 ## Findings Overview
 | Severity | Count |
@@ -1298,9 +1300,9 @@ ${(recommendationModule.recommendations || []).map((r: any) => `
 `).join('\n')}
 
 ## Learning Path
-**Difficulty:** ${educationalData.educational.learningPath.difficulty}
-**Estimated Time:** ${educationalData.educational.learningPath.estimatedTime}
-**Total Steps:** ${educationalData.educational.learningPath.totalSteps}
+**Difficulty:** ${educationalData.educational?.learningPath?.difficulty || 'intermediate'}
+**Estimated Time:** ${educationalData.educational?.learningPath?.estimatedTime || 'Variable'}
+**Total Steps:** ${educationalData.educational?.learningPath?.totalSteps || 0}
 
 ### Learning Steps
 ${(educationalData.educational?.learningPath?.steps || []).map((step: any, i: number) => 

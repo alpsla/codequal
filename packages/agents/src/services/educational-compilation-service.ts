@@ -155,7 +155,7 @@ export class EducationalCompilationService {
         resources: educationalResult.additionalResources?.length || 0
       },
       recommendations: recommendationModule.summary.totalRecommendations,
-      findings: Object.keys(analysisResults.findings || {}).length
+      findings: Object.keys(analysisResults?.findings || {}).length
     });
 
     // Compile learning path with enhanced metadata
@@ -358,7 +358,7 @@ export class EducationalCompilationService {
     recommendationModule: RecommendationModule,
     educationalResult: EducationalResult
   ): any {
-    const learningPathMapping = recommendationModule.learningPathGuidance.suggestedOrder.map((recId, index) => {
+    const learningPathMapping = (recommendationModule.learningPathGuidance?.suggestedOrder || []).map((recId, index) => {
       const recommendation = recommendationModule.recommendations.find(r => r.id === recId);
       const contentIds = this.findRelatedContentIds(recommendation, educationalResult, index);
       

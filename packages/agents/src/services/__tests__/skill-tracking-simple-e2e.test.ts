@@ -33,16 +33,14 @@ const mockSkillModel = {
 
 import { SkillModel } from '@codequal/database/models/skill';
 
-const mockSkillModel = {
-  getUserSkills: jest.fn(),
-  updateSkill: jest.fn(),
-  createSkill: jest.fn(),
-  recordSkillHistory: jest.fn(),
-  getSkillHistory: jest.fn()
-};
-
 jest.mock('@codequal/database/models/skill', () => ({
-  SkillModel: mockSkillModel
+  SkillModel: {
+    getUserSkills: jest.fn(),
+    updateSkill: jest.fn(),
+    createSkill: jest.fn(),
+    recordSkillHistory: jest.fn(),
+    getSkillHistory: jest.fn()
+  }
 }));
 
 jest.mock('@codequal/core/utils', () => ({

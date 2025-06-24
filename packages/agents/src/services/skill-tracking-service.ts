@@ -243,7 +243,8 @@ export class SkillTrackingService {
    * Get user's current skill levels
    */
   async getCurrentSkills(): Promise<DeveloperSkill[]> {
-    return await SkillModel.getUserSkills(this.authenticatedUser.id);
+    const skills = await SkillModel.getUserSkills(this.authenticatedUser.id);
+    return skills || [];
   }
 
   /**

@@ -81,8 +81,8 @@ export class ReporterAgent {
     reportFormat?: ReportFormat
   ): Promise<StandardReport> {
     this.logger.info('Generating standardized report for UI', {
-      repositoryUrl: analysisResult.repository.url,
-      prNumber: analysisResult.pr.number,
+      repositoryUrl: analysisResult.repository?.url || 'unknown',
+      prNumber: analysisResult.pr?.number || 0,
       format: reportFormat?.type || 'full-report'
     });
     

@@ -3,6 +3,12 @@ import express from 'express';
 import monitoringRoutes, { getGlobalMonitoringService } from '../routes/monitoring';
 import { authMiddleware } from '../middleware/auth-middleware';
 import { monitoringMiddleware } from '../middleware/monitoring-middleware';
+import { EnhancedMonitoringService } from '../../../../packages/core/src/monitoring/enhanced-monitoring-service';
+
+// Mock the enhanced monitoring service
+jest.mock('../../../../packages/core/src/monitoring/enhanced-monitoring-service', () => ({
+  EnhancedMonitoringService: jest.fn()
+}));
 
 // Mock the auth middleware for testing
 jest.mock('../middleware/auth-middleware', () => ({
@@ -249,8 +255,7 @@ describe('Monitoring API Endpoints', () => {
 
     it('should return 404 for invalid widget ID', async () => {
       // Mock the service to throw an error for invalid widget
-      const { EnhancedMonitoringService } = await import('../../../../packages/core/src/monitoring/enhanced-monitoring-service');
-      const mockService = EnhancedMonitoringService;
+      const mockService = EnhancedMonitoringService as jest.MockedClass<typeof EnhancedMonitoringService>;
       mockService.mockImplementation(() => ({
         getWidgetData: jest.fn().mockRejectedValue(new Error('Widget not-found not found'))
       }));
@@ -315,8 +320,7 @@ describe('Monitoring API Endpoints', () => {
 
     it('should return 404 for invalid dashboard ID', async () => {
       // Mock the service to return null for invalid dashboard
-      const { EnhancedMonitoringService } = await import('../../../../packages/core/src/monitoring/enhanced-monitoring-service');
-      const mockService = EnhancedMonitoringService;
+      const mockService = EnhancedMonitoringService as jest.MockedClass<typeof EnhancedMonitoringService>;
       mockService.mockImplementation(() => ({
         getDashboardData: jest.fn().mockResolvedValue(null)
       }));
@@ -373,8 +377,7 @@ describe('Monitoring API Endpoints', () => {
 
     it('should return 404 for invalid alert ID', async () => {
       // Mock the service to return empty array for invalid alert
-      const { EnhancedMonitoringService } = await import('../../../../packages/core/src/monitoring/enhanced-monitoring-service');
-      const mockService = EnhancedMonitoringService;
+      const mockService = EnhancedMonitoringService as jest.MockedClass<typeof EnhancedMonitoringService>;
       mockService.mockImplementation(() => ({
         getAlertStatus: jest.fn().mockReturnValue([])
       }));

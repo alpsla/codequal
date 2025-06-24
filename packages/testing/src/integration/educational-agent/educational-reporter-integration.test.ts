@@ -1,5 +1,5 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const { describe, it, expect, beforeEach, jest } = globalThis;
+const { describe, it, expect, beforeEach } = globalThis;
 import { EducationalAgent, EducationalResult, CompiledFindings } from '@codequal/agents/multi-agent/educational-agent';
 import { ReporterAgent, ReportFormat, EducationalSearchPrompt } from '@codequal/agents/multi-agent/reporter-agent';
 import { createLogger } from '@codequal/core/utils';

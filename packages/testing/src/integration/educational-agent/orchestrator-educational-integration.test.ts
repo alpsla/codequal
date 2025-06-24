@@ -20,34 +20,35 @@ describe('Orchestrator Educational Agent Integration', () => {
   let mockAuthenticatedUser: AuthenticatedUser;
   let educationalAgent: EducationalAgent;
 
+  // Define all mocks at the module level
+  const mockEducationalService = {
+    generateContentForFindings: jest.fn()
+  };
+
+  const mockPRContextService = {
+    fetchPRDetails: jest.fn(),
+    getPRDiff: jest.fn(),
+    extractChangedFiles: jest.fn(),
+    detectPrimaryLanguage: jest.fn(),
+    estimateRepositorySize: jest.fn()
+  };
+  
+  const mockDeepWikiManager = {
+    checkRepositoryExists: jest.fn(),
+    triggerRepositoryAnalysis: jest.fn(),
+    waitForAnalysisCompletion: jest.fn()
+  };
+  
+  const mockResultProcessor = {
+    processAgentResults: jest.fn()
+  };
+  
+  const mockToolResultRetrieval = {
+    getRepositoryToolSummary: jest.fn(),
+    getToolResultsForAgents: jest.fn()
+  };
+
   beforeEach(() => {
-    // Define all mocks at the beginning
-    const mockEducationalService = {
-      generateContentForFindings: jest.fn()
-    };
-    
-    const mockPRContextService = {
-      fetchPRDetails: jest.fn(),
-      getPRDiff: jest.fn(),
-      extractChangedFiles: jest.fn(),
-      detectPrimaryLanguage: jest.fn(),
-      estimateRepositorySize: jest.fn()
-    };
-    
-    const mockDeepWikiManager = {
-      checkRepositoryExists: jest.fn(),
-      triggerRepositoryAnalysis: jest.fn(),
-      waitForAnalysisCompletion: jest.fn()
-    };
-    
-    const mockResultProcessor = {
-      processAgentResults: jest.fn()
-    };
-    
-    const mockToolResultRetrieval = {
-      getRepositoryToolSummary: jest.fn(),
-      getToolResultsForAgents: jest.fn()
-    };
     
     const mockEnhancedExecutor = {
       execute: jest.fn()

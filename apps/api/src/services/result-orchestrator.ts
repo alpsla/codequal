@@ -196,7 +196,7 @@ export class ResultOrchestrator {
       processingSteps.push('Generating recommendation module');
       const deepWikiSummary = await this.getDeepWikiSummary(request.repositoryUrl);
       const recommendationModule = await this.recommendationService.generateRecommendations(
-        processedResults, 
+        processedResults || { findings: {} }, 
         deepWikiSummary
       );
 
@@ -236,7 +236,7 @@ export class ResultOrchestrator {
       const standardReport = await this.reporterAgent.generateStandardReport(
         {
           ...processedResults,
-          findings: processedResults.findings,
+          findings: processedResults?.findings || {},
           metrics: this.calculateMetrics(processedResults)
         },
         compiledEducationalData,
@@ -261,7 +261,7 @@ export class ResultOrchestrator {
         },
         pr: {
           number: request.prNumber,
-          title: prContext.prDetails.title || 'PR Analysis',
+          title: prContext.prDetails?.title || 'PR Analysis',
           changedFiles: prContext.changedFiles.length
         },
         analysis: {
@@ -270,7 +270,7 @@ export class ResultOrchestrator {
           totalFindings: this.countTotalFindings(processedResults),
           processingTime
         },
-        findings: processedResults.findings,
+        findings: processedResults?.findings || {},
         recommendations: recommendationModule, // NEW: Include the Recommendation Module
         educationalContent: [standardReport.modules.educational], // Educational module from standard report
         compiledEducationalData: compiledEducationalData, // NEW: Compiled format for Reporter Agent
@@ -332,7 +332,7 @@ export class ResultOrchestrator {
    * Compile findings into format expected by Educational Agent
    */
   private compileFindings(processedResults: any): any {
-    const findings = processedResults.findings || {};
+    const findings = processedResults?.findings || {};
     
     return {
       codeQuality: {
@@ -375,7 +375,7 @@ export class ResultOrchestrator {
    * Generate PR comment with educational insights
    */
   private generatePRComment(processedResults: any, educationalResult: any): string {
-    const findings = processedResults.findings || {};
+    const findings = processedResults?.findings || {};
     const totalFindings = this.countTotalFindings(processedResults);
     
     let comment = "## CodeQual Analysis Results\n\n";
@@ -534,7 +534,7 @@ export class ResultOrchestrator {
       // Get tool summary to check if results exist
       const summary = await this.toolResultRetrievalService.getRepositoryToolSummary(repositoryId);
       
-      if (!summary.hasResults) {
+      if (!summary?.hasResults) {
         console.log(`No tool results found for repository ${repositoryId}, agents will analyze without tool context`);
         return {};
       }
@@ -637,7 +637,7 @@ export class ResultOrchestrator {
    */
   private async generateEducationalContent(processedResults: any): Promise<any[]> {
     return this.educationalService.generateContentForFindings(
-      processedResults.findings,
+      processedResults?.findings || {},
       this.authenticatedUser
     );
   }
@@ -764,14 +764,14 @@ export class ResultOrchestrator {
   }
 
   private countTotalFindings(processedResults: any): number {
-    const findings = processedResults.findings || {};
+    const findings = processedResults?.findings || {};
     return Object.values(findings).reduce((total: number, categoryFindings: any) => {
       return total + (Array.isArray(categoryFindings) ? categoryFindings.length : 0);
     }, 0);
   }
 
   private calculateMetrics(processedResults: any): any {
-    const findings = processedResults.findings || {};
+    const findings = processedResults?.findings || {};
     const allFindings = Object.values(findings).flat() as any[];
     
     const severityCounts = {
@@ -808,7 +808,7 @@ export class ResultOrchestrator {
 
   private extractRecommendations(processedResults: any): string[] {
     // Extract key recommendations from findings
-    const findings = processedResults.findings || {};
+    const findings = processedResults?.findings || {};
     const recommendations: string[] = [];
     
     Object.values(findings).forEach((categoryFindings: any) => {
