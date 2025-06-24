@@ -103,7 +103,7 @@ export class RecommendationService {
     userSkills: DeveloperSkill[], 
     skillProgressions: Record<string, SkillProgression | null>
   ): Promise<ActionableRecommendation[]> {
-    const securitySkill = userSkills.find(s => s.categoryId === 'security');
+    const securitySkill = (userSkills || []).find(s => s.categoryId === 'security');
     const securityProgression = skillProgressions['security'];
     
     return securityFindings.map((finding, index) => {
@@ -129,7 +129,7 @@ export class RecommendationService {
     userSkills: DeveloperSkill[], 
     skillProgressions: Record<string, SkillProgression | null>
   ): Promise<ActionableRecommendation[]> {
-    const performanceSkill = userSkills.find(s => s.categoryId === 'performance');
+    const performanceSkill = (userSkills || []).find(s => s.categoryId === 'performance');
     const performanceProgression = skillProgressions['performance'];
     
     return performanceFindings.map((finding, index) => {
@@ -317,6 +317,9 @@ export class RecommendationService {
 
     // Add progression-aware success criteria
     if (progression) {
+      if (!adapted.successCriteria.measurable) {
+        adapted.successCriteria.measurable = [];
+      }
       adapted.successCriteria.measurable.push(
         `Maintain or improve current skill level (currently ${skillLevel}/10)`
       );

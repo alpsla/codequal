@@ -147,7 +147,7 @@ export class EducationalToolOrchestrator {
       this.logger.info('Executing educational tools with compiled context', {
         topics: topics.length,
         packages: packages.length,
-        compiledFindings: Object.keys(compiledFindings).length,
+        compiledFindings: Object.keys(compiledFindings || {}).length,
         recommendations: recommendationModule?.summary?.totalRecommendations || 0
       });
 
@@ -205,7 +205,7 @@ export class EducationalToolOrchestrator {
         documentation: result.documentation.length,
         examples: result.workingExamples.length,
         versions: result.versionInfo.length,
-        cachedHitRate: result.cachedResults / (result.cachedResults + result.freshResults),
+        cachedHitRate: (result.cachedResults + result.freshResults) > 0 ? result.cachedResults / (result.cachedResults + result.freshResults) : 0,
         totalCost: result.totalCost,
         executionTime: Date.now() - startTime
       });
@@ -213,7 +213,7 @@ export class EducationalToolOrchestrator {
       return result;
     } catch (error) {
       this.logger.error('Educational tools execution failed', {
-        error: error instanceof Error ? error.message : error
+        error: error instanceof Error ? error.message : String(error || 'Unknown error')
       });
       return result; // Return partial results
     }
@@ -426,9 +426,9 @@ function validateInput(input: string): boolean {
     const topics = new Set<string>();
     
     // Extract from compiled findings
-    Object.keys(compiledFindings.findings || {}).forEach(category => {
+    Object.keys(compiledFindings?.findings || {}).forEach(category => {
       topics.add(category);
-      const findings = compiledFindings.findings[category] || [];
+      const findings = compiledFindings?.findings?.[category] || [];
       findings.forEach((finding: any) => {
         if (finding.category) topics.add(finding.category);
         if (finding.type) topics.add(finding.type);
@@ -567,7 +567,7 @@ function validateInput(input: string): boolean {
       // For now, return placeholder showing the pattern
       this.logger.info('Would execute Context 7 MCP tool with compiled context', {
         topic,
-        findingsCount: Object.keys(compiledFindings.findings || {}).length,
+        findingsCount: Object.keys(compiledFindings?.findings || {}).length,
         recommendationsCount: recommendationModule?.recommendations?.length || 0
       });
       
@@ -590,7 +590,7 @@ function validateInput(input: string): boolean {
       // This would execute the working examples MCP tool through the tool manager
       this.logger.info('Would execute working examples MCP tool with compiled context', {
         topics: topics.length,
-        findingsCount: Object.keys(compiledFindings.findings || {}).length
+        findingsCount: Object.keys(compiledFindings?.findings || {}).length
       });
       
       return [];
@@ -611,7 +611,7 @@ function validateInput(input: string): boolean {
     const examples: WorkingExample[] = [];
     
     // Generate examples based on actual findings
-    Object.keys(compiledFindings.findings || {}).forEach(category => {
+    Object.keys(compiledFindings?.findings || {}).forEach(category => {
       if (category === 'security') {
         examples.push({
           id: 'curated-security-compiled',

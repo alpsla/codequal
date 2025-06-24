@@ -436,7 +436,7 @@ export class EducationalAgent {
       const _levels = { beginner: 1, intermediate: 2, advanced: 3 };
       
       // If skill level is low, everything is challenging
-      const adjustedDifficulty = skillLevel <= 3 ? 'advanced' : rec.learningContext.skillLevel;
+      const adjustedDifficulty = skillLevel <= 3 ? 'advanced' : rec.learningContext?.skillLevel || 'intermediate';
       return adjustedDifficulty;
     });
     
@@ -449,7 +449,7 @@ export class EducationalAgent {
 
     return {
       title: 'Personalized Skill-Based Learning Path',
-      description: `A learning path customized for your current skill levels across ${summary.focusAreas.join(', ')}. Prioritizes areas where you can make the most improvement.`,
+      description: `A learning path customized for your current skill levels across ${(summary.focusAreas || []).join(', ')}. Prioritizes areas where you can make the most improvement.`,
       steps,
       difficulty: maxDifficulty,
       estimatedTime: this.calculateSkillAwareTime(recommendations, userSkills)
@@ -625,7 +625,7 @@ export class EducationalAgent {
     // Analyze skill gaps from recommendations
     recommendations.recommendations.forEach(rec => {
       const currentSkillLevel = skillLevels[rec.category] || 1;
-      const requiredSkillLevel = rec.learningContext.difficultyScore || 5;
+      const requiredSkillLevel = rec.learningContext?.difficultyScore || 5;
       
       if (currentSkillLevel < requiredSkillLevel) {
         const skillGap = this.generateSkillGapDescription(rec.category, currentSkillLevel, requiredSkillLevel);
@@ -633,7 +633,7 @@ export class EducationalAgent {
       }
 
       // Add prerequisite gaps
-      rec.learningContext.prerequisites.forEach(prereq => {
+      rec.learningContext?.prerequisites || [].forEach(prereq => {
         if (this.isPrerequisiteGap(prereq, userSkills)) {
           gaps.add(`Prerequisite knowledge: ${prereq}`);
         }
@@ -698,8 +698,8 @@ export class EducationalAgent {
     const nextSteps: string[] = [];
 
     // Take the first few items but adapt based on skill level
-    for (let i = 0; i < Math.min(3, learningPathGuidance.suggestedOrder.length); i++) {
-      const recId = learningPathGuidance.suggestedOrder[i];
+    for (let i = 0; i < Math.min(3, (learningPathGuidance?.suggestedOrder || []).length); i++) {
+      const recId = (learningPathGuidance?.suggestedOrder || [])[i];
       const rec = recommendations.recommendations.find(r => r.id === recId);
       
       if (rec) {
@@ -716,9 +716,14 @@ export class EducationalAgent {
     }
 
     // Add skill development suggestions
-    if (this.skillTrackingService) {
-      const skillSuggestions = await this.skillTrackingService.generateSkillBasedRecommendations();
-      nextSteps.push(...skillSuggestions.slice(0, 2));
+    if (this.skillTrackingService && typeof this.skillTrackingService.generateSkillBasedRecommendations === 'function') {
+      try {
+        const skillSuggestions = await this.skillTrackingService.generateSkillBasedRecommendations();
+        nextSteps.push(...skillSuggestions.slice(0, 2));
+      } catch (error) {
+        // Gracefully handle skill service errors
+        this.logger.warn('Failed to generate skill-based recommendations', { error: error instanceof Error ? error.message : String(error) });
+      }
     }
 
     return nextSteps;
@@ -732,9 +737,9 @@ export class EducationalAgent {
       return acc;
     }, {} as Record<string, number>);
 
-    const totalMinutes = recommendations.recommendations.reduce((total, rec) => {
+    const totalMinutes = (recommendations.recommendations || []).reduce((total, rec) => {
       const skillLevel = skillLevels[rec.category] || 1;
-      const baseTime = rec.actionSteps.reduce((stepTime, step) => {
+      const baseTime = (rec.actionSteps || []).reduce((stepTime, step) => {
         const match = step.estimatedEffort.match(/(\d+)(?:-(\d+))?\s*(minute|hour)/);
         if (match) {
           const min = parseInt(match[1]);
@@ -856,8 +861,8 @@ export class EducationalAgent {
       type: 'documentation',
       title: `Learn more about ${rec.category}`,
       url: this.generateResourceUrl(rec.category),
-      description: `Deep dive into ${rec.title.toLowerCase()}`,
-      difficulty: rec.learningContext.skillLevel,
+      description: `Deep dive into ${(rec.title || 'this recommendation').toLowerCase()}`,
+      difficulty: rec.learningContext?.skillLevel || 'intermediate',
       estimatedTime: '30 minutes'
     });
 
@@ -1292,7 +1297,7 @@ import { validateUser } from './userAuthCommon';`,
     const highPriorityItems = opportunities.filter(opp => opp.priority === 'high');
     
     if (highPriorityItems.length > 0) {
-      nextSteps.push(`Start with high-priority topics: ${highPriorityItems.map(opp => opp.topic).join(', ')}`);
+      nextSteps.push(`Start with high-priority topics: ${(highPriorityItems || []).map(opp => opp?.topic || 'Unknown').join(', ')}`);
     }
     
     const beginnerItems = opportunities.filter(opp => opp.learningLevel === 'beginner');
@@ -1407,21 +1412,21 @@ import { validateUser } from './userAuthCommon';`,
       if (!rec) return '';
       
       const stepNumber = index + 1;
-      const difficulty = rec.learningContext.skillLevel;
+      const difficulty = rec.learningContext?.skillLevel || 'intermediate';
       return `${stepNumber}. ${rec.title} (${difficulty})`;
     });
 
     // Calculate difficulty based on recommendations
     const maxDifficulty = recommendations.recommendations.reduce((max: 'beginner' | 'intermediate' | 'advanced', rec) => {
       const levels = { beginner: 1, intermediate: 2, advanced: 3 };
-      const currentLevel = levels[rec.learningContext.skillLevel];
+      const currentLevel = levels[rec.learningContext?.skillLevel || 'intermediate'];
       const maxLevel = levels[max];
-      return currentLevel > maxLevel ? rec.learningContext.skillLevel : max;
+      return currentLevel > maxLevel ? rec.learningContext?.skillLevel || 'intermediate' : max;
     }, 'beginner' as const);
 
     return {
       title: 'Personalized Learning Path',
-      description: `A recommended learning path based on ${summary.totalRecommendations} actionable recommendations across ${summary.focusAreas.join(', ')}`,
+      description: `A recommended learning path based on ${summary.totalRecommendations} actionable recommendations across ${(summary.focusAreas || []).join(', ')}`,
       steps,
       difficulty: maxDifficulty as 'beginner' | 'intermediate' | 'advanced',
       estimatedTime: summary.estimatedTotalEffort
@@ -1461,8 +1466,8 @@ import { validateUser } from './userAuthCommon';`,
         type: 'documentation',
         title: `Learn more about ${rec.category}`,
         url: this.generateResourceUrl(rec.category),
-        description: `Deep dive into ${rec.title.toLowerCase()}`,
-        difficulty: rec.learningContext.skillLevel,
+        description: `Deep dive into ${(rec.title || 'this recommendation').toLowerCase()}`,
+        difficulty: rec.learningContext?.skillLevel || 'intermediate',
         estimatedTime: '30 minutes'
       });
     }
@@ -1497,13 +1502,13 @@ import { validateUser } from './userAuthCommon';`,
     return {
       concept: rec.title,
       simpleExplanation: rec.description,
-      technicalDetails: `Addressing ${rec.category} issues through: ${rec.actionSteps.map((step: any) => step.action).join(', ')}`,
-      whyItMatters: rec.evidence.impact,
+      technicalDetails: `Addressing ${rec.category} issues through: ${(rec.actionSteps || []).map((step: any) => step?.action || 'Unknown action').join(', ')}`,
+      whyItMatters: rec.evidence?.impact || 'Improves code quality and maintainability',
       examples: [{
         title: `${rec.title} Example`,
         language: 'typescript',
         code: this.generateExampleCode(rec),
-        explanation: `Example implementation for ${rec.title.toLowerCase()}`,
+        explanation: `Example implementation for ${(rec.title || 'this recommendation').toLowerCase()}`,
         type: 'good' as const
       }]
     };
@@ -1513,24 +1518,24 @@ import { validateUser } from './userAuthCommon';`,
    * Create tutorial from recommendation action steps
    */
   private createTutorialFromRecommendation(rec: any): Tutorial | null {
-    if (rec.actionSteps.length === 0) return null;
+    if (!rec?.actionSteps || rec.actionSteps.length === 0) return null;
 
     return {
       title: `How to: ${rec.title}`,
       description: rec.description,
-      difficulty: rec.learningContext.skillLevel,
-      estimatedTime: rec.actionSteps.reduce((total: any, step: any) => {
+      difficulty: rec.learningContext?.skillLevel || 'intermediate',
+      estimatedTime: (rec.actionSteps || []).reduce((total: any, step: any) => {
         const match = step.estimatedEffort.match(/(\d+)/);
         return total + (match ? parseInt(match[1]) : 30);
       }, 0) + ' minutes',
-      steps: rec.actionSteps.map((step: any, index: any) => ({
+      steps: (rec.actionSteps || []).map((step: any, index: any) => ({
         stepNumber: step.step,
         title: step.action,
         description: `${step.action} - estimated time: ${step.estimatedEffort}`,
         codeExample: step.step === 1 ? this.generateExampleCode(rec) : undefined
       })),
-      prerequisites: rec.learningContext.prerequisites,
-      outcome: rec.successCriteria.measurable[0] || `Successfully implement ${rec.title}`
+      prerequisites: rec.learningContext?.prerequisites || [],
+      outcome: rec.successCriteria?.measurable?.[0] || `Successfully implement ${rec.title}`
     };
   }
 
@@ -1544,12 +1549,12 @@ import { validateUser } from './userAuthCommon';`,
       category: rec.category,
       guidelines: [
         rec.description,
-        ...rec.actionSteps.map((step: any) => step.action),
-        ...rec.successCriteria.measurable
+        ...(rec.actionSteps || []).map((step: any) => step.action),
+        ...(rec.successCriteria?.measurable || [])
       ],
-      antiPatterns: [`Ignoring ${rec.category} issues`, `Not following ${rec.title.toLowerCase()} practices`],
-      tools: rec.actionSteps.flatMap((step: any) => step.toolsRequired || []),
-      difficulty: rec.learningContext.skillLevel
+      antiPatterns: [`Ignoring ${rec.category} issues`, `Not following ${(rec.title || 'this recommendation').toLowerCase()} practices`],
+      tools: (rec.actionSteps || []).flatMap((step: any) => step.toolsRequired || []),
+      difficulty: rec.learningContext?.skillLevel || 'intermediate'
     };
   }
 
@@ -1575,7 +1580,7 @@ import { validateUser } from './userAuthCommon';`,
       }
 
       // Add specific gaps based on missing prerequisites
-      rec.learningContext.prerequisites.forEach(prereq => {
+      (rec.learningContext?.prerequisites || []).forEach(prereq => {
         if (prereq.includes('security')) {
           gaps.add('Security fundamentals');
         } else if (prereq.includes('performance')) {
@@ -1596,7 +1601,7 @@ import { validateUser } from './userAuthCommon';`,
     const topics = new Set<string>();
 
     recommendations.recommendations.forEach(rec => {
-      rec.learningContext.relatedConcepts.forEach(concept => {
+      (rec.learningContext?.relatedConcepts || []).forEach(concept => {
         topics.add(concept);
       });
 

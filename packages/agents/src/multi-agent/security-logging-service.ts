@@ -473,7 +473,7 @@ codequal_auth_rate_per_minute ${metrics.auth.rate}
     }
 
     // Track high-risk events
-    if (event.riskScore > 70) {
+    if (event?.riskScore > 70) {
       this.incrementMetric('suspicious_activity');
     }
   }

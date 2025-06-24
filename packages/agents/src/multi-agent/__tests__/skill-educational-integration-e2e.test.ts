@@ -591,10 +591,10 @@ describe('Skill Tracking + Educational Agent Integration E2E', () => {
       const securityCall = mockSkillModel.updateSkill.mock.calls
         .find(call => call[1] === 'security');
       
-      expect(securityCall[2].level).toBeGreaterThanOrEqual(1);
-      expect(securityCall[2].level).toBeLessThanOrEqual(10);
-      expect(securityCall[2].confidence).toBeGreaterThanOrEqual(0);
-      expect(securityCall[2].confidence).toBeLessThanOrEqual(1);
+      expect(securityCall[2]?.level).toBeGreaterThanOrEqual(1);
+      expect(securityCall[2]?.level).toBeLessThanOrEqual(10);
+      expect(securityCall[2]?.confidence).toBeGreaterThanOrEqual(0);
+      expect(securityCall[2]?.confidence).toBeLessThanOrEqual(1);
     });
   });
 });

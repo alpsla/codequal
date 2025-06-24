@@ -49,6 +49,33 @@ jest.mock('../src/prompts/prompt-loader', () => ({
   loadPromptTemplate: jest.fn(templateName => `Mock template for ${templateName}`)
 }));
 
+// Mock Supabase client and database models
+jest.mock('@codequal/database', () => ({
+  getSupabase: jest.fn(() => ({
+    from: jest.fn(() => ({
+      select: jest.fn(() => ({
+        eq: jest.fn(() => Promise.resolve({ data: [], error: null })),
+        insert: jest.fn(() => Promise.resolve({ data: [], error: null })),
+        update: jest.fn(() => Promise.resolve({ data: [], error: null })),
+        delete: jest.fn(() => Promise.resolve({ data: [], error: null }))
+      }))
+    }))
+  }))
+}));
+
+jest.mock('@codequal/database/models/skill', () => ({
+  SkillModel: {
+    getUserSkills: jest.fn(() => Promise.resolve([])),
+    updateSkill: jest.fn(() => Promise.resolve()),
+    getSkillHistory: jest.fn(() => Promise.resolve([])),
+    recordSkillHistory: jest.fn(() => Promise.resolve())
+  },
+  DeveloperSkill: jest.fn(),
+  SkillHistoryEntry: jest.fn()
+}));
+
 // Add environment variables
 process.env.ANTHROPIC_API_KEY = 'test-api-key';
 process.env.OPENAI_API_KEY = 'test-api-key';
+process.env.SUPABASE_URL = 'https://test.supabase.co';
+process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role-key';
