@@ -1,6 +1,6 @@
 import { createLogger } from '@codequal/core/utils';
 import { SkillModel, DeveloperSkill, SkillHistoryEntry } from '@codequal/database/models/skill';
-import { AuthenticatedUser } from '../types/auth-types';
+import { AuthenticatedUser } from '../multi-agent/types/auth';
 
 /**
  * Skill assessment data extracted from PR analysis

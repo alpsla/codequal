@@ -11,16 +11,19 @@ import { storeAnalysisInHistory } from '../routes/analysis';
 import { EnhancedMultiAgentExecutor } from '@codequal/agents/multi-agent/enhanced-executor';
 import { ModelVersionSync, RepositorySizeCategory } from '@codequal/core/services/model-selection/ModelVersionSync';
 import { VectorContextService } from '@codequal/agents/multi-agent/vector-context-service';
-import { ToolResultRetrievalService, AgentToolResults } from '@codequal/core/services/deepwiki-tools';
+import { ToolResultRetrievalService, AgentToolResults } from '../../../../packages/core/src/services/deepwiki-tools';
 import { VectorStorageService } from '@codequal/database';
 import { createLogger } from '@codequal/core/utils';
 import { AuthenticatedUser as AgentAuthenticatedUser, UserRole, UserStatus, UserPermissions } from '@codequal/agents/multi-agent/types/auth';
 import { RepositorySchedulerService } from '@codequal/core/services/scheduling';
 import { EducationalAgent } from '@codequal/agents/multi-agent/educational-agent';
 import { ReporterAgent, ReportFormat } from '@codequal/agents/multi-agent/reporter-agent';
-import { StandardReport } from '@codequal/agents/services/report-formatter.service';
-import { RecommendationService } from '@codequal/agents/services/recommendation-service';
-import { EducationalCompilationService } from '@codequal/agents/services/educational-compilation-service';
+import { StandardReport } from '../../../../packages/agents/src/services/report-formatter.service';
+import { RecommendationService } from '../../../../packages/agents/src/services/recommendation-service';
+import { EducationalCompilationService } from '../../../../packages/agents/src/services/educational-compilation-service';
+import { PRContentAnalyzer, PRFile } from './intelligence/pr-content-analyzer';
+import { IntelligentResultMerger } from './intelligence/intelligent-result-merger';
+import { SkillTrackingService } from '../../../../packages/agents/src/services/skill-tracking-service';
 
 export interface PRAnalysisRequest {
   repositoryUrl: string;
@@ -100,6 +103,13 @@ export interface AnalysisResult {
     timestamp: Date;
     modelVersions: Record<string, string>;
     processingSteps: string[];
+    prContentAnalysis?: {
+      changeTypes: string[];
+      complexity: string;
+      riskLevel: string;
+      agentsSkipped: string[];
+      skipReasons: Record<string, string>;
+    } | null;
   };
 }
 
@@ -121,6 +131,8 @@ export class ResultOrchestrator {
   private recommendationService: RecommendationService;
   private educationalCompilationService: EducationalCompilationService;
   private agentAuthenticatedUser: AgentAuthenticatedUser;
+  private prContentAnalyzer: PRContentAnalyzer;
+  private intelligentResultMerger: IntelligentResultMerger;
 
   constructor(private authenticatedUser: AuthenticatedUser) {
     // Initialize services with authenticated user context
@@ -148,10 +160,12 @@ export class ResultOrchestrator {
     );
     
     // Initialize Educational and Reporter agents
-    this.educationalAgent = new EducationalAgent(mockVectorStorage, null, authenticatedUser);
+    this.educationalAgent = new EducationalAgent(mockVectorStorage, null, this.agentAuthenticatedUser);
     this.reporterAgent = new ReporterAgent(mockVectorStorage);
     this.recommendationService = new RecommendationService();
     this.educationalCompilationService = new EducationalCompilationService();
+    this.prContentAnalyzer = new PRContentAnalyzer();
+    this.intelligentResultMerger = new IntelligentResultMerger();
   }
 
   /**
@@ -166,7 +180,11 @@ export class ResultOrchestrator {
       processingSteps.push('Extracting PR context');
       const prContext = await this.extractPRContext(request);
 
-      // Step 2: Check repository status in Vector DB
+      // Step 2: Analyze PR content for intelligent agent selection
+      processingSteps.push('Analyzing PR content for agent optimization');
+      const prContentAnalysis = await this.analyzePRContent(prContext);
+      
+      // Step 3: Check repository status in Vector DB
       processingSteps.push('Checking repository status');
       const repositoryStatus = await this.checkRepositoryStatus(request.repositoryUrl);
 
@@ -184,20 +202,22 @@ export class ResultOrchestrator {
       processingSteps.push('Retrieving tool analysis results');
       const toolResults = await this.retrieveToolResults(request.repositoryUrl);
 
-      // Step 6: Coordinate multi-agent analysis with tool results
+      // Step 6: Coordinate multi-agent analysis with tool results and PR content analysis
       processingSteps.push('Coordinating multi-agent analysis');
-      const agentResults = await this.coordinateAgents(prContext, orchestratorModel, toolResults);
+      const agentResults = await this.coordinateAgents(prContext, orchestratorModel, toolResults, prContentAnalysis);
 
-      // Step 7: Process and deduplicate results
-      processingSteps.push('Processing agent results');
-      const processedResults = await this.processResults(agentResults);
+      // Step 7: Get DeepWiki data with chunks for context
+      const deepWikiData = await this.getDeepWikiSummary(request.repositoryUrl);
+      
+      // Step 8: Process and deduplicate results with intelligent merging
+      processingSteps.push('Processing agent results with intelligent merging');
+      const processedResults = await this.processResults(agentResults, deepWikiData);
 
-      // Step 8: Generate Recommendation Module from processed results
+      // Step 9: Generate Recommendation Module from processed results
       processingSteps.push('Generating recommendation module');
-      const deepWikiSummary = await this.getDeepWikiSummary(request.repositoryUrl);
       const recommendationModule = await this.recommendationService.generateRecommendations(
         processedResults || { findings: {} }, 
-        deepWikiSummary
+        deepWikiData?.summary || deepWikiData
       );
 
       // Step 9: Execute educational tools with compiled findings
@@ -205,7 +225,7 @@ export class ResultOrchestrator {
       const educationalToolResults = await this.educationalToolOrchestrator.executeEducationalTools(
         processedResults,
         recommendationModule,
-        deepWikiSummary,
+        deepWikiData?.summary || deepWikiData,
         { prContext, processedResults }
       );
 
@@ -224,7 +244,25 @@ export class ResultOrchestrator {
         processedResults
       );
 
-      // Step 11: Generate standardized report using Reporter Agent
+      // Step 11: Get current skill levels and progression history for report
+      processingSteps.push('Retrieving user skill levels and progression');
+      const agentUser = this.convertToAgentUser(request.authenticatedUser);
+      const skillTracker = new SkillTrackingService(agentUser);
+      const currentSkills = await skillTracker.getCurrentSkills();
+      
+      // Get skill progression for each skill category
+      const skillProgressions: Record<string, any> = {};
+      for (const skill of currentSkills) {
+        const progression = await skillTracker.getSkillProgression(skill.categoryId, '3m');
+        if (progression) {
+          skillProgressions[skill.categoryId] = progression;
+        }
+      }
+      
+      // Generate skill-based recommendations
+      const skillRecommendations = await skillTracker.generateSkillBasedRecommendations();
+      
+      // Step 12: Generate standardized report using Reporter Agent
       processingSteps.push('Generating standardized report');
       const reportFormat: ReportFormat = {
         type: request.reportFormat?.type || 'full-report',
@@ -237,7 +275,11 @@ export class ResultOrchestrator {
         {
           ...processedResults,
           findings: processedResults?.findings || {},
-          metrics: this.calculateMetrics(processedResults)
+          metrics: this.calculateMetrics(processedResults),
+          deepWikiData: processedResults?.deepWikiData, // Pass DeepWiki data to Reporter
+          userSkills: currentSkills, // Pass current skill levels
+          skillProgressions, // Pass skill progression history
+          skillRecommendations // Pass skill-based recommendations
         },
         compiledEducationalData,
         recommendationModule,
@@ -247,6 +289,16 @@ export class ResultOrchestrator {
       // Step 12: Store standardized report in Supabase for UI consumption
       processingSteps.push('Storing report in database');
       await this.storeReportInSupabase(standardReport, request.authenticatedUser);
+
+      // Step 13: Track skill development based on PR analysis
+      processingSteps.push('Tracking skill development');
+      await this.trackSkillDevelopment(
+        processedResults,
+        recommendationModule,
+        compiledEducationalData,
+        prContext,
+        request.authenticatedUser
+      );
 
       const processingTime = Date.now() - startTime;
 
@@ -287,7 +339,14 @@ export class ResultOrchestrator {
         metadata: {
           timestamp: new Date(),
           modelVersions: this.extractModelVersions(agentResults),
-          processingSteps
+          processingSteps,
+          prContentAnalysis: prContentAnalysis ? {
+            changeTypes: prContentAnalysis.changeTypes,
+            complexity: prContentAnalysis.complexity,
+            riskLevel: prContentAnalysis.riskLevel,
+            agentsSkipped: prContentAnalysis.agentsToSkip,
+            skipReasons: prContentAnalysis.skipReasons
+          } : null
         }
       };
 
@@ -455,6 +514,38 @@ export class ResultOrchestrator {
   }
 
   /**
+   * Analyze PR content to determine which agents to skip
+   */
+  private async analyzePRContent(prContext: PRContext): Promise<any> {
+    try {
+      // Convert PR context files to PRFile format
+      const prFiles: PRFile[] = (prContext.files || []).map(file => ({
+        filename: file.path,
+        additions: file.diff ? file.diff.split('\n').filter(line => line.startsWith('+')).length : 0,
+        deletions: file.diff ? file.diff.split('\n').filter(line => line.startsWith('-')).length : 0,
+        changes: file.diff ? file.diff.split('\n').length : 0,
+        patch: file.diff
+      }));
+      
+      // Analyze PR content
+      const analysis = await this.prContentAnalyzer.analyzePR(prFiles);
+      
+      this.logger.info('PR content analysis complete', {
+        changeTypes: analysis.changeTypes,
+        complexity: analysis.complexity,
+        riskLevel: analysis.riskLevel,
+        agentsToSkip: analysis.agentsToSkip,
+        totalChanges: analysis.totalChanges
+      });
+      
+      return analysis;
+    } catch (error) {
+      this.logger.warn('Failed to analyze PR content, proceeding with all agents', { error });
+      return null; // Return null to use default agent selection
+    }
+  }
+
+  /**
    * Check if repository exists in Vector DB and its freshness
    */
   private async checkRepositoryStatus(repositoryUrl: string): Promise<RepositoryStatus> {
@@ -570,7 +661,8 @@ export class ResultOrchestrator {
   private async coordinateAgents(
     context: PRContext, 
     orchestratorModel: any, 
-    toolResults: Record<string, AgentToolResults> = {}
+    toolResults: Record<string, AgentToolResults> = {},
+    prContentAnalysis?: any
   ): Promise<any> {
     // Create repository data for the executor
     const repositoryData = {
@@ -610,8 +702,8 @@ export class ResultOrchestrator {
       deepWikiReportRetriever
     );
 
-    // Select agents based on analysis mode
-    const selectedAgents = this.selectAgentsForAnalysis(context.analysisMode);
+    // Select agents based on analysis mode and PR content analysis
+    const selectedAgents = this.selectAgentsForAnalysis(context.analysisMode, prContentAnalysis);
 
     // Configure agents with repository context and tool results
     const agentConfigurations = await this.configureAgents(selectedAgents, context, toolResults);
@@ -626,10 +718,54 @@ export class ResultOrchestrator {
   }
 
   /**
-   * Process and deduplicate agent results
+   * Process and deduplicate agent results using intelligent merging
    */
-  private async processResults(agentResults: any): Promise<any> {
-    return this.resultProcessor.processAgentResults(agentResults);
+  private async processResults(agentResults: any, deepWikiData?: any): Promise<any> {
+    try {
+      // Extract agent results in the expected format
+      const formattedResults = this.formatAgentResults(agentResults);
+      
+      // Use intelligent result merger for cross-agent deduplication
+      const mergedResult = await this.intelligentResultMerger.mergeResults(
+        formattedResults,
+        deepWikiData?.summary || deepWikiData,
+        {
+          crossAgentDeduplication: true,
+          semanticMerging: true,
+          confidenceAggregation: true,
+          patternDetection: true,
+          prioritization: 'severity'
+        }
+      );
+      
+      // Format merged results for downstream processing
+      const processedResults = {
+        findings: {
+          security: mergedResult.findings.filter(f => f.category === 'security'),
+          architecture: mergedResult.findings.filter(f => f.category === 'architecture'),
+          performance: mergedResult.findings.filter(f => f.category === 'performance'),
+          dependencies: mergedResult.findings.filter(f => f.category === 'dependencies'),
+          codeQuality: mergedResult.findings.filter(f => f.category === 'codeQuality')
+        },
+        insights: mergedResult.insights,
+        suggestions: mergedResult.suggestions,
+        crossAgentPatterns: mergedResult.crossAgentPatterns,
+        statistics: mergedResult.statistics,
+        deepWikiData: deepWikiData // Include full DeepWiki data with chunks
+      };
+      
+      this.logger.info('Intelligent result processing complete', {
+        totalFindings: mergedResult.findings.length,
+        crossAgentPatterns: mergedResult.crossAgentPatterns.length,
+        deduplicationRate: `${((1 - mergedResult.statistics.totalFindings.afterMerge / mergedResult.statistics.totalFindings.beforeMerge) * 100).toFixed(1)}%`
+      });
+      
+      return processedResults;
+    } catch (error) {
+      this.logger.error('Failed to process results with intelligent merger', { error });
+      // Fallback to basic processing
+      return this.resultProcessor.processAgentResults(agentResults);
+    }
   }
 
   /**
@@ -656,13 +792,52 @@ export class ResultOrchestrator {
   }
 
   // Helper methods
-  private selectAgentsForAnalysis(mode: string): string[] {
+  private selectAgentsForAnalysis(mode: string, prContentAnalysis?: any): string[] {
+    // Start with default agents based on analysis mode
+    let baseAgents: string[];
     switch (mode) {
-      case 'quick': return ['security', 'codeQuality'];
-      case 'comprehensive': return ['security', 'architecture', 'performance', 'codeQuality'];
-      case 'deep': return ['security', 'architecture', 'performance', 'codeQuality', 'dependencies'];
-      default: return ['security', 'codeQuality'];
+      case 'quick': 
+        baseAgents = ['security', 'codeQuality'];
+        break;
+      case 'comprehensive': 
+        baseAgents = ['security', 'architecture', 'performance', 'codeQuality'];
+        break;
+      case 'deep': 
+        baseAgents = ['security', 'architecture', 'performance', 'codeQuality', 'dependencies'];
+        break;
+      default: 
+        baseAgents = ['security', 'codeQuality'];
     }
+    
+    // If no PR content analysis, return base agents
+    if (!prContentAnalysis) {
+      return baseAgents;
+    }
+    
+    // Apply intelligent agent skipping based on PR content
+    const { agentsToSkip, agentsToKeep, riskLevel } = prContentAnalysis;
+    
+    // For high-risk changes, ignore skipping recommendations
+    if (riskLevel === 'high') {
+      this.logger.info('High-risk PR detected, using all agents', { mode, baseAgents });
+      return baseAgents;
+    }
+    
+    // Filter out agents marked for skipping
+    const filteredAgents = baseAgents.filter(agent => !agentsToSkip.includes(agent));
+    
+    // Ensure we keep at least the recommended agents
+    const finalAgents = [...new Set([...filteredAgents, ...agentsToKeep])];
+    
+    this.logger.info('Agent selection optimized based on PR content', {
+      mode,
+      baseAgents,
+      skipped: agentsToSkip,
+      kept: agentsToKeep,
+      finalAgents
+    });
+    
+    return finalAgents;
   }
 
   private async configureAgents(
@@ -767,7 +942,7 @@ export class ResultOrchestrator {
     const findings = processedResults?.findings || {};
     return Object.values(findings).reduce((total: number, categoryFindings: any) => {
       return total + (Array.isArray(categoryFindings) ? categoryFindings.length : 0);
-    }, 0);
+    }, 0) as number;
   }
 
   private calculateMetrics(processedResults: any): any {
@@ -986,6 +1161,48 @@ export class ResultOrchestrator {
   }
 
   /**
+   * Format agent results for intelligent merger
+   */
+  private formatAgentResults(agentResults: any): any[] {
+    if (!agentResults) return [];
+    
+    // Handle different result formats
+    const results = agentResults.results || agentResults.aggregatedInsights || [];
+    
+    return results.map((result: any) => {
+      // Extract findings from various formats
+      let findings: any[] = [];
+      
+      // Direct findings
+      if (result.findings) {
+        findings = Array.isArray(result.findings) ? result.findings : [];
+      }
+      
+      // Result.result.findings (nested format)
+      if (result.result?.findings) {
+        for (const [category, categoryFindings] of Object.entries(result.result.findings)) {
+          if (Array.isArray(categoryFindings)) {
+            findings.push(...categoryFindings.map((f: any) => ({
+              ...f,
+              category: f.category || category
+            })));
+          }
+        }
+      }
+      
+      return {
+        agentId: result.agentId || `${result.config?.provider}-${result.config?.role}`,
+        agentRole: result.config?.role || result.agentRole || 'unknown',
+        findings,
+        insights: result.result?.insights || result.insights || [],
+        suggestions: result.result?.suggestions || result.suggestions || [],
+        metadata: result.metadata,
+        deduplicationResult: result.deduplicationStats
+      };
+    });
+  }
+
+  /**
    * Extract educational topics from recommendations
    */
   private extractEducationalTopics(recommendationModule: any): string[] {
@@ -1031,6 +1248,44 @@ export class ResultOrchestrator {
   }
 
   /**
+   * Group DeepWiki chunks by analysis type for better organization
+   */
+  private groupDeepWikiChunks(chunks: any[], agentRole: string): any {
+    const grouped = {
+      summary: '',
+      patterns: [] as string[],
+      recommendations: [] as string[],
+      historicalContext: [] as string[]
+    };
+
+    // Sort chunks by relevance score
+    const sortedChunks = chunks.sort((a, b) => b.score - a.score);
+
+    // Extract key insights based on chunk metadata
+    sortedChunks.forEach(chunk => {
+      const content = chunk.content;
+      const metadata: any = chunk.metadata || {};
+
+      // Categorize based on content type
+      if (metadata.analysis_type === 'code_patterns' || content.includes('pattern')) {
+        grouped.patterns.push(content);
+      } else if (metadata.analysis_type === 'best_practices' || content.includes('recommend')) {
+        grouped.recommendations.push(content);
+      } else if (metadata.created_at && new Date(metadata.created_at) < new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)) {
+        grouped.historicalContext.push(content);
+      }
+    });
+
+    // Create a summary from top chunks
+    grouped.summary = sortedChunks
+      .slice(0, 3)
+      .map(chunk => chunk.content)
+      .join('\n\n');
+
+    return grouped;
+  }
+
+  /**
    * Retrieve relevant DeepWiki report sections based on agent role and context
    */
   private async retrieveRelevantDeepWikiReport(agentRole: string, requestContext: any): Promise<any> {
@@ -1040,8 +1295,43 @@ export class ResultOrchestrator {
         changedFiles: requestContext.changedFiles?.length || 0
       });
 
-      // In production, this would query the Vector DB for specific report sections
-      // For now, return a mock structure that shows the intended behavior
+      // Query Vector DB for relevant DeepWiki chunks
+      const vectorResults = await this.vectorContextService.getCrossRepositoryPatterns(
+        agentRole as any,
+        `${agentRole} analysis ${requestContext.changedFiles?.join(' ') || ''}`,
+        this.agentAuthenticatedUser,
+        {
+          maxResults: 10,
+          respectUserPermissions: true,
+          sanitizeContent: true,
+          anonymizeMetadata: true,
+          excludeRepositoryId: undefined
+        }
+      );
+
+      // Extract and format relevant chunks
+      const relevantChunks = vectorResults.map(result => ({
+        content: result.content,
+        score: result.similarity_score,
+        metadata: result.metadata
+      }));
+
+      // Group chunks by analysis type
+      const groupedAnalysis = this.groupDeepWikiChunks(relevantChunks, agentRole);
+
+      // If we have actual DeepWiki data, use it; otherwise fall back to mock
+      if (relevantChunks.length > 0) {
+        return {
+          [agentRole]: groupedAnalysis.summary,
+          chunks: relevantChunks,
+          patterns: groupedAnalysis.patterns,
+          recommendations: groupedAnalysis.recommendations,
+          historicalContext: groupedAnalysis.historicalContext,
+          summary: `DeepWiki analysis found ${relevantChunks.length} relevant insights for ${agentRole} analysis.`
+        };
+      }
+
+      // Fallback to mock data if no DeepWiki chunks found
       const mockReport = {
         security: agentRole === 'security' ? `
 Security analysis indicates this repository follows standard security practices.
@@ -1108,33 +1398,212 @@ Primary Language: TypeScript
    */
   private async getDeepWikiSummary(repositoryUrl: string): Promise<any> {
     try {
-      const deepWikiReport = await this.deepWikiManager.waitForAnalysisCompletion(repositoryUrl);
+      // First, check if we have a completed DeepWiki analysis
+      const hasAnalysis = await this.deepWikiManager.checkRepositoryExists(repositoryUrl);
       
-      if (!deepWikiReport) {
-        return {
-          suggestions: [],
-          insights: [],
-          summary: 'No DeepWiki analysis available'
-        };
+      // Query Vector DB for DeepWiki chunks regardless
+      const repositoryId = this.extractRepositoryId(repositoryUrl);
+      const deepWikiChunks = await this.vectorContextService.getCrossRepositoryPatterns(
+        'orchestrator' as any, // Using orchestrator role for general queries
+        'repository analysis summary insights patterns deepwiki',
+        this.agentAuthenticatedUser,
+        {
+          maxResults: 20,
+          respectUserPermissions: true,
+          sanitizeContent: true,
+          anonymizeMetadata: true,
+          excludeRepositoryId: undefined
+        }
+      );
+
+      // Extract insights from chunks
+      const suggestions: string[] = [];
+      const insights: string[] = [];
+      const patterns: string[] = [];
+      
+      deepWikiChunks.forEach(chunk => {
+        const content = chunk.content;
+        const metadata: any = chunk.metadata || {};
+        
+        if (metadata.analysis_type === 'key_insights' || content.includes('insight')) {
+          insights.push(content);
+        } else if (metadata.analysis_type === 'code_patterns' || content.includes('pattern')) {
+          patterns.push(content);
+        } else if (content.includes('suggest') || content.includes('recommend')) {
+          suggestions.push(content);
+        }
+      });
+
+      // If we have stored analysis results, merge them
+      let analysisData = {};
+      if (hasAnalysis) {
+        try {
+          const deepWikiReport = await this.deepWikiManager.waitForAnalysisCompletion(repositoryUrl);
+          analysisData = deepWikiReport.analysis || {};
+        } catch (e) {
+          console.log('Could not retrieve stored DeepWiki analysis, using chunks only');
+        }
       }
 
-      // Extract key insights for recommendation generation
       return {
-        suggestions: [], // No suggestions property in AnalysisResults
-        insights: [], // No insights property in AnalysisResults
-        summary: 'DeepWiki analysis completed',
-        metrics: deepWikiReport.metadata || {},
-        patterns: [], // No patterns property in AnalysisResults
-        analysis: deepWikiReport.analysis || {}
+        suggestions: suggestions.slice(0, 5), // Top 5 suggestions
+        insights: insights.slice(0, 10), // Top 10 insights
+        patterns: patterns.slice(0, 5), // Top 5 patterns
+        summary: deepWikiChunks.length > 0 
+          ? `DeepWiki analysis found ${deepWikiChunks.length} relevant insights across ${new Set(deepWikiChunks.map(c => c.metadata?.analysis_type)).size} categories`
+          : 'No DeepWiki analysis available',
+        metrics: {
+          totalChunks: deepWikiChunks.length,
+          avgConfidence: deepWikiChunks.reduce((sum, c) => sum + c.similarity_score, 0) / (deepWikiChunks.length || 1)
+        },
+        analysis: analysisData,
+        chunks: deepWikiChunks // Include raw chunks for transparency
       };
     } catch (error) {
       console.error('Error retrieving DeepWiki summary:', error);
       return {
         suggestions: [],
         insights: [],
-        summary: 'DeepWiki analysis failed'
+        patterns: [],
+        summary: 'DeepWiki analysis failed',
+        chunks: []
       };
     }
+  }
+
+  /**
+   * Track skill development based on PR analysis
+   */
+  private async trackSkillDevelopment(
+    processedResults: any,
+    recommendationModule: any,
+    compiledEducationalData: any,
+    prContext: PRContext,
+    authenticatedUser: AuthenticatedUser
+  ): Promise<void> {
+    try {
+      // Convert to agent authenticated user for skill tracking
+      const agentUser = this.convertToAgentUser(authenticatedUser);
+      const skillTracker = new SkillTrackingService(agentUser);
+      
+      // Prepare PR metadata
+      const prMetadata = {
+        prNumber: prContext.prNumber,
+        repository: prContext.repositoryUrl,
+        filesChanged: prContext.changedFiles.length,
+        linesChanged: this.estimateLinesChanged(prContext),
+        complexity: this.calculatePRComplexity(processedResults, prContext)
+      };
+      
+      // Assess skills from PR analysis
+      const skillAssessments = await skillTracker.assessSkillsFromPR(
+        {
+          security: processedResults.findings?.security || [],
+          codeQuality: processedResults.findings?.codeQuality || [],
+          architecture: processedResults.findings?.architecture || [],
+          performance: processedResults.findings?.performance || [],
+          dependencies: processedResults.findings?.dependencies || []
+        },
+        prMetadata
+      );
+      
+      // Update skills based on assessments
+      await skillTracker.updateSkillsFromAssessments(skillAssessments);
+      
+      // Track educational engagement if user viewed educational content
+      if (compiledEducationalData?.educational?.learningPath?.steps?.length > 0) {
+        const engagement = {
+          educationalContentId: `pr-${prContext.prNumber}-education`,
+          engagementType: 'viewed' as const,
+          skillsTargeted: this.extractTargetedSkills(compiledEducationalData),
+          improvementObserved: false, // Will be determined in future analyses
+          timestamp: new Date()
+        };
+        
+        await skillTracker.trackLearningEngagement(engagement);
+      }
+      
+      this.logger.info('Skill tracking completed', {
+        userId: authenticatedUser.id,
+        prNumber: prContext.prNumber,
+        assessmentsCount: skillAssessments.length,
+        hasEducationalContent: compiledEducationalData?.educational ? true : false
+      });
+      
+    } catch (error) {
+      // Log error but don't fail the analysis
+      this.logger.error('Failed to track skill development', {
+        error: error instanceof Error ? error.message : error,
+        userId: authenticatedUser.id,
+        prNumber: prContext.prNumber
+      });
+    }
+  }
+  
+  private estimateLinesChanged(prContext: PRContext): number {
+    // Estimate based on file count and diff size if available
+    const filesChanged = prContext.changedFiles.length;
+    return filesChanged * 50; // Rough estimate
+  }
+  
+  private calculatePRComplexity(processedResults: any, prContext: PRContext): number {
+    // Calculate complexity based on findings and file changes
+    const totalFindings = this.countTotalFindings(processedResults);
+    const filesChanged = prContext.changedFiles.length;
+    const criticalFindings = processedResults.findings?.security?.filter((f: any) => 
+      f.severity === 'critical' || f.severity === 'high'
+    ).length || 0;
+    
+    // Simple complexity calculation (1-10 scale)
+    const complexity = Math.min(10, Math.round(
+      (filesChanged / 5) + 
+      (totalFindings / 10) + 
+      (criticalFindings * 2)
+    ));
+    
+    return Math.max(1, complexity);
+  }
+  
+  private extractTargetedSkills(compiledEducationalData: any): string[] {
+    const skills = new Set<string>();
+    
+    // Extract from skill gaps
+    const skillGaps = compiledEducationalData?.educational?.insights?.skillGaps || [];
+    skillGaps.forEach((gap: any) => {
+      if (gap.skill) {
+        // Map skill names to categories
+        const categoryMap: Record<string, string> = {
+          'security': 'security',
+          'architecture': 'architecture',
+          'performance': 'performance',
+          'code quality': 'codeQuality',
+          'maintainability': 'codeQuality',
+          'dependency': 'dependencies'
+        };
+        
+        const skill = gap.skill.toLowerCase();
+        for (const [key, value] of Object.entries(categoryMap)) {
+          if (skill.includes(key)) {
+            skills.add(value);
+            break;
+          }
+        }
+      }
+    });
+    
+    // Extract from learning path topics
+    const learningPath = compiledEducationalData?.educational?.learningPath;
+    if (learningPath?.steps) {
+      learningPath.steps.forEach((step: any) => {
+        const topic = (step.topic || '').toLowerCase();
+        if (topic.includes('security')) skills.add('security');
+        if (topic.includes('architecture') || topic.includes('design')) skills.add('architecture');
+        if (topic.includes('performance')) skills.add('performance');
+        if (topic.includes('quality') || topic.includes('clean')) skills.add('codeQuality');
+      });
+    }
+    
+    return Array.from(skills);
   }
 
   /**

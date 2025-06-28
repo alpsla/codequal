@@ -33,18 +33,20 @@ export class ModelConfigurationFactory {
    * @param preferredProvider Optional preferred provider
    * @returns Repository model configuration
    */
-  createRepositoryModelConfig(
+  async createRepositoryModelConfig(
     context: RepositoryContext,
     preferredProvider?: string
-  ): RepositoryModelConfig | null {
+  ): Promise<RepositoryModelConfig | null> {
     try {
       // Find the optimal model for this context
-      const model = this.modelVersionSync.findOptimalModel(context, preferredProvider);
+      const optimalModel = await this.modelVersionSync.findOptimalModel(context, preferredProvider);
       
-      if (!model) {
+      if (!optimalModel) {
         this.logger.warn('No suitable model found for repository context', { context });
         return null;
       }
+      
+      const model = Array.isArray(optimalModel) ? optimalModel[0] : optimalModel;
       
       // Create a repository model config with all required properties
       return {

@@ -1,0 +1,138 @@
+{
+  "metadata": {
+    "analysisId": "analysis-1751051730876",
+    "repository": "https://github.com/spring-projects/spring-boot",
+    "prNumber": 34567,
+    "title": "Refactor dependency injection container",
+    "timestamp": "2025-06-27T19:15:30.876Z",
+    "language": "java",
+    "size": "large",
+    "modelUsed": "gpt-4o:extended",
+    "totalTokens": 10559,
+    "totalCost": "0.126708",
+    "executionTime": 14588
+  },
+  "summary": {
+    "overallScore": 96,
+    "criticalIssues": 0,
+    "totalFindings": 11,
+    "recommendation": "APPROVE_WITH_SUGGESTIONS"
+  },
+  "findings": {
+    "security": [
+      {
+        "severity": "high",
+        "message": "Potential SQL injection vulnerability detected",
+        "category": "security",
+        "agent": "security",
+        "file": "spring-boot-project/spring-boot/src/main/java/org/springframework/boot/context/ApplicationContextFactory.java",
+        "line": 85
+      },
+      {
+        "severity": "medium",
+        "message": "Missing input validation on user data",
+        "category": "security",
+        "agent": "security",
+        "file": "spring-boot-project/spring-boot/src/main/java/org/springframework/boot/context/ApplicationContextFactory.java",
+        "line": 65
+      },
+      {
+        "severity": "low",
+        "message": "Consider using parameterized queries",
+        "category": "security",
+        "agent": "security",
+        "file": "spring-boot-project/spring-boot/src/main/java/org/springframework/boot/context/ApplicationContextFactory.java",
+        "line": 83
+      }
+    ],
+    "performance": [
+      {
+        "severity": "medium",
+        "message": "Inefficient algorithm with O(n²) complexity",
+        "category": "performance",
+        "agent": "performance",
+        "file": "spring-boot-project/spring-boot/src/main/java/org/springframework/boot/context/ApplicationContextFactory.java",
+        "line": 45
+      },
+      {
+        "severity": "low",
+        "message": "Consider caching frequently accessed data",
+        "category": "performance",
+        "agent": "performance",
+        "file": "spring-boot-project/spring-boot/src/main/java/org/springframework/boot/context/ApplicationContextFactory.java",
+        "line": 59
+      }
+    ],
+    "architecture": [
+      {
+        "severity": "medium",
+        "message": "High coupling between modules detected",
+        "category": "architecture",
+        "agent": "architecture",
+        "file": "spring-boot-project/spring-boot/src/main/java/org/springframework/boot/context/ApplicationContextFactory.java",
+        "line": 20
+      },
+      {
+        "severity": "low",
+        "message": "Consider extracting interface for better testability",
+        "category": "architecture",
+        "agent": "architecture",
+        "file": "spring-boot-project/spring-boot/src/main/java/org/springframework/boot/context/ApplicationContextFactory.java",
+        "line": 6
+      }
+    ],
+    "codeQuality": [
+      {
+        "severity": "low",
+        "message": "Function exceeds recommended length of 20 lines",
+        "category": "code-quality",
+        "agent": "codeQuality",
+        "file": "spring-boot-project/spring-boot/src/main/java/org/springframework/boot/context/ApplicationContextFactory.java",
+        "line": 16
+      },
+      {
+        "severity": "low",
+        "message": "Missing documentation for public methods",
+        "category": "code-quality",
+        "agent": "codeQuality",
+        "file": "spring-boot-project/spring-boot/src/main/java/org/springframework/boot/context/ApplicationContextFactory.java",
+        "line": 81
+      }
+    ],
+    "dependencies": [
+      {
+        "severity": "high",
+        "message": "Dependency with known security vulnerability",
+        "category": "dependencies",
+        "agent": "dependencies",
+        "file": "spring-boot-project/spring-boot/src/main/java/org/springframework/boot/context/ApplicationContextFactory.java",
+        "line": 1
+      },
+      {
+        "severity": "medium",
+        "message": "Outdated dependencies detected",
+        "category": "dependencies",
+        "agent": "dependencies",
+        "file": "spring-boot-project/spring-boot/src/main/java/org/springframework/boot/context/ApplicationContextFactory.java",
+        "line": 47
+      }
+    ]
+  },
+  "educationalContent": {
+    "relevantPatterns": [
+      "Dependency injection",
+      "Builder pattern",
+      "Stream API usage"
+    ],
+    "skillGaps": [
+      "Advanced java patterns",
+      "Performance optimization"
+    ],
+    "recommendedResources": [
+      "Best practices for java development",
+      "Code review guidelines",
+      "Security considerations"
+    ]
+  },
+  "detailedReport": "\n# PR Analysis Report\n\n## Overview\n- **Repository**: https://github.com/spring-projects/spring-boot\n- **PR**: #34567 - Refactor dependency injection container\n- **Language**: java\n- **Size**: large\n- **Model**: gpt-4o:extended\n\n## Analysis Summary\nThis PR Major refactoring of the DI container for better performance. Our multi-agent analysis has identified several areas for consideration.\n\n## Key Findings\n\n### Security Analysis\n- **HIGH**: Potential SQL injection vulnerability detected (spring-boot-project/spring-boot/src/main/java/org/springframework/boot/context/ApplicationContextFactory.java:85)\n- **MEDIUM**: Missing input validation on user data (spring-boot-project/spring-boot/src/main/java/org/springframework/boot/context/ApplicationContextFactory.java:65)\n- **LOW**: Consider using parameterized queries (spring-boot-project/spring-boot/src/main/java/org/springframework/boot/context/ApplicationContextFactory.java:83)\n\n\n### Performance Analysis\n- **MEDIUM**: Inefficient algorithm with O(n²) complexity (spring-boot-project/spring-boot/src/main/java/org/springframework/boot/context/ApplicationContextFactory.java:45)\n- **LOW**: Consider caching frequently accessed data (spring-boot-project/spring-boot/src/main/java/org/springframework/boot/context/ApplicationContextFactory.java:59)\n\n\n### Architecture Analysis\n- **MEDIUM**: High coupling between modules detected (spring-boot-project/spring-boot/src/main/java/org/springframework/boot/context/ApplicationContextFactory.java:20)\n- **LOW**: Consider extracting interface for better testability (spring-boot-project/spring-boot/src/main/java/org/springframework/boot/context/ApplicationContextFactory.java:6)\n\n\n### CodeQuality Analysis\n- **LOW**: Function exceeds recommended length of 20 lines (spring-boot-project/spring-boot/src/main/java/org/springframework/boot/context/ApplicationContextFactory.java:16)\n- **LOW**: Missing documentation for public methods (spring-boot-project/spring-boot/src/main/java/org/springframework/boot/context/ApplicationContextFactory.java:81)\n\n\n### Dependencies Analysis\n- **HIGH**: Dependency with known security vulnerability (spring-boot-project/spring-boot/src/main/java/org/springframework/boot/context/ApplicationContextFactory.java:1)\n- **MEDIUM**: Outdated dependencies detected (spring-boot-project/spring-boot/src/main/java/org/springframework/boot/context/ApplicationContextFactory.java:47)\n\n\n## Recommendations\n1. Address all high-severity findings before merging\n2. Consider the architectural improvements suggested\n3. Update documentation as recommended\n\n## Next Steps\n- Review and address the findings\n- Run additional tests if needed\n- Request re-review after changes\n"
+}

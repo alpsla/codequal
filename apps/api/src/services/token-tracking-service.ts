@@ -178,9 +178,54 @@ export class TokenTrackingService {
   }
 
   /**
+   * Start tracking for a specific analysis
+   */
+  startTracking(analysisId: string): void {
+    if (!this.metrics.has(analysisId)) {
+      this.metrics.set(analysisId, []);
+    }
+  }
+
+  /**
+   * Stop tracking and return metrics for an analysis
+   */
+  stopTracking(analysisId: string): TokenAnalyticsSummary | null {
+    const analytics = this.getAnalytics(analysisId);
+    // Optionally clear the metrics to free memory
+    // this.metrics.delete(analysisId);
+    return analytics;
+  }
+
+  /**
    * Get comprehensive analytics for an analysis
    */
-  getAnalytics(analysisId: string): TokenAnalyticsSummary | null {
+  getAnalytics(analysisId?: string): TokenAnalyticsSummary | null {
+    // If no analysisId provided, aggregate all metrics
+    if (!analysisId) {
+      const allMetrics: TokenUsageMetric[] = [];
+      this.metrics.forEach(metrics => allMetrics.push(...metrics));
+      
+      if (allMetrics.length === 0) {
+        return null;
+      }
+      
+      // Create a synthetic analysisId for aggregated data
+      analysisId = 'aggregate';
+      const tempMetrics = this.metrics.get(analysisId);
+      this.metrics.set(analysisId, allMetrics);
+      const result = this.getAnalytics(analysisId);
+      
+      // Restore original state
+      if (tempMetrics) {
+        this.metrics.set(analysisId, tempMetrics);
+      } else {
+        this.metrics.delete(analysisId);
+      }
+      
+      return result;
+    }
+    
+    // Original implementation for specific analysisId
     const metrics = this.metrics.get(analysisId);
     if (!metrics || metrics.length === 0) {
       return null;

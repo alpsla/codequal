@@ -1,0 +1,106 @@
+{
+  "name": "@codequal/test-integration",
+  "version": "1.0.0",
+  "description": "End-to-end integration tests for CodeQual orchestrator flow",
+  "main": "dist/index.js",
+  "scripts": {
+    "test:orchestrator": "E2E_TEST_MODE=SMART_COMPREHENSIVE jest src/e2e/orchestrator-flow.test.ts --runInBand --detectOpenHandles",
+    "test:orchestrator:debug": "DEBUG=codequal:* E2E_TEST_MODE=SMART_COMPREHENSIVE jest src/e2e/orchestrator-flow.test.ts --runInBand --detectOpenHandles --verbose",
+    "test:orchestrator-e2e": "ts-node src/e2e/run-orchestrator-e2e.ts",
+    "test:orchestrator-e2e:tracking": "ts-node src/e2e/working-model-selection-test.ts",
+    "test:orchestrator-e2e:model-selection": "ts-node src/e2e/orchestrator-e2e-test.ts --test-model-selection",
+    "test:orchestrator-e2e:custom": "ts-node src/e2e/orchestrator-e2e-test.ts --repo",
+    "test:model-scenarios": "ts-node src/e2e/model-selection-scenarios.ts",
+    "test:scenario": "E2E_SCENARIO_ID=$SCENARIO_ID jest src/e2e/orchestrator-flow.test.ts --runInBand --detectOpenHandles",
+    "test:scenario:vscode": "E2E_SCENARIO_ID=vscode-typescript-large npm run test:scenario",
+    "test:scenario:react": "E2E_SCENARIO_ID=react-javascript-medium npm run test:scenario",
+    "test:scenario:flask": "E2E_SCENARIO_ID=flask-python-small npm run test:scenario",
+    "test:flask:direct": "E2E_SCENARIO_ID=flask-python-small ts-node src/e2e/run-orchestrator-test.ts",
+    "test:scenario:spring": "E2E_SCENARIO_ID=spring-java-large npm run test:scenario",
+    "test:scenario:rust": "E2E_SCENARIO_ID=rust-systems-medium npm run test:scenario",
+    "test:scenario:go": "E2E_SCENARIO_ID=go-microservices-medium npm run test:scenario",
+    "test:performance-baseline": "npm run test:orchestrator > performance-baseline.log 2>&1",
+    "test:all-scenarios": "npm run test:scenario:flask && npm run test:scenario:react && npm run test:scenario:vscode && npm run test:scenario:spring && npm run test:scenario:rust && npm run test:scenario:go",
+    "test:e2e": "jest src/e2e/ --runInBand --detectOpenHandles",
+    "test:pr-scenarios": "ts-node src/e2e/e2e-test-runner.ts",
+    "test:deduplication": "node src/e2e/deduplication-test.js",
+    "test:pr-analyzer": "node src/e2e/pr-analyzer-test.js",
+    "test:all": "ts-node src/e2e/index.ts",
+    "test:baseline": "ts-node src/e2e/baseline-performance-test.ts",
+    "test:baseline:system": "ts-node src/e2e/system-baseline-test.ts",
+    "test:monitor": "ts-node src/e2e/performance-monitor.ts",
+    "test:baseline:report": "ts-node src/e2e/baseline-performance-test.ts > reports/baseline-$(date +%Y%m%d-%H%M%S).log",
+    "test:dynamic-config": "ts-node src/e2e/dynamic-configuration-test.ts",
+    "test:model-baseline": "ts-node src/e2e/model-performance-baseline.ts",
+    "test:baseline:all": "npm run test:dynamic-config && npm run test:model-baseline && npm run test:baseline:system",
+    "test:tools": "jest --grep \"MCP tool\"",
+    "test:educational": "jest --grep \"Educational Agent\"",
+    "test:reporting": "jest --grep \"Reporter Agent\"",
+    "test:watch": "jest --watch src/e2e/orchestrator-flow.test.ts",
+    "test:real-data": "ts-node src/e2e/real-data-test.ts",
+    "test:real-data:quick": "ts-node src/e2e/real-data-test.ts flask-python-small",
+    "test:real-data:javascript": "ts-node src/e2e/real-data-test.ts vscode-typescript-large react-javascript-medium",
+    "test:real-data:python": "ts-node src/e2e/real-data-test.ts flask-python-small",
+    "test:real-data:systems": "ts-node src/e2e/real-data-test.ts rust-systems-medium go-microservices-medium",
+    "test:real-data:performance": "ts-node src/e2e/real-data-test.ts vscode-typescript-large spring-java-large go-microservices-medium",
+    "test:real-data:baseline": "ts-node src/e2e/real-data-test.ts > reports/real-data-baseline-$(date +%Y%m%d-%H%M%S).log",
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix"
+  },
+  "dependencies": {
+    "@codequal/agents": "workspace:*",
+    "@codequal/core": "workspace:*",
+    "@codequal/database": "workspace:*",
+    "@supabase/supabase-js": "^2.38.0",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.5",
+    "@types/node": "^20.6.0",
+    "@typescript-eslint/eslint-plugin": "^6.7.0",
+    "@typescript-eslint/parser": "^6.7.0",
+    "axios": "^1.6.0",
+    "chalk": "^4.1.2",
+    "eslint": "^8.49.0",
+    "jest": "^29.7.0",
+    "ora": "^5.4.1",
+    "ts-jest": "^29.1.1",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.2.2"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/__tests__/**/*.test.ts",
+      "**/*.(test|spec).ts"
+    ],
+    "collectCoverageFrom": [
+      "src/**/*.ts",
+      "!src/**/*.d.ts",
+      "!src/**/__tests__/**"
+    ],
+    "setupFilesAfterEnv": [
+      "<rootDir>/src/setup/test-setup.ts"
+    ],
+    "testTimeout": 300000,
+    "maxWorkers": 1
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alpsla/codequal.git",
+    "directory": "packages/test-integration"
+  },
+  "keywords": [
+    "codequal",
+    "testing",
+    "e2e",
+    "integration",
+    "orchestrator",
+    "mcp-tools"
+  ],
+  "author": "CodeQual Team",
+  "license": "MIT"
+}

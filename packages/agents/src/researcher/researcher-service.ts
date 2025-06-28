@@ -12,7 +12,7 @@ import { AuthenticatedUser } from '@codequal/core/types';
 import { Logger, createLogger } from '@codequal/core/utils';
 import { ResearcherAgent, ResearchConfig } from './researcher-agent';
 import { VectorContextService } from '../multi-agent/vector-context-service';
-import { CANONICAL_MODEL_VERSIONS } from '@codequal/core';
+// import { CANONICAL_MODEL_VERSIONS } from '@codequal/core'; // Removed - no longer exists
 
 // Special repository UUID for storing researcher configurations
 const RESEARCHER_CONFIG_REPO_ID = '00000000-0000-0000-0000-000000000001';
@@ -357,9 +357,9 @@ export class ResearcherService {
   }> {
     try {
       // This would typically query the Vector DB for current configurations
-      // For now, we'll generate a summary based on available data
+      // For now, we'll return empty summary since CANONICAL_MODEL_VERSIONS no longer exists
       
-      const configurations = Object.values(CANONICAL_MODEL_VERSIONS);
+      const configurations: any[] = []; // TODO: Query from Vector DB or ModelVersionSync
       
       const configurationsByProvider: Record<string, number> = {};
       const configurationsByRole: Record<string, number> = {};

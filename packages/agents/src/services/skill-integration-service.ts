@@ -2,7 +2,7 @@ import { createLogger } from '@codequal/core/utils';
 import { SkillTrackingService } from './skill-tracking-service';
 import { PRSkillAssessmentService, PRMetadata } from './pr-skill-assessment-service';
 import { RecommendationService } from './recommendation-service';
-import { AuthenticatedUser } from '../types/auth-types';
+import { AuthenticatedUser } from '../multi-agent/types/auth';
 
 /**
  * Skill integration result for reporting

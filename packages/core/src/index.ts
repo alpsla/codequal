@@ -45,8 +45,7 @@ export type {
 // Export regular exports from ModelVersionSync
 export {
   ModelVersionSync,
-  createDeepWikiModelConfig,
-  CANONICAL_MODEL_VERSIONS
+  createDeepWikiModelConfig
 } from './services/model-selection/ModelVersionSync';
 
 // Export repository model config types
@@ -74,5 +73,9 @@ export {
 
 // Services
 export * from './services/pr-review-service';
+
+// Monitoring
+export * from './monitoring/production-monitoring';
+export * from './monitoring/enhanced-monitoring-service';
 
 // Other core modules will be exported here as they are added

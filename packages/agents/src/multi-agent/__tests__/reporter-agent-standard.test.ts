@@ -34,7 +34,7 @@ describe('Reporter Agent - Standard Report Generation', () => {
         tags: ['security', 'best-practices'],
         url: 'https://example.com/security-guide'
       }
-    ]);
+    ] as any);
     
     const depGraphMock = jest.fn();
     depGraphMock.mockResolvedValue({
