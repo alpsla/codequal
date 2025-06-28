@@ -80,7 +80,7 @@ export class ModelSelectionIntegration {
           this.modelSelectionService.getModelForRepository(repository, tier, strategy);
         
         // Standardize and run analysis with temporary config
-        const standardizedConfig = this.standardizeModelConfig(modelConfig);
+        const standardizedConfig = await this.standardizeModelConfig(modelConfig);
         return this.analysisService.analyzeRepository(repository, {
           depth: this.convertAnalysisTier(tier),
           modelConfig: standardizedConfig
@@ -96,7 +96,7 @@ export class ModelSelectionIntegration {
           this.modelSelectionService.getModelForRepository(repository, tier, strategy);
         
         // Standardize config before using
-        const standardizedConfig = this.standardizeModelConfig(modelConfig);
+        const standardizedConfig = await this.standardizeModelConfig(modelConfig);
         return this.analysisService.analyzeRepository(repository, {
           depth: this.convertAnalysisTier(tier),
           modelConfig: standardizedConfig
@@ -113,7 +113,7 @@ export class ModelSelectionIntegration {
         this.modelSelectionService.getModelForRepository(repository, tier, strategy);
       
       // Standardize and run analysis with the selected model
-      const standardizedConfig = this.standardizeModelConfig(configToUse);
+      const standardizedConfig = await this.standardizeModelConfig(configToUse);
       return this.analysisService.analyzeRepository(repository, {
         depth: this.convertAnalysisTier(tier),
         modelConfig: standardizedConfig
@@ -175,7 +175,7 @@ export class ModelSelectionIntegration {
     );
     
     // Standardize and run PR analysis with the selected model
-    const standardizedConfig = this.standardizeModelConfig(modelConfig);
+    const standardizedConfig = await this.standardizeModelConfig(modelConfig);
     return this.analysisService.analyzePR(repository, prId, {
       depth: this.convertAnalysisTier(tier),
       modelConfig: standardizedConfig
@@ -254,7 +254,7 @@ export class ModelSelectionIntegration {
    * @param config Model configuration
    * @returns Standardized model configuration
    */
-  private standardizeModelConfig(config: any): ModelConfig<DeepWikiProvider> {
+  private async standardizeModelConfig(config: any): Promise<ModelConfig<DeepWikiProvider>> {
     try {
       // Convert from RepositoryModelConfig to ModelConfig<DeepWikiProvider>
       const deepWikiConfig: ModelConfig<DeepWikiProvider> = {
@@ -262,7 +262,7 @@ export class ModelSelectionIntegration {
         model: config.model as any
       };
       
-      const result = this.modelVersionSync.standardizeModelConfig(config);
+      const result = await this.modelVersionSync.standardizeModelConfig(config);
       return {
         provider: result.provider as unknown as DeepWikiProvider,
         model: result.model as any

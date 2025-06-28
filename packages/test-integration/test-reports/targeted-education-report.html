@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeQual Analysis - Targeted Education</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #1a1a1a;
+            margin: 0;
+            padding: 0;
+            background: #f8f9fa;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+        .education-section {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .priority-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        .priority-high {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+        .priority-medium {
+            background: #fef3c7;
+            color: #d97706;
+        }
+        .priority-low {
+            background: #dbeafe;
+            color: #2563eb;
+        }
+        .education-card {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            background: #f9fafb;
+        }
+        .education-card.featured {
+            border-color: #667eea;
+            background: #f0f4ff;
+            position: relative;
+        }
+        .featured-ribbon {
+            position: absolute;
+            top: -10px;
+            right: 20px;
+            background: #667eea;
+            color: white;
+            padding: 4px 16px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .resource-item {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+            border: 1px solid #e5e7eb;
+        }
+        .resource-type {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        .type-guide { background: #dbeafe; color: #1e40af; }
+        .type-example { background: #d1fae5; color: #065f46; }
+        .type-critical { background: #fee2e2; color: #991b1b; }
+        .code-example {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            margin: 10px 0;
+        }
+        .immediate-actions {
+            background: #fef3c7;
+            border: 1px solid #fbbf24;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .skill-gap {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+        }
+        .skill-bar {
+            flex: 1;
+            height: 20px;
+            background: #e5e7eb;
+            border-radius: 10px;
+            margin: 0 15px;
+            position: relative;
+            overflow: hidden;
+        }
+        .skill-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ef4444, #f59e0b, #10b981);
+            transition: width 0.5s;
+        }
+        .expand-button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            margin: 20px 0;
+            transition: background 0.2s;
+        }
+        .expand-button:hover {
+            background: #5a67d8;
+        }
+        .additional-topics {
+            display: none;
+            margin-top: 20px;
+        }
+        .additional-topics.show {
+            display: block;
+        }
+        .exercise-list {
+            background: #f3f4f6;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        .exercise-list li {
+            margin: 8px 0;
+            position: relative;
+            padding-left: 24px;
+        }
+        .exercise-list li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Personalized Learning Recommendations</h1>
+            <p>Based on your PR analysis and skill profile</p>
+        </div>
+
+        <div class="education-section">
+            <h2>🎯 Immediate Actions Required</h2>
+            <div class="immediate-actions">
+                <strong>Before merging this PR:</strong>
+                <ol>
+                    <li>Add JSDoc to your memory leak fix before merging</li><li>Extract the magic number 100 to a named constant</li><li>Review security implications of server-side code changes</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="education-section">
+            <h2>📚 Priority Learning Topics</h2>
+            <p>Based on 5 findings in your PR and your skill profile, 
+               we've identified the following learning priorities:</p>
+
+            
+                <div class="education-card featured">
+                    <div class="featured-ribbon">TOP PRIORITY</div>
+                    <h3>Software Architecture & Design Patterns
+                        <span class="priority-badge priority-immediate">IMMEDIATE</span>
+                    </h3>
+                    <p><strong>Why this matters:</strong> Learn to create maintainable, scalable architectures and avoid common pitfalls</p>
+                    
+                    
+                        <div style="background: #f9fafb; padding: 15px; border-radius: 6px; margin: 15px 0;">
+                            
+                                <strong style="color: #059669;">📝 From Your PR (1):</strong>
+                                <ul style="margin: 5px 0 10px 0;">
+                                    <li>Resource disposal pattern could be generalized <small>(packages/next/server/dev/hot-reloader.ts:130-145)</small></li>
+                                </ul>
+                            
+                            
+                                <strong style="color: #dc2626;">🏢 From Repository (7):</strong>
+                                <ul style="margin: 5px 0;">
+                                    <li>[ARCH-001] Tight coupling <small>(medium)</small></li><li>[ARCH-002] Duplicated router logic <small>(low)</small></li><li>[ARCH-003] Circular dependencies <small>(medium)</small></li>
+                                    <li><em>...and 4 more</em></li>
+                                </ul>
+                            
+                        </div>
+                    
+                    
+                    <h4>Resources:</h4>
+                    
+                        <div class="resource-item">
+                            <span class="resource-type type-guide">guide</span>
+                            <h5 style="margin: 5px 0;">
+                                <a href="https://www.typescriptlang.org/docs/handbook/solid.html" target="_blank">SOLID Principles in TypeScript</a>
+                            </h5>
+                            <p style="color: #6b7280; font-size: 14px; margin: 5px 0;">
+                                Addresses coupling issues (ARCH-001) and interface segregation (ARCH-006)
+                            </p>
+                            
+                        </div>
+                    
+                        <div class="resource-item">
+                            <span class="resource-type type-guide">guide</span>
+                            <h5 style="margin: 5px 0;">
+                                <a href="https://medium.com/visual-development/how-to-fix-nasty-circular-dependency-issues-once-and-for-all-in-javascript-typescript-a04c987cf0de" target="_blank">Avoiding Circular Dependencies</a>
+                            </h5>
+                            <p style="color: #6b7280; font-size: 14px; margin: 5px 0;">
+                                Directly addresses ARCH-003 circular dependency issue
+                            </p>
+                            
+                        </div>
+                    
+                        <div class="resource-item">
+                            <span class="resource-type type-example">example</span>
+                            <h5 style="margin: 5px 0;">
+                                Generalized Resource Disposal Pattern
+                            </h5>
+                            <p style="color: #6b7280; font-size: 14px; margin: 5px 0;">
+                                undefined
+                            </p>
+                            
+                                <div class="code-example">
+                                    <pre><code>// Generic disposal pattern for your PR suggestion
+interface IDisposable {
+  dispose(): void | Promise<void>;
+}
+
+class DisposableRegistry {
+  private disposables = new Set<IDisposable>();
+  
+  register<T extends IDisposable>(resource: T): T {
+    this.disposables.add(resource);
+    return resource;
+  }
+  
+  async disposeAll(): Promise<void> {
+    const promises = Array.from(this.disposables).map(d => d.dispose());
+    this.disposables.clear();
+    await Promise.all(promises);
+  }
+}
+
+// Usage in hot-reloader.ts
+class HotReloader {
+  private registry = new DisposableRegistry();
+  
+  createWatcher(path: string) {
+    const watcher = this.registry.register(new FileWatcher(path));
+    return watcher;
+  }
+  
+  async cleanup() {
+    await this.registry.disposeAll();
+  }
+}</code></pre>
+                                </div>
+                            
+                        </div>
+                    
+                        <div class="resource-item">
+                            <span class="resource-type type-critical">critical</span>
+                            <h5 style="margin: 5px 0;">
+                                <a href="https://martinfowler.com/articles/micro-frontends.html#SharedNothingArchitecture" target="_blank">Managing Dependencies in Large Codebases</a>
+                            </h5>
+                            <p style="color: #6b7280; font-size: 14px; margin: 5px 0;">
+                                Strategies for managing dependencies in monorepo architectures
+                            </p>
+                            
+                        </div>
+                    
+                    
+                    <h4>Practice Exercises:</h4>
+                    <div class="exercise-list">
+                        <ul style="list-style: none; padding: 0; margin: 0;">
+                            <li>Extract the disposal pattern from hot-reloader.ts into a reusable utility</li><li>Create a dependency graph of your modules to identify circular dependencies</li><li>Implement the Dependency Inversion Principle for the build/runtime coupling</li><li>Refactor duplicated router logic using the Strategy pattern</li>
+                        </ul>
+                    </div>
+                </div>
+            
+                <div class="education-card featured">
+                    <div class="featured-ribbon">TOP PRIORITY</div>
+                    <h3>Resource Management at Scale
+                        <span class="priority-badge priority-immediate">IMMEDIATE</span>
+                    </h3>
+                    <p><strong>Why this matters:</strong> Implementing limits and preventing unbounded growth</p>
+                    
+                    
+                        <div style="background: #f9fafb; padding: 15px; border-radius: 6px; margin: 15px 0;">
+                            
+                                <strong style="color: #059669;">📝 From Your PR (1):</strong>
+                                <ul style="margin: 5px 0 10px 0;">
+                                    <li>Consider implementing maximum watcher limit <small>(packages/next/server/dev/hot-reloader.ts:124)</small></li>
+                                </ul>
+                            
+                            
+                                <strong style="color: #dc2626;">🏢 From Repository (4):</strong>
+                                <ul style="margin: 5px 0;">
+                                    <li>[PERF-001] Unnecessary re-renders <small>(high)</small></li><li>[PERF-002] Large bundle size <small>(medium)</small></li><li>[PERF-003] Inefficient bundle splitting <small>(medium)</small></li>
+                                    <li><em>...and 1 more</em></li>
+                                </ul>
+                            
+                        </div>
+                    
+                    
+                    <h4>Resources:</h4>
+                    
+                        <div class="resource-item">
+                            <span class="resource-type type-example">example</span>
+                            <h5 style="margin: 5px 0;">
+                                Memory Leak Fix Pattern from This PR
+                            </h5>
+                            <p style="color: #6b7280; font-size: 14px; margin: 5px 0;">
+                                This pattern fixed PERF-005 memory leak in your PR
+                            </p>
+                            
+                                <div class="code-example">
+                                    <pre><code>// Pattern: Always dispose resources before replacing
+// From PERF-005 resolution
+class HotReloader {
+  private watchers = new Map<string, FSWatcher>();
+  
+  reloadModule(path: string) {
+    // IMPORTANT: Dispose existing watcher first
+    const existing = this.watchers.get(path);
+    if (existing) {
+      existing.close();
+      this.watchers.delete(path);
+    }
+    
+    // Then create new watcher
+    const watcher = fs.watch(path, () => {...});
+    this.watchers.set(path, watcher);
+  }
+}</code></pre>
+                                </div>
+                            
+                        </div>
+                    
+                        <div class="resource-item">
+                            <span class="resource-type type-guide">guide</span>
+                            <h5 style="margin: 5px 0;">
+                                <a href="https://nodejs.org/en/docs/guides/simple-profiling/" target="_blank">Node.js Resource Management Patterns</a>
+                            </h5>
+                            <p style="color: #6b7280; font-size: 14px; margin: 5px 0;">
+                                For your MAX_WATCHERS implementation
+                            </p>
+                            
+                        </div>
+                    
+                        <div class="resource-item">
+                            <span class="resource-type type-example">example</span>
+                            <h5 style="margin: 5px 0;">
+                                Bounded Resource Pattern
+                            </h5>
+                            <p style="color: #6b7280; font-size: 14px; margin: 5px 0;">
+                                undefined
+                            </p>
+                            
+                                <div class="code-example">
+                                    <pre><code>class BoundedWatcherManager {
+  private readonly MAX_WATCHERS = 1000;
+  private readonly watchers = new Map<string, FSWatcher>();
+  
+  addWatcher(path: string, watcher: FSWatcher): void {
+    if (this.watchers.size >= this.MAX_WATCHERS) {
+      // Remove oldest watcher (LRU pattern)
+      const firstKey = this.watchers.keys().next().value;
+      this.watchers.get(firstKey)?.close();
+      this.watchers.delete(firstKey);
+      
+      console.warn(`Watcher limit reached, removed oldest: ${firstKey}`);
+    }
+    
+    this.watchers.set(path, watcher);
+  }
+}</code></pre>
+                                </div>
+                            
+                        </div>
+                    
+                    
+                    <h4>Practice Exercises:</h4>
+                    <div class="exercise-list">
+                        <ul style="list-style: none; padding: 0; margin: 0;">
+                            <li>Implement MAX_WATCHERS in hot-reloader.ts</li><li>Add metrics for watcher count</li><li>Create LRU eviction strategy</li>
+                        </ul>
+                    </div>
+                </div>
+            
+
+            
+                <button class="expand-button" onclick="toggleAdditional()" 
+                        data-show-text="Show 5 More Learning Topics">
+                    Show 5 More Learning Topics
+                </button>
+                
+                <div class="additional-topics" id="additionalTopics">
+                    
+                        <div class="education-card">
+                            <h3>Code Quality & Maintainability
+                                <span class="priority-badge priority-immediate">IMMEDIATE</span>
+                            </h3>
+                            <p><strong>Why this matters:</strong> Improve code readability, maintainability, and documentation practices</p>
+                            
+                            
+                                <div style="background: #f9fafb; padding: 15px; border-radius: 6px; margin: 15px 0;">
+                                    
+                                        <strong style="color: #059669;">📝 From Your PR (2):</strong>
+                                        <ul style="margin: 5px 0 10px 0;">
+                                            <li>Missing documentation for disposal logic <small>(packages/next/server/dev/hot-reloader.ts:122)</small></li><li>Magic number should be constant <small>(test/development/hot-reload-memory.test.ts:10)</small></li>
+                                        </ul>
+                                    
+                                    
+                                        <strong style="color: #dc2626;">🏢 From Repository (6):</strong>
+                                        <ul style="margin: 5px 0;">
+                                            <li>[CQ-001] Complex functions <small>(low)</small></li><li>[CQ-002] Missing TypeScript types <small>(low)</small></li><li>[CQ-003] Inconsistent naming <small>(medium)</small></li>
+                                            <li><em>...and 3 more</em></li>
+                                        </ul>
+                                    
+                                </div>
+                            
+                            
+                            <h4>Resources:</h4>
+                            
+                                <div class="resource-item">
+                                    <span class="resource-type type-guide">guide</span>
+                                    <h5 style="margin: 5px 0;">
+                                        <a href="https://github.com/labs42io/clean-code-typescript" target="_blank">Clean Code in TypeScript</a>
+                                    </h5>
+                                    <p style="color: #6b7280; font-size: 14px; margin: 5px 0;">
+                                        Addresses CQ-001 complex functions, CQ-003 naming conventions
+                                    </p>
+                                    
+                                </div>
+                            
+                                <div class="resource-item">
+                                    <span class="resource-type type-guide">guide</span>
+                                    <h5 style="margin: 5px 0;">
+                                        <a href="https://www.joyent.com/node-js/production/design/errors" target="_blank">Effective Error Handling in Node.js</a>
+                                    </h5>
+                                    <p style="color: #6b7280; font-size: 14px; margin: 5px 0;">
+                                        Improves error context (CQ-006) and debugging capabilities
+                                    </p>
+                                    
+                                </div>
+                            
+                                <div class="resource-item">
+                                    <span class="resource-type type-example">example</span>
+                                    <h5 style="margin: 5px 0;">
+                                        Function Decomposition Pattern
+                                    </h5>
+                                    <p style="color: #6b7280; font-size: 14px; margin: 5px 0;">
+                                        Addresses CQ-001 complex function issue
+                                    </p>
+                                    
+                                        <div class="code-example">
+                                            <pre><code>// Before: Complex function (CQ-001)
+function processHotReload(modules, options, callback) {
+  // 50+ lines of code...
+}
+
+// After: Decomposed functions
+function processHotReload(modules, options, callback) {
+  const validModules = validateModules(modules);
+  const watchers = createWatchers(validModules, options);
+  registerCleanupHandlers(watchers);
+  notifyCompletion(callback);
+}
+
+function validateModules(modules) { /* ... */ }
+function createWatchers(modules, options) { /* ... */ }
+function registerCleanupHandlers(watchers) { /* ... */ }
+function notifyCompletion(callback) { /* ... */ }</code></pre>
+                                        </div>
+                                    
+                                </div>
+                            
+                            
+                            
+                                <h4>Practice Exercises:</h4>
+                                <div class="exercise-list">
+                                    <ul style="list-style: none; padding: 0; margin: 0;">
+                                        <li>Refactor complex functions in next-babel-loader.js</li><li>Add TypeScript types to utils.js (CQ-002)</li><li>Standardize naming conventions across modules</li><li>Implement comprehensive error context in catch blocks</li>
+                                    </ul>
+                                </div>
+                            
+                        </div>
+                    
+                        <div class="education-card">
+                            <h3>Security in Next.js Server-Side Code
+                                <span class="priority-badge priority-immediate">IMMEDIATE</span>
+                            </h3>
+                            <p><strong>Why this matters:</strong> Prevent XSS vulnerabilities in SSR contexts</p>
+                            
+                            
+                                <div style="background: #f9fafb; padding: 15px; border-radius: 6px; margin: 15px 0;">
+                                    
+                                    
+                                        <strong style="color: #dc2626;">🏢 From Repository (2):</strong>
+                                        <ul style="margin: 5px 0;">
+                                            <li>[SEC-001] XSS vulnerability in SSR <small>(high)</small></li><li>[SEC-002] Missing CSRF validation <small>(medium)</small></li>
+                                            
+                                        </ul>
+                                    
+                                </div>
+                            
+                            
+                            <h4>Resources:</h4>
+                            
+                                <div class="resource-item">
+                                    <span class="resource-type type-critical">critical</span>
+                                    <h5 style="margin: 5px 0;">
+                                        <a href="https://nextjs.org/docs/advanced-features/security-headers" target="_blank">Next.js SSR Security Guide</a>
+                                    </h5>
+                                    <p style="color: #6b7280; font-size: 14px; margin: 5px 0;">
+                                        Your repo has SEC-001 XSS vulnerability
+                                    </p>
+                                    
+                                </div>
+                            
+                                <div class="resource-item">
+                                    <span class="resource-type type-example">example</span>
+                                    <h5 style="margin: 5px 0;">
+                                        Safe SSR Rendering
+                                    </h5>
+                                    <p style="color: #6b7280; font-size: 14px; margin: 5px 0;">
+                                        undefined
+                                    </p>
+                                    
+                                        <div class="code-example">
+                                            <pre><code>// Unsafe - vulnerable to XSS
+const html = `<div>${userInput}</div>`;
+
+// Safe - properly escaped
+import { escape } from 'lodash';
+const safeHtml = `<div>${escape(userInput)}</div>`;
+
+// Better - use React's built-in protection
+return <div>{userInput}</div>; // React escapes by default</code></pre>
+                                        </div>
+                                    
+                                </div>
+                            
+                            
+                            
+                                <h4>Practice Exercises:</h4>
+                                <div class="exercise-list">
+                                    <ul style="list-style: none; padding: 0; margin: 0;">
+                                        <li>Audit render.tsx for XSS vulnerabilities</li><li>Implement content security policy</li><li>Add input validation layer</li>
+                                    </ul>
+                                </div>
+                            
+                        </div>
+                    
+                        <div class="education-card">
+                            <h3>React Performance Optimization
+                                <span class="priority-badge priority-high">HIGH</span>
+                            </h3>
+                            <p><strong>Why this matters:</strong> Eliminate unnecessary re-renders and optimize React applications</p>
+                            
+                            
+                                <div style="background: #f9fafb; padding: 15px; border-radius: 6px; margin: 15px 0;">
+                                    
+                                    
+                                        <strong style="color: #dc2626;">🏢 From Repository (1):</strong>
+                                        <ul style="margin: 5px 0;">
+                                            <li>[PERF-001] Unnecessary re-renders <small>(high)</small></li>
+                                            
+                                        </ul>
+                                    
+                                </div>
+                            
+                            
+                            <h4>Resources:</h4>
+                            
+                                <div class="resource-item">
+                                    <span class="resource-type type-guide">guide</span>
+                                    <h5 style="margin: 5px 0;">
+                                        <a href="https://react.dev/reference/react/memo" target="_blank">React Re-render Optimization Techniques</a>
+                                    </h5>
+                                    <p style="color: #6b7280; font-size: 14px; margin: 5px 0;">
+                                        Directly addresses PERF-001 unnecessary re-renders
+                                    </p>
+                                    
+                                </div>
+                            
+                                <div class="resource-item">
+                                    <span class="resource-type type-example">example</span>
+                                    <h5 style="margin: 5px 0;">
+                                        Memoization Pattern for Dev Mode
+                                    </h5>
+                                    <p style="color: #6b7280; font-size: 14px; margin: 5px 0;">
+                                        Pattern to fix PERF-001 re-render issues
+                                    </p>
+                                    
+                                        <div class="code-example">
+                                            <pre><code>// Prevent re-renders in development mode
+const DevBuildWatcher = React.memo(({ config, onUpdate }) => {
+  // Memoize expensive computations
+  const watchedFiles = useMemo(() => 
+    computeWatchedFiles(config), [config.id]
+  );
+  
+  // Stable callbacks prevent child re-renders
+  const handleUpdate = useCallback((changes) => {
+    onUpdate(changes);
+  }, [onUpdate]);
+  
+  return <Watcher files={watchedFiles} onChange={handleUpdate} />;
+}, (prevProps, nextProps) => {
+  // Custom comparison for deep equality
+  return deepEqual(prevProps.config, nextProps.config);
+});</code></pre>
+                                        </div>
+                                    
+                                </div>
+                            
+                                <div class="resource-item">
+                                    <span class="resource-type type-guide">guide</span>
+                                    <h5 style="margin: 5px 0;">
+                                        <a href="https://web.dev/articles/reduce-javascript-payloads-with-tree-shaking" target="_blank">Bundle Size Optimization</a>
+                                    </h5>
+                                    <p style="color: #6b7280; font-size: 14px; margin: 5px 0;">
+                                        Addresses PERF-002 large bundle size
+                                    </p>
+                                    
+                                </div>
+                            
+                            
+                            
+                                <h4>Practice Exercises:</h4>
+                                <div class="exercise-list">
+                                    <ul style="list-style: none; padding: 0; margin: 0;">
+                                        <li>Implement React.memo for dev-build-watcher components</li><li>Add useMemo hooks for expensive computations</li><li>Profile and fix re-render issues in development mode</li>
+                                    </ul>
+                                </div>
+                            
+                        </div>
+                    
+                        <div class="education-card">
+                            <h3>Dependency Management Best Practices
+                                <span class="priority-badge priority-medium">MEDIUM</span>
+                            </h3>
+                            <p><strong>Why this matters:</strong> Keep dependencies updated and manage technical debt</p>
+                            
+                            
+                                <div style="background: #f9fafb; padding: 15px; border-radius: 6px; margin: 15px 0;">
+                                    
+                                    
+                                        <strong style="color: #dc2626;">🏢 From Repository (2):</strong>
+                                        <ul style="margin: 5px 0;">
+                                            <li>[DEP-001] Outdated webpack <small>(medium)</small></li><li>[DEP-002] Deprecated packages <small>(low)</small></li>
+                                            
+                                        </ul>
+                                    
+                                </div>
+                            
+                            
+                            <h4>Resources:</h4>
+                            
+                                <div class="resource-item">
+                                    <span class="resource-type type-guide">guide</span>
+                                    <h5 style="margin: 5px 0;">
+                                        <a href="https://docs.npmjs.com/cli/v8/using-npm/dependency-management" target="_blank">npm Dependency Management Guide</a>
+                                    </h5>
+                                    <p style="color: #6b7280; font-size: 14px; margin: 5px 0;">
+                                        Addresses DEP-001 outdated packages
+                                    </p>
+                                    
+                                </div>
+                            
+                                <div class="resource-item">
+                                    <span class="resource-type type-guide">guide</span>
+                                    <h5 style="margin: 5px 0;">
+                                        <a href="https://nodejs.org/api/deprecations.html" target="_blank">Migrating from Deprecated Packages</a>
+                                    </h5>
+                                    <p style="color: #6b7280; font-size: 14px; margin: 5px 0;">
+                                        Handle DEP-002 deprecated querystring
+                                    </p>
+                                    
+                                </div>
+                            
+                                <div class="resource-item">
+                                    <span class="resource-type type-example">example</span>
+                                    <h5 style="margin: 5px 0;">
+                                        Safe Dependency Update Process
+                                    </h5>
+                                    <p style="color: #6b7280; font-size: 14px; margin: 5px 0;">
+                                        Safe update process for DEP-001 and migration for DEP-002
+                                    </p>
+                                    
+                                        <div class="code-example">
+                                            <pre><code>// package.json update strategy
+{
+  "scripts": {
+    "deps:check": "npm outdated",
+    "deps:audit": "npm audit",
+    "deps:update": "npm update && npm test",
+    "deps:major": "npx npm-check-updates -u && npm install && npm test"
+  },
+  "devDependencies": {
+    "npm-check-updates": "^16.0.0"
+  }
+}
+
+// Migrate from deprecated querystring
+// Before:
+const querystring = require('querystring');
+const parsed = querystring.parse(url);
+
+// After:
+const parsed = new URLSearchParams(url);</code></pre>
+                                        </div>
+                                    
+                                </div>
+                            
+                            
+                            
+                                <h4>Practice Exercises:</h4>
+                                <div class="exercise-list">
+                                    <ul style="list-style: none; padding: 0; margin: 0;">
+                                        <li>Update webpack-sources from 2.3.0 to 3.2.3</li><li>Replace querystring with URLSearchParams</li><li>Set up automated dependency updates</li><li>Create migration plan for major updates</li>
+                                    </ul>
+                                </div>
+                            
+                        </div>
+                    
+                        <div class="education-card">
+                            <h3>Documentation Best Practices for TypeScript
+                                <span class="priority-badge priority-medium">MEDIUM</span>
+                            </h3>
+                            <p><strong>Why this matters:</strong> Learn JSDoc patterns specific to your memory management code</p>
+                            
+                            
+                                <div style="background: #f9fafb; padding: 15px; border-radius: 6px; margin: 15px 0;">
+                                    
+                                        <strong style="color: #059669;">📝 From Your PR (1):</strong>
+                                        <ul style="margin: 5px 0 10px 0;">
+                                            <li>Missing documentation for disposal logic <small>(packages/next/server/dev/hot-reloader.ts:122)</small></li>
+                                        </ul>
+                                    
+                                    
+                                </div>
+                            
+                            
+                            <h4>Resources:</h4>
+                            
+                                <div class="resource-item">
+                                    <span class="resource-type type-guide">guide</span>
+                                    <h5 style="margin: 5px 0;">
+                                        <a href="https://www.typescriptlang.org/docs/handbook/jsdoc-supported-types.html" target="_blank">JSDoc for TypeScript Memory Management</a>
+                                    </h5>
+                                    <p style="color: #6b7280; font-size: 14px; margin: 5px 0;">
+                                        Directly applicable to hot-reloader.ts
+                                    </p>
+                                    
+                                </div>
+                            
+                                <div class="resource-item">
+                                    <span class="resource-type type-example">example</span>
+                                    <h5 style="margin: 5px 0;">
+                                        Documentation Example
+                                    </h5>
+                                    <p style="color: #6b7280; font-size: 14px; margin: 5px 0;">
+                                        undefined
+                                    </p>
+                                    
+                                        <div class="code-example">
+                                            <pre><code>/**
+ * Disposes of previous module watchers to prevent memory leaks
+ * during hot reload cycles.
+ * 
+ * @remarks
+ * This method should be called before creating new watchers
+ * to ensure proper cleanup of resources.
+ * 
+ * @performance Reduces memory usage by ~15% in development mode
+ * @since v13.4.0
+ * 
+ * @example
+ * ```typescript
+ * // Before creating new watchers
+ * this.disposeWatchers();
+ * this.createWatchers(modules);
+ * ```
+ */
+private disposeWatchers(): void {
+  this.watchers.forEach(watcher => {
+    watcher.close();
+  });
+  this.watchers.clear();
+}</code></pre>
+                                        </div>
+                                    
+                                </div>
+                            
+                            
+                            
+                                <h4>Practice Exercises:</h4>
+                                <div class="exercise-list">
+                                    <ul style="list-style: none; padding: 0; margin: 0;">
+                                        <li>Document the memory leak fix in hot-reloader.ts</li><li>Add @performance annotations to show impact</li><li>Include @example showing proper usage</li>
+                                    </ul>
+                                </div>
+                            
+                        </div>
+                    
+                </div>
+            
+        </div>
+
+        <div class="education-section">
+            <h2>📊 Your Skill Development Focus</h2>
+            <p>Based on this PR and historical patterns, here are your priority skill gaps:</p>
+            
+            
+                <div class="skill-gap">
+                    <span style="min-width: 150px; font-weight: 600;">documentation</span>
+                    <div class="skill-bar">
+                        <div class="skill-fill" style="width: 45%"></div>
+                    </div>
+                    <span style="min-width: 100px; text-align: right;">
+                        45% → 70%
+                    </span>
+                </div>
+                <p style="color: #6b7280; font-size: 14px; margin: 5px 0 20px 0;">
+                    1 findings in this PR relate to this skill
+                </p>
+            
+        </div>
+
+        <div class="education-section" style="background: #f0f4ff;">
+            <h2>🎓 Learning Path Summary</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                <div>
+                    <h4>This Week</h4>
+                    <ul>
+                        <li>Complete JSDoc documentation</li>
+                        <li>Extract magic numbers</li>
+                        <li>Review security patterns</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4>This Month</h4>
+                    <ul>
+                        <li>Master resource disposal patterns</li>
+                        <li>Implement bounded collections</li>
+                        <li>Improve test coverage strategies</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4>This Quarter</h4>
+                    <ul>
+                        <li>Architecture pattern mastery</li>
+                        <li>Security-first development</li>
+                        <li>Performance optimization expertise</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleAdditional() {
+            const additionalTopics = document.getElementById('additionalTopics');
+            const button = document.querySelector('.expand-button');
+            
+            if (additionalTopics.classList.contains('show')) {
+                additionalTopics.classList.remove('show');
+                button.textContent = button.getAttribute('data-show-text');
+            } else {
+                additionalTopics.classList.add('show');
+                button.textContent = 'Hide Additional Topics';
+            }
+        }
+    </script>
+</body>
+</html>

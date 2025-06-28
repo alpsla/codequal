@@ -14,6 +14,7 @@ import {
 import { MultiAgentValidator } from './validator';
 import { VectorContextService } from './vector-context-service';
 import { MCPContextManager, MCPCoordinationStrategy } from './mcp-context-manager';
+import { AgentResultProcessor } from '../services/agent-result-processor';
 
 /**
  * Vector DB search result for agent context
@@ -1020,14 +1021,49 @@ export class EnhancedMultiAgentExecutor {
   }
   
   /**
-   * Aggregate results from multiple agents
+   * Aggregate results from multiple agents with deduplication
    */
   private aggregateResults(results: any[]): any {
-    // Placeholder for result aggregation logic
+    // Filter successful results
+    const successfulResults = results.filter(r => r != null && !r.error);
+    
+    // Apply deduplication to each agent's results
+    const processedResults = AgentResultProcessor.transformAgentResults(successfulResults);
+    
+    // Log deduplication statistics
+    processedResults.forEach(result => {
+      if (result.deduplicationResult) {
+        this.logger.info(`Deduplication for ${result.agentRole}`, {
+          original: result.deduplicationResult.statistics.original,
+          unique: result.deduplicationResult.statistics.unique,
+          duplicatesRemoved: result.deduplicationResult.duplicatesRemoved
+        });
+      }
+    });
+    
+    // Aggregate all findings for cross-agent analysis
+    const allFindings = processedResults.flatMap(r => r.findings || []);
+    const totalDuplicatesRemoved = processedResults.reduce(
+      (sum, r) => sum + (r.deduplicationResult?.duplicatesRemoved || 0), 
+      0
+    );
+    
     return {
-      aggregatedInsights: results.filter(r => r != null),
+      results: processedResults,
+      aggregatedInsights: successfulResults.filter(r => r != null),
       totalResults: results.length,
-      successfulResults: results.filter(r => r != null).length
+      successfulResults: successfulResults.length,
+      failedResults: results.filter(r => r == null || r.error).length,
+      deduplicationStats: {
+        totalFindingsBeforeDedup: processedResults.reduce(
+          (sum, r) => sum + (r.originalFindingsCount || 0), 
+          0
+        ),
+        totalFindingsAfterDedup: allFindings.length,
+        totalDuplicatesRemoved,
+        deduplicationRate: totalDuplicatesRemoved > 0 ? 
+          (totalDuplicatesRemoved / processedResults.reduce((sum, r) => sum + (r.originalFindingsCount || 0), 0)) : 0
+      }
     };
   }
   
@@ -1492,6 +1528,48 @@ export class EnhancedMultiAgentExecutor {
 
     let formatted = `## Repository Analysis Report\n\n`;
 
+    // Include DeepWiki chunks if available
+    if (report.chunks && report.chunks.length > 0) {
+      formatted += `### DeepWiki Analysis Chunks (${report.chunks.length} relevant insights)\n\n`;
+      
+      // Group chunks by score
+      const highRelevance = report.chunks.filter((c: any) => c.score > 0.8);
+      const mediumRelevance = report.chunks.filter((c: any) => c.score > 0.6 && c.score <= 0.8);
+      
+      if (highRelevance.length > 0) {
+        formatted += `#### Highly Relevant Insights:\n`;
+        highRelevance.slice(0, 3).forEach((chunk: any) => {
+          formatted += `- ${chunk.content}\n`;
+        });
+        formatted += '\n';
+      }
+      
+      if (mediumRelevance.length > 0) {
+        formatted += `#### Additional Context:\n`;
+        mediumRelevance.slice(0, 2).forEach((chunk: any) => {
+          formatted += `- ${chunk.content}\n`;
+        });
+        formatted += '\n';
+      }
+    }
+
+    // Include patterns and recommendations if available
+    if (report.patterns && report.patterns.length > 0) {
+      formatted += `### Code Patterns Detected:\n`;
+      report.patterns.slice(0, 3).forEach((pattern: string) => {
+        formatted += `- ${pattern}\n`;
+      });
+      formatted += '\n';
+    }
+
+    if (report.recommendations && report.recommendations.length > 0) {
+      formatted += `### Historical Recommendations:\n`;
+      report.recommendations.slice(0, 3).forEach((rec: string) => {
+        formatted += `- ${rec}\n`;
+      });
+      formatted += '\n';
+    }
+
     // Include role-specific sections
     switch (agentRole) {
       case 'security':
@@ -1511,6 +1589,11 @@ export class EnhancedMultiAgentExecutor {
         break;
       default:
         formatted += this.formatGeneralReportSection(report);
+    }
+
+    // Add summary if available
+    if (report.summary) {
+      formatted += `\n### Summary\n${report.summary}\n`;
     }
 
     formatted += `\n*Use this repository context to understand the broader codebase when analyzing PR changes.*\n`;

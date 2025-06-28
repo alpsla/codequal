@@ -27,7 +27,9 @@ export class DependencyAgent {
         message: `${vuln.package} - ${vuln.vulnerability}: ${vuln.description}`,
         location: {
           file: 'package.json'
-        }
+        },
+        tool: vuln.tool || 'npm-audit', // Tool that detected the vulnerability
+        source: 'dependency-scan'
       })),
       suggestions: [
         ...vulnerabilities.map((vuln, index) => ({
@@ -63,7 +65,8 @@ export class DependencyAgent {
       vulnerability: finding.vulnerability || finding.cve,
       severity: finding.severity,
       description: finding.description,
-      fixedIn: finding.fixedIn || finding.patched_versions
+      fixedIn: finding.fixedIn || finding.patched_versions,
+      tool: finding.tool || finding.source || 'npm-audit' // Preserve tool information
     }));
   }
 

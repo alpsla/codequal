@@ -41,13 +41,13 @@ export class ModelProviderRegistry {
    * @param provider Provider plugin
    * @returns Count of models registered
    */
-  registerProvider(provider: ModelProviderPlugin): number {
+  async registerProvider(provider: ModelProviderPlugin): Promise<number> {
     try {
       // Add to list of providers
       this.providers.push(provider);
       
       // Register the provider's models
-      const count = this.modelVersionSync.registerProvider(provider);
+      const count = await this.modelVersionSync.registerProvider(provider);
       
       this.logger.info(`Registered provider ${provider.provider} with ${count} models`);
       
@@ -85,14 +85,14 @@ export class ModelProviderRegistry {
    * 
    * @returns Total count of models registered
    */
-  registerDefaultProviders(): number {
+  async registerDefaultProviders(): Promise<number> {
     let totalCount = 0;
     
     // Register OpenAI provider
-    totalCount += this.registerProvider(new OpenAIModelProvider());
+    totalCount += await this.registerProvider(new OpenAIModelProvider());
     
     // Register Anthropic provider
-    totalCount += this.registerProvider(new AnthropicModelProvider());
+    totalCount += await this.registerProvider(new AnthropicModelProvider());
     
     this.logger.info(`Registered ${this.providers.length} default providers with ${totalCount} total models`);
     

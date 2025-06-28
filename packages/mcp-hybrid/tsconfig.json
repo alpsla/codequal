@@ -23,7 +23,11 @@
   "exclude": [
     "node_modules",
     "dist",
-    "tests"
+    "tests",
+    "**/__tests__/**",
+    "**/__tests__.disabled/**",
+    "**/*.test.ts",
+    "**/*.spec.ts"
   ],
   "references": [
     { "path": "../core" }

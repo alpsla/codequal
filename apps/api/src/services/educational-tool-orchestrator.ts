@@ -5,7 +5,7 @@
  */
 
 import { createLogger } from '@codequal/core/utils';
-import { ToolResultRetrievalService } from '@codequal/core/services/deepwiki-tools';
+import { ToolResultRetrievalService } from '../../../../packages/core/src/services/deepwiki-tools';
 import { AuthenticatedUser } from '../middleware/auth-middleware';
 
 export interface EducationalToolResult {

@@ -1,6 +1,6 @@
 import { createLogger } from '@codequal/core/utils';
 import { SkillTrackingService } from './skill-tracking-service';
-import { AuthenticatedUser } from '../types/auth-types';
+import { AuthenticatedUser } from '../multi-agent/types/auth';
 import { DeveloperSkill } from '@codequal/database/models/skill';
 
 /**

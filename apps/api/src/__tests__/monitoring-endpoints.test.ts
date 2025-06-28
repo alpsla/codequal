@@ -1,14 +1,7 @@
 import request from 'supertest';
 import express from 'express';
-import monitoringRoutes, { getGlobalMonitoringService } from '../routes/monitoring';
 import { authMiddleware } from '../middleware/auth-middleware';
 import { monitoringMiddleware } from '../middleware/monitoring-middleware';
-import { EnhancedMonitoringService } from '../../../../packages/core/src/monitoring/enhanced-monitoring-service';
-
-// Mock the enhanced monitoring service
-jest.mock('../../../../packages/core/src/monitoring/enhanced-monitoring-service', () => ({
-  EnhancedMonitoringService: jest.fn()
-}));
 
 // Mock the auth middleware for testing
 jest.mock('../middleware/auth-middleware', () => ({
@@ -28,7 +21,7 @@ jest.mock('../middleware/auth-middleware', () => ({
   }
 }));
 
-// Mock the monitoring service and getGlobalMonitoringService
+// Mock the monitoring service
 const mockMonitoringService = {
   getPrometheusMetrics: jest.fn().mockReturnValue('# Mock metrics\ntest_metric 1'),
   getEmbeddableWidgets: jest.fn().mockReturnValue([
@@ -127,10 +120,11 @@ const mockMonitoringService = {
   recordComponentLatency: jest.fn(),
   recordError: jest.fn(),
   recordBusinessEvent: jest.fn(),
-  recordCost: jest.fn()
+  recordCost: jest.fn(),
+  on: jest.fn() // Add event listener mock
 };
 
-// Mock the enhanced monitoring service module
+// Mock the enhanced monitoring service before importing the routes
 jest.mock('../../../../packages/core/src/monitoring/enhanced-monitoring-service', () => ({
   EnhancedMonitoringService: jest.fn().mockImplementation(() => mockMonitoringService),
   defaultMonitoringConfig: {
@@ -147,36 +141,16 @@ jest.mock('../../../../packages/core/src/monitoring/enhanced-monitoring-service'
   }
 }));
 
-// Mock the monitoring routes module completely
-jest.mock('../routes/monitoring', () => {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const express = require('express');
-  const router = express.Router();
-  
-  // Mock all the routes that exist in the real monitoring routes
-  router.get('/widgets', (req: any, res: any) => res.json([]));
-  router.get('/widgets/:id/data', (req: any, res: any) => res.json({}));
-  router.get('/widgets/:id/component', (req: any, res: any) => res.send(''));
-  router.get('/dashboards', (req: any, res: any) => res.json([]));
-  router.get('/dashboards/:id', (req: any, res: any) => res.json({}));
-  router.get('/alerts', (req: any, res: any) => res.json([]));
-  router.get('/alerts/:id', (req: any, res: any) => res.json({}));
-  router.get('/schema', (req: any, res: any) => res.json({}));
-  router.get('/metrics/ai', (req: any, res: any) => res.json({}));
-  router.post('/events', (req: any, res: any) => res.json({ success: true }));
-  router.get('/health', (req: any, res: any) => res.json({ status: 'ok' }));
-  
-  return {
-    __esModule: true,
-    default: router,
-    getGlobalMonitoringService: jest.fn(() => mockMonitoringService)
-  };
-});
+// Import routes after mocking
+import monitoringRoutes, { getGlobalMonitoringService } from '../routes/monitoring';
 
 describe('Monitoring API Endpoints', () => {
   let app: express.Application;
 
   beforeEach(() => {
+    // Clear all mocks before each test
+    jest.clearAllMocks();
+    
     app = express();
     app.use(express.json());
     app.use(monitoringMiddleware);
@@ -254,15 +228,14 @@ describe('Monitoring API Endpoints', () => {
     });
 
     it('should return 404 for invalid widget ID', async () => {
-      // Mock the service to throw an error for invalid widget
-      const mockService = EnhancedMonitoringService as jest.MockedClass<typeof EnhancedMonitoringService>;
-      mockService.mockImplementation(() => ({
-        getWidgetData: jest.fn().mockRejectedValue(new Error('Widget not-found not found'))
-      }));
-
-      await request(app)
+      const response = await request(app)
         .get('/api/monitoring/widgets/invalid-widget/data')
         .expect(404);
+
+      expect(response.body).toMatchObject({
+        error: 'Widget not found',
+        widgetId: 'invalid-widget'
+      });
     });
   });
 
@@ -319,15 +292,14 @@ describe('Monitoring API Endpoints', () => {
     });
 
     it('should return 404 for invalid dashboard ID', async () => {
-      // Mock the service to return null for invalid dashboard
-      const mockService = EnhancedMonitoringService as jest.MockedClass<typeof EnhancedMonitoringService>;
-      mockService.mockImplementation(() => ({
-        getDashboardData: jest.fn().mockResolvedValue(null)
-      }));
-
-      await request(app)
+      const response = await request(app)
         .get('/api/monitoring/dashboards/invalid-dashboard')
         .expect(404);
+
+      expect(response.body).toMatchObject({
+        error: 'Dashboard not found',
+        dashboardId: 'invalid-dashboard'
+      });
     });
   });
 
@@ -376,15 +348,14 @@ describe('Monitoring API Endpoints', () => {
     });
 
     it('should return 404 for invalid alert ID', async () => {
-      // Mock the service to return empty array for invalid alert
-      const mockService = EnhancedMonitoringService as jest.MockedClass<typeof EnhancedMonitoringService>;
-      mockService.mockImplementation(() => ({
-        getAlertStatus: jest.fn().mockReturnValue([])
-      }));
-
-      await request(app)
+      const response = await request(app)
         .get('/api/monitoring/alerts/invalid-alert')
         .expect(404);
+
+      expect(response.body).toMatchObject({
+        error: 'Alert not found',
+        alertId: 'invalid-alert'
+      });
     });
   });
 

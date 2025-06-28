@@ -57,16 +57,17 @@ async function requestResearcherForMissingConfig(
     await triggerResearcherAgent(researchRequest);
     
     // After research is complete, try to find the model again
-    const updatedOptimalModel = modelSync.findOptimalModel({
+    const updatedOptimalModel = await modelSync.findOptimalModel({
       ...context,
       tags: [...(context.tags || []), role]
     });
     
     if (updatedOptimalModel) {
+      const model = Array.isArray(updatedOptimalModel) ? updatedOptimalModel[0] : updatedOptimalModel;
       logger.info('Researcher found and configured optimal model', { 
         role, 
-        provider: updatedOptimalModel.provider,
-        model: updatedOptimalModel.model 
+        provider: model.provider,
+        model: model.model 
       });
       
       // Map provider name to enum for backward compatibility
@@ -78,7 +79,7 @@ async function requestResearcherForMissingConfig(
         'openrouter': AgentProvider.OPENROUTER
       };
       
-      return providerMapping[updatedOptimalModel.provider] || AgentProvider.OPENAI;
+      return providerMapping[model.provider] || AgentProvider.OPENAI;
     }
     
     // If Researcher couldn't find a suitable model, use dynamic fallback from Vector DB
@@ -136,12 +137,13 @@ async function getDynamicFallback(role: AgentRole, context: RepositoryContext): 
   ];
   
   for (const fallbackContext of fallbackStrategies) {
-    const fallbackModel = modelSync.findOptimalModel(fallbackContext);
+    const fallbackModel = await modelSync.findOptimalModel(fallbackContext);
     if (fallbackModel) {
+      const model = Array.isArray(fallbackModel) ? fallbackModel[0] : fallbackModel;
       logger.info('Found dynamic fallback model', { 
         strategy: fallbackContext, 
-        provider: fallbackModel.provider,
-        model: fallbackModel.model 
+        provider: model.provider,
+        model: model.model 
       });
       
       // Map provider name to enum for backward compatibility
@@ -153,7 +155,7 @@ async function getDynamicFallback(role: AgentRole, context: RepositoryContext): 
         'openrouter': AgentProvider.OPENROUTER
       };
       
-      return providerMapping[fallbackModel.provider] || AgentProvider.OPENAI;
+      return providerMapping[model.provider] || AgentProvider.OPENAI;
     }
   }
   
@@ -171,12 +173,13 @@ export async function getOptimalAgent(
 ): Promise<AgentProvider> {
   const modelSync = new ModelVersionSync(logger);
   
-  const optimalModel = modelSync.findOptimalModel({
+  const optimalModel = await modelSync.findOptimalModel({
     ...context,
     tags: [...(context.tags || []), role]
   });
   
   if (optimalModel) {
+    const model = Array.isArray(optimalModel) ? optimalModel[0] : optimalModel;
     // Map provider name to enum for backward compatibility
     const providerMapping: Record<string, AgentProvider> = {
       'anthropic': AgentProvider.ANTHROPIC,
@@ -186,7 +189,7 @@ export async function getOptimalAgent(
       'openrouter': AgentProvider.OPENROUTER
     };
     
-    return providerMapping[optimalModel.provider] || AgentProvider.OPENAI;
+    return providerMapping[model.provider] || AgentProvider.OPENAI;
   }
   
   // If no optimal model found, trigger Researcher agent to find missing config
@@ -226,21 +229,22 @@ export async function getDefaultAgentSelection(): Promise<AgentSelection> {
 /**
  * Check if a specific agent provider is available for a role
  */
-export function isAgentAvailable(
+export async function isAgentAvailable(
   role: AgentRole, 
   provider: AgentProvider,
   context: RepositoryContext
-): boolean {
+): Promise<boolean> {
   try {
     const modelSync = new ModelVersionSync(logger);
     
     // Check if we have a model for this provider/role combination
-    const optimalModel = modelSync.findOptimalModel({
+    const optimalModel = await modelSync.findOptimalModel({
       ...context,
       tags: [...(context.tags || []), role]
     });
     
-    return optimalModel?.provider === provider;
+    const model = Array.isArray(optimalModel) ? optimalModel[0] : optimalModel;
+    return model?.provider === provider;
   } catch (error) {
     logger.error('Error checking agent availability', { role, provider, error });
     return false;
@@ -250,22 +254,23 @@ export function isAgentAvailable(
 /**
  * Get cost estimate for using a specific agent configuration
  */
-export function getAgentCostEstimate(
+export async function getAgentCostEstimate(
   role: AgentRole,
   context: RepositoryContext
-): { inputCost: number; outputCost: number } | null {
+): Promise<{ inputCost: number; outputCost: number } | null> {
   try {
     const modelSync = new ModelVersionSync(logger);
     
-    const optimalModel = modelSync.findOptimalModel({
+    const optimalModel = await modelSync.findOptimalModel({
       ...context,
       tags: [...(context.tags || []), role]
     });
     
-    if (optimalModel?.pricing) {
+    const model = Array.isArray(optimalModel) ? optimalModel[0] : optimalModel;
+    if (model?.pricing) {
       return {
-        inputCost: optimalModel.pricing.input,
-        outputCost: optimalModel.pricing.output
+        inputCost: model.pricing.input,
+        outputCost: model.pricing.output
       };
     }
     

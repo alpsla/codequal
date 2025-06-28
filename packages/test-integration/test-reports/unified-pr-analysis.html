@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeQual Unified PR Analysis Report</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 40px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #e1e4e8;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .score-badge {
+            font-size: 48px;
+            font-weight: bold;
+            color: #28a745;
+        }
+        .recommendation {
+            display: inline-block;
+            background: #d4edda;
+            color: #155724;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        .category-section {
+            margin: 30px 0;
+            padding: 20px;
+            border: 1px solid #e1e4e8;
+            border-radius: 8px;
+        }
+        .category-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .category-score {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .category-score.excellent { color: #28a745; }
+        .category-score.good { color: #17a2b8; }
+        .category-score.warning { color: #ffc107; }
+        .finding {
+            margin: 15px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-left: 4px solid;
+            border-radius: 4px;
+        }
+        .finding.medium { border-color: #ffc107; }
+        .finding.low { border-color: #28a745; }
+        .skill-progress {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+        }
+        .skill-bar {
+            flex: 1;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            margin: 0 10px;
+            position: relative;
+            overflow: hidden;
+        }
+        .skill-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745, #20c997);
+            transition: width 0.3s;
+        }
+        .skill-improvement {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .tools-used {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 10px 0;
+        }
+        .tool-badge {
+            background: #e7f3ff;
+            color: #0366d6;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+        .repository-health {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 20px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .metric-item {
+            text-align: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #0366d6;
+        }
+        .metric-label {
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>Unified PR Analysis Report</h1>
+                <p style="color: #666;">Fix memory leak in development server • vercel/next.js #45678</p>
+            </div>
+            <div style="text-align: center;">
+                <div class="score-badge">88</div>
+                <div style="font-size: 14px; color: #666;">OVERALL SCORE</div>
+            </div>
+        </div>
+
+        <div class="recommendation">APPROVE WITH MINOR SUGGESTIONS</div>
+
+        <div class="repository-health">
+            <h3>📊 Repository Health Status</h3>
+            <p><strong>21</strong> pending issues 
+               (2 resolved in this PR)</p>
+            <div class="metric-grid">
+                <div class="metric-item">
+                    <div class="metric-value">🔒 2</div>
+                    <div class="metric-label">Security</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-value">⚡ 5</div>
+                    <div class="metric-label">Performance</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-value">🏗️ 8</div>
+                    <div class="metric-label">Architecture</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-value">📝 6</div>
+                    <div class="metric-label">Code Quality</div>
+                </div>
+            </div>
+        </div>
+
+        
+        <div class="category-section">
+            <div class="category-header">
+                <h2>Security Analysis</h2>
+                <div>
+                    <span class="category-score excellent">95/100</span>
+                    <span style="color: #666; margin-left: 10px;">Excellent</span>
+                </div>
+            </div>
+            
+            <div class="tools-used">
+                <span class="tool-badge">CodeQL</span><span class="tool-badge">Semgrep</span><span class="tool-badge">OWASP Dependency Check</span>
+            </div>
+
+            
+
+            
+                <h4>Positive Aspects:</h4>
+                <ul>
+                    <li>✅ Proper resource disposal prevents potential DoS attacks</li><li>✅ No new vulnerabilities introduced</li><li>✅ Follows secure coding practices</li>
+                </ul>
+            
+
+            
+        </div>
+        
+        <div class="category-section">
+            <div class="category-header">
+                <h2>Performance Analysis</h2>
+                <div>
+                    <span class="category-score excellent">90/100</span>
+                    <span style="color: #666; margin-left: 10px;">Excellent</span>
+                </div>
+            </div>
+            
+            <div class="tools-used">
+                <span class="tool-badge">Performance Profiler</span><span class="tool-badge">Lighthouse CI</span><span class="tool-badge">Memory Analyzer</span>
+            </div>
+
+            
+                <h4>Findings:</h4>
+                
+                    <div class="finding medium">
+                        <strong>Consider implementing maximum watcher limit</strong>
+                        <div style="color: #666; font-size: 14px; margin: 5px 0;">packages/next/server/dev/hot-reloader.ts:124</div>
+                        <p style="margin: 5px 0;">Add MAX_WATCHERS constant to prevent unbounded growth</p>
+                    </div>
+                
+            
+
+            
+                <h4>Positive Aspects:</h4>
+                <ul>
+                    <li>✅ Memory usage reduced by 15%</li><li>✅ No CPU performance regression</li><li>✅ Lighthouse score improved by 5 points</li>
+                </ul>
+            
+
+            
+                <div class="metric-grid">
+                    
+                        <div class="metric-item">
+                            <div class="metric-value">15%</div>
+                            <div class="metric-label">memory Reduction</div>
+                        </div>
+                    
+                        <div class="metric-item">
+                            <div class="metric-value">Negligible</div>
+                            <div class="metric-label">cpu Impact</div>
+                        </div>
+                    
+                        <div class="metric-item">
+                            <div class="metric-value">+5 points</div>
+                            <div class="metric-label">lighthouse Improvement</div>
+                        </div>
+                    
+                </div>
+            
+        </div>
+        
+        <div class="category-section">
+            <div class="category-header">
+                <h2>Architecture Analysis</h2>
+                <div>
+                    <span class="category-score good">85/100</span>
+                    <span style="color: #666; margin-left: 10px;">Good</span>
+                </div>
+            </div>
+            
+            <div class="tools-used">
+                <span class="tool-badge">Dependency Graph Analyzer</span><span class="tool-badge">Module Analyzer</span>
+            </div>
+
+            
+                <h4>Findings:</h4>
+                
+                    <div class="finding low">
+                        <strong>Module disposal pattern could be extracted</strong>
+                        <div style="color: #666; font-size: 14px; margin: 5px 0;">packages/next/server/dev/hot-reloader.ts:130-145</div>
+                        <p style="margin: 5px 0;">Create reusable DisposableWatcher class</p>
+                    </div>
+                
+            
+
+            
+                <h4>Positive Aspects:</h4>
+                <ul>
+                    <li>✅ Good separation of concerns</li><li>✅ Low coupling between modules</li><li>✅ Clear resource management pattern</li>
+                </ul>
+            
+
+            
+                <div class="metric-grid">
+                    
+                        <div class="metric-item">
+                            <div class="metric-value">Low</div>
+                            <div class="metric-label">coupling</div>
+                        </div>
+                    
+                        <div class="metric-item">
+                            <div class="metric-value">High</div>
+                            <div class="metric-label">cohesion</div>
+                        </div>
+                    
+                        <div class="metric-item">
+                            <div class="metric-value">Acceptable</div>
+                            <div class="metric-label">complexity</div>
+                        </div>
+                    
+                </div>
+            
+        </div>
+        
+        <div class="category-section">
+            <div class="category-header">
+                <h2>CodeQuality Analysis</h2>
+                <div>
+                    <span class="category-score good">82/100</span>
+                    <span style="color: #666; margin-left: 10px;">Good</span>
+                </div>
+            </div>
+            
+            <div class="tools-used">
+                <span class="tool-badge">ESLint</span><span class="tool-badge">SonarQube</span><span class="tool-badge">TSLint</span>
+            </div>
+
+            
+                <h4>Findings:</h4>
+                
+                    <div class="finding low">
+                        <strong>Missing JSDoc documentation</strong>
+                        <div style="color: #666; font-size: 14px; margin: 5px 0;">packages/next/server/dev/hot-reloader.ts:122</div>
+                        <p style="margin: 5px 0;">Add documentation explaining memory leak fix</p>
+                    </div>
+                
+                    <div class="finding low">
+                        <strong>Magic number should be constant</strong>
+                        <div style="color: #666; font-size: 14px; margin: 5px 0;">test/development/hot-reload-memory.test.ts:10</div>
+                        <p style="margin: 5px 0;">const RELOAD_ITERATIONS = 100</p>
+                    </div>
+                
+            
+
+            
+                <h4>Positive Aspects:</h4>
+                <ul>
+                    <li>✅ Clean code structure</li><li>✅ Good test coverage</li><li>✅ No code duplication</li>
+                </ul>
+            
+
+            
+                <div class="metric-grid">
+                    
+                        <div class="metric-item">
+                            <div class="metric-value">A</div>
+                            <div class="metric-label">maintainability</div>
+                        </div>
+                    
+                        <div class="metric-item">
+                            <div class="metric-value">A</div>
+                            <div class="metric-label">reliability</div>
+                        </div>
+                    
+                        <div class="metric-item">
+                            <div class="metric-value">0%</div>
+                            <div class="metric-label">duplications</div>
+                        </div>
+                    
+                </div>
+            
+        </div>
+        
+        <div class="category-section">
+            <div class="category-header">
+                <h2>Dependencies Analysis</h2>
+                <div>
+                    <span class="category-score perfect">100/100</span>
+                    <span style="color: #666; margin-left: 10px;">Perfect</span>
+                </div>
+            </div>
+            
+            <div class="tools-used">
+                <span class="tool-badge">npm audit</span><span class="tool-badge">License Checker</span><span class="tool-badge">Dependency Track</span>
+            </div>
+
+            
+
+            
+                <h4>Positive Aspects:</h4>
+                <ul>
+                    <li>✅ No new dependencies added</li><li>✅ All existing dependencies up to date</li><li>✅ No security vulnerabilities</li>
+                </ul>
+            
+
+            
+        </div>
+        
+        <div class="category-section">
+            <div class="category-header">
+                <h2>Testing Analysis</h2>
+                <div>
+                    <span class="category-score good">88/100</span>
+                    <span style="color: #666; margin-left: 10px;">Good</span>
+                </div>
+            </div>
+            
+            <div class="tools-used">
+                <span class="tool-badge">Jest Coverage</span><span class="tool-badge">Test Analyzer</span>
+            </div>
+
+            
+                <h4>Findings:</h4>
+                
+                    <div class="finding low">
+                        <strong>Consider adding edge case tests</strong>
+                        <div style="color: #666; font-size: 14px; margin: 5px 0;"></div>
+                        <p style="margin: 5px 0;">Test behavior with extremely large number of modules</p>
+                    </div>
+                
+            
+
+            
+                <h4>Positive Aspects:</h4>
+                <ul>
+                    <li>✅ Good memory leak test implementation</li><li>✅ Tests verify the fix works correctly</li><li>✅ No test regressions</li>
+                </ul>
+            
+
+            
+                <div class="metric-grid">
+                    
+                        <div class="metric-item">
+                            <div class="metric-value">87%</div>
+                            <div class="metric-label">coverage</div>
+                        </div>
+                    
+                        <div class="metric-item">
+                            <div class="metric-value">2</div>
+                            <div class="metric-label">new Tests</div>
+                        </div>
+                    
+                        <div class="metric-item">
+                            <div class="metric-value">45s</div>
+                            <div class="metric-label">test Duration</div>
+                        </div>
+                    
+                </div>
+            
+        </div>
+        
+
+        <div class="category-section">
+            <h2>🎓 Skill Progression & Education</h2>
+            
+            <h4>Your Skill Improvements:</h4>
+            
+                <div class="skill-progress">
+                    <span style="width: 150px;">Memory Management</span>
+                    <div class="skill-bar">
+                        <div class="skill-fill" style="width: 77%"></div>
+                    </div>
+                    <span>77%</span>
+                    <span class="skill-improvement">+5</span>
+                </div>
+                <p style="color: #666; font-size: 14px; margin: 5px 0 15px 0;">Excellent implementation of resource disposal pattern</p>
+            
+                <div class="skill-progress">
+                    <span style="width: 150px;">Performance Optimization</span>
+                    <div class="skill-bar">
+                        <div class="skill-fill" style="width: 81%"></div>
+                    </div>
+                    <span>81%</span>
+                    <span class="skill-improvement">+3</span>
+                </div>
+                <p style="color: #666; font-size: 14px; margin: 5px 0 15px 0;">Identified and fixed significant memory leak</p>
+            
+                <div class="skill-progress">
+                    <span style="width: 150px;">Testing</span>
+                    <div class="skill-bar">
+                        <div class="skill-fill" style="width: 84%"></div>
+                    </div>
+                    <span>84%</span>
+                    <span class="skill-improvement">+2</span>
+                </div>
+                <p style="color: #666; font-size: 14px; margin: 5px 0 15px 0;">Added comprehensive memory usage tests</p>
+            
+
+            <h4>Learning Resources:</h4>
+            <ul>
+                
+                    <li>
+                        <a href="https://nodejs.org/en/docs/guides/simple-profiling/" target="_blank">Node.js Memory Management</a>
+                        <span style="color: #666;"> - Direct application in this PR</span>
+                    </li>
+                
+                    <li>
+                        <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Memory_Management" target="_blank">Resource Disposal Patterns</a>
+                        <span style="color: #666;"> - Pattern used in the fix</span>
+                    </li>
+                
+            </ul>
+
+            <h4>Recommended Next Steps:</h4>
+            <ul>
+                <li>Explore WeakMap for automatic garbage collection</li><li>Learn about Node.js performance profiling tools</li><li>Study advanced TypeScript patterns for resource management</li>
+            </ul>
+        </div>
+
+        <div style="text-align: center; margin-top: 50px; padding-top: 20px; border-top: 1px solid #e1e4e8;">
+            <p style="color: #666;">Analysis performed by CodeQual AI • Repository insights powered by advanced code analysis</p>
+            <p style="font-size: 12px; color: #999;">
+                16 tools • 
+                24,567 tokens • 
+                $0.0189
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Animate skill bars
+        setTimeout(() => {
+            document.querySelectorAll('.skill-fill').forEach(el => {
+                el.style.width = el.parentElement.nextElementSibling.textContent;
+            });
+        }, 100);
+    </script>
+</body>
+</html>

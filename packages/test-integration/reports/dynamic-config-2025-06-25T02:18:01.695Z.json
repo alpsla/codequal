@@ -1,0 +1,295 @@
+{
+  "timestamp": "2025-06-25T02:18:01.695Z",
+  "summary": {
+    "totalScenarios": 5,
+    "missingConfigurations": 0,
+    "researcherActivations": 0,
+    "fallbacksUsed": 0
+  },
+  "baselines": {
+    "new-language-rust": {
+      "context": {
+        "language": "rust-wasm",
+        "sizeCategory": "medium",
+        "tags": [
+          "systems",
+          "webassembly",
+          "performance-critical",
+          "wasm-bindgen"
+        ]
+      },
+      "modelSelections": {
+        "performance": {
+          "agent": "performance",
+          "provider": "anthropic",
+          "model": "claude-3-7-sonnet",
+          "reason": "Optimal for rust-wasm performance",
+          "cost": 0.0343439113336783,
+          "performance": 1333,
+          "tokens": 3434,
+          "findings": 6
+        },
+        "security": {
+          "agent": "security",
+          "provider": "anthropic",
+          "model": "claude-3-7-sonnet",
+          "reason": "Optimal for rust-wasm security",
+          "cost": 0.03612083447544206,
+          "performance": 1333,
+          "tokens": 3612,
+          "findings": 3
+        },
+        "architecture": {
+          "agent": "architecture",
+          "provider": "anthropic",
+          "model": "claude-3-7-sonnet",
+          "reason": "Optimal for rust-wasm architecture",
+          "cost": 0.06301168926036481,
+          "performance": 1333,
+          "tokens": 6301,
+          "findings": 5
+        }
+      },
+      "totalCost": 0.13347643506948514,
+      "totalTokens": 13347,
+      "executionTime": 0.001
+    },
+    "exotic-framework-elixir": {
+      "context": {
+        "language": "elixir",
+        "sizeCategory": "large",
+        "tags": [
+          "functional",
+          "real-time",
+          "distributed",
+          "phoenix-liveview"
+        ]
+      },
+      "modelSelections": {
+        "architecture": {
+          "agent": "architecture",
+          "provider": "anthropic",
+          "model": "claude-3-7-sonnet",
+          "reason": "Optimal for elixir architecture",
+          "cost": 0.031030162234852332,
+          "performance": 1333,
+          "tokens": 3103,
+          "findings": 8
+        },
+        "performance": {
+          "agent": "performance",
+          "provider": "anthropic",
+          "model": "claude-3-7-sonnet",
+          "reason": "Optimal for elixir performance",
+          "cost": 0.05810626376439814,
+          "performance": 1333,
+          "tokens": 5810,
+          "findings": 10
+        },
+        "codeQuality": {
+          "agent": "codeQuality",
+          "provider": "anthropic",
+          "model": "claude-3-7-sonnet",
+          "reason": "Optimal for elixir codeQuality",
+          "cost": 0.03665435587343613,
+          "performance": 1333,
+          "tokens": 3665,
+          "findings": 8
+        }
+      },
+      "totalCost": 0.1257907818726866,
+      "totalTokens": 12578,
+      "executionTime": 0.001
+    },
+    "emerging-tech-quantum": {
+      "context": {
+        "language": "qsharp",
+        "sizeCategory": "small",
+        "tags": [
+          "quantum",
+          "research",
+          "experimental",
+          "microsoft-quantum"
+        ]
+      },
+      "modelSelections": {
+        "architecture": {
+          "agent": "architecture",
+          "provider": "anthropic",
+          "model": "claude-3-7-sonnet",
+          "reason": "Optimal for qsharp architecture",
+          "cost": 0.06186031283137138,
+          "performance": 1333,
+          "tokens": 6186,
+          "findings": 1
+        },
+        "documentation": {
+          "agent": "documentation",
+          "provider": "anthropic",
+          "model": "claude-3-7-sonnet",
+          "reason": "Optimal for qsharp documentation",
+          "cost": 0.06627376569882504,
+          "performance": 1333,
+          "tokens": 6627,
+          "findings": 6
+        }
+      },
+      "totalCost": 0.12813407853019643,
+      "totalTokens": 12813,
+      "executionTime": 0
+    },
+    "legacy-cobol-banking": {
+      "context": {
+        "language": "cobol",
+        "sizeCategory": "extra_large",
+        "tags": [
+          "legacy",
+          "banking",
+          "mainframe",
+          "critical",
+          "mainframe-zos"
+        ]
+      },
+      "modelSelections": {
+        "security": {
+          "agent": "security",
+          "provider": "anthropic",
+          "model": "claude-3-7-sonnet",
+          "reason": "Optimal for cobol security",
+          "cost": 0.06557911576318175,
+          "performance": 1333,
+          "tokens": 6557,
+          "findings": 1
+        },
+        "architecture": {
+          "agent": "architecture",
+          "provider": "anthropic",
+          "model": "claude-3-7-sonnet",
+          "reason": "Optimal for cobol architecture",
+          "cost": 0.06259746005292448,
+          "performance": 1333,
+          "tokens": 6259,
+          "findings": 3
+        },
+        "dependencies": {
+          "agent": "dependencies",
+          "provider": "anthropic",
+          "model": "claude-3-7-sonnet",
+          "reason": "Optimal for cobol dependencies",
+          "cost": 0.047560569165948766,
+          "performance": 1333,
+          "tokens": 4756,
+          "findings": 7
+        }
+      },
+      "totalCost": 0.175737144982055,
+      "totalTokens": 17572,
+      "executionTime": 0
+    },
+    "ml-pytorch-research": {
+      "context": {
+        "language": "python",
+        "sizeCategory": "large",
+        "tags": [
+          "machine-learning",
+          "research",
+          "gpu",
+          "scientific",
+          "pytorch-research"
+        ]
+      },
+      "modelSelections": {
+        "performance": {
+          "agent": "performance",
+          "provider": "anthropic",
+          "model": "claude-3-7-sonnet",
+          "reason": "Optimal for python performance",
+          "cost": 0.07413035211386927,
+          "performance": 1333,
+          "tokens": 7413,
+          "findings": 7
+        },
+        "architecture": {
+          "agent": "architecture",
+          "provider": "anthropic",
+          "model": "claude-3-7-sonnet",
+          "reason": "Optimal for python architecture",
+          "cost": 0.06845198931890306,
+          "performance": 1333,
+          "tokens": 6845,
+          "findings": 6
+        },
+        "documentation": {
+          "agent": "documentation",
+          "provider": "anthropic",
+          "model": "claude-3-7-sonnet",
+          "reason": "Optimal for python documentation",
+          "cost": 0.052534094118722285,
+          "performance": 1333,
+          "tokens": 5253,
+          "findings": 2
+        }
+      },
+      "totalCost": 0.1951164355514946,
+      "totalTokens": 19511,
+      "executionTime": 0.001
+    }
+  },
+  "performanceStats": {
+    "elapsed": 7.009,
+    "tokens": {
+      "prompt": 27804.657422059783,
+      "completion": 26706.986133089675,
+      "total": 54511.64355514946,
+      "tokensPerSecond": 7777.378164524105
+    },
+    "cost": {
+      "total": 1.6240187642625246,
+      "costPerMinute": 13.902286468219641,
+      "projectedHourly": 834.1371880931785
+    },
+    "api": {
+      "totalCalls": 0,
+      "rateLimited": 0,
+      "rateLimitPercentage": 0,
+      "avgResponseTime": 0
+    },
+    "memory": {
+      "current": 117.4214096069336,
+      "peak": 120
+    },
+    "bottlenecks": [],
+    "components": [
+      {
+        "name": "researcher-quarterly",
+        "tokens": 35000,
+        "cost": 1.425,
+        "avgTime": 0
+      },
+      {
+        "name": "performance",
+        "tokens": 7413.035211386927,
+        "cost": 0.07561295915614666,
+        "avgTime": 3.3125995010317526
+      },
+      {
+        "name": "architecture",
+        "tokens": 6845.198931890305,
+        "cost": 0.06982102910528111,
+        "avgTime": 3.6099255494544997
+      },
+      {
+        "name": "documentation",
+        "tokens": 5253.409411872228,
+        "cost": 0.05358477600109672,
+        "avgTime": 4.458793238223716
+      }
+    ]
+  },
+  "recommendations": [
+    "Set up alerts for new language/framework combinations",
+    "Monitor researcher agent usage to identify configuration gaps",
+    "Consider caching researcher results for 7 days",
+    "Implement progressive model upgrade strategy (Haiku → Sonnet → Opus)"
+  ]
+}
