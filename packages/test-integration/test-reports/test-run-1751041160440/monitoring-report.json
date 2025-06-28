@@ -1,0 +1,142 @@
+{
+  "testRunId": "test-run-1751041160440",
+  "timestamp": "2025-06-27T16:19:20.470Z",
+  "environment": "test",
+  "performance": {
+    "totalExecutionTime": 29,
+    "componentLatency": {
+      "orchestrator": 0,
+      "deepWiki": 0,
+      "vectorDB": 0,
+      "agents": {},
+      "reportGeneration": 0
+    },
+    "apiLatency": {
+      "p50": 0,
+      "p95": 0,
+      "p99": 0
+    },
+    "throughput": {
+      "requestsPerSecond": 0,
+      "analysesPerHour": 0
+    }
+  },
+  "costAnalysis": {
+    "totalCost": 0,
+    "costByModel": {},
+    "costByComponent": {},
+    "tokenUsage": {
+      "totalTokens": 0,
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "compressionRatio": 1
+    },
+    "projectedMonthlyCost": 0
+  },
+  "modelEfficiency": {
+    "accuracyScores": {
+      "claude-3-opus": 0,
+      "claude-3-sonnet": 0,
+      "gpt-4": 0,
+      "gpt-4-turbo": 0,
+      "gemini-pro": 0
+    },
+    "costPerQualityPoint": {},
+    "responseTimeByModel": {
+      "claude-3-opus": 0,
+      "claude-3-sonnet": 0,
+      "gpt-4": 0,
+      "gpt-4-turbo": 0,
+      "gemini-pro": 0
+    },
+    "errorRateByModel": {
+      "claude-3-opus": 0,
+      "claude-3-sonnet": 0,
+      "gpt-4": 0,
+      "gpt-4-turbo": 0,
+      "gemini-pro": 0
+    },
+    "optimalModelByUseCase": {
+      "quickAnalysis": "claude-3-sonnet",
+      "comprehensiveAnalysis": "claude-3-opus",
+      "deepAnalysis": "gpt-4"
+    }
+  },
+  "qualityMetrics": {
+    "analysisAccuracy": {
+      "falsePositives": 0,
+      "falseNegatives": 0,
+      "precision": 0,
+      "recall": 0
+    },
+    "findingQuality": {
+      "totalFindings": 0,
+      "criticalFindings": 0,
+      "actionableFindings": 0,
+      "duplicateFindings": 0
+    },
+    "educationalQuality": {
+      "relevantResources": 0,
+      "skillGapsCovered": 0,
+      "learningPathCompleteness": 0
+    }
+  },
+  "systemHealth": {
+    "errorRate": 0,
+    "errorsByType": {},
+    "memoryUsage": {
+      "average": 0,
+      "peak": 0
+    },
+    "cpuUsage": {
+      "average": 0,
+      "peak": 0
+    },
+    "activeConnections": {
+      "database": 0,
+      "vectorDB": 0,
+      "external": 0
+    }
+  },
+  "businessMetrics": {
+    "analysisVolume": {
+      "totalAnalyses": 0,
+      "successfulAnalyses": 0,
+      "failedAnalyses": 0,
+      "averageFilesPerAnalysis": 0
+    },
+    "userActivity": {
+      "activeUsers": 0,
+      "newUsers": 0,
+      "returningUsers": 0
+    },
+    "repositoryMetrics": {
+      "totalRepositories": 0,
+      "repositoriesByLanguage": {},
+      "averageRepositorySize": 0
+    }
+  },
+  "testResults": {
+    "totalTests": 3,
+    "passedTests": 1,
+    "failedTests": 2,
+    "skippedTests": 0,
+    "testDuration": 29,
+    "failureDetails": [
+      {
+        "testName": "Quick Analysis Test",
+        "error": "Added label \"repository\" is not included in initial labelset: [ 'mode', 'repository_size' ]"
+      },
+      {
+        "testName": "Comprehensive Analysis Test",
+        "error": "Added label \"repository\" is not included in initial labelset: [ 'mode', 'repository_size' ]"
+      }
+    ]
+  },
+  "recommendations": {
+    "costOptimization": [],
+    "performanceImprovements": [],
+    "qualityEnhancements": [],
+    "scalingConsiderations": []
+  }
+}

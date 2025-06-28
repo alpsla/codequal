@@ -1,0 +1,191 @@
+{
+  "analysisReport": {
+    "metadata": {
+      "analysisId": "analysis-1751071361557",
+      "repository": "https://github.com/vercel/next.js",
+      "prNumber": 45678,
+      "title": "Fix memory leak in development server",
+      "author": "john.doe",
+      "timestamp": "2025-06-28T00:42:41.557Z",
+      "executionTime": 15234,
+      "analysisDepth": "Comprehensive",
+      "agentsUsed": 8
+    },
+    "summary": {
+      "overallScore": 88,
+      "recommendation": "APPROVE WITH MINOR SUGGESTIONS",
+      "issuesAddressed": 2,
+      "newFindings": 4,
+      "skillImprovements": 3
+    },
+    "categoryScores": {
+      "security": { "score": 95, "status": "Excellent", "findings": 0 },
+      "performance": { "score": 90, "status": "Excellent", "findings": 1 },
+      "architecture": { "score": 85, "status": "Good", "findings": 1 },
+      "codeQuality": { "score": 82, "status": "Good", "findings": 2 },
+      "dependencies": { "score": 100, "status": "Perfect", "findings": 0 },
+      "testing": { "score": 88, "status": "Good", "findings": 1 }
+    },
+    "repositoryHealth": {
+      "pendingIssues": {
+        "total": 23,
+        "byCategory": {
+          "security": 2,
+          "performance": 5,
+          "architecture": 8,
+          "codeQuality": 6,
+          "dependencies": 2
+        }
+      },
+      "trend": "Improving",
+      "issuesResolvedThisPR": ["PERF-005", "ARCH-004"]
+    },
+    "findings": [
+      {
+        "id": "f1",
+        "category": "codeQuality",
+        "severity": "low",
+        "message": "Missing JSDoc documentation for disposal logic",
+        "location": "packages/next/server/dev/hot-reloader.ts:122",
+        "recommendation": "Add JSDoc explaining the memory leak fix"
+      },
+      {
+        "id": "f2",
+        "category": "performance",
+        "severity": "medium",
+        "message": "Consider implementing maximum watcher limit",
+        "location": "packages/next/server/dev/hot-reloader.ts:124",
+        "recommendation": "Add MAX_WATCHERS constant to prevent unbounded growth"
+      }
+    ]
+  },
+  "educationalRecommendations": {
+    "validationStats": {
+      "totalChecked": 12,
+      "valid": 11,
+      "invalid": 1,
+      "replaced": 0
+    },
+    "prioritizedTopics": [
+      {
+        "id": "t1",
+        "topic": "architectureDesign",
+        "priority": "IMMEDIATE",
+        "title": "Software Architecture & Design Patterns",
+        "description": "Learn SOLID principles, reduce coupling, and prevent circular dependencies",
+        "prFindings": 1,
+        "repoIssues": 8,
+        "resources": [
+          {
+            "type": "guide",
+            "title": "Dependency Inversion Principle",
+            "url": "https://martinfowler.com/articles/dipInTheWild.html",
+            "validated": true
+          },
+          {
+            "type": "example",
+            "title": "Disposal Pattern Implementation",
+            "code": "interface IDisposable {\n  dispose(): void | Promise<void>;\n}"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "topic": "performance",
+        "priority": "IMMEDIATE",
+        "title": "Performance Optimization",
+        "description": "Implement resource limits and optimize watchers",
+        "prFindings": 1,
+        "repoIssues": 5,
+        "resources": [
+          {
+            "type": "guide",
+            "title": "Node.js Performance Best Practices",
+            "url": "https://nodejs.org/en/docs/guides/simple-profiling/",
+            "validated": true
+          }
+        ]
+      }
+    ]
+  },
+  "skillProgression": {
+    "timeRange": "3 months",
+    "skills": [
+      {
+        "name": "Memory Management",
+        "current": 77,
+        "previous": 72,
+        "trend": "up",
+        "change": 5,
+        "history": [
+          { "date": "2025-03-28", "value": 72 },
+          { "date": "2025-04-28", "value": 74 },
+          { "date": "2025-05-28", "value": 75 },
+          { "date": "2025-06-28", "value": 77 }
+        ]
+      },
+      {
+        "name": "Documentation",
+        "current": 45,
+        "previous": 45,
+        "trend": "stable",
+        "change": 0,
+        "history": [
+          { "date": "2025-03-28", "value": 45 },
+          { "date": "2025-04-28", "value": 44 },
+          { "date": "2025-05-28", "value": 45 },
+          { "date": "2025-06-28", "value": 45 }
+        ]
+      },
+      {
+        "name": "Security Awareness",
+        "current": 65,
+        "previous": 63,
+        "trend": "up",
+        "change": 2,
+        "history": [
+          { "date": "2025-03-28", "value": 63 },
+          { "date": "2025-04-28", "value": 63 },
+          { "date": "2025-05-28", "value": 64 },
+          { "date": "2025-06-28", "value": 65 }
+        ]
+      }
+    ]
+  },
+  "recentAnalyses": [
+    {
+      "id": "a1",
+      "prNumber": 45678,
+      "title": "Fix memory leak in development server",
+      "score": 88,
+      "status": "approved",
+      "timestamp": "2025-06-28T00:42:41.557Z"
+    },
+    {
+      "id": "a2",
+      "prNumber": 45677,
+      "title": "Update webpack configuration",
+      "score": 76,
+      "status": "needs-work",
+      "timestamp": "2025-06-27T18:30:00.000Z"
+    },
+    {
+      "id": "a3",
+      "prNumber": 45676,
+      "title": "Add new API route handlers",
+      "score": 92,
+      "status": "approved",
+      "timestamp": "2025-06-27T14:15:00.000Z"
+    }
+  ],
+  "teamMetrics": {
+    "averageScore": 85,
+    "totalAnalyses": 127,
+    "approvalRate": 78,
+    "topIssues": [
+      "Missing documentation",
+      "Complex functions",
+      "Insufficient test coverage"
+    ]
+  }
+}

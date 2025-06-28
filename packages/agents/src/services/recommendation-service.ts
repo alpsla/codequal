@@ -10,7 +10,7 @@ import {
   RecommendationPriority 
 } from '../types/recommendation-types';
 import { SkillTrackingService, SkillProgression } from './skill-tracking-service';
-import { AuthenticatedUser } from '../types/auth-types';
+import { AuthenticatedUser } from '../multi-agent/types/auth';
 import { DeveloperSkill } from '@codequal/database/models/skill';
 
 const logger = createLogger('RecommendationService');

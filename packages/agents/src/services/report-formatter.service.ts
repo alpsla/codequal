@@ -34,6 +34,7 @@ export interface StandardReport {
     severityDistribution: ChartData;
     categoryBreakdown: ChartData;
     learningPathProgress: ChartData;
+    skillProgression?: ChartData; // NEW: Historical skill progression
     trendAnalysis?: ChartData;
     dependencyGraph?: GraphData;
     mermaidDiagrams?: Array<{
@@ -191,6 +192,8 @@ export interface EducationalModule {
     resources: EducationalItem[];
   };
   skillGaps: SkillGap[];
+  skillProgressions?: SkillProgressionSummary[]; // NEW: Skill progression history
+  skillRecommendations?: string[]; // NEW: Personalized skill recommendations
   certifications: Certification[];
 }
 
@@ -234,6 +237,20 @@ export interface SkillGap {
   requiredLevel: number; // 1-10
   importance: 'low' | 'medium' | 'high';
   resources: string[]; // Educational item IDs
+}
+
+export interface SkillProgressionSummary {
+  skill: string;
+  previousLevel: number;
+  currentLevel: number;
+  improvement: number;
+  trend: 'improving' | 'maintaining' | 'declining';
+  recentActivity: {
+    prCount: number;
+    avgComplexity: number;
+    successRate: number;
+    timespan: string;
+  };
 }
 
 export interface Certification {
@@ -301,6 +318,18 @@ export interface InsightsModule {
   patterns: Pattern[];
   predictions: Prediction[];
   contextualAdvice: ContextualAdvice[];
+  pendingIssues?: PendingIssue[]; // Repository-wide pending issues
+}
+
+export interface PendingIssue {
+  id: string;
+  title: string;
+  description: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  category: string;
+  createdAt: Date;
+  source: 'historical' | 'deepwiki' | 'previous-analysis';
+  status: 'open' | 'in-progress' | 'deferred';
 }
 
 export interface Insight {
@@ -311,14 +340,18 @@ export interface Insight {
   category: string;
   evidence: string[];
   visualization?: any;
+  importance?: 'low' | 'medium' | 'high'; // Optional for backward compatibility
+  source?: string; // Optional source identifier
 }
 
 export interface Pattern {
+  id?: string; // Optional for backward compatibility
   name: string;
   description: string;
   occurrences: number;
   trend: 'increasing' | 'stable' | 'decreasing';
   recommendation: string;
+  confidence?: number; // Optional confidence score
 }
 
 export interface Prediction {
@@ -403,7 +436,7 @@ export class ReportFormatterService {
       modules: {
         findings: this.buildFindingsModule(analysisResult),
         recommendations: this.buildRecommendationsModule(recommendationModule, analysisResult),
-        educational: this.buildEducationalModule(compiledEducationalData),
+        educational: this.buildEducationalModule(compiledEducationalData, analysisResult),
         metrics: this.buildMetricsModule(analysisResult),
         insights: this.buildInsightsModule(analysisResult, recommendationModule)
       },
@@ -457,8 +490,14 @@ export class ReportFormatterService {
       educationalData.educational?.learningPath
     );
     
+    // Enhance executive summary with DeepWiki context if available
+    let executiveSummary = analysisResult.report?.summary || analysisResult.summary || 'Analysis completed successfully.';
+    if (analysisResult.deepWikiData?.summary) {
+      executiveSummary += ` ${analysisResult.deepWikiData.summary}`;
+    }
+    
     return {
-      executiveSummary: analysisResult.report?.summary || analysisResult.summary || 'Analysis completed successfully.',
+      executiveSummary,
       analysisScore,
       riskLevel,
       totalFindings,
@@ -545,7 +584,7 @@ export class ReportFormatterService {
   /**
    * Build educational module
    */
-  private buildEducationalModule(compiledEducationalData: any): EducationalModule {
+  private buildEducationalModule(compiledEducationalData: any, analysisResult: any): EducationalModule {
     const educationalData = compiledEducationalData?.educational || {};
     
     // Build learning path
@@ -574,23 +613,62 @@ export class ReportFormatterService {
       resources: this.formatEducationalItems(educationalData.content?.resources, 'resource')
     };
     
-    // Build skill gaps
-    const skillGaps: SkillGap[] = (educationalData.insights?.skillGaps || []).map((gap: any) => ({
-      skill: gap.skill,
-      currentLevel: gap.currentLevel || 3,
-      requiredLevel: gap.requiredLevel || 7,
-      importance: gap.importance || 'medium',
-      resources: gap.resources || []
-    }));
+    // Build skill gaps - enhance with actual user skill levels if available
+    const userSkills = analysisResult.userSkills || [];
+    const skillGaps: SkillGap[] = (educationalData.insights?.skillGaps || []).map((gap: any) => {
+      // Find matching user skill
+      const userSkill = userSkills.find((s: any) => 
+        s.categoryName?.toLowerCase().includes(gap.skill?.toLowerCase()) ||
+        gap.skill?.toLowerCase().includes(s.categoryName?.toLowerCase())
+      );
+      
+      return {
+        skill: gap.skill,
+        currentLevel: userSkill?.level || gap.currentLevel || 3,
+        requiredLevel: gap.requiredLevel || 7,
+        importance: gap.importance || 'medium',
+        resources: gap.resources || []
+      };
+    });
     
     // Add relevant certifications
     const certifications = this.suggestCertifications(educationalData.insights?.relatedTopics || []);
+    
+    // Build skill progression summaries
+    const skillProgressions: SkillProgressionSummary[] = [];
+    const progressionData = analysisResult.skillProgressions || {};
+    
+    for (const [categoryId, progression] of Object.entries(progressionData)) {
+      if (progression && typeof progression === 'object') {
+        const prog = progression as any;
+        const skillName = userSkills.find((s: any) => s.categoryId === categoryId)?.categoryName || categoryId;
+        
+        skillProgressions.push({
+          skill: skillName,
+          previousLevel: prog.previousLevel || 0,
+          currentLevel: prog.newLevel || 0,
+          improvement: prog.improvement || 0,
+          trend: prog.trend || 'maintaining',
+          recentActivity: prog.recentActivity || {
+            prCount: 0,
+            avgComplexity: 0,
+            successRate: 0,
+            timespan: '3m'
+          }
+        });
+      }
+    }
+    
+    // Get skill recommendations
+    const skillRecommendations = analysisResult.skillRecommendations || [];
     
     return {
       summary: `Comprehensive learning path with ${learningPath.steps.length} steps to address identified issues`,
       learningPath,
       content,
       skillGaps,
+      skillProgressions: skillProgressions.length > 0 ? skillProgressions : undefined,
+      skillRecommendations: skillRecommendations.length > 0 ? skillRecommendations : undefined,
       certifications
     };
   }
@@ -601,11 +679,21 @@ export class ReportFormatterService {
   private buildMetricsModule(analysisResult: any): MetricsModule {
     const overallScore = this.calculateAnalysisScore(analysisResult);
     
+    // Include skill-based adjustments if available
+    const userSkills = analysisResult.userSkills || [];
+    const skillAdjustment = this.calculateSkillAdjustment(userSkills);
+    
     const scores = {
       overall: this.createMetricScore('Overall Quality', overallScore),
-      security: this.createMetricScore('Security', this.calculateCategoryScore(analysisResult, 'security')),
-      maintainability: this.createMetricScore('Maintainability', this.calculateCategoryScore(analysisResult, 'codeQuality')),
-      performance: this.createMetricScore('Performance', this.calculateCategoryScore(analysisResult, 'performance')),
+      security: this.createMetricScore('Security', this.calculateCategoryScore(analysisResult, 'security'), 
+        userSkills.find((s: any) => s.categoryId === 'security'),
+        analysisResult.skillProgressions?.security),
+      maintainability: this.createMetricScore('Maintainability', this.calculateCategoryScore(analysisResult, 'codeQuality'),
+        userSkills.find((s: any) => s.categoryId === 'codeQuality'),
+        analysisResult.skillProgressions?.codeQuality),
+      performance: this.createMetricScore('Performance', this.calculateCategoryScore(analysisResult, 'performance'),
+        userSkills.find((s: any) => s.categoryId === 'performance'),
+        analysisResult.skillProgressions?.performance),
       reliability: this.createMetricScore('Reliability', this.calculateReliabilityScore(analysisResult))
     };
     
@@ -656,12 +744,93 @@ export class ReportFormatterService {
     const predictions = this.generatePredictions(analysisResult);
     const contextualAdvice = this.generateContextualAdvice(analysisResult, recommendationModule);
     
+    // Add DeepWiki insights if available
+    if (analysisResult.deepWikiData?.insights) {
+      analysisResult.deepWikiData.insights.forEach((insight: string, index: number) => {
+        if (index < 3) { // Add top 3 DeepWiki insights
+          keyInsights.push({
+            id: `deepwiki_insight_${index}`,
+            title: 'DeepWiki Repository Insight',
+            description: insight,
+            significance: 'high',
+            category: 'repository-context',
+            evidence: [],
+            source: 'DeepWiki Analysis'
+          });
+        }
+      });
+    }
+    
+    // Add DeepWiki patterns if available
+    if (analysisResult.deepWikiData?.patterns) {
+      analysisResult.deepWikiData.patterns.forEach((pattern: string, index: number) => {
+        if (index < 2) { // Add top 2 DeepWiki patterns
+          patterns.push({
+            id: `deepwiki_pattern_${index}`,
+            name: 'Repository Pattern',
+            description: pattern,
+            occurrences: 1,
+            trend: 'stable',
+            recommendation: 'Pattern detected from historical repository analysis',
+            confidence: analysisResult.deepWikiData.metrics?.avgConfidence || 0.8
+          });
+        }
+      });
+    }
+    
+    // Extract pending issues from DeepWiki chunks or analysis
+    const pendingIssues: PendingIssue[] = [];
+    if (analysisResult.deepWikiData?.chunks) {
+      // Look for chunks that mention unresolved or pending issues
+      analysisResult.deepWikiData.chunks.forEach((chunk: any, index: number) => {
+        const content = chunk.content.toLowerCase();
+        const metadata = chunk.metadata || {};
+        
+        // Check if this chunk discusses pending/unresolved issues
+        if (content.includes('pending') || content.includes('unresolved') || 
+            content.includes('technical debt') || content.includes('todo') ||
+            metadata.analysis_type === 'pending_issues') {
+          pendingIssues.push({
+            id: `pending_${index}`,
+            title: 'Repository Issue',
+            description: chunk.content.substring(0, 200) + (chunk.content.length > 200 ? '...' : ''),
+            severity: this.extractSeverityFromContent(chunk.content),
+            category: metadata.analysis_type || 'general',
+            createdAt: new Date(metadata.created_at || Date.now()),
+            source: 'deepwiki',
+            status: 'open'
+          });
+        }
+      });
+    }
+    
+    // Add any high-severity findings as pending issues if they're likely to persist
+    Object.entries(analysisResult.findings || {}).forEach(([category, findings]: [string, any]) => {
+      if (Array.isArray(findings)) {
+        findings.filter((f: any) => f.severity === 'critical' || f.severity === 'high')
+          .slice(0, 3) // Top 3 from each category
+          .forEach((finding: any, index: number) => {
+            pendingIssues.push({
+              id: `pending_${category}_${index}`,
+              title: finding.title || finding.description,
+              description: finding.recommendation || 'Requires immediate attention',
+              severity: finding.severity,
+              category,
+              createdAt: new Date(),
+              source: 'previous-analysis',
+              status: 'open'
+            });
+          });
+      }
+    });
+    
     return {
-      summary: `${keyInsights.length} key insights identified from the analysis`,
+      summary: `${keyInsights.length} key insights identified from the analysis${analysisResult.deepWikiData ? ' (enhanced with DeepWiki context)' : ''}${pendingIssues.length > 0 ? `. ${pendingIssues.length} pending repository issues detected.` : ''}`,
       keyInsights,
       patterns,
       predictions,
-      contextualAdvice
+      contextualAdvice,
+      pendingIssues: pendingIssues.length > 0 ? pendingIssues : undefined
     };
   }
   
@@ -669,7 +838,7 @@ export class ReportFormatterService {
    * Build visualization data
    */
   private buildVisualizations(analysisResult: any, educationalData: any): StandardReport['visualizations'] {
-    return {
+    const visualizations: StandardReport['visualizations'] = {
       severityDistribution: {
         type: 'pie',
         title: 'Finding Severity Distribution',
@@ -714,6 +883,54 @@ export class ReportFormatterService {
         }
       }
     };
+    
+    // Add skill progression chart if available
+    if (analysisResult.skillProgressions && Object.keys(analysisResult.skillProgressions).length > 0) {
+      const skillNames: string[] = [];
+      const improvements: number[] = [];
+      const trends: string[] = [];
+      
+      for (const [categoryId, progression] of Object.entries(analysisResult.skillProgressions)) {
+        if (progression && typeof progression === 'object') {
+          const prog = progression as any;
+          const userSkills = analysisResult.userSkills || [];
+          const skillName = userSkills.find((s: any) => s.categoryId === categoryId)?.categoryName || categoryId;
+          
+          skillNames.push(skillName);
+          improvements.push(prog.improvement || 0);
+          trends.push(prog.trend || 'maintaining');
+        }
+      }
+      
+      visualizations.skillProgression = {
+        type: 'line',
+        title: 'Skill Progression (Last 3 Months)',
+        data: {
+          labels: skillNames,
+          datasets: [{
+            label: 'Skill Improvement',
+            data: improvements,
+            borderColor: improvements.map(imp => imp > 0 ? '#28a745' : imp < 0 ? '#dc3545' : '#6c757d'),
+            backgroundColor: improvements.map(imp => imp > 0 ? 'rgba(40, 167, 69, 0.1)' : imp < 0 ? 'rgba(220, 53, 69, 0.1)' : 'rgba(108, 117, 125, 0.1)'),
+            tension: 0.4
+          }]
+        },
+        options: {
+          plugins: {
+            tooltip: {
+              callbacks: {
+                afterLabel: (context: any) => {
+                  const trend = trends[context.dataIndex];
+                  return `Trend: ${trend}`;
+                }
+              }
+            }
+          }
+        }
+      };
+    }
+    
+    return visualizations;
   }
   
   /**
@@ -766,12 +983,30 @@ export class ReportFormatterService {
     
     // Convert to human-readable format
     if (totalHours < 8) {
-      return `${Math.round(totalHours)} hours`;
+      return 'Minimal effort';
     } else if (totalHours < 40) {
-      return `${Math.round(totalHours / 8)} days`;
+      return 'Moderate effort';
+    } else if (totalHours < 160) {
+      return 'Significant effort';
     } else {
-      return `${Math.round(totalHours / 40)} weeks`;
+      return 'Substantial effort';
     }
+  }
+  
+  private extractSeverityFromContent(content: string): 'low' | 'medium' | 'high' | 'critical' {
+    const lowerContent = content.toLowerCase();
+    if (lowerContent.includes('critical') || lowerContent.includes('severe') || 
+        lowerContent.includes('vulnerability')) {
+      return 'critical';
+    }
+    if (lowerContent.includes('high') || lowerContent.includes('important') || 
+        lowerContent.includes('security')) {
+      return 'high';
+    }
+    if (lowerContent.includes('medium') || lowerContent.includes('moderate')) {
+      return 'medium';
+    }
+    return 'low';
   }
   
   private parseTimeToHours(timeStr: string): number {
@@ -887,7 +1122,7 @@ export class ReportFormatterService {
         name: 'Phase 1: Critical Issues',
         description: 'Address critical security and stability issues immediately',
         recommendations: (criticalRecs || []).map(r => r.id),
-        estimatedDuration: '1 week',
+        estimatedDuration: 'Immediate',
         dependencies: []
       });
     }
@@ -897,7 +1132,7 @@ export class ReportFormatterService {
         name: 'Phase 2: High Priority',
         description: 'Resolve high-priority issues affecting functionality',
         recommendations: (highRecs || []).map(r => r.id),
-        estimatedDuration: '2 weeks',
+        estimatedDuration: 'Short-term',
         dependencies: criticalRecs.length > 0 ? ['Phase 1: Critical Issues'] : []
       });
     }
@@ -907,7 +1142,7 @@ export class ReportFormatterService {
         name: 'Phase 3: Improvements',
         description: 'Implement improvements for better maintainability',
         recommendations: (mediumRecs || []).map(r => r.id),
-        estimatedDuration: '3 weeks',
+        estimatedDuration: 'Medium-term',
         dependencies: (phases || []).map(p => p.name)
       });
     }
@@ -917,20 +1152,28 @@ export class ReportFormatterService {
         name: 'Phase 4: Optimizations',
         description: 'Optional optimizations and nice-to-have features',
         recommendations: (lowRecs || []).map(r => r.id),
-        estimatedDuration: '2 weeks',
+        estimatedDuration: 'Long-term',
         dependencies: []
       });
     }
     
-    const totalWeeks = phases.reduce((sum, phase) => {
-      const weeks = parseInt(phase.estimatedDuration.match(/\d+/)?.[0] || '0');
-      return sum + weeks;
-    }, 0);
+    // Calculate overall priority based on phases
+    const hasCritical = phases.some(p => p.name.includes('Critical'));
+    const hasHighPriority = phases.some(p => p.name.includes('High Priority'));
+    
+    let overallTimeframe = 'Variable';
+    if (hasCritical) {
+      overallTimeframe = 'Immediate action required';
+    } else if (hasHighPriority) {
+      overallTimeframe = 'Short to medium-term focus';
+    } else if (phases.length > 0) {
+      overallTimeframe = 'Ongoing improvements';
+    }
     
     return {
       phases,
-      totalEstimatedTime: `${totalWeeks} weeks`,
-      teamSizeRecommendation: totalWeeks > 4 ? 3 : 2
+      totalEstimatedTime: overallTimeframe,
+      teamSizeRecommendation: phases.length > 2 ? 3 : 2
     };
   }
   
@@ -957,17 +1200,17 @@ export class ReportFormatterService {
       return 'No issues found in the analysis';
     }
 
-    const criticalCount = Object.values(categories).reduce((sum: number, cat: any) => {
+    const criticalCount: number = Object.values(categories).reduce((sum: number, cat: any) => {
       return sum + (cat.findings?.filter((f: any) => f.severity === 'critical')?.length || 0);
     }, 0);
 
-    const highCount = Object.values(categories).reduce((sum: number, cat: any) => {
+    const highCount: number = Object.values(categories).reduce((sum: number, cat: any) => {
       return sum + (cat.findings?.filter((f: any) => f.severity === 'high')?.length || 0);
     }, 0);
 
-    if (criticalCount > 0) {
+    if ((criticalCount as number) > 0) {
       return `Found ${totalCount} issues with ${criticalCount} critical security concerns requiring immediate attention`;
-    } else if (highCount > 0) {
+    } else if ((highCount as number) > 0) {
       return `Found ${totalCount} issues with ${highCount} high-priority items to address`;
     } else {
       return `Found ${totalCount} minor issues that can be addressed gradually`;
@@ -1025,7 +1268,13 @@ export class ReportFormatterService {
     return certifications;
   }
   
-  private createMetricScore(name: string, score: number): MetricScore {
+  private calculateSkillAdjustment(userSkills: any[]): number {
+    if (userSkills.length === 0) return 0;
+    const avgSkillLevel = userSkills.reduce((sum: number, skill: any) => sum + (skill.level || 0), 0) / userSkills.length;
+    return avgSkillLevel > 5 ? 5 : 0; // Bonus points for skilled developers
+  }
+  
+  private createMetricScore(name: string, score: number, userSkill?: any, skillProgression?: any): MetricScore {
     let rating: 'A' | 'B' | 'C' | 'D' | 'F';
     if (score >= 90) rating = 'A';
     else if (score >= 80) rating = 'B';
@@ -1033,11 +1282,34 @@ export class ReportFormatterService {
     else if (score >= 60) rating = 'D';
     else rating = 'F';
     
+    let description = this.getScoreDescription(name, score);
+    
+    // Add skill context if available
+    if (userSkill) {
+      description += ` (Your skill level: ${userSkill.level}/10`;
+      
+      // Add progression info if available
+      if (skillProgression) {
+        const trend = skillProgression.trend;
+        const improvement = skillProgression.improvement;
+        
+        if (trend === 'improving') {
+          description += `, ↑${improvement} points in last 3 months`;
+        } else if (trend === 'declining') {
+          description += `, ↓${Math.abs(improvement)} points in last 3 months`;
+        } else {
+          description += ', stable';
+        }
+      }
+      
+      description += ')';
+    }
+    
     return {
       name,
       score,
       rating,
-      description: this.getScoreDescription(name, score),
+      description,
       factors: this.getScoreFactors(name)
     };
   }
@@ -1127,6 +1399,48 @@ export class ReportFormatterService {
         category: 'education',
         evidence: [`${recommendationModule?.summary?.totalRecommendations || 0} recommendations generated`]
       });
+    }
+    
+    // Skill progression insights
+    if (analysisResult.skillProgressions) {
+      const improvingSkills: string[] = [];
+      const decliningSkills: string[] = [];
+      
+      for (const [categoryId, progression] of Object.entries(analysisResult.skillProgressions)) {
+        if (progression && typeof progression === 'object') {
+          const prog = progression as any;
+          const userSkills = analysisResult.userSkills || [];
+          const skillName = userSkills.find((s: any) => s.categoryId === categoryId)?.categoryName || categoryId;
+          
+          if (prog.trend === 'improving' && prog.improvement > 0) {
+            improvingSkills.push(`${skillName} (+${prog.improvement})`);
+          } else if (prog.trend === 'declining' && prog.improvement < 0) {
+            decliningSkills.push(`${skillName} (${prog.improvement})`);
+          }
+        }
+      }
+      
+      if (improvingSkills.length > 0) {
+        insights.push({
+          id: 'insight_skill_improvement',
+          title: 'Skills Improving',
+          description: `Great progress in: ${improvingSkills.join(', ')}`,
+          significance: 'high',
+          category: 'skill-development',
+          evidence: ['Based on last 3 months of PR analysis']
+        });
+      }
+      
+      if (decliningSkills.length > 0) {
+        insights.push({
+          id: 'insight_skill_decline',
+          title: 'Skills Need Attention',
+          description: `Skills declining: ${decliningSkills.join(', ')}. Consider focused practice.`,
+          significance: 'medium',
+          category: 'skill-development',
+          evidence: ['Based on last 3 months of PR analysis']
+        });
+      }
     }
     
     return insights;

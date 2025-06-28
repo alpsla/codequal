@@ -9,16 +9,28 @@ import { PRSkillAssessmentService } from '../../services/pr-skill-assessment-ser
 import { SkillAwareRAGService } from '../../services/skill-aware-rag-service';
 
 // Mock authenticated user
-const mockAuthenticatedUser = {
+const mockAuthenticatedUser: any = {
   id: 'test-user-123',
   email: 'test@example.com',
   name: 'Test Developer',
-  permissions: ['read', 'write'],
-  role: 'developer',
+  permissions: {
+    repositories: {},
+    organizations: [],
+    globalPermissions: ['read', 'write'],
+    quotas: {
+      requestsPerHour: 1000,
+      maxConcurrentExecutions: 5,
+      storageQuotaMB: 100
+    }
+  },
+  role: 'user',
   status: 'active',
   session: {
     token: 'mock-token',
-    expiresAt: new Date(Date.now() + 86400000)
+    expiresAt: new Date(Date.now() + 86400000),
+    fingerprint: 'test-fingerprint',
+    ipAddress: '127.0.0.1',
+    userAgent: 'test-agent'
   }
 };
 
@@ -556,19 +568,27 @@ describe('Skill Tracking + Educational Agent Integration E2E', () => {
 
     it('should validate and sanitize skill assessment data', async () => {
       // Provide invalid skill data
-      const invalidAssessments = [
+      const invalidAssessments: any[] = [
         {
-          categoryId: 'security',
-          skillLevel: -5, // Invalid negative
+          category: 'security',
+          demonstratedLevel: -5, // Invalid negative
           confidence: 2.5, // Invalid > 1.0
-          evidence: [],
+          evidence: {
+            type: 'pr_analysis',
+            sourceId: 'PR-123',
+            description: 'Invalid assessment'
+          },
           timestamp: new Date()
         },
         {
-          categoryId: 'performance',
-          skillLevel: 15, // Invalid > 10
+          category: 'performance',
+          demonstratedLevel: 15, // Invalid > 10
           confidence: -0.2, // Invalid negative
-          evidence: ['test'],
+          evidence: {
+            type: 'pr_analysis',
+            sourceId: 'PR-124',
+            description: 'Another invalid assessment'
+          },
           timestamp: new Date()
         }
       ];

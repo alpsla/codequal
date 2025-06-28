@@ -1,5 +1,4 @@
 import { Router, Request, Response } from 'express';
-import '../types/express.d.ts';
 
 export const analysisRoutes = Router();
 

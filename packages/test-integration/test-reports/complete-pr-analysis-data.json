@@ -1,0 +1,334 @@
+{
+  "metadata": {
+    "analysisId": "analysis-1751054634263",
+    "repository": "https://github.com/vercel/next.js",
+    "prNumber": 45678,
+    "title": "Fix memory leak in development server",
+    "timestamp": "2025-06-27T20:03:54.263Z",
+    "executionTime": 15234,
+    "modelsUsed": {
+      "orchestrator": "deepseek/deepseek-chat-v3-0324",
+      "security": "deepseek/deepseek-chat-v3-0324",
+      "performance": "aion-labs/aion-1.0-mini",
+      "architecture": "deepseek/deepseek-chat-v3-0324",
+      "codeQuality": "deepseek/deepseek-chat-v3-0324",
+      "dependencies": "deepseek/deepseek-chat-v3-0324",
+      "educational": "openai/gpt-4o",
+      "reporter": "aion-labs/aion-1.0-mini"
+    },
+    "totalTokens": 24567,
+    "totalCost": 0.018934
+  },
+  "deepWikiContext": {
+    "repositoryOverview": {
+      "name": "vercel/next.js",
+      "description": "The React Framework for Production",
+      "primaryLanguage": "TypeScript",
+      "totalFiles": 3847,
+      "totalLines": 485920,
+      "architecture": {
+        "pattern": "Modular Monorepo",
+        "mainComponents": [
+          "Core",
+          "Compiler",
+          "Runtime",
+          "Dev Server"
+        ],
+        "dependencies": 156
+      }
+    },
+    "existingIssues": {
+      "total": 23,
+      "byCategory": {
+        "security": 2,
+        "performance": 5,
+        "architecture": 8,
+        "codeQuality": 6,
+        "dependencies": 2
+      },
+      "critical": [
+        {
+          "id": "SEC-001",
+          "category": "security",
+          "severity": "high",
+          "message": "Potential XSS vulnerability in server-side rendering",
+          "file": "packages/next/server/render.tsx",
+          "line": 342,
+          "firstDetected": "2025-06-15",
+          "status": "pending"
+        },
+        {
+          "id": "PERF-003",
+          "category": "performance",
+          "severity": "medium",
+          "message": "Inefficient bundle splitting algorithm",
+          "file": "packages/next/build/webpack/plugins/build-manifest-plugin.ts",
+          "line": 128,
+          "firstDetected": "2025-06-20",
+          "status": "pending"
+        }
+      ]
+    },
+    "codePatterns": {
+      "common": [
+        "React Hooks",
+        "TypeScript Generics",
+        "Async/Await"
+      ],
+      "antiPatterns": [
+        "Callback Hell",
+        "God Objects"
+      ],
+      "frameworkSpecific": [
+        "Next.js App Router",
+        "Server Components"
+      ]
+    }
+  },
+  "summary": {
+    "overallScore": 88,
+    "recommendation": "APPROVE_WITH_MINOR_SUGGESTIONS",
+    "criticalIssues": 0,
+    "totalFindings": 7,
+    "categoryScores": {
+      "security": 95,
+      "performance": 90,
+      "architecture": 85,
+      "codeQuality": 82,
+      "dependencies": 100,
+      "testing": 88
+    }
+  },
+  "pendingIssues": {
+    "total": 21,
+    "addressed": 2,
+    "remaining": {
+      "security": 2,
+      "performance": 5,
+      "architecture": 8,
+      "codeQuality": 6,
+      "dependencies": 2
+    },
+    "addressedInThisPR": [
+      {
+        "id": "PERF-005",
+        "category": "performance",
+        "message": "Memory leak in hot reload",
+        "status": "fixed"
+      },
+      {
+        "id": "ARCH-004",
+        "category": "architecture",
+        "message": "Missing resource disposal pattern",
+        "status": "fixed"
+      }
+    ]
+  },
+  "agentFindings": {
+    "security": {
+      "findings": [],
+      "toolsUsed": [
+        {
+          "tool": "CodeQL",
+          "result": "No security vulnerabilities detected",
+          "confidence": 0.95
+        },
+        {
+          "tool": "Semgrep",
+          "result": "All security patterns passed",
+          "confidence": 0.92
+        }
+      ],
+      "score": 95,
+      "summary": "No security issues found. Code follows secure practices."
+    },
+    "performance": {
+      "findings": [
+        {
+          "severity": "medium",
+          "message": "Consider implementing maximum watcher limit",
+          "suggestion": "Add MAX_WATCHERS constant",
+          "file": "packages/next/server/dev/hot-reloader.ts",
+          "line": 124
+        }
+      ],
+      "toolsUsed": [
+        {
+          "tool": "Performance Profiler",
+          "result": {
+            "memoryImpact": "-15%",
+            "cpuImpact": "Negligible",
+            "responseTime": "No change"
+          }
+        },
+        {
+          "tool": "Lighthouse CI",
+          "result": {
+            "before": 87,
+            "after": 92,
+            "improvement": "+5 points"
+          }
+        }
+      ],
+      "score": 90,
+      "summary": "Significant memory usage improvement detected."
+    },
+    "architecture": {
+      "findings": [
+        {
+          "severity": "low",
+          "message": "Module disposal pattern could be extracted",
+          "suggestion": "Create reusable disposal utility"
+        }
+      ],
+      "toolsUsed": [
+        {
+          "tool": "Dependency Graph Analyzer",
+          "result": {
+            "coupling": "Low",
+            "cohesion": "High",
+            "complexity": "Acceptable"
+          }
+        }
+      ],
+      "score": 85,
+      "summary": "Good architectural decisions with minor improvement opportunities."
+    },
+    "codeQuality": {
+      "findings": [
+        {
+          "severity": "low",
+          "message": "Missing JSDoc documentation",
+          "file": "packages/next/server/dev/hot-reloader.ts",
+          "line": 122
+        },
+        {
+          "severity": "low",
+          "message": "Magic number should be constant",
+          "file": "test/development/hot-reload-memory.test.ts",
+          "line": 10
+        }
+      ],
+      "toolsUsed": [
+        {
+          "tool": "ESLint",
+          "result": "2 warnings, 0 errors"
+        },
+        {
+          "tool": "SonarQube",
+          "result": {
+            "maintainability": "A",
+            "reliability": "A",
+            "duplications": "0%"
+          }
+        }
+      ],
+      "score": 82,
+      "summary": "Clean code with minor documentation improvements needed."
+    },
+    "dependencies": {
+      "findings": [],
+      "toolsUsed": [
+        {
+          "tool": "npm audit",
+          "result": "0 vulnerabilities"
+        },
+        {
+          "tool": "License Checker",
+          "result": "All licenses compatible"
+        }
+      ],
+      "score": 100,
+      "summary": "No dependency issues detected."
+    }
+  },
+  "educationalContent": {
+    "skillsDetected": [
+      "Memory Management",
+      "Resource Disposal",
+      "Testing Patterns"
+    ],
+    "learningResources": [
+      "Node.js Memory Management Guide",
+      "TypeScript Best Practices"
+    ]
+  },
+  "visualizations": {
+    "scoreRadarChart": {
+      "type": "radar",
+      "data": {
+        "labels": [
+          "Security",
+          "Performance",
+          "Architecture",
+          "Code Quality",
+          "Dependencies",
+          "Testing"
+        ],
+        "values": [
+          95,
+          90,
+          85,
+          82,
+          100,
+          88
+        ]
+      }
+    },
+    "pendingIssuesTrend": {
+      "type": "line",
+      "data": {
+        "labels": [
+          "2 weeks ago",
+          "1 week ago",
+          "This PR"
+        ],
+        "total": [
+          25,
+          23,
+          21
+        ],
+        "critical": [
+          3,
+          2,
+          0
+        ]
+      }
+    },
+    "toolResultsSummary": {
+      "type": "table",
+      "data": [
+        {
+          "agent": "Security",
+          "tools": 2,
+          "findings": 0,
+          "score": 95
+        },
+        {
+          "agent": "Performance",
+          "tools": 2,
+          "findings": 1,
+          "score": 90
+        },
+        {
+          "agent": "Architecture",
+          "tools": 1,
+          "findings": 1,
+          "score": 85
+        },
+        {
+          "agent": "Code Quality",
+          "tools": 2,
+          "findings": 2,
+          "score": 82
+        },
+        {
+          "agent": "Dependencies",
+          "tools": 2,
+          "findings": 0,
+          "score": 100
+        }
+      ]
+    }
+  }
+}

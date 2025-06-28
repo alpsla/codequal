@@ -1,0 +1,70 @@
+{
+  "testRunId": "test-run-1751048143736",
+  "timestamp": "2025-06-27T18:15:43.766Z",
+  "summary": {
+    "totalCost": 0,
+    "executionTime": 30,
+    "errorRate": 0,
+    "testPassRate": 0.3333333333333333,
+    "optimalModels": {
+      "quickAnalysis": "claude-3-sonnet",
+      "comprehensiveAnalysis": "claude-3-opus",
+      "deepAnalysis": "gpt-4"
+    }
+  },
+  "alerts": [
+    "TEST_FAILURES: 2 tests failed"
+  ],
+  "metrics": {
+    "performance": {
+      "totalExecutionTime": 30,
+      "componentLatency": {
+        "orchestrator": 0,
+        "deepWiki": 0,
+        "vectorDB": 0,
+        "agents": {},
+        "reportGeneration": 0
+      },
+      "apiLatency": {
+        "p50": 0,
+        "p95": 0,
+        "p99": 0
+      },
+      "throughput": {
+        "requestsPerSecond": 0,
+        "analysesPerHour": 0
+      }
+    },
+    "cost": {
+      "totalCost": 0,
+      "costByModel": {},
+      "costByComponent": {},
+      "tokenUsage": {
+        "totalTokens": 0,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "compressionRatio": 1
+      },
+      "projectedMonthlyCost": 0
+    },
+    "quality": {
+      "analysisAccuracy": {
+        "falsePositives": 0,
+        "falseNegatives": 0,
+        "precision": 0,
+        "recall": 0
+      },
+      "findingQuality": {
+        "totalFindings": 0,
+        "criticalFindings": 0,
+        "actionableFindings": 0,
+        "duplicateFindings": 0
+      },
+      "educationalQuality": {
+        "relevantResources": 0,
+        "skillGapsCovered": 0,
+        "learningPathCompleteness": 0
+      }
+    }
+  }
+}

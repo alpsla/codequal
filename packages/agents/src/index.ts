@@ -26,3 +26,9 @@ export * from './prompts/prompt-loader';
 // Researcher
 export * from './researcher/researcher-agent';
 export * from './researcher/researcher-service';
+
+// Services
+export * from './services/skill-tracking-service';
+export * from './services/report-formatter.service';
+export * from './services/recommendation-service';
+export * from './services/educational-compilation-service';

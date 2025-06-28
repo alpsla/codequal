@@ -1,0 +1,404 @@
+{
+  "analysisResults": {
+    "metadata": {
+      "analysisId": "analysis-1751077505221",
+      "repository": "https://github.com/vercel/next.js",
+      "prNumber": 45678,
+      "title": "Fix memory leak in development server",
+      "author": "john.doe",
+      "timestamp": "2025-06-28T02:25:05.221Z"
+    },
+    "prFindings": [
+      {
+        "category": "codeQuality",
+        "severity": "low",
+        "issue": "Missing JSDoc documentation",
+        "message": "Missing documentation for disposal logic",
+        "location": "packages/next/server/dev/hot-reloader.ts:122",
+        "suggestion": "Add JSDoc explaining the memory leak fix",
+        "context": "Memory leak fix implementation needs documentation"
+      },
+      {
+        "category": "codeQuality",
+        "severity": "low",
+        "issue": "Magic number in test",
+        "message": "Magic number should be constant",
+        "location": "test/development/hot-reload-memory.test.ts:10",
+        "suggestion": "Extract to named constant RELOAD_ITERATIONS",
+        "context": "Test clarity and maintainability"
+      },
+      {
+        "category": "performance",
+        "severity": "medium",
+        "issue": "Missing watcher limit",
+        "message": "Consider implementing maximum watcher limit",
+        "location": "packages/next/server/dev/hot-reloader.ts:124",
+        "suggestion": "Add MAX_WATCHERS constant to prevent unbounded growth",
+        "context": "Preventing edge cases with thousands of modules"
+      },
+      {
+        "category": "architecture",
+        "severity": "low",
+        "issue": "Pattern not generalized",
+        "message": "Resource disposal pattern could be generalized",
+        "location": "packages/next/server/dev/hot-reloader.ts:130-145",
+        "suggestion": "Create reusable DisposableWatcher class",
+        "context": "Reusability across codebase"
+      },
+      {
+        "category": "testing",
+        "severity": "low",
+        "issue": "Missing edge cases",
+        "message": "Edge case testing opportunity",
+        "suggestion": "Consider testing with extreme module counts",
+        "context": "Comprehensive test coverage"
+      }
+    ],
+    "resolvedIssues": [
+      {
+        "id": "PERF-005",
+        "category": "performance",
+        "issue": "Memory leak in hot reload watcher",
+        "howFixed": "Implemented proper resource disposal",
+        "lessonLearned": "Always clean up watchers and listeners"
+      },
+      {
+        "id": "ARCH-004",
+        "category": "architecture",
+        "issue": "Missing abstraction for resource disposal",
+        "howFixed": "Added disposal pattern",
+        "lessonLearned": "Explicit cleanup prevents leaks"
+      }
+    ],
+    "userContext": {
+      "currentSkills": {
+        "memoryManagement": 72,
+        "documentation": 45,
+        "testingPatterns": 82,
+        "securityAwareness": 65,
+        "architectureDesign": 70
+      },
+      "weakestAreas": [
+        "documentation",
+        "securityAwareness"
+      ],
+      "historicalPatterns": [
+        "Often skips documentation",
+        "Good at performance fixes",
+        "Needs improvement in security considerations"
+      ]
+    }
+  },
+  "educationalRecommendations": {
+    "prioritizedTopics": [
+      {
+        "topic": "architectureDesign",
+        "priority": "IMMEDIATE",
+        "score": 49.8,
+        "resources": {
+          "title": "Software Architecture & Design Patterns",
+          "description": "Learn SOLID principles, reduce coupling, and prevent circular dependencies",
+          "resources": [
+            {
+              "type": "guide",
+              "title": "Dependency Inversion Principle",
+              "url": "https://martinfowler.com/articles/dipInTheWild.html",
+              "relevance": "Addresses ARCH-001 tight coupling and ARCH-006 interface segregation"
+            },
+            {
+              "type": "guide",
+              "title": "SOLID Principles in TypeScript",
+              "url": "https://www.typescriptlang.org/docs/handbook/2/classes.html",
+              "relevance": "Foundation for addressing coupling and interface issues"
+            },
+            {
+              "type": "guide",
+              "title": "Circular Dependency Detection",
+              "url": "https://medium.com/visual-development/how-to-fix-nasty-circular-dependency-issues-once-and-for-all-in-javascript-typescript-a04c987cf0de",
+              "relevance": "Directly addresses ARCH-003 circular dependencies"
+            },
+            {
+              "type": "example",
+              "title": "Disposal Pattern Implementation",
+              "code": "// Generalized disposal pattern for ARCH-004\ninterface IDisposable {\n  dispose(): void | Promise<void>;\n}\n\nclass DisposableWatcher implements IDisposable {\n  private watchers = new Map<string, FSWatcher>();\n  \n  watch(path: string): void {\n    const watcher = fs.watch(path);\n    this.watchers.set(path, watcher);\n  }\n  \n  async dispose(): Promise<void> {\n    for (const [path, watcher] of this.watchers) {\n      watcher.close();\n    }\n    this.watchers.clear();\n  }\n}"
+            }
+          ]
+        },
+        "details": {
+          "prFindings": [
+            {
+              "category": "architecture",
+              "severity": "low",
+              "issue": "Pattern not generalized",
+              "message": "Resource disposal pattern could be generalized",
+              "location": "packages/next/server/dev/hot-reloader.ts:130-145",
+              "suggestion": "Create reusable DisposableWatcher class",
+              "context": "Reusability across codebase"
+            }
+          ],
+          "repoIssues": [
+            {
+              "id": "ARCH-001",
+              "severity": "medium",
+              "issue": "Tight coupling",
+              "category": "architecture"
+            },
+            {
+              "id": "ARCH-002",
+              "severity": "low",
+              "issue": "Duplicated router logic",
+              "category": "architecture"
+            },
+            {
+              "id": "ARCH-003",
+              "severity": "medium",
+              "issue": "Circular dependencies",
+              "category": "architecture"
+            },
+            {
+              "id": "ARCH-005",
+              "severity": "medium",
+              "issue": "Inconsistent error handling",
+              "category": "architecture"
+            },
+            {
+              "id": "ARCH-006",
+              "severity": "low",
+              "issue": "Missing interface segregation",
+              "category": "architecture"
+            },
+            {
+              "id": "ARCH-007",
+              "severity": "medium",
+              "issue": "SSR/CSR state inconsistency",
+              "category": "architecture"
+            },
+            {
+              "id": "ARCH-008",
+              "severity": "low",
+              "issue": "Plugin lifecycle gaps",
+              "category": "architecture"
+            }
+          ]
+        }
+      },
+      {
+        "topic": "performance",
+        "priority": "IMMEDIATE",
+        "score": 47.099999999999994,
+        "resources": {
+          "title": "Performance Optimization",
+          "description": "Implement resource limits and optimize watchers",
+          "resources": [
+            {
+              "type": "guide",
+              "title": "Node.js Performance Best Practices",
+              "url": "https://nodejs.org/en/docs/guides/simple-profiling/",
+              "relevance": "Profile and optimize watcher performance"
+            },
+            {
+              "type": "guide",
+              "title": "Memory Management in Node.js",
+              "url": "https://blog.risingstack.com/finding-a-memory-leak-in-node-js/",
+              "relevance": "Advanced techniques for memory optimization"
+            }
+          ]
+        },
+        "details": {
+          "prFindings": [
+            {
+              "category": "performance",
+              "severity": "medium",
+              "issue": "Missing watcher limit",
+              "message": "Consider implementing maximum watcher limit",
+              "location": "packages/next/server/dev/hot-reloader.ts:124",
+              "suggestion": "Add MAX_WATCHERS constant to prevent unbounded growth",
+              "context": "Preventing edge cases with thousands of modules"
+            }
+          ],
+          "repoIssues": [
+            {
+              "id": "PERF-001",
+              "severity": "high",
+              "issue": "Unnecessary re-renders",
+              "category": "performance"
+            },
+            {
+              "id": "PERF-002",
+              "severity": "medium",
+              "issue": "Large bundle size",
+              "category": "performance"
+            },
+            {
+              "id": "PERF-003",
+              "severity": "medium",
+              "issue": "Inefficient bundle splitting",
+              "category": "performance"
+            },
+            {
+              "id": "PERF-004",
+              "severity": "low",
+              "issue": "Redundant file checks",
+              "category": "performance"
+            }
+          ]
+        }
+      },
+      {
+        "topic": "securityAwareness",
+        "priority": "IMMEDIATE",
+        "score": 36,
+        "resources": {
+          "title": "Security in Next.js Server-Side Code",
+          "description": "Prevent XSS vulnerabilities in SSR contexts",
+          "resources": [
+            {
+              "type": "critical",
+              "title": "Next.js SSR Security Guide",
+              "url": "https://nextjs.org/docs/advanced-features/security-headers",
+              "relevance": "Your repo has SEC-001 XSS vulnerability"
+            },
+            {
+              "type": "guide",
+              "title": "OWASP XSS Prevention Cheat Sheet",
+              "url": "https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html",
+              "relevance": "Comprehensive XSS prevention strategies"
+            }
+          ]
+        },
+        "details": {
+          "prFindings": [],
+          "repoIssues": [
+            {
+              "id": "SEC-001",
+              "severity": "high",
+              "issue": "XSS vulnerability in SSR",
+              "category": "security"
+            },
+            {
+              "id": "SEC-002",
+              "severity": "medium",
+              "issue": "Missing CSRF validation",
+              "category": "security"
+            }
+          ]
+        }
+      },
+      {
+        "topic": "documentation",
+        "priority": "MEDIUM",
+        "score": 6,
+        "resources": {
+          "title": "Documentation Best Practices for TypeScript",
+          "description": "Learn JSDoc patterns specific to your memory management code",
+          "resources": [
+            {
+              "type": "guide",
+              "title": "JSDoc for TypeScript Memory Management",
+              "url": "https://www.typescriptlang.org/docs/handbook/jsdoc-supported-types.html",
+              "relevance": "Directly applicable to hot-reloader.ts"
+            },
+            {
+              "type": "guide",
+              "title": "TypeScript Documentation Best Practices",
+              "url": "https://github.com/Microsoft/TypeScript/wiki/JSDoc-support-in-JavaScript",
+              "relevance": "Comprehensive JSDoc patterns for TypeScript"
+            }
+          ]
+        },
+        "details": {
+          "prFindings": [
+            {
+              "category": "codeQuality",
+              "severity": "low",
+              "issue": "Missing JSDoc documentation",
+              "message": "Missing documentation for disposal logic",
+              "location": "packages/next/server/dev/hot-reloader.ts:122",
+              "suggestion": "Add JSDoc explaining the memory leak fix",
+              "context": "Memory leak fix implementation needs documentation"
+            }
+          ],
+          "repoIssues": []
+        }
+      },
+      {
+        "topic": "testingPatterns",
+        "priority": "MEDIUM",
+        "score": 6,
+        "resources": {
+          "title": "Advanced Testing Patterns",
+          "description": "Improve test quality with constants and edge cases",
+          "resources": [
+            {
+              "type": "guide",
+              "title": "Eliminating Magic Numbers in Tests",
+              "url": "https://kentcdodds.com/blog/common-testing-mistakes",
+              "relevance": "Addresses your test constant issue"
+            },
+            {
+              "type": "guide",
+              "title": "JavaScript Testing Best Practices",
+              "url": "https://github.com/goldbergyoni/javascript-testing-best-practices",
+              "relevance": "Comprehensive testing patterns and edge cases"
+            }
+          ]
+        },
+        "details": {
+          "prFindings": [
+            {
+              "category": "codeQuality",
+              "severity": "low",
+              "issue": "Magic number in test",
+              "message": "Magic number should be constant",
+              "location": "test/development/hot-reload-memory.test.ts:10",
+              "suggestion": "Extract to named constant RELOAD_ITERATIONS",
+              "context": "Test clarity and maintainability"
+            },
+            {
+              "category": "testing",
+              "severity": "low",
+              "issue": "Missing edge cases",
+              "message": "Edge case testing opportunity",
+              "suggestion": "Consider testing with extreme module counts",
+              "context": "Comprehensive test coverage"
+            }
+          ],
+          "repoIssues": []
+        }
+      }
+    ],
+    "immediateActions": [
+      "Add JSDoc documentation to hot-reloader.ts disposal logic",
+      "Extract magic number 100 to RELOAD_ITERATIONS constant",
+      "Implement MAX_WATCHERS constant to prevent unbounded growth",
+      "Review and fix SEC-001 XSS vulnerability in SSR (HIGH PRIORITY)",
+      "Implement CSRF token validation for API routes"
+    ],
+    "skillGaps": [
+      {
+        "skill": "documentation",
+        "currentLevel": 45,
+        "targetLevel": 80,
+        "gap": 35
+      },
+      {
+        "skill": "securityAwareness",
+        "currentLevel": 65,
+        "targetLevel": 80,
+        "gap": 15
+      }
+    ],
+    "validationStats": {
+      "totalChecked": 12,
+      "valid": 11,
+      "invalid": 1,
+      "replaced": 0
+    }
+  },
+  "validationStats": {
+    "totalChecked": 12,
+    "valid": 11,
+    "invalid": 1,
+    "replaced": 0
+  }
+}

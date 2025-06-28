@@ -32,6 +32,10 @@ interface ModelConfigRecord {
     qualityScore?: number;
     testCount: number;
     lastTested: string;
+    pricing?: {
+      input: number;
+      output: number;
+    };
   };
   notes?: string;
   created_at: string;
@@ -163,7 +167,8 @@ export class ModelConfigStore {
           avgResponseSize: record.test_results.avgResponseSize,
           qualityScore: record.test_results.qualityScore,
           testCount: record.test_results.testCount,
-          lastTested: record.test_results.lastTested
+          lastTested: record.test_results.lastTested,
+          pricing: record.test_results.pricing
         },
         notes: record.notes,
         optimal_models: {},
@@ -448,7 +453,8 @@ export class ModelConfigStore {
             avgResponseSize: record.test_results.avgResponseSize,
             qualityScore: record.test_results.qualityScore,
             testCount: record.test_results.testCount,
-            lastTested: record.test_results.lastTested
+            lastTested: record.test_results.lastTested,
+            pricing: record.test_results.pricing
           },
           notes: record.notes,
           optimal_models: {},
