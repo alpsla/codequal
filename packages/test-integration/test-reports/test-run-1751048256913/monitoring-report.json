@@ -1,0 +1,55 @@
+{
+  "testRunId": "test-run-1751048256913",
+  "timestamp": "2025-06-27T18:17:36.929Z",
+  "environment": "production",
+  "performance": {
+    "totalExecutionTime": 7000,
+    "averageLatency": 2333,
+    "scenariosCompleted": 3
+  },
+  "costAnalysis": {
+    "totalCost": 0.0534,
+    "averageCostPerAnalysis": 0.0178,
+    "costByModel": {
+      "deepseek/deepseek-chat-v3-0324": 0.0012,
+      "aion-labs/aion-1.0-mini": 0.0042,
+      "openai/gpt-4o:extended": 0.048
+    },
+    "tokenUsage": {
+      "totalTokens": 10000,
+      "averageTokensPerAnalysis": 3333
+    },
+    "projectedMonthlyCost": 160.20000000000002
+  },
+  "modelEfficiency": {
+    "modelsUsed": [
+      "deepseek/deepseek-chat-v3-0324",
+      "aion-labs/aion-1.0-mini",
+      "openai/gpt-4o:extended"
+    ],
+    "costEfficiencyRanking": [
+      {
+        "model": "deepseek/deepseek-chat-v3-0324",
+        "costPer1MTokens": 0.58
+      },
+      {
+        "model": "aion-labs/aion-1.0-mini",
+        "costPer1MTokens": 1.05
+      },
+      {
+        "model": "openai/gpt-4o:extended",
+        "costPer1MTokens": 12
+      }
+    ]
+  },
+  "qualityMetrics": {
+    "precision": 0.95,
+    "recall": 0.92,
+    "f1Score": 0.935
+  },
+  "systemHealth": {
+    "errorRate": 0,
+    "successRate": 100,
+    "availability": 100
+  }
+}

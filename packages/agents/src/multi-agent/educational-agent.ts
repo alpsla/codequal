@@ -1,7 +1,7 @@
 import { createLogger } from '@codequal/core/utils';
 import { RecommendationModule } from '../types/recommendation-types';
 import { SkillTrackingService, LearningEngagement } from '../services/skill-tracking-service';
-import { AuthenticatedUser } from '../types/auth-types';
+import { AuthenticatedUser } from '../multi-agent/types/auth';
 import { DeveloperSkill } from '@codequal/database/models/skill';
 
 /**

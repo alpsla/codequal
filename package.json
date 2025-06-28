@@ -22,7 +22,13 @@
     "setup:hooks": "bash scripts/setup-git-hooks.sh",
     "setup:ci": "bash scripts/setup-local-ci.sh",
     "pre-commit": "bash scripts/validate-ci-local.sh --max-warnings 5",
-    "pre-push": "bash scripts/validate-ci-local.sh --max-warnings 0"
+    "pre-push": "bash scripts/validate-ci-local.sh --max-warnings 0",
+    "test:baseline": "npm run test:baseline -w @codequal/test-integration",
+    "test:baseline:system": "npm run test:baseline:system -w @codequal/test-integration",
+    "test:baseline:all": "npm run test:baseline:all -w @codequal/test-integration",
+    "test:dynamic-config": "npm run test:dynamic-config -w @codequal/test-integration",
+    "test:model-baseline": "npm run test:model-baseline -w @codequal/test-integration",
+    "test:e2e": "npm run test:e2e -w @codequal/test-integration"
   },
   "repository": {
     "type": "git",

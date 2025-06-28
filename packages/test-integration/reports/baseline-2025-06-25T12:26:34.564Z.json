@@ -1,0 +1,476 @@
+{
+  "timestamp": "2025-06-25T12:26:34.564Z",
+  "summary": {
+    "totalScenarios": 5,
+    "averageExecutionTime": 70.00151046660001,
+    "averageTokenUsage": 65861.95414995484,
+    "averageCost": 5.6154961791629034,
+    "totalApiCalls": 69
+  },
+  "scenarios": {
+    "baseline-small-full": {
+      "executionTime": 68.126677875,
+      "memoryUsage": {
+        "heapUsed": 110.35623931884766,
+        "heapTotal": 113.265625,
+        "external": 7.408591270446777,
+        "rss": 39.875
+      },
+      "cpuUsage": {
+        "user": 0.322596,
+        "system": 0.064321
+      },
+      "tokenUsage": {
+        "promptTokens": 34555.11332490601,
+        "completionTokens": 29029.09065992481,
+        "totalTokens": 63584.20398483082,
+        "estimatedCost": 5.391016998735901
+      },
+      "apiCalls": {
+        "total": 15,
+        "byService": {
+          "github": 4,
+          "database": 2,
+          "vectordb": 1,
+          "mcp-tool": 8
+        },
+        "rateLimitHits": 0
+      },
+      "toolMetrics": {
+        "eslint-direct": {
+          "executionTime": 2724.0729169999995,
+          "success": true,
+          "outputSize": 749
+        },
+        "npm-audit": {
+          "executionTime": 2563.349957999999,
+          "success": true,
+          "outputSize": 9417
+        },
+        "license-checker": {
+          "executionTime": 1884.5022910000007,
+          "success": true,
+          "outputSize": 9744
+        },
+        "bundlephobia-direct": {
+          "executionTime": 1603.4214169999996,
+          "success": false,
+          "outputSize": 5145
+        },
+        "madge": {
+          "executionTime": 2886.1120420000007,
+          "success": true,
+          "outputSize": 8380
+        },
+        "dependency-cruiser": {
+          "executionTime": 3375.9381670000002,
+          "success": true,
+          "outputSize": 6314
+        },
+        "lighthouse-direct": {
+          "executionTime": 4799.479625,
+          "success": true,
+          "outputSize": 9047
+        },
+        "jscpd-direct": {
+          "executionTime": 2158.537833999999,
+          "success": true,
+          "outputSize": 3797
+        }
+      },
+      "agentMetrics": {
+        "security": {
+          "executionTime": 7867.432750000004,
+          "findingsCount": 2,
+          "tokenUsage": 11300.085662895623
+        },
+        "performance": {
+          "executionTime": 5194.764084000002,
+          "findingsCount": 4,
+          "tokenUsage": 7699.059912114175
+        },
+        "architecture": {
+          "executionTime": 5115.461959,
+          "findingsCount": 3,
+          "tokenUsage": 12888.420192584907
+        },
+        "codeQuality": {
+          "executionTime": 6639.2071249999935,
+          "findingsCount": 6,
+          "tokenUsage": 8985.297503932019
+        },
+        "dependencies": {
+          "executionTime": 7220.368166999993,
+          "findingsCount": 8,
+          "tokenUsage": 5936.340713304095
+        }
+      }
+    },
+    "baseline-medium-full": {
+      "executionTime": 81.96583370799999,
+      "memoryUsage": {
+        "heapUsed": 110.55886840820312,
+        "heapTotal": 113.265625,
+        "external": 7.408629417419434,
+        "rss": 42.25
+      },
+      "cpuUsage": {
+        "user": 0.011838,
+        "system": 0.016016
+      },
+      "tokenUsage": {
+        "promptTokens": 41262.22602024981,
+        "completionTokens": 33394.780816199855,
+        "totalTokens": 74657.00683644967,
+        "estimatedCost": 6.247083903037472
+      },
+      "apiCalls": {
+        "total": 14,
+        "byService": {
+          "github": 4,
+          "database": 2,
+          "mcp-tool": 8
+        },
+        "rateLimitHits": 1
+      },
+      "toolMetrics": {
+        "eslint-direct": {
+          "executionTime": 2022.9154590000107,
+          "success": true,
+          "outputSize": 4710
+        },
+        "npm-audit": {
+          "executionTime": 2285.1872910000093,
+          "success": false,
+          "outputSize": 8444
+        },
+        "license-checker": {
+          "executionTime": 1490.3873750000057,
+          "success": true,
+          "outputSize": 723
+        },
+        "bundlephobia-direct": {
+          "executionTime": 1433.5166670000035,
+          "success": true,
+          "outputSize": 749
+        },
+        "madge": {
+          "executionTime": 3073.7450839999947,
+          "success": false,
+          "outputSize": 1749
+        },
+        "dependency-cruiser": {
+          "executionTime": 3297.0854580000014,
+          "success": true,
+          "outputSize": 7139
+        },
+        "lighthouse-direct": {
+          "executionTime": 4987.429959000001,
+          "success": true,
+          "outputSize": 3635
+        },
+        "jscpd-direct": {
+          "executionTime": 1981.4907499999972,
+          "success": false,
+          "outputSize": 742
+        }
+      },
+      "agentMetrics": {
+        "security": {
+          "executionTime": 6059.661458000002,
+          "findingsCount": 3,
+          "tokenUsage": 11006.215486137047
+        },
+        "performance": {
+          "executionTime": 7675.198166999995,
+          "findingsCount": 2,
+          "tokenUsage": 10169.260683085595
+        },
+        "architecture": {
+          "executionTime": 5667.207916999992,
+          "findingsCount": 2,
+          "tokenUsage": 15285.735845497165
+        },
+        "codeQuality": {
+          "executionTime": 6867.967082999996,
+          "findingsCount": 10,
+          "tokenUsage": 7704.573582646357
+        },
+        "dependencies": {
+          "executionTime": 7447.093499999988,
+          "findingsCount": 1,
+          "tokenUsage": 5716.221239083492
+        }
+      }
+    },
+    "baseline-large-full": {
+      "executionTime": 67.31258075,
+      "memoryUsage": {
+        "heapUsed": 110.7420654296875,
+        "heapTotal": 113.265625,
+        "external": 7.408629417419434,
+        "rss": 41.59375
+      },
+      "cpuUsage": {
+        "user": 0.009591,
+        "system": 0.012246
+      },
+      "tokenUsage": {
+        "promptTokens": 33938.63868298865,
+        "completionTokens": 28535.91094639092,
+        "totalTokens": 62474.549629379566,
+        "estimatedCost": 5.298545802448298
+      },
+      "apiCalls": {
+        "total": 15,
+        "byService": {
+          "github": 4,
+          "database": 2,
+          "vectordb": 1,
+          "mcp-tool": 8
+        },
+        "rateLimitHits": 0
+      },
+      "toolMetrics": {
+        "eslint-direct": {
+          "executionTime": 2466.4692919999943,
+          "success": true,
+          "outputSize": 6777
+        },
+        "npm-audit": {
+          "executionTime": 2523.9358750000247,
+          "success": true,
+          "outputSize": 9916
+        },
+        "license-checker": {
+          "executionTime": 1274.2636250000214,
+          "success": true,
+          "outputSize": 123
+        },
+        "bundlephobia-direct": {
+          "executionTime": 1281.3181669999904,
+          "success": true,
+          "outputSize": 3637
+        },
+        "madge": {
+          "executionTime": 3130.163042,
+          "success": true,
+          "outputSize": 6205
+        },
+        "dependency-cruiser": {
+          "executionTime": 3030.2958750000107,
+          "success": true,
+          "outputSize": 2818
+        },
+        "lighthouse-direct": {
+          "executionTime": 4248.774707999983,
+          "success": true,
+          "outputSize": 6712
+        },
+        "jscpd-direct": {
+          "executionTime": 2388.6729159999813,
+          "success": true,
+          "outputSize": 3903
+        }
+      },
+      "agentMetrics": {
+        "security": {
+          "executionTime": 5550.424833000026,
+          "findingsCount": 5,
+          "tokenUsage": 11358.741065565428
+        },
+        "performance": {
+          "executionTime": 5332.963667000004,
+          "findingsCount": 10,
+          "tokenUsage": 8317.6375460189
+        },
+        "architecture": {
+          "executionTime": 6719.00108300001,
+          "findingsCount": 4,
+          "tokenUsage": 15188.459581810424
+        },
+        "codeQuality": {
+          "executionTime": 7256.255999999994,
+          "findingsCount": 7,
+          "tokenUsage": 6219.9920460063695
+        },
+        "dependencies": {
+          "executionTime": 7243.442207999993,
+          "findingsCount": 5,
+          "tokenUsage": 4614.719389978447
+        }
+      }
+    },
+    "baseline-quick-mode": {
+      "executionTime": 55.755034875000014,
+      "memoryUsage": {
+        "heapUsed": 110.87767028808594,
+        "heapTotal": 113.265625,
+        "external": 7.408629417419434,
+        "rss": 41.59375
+      },
+      "cpuUsage": {
+        "user": 0.004621,
+        "system": 0.012993
+      },
+      "tokenUsage": {
+        "promptTokens": 28161.488218171336,
+        "completionTokens": 23514.190574537068,
+        "totalTokens": 51675.67879270841,
+        "estimatedCost": 4.3719732327257
+      },
+      "apiCalls": {
+        "total": 10,
+        "byService": {
+          "github": 4,
+          "database": 2,
+          "mcp-tool": 4
+        },
+        "rateLimitHits": 1
+      },
+      "toolMetrics": {
+        "bundlephobia-direct": {
+          "executionTime": 2088.1114170000073,
+          "success": true,
+          "outputSize": 2062
+        },
+        "madge": {
+          "executionTime": 2642.748833999998,
+          "success": true,
+          "outputSize": 8096
+        },
+        "dependency-cruiser": {
+          "executionTime": 3557.486709000019,
+          "success": true,
+          "outputSize": 3670
+        },
+        "jscpd-direct": {
+          "executionTime": 1663.1271670000278,
+          "success": true,
+          "outputSize": 3676
+        }
+      },
+      "agentMetrics": {
+        "security": {
+          "executionTime": 5243.657749999984,
+          "findingsCount": 3,
+          "tokenUsage": 10123.464335478431
+        },
+        "performance": {
+          "executionTime": 5519.594083000004,
+          "findingsCount": 1,
+          "tokenUsage": 8138.884539713074
+        },
+        "architecture": {
+          "executionTime": 7331.337249999982,
+          "findingsCount": 1,
+          "tokenUsage": 11638.329917516901
+        }
+      }
+    },
+    "baseline-deep-analysis": {
+      "executionTime": 76.84742512500002,
+      "memoryUsage": {
+        "heapUsed": 110.28961944580078,
+        "heapTotal": 114.265625,
+        "external": 7.408629417419434,
+        "rss": 41.515625
+      },
+      "cpuUsage": {
+        "user": 0.009775,
+        "system": 0.016058
+      },
+      "tokenUsage": {
+        "promptTokens": 39740.73972578096,
+        "completionTokens": 37177.591780624774,
+        "totalTokens": 76918.33150640572,
+        "estimatedCost": 6.768860958867144
+      },
+      "apiCalls": {
+        "total": 15,
+        "byService": {
+          "github": 4,
+          "database": 2,
+          "vectordb": 1,
+          "mcp-tool": 8
+        },
+        "rateLimitHits": 3
+      },
+      "toolMetrics": {
+        "eslint-direct": {
+          "executionTime": 2470.132708000019,
+          "success": true,
+          "outputSize": 7497
+        },
+        "npm-audit": {
+          "executionTime": 2329.3288750000065,
+          "success": true,
+          "outputSize": 1977
+        },
+        "license-checker": {
+          "executionTime": 1746.2683750000433,
+          "success": true,
+          "outputSize": 1927
+        },
+        "bundlephobia-direct": {
+          "executionTime": 1936.2845840000082,
+          "success": true,
+          "outputSize": 7244
+        },
+        "madge": {
+          "executionTime": 3293.6079170000157,
+          "success": true,
+          "outputSize": 5314
+        },
+        "dependency-cruiser": {
+          "executionTime": 3245.189834000019,
+          "success": false,
+          "outputSize": 6765
+        },
+        "lighthouse-direct": {
+          "executionTime": 4696.517041999963,
+          "success": true,
+          "outputSize": 7203
+        },
+        "jscpd-direct": {
+          "executionTime": 1484.5742500000051,
+          "success": true,
+          "outputSize": 2259
+        }
+      },
+      "agentMetrics": {
+        "security": {
+          "executionTime": 5221.200124999974,
+          "findingsCount": 6,
+          "tokenUsage": 13221.637540175958
+        },
+        "performance": {
+          "executionTime": 6945.534291999997,
+          "findingsCount": 8,
+          "tokenUsage": 7304.933885789491
+        },
+        "architecture": {
+          "executionTime": 6916.280583999993,
+          "findingsCount": 6,
+          "tokenUsage": 14018.981971685687
+        },
+        "codeQuality": {
+          "executionTime": 6591.691749999998,
+          "findingsCount": 6,
+          "tokenUsage": 7413.550497761955
+        },
+        "dependencies": {
+          "executionTime": 6418.512667000003,
+          "findingsCount": 9,
+          "tokenUsage": 5184.227610992637
+        }
+      }
+    }
+  },
+  "recommendations": [
+    "Consider optimizing agent prompts to reduce token consumption",
+    "Use quick mode for routine PRs and comprehensive mode for complex changes",
+    "Implement result caching for frequently analyzed repositories",
+    "Monitor rate limits and implement exponential backoff for API calls"
+  ]
+}

@@ -87,11 +87,11 @@ export async function loadResearcherConfigFromVectorDB(
 /**
  * Apply the loaded researcher configuration to the model selection system
  */
-export function applyResearcherConfiguration(
+export async function applyResearcherConfiguration(
   config: StoredResearcherConfig,
   modelVersionSync: ModelVersionSync,
   logger: Logger
-): boolean {
+): Promise<boolean> {
   try {
     logger.info('🔧 Applying researcher configuration', {
       provider: config.provider,
@@ -114,11 +114,11 @@ export function applyResearcherConfiguration(
 
     // Update or register the model
     const key = `${config.provider}/${config.model}`;
-    const exists = modelVersionSync.getCanonicalVersion(config.provider, config.model);
+    const exists = await modelVersionSync.getCanonicalVersion(config.provider, config.model);
     
     if (exists) {
       // Update existing model
-      const success = modelVersionSync.updateModelVersion(modelInfo);
+      const success = await modelVersionSync.updateModelVersion(modelInfo);
       if (success) {
         logger.info('✅ Updated researcher model in canonical versions', { key });
       } else {
@@ -127,7 +127,7 @@ export function applyResearcherConfiguration(
       return success;
     } else {
       // Register new model
-      const success = modelVersionSync.registerModel(modelInfo);
+      const success = await modelVersionSync.registerModel(modelInfo);
       if (success) {
         logger.info('✅ Registered new researcher model in canonical versions', { key });
       } else {
@@ -172,7 +172,7 @@ export async function initializeResearcherFromVectorDB(
     }
 
     // Apply configuration
-    const applied = applyResearcherConfiguration(config, modelVersionSync, logger);
+    const applied = await applyResearcherConfiguration(config, modelVersionSync, logger);
     
     if (applied) {
       logger.info('✅ Successfully initialized researcher from Vector DB', {

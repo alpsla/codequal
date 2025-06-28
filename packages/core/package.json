@@ -28,6 +28,22 @@
     "./config/*": {
       "types": "./dist/config/*.d.ts",
       "default": "./dist/config/*.js"
+    },
+    "./services/deepwiki-tools": {
+      "types": "./dist/services/deepwiki-tools.d.ts",
+      "default": "./dist/services/deepwiki-tools.js"
+    },
+    "./services/usage-tracking/token-tracking-service": {
+      "types": "./dist/services/usage-tracking/token-tracking-service.d.ts",
+      "default": "./dist/services/usage-tracking/token-tracking-service.js"
+    },
+    "./services/model-selection/ModelVersionSync": {
+      "types": "./dist/services/model-selection/ModelVersionSync.d.ts",
+      "default": "./dist/services/model-selection/ModelVersionSync.js"
+    },
+    "./services/scheduling": {
+      "types": "./dist/services/scheduling/index.d.ts",
+      "default": "./dist/services/scheduling/index.js"
     }
   },
   "scripts": {

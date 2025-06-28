@@ -15,7 +15,14 @@ jest.mock('@codequal/core/services/model-selection/ModelVersionSync');
 jest.mock('@codequal/agents/multi-agent/vector-context-service');
 jest.mock('@codequal/core/services/deepwiki-tools');
 jest.mock('@codequal/database');
-jest.mock('@codequal/core/utils');
+jest.mock('@codequal/core/utils', () => ({
+  createLogger: jest.fn(() => ({
+    info: jest.fn(),
+    debug: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn()
+  }))
+}));
 jest.mock('@codequal/core/services/scheduling');
 jest.mock('@codequal/agents/multi-agent/educational-agent');
 jest.mock('@codequal/agents/multi-agent/reporter-agent');
@@ -35,12 +42,24 @@ describe('End-to-End: PR Analysis to Report Storage', () => {
       id: 'user-123',
       email: 'test@example.com',
       organizationId: 'org-456',
-      permissions: ['read', 'write'],
-      role: 'developer',
+      permissions: {
+        repositories: {},
+        organizations: ['org-456'],
+        globalPermissions: ['read', 'write'],
+        quotas: {
+          requestsPerHour: 1000,
+          maxConcurrentExecutions: 5,
+          storageQuotaMB: 100
+        }
+      },
+      role: 'user',
       status: 'active',
       session: {
         token: 'valid-token',
-        expiresAt: new Date(Date.now() + 3600000).toISOString()
+        expiresAt: new Date(Date.now() + 3600000).toISOString(),
+        fingerprint: 'test-fingerprint',
+        ipAddress: '127.0.0.1',
+        userAgent: 'test-agent'
       }
     };
     

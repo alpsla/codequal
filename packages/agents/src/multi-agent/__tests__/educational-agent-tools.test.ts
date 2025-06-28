@@ -3,7 +3,18 @@
  */
 
 import { EducationalAgent } from '../educational-agent';
-import { EducationalToolOrchestrator } from '../../../../apps/api/src/services/educational-tool-orchestrator';
+// Mock EducationalToolOrchestrator since it's in a different package
+class EducationalToolOrchestrator {
+  constructor(private authenticatedUser: any) {}
+  
+  async generateEducationalContent(params: any) {
+    return {
+      content: 'Mock educational content',
+      exercises: [],
+      resources: []
+    };
+  }
+}
 import { RecommendationModule } from '../../types/recommendation-types';
 import { createLogger } from '@codequal/core/utils';
 

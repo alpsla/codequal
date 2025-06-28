@@ -28,6 +28,18 @@
     "./multi-agent/types/auth": {
       "types": "./dist/multi-agent/types/auth.d.ts",
       "default": "./dist/multi-agent/types/auth.js"
+    },
+    "./multi-agent/educational-agent": {
+      "types": "./dist/multi-agent/educational-agent.d.ts",
+      "default": "./dist/multi-agent/educational-agent.js"
+    },
+    "./multi-agent/reporter-agent": {
+      "types": "./dist/multi-agent/reporter-agent.d.ts",
+      "default": "./dist/multi-agent/reporter-agent.js"
+    },
+    "./services/basic-deduplicator": {
+      "types": "./dist/services/basic-deduplicator.d.ts",
+      "default": "./dist/services/basic-deduplicator.js"
     }
   },
   "scripts": {

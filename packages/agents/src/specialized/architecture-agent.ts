@@ -31,7 +31,9 @@ export class ArchitectureAgent {
         location: {
           file: dep.cycle[0],
           line: 1
-        }
+        },
+        tool: dep.tool || 'madge', // Tool that detected circular dependencies
+        source: 'static-analysis'
       })),
       ...orphanModules.map(module => ({
         type: 'orphan-module' as const,
@@ -40,7 +42,9 @@ export class ArchitectureAgent {
         location: {
           file: module.path,
           line: 1
-        }
+        },
+        tool: module.tool || 'dependency-cruiser', // Tool that detected orphan modules
+        source: 'static-analysis'
       })),
       ...layerViolations.map(violation => ({
         type: 'layer-violation' as const,
@@ -49,7 +53,9 @@ export class ArchitectureAgent {
         location: {
           file: violation.from,
           line: violation.line || 1
-        }
+        },
+        tool: violation.tool || 'dependency-cruiser', // Tool that detected layer violations
+        source: 'static-analysis'
       })),
       ...complexityIssues.map(issue => ({
         type: 'high-complexity' as const,
@@ -58,7 +64,9 @@ export class ArchitectureAgent {
         location: {
           file: issue.module,
           line: 1
-        }
+        },
+        tool: issue.tool || 'complexity-report', // Tool that detected complexity issues
+        source: 'static-analysis'
       }))
     ];
 

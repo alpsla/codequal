@@ -239,7 +239,7 @@ export class RepositoryCalibrationService {
     
     // Calculate averages and determine the best model
     const averages = this.calculateAverages(results);
-    const recommendedConfig = this.determineOptimalModel(averages, sizeCategory, repository.language);
+    const recommendedConfig = await this.determineOptimalModel(averages, sizeCategory, repository.language);
     
     // Update configuration if requested
     if (fullOptions.updateConfig) {
@@ -413,7 +413,7 @@ export class RepositoryCalibrationService {
    * @param language Repository language
    * @returns Recommended model configuration
    */
-  private determineOptimalModel(
+  private async determineOptimalModel(
     averages: Record<string, {
       modelConfig: ModelConfig<DeepWikiProvider>;
       avgResponseTime: number;
@@ -423,7 +423,7 @@ export class RepositoryCalibrationService {
     }>,
     sizeCategory: RepositorySizeCategory,
     language = 'default'
-  ): RepositoryModelConfig {
+  ): Promise<RepositoryModelConfig> {
     const models = Object.values(averages);
     
     // Filter out models with low success rate
@@ -432,7 +432,7 @@ export class RepositoryCalibrationService {
     if (reliableModels.length === 0) {
       // No reliable models, check if we can use the config factory for a recommendation
       if (this.configFactory) {
-        const recommendedModel = this.configFactory.createRepositoryModelConfig({
+        const recommendedModel = await this.configFactory.createRepositoryModelConfig({
           language,
           sizeCategory,
           tags: []

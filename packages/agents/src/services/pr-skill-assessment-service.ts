@@ -1,6 +1,6 @@
 import { createLogger } from '@codequal/core/utils';
 import { SkillTrackingService, SkillAssessment } from './skill-tracking-service';
-import { AuthenticatedUser } from '../types/auth-types';
+import { AuthenticatedUser } from '../multi-agent/types/auth';
 
 /**
  * PR metadata for skill assessment

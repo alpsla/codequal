@@ -7,16 +7,28 @@ import { SkillTrackingService } from '../skill-tracking-service';
 import { SkillAwareRAGService } from '../skill-aware-rag-service';
 
 // Mock authenticated user with complete interface
-const mockAuthenticatedUser = {
+const mockAuthenticatedUser: any = {
   id: 'test-user-123',
   email: 'test@example.com',
   name: 'Test User',
-  permissions: ['read', 'write'],
-  role: 'developer',
+  permissions: {
+    repositories: {},
+    organizations: [],
+    globalPermissions: ['read', 'write'],
+    quotas: {
+      requestsPerHour: 1000,
+      maxConcurrentExecutions: 5,
+      storageQuotaMB: 100
+    }
+  },
+  role: 'user',
   status: 'active',
   session: {
     token: 'mock-token',
-    expiresAt: new Date(Date.now() + 86400000)
+    expiresAt: new Date(Date.now() + 86400000),
+    fingerprint: 'test-fingerprint',
+    ipAddress: '127.0.0.1',
+    userAgent: 'test-agent'
   }
 };
 

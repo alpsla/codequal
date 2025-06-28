@@ -14,6 +14,7 @@ import {
   RepositoryModelConfig,
   RepositoryProvider
 } from '../../config/models/repository-model-config';
+import { ModelConfigStore } from './ModelConfigStore';
 
 // Export types for other modules
 export { RepositorySizeCategory } from '../../config/models/repository-model-config';
@@ -137,159 +138,29 @@ export interface ModelVersionInfo {
 }
 
 /**
- * Canonical model versions used across the system
+ * Fallback model configurations for emergency use
+ * These are ONLY used when database is completely unavailable
  */
-export const CANONICAL_MODEL_VERSIONS: Record<string, ModelVersionInfo> = {
-  // OpenAI models
+const EMERGENCY_FALLBACK_MODELS: Record<string, ModelVersionInfo> = {
   'openai/gpt-4o': {
     provider: 'openai',
     model: 'gpt-4o',
-    versionId: '', // OpenAI doesn't use explicit version IDs
-    releaseDate: '2025-03-15',
-    description: 'OpenAI GPT-4o model with updated context window and improved capabilities',
+    versionId: 'emergency-fallback',
+    releaseDate: '2024-01-01',
+    description: 'Emergency fallback model - database unavailable',
     capabilities: {
-      codeQuality: 8.5,
-      speed: 9.0,
+      codeQuality: 8.0,
+      speed: 8.0,
       contextWindow: 128000,
-      reasoning: 8.7,
+      reasoning: 8.0,
       detailLevel: 8.0
     },
     pricing: {
       input: 10.00,
       output: 30.00
     },
-    tier: ModelTier.PREMIUM,
-    preferredFor: ['small_repositories', 'quick_analysis', 'typescript']
-  },
-  
-  // Anthropic models
-  'anthropic/claude-3-7-sonnet': {
-    provider: 'anthropic',
-    model: 'claude-3-7-sonnet',
-    versionId: 'claude-3-7-sonnet-20250219',
-    releaseDate: '2025-02-19',
-    description: 'Anthropic Claude 3.7 Sonnet - reasoning optimized model with improved code understanding',
-    capabilities: {
-      codeQuality: 9.2,
-      speed: 7.5,
-      contextWindow: 200000,
-      reasoning: 9.5,
-      detailLevel: 9.3
-    },
-    pricing: {
-      input: 15.00,
-      output: 75.00
-    },
-    tier: ModelTier.PREMIUM,
-    preferredFor: ['medium_repositories', 'large_repositories', 'detailed_analysis', 'python', 'javascript']
-  },
-  
-  // Google models
-  'google/gemini-2.5-pro-preview-05-06': {
-    provider: 'google',
-    model: 'gemini-2.5-pro-preview-05-06',
-    versionId: 'gemini-2.5-pro-preview-05-06-20250506',
-    releaseDate: '2025-05-06',
-    description: 'Google Gemini 2.5 Pro Preview with enhanced code understanding and multi-language support',
-    capabilities: {
-      codeQuality: 8.8,
-      speed: 8.2,
-      contextWindow: 100000,
-      reasoning: 8.9,
-      detailLevel: 8.5
-    },
-    pricing: {
-      input: 7.00,
-      output: 21.00
-    },
-    tier: ModelTier.PREMIUM,
-    preferredFor: ['large_repositories', 'balanced_analysis', 'typescript']
-  },
-  
-  // DeepSeek models
-  'deepseek/deepseek-coder': {
-    provider: 'deepseek',
-    model: 'deepseek-coder',
-    versionId: '1.5-instruct-20250420',
-    releaseDate: '2025-04-20',
-    description: 'DeepSeek Coder - general purpose code model. This is the only working DeepSeek model as of May 13, 2025',
-    capabilities: {
-      codeQuality: 8.7,
-      speed: 7.8,
-      contextWindow: 32000,
-      reasoning: 8.2,
-      detailLevel: 8.3
-    },
-    pricing: {
-      input: 0.7,
-      output: 1.0
-    },
     tier: ModelTier.STANDARD,
-    preferredFor: ['medium_repositories', 'java', 'c', 'cpp', 'rust']
-  },
-  
-  // Google Gemini 2.5 Flash for RESEARCHER agent
-  'google/gemini-2.5-flash': {
-    provider: 'google',
-    model: 'gemini-2.5-flash',
-    versionId: 'gemini-2.5-flash-20250602',
-    releaseDate: '2025-06-02',
-    description: 'Google Gemini 2.5 Flash - Optimized for RESEARCHER agent: fast model research, cost analysis, and configuration updates',
-    capabilities: {
-      codeQuality: 8.5,
-      speed: 9.2,
-      contextWindow: 100000,
-      reasoning: 8.8,
-      detailLevel: 8.0
-    },
-    pricing: {
-      input: 0.075,
-      output: 0.30
-    },
-    tier: ModelTier.STANDARD,
-    preferredFor: ['researcher', 'model_research', 'cost_optimization', 'configuration_updates', 'scheduled_tasks']
-  },
-
-  // OpenRouter models
-  'openrouter/anthropic/claude-3.7-sonnet': {
-    provider: 'openrouter',
-    model: 'anthropic/claude-3.7-sonnet',
-    versionId: 'claude-3-7-sonnet-20250219',
-    releaseDate: '2025-02-19',
-    description: 'Anthropic Claude 3.7 Sonnet via OpenRouter',
-    capabilities: {
-      codeQuality: 9.0,
-      speed: 7.3,
-      contextWindow: 200000,
-      reasoning: 9.3,
-      detailLevel: 9.1
-    },
-    pricing: {
-      input: 18.00,
-      output: 85.00
-    },
-    tier: ModelTier.PREMIUM,
-    preferredFor: ['medium_repositories', 'large_repositories', 'detailed_analysis', 'python', 'javascript']
-  },
-  'openrouter/openai/gpt-4o': {
-    provider: 'openrouter',
-    model: 'openai/gpt-4o',
-    versionId: '',
-    releaseDate: '2025-03-15',
-    description: 'OpenAI GPT-4o via OpenRouter',
-    capabilities: {
-      codeQuality: 8.4,
-      speed: 8.8,
-      contextWindow: 128000,
-      reasoning: 8.6,
-      detailLevel: 7.9
-    },
-    pricing: {
-      input: 12.00,
-      output: 36.00
-    },
-    tier: ModelTier.PREMIUM,
-    preferredFor: ['small_repositories', 'quick_analysis']
+    preferredFor: ['emergency_fallback']
   }
 };
 
@@ -340,27 +211,174 @@ export interface RepositoryContext {
 }
 
 export class ModelVersionSync {
+  private modelConfigStore?: ModelConfigStore;
+  private cachedModels: Record<string, ModelVersionInfo> = {};
+  private lastCacheUpdate = 0;
+  private readonly CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes cache
+
   /**
    * Constructor
    * @param logger Logger instance
+   * @param supabaseUrl Optional Supabase URL for database access
+   * @param supabaseKey Optional Supabase key for database access
    */
-  constructor(private logger: Logger) {
+  constructor(
+    private logger: Logger,
+    private supabaseUrl?: string,
+    private supabaseKey?: string
+  ) {
     this.logger.info('ModelVersionSync initialized');
+    
+    // Initialize model config store if credentials provided
+    if (supabaseUrl && supabaseKey) {
+      this.initializeModelConfigStore(supabaseUrl, supabaseKey);
+    }
+  }
+
+  /**
+   * Initialize the model config store for database access
+   */
+  private async initializeModelConfigStore(url: string, key: string): Promise<void> {
+    try {
+      this.modelConfigStore = new ModelConfigStore(this.logger, url, key);
+      await this.modelConfigStore.init();
+      this.logger.info('ModelConfigStore initialized successfully');
+      
+      // Load initial models from database
+      await this.refreshModelCache();
+    } catch (error) {
+      this.logger.error('Failed to initialize ModelConfigStore', { error });
+      // Fall back to hardcoded models
+    }
+  }
+
+  /**
+   * Refresh the model cache from database
+   */
+  private async refreshModelCache(): Promise<void> {
+    if (!this.modelConfigStore) return;
+
+    try {
+      const dbConfigs = await this.modelConfigStore.getAllModelConfigs();
+      const models: Record<string, ModelVersionInfo> = {};
+      const modelContextMap = new Map<string, Set<string>>();
+
+      // Convert database configs to ModelVersionInfo format
+      for (const [language, sizeConfigs] of Object.entries(dbConfigs)) {
+        for (const [size, config] of Object.entries(sizeConfigs)) {
+          const modelConfig = config as any;
+          const key = `${modelConfig.provider}/${modelConfig.model}`;
+          
+          // Track all contexts where this model is used
+          if (!modelContextMap.has(key)) {
+            modelContextMap.set(key, new Set());
+          }
+          modelContextMap.get(key)!.add(language);
+          modelContextMap.get(key)!.add(`${size}_repositories`);
+          
+          // Create or update ModelVersionInfo
+          if (!models[key]) {
+            // First time seeing this model - create full entry
+            const pricing = modelConfig.testResults?.pricing || this.getPricingForModel(modelConfig.provider, modelConfig.model);
+            
+            // Debug logging
+            if (key.includes('nano')) {
+              this.logger.info('Loading model with pricing', {
+                model: key,
+                testResultsPricing: modelConfig.testResults?.pricing,
+                finalPricing: pricing
+              });
+            }
+            
+            models[key] = {
+              provider: modelConfig.provider,
+              model: modelConfig.model,
+              versionId: modelConfig.model,
+              releaseDate: modelConfig.testResults?.lastTested || new Date().toISOString(),
+              description: modelConfig.notes || `${modelConfig.provider} ${modelConfig.model}`,
+              capabilities: {
+                codeQuality: modelConfig.testResults?.qualityScore || 8.0,
+                speed: 8.0,
+                contextWindow: 128000,
+                reasoning: 8.0,
+                detailLevel: 8.0
+              },
+              pricing: pricing,
+              tier: ModelTier.STANDARD,
+              preferredFor: []
+            };
+          }
+          
+          // Update preferredFor with all contexts
+          models[key].preferredFor = Array.from(modelContextMap.get(key)!);
+        }
+      }
+
+      // Use database models exclusively
+      this.cachedModels = models;
+      this.lastCacheUpdate = Date.now();
+      
+      this.logger.info('Model cache refreshed from database', {
+        databaseModels: Object.keys(models).length,
+        totalModels: Object.keys(this.cachedModels).length
+      });
+    } catch (error) {
+      this.logger.error('Failed to refresh model cache', { error });
+    }
+  }
+
+  /**
+   * Get pricing information for a model
+   */
+  private getPricingForModel(provider: string, model: string): { input: number; output: number } | undefined {
+    // Check if we have pricing in cached models
+    const canonicalKey = `${provider}/${model}`;
+    const canonical = this.cachedModels[canonicalKey];
+    if (canonical?.pricing) return canonical.pricing;
+
+    // Default pricing based on provider
+    const defaultPricing: Record<string, { input: number; output: number }> = {
+      'openai': { input: 5.0, output: 15.0 },
+      'anthropic': { input: 15.0, output: 75.0 },
+      'google': { input: 7.0, output: 21.0 },
+      'deepseek': { input: 0.7, output: 1.0 },
+      'openrouter': { input: 10.0, output: 30.0 }
+    };
+
+    return defaultPricing[provider] || { input: 5.0, output: 15.0 };
+  }
+
+  /**
+   * Get all available models (from cache or hardcoded)
+   */
+  private async getAvailableModels(): Promise<Record<string, ModelVersionInfo>> {
+    // Check if cache needs refresh
+    if (this.modelConfigStore && Date.now() - this.lastCacheUpdate > this.CACHE_TTL_MS) {
+      await this.refreshModelCache();
+    }
+
+    // Return cached models if available, otherwise emergency fallback
+    return Object.keys(this.cachedModels).length > 0 ? this.cachedModels : EMERGENCY_FALLBACK_MODELS;
   }
   
   /**
-   * Register a new model in the canonical versions
-   * This updates the CANONICAL_MODEL_VERSIONS registry
+   * Register a new model in the database
+   * This method now stores models in the database via ModelConfigStore
    * 
    * @param modelInfo Model version information
    * @returns Whether the registration was successful
    */
-  registerModel(modelInfo: ModelVersionInfo): boolean {
+  async registerModel(modelInfo: ModelVersionInfo): Promise<boolean> {
     try {
+      if (!this.modelConfigStore) {
+        this.logger.error('ModelConfigStore not initialized - cannot register models');
+        return false;
+      }
+
       const key = `${modelInfo.provider}/${modelInfo.model}`;
       
-      // Check if the model already exists
-      if (CANONICAL_MODEL_VERSIONS[key]) {
+      // Check if the model already exists in cache
+      if (this.cachedModels[key]) {
         this.logger.warn(`Model ${key} already exists. Use updateModelVersion to update it.`);
         return false;
       }
@@ -371,10 +389,14 @@ export class ModelVersionSync {
         return false;
       }
       
-      // Register the model
-      (CANONICAL_MODEL_VERSIONS as Record<string, ModelVersionInfo>)[key] = modelInfo;
+      // Store in cache immediately
+      this.cachedModels[key] = modelInfo;
       
-      this.logger.info(`Model ${key} registered successfully`);
+      // TODO: Store in database via ModelConfigStore
+      // This would require adding a method to ModelConfigStore to store individual models
+      this.logger.info(`Model ${key} registered successfully in cache`);
+      this.logger.warn('Database storage for individual model registration not yet implemented');
+      
       return true;
     } catch (error) {
       this.logger.error('Error registering model', { error });
@@ -388,22 +410,22 @@ export class ModelVersionSync {
    * @param modelInfo Model version information
    * @returns Whether the update was successful
    */
-  updateModelVersion(modelInfo: ModelVersionInfo): boolean {
+  async updateModelVersion(modelInfo: ModelVersionInfo): Promise<boolean> {
     try {
       const key = `${modelInfo.provider}/${modelInfo.model}`;
       
-      // Check if the model exists
-      if (!CANONICAL_MODEL_VERSIONS[key]) {
+      // Check if the model exists in cache
+      if (!this.cachedModels[key]) {
         this.logger.warn(`Model ${key} does not exist. Use registerModel to add it.`);
         return false;
       }
       
       // Preserve existing fields that might not be provided in the update
-      const existingModel = CANONICAL_MODEL_VERSIONS[key];
+      const existingModel = this.cachedModels[key];
       const updatedModel = { ...existingModel, ...modelInfo };
       
-      // Update the model
-      (CANONICAL_MODEL_VERSIONS as Record<string, ModelVersionInfo>)[key] = updatedModel;
+      // Update the model in cache
+      this.cachedModels[key] = updatedModel;
       
       this.logger.info(`Model ${key} updated successfully`);
       return true;
@@ -421,26 +443,26 @@ export class ModelVersionSync {
    * @param replacementKey Optional replacement model key
    * @returns Whether the deprecation was successful
    */
-  deprecateModel(provider: string, model: string, replacementKey?: string): boolean {
+  async deprecateModel(provider: string, model: string, replacementKey?: string): Promise<boolean> {
     try {
       const key = `${provider}/${model}`;
       
-      // Check if the model exists
-      if (!CANONICAL_MODEL_VERSIONS[key]) {
+      // Check if the model exists in cache
+      if (!this.cachedModels[key]) {
         this.logger.warn(`Model ${key} does not exist.`);
         return false;
       }
       
       // Get the existing model
-      const modelInfo = { ...CANONICAL_MODEL_VERSIONS[key] };
+      const modelInfo = { ...this.cachedModels[key] };
       
       // Mark as deprecated
       modelInfo.deprecated = true;
       
-      // Update the model
-      (CANONICAL_MODEL_VERSIONS as Record<string, ModelVersionInfo>)[key] = modelInfo;
+      // Update the model in cache
+      this.cachedModels[key] = modelInfo;
       
-      if (replacementKey && CANONICAL_MODEL_VERSIONS[replacementKey]) {
+      if (replacementKey && this.cachedModels[replacementKey]) {
         this.logger.info(`Model ${key} deprecated and replaced by ${replacementKey}`);
       } else {
         this.logger.info(`Model ${key} deprecated`);
@@ -459,7 +481,7 @@ export class ModelVersionSync {
    * @param plugin Provider plugin
    * @returns Number of models registered
    */
-  registerProvider(plugin: ModelProviderPlugin): number {
+  async registerProvider(plugin: ModelProviderPlugin): Promise<number> {
     try {
       // Get models from the plugin
       const models = plugin.registerModels();
@@ -475,7 +497,7 @@ export class ModelVersionSync {
         }
         
         // Register the model
-        if (this.registerModel(model)) {
+        if (await this.registerModel(model)) {
           registerCount++;
         }
       }
@@ -498,17 +520,20 @@ export class ModelVersionSync {
    * @param model Model name
    * @returns Canonical version information or null if not found
    */
-  getCanonicalVersion(provider: string, model: string): ModelVersionInfo | null {
+  async getCanonicalVersion(provider: string, model: string): Promise<ModelVersionInfo | null> {
     const key = `${provider}/${model}`;
+    
+    // Get available models (includes database models if available)
+    const availableModels = await this.getAvailableModels();
     
     // Handle OpenRouter special case
     if (provider === 'openrouter' && model.includes('/')) {
       // For OpenRouter, the model name includes the provider
       const fullKey = `openrouter/${model}`;
-      return CANONICAL_MODEL_VERSIONS[fullKey] || null;
+      return availableModels[fullKey] || null;
     }
     
-    return CANONICAL_MODEL_VERSIONS[key] || null;
+    return availableModels[key] || null;
   }
   
   /**
@@ -517,8 +542,8 @@ export class ModelVersionSync {
    * @param config Model configuration
    * @returns Standardized model configuration
    */
-  standardizeModelConfig(config: RepositoryModelConfig): RepositoryModelConfig {
-    const canonicalVersion = this.getCanonicalVersion(config.provider as string, config.model || '');
+  async standardizeModelConfig(config: RepositoryModelConfig): Promise<RepositoryModelConfig> {
+    const canonicalVersion = await this.getCanonicalVersion(config.provider as string, config.model || '');
     
     if (!canonicalVersion) {
       this.logger.warn(`No canonical version found for ${config.provider}/${config.model}`);
@@ -541,9 +566,9 @@ export class ModelVersionSync {
    * @param configMap Configuration map by language and size
    * @returns Standardized configuration map
    */
-  standardizeConfigMap(
+  async standardizeConfigMap(
     configMap: Record<string, Record<RepositorySizeCategory, RepositoryModelConfig>>
-  ): Record<string, Record<RepositorySizeCategory, RepositoryModelConfig>> {
+  ): Promise<Record<string, Record<RepositorySizeCategory, RepositoryModelConfig>>> {
     const standardizedMap = { ...configMap };
     
     for (const [language, sizeConfigs] of Object.entries(standardizedMap)) {
@@ -551,7 +576,7 @@ export class ModelVersionSync {
       
       for (const [sizeCategory, config] of Object.entries(sizeConfigs)) {
         if (standardizedMap[language] && typeof standardizedMap[language] === 'object') {
-          (standardizedMap[language] as Record<string, RepositoryModelConfig>)[sizeCategory] = this.standardizeModelConfig(config);
+          (standardizedMap[language] as Record<string, RepositoryModelConfig>)[sizeCategory] = await this.standardizeModelConfig(config);
         }
       }
     }
@@ -571,7 +596,7 @@ export class ModelVersionSync {
     // Handle OpenRouter special case
     if (provider === 'openrouter') {
       // For OpenRouter, filter by provider prefix
-      const openRouterVersions = Object.values(CANONICAL_MODEL_VERSIONS)
+      const openRouterVersions = Object.values(this.cachedModels)
         .filter(v => v.provider === 'openrouter');
       
       // Group by upstream model
@@ -588,7 +613,7 @@ export class ModelVersionSync {
     }
     
     // For regular providers
-    const versions = Object.values(CANONICAL_MODEL_VERSIONS)
+    const versions = Object.values(this.cachedModels)
       .filter(v => v.provider === provider);
     
     for (const version of versions) {
@@ -603,7 +628,7 @@ export class ModelVersionSync {
    */
   logModelVersionReport(): void {
     // Get unique providers without using Set
-    const providerValues = Object.values(CANONICAL_MODEL_VERSIONS).map(v => v.provider);
+    const providerValues = Object.values(this.cachedModels).map(v => v.provider);
     const providers: string[] = [];
     
     // Manual deduplication
@@ -634,21 +659,26 @@ export class ModelVersionSync {
    */
   getModelsForProvider(provider: string): ModelVersionInfo[] {
     // Filter models by provider
-    return Object.values(CANONICAL_MODEL_VERSIONS)
+    return Object.values(this.cachedModels)
       .filter(m => m.provider === provider && m.deprecated !== true);
   }
   
   /**
    * Find the optimal model for a given repository context
+   * Returns both primary and fallback models when includeFallback is true
    * 
    * @param context Repository context
    * @param preferredProvider Optional preferred provider
-   * @returns Best model for this context
+   * @param includeFallback Whether to return fallback model as well
+   * @returns Best model for this context, or array of [primary, fallback] if includeFallback is true
    */
-  findOptimalModel(context: RepositoryContext, preferredProvider?: string): ModelVersionInfo | null {
+  async findOptimalModel(context: RepositoryContext, preferredProvider?: string, includeFallback?: boolean): Promise<ModelVersionInfo | ModelVersionInfo[] | null> {
     try {
+      // Get all available models (from database or hardcoded)
+      const availableModels = await this.getAvailableModels();
+      
       // Get all active (non-deprecated) models
-      const activeModels = Object.values(CANONICAL_MODEL_VERSIONS)
+      const activeModels = Object.values(availableModels)
         .filter(m => m.deprecated !== true);
       
       // If preferred provider is specified, prioritize those models
@@ -667,14 +697,17 @@ export class ModelVersionSync {
         const matchesSize = model.preferredFor.includes(`${context.sizeCategory}_repositories`);
         
         // Check for tag matches if provided
-        const matchesTags = context.tags && model.preferredFor
+        // Tags are optional - if no tags match, we still consider the model
+        const matchesTags = context.tags && model.preferredFor && context.tags.length > 0
           ? context.tags.some(tag => {
               // We've already checked model.preferredFor exists above
               return model.preferredFor && model.preferredFor.includes(tag.toLowerCase());
             })
-          : true;
+          : true; // If no tags provided or model doesn't support tags, consider it a match
         
-        return (matchesLanguage || matchesSize) && matchesTags;
+        // Return true if language or size matches
+        // Tags are used as a bonus filter but not required
+        return (matchesLanguage || matchesSize);
       });
       
       if (matchingModels.length === 0) {
@@ -687,7 +720,18 @@ export class ModelVersionSync {
           return bScore - aScore; // Descending order
         });
         
-        return sortedByCapabilities.length > 0 ? sortedByCapabilities[0] : null;
+        if (sortedByCapabilities.length === 0) {
+          // Last resort - use emergency fallback
+          const emergencyModel = EMERGENCY_FALLBACK_MODELS['openai/gpt-4o'];
+          return includeFallback ? [emergencyModel, emergencyModel] : emergencyModel;
+        }
+        
+        // Return primary and fallback if requested
+        if (includeFallback && sortedByCapabilities.length > 1) {
+          return [sortedByCapabilities[0], sortedByCapabilities[1]];
+        }
+        
+        return sortedByCapabilities[0];
       }
       
       // Sort matching models by suitability score
@@ -697,7 +741,16 @@ export class ModelVersionSync {
         return bScore - aScore; // Descending order
       });
       
-      return sortedMatches.length > 0 ? sortedMatches[0] : null;
+      if (sortedMatches.length === 0) {
+        return null;
+      }
+      
+      // Return primary and fallback if requested
+      if (includeFallback && sortedMatches.length > 1) {
+        return [sortedMatches[0], sortedMatches[1]];
+      }
+      
+      return sortedMatches[0];
     } catch (error) {
       this.logger.error('Error finding optimal model', { context, error });
       return null;
@@ -714,8 +767,20 @@ export class ModelVersionSync {
   private calculateModelScore(model: ModelVersionInfo, context: RepositoryContext): number {
     if (!model.capabilities) return 0;
     
-    // Base scores for different size categories
-    const sizeWeights: Record<RepositorySizeCategory, Record<string, number>> = {
+    // Determine cost weight based on repository size
+    const costWeights: Record<RepositorySizeCategory, number> = {
+      [RepositorySizeCategory.SMALL]: 0.4,      // 40% cost weight for small repos
+      [RepositorySizeCategory.MEDIUM]: 0.25,     // 25% cost weight for medium repos
+      [RepositorySizeCategory.LARGE]: 0.15,      // 15% cost weight for large repos
+      [RepositorySizeCategory.EXTRA_LARGE]: 0.1  // 10% cost weight for extra large repos
+    };
+    
+    // Get cost weight for this size category
+    const costWeight = costWeights[context.sizeCategory] || 0.25;
+    const capabilityWeight = 1 - costWeight;
+    
+    // Base scores for different size categories (normalized to sum to 1)
+    const capabilityWeights: Record<RepositorySizeCategory, Record<string, number>> = {
       [RepositorySizeCategory.SMALL]: { codeQuality: 0.3, speed: 0.4, contextWindow: 0.1, reasoning: 0.1, detailLevel: 0.1 },
       [RepositorySizeCategory.MEDIUM]: { codeQuality: 0.4, speed: 0.2, contextWindow: 0.1, reasoning: 0.2, detailLevel: 0.1 },
       [RepositorySizeCategory.LARGE]: { codeQuality: 0.3, speed: 0.1, contextWindow: 0.2, reasoning: 0.2, detailLevel: 0.2 },
@@ -723,23 +788,35 @@ export class ModelVersionSync {
     };
     
     // Get weights for this size category
-    const weights = sizeWeights[context.sizeCategory] || sizeWeights[RepositorySizeCategory.MEDIUM];
+    const weights = capabilityWeights[context.sizeCategory] || capabilityWeights[RepositorySizeCategory.MEDIUM];
     
-    // Calculate weighted score
-    let score = 0;
+    // Calculate capability score
+    let capabilityScore = 0;
     const c = model.capabilities;
     
-    if (c.codeQuality) score += c.codeQuality * weights.codeQuality;
-    if (c.speed) score += c.speed * weights.speed;
+    if (c.codeQuality) capabilityScore += c.codeQuality * weights.codeQuality;
+    if (c.speed) capabilityScore += c.speed * weights.speed;
     if (c.contextWindow) {
       // Normalize context window size to 0-10 scale
       const normalizedContextWindow = Math.min(10, c.contextWindow / 20000);
-      score += normalizedContextWindow * weights.contextWindow;
+      capabilityScore += normalizedContextWindow * weights.contextWindow;
     }
-    if (c.reasoning) score += c.reasoning * weights.reasoning;
-    if (c.detailLevel) score += c.detailLevel * weights.detailLevel;
+    if (c.reasoning) capabilityScore += c.reasoning * weights.reasoning;
+    if (c.detailLevel) capabilityScore += c.detailLevel * weights.detailLevel;
     
-    return score;
+    // Calculate cost score (inverse of cost, normalized to 0-10 scale)
+    let costScore = 10;
+    if (model.pricing) {
+      const avgCost = (model.pricing.input + model.pricing.output) / 2;
+      // Convert to 0-10 scale where lower cost = higher score
+      // Log scale to handle wide range of costs
+      costScore = Math.max(0, 10 - Math.log10(Math.max(0.1, avgCost)) * 2.5);
+    }
+    
+    // Combine scores with weights
+    const finalScore = (capabilityScore * capabilityWeight) + (costScore * costWeight);
+    
+    return finalScore;
   }
   
   /**
@@ -747,7 +824,7 @@ export class ModelVersionSync {
    * 
    * @returns Complete configuration map for all language/size combinations
    */
-  generateCompleteConfigMap(): Record<string, Record<RepositorySizeCategory, RepositoryModelConfig>> {
+  async generateCompleteConfigMap(): Promise<Record<string, Record<RepositorySizeCategory, RepositoryModelConfig>>> {
     try {
       const configMap: Record<string, Record<RepositorySizeCategory, RepositoryModelConfig>> = {};
       const languages = ['javascript', 'typescript', 'python', 'java', 'ruby', 'go', 'rust', 'csharp', 'php', 'default'];
@@ -758,24 +835,26 @@ export class ModelVersionSync {
         configMap[language] = {} as Record<RepositorySizeCategory, RepositoryModelConfig>;
         
         for (const sizeCategory of sizeCategories) {
-          const model = this.findOptimalModel({
+          const model = await this.findOptimalModel({
             language,
             sizeCategory,
             tags: []
           });
           
           if (model) {
+            // Handle array return type from findOptimalModel
+            const primaryModel = Array.isArray(model) ? model[0] : model;
             configMap[language][sizeCategory] = {
               id: `auto-${Date.now()}-${language}-${sizeCategory}`,
               repository_url: '',
               repository_name: '',
-              provider: model.provider as RepositoryProvider,
+              provider: primaryModel.provider as RepositoryProvider,
               primary_language: language,
               languages: [language],
               size_category: sizeCategory,
               framework_stack: [],
               complexity_score: 0.5,
-              model: model.model as string,
+              model: primaryModel.model as string,
               testResults: {
                 status: TestingStatus.TESTED,
                 avgResponseTime: 0,
@@ -792,7 +871,7 @@ export class ModelVersionSync {
             };
           } else {
             // Fallback to default
-            const defaultModel = CANONICAL_MODEL_VERSIONS['openai/gpt-4o'];
+            const defaultModel = EMERGENCY_FALLBACK_MODELS['openai/gpt-4o'];
             if (defaultModel) {
               configMap[language][sizeCategory] = {
                 id: `default-${Date.now()}-${language}-${sizeCategory}`,
