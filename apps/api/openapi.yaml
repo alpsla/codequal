@@ -1,0 +1,457 @@
+openapi: 3.0.0
+info:
+  title: CodeQual API
+  version: 1.0.0
+  description: AI-powered code review API for comprehensive pull request analysis
+  termsOfService: https://codequal.com/terms
+  contact:
+    name: CodeQual Support
+    email: support@codequal.com
+    url: https://codequal.com/support
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.codequal.com/v1
+    description: Production server
+  - url: https://staging-api.codequal.com/v1
+    description: Staging server
+  - url: http://localhost:8080/v1
+    description: Development server
+
+tags:
+  - name: Analysis
+    description: Pull request analysis operations
+  - name: Reports
+    description: Analysis reports and history
+  - name: API Keys
+    description: API key management (requires user auth)
+  - name: Usage
+    description: Usage statistics and billing
+  - name: Health
+    description: Service health and status
+
+security:
+  - ApiKeyAuth: []
+
+paths:
+  /analyze-pr:
+    post:
+      summary: Analyze a pull request
+      description: Submit a pull request for comprehensive AI-powered code review analysis
+      operationId: analyzePR
+      tags:
+        - Analysis
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PRAnalysisRequest'
+            examples:
+              basic:
+                summary: Basic analysis request
+                value:
+                  repositoryUrl: https://github.com/example/repo
+                  prNumber: 123
+                  analysisMode: comprehensive
+              withToken:
+                summary: Private repo with token
+                value:
+                  repositoryUrl: https://github.com/example/private-repo
+                  prNumber: 456
+                  analysisMode: deep
+                  githubToken: ghp_xxxxxxxxxxxxxxxxxxxx
+      responses:
+        '202':
+          description: Analysis request accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalysisResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimit'
+
+  /analysis/{id}/progress:
+    get:
+      summary: Check analysis progress
+      description: Get the current status and results of an analysis request
+      operationId: getAnalysisProgress
+      tags:
+        - Analysis
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Analysis ID from initial request
+          schema:
+            type: string
+            example: analysis_1234567890_abc123
+      responses:
+        '200':
+          description: Analysis status retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalysisProgress'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /analysis/history:
+    get:
+      summary: Get analysis history
+      description: Retrieve pull request analysis history with filtering and pagination
+      operationId: getAnalysisHistory
+      tags:
+        - Reports
+      parameters:
+        - name: limit
+          in: query
+          description: Number of results to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          description: Number of results to skip
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: repositoryUrl
+          in: query
+          description: Filter by repository URL
+          schema:
+            type: string
+            format: uri
+      responses:
+        '200':
+          description: Analysis history retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalysisHistory'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /reports/{id}:
+    get:
+      summary: Get analysis report
+      description: Retrieve detailed analysis report for a completed analysis
+      operationId: getReport
+      tags:
+        - Reports
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Analysis ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Analysis report retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalysisReport'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API key for authentication. Format ck_[32-character-hex]
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token for authenticated users (internal use)
+
+  schemas:
+    PRAnalysisRequest:
+      type: object
+      required:
+        - repositoryUrl
+        - prNumber
+        - analysisMode
+      properties:
+        repositoryUrl:
+          type: string
+          format: uri
+          description: GitHub repository URL
+          example: https://github.com/owner/repo
+        prNumber:
+          type: integer
+          description: Pull request number
+          minimum: 1
+          example: 123
+        analysisMode:
+          type: string
+          enum: [quick, comprehensive, deep]
+          description: |
+            Analysis depth level:
+            - quick: Basic checks (5-10 min)
+            - comprehensive: Standard analysis (10-20 min)
+            - deep: Full analysis with all checks (20-30 min)
+          default: comprehensive
+        githubToken:
+          type: string
+          description: GitHub personal access token for private repos
+          example: ghp_xxxxxxxxxxxxxxxxxxxx
+
+    AnalysisResponse:
+      type: object
+      properties:
+        analysisId:
+          type: string
+          description: Unique analysis identifier
+          example: analysis_1234567890_abc123
+        status:
+          type: string
+          enum: [queued, processing]
+          description: Initial analysis status
+        estimatedTime:
+          type: integer
+          description: Estimated completion time in seconds
+          example: 600
+        checkStatusUrl:
+          type: string
+          format: uri
+          description: URL to check analysis status
+          example: /v1/analysis/analysis_1234567890_abc123/progress
+
+    AnalysisProgress:
+      type: object
+      properties:
+        analysisId:
+          type: string
+        status:
+          type: string
+          enum: [queued, processing, complete, failed]
+        progress:
+          type: number
+          minimum: 0
+          maximum: 100
+          description: Progress percentage
+        estimatedTime:
+          type: integer
+          description: Remaining time estimate in seconds
+        results:
+          $ref: '#/components/schemas/AnalysisResults'
+        error:
+          type: string
+          description: Error message if failed
+
+    AnalysisResults:
+      type: object
+      properties:
+        summary:
+          type: object
+          properties:
+            overallScore:
+              type: number
+              minimum: 0
+              maximum: 100
+              description: Overall code quality score
+            recommendation:
+              type: string
+              enum: [approve, review, reject]
+              description: Merge recommendation
+            criticalIssues:
+              type: integer
+              description: Number of critical issues
+            warnings:
+              type: integer
+              description: Number of warnings
+        details:
+          type: object
+          properties:
+            codeQuality:
+              type: object
+              description: Code quality metrics
+            security:
+              type: object
+              description: Security vulnerabilities
+            performance:
+              type: object
+              description: Performance analysis
+            tests:
+              type: object
+              description: Test coverage analysis
+
+    AnalysisHistory:
+      type: object
+      properties:
+        analyses:
+          type: array
+          items:
+            type: object
+            properties:
+              analysisId:
+                type: string
+              repository:
+                type: object
+                properties:
+                  url:
+                    type: string
+                  name:
+                    type: string
+              pr:
+                type: object
+                properties:
+                  number:
+                    type: integer
+                  title:
+                    type: string
+                  author:
+                    type: string
+              timestamp:
+                type: string
+                format: date-time
+              status:
+                type: string
+        pagination:
+          type: object
+          properties:
+            total:
+              type: integer
+            offset:
+              type: integer
+            limit:
+              type: integer
+            hasMore:
+              type: boolean
+
+    AnalysisReport:
+      type: object
+      description: Detailed analysis report
+      properties:
+        id:
+          type: string
+        repository:
+          type: object
+        pullRequest:
+          type: object
+        analysis:
+          $ref: '#/components/schemas/AnalysisResults'
+        generatedAt:
+          type: string
+          format: date-time
+
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: Error message
+        code:
+          type: string
+          description: Error code for programmatic handling
+        details:
+          type: object
+          description: Additional error details
+
+    RateLimitError:
+      allOf:
+        - $ref: '#/components/schemas/Error'
+        - type: object
+          properties:
+            details:
+              type: object
+              properties:
+                limit:
+                  type: integer
+                  description: Request limit per hour
+                remaining:
+                  type: integer
+                  description: Remaining requests
+                reset:
+                  type: integer
+                  description: Unix timestamp when limit resets
+
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: Invalid request parameters
+            code: INVALID_REQUEST
+
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: API key required
+            code: AUTH_REQUIRED
+
+    Forbidden:
+      description: Access denied
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: Access denied to repository
+            code: ACCESS_DENIED
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: Analysis not found
+            code: NOT_FOUND
+
+    RateLimit:
+      description: Rate limit exceeded
+      headers:
+        X-RateLimit-Limit:
+          description: Request limit per hour
+          schema:
+            type: integer
+        X-RateLimit-Remaining:
+          description: Remaining requests
+          schema:
+            type: integer
+        X-RateLimit-Reset:
+          description: Reset timestamp
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RateLimitError'
+          example:
+            error: Rate limit exceeded
+            code: RATE_LIMIT_EXCEEDED
+            details:
+              limit: 1000
+              remaining: 0
+              reset: 1640995200

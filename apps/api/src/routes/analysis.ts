@@ -6,16 +6,90 @@ export const analysisRoutes = Router();
 const analysisHistory = new Map<string, any[]>();
 
 /**
- * GET /api/analysis/history
- * Get user's analysis history
+ * @swagger
+ * /analysis/history:
+ *   get:
+ *     summary: Get analysis history
+ *     description: Retrieve the user's pull request analysis history with optional filtering and pagination
+ *     tags: [Reports]
+ *     security:
+ *       - ApiKeyAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 20
+ *         description: Number of results to return
+ *       - in: query
+ *         name: offset
+ *         schema:
+ *           type: integer
+ *           minimum: 0
+ *           default: 0
+ *         description: Number of results to skip
+ *       - in: query
+ *         name: repositoryUrl
+ *         schema:
+ *           type: string
+ *           format: uri
+ *         description: Filter by repository URL
+ *     responses:
+ *       200:
+ *         description: Analysis history retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 analyses:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       analysisId:
+ *                         type: string
+ *                       repository:
+ *                         type: object
+ *                       pr:
+ *                         type: object
+ *                       analysis:
+ *                         type: object
+ *                       metrics:
+ *                         type: object
+ *                       timestamp:
+ *                         type: string
+ *                         format: date-time
+ *                       status:
+ *                         type: string
+ *                 pagination:
+ *                   type: object
+ *                   properties:
+ *                     total:
+ *                       type: integer
+ *                     offset:
+ *                       type: integer
+ *                     limit:
+ *                       type: integer
+ *                     hasMore:
+ *                       type: boolean
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       429:
+ *         $ref: '#/components/responses/RateLimitError'
  */
-analysisRoutes.get('/history', async (req: Request, res: Response): Promise<void> => {
+analysisRoutes.get('/history', async (req: Request, res: Response) => {
   try {
-    const user = req.user!;
+    const user = req.user;
+    if (!user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
     const { limit = 20, offset = 0, repositoryUrl } = req.query;
     
     // Get user's analysis history
-    const userHistory = analysisHistory.get(user!.id) || [];
+    const userHistory = analysisHistory.get(user.id) || [];
     
     // Filter by repository if specified
     let filteredHistory = userHistory;
@@ -69,9 +143,12 @@ analysisRoutes.get('/:id/results', async (req: Request, res: Response) => {
   try {
     const { id: analysisId } = req.params;
     const user = req.user;
+    if (!user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
     
     // Find analysis in user's history
-    const userHistory = analysisHistory.get(user!.id) || [];
+    const userHistory = analysisHistory.get(user.id) || [];
     const analysis = userHistory.find(a => a.analysisId === analysisId);
     
     if (!analysis) {
@@ -101,9 +178,12 @@ analysisRoutes.get('/:id/report', async (req: Request, res: Response) => {
     const { id: analysisId } = req.params;
     const { format = 'json' } = req.query;
     const user = req.user;
+    if (!user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
     
     // Find analysis in user's history
-    const userHistory = analysisHistory.get(user!.id) || [];
+    const userHistory = analysisHistory.get(user.id) || [];
     const analysis = userHistory.find(a => a.analysisId === analysisId);
     
     if (!analysis) {
@@ -216,11 +296,14 @@ analysisRoutes.post('/:id/feedback', async (req: Request, res: Response) => {
  */
 analysisRoutes.get('/stats', async (req: Request, res: Response) => {
   try {
-    const user = req.user!;
+    const user = req.user;
+    if (!user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
     const { timeRange = '30d' } = req.query;
     
     // Get user's analysis history
-    const userHistory = analysisHistory.get(user!.id) || [];
+    const userHistory = analysisHistory.get(user.id) || [];
     
     // Filter by time range
     const cutoffDate = new Date();

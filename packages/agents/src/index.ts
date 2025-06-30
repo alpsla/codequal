@@ -32,3 +32,9 @@ export * from './services/skill-tracking-service';
 export * from './services/report-formatter.service';
 export * from './services/recommendation-service';
 export * from './services/educational-compilation-service';
+
+// Translator
+export * from './translator';
+
+// Support
+export * from './support/support-chatbot';

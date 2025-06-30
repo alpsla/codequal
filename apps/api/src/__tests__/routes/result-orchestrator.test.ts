@@ -2,6 +2,9 @@ import request from 'supertest';
 import express from 'express';
 import { resultOrchestratorRoutes } from '../../routes/result-orchestrator';
 import { createMockAuthenticatedUser } from '../setup';
+import { validatePRAnalysisRequest } from '../../validators/request-validators';
+import { ResultOrchestrator } from '../../services/result-orchestrator';
+import { checkRepositoryAccess } from '../../middleware/auth-middleware';
 
 // Mock the services
 jest.mock('../../services/result-orchestrator');
@@ -114,8 +117,7 @@ describe('Result Orchestrator Routes', () => {
     });
 
     test('should reject invalid request body', async () => {
-      const { validatePRAnalysisRequest } = require('../../validators/request-validators');
-      validatePRAnalysisRequest.mockReturnValueOnce({
+      (validatePRAnalysisRequest as jest.Mock).mockReturnValueOnce({
         isValid: false,
         errors: ['repositoryUrl is required', 'prNumber must be a positive integer']
       });
@@ -135,8 +137,7 @@ describe('Result Orchestrator Routes', () => {
     });
 
     test('should reject request for inaccessible repository', async () => {
-      const { checkRepositoryAccess } = require('../../middleware/auth-middleware');
-      checkRepositoryAccess.mockResolvedValueOnce(false);
+      (checkRepositoryAccess as jest.Mock).mockResolvedValueOnce(false);
 
       const response = await request(app)
         .post('/api/analyze-pr')
@@ -534,8 +535,7 @@ describe('Result Orchestrator Routes', () => {
     });
 
     test('should validate analysis mode values', async () => {
-      const { validatePRAnalysisRequest } = require('../../validators/request-validators');
-      validatePRAnalysisRequest.mockReturnValueOnce({
+      (validatePRAnalysisRequest as jest.Mock).mockReturnValueOnce({
         isValid: false,
         errors: ['analysisMode must be one of: quick, comprehensive, deep']
       });

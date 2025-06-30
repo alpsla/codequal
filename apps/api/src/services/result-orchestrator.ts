@@ -24,6 +24,7 @@ import { EducationalCompilationService } from '../../../../packages/agents/src/s
 import { PRContentAnalyzer, PRFile } from './intelligence/pr-content-analyzer';
 import { IntelligentResultMerger } from './intelligence/intelligent-result-merger';
 import { SkillTrackingService } from '../../../../packages/agents/src/services/skill-tracking-service';
+import { IssueResolutionDetector } from '../../../../packages/agents/src/services/issue-resolution-detector';
 
 export interface PRAnalysisRequest {
   repositoryUrl: string;
@@ -98,6 +99,7 @@ export interface AnalysisResult {
     recommendations: string[];
     prComment: string;
     fullReport?: any; // Full enhanced report from Reporter Agent
+    htmlReportUrl?: string;
   };
   metadata: {
     timestamp: Date;
@@ -288,7 +290,7 @@ export class ResultOrchestrator {
       
       // Step 12: Store standardized report in Supabase for UI consumption
       processingSteps.push('Storing report in database');
-      await this.storeReportInSupabase(standardReport, request.authenticatedUser);
+      const reportId = await this.storeReportInSupabase(standardReport, request.authenticatedUser);
 
       // Step 13: Track skill development based on PR analysis
       processingSteps.push('Tracking skill development');
@@ -301,6 +303,10 @@ export class ResultOrchestrator {
       );
 
       const processingTime = Date.now() - startTime;
+      
+      // Generate HTML report URL (will be updated when deployed to cloud)
+      const baseUrl = process.env.API_BASE_URL || 'http://localhost:3001';
+      const htmlReportUrl = `${baseUrl}/api/analysis/${reportId}/report?format=html`;
 
       // Step 10: Compile final analysis result
       const analysisResult: AnalysisResult = {
@@ -334,7 +340,8 @@ export class ResultOrchestrator {
             .slice(0, 5)
             .map(r => r.title),
           prComment: standardReport.exports.prComment,
-          fullReport: standardReport
+          fullReport: standardReport,
+          htmlReportUrl
         },
         metadata: {
           timestamp: new Date(),
@@ -1486,6 +1493,55 @@ Primary Language: TypeScript
       const agentUser = this.convertToAgentUser(authenticatedUser);
       const skillTracker = new SkillTrackingService(agentUser);
       
+      // Get existing repository issues from DeepWiki data
+      const existingRepoIssues = await this.getExistingRepositoryIssues(prContext.repositoryUrl);
+      
+      // Detect which issues were fixed in this PR
+      const issueResolutionDetector = new IssueResolutionDetector();
+      const { fixedIssues, newIssues, unchangedIssues } = issueResolutionDetector.detectFixedIssues(
+        processedResults,
+        existingRepoIssues,
+        prContext.repositoryUrl,
+        prContext.prNumber
+      );
+      
+      // Track fixed issues for skill points
+      if (fixedIssues.length > 0) {
+        const fixedIssuesForTracking = fixedIssues.map((issue: any) => ({
+          issueId: issue.issueId,
+          category: issue.category,
+          severity: issue.severity,
+          repository: issue.repository,
+          prNumber: prContext.prNumber
+        }));
+        
+        await skillTracker.trackRepoIssueResolution(fixedIssuesForTracking);
+        
+        this.logger.info('Tracked issue resolutions', {
+          fixedCount: fixedIssues.length,
+          repository: prContext.repositoryUrl,
+          prNumber: prContext.prNumber
+        });
+      }
+      
+      // Apply degradation for unresolved repository issues
+      if (unchangedIssues.length > 0) {
+        const unresolvedIssuesForDegradation = unchangedIssues.map((issue: any) => ({
+          issueId: issue.issueId,
+          category: issue.category,
+          severity: issue.severity,
+          repository: issue.repository
+        }));
+        
+        const totalDegradation = await skillTracker.applyRepoIssueDegradation(unresolvedIssuesForDegradation);
+        
+        this.logger.info('Applied skill degradation for unresolved issues', {
+          unresolvedCount: unchangedIssues.length,
+          totalDegradation,
+          repository: prContext.repositoryUrl
+        });
+      }
+      
       // Prepare PR metadata
       const prMetadata = {
         prNumber: prContext.prNumber,
@@ -1495,7 +1551,7 @@ Primary Language: TypeScript
         complexity: this.calculatePRComplexity(processedResults, prContext)
       };
       
-      // Assess skills from PR analysis
+      // Assess skills from PR analysis with existing repo issues context
       const skillAssessments = await skillTracker.assessSkillsFromPR(
         {
           security: processedResults.findings?.security || [],
@@ -1504,7 +1560,8 @@ Primary Language: TypeScript
           performance: processedResults.findings?.performance || [],
           dependencies: processedResults.findings?.dependencies || []
         },
-        prMetadata
+        prMetadata,
+        existingRepoIssues
       );
       
       // Update skills based on assessments
@@ -1564,6 +1621,61 @@ Primary Language: TypeScript
     return Math.max(1, complexity);
   }
   
+  /**
+   * Get existing repository issues from DeepWiki or other sources
+   */
+  private async getExistingRepositoryIssues(repositoryUrl: string): Promise<{
+    security?: any[];
+    codeQuality?: any[];
+    architecture?: any[];
+    performance?: any[];
+    dependencies?: any[];
+  }> {
+    try {
+      // Get DeepWiki data which should contain existing issues
+      const deepWikiData = await this.getDeepWikiSummary(repositoryUrl);
+      
+      // Extract existing issues from DeepWiki analysis
+      const existingIssues = {
+        security: deepWikiData.analysis?.security?.vulnerabilities || [],
+        codeQuality: deepWikiData.analysis?.codeQuality?.issues || [],
+        architecture: deepWikiData.analysis?.architecture?.issues || [],
+        performance: deepWikiData.analysis?.performance?.issues || [],
+        dependencies: deepWikiData.analysis?.dependencies?.vulnerabilities || []
+      };
+      
+      // Also check if we have stored analysis results in Vector DB
+      const repositoryId = this.extractRepositoryId(repositoryUrl);
+      const toolResults = await this.retrieveToolResults(repositoryUrl);
+      
+      // Merge with tool results if available
+      if (toolResults.security?.toolResults) {
+        existingIssues.security = [...existingIssues.security, ...toolResults.security.toolResults];
+      }
+      if (toolResults.codeQuality?.toolResults) {
+        existingIssues.codeQuality = [...existingIssues.codeQuality, ...toolResults.codeQuality.toolResults];
+      }
+      
+      this.logger.info('Retrieved existing repository issues', {
+        repository: repositoryUrl,
+        securityCount: existingIssues.security.length,
+        codeQualityCount: existingIssues.codeQuality.length,
+        architectureCount: existingIssues.architecture.length,
+        performanceCount: existingIssues.performance.length,
+        dependenciesCount: existingIssues.dependencies.length
+      });
+      
+      return existingIssues;
+    } catch (error) {
+      this.logger.error('Failed to get existing repository issues', {
+        repository: repositoryUrl,
+        error: error instanceof Error ? error.message : error
+      });
+      // Return empty issues if retrieval fails
+      return {};
+    }
+  }
+  
   private extractTargetedSkills(compiledEducationalData: any): string[] {
     const skills = new Set<string>();
     
@@ -1612,7 +1724,7 @@ Primary Language: TypeScript
   private async storeReportInSupabase(
     report: StandardReport,
     authenticatedUser: AuthenticatedUser
-  ): Promise<void> {
+  ): Promise<string> {
     try {
       const { createClient } = await import('@supabase/supabase-js');
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -1648,10 +1760,14 @@ Primary Language: TypeScript
         reportId: report.id,
         repositoryUrl: report.repositoryUrl
       });
+      
+      return report.id;
     } catch (error) {
       this.logger.error('Error storing report in Supabase', { error });
       // Don't fail the entire analysis if storage fails
       // The report is still available in the response
+      // Return the report ID even if storage fails
+      return report.id;
     }
   }
 

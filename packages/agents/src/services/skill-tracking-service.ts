@@ -1,6 +1,7 @@
 import { createLogger } from '@codequal/core/utils';
 import { SkillModel, DeveloperSkill, SkillHistoryEntry } from '@codequal/database/models/skill';
 import { AuthenticatedUser } from '../multi-agent/types/auth';
+import { getSupabase } from '@codequal/database/supabase/client';
 
 /**
  * Skill assessment data extracted from PR analysis
@@ -67,6 +68,13 @@ export class SkillTrackingService {
       filesChanged: number;
       linesChanged: number;
       complexity: number;
+    },
+    existingRepoIssues?: {
+      security?: any[];
+      codeQuality?: any[];
+      architecture?: any[];
+      performance?: any[];
+      dependencies?: any[];
     }
   ): Promise<SkillAssessment[]> {
     this.logger.info('Assessing skills from PR analysis', {
@@ -78,11 +86,15 @@ export class SkillTrackingService {
     const assessments: SkillAssessment[] = [];
 
     // Assess security skills
-    if (prAnalysis.security?.vulnerabilities?.length > 0) {
-      const securityLevel = this.calculateSecuritySkillLevel(
+    if (prAnalysis.security?.vulnerabilities?.length > 0 || (existingRepoIssues?.security && existingRepoIssues.security.length > 0)) {
+      const securityLevel = await this.calculateSecuritySkillLevel(
         prAnalysis.security,
-        prMetadata.complexity
+        prMetadata.complexity,
+        existingRepoIssues?.security
       );
+      
+      const prIssues = prAnalysis.security?.vulnerabilities?.length || 0;
+      const repoIssues = existingRepoIssues?.security?.length || 0;
       
       assessments.push({
         category: 'security',
@@ -90,8 +102,11 @@ export class SkillTrackingService {
         evidence: {
           type: 'pr_analysis',
           sourceId: `pr-${prMetadata.prNumber}`,
-          description: `Handled ${prAnalysis.security.vulnerabilities.length} security issues`,
-          severity: this.categorizeSecuritySeverity(prAnalysis.security.vulnerabilities),
+          description: `PR: ${prIssues} new issues, Repo: ${repoIssues} unresolved issues${securityLevel.activeDegradation > 0 ? ` (Active degradation: -${securityLevel.activeDegradation.toFixed(1)} points)` : ''}`,
+          severity: this.categorizeSecuritySeverity([
+            ...(prAnalysis.security?.vulnerabilities || []),
+            ...(existingRepoIssues?.security || [])
+          ]),
           complexity: prMetadata.complexity
         },
         confidence: securityLevel.confidence
@@ -206,6 +221,199 @@ export class SkillTrackingService {
         });
       }
     }
+  }
+
+  /**
+   * Track when repository issues are fixed
+   */
+  async trackRepoIssueResolution(
+    issuesFixed: {
+      issueId: string;
+      category: string;
+      severity: 'critical' | 'high' | 'medium' | 'low';
+      repository: string;
+      prNumber?: number;
+    }[]
+  ): Promise<void> {
+    this.logger.info('Tracking repository issue resolution', {
+      userId: this.authenticatedUser.id,
+      issuesFixedCount: issuesFixed.length
+    });
+
+    const supabase = getSupabase();
+    let totalPointsEarned = 0;
+
+    for (const fix of issuesFixed) {
+      try {
+        // Call the database function to handle resolution
+        const { data, error } = await supabase
+          .rpc('handle_issue_resolution', {
+            p_repository: fix.repository,
+            p_issue_id: fix.issueId,
+            p_issue_category: fix.category,
+            p_issue_severity: fix.severity,
+            p_resolved_by_user_id: this.authenticatedUser.id,
+            p_pr_number: fix.prNumber || null
+          });
+
+        if (error) {
+          this.logger.error('Failed to handle issue resolution', {
+            issueId: fix.issueId,
+            error: error.message
+          });
+          continue;
+        }
+
+        const pointsEarned = data || 0;
+        totalPointsEarned += Number(pointsEarned) || 0;
+
+        // Create assessment for skill update
+        const assessment: SkillAssessment = {
+          category: fix.category,
+          demonstratedLevel: Number(pointsEarned) || 0,
+          evidence: {
+            type: 'issue_resolution',
+            sourceId: `issue-${fix.issueId}`,
+            description: `Fixed ${fix.severity} ${fix.category} issue in ${fix.repository}`,
+            severity: fix.severity,
+            complexity: fix.severity === 'critical' ? 8 : fix.severity === 'high' ? 6 : 4
+          },
+          confidence: 0.95 // High confidence for fixing issues
+        };
+
+        await this.updateSkillLevel(assessment);
+      } catch (error) {
+        this.logger.error('Error tracking issue resolution', {
+          issueId: fix.issueId,
+          error: error instanceof Error ? error.message : error
+        });
+      }
+    }
+
+    this.logger.info('Completed tracking issue resolutions', {
+      totalPointsEarned,
+      issuesFixed: issuesFixed.length
+    });
+  }
+
+  /**
+   * Apply skill degradation for unresolved repository issues
+   */
+  async applyRepoIssueDegradation(
+    unresolvedIssues: {
+      issueId: string;
+      category: string;
+      severity: 'critical' | 'high' | 'medium' | 'low';
+      repository: string;
+    }[]
+  ): Promise<number> {
+    this.logger.info('Applying skill degradation for unresolved issues', {
+      userId: this.authenticatedUser.id,
+      issueCount: unresolvedIssues.length
+    });
+
+    const supabase = getSupabase();
+    let totalDegradation = 0;
+
+    for (const issue of unresolvedIssues) {
+      try {
+        const { data, error } = await supabase
+          .rpc('apply_issue_degradation', {
+            p_user_id: this.authenticatedUser.id,
+            p_repository: issue.repository,
+            p_issue_id: issue.issueId,
+            p_issue_category: issue.category,
+            p_issue_severity: issue.severity
+          });
+
+        if (error) {
+          this.logger.error('Failed to apply issue degradation', {
+            issueId: issue.issueId,
+            error: error.message
+          });
+          continue;
+        }
+
+        totalDegradation += Number(data) || 0;
+      } catch (error) {
+        this.logger.error('Error applying issue degradation', {
+          issueId: issue.issueId,
+          error: error instanceof Error ? error.message : error
+        });
+      }
+    }
+
+    this.logger.info('Completed applying issue degradations', {
+      totalDegradation,
+      issuesProcessed: unresolvedIssues.length
+    });
+
+    return totalDegradation;
+  }
+
+  /**
+   * Get active skill degradations for the user
+   */
+  async getActiveDegradations(): Promise<{
+    repository: string;
+    issueCount: number;
+    totalDegradation: number;
+    bySeverity: Record<string, { count: number; degradation: number }>;
+  }[]> {
+    const supabase = getSupabase();
+    
+    const { data, error } = await supabase
+      .rpc('get_active_degradations', {
+        p_user_id: this.authenticatedUser.id
+      });
+
+    if (error) {
+      this.logger.error('Failed to get active degradations', {
+        error: error.message
+      });
+      return [];
+    }
+
+    return Array.isArray(data) ? data.map((row: any) => ({
+      repository: row.repository,
+      issueCount: Number(row.issue_count),
+      totalDegradation: Number(row.total_degradation),
+      bySeverity: row.by_severity || {}
+    })) : [];
+  }
+
+  /**
+   * Get resolution history for the user
+   */
+  async getResolutionHistory(days = 90): Promise<{
+    repository: string;
+    resolutions: number;
+    skillPointsEarned: number;
+    bySeverity: Record<string, { count: number; points: number }>;
+    recentResolutions: any[];
+  }[]> {
+    const supabase = getSupabase();
+    
+    const { data, error } = await supabase
+      .rpc('get_resolution_history', {
+        p_user_id: this.authenticatedUser.id,
+        p_days: days
+      });
+
+    if (error) {
+      this.logger.error('Failed to get resolution history', {
+        error: error.message
+      });
+      return [];
+    }
+
+    return Array.isArray(data) ? data.map((row: any) => ({
+      repository: row.repository,
+      resolutions: Number(row.resolutions),
+      skillPointsEarned: Number(row.skill_points_earned),
+      bySeverity: row.by_severity || {},
+      recentResolutions: row.recent_resolutions || []
+    })) : [];
   }
 
   /**
@@ -333,27 +541,53 @@ export class SkillTrackingService {
     }
   }
 
-  private calculateSecuritySkillLevel(securityAnalysis: any, complexity: number): { level: number; confidence: number } {
-    const vulnerabilityCount = securityAnalysis.vulnerabilities?.length || 0;
-    const criticalCount = securityAnalysis.vulnerabilities?.filter((v: any) => v.severity === 'critical').length || 0;
+  private async calculateSecuritySkillLevel(
+    securityAnalysis: any, 
+    complexity: number,
+    existingRepoIssues?: any[]
+  ): Promise<{ level: number; confidence: number; activeDegradation: number }> {
+    const prVulnerabilities = securityAnalysis?.vulnerabilities || [];
+    const repoVulnerabilities = existingRepoIssues || [];
+    
+    // Count PR issues
+    const prVulnerabilityCount = prVulnerabilities.length;
+    const prCriticalCount = prVulnerabilities.filter((v: any) => v.severity === 'critical').length;
+    const prHighCount = prVulnerabilities.filter((v: any) => v.severity === 'high').length;
     
     let baseLevel = 5; // Default starting level
+    let degradationFactor = 0;
     
-    if (vulnerabilityCount === 0) {
-      baseLevel = 8; // Good security practices
-    } else if (criticalCount === 0) {
-      baseLevel = 6; // Some issues but not critical
+    // Assess based on new PR issues
+    if (prVulnerabilityCount === 0) {
+      baseLevel = 8; // Good security practices in PR
+    } else if (prCriticalCount === 0 && prHighCount === 0) {
+      baseLevel = 6; // Some issues but not critical/high
     } else {
-      baseLevel = 3; // Critical security issues present
+      baseLevel = 3; // Critical/high security issues introduced
+      // Apply degradation for new critical/high issues
+      degradationFactor = (prCriticalCount * 1.5) + (prHighCount * 1.0);
     }
+    
+    // Get active degradations from database
+    const activeDegradations = await this.getActiveDegradations();
+    let activeDegradationAmount = 0;
+    
+    // Sum up all active degradations for security category
+    for (const degradation of activeDegradations) {
+      activeDegradationAmount += degradation.totalDegradation;
+    }
+    
+    // Apply active degradation
+    degradationFactor += activeDegradationAmount;
 
     // Adjust for complexity
     const complexityModifier = Math.min(complexity / 10, 0.5);
-    const finalLevel = Math.min(10, Math.max(1, baseLevel + complexityModifier));
+    const finalLevel = Math.min(10, Math.max(1, baseLevel + complexityModifier - degradationFactor));
     
     return {
       level: Math.round(finalLevel),
-      confidence: vulnerabilityCount > 0 ? 0.9 : 0.7
+      confidence: (prVulnerabilityCount > 0 || repoVulnerabilities.length > 0) ? 0.9 : 0.7,
+      activeDegradation: activeDegradationAmount
     };
   }
 
@@ -362,8 +596,14 @@ export class SkillTrackingService {
     const codeSmells = codeQualityAnalysis.codeSmells?.length || 0;
     const linesChanged = metadata.linesChanged || 0;
     
+    // Count critical/high code quality issues
+    const criticalQualityIssues = codeQualityAnalysis.complexityIssues?.filter((i: any) => 
+      i.severity === 'critical' || i.severity === 'high'
+    ).length || 0;
+    
     let baseLevel = 5;
     let reasoning = '';
+    let degradationFactor = 0;
 
     if (issues === 0 && codeSmells === 0) {
       baseLevel = 8;
@@ -374,6 +614,8 @@ export class SkillTrackingService {
     } else {
       baseLevel = 3;
       reasoning = 'Multiple quality issues detected';
+      // Apply degradation for unresolved critical/high issues
+      degradationFactor = criticalQualityIssues * 0.8;
     }
 
     // Adjust for change size
@@ -383,7 +625,7 @@ export class SkillTrackingService {
     }
 
     return {
-      level: Math.min(10, Math.max(1, baseLevel)),
+      level: Math.min(10, Math.max(1, baseLevel - degradationFactor)),
       confidence: 0.8,
       reasoning
     };

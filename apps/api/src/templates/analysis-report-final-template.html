@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="google" content="notranslate">
+    <title>CodeQual - PR Analysis Report #{{pr_number}}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #2d3748;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* Header with gradient and shadow */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 16px;
+            margin-bottom: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: pulse 4s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.1); opacity: 0.3; }
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .header .subtitle {
+            font-size: 1.2em;
+            opacity: 0.95;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .metadata {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .metadata-item {
+            background: rgba(255,255,255,0.15);
+            padding: 12px 18px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        /* SECTION 1: PR Approval Decision - PROMINENT */
+        .pr-decision-section {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            margin-bottom: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            border: 4px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .pr-decision-section.approved {
+            border-color: #27ae60;
+            background: linear-gradient(to bottom, #ffffff 0%, #e8f8f5 100%);
+        }
+        
+        .pr-decision-section.rejected {
+            border-color: #e74c3c;
+            background: linear-gradient(to bottom, #ffffff 0%, #ffe5e5 100%);
+        }
+        
+        .pr-decision-section.conditional {
+            border-color: #f39c12;
+            background: linear-gradient(to bottom, #ffffff 0%, #fff8e5 100%);
+        }
+        
+        .decision-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .decision-icon {
+            font-size: 4em;
+            margin-bottom: 15px;
+        }
+        
+        .decision-title {
+            font-size: 2.5em;
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+        
+        .decision-subtitle {
+            font-size: 1.3em;
+            color: #718096;
+        }
+        
+        .decision-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 30px;
+        }
+        
+        .decision-section {
+            padding: 20px;
+            background: rgba(255,255,255,0.7);
+            border-radius: 12px;
+        }
+        
+        .decision-section h3 {
+            color: #4a5568;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        /* Code Snippets */
+        .code-snippet {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            overflow-x: auto;
+            font-family: 'Monaco', 'Consolas', 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
+            position: relative;
+        }
+        
+        .code-snippet pre {
+            margin: 0;
+        }
+        
+        .code-snippet code {
+            color: #d4d4d4;
+        }
+        
+        .code-line {
+            display: block;
+            padding: 2px 0;
+        }
+        
+        .code-line.highlight {
+            background: rgba(255, 107, 107, 0.2);
+            margin: 0 -20px;
+            padding-left: 20px;
+            padding-right: 20px;
+            border-left: 3px solid #ff6b6b;
+        }
+        
+        .code-comment {
+            color: #6a9955;
+        }
+        
+        .code-keyword {
+            color: #569cd6;
+        }
+        
+        .code-string {
+            color: #ce9178;
+        }
+        
+        .code-function {
+            color: #dcdcaa;
+        }
+        
+        /* Findings Section */
+        .finding {
+            background: #fef5e7;
+            border-left: 4px solid #f39c12;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        .finding.critical {
+            background: #fdf2f2;
+            border-color: #e74c3c;
+        }
+        
+        .finding.high {
+            background: #fef5e7;
+            border-color: #f39c12;
+        }
+        
+        .finding.medium {
+            background: #fffbeb;
+            border-color: #f1c40f;
+        }
+        
+        .finding.low {
+            background: #f0f7ff;
+            border-color: #95a5a6;
+        }
+        
+        .finding h4 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 500;
+        }
+        
+        .badge.critical {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .badge.high {
+            background: #f39c12;
+            color: white;
+        }
+        
+        .badge.medium {
+            background: #f1c40f;
+            color: #333;
+        }
+        
+        .badge.low {
+            background: #95a5a6;
+            color: white;
+        }
+        
+        /* Section Styles */
+        .section {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .section h2 {
+            color: #4a5568;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        
+        /* Recommendation Box */
+        .recommendation-box {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        
+        .recommendation-box strong {
+            color: #1976d2;
+        }
+        
+        /* Overall Score Section */
+        .overall-score-section {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .score-display {
+            display: inline-block;
+            position: relative;
+            margin: 20px 0;
+        }
+        
+        .score-circle {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: conic-gradient(
+                from 0deg,
+                #27ae60 0deg,
+                #27ae60 calc(var(--score) * 3.6deg),
+                #e0e0e0 calc(var(--score) * 3.6deg)
+            );
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .score-inner {
+            width: 170px;
+            height: 170px;
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .score-number {
+            font-size: 3em;
+            font-weight: bold;
+            color: #2d3748;
+        }
+        
+        .score-label {
+            font-size: 1.1em;
+            color: #718096;
+        }
+        
+        .score-breakdown {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .score-component {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .score-component h4 {
+            color: #4a5568;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        
+        .score-component .points {
+            font-size: 2em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .points-positive {
+            color: #27ae60;
+        }
+        
+        .points-negative {
+            color: #e74c3c;
+        }
+        
+        /* Skill Development Section */
+        .skill-development-section {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .skill-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .skill-card {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            padding: 20px;
+            transition: transform 0.2s;
+        }
+        
+        .skill-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .skill-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+        
+        .skill-name {
+            font-weight: 600;
+            color: #495057;
+            font-size: 1.1em;
+        }
+        
+        .skill-level {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .skill-progress {
+            margin-bottom: 15px;
+        }
+        
+        .skill-bar {
+            width: 100%;
+            height: 12px;
+            background: #e9ecef;
+            border-radius: 6px;
+            overflow: hidden;
+            margin-bottom: 5px;
+        }
+        
+        .skill-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.5s ease;
+            position: relative;
+        }
+        
+        .skill-range {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8em;
+            color: #718096;
+        }
+        
+        /* Educational Modules */
+        .edu-module {
+            background: #f0f7ff;
+            border: 1px solid #b8daff;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            transition: transform 0.2s;
+        }
+        
+        .edu-module:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .edu-module h4 {
+            color: #004085;
+            margin-bottom: 10px;
+        }
+        
+        .edu-link {
+            display: inline-block;
+            margin-top: 10px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .edu-link:hover {
+            text-decoration: underline;
+        }
+        
+        /* Priority Recommendations */
+        .priority-grid {
+            display: grid;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .priority-item {
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid;
+        }
+        
+        .priority-high {
+            background: #fef5e7;
+            border-color: #f39c12;
+        }
+        
+        .priority-medium {
+            background: #fff9e6;
+            border-color: #f1c40f;
+        }
+        
+        .priority-low {
+            background: #f0f7ff;
+            border-color: #3498db;
+        }
+        
+        /* PR Comment Preview */
+        .pr-comment {
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.9em;
+            white-space: pre-wrap;
+        }
+        
+        /* Toggle Button */
+        .toggle-button {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95em;
+            color: #4a5568;
+            transition: all 0.2s;
+        }
+        
+        .toggle-button:hover {
+            background: #edf2f7;
+            border-color: #cbd5e0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Code Analysis Report</h1>
+            <div class="subtitle">Pull Request #{{pr_number}} - {{repository_name}}</div>
+            <div class="metadata">
+                <div class="metadata-item">
+                    <strong>Repository</strong>
+                    {{repository_full_name}}
+                </div>
+                <div class="metadata-item">
+                    <strong>Primary Language</strong>
+                    {{primary_language}}
+                </div>
+                <div class="metadata-item">
+                    <strong>Files Changed</strong>
+                    {{files_changed}} files
+                </div>
+                <div class="metadata-item">
+                    <strong>Lines Modified</strong>
+                    +{{lines_added}} / -{{lines_removed}}
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 1: PR Approval Decision -->
+        <div class="pr-decision-section {{approval_status_class}}">
+            <div class="decision-header">
+                <div class="decision-icon">{{approval_icon}}</div>
+                <div class="decision-title">PR Decision: {{approval_status}}</div>
+                <div class="decision-subtitle">{{approval_message}}</div>
+            </div>
+            
+            <div class="decision-details">
+                <div class="decision-section">
+                    <h3>{{blocking_issues_title}}</h3>
+                    <ul style="list-style: none; padding: 0;">
+                        {{#each blocking_issues}}
+                        <li style="margin-bottom: 10px;">
+                            <strong>{{icon}} {{severity}}:</strong> {{description}}
+                        </li>
+                        {{/each}}
+                    </ul>
+                </div>
+                
+                <div class="decision-section">
+                    <h3>{{positive_findings_title}}</h3>
+                    <ul style="list-style: none; padding: 0;">
+                        {{#each positive_findings}}
+                        <li style="margin-bottom: 10px;">✓ {{description}}</li>
+                        {{/each}}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 2: Current PR Issues -->
+        <div class="section">
+            <h2>🔍 Issues Found in This PR ({{pr_issues_count}})</h2>
+            {{#if has_pr_issues}}
+            <p style="margin-bottom: 20px;">The following issues were identified in the submitted code:</p>
+            
+            {{#each pr_issues_by_severity}}
+            <div class="finding {{severity_class}}">
+                <h4>
+                    <span class="badge {{severity_class}}">{{severity}}</span>
+                    {{title}}
+                </h4>
+                <p>{{description}}</p>
+                
+                {{#if code_snippet}}
+                <div class="code-snippet">
+                    <pre><code>{{code_snippet}}</code></pre>
+                </div>
+                {{/if}}
+                
+                {{#if recommendation}}
+                <div class="recommendation-box">
+                    <strong>🔧 Fix Required:</strong> {{recommendation}}
+                    {{#if fix_example}}
+                    <div class="code-snippet" style="margin-top: 10px;">
+                        <pre><code>{{fix_example}}</code></pre>
+                    </div>
+                    {{/if}}
+                </div>
+                {{/if}}
+                
+                <div style="margin-top: 10px;">
+                    <strong>Location:</strong> {{file_path}}:{{line_number}} | 
+                    <strong>Category:</strong> {{category}}
+                </div>
+            </div>
+            {{/each}}
+            {{else}}
+            <p style="color: #27ae60; font-size: 1.1em;">✅ No issues found in this PR. Great work!</p>
+            {{/if}}
+        </div>
+
+        <!-- SECTION 3: Repository Issues -->
+        <div class="section" style="background: #fff5f5; border: 2px solid #ffcccc;">
+            <h2 style="color: #dc3545;">⚠️ Repository Issues Affecting Your Score ({{total_repo_issues}} total)</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <p>These existing issues create ongoing skill degradation. Fix them to boost your score!</p>
+                {{#if has_lower_priority_issues}}
+                <button id="toggleRepoIssues" onclick="toggleLowerPriorityIssues()" class="toggle-button">
+                    <span id="toggleRepoText">Show All Issues ({{total_repo_issues}})</span>
+                    <span style="margin-left: 5px;">▼</span>
+                </button>
+                {{/if}}
+            </div>
+            
+            <!-- Critical and High Priority Issues (Always Visible) -->
+            {{#each high_priority_repo_issues}}
+            <div class="finding {{severity_class}}" style="margin-bottom: 20px;">
+                <h4>
+                    <span class="badge {{severity_class}}">{{severity}}</span>
+                    {{title}}
+                </h4>
+                <p>{{description}}</p>
+                
+                {{#if code_snippet}}
+                <div class="code-snippet">
+                    <pre><code>{{code_snippet}}</code></pre>
+                </div>
+                {{/if}}
+                
+                <div style="margin-top: 10px; color: {{impact_color}};">
+                    <strong>Impact:</strong> {{degradation_points}} points degradation | Fix to gain {{fix_points}} points
+                </div>
+            </div>
+            {{/each}}
+            
+            <!-- Lower Priority Issues (Hidden by default) -->
+            {{#if has_lower_priority_issues}}
+            <div id="lowerPriorityRepoIssues" style="display: none;">
+                <h3 style="margin: 30px 0 20px 0; color: #718096; border-top: 2px solid #e2e8f0; padding-top: 20px;">
+                    Medium & Low Priority Issues ({{lower_priority_count}})
+                </h3>
+                
+                {{#each lower_priority_repo_issues}}
+                <div class="finding {{severity_class}}" style="margin-bottom: 20px;">
+                    <h4>
+                        <span class="badge {{severity_class}}">{{severity}}</span>
+                        {{title}}
+                    </h4>
+                    <p>{{description}}</p>
+                    
+                    {{#if code_snippet}}
+                    <div class="code-snippet">
+                        <pre><code>{{code_snippet}}</code></pre>
+                    </div>
+                    {{/if}}
+                    
+                    <div style="margin-top: 10px; color: {{impact_color}};">
+                        <strong>Impact:</strong> {{degradation_points}} points | Fix to gain {{fix_points}} points
+                    </div>
+                </div>
+                {{/each}}
+            </div>
+            {{/if}}
+            
+            <div style="background: #e8f5e9; padding: 20px; border-radius: 8px; border: 1px solid #c8e6c9; margin-top: 20px;">
+                <h4 style="color: #2e7d32;">💡 Quick Win Opportunity</h4>
+                <p>{{quick_win_message}}</p>
+                <ul style="margin: 10px 0 0 20px;">
+                    {{#each quick_win_items}}
+                    <li>{{description}}</li>
+                    {{/each}}
+                </ul>
+                <p style="margin-top: 10px;">{{quick_win_result}}</p>
+            </div>
+        </div>
+
+        <!-- SECTION 4: Prioritized Recommendations -->
+        <div class="section">
+            <h2>🎯 Prioritized Recommendations</h2>
+            <p>Actions to improve your code quality and skill scores:</p>
+            
+            <div class="priority-grid">
+                {{#each priority_recommendations}}
+                <div class="priority-item priority-{{priority}}">
+                    <h4 style="margin-bottom: 10px;">{{icon}} {{title}}</h4>
+                    <p><strong>Priority:</strong> {{priority_label}} | <strong>Effort:</strong> {{effort}}</p>
+                    <p style="margin-top: 10px;">{{description}}</p>
+                    {{#if impact}}
+                    <p style="margin-top: 10px; font-weight: 500;">Impact: {{impact}}</p>
+                    {{/if}}
+                </div>
+                {{/each}}
+            </div>
+        </div>
+
+        <!-- SECTION 5: Skill Impact & Score -->
+        <div class="overall-score-section">
+            <h2>Developer Skill Score</h2>
+            <p style="color: #718096; margin-bottom: 20px;">Your current skill level based on code quality and repository health</p>
+            
+            <div class="score-display">
+                <div class="score-circle" style="--score: {{overall_score}};">
+                    <div class="score-inner">
+                        <div class="score-number">{{overall_score}}</div>
+                        <div class="score-label">Current Score</div>
+                    </div>
+                </div>
+            </div>
+            
+            <p style="margin-top: 20px; font-size: 1.1em; color: #718096;">
+                {{score_level_description}}
+            </p>
+            
+            <div class="score-breakdown">
+                {{#each score_components}}
+                <div class="score-component">
+                    <h4>{{name}}</h4>
+                    <div class="points {{points_class}}">{{points_display}}</div>
+                    <p>{{description}}</p>
+                </div>
+                {{/each}}
+            </div>
+        </div>
+
+        <div class="skill-development-section">
+            <h2>📊 Skill Level Breakdown</h2>
+            <p>Your skills are measured on a 0-100 scale with room for continuous improvement</p>
+            
+            <div class="skill-grid">
+                {{#each skill_categories}}
+                <div class="skill-card">
+                    <div class="skill-header">
+                        <span class="skill-name">{{icon}} {{name}}</span>
+                        <span class="skill-level">{{current_level}}/100</span>
+                    </div>
+                    
+                    <div class="skill-progress">
+                        <div class="skill-bar">
+                            <div class="skill-fill" style="width: {{current_level}}%"></div>
+                        </div>
+                        <div class="skill-range">
+                            <span>Beginner</span>
+                            <span>Expert</span>
+                        </div>
+                    </div>
+                    
+                    {{#if has_impact}}
+                    <div style="margin-top: 15px;">
+                        <p style="font-size: 0.9em; color: {{impact_color}}; margin-bottom: 5px;">
+                            <strong>Impact:</strong> {{total_impact}} points from issues
+                        </p>
+                        <ul style="font-size: 0.85em; color: #718096; margin-left: 20px;">
+                            {{#each impact_items}}
+                            <li>{{source}}: {{points}} ({{description}})</li>
+                            {{/each}}
+                        </ul>
+                    </div>
+                    {{/if}}
+                </div>
+                {{/each}}
+            </div>
+        </div>
+
+        <!-- SECTION 6: Educational Resources -->
+        <div class="section">
+            <h2>📚 Educational Resources</h2>
+            <p>Based on the analysis, we recommend the following learning modules to improve your skills:</p>
+            
+            {{#each educational_modules}}
+            <div class="edu-module">
+                <h4>{{title}}</h4>
+                <p><strong>Duration:</strong> {{duration}} | <strong>Level:</strong> {{level}}</p>
+                <p>{{description}}</p>
+                {{#if topics}}
+                <p style="margin-top: 10px;"><strong>Topics covered:</strong> {{topics}}</p>
+                {{/if}}
+                <a href="{{url}}" class="edu-link" target="_blank">Start Learning →</a>
+            </div>
+            {{/each}}
+            
+            {{#if has_skill_recommendations}}
+            <div style="margin-top: 30px; padding: 20px; background: #f0f7ff; border-radius: 8px; border: 1px solid #b8daff;">
+                <h4 style="margin-top: 0; color: #004085;">📈 Personalized Learning Path</h4>
+                <p>Based on your skill gaps, we recommend focusing on:</p>
+                <ol style="margin: 15px 0 0 20px;">
+                    {{#each personalized_recommendations}}
+                    <li style="margin-bottom: 8px;">{{recommendation}}</li>
+                    {{/each}}
+                </ol>
+            </div>
+            {{/if}}
+        </div>
+
+        <!-- Suggested PR Comment -->
+        <div class="section">
+            <h2>💬 Suggested PR Comment</h2>
+            <p>Copy this comment for your PR review:</p>
+            <div class="pr-comment">{{pr_comment_text}}</div>
+        </div>
+
+        <!-- Footer -->
+        <div class="section" style="text-align: center; color: #718096;">
+            <p>Generated by CodeQual • <a href="https://codequal.com" style="color: #667eea;">codequal.com</a></p>
+            <p style="margin-top: 10px; font-size: 0.9em;">
+                {{report_timestamp}} | Analysis ID: {{analysis_id}}
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Toggle lower priority repository issues
+        function toggleLowerPriorityIssues() {
+            const section = document.getElementById('lowerPriorityRepoIssues');
+            const button = document.getElementById('toggleRepoIssues');
+            const toggleText = document.getElementById('toggleRepoText');
+            const arrow = button.querySelector('span:last-child');
+            
+            if (section.style.display === 'none') {
+                section.style.display = 'block';
+                toggleText.textContent = 'Hide Lower Priority ({{lower_priority_count}})';
+                arrow.textContent = '▲';
+                button.style.background = '#e6fffa';
+                button.style.borderColor = '#4299e1';
+            } else {
+                section.style.display = 'none';
+                toggleText.textContent = 'Show All Issues ({{total_repo_issues}})';
+                arrow.textContent = '▼';
+                button.style.background = '#f7fafc';
+                button.style.borderColor = '#e2e8f0';
+            }
+        }
+        
+        // Animate score circle on load
+        window.addEventListener('load', () => {
+            const scoreCircle = document.querySelector('.score-circle');
+            if (scoreCircle) {
+                setTimeout(() => {
+                    scoreCircle.style.transition = 'background 1s ease';
+                }, 100);
+            }
+            
+            // Animate skill bars
+            const fills = document.querySelectorAll('.skill-fill');
+            fills.forEach(fill => {
+                const width = fill.style.width;
+                fill.style.width = '0';
+                setTimeout(() => {
+                    fill.style.transition = 'width 1s ease';
+                    fill.style.width = width;
+                }, 100);
+            });
+            
+            // Check URL parameter for showing all issues
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('show') === 'all') {
+                toggleLowerPriorityIssues();
+            }
+        });
+    </script>
+</body>
+</html>
