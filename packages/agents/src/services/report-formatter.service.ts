@@ -597,9 +597,9 @@ export class ReportFormatterService {
       steps: (educationalData?.learningPath?.steps || []).map((step: any, index: number) => ({
         id: `step_${index + 1}`,
         order: index + 1,
-        title: step.topic,
+        title: step.title || step.topic,
         description: step.description || '',
-        type: this.determineStepType(step.topic),
+        type: this.determineStepType(step.title || step.topic),
         estimatedTime: step.estimatedTime || '30 minutes',
         resources: step.resources || []
       }))
@@ -1200,13 +1200,13 @@ export class ReportFormatterService {
       return 'No issues found in the analysis';
     }
 
-    const criticalCount: number = Object.values(categories).reduce((sum: number, cat: any) => {
+    const criticalCount = Object.values(categories).reduce((sum: number, cat: any) => {
       return sum + (cat.findings?.filter((f: any) => f.severity === 'critical')?.length || 0);
-    }, 0);
+    }, 0) as number;
 
-    const highCount: number = Object.values(categories).reduce((sum: number, cat: any) => {
+    const highCount = Object.values(categories).reduce((sum: number, cat: any) => {
       return sum + (cat.findings?.filter((f: any) => f.severity === 'high')?.length || 0);
-    }, 0);
+    }, 0) as number;
 
     if ((criticalCount as number) > 0) {
       return `Found ${totalCount} issues with ${criticalCount} critical security concerns requiring immediate attention`;

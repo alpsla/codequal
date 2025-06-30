@@ -1285,7 +1285,7 @@ import { validateUser } from './userAuthCommon';`,
       gaps.push("License compliance and legal aspects of dependencies");
     }
     
-    return [...new Set(gaps)]; // Remove duplicates
+    return Array.from(new Set(gaps)); // Remove duplicates
   }
   
   /**

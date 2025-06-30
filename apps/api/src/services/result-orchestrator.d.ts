@@ -76,6 +76,7 @@ export interface AnalysisResult {
         recommendations: string[];
         prComment: string;
         fullReport?: any;
+        htmlReportUrl?: string;
     };
     metadata: {
         timestamp: Date;

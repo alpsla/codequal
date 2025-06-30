@@ -24,8 +24,9 @@ config({ path: path.resolve(__dirname, '../../../../.env') });
 const _logger = createLogger('ToolResultsFlow');
 
 // Import the orchestrator directly to test
-import('../../../../apps/api/dist/services/result-orchestrator.js').then(async (_module: any) => {
-  const { ResultOrchestrator } = _module;
+async function runTest() {
+  // For TypeScript compilation, we'll use require after build
+  const { ResultOrchestrator } = await import('../../../../apps/api/src/services/result-orchestrator.js');
   
   console.log(chalk.cyan('\n🔬 Testing Tool Results Flow Through Orchestrator\n'));
 
@@ -231,8 +232,10 @@ import('../../../../apps/api/dist/services/result-orchestrator.js').then(async (
     console.error(chalk.red('\n❌ Test failed:'), error);
     process.exit(1);
   }
+}
 
-}).catch(error => {
-  console.error(chalk.red('Failed to load orchestrator module:'), error);
+// Run the test
+runTest().catch(error => {
+  console.error(chalk.red('Failed to run test:'), error);
   process.exit(1);
 });

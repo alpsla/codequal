@@ -24,8 +24,78 @@ interface AnalysisResponse {
 }
 
 /**
- * POST /api/analyze-pr
- * Main endpoint for PR analysis requests
+ * @swagger
+ * /analyze-pr:
+ *   post:
+ *     summary: Analyze a pull request
+ *     description: Submit a pull request for comprehensive AI-powered code review analysis
+ *     tags: [Analysis]
+ *     security:
+ *       - ApiKeyAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - repositoryUrl
+ *               - prNumber
+ *               - analysisMode
+ *             properties:
+ *               repositoryUrl:
+ *                 type: string
+ *                 format: uri
+ *                 description: GitHub repository URL
+ *                 example: https://github.com/owner/repo
+ *               prNumber:
+ *                 type: integer
+ *                 description: Pull request number
+ *                 example: 123
+ *               analysisMode:
+ *                 type: string
+ *                 enum: [quick, comprehensive, deep]
+ *                 description: Analysis depth level
+ *                 default: comprehensive
+ *               githubToken:
+ *                 type: string
+ *                 description: Optional GitHub personal access token for private repos
+ *     responses:
+ *       202:
+ *         description: Analysis request accepted and processing
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 analysisId:
+ *                   type: string
+ *                   description: Unique analysis identifier
+ *                 status:
+ *                   type: string
+ *                   enum: [queued, processing]
+ *                 estimatedTime:
+ *                   type: integer
+ *                   description: Estimated completion time in seconds
+ *                 checkStatusUrl:
+ *                   type: string
+ *                   description: URL to check analysis status
+ *       400:
+ *         description: Invalid request parameters
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       403:
+ *         description: Access denied to repository
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       429:
+ *         $ref: '#/components/responses/RateLimitError'
  */
 resultOrchestratorRoutes.post('/analyze-pr', async (req: Request, res: Response) => {
   try {
@@ -118,8 +188,54 @@ resultOrchestratorRoutes.post('/analyze-pr', async (req: Request, res: Response)
 });
 
 /**
- * GET /api/analysis/:id/progress
- * Check analysis progress and get results
+ * @swagger
+ * /analysis/{id}/progress:
+ *   get:
+ *     summary: Check analysis progress
+ *     description: Get the current status and results of an analysis request
+ *     tags: [Analysis]
+ *     security:
+ *       - ApiKeyAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Analysis ID from the initial request
+ *     responses:
+ *       200:
+ *         description: Analysis status and results
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 analysisId:
+ *                   type: string
+ *                 status:
+ *                   type: string
+ *                   enum: [queued, processing, complete, failed]
+ *                 progress:
+ *                   type: number
+ *                   minimum: 0
+ *                   maximum: 100
+ *                   description: Progress percentage (0-100)
+ *                 estimatedTime:
+ *                   type: integer
+ *                   description: Remaining time estimate in seconds
+ *                 results:
+ *                   type: object
+ *                   description: Analysis results (only when status is complete)
+ *                 error:
+ *                   type: string
+ *                   description: Error message (only when status is failed)
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       404:
+ *         $ref: '#/components/responses/NotFoundError'
+ *       429:
+ *         $ref: '#/components/responses/RateLimitError'
  */
 resultOrchestratorRoutes.get('/analysis/:id/progress', (req: Request, res: Response) => {
   try {
