@@ -45,8 +45,45 @@ export class CodeTranslator extends BaseTranslator {
     }
     
     try {
-      // Get optimal model for code translation
-      const model = await this.researcher.findOptimalTranslationModel('sdk', targetLanguage);
+
+    
+      // Ensure we have a model configuration from Vector DB
+
+    
+      if (!this.modelConfig) {
+
+    
+        throw new Error('Translator not initialized with Vector DB configuration');
+
+    
+      }
+
+    
+      
+
+    
+      // Get model ID from configuration
+
+    
+      const modelId = this.getModelId();
+
+    
+      const qualityScore = this.modelConfig.capabilities?.translationQuality || 0.85;
+
+    
+      
+
+    
+      this.logger.debug('Using Vector DB configured model', { 
+
+    
+        modelId, 
+
+    
+        provider: this.modelConfig.provider 
+
+    
+      });
       
       // Parse code and extract comments
       const codeInfo = this.parseCode(content as string, options);
@@ -66,7 +103,7 @@ export class CodeTranslator extends BaseTranslator {
       const translatedComments = await this.translateComments(
         codeInfo.comments,
         targetLanguage,
-        model,
+        modelId,
         options
       );
       
@@ -85,8 +122,8 @@ export class CodeTranslator extends BaseTranslator {
       
       return {
         translated: processed,
-        confidence: model.qualityScore,
-        modelUsed: model.modelId,
+        confidence: qualityScore,
+        modelUsed: modelId,
         processingTime: Date.now() - startTime,
         cached: false
       };
@@ -367,7 +404,7 @@ export class CodeTranslator extends BaseTranslator {
   private async translateComments(
     comments: any[],
     targetLanguage: SupportedLanguage,
-    model: any,
+    modelId: string,
     options?: any
   ): Promise<Map<number, string>> {
     const translatedMap = new Map<number, string>();
@@ -389,8 +426,9 @@ export class CodeTranslator extends BaseTranslator {
         technicalLevel: 'advanced'
       });
       
-      const response = await this.openai.chat.completions.create({
-        model: model.modelId,
+      const client = this.ensureClient();
+      const response = await client.chat.completions.create({
+        model: modelId,
         messages: [
           { role: 'system', content: system + '\n\nThis is a code comment. Maintain technical accuracy.' },
           { role: 'user', content: user }

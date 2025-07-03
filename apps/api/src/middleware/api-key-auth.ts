@@ -1,18 +1,15 @@
 import { Request, Response, NextFunction } from 'express';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabase } from '@codequal/database/supabase/client';
 import { createHash, randomBytes } from 'crypto';
 
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
-interface ApiKeyData {
+// ApiKeyData interface is defined in types/express.d.ts
+interface ApiKeyDataDB {
   id: string;
   user_id: string;
+  organization_id?: string;
   name: string;
   key_hash: string;
-  key_prefix: string;
+  key_prefix?: string;
   permissions: any;
   usage_limit: number;
   usage_count: number;
@@ -21,6 +18,7 @@ interface ApiKeyData {
   active: boolean;
   expires_at: string | null;
   last_used_at: string | null;
+  created_at: string;
   metadata: any;
 }
 
@@ -49,12 +47,12 @@ export async function apiKeyAuth(
     const keyHash = createHash('sha256').update(apiKey).digest('hex');
     
     // Look up API key in database
-    const { data: keyData, error } = await supabase
+    const { data: keyData, error } = await getSupabase()
       .from('api_keys')
       .select('*')
       .eq('key_hash', keyHash)
       .eq('active', true)
-      .single();
+      .single() as { data: ApiKeyDataDB | null; error: any };
 
     if (error || !keyData) {
       // Log failed attempt
@@ -67,8 +65,8 @@ export async function apiKeyAuth(
     }
 
     // Check expiration
-    if (keyData.expires_at && new Date(keyData.expires_at) < new Date()) {
-      await logFailedAuth(req, 'EXPIRED_KEY', keyData.id);
+    if (keyData.expires_at && new Date(keyData.expires_at as string) < new Date()) {
+      await logFailedAuth(req, 'EXPIRED_KEY', keyData.id as string);
       return res.status(401).json({
         error: 'API key expired',
         code: 'EXPIRED_API_KEY',
@@ -77,8 +75,8 @@ export async function apiKeyAuth(
     }
 
     // Check endpoint permissions
-    if (keyData.permissions?.endpoints !== '*') {
-      const allowedEndpoints = keyData.permissions?.endpoints || [];
+    if ((keyData.permissions as any)?.endpoints !== '*') {
+      const allowedEndpoints = (keyData.permissions as any)?.endpoints || [];
       const currentEndpoint = req.path;
       
       if (!allowedEndpoints.some((ep: string) => currentEndpoint.startsWith(ep))) {
@@ -91,10 +89,10 @@ export async function apiKeyAuth(
     }
 
     // Check rate limits using database function
-    const { data: rateLimitOk } = await supabase.rpc('check_rate_limit', {
+    const { data: rateLimitOk } = await getSupabase().rpc('check_rate_limit', {
       p_key_hash: keyHash,
       p_limit_per_minute: keyData.rate_limit_per_minute,
-      p_limit_per_hour: keyData.rate_limit_per_hour
+      p_limit_per_hour: keyData.rate_limit_per_hour || 1000
     });
 
     if (!rateLimitOk) {
@@ -137,15 +135,28 @@ export async function apiKeyAuth(
     };
 
     // Store usage log (will be updated with response details later)
-    const { data: logData } = await supabase
+    const { data: logData } = await getSupabase()
       .from('api_usage_logs')
       .insert(usageLogEntry)
       .select()
-      .single();
+      .single() as { data: any; error: any };
 
-    // Attach data to request
-    req.apiKey = keyData;
-    req.customerId = keyData.user_id;
+    // Attach data to request - convert to express ApiKeyData type
+    req.apiKey = {
+      id: keyData.id,
+      name: keyData.name,
+      key_hash: keyData.key_hash,
+      user_id: keyData.user_id,
+      organization_id: keyData.organization_id || '',
+      permissions: keyData.permissions ? (Array.isArray(keyData.permissions) ? keyData.permissions : []) : null,
+      rate_limit_per_hour: keyData.rate_limit_per_hour || 1000,
+      usage_count: keyData.usage_count,
+      expires_at: keyData.expires_at,
+      created_at: keyData.created_at,
+      last_used_at: keyData.last_used_at,
+      metadata: keyData.metadata
+    };
+    req.customerId = keyData.user_id as string;
     
     // Add response interceptor to update usage log
     const originalSend = res.send;
@@ -155,7 +166,7 @@ export async function apiKeyAuth(
         const responseTime = Date.now() - req.requestStartTime!;
         (async () => {
           try {
-            await supabase
+            await getSupabase()
               .from('api_usage_logs')
               .update({
                 status_code: res.statusCode,
@@ -163,10 +174,10 @@ export async function apiKeyAuth(
                 tokens_used: res.locals.tokensUsed || 0,
                 cost_usd: res.locals.costUsd || 0
               })
-              .eq('id', logData.id);
+              .eq('id', logData.id as string);
               
             // Update usage count using database function
-            await supabase.rpc('increment_api_usage', {
+            await getSupabase().rpc('increment_api_usage', {
               p_api_key_id: keyData.id,
               p_tokens_used: res.locals.tokensUsed || 0,
               p_cost_usd: res.locals.costUsd || 0
@@ -194,7 +205,7 @@ export async function apiKeyAuth(
 // Helper to log failed authentication attempts
 async function logFailedAuth(req: Request, reason: string, apiKeyId?: string) {
   try {
-    await supabase
+    await getSupabase()
       .from('api_usage_logs')
       .insert({
         api_key_id: apiKeyId || null,

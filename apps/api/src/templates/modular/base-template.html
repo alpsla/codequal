@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="{{lang}}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="google" content="notranslate">
+    <title>{{i18n.title}}</title>
+    <link rel="stylesheet" href="./styles.css">
+</head>
+<body data-lang="{{lang}}">
+    <!-- Language Selector -->
+    <div class="language-selector">
+        <select class="language-dropdown" onchange="changeLanguage(this.value)">
+            <option value="en" {{#ifEquals lang "en"}}selected{{/ifEquals}}>English</option>
+            <option value="ru" {{#ifEquals lang "ru"}}selected{{/ifEquals}}>Русский</option>
+            <option value="es" {{#ifEquals lang "es"}}selected{{/ifEquals}}>Español</option>
+            <option value="fr" {{#ifEquals lang "fr"}}selected{{/ifEquals}}>Français</option>
+            <option value="de" {{#ifEquals lang "de"}}selected{{/ifEquals}}>Deutsch</option>
+            <option value="ja" {{#ifEquals lang "ja"}}selected{{/ifEquals}}>日本語</option>
+            <option value="zh" {{#ifEquals lang "zh"}}selected{{/ifEquals}}>中文</option>
+            <option value="pt" {{#ifEquals lang "pt"}}selected{{/ifEquals}}>Português</option>
+            <option value="it" {{#ifEquals lang "it"}}selected{{/ifEquals}}>Italiano</option>
+            <option value="ko" {{#ifEquals lang "ko"}}selected{{/ifEquals}}>한국어</option>
+        </select>
+    </div>
+
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>{{i18n.header.title}}</h1>
+            <div class="subtitle">{{i18n.header.subtitle}} #{{pr_number}} - {{repository_name}}</div>
+            <div class="metadata">
+                <div class="metadata-item">
+                    <strong>{{i18n.header.repository}}</strong>
+                    {{repository_full_name}}
+                </div>
+                <div class="metadata-item">
+                    <strong>{{i18n.header.primaryLanguage}}</strong>
+                    {{primary_language}}
+                </div>
+                <div class="metadata-item">
+                    <strong>{{i18n.header.filesChanged}}</strong>
+                    {{files_changed}}
+                </div>
+                <div class="metadata-item">
+                    <strong>{{i18n.header.linesModified}}</strong>
+                    +{{lines_added}} / -{{lines_removed}}
+                </div>
+            </div>
+        </div>
+
+        <!-- PR Approval Decision -->
+        <div class="pr-decision-section {{approval_class}}">
+            <div class="decision-header">
+                <div class="decision-icon">{{approval_icon}}</div>
+                <div class="decision-title">
+                    {{i18n.prDecision.title}}: {{approval_status_text}}
+                </div>
+                <div class="decision-subtitle">{{approval_message}}</div>
+            </div>
+            
+            <div class="decision-details">
+                <div class="decision-section">
+                    <h3>{{i18n.prDecision.blockingIssues}}</h3>
+                    <ul style="list-style: none; padding: 0;">
+                        {{#each blocking_issues}}
+                        <li style="margin-bottom: 10px;">
+                            <strong>{{icon}}&nbsp;{{severity}}:</strong>&nbsp;{{description}}
+                        </li>
+                        {{/each}}
+                    </ul>
+                </div>
+                
+                <div class="decision-section">
+                    <h3>{{i18n.prDecision.positiveFindings}}</h3>
+                    <ul style="list-style: none; padding: 0;">
+                        {{#each positive_findings}}
+                        <li style="margin-bottom: 10px;">✓&nbsp;{{description}}</li>
+                        {{/each}}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Current PR Issues -->
+        <div class="section">
+            <h2>🔍 {{i18n.prIssues.title}}</h2>
+            
+            {{#if has_pr_issues}}
+            {{#each pr_issues}}
+            <div class="finding {{severity_class}}">
+                <h4>
+                    <span class="badge {{severity_class}}">{{severity}}</span>
+                    {{title}}
+                </h4>
+                <p><strong>{{i18n.prIssues.file}}:</strong> {{file_path}}:{{line_number}}</p>
+                <p>{{description}}</p>
+                {{#if code_snippet}}
+                <div class="code-snippet">
+                    <code>{{code_snippet}}</code>
+                </div>
+                {{/if}}
+                <div class="recommendation-box">
+                    <strong>{{i18n.prIssues.recommendation}}:</strong>
+                    {{recommendation}}
+                </div>
+            </div>
+            {{/each}}
+            {{else}}
+            <p style="color: #27ae60; font-size: 1.1em;">✅ {{i18n.prIssues.noIssues}}</p>
+            {{/if}}
+        </div>
+
+        <!-- Repository Issues -->
+        <div class="section repo-issues">
+            <h2>⚠️ {{i18n.repoIssues.title}}</h2>
+            <p>{{i18n.repoIssues.subtitle}}</p>
+            
+            <!-- High Priority Issues (Always Visible) -->
+            {{#each high_priority_repo_issues}}
+            <div class="finding {{severity_class}}">
+                <h4>
+                    <span class="badge {{severity_class}}">{{severity}}</span>
+                    {{title}}
+                </h4>
+                <p>{{description}}</p>
+                {{#if code_snippet}}
+                <div class="code-snippet">
+                    <code>{{code_snippet}}</code>
+                </div>
+                {{/if}}
+                <div style="margin-top: 10px; color: {{impact_color}};">
+                    <strong>{{i18n.repoIssues.impact}}:</strong>
+                    {{impact_description}}
+                </div>
+            </div>
+            {{/each}}
+            
+            <!-- Toggle Button for Lower Priority Issues -->
+            {{#if has_lower_priority_issues}}
+            <button id="toggleRepoIssues" onclick="toggleLowerPriorityIssues()" class="toggle-button">
+                <span id="toggleText">{{i18n.repoIssues.showAll}} ({{total_lower_priority_issues}})</span>
+                <span id="toggleArrow" style="margin-left: 5px;">▼</span>
+            </button>
+            
+            <!-- Lower Priority Issues (Hidden by Default) -->
+            <div id="lowerPriorityIssues" style="display: none; margin-top: 20px;">
+                {{#each lower_priority_repo_issues}}
+                <div class="finding {{severity_class}}">
+                    <h4>
+                        <span class="badge {{severity_class}}">{{severity}}</span>
+                        {{title}}
+                    </h4>
+                    <p>{{description}}</p>
+                    {{#if code_snippet}}
+                    <div class="code-snippet">
+                        <code>{{code_snippet}}</code>
+                    </div>
+                    {{/if}}
+                    <div style="margin-top: 10px; color: {{impact_color}};">
+                        <strong>{{i18n.repoIssues.impact}}:</strong>
+                        {{impact_description}}
+                    </div>
+                </div>
+                {{/each}}
+            </div>
+            {{/if}}
+        </div>
+
+        <!-- Score Display -->
+        <div class="section">
+            <h2>📊 {{i18n.score.title}}</h2>
+            
+            <div class="score-display">
+                <div class="score-circle {{severityClass overall_score}}" style="--score: {{overall_score}};">
+                    <div class="score-inner">
+                        <div class="score-number">{{overall_score}}</div>
+                        <div class="score-label">{{i18n.score.currentScore}}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <p style="text-align: center; color: #718096; margin-top: 20px;">
+                {{score_message}}
+            </p>
+        </div>
+
+        <!-- Skills Breakdown -->
+        <div class="section">
+            <h2>🎯 {{i18n.skills.title}}</h2>
+            
+            {{#each skill_categories}}
+            <div class="skill-card">
+                <div class="skill-header">
+                    <span>{{icon}} {{name}}</span>
+                    <span>{{current_level}}/100</span>
+                </div>
+                <div class="skill-bar">
+                    <div class="skill-fill" style="width: {{current_level}}%"></div>
+                </div>
+                <p style="color: {{skill_color}}; margin-top: 10px;">
+                    {{skill_message}}
+                </p>
+            </div>
+            {{/each}}
+        </div>
+
+        <!-- Educational Resources -->
+        <div class="section">
+            <h2>📚 {{i18n.educational.title}}</h2>
+            
+            {{#each educational_modules_fixed}}
+            <div class="edu-module">
+                <h4>{{title}}</h4>
+                <p>
+                    <strong>{{../i18n.educational.duration}}:</strong> {{duration}} {{../i18n.educational.hours}} | 
+                    <strong>{{../i18n.educational.level}}:</strong> {{level}}
+                </p>
+                <p>{{description}}</p>
+                <a href="{{real_link}}" target="_blank" rel="noopener noreferrer" class="edu-link">
+                    {{../i18n.educational.startLearning}} →
+                </a>
+            </div>
+            {{/each}}
+        </div>
+
+        <!-- PR Comment -->
+        <div class="section">
+            <h2>💬 {{i18n.prComment.title}}</h2>
+            <div class="pr-comment-box">{{pr_comment_text}}</div>
+        </div>
+
+        <!-- Footer -->
+        <div class="section footer">
+            <p>
+                {{i18n.footer.generatedBy}} • <a href="https://codequal.com">codequal.com</a>
+            </p>
+            <p>
+                {{timestamp}} | {{i18n.footer.analysisId}}: {{analysis_id}}
+            </p>
+        </div>
+    </div>
+
+    <script src="./scripts.js"></script>
+</body>
+</html>

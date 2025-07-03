@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabase } from '@codequal/database/supabase/client';
 
 // Extended Request interface to include authenticated user
 export interface AuthenticatedRequest extends Request {
@@ -18,11 +18,6 @@ export interface AuthenticatedUser {
     expiresAt: Date;
   };
 }
-
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_ANON_KEY!
-);
 
 export const authMiddleware = async (
   req: Request,
@@ -45,11 +40,11 @@ export const authMiddleware = async (
     const token = authHeader.substring(7);
 
     // Verify token with Supabase
-    const { data: session, error } = await supabase.auth.getSession();
+    const { data: session, error } = await getSupabase().auth.getSession();
     
     if (error || !session.session) {
       // Try to get user from token directly
-      const { data: userData, error: userError } = await supabase.auth.getUser(token);
+      const { data: userData, error: userError } = await getSupabase().auth.getUser(token);
       
       if (userError || !userData.user) {
         res.status(401).json({ error: 'Invalid or expired token' });
@@ -115,7 +110,7 @@ export const checkRepositoryAccess = async (
 ): Promise<boolean> => {
   try {
     // Query user's accessible repositories
-    const { data: repositories, error } = await supabase
+    const { data: repositories, error } = await getSupabase()
       .from('user_repositories')
       .select('repository_url')
       .eq('user_id', user.id)

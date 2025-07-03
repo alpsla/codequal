@@ -315,6 +315,27 @@ export class TranslatorFactory {
   getAllModelConfigs(): Map<TranslatorRole, StoredTranslatorConfig> {
     return new Map(this.modelConfigs);
   }
+  
+  /**
+   * Get recommended model for a context and language
+   */
+  async getRecommendedModel(context: TranslationContext, targetLanguage: SupportedLanguage): Promise<string> {
+    const config = this.getModelConfig(context);
+    if (config) {
+      return `${config.provider}/${config.model}`;
+    }
+    
+    // Default recommendations based on context
+    const defaults: Record<TranslationContext, string> = {
+      'api': 'openai/gpt-3.5-turbo',
+      'error': 'anthropic/claude-3-haiku',
+      'docs': 'openai/gpt-4',
+      'ui': 'openai/gpt-3.5-turbo',
+      'sdk': 'openai/gpt-4'
+    };
+    
+    return defaults[context] || 'openai/gpt-3.5-turbo';
+  }
 }
 
 /**

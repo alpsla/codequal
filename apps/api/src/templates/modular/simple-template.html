@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="{{lang}}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="google" content="notranslate">
+    <title>{{i18n.title}}</title>
+    <link rel="stylesheet" href="./styles.css">
+</head>
+<body data-lang="{{lang}}">
+    <!-- Google Translate Only -->
+    <div class="language-selector">
+        <div id="google_translate_element"></div>
+    </div>
+
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>{{i18n.header.title}}</h1>
+            <div class="subtitle">{{i18n.header.subtitle}} #{{pr_number}} - {{repository_name}}</div>
+            <div class="metadata">
+                <div class="metadata-item">
+                    <strong>{{i18n.header.repository}}</strong>
+                    {{repository_full_name}}
+                </div>
+                <div class="metadata-item">
+                    <strong>{{i18n.header.primaryLanguage}}</strong>
+                    {{primary_language}}
+                </div>
+                <div class="metadata-item">
+                    <strong>{{i18n.header.filesChanged}}</strong>
+                    {{files_changed}}
+                </div>
+                <div class="metadata-item">
+                    <strong>{{i18n.header.linesModified}}</strong>
+                    +{{lines_added}} / -{{lines_removed}}
+                </div>
+            </div>
+        </div>
+
+        <!-- PR Approval Decision -->
+        <div class="pr-decision-section {{approval_class}}">
+            <div class="decision-header">
+                <div class="decision-icon">{{approval_icon}}</div>
+                <div class="decision-title">
+                    {{i18n.prDecision.title}}: {{approval_status_text}}
+                </div>
+                <div class="decision-subtitle">{{approval_message}}</div>
+            </div>
+            
+            <div class="decision-details">
+                <div class="decision-section">
+                    <h3>{{i18n.prDecision.blockingIssues}}</h3>
+                    <ul style="list-style: none; padding: 0;">
+                        {{blocking_issues_html}}
+                    </ul>
+                </div>
+                
+                <div class="decision-section">
+                    <h3>{{i18n.prDecision.positiveFindings}}</h3>
+                    <ul style="list-style: none; padding: 0;">
+                        {{positive_findings_html}}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Current PR Issues -->
+        <div class="section">
+            <h2>🔍 {{i18n.prIssues.title}}</h2>
+            {{pr_issues_content}}
+        </div>
+
+        <!-- Repository Issues -->
+        <div class="section repo-issues">
+            <h2>⚠️ {{i18n.repoIssues.title}}</h2>
+            <p>{{i18n.repoIssues.subtitle}}</p>
+            
+            <!-- High Priority Issues -->
+            {{high_priority_issues_html}}
+            
+            <!-- Toggle Button -->
+            {{toggle_button_html}}
+            
+            <!-- Lower Priority Issues -->
+            {{lower_priority_issues_html}}
+        </div>
+
+        <!-- Score Display -->
+        <div class="section">
+            <h2>📊 {{i18n.score.title}}</h2>
+            
+            <div class="score-display">
+                <div class="score-circle {{score_class}}" style="--score: {{overall_score}};">
+                    <div class="score-inner">
+                        <div class="score-number">{{overall_score}}</div>
+                        <div class="score-label">{{i18n.score.currentScore}}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <p style="text-align: center; color: #718096; margin-top: 20px;">
+                {{score_message}}
+            </p>
+        </div>
+
+        <!-- Skills Breakdown -->
+        <div class="section">
+            <h2>🎯 {{i18n.skills.title}}</h2>
+            {{skills_html}}
+        </div>
+
+        <!-- Educational Resources -->
+        <div class="section">
+            <h2>📚 {{i18n.educational.title}}</h2>
+            {{educational_html}}
+        </div>
+
+        <!-- PR Comment -->
+        <div class="section">
+            <h2>💬 {{i18n.prComment.title}}</h2>
+            <div class="pr-comment-box">{{pr_comment_text}}</div>
+        </div>
+
+        <!-- Footer -->
+        <div class="section footer">
+            <p>
+                {{i18n.footer.generatedBy}} • <a href="https://codequal.com">codequal.com</a>
+            </p>
+            <p>
+                {{timestamp}} | {{i18n.footer.analysisId}}: {{analysis_id}}
+            </p>
+        </div>
+    </div>
+
+    <script src="./scripts.js"></script>
+    
+    <!-- Google Translate -->
+    <script type="text/javascript">
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'en',
+                includedLanguages: 'en,ru,es,fr,de,ja,zh-CN,pt,it,ko,hi,ar,tr,pl,nl,sv,da,no,fi,cs,hu,ro,el,he,th,vi,id,ms,tl,uk,bg,ca,hr,sr,sk,sl',
+                layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+                autoDisplay: false,
+                multilanguagePage: true
+            }, 'google_translate_element');
+        }
+    </script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+</body>
+</html>

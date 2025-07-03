@@ -1,6 +1,8 @@
 import { Router, Request, Response } from 'express';
 
-export const analysisRoutes = Router();
+const analysisRoutes = Router();
+
+export default analysisRoutes;
 
 // Store for user analysis history (in production, this would be a database)
 const analysisHistory = new Map<string, any[]>();

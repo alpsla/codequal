@@ -49,8 +49,45 @@ export class UITranslator extends BaseTranslator {
     }
     
     try {
-      // Get optimal model for UI translation
-      const model = await this.researcher.findOptimalTranslationModel('ui', targetLanguage);
+
+    
+      // Ensure we have a model configuration from Vector DB
+
+    
+      if (!this.modelConfig) {
+
+    
+        throw new Error('Translator not initialized with Vector DB configuration');
+
+    
+      }
+
+    
+      
+
+    
+      // Get model ID from configuration
+
+    
+      const modelId = this.getModelId();
+
+    
+      const qualityScore = this.modelConfig.capabilities?.translationQuality || 0.85;
+
+    
+      
+
+    
+      this.logger.debug('Using Vector DB configured model', { 
+
+    
+        modelId, 
+
+    
+        provider: this.modelConfig.provider 
+
+    
+      });
       
       // Pre-process content
       const processed = this.preprocessUI(content, options);
@@ -95,8 +132,9 @@ Examples of good UI translations:
 - Error messages → Clear but not alarming`;
       
       // Translate
-      const response = await this.openai.chat.completions.create({
-        model: model.modelId,
+      const client = this.ensureClient();
+      const response = await client.chat.completions.create({
+        model: modelId,
         messages: [
           { role: 'system', content: enhancedSystem },
           { role: 'user', content: user }
@@ -125,8 +163,8 @@ Examples of good UI translations:
       
       return {
         translated,
-        confidence: model.qualityScore,
-        modelUsed: model.modelId,
+        confidence: qualityScore,
+        modelUsed: modelId,
         processingTime: Date.now() - startTime,
         cached: false
       };

@@ -1,0 +1,86 @@
+{
+  "title": "CodeQual - Informe de Análisis de PR",
+  "header": {
+    "title": "Informe de Análisis de Código",
+    "subtitle": "Pull Request",
+    "repository": "Repositorio",
+    "primaryLanguage": "Lenguaje Principal",
+    "filesChanged": "Archivos Modificados",
+    "linesModified": "Líneas Modificadas"
+  },
+  "executiveSummary": {
+    "title": "Resumen Ejecutivo",
+    "prTitle": "Título del PR",
+    "author": "Autor",
+    "submittedAt": "Enviado el",
+    "overallScore": "Puntuación General"
+  },
+  "prDecision": {
+    "title": "Decisión del PR",
+    "blockingIssues": "Problemas Bloqueantes",
+    "positiveFindings": "Hallazgos Positivos",
+    "statuses": {
+      "approved": "Aprobado",
+      "conditionallyApproved": "Aprobado Condicionalmente",
+      "blocked": "Bloqueado"
+    }
+  },
+  "prIssues": {
+    "title": "Problemas Encontrados en Este PR",
+    "file": "Archivo",
+    "recommendation": "Recomendación",
+    "noIssues": "No se encontraron problemas en este PR. ¡Excelente trabajo!",
+    "showAll": "Mostrar Todos los Problemas"
+  },
+  "repoIssues": {
+    "title": "Problemas Detectados en el Repositorio",
+    "subtitle": "Estos problemas existen en el repositorio y afectan la calidad general del código:",
+    "impact": "Impacto",
+    "showAll": "Mostrar Todos los Problemas",
+    "hideAll": "Ocultar Problemas"
+  },
+  "score": {
+    "title": "Puntuación de Habilidad del Desarrollador",
+    "currentScore": "Puntuación Actual",
+    "messages": {
+      "low": "Se necesitan mejoras significativas",
+      "medium": "Buen progreso, pero hay espacio para mejorar",
+      "high": "¡Excelente calidad de código!"
+    }
+  },
+  "skills": {
+    "title": "Desglose por Nivel de Habilidad",
+    "categories": {
+      "security": "Seguridad",
+      "testing": "Pruebas",
+      "documentation": "Documentación",
+      "performance": "Rendimiento",
+      "codeQuality": "Calidad del Código"
+    }
+  },
+  "educational": {
+    "title": "Recursos de Aprendizaje Recomendados",
+    "duration": "Duración",
+    "hours": "horas",
+    "level": "Nivel",
+    "description": "Basado en los problemas encontrados, recomendamos estos recursos de aprendizaje:",
+    "startLearning": "Comenzar a Aprender"
+  },
+  "prComment": {
+    "title": "Resultados del Análisis CodeQual",
+    "approved": "¡Este PR está aprobado para fusionar!",
+    "approvedMessage": "¡Excelente trabajo! Todas las verificaciones de calidad han pasado.",
+    "conditional": "Este PR está aprobado condicionalmente.",
+    "conditionalMessage": "Por favor, aborde los siguientes elementos antes de fusionar:",
+    "blocked": "Este PR no puede fusionarse en su estado actual.",
+    "blockedMessage": "Se encontraron problemas críticos que deben resolverse:",
+    "score": "Puntuación de Calidad",
+    "strengths": "Fortalezas"
+  },
+  "footer": {
+    "generatedBy": "Generado por",
+    "on": "el",
+    "poweredBy": "Impulsado por CodeQual - Mejorando la calidad del código, un PR a la vez",
+    "analysisId": "ID de Análisis"
+  }
+}

@@ -45,8 +45,45 @@ export class DocumentationTranslator extends BaseTranslator {
     }
     
     try {
-      // Get optimal model for documentation (prioritize quality)
-      const model = await this.researcher.findOptimalTranslationModel('docs', targetLanguage);
+
+    
+      // Ensure we have a model configuration from Vector DB
+
+    
+      if (!this.modelConfig) {
+
+    
+        throw new Error('Translator not initialized with Vector DB configuration');
+
+    
+      }
+
+    
+      
+
+    
+      // Get model ID from configuration
+
+    
+      const modelId = this.getModelId();
+
+    
+      const qualityScore = this.modelConfig.capabilities?.translationQuality || 0.85;
+
+    
+      
+
+    
+      this.logger.debug('Using Vector DB configured model', { 
+
+    
+        modelId, 
+
+    
+        provider: this.modelConfig.provider 
+
+    
+      });
       
       // Pre-process: Extract and preserve non-translatable content
       const processed = this.preprocessDocumentation(
@@ -90,12 +127,13 @@ CRITICAL: The translated documentation must be as technically accurate as the or
         translated = await this.translateInChunks(
           contentToTranslate,
           targetLanguage,
-          model,
+          modelId,
           enhancedSystem
         );
       } else {
-        const response = await this.openai.chat.completions.create({
-          model: model.modelId,
+        const client = this.ensureClient();
+      const response = await client.chat.completions.create({
+          model: modelId,
           messages: [
             { role: 'system', content: enhancedSystem },
             { role: 'user', content: user }
@@ -118,8 +156,8 @@ CRITICAL: The translated documentation must be as technically accurate as the or
       
       return {
         translated,
-        confidence: model.qualityScore,
-        modelUsed: model.modelId,
+        confidence: qualityScore,
+        modelUsed: modelId,
         processingTime: Date.now() - startTime,
         cached: false
       };
@@ -223,7 +261,7 @@ CRITICAL: The translated documentation must be as technically accurate as the or
   private async translateInChunks(
     content: string,
     targetLanguage: SupportedLanguage,
-    model: any,
+    modelId: string,
     systemPrompt: string
   ): Promise<string> {
     // Split by paragraphs or sections
@@ -231,8 +269,9 @@ CRITICAL: The translated documentation must be as technically accurate as the or
     const translatedChunks: string[] = [];
     
     for (const chunk of chunks) {
-      const response = await this.openai.chat.completions.create({
-        model: model.modelId,
+      const client = this.ensureClient();
+      const response = await client.chat.completions.create({
+        model: modelId,
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: `Translate this documentation section:\n\n${chunk}` }

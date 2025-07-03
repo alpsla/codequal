@@ -14,6 +14,8 @@ export * from './tool-result-storage.service';
 export * from './tool-result-retrieval.service';
 export * from './repository-clone-integration.service';
 export * from './webhook-handler.service';
+export { ToolResultRetrievalService } from './tool-result-retrieval.service';
+export type { AgentToolResults } from './tool-result-retrieval.service';
 
 /**
  * Tools that run in DeepWiki (need full repository):

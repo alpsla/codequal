@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="google" content="notranslate">
+    <title>CodeQual - Отчет анализа PR</title>
+    <link rel="stylesheet" href="./styles.css">
+</head>
+<body data-lang="ru">
+    <!-- Language Selector -->
+    <div class="language-selector">
+        <select id="languageSelector" class="language-dropdown" onchange="changeLanguage(this.value)">
+            <option value="en" >English</option>
+            <option value="ru" selected>Русский</option>
+            <option value="es" >Español</option>
+            <option value="fr" >Français</option>
+            <option value="de" >Deutsch</option>
+            <option value="ja" >日本語</option>
+            <option value="zh" >中文</option>
+            <option value="pt" >Português</option>
+            <option value="it" >Italiano</option>
+            <option value="ko" >한국어</option>
+        </select>
+        <div id="google_translate_element" style="margin-top: 10px;"></div>
+    </div>
+
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Отчет анализа кода</h1>
+            <div class="subtitle">Пул-реквест #892 - web-app</div>
+            <div class="metadata">
+                <div class="metadata-item">
+                    <strong>Репозиторий</strong>
+                    company/web-app
+                </div>
+                <div class="metadata-item">
+                    <strong>Основной язык</strong>
+                    JavaScript
+                </div>
+                <div class="metadata-item">
+                    <strong>Изменено файлов</strong>
+                    18
+                </div>
+                <div class="metadata-item">
+                    <strong>Изменено строк</strong>
+                    +742 / -156
+                </div>
+            </div>
+        </div>
+
+        <!-- PR Approval Decision -->
+        <div class="pr-decision-section conditionally-approved">
+            <div class="decision-header">
+                <div class="decision-icon">⚠️</div>
+                <div class="decision-title">
+                    Решение по PR: Условно одобрено
+                </div>
+                <div class="decision-subtitle"></div>
+            </div>
+            
+            <div class="decision-details">
+                <div class="decision-section">
+                    <h3>Блокирующие проблемы</h3>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="margin-bottom: 10px;">
+          <strong>⚠️&nbsp;Medium:</strong>&nbsp;Missing unit tests for critical user profile validation logic
+          
+        </li><li style="margin-bottom: 10px;">
+          <strong>📊&nbsp;Medium:</strong>&nbsp;Performance impact not assessed for profile image uploads
+          
+        </li>
+                    </ul>
+                </div>
+                
+                <div class="decision-section">
+                    <h3>Положительные моменты</h3>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="margin-bottom: 10px;">✓&nbsp;Clean component architecture with proper separation of concerns</li><li style="margin-bottom: 10px;">✓&nbsp;Follows React best practices and hooks patterns</li><li style="margin-bottom: 10px;">✓&nbsp;Proper input validation on frontend</li><li style="margin-bottom: 10px;">✓&nbsp;Responsive design implemented</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Current PR Issues -->
+        <div class="section">
+            <h2>🔍 Проблемы, найденные в этом PR</h2>
+            
+                <button id="togglePRIssues" onclick="toggleLowerPriorityPRIssues()" class="toggle-button">
+                  <span id="togglePRText">Show All Issues (3)</span>
+                  <span id="togglePRArrow" style="margin-left: 5px;">▼</span>
+                </button>
+                <div id="lowerPriorityPRIssues" style="display: none; margin-top: 20px;">
+                  
+                    <div class="finding medium">
+                      <h4>
+                        <span class="badge medium">Medium</span>
+                        Missing Test Coverage
+                      </h4>
+                      <p><strong>Файл:</strong> src/services/profileService.js:45-89</p>
+                      <p>Profile validation logic lacks unit tests</p>
+                      <div class="code-snippet"><code>function validateProfile(data) {
+  // Complex validation logic without tests
+}</code></div>
+                      <div class="recommendation-box">
+                        <strong>Рекомендация:</strong>
+                        Add comprehensive unit tests using Jest. Aim for at least 80% coverage of validation logic
+                      </div>
+                    </div>
+                  
+                    <div class="finding medium">
+                      <h4>
+                        <span class="badge medium">Medium</span>
+                        Large File Upload Handling
+                      </h4>
+                      <p><strong>Файл:</strong> src/components/ProfileImageUpload.jsx:112</p>
+                      <p>No file size validation before upload</p>
+                      <div class="code-snippet"><code>const handleFileUpload = (file) => {
+  uploadFile(file); // No size check
+}</code></div>
+                      <div class="recommendation-box">
+                        <strong>Рекомендация:</strong>
+                        Add file size validation: if (file.size > 5 * 1024 * 1024) { /* reject */ }
+                      </div>
+                    </div>
+                  
+                    <div class="finding low">
+                      <h4>
+                        <span class="badge low">Low</span>
+                        Console.log Statements
+                      </h4>
+                      <p><strong>Файл:</strong> src/utils/debug.js:23, 45, 67</p>
+                      <p>Debug console.log statements left in code</p>
+                      
+                      <div class="recommendation-box">
+                        <strong>Рекомендация:</strong>
+                        Remove console.log statements or use a proper logging library
+                      </div>
+                    </div>
+                  
+                </div>
+              
+        </div>
+
+        <!-- Repository Issues -->
+        <div class="section repo-issues">
+            <h2>⚠️ Обнаружены проблемы в репозитории</h2>
+            <p>Эти проблемы существуют в репозитории и влияют на общее качество кода:</p>
+            
+            <!-- High Priority Issues -->
+            
+        <div class="finding medium">
+          <h4>
+            <span class="badge medium">Medium</span>
+            Outdated React Version
+          </h4>
+          <p>Using React 16.8, missing out on performance improvements and new features</p>
+          <div class="code-snippet"><code>"react": "^16.8.0", "react-dom": "^16.8.0"</code></div>
+          <div style="margin-top: 10px; color: #f39c12;">
+            <strong>Влияние:</strong>
+            Missing performance optimizations and concurrent features
+          </div>
+        </div>
+      
+            
+            <!-- Toggle Button -->
+            <button id="toggleRepoIssues" onclick="toggleLowerPriorityIssues()" class="toggle-button">
+            <span id="toggleText">Показать все проблемы (1)</span>
+            <span id="toggleArrow" style="margin-left: 5px;">▼</span>
+          </button>
+            
+            <!-- Lower Priority Issues -->
+            <div id="lowerPriorityIssues" style="display: none; margin-top: 20px;">
+            
+              <div class="finding low">
+                <h4>
+                  <span class="badge low">Low</span>
+                  Inconsistent Component Naming
+                </h4>
+                <p>Mix of PascalCase and camelCase for component files</p>
+                <div class="code-snippet"><code>userProfile.jsx, AdminDashboard.jsx, settings_page.jsx</code></div>
+                <div class="code-snippet"><code>userProfile.jsx, AdminDashboard.jsx, settings_page.jsx</code></div>
+                <div style="margin-top: 10px; color: #95a5a6;">
+                  <strong>Влияние:</strong>
+                  Can cause confusion when importing components
+                </div>
+                
+              </div>
+            
+          </div>
+        </div>
+
+        <!-- Score Display -->
+        <div class="section">
+            <h2>📊 Рейтинг навыков разработчика</h2>
+            
+            <div class="score-display">
+                <div class="score-circle high" style="--score: 72;">
+                    <div class="score-inner">
+                        <div class="score-number">72</div>
+                        <div class="score-label">Текущий рейтинг</div>
+                    </div>
+                </div>
+            </div>
+            
+            <p style="text-align: center; color: #718096; margin-top: 20px;">
+                Excellent code quality!
+            </p>
+        </div>
+
+        <!-- Skills Breakdown -->
+        <div class="section">
+            <h2>🎯 Разбивка по уровням навыков</h2>
+            
+        <div class="skill-card">
+          <div class="skill-header">
+            <span>🔒 Security</span>
+            <span>75/100</span>
+          </div>
+          <div class="skill-bar">
+            <div class="skill-fill" style="width: 75%"></div>
+          </div>
+          <p style="color: #27ae60; margin-top: 10px;">
+            Good security practices with input validation
+          </p>
+        </div>
+      
+        <div class="skill-card">
+          <div class="skill-header">
+            <span>📝 Code Quality</span>
+            <span>80/100</span>
+          </div>
+          <div class="skill-bar">
+            <div class="skill-fill" style="width: 80%"></div>
+          </div>
+          <p style="color: #27ae60; margin-top: 10px;">
+            Clean, maintainable code structure
+          </p>
+        </div>
+      
+        <div class="skill-card">
+          <div class="skill-header">
+            <span>🧪 Testing</span>
+            <span>45/100</span>
+          </div>
+          <div class="skill-bar">
+            <div class="skill-fill" style="width: 45%"></div>
+          </div>
+          <p style="color: #f39c12; margin-top: 10px;">
+            Needs improvement in test coverage
+          </p>
+        </div>
+      
+        <div class="skill-card">
+          <div class="skill-header">
+            <span>⚡ Performance</span>
+            <span>60/100</span>
+          </div>
+          <div class="skill-bar">
+            <div class="skill-fill" style="width: 60%"></div>
+          </div>
+          <p style="color: #f39c12; margin-top: 10px;">
+            Consider performance impact of features
+          </p>
+        </div>
+      
+        </div>
+
+        <!-- Educational Resources -->
+        <div class="section">
+            <h2>📚 Рекомендуемые учебные ресурсы</h2>
+            
+          <div class="edu-module">
+            <h4>React Testing Best Practices</h4>
+            <p>
+              <strong>Продолжительность:</strong> 2 часа | 
+              <strong>Уровень:</strong> Intermediate
+            </p>
+            <p>Learn to write effective tests for React components and hooks</p>
+            <a href="https://github.com/goldbergyoni/javascript-testing-best-practices" target="_blank" rel="noopener noreferrer" class="edu-link">
+              Начать обучение →
+            </a>
+          </div>
+        
+          <div class="edu-module">
+            <h4>Performance Optimization</h4>
+            <p>
+              <strong>Продолжительность:</strong> 3 часа | 
+              <strong>Уровень:</strong> Intermediate
+            </p>
+            <p>Optimize React applications for better performance</p>
+            <a href="https://web.dev/performance/" target="_blank" rel="noopener noreferrer" class="edu-link">
+              Начать обучение →
+            </a>
+          </div>
+        
+        </div>
+
+        <!-- PR Comment -->
+        <div class="section">
+            <h2>💬 Предлагаемый комментарий к PR</h2>
+            <div class="pr-comment-box">## Предлагаемый комментарий к PR
+
+⚠️ **This PR is conditionally approved.**
+
+Please address the following items before merging:
+
+### Issues to Address:
+- **Medium**: Missing unit tests for critical user profile validation logic
+- **Medium**: Performance impact not assessed for profile image uploads
+
+### Quality Score: 72/100
+
+### Strengths:
+- ✓ Clean component architecture with proper separation of concerns
+- ✓ Follows React best practices and hooks patterns
+- ✓ Proper input validation on frontend
+- ✓ Responsive design implemented
+
+---
+📊 [View Full Report](./report.html) | 🔗 [CodeQual Dashboard](https://codequal.com)</div>
+        </div>
+
+        <!-- Footer -->
+        <div class="section footer">
+            <p>
+                Сгенерировано CodeQual • <a href="https://codequal.com">codequal.com</a>
+            </p>
+            <p>
+                7/1/2025, 2:59:51 PM | ID анализа: analysis-1751396391085
+            </p>
+        </div>
+    </div>
+
+    <script src="./scripts.js"></script>
+    
+    <!-- Google Translate -->
+    <script type="text/javascript">
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'ru',
+                includedLanguages: 'en,ru,es,fr,de,ja,zh-CN,pt,it,ko,hi,ar,tr,pl,nl,sv,da,no,fi,cs,hu,ro,el,he,th,vi,id,ms,tl',
+                layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+                autoDisplay: false
+            }, 'google_translate_element');
+        }
+    </script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+</body>
+</html>

@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="google" content="notranslate">
+    <title>CodeQual - PR Analysis Report</title>
+    <link rel="stylesheet" href="./styles.css">
+</head>
+<body data-lang="en">
+    <!-- Language Selector -->
+    <div class="language-selector">
+        <select id="languageSelector" class="language-dropdown" onchange="changeLanguage(this.value)">
+            <option value="en" selected>English</option>
+            <option value="ru" >Русский</option>
+            <option value="es" >Español</option>
+            <option value="fr" >Français</option>
+            <option value="de" >Deutsch</option>
+            <option value="ja" >日本語</option>
+            <option value="zh" >中文</option>
+            <option value="pt" >Português</option>
+            <option value="it" >Italiano</option>
+            <option value="ko" >한국어</option>
+        </select>
+        <div id="google_translate_element" style="margin-top: 10px;"></div>
+    </div>
+
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Code Analysis Report</h1>
+            <div class="subtitle">Pull Request #1247 - enterprise-api</div>
+            <div class="metadata">
+                <div class="metadata-item">
+                    <strong>Repository</strong>
+                    techcorp/enterprise-api
+                </div>
+                <div class="metadata-item">
+                    <strong>Primary Language</strong>
+                    TypeScript
+                </div>
+                <div class="metadata-item">
+                    <strong>Files Changed</strong>
+                    32
+                </div>
+                <div class="metadata-item">
+                    <strong>Lines Modified</strong>
+                    +1847 / -423
+                </div>
+            </div>
+        </div>
+
+        <!-- PR Approval Decision -->
+        <div class="pr-decision-section blocked">
+            <div class="decision-header">
+                <div class="decision-icon">🚫</div>
+                <div class="decision-title">
+                    PR Decision: Blocked
+                </div>
+                <div class="decision-subtitle"></div>
+            </div>
+            
+            <div class="decision-details">
+                <div class="decision-section">
+                    <h3>Blocking Issues</h3>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="margin-bottom: 10px;">
+          <strong>🛡️&nbsp;Critical:</strong>&nbsp;SQL injection vulnerability in user search endpoint
+          <ul style="margin-top: 5px; margin-left: 20px;"><li>File: src/controllers/user-controller.ts:156</li><li>User input directly concatenated into SQL query</li><li>No input validation or sanitization</li></ul>
+        </li><li style="margin-bottom: 10px;">
+          <strong>🔐&nbsp;High:</strong>&nbsp;Missing authentication on admin endpoints
+          <ul style="margin-top: 5px; margin-left: 20px;"><li>File: src/routes/admin.ts:42</li><li>Endpoint /api/admin/export is publicly accessible</li><li>No auth middleware applied to sensitive routes</li></ul>
+        </li>
+                    </ul>
+                </div>
+                
+                <div class="decision-section">
+                    <h3>Positive Findings</h3>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="margin-bottom: 10px;">✓&nbsp;Comprehensive test coverage for new endpoints (92%)</li><li style="margin-bottom: 10px;">✓&nbsp;Well-documented API with OpenAPI specifications</li><li style="margin-bottom: 10px;">✓&nbsp;Performance optimizations reduced query time by 40%</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Current PR Issues -->
+        <div class="section">
+            <h2>🔍 Issues Found in This PR</h2>
+            
+          <div class="finding critical">
+            <h4>
+              <span class="badge critical">Critical</span>
+              SQL Injection Vulnerability
+            </h4>
+            <p><strong>File:</strong> src/controllers/user-controller.ts:156</p>
+            <p>User input is directly concatenated into SQL query without parameterization</p>
+            <div class="code-snippet"><code>const query = `SELECT * FROM users WHERE name LIKE '%${searchTerm}%'`;</code></div>
+            <div class="recommendation-box">
+              <strong>Recommendation:</strong>
+              Use parameterized queries or an ORM like TypeORM/Prisma. Example: db.query('SELECT * FROM users WHERE name LIKE ?', [`%${searchTerm}%`])
+            </div>
+          </div>
+        
+          <div class="finding high">
+            <h4>
+              <span class="badge high">High</span>
+              Missing Authentication Middleware
+            </h4>
+            <p><strong>File:</strong> src/routes/admin.ts:42</p>
+            <p>Admin routes lack authentication middleware, exposing sensitive operations</p>
+            <div class="code-snippet"><code>router.get('/export', exportController.exportAllData);</code></div>
+            <div class="recommendation-box">
+              <strong>Recommendation:</strong>
+              Add authentication middleware: router.get('/export', authMiddleware, exportController.exportAllData);
+            </div>
+          </div>
+        
+                <button id="togglePRIssues" onclick="toggleLowerPriorityPRIssues()" class="toggle-button">
+                  <span id="togglePRText">Show All Issues (1)</span>
+                  <span id="togglePRArrow" style="margin-left: 5px;">▼</span>
+                </button>
+                <div id="lowerPriorityPRIssues" style="display: none; margin-top: 20px;">
+                  
+                    <div class="finding medium">
+                      <h4>
+                        <span class="badge medium">Medium</span>
+                        Hardcoded Credentials
+                      </h4>
+                      <p><strong>File:</strong> src/config/database.ts:15</p>
+                      <p>Database credentials are hardcoded in the source code</p>
+                      <div class="code-snippet"><code>const DB_PASSWORD = 'admin123';</code></div>
+                      <div class="recommendation-box">
+                        <strong>Recommendation:</strong>
+                        Use environment variables: process.env.DB_PASSWORD
+                      </div>
+                    </div>
+                  
+                </div>
+              
+        </div>
+
+        <!-- Repository Issues -->
+        <div class="section repo-issues">
+            <h2>⚠️ Repository-wide Issues Detected</h2>
+            <p>These issues exist in the repository and affect overall code quality:</p>
+            
+            <!-- High Priority Issues -->
+            
+        <div class="finding critical">
+          <h4>
+            <span class="badge critical">Critical</span>
+            12 Dependencies with Known Vulnerabilities
+          </h4>
+          <p>Multiple dependencies have critical security vulnerabilities that could be exploited</p>
+          <div class="code-snippet"><code>npm audit found 12 vulnerabilities (8 critical, 3 high, 1 moderate)</code></div>
+          <div style="margin-top: 10px; color: #e74c3c;">
+            <strong>Impact:</strong>
+            Exposes application to known exploits including RCE and XSS attacks
+          </div>
+        </div>
+      
+        <div class="finding high">
+          <h4>
+            <span class="badge high">High</span>
+            No Security Headers Configured
+          </h4>
+          <p>Application lacks essential security headers making it vulnerable to various attacks</p>
+          <div class="code-snippet"><code>// No helmet.js or security headers middleware found</code></div>
+          <div style="margin-top: 10px; color: #ed8936;">
+            <strong>Impact:</strong>
+            Vulnerable to XSS, clickjacking, and other client-side attacks
+          </div>
+        </div>
+      
+            
+            <!-- Toggle Button -->
+            <button id="toggleRepoIssues" onclick="toggleLowerPriorityIssues()" class="toggle-button">
+            <span id="toggleText">Show All Issues (2)</span>
+            <span id="toggleArrow" style="margin-left: 5px;">▼</span>
+          </button>
+            
+            <!-- Lower Priority Issues -->
+            <div id="lowerPriorityIssues" style="display: none; margin-top: 20px;">
+            
+              <div class="finding medium">
+                <h4>
+                  <span class="badge medium">Medium</span>
+                  Missing Error Handling in 8 API Endpoints
+                </h4>
+                <p>Several endpoints don't handle errors properly, potentially leaking sensitive information</p>
+                <div class="code-snippet"><code>} catch (e) { res.status(500).json({ error: e.toString() }); }</code></div>
+                <div class="code-snippet"><code>} catch (e) { res.status(500).json({ error: e.toString() }); }</code></div>
+                <div style="margin-top: 10px; color: #f39c12;">
+                  <strong>Impact:</strong>
+                  Could leak stack traces and internal system information
+                </div>
+                
+              </div>
+            
+              <div class="finding low">
+                <h4>
+                  <span class="badge low">Low</span>
+                  Inconsistent Code Formatting
+                </h4>
+                <p>Mixed use of tabs and spaces, inconsistent naming conventions</p>
+                
+                
+                <div style="margin-top: 10px; color: #95a5a6;">
+                  <strong>Impact:</strong>
+                  Makes code harder to maintain and review
+                </div>
+                
+              </div>
+            
+          </div>
+        </div>
+
+        <!-- Score Display -->
+        <div class="section">
+            <h2>📊 Developer Skill Score</h2>
+            
+            <div class="score-display">
+                <div class="score-circle low" style="--score: 35;">
+                    <div class="score-inner">
+                        <div class="score-number">35</div>
+                        <div class="score-label">Current Score</div>
+                    </div>
+                </div>
+            </div>
+            
+            <p style="text-align: center; color: #718096; margin-top: 20px;">
+                Significant improvements needed
+            </p>
+        </div>
+
+        <!-- Skills Breakdown -->
+        <div class="section">
+            <h2>🎯 Skill Level Breakdown</h2>
+            
+        <div class="skill-card">
+          <div class="skill-header">
+            <span>🔒 Security</span>
+            <span>25/100</span>
+          </div>
+          <div class="skill-bar">
+            <div class="skill-fill" style="width: 25%"></div>
+          </div>
+          <p style="color: #e74c3c; margin-top: 10px;">
+            Critical security issues need immediate attention
+          </p>
+        </div>
+      
+        <div class="skill-card">
+          <div class="skill-header">
+            <span>📝 Code Quality</span>
+            <span>65/100</span>
+          </div>
+          <div class="skill-bar">
+            <div class="skill-fill" style="width: 65%"></div>
+          </div>
+          <p style="color: #f39c12; margin-top: 10px;">
+            Good structure but needs security improvements
+          </p>
+        </div>
+      
+        <div class="skill-card">
+          <div class="skill-header">
+            <span>🧪 Testing</span>
+            <span>92/100</span>
+          </div>
+          <div class="skill-bar">
+            <div class="skill-fill" style="width: 92%"></div>
+          </div>
+          <p style="color: #27ae60; margin-top: 10px;">
+            Excellent test coverage
+          </p>
+        </div>
+      
+        <div class="skill-card">
+          <div class="skill-header">
+            <span>📚 Documentation</span>
+            <span>85/100</span>
+          </div>
+          <div class="skill-bar">
+            <div class="skill-fill" style="width: 85%"></div>
+          </div>
+          <p style="color: #27ae60; margin-top: 10px;">
+            Well-documented code and APIs
+          </p>
+        </div>
+      
+        </div>
+
+        <!-- Educational Resources -->
+        <div class="section">
+            <h2>📚 Recommended Learning Resources</h2>
+            
+          <div class="edu-module">
+            <h4>Secure Coding Practices</h4>
+            <p>
+              <strong>Duration:</strong> 3 hours | 
+              <strong>Level:</strong> Critical
+            </p>
+            <p>Learn OWASP secure coding guidelines to prevent SQL injection and other vulnerabilities</p>
+            <a href="https://owasp.org/www-project-secure-coding-practices-quick-reference-guide/" target="_blank" rel="noopener noreferrer" class="edu-link">
+              Start Learning →
+            </a>
+          </div>
+        
+          <div class="edu-module">
+            <h4>API Security Best Practices</h4>
+            <p>
+              <strong>Duration:</strong> 2 hours | 
+              <strong>Level:</strong> High
+            </p>
+            <p>Master authentication, authorization, and API security patterns</p>
+            <a href="https://github.com/OWASP/API-Security" target="_blank" rel="noopener noreferrer" class="edu-link">
+              Start Learning →
+            </a>
+          </div>
+        
+          <div class="edu-module">
+            <h4>Dependency Security Management</h4>
+            <p>
+              <strong>Duration:</strong> 1 hours | 
+              <strong>Level:</strong> Medium
+            </p>
+            <p>Learn to manage and update dependencies securely</p>
+            <a href="https://docs.github.com/en/code-security/supply-chain-security" target="_blank" rel="noopener noreferrer" class="edu-link">
+              Start Learning →
+            </a>
+          </div>
+        
+        </div>
+
+        <!-- PR Comment -->
+        <div class="section">
+            <h2>💬 Suggested PR Comment</h2>
+            <div class="pr-comment-box">## Suggested PR Comment
+
+🚫 **This PR cannot be merged in its current state.**
+
+Critical issues were found that must be resolved:
+
+### Critical Issues:
+- **Critical**: SQL injection vulnerability in user search endpoint
+- **High**: Missing authentication on admin endpoints
+
+### Quality Score: 35/100
+
+### Strengths:
+- ✓ Comprehensive test coverage for new endpoints (92%)
+- ✓ Well-documented API with OpenAPI specifications
+- ✓ Performance optimizations reduced query time by 40%
+
+---
+📊 [View Full Report](./report.html) | 🔗 [CodeQual Dashboard](https://codequal.com)</div>
+        </div>
+
+        <!-- Footer -->
+        <div class="section footer">
+            <p>
+                Generated by CodeQual • <a href="https://codequal.com">codequal.com</a>
+            </p>
+            <p>
+                7/1/2025, 2:58:21 PM | Analysis ID: analysis-1751396301853
+            </p>
+        </div>
+    </div>
+
+    <script src="./scripts.js"></script>
+    
+    <!-- Google Translate -->
+    <script type="text/javascript">
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'en',
+                includedLanguages: 'en,ru,es,fr,de,ja,zh-CN,pt,it,ko,hi,ar,tr,pl,nl,sv,da,no,fi,cs,hu,ro,el,he,th,vi,id,ms,tl',
+                layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+                autoDisplay: false
+            }, 'google_translate_element');
+        }
+    </script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+</body>
+</html>
