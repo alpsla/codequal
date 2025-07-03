@@ -1,6 +1,5 @@
 import { createLogger } from '@codequal/core/utils';
 import { TranslatorFactory, TranslationContext, quickTranslate } from './translator-factory';
-import { TranslatorResearcher } from './translator-researcher';
 
 export type SupportedLanguage = 'en' | 'es' | 'zh' | 'hi' | 'pt' | 'ja' | 'de' | 'ru' | 'fr' | 'ko';
 
@@ -30,11 +29,9 @@ export const LANGUAGE_CONFIG = {
 export class TranslatorAgent {
   private logger = createLogger('TranslatorAgent');
   private factory: TranslatorFactory;
-  private researcher: TranslatorResearcher;
 
   constructor() {
     this.factory = TranslatorFactory.getInstance();
-    this.researcher = new TranslatorResearcher();
   }
 
   async translate(request: TranslationRequest): Promise<any> {
@@ -225,7 +222,8 @@ export class TranslatorAgent {
   
   // Get model recommendation
   async getModelRecommendation(context: string, targetLanguage: SupportedLanguage): Promise<string> {
-    return this.researcher.getModelRecommendation(context, targetLanguage);
+    // Model recommendations are now handled by the TranslatorFactory
+    return this.factory.getRecommendedModel(context as TranslationContext, targetLanguage);
   }
   
   // Get translation statistics

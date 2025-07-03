@@ -1,6 +1,5 @@
 import { createLogger } from '@codequal/core/utils';
 import OpenAI from 'openai';
-import { TranslatorResearcher } from '../translator-researcher';
 import { SupportedLanguage } from '../translator-agent';
 
 export interface TranslationResult {
@@ -20,16 +19,45 @@ export interface ModelConfig {
 
 export abstract class BaseTranslator {
   protected logger;
-  protected openai: OpenAI;
-  protected researcher: TranslatorResearcher;
+  protected openai?: OpenAI;
   protected cache = new Map<string, any>();
   protected modelCache = new Map<string, any>();
   protected modelConfig?: ModelConfig;
   
   constructor(protected name: string) {
     this.logger = createLogger(`Translator:${name}`);
-    this.openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || '' });
-    this.researcher = new TranslatorResearcher();
+    // OpenAI client will NOT be initialized until model config is set
+    this.logger.info('Translator created, waiting for model configuration from Vector DB');
+  }
+  
+  /**
+   * Initialize OpenAI client based on model configuration
+   */
+  private initializeOpenAIClient(): void {
+    if (!this.modelConfig) {
+      throw new Error('Cannot initialize OpenAI client without model configuration');
+    }
+    
+    // Always use OpenRouter for translation models
+    const apiKey = process.env.OPENROUTER_API_KEY;
+    
+    if (!apiKey) {
+      throw new Error('OPENROUTER_API_KEY is required for translation service');
+    }
+    
+    this.openai = new OpenAI({
+      apiKey: apiKey,
+      baseURL: 'https://openrouter.ai/api/v1',
+      defaultHeaders: {
+        'HTTP-Referer': 'https://codequal.ai',
+        'X-Title': 'CodeQual Translation Service'
+      }
+    } as any);
+    
+    this.logger.info('Initialized OpenAI client for OpenRouter', { 
+      provider: this.modelConfig.provider,
+      model: this.modelConfig.model
+    });
   }
   
   /**
@@ -139,13 +167,17 @@ export abstract class BaseTranslator {
    */
   setModelConfig(config: ModelConfig): void {
     this.modelConfig = config;
-    this.logger.info(`Model configuration updated`, {
+    this.logger.info(`Model configuration updated from Vector DB`, {
       provider: config.provider,
-      model: config.model
+      model: config.model,
+      capabilities: config.capabilities
     });
     
     // Clear model cache when configuration changes
     this.modelCache.clear();
+    
+    // Initialize OpenAI client with the new configuration
+    this.initializeOpenAIClient();
   }
   
   /**
@@ -156,14 +188,31 @@ export abstract class BaseTranslator {
   }
   
   /**
-   * Get preferred model ID based on configuration
+   * Get model ID from configuration (required)
    */
-  protected getPreferredModelId(): string {
-    if (this.modelConfig) {
-      return this.modelConfig.model;
+  protected getModelId(): string {
+    if (!this.modelConfig) {
+      throw new Error('Model configuration not set. Translator must be initialized with Vector DB configuration.');
     }
     
-    // Fallback to researcher selection
-    return 'gpt-3.5-turbo';
+    const modelId = this.modelConfig.model;
+    const provider = this.modelConfig.provider;
+    
+    // OpenRouter expects format like "openai/gpt-3.5-turbo" or "anthropic/claude-3-opus"
+    if (!modelId.includes('/')) {
+      return `${provider}/${modelId}`;
+    }
+    
+    return modelId;
+  }
+  
+  /**
+   * Ensure OpenAI client is initialized
+   */
+  protected ensureClient(): OpenAI {
+    if (!this.openai) {
+      throw new Error('OpenAI client not initialized. Model configuration must be set first.');
+    }
+    return this.openai;
   }
 }

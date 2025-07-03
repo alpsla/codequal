@@ -43,8 +43,20 @@ export class APITranslator extends BaseTranslator {
     }
     
     try {
-      // Get optimal model for API translation
-      const model = await this.researcher.findOptimalTranslationModel('api', targetLanguage);
+      // Ensure we have a model configuration from Vector DB
+      if (!this.modelConfig) {
+        throw new Error('Translator not initialized with Vector DB configuration');
+      }
+      
+      // Get model ID and quality score from configuration
+      const modelId = this.getModelId();
+      const qualityScore = this.modelConfig.capabilities?.translationQuality || 0.85;
+      
+      this.logger.debug('Using Vector DB configured model', { 
+        modelId, 
+        provider: this.modelConfig.provider,
+        capabilities: this.modelConfig.capabilities
+      });
       
       // Pre-process: Extract translatable content
       const processed = this.extractTranslatableContent(content);
@@ -57,9 +69,10 @@ export class APITranslator extends BaseTranslator {
         preserveFormatting: true
       });
       
-      // Translate
-      const response = await this.openai.chat.completions.create({
-        model: model.modelId,
+      // Translate using configured model via OpenRouter
+      const client = this.ensureClient();
+      const response = await client.chat.completions.create({
+        model: modelId,
         messages: [
           { role: 'system', content: system },
           { role: 'user', content: user }
@@ -83,8 +96,8 @@ export class APITranslator extends BaseTranslator {
       
       return {
         translated,
-        confidence: model.qualityScore,
-        modelUsed: model.modelId,
+        confidence: qualityScore,
+        modelUsed: modelId,
         processingTime: Date.now() - startTime,
         cached: false
       };

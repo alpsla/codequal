@@ -30,8 +30,12 @@
       "default": "./dist/config/*.js"
     },
     "./services/deepwiki-tools": {
-      "types": "./dist/services/deepwiki-tools.d.ts",
-      "default": "./dist/services/deepwiki-tools.js"
+      "types": "./dist/services/deepwiki-tools/index.d.ts",
+      "default": "./dist/services/deepwiki-tools/index.js"
+    },
+    "./services/deepwiki-tools/index": {
+      "types": "./dist/services/deepwiki-tools/index.d.ts",
+      "default": "./dist/services/deepwiki-tools/index.js"
     },
     "./services/usage-tracking/token-tracking-service": {
       "types": "./dist/services/usage-tracking/token-tracking-service.d.ts",
@@ -44,6 +48,10 @@
     "./services/scheduling": {
       "types": "./dist/services/scheduling/index.d.ts",
       "default": "./dist/services/scheduling/index.js"
+    },
+    "./monitoring/enhanced-monitoring-service": {
+      "types": "./dist/monitoring/enhanced-monitoring-service.d.ts",
+      "default": "./dist/monitoring/enhanced-monitoring-service.js"
     }
   },
   "scripts": {

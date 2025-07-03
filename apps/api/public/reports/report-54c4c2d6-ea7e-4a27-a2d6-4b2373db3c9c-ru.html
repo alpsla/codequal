@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="google" content="notranslate">
+    <title>CodeQual - Отчет анализа PR</title>
+    <link rel="stylesheet" href="./styles.css">
+</head>
+<body data-lang="ru">
+    <!-- Language Selector -->
+    <div class="language-selector">
+        <select id="languageSelector" class="language-dropdown" onchange="changeLanguage(this.value)">
+            <option value="en" {{lang_en_selected}}>English</option>
+            <option value="ru" selected>Русский</option>
+            <option value="es" {{lang_es_selected}}>Español</option>
+            <option value="fr" {{lang_fr_selected}}>Français</option>
+            <option value="de" {{lang_de_selected}}>Deutsch</option>
+            <option value="ja" {{lang_ja_selected}}>日本語</option>
+            <option value="zh" {{lang_zh_selected}}>中文</option>
+            <option value="pt" {{lang_pt_selected}}>Português</option>
+            <option value="it" {{lang_it_selected}}>Italiano</option>
+            <option value="ko" {{lang_ko_selected}}>한국어</option>
+        </select>
+    </div>
+
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Отчет анализа кода</h1>
+            <div class="subtitle">Пул-реквест #123 - test-repo</div>
+            <div class="metadata">
+                <div class="metadata-item">
+                    <strong>Репозиторий</strong>
+                    org/test-repo
+                </div>
+                <div class="metadata-item">
+                    <strong>Основной язык</strong>
+                    TypeScript
+                </div>
+                <div class="metadata-item">
+                    <strong>Изменено файлов</strong>
+                    15
+                </div>
+                <div class="metadata-item">
+                    <strong>Изменено строк</strong>
+                    +350 / -120
+                </div>
+            </div>
+        </div>
+
+        <!-- PR Approval Decision -->
+        <div class="pr-decision-section conditionally-approved">
+            <div class="decision-header">
+                <div class="decision-icon">⚠️</div>
+                <div class="decision-title">
+                    Решение по PR: Условно одобрено
+                </div>
+                <div class="decision-subtitle">PR может быть принят после исправления проблем</div>
+            </div>
+            
+            <div class="decision-details">
+                <div class="decision-section">
+                    <h3>Блокирующие проблемы</h3>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="margin-bottom: 10px;">
+          <strong>⚠️&nbsp;Средняя:</strong>&nbsp;Необходимо добавить тесты для новой функциональности
+        </li>
+                    </ul>
+                </div>
+                
+                <div class="decision-section">
+                    <h3>Положительные моменты</h3>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="margin-bottom: 10px;">✓&nbsp;Good test coverage</li><li style="margin-bottom: 10px;">✓&nbsp;Follows coding standards</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Current PR Issues -->
+        <div class="section">
+            <h2>🔍 Проблемы, найденные в этом PR</h2>
+            
+          <div class="finding medium">
+            <h4>
+              <span class="badge medium">Medium</span>
+              Отсутствуют тесты
+            </h4>
+            <p><strong>Файл:</strong> src/services/auth.ts:120</p>
+            <p>Новый код не покрыт тестами</p>
+            
+            <div class="recommendation-box">
+              <strong>Рекомендация:</strong>
+              Добавьте unit и integration тесты
+            </div>
+          </div>
+        
+        </div>
+
+        <!-- Repository Issues -->
+        <div class="section repo-issues">
+            <h2>⚠️ Обнаружены проблемы в репозитории</h2>
+            <p>Эти проблемы существуют в репозитории и влияют на общее качество кода:</p>
+            
+            <!-- High Priority Issues -->
+            
+            
+            <!-- Toggle Button -->
+            
+            
+            <!-- Lower Priority Issues -->
+            
+        </div>
+
+        <!-- Score Display -->
+        <div class="section">
+            <h2>📊 Рейтинг навыков разработчика</h2>
+            
+            <div class="score-display">
+                <div class="score-circle medium" style="--score: 65;">
+                    <div class="score-inner">
+                        <div class="score-number">65</div>
+                        <div class="score-label">Текущий рейтинг</div>
+                    </div>
+                </div>
+            </div>
+            
+            <p style="text-align: center; color: #718096; margin-top: 20px;">
+                {{score_message}}
+            </p>
+        </div>
+
+        <!-- Skills Breakdown -->
+        <div class="section">
+            <h2>🎯 Разбивка по уровням навыков</h2>
+            
+        <div class="skill-card">
+          <div class="skill-header">
+            <span>🔒 Security</span>
+            <span>70/100</span>
+          </div>
+          <div class="skill-bar">
+            <div class="skill-fill" style="width: 70%"></div>
+          </div>
+          <p style="color: #f39c12; margin-top: 10px;">
+            Good security practices
+          </p>
+        </div>
+      
+        <div class="skill-card">
+          <div class="skill-header">
+            <span>📝 Code Quality</span>
+            <span>85/100</span>
+          </div>
+          <div class="skill-bar">
+            <div class="skill-fill" style="width: 85%"></div>
+          </div>
+          <p style="color: #27ae60; margin-top: 10px;">
+            Excellent code quality
+          </p>
+        </div>
+      
+        </div>
+
+        <!-- Educational Resources -->
+        <div class="section">
+            <h2>📚 Рекомендуемые учебные ресурсы</h2>
+            
+          <div class="edu-module">
+            <h4>Secure Coding Practices</h4>
+            <p>
+              <strong>Продолжительность:</strong> 3 часа | 
+              <strong>Уровень:</strong> Intermediate
+            </p>
+            <p>Learn OWASP guidelines</p>
+            <a href="https://owasp.org/www-project-secure-coding-practices-quick-reference-guide/" target="_blank" rel="noopener noreferrer" class="edu-link">
+              Начать обучение →
+            </a>
+          </div>
+        
+          <div class="edu-module">
+            <h4>API Security</h4>
+            <p>
+              <strong>Продолжительность:</strong> 2 часа | 
+              <strong>Уровень:</strong> Advanced
+            </p>
+            <p>Master API security</p>
+            <a href="https://github.com/OWASP/API-Security" target="_blank" rel="noopener noreferrer" class="edu-link">
+              Начать обучение →
+            </a>
+          </div>
+        
+        </div>
+
+        <!-- PR Comment -->
+        <div class="section">
+            <h2>💬 Предлагаемый комментарий к PR</h2>
+            <div class="pr-comment-box">{{pr_comment_text}}</div>
+        </div>
+
+        <!-- Footer -->
+        <div class="section footer">
+            <p>
+                Сгенерировано CodeQual • <a href="https://codequal.com">codequal.com</a>
+            </p>
+            <p>
+                7/1/2025, 2:21:35 PM | ID анализа: test-1751394095175
+            </p>
+        </div>
+    </div>
+
+    <script src="./scripts.js"></script>
+</body>
+</html>

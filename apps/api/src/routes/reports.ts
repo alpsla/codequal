@@ -1,15 +1,10 @@
 import { Router } from 'express';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabase } from '@codequal/database/supabase/client';
 import { authMiddleware } from '../middleware/auth-middleware';
 import { createLogger } from '@codequal/core/utils';
 
 const router = Router();
 const logger = createLogger('ReportsAPI');
-
-// Initialize Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 /**
  * GET /api/reports/:reportId
@@ -23,8 +18,8 @@ router.get('/reports/:reportId', authMiddleware, async (req, res) => {
     logger.info('Retrieving report', { reportId, userId });
     
     // Use the secure function to get report with access control
-    const { data, error } = await supabase
-      .rpc('get_analysis_report', { report_id: reportId });
+    const { data, error } = await getSupabase()
+      .rpc('get_analysis_report', { report_id: reportId }) as { data: any; error: any };
     
     if (error) {
       if (error.message.includes('not found or access denied')) {
@@ -35,16 +30,17 @@ router.get('/reports/:reportId', authMiddleware, async (req, res) => {
       throw error;
     }
     
+    const reportData = data as any;
     res.json({
       success: true,
-      report: data.report_data, // Return the complete StandardReport
+      report: reportData.report_data, // Return the complete StandardReport
       metadata: {
-        id: data.id,
-        createdAt: data.created_at,
-        repositoryUrl: data.repository_url,
-        prNumber: data.pr_number,
-        analysisScore: data.analysis_score,
-        riskLevel: data.risk_level
+        id: reportData.id,
+        createdAt: reportData.created_at,
+        repositoryUrl: reportData.repository_url,
+        prNumber: reportData.pr_number,
+        analysisScore: reportData.analysis_score,
+        riskLevel: reportData.risk_level
       }
     });
   } catch (error) {
@@ -75,11 +71,11 @@ router.get('/reports/repository/:repoUrl/pr/:prNumber', authMiddleware, async (r
     });
     
     // Use the secure function to get latest report
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .rpc('get_latest_analysis_report', { 
         p_repository_url: repositoryUrl,
         p_pr_number: parseInt(prNumber)
-      });
+      }) as { data: any; error: any };
     
     if (error) {
       throw error;
@@ -91,16 +87,17 @@ router.get('/reports/repository/:repoUrl/pr/:prNumber', authMiddleware, async (r
       });
     }
     
+    const reportData = data as any;
     res.json({
       success: true,
-      report: data.report_data,
+      report: reportData.report_data,
       metadata: {
-        id: data.id,
-        createdAt: data.created_at,
-        analysisScore: data.analysis_score,
-        riskLevel: data.risk_level,
-        totalFindings: data.total_findings,
-        totalRecommendations: data.total_recommendations
+        id: reportData.id,
+        createdAt: reportData.created_at,
+        analysisScore: reportData.analysis_score,
+        riskLevel: reportData.risk_level,
+        totalFindings: reportData.total_findings,
+        totalRecommendations: reportData.total_recommendations
       }
     });
   } catch (error) {
@@ -140,7 +137,7 @@ router.get('/reports', authMiddleware, async (req, res) => {
     });
     
     // Build query
-    let query = supabase
+    let query = getSupabase()
       .from('analysis_report_summaries')
       .select('*', { count: 'exact' })
       .eq('user_id', userId);
@@ -199,7 +196,7 @@ router.get('/reports/statistics', authMiddleware, async (req, res) => {
     
     logger.info('Getting report statistics', { userId });
     
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .rpc('get_user_report_statistics');
     
     if (error) {
@@ -231,7 +228,7 @@ router.delete('/reports/:reportId', authMiddleware, async (req, res) => {
     logger.info('Deleting report', { reportId, userId });
     
     // Only allow deletion of own reports
-    const { error } = await supabase
+    const { error } = await getSupabase()
       .from('analysis_reports')
       .delete()
       .eq('id', reportId)
@@ -271,7 +268,7 @@ router.get('/reports/:reportId/export/:format', authMiddleware, async (req, res)
     logger.info('Exporting report', { reportId, format, userId });
     
     // Get the report
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .rpc('get_analysis_report', { report_id: reportId });
     
     if (error) {
@@ -283,7 +280,7 @@ router.get('/reports/:reportId/export/:format', authMiddleware, async (req, res)
       throw error;
     }
     
-    const report = data.report_data;
+    const report = (data as any).report_data;
     
     switch (format) {
       case 'markdown':

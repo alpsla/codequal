@@ -329,10 +329,11 @@ export class IntelligentResultMerger {
         case 'confidence':
           return (b.confidence || 0) - (a.confidence || 0);
           
-        case 'consensus':
+        case 'consensus': {
           const aConsensus = (a as any)._agentConsensus || 1;
           const bConsensus = (b as any)._agentConsensus || 1;
           return bConsensus - aConsensus;
+        }
           
         default:
           return 0;

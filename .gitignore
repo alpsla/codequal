@@ -9,6 +9,52 @@ coverage/
 test-results/
 test_logs.txt
 *.log
+*.pem
+
+# Test files and temporary scripts
+apps/api/test-*.js
+apps/api/test-*.html
+apps/api/*.html
+apps/api/debug-*.js
+apps/api/manual-*.js
+apps/api/build.js
+apps/api/build-bundle.js
+apps/api/start.js
+apps/api/health-server.js
+apps/api/server.log
+apps/api/test/
+apps/api/test-scripts/
+apps/api/TESTING_*.md
+apps/api/TEST_*.md
+apps/api/cleanup-*.sh
+apps/api/clean-*.sh
+apps/api/prepare-*.sh
+apps/api/setup-*.sh
+apps/api/verify-*.js
+generated-*.html
+final-*.html
+
+# Docker test files
+.env.docker.test
+Dockerfile.bundle
+Dockerfile.production
+Dockerfile.simple
+Dockerfile.fixed
+Dockerfile.minimal
+Dockerfile.monorepo
+Dockerfile.prod
+apps/api/Dockerfile.*
+
+# Deployment scripts (keep in repo but not tracked for changes)
+deploy-*.sh
+deployment-*.md
+docker-*.md
+
+# Build scripts
+scripts/build-*.sh
+scripts/deploy-*.sh
+scripts/pre-*.sh
+scripts/setup-*.sh
 
 # Production
 build/
@@ -90,3 +136,6 @@ examples/
 # Lock files (keep package-lock.json)
 yarn.lock
 pnpm-lock.yaml
+
+# Kubernetes secrets
+kubernetes/production/secrets.yaml

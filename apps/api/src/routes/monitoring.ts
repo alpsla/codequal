@@ -1,6 +1,6 @@
 import { Router, Request, Response, RequestHandler } from 'express';
 import { AuthenticatedRequest } from '../middleware/auth-middleware';
-import { EnhancedMonitoringService, MonitoringConfig, defaultMonitoringConfig } from '../../../../packages/core/src/monitoring/enhanced-monitoring-service';
+import { EnhancedMonitoringService, MonitoringConfig, defaultMonitoringConfig } from '@codequal/core/monitoring/enhanced-monitoring-service';
 
 export const monitoringRoutes = Router();
 

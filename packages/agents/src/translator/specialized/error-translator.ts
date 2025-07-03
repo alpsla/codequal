@@ -63,8 +63,19 @@ export class ErrorTranslator extends BaseTranslator {
     }
     
     try {
-      // Get optimal model for error translation
-      const model = await this.researcher.findOptimalTranslationModel('error', targetLanguage);
+      // Ensure we have a model configuration from Vector DB
+      if (!this.modelConfig) {
+        throw new Error('Translator not initialized with Vector DB configuration');
+      }
+      
+      // Get model ID from configuration
+      const modelId = this.getModelId();
+      const qualityScore = this.modelConfig.capabilities?.translationQuality || 0.90;
+      
+      this.logger.debug('Using Vector DB configured model', { 
+        modelId, 
+        provider: this.modelConfig.provider 
+      });
       
       // Extract error components
       const errorInfo = this.parseErrorContent(content);
@@ -88,9 +99,10 @@ Additional instructions for error translation:
 4. Technical level: ${options?.technicalLevel || 'intermediate'}
 5. ${options?.includeSuggestions ? 'Include helpful suggestions for resolving the error' : ''}`;
       
-      // Translate
-      const response = await this.openai.chat.completions.create({
-        model: model.modelId,
+      // Translate using configured model via OpenRouter
+      const client = this.ensureClient();
+      const response = await client.chat.completions.create({
+        model: modelId,
         messages: [
           { role: 'system', content: enhancedSystem },
           { role: 'user', content: user }
@@ -116,8 +128,8 @@ Additional instructions for error translation:
       
       return {
         translated,
-        confidence: model.qualityScore,
-        modelUsed: model.modelId,
+        confidence: qualityScore,
+        modelUsed: modelId,
         processingTime: Date.now() - startTime,
         cached: false
       };

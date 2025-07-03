@@ -1,7 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { checkRepositoryAccess } from '../middleware/auth-middleware';
 import { DeepWikiManager } from '../services/deepwiki-manager';
-import '../types/express.d.ts';
 
 export const repositoryRoutes = Router();
 

@@ -1,14 +1,10 @@
 import { Router, Request, Response } from 'express';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabase } from '@codequal/database/supabase/client';
 import { generateApiKey } from '../middleware/api-key-auth';
 import { authMiddleware } from '../middleware/auth-middleware';
 import { createHash } from 'crypto';
 
 const router = Router();
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
 
 // All routes require user authentication
 router.use(authMiddleware);
@@ -64,7 +60,7 @@ router.get('/', async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
     
-    const { data: keys, error } = await supabase
+    const { data: keys, error } = await getSupabase()
       .from('api_keys')
       .select('id, name, created_at, expires_at, usage_count, usage_limit, active')
       .eq('user_id', userId)
@@ -167,7 +163,7 @@ router.post('/', async (req: Request, res: Response) => {
     }
 
     // Check user's subscription plan for API key limits
-    const { data: subscription } = await supabase
+    const { data: subscription } = await getSupabase()
       .from('subscriptions')
       .select('plan_id, api_key_limit')
       .eq('user_id', userId)
@@ -176,13 +172,13 @@ router.post('/', async (req: Request, res: Response) => {
     const keyLimit = subscription?.api_key_limit || 1;
 
     // Count existing keys
-    const { count } = await supabase
+    const { count } = await getSupabase()
       .from('api_keys')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId)
       .eq('active', true);
 
-    if (count && count >= keyLimit) {
+    if (count && (count as number) >= (keyLimit as number)) {
       return res.status(403).json({
         error: 'API key limit reached for your plan',
         limit: keyLimit
@@ -207,7 +203,7 @@ router.post('/', async (req: Request, res: Response) => {
                       subscription?.plan_id === 'growth' ? 5000 : 1000;
 
     // Store API key
-    const { data: newKey, error } = await supabase
+    const { data: newKey, error } = await getSupabase()
       .from('api_keys')
       .insert({
         user_id: userId,
@@ -285,7 +281,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
     const keyId = req.params.id;
 
     // Soft delete - mark as inactive
-    const { error } = await supabase
+    const { error } = await getSupabase()
       .from('api_keys')
       .update({ active: false })
       .eq('id', keyId)
@@ -374,7 +370,7 @@ router.get('/:id/usage', async (req: Request, res: Response) => {
     const keyId = req.params.id;
 
     // Verify ownership
-    const { data: key } = await supabase
+    const { data: key } = await getSupabase()
       .from('api_keys')
       .select('usage_count, usage_limit')
       .eq('id', keyId)
@@ -388,7 +384,7 @@ router.get('/:id/usage', async (req: Request, res: Response) => {
     }
 
     // Get usage statistics
-    const { data: usage } = await supabase
+    const { data: usage } = await getSupabase()
       .from('api_usage_logs')
       .select('endpoint, method, timestamp, response_time, status_code')
       .eq('api_key_id', keyId)
@@ -407,8 +403,8 @@ router.get('/:id/usage', async (req: Request, res: Response) => {
       usage: {
         total: key.usage_count,
         limit: key.usage_limit,
-        remaining: key.usage_limit - key.usage_count,
-        percentage: Math.round((key.usage_count / key.usage_limit) * 100),
+        remaining: (key.usage_limit as number) - (key.usage_count as number),
+        percentage: Math.round(((key.usage_count as number) / (key.usage_limit as number)) * 100),
         byEndpoint: endpointUsage,
         recentCalls: usage
       }

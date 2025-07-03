@@ -1,0 +1,68 @@
+{
+  "title": "CodeQual - Отчет анализа PR",
+  "header": {
+    "title": "Отчет анализа кода",
+    "subtitle": "Пул-реквест",
+    "repository": "Репозиторий",
+    "primaryLanguage": "Основной язык",
+    "filesChanged": "Изменено файлов",
+    "linesModified": "Изменено строк"
+  },
+  "prDecision": {
+    "title": "Решение по PR",
+    "blockingIssues": "Блокирующие проблемы",
+    "positiveFindings": "Положительные моменты",
+    "statuses": {
+      "approved": "Одобрено",
+      "conditionallyApproved": "Условно одобрено",
+      "blocked": "Заблокировано"
+    }
+  },
+  "prIssues": {
+    "title": "Проблемы, найденные в этом PR",
+    "file": "Файл",
+    "recommendation": "Рекомендация",
+    "noIssues": "В этом PR не найдено проблем. Отличная работа!"
+  },
+  "repoIssues": {
+    "title": "Обнаружены проблемы в репозитории",
+    "subtitle": "Эти проблемы существуют в репозитории и влияют на общее качество кода:",
+    "impact": "Влияние",
+    "showAll": "Показать все проблемы",
+    "hideAll": "Скрыть проблемы"
+  },
+  "score": {
+    "title": "Рейтинг навыков разработчика",
+    "currentScore": "Текущий рейтинг"
+  },
+  "skills": {
+    "title": "Разбивка по уровням навыков",
+    "categories": {
+      "security": "Безопасность",
+      "testing": "Тестирование",
+      "documentation": "Документация",
+      "performance": "Производительность",
+      "codeQuality": "Качество кода"
+    }
+  },
+  "educational": {
+    "title": "Рекомендуемые учебные ресурсы",
+    "duration": "Продолжительность",
+    "hours": "часа",
+    "level": "Уровень",
+    "startLearning": "Начать обучение"
+  },
+  "prComment": {
+    "title": "Предлагаемый комментарий к PR"
+  },
+  "footer": {
+    "generatedBy": "Сгенерировано CodeQual",
+    "analysisId": "ID анализа"
+  },
+  "severity": {
+    "critical": "Критическая",
+    "high": "Высокая",
+    "medium": "Средняя",
+    "low": "Низкая"
+  }
+}

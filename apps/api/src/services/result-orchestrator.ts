@@ -11,20 +11,20 @@ import { storeAnalysisInHistory } from '../routes/analysis';
 import { EnhancedMultiAgentExecutor } from '@codequal/agents/multi-agent/enhanced-executor';
 import { ModelVersionSync, RepositorySizeCategory } from '@codequal/core/services/model-selection/ModelVersionSync';
 import { VectorContextService } from '@codequal/agents/multi-agent/vector-context-service';
-import { ToolResultRetrievalService, AgentToolResults } from '../../../../packages/core/src/services/deepwiki-tools';
+import { ToolResultRetrievalService, AgentToolResults } from '@codequal/core/services/deepwiki-tools';
 import { VectorStorageService } from '@codequal/database';
 import { createLogger } from '@codequal/core/utils';
 import { AuthenticatedUser as AgentAuthenticatedUser, UserRole, UserStatus, UserPermissions } from '@codequal/agents/multi-agent/types/auth';
 import { RepositorySchedulerService } from '@codequal/core/services/scheduling';
 import { EducationalAgent } from '@codequal/agents/multi-agent/educational-agent';
 import { ReporterAgent, ReportFormat } from '@codequal/agents/multi-agent/reporter-agent';
-import { StandardReport } from '../../../../packages/agents/src/services/report-formatter.service';
-import { RecommendationService } from '../../../../packages/agents/src/services/recommendation-service';
-import { EducationalCompilationService } from '../../../../packages/agents/src/services/educational-compilation-service';
+import { StandardReport } from '@codequal/agents/services/report-formatter.service';
+import { RecommendationService } from '@codequal/agents/services/recommendation-service';
+import { EducationalCompilationService } from '@codequal/agents/services/educational-compilation-service';
 import { PRContentAnalyzer, PRFile } from './intelligence/pr-content-analyzer';
 import { IntelligentResultMerger } from './intelligence/intelligent-result-merger';
-import { SkillTrackingService } from '../../../../packages/agents/src/services/skill-tracking-service';
-import { IssueResolutionDetector } from '../../../../packages/agents/src/services/issue-resolution-detector';
+import { SkillTrackingService } from '@codequal/agents/services/skill-tracking-service';
+import { IssueResolutionDetector } from '@codequal/agents/services/issue-resolution-detector';
 
 export interface PRAnalysisRequest {
   repositoryUrl: string;
@@ -1726,14 +1726,10 @@ Primary Language: TypeScript
     authenticatedUser: AuthenticatedUser
   ): Promise<string> {
     try {
-      const { createClient } = await import('@supabase/supabase-js');
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-      const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-      
-      const supabase = createClient(supabaseUrl, supabaseServiceKey);
+      const { getSupabase } = await import('@codequal/database/supabase/client');
       
       // Store the report in the analysis_reports table
-      const { error } = await supabase
+      const { error } = await getSupabase()
         .from('analysis_reports')
         .insert({
           id: report.id,

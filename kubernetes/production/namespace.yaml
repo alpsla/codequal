@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: codequal-prod
+  labels:
+    name: codequal-prod
+    environment: production

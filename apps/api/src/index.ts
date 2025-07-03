@@ -6,7 +6,7 @@ import dotenv from 'dotenv';
 import { authMiddleware } from './middleware/auth-middleware';
 import { resultOrchestratorRoutes } from './routes/result-orchestrator';
 import { repositoryRoutes } from './routes/repository';
-import { analysisRoutes } from './routes/analysis';
+import analysisRoutes from './routes/analysis';
 import webhookRoutes from './routes/webhooks';
 import scheduleRoutes from './routes/schedules';
 import monitoringRoutes, { getGlobalMonitoringService } from './routes/monitoring';
@@ -14,11 +14,13 @@ import reportRoutes from './routes/reports';
 import apiKeyRoutes from './routes/api-keys';
 import openapiDocsRoutes from './routes/openapi-docs';
 import languageRoutes from './routes/languages';
+import healthRoutes from './routes/health';
 import { errorHandler } from './middleware/error-handler';
 import { i18nMiddleware, translateResponse, validateLanguage } from './middleware/i18n-middleware';
 import { requestLogger } from './middleware/request-logger';
 import { monitoringMiddleware, analysisMonitoringMiddleware } from './middleware/monitoring-middleware';
 import { apiKeyAuth } from './middleware/api-key-auth';
+import { initializeTranslators } from './services/translator-initialization-service';
 
 // Load environment variables
 dotenv.config();
@@ -117,10 +119,25 @@ app.use('/api/monitoring', monitoringRoutes);
 // Error handling
 app.use(errorHandler);
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`CodeQual API Server running on port ${PORT}`);
-  console.log(`Health check available at http://localhost:${PORT}/health`);
-});
+// Initialize services before starting server
+async function startServer() {
+  try {
+    // Initialize translators with Vector DB configurations
+    await initializeTranslators();
+    
+    // Start server
+    app.listen(PORT, () => {
+      console.log(`CodeQual API Server running on port ${PORT}`);
+      console.log(`Health check available at http://localhost:${PORT}/health`);
+      console.log(`Translators initialized with Vector DB configurations`);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+}
+
+// Start the server
+startServer();
 
 export default app;

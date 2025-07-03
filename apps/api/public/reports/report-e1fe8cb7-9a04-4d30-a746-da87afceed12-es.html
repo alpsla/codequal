@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="google" content="notranslate">
+    <title>CodeQual - Informe de Análisis de PR</title>
+    <link rel="stylesheet" href="./styles.css">
+</head>
+<body data-lang="es">
+    <!-- Language Selector -->
+    <div class="language-selector">
+        <select id="languageSelector" class="language-dropdown" onchange="changeLanguage(this.value)">
+            <option value="en" >English</option>
+            <option value="ru" >Русский</option>
+            <option value="es" selected>Español</option>
+            <option value="fr" >Français</option>
+            <option value="de" >Deutsch</option>
+            <option value="ja" >日本語</option>
+            <option value="zh" >中文</option>
+            <option value="pt" >Português</option>
+            <option value="it" >Italiano</option>
+            <option value="ko" >한국어</option>
+        </select>
+        <div id="google_translate_element" style="margin-top: 10px;"></div>
+    </div>
+
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Informe de Análisis de Código</h1>
+            <div class="subtitle">Pull Request #456 - auth-service</div>
+            <div class="metadata">
+                <div class="metadata-item">
+                    <strong>Repositorio</strong>
+                    enterprise/auth-service
+                </div>
+                <div class="metadata-item">
+                    <strong>Lenguaje Principal</strong>
+                    Python
+                </div>
+                <div class="metadata-item">
+                    <strong>Archivos Modificados</strong>
+                    12
+                </div>
+                <div class="metadata-item">
+                    <strong>Líneas Modificadas</strong>
+                    +389 / -512
+                </div>
+            </div>
+        </div>
+
+        <!-- PR Approval Decision -->
+        <div class="pr-decision-section approved">
+            <div class="decision-header">
+                <div class="decision-icon">✅</div>
+                <div class="decision-title">
+                    Decisión del PR: Aprobado
+                </div>
+                <div class="decision-subtitle"></div>
+            </div>
+            
+            <div class="decision-details">
+                <div class="decision-section">
+                    <h3>Problemas Bloqueantes</h3>
+                    <ul style="list-style: none; padding: 0;">
+                        
+                    </ul>
+                </div>
+                
+                <div class="decision-section">
+                    <h3>Hallazgos Positivos</h3>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="margin-bottom: 10px;">✓&nbsp;100% test coverage for authentication logic</li><li style="margin-bottom: 10px;">✓&nbsp;Proper error handling with custom exceptions</li><li style="margin-bottom: 10px;">✓&nbsp;Reduced code complexity by 40%</li><li style="margin-bottom: 10px;">✓&nbsp;Added comprehensive logging for debugging</li><li style="margin-bottom: 10px;">✓&nbsp;Follows SOLID principles and clean architecture</li><li style="margin-bottom: 10px;">✓&nbsp;Performance improved by 25% in auth operations</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Current PR Issues -->
+        <div class="section">
+            <h2>🔍 Problemas Encontrados en Este PR</h2>
+            <p style="color: #27ae60; font-size: 1.1em;">✅ No se encontraron problemas en este PR. ¡Excelente trabajo!</p>
+        </div>
+
+        <!-- Repository Issues -->
+        <div class="section repo-issues">
+            <h2>⚠️ Problemas Detectados en el Repositorio</h2>
+            <p>Estos problemas existen en el repositorio y afectan la calidad general del código:</p>
+            
+            <!-- High Priority Issues -->
+            
+            
+            <!-- Toggle Button -->
+            <button id="toggleRepoIssues" onclick="toggleLowerPriorityIssues()" class="toggle-button">
+            <span id="toggleText">Mostrar Todos los Problemas (1)</span>
+            <span id="toggleArrow" style="margin-left: 5px;">▼</span>
+          </button>
+            
+            <!-- Lower Priority Issues -->
+            <div id="lowerPriorityIssues" style="display: none; margin-top: 20px;">
+            
+              <div class="finding low">
+                <h4>
+                  <span class="badge low">Low</span>
+                  Documentation Could Be Enhanced
+                </h4>
+                <p>Some complex functions could benefit from more detailed docstrings</p>
+                
+                
+                <div style="margin-top: 10px; color: #95a5a6;">
+                  <strong>Impacto:</strong>
+                  Minor impact on maintainability
+                </div>
+                
+              </div>
+            
+          </div>
+        </div>
+
+        <!-- Score Display -->
+        <div class="section">
+            <h2>📊 Puntuación de Habilidad del Desarrollador</h2>
+            
+            <div class="score-display">
+                <div class="score-circle high" style="--score: 94;">
+                    <div class="score-inner">
+                        <div class="score-number">94</div>
+                        <div class="score-label">Puntuación Actual</div>
+                    </div>
+                </div>
+            </div>
+            
+            <p style="text-align: center; color: #718096; margin-top: 20px;">
+                ¡Excelente calidad de código!
+            </p>
+        </div>
+
+        <!-- Skills Breakdown -->
+        <div class="section">
+            <h2>🎯 Desglose por Nivel de Habilidad</h2>
+            
+        <div class="skill-card">
+          <div class="skill-header">
+            <span>🔒 Security</span>
+            <span>95/100</span>
+          </div>
+          <div class="skill-bar">
+            <div class="skill-fill" style="width: 95%"></div>
+          </div>
+          <p style="color: #27ae60; margin-top: 10px;">
+            Excellent security implementation
+          </p>
+        </div>
+      
+        <div class="skill-card">
+          <div class="skill-header">
+            <span>📝 Code Quality</span>
+            <span>98/100</span>
+          </div>
+          <div class="skill-bar">
+            <div class="skill-fill" style="width: 98%"></div>
+          </div>
+          <p style="color: #27ae60; margin-top: 10px;">
+            Exceptional code quality and architecture
+          </p>
+        </div>
+      
+        <div class="skill-card">
+          <div class="skill-header">
+            <span>🧪 Testing</span>
+            <span>100/100</span>
+          </div>
+          <div class="skill-bar">
+            <div class="skill-fill" style="width: 100%"></div>
+          </div>
+          <p style="color: #27ae60; margin-top: 10px;">
+            Perfect test coverage
+          </p>
+        </div>
+      
+        <div class="skill-card">
+          <div class="skill-header">
+            <span>⚡ Performance</span>
+            <span>90/100</span>
+          </div>
+          <div class="skill-bar">
+            <div class="skill-fill" style="width: 90%"></div>
+          </div>
+          <p style="color: #27ae60; margin-top: 10px;">
+            Highly optimized implementation
+          </p>
+        </div>
+      
+        </div>
+
+        <!-- Educational Resources -->
+        <div class="section">
+            <h2>📚 Recursos de Aprendizaje Recomendados</h2>
+            
+          <div class="edu-module">
+            <h4>Advanced Python Patterns</h4>
+            <p>
+              <strong>Duración:</strong> 2 horas | 
+              <strong>Nivel:</strong> Advanced
+            </p>
+            <p>Explore advanced Python patterns and architectures</p>
+            <a href="https://docs.python-guide.org/writing/structure/" target="_blank" rel="noopener noreferrer" class="edu-link">
+              Comenzar a Aprender →
+            </a>
+          </div>
+        
+        </div>
+
+        <!-- PR Comment -->
+        <div class="section">
+            <h2>💬 Resultados del Análisis CodeQual</h2>
+            <div class="pr-comment-box">## Resultados del Análisis CodeQual
+
+✅ **¡Este PR está aprobado para fusionar!**
+
+¡Excelente trabajo! Todas las verificaciones de calidad han pasado.
+
+
+### Puntuación de Calidad: 94/100
+
+### Fortalezas:
+- ✓ 100% test coverage for authentication logic
+- ✓ Proper error handling with custom exceptions
+- ✓ Reduced code complexity by 40%
+- ✓ Added comprehensive logging for debugging
+- ✓ Follows SOLID principles and clean architecture
+- ✓ Performance improved by 25% in auth operations
+
+---
+📊 [View Full Report](./report.html) | 🔗 [CodeQual Dashboard](https://codequal.com)</div>
+        </div>
+
+        <!-- Footer -->
+        <div class="section footer">
+            <p>
+                Generado por • <a href="https://codequal.com">codequal.com</a>
+            </p>
+            <p>
+                7/1/2025, 3:00:34 PM | ID de Análisis: analysis-1751396434515
+            </p>
+        </div>
+    </div>
+
+    <script src="./scripts.js"></script>
+    
+    <!-- Google Translate -->
+    <script type="text/javascript">
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'es',
+                includedLanguages: 'en,ru,es,fr,de,ja,zh-CN,pt,it,ko,hi,ar,tr,pl,nl,sv,da,no,fi,cs,hu,ro,el,he,th,vi,id,ms,tl',
+                layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+                autoDisplay: false
+            }, 'google_translate_element');
+        }
+    </script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+</body>
+</html>

@@ -40,6 +40,30 @@
     "./services/basic-deduplicator": {
       "types": "./dist/services/basic-deduplicator.d.ts",
       "default": "./dist/services/basic-deduplicator.js"
+    },
+    "./services/recommendation-service": {
+      "types": "./dist/services/recommendation-service.d.ts",
+      "default": "./dist/services/recommendation-service.js"
+    },
+    "./services/report-formatter.service": {
+      "types": "./dist/services/report-formatter.service.d.ts",
+      "default": "./dist/services/report-formatter.service.js"
+    },
+    "./services/educational-compilation-service": {
+      "types": "./dist/services/educational-compilation-service.d.ts",
+      "default": "./dist/services/educational-compilation-service.js"
+    },
+    "./services/skill-tracking-service": {
+      "types": "./dist/services/skill-tracking-service.d.ts",
+      "default": "./dist/services/skill-tracking-service.js"
+    },
+    "./services/issue-resolution-detector": {
+      "types": "./dist/services/issue-resolution-detector.d.ts",
+      "default": "./dist/services/issue-resolution-detector.js"
+    },
+    "./translator/translator-agent": {
+      "types": "./dist/translator/translator-agent.d.ts",
+      "default": "./dist/translator/translator-agent.js"
     }
   },
   "scripts": {
