@@ -283,7 +283,9 @@ function processArrays(html: string, data: any, translations: any): string {
   return html;
 }
 
-router.post('/', async (req: Request<{}, {}, ReportRequest>, res: Response<ReportResponse>) => {
+// Using any for route params and query to avoid TypeScript issues
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+router.post('/', async (req: Request<any, any, ReportRequest>, res: Response<ReportResponse>) => {
   try {
     const { analysisData, language = 'en' } = req.body;
     
