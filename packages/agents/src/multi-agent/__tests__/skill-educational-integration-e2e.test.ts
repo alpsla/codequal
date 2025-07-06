@@ -165,7 +165,8 @@ describe.skip('Skill Tracking + Educational Agent Integration E2E - FIXME: TypeS
       };
 
       // Step 3: Assess skills from PR
-      const skillAssessments = await prSkillAssessmentService.assessSkillsFromPR(prAnalysis, prMetadata);
+      const skillAssessmentResult = await prSkillAssessmentService.assessAndUpdateSkills(prAnalysis, prMetadata);
+      const skillAssessments = skillAssessmentResult.assessments;
 
       expect(skillAssessments).toHaveLength(2); // security and codeQuality
       
@@ -553,17 +554,17 @@ describe.skip('Skill Tracking + Educational Agent Integration E2E - FIXME: TypeS
       const educationalResult = await educationalAgent.analyzeFromRecommendations(recommendations);
 
       // Should provide beginner-friendly content for new users
-      expect(educationalResult.educational.learningPath.difficulty).toBe('guided');
+      expect(educationalResult.learningPath.difficulty).toBe('beginner');
       
       // Should include foundational content
-      expect(educationalResult.educational.content.explanations).toContainEqual(
+      expect(educationalResult.explanations).toContainEqual(
         expect.objectContaining({
           simpleExplanation: expect.any(String)
         })
       );
 
       // Should identify all areas as skill gaps for new users
-      expect(educationalResult.educational.insights.skillGaps.length).toBeGreaterThan(0);
+      expect(educationalResult.skillGaps.length).toBeGreaterThan(0);
     });
 
     it('should validate and sanitize skill assessment data', async () => {

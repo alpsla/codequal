@@ -6,7 +6,6 @@
  * is treated as a distinct role that can be researched and optimized.
  */
 
-import { AgentRole } from '@codequal/core/config/agent-registry';
 import { ModelVersionInfo } from '@codequal/core/services/model-selection/ModelVersionSync';
 
 /**
