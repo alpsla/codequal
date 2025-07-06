@@ -52,13 +52,19 @@
     "./monitoring/enhanced-monitoring-service": {
       "types": "./dist/monitoring/enhanced-monitoring-service.d.ts",
       "default": "./dist/monitoring/enhanced-monitoring-service.js"
+    },
+    "./services/vector-db/authenticated-vector-service": {
+      "types": "./dist/services/vector-db/authenticated-vector-service.d.ts",
+      "default": "./dist/services/vector-db/authenticated-vector-service.js"
     }
   },
   "scripts": {
     "build": "tsc --skipLibCheck",
     "dev": "tsc -w",
     "lint": "eslint src",
-    "test": "jest --passWithNoTests --testPathIgnorePatterns=test/"
+    "test": "jest --passWithNoTests --testPathIgnorePatterns=test/",
+    "test:embeddings": "jest src/services/vector-db/__tests__/openrouter-embedding-service.test.ts --verbose",
+    "test:vector": "jest src/services/vector-db/__tests__/authenticated-vector-service.test.ts --verbose"
   },
   "dependencies": {
     "@codequal/database": "0.1.0",
@@ -71,6 +77,7 @@
     "node-cron": "^4.1.0",
     "prom-client": "^15.1.0",
     "uuid": "^11.0.0",
+    "voyageai": "^0.0.4",
     "winston": "^3.17.0",
     "ws": "^8.18.2"
   },

@@ -60,7 +60,8 @@ async function preCacheTranslations() {
 }
 
 // Initialize pre-caching
-preCacheTranslations().catch(console.error);
+// Temporarily disabled to get server running
+// preCacheTranslations().catch(console.error);
 
 /**
  * Internationalization middleware

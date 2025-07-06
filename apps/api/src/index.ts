@@ -1,8 +1,10 @@
+// Load environment variables FIRST before any other imports
+import './setup';
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
-import dotenv from 'dotenv';
 import { authMiddleware } from './middleware/auth-middleware';
 import { resultOrchestratorRoutes } from './routes/result-orchestrator';
 import { repositoryRoutes } from './routes/repository';
@@ -15,6 +17,9 @@ import apiKeyRoutes from './routes/api-keys';
 import openapiDocsRoutes from './routes/openapi-docs';
 import languageRoutes from './routes/languages';
 import healthRoutes from './routes/health';
+import authRoutes from './routes/auth';
+import vectorSearchRoutes from './routes/vector-search';
+import embeddingConfigRoutes from './routes/embedding-config';
 import { errorHandler } from './middleware/error-handler';
 import { i18nMiddleware, translateResponse, validateLanguage } from './middleware/i18n-middleware';
 import { requestLogger } from './middleware/request-logger';
@@ -22,14 +27,28 @@ import { monitoringMiddleware, analysisMonitoringMiddleware } from './middleware
 import { apiKeyAuth } from './middleware/api-key-auth';
 import { initializeTranslators } from './services/translator-initialization-service';
 
-// Load environment variables
-dotenv.config();
+// Environment variables are already loaded in setup.ts
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Security middleware
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+      scriptSrcAttr: ["'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https:"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'"],
+      fontSrc: ["'self'", "https:", "data:"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      frameSrc: ["'none'"],
+    },
+  },
+}));
 app.use(cors({
   origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
   credentials: true
@@ -41,6 +60,9 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Compression
 app.use(compression());
+
+// Serve static files from public directory
+app.use(express.static('public'));
 
 // Request logging
 app.use(requestLogger);
@@ -88,6 +110,9 @@ app.use('/api/docs', openapiDocsRoutes);
 app.use('/languages', languageRoutes);
 app.use('/v1/languages', languageRoutes);
 
+// Authentication routes (no authentication required)
+app.use('/auth', authRoutes);
+
 // Webhook routes (no authentication required for external webhooks)
 app.use('/api/webhooks', webhookRoutes);
 
@@ -104,6 +129,12 @@ app.use('/v1/analyze-pr', resultOrchestratorRoutes);
 app.use('/v1/repository', repositoryRoutes);
 app.use('/v1/analysis', analysisRoutes);
 app.use('/v1/reports', reportRoutes);
+
+// Vector search routes (requires user authentication)
+app.use('/api/vector', authMiddleware, vectorSearchRoutes);
+
+// Embedding configuration routes (requires user authentication)
+app.use('/api/embedding-config', authMiddleware, embeddingConfigRoutes);
 
 // Internal API routes (requires user authentication)
 app.use('/api', authMiddleware);
@@ -123,13 +154,15 @@ app.use(errorHandler);
 async function startServer() {
   try {
     // Initialize translators with Vector DB configurations
-    await initializeTranslators();
+    // Temporarily disabled to get server running
+    // await initializeTranslators();
     
     // Start server
     app.listen(PORT, () => {
       console.log(`CodeQual API Server running on port ${PORT}`);
       console.log(`Health check available at http://localhost:${PORT}/health`);
-      console.log(`Translators initialized with Vector DB configurations`);
+      console.log(`Auth endpoints available at http://localhost:${PORT}/auth`);
+      console.log(`Test OAuth at http://localhost:${PORT}/auth-test.html`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);

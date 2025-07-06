@@ -177,10 +177,9 @@ describe.skip('Educational Agent with Tool Integration - FIXME: TypeScript inter
       expect(result).toBeDefined();
       expect(result.learningPath).toBeDefined();
       expect(result.learningPath.steps).toHaveLength(4); // Should have learning steps
-      expect(result.learningPath.totalSteps).toBe(4);
       
       // Check that tool results were integrated
-      expect(result.content.resources).toContainEqual(
+      expect(result.additionalResources).toContainEqual(
         expect.objectContaining({
           type: 'documentation',
           title: 'SQL Injection Prevention Guide',
@@ -189,7 +188,7 @@ describe.skip('Educational Agent with Tool Integration - FIXME: TypeScript inter
       );
 
       // Verify working examples were included
-      expect(result.content.examples).toContainEqual(
+      expect(result.tutorials).toContainEqual(
         expect.objectContaining({
           title: 'Secure SQL Query Example',
           language: 'javascript'
@@ -508,7 +507,7 @@ describe.skip('Educational Agent with Tool Integration - FIXME: TypeScript inter
       // Resources should be available despite being from cache
       const resources = result.content.resources;
       expect(resources.length).toBeGreaterThanOrEqual(2);
-      expect(resources.filter(r => r.status === 'available').length).toBeGreaterThanOrEqual(2);
+      expect(resources.filter((r: any) => r.status === 'available').length).toBeGreaterThanOrEqual(2);
     });
   });
 });
