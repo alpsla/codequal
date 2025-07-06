@@ -1,5 +1,5 @@
 CodeQual Architecture Document
-Last Updated: June 23, 2025 (Educational Agent MCP Integration & Architectural Flow Corrections)
+Last Updated: January 6, 2025 (Dynamic Embedding Configuration System)
 System Overview Please review the file model-version-management.md
 CodeQual is a flexible, multi-agent system for comprehensive code analysis, quality assessment, and improvement. The system leverages a combination of specialized AI agents, vector database storage, MCP (Model Context Protocol) tools, and a scoring system to deliver actionable insights for developers and teams.
 Core Components
@@ -1611,3 +1611,358 @@ This system realizes the original vision of tracing user skill growth over time 
   - Real-time engagement monitoring
 
   The UI team can implement sophisticated educational overlays using our existing backend APIs without any additional backend development needed! 🎉
+
+---
+
+## 19. Dynamic Embedding Configuration System (NEW - January 6, 2025)
+
+The system implements a **database-driven embedding configuration system** that allows dynamic model selection and configuration updates without code changes, supporting easy migration to more advanced embedding models as they become available.
+
+### **19.1 Architecture Overview**
+
+The embedding configuration system provides a flexible, maintainable approach to managing embedding models across different content types and use cases:
+
+```typescript
+/**
+ * Dynamic embedding configuration system
+ * Manages embedding models through database configuration
+ * rather than hardcoded values
+ */
+interface EmbeddingConfigurationSystem {
+  configurationStorage: DatabaseDrivenConfig;
+  modelSelection: ContentAwareSelection;
+  metricsTracking: EmbeddingPerformanceMetrics;
+  migrationSupport: SeamlessModelUpgrades;
+}
+```
+
+### **19.2 Database Schema**
+
+**Configuration Tables:**
+
+```sql
+-- Main configuration table
+CREATE TABLE embedding_configurations (
+    id SERIAL PRIMARY KEY,
+    config_name VARCHAR(100) UNIQUE NOT NULL,
+    provider VARCHAR(50) NOT NULL,
+    model_name VARCHAR(100) NOT NULL,
+    dimensions INTEGER NOT NULL,
+    max_tokens INTEGER NOT NULL,
+    api_key_env_var VARCHAR(50),
+    base_url VARCHAR(500),
+    description TEXT,
+    cost_per_1k_tokens DECIMAL(10, 6),
+    last_updated DATE NOT NULL,
+    avg_latency_ms INTEGER,
+    quality_score DECIMAL(3, 2),
+    is_active BOOLEAN DEFAULT true,
+    is_default BOOLEAN DEFAULT false,
+    content_type_preference VARCHAR(50),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Metrics tracking table
+CREATE TABLE embedding_model_metrics (
+    id BIGSERIAL PRIMARY KEY,
+    config_id INTEGER REFERENCES embedding_configurations(id),
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    requests_count INTEGER NOT NULL DEFAULT 0,
+    avg_latency_ms INTEGER,
+    p95_latency_ms INTEGER,
+    p99_latency_ms INTEGER,
+    error_count INTEGER DEFAULT 0,
+    total_tokens_used BIGINT DEFAULT 0,
+    total_cost_usd DECIMAL(10, 4) DEFAULT 0,
+    metric_window VARCHAR(20) NOT NULL,
+    window_start TIMESTAMP NOT NULL,
+    window_end TIMESTAMP NOT NULL
+);
+```
+
+### **19.3 Current Configuration**
+
+As of January 2025, the system is configured with three embedding models:
+
+```typescript
+// Default configurations loaded into the database
+const defaultConfigurations = [
+  {
+    config_name: 'openai-3-large',
+    provider: 'openai',
+    model_name: 'text-embedding-3-large',
+    dimensions: 3072,
+    max_tokens: 8191,
+    cost_per_1k_tokens: 0.00013,
+    content_type_preference: 'documentation',
+    is_default: true
+  },
+  {
+    config_name: 'voyage-code-3',
+    provider: 'voyage',
+    model_name: 'voyage-code-3',
+    dimensions: 1024,
+    max_tokens: 16000,
+    cost_per_1k_tokens: 0.00012,
+    content_type_preference: 'code'
+  },
+  {
+    config_name: 'openai-3-small',
+    provider: 'openai',
+    model_name: 'text-embedding-3-small',
+    dimensions: 1536,
+    max_tokens: 8191,
+    cost_per_1k_tokens: 0.00002,
+    content_type_preference: 'general'
+  }
+];
+```
+
+### **19.4 Content-Aware Model Selection**
+
+The system automatically selects the appropriate embedding model based on content type:
+
+```typescript
+/**
+ * Intelligent model selection based on content characteristics
+ */
+async function selectEmbeddingModel(content: string, contentType?: string) {
+  // Priority order:
+  // 1. Explicit content type match
+  // 2. Content analysis (code patterns, documentation markers)
+  // 3. Default configuration
+  
+  if (contentType === 'code') {
+    // Use Voyage Code-3 for code embeddings (optimized for code)
+    return await embeddingConfigService.getConfigForContentType('code');
+  } else if (contentType === 'documentation') {
+    // Use OpenAI Large for documentation (better semantic understanding)
+    return await embeddingConfigService.getConfigForContentType('documentation');
+  } else {
+    // Fall back to default
+    return await embeddingConfigService.getDefaultConfig();
+  }
+}
+```
+
+### **19.5 Embedding Service Integration**
+
+The `OpenRouterEmbeddingService` (despite its name, it now connects directly to providers) loads configurations dynamically:
+
+```typescript
+export class OpenRouterEmbeddingService {
+  private async loadConfigFromDatabase(): Promise<void> {
+    try {
+      const defaultConfig = await embeddingConfigService.getDefaultConfig();
+      if (defaultConfig) {
+        // Update service configuration from database
+        this.currentConfig = {
+          provider: defaultConfig.provider,
+          model: defaultConfig.model_name,
+          dimensions: defaultConfig.dimensions,
+          maxTokens: defaultConfig.max_tokens,
+          costPerMillion: (defaultConfig.cost_per_1k_tokens || 0) * 1000
+        };
+        
+        // Load content-specific configurations
+        const codeConfig = await embeddingConfigService.getConfigForContentType('code');
+        if (codeConfig && codeConfig.provider === 'voyage') {
+          // Special handling for Voyage AI (code-optimized)
+          this.voyageClient = new VoyageAIClient({ 
+            apiKey: process.env[codeConfig.api_key_env_var] 
+          });
+        }
+      }
+    } catch (error) {
+      this.logger.error('Failed to load embedding configuration', { error });
+      // Fall back to hardcoded defaults
+    }
+  }
+}
+```
+
+### **19.6 Configuration Management API**
+
+RESTful API endpoints for managing embedding configurations:
+
+```typescript
+// API Endpoints
+GET    /api/embedding-config              // List all configurations
+GET    /api/embedding-config/:name        // Get specific configuration
+POST   /api/embedding-config              // Create new configuration
+PUT    /api/embedding-config/:name        // Update configuration
+DELETE /api/embedding-config/:name        // Deactivate configuration
+GET    /api/embedding-config/metrics/:id  // Get performance metrics
+```
+
+### **19.7 Maintenance Guide: Adding New Models**
+
+To add a new embedding model (e.g., upgrading to a hypothetical GPT-5 embedding):
+
+**Step 1: Add Configuration to Database**
+
+```sql
+-- Via Supabase SQL Editor or migration
+INSERT INTO embedding_configurations (
+    config_name,
+    provider,
+    model_name,
+    dimensions,
+    max_tokens,
+    api_key_env_var,
+    description,
+    cost_per_1k_tokens,
+    last_updated,
+    is_active,
+    content_type_preference
+) VALUES (
+    'gpt5-embedding-large',
+    'openai',
+    'text-embedding-gpt5-large',
+    4096,  -- New model with higher dimensions
+    16384, -- Larger context window
+    'OPENAI_API_KEY',
+    'GPT-5 large embedding model with improved semantic understanding',
+    0.00020,
+    '2025-07-01',
+    true,
+    'documentation' -- Can replace existing preference
+);
+```
+
+**Step 2: Test New Configuration**
+
+```javascript
+// Test script to verify new model
+const testNewEmbedding = async () => {
+  const config = await embeddingConfigService.getConfigByName('gpt5-embedding-large');
+  const result = await openRouterEmbeddingService.createEmbedding(
+    'Test content for new model',
+    'documentation'
+  );
+  console.log('Embedding dimensions:', result.length);
+  console.log('Expected dimensions:', config.dimensions);
+};
+```
+
+**Step 3: Gradual Migration**
+
+```sql
+-- Phase 1: Run both models in parallel (A/B testing)
+UPDATE embedding_configurations 
+SET is_active = true 
+WHERE config_name IN ('openai-3-large', 'gpt5-embedding-large');
+
+-- Phase 2: Make new model default after validation
+UPDATE embedding_configurations SET is_default = false WHERE is_default = true;
+UPDATE embedding_configurations SET is_default = true WHERE config_name = 'gpt5-embedding-large';
+
+-- Phase 3: Deactivate old model
+UPDATE embedding_configurations 
+SET is_active = false 
+WHERE config_name = 'openai-3-large';
+```
+
+### **19.8 Performance Monitoring**
+
+The system tracks embedding performance metrics automatically:
+
+```typescript
+// Metrics recorded for each embedding operation
+await embeddingConfigService.recordMetrics(configId, {
+  latencyMs: 245,
+  tokensUsed: 1500,
+  success: true,
+  errorMessage: undefined
+});
+
+// Query performance metrics
+const metrics = await embeddingConfigService.getConfigMetrics(
+  configId, 
+  'last_24h'
+);
+// Returns: { avgLatencyMs: 230, errorRate: 0.01, totalRequests: 5420 }
+```
+
+### **19.9 Advanced Configuration Features**
+
+**Multi-Provider Support:**
+```typescript
+// System supports multiple providers simultaneously
+const providers = {
+  'openai': OpenAIProvider,
+  'voyage': VoyageAIProvider,
+  'cohere': CohereProvider,    // Future addition
+  'anthropic': AnthropicProvider // Future addition
+};
+```
+
+**Automatic Fallback:**
+```typescript
+// If primary model fails, automatically fallback
+async function createEmbeddingWithFallback(content: string) {
+  const primary = await embeddingConfigService.getDefaultConfig();
+  try {
+    return await createEmbedding(content, primary);
+  } catch (error) {
+    const fallback = await embeddingConfigService.getConfigByName('openai-3-small');
+    return await createEmbedding(content, fallback);
+  }
+}
+```
+
+**Cost Optimization:**
+```typescript
+// Select model based on cost constraints
+async function selectCostOptimalModel(contentLength: number) {
+  const configs = await embeddingConfigService.getActiveConfigs();
+  return configs.reduce((optimal, config) => {
+    const cost = (contentLength / 1000) * config.cost_per_1k_tokens;
+    return cost < optimal.cost ? config : optimal;
+  });
+}
+```
+
+### **19.10 Migration Best Practices**
+
+When upgrading to new embedding models:
+
+1. **Dimension Compatibility**: Ensure new model dimensions are compatible with vector database indices
+2. **Quality Testing**: Run quality assessments on sample data before full migration
+3. **Gradual Rollout**: Use content type preferences to test on specific data types first
+4. **Performance Baseline**: Establish performance metrics before migration
+5. **Rollback Plan**: Keep previous configuration active until new model is validated
+
+### **19.11 Future Enhancements**
+
+Planned improvements to the embedding configuration system:
+
+- **Automatic Model Discovery**: Query provider APIs for new models
+- **Quality Scoring**: Automated quality assessment based on retrieval accuracy
+- **Dynamic Dimension Mapping**: Support for models with different embedding dimensions
+- **Multi-Modal Embeddings**: Support for image and code-specific embeddings
+- **Regional Configuration**: Different models for different geographic regions
+
+### **19.12 Troubleshooting Guide**
+
+Common issues and solutions:
+
+**Issue: "relation 'embedding_configurations' does not exist"**
+- Solution: Run migration script `create-embedding-tables.sql` in Supabase
+
+**Issue: Old API key still being used**
+- Solution: Check shell environment variables don't override .env settings
+- Run: `unset OPENAI_API_KEY` before starting the application
+
+**Issue: Wrong model being selected**
+- Solution: Check content_type_preference in database configuration
+- Verify is_active and is_default flags are set correctly
+
+**Issue: High latency with new model**
+- Solution: Monitor embedding_model_metrics table
+- Consider adjusting max_tokens or switching providers
+
+---
+
+**Summary**: The dynamic embedding configuration system provides a robust, maintainable approach to managing embedding models. By storing configurations in the database rather than hardcoding them, the system supports easy upgrades to more advanced models as they become available, with built-in performance tracking and gradual migration capabilities.

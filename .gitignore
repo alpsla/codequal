@@ -31,6 +31,13 @@ apps/api/clean-*.sh
 apps/api/prepare-*.sh
 apps/api/setup-*.sh
 apps/api/verify-*.js
+apps/api/*-integration-test.js
+apps/api/check-*.js
+apps/api/validate-*.js
+apps/api/create-*.sql
+apps/api/run-*.js
+apps/api/public/test-*.html
+apps/api/public/*-test.html
 generated-*.html
 final-*.html
 
