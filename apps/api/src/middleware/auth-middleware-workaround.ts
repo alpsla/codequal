@@ -94,11 +94,11 @@ export const authMiddlewareWorkaround = async (
 };
 
 // Export a function to switch between normal and workaround auth
-export function getAuthMiddleware(useWorkaround: boolean = true) {
+export async function getAuthMiddleware(useWorkaround = true) {
   if (useWorkaround) {
     return authMiddlewareWorkaround;
   }
   // Import the original middleware
-  const { authMiddleware } = require('./auth-middleware');
+  const { authMiddleware } = await import('./auth-middleware');
   return authMiddleware;
 }
