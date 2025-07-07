@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { getSupabase } from '@codequal/database/supabase/client';
 import { AuthenticatedRequest } from './auth-middleware';
-import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Middleware to ensure user profile exists after authentication
@@ -29,12 +28,6 @@ export const ensureUserProfile = async (
       .eq('user_id', authReq.user.id)
       .single();
 
-    console.log('Profile check result:', {
-      userId: authReq.user.id,
-      email: authReq.user.email,
-      found: !!existingProfile,
-      error: checkError ? { code: checkError.code, message: checkError.message } : null
-    });
 
     // Profile exists, continue
     if (existingProfile && !checkError) {
@@ -42,7 +35,6 @@ export const ensureUserProfile = async (
     }
 
     // Profile doesn't exist, create it
-    console.log(`Creating profile for user ${authReq.user.email}`);
     
     // Create basic profile data from what we have in the auth request
     const profileData = {
@@ -75,7 +67,6 @@ export const ensureUserProfile = async (
       });
       // Continue anyway - the user is authenticated, just missing profile
     } else {
-      console.log(`Profile created for user ${authReq.user.email}`);
     }
 
     next();
