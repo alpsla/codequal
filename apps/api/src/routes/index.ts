@@ -12,6 +12,9 @@ import languagesRouter from './languages';
 import monitoringRouter from './monitoring';
 import openapiDocsRouter from './openapi-docs';
 import generateReportRouter from './generate-report'; // Add new report generation route
+import usersRouter from './users';
+import organizationsRouter from './organizations';
+import testProfileRouter from './test-profile';
 
 const router = Router();
 
@@ -30,6 +33,9 @@ router.use('/api/schedules', schedulesRouter);
 router.use('/api/languages', languagesRouter);
 router.use('/api/monitoring', monitoringRouter);
 router.use('/api/generate-report', generateReportRouter); // Add new endpoint
+router.use('/api/users', usersRouter);
+router.use('/api/organizations', organizationsRouter);
+router.use('/api/test', testProfileRouter); // Test endpoints
 
 // OpenAPI documentation
 router.use('/api-docs', openapiDocsRouter);

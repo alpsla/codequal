@@ -1,0 +1,36 @@
+{
+  "app": {
+    "name": "CodeQual",
+    "version": "1.0.0",
+    "environment": "development",
+    "baseUrl": "http://localhost:3000",
+    "logLevel": "debug"
+  },
+  "api": {
+    "port": 3001,
+    "baseUrl": "http://localhost:3001",
+    "corsOrigins": ["http://localhost:3000"],
+    "bodyLimit": "10mb",
+    "timeout": 30000
+  },
+  "auth": {
+    "sessionDurationHours": 24,
+    "requireEmailVerification": false,
+    "useSupabaseWorkaround": true
+  },
+  "database": {
+    "poolSize": 10,
+    "timeout": 5000,
+    "ssl": false
+  },
+  "stripe": {
+    "publicKey": "",
+    "webhookEndpoint": "/api/webhooks/stripe"
+  },
+  "monitoring": {
+    "sentry": {
+      "environment": "development",
+      "tracesSampleRate": 0.1
+    }
+  }
+}

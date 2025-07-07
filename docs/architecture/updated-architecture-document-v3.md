@@ -1,5 +1,5 @@
 CodeQual Architecture Document
-Last Updated: January 6, 2025 (Dynamic Embedding Configuration System)
+Last Updated: July 7, 2025 (API Implementation & Authentication Workaround)
 System Overview Please review the file model-version-management.md
 CodeQual is a flexible, multi-agent system for comprehensive code analysis, quality assessment, and improvement. The system leverages a combination of specialized AI agents, vector database storage, MCP (Model Context Protocol) tools, and a scoring system to deliver actionable insights for developers and teams.
 Core Components
@@ -398,6 +398,65 @@ export class MessageControlProgram {
     // ... rest of implementation ...
   }
 }
+
+8. API Implementation Architecture (July 2025)
+The CodeQual API provides comprehensive access to analysis capabilities through a RESTful interface:
+
+API Structure
+```typescript
+/api
+  ├── /auth
+  │   ├── POST /magic-link    # Send magic link email
+  │   ├── POST /signin         # Sign in with email/password
+  │   ├── POST /signup         # Create new account
+  │   └── GET  /session        # Get current session
+  ├── /users
+  │   ├── GET    /profile      # Get user profile
+  │   ├── PUT    /profile      # Update profile
+  │   ├── PATCH  /settings     # Update settings
+  │   └── /repositories
+  │       ├── GET  /           # List user repositories
+  │       └── POST /sync       # Sync from Git provider
+  └── /organizations
+      ├── GET    /             # List user organizations
+      ├── POST   /             # Create organization
+      ├── GET    /:id          # Get organization details
+      ├── PUT    /:id          # Update organization
+      └── GET    /:id/members  # List organization members
+```
+
+Database Schema Updates
+```sql
+-- Core tables with proper relationships
+user_profiles (user_id references auth.users)
+organizations (owner_id references auth.users)
+organization_members (user_id references auth.users, organization_id references organizations)
+user_repositories (user_id references auth.users)
+```
+
+Authentication Workaround (Temporary)
+Due to a Supabase bug with Magic Link session verification, we implemented a custom JWT decoder:
+```typescript
+// Workaround for "Database error granting user" bug
+export async function authMiddlewareWorkaround(req, res, next) {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'No token' });
+  
+  // Manual JWT decode and validation
+  const payload = JSON.parse(
+    Buffer.from(token.split('.')[1], 'base64').toString()
+  );
+  
+  // Validate expiration
+  if (payload.exp * 1000 < Date.now()) {
+    return res.status(401).json({ error: 'Token expired' });
+  }
+  
+  req.user = { id: payload.sub, email: payload.email };
+  next();
+}
+```
+
 9. Authentication System
 The system implements a comprehensive authentication and authorization framework:
 Supabase Authentication Integration
