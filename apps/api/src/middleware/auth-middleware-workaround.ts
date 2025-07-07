@@ -99,6 +99,6 @@ export async function getAuthMiddleware(useWorkaround = true) {
     return authMiddlewareWorkaround;
   }
   // Import the original middleware
-  const { authMiddleware } = await import('./auth-middleware');
+  const { authMiddleware } = await import('./auth-middleware.js');
   return authMiddleware;
 }

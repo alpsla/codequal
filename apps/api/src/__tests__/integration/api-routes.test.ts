@@ -3,7 +3,7 @@ import express from 'express';
 import { authMiddleware } from '../../middleware/auth-middleware';
 import { resultOrchestratorRoutes } from '../../routes/result-orchestrator';
 import { repositoryRoutes } from '../../routes/repository';
-import { analysisRoutes } from '../../routes/analysis';
+import analysisRoutes from '../../routes/analysis';
 import { createMockAuthenticatedUser } from '../setup';
 
 // Mock authentication middleware
