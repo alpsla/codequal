@@ -20,6 +20,8 @@ import healthRoutes from './routes/health';
 import authRoutes from './routes/auth';
 import vectorSearchRoutes from './routes/vector-search';
 import embeddingConfigRoutes from './routes/embedding-config';
+import usersRoutes from './routes/users';
+import organizationsRoutes from './routes/organizations';
 import { errorHandler } from './middleware/error-handler';
 import { i18nMiddleware, translateResponse, validateLanguage } from './middleware/i18n-middleware';
 import { requestLogger } from './middleware/request-logger';
@@ -135,6 +137,12 @@ app.use('/api/vector', authMiddleware, vectorSearchRoutes);
 
 // Embedding configuration routes (requires user authentication)
 app.use('/api/embedding-config', authMiddleware, embeddingConfigRoutes);
+
+// User management routes (requires user authentication)
+app.use('/api/users', authMiddleware, usersRoutes);
+
+// Organization management routes (requires user authentication)
+app.use('/api/organizations', authMiddleware, organizationsRoutes);
 
 // Internal API routes (requires user authentication)
 app.use('/api', authMiddleware);

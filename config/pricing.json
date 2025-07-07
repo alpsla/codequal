@@ -1,0 +1,80 @@
+{
+  "currency": "USD",
+  "tiers": {
+    "free": {
+      "name": "Free",
+      "price": 0,
+      "interval": null,
+      "features": [
+        "5 repository scans per month",
+        "Basic security analysis", 
+        "Code quality metrics",
+        "Public repositories only",
+        "Community support"
+      ],
+      "limits": {
+        "apiCallsPerMonth": 100,
+        "repositoriesPerMonth": 5,
+        "teamMembers": 1,
+        "maxRepositorySize": "50MB"
+      },
+      "stripePriceId": null
+    },
+    "professional": {
+      "name": "Professional",
+      "price": 29,
+      "interval": "month",
+      "features": [
+        "Unlimited repository scans",
+        "Advanced security analysis",
+        "Performance optimization tips",
+        "Private repositories",
+        "Priority email support",
+        "API access",
+        "Custom rules"
+      ],
+      "limits": {
+        "apiCallsPerMonth": 10000,
+        "repositoriesPerMonth": -1,
+        "teamMembers": 5,
+        "maxRepositorySize": "500MB"
+      },
+      "stripePriceId": "price_XXXXXX"
+    },
+    "enterprise": {
+      "name": "Enterprise", 
+      "price": 199,
+      "interval": "month",
+      "features": [
+        "Everything in Professional",
+        "Unlimited team members",
+        "SSO/SAML",
+        "Advanced analytics",
+        "Dedicated support",
+        "SLA guarantee",
+        "On-premise option",
+        "Custom integrations"
+      ],
+      "limits": {
+        "apiCallsPerMonth": -1,
+        "repositoriesPerMonth": -1,
+        "teamMembers": -1,
+        "maxRepositorySize": -1
+      },
+      "stripePriceId": "price_YYYYYY",
+      "customPricing": true
+    }
+  },
+  "addons": {
+    "extraApiCalls": {
+      "name": "1000 Extra API Calls",
+      "price": 10,
+      "stripePriceId": "price_ZZZZZZ"
+    },
+    "extraTeamMember": {
+      "name": "Additional Team Member",
+      "price": 5,
+      "stripePriceId": "price_AAAAAA"
+    }
+  }
+}

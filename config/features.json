@@ -1,0 +1,60 @@
+{
+  "auth": {
+    "useSupabaseWorkaround": true,
+    "providers": {
+      "magic": true,
+      "github": true,
+      "gitlab": false,
+      "google": false,
+      "microsoft": false
+    },
+    "requireEmailVerification": false,
+    "sessionDurationHours": 24
+  },
+  "billing": {
+    "enabled": false,
+    "sandbox": true,
+    "allowTrials": true,
+    "trialDurationDays": 14,
+    "requirePaymentUpfront": false
+  },
+  "api": {
+    "rateLimiting": true,
+    "requireApiKey": false,
+    "maxRequestsPerMinute": 60,
+    "maxRequestsPerHour": 1000
+  },
+  "analysis": {
+    "enableAiAnalysis": true,
+    "enableSecurityScanning": true,
+    "enablePerformanceAnalysis": true,
+    "enableDependencyAnalysis": true,
+    "maxFileSizeKb": 5000,
+    "supportedLanguages": [
+      "javascript",
+      "typescript", 
+      "python",
+      "java",
+      "go",
+      "rust"
+    ]
+  },
+  "ui": {
+    "enableDarkMode": true,
+    "enableBetaFeatures": false,
+    "showPricingPage": true,
+    "enableFeedbackWidget": true
+  },
+  "integrations": {
+    "github": true,
+    "gitlab": false,
+    "bitbucket": false,
+    "slack": false,
+    "discord": false,
+    "webhooks": true
+  },
+  "maintenance": {
+    "enabled": false,
+    "message": "CodeQual is undergoing scheduled maintenance. We'll be back shortly!"
+  }
+}

@@ -117,6 +117,16 @@ Thumbs.db
 # Archive directory
 archive/
 
+# Debug scripts and test files
+apps/api/debug-scripts/
+packages/database/test-*.js
+packages/database/debug-*.js
+packages/database/fix-*.sql
+packages/database/check-*.sql
+packages/database/diagnose-*.sql
+packages/database/generate-*.sql
+database/auth-fixes/
+
 # ESLint
 .eslintcache
 eslint-results.json

@@ -56,6 +56,10 @@
     "./services/vector-db/authenticated-vector-service": {
       "types": "./dist/services/vector-db/authenticated-vector-service.d.ts",
       "default": "./dist/services/vector-db/authenticated-vector-service.js"
+    },
+    "./services/vector-db/embedding-config-service": {
+      "types": "./dist/services/vector-db/embedding-config-service.d.ts",
+      "default": "./dist/services/vector-db/embedding-config-service.js"
     }
   },
   "scripts": {
