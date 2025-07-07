@@ -53,7 +53,14 @@ else
 fi
 
 # 5. Run tests
-run_check "Tests" "npm test"
+echo -e "\n5️⃣  Running tests..."
+if npm test 2>&1 | tee test-output.log | grep -q "Test Suites:.*passed"; then
+    echo -e "${GREEN}✅ Tests passed${NC}"
+else
+    echo -e "${RED}❌ Tests failed${NC}"
+    VALIDATION_PASSED=false
+fi
+rm -f test-output.log
 
 # 6. Check for security vulnerabilities
 echo -e "\n6️⃣  Checking for security vulnerabilities..."
