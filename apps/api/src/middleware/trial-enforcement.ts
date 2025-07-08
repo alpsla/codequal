@@ -66,13 +66,13 @@ export async function enforceTrialLimits(
         });
       }
 
-      if (billing && billing.trial_scans_used >= billing.trial_scans_limit) {
+      if (billing && (billing as any).trial_scans_used >= (billing as any).trial_scans_limit) {
         return res.status(403).json({
           error: 'Trial scan limit reached',
           code: 'TRIAL_LIMIT_REACHED',
           details: {
-            scans_used: billing.trial_scans_used,
-            scans_limit: billing.trial_scans_limit,
+            scans_used: (billing as any).trial_scans_used,
+            scans_limit: (billing as any).trial_scans_limit,
             upgrade_required: true
           }
         });
@@ -123,25 +123,37 @@ export async function incrementScanCount(
       const repositoryUrl = trialsReq.body.repository_url || trialsReq.body.repositoryUrl;
 
       // Increment scan count asynchronously
-      getSupabase()
-        .from('user_billing')
-        .update({ 
-          trial_scans_used: getSupabase().sql`trial_scans_used + 1` 
-        })
-        .eq('user_id', user.id)
-        .then(() => {
+      (async () => {
+        try {
+          // Get current scan count
+          const { data: currentBilling } = await getSupabase()
+            .from('user_billing')
+            .select('trial_scans_used')
+            .eq('user_id', user.id)
+            .single();
+
+          const currentCount = (currentBilling as any)?.trial_scans_used || 0;
+
+          // Update scan count
+          await getSupabase()
+            .from('user_billing')
+            .update({ 
+              trial_scans_used: currentCount + 1
+            })
+            .eq('user_id', user.id);
+
           // Log the scan
-          return getSupabase()
+          await getSupabase()
             .from('trial_usage')
             .insert({
               user_id: user.id,
               repository_url: repositoryUrl,
               scan_type: req.path.includes('pull-request') ? 'pull_request' : 'repository'
             });
-        })
-        .catch(err => {
+        } catch (err) {
           console.error('Error updating scan count:', err);
-        });
+        }
+      })();
     }
     
     return originalSend.call(this, data);
