@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { checkRepositoryAccess } from '../middleware/auth-middleware';
 import { DeepWikiManager } from '../services/deepwiki-manager';
+import { enforceTrialLimits, incrementScanCount } from '../middleware/trial-enforcement';
 
 export const repositoryRoutes = Router();
 
@@ -61,7 +62,7 @@ repositoryRoutes.get('/status', async (req: Request, res: Response) => {
  * POST /api/repository/analyze
  * Manually trigger repository analysis
  */
-repositoryRoutes.post('/analyze', async (req: Request, res: Response) => {
+repositoryRoutes.post('/analyze', enforceTrialLimits, incrementScanCount, async (req: Request, res: Response) => {
   try {
     const { repositoryUrl, force = false } = req.body;
     
