@@ -13,10 +13,6 @@ interface MulterFile {
   mimetype: string;
 }
 
-interface MulterRequest extends Request {
-  file?: MulterFile;
-}
-
 // Mock multer for now
 const multer = {
   memoryStorage: () => ({}),
@@ -132,22 +128,22 @@ router.put('/profile', async (req: Request, res: Response) => {
 router.post('/avatar', upload.single('avatar'), async (req: Request, res: Response) => {
   try {
     const { user } = req as AuthenticatedRequest;
-    const multerReq = req as MulterRequest;
+    const file = (req as any).file as MulterFile | undefined;
 
-    if (!multerReq.file) {
+    if (!file) {
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
     // Generate unique filename
-    const fileExt = multerReq.file.originalname.split('.').pop();
+    const fileExt = file.originalname.split('.').pop();
     const fileName = `${user.id}/${uuidv4()}.${fileExt}`;
 
     // Upload to Supabase Storage
     const { data: uploadData, error: uploadError } = await getSupabase()
       .storage
       .from('avatars')
-      .upload(fileName, multerReq.file.buffer, {
-        contentType: multerReq.file.mimetype,
+      .upload(fileName, file.buffer, {
+        contentType: file.mimetype,
         cacheControl: '3600',
         upsert: false
       });

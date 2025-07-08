@@ -50,9 +50,9 @@
     "lint:fix": "eslint src --ext .ts --fix"
   },
   "dependencies": {
-    "@codequal/agents": "workspace:*",
-    "@codequal/core": "workspace:*",
-    "@codequal/database": "workspace:*",
+    "@codequal/agents": "0.1.0",
+    "@codequal/core": "0.1.0",
+    "@codequal/database": "0.1.0",
     "@supabase/supabase-js": "^2.38.0",
     "dotenv": "^16.3.1"
   },
