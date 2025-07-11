@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { checkRepositoryAccess } from '../middleware/auth-middleware';
 import { DeepWikiManager } from '../services/deepwiki-manager';
 import { enforceTrialLimits, incrementScanCount } from '../middleware/trial-enforcement';
+import { getSupabase } from '@codequal/database/supabase/client';
 
 export const repositoryRoutes = Router();
 
@@ -74,13 +75,25 @@ repositoryRoutes.post('/analyze', enforceTrialLimits, incrementScanCount, async 
 
     const user = req.user!;
 
-    // Check repository access
-    const hasAccess = await checkRepositoryAccess(user, repositoryUrl);
-    if (!hasAccess) {
-      return res.status(403).json({ 
-        error: 'Access denied to repository',
-        repositoryUrl 
-      });
+    // For trial users, access is already checked by enforceTrialLimits middleware
+    // For paid users, check repository access
+    const { data: userBilling } = await getSupabase()
+      .from('user_billing')
+      .select('subscription_status')
+      .eq('user_id', user.id)
+      .single();
+    
+    const isTrialUser = !userBilling || userBilling.subscription_status !== 'active';
+    
+    if (!isTrialUser) {
+      // Only check repository access for paid users
+      const hasAccess = await checkRepositoryAccess(user, repositoryUrl);
+      if (!hasAccess) {
+        return res.status(403).json({ 
+          error: 'Access denied to repository',
+          repositoryUrl 
+        });
+      }
     }
 
     const deepWikiManager = new DeepWikiManager(user);

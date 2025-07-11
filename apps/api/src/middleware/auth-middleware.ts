@@ -109,7 +109,20 @@ export const checkRepositoryAccess = async (
   repositoryUrl: string
 ): Promise<boolean> => {
   try {
-    // Query user's accessible repositories
+    // Check if user has a payment method - if yes, allow access to any repository
+    const { data: paymentMethods } = await getSupabase()
+      .from('payment_methods')
+      .select('id')
+      .eq('user_id', user.id)
+      .limit(1);
+    
+    if (paymentMethods && paymentMethods.length > 0) {
+      // User has payment method - allow access to any repository
+      console.log('User has payment method - granting repository access');
+      return true;
+    }
+
+    // For users without payment methods, check if they have explicit access
     const { data: repositories, error } = await getSupabase()
       .from('user_repositories')
       .select('repository_url')
@@ -119,6 +132,19 @@ export const checkRepositoryAccess = async (
     if (error) {
       console.error('Repository access check error:', error);
       return false;
+    }
+
+    // If no explicit access, check if it's their trial repository
+    if (!repositories || repositories.length === 0) {
+      const { data: trialRepo } = await getSupabase()
+        .from('user_trial_repository')
+        .select('repository_url')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (trialRepo && trialRepo.repository_url === repositoryUrl) {
+        return true;
+      }
     }
 
     return repositories && repositories.length > 0;

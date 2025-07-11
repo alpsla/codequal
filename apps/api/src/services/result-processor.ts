@@ -90,12 +90,29 @@ export class ResultProcessor {
       return findings;
     }
 
-    if (!agentResults.agentResults || typeof agentResults.agentResults !== 'object') {
-      console.warn('No agentResults found in provided data');
+    // Handle different structures: agentResults property, direct array, or object
+    let resultsToProcess: Record<string, any> = {};
+    
+    if (agentResults.agentResults && typeof agentResults.agentResults === 'object') {
+      resultsToProcess = agentResults.agentResults;
+    } else if (Array.isArray(agentResults)) {
+      // Convert array to object keyed by agent name
+      agentResults.forEach((result: any, index: number) => {
+        const agentName = result.agentRole || result.agentId || `agent_${index}`;
+        resultsToProcess[agentName] = result;
+      });
+    } else if (agentResults.results && Array.isArray(agentResults.results)) {
+      // Handle wrapped results
+      agentResults.results.forEach((result: any, index: number) => {
+        const agentName = result.agentRole || result.agentId || `agent_${index}`;
+        resultsToProcess[agentName] = result;
+      });
+    } else {
+      console.warn('No recognizable results structure found in provided data');
       return findings;
     }
 
-    Object.entries(agentResults.agentResults).forEach(([agentName, result]: [string, any]) => {
+    Object.entries(resultsToProcess).forEach(([agentName, result]: [string, any]) => {
       // Defensive programming: validate agent result structure
       if (!result || typeof result !== 'object') {
         console.warn(`Invalid result structure for agent: ${agentName}`);

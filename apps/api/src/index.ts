@@ -5,6 +5,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
+import path from 'path';
 import { authMiddleware } from './middleware/auth-middleware';
 import { resultOrchestratorRoutes } from './routes/result-orchestrator';
 import { repositoryRoutes } from './routes/repository';
@@ -13,6 +14,7 @@ import webhookRoutes from './routes/webhooks';
 import scheduleRoutes from './routes/schedules';
 import monitoringRoutes, { getGlobalMonitoringService } from './routes/monitoring';
 import reportRoutes from './routes/reports';
+import analysisReportsRoutes from './routes/analysis-reports';
 import apiKeyRoutes from './routes/api-keys';
 import openapiDocsRoutes from './routes/openapi-docs';
 import languageRoutes from './routes/languages';
@@ -22,11 +24,17 @@ import vectorSearchRoutes from './routes/vector-search';
 import embeddingConfigRoutes from './routes/embedding-config';
 import usersRoutes from './routes/users';
 import organizationsRoutes from './routes/organizations';
+import billingRoutes from './routes/billing';
+import stripeWebhookRoutes from './routes/stripe-webhooks';
+import simpleScanRoutes from './routes/simple-scan';
+import mockPRAnalysisRoutes from './routes/mock-pr-analysis';
+import testAuthRoutes from './routes/test-auth';
 import { errorHandler } from './middleware/error-handler';
 import { i18nMiddleware, translateResponse, validateLanguage } from './middleware/i18n-middleware';
 import { requestLogger } from './middleware/request-logger';
 import { monitoringMiddleware, analysisMonitoringMiddleware } from './middleware/monitoring-middleware';
 import { apiKeyAuth } from './middleware/api-key-auth';
+import { trackApiUsage, requireApiAccess } from './middleware/api-usage-tracking';
 import { initializeTranslators } from './services/translator-initialization-service';
 
 // Environment variables are already loaded in setup.ts
@@ -64,7 +72,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(compression());
 
 // Serve static files from public directory
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, '../public')));
 
 // Request logging
 app.use(requestLogger);
@@ -114,6 +122,7 @@ app.use('/v1/languages', languageRoutes);
 
 // Authentication routes (no authentication required)
 app.use('/auth', authRoutes);
+app.use('/api/auth', authRoutes);
 
 // Webhook routes (no authentication required for external webhooks)
 app.use('/api/webhooks', webhookRoutes);
@@ -121,13 +130,19 @@ app.use('/api/webhooks', webhookRoutes);
 // API Key management routes (requires user authentication)
 app.use('/api/keys', authMiddleware, apiKeyRoutes);
 
+// Test auth routes
+app.use('/api/test-auth', authMiddleware, testAuthRoutes);
+
 // Public API routes (authenticated via API key)
 app.use('/v1', apiKeyAuth); // All v1 API routes require API key
+app.use('/v1', trackApiUsage); // Track API usage based on subscription
+// app.use('/v1', requireApiAccess); // Temporarily disabled - limits enforced in trackApiUsage
 app.use('/v1', translateResponse('api')); // Auto-translate API responses
 app.use('/v1', analysisMonitoringMiddleware);
 
 // Map existing routes to v1 API
-app.use('/v1/analyze-pr', resultOrchestratorRoutes);
+app.use('/v1', analysisReportsRoutes); // Register analysis reports first to catch specific routes
+app.use('/v1', resultOrchestratorRoutes);
 app.use('/v1/repository', repositoryRoutes);
 app.use('/v1/analysis', analysisRoutes);
 app.use('/v1/reports', reportRoutes);
@@ -144,10 +159,24 @@ app.use('/api/users', authMiddleware, usersRoutes);
 // Organization management routes (requires user authentication)
 app.use('/api/organizations', authMiddleware, organizationsRoutes);
 
+// Billing routes (requires user authentication)
+app.use('/api/billing', authMiddleware, billingRoutes);
+
+// Simple scan routes (for testing) - also track API usage for subscribed users
+app.use('/api/simple-scan', authMiddleware, trackApiUsage, simpleScanRoutes);
+app.use('/api/mock-pr-analysis', authMiddleware, trackApiUsage, mockPRAnalysisRoutes);
+// Other simple routes without tracking
+app.use('/api', simpleScanRoutes);
+app.use('/api', mockPRAnalysisRoutes);
+
+// Stripe webhook routes (no authentication required)
+app.use('/stripe', stripeWebhookRoutes);
+
 // Internal API routes (requires user authentication)
 app.use('/api', authMiddleware);
 app.use('/api', translateResponse('api')); // Auto-translate API responses
 app.use('/api', analysisMonitoringMiddleware);
+app.use('/api', analysisReportsRoutes); // Register analysis reports first to catch specific routes
 app.use('/api', resultOrchestratorRoutes);
 app.use('/api/repository', repositoryRoutes);
 app.use('/api/analysis', analysisRoutes);

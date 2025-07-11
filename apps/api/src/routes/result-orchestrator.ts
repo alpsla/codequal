@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { checkRepositoryAccess } from '../middleware/auth-middleware';
 import { ResultOrchestrator } from '../services/result-orchestrator';
 import { validatePRAnalysisRequest, validateAnalysisMode } from '../validators/request-validators';
+import { enforceTrialLimits, incrementScanCount } from '../middleware/trial-enforcement';
 
 export const resultOrchestratorRoutes = Router();
 
@@ -97,7 +98,7 @@ interface AnalysisResponse {
  *       429:
  *         $ref: '#/components/responses/RateLimitError'
  */
-resultOrchestratorRoutes.post('/analyze-pr', async (req: Request, res: Response) => {
+resultOrchestratorRoutes.post('/analyze-pr', enforceTrialLimits, incrementScanCount, async (req: Request, res: Response) => {
   try {
     // Validate request body
     const validationResult = validatePRAnalysisRequest(req.body);

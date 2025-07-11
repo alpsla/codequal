@@ -35,7 +35,7 @@ class DeepWikiManager {
      */
     async triggerRepositoryAnalysis(repositoryUrl) {
         try {
-            const jobId = `deepwiki_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            const jobId = `analysis_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
             // Create analysis job record
             const job = {
                 jobId,

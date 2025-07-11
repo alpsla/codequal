@@ -1,6 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
 import { getSupabase } from '@codequal/database/supabase/client';
 import { AuthenticatedRequest } from './auth-middleware';
+import { normalizeRepositoryUrl } from '../utils/repository-utils';
+import Stripe from 'stripe';
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
+  apiVersion: '2023-10-16',
+});
 
 interface TrialCheckRequest extends AuthenticatedRequest {
   body: {
@@ -8,6 +14,7 @@ interface TrialCheckRequest extends AuthenticatedRequest {
     repositoryUrl?: string;
   };
 }
+
 
 export async function enforceTrialLimits(
   req: Request,
@@ -17,13 +24,47 @@ export async function enforceTrialLimits(
   try {
     const { user } = req as AuthenticatedRequest;
     const trialsReq = req as TrialCheckRequest;
-    const repositoryUrl = trialsReq.body.repository_url || trialsReq.body.repositoryUrl;
+    let repositoryUrl = trialsReq.body.repository_url || trialsReq.body.repositoryUrl;
+    
+    // Check if this is an API key request with a valid subscription
+    if ((user as any)?.isApiKeyAuth) {
+      // Get user's billing to check subscription
+      const { data: billing } = await getSupabase()
+        .from('user_billing')
+        .select('subscription_tier, subscription_status')
+        .eq('user_id', user.id)
+        .single();
+        
+      if (billing?.subscription_tier && 
+          ['api', 'individual', 'team'].includes(billing.subscription_tier as string) &&
+          billing.subscription_status === 'active') {
+        // Valid API/Individual/Team subscription - skip trial limits
+        console.log('API key user with valid subscription - skipping trial limits');
+        return next();
+      }
+    }
 
     if (!repositoryUrl) {
       return res.status(400).json({ 
         error: 'Repository URL is required',
         code: 'REPOSITORY_URL_REQUIRED'
       });
+    }
+    
+    // Normalize the repository URL
+    repositoryUrl = normalizeRepositoryUrl(repositoryUrl);
+    
+    // Check if user has a payment method - if yes, skip all trial restrictions
+    const { data: paymentMethods } = await getSupabase()
+      .from('payment_methods')
+      .select('id')
+      .eq('user_id', user.id)
+      .limit(1);
+    
+    if (paymentMethods && paymentMethods.length > 0) {
+      // User has payment method - allow any repository
+      console.log('User has payment method - skipping trial restrictions');
+      return next();
     }
 
     // Check if user can scan this repository
@@ -47,7 +88,7 @@ export async function enforceTrialLimits(
         .from('user_trial_repository')
         .select('repository_url')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       const { data: billing } = await getSupabase()
         .from('user_billing')
@@ -55,15 +96,28 @@ export async function enforceTrialLimits(
         .eq('user_id', user.id)
         .single();
 
-      if (trialRepo && trialRepo.repository_url !== repositoryUrl) {
-        return res.status(403).json({
-          error: 'Trial limited to one repository',
-          code: 'TRIAL_REPOSITORY_LIMIT',
-          details: {
-            allowed_repository: trialRepo.repository_url,
-            requested_repository: repositoryUrl
-          }
-        });
+      // Check if user has payment method before enforcing repository limit
+      const { data: hasPaymentMethod } = await getSupabase()
+        .from('payment_methods')
+        .select('id')
+        .eq('user_id', user.id)
+        .limit(1);
+      
+      if (trialRepo && trialRepo.repository_url && (!hasPaymentMethod || hasPaymentMethod.length === 0)) {
+        // Normalize both URLs for comparison
+        const normalizedTrialUrl = normalizeRepositoryUrl(trialRepo.repository_url as string);
+        const normalizedRequestUrl = normalizeRepositoryUrl(repositoryUrl);
+        
+        if (normalizedTrialUrl !== normalizedRequestUrl) {
+          return res.status(403).json({
+            error: 'Trial limited to one repository',
+            code: 'TRIAL_REPOSITORY_LIMIT',
+            details: {
+              allowed_repository: trialRepo.repository_url,
+              requested_repository: repositoryUrl
+            }
+          });
+        }
       }
 
       if (billing && (billing as any).trial_scans_used >= (billing as any).trial_scans_limit) {
@@ -84,15 +138,22 @@ export async function enforceTrialLimits(
       .from('user_trial_repository')
       .select('id')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
     if (!existingTrialRepo) {
-      await getSupabase()
+      const normalizedUrl = normalizeRepositoryUrl(repositoryUrl);
+      const { error: insertError } = await getSupabase()
         .from('user_trial_repository')
         .insert({
           user_id: user.id,
-          repository_url: repositoryUrl
+          repository_url: normalizedUrl
         });
+      
+      if (insertError) {
+        console.error('Error setting trial repository:', insertError);
+      } else {
+        console.log(`Set trial repository for user ${user.id}: ${normalizedUrl}`);
+      }
     }
 
     // Continue to next middleware
@@ -122,25 +183,65 @@ export async function incrementScanCount(
       const trialsReq = req as TrialCheckRequest;
       const repositoryUrl = trialsReq.body.repository_url || trialsReq.body.repositoryUrl;
 
-      // Increment scan count asynchronously
+      // Handle billing asynchronously
       (async () => {
         try {
-          // Get current scan count
-          const { data: currentBilling } = await getSupabase()
-            .from('user_billing')
-            .select('trial_scans_used')
+          // Check if user has payment method
+          const { data: paymentMethods } = await getSupabase()
+            .from('payment_methods')
+            .select('stripe_payment_method_id')
             .eq('user_id', user.id)
-            .single();
+            .limit(1);
+          
+          if (paymentMethods && paymentMethods.length > 0) {
+            // User has payment method - charge them
+            const { data: billing } = await getSupabase()
+              .from('user_billing')
+              .select('stripe_customer_id')
+              .eq('user_id', user.id)
+              .single();
+            
+            if (billing?.stripe_customer_id) {
+              try {
+                // Create payment intent for $0.50
+                const paymentIntent = await stripe.paymentIntents.create({
+                  amount: 50, // $0.50 in cents
+                  currency: 'usd',
+                  customer: billing.stripe_customer_id as string,
+                  payment_method: paymentMethods[0].stripe_payment_method_id as string,
+                  confirm: true,
+                  off_session: true,
+                  description: `Repository scan: ${repositoryUrl}`,
+                  metadata: {
+                    user_id: user.id,
+                    repository_url: repositoryUrl || '',
+                    type: 'pay_per_scan'
+                  }
+                });
+                
+                console.log(`Charged $0.50 for scan: ${paymentIntent.id}`);
+              } catch (chargeError) {
+                console.error('Error charging for scan:', chargeError);
+                // Don't fail the scan if payment fails - we already delivered the service
+              }
+            }
+          } else {
+            // No payment method - use trial
+            const { data: currentBilling } = await getSupabase()
+              .from('user_billing')
+              .select('trial_scans_used')
+              .eq('user_id', user.id)
+              .single();
 
-          const currentCount = (currentBilling as any)?.trial_scans_used || 0;
+            const currentCount = (currentBilling as any)?.trial_scans_used || 0;
 
-          // Update scan count
-          await getSupabase()
-            .from('user_billing')
-            .update({ 
-              trial_scans_used: currentCount + 1
-            })
-            .eq('user_id', user.id);
+            await getSupabase()
+              .from('user_billing')
+              .update({ 
+                trial_scans_used: currentCount + 1
+              })
+              .eq('user_id', user.id);
+          }
 
           // Log the scan
           await getSupabase()
@@ -151,7 +252,7 @@ export async function incrementScanCount(
               scan_type: req.path.includes('pull-request') ? 'pull_request' : 'repository'
             });
         } catch (err) {
-          console.error('Error updating scan count:', err);
+          console.error('Error processing scan billing:', err);
         }
       })();
     }

@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import AuthenticatedLayout from '../../components/authenticated-layout';
+import { fetchWithAuth } from '../../utils/api';
 
 const plans = [
   {
@@ -17,35 +19,51 @@ const plans = [
     disabled: true
   },
   {
-    name: 'Individual',
-    price: '$29',
+    name: 'API Plan',
+    price: '$9.99',
+    period: '/month',
+    description: 'API access only',
+    features: [
+      '200 API calls/month',
+      'All analysis endpoints',
+      'Webhook support',
+      'Developer documentation',
+      'Rate limit: 100/hour',
+      'No web access'
+    ],
+    cta: 'Subscribe',
+    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_API || 'price_1RjLIsH9VfPdHERjZ8JwAHSV',
+  },
+  {
+    name: 'Individual Plan',
+    price: '$29.99',
     period: '/month',
     description: 'For individual developers',
     features: [
-      'Unlimited scans',
+      '50 web scans/month',
+      '200 API calls/month',
       'Unlimited repositories',
       'Advanced code analysis',
-      'Priority support',
-      'API access'
+      'Priority support'
     ],
     cta: 'Subscribe',
-    priceId: 'price_individual', // Replace with actual Stripe price ID
+    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_INDIVIDUAL || 'price_1RjLIsH9VfPdHERjgmSu4gLT',
     popular: true
   },
   {
-    name: 'Team',
-    price: '$99',
+    name: 'Team Plan',
+    price: '$99.99',
     period: '/month',
-    description: 'For development teams',
+    description: 'For teams of 3-5 developers',
     features: [
-      'Everything in Individual',
+      '3-5 user seats',
+      'Unlimited web scans',
+      'Unlimited API calls',
       'Team collaboration',
-      'Advanced analytics',
-      'Custom integrations',
-      'Dedicated support'
+      'Priority support'
     ],
     cta: 'Subscribe',
-    priceId: 'price_team' // Replace with actual Stripe price ID
+    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_TEAM || 'price_1RjLIsH9VfPdHERjC6ud2Esb',
   }
 ];
 
@@ -57,13 +75,9 @@ export default function SubscribePage() {
       setLoading(priceId);
       
       // Create checkout session
-      const response = await fetch('/api/billing/create-checkout', {
+      const response = await fetchWithAuth('/api/billing/create-checkout', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({ priceId }),
-        credentials: 'include'
       });
 
       const data = await response.json();
@@ -82,8 +96,9 @@ export default function SubscribePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
+    <AuthenticatedLayout>
+      <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
         <div className="text-center">
           <h2 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">
             Choose Your Plan
@@ -93,7 +108,7 @@ export default function SubscribePage() {
           </p>
         </div>
 
-        <div className="mt-12 space-y-4 sm:mt-16 sm:space-y-0 sm:grid sm:grid-cols-3 sm:gap-6 lg:max-w-4xl lg:mx-auto">
+        <div className="mt-12 space-y-4 sm:mt-16 sm:space-y-0 sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:gap-6 lg:max-w-6xl lg:mx-auto">
           {plans.map((plan) => (
             <div
               key={plan.name}
@@ -162,10 +177,14 @@ export default function SubscribePage() {
 
         <div className="mt-12 text-center">
           <p className="text-base text-gray-600">
-            After trial ends: $0.50 per scan (pay as you go)
+            No subscription? Pay-as-you-go: $0.50 per scan
+          </p>
+          <p className="text-sm text-gray-500 mt-1">
+            Payment method required for all paid options
           </p>
         </div>
       </div>
     </div>
+    </AuthenticatedLayout>
   );
 }

@@ -100,6 +100,8 @@ export interface AnalysisResult {
     prComment: string;
     fullReport?: any; // Full enhanced report from Reporter Agent
     htmlReportUrl?: string;
+    uiReportUrl?: string;
+    reportId?: string;
   };
   metadata: {
     timestamp: Date;
@@ -304,9 +306,11 @@ export class ResultOrchestrator {
 
       const processingTime = Date.now() - startTime;
       
-      // Generate HTML report URL (will be updated when deployed to cloud)
-      const baseUrl = process.env.API_BASE_URL || 'http://localhost:3001';
-      const htmlReportUrl = `${baseUrl}/api/analysis/${reportId}/report?format=html`;
+      // Generate report URLs for both API and UI access
+      const apiBaseUrl = process.env.API_BASE_URL || 'http://localhost:3001';
+      const webBaseUrl = process.env.WEB_BASE_URL || 'http://localhost:3000';
+      const htmlReportUrl = `${apiBaseUrl}/api/analysis/${reportId}/report?format=html`;
+      const uiReportUrl = `${webBaseUrl}/reports/${reportId}`;
 
       // Step 10: Compile final analysis result
       const analysisResult: AnalysisResult = {
@@ -341,7 +345,9 @@ export class ResultOrchestrator {
             .map(r => r.title),
           prComment: standardReport.exports.prComment,
           fullReport: standardReport,
-          htmlReportUrl
+          htmlReportUrl,
+          uiReportUrl,
+          reportId
         },
         metadata: {
           timestamp: new Date(),
@@ -685,11 +691,31 @@ export class ResultOrchestrator {
       })) || []
     };
 
-    // Create multi-agent config
+    // Select agents based on analysis mode and PR content analysis
+    const selectedAgents = this.selectAgentsForAnalysis(context.analysisMode, prContentAnalysis);
+    
+    this.logger.info('Selected agents for analysis', {
+      analysisMode: context.analysisMode,
+      selectedAgents,
+      prContentAnalysis: prContentAnalysis ? {
+        riskLevel: prContentAnalysis.riskLevel,
+        agentsToSkip: prContentAnalysis.agentsToSkip
+      } : null
+    });
+
+    // Configure agents with repository context and tool results
+    const agentConfigurations = await this.configureAgents(selectedAgents, context, toolResults);
+    
+    this.logger.info('Agent configurations prepared', {
+      agentCount: agentConfigurations.length,
+      agents: agentConfigurations.map(a => ({ type: a.type, role: a.role }))
+    });
+
+    // Create multi-agent config with agents already configured
     const multiAgentConfig = {
       name: 'PR Analysis',
       strategy: 'parallel' as any,
-      agents: [] as any[],
+      agents: agentConfigurations, // Set agents before creating executor
       fallbackEnabled: true
     };
 
@@ -698,25 +724,16 @@ export class ResultOrchestrator {
       return this.retrieveRelevantDeepWikiReport(agentRole, requestContext);
     };
 
-    // Create enhanced multi-agent executor
+    // Create enhanced multi-agent executor with properly configured agents
     const executor = new EnhancedMultiAgentExecutor(
       multiAgentConfig,
       repositoryData,
       this.vectorContextService,
       this.agentAuthenticatedUser,
-      { debug: false },
+      { debug: true }, // Enable debug for better logging
       toolResults,
       deepWikiReportRetriever
     );
-
-    // Select agents based on analysis mode and PR content analysis
-    const selectedAgents = this.selectAgentsForAnalysis(context.analysisMode, prContentAnalysis);
-
-    // Configure agents with repository context and tool results
-    const agentConfigurations = await this.configureAgents(selectedAgents, context, toolResults);
-
-    // Update the config with selected agents
-    multiAgentConfig.agents = agentConfigurations;
 
     // Execute agents
     const results = await executor.execute();
@@ -731,6 +748,27 @@ export class ResultOrchestrator {
     try {
       // Extract agent results in the expected format
       const formattedResults = this.formatAgentResults(agentResults);
+      
+      // Check if we have any results to process
+      if (!formattedResults || formattedResults.length === 0) {
+        this.logger.warn('No formatted results to process');
+        return {
+          findings: {
+            security: [],
+            architecture: [],
+            performance: [],
+            dependencies: [],
+            codeQuality: []
+          },
+          insights: [],
+          suggestions: [],
+          crossAgentPatterns: [],
+          statistics: {
+            totalFindings: { beforeMerge: 0, afterMerge: 0 }
+          },
+          deepWikiData: deepWikiData
+        };
+      }
       
       // Use intelligent result merger for cross-agent deduplication
       const mergedResult = await this.intelligentResultMerger.mergeResults(
@@ -764,14 +802,48 @@ export class ResultOrchestrator {
       this.logger.info('Intelligent result processing complete', {
         totalFindings: mergedResult.findings.length,
         crossAgentPatterns: mergedResult.crossAgentPatterns.length,
-        deduplicationRate: `${((1 - mergedResult.statistics.totalFindings.afterMerge / mergedResult.statistics.totalFindings.beforeMerge) * 100).toFixed(1)}%`
+        deduplicationRate: mergedResult.statistics?.totalFindings?.beforeMerge > 0 
+          ? `${((1 - mergedResult.statistics.totalFindings.afterMerge / mergedResult.statistics.totalFindings.beforeMerge) * 100).toFixed(1)}%`
+          : '0%'
       });
       
       return processedResults;
     } catch (error) {
-      this.logger.error('Failed to process results with intelligent merger', { error });
+      this.logger.error('Failed to process results with intelligent merger', { 
+        error: error instanceof Error ? error.message : error,
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      
       // Fallback to basic processing
-      return this.resultProcessor.processAgentResults(agentResults);
+      try {
+        const fallbackResults = await this.resultProcessor.processAgentResults(agentResults);
+        return {
+          ...fallbackResults,
+          deepWikiData: deepWikiData
+        };
+      } catch (fallbackError) {
+        this.logger.error('Fallback processing also failed', {
+          error: fallbackError instanceof Error ? fallbackError.message : fallbackError
+        });
+        
+        // Return empty results structure rather than failing completely
+        return {
+          findings: {
+            security: [],
+            architecture: [],
+            performance: [],
+            dependencies: [],
+            codeQuality: []
+          },
+          insights: [],
+          suggestions: [],
+          crossAgentPatterns: [],
+          statistics: {
+            totalFindings: { beforeMerge: 0, afterMerge: 0 }
+          },
+          deepWikiData: deepWikiData
+        };
+      }
     }
   }
 
@@ -854,20 +926,42 @@ export class ResultOrchestrator {
   ): Promise<any[]> {
     const configurations = [];
     
-    for (const agentType of agents) {
-      const config = await this.modelVersionSync.findOptimalModel({
-        language: context.primaryLanguage,
-        sizeCategory: context.repositorySize,
-        tags: [agentType]
-      });
+    for (let i = 0; i < agents.length; i++) {
+      const agentType = agents[i];
+      let config;
+      try {
+        config = await this.modelVersionSync.findOptimalModel({
+          language: context.primaryLanguage,
+          sizeCategory: context.repositorySize,
+          tags: [agentType]
+        });
+      } catch (error) {
+        this.logger.warn(`Failed to find optimal model for ${agentType}, using default`, { error });
+        // Use default configuration if model sync fails
+        config = {
+          model: 'gpt-4',
+          temperature: 0.7,
+          maxTokens: 4000
+        };
+      }
       
       // Get agent-specific context including tool results
       const agentContext = this.getAgentSpecificContext(agentType, context, toolResults[agentType]);
       
+      // Assign position based on index: first agent is PRIMARY, others are SECONDARY
+      const position = i === 0 ? 'primary' : 'secondary';
+      
       configurations.push({
         type: agentType,
-        configuration: config,
-        context: agentContext
+        provider: (config as any)?.provider || 'openai', // Add required provider field
+        role: agentType,
+        position: position, // Use dynamic position assignment
+        configuration: config || { model: 'gpt-4', temperature: 0.7, maxTokens: 4000 },
+        context: agentContext,
+        model: (config as any)?.model || 'gpt-4',
+        temperature: (config as any)?.temperature || 0.7,
+        maxTokens: (config as any)?.maxTokens || 4000,
+        priority: agents.length - i // Higher priority for agents that appear first
       });
     }
     
@@ -1011,18 +1105,34 @@ export class ResultOrchestrator {
    */
   private convertToAgentUser(apiUser: AuthenticatedUser): AgentAuthenticatedUser {
     // Create user permissions structure expected by agents package
+    // For API users, grant broad read access to public repositories
     const permissions: UserPermissions = {
       repositories: {
-        // For now, grant access to all repositories the user has access to
-        // In production, this would be populated from the database
+        // Grant full read access for API users
         '*': {
           read: true,
           write: false,
           admin: false
+        },
+        // Also add specific common repositories
+        'facebook/react': {
+          read: true,
+          write: false,
+          admin: false
+        },
+        'vuejs/vue': {
+          read: true,
+          write: false,
+          admin: false
+        },
+        'angular/angular': {
+          read: true,
+          write: false,
+          admin: false  
         }
       },
-      organizations: apiUser.organizationId ? [apiUser.organizationId] : [],
-      globalPermissions: apiUser.permissions || [],
+      organizations: apiUser.organizationId ? [apiUser.organizationId] : ['public'],
+      globalPermissions: apiUser.permissions || ['api_access', 'read_public_repos'],
       quotas: {
         requestsPerHour: 1000,
         maxConcurrentExecutions: 5,
@@ -1077,8 +1187,8 @@ export class ResultOrchestrator {
       organizationId: apiUser.organizationId,
       permissions,
       session: {
-        token: apiUser.session.token,
-        expiresAt: apiUser.session.expiresAt,
+        token: apiUser.session?.token || 'api-key-auth',
+        expiresAt: apiUser.session?.expiresAt || new Date(Date.now() + 3600000).toISOString(), // 1 hour from now
         fingerprint: 'api-session',
         ipAddress: '127.0.0.1',
         userAgent: 'CodeQual API'
@@ -1173,8 +1283,35 @@ export class ResultOrchestrator {
   private formatAgentResults(agentResults: any): any[] {
     if (!agentResults) return [];
     
+    // Log the structure to understand what we're getting
+    this.logger.info('Agent results structure:', {
+      type: typeof agentResults,
+      isArray: Array.isArray(agentResults),
+      keys: Object.keys(agentResults || {}),
+      hasResults: !!agentResults.results,
+      hasAggregatedInsights: !!agentResults.aggregatedInsights,
+      hasAgentResults: !!agentResults.agentResults
+    });
+    
     // Handle different result formats
-    const results = agentResults.results || agentResults.aggregatedInsights || [];
+    let results = [];
+    
+    // Check if agentResults itself is an array
+    if (Array.isArray(agentResults)) {
+      results = agentResults;
+    } else if (agentResults.results && Array.isArray(agentResults.results)) {
+      results = agentResults.results;
+    } else if (agentResults.aggregatedInsights && Array.isArray(agentResults.aggregatedInsights)) {
+      results = agentResults.aggregatedInsights;
+    } else if (agentResults.agentResults) {
+      // Handle the case where results are in agentResults property
+      results = Object.values(agentResults.agentResults);
+    } else {
+      this.logger.warn('Unable to extract results array from agent results', {
+        structure: JSON.stringify(agentResults, null, 2).substring(0, 500)
+      });
+      return [];
+    }
     
     return results.map((result: any) => {
       // Extract findings from various formats
@@ -1760,6 +1897,16 @@ Primary Language: TypeScript
       return report.id;
     } catch (error) {
       this.logger.error('Error storing report in Supabase', { error });
+      
+      // If database storage fails, use temporary in-memory storage
+      try {
+        const { storeReportTemporarily } = await import('../routes/analysis-reports.js');
+        storeReportTemporarily(report.id, report);
+        this.logger.info('Report stored in temporary memory storage', { reportId: report.id });
+      } catch (tempError) {
+        this.logger.error('Failed to store report temporarily', { tempError });
+      }
+      
       // Don't fail the entire analysis if storage fails
       // The report is still available in the response
       // Return the report ID even if storage fails
