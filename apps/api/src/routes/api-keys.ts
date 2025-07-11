@@ -58,7 +58,13 @@ router.use(authMiddleware);
  */
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const userId = req.user!.id;
+    const userId = (req as any).user?.id;
+    
+    if (!userId) {
+      return res.status(401).json({
+        error: 'User not authenticated'
+      });
+    }
     
     const { data: keys, error } = await getSupabase()
       .from('api_keys')
@@ -66,7 +72,10 @@ router.get('/', async (req: Request, res: Response) => {
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Database error fetching API keys:', error);
+      throw error;
+    }
 
     res.json({
       success: true,
@@ -74,8 +83,14 @@ router.get('/', async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Error fetching API keys:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorDetails = (error as any)?.details || (error as any)?.hint || '';
+    console.error('Error details:', { message: errorMessage, details: errorDetails });
+    
     res.status(500).json({
-      error: 'Failed to fetch API keys'
+      error: 'Failed to fetch API keys',
+      message: errorMessage,
+      details: errorDetails
     });
   }
 });
@@ -153,7 +168,13 @@ router.get('/', async (req: Request, res: Response) => {
  */
 router.post('/', async (req: Request, res: Response) => {
   try {
-    const userId = req.user!.id;
+    const userId = (req as any).user?.id;
+    
+    if (!userId) {
+      return res.status(401).json({
+        error: 'User not authenticated'
+      });
+    }
     const { name, expiresIn } = req.body;
 
     if (!name) {
@@ -162,14 +183,20 @@ router.post('/', async (req: Request, res: Response) => {
       });
     }
 
-    // Check user's subscription plan for API key limits
-    const { data: subscription } = await getSupabase()
-      .from('subscriptions')
-      .select('plan_id, api_key_limit')
+    // Check user's billing plan for API key limits
+    const { data: billing } = await getSupabase()
+      .from('user_billing')
+      .select('subscription_tier')
       .eq('user_id', userId)
       .single();
 
-    const keyLimit = subscription?.api_key_limit || 1;
+    // Set key limit based on subscription tier
+    let keyLimit = 1; // Default
+    if (billing?.subscription_tier === 'team') {
+      keyLimit = 10;
+    } else if (billing?.subscription_tier === 'individual' || billing?.subscription_tier === 'api') {
+      keyLimit = 5;
+    }
 
     // Count existing keys
     const { count } = await getSupabase()
@@ -197,10 +224,10 @@ router.post('/', async (req: Request, res: Response) => {
       expiresAt = date.toISOString();
     }
 
-    // Get usage limit based on plan
-    const usageLimit = subscription?.plan_id === 'enterprise' ? 999999 : 
-                      subscription?.plan_id === 'scale' ? 20000 :
-                      subscription?.plan_id === 'growth' ? 5000 : 1000;
+    // Get usage limit based on billing tier (simplified)
+    const usageLimit = billing?.subscription_tier === 'team' ? 999999 : // effectively unlimited
+                      billing?.subscription_tier === 'api' ? 200 :
+                      billing?.subscription_tier === 'individual' ? 200 : 0;
 
     // Store API key
     const { data: newKey, error } = await getSupabase()
@@ -212,7 +239,12 @@ router.post('/', async (req: Request, res: Response) => {
         usage_limit: usageLimit,
         usage_count: 0,
         active: true,
-        expires_at: expiresAt
+        expires_at: expiresAt,
+        permissions: { endpoints: '*' }, // Allow all endpoints by default
+        key_prefix: 'ck_',
+        rate_limit_per_minute: 60,
+        rate_limit_per_hour: 1000,
+        metadata: {}
       })
       .select()
       .single();
@@ -233,8 +265,14 @@ router.post('/', async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Error creating API key:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorDetails = (error as any)?.details || (error as any)?.hint || '';
+    console.error('Error details:', { message: errorMessage, details: errorDetails });
+    
     res.status(500).json({
-      error: 'Failed to create API key'
+      error: 'Failed to create API key',
+      message: errorMessage,
+      details: errorDetails
     });
   }
 });
@@ -277,7 +315,13 @@ router.post('/', async (req: Request, res: Response) => {
  */
 router.delete('/:id', async (req: Request, res: Response) => {
   try {
-    const userId = req.user!.id;
+    const userId = (req as any).user?.id;
+    
+    if (!userId) {
+      return res.status(401).json({
+        error: 'User not authenticated'
+      });
+    }
     const keyId = req.params.id;
 
     // Soft delete - mark as inactive
@@ -366,7 +410,13 @@ router.delete('/:id', async (req: Request, res: Response) => {
  */
 router.get('/:id/usage', async (req: Request, res: Response) => {
   try {
-    const userId = req.user!.id;
+    const userId = (req as any).user?.id;
+    
+    if (!userId) {
+      return res.status(401).json({
+        error: 'User not authenticated'
+      });
+    }
     const keyId = req.params.id;
 
     // Verify ownership
@@ -403,8 +453,8 @@ router.get('/:id/usage', async (req: Request, res: Response) => {
       usage: {
         total: key.usage_count,
         limit: key.usage_limit,
-        remaining: (key.usage_limit as number) - (key.usage_count as number),
-        percentage: Math.round(((key.usage_count as number) / (key.usage_limit as number)) * 100),
+        remaining: key.usage_limit ? (key.usage_limit as number) - (key.usage_count as number) : 999999,
+        percentage: key.usage_limit ? Math.round(((key.usage_count as number) / (key.usage_limit as number)) * 100) : 0,
         byEndpoint: endpointUsage,
         recentCalls: usage
       }

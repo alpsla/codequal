@@ -79,6 +79,8 @@
     "dotenv": "^16.5.0",
     "express": "^4.21.1",
     "node-cron": "^4.1.0",
+    "node-fetch": "^2.7.0",
+    "pg": "^8.16.3",
     "prom-client": "^15.1.0",
     "uuid": "^11.0.0",
     "voyageai": "^0.0.4",

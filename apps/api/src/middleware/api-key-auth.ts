@@ -75,11 +75,14 @@ export async function apiKeyAuth(
     }
 
     // Check endpoint permissions
-    if ((keyData.permissions as any)?.endpoints !== '*') {
-      const allowedEndpoints = (keyData.permissions as any)?.endpoints || [];
+    const permissions = keyData.permissions as any;
+    const endpoints = permissions?.endpoints;
+    
+    // Skip permission check if endpoints is '*' or permissions is empty/null
+    if (endpoints && endpoints !== '*' && Array.isArray(endpoints)) {
       const currentEndpoint = req.path;
       
-      if (!allowedEndpoints.some((ep: string) => currentEndpoint.startsWith(ep))) {
+      if (!endpoints.some((ep: string) => currentEndpoint.startsWith(ep))) {
         return res.status(403).json({
           error: 'Endpoint not allowed',
           code: 'FORBIDDEN_ENDPOINT',
@@ -89,6 +92,8 @@ export async function apiKeyAuth(
     }
 
     // Check rate limits using database function
+    // TODO: Implement check_rate_limit function in database
+    /*
     const { data: rateLimitOk } = await getSupabase().rpc('check_rate_limit', {
       p_key_hash: keyHash,
       p_limit_per_minute: keyData.rate_limit_per_minute,
@@ -103,6 +108,7 @@ export async function apiKeyAuth(
         retry_after: 60 // seconds
       });
     }
+    */
 
     // Check usage limits
     if (keyData.usage_count >= keyData.usage_limit) {
@@ -157,6 +163,21 @@ export async function apiKeyAuth(
       metadata: keyData.metadata
     };
     req.customerId = keyData.user_id as string;
+    
+    // Also set req.user for compatibility with other middleware
+    (req as any).user = {
+      id: keyData.user_id,
+      email: 'api-user@codequal.com', // Placeholder for API users
+      role: 'user',
+      status: 'active',
+      organizationId: keyData.organization_id || null,
+      permissions: [],
+      session: {
+        token: 'api-key-auth',
+        expiresAt: new Date(Date.now() + 3600000).toISOString()
+      },
+      isApiKeyAuth: true
+    };
     
     // Add response interceptor to update usage log
     const originalSend = res.send;

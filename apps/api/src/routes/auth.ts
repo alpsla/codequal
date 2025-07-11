@@ -177,6 +177,51 @@ router.post('/magic-link', async (req, res) => {
 });
 
 
+// GET OAuth endpoint for direct browser redirects
+router.get('/:provider', async (req, res) => {
+  try {
+    initializeAuth();
+    const { provider } = req.params;
+    const redirect = req.query.redirect as string || '/';
+    
+    if (!['github', 'gitlab'].includes(provider)) {
+      return res.status(400).json({ error: 'Invalid OAuth provider. Supported: github, gitlab' });
+    }
+
+    // Check if provider is enabled
+    if ((provider === 'github' && !config.features.githubAuth) ||
+        (provider === 'gitlab' && !config.features.gitlabAuth)) {
+      return res.status(400).json({ error: 'Provider is not enabled' });
+    }
+
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: provider as 'github' | 'gitlab',
+      options: {
+        redirectTo: `${config.app.url}/auth/callback`,
+        queryParams: {
+          redirect_to: redirect
+        },
+        scopes: provider === 'github' 
+          ? 'read:user user:email'
+          : 'read_user',
+      },
+    });
+
+    if (error || !data.url) {
+      return res.status(500).json({ error: 'Failed to initiate OAuth flow' });
+    }
+
+    // Redirect the user to the OAuth provider
+    res.redirect(data.url);
+  } catch (error: any) {
+    console.error('OAuth error:', error);
+    if (error.message && error.message.includes('ECONNREFUSED')) {
+      return res.status(503).json({ error: 'Authentication service unavailable' });
+    }
+    res.status(500).json({ error: 'Failed to initiate OAuth flow' });
+  }
+});
+
 // OAuth sign in
 router.post('/oauth/:provider', async (req, res) => {
   try {
@@ -224,7 +269,46 @@ router.post('/oauth/:provider', async (req, res) => {
   }
 });
 
-// OAuth callback handler
+// OAuth callback handler (POST)
+router.post('/callback', async (req, res) => {
+  try {
+    initializeAuth();
+    
+    const { code, state } = oauthCallbackSchema.parse(req.body);
+    
+    console.log('OAuth callback received:', { code: code.substring(0, 10) + '...', state });
+    
+    // Exchange code for session
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+    
+    if (error) {
+      console.error('OAuth exchange error:', error);
+      console.error('Error details:', JSON.stringify(error, null, 2));
+      return res.status(401).json({ 
+        error: 'Authentication failed', 
+        details: error.message,
+        errorCode: error.code || 'unknown',
+        provider: 'gitlab' // Assume GitLab for now based on the error
+      });
+    }
+
+    // Return session data
+    res.json({ 
+      success: true,
+      session: data.session,
+      user: data.user,
+      redirect: state || '/dashboard'
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Invalid callback parameters' });
+    }
+    console.error('Callback error:', error);
+    res.status(500).json({ error: 'Authentication failed' });
+  }
+});
+
+// OAuth callback handler (GET - for direct browser redirects)
 router.get('/callback', async (req, res) => {
   try {
     initializeAuth();
@@ -259,6 +343,51 @@ router.get('/callback', async (req, res) => {
     }
     console.error('Callback error:', error);
     res.status(500).json({ error: 'Authentication failed' });
+  }
+});
+
+// Create session from magic link tokens
+router.post('/session', async (req, res) => {
+  try {
+    initializeAuth();
+    const { access_token, refresh_token } = req.body;
+    
+    if (!access_token || !refresh_token) {
+      return res.status(400).json({ error: 'Missing tokens' });
+    }
+    
+    // Verify the tokens with Supabase
+    const { data: { user }, error } = await supabase.auth.getUser(access_token);
+    
+    if (error || !user) {
+      return res.status(401).json({ error: 'Invalid tokens' });
+    }
+    
+    // Set cookies for the session
+    const isProduction = process.env.NODE_ENV === 'production';
+    const cookieOptions = {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'lax' as const,
+      maxAge: 60 * 60 * 24 * 7 * 1000, // 7 days
+      domain: isProduction ? '.codequal.dev' : undefined,
+    };
+    
+    res.cookie('sb-access-token', access_token, cookieOptions);
+    res.cookie('sb-refresh-token', refresh_token, cookieOptions);
+    
+    res.json({ 
+      success: true,
+      user: {
+        id: user.id,
+        email: user.email,
+        app_metadata: user.app_metadata,
+        user_metadata: user.user_metadata
+      }
+    });
+  } catch (error) {
+    console.error('Error in POST /session endpoint:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 

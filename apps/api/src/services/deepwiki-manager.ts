@@ -65,7 +65,7 @@ export class DeepWikiManager {
    */
   async triggerRepositoryAnalysis(repositoryUrl: string): Promise<string> {
     try {
-      const jobId = `deepwiki_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const jobId = `analysis_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
       // Create analysis job record
       const job: AnalysisJob = {
@@ -183,7 +183,7 @@ export class DeepWikiManager {
           currentJob.status = 'completed';
           currentJob.completedAt = new Date();
           
-          console.log(`DeepWiki analysis completed for ${repositoryUrl} (Job: ${jobId})`);
+          console.log(`Repository analysis completed for ${repositoryUrl} (Job: ${jobId})`);
         }
       } catch (error) {
         const currentJob = this.activeJobs.get(jobId);
@@ -193,7 +193,7 @@ export class DeepWikiManager {
           currentJob.completedAt = new Date();
         }
         
-        console.error(`DeepWiki analysis failed for ${repositoryUrl}:`, error);
+        console.error(`Repository analysis failed for ${repositoryUrl}:`, error);
       }
     }, completionDelay);
 
