@@ -10,6 +10,8 @@ export default function PRAnalysisPage() {
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [useRealAnalysis, setUseRealAnalysis] = useState(false);
+  const [useGitHubData, setUseGitHubData] = useState(false);
   const { trialUsage, subscription, hasPaymentMethod, refreshBilling, webScanUsage } = useBilling();
 
   const handleAnalyze = async (e: React.FormEvent) => {
@@ -28,8 +30,17 @@ export default function PRAnalysisPage() {
       const [, repoPath, prNumber] = prMatch;
       const repositoryUrl = `https://github.com/${repoPath}`;
 
-      // Use mock endpoint for E2E testing
-      const response = await fetchWithAuth('/api/mock-pr-analysis', {
+      // Select endpoint based on toggles
+      let endpoint;
+      if (useGitHubData) {
+        endpoint = '/api/github-pr-analysis';
+      } else if (useRealAnalysis) {
+        endpoint = '/api/test-analysis';
+      } else {
+        endpoint = '/api/mock-pr-analysis';
+      }
+      
+      const response = await fetchWithAuth(endpoint, {
         method: 'POST',
         body: JSON.stringify({ 
           repositoryUrl: repositoryUrl,
@@ -81,16 +92,16 @@ export default function PRAnalysisPage() {
     <AuthenticatedLayout>
       <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto">
-        <div className="bg-white shadow rounded-lg p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-gray-900">Analyze Pull Request</h1>
-            <button
-              onClick={() => refreshBilling()}
-              className="text-sm px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded text-gray-700"
-            >
-              Refresh Status
-            </button>
-          </div>
+          <div className="bg-white shadow rounded-lg p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h1 className="text-2xl font-bold text-gray-900">Analyze Pull Request</h1>
+              <button
+                onClick={() => refreshBilling()}
+                className="text-sm px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded text-gray-700"
+              >
+                Refresh Status
+              </button>
+            </div>
           
           {/* Subscription Status */}
           {isSubscribed && (
@@ -185,6 +196,65 @@ export default function PRAnalysisPage() {
           )}
 
           <form onSubmit={handleAnalyze} className="space-y-6">
+            {/* Analysis Mode Toggles */}
+            <div className="space-y-3">
+              {/* Real Analysis Toggle */}
+              <div className="flex items-center justify-between p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                <div>
+                  <label htmlFor="real-analysis" className="text-sm font-medium text-gray-700">
+                    Use Real Analysis
+                  </label>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Enable to perform actual code analysis (may take 2-5 minutes)
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUseRealAnalysis(!useRealAnalysis);
+                    if (!useRealAnalysis) setUseGitHubData(false);
+                  }}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    useRealAnalysis ? 'bg-indigo-600' : 'bg-gray-200'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      useRealAnalysis ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* GitHub Data Toggle */}
+              <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-md">
+                <div>
+                  <label htmlFor="github-data" className="text-sm font-medium text-gray-700">
+                    Use Real GitHub Data
+                  </label>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Fetch actual PR data from GitHub API (fast, basic analysis)
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUseGitHubData(!useGitHubData);
+                    if (!useGitHubData) setUseRealAnalysis(false);
+                  }}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    useGitHubData ? 'bg-green-600' : 'bg-gray-200'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      useGitHubData ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
+            
             <div>
               <label htmlFor="pr-url" className="block text-sm font-medium text-gray-700">
                 Pull Request URL
@@ -301,16 +371,36 @@ export default function PRAnalysisPage() {
           {/* Results Display */}
           {result && (
             <div className="mt-6">
-              {/* Analysis Report Header */}
-              <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-t-lg p-6 text-white">
-                <h2 className="text-2xl font-bold mb-2">Code Analysis Report</h2>
-                <p className="text-sm opacity-90">Pull Request #{result.pr?.number} - {result.pr?.title}</p>
-                <div className="flex items-center mt-4 space-x-6 text-sm">
-                  <span>📅 {new Date().toLocaleDateString()}</span>
-                  <span>🔍 v1.0.0</span>
-                  <span>🔗 {result.analysisId}</span>
+              {/* If we have an analysis ID, redirect to the report page */}
+              {result.analysisId ? (
+                <div className="bg-white rounded-lg shadow-lg p-6">
+                  <div className="text-center">
+                    <div className="mb-4">
+                      <i className="fas fa-check-circle text-green-500 text-4xl"></i>
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">Analysis Complete!</h3>
+                    <p className="text-gray-600 mb-4">Your PR analysis has been completed successfully.</p>
+                    <a 
+                      href={`/reports/${result.analysisId}`}
+                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    >
+                      View Full Report
+                      <i className="fas fa-arrow-right ml-2"></i>
+                    </a>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                /* Legacy JSON display */
+                <>
+                  <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-t-lg p-6 text-white">
+                    <h2 className="text-2xl font-bold mb-2">Code Analysis Report</h2>
+                    <p className="text-sm opacity-90">Pull Request #{result.pr?.number} - {result.pr?.title}</p>
+                    <div className="flex items-center mt-4 space-x-6 text-sm">
+                      <span>📅 {new Date().toLocaleDateString()}</span>
+                      <span>🔍 v1.0.0</span>
+                      <span>🔗 {result.analysisId}</span>
+                    </div>
+                  </div>
 
               {/* PR Stats */}
               <div className="bg-white border-x border-gray-200 p-4">
@@ -466,11 +556,13 @@ export default function PRAnalysisPage() {
                   </div>
                 )}
               </div>
+                </>
+              )}
             </div>
           )}
+          </div>
         </div>
       </div>
-    </div>
     </AuthenticatedLayout>
   );
 }

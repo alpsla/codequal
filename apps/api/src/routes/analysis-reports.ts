@@ -15,6 +15,186 @@ export const storeReportTemporarily = (reportId: string, report: any) => {
 };
 
 /**
+ * GET /analysis/real-pr-test
+ * Test with a real GitHub PR (no auth required in dev mode)
+ */
+router.get('/analysis/real-pr-test', async (req: Request, res: Response) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(403).json({ error: 'Test endpoint not available in production' });
+  }
+
+  try {
+    // Import the result orchestrator to run real analysis
+    const { ResultOrchestrator } = require('../services/result-orchestrator');
+    const orchestrator = new ResultOrchestrator();
+    
+    // Use a small public PR for testing
+    const testPR = {
+      repository_url: 'https://github.com/facebook/react',
+      pr_number: 28000, // A small, recent PR
+      api_key: 'test_key'
+    };
+    
+    logger.info('Starting real PR analysis', testPR);
+    
+    // Run the analysis
+    const result = await orchestrator.analyzePullRequest(
+      testPR.repository_url,
+      testPR.pr_number
+    );
+    
+    // Generate enhanced HTML report
+    const HtmlReportGenerator = require('../services/html-report-generator').HtmlReportGenerator;
+    const generator = new HtmlReportGenerator();
+    const html = generator.generateEnhancedHtmlReport(result);
+    
+    res.setHeader('Content-Type', 'text/html');
+    res.send(html);
+    
+  } catch (error) {
+    logger.error('Real PR test failed', { error });
+    res.status(500).json({ 
+      error: 'Failed to analyze PR', 
+      details: error instanceof Error ? error.message : 'Unknown error',
+      suggestion: 'Try with a smaller PR or check GitHub API access'
+    });
+  }
+});
+
+/**
+ * GET /analysis/demo-report
+ * Get a demo report with enhanced template (no auth required in dev mode)
+ */
+router.get('/analysis/demo-report', async (req: Request, res: Response) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(403).json({ error: 'Demo endpoint not available in production' });
+  }
+  
+  const testReportId = `report_demo_enhanced_${Date.now()}`;
+  const testReport = {
+    id: testReportId,
+    repository_url: 'https://github.com/codequal/test-repo',
+    pr_number: 42,
+    analysis_date: new Date().toISOString(),
+    agents: {
+      security: {
+        score: 85,
+        findings: [
+          {
+            type: 'security',
+            severity: 'medium',
+            message: 'Potential SQL injection vulnerability detected',
+            file: 'src/database/queries.ts',
+            line: 45,
+            recommendation: 'Use parameterized queries instead of string concatenation'
+          }
+        ]
+      },
+      codeQuality: {
+        score: 92,
+        findings: [
+          {
+            type: 'code_quality',
+            severity: 'low',
+            message: 'Function complexity is too high',
+            file: 'src/services/analyzer.ts',
+            line: 123,
+            recommendation: 'Consider breaking down this function into smaller, more focused functions'
+          }
+        ]
+      },
+      performance: {
+        score: 78,
+        findings: [
+          {
+            type: 'performance',
+            severity: 'high',
+            message: 'Inefficient database query in loop',
+            file: 'src/api/users.ts',
+            line: 67,
+            recommendation: 'Use batch queries or JOIN operations instead of N+1 queries'
+          }
+        ]
+      },
+      architecture: {
+        score: 88,
+        findings: []
+      },
+      dependencies: {
+        score: 75,
+        findings: [
+          {
+            type: 'dependency',
+            severity: 'high',
+            message: '3 high severity vulnerabilities found in dependencies',
+            file: 'package.json',
+            recommendation: 'Run npm audit fix to resolve vulnerabilities'
+          }
+        ]
+      }
+    },
+    tools: {
+      eslint: {
+        errors: 2,
+        warnings: 15,
+        results: [
+          { file: 'src/index.ts', line: 10, message: 'Missing semicolon', severity: 'error' }
+        ]
+      },
+      prettier: {
+        unformatted: 5,
+        results: []
+      },
+      bundlephobia: {
+        totalSize: '2.3MB',
+        gzipSize: '645KB'
+      }
+    },
+    overall_score: 84,
+    deepwiki: {
+      summary: 'This PR implements a new user authentication system with JWT tokens',
+      changes: [
+        'Added JWT authentication middleware',
+        'Implemented user login and registration endpoints',
+        'Added password hashing with bcrypt',
+        'Created user session management'
+      ]
+    },
+    educational: {
+      suggestions: [
+        {
+          topic: 'Security Best Practices',
+          content: 'When implementing authentication, always use secure password hashing algorithms like bcrypt or argon2',
+          resources: ['https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html']
+        }
+      ]
+    }
+  };
+  
+  // Store the report
+  storeReportTemporarily(testReportId, testReport);
+  
+  // Generate HTML directly
+  try {
+    const HtmlReportGenerator = require('../services/html-report-generator').HtmlReportGenerator;
+    const generator = new HtmlReportGenerator();
+    const html = generator.generateEnhancedHtmlReport(testReport);
+    
+    res.setHeader('Content-Type', 'text/html');
+    res.send(html);
+  } catch (error) {
+    // Fallback to JSON response
+    res.json({
+      success: true,
+      reportId: testReportId,
+      htmlUrl: `http://localhost:3001/v1/analysis/${testReportId}/report?format=html&api_key=test_key`,
+      jsonUrl: `http://localhost:3001/v1/analysis/${testReportId}/report?format=json&api_key=test_key`,
+      directUrl: `http://localhost:3001/v1/analysis/demo-report`
+    });
+  }
+});
+
+/**
  * GET /api/analysis/:reportId/report
  * Get analysis report in various formats (HTML, JSON, Markdown)
  * Supports both JWT auth and API key auth
@@ -42,18 +222,23 @@ router.get('/analysis/:reportId/report', async (req: Request, res: Response) => 
     
     // If API key provided, verify it
     if (apiKey) {
-      const keyHash = require('crypto').createHash('sha256').update(apiKey).digest('hex');
-      const { data: keyData } = await getSupabase()
-        .from('api_keys')
-        .select('user_id, active')
-        .eq('key_hash', keyHash)
-        .single();
+      // Allow test_key in development mode
+      if (apiKey === 'test_key' && process.env.NODE_ENV !== 'production') {
+        userId = 'test_user';
+      } else {
+        const keyHash = require('crypto').createHash('sha256').update(apiKey).digest('hex');
+        const { data: keyData } = await getSupabase()
+          .from('api_keys')
+          .select('user_id, active')
+          .eq('key_hash', keyHash)
+          .single();
         
-      if (!keyData || !keyData.active) {
-        return res.status(401).json({ error: 'Invalid or inactive API key' });
+        if (!keyData || !keyData.active) {
+          return res.status(401).json({ error: 'Invalid or inactive API key' });
+        }
+        
+        userId = keyData.user_id as string;
       }
-      
-      userId = keyData.user_id as string;
     }
     
     // If JWT token provided, verify it
@@ -144,7 +329,278 @@ router.get('/analysis/:reportId/report', async (req: Request, res: Response) => 
  * Generate HTML report from report data
  */
 function generateHTMLReport(report: any): string {
+  // Handle both new format (with overview/modules) and old format (with agents/tools)
+  if (report.agents || report.tools) {
+    return generateLegacyHTMLReport(report);
+  }
+  
   const { overview, modules, visualizations } = report;
+  
+  // Read the enhanced template
+  const fs = require('fs');
+  const path = require('path');
+  // When compiled, __dirname is dist/routes, so we need to go up to dist, then to src/templates
+  const templatePath = path.join(__dirname, '../../src/templates/modular/enhanced-template.html');
+  
+  let template: string;
+  try {
+    template = fs.readFileSync(templatePath, 'utf8');
+  } catch (error) {
+    logger.error('Failed to read enhanced template, falling back to basic template', { error });
+    // Fallback to basic template if enhanced template is not found
+    return generateBasicHTMLReport(report);
+  }
+  
+  // Helper function to get severity counts
+  const getSeverityCounts = (findings: any[]) => {
+    const counts = { critical: 0, high: 0, medium: 0, low: 0 };
+    findings.forEach(f => {
+      if (counts.hasOwnProperty(f.severity)) {
+        counts[f.severity as keyof typeof counts]++;
+      }
+    });
+    return counts;
+  };
+  
+  // Extract all findings
+  const allFindings: any[] = [];
+  if (modules.findings?.categories) {
+    Object.values(modules.findings.categories).forEach((category: any) => {
+      if (category.findings) {
+        allFindings.push(...category.findings);
+      }
+    });
+  }
+  
+  const severityCounts = getSeverityCounts(allFindings);
+  
+  // Determine PR approval decision based on findings
+  const prIssues = allFindings.filter(f => f.isPRIssue !== false);
+  const criticalPRIssues = prIssues.filter(f => f.severity === 'critical');
+  const highPRIssues = prIssues.filter(f => f.severity === 'high');
+  
+  let approvalStatus, approvalMessage, approvalClass, approvalIcon, confidence;
+  
+  if (criticalPRIssues.length > 0) {
+    approvalStatus = 'BLOCKED';
+    approvalMessage = `This PR is blocked due to ${criticalPRIssues.length} critical issue${criticalPRIssues.length !== 1 ? 's' : ''} that must be resolved before merging.`;
+    approvalClass = 'rejected';
+    approvalIcon = '❌';
+    confidence = 95;
+  } else if (highPRIssues.length > 0) {
+    approvalStatus = 'CONDITIONALLY APPROVED';
+    approvalMessage = `This PR is conditionally approved. Please address ${highPRIssues.length} high priority issue${highPRIssues.length !== 1 ? 's' : ''} before merging.`;
+    approvalClass = 'conditional';
+    approvalIcon = '⚠️';
+    confidence = 75;
+  } else {
+    approvalStatus = 'APPROVED';
+    approvalMessage = 'This PR meets quality standards and is approved for merging.';
+    approvalClass = 'approved';
+    approvalIcon = '✅';
+    confidence = 90;
+  }
+  
+  // Override with report decision if available
+  if (overview.decision?.status) {
+    approvalStatus = overview.decision.status;
+    approvalMessage = overview.decision.message || approvalMessage;
+    confidence = Math.round((overview.decision.confidence || confidence / 100) * 100);
+  }
+  
+  // Prepare data for template replacement
+  const templateData: Record<string, string> = {
+    // Meta information
+    analysis_id: report.id || 'N/A',
+    pr_number: report.prNumber?.toString() || 'N/A',
+    repository_name: report.repositoryUrl?.split('/').pop() || 'Repository',
+    timestamp: new Date(report.timestamp || Date.now()).toLocaleString(),
+    report_version: '2.0',
+    app_version: '1.0.0',
+    
+    // Metrics
+    files_changed: report.filesAnalyzed?.toString() || '0',
+    lines_added: report.linesAdded?.toString() || '0',
+    lines_removed: report.linesRemoved?.toString() || '0',
+    primary_language: report.primaryLanguage || 'JavaScript',
+    
+    // Approval decision
+    approval_class: approvalClass,
+    approval_icon: approvalIcon,
+    approval_status_text: approvalStatus,
+    approval_message: approvalMessage,
+    confidence_percentage: confidence.toString(),
+    
+    // Issues counts
+    critical_count: severityCounts.critical.toString(),
+    high_count: severityCounts.high.toString(),
+    medium_count: severityCounts.medium.toString(),
+    low_count: severityCounts.low.toString(),
+    
+    // Overall score
+    overall_score: overview.analysisScore?.toString() || '0',
+    score_class: overview.analysisScore >= 80 ? 'excellent' : 
+                 overview.analysisScore >= 60 ? 'good' : 
+                 overview.analysisScore >= 40 ? 'fair' : 'poor',
+    score_trend_class: 'neutral',
+    score_trend_icon: 'fa-equals',
+    score_trend_value: 'No change',
+    
+    // Learning time
+    total_learning_time: modules.educationalContent?.totalTime || '30 minutes',
+  };
+  
+  // Generate blocking issues HTML
+  templateData.blocking_issues_html = overview.blockingIssues?.length > 0 ?
+    overview.blockingIssues.map((issue: any) => `
+      <div class="factor-item blocking">
+        <i class="fas fa-times-circle"></i>
+        <span>${issue.message || issue}</span>
+      </div>
+    `).join('') : '<div class="factor-item"><i class="fas fa-check"></i> No blocking issues found</div>';
+  
+  // Generate positive findings HTML
+  templateData.positive_findings_html = overview.positiveFindings?.length > 0 ?
+    overview.positiveFindings.map((finding: any) => `
+      <div class="factor-item positive">
+        <i class="fas fa-check-circle"></i>
+        <span>${finding.message || finding}</span>
+      </div>
+    `).join('') : '<div class="factor-item">No specific positive findings highlighted</div>';
+  
+  // Generate PR issues content
+  templateData.pr_issues_content = generateIssuesHTML(allFindings.filter(f => f.isPRIssue !== false));
+  
+  // Generate repository issues content
+  const repoIssues = allFindings.filter(f => f.isRepoIssue === true);
+  const highPriorityRepoIssues = repoIssues.filter(f => f.severity === 'critical' || f.severity === 'high');
+  const lowerPriorityRepoIssues = repoIssues.filter(f => f.severity === 'medium' || f.severity === 'low');
+  
+  templateData.high_priority_issues_html = generateIssuesHTML(highPriorityRepoIssues);
+  templateData.lower_priority_issues_html = lowerPriorityRepoIssues.length > 0 ? 
+    `<div class="collapsible-section" id="lowerPriorityIssues" style="display:none">${generateIssuesHTML(lowerPriorityRepoIssues)}</div>` : '';
+  templateData.toggle_button_html = lowerPriorityRepoIssues.length > 0 ?
+    `<button class="btn-secondary" onclick="toggleLowerPriorityIssues()">Show ${lowerPriorityRepoIssues.length} lower priority issues</button>` : '';
+  
+  // Generate skills HTML
+  templateData.skills_html = modules.skillsAssessment?.skills ? 
+    modules.skillsAssessment.skills.map((skill: any) => `
+      <div class="skill-item">
+        <div class="skill-header">
+          <span class="skill-name">${skill.name}</span>
+          <span class="skill-level ${skill.level.toLowerCase()}">${skill.level}</span>
+        </div>
+        <div class="skill-bar">
+          <div class="skill-progress" style="width: ${skill.score}%"></div>
+        </div>
+        <div class="skill-score">${skill.score}/100</div>
+      </div>
+    `).join('') : '<p>No skills assessment available</p>';
+  
+  // Generate skill recommendations HTML
+  templateData.skill_recommendations_html = modules.recommendations?.categories ?  
+    modules.recommendations.categories.slice(0, 3).map((cat: any) => 
+      cat.recommendations.slice(0, 1).map((rec: any) => `
+        <div class="recommendation-card">
+          <h4>${rec.title}</h4>
+          <p>${rec.description}</p>
+        </div>
+      `).join('')
+    ).join('') : '';
+  
+  // Generate educational content HTML
+  templateData.educational_html = modules.educationalContent?.resources ?
+    modules.educationalContent.resources.map((resource: any) => `
+      <div class="educational-card">
+        <div class="educational-icon">
+          <i class="fas fa-book"></i>
+        </div>
+        <div class="educational-content">
+          <h3>${resource.title}</h3>
+          <p>${resource.description}</p>
+          <div class="educational-meta">
+            <span><i class="fas fa-clock"></i> ${resource.estimatedTime || '10 min'}</span>
+            <span><i class="fas fa-signal"></i> ${resource.difficulty || 'Intermediate'}</span>
+          </div>
+          ${resource.links ? `
+            <div class="educational-links">
+              ${resource.links.map((link: any) => `<a href="${link.url}" target="_blank">${link.title}</a>`).join(' • ')}
+            </div>
+          ` : ''}
+        </div>
+      </div>
+    `).join('') : '<p>No educational resources available</p>';
+  
+  // Generate PR comment text
+  templateData.pr_comment_text = generatePRComment(report);
+  
+  // Replace all template variables
+  let html = template;
+  Object.entries(templateData).forEach(([key, value]) => {
+    const regex = new RegExp(`{{${key}}}`, 'g');
+    html = html.replace(regex, value);
+  });
+  
+  return html;
+}
+
+/**
+ * Generate issues HTML for the template
+ */
+function generateIssuesHTML(issues: any[]): string {
+  if (issues.length === 0) {
+    return '<p class="no-issues">No issues found in this category.</p>';
+  }
+  
+  return issues.map(issue => `
+    <div class="issue-card ${issue.severity}">
+      <div class="issue-header">
+        <span class="issue-type">${issue.type || 'General'}</span>
+        <span class="issue-severity">${issue.severity}</span>
+      </div>
+      <h4 class="issue-title">${issue.title}</h4>
+      <p class="issue-description">${issue.description}</p>
+      ${issue.file ? `<div class="issue-location"><i class="fas fa-file-code"></i> ${issue.file}${issue.line ? `:${issue.line}` : ''}</div>` : ''}
+      ${issue.recommendation ? `<div class="issue-recommendation"><strong>Fix:</strong> ${issue.recommendation}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+/**
+ * Generate PR comment text
+ */
+function generatePRComment(report: any): string {
+  const { overview } = report;
+  const decision = overview.decision?.status || 'NEEDS_REVIEW';
+  const score = overview.analysisScore || 0;
+  const blockingCount = overview.blockingIssues?.length || 0;
+  
+  return `## CodeQual Analysis Report
+
+**Decision:** ${decision}
+**Quality Score:** ${score}/100
+**Blocking Issues:** ${blockingCount}
+
+${overview.executiveSummary || 'Analysis complete.'}
+
+${blockingCount > 0 ? `
+### ⚠️ Blocking Issues
+${overview.blockingIssues.map((issue: any) => `- ${issue.message || issue}`).join('\n')}
+` : ''}
+
+${overview.positiveFindings?.length > 0 ? `
+### ✅ Positive Findings
+${overview.positiveFindings.map((finding: any) => `- ${finding.message || finding}`).join('\n')}
+` : ''}
+
+[View Full Report](${report.reportUrl || '#'})`;
+}
+
+/**
+ * Fallback to basic HTML report if enhanced template fails
+ */
+function generateBasicHTMLReport(report: any): string {
+  const { overview, modules } = report;
   
   return `
 <!DOCTYPE html>
@@ -237,7 +693,7 @@ function generateHTMLReport(report: any): string {
     
     <section>
       <h2>Findings</h2>
-      ${Object.entries(modules.findings.categories).map(([category, data]: [string, any]) => `
+      ${Object.entries(modules.findings?.categories || {}).map(([category, data]: [string, any]) => `
         <h3>${data.name} ${data.icon}</h3>
         <p>${data.summary}</p>
         ${data.findings.length === 0 ? '<p>No issues found.</p>' : 
@@ -255,7 +711,7 @@ function generateHTMLReport(report: any): string {
     
     <section>
       <h2>Recommendations</h2>
-      ${modules.recommendations.categories.map((cat: any) => `
+      ${modules.recommendations?.categories?.map((cat: any) => `
         <h3>${cat.name}</h3>
         ${cat.recommendations.map((rec: any) => `
           <div class="recommendation">
@@ -264,18 +720,7 @@ function generateHTMLReport(report: any): string {
             <p><strong>Effort:</strong> ${rec.effort} | <strong>Impact:</strong> ${rec.impact}</p>
           </div>
         `).join('')}
-      `).join('')}
-    </section>
-    
-    <section>
-      <h2>Metrics</h2>
-      ${Object.entries(modules.metrics.scores).map(([metric, data]: [string, any]) => `
-        <div class="metric">
-          <h4>${data.name}</h4>
-          <p>Score: ${data.score}/100 (${data.rating})</p>
-          <p>${data.description}</p>
-        </div>
-      `).join('')}
+      `).join('') || '<p>No recommendations available.</p>'}
     </section>
     
     <footer>
@@ -286,5 +731,235 @@ function generateHTMLReport(report: any): string {
 </html>
   `.trim();
 }
+
+/**
+ * Generate HTML report for legacy format (agents/tools structure)
+ */
+function generateLegacyHTMLReport(report: any): string {
+  const { agents = {}, tools = {}, overall_score, repository_url, pr_number } = report;
+  
+  // Collect all findings from agents
+  const allFindings: any[] = [];
+  Object.entries(agents).forEach(([agentName, agentData]: [string, any]) => {
+    if (agentData.findings && Array.isArray(agentData.findings)) {
+      agentData.findings.forEach((finding: any) => {
+        allFindings.push({
+          ...finding,
+          category: agentName
+        });
+      });
+    }
+  });
+  
+  // Calculate severity counts
+  const severityCounts = {
+    critical: allFindings.filter(f => f.severity === 'critical').length,
+    high: allFindings.filter(f => f.severity === 'high').length,
+    medium: allFindings.filter(f => f.severity === 'medium').length,
+    low: allFindings.filter(f => f.severity === 'low').length
+  };
+  
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CodeQual Analysis Report</title>
+  <link rel="stylesheet" href="/assets/enhanced-styles.css">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      margin: 0;
+      padding: 0;
+      background-color: #f5f5f5;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 40px;
+      border-radius: 8px;
+      margin-bottom: 30px;
+    }
+    .score-circle {
+      display: inline-block;
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: white;
+      color: #667eea;
+      text-align: center;
+      line-height: 100px;
+      font-size: 36px;
+      font-weight: bold;
+      margin-right: 20px;
+    }
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin: 30px 0;
+    }
+    .metric-card {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    .finding-card {
+      background: white;
+      padding: 20px;
+      margin: 15px 0;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      border-left: 4px solid #dc3545;
+    }
+    .finding-card.critical { border-left-color: #dc3545; }
+    .finding-card.high { border-left-color: #ffc107; }
+    .finding-card.medium { border-left-color: #fd7e14; }
+    .finding-card.low { border-left-color: #28a745; }
+    .severity-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: bold;
+      color: white;
+      text-transform: uppercase;
+    }
+    .severity-badge.critical { background: #dc3545; }
+    .severity-badge.high { background: #ffc107; color: #333; }
+    .severity-badge.medium { background: #fd7e14; }
+    .severity-badge.low { background: #28a745; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>CodeQual Analysis Report</h1>
+      <p>Repository: ${repository_url || 'Unknown'}</p>
+      <p>Pull Request: #${pr_number || 'N/A'}</p>
+      <div style="margin-top: 20px;">
+        <div class="score-circle">${overall_score || 'N/A'}</div>
+        <span style="font-size: 24px;">Overall Score</span>
+      </div>
+    </div>
+    
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <h3>${severityCounts.critical}</h3>
+        <p>Critical Issues</p>
+      </div>
+      <div class="metric-card">
+        <h3>${severityCounts.high}</h3>
+        <p>High Issues</p>
+      </div>
+      <div class="metric-card">
+        <h3>${severityCounts.medium}</h3>
+        <p>Medium Issues</p>
+      </div>
+      <div class="metric-card">
+        <h3>${severityCounts.low}</h3>
+        <p>Low Issues</p>
+      </div>
+    </div>
+    
+    <section>
+      <h2>Findings</h2>
+      ${allFindings.length > 0 ? allFindings.map(finding => `
+        <div class="finding-card ${finding.severity}">
+          <div style="display: flex; justify-content: space-between; align-items: start;">
+            <h3>${finding.message || finding.title}</h3>
+            <span class="severity-badge ${finding.severity}">${finding.severity}</span>
+          </div>
+          <p><strong>Category:</strong> ${finding.category}</p>
+          ${finding.file ? `<p><strong>File:</strong> ${finding.file}${finding.line ? `:${finding.line}` : ''}</p>` : ''}
+          ${finding.recommendation ? `
+            <div style="margin-top: 10px; padding: 10px; background: #e8f4f8; border-radius: 4px;">
+              <strong>Recommendation:</strong> ${finding.recommendation}
+            </div>
+          ` : ''}
+        </div>
+      `).join('') : '<p>No issues found - code looks good!</p>'}
+    </section>
+    
+    <footer style="margin-top: 60px; padding: 20px; text-align: center; color: #666;">
+      <p>Generated by CodeQual on ${new Date().toLocaleString()}</p>
+    </footer>
+  </div>
+</body>
+</html>
+  `.trim();
+}
+
+/**
+ * GET /analysis/:reportId/html
+ * Get report as HTML (for displaying in report page)
+ */
+router.get('/analysis/:reportId/html', async (req: Request, res: Response) => {
+  try {
+    const { reportId } = req.params;
+    
+    // Check for JWT token
+    const authHeader = req.headers.authorization;
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+    
+    if (!token) {
+      return res.status(401).json({ 
+        error: 'Authorization required',
+        message: 'Please provide authorization token'
+      });
+    }
+    
+    // First check temporary storage
+    const tempReport = temporaryReportStorage.get(reportId);
+    if (tempReport) {
+      logger.info('Serving report from temporary storage', { reportId });
+      
+      // Generate HTML using V5 generator
+      const { HtmlReportGeneratorV5 } = require('../services/html-report-generator-v5');
+      const generator = new HtmlReportGeneratorV5();
+      const html = generator.generateEnhancedHtmlReport(tempReport);
+      
+      res.setHeader('Content-Type', 'text/html');
+      return res.send(html);
+    }
+    
+    // Try to fetch from database
+    const { data: report, error } = await getSupabase()
+      .from('analysis_reports')
+      .select('*')
+      .eq('id', reportId)
+      .single();
+    
+    if (error || !report) {
+      logger.warn('Report not found', { reportId, error });
+      return res.status(404).json({ error: 'Report not found' });
+    }
+    
+    // Generate HTML
+    const { HtmlReportGeneratorV5 } = require('../services/html-report-generator-v5');
+    const generator = new HtmlReportGeneratorV5();
+    const html = generator.generateEnhancedHtmlReport(report.report_data || report);
+    
+    res.setHeader('Content-Type', 'text/html');
+    res.send(html);
+    
+  } catch (error) {
+    logger.error('Failed to retrieve HTML report', { error });
+    res.status(500).json({ 
+      error: 'Failed to retrieve report',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
 
 export default router;

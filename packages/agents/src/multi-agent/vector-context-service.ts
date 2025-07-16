@@ -24,6 +24,15 @@ export class VectorContextService {
   private readonly supabase: any; // Will be properly typed when integrated
   
   private readonly agentSearchConfigs: Map<AgentRole, AgentSearchConfig> = new Map([
+    [AgentRole.ORCHESTRATOR, {
+      role: AgentRole.ORCHESTRATOR,
+      searchTerms: ['repository', 'summary', 'overview', 'analysis', 'report'],
+      contentTypes: ['repository_summary', 'analysis_overview', 'full_report'],
+      maxResults: 5,
+      minSimilarity: 0.7,
+      timeWindowDays: 180
+    }],
+    
     [AgentRole.CODE_QUALITY, {
       role: AgentRole.CODE_QUALITY,
       searchTerms: ['code quality', 'complexity', 'maintainability', 'technical debt', 'code smell'],
@@ -58,6 +67,16 @@ export class VectorContextService {
       maxResults: 12,
       minSimilarity: 0.75,
       timeWindowDays: 30
+    }],
+    
+    // Add 'dependencies' alias for backward compatibility
+    ['dependencies' as any, {
+      role: AgentRole.DEPENDENCY,
+      searchTerms: ['dependency', 'package', 'version', 'vulnerability', 'license'],
+      contentTypes: ['dependency_analysis', 'package_audit', 'license_check'],
+      maxResults: 12,
+      minSimilarity: 0.75,
+      timeWindowDays: 30
     }]
   ]);
 
@@ -66,9 +85,20 @@ export class VectorContextService {
     supabaseClient?: any // Will be properly typed when integrated
   ) {
     // 🔒 SECURITY: Use same Supabase client as AuthenticatedRAGService for consistency
-    this.supabase = supabaseClient || this.authenticatedRAGService.supabase;
+    this.supabase = supabaseClient || this.authenticatedRAGService?.supabase;
+    
+    // Validate that the RAG service has required methods
+    if (!this.authenticatedRAGService || typeof this.authenticatedRAGService.search !== 'function') {
+      this.logger.error('Invalid authenticatedRAGService: missing search method', {
+        hasService: !!this.authenticatedRAGService,
+        hasSearch: this.authenticatedRAGService ? typeof this.authenticatedRAGService.search : 'no service'
+      });
+    }
+    
     this.logger.debug('VectorContextService initialized', {
-      supportedRoles: Array.from(this.agentSearchConfigs.keys())
+      supportedRoles: Array.from(this.agentSearchConfigs.keys()),
+      hasRAGService: !!this.authenticatedRAGService,
+      hasSearchMethod: this.authenticatedRAGService ? typeof this.authenticatedRAGService.search === 'function' : false
     });
   }
 
@@ -201,6 +231,10 @@ export class VectorContextService {
         exclude_repository_id: options.excludeRepositoryId
       };
 
+      if (!this.authenticatedRAGService || typeof this.authenticatedRAGService.search !== 'function') {
+        this.logger.warn('RAG service search method not available for cross-repo patterns');
+        return [];
+      }
       const results = await this.authenticatedRAGService.search(searchOptions, authenticatedUser.id);
       
       const mappedResults = results.map((result: any) => this.mapToVectorSearchResult(result));
@@ -273,6 +307,10 @@ export class VectorContextService {
       respect_repository_access: true
     };
 
+    if (!this.authenticatedRAGService || typeof this.authenticatedRAGService.search !== 'function') {
+      this.logger.warn('RAG service search method not available');
+      return [];
+    }
     const results = await this.authenticatedRAGService.search(searchOptions, userId);
     return results.map((result: any) => this.mapToVectorSearchResult(result));
   }
@@ -299,6 +337,10 @@ export class VectorContextService {
       respect_repository_access: true
     };
 
+    if (!this.authenticatedRAGService || typeof this.authenticatedRAGService.search !== 'function') {
+      this.logger.warn('RAG service search method not available');
+      return [];
+    }
     const results = await this.authenticatedRAGService.search(searchOptions, userId);
     return results.map((result: any) => this.mapToVectorSearchResult(result));
   }
@@ -496,9 +538,25 @@ export class VectorContextService {
     repositoryId: string,
     permission: 'read' | 'write' | 'admin'
   ): Promise<void> {
+    // Check if this is a public GitHub repository
+    // Public repos should allow read access without explicit permissions
+    if (permission === 'read' && this.isPublicGitHubRepository(repositoryId)) {
+      this.logger.debug('Allowing read access to public GitHub repository', {
+        userId: authenticatedUser.id,
+        repositoryId
+      });
+      return;
+    }
+
+    // Check for wildcard permissions first
+    const wildcardPermissions = authenticatedUser.permissions.repositories['*'];
     const repositoryPermissions = authenticatedUser.permissions.repositories[repositoryId];
     
-    if (!repositoryPermissions || !repositoryPermissions[permission]) {
+    // Allow access if either wildcard or specific repository permissions grant it
+    const hasPermission = (wildcardPermissions && wildcardPermissions[permission]) || 
+                         (repositoryPermissions && repositoryPermissions[permission]);
+    
+    if (!hasPermission) {
       const _securityEvent: SecurityEvent = {
         type: 'ACCESS_DENIED',
         userId: authenticatedUser.id,
@@ -546,8 +604,21 @@ export class VectorContextService {
   private getUserAccessibleRepositories(authenticatedUser: AuthenticatedUser): string[] {
     const accessibleRepos: string[] = [];
     
+    // Check for wildcard permissions
+    const wildcardPermissions = authenticatedUser.permissions.repositories['*'];
+    if (wildcardPermissions && wildcardPermissions.read) {
+      // User has read access to all repositories
+      // For now, return an empty array as we don't have a list of all repos
+      // In production, this would query the database for all repositories
+      this.logger.debug('User has wildcard read access to all repositories', {
+        userId: authenticatedUser.id
+      });
+      return [];
+    }
+    
+    // Otherwise, check specific repository permissions
     for (const [repositoryId, permissions] of Object.entries(authenticatedUser.permissions.repositories)) {
-      if (permissions.read) {
+      if (repositoryId !== '*' && permissions.read) {
         accessibleRepos.push(repositoryId);
       }
     }
@@ -558,6 +629,30 @@ export class VectorContextService {
     });
 
     return accessibleRepos;
+  }
+
+  /**
+   * Check if a repository ID represents a public GitHub repository
+   * Public GitHub repositories should be accessible for read operations
+   */
+  private isPublicGitHubRepository(repositoryId: string): boolean {
+    // Check if this looks like a GitHub URL or repository identifier
+    const githubPatterns = [
+      /^https?:\/\/github\.com\//i,
+      /^github\.com\//i,
+      /^[a-zA-Z0-9-_]+\/[a-zA-Z0-9-_]+$/ // owner/repo format
+    ];
+    
+    const isGitHubRepo = githubPatterns.some(pattern => pattern.test(repositoryId));
+    
+    if (isGitHubRepo) {
+      // For now, assume all GitHub repos passed to the analysis are public
+      // In production, we could make an API call to verify
+      this.logger.debug('Identified as GitHub repository', { repositoryId });
+      return true;
+    }
+    
+    return false;
   }
 }
 

@@ -1,5 +1,5 @@
 import { AuthenticatedUser } from '../middleware/auth-middleware';
-import { SupportedLanguage } from '@codequal/agents/translator/translator-agent';
+// import { SupportedLanguage } from '@codequal/agents/translator/translator-agent';
 
 // API Key data type (from api-key-auth.ts)
 interface ApiKeyData {
@@ -29,8 +29,8 @@ declare global {
       requestStartTime?: number;
       
       // From i18n-middleware
-      language?: SupportedLanguage;
-      t?: (key: string, params?: Record<string, any>) => string;
+      // language?: SupportedLanguage;
+      // t?: (key: string, params?: Record<string, any>) => string;
     }
   }
 }

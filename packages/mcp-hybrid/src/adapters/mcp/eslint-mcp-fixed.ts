@@ -4,7 +4,6 @@
  */
 
 import * as path from 'path';
-import * as fs from 'fs/promises';
 import { BaseMCPAdapter } from './base-mcp-adapter';
 import {
   ToolResult,
@@ -54,8 +53,9 @@ export class ESLintMCPAdapterFixed extends BaseMCPAdapter {
     const startTime = Date.now();
     
     try {
-      // For now, return a mock result to test the infrastructure
-      // The actual MCP integration needs the correct method names
+      // Initialize MCP server if needed
+      await this.initializeMCPServer();
+      
       const supportedExtensions = ['.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs'];
       const jsFiles = this.filterSupportedFiles(context.pr.files, supportedExtensions);
       
@@ -63,26 +63,87 @@ export class ESLintMCPAdapterFixed extends BaseMCPAdapter {
         return this.createEmptyResult(startTime);
       }
       
-      // Mock findings for testing
-      const findings: ToolFinding[] = jsFiles.map(file => ({
-        type: 'suggestion',
-        severity: 'medium',
-        category: 'code-quality',
-        message: 'ESLint analysis pending - MCP integration in progress',
-        file: file.path,
-        ruleId: 'no-unused-vars'
-      }));
+      // Create temporary directory and write files
+      const tempDir = await this.createTempDirectory(context);
       
-      return {
-        success: true,
-        toolId: this.id,
-        executionTime: Date.now() - startTime,
-        findings,
-        metrics: {
-          filesAnalyzed: jsFiles.length,
-          totalIssues: findings.length
+      try {
+        await this.writeFilesToTemp(jsFiles, tempDir);
+        
+        // Execute ESLint through MCP
+        const result = await this.executeMCPCommand<{
+          results: Array<{
+            filePath: string;
+            messages: Array<{
+              ruleId: string;
+              severity: number;
+              message: string;
+              line: number;
+              column: number;
+              fix?: {
+                range: [number, number];
+                text: string;
+              };
+            }>;
+            errorCount: number;
+            warningCount: number;
+          }>;
+        }>({
+          method: 'eslint/lint',
+          params: {
+            directory: tempDir,
+            options: {
+              fix: false,
+              extensions: supportedExtensions
+            }
+          }
+        });
+        
+        // Convert ESLint results to ToolFindings
+        const findings: ToolFinding[] = [];
+        let totalErrors = 0;
+        let totalWarnings = 0;
+        
+        for (const fileResult of result.results) {
+          for (const message of fileResult.messages) {
+            const relativePath = path.relative(tempDir, fileResult.filePath);
+            
+            findings.push({
+              type: message.severity === 2 ? 'issue' : 'suggestion',
+              severity: this.mapSeverity(message.severity),
+              category: 'code-quality',
+              message: message.message,
+              file: relativePath,
+              line: message.line,
+              column: message.column,
+              ruleId: message.ruleId || 'unknown',
+              autoFixable: !!message.fix
+            });
+          }
+          
+          totalErrors += fileResult.errorCount;
+          totalWarnings += fileResult.warningCount;
         }
-      };
+        
+        // Cleanup temp directory
+        await this.cleanupTempDirectory(tempDir);
+        
+        return {
+          success: true,
+          toolId: this.id,
+          executionTime: Date.now() - startTime,
+          findings,
+          metrics: {
+            filesAnalyzed: jsFiles.length,
+            totalIssues: findings.length,
+            errors: totalErrors,
+            warnings: totalWarnings
+          }
+        };
+      } catch (error) {
+        // Ensure cleanup even on error
+        await this.cleanupTempDirectory(tempDir);
+        throw error;
+      }
     } catch (error) {
       return this.createErrorResult(
         error instanceof Error ? error : new Error(String(error)),

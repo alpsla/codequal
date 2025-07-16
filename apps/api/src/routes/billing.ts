@@ -15,8 +15,17 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
 // Get billing status
 router.get('/status', async (req: Request, res: Response) => {
   try {
-    const { user } = (req as any);
+    const { user } = (req as AuthenticatedRequest);
 
+    if (!user) {
+      return res.status(401).json({ 
+        error: 'Unauthorized',
+        code: ErrorCodes.AUTH_REQUIRED 
+      });
+    }
+
+    console.log(`[Billing Status] Fetching for user: ${user.id} (${user.email})`);
+    
     // Get billing information
     const { data: billing, error: billingError } = await getSupabase()
       .from('user_billing')
@@ -47,7 +56,8 @@ router.get('/status', async (req: Request, res: Response) => {
     
     // If no billing record exists, create one
     if (!billing) {
-      const { data: newBilling } = await getSupabase()
+      console.log(`[Billing Status] No billing record found, creating one for user: ${user.id}`);
+      const { data: newBilling, error: createError } = await getSupabase()
         .from('user_billing')
         .upsert({
           user_id: user.id,
@@ -58,8 +68,13 @@ router.get('/status', async (req: Request, res: Response) => {
         .select()
         .single();
       
+      if (createError) {
+        console.error(`[Billing Status] Error creating billing record:`, createError);
+      }
+      
       if (newBilling) {
         billingData = newBilling;
+        console.log(`[Billing Status] Created billing record:`, billingData);
       }
     }
 
@@ -149,7 +164,14 @@ router.get('/status', async (req: Request, res: Response) => {
 // Create checkout session
 router.post('/create-checkout', async (req: Request, res: Response) => {
   try {
-    const { user } = (req as any);
+    const { user } = (req as AuthenticatedRequest);
+
+    if (!user) {
+      return res.status(401).json({ 
+        error: 'Unauthorized',
+        code: ErrorCodes.AUTH_REQUIRED 
+      });
+    }
     const { priceId } = req.body;
 
     if (!priceId) {
@@ -220,7 +242,14 @@ router.post('/create-checkout', async (req: Request, res: Response) => {
 // Create setup intent for pay-per-scan
 router.post('/create-setup-intent', async (req: Request, res: Response) => {
   try {
-    const { user } = (req as any);
+    const { user } = (req as AuthenticatedRequest);
+
+    if (!user) {
+      return res.status(401).json({ 
+        error: 'Unauthorized',
+        code: ErrorCodes.AUTH_REQUIRED 
+      });
+    }
 
     // Get or create Stripe customer
     const { data: billing } = await getSupabase()
@@ -274,7 +303,14 @@ router.post('/create-setup-intent', async (req: Request, res: Response) => {
 // Confirm payment method was added (for local dev without webhooks)
 router.post('/confirm-payment-method', async (req: Request, res: Response) => {
   try {
-    const { user } = (req as any);
+    const { user } = (req as AuthenticatedRequest);
+
+    if (!user) {
+      return res.status(401).json({ 
+        error: 'Unauthorized',
+        code: ErrorCodes.AUTH_REQUIRED 
+      });
+    }
     const { setupIntentId } = req.body;
 
     const { data: billing } = await getSupabase()
@@ -334,7 +370,14 @@ router.post('/confirm-payment-method', async (req: Request, res: Response) => {
 // Charge for a single scan
 router.post('/charge-scan', async (req: Request, res: Response) => {
   try {
-    const { user } = (req as any);
+    const { user } = (req as AuthenticatedRequest);
+
+    if (!user) {
+      return res.status(401).json({ 
+        error: 'Unauthorized',
+        code: ErrorCodes.AUTH_REQUIRED 
+      });
+    }
     const { paymentMethodId } = req.body;
 
     const { data: billing } = await getSupabase()

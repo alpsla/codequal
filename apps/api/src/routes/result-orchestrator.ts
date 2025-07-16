@@ -12,7 +12,7 @@ const activeAnalyses = new Map<string, any>();
 interface PRAnalysisRequest {
   repositoryUrl: string;
   prNumber: number;
-  analysisMode: 'quick' | 'comprehensive' | 'deep';
+  analysisMode: 'quick' | 'comprehensive' | 'deep' | 'auto';
   githubToken?: string;
 }
 
@@ -55,9 +55,14 @@ interface AnalysisResponse {
  *                 example: 123
  *               analysisMode:
  *                 type: string
- *                 enum: [quick, comprehensive, deep]
- *                 description: Analysis depth level
- *                 default: comprehensive
+ *                 enum: [quick, comprehensive, deep, auto]
+ *                 description: |
+ *                   Analysis depth level. 'auto' (default) automatically selects based on PR complexity:
+ *                   - quick: For simple changes (docs, small UI updates)
+ *                   - comprehensive: For medium complexity changes
+ *                   - deep: For complex changes or high-risk modifications
+ *                   Note: Manual mode selection overrides automatic detection (not recommended)
+ *                 default: auto
  *               githubToken:
  *                 type: string
  *                 description: Optional GitHub personal access token for private repos

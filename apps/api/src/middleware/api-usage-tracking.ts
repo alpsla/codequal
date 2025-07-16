@@ -24,6 +24,12 @@ export async function trackApiUsage(
     if (!userId) {
       return next(); // No user context, skip tracking
     }
+    
+    // Skip tracking for test key
+    if ((req as any).apiKey?.id === 'test_key_id') {
+      console.log('[API Usage] Skipping tracking for test key');
+      return next();
+    }
 
     // Get user's billing information
     const { data: billing, error: billingError } = await getSupabase()
@@ -146,7 +152,7 @@ export async function trackApiUsage(
 function getApiLimit(tier: string): number | null {
   switch (tier) {
     case 'free':
-      return 0; // No API access for free tier
+      return null; // Pay-per-scan users (free tier with payment method) have no hard limit
     case 'api':
       return 200; // 200 API calls per month
     case 'individual':
@@ -189,7 +195,9 @@ export function requireApiAccess(
     return next(); // Let it through, the actual limits will be enforced in trackApiUsage
   }
   
-  if (!tier || tier === 'free') {
+  // Skip the free tier check - pay-per-scan users (free tier with payment) can use API
+  // The actual payment enforcement happens in trial-enforcement.ts
+  if (!tier) {
     return res.status(403).json({
       error: 'API access not available',
       code: 'NO_API_ACCESS',

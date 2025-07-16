@@ -61,6 +61,22 @@
       "types": "./dist/services/issue-resolution-detector.d.ts",
       "default": "./dist/services/issue-resolution-detector.js"
     },
+    "./services/debug-logger": {
+      "types": "./dist/services/debug-logger.d.ts",
+      "default": "./dist/services/debug-logger.js"
+    },
+    "./services/progress-tracker": {
+      "types": "./dist/services/progress-tracker.d.ts",
+      "default": "./dist/services/progress-tracker.js"
+    },
+    "./services/tool-results-vector-storage": {
+      "types": "./dist/services/tool-results-vector-storage.d.ts",
+      "default": "./dist/services/tool-results-vector-storage.js"
+    },
+    "./services/vector-db-retention-policy": {
+      "types": "./dist/services/vector-db-retention-policy.d.ts",
+      "default": "./dist/services/vector-db-retention-policy.js"
+    },
     "./translator/translator-agent": {
       "types": "./dist/translator/translator-agent.d.ts",
       "default": "./dist/translator/translator-agent.js"
@@ -68,7 +84,8 @@
   },
   "scripts": {
     "test-build": "rm -rf ./dist ./src/codewhisperer* && tsc",
-    "build": "echo 'Building...' && rm -rf ./dist ./src/codewhisperer* && tsc --composite false && echo 'Build completed successfully!'",
+    "build": "echo 'Building...' && rm -rf ./dist ./src/codewhisperer* && tsc --composite false && npm run copy-prompts && echo 'Build completed successfully!'",
+    "copy-prompts": "mkdir -p dist/prompts && cp -r src/prompts/templates dist/prompts/ && cp -r src/prompts/components dist/prompts/",
     "dev": "tsc -w",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
@@ -82,8 +99,10 @@
     "@kubernetes/client-node": "^1.3.0",
     "@modelcontextprotocol/sdk": "^1.10.2",
     "@supabase/supabase-js": "^2.50.0",
+    "@types/cron": "^2.0.1",
     "@types/node-cron": "^3.0.11",
-    "axios": "^1.9.0",
+    "axios": "^1.10.0",
+    "cron": "^4.3.2",
     "node-cron": "^4.1.0",
     "node-fetch": "^2.7.0",
     "openai": "^4.43.0",

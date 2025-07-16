@@ -140,16 +140,17 @@ export class MCPContextManager {
     this.coordinationStrategies.comprehensive = {
       name: 'Comprehensive Analysis',
       description: 'Thorough analysis with intelligent agent coordination',
-      execution_order: ['security', 'codeQuality', 'performance', 'dependency'],
+      execution_order: ['security', 'codeQuality', 'performance', 'dependency', 'architecture'],
       dependency_graph: {
         'codeQuality': ['security'], // Code quality depends on security findings
         'performance': ['security', 'codeQuality'], // Performance depends on security and code quality
-        'dependency': ['security'] // Dependency analysis depends on security
+        'dependency': ['security'], // Dependency analysis depends on security
+        'architecture': ['security', 'codeQuality'] // Architecture depends on security and code quality
       },
       parallel_groups: [
         ['security'], // Security first
         ['codeQuality', 'dependency'], // Then these in parallel
-        ['performance'] // Finally performance
+        ['performance', 'architecture'] // Finally performance and architecture
       ],
       timeout_per_agent: 120000, // 2 minutes
       fallback_strategy: 'progressive_timeout'
@@ -159,16 +160,21 @@ export class MCPContextManager {
     this.coordinationStrategies.deep = {
       name: 'Deep Analysis',
       description: 'Extensive analysis with cross-agent collaboration',
-      execution_order: ['security', 'codeQuality', 'performance', 'dependency'],
+      execution_order: ['security', 'codeQuality', 'performance', 'dependency', 'architecture', 'educational', 'reporting'],
       dependency_graph: {
         'codeQuality': ['security'], // Code quality depends on security
         'performance': ['security', 'codeQuality'], // Performance depends on both
-        'dependency': ['security'] // Dependency depends on security
+        'dependency': ['security'], // Dependency depends on security
+        'architecture': ['security', 'codeQuality'], // Architecture depends on security and code quality
+        'educational': ['security', 'codeQuality', 'performance', 'dependency', 'architecture'], // Educational needs all findings
+        'reporting': ['security', 'codeQuality', 'performance', 'dependency', 'architecture', 'educational'] // Reporting needs everything
       },
       parallel_groups: [
         ['security'], // Security first (everything depends on it)
         ['codeQuality', 'dependency'], // These can run after security
-        ['performance'] // Performance depends on earlier results
+        ['performance', 'architecture'], // These depend on earlier results
+        ['educational'], // Educational analysis after all specialized agents
+        ['reporting'] // Final reporting
       ],
       timeout_per_agent: 300000, // 5 minutes
       fallback_strategy: 'best_effort_completion'

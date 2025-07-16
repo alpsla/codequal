@@ -283,7 +283,24 @@ router.post('/callback', async (req, res) => {
     
     if (error) {
       console.error('OAuth exchange error:', error);
-      console.error('Error details:', JSON.stringify(error, null, 2));
+      // Use safe stringify to handle potential circular references in error objects
+      const safeErrorString = (() => {
+        const seen = new WeakSet();
+        try {
+          return JSON.stringify(error, (key, value) => {
+            if (typeof value === 'object' && value !== null) {
+              if (seen.has(value)) {
+                return '[Circular Reference]';
+              }
+              seen.add(value);
+            }
+            return value;
+          }, 2);
+        } catch (err) {
+          return `[Unable to stringify error: ${err instanceof Error ? err.message : 'Unknown error'}]`;
+        }
+      })();
+      console.error('Error details:', safeErrorString);
       return res.status(401).json({ 
         error: 'Authentication failed', 
         details: error.message,

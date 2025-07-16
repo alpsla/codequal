@@ -251,6 +251,234 @@ export const openapiSpecification = {
               format: 'date-time'
             }
           }
+        },
+        ProgressUpdate: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string',
+              format: 'uuid',
+              description: 'Update ID'
+            },
+            timestamp: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Update timestamp'
+            },
+            type: {
+              type: 'string',
+              enum: ['analysis', 'tool', 'agent', 'system'],
+              description: 'Update type'
+            },
+            phase: {
+              type: 'string',
+              description: 'Current phase'
+            },
+            status: {
+              type: 'string',
+              enum: ['pending', 'in_progress', 'completed', 'failed', 'skipped'],
+              description: 'Update status'
+            },
+            percentage: {
+              type: 'number',
+              minimum: 0,
+              maximum: 100,
+              description: 'Progress percentage'
+            },
+            message: {
+              type: 'string',
+              description: 'Progress message'
+            },
+            details: {
+              type: 'object',
+              properties: {
+                agentName: { type: 'string' },
+                toolName: { type: 'string' },
+                currentStep: { type: 'integer' },
+                totalSteps: { type: 'integer' },
+                duration: { type: 'number' },
+                error: { type: 'string' }
+              }
+            }
+          },
+          required: ['id', 'timestamp', 'type', 'phase', 'status', 'percentage', 'message']
+        },
+        AnalysisProgress: {
+          type: 'object',
+          properties: {
+            analysisId: {
+              type: 'string',
+              format: 'uuid',
+              description: 'Analysis ID'
+            },
+            repositoryUrl: {
+              type: 'string',
+              description: 'Repository URL'
+            },
+            prNumber: {
+              type: 'integer',
+              description: 'Pull request number'
+            },
+            startTime: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Analysis start time'
+            },
+            endTime: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Analysis end time',
+              nullable: true
+            },
+            overallStatus: {
+              type: 'string',
+              enum: ['initializing', 'analyzing', 'finalizing', 'completed', 'failed'],
+              description: 'Overall analysis status'
+            },
+            overallPercentage: {
+              type: 'number',
+              minimum: 0,
+              maximum: 100,
+              description: 'Overall progress percentage'
+            },
+            currentPhase: {
+              type: 'string',
+              description: 'Current execution phase'
+            },
+            phases: {
+              type: 'object',
+              properties: {
+                initialization: { $ref: '#/components/schemas/PhaseProgress' },
+                toolExecution: { $ref: '#/components/schemas/PhaseProgress' },
+                agentAnalysis: { $ref: '#/components/schemas/PhaseProgress' },
+                resultProcessing: { $ref: '#/components/schemas/PhaseProgress' },
+                reportGeneration: { $ref: '#/components/schemas/PhaseProgress' }
+              }
+            },
+            agents: {
+              type: 'object',
+              additionalProperties: { $ref: '#/components/schemas/AgentProgress' }
+            },
+            tools: {
+              type: 'object',
+              additionalProperties: { $ref: '#/components/schemas/ToolProgress' }
+            },
+            metrics: {
+              type: 'object',
+              properties: {
+                totalAgents: { type: 'integer' },
+                completedAgents: { type: 'integer' },
+                failedAgents: { type: 'integer' },
+                totalTools: { type: 'integer' },
+                completedTools: { type: 'integer' },
+                failedTools: { type: 'integer' },
+                estimatedTimeRemaining: { type: 'integer', nullable: true }
+              }
+            },
+            updates: {
+              type: 'array',
+              items: { $ref: '#/components/schemas/ProgressUpdate' }
+            }
+          },
+          required: ['analysisId', 'repositoryUrl', 'prNumber', 'startTime', 'overallStatus', 'overallPercentage', 'currentPhase']
+        },
+        PhaseProgress: {
+          type: 'object',
+          properties: {
+            status: {
+              type: 'string',
+              enum: ['pending', 'in_progress', 'completed', 'failed', 'skipped']
+            },
+            percentage: {
+              type: 'number',
+              minimum: 0,
+              maximum: 100
+            },
+            startTime: {
+              type: 'string',
+              format: 'date-time',
+              nullable: true
+            },
+            endTime: {
+              type: 'string',
+              format: 'date-time',
+              nullable: true
+            },
+            message: {
+              type: 'string',
+              nullable: true
+            }
+          },
+          required: ['status', 'percentage']
+        },
+        AgentProgress: {
+          type: 'object',
+          properties: {
+            name: { type: 'string' },
+            status: {
+              type: 'string',
+              enum: ['pending', 'running', 'completed', 'failed', 'skipped']
+            },
+            percentage: {
+              type: 'number',
+              minimum: 0,
+              maximum: 100
+            },
+            startTime: {
+              type: 'string',
+              format: 'date-time',
+              nullable: true
+            },
+            endTime: {
+              type: 'string',
+              format: 'date-time',
+              nullable: true
+            },
+            findings: {
+              type: 'integer',
+              nullable: true
+            },
+            error: {
+              type: 'string',
+              nullable: true
+            }
+          },
+          required: ['name', 'status', 'percentage']
+        },
+        ToolProgress: {
+          type: 'object',
+          properties: {
+            name: { type: 'string' },
+            agentRole: { type: 'string' },
+            status: {
+              type: 'string',
+              enum: ['pending', 'running', 'completed', 'failed', 'skipped']
+            },
+            percentage: {
+              type: 'number',
+              minimum: 0,
+              maximum: 100
+            },
+            startTime: {
+              type: 'string',
+              format: 'date-time',
+              nullable: true
+            },
+            endTime: {
+              type: 'string',
+              format: 'date-time',
+              nullable: true
+            },
+            findingsCount: {
+              type: 'integer',
+              nullable: true
+            },
+            error: {
+              type: 'string',
+              nullable: true
+            }
+          },
+          required: ['name', 'agentRole', 'status', 'percentage']
         }
       },
       responses: {
@@ -346,6 +574,10 @@ export const openapiSpecification = {
         description: 'Analysis reports and history'
       },
       {
+        name: 'Progress',
+        description: 'Real-time analysis progress tracking'
+      },
+      {
         name: 'API Keys',
         description: 'API key management'
       },
@@ -356,6 +588,10 @@ export const openapiSpecification = {
       {
         name: 'Health',
         description: 'Service health and status'
+      },
+      {
+        name: 'Vector DB Management',
+        description: 'Vector database retention and optimization'
       }
     ],
     paths: {}  // Paths will be added through the API routes

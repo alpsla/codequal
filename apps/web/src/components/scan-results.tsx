@@ -41,9 +41,13 @@ export default function ScanResults({ result }: ScanResultsProps) {
           <div>
             <dt className="text-sm font-medium text-gray-500">Repository</dt>
             <dd className="mt-1 text-sm text-gray-900">
-              <a href={result.repositoryUrl} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:text-indigo-500">
-                {result.repositoryUrl.replace('https://github.com/', '')}
-              </a>
+              {result.repositoryUrl ? (
+                <a href={result.repositoryUrl} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:text-indigo-500">
+                  {result.repositoryUrl.replace('https://github.com/', '')}
+                </a>
+              ) : (
+                <span className="text-gray-500">Unknown repository</span>
+              )}
             </dd>
           </div>
           
@@ -86,8 +90,6 @@ export default function ScanResults({ result }: ScanResultsProps) {
           {result.reportUrl ? (
             <a
               href={result.reportUrl}
-              target="_blank"
-              rel="noopener noreferrer"
               className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
               View Analysis Report

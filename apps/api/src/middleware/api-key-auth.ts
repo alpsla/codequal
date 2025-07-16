@@ -42,6 +42,36 @@ export async function apiKeyAuth(
   // Track request start time for response time calculation
   req.requestStartTime = Date.now();
 
+  // Allow test_key in development mode
+  if (apiKey === 'test_key' && process.env.NODE_ENV !== 'production') {
+    // Use a valid UUID for test user
+    const testUserId = '00000000-0000-0000-0000-000000000000';
+    
+    req.apiKey = {
+      id: 'test_key_id',
+      name: 'Test Key',
+      key_hash: 'test_key_hash',
+      user_id: testUserId,
+      organization_id: 'test_org',
+      permissions: ['read', 'write'],
+      rate_limit_per_hour: 10000,
+      usage_count: 0,
+      expires_at: null,
+      created_at: new Date().toISOString(),
+      last_used_at: null,
+      metadata: { test: true }
+    };
+    
+    // Also set user for downstream middleware
+    (req as any).user = {
+      id: testUserId,
+      email: 'test@codequal.dev'
+    };
+    
+    console.log('[API Key Auth] Test key authenticated successfully');
+    return next();
+  }
+
   try {
     // Hash the API key for secure comparison
     const keyHash = createHash('sha256').update(apiKey).digest('hex');

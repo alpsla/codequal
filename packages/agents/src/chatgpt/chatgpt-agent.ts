@@ -131,13 +131,31 @@ export class ChatGPTAgent extends BaseAgent {
    * @param config Configuration
    */
   constructor(promptTemplate: string, config: ChatGPTAgentConfig = {}) {
-    super(config);
+    // Clean the config to prevent circular references
+    const cleanConfig = {
+      model: config.model,
+      openaiApiKey: config.openaiApiKey,
+      debug: config.debug,
+      useOpenRouter: config.useOpenRouter !== undefined ? config.useOpenRouter : true,
+      openRouterApiKey: config.openRouterApiKey,
+      maxTokens: config.maxTokens,
+      temperature: config.temperature
+    };
+    
+    super(cleanConfig);
     this.promptTemplate = promptTemplate;
     
     // Import OPENAI_MODELS directly to avoid unused import warning
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { GPT_3_5_TURBO } = require('@codequal/core/config/models/model-versions').OPENAI_MODELS;
-    this.model = config.model || DEFAULT_MODELS_BY_PROVIDER['openai'] || GPT_3_5_TURBO;
+    this.model = cleanConfig.model || DEFAULT_MODELS_BY_PROVIDER['openai'] || GPT_3_5_TURBO;
+    
+    // Log model configuration for debugging
+    this.log('ChatGPTAgent initialized with model:', { 
+      configModel: cleanConfig.model,
+      defaultModel: DEFAULT_MODELS_BY_PROVIDER['openai'],
+      finalModel: this.model 
+    });
     
     this.openaiClient = this.initOpenAIClient();
   }
@@ -147,24 +165,68 @@ export class ChatGPTAgent extends BaseAgent {
    * @returns OpenAI client
    */
   protected initOpenAIClient(): OpenAIClient {
-    const apiKey = (this.config as ChatGPTAgentConfig).openaiApiKey || process.env.OPENAI_API_KEY;
+    // Check if we should use OpenRouter
+    const useOpenRouter = this.config.useOpenRouter !== false; // Default to true
+    const apiKey = useOpenRouter 
+      ? process.env.OPENROUTER_API_KEY 
+      : ((this.config as ChatGPTAgentConfig).openaiApiKey || process.env.OPENAI_API_KEY);
+    
+    // Log configuration for debugging
+    this.log('Initializing OpenAI client', { 
+      useOpenRouter, 
+      hasApiKey: !!apiKey,
+      model: this.model,
+      config: this.config 
+    });
     
     if (!apiKey) {
-      throw new Error('OpenAI API key is required');
+      throw new Error(`${useOpenRouter ? 'OpenRouter' : 'OpenAI'} API key is required`);
     }
     
     const openai = new OpenAI({
       apiKey: apiKey,
+      ...(useOpenRouter && {
+        baseURL: 'https://openrouter.ai/api/v1',
+        defaultHeaders: {
+          'HTTP-Referer': 'https://codequal.ai',
+          'X-Title': 'CodeQual Analysis'
+        }
+      })
     });
     
-    const logger = createLogger('OpenAIAPI');
+    // Adjust model name for OpenRouter format
+    if (useOpenRouter && this.model) {
+      // Handle aion model specifically
+      if (this.model === 'aion-1.0-mini') {
+        this.model = 'aion-labs/aion-1.0-mini';
+      }
+      // Only add openai/ prefix for actual OpenAI models
+      else if (!this.model.includes('/') && 
+          (this.model.startsWith('gpt-') || 
+           this.model.startsWith('o1-') || 
+           this.model === 'chatgpt-4o-latest')) {
+        this.model = `openai/${this.model}`;
+      }
+      this.log('Using OpenRouter model', { originalModel: this.config.model, adjustedModel: this.model });
+    }
     
+    const logger = createLogger(useOpenRouter ? 'OpenRouterAPI' : 'OpenAIAPI');
+    return this.createClientWrapper(openai, logger);
+  }
+  
+  /**
+   * Create a client wrapper for OpenAI/OpenRouter
+   * @param openai OpenAI client instance
+   * @param logger Logger instance
+   * @returns OpenAI client wrapper
+   */
+  private createClientWrapper(openai: OpenAI, logger: any): OpenAIClient {
     return {
       chat: {
         completions: {
           create: async (params: OpenAIRequestParams) => {
             try {
-              logger.debug('Calling OpenAI API with model:', params.model);
+              logger.debug('Calling API with model:', params.model);
               logger.debug('Prompt preview:', JSON.stringify(params.messages).substring(0, 100) + '...');
               
               const response = await openai.chat.completions.create({
@@ -204,7 +266,7 @@ export class ChatGPTAgent extends BaseAgent {
                 ? error 
                 : { message: String(error) };
               
-              logger.error('OpenAI API error:', errorData);
+              logger.error('API error:', errorData);
               throw error;
             }
           }
@@ -220,16 +282,44 @@ export class ChatGPTAgent extends BaseAgent {
    */
   async analyze(data: PRData): Promise<AnalysisResult> {
     try {
+      this.log('Starting analysis', { 
+        template: this.promptTemplate, 
+        hasData: !!data,
+        dataKeys: data ? Object.keys(data) : [],
+        filesCount: data?.files?.length || 0 
+      });
+      
       // 1. Load prompt template and system prompt
       const template = loadPromptTemplate(this.promptTemplate);
       const systemPrompt = loadPromptTemplate(`${this.promptTemplate}_system`) || 
                           'You are a code review assistant specialized in analyzing pull requests.';
       
+      this.log('Templates loaded', { 
+        hasTemplate: !!template,
+        templateLength: template?.length || 0,
+        hasSystemPrompt: !!systemPrompt 
+      });
+      
       // 2. Fill template with PR data
       const prompt = this.fillPromptTemplate(template, data);
       
+      this.log('Prompt filled', { 
+        promptLength: prompt.length,
+        promptPreview: prompt.substring(0, 200) + '...' 
+      });
+      
+      // If prompt is empty or too short, something went wrong
+      if (!prompt || prompt.length < 50) {
+        this.log('WARNING: Prompt seems too short or empty', { prompt });
+      }
+      
       // 3. Call OpenAI API
-      this.log('Calling OpenAI API', { template: this.promptTemplate, model: this.model });
+      this.log('Calling OpenAI API', { 
+        template: this.promptTemplate, 
+        model: this.model,
+        useOpenRouter: this.config.useOpenRouter !== false,
+        hasApiKey: !!process.env.OPENROUTER_API_KEY
+      });
       
       const response = await this.openaiClient.chat.completions.create({
         model: this.model,
@@ -241,10 +331,36 @@ export class ChatGPTAgent extends BaseAgent {
         max_tokens: 4000
       });
       
+      this.log('API response received', {
+        hasResponse: !!response,
+        hasChoices: !!response?.choices,
+        choicesCount: response?.choices?.length || 0,
+        responseLength: response?.choices[0]?.message?.content?.length || 0
+      });
+      
       // 4. Parse response
-      const responseText = response.choices[0]?.message?.content || '';
-      return this.formatResult(responseText);
+      let responseText = response.choices[0]?.message?.content || '';
+      
+      // Clean up thinking tags if present (for models like aion that include them)
+      responseText = responseText.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+      responseText = responseText.replace(/<think>[\s\S]*?<\\?/g, '').trim(); // Handle unclosed tags
+      
+      const result = this.formatResult(responseText);
+      
+      this.log('Analysis complete', {
+        insightsCount: result.insights?.length || 0,
+        suggestionsCount: result.suggestions?.length || 0,
+        educationalCount: result.educational?.length || 0
+      });
+      
+      return result;
     } catch (error) {
+      this.log('Analysis error', {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        template: this.promptTemplate,
+        model: this.model
+      });
       return this.handleError(error);
     }
   }
@@ -291,9 +407,20 @@ export class ChatGPTAgent extends BaseAgent {
     // This is a simplified parsing logic
     // In reality, you'd implement more robust parsing based on your prompt structure
     
+    this.log('Formatting result', { 
+      responseLength: response.length,
+      responsePreview: response.substring(0, 200) + '...'
+    });
+    
     const insightsMatch = response.match(/## Insights\s+([\s\S]*?)(?=##|$)/i);
     const suggestionsMatch = response.match(/## Suggestions\s+([\s\S]*?)(?=##|$)/i);
     const educationalMatch = response.match(/## Educational\s+([\s\S]*?)(?=##|$)/i);
+    
+    this.log('Regex matches', {
+      hasInsights: !!insightsMatch,
+      hasSuggestions: !!suggestionsMatch,
+      hasEducational: !!educationalMatch
+    });
     
     const insights: Insight[] = [];
     const suggestions: Suggestion[] = [];
