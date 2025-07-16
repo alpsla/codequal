@@ -368,7 +368,7 @@ export class DeepWikiManager {
    */
   private async cloneRepositoryLocally(
     repositoryUrl: string,
-    branch: string = 'main',
+    branch = 'main',
     accessToken?: string
   ): Promise<{ localPath: string; cleanup: () => Promise<void> }> {
     const tempDir = `/tmp/deepwiki-clone-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -1038,7 +1038,7 @@ export class DeepWikiManager {
    * Cache repository files (simulated)
    * In production, this would store actual cloned repository files
    */
-  private cacheRepository(repositoryUrl: string, branch: string = 'main', analysisResults?: AnalysisResults, files?: any[]): void {
+  private cacheRepository(repositoryUrl: string, branch = 'main', analysisResults?: AnalysisResults, files?: any[]): void {
     const filesToCache = files || this.generateMockRepositoryFiles();
     const cacheKey = branch !== 'main' ? `${repositoryUrl}:${branch}` : repositoryUrl;
     

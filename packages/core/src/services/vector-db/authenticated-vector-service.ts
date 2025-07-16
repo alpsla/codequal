@@ -33,8 +33,8 @@ export class AuthenticatedVectorService {
   private supabase = getSupabase();
 
   constructor() {
-    // OpenRouter embedding service handles API key validation
-    this.logger.info('Using OpenRouter for embeddings');
+    // Direct embedding service handles API key validation
+    this.logger.info('Using direct embedding service (OpenAI text-embedding-3-large, Voyage AI voyage-code-3)');
   }
 
   /**

@@ -26,6 +26,12 @@ export async function enforceTrialLimits(
     const trialsReq = req as TrialCheckRequest;
     let repositoryUrl = trialsReq.body.repository_url || trialsReq.body.repositoryUrl;
     
+    // Skip trial limits for test user
+    if (user?.id === '00000000-0000-0000-0000-000000000000') {
+      console.log('[Trial Enforcement] Skipping for test user');
+      return next();
+    }
+    
     // Check if this is an API key request with a valid subscription
     if ((user as any)?.isApiKeyAuth) {
       // Get user's billing to check subscription

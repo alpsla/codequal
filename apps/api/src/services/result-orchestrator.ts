@@ -2192,7 +2192,7 @@ export class ResultOrchestrator {
   /**
    * Safe JSON stringify that handles circular references
    */
-  private safeStringify(obj: any, maxLength: number = 500): string {
+  private safeStringify(obj: any, maxLength = 500): string {
     const seen = new WeakSet();
     try {
       const result = JSON.stringify(obj, (key, value) => {

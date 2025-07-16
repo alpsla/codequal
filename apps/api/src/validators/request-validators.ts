@@ -6,7 +6,7 @@ export interface ValidationResult {
 export interface PRAnalysisRequest {
   repositoryUrl: string;
   prNumber: number;
-  analysisMode: 'quick' | 'comprehensive' | 'deep';
+  analysisMode: 'quick' | 'comprehensive' | 'deep' | 'auto';
   githubToken?: string;
 }
 
@@ -41,8 +41,8 @@ export function validatePRAnalysisRequest(body: unknown): ValidationResult {
 
   if (!request.analysisMode) {
     errors.push('analysisMode is required');
-  } else if (!['quick', 'comprehensive', 'deep'].includes(request.analysisMode)) {
-    errors.push('analysisMode must be one of: quick, comprehensive, deep');
+  } else if (!['quick', 'comprehensive', 'deep', 'auto'].includes(request.analysisMode)) {
+    errors.push('analysisMode must be one of: quick, comprehensive, deep, auto');
   }
 
   // Check optional fields
@@ -57,7 +57,7 @@ export function validatePRAnalysisRequest(body: unknown): ValidationResult {
 }
 
 export function validateAnalysisMode(mode: string): boolean {
-  return ['quick', 'comprehensive', 'deep'].includes(mode);
+  return ['quick', 'comprehensive', 'deep', 'auto'].includes(mode);
 }
 
 export function validateRepositoryUrl(url: string): boolean {

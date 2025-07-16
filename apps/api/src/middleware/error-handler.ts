@@ -71,7 +71,7 @@ export class AppError extends Error implements ApiError {
 
   constructor(
     message: string,
-    statusCode: number = 500,
+    statusCode = 500,
     code: string = ErrorCodes.INTERNAL_ERROR,
     details?: any
   ) {

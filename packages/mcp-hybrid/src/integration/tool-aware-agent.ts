@@ -11,6 +11,8 @@ import {
 } from '../core/interfaces';
 import { toolSelector } from '../context/selector';
 import { toolExecutor } from '../core/executor';
+import { toolRegistry } from '../core/registry';
+import { initializeTools, getToolStatus } from '../core/initialize-tools';
 import { logging } from '@codequal/core';
 
 export interface AgentResult {
@@ -33,6 +35,31 @@ export interface ParallelExecutionOptions {
  */
 export class AgentToolService {
   private logger = logging.createLogger('AgentToolService');
+  private initialized = false;
+  
+  /**
+   * Ensure tools are initialized
+   */
+  private async ensureInitialized(): Promise<void> {
+    if (!this.initialized) {
+      const status = getToolStatus();
+      if (!status.initialized) {
+        this.logger.info('Initializing tools...');
+        await initializeTools();
+        this.initialized = true;
+        
+        const newStatus = getToolStatus();
+        this.logger.info('Tools initialized', {
+          total: newStatus.toolCount,
+          direct: newStatus.byType.direct,
+          mcp: newStatus.byType.mcp
+        });
+      } else {
+        this.initialized = true;
+        this.logger.debug('Tools already initialized', status);
+      }
+    }
+  }
   
   /**
    * Run tools for a specific agent role
@@ -46,6 +73,8 @@ export class AgentToolService {
     options: ParallelExecutionOptions = {}
   ): Promise<ConsolidatedToolResults> {
     try {
+      // Ensure tools are initialized
+      await this.ensureInitialized();
       // ENSURE agentRole is set in context for role-based filtering
       const contextWithRole: AnalysisContext = {
         ...context,

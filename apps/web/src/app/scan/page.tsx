@@ -5,6 +5,7 @@ import { useBilling } from '../../contexts/billing-context';
 import AuthenticatedLayout from '../../components/authenticated-layout';
 import { fetchWithAuth } from '../../utils/api';
 import ScanResults from '../../components/scan-results';
+import ScanProgress from '../../components/scan-progress';
 
 export default function ScanPage() {
   const [repositoryUrl, setRepositoryUrl] = useState('');
@@ -12,6 +13,8 @@ export default function ScanPage() {
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [showProgress, setShowProgress] = useState(false);
+  const [analysisId, setAnalysisId] = useState<string | null>(null);
   const { trialUsage, subscription, hasPaymentMethod, refreshBilling, loading, webScanUsage } = useBilling();
 
   const handleScan = async (e: React.FormEvent) => {
@@ -51,9 +54,10 @@ export default function ScanPage() {
           setError(data.error || 'Failed to scan repository');
         }
       } else {
-        setResult(data);
-        // Refresh billing to update scan count
-        await refreshBilling();
+        // Show progress indicator
+        setAnalysisId(data.analysisId);
+        setShowProgress(true);
+        setScanning(false);
       }
     } catch (err) {
       console.error('Scan error details:', err);
@@ -303,6 +307,23 @@ export default function ScanPage() {
 
           {/* Results Display */}
           {result && <ScanResults result={result} />}
+          
+          {/* Progress Indicator */}
+          {showProgress && analysisId && (
+            <ScanProgress 
+              analysisId={analysisId} 
+              onComplete={async (reportUrl) => {
+                setShowProgress(false);
+                setResult({
+                  ...result,
+                  reportUrl,
+                  status: 'complete'
+                });
+                // Refresh billing to update scan count
+                await refreshBilling();
+              }}
+            />
+          )}
         </div>
       </div>
     </div>

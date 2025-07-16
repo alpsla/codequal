@@ -94,17 +94,33 @@ export class ClaudeAgent extends BaseAgent {
    * @returns Claude client
    */
   private initClaudeClient(): ClaudeClient {
-    const apiKey = (this.config as ClaudeAgentConfig).anthropicApiKey || process.env.ANTHROPIC_API_KEY;
+    // Check if we should use OpenRouter
+    const useOpenRouter = this.config.useOpenRouter !== false; // Default to true
+    const apiKey = useOpenRouter 
+      ? process.env.OPENROUTER_API_KEY 
+      : ((this.config as ClaudeAgentConfig).anthropicApiKey || process.env.ANTHROPIC_API_KEY);
     
     if (!apiKey) {
-      throw new Error('Anthropic API key is required');
+      throw new Error(`${useOpenRouter ? 'OpenRouter' : 'Anthropic'} API key is required`);
     }
     
     const anthropic = new Anthropic({
       apiKey,
+      ...(useOpenRouter && {
+        baseURL: 'https://openrouter.ai/api/v1',
+        defaultHeaders: {
+          'HTTP-Referer': 'https://codequal.ai',
+          'X-Title': 'CodeQual Analysis'
+        }
+      })
     });
     
-    const logger = createLogger('ClaudeAPI');
+    // Adjust model name for OpenRouter format
+    if (useOpenRouter && this.model && !this.model.includes('/')) {
+      this.model = `anthropic/${this.model}`;
+    }
+    
+    const logger = createLogger(useOpenRouter ? 'OpenRouterAPI' : 'ClaudeAPI');
     const model = this.model;  // Capture this.model for use in the closure
     
     return {
@@ -122,7 +138,13 @@ export class ClaudeAgent extends BaseAgent {
             ],
           });
           
-          return response.content[0].text;
+          if (response.content && response.content.length > 0) {
+            const content = response.content[0];
+            if ('text' in content) {
+              return content.text;
+            }
+          }
+          throw new Error('No text content in Claude response');
         } catch (error) {
           const errorData: LoggableData = error instanceof Error 
             ? error 

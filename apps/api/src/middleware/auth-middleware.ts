@@ -109,6 +109,12 @@ export const checkRepositoryAccess = async (
   repositoryUrl: string
 ): Promise<boolean> => {
   try {
+    // Allow test user to access any repository
+    if (user.id === '00000000-0000-0000-0000-000000000000') {
+      console.log('[Repository Access] Allowing test user access to all repositories');
+      return true;
+    }
+    
     // Check if user has a payment method - if yes, allow access to any repository
     const { data: paymentMethods } = await getSupabase()
       .from('payment_methods')

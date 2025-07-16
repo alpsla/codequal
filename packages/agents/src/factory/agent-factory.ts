@@ -45,8 +45,9 @@ export class AgentFactory {
    * @returns Agent instance
    */
   static createAgent(role: AgentRole, provider: AgentProvider | ProviderGroup, config: Record<string, unknown> = {}): Agent {
-    // Handle provider groups first
-    if (Object.values(ProviderGroup).includes(provider as ProviderGroup)) {
+    // Handle provider groups first - but ensure we're not already handling a specific provider
+    if (Object.values(ProviderGroup).includes(provider as ProviderGroup) && 
+        !Object.values(AgentProvider).includes(provider as AgentProvider)) {
       const providerGroupValue = provider as ProviderGroup;
       
       // Map provider group to a specific provider

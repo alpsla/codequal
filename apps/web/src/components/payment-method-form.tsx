@@ -131,7 +131,9 @@ function PaymentMethodFormContent({ onSuccess }: { onSuccess: () => void }) {
   );
 }
 
-export default function PaymentMethodForm({ onSuccess = () => {} }: { onSuccess?: () => void }) {
+export default function PaymentMethodForm({ onSuccess = () => {
+  // Default no-op
+} }: { onSuccess?: () => void }) {
   return (
     <Elements stripe={stripePromise}>
       <PaymentMethodFormContent onSuccess={onSuccess} />

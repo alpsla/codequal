@@ -30,10 +30,10 @@ export interface EmbeddingProvider {
   models: Map<string, EmbeddingConfig>;
 }
 
-export class OpenRouterEmbeddingService {
-  private logger = createLogger('OpenRouterEmbeddingService');
+export class DirectEmbeddingService {
+  private logger = createLogger('DirectEmbeddingService');
   private providers: Map<string, EmbeddingProvider> = new Map();
-  private openRouterClient: OpenAI;
+  private openaiClient: OpenAI;
   private togetherClient?: OpenAI;
   private voyageClient?: any; // Will be VoyageAIClient when available
   private currentConfig: EmbeddingConfig;
@@ -49,20 +49,21 @@ export class OpenRouterEmbeddingService {
       throw new Error('OPENAI_API_KEY is required for embeddings');
     }
     
-    // Using OpenAI directly for embeddings until OpenRouter supports them
-    this.openRouterClient = new OpenAI({
+    // Initialize OpenAI client directly for text embeddings
+    this.openaiClient = new OpenAI({
       apiKey: openaiKey
     });
+    this.logger.info('OpenAI client initialized for text-embedding-3-large embeddings');
     
-    // Initialize Together AI client if API key is available
-    const togetherKey = process.env.TOGETHER_API_KEY;
-    if (togetherKey) {
-      this.togetherClient = new OpenAI({
-        apiKey: togetherKey,
-        baseURL: 'https://api.together.xyz/v1'
-      });
-      this.logger.info('Together AI client initialized');
-    }
+    // Together AI client initialization commented out - not currently used
+    // const togetherKey = process.env.TOGETHER_API_KEY;
+    // if (togetherKey) {
+    //   this.togetherClient = new OpenAI({
+    //     apiKey: togetherKey,
+    //     baseURL: 'https://api.together.xyz/v1'
+    //   });
+    //   this.logger.info('Together AI client initialized');
+    // }
     
     // Initialize Voyage AI client if API key is available
     const voyageKey = process.env.VOYAGE_API_KEY;
@@ -104,7 +105,6 @@ export class OpenRouterEmbeddingService {
     this.logger.info('Initialized embedding service', {
       defaultModel: `${this.currentConfig.provider}/${this.currentConfig.model}`,
       dimensions: this.currentConfig.dimensions,
-      togetherEnabled: !!togetherKey,
       voyageEnabled: !!voyageKey
     });
   }
@@ -225,9 +225,9 @@ export class OpenRouterEmbeddingService {
       // Create embedding based on provider
       let embedding: number[];
       
-      if (this.isOpenRouterModel(modelConfig)) {
-        // Use OpenRouter
-        embedding = await this.createOpenRouterEmbedding(text, modelConfig);
+      if (modelConfig.provider === 'openai') {
+        // Use OpenAI directly
+        embedding = await this.createOpenAIEmbedding(text, modelConfig);
       } else {
         // Use alternative provider (Together AI for Voyage)
         embedding = await this.createAlternativeEmbedding(text, modelConfig);
@@ -272,14 +272,14 @@ export class OpenRouterEmbeddingService {
   }
   
   /**
-   * Create embedding via OpenAI (until OpenRouter supports embeddings)
+   * Create embedding via OpenAI directly
    */
-  private async createOpenRouterEmbedding(
+  private async createOpenAIEmbedding(
     text: string, 
     config: EmbeddingConfig
   ): Promise<number[]> {
     // Use direct model name for OpenAI, not provider/model format
-    const response = await this.openRouterClient.embeddings.create({
+    const response = await this.openaiClient.embeddings.create({
       model: config.model,
       input: text,
       dimensions: config.dimensions
@@ -537,4 +537,4 @@ export class OpenRouterEmbeddingService {
 }
 
 // Export singleton instance
-export const openRouterEmbeddingService = new OpenRouterEmbeddingService();
+export const openRouterEmbeddingService = new DirectEmbeddingService();

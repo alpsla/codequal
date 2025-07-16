@@ -9,6 +9,9 @@ export * from './core/interfaces';
 // Tool registry
 export { toolRegistry, ToolRegistry } from './core/registry';
 
+// Tool initialization
+export { initializeTools, verifyToolHealth, getToolStatus } from './core/initialize-tools';
+
 // Tool manager and executor
 export { toolManager, MCPToolManager } from './core/tool-manager';
 export { toolExecutor, ToolExecutor, ExecutionStrategy, executionExamples } from './core/executor';

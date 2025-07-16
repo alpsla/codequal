@@ -6,6 +6,14 @@ export { SkillAwareRAGService } from './skill-aware-rag-service';
 
 // Export existing services
 export { RecommendationService } from './recommendation-service';
+export { AgentResultProcessor } from './agent-result-processor';
+export { BasicDeduplicator } from './basic-deduplicator';
+export { EducationalCompilationService } from './educational-compilation-service';
+export { IssueResolutionDetector } from './issue-resolution-detector';
+export { ReportFormatterService } from './report-formatter.service';
+
+// Export debug logger
+export { DebugLogger, getDebugLogger } from './debug-logger';
 
 // Export types
 export type { 
@@ -27,3 +35,8 @@ export type {
   SkillAwareQueryResult, 
   SkillAwareSearchResult 
 } from './skill-aware-rag-service';
+
+export type {
+  DebugContext,
+  ExecutionTrace
+} from './debug-logger';
