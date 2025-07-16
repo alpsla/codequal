@@ -1,5 +1,5 @@
 CodeQual Architecture Document
-Last Updated: July 7, 2025 (API Implementation & Authentication Workaround)
+Last Updated: January 2025 (Enhanced PR Branch Analysis & Optimization Strategy)
 System Overview Please review the file model-version-management.md
 CodeQual is a flexible, multi-agent system for comprehensive code analysis, quality assessment, and improvement. The system leverages a combination of specialized AI agents, vector database storage, MCP (Model Context Protocol) tools, and a scoring system to deliver actionable insights for developers and teams.
 Core Components
@@ -180,7 +180,7 @@ json{
     }
   }
 }
-5. Orchestrator-Driven Analysis Flow (Updated June 2025)
+5. Orchestrator-Driven Analysis Flow (Updated January 2025)
 The system follows a sophisticated orchestration flow with integrated tool execution:
 1. PR Analysis and Complexity Detection
 typescript/**
@@ -190,21 +190,75 @@ typescript/**
  * - Appropriate DeepWiki request generation
  * - Tool selection based on repository type
  * - Agent requirements and priorities
+ * - PR branch extraction for latest code analysis
  */
-2. Vector DB and DeepWiki Integration
+2. DeepWiki PR Branch Analysis (ENHANCED - January 2025)
+DeepWiki now provides comprehensive support for feature branches and GitLab repositories through intelligent local cloning:
+
+**Branch-Aware Analysis Architecture**
+- **GitHub Main Branch**: Direct DeepWiki API analysis (native support)
+- **Feature Branches**: Local clone approach with full file extraction
+- **GitLab Repositories**: Local clone approach (DeepWiki only supports GitHub)
+- **Smart Detection**: Automatically determines when local clone is needed
+
+**Enhanced DeepWiki Request**
+```typescript
+// DeepWiki intelligently handles different repository types
+const jobId = await deepWikiManager.triggerRepositoryAnalysis(repositoryUrl, {
+  branch: prBranch,        // e.g., "feature/new-feature"
+  baseBranch: baseBranch,  // e.g., "main"
+  includeDiff: true,       // Generate diff-specific insights
+  prNumber: prNumber,
+  accessToken: token       // For private repos
+});
+
+// Internal logic determines approach:
+const isGitLab = repositoryUrl.includes('gitlab.com');
+const isFeatureBranch = branch !== 'main' && branch !== 'master';
+const needsLocalClone = isGitLab || isFeatureBranch;
+```
+
+**Local Clone Implementation**
+```typescript
+// For feature branches and GitLab:
+1. Clone repository with specific branch
+2. Extract all code files (.js, .ts, .jsx, .tsx, .py, .java, .go, .rs, .c, .cpp, .h, .hpp)
+3. Cache files with branch-specific key for MCP tools
+4. Generate analysis using local MCP tools
+5. Store results in Vector DB
+```
+
+**Benefits**
+- **Universal Support**: Works with GitHub, GitLab, and any Git platform
+- **Branch Accuracy**: Always analyzes the exact PR branch code
+- **MCP Tool Integration**: Cached files ensure tools analyze correct version
+- **Performance**: Branch-aware caching prevents redundant clones
+- **Error Handling**: User-friendly messages for outdated/deleted branches
+
+**Limitations & Future Improvements**
+- **Current**: Feature branches use local MCP tools instead of full DeepWiki AI analysis
+- **Performance**: Double cloning for baseline comparison impacts large repos
+- **Planned Optimizations**:
+  - Single clone with branch switching
+  - Sparse checkout for large repositories
+  - Main branch analysis caching
+  - Differential analysis (PR changes only vs full branch)
+
+3. Vector DB and DeepWiki Integration
 
 Check Vector DB: Look for existing repository report
 If not found: Trigger DeepWiki + Tools analysis
 DeepWiki Phase:
 
-Clone repository once
-Run DeepWiki analysis
-Execute repository tools in parallel
+Clone repository PR branch (not main)
+Run DeepWiki analysis on PR code
+Execute repository tools in parallel with PR files
 Store all results in Vector DB (replace previous)
+Cache PR branch files for MCP tool usage
 
 
 
-3. Agent Context Distribution
+4. Agent Context Distribution
 typescript{
   "agentContexts": {
     "security": {
@@ -212,30 +266,33 @@ typescript{
       "priority": "high",
       "dependencies": ["oauth2", "jwt"],
       "toolResults": ["npm-audit", "license-checker"],
+      "prFiles": "Latest PR branch content",
       "scoring": { "threshold": 8, "weight": 0.3 }
     },
     "architecture": {
       "focus": "modularity",
       "toolResults": ["madge", "dependency-cruiser"],
+      "prFiles": "Latest PR branch content",
       "scoring": { "threshold": 7, "weight": 0.25 }
     },
     "dependency": {
       "focus": "maintenance",
       "toolResults": ["npm-outdated", "license-checker"],
+      "prFiles": "Latest PR branch content",
       "scoring": { "threshold": 6, "weight": 0.2 }
     }
     // ... other agents
   }
 }
-4. Enhanced Agent Execution
+5. Enhanced Agent Execution
 
 Retrieve DeepWiki analysis from Vector DB
 Retrieve relevant tool results by agent role
-Local tools run for PR-specific insights
-Agents analyze based on all available data
-Reports compiled by agents
+Local tools run with PR branch files (not main branch)
+Agents analyze based on latest PR code + all available data
+Reports compiled by agents with accurate findings
 
-5. Post-Analysis Agent Flow (Educational & Reporting)
+6. Post-Analysis Agent Flow (Educational & Reporting)
 
 **Educational Agent Architectural Flow (Updated June 23, 2025):**
 
@@ -2025,3 +2082,379 @@ Common issues and solutions:
 ---
 
 **Summary**: The dynamic embedding configuration system provides a robust, maintainable approach to managing embedding models. By storing configurations in the database rather than hardcoding them, the system supports easy upgrades to more advanced models as they become available, with built-in performance tracking and gradual migration capabilities.
+
+---
+
+## 20. Beta Testing Progress & Completed Features (July 11, 2025)
+
+### **20.1 Major Features Completed**
+
+**Authentication & Billing Integration:**
+- ✅ Full authentication system with JWT and API key support
+- ✅ Stripe billing integration with subscription management
+- ✅ Trial limit enforcement (10 scans for one repository)
+- ✅ Payment method management and subscription flows
+- ✅ API key generation and management system
+- ✅ Usage tracking and limits enforcement
+
+**Report Generation & Access:**
+- ✅ Enhanced HTML report template with modern UI
+- ✅ API endpoint for report access with authentication
+- ✅ JSON and HTML export formats
+- ✅ Temporary in-memory storage fallback
+- ✅ PR context extraction and file analysis
+- ✅ Circular reference error fixes
+
+**Testing Infrastructure:**
+- ✅ Comprehensive E2E test suites
+- ✅ Component-level testing for all agents
+- ✅ DeepWiki integration tests
+- ✅ Tools integration verification (7 tools)
+- ✅ Mock testing for rapid development
+
+### **20.2 Usage Monitoring Implementation**
+
+**Backend Capabilities (Implemented):**
+```typescript
+// Usage statistics API endpoints
+GET /api/usage-stats              // Current usage with recommendations
+GET /api/usage-stats/history      // Historical usage for charts
+
+// Comprehensive tracking includes:
+- API calls (used/remaining/percentage)
+- Web scans (used/remaining/percentage)  
+- Trial usage tracking
+- API key usage per key
+- Recent analyses with scores
+- Smart upgrade recommendations
+```
+
+**Frontend Dashboard (Implemented):**
+- Clean usage visualization at `/usage`
+- Progress bars with color-coded warnings
+- Subscription information display
+- API key usage table
+- Recent analyses list
+- Upgrade prompts based on usage
+
+### **20.3 Profile Feature Roadmap**
+
+**Planned User Profile Features:**
+
+1. **Personal Profile Page** (`/profile`)
+   - User information and avatar
+   - Connected accounts (GitHub/GitLab)
+   - Usage statistics visualization
+   - Achievement badges
+   - Repository management
+
+2. **Team Features** (`/team`)
+   - Member management and roles
+   - Shared PR analyses feed
+   - Team-wide quality metrics
+   - Collaborative learning paths
+   - Cross-team insights
+
+3. **Credit & Usage Tracking**
+   - Real-time usage meters
+   - Cost breakdown for token usage
+   - Historical usage trends
+   - Budget alerts and limits
+   - Predictive usage forecasting
+
+4. **Learning & Skills**
+   - Skill progression tracking
+   - Personalized learning paths
+   - Achievement system
+   - Mentorship matching (future)
+   - Educational content bookmarks
+
+5. **Integration Hub**
+   - GitHub/GitLab permissions
+   - Webhook configurations
+   - Notification preferences
+   - Third-party integrations (Jira, Slack - future)
+   - Export settings
+
+### **20.4 Beta Testing Priorities**
+
+**Current Focus Areas:**
+1. API report generation stability
+2. Stripe payment flow testing
+3. Usage monitoring accuracy
+4. Performance optimization
+5. User feedback collection
+
+**Metrics to Track:**
+- Analysis completion rates
+- Payment conversion rates
+- API response times
+- User engagement metrics
+- Feature adoption rates
+
+### **20.5 Future Enhancements During Beta**
+
+**Short-term (During Beta):**
+- Profile page implementation
+- Team collaboration features
+- Enhanced usage analytics
+- Mobile-responsive design
+- Performance optimizations
+
+**Long-term (Post-Beta):**
+- Jira integration
+- Slack notifications
+- Advanced team analytics
+- Enterprise SSO
+- White-label options
+
+---
+
+## 21. PR Analysis Strategy & Optimization (NEW - January 2025)
+
+### **21.1 Current Analysis Challenges**
+
+The system faces several challenges when analyzing pull requests:
+
+1. **Repository vs PR Issues**: Current approach analyzes entire feature branch, not just PR changes
+2. **DeepWiki Limitations**: Only supports GitHub main branch, not feature branches or GitLab
+3. **Performance Impact**: Large repositories require significant time and resources to clone
+4. **Quality Differences**: Local MCP tools vs DeepWiki AI analysis provide different insights
+
+### **21.2 Intelligent Analysis Mode Selection**
+
+The system implements smart logic to determine when to run full analysis:
+
+```typescript
+interface AnalysisTriggerCriteria {
+  // Frequency-based triggers
+  frequency: {
+    lastAnalysis: Date;
+    threshold: 'daily' | 'weekly' | 'monthly';
+    forceAnalysis: boolean;
+  };
+  
+  // PR characteristics
+  prMetrics: {
+    filesChanged: number;
+    linesChanged: number;
+    criticalFiles: string[]; // security, config, architecture files
+    complexity: 'low' | 'medium' | 'high';
+  };
+  
+  // Repository context
+  repoContext: {
+    size: 'small' | 'medium' | 'large';
+    language: string;
+    lastBaselineAge: number; // days since last main analysis
+  };
+}
+
+// Decision logic
+function shouldRunFullAnalysis(criteria: AnalysisTriggerCriteria): boolean {
+  // Always run if security/architecture files changed
+  if (criteria.prMetrics.criticalFiles.length > 0) return true;
+  
+  // Run based on repository size and PR complexity
+  if (criteria.repoContext.size === 'large' && 
+      criteria.prMetrics.complexity === 'low') return false;
+  
+  // Run if baseline is stale
+  if (criteria.repoContext.lastBaselineAge > 7) return true;
+  
+  // Otherwise follow frequency settings
+  return criteria.frequency.forceAnalysis;
+}
+```
+
+### **21.3 Optimized Clone Strategy**
+
+**Single Clone Approach** (Recommended):
+```typescript
+class OptimizedRepositoryAnalyzer {
+  async analyzePR(repoUrl: string, prNumber: number) {
+    // 1. Clone repository once
+    const { localPath } = await this.cloneRepository(repoUrl, 'main');
+    
+    // 2. Analyze main branch (baseline)
+    const baseline = await this.analyzeFiles(localPath);
+    await this.vectorDB.storeBaseline(repoUrl, baseline);
+    
+    // 3. Switch to feature branch
+    await this.gitCheckout(localPath, prBranch);
+    
+    // 4. Get only changed files
+    const changedFiles = await this.getChangedFiles(localPath, 'main', prBranch);
+    
+    // 5. Analyze changed files only
+    const prAnalysis = await this.analyzeFiles(localPath, { 
+      fileFilter: changedFiles 
+    });
+    
+    // 6. Compare results
+    return this.compareAnalyses(baseline, prAnalysis, changedFiles);
+  }
+}
+```
+
+**Sparse Checkout** (For Large Repos):
+```typescript
+async function sparseCheckout(repoUrl: string, branch: string, files: string[]) {
+  // Clone without files
+  await exec(`git clone --no-checkout --filter=blob:none ${repoUrl} ${tempDir}`);
+  
+  // Configure sparse checkout
+  await exec(`cd ${tempDir} && git sparse-checkout init --cone`);
+  await exec(`cd ${tempDir} && git sparse-checkout set ${files.join(' ')}`);
+  
+  // Checkout only specified files
+  await exec(`cd ${tempDir} && git checkout ${branch}`);
+}
+```
+
+### **21.4 Differential Analysis Architecture**
+
+**PR-Focused Analysis Pipeline**:
+```typescript
+interface DifferentialAnalysis {
+  // Step 1: Identify scope
+  scope: {
+    changedFiles: string[];
+    addedFiles: string[];
+    deletedFiles: string[];
+    modifiedFiles: string[];
+  };
+  
+  // Step 2: Categorize issues
+  issues: {
+    newIssues: Issue[];        // Introduced by PR
+    fixedIssues: Issue[];      // Resolved by PR
+    existingIssues: Issue[];   // Pre-existing in changed files
+    unrealtedIssues: Issue[];  // In unchanged files (excluded)
+  };
+  
+  // Step 3: Generate PR-specific report
+  report: {
+    prImpact: 'positive' | 'neutral' | 'negative';
+    newProblems: number;
+    problemsFixed: number;
+    overallAssessment: string;
+  };
+}
+```
+
+### **21.5 Caching Strategy**
+
+**Multi-Level Cache Architecture**:
+```typescript
+interface CacheStrategy {
+  // Level 1: Repository baseline cache
+  baseline: {
+    key: `${repoUrl}:main:${commitHash}`;
+    ttl: 24 * 60 * 60; // 24 hours
+    storage: 'vector-db';
+  };
+  
+  // Level 2: Branch file cache
+  branchFiles: {
+    key: `${repoUrl}:${branch}:files`;
+    ttl: 60 * 60; // 1 hour
+    storage: 'memory';
+  };
+  
+  // Level 3: Analysis results cache
+  results: {
+    key: `${repoUrl}:${prNumber}:analysis`;
+    ttl: 30 * 60; // 30 minutes
+    storage: 'redis';
+  };
+}
+```
+
+### **21.6 Performance Optimization Roadmap**
+
+**Phase 1: Immediate Optimizations** (1-2 weeks)
+- ✅ Implement branch-aware caching
+- ⏳ Single clone with branch switching
+- ⏳ Baseline caching in Vector DB
+- ⏳ PR-only analysis mode
+
+**Phase 2: Advanced Features** (3-4 weeks)
+- Sparse checkout for large repos
+- Incremental analysis updates
+- Parallel analysis for multiple PRs
+- Smart cleanup scheduler
+
+**Phase 3: Enterprise Scale** (5-8 weeks)
+- Distributed analysis workers
+- Git object caching
+- Cross-repository pattern learning
+- Predictive analysis pre-warming
+
+### **21.7 Testing Plan**
+
+**Test Scenarios**:
+1. **Small PR, Small Repo**: < 5 files, < 10MB repo
+2. **Large PR, Small Repo**: > 50 files, < 10MB repo
+3. **Small PR, Large Repo**: < 5 files, > 500MB repo
+4. **Large PR, Large Repo**: > 50 files, > 500MB repo
+5. **Security-Critical PR**: Changes to auth/crypto files
+6. **Architecture PR**: Changes to > 10 interconnected files
+
+**Metrics to Track**:
+- Clone time
+- Analysis time
+- Memory usage
+- Disk usage
+- Cache hit rate
+- Issue detection accuracy
+
+### **21.8 Implementation Priority**
+
+Based on user impact and technical complexity:
+
+1. **High Priority**:
+   - Single clone optimization
+   - Baseline caching
+   - PR-only analysis mode
+   
+2. **Medium Priority**:
+   - Sparse checkout
+   - Smart cleanup
+   - Performance monitoring
+   
+3. **Low Priority**:
+   - Distributed workers
+   - Cross-repo learning
+   - Predictive warming
+
+---
+
+## 22. Future Architecture Considerations
+
+### **22.1 Scalability Enhancements**
+- Horizontal scaling for analysis workloads
+- Caching layer for frequent queries
+- CDN integration for report delivery
+- Queue-based processing for large PRs
+
+### **22.2 Enterprise Features**
+- SAML/SSO authentication
+- Advanced role-based access control
+- Audit logging and compliance
+- Private cloud deployment options
+- SLA guarantees
+
+### **22.3 Advanced Analytics**
+- Predictive quality metrics
+- Team performance insights
+- Technical debt tracking
+- ROI calculations
+- Custom dashboards
+
+### **22.4 Integration Ecosystem**
+- IDE plugins (VS Code, IntelliJ)
+- CI/CD pipeline integrations
+- Project management tools
+- Communication platforms
+- Documentation systems
