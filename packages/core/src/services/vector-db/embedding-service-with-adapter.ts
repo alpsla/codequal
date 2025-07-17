@@ -61,8 +61,7 @@ export class AdaptedEmbeddingService {
         rawEmbedding,
         modelKey,
         {
-          provider: modelConfig?.provider || 'unknown',
-          contentType: options?.contentType
+          provider: modelConfig?.provider || 'unknown'
         }
       );
       
