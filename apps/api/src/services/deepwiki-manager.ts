@@ -6,6 +6,17 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import * as os from 'os';
+import simpleGit, { SimpleGit } from 'simple-git';
+import * as k8s from '@kubernetes/client-node';
+import { createLogger } from '@codequal/core/utils';
+import { ModelVersionSync } from '@codequal/core/services/model-selection/ModelVersionSync';
+// @ts-ignore - Module will be available after build
+import { createDeepWikiModelSelector, DeepWikiModelSelector, RepositoryContext } from '@codequal/agents/src/deepwiki/deepwiki-model-selector';
+import { VectorStorageService } from '@codequal/database';
+import { LRUCache } from 'lru-cache';
+import { AgentRole } from '@codequal/core/config/agent-registry';
+import { ModelVersionInfo } from '@codequal/core';
 
 const execAsync = promisify(exec);
 
@@ -20,6 +31,24 @@ export interface AnalysisJob {
   baseBranch?: string;
   includeDiff?: boolean;
   prNumber?: number;
+}
+
+export interface CachedAnalysis {
+  results: AnalysisResults;
+  timestamp: number;
+  options?: any;
+}
+
+export interface AnalysisOptions {
+  branch?: string;
+  baseBranch?: string;
+  includeDiff?: boolean;
+  prNumber?: number;
+  accessToken?: string;
+  promptTemplate?: string;
+  forceRefresh?: boolean;
+  prSize?: 'small' | 'medium' | 'large';
+  changedFiles?: string[];
 }
 
 export interface AnalysisResults {
@@ -61,22 +90,49 @@ export class DeepWikiManager {
   private activeJobs = new Map<string, AnalysisJob>();
   private repositoryCache = new Map<string, any>();
   private deepwikiClient: AxiosInstance;
+  private modelSelector?: DeepWikiModelSelector;
+  private logger = createLogger('DeepWikiManager');
+  
+  // Request optimization
+  private runningAnalyses = new Map<string, Promise<AnalysisResults>>();
+  private recentAnalyses: LRUCache<string, CachedAnalysis>;
+  private pendingBatches = new Map<string, Set<AnalysisOptions>>();
+  private batchTimer?: NodeJS.Timeout;
   
   // Configuration
   private readonly DEEPWIKI_NAMESPACE = process.env.DEEPWIKI_NAMESPACE || 'codequal-dev';
   private readonly DEEPWIKI_POD_SELECTOR = process.env.DEEPWIKI_POD_SELECTOR || 'deepwiki-fixed';
   private readonly DEEPWIKI_PORT = process.env.DEEPWIKI_PORT || '8001';
-  private readonly PRIMARY_MODEL = process.env.DEEPWIKI_MODEL || 'anthropic/claude-3-opus';
-  private readonly FALLBACK_MODELS = [
+  
+  // Model configuration
+  private primaryModel?: ModelVersionInfo;
+  private fallbackModel?: ModelVersionInfo;
+  private readonly LEGACY_PRIMARY_MODEL = process.env.DEEPWIKI_MODEL || 'anthropic/claude-3-opus';
+  private readonly LEGACY_FALLBACK_MODELS = [
     'openai/gpt-4.1',
     'anthropic/claude-3.7-sonnet',
     'google/gemini-2.5-pro-preview'
   ];
 
-  constructor(private authenticatedUser: AuthenticatedUser) {
+  constructor(
+    private authenticatedUser: AuthenticatedUser,
+    modelVersionSync?: ModelVersionSync,
+    vectorStorage?: VectorStorageService
+  ) {
     // Convert middleware AuthenticatedUser to agent's AuthenticatedUser format
     const agentAuthenticatedUser = this.convertToAgentUser(authenticatedUser);
     this.vectorContextService = new VectorContextService(agentAuthenticatedUser);
+    
+    // Initialize model selector if dependencies provided
+    if (modelVersionSync) {
+      this.modelSelector = createDeepWikiModelSelector(modelVersionSync, vectorStorage);
+      this.logger.info('DeepWiki model selector initialized');
+      
+      // Load model configuration from Vector DB
+      this.loadModelConfiguration(vectorStorage);
+    } else {
+      this.logger.warn('DeepWiki using legacy hardcoded models - no ModelVersionSync provided');
+    }
     
     // Initialize DeepWiki client
     this.deepwikiClient = axios.create({
@@ -84,6 +140,13 @@ export class DeepWikiManager {
       headers: {
         'Content-Type': 'application/json'
       }
+    });
+    
+    // Initialize recent analyses cache
+    this.recentAnalyses = new LRUCache<string, CachedAnalysis>({
+      max: 1000,
+      ttl: 1000 * 60 * 60 * 24, // 24 hours
+      updateAgeOnGet: true
     });
   }
 
@@ -200,15 +263,48 @@ export class DeepWikiManager {
    */
   async triggerRepositoryAnalysis(
     repositoryUrl: string,
-    options?: {
-      branch?: string;
-      baseBranch?: string;
-      includeDiff?: boolean;
-      prNumber?: number;
-      accessToken?: string;
-    }
+    options?: AnalysisOptions
   ): Promise<string> {
     try {
+      // Check if we should skip this analysis
+      if (options && this.shouldSkipAnalysis(options)) {
+        this.logger.info('[DeepWiki] Skipping analysis for docs-only or trivial changes');
+        
+        // Return cached analysis if available
+        const cached = await this.getCachedAnalysis(repositoryUrl, options);
+        if (cached) {
+          return `cached_${Date.now()}`; // Return a pseudo job ID
+        }
+      }
+      
+      // Check for running analysis
+      const cacheKey = this.getCacheKey(repositoryUrl, options);
+      if (this.runningAnalyses.has(cacheKey)) {
+        this.logger.info('[DeepWiki] Returning existing analysis promise');
+        // Create a pseudo job that will complete when the running analysis completes
+        const jobId = `dedup_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const job: AnalysisJob = {
+          jobId,
+          repositoryUrl,
+          status: 'processing',
+          startedAt: new Date(),
+          branch: options?.branch || 'main'
+        };
+        this.activeJobs.set(jobId, job);
+        
+        // Wait for the running analysis to complete
+        this.runningAnalyses.get(cacheKey)!.then(() => {
+          job.status = 'completed';
+          job.completedAt = new Date();
+        }).catch(error => {
+          job.status = 'failed';
+          job.error = error.message;
+          job.completedAt = new Date();
+        });
+        
+        return jobId;
+      }
+      
       const jobId = `analysis_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
       // Create analysis job record with branch info
@@ -224,6 +320,21 @@ export class DeepWikiManager {
       };
 
       this.activeJobs.set(jobId, job);
+
+      // Check if we should batch this request
+      if (options?.prNumber && !options.forceRefresh) {
+        const batchKey = this.getBatchKey(repositoryUrl);
+        if (!this.pendingBatches.has(batchKey)) {
+          this.pendingBatches.set(batchKey, new Set());
+        }
+        this.pendingBatches.get(batchKey)!.add(options);
+        
+        // If we have multiple PRs pending, wait for batch window
+        if (this.pendingBatches.get(batchKey)!.size > 1 && !this.batchTimer) {
+          this.scheduleBatchProcessing();
+          return jobId;
+        }
+      }
 
       console.log(`[DeepWiki] Triggering analysis for ${repositoryUrl}`);
       console.log(`[DeepWiki] Branch: ${job.branch}${options?.baseBranch ? ` (base: ${options.baseBranch})` : ''}`);
@@ -248,9 +359,24 @@ export class DeepWikiManager {
         });
       } else {
         // Use standard DeepWiki API for GitHub main branch
-        this.callDeepWikiAPI(repositoryUrl, jobId, options).catch(error => {
-          console.error('[DeepWiki] Background analysis failed:', error);
-        });
+        const analysisPromise = this.callDeepWikiAPI(repositoryUrl, jobId, options)
+          .then(async () => {
+            // Get the results from Vector DB
+            const results = await this.getAnalysisResults(repositoryUrl, options);
+            // Cache the results
+            if (results) {
+              this.cacheAnalysisResults(repositoryUrl, results, options);
+            }
+            return results;
+          })
+          .catch(error => {
+            console.error('[DeepWiki] Background analysis failed:', error);
+            this.runningAnalyses.delete(cacheKey);
+            throw error;
+          });
+        
+        // Track running analysis
+        this.runningAnalyses.set(cacheKey, analysisPromise);
       }
 
       return jobId;
@@ -270,6 +396,12 @@ export class DeepWikiManager {
         .find(j => j.repositoryUrl === repositoryUrl);
 
       if (!job) {
+        // Check for cached results first
+        const cached = await this.getCachedAnalysis(repositoryUrl);
+        if (cached) {
+          return cached;
+        }
+        
         // If no job exists, check if we already have results and return mock data
         console.log('No job found, returning mock analysis results');
         return this.generateMockAnalysisResults(repositoryUrl);
@@ -281,11 +413,25 @@ export class DeepWikiManager {
         return this.generateMockAnalysisResults(repositoryUrl);
       }
 
+      // Check for running analysis with same cache key
+      const cacheKey = this.getCacheKey(repositoryUrl, { branch: job.branch });
+      if (this.runningAnalyses.has(cacheKey)) {
+        this.logger.info('[DeepWiki] Waiting for running analysis');
+        try {
+          return await this.runningAnalyses.get(cacheKey)!;
+        } catch (error) {
+          // Fall back to polling if the running analysis failed
+        }
+      }
+      
       // Otherwise, poll for completion
       const results = await this.pollForResults(job);
 
       // Store results in Vector DB
       await this.storeAnalysisResults(repositoryUrl, results);
+      
+      // Cache the results
+      this.cacheAnalysisResults(repositoryUrl, results, { branch: job.branch });
 
       return results;
     } catch (error) {
@@ -774,6 +920,30 @@ export class DeepWikiManager {
         // Prepare the prompt based on template
         const prompt = this.getAnalysisPrompt(options?.promptTemplate || 'standard', repositoryUrl, options);
 
+        // Select optimal model based on repository context
+        let selectedModel = this.primaryModel ? `${this.primaryModel.provider}/${this.primaryModel.model}` : this.LEGACY_PRIMARY_MODEL;
+        let fallbackModel = this.fallbackModel ? `${this.fallbackModel.provider}/${this.fallbackModel.model}` : this.LEGACY_FALLBACK_MODELS[0];
+        
+        if (this.modelSelector) {
+          try {
+            // Estimate repository context
+            const repoContext = await this.estimateRepositoryContext(repositoryUrl, options);
+            const modelSelection = await this.modelSelector.selectModel(repoContext);
+            
+            selectedModel = `${modelSelection.primary.provider}/${modelSelection.primary.model}`;
+            fallbackModel = `${modelSelection.fallback.provider}/${modelSelection.fallback.model}`;
+            
+            console.log(`[DeepWiki] Model selection:`, {
+              primary: selectedModel,
+              fallback: fallbackModel,
+              estimatedCost: `$${modelSelection.estimatedCost.toFixed(3)}`,
+              reasoning: modelSelection.reasoning
+            });
+          } catch (error) {
+            console.warn('[DeepWiki] Model selection failed, using defaults:', error);
+          }
+        }
+
         // Prepare the request
         const deepwikiRequest: DeepWikiRequest = {
           repo_url: repositoryUrl,
@@ -783,7 +953,7 @@ export class DeepWikiManager {
           }],
           stream: false,
           provider: 'openrouter',
-          model: this.PRIMARY_MODEL,
+          model: selectedModel,
           temperature: 0.2
         };
 
@@ -792,33 +962,48 @@ export class DeepWikiManager {
 
         console.log(`[DeepWiki] Analyzing repository: ${repositoryUrl}`);
         console.log(`[DeepWiki] Branch: ${options?.branch || 'main'} (base: ${options?.baseBranch || 'main'})`);
-        console.log(`[DeepWiki] Model: ${this.PRIMARY_MODEL}`);
+        console.log(`[DeepWiki] Model: ${selectedModel}`);
 
         // Call DeepWiki API
         let response;
-        let modelUsed = this.PRIMARY_MODEL;
+        let modelUsed = selectedModel;
         
         try {
           response = await this.deepwikiClient.post(
             `http://localhost:${this.DEEPWIKI_PORT}/chat/completions/stream`,
             deepwikiRequest
           );
+          modelUsed = selectedModel;
         } catch (primaryError) {
-          console.warn(`[DeepWiki] Primary model failed: ${primaryError}`);
+          console.warn(`[DeepWiki] Primary model ${selectedModel} failed: ${primaryError}`);
           
-          // Try fallback models
-          for (const fallbackModel of this.FALLBACK_MODELS) {
-            console.log(`[DeepWiki] Trying fallback model: ${fallbackModel}`);
-            try {
-              deepwikiRequest.model = fallbackModel;
-              response = await this.deepwikiClient.post(
-                `http://localhost:${this.DEEPWIKI_PORT}/chat/completions/stream`,
-                deepwikiRequest
-              );
-              modelUsed = fallbackModel;
-              break;
-            } catch (fallbackError) {
-              console.warn(`[DeepWiki] Fallback model ${fallbackModel} failed:`, fallbackError);
+          // Try fallback model
+          console.log(`[DeepWiki] Trying fallback model: ${fallbackModel}`);
+          try {
+            deepwikiRequest.model = fallbackModel;
+            response = await this.deepwikiClient.post(
+              `http://localhost:${this.DEEPWIKI_PORT}/chat/completions/stream`,
+              deepwikiRequest
+            );
+            modelUsed = fallbackModel;
+          } catch (fallbackError) {
+            console.warn(`[DeepWiki] Fallback model ${fallbackModel} failed:`, fallbackError);
+            
+            // Last resort - try legacy models
+            for (const legacyModel of this.LEGACY_FALLBACK_MODELS) {
+              if (legacyModel === fallbackModel) continue;
+              console.log(`[DeepWiki] Trying legacy model: ${legacyModel}`);
+              try {
+                deepwikiRequest.model = legacyModel;
+                response = await this.deepwikiClient.post(
+                  `http://localhost:${this.DEEPWIKI_PORT}/chat/completions/stream`,
+                  deepwikiRequest
+                );
+                modelUsed = legacyModel;
+                break;
+              } catch (legacyError) {
+                console.warn(`[DeepWiki] Legacy model ${legacyModel} failed:`, legacyError);
+              }
             }
           }
           
@@ -833,6 +1018,9 @@ export class DeepWikiManager {
         // Store the results
         await this.storeAnalysisResults(repositoryUrl, analysisResults);
         
+        // Cache the results
+        this.cacheAnalysisResults(repositoryUrl, analysisResults, options);
+        
         // Cache repository files if branch is specified
         if (options?.branch) {
           this.cacheRepository(repositoryUrl, options.branch, analysisResults);
@@ -843,6 +1031,10 @@ export class DeepWikiManager {
         job.completedAt = new Date();
         
         console.log(`[DeepWiki] Analysis completed for ${repositoryUrl} using ${modelUsed}`);
+        
+        // Clean up running analyses tracking
+        const cacheKey = this.getCacheKey(repositoryUrl, options);
+        this.runningAnalyses.delete(cacheKey);
         
       } finally {
         // Clean up port forwarding
@@ -1117,5 +1309,399 @@ module.exports = { processData, moduleA };
 }`
       }
     ];
+  }
+
+  /**
+   * Estimate repository context for model selection
+   */
+  private async estimateRepositoryContext(
+    repositoryUrl: string,
+    options?: {
+      branch?: string;
+      prContext?: any;
+    }
+  ): Promise<RepositoryContext> {
+    // Extract repository info from URL
+    const repoPath = repositoryUrl.replace(/^https?:\/\/[^\/]+\//, '');
+    const [owner, repo] = repoPath.split('/');
+    
+    // Try to get cached repository info
+    const cachedData = this.repositoryCache.get(repositoryUrl);
+    
+    // Estimate repository size based on cached data or defaults
+    let fileCount = 100; // default estimate
+    let totalLines = 10000; // default estimate
+    let primaryLanguage = 'javascript'; // default
+    let languages: string[] = ['javascript'];
+    
+    if (cachedData?.files) {
+      fileCount = cachedData.files.length;
+      totalLines = cachedData.files.reduce((sum: number, file: any) => 
+        sum + (file.content?.split('\n').length || 0), 0
+      );
+      
+      // Detect languages from file extensions
+      const langMap = new Map<string, number>();
+      cachedData.files.forEach((file: any) => {
+        const ext = path.extname(file.path).toLowerCase();
+        const lang = this.getLanguageFromExtension(ext);
+        if (lang) {
+          langMap.set(lang, (langMap.get(lang) || 0) + 1);
+        }
+      });
+      
+      // Sort languages by frequency
+      languages = Array.from(langMap.entries())
+        .sort((a, b) => b[1] - a[1])
+        .map(([lang]) => lang);
+      
+      primaryLanguage = languages[0] || 'javascript';
+    }
+    
+    // Determine repository size category
+    let size: RepositoryContext['size'] = 'medium';
+    if (fileCount < 50 || totalLines < 5000) {
+      size = 'small';
+    } else if (fileCount > 500 || totalLines > 50000) {
+      size = 'large';
+    } else if (fileCount > 2000 || totalLines > 200000) {
+      size = 'enterprise';
+    }
+    
+    // Calculate complexity based on various factors
+    let complexity = 5; // default medium complexity
+    
+    // Adjust based on language
+    if (primaryLanguage === 'rust' || primaryLanguage === 'c++' || primaryLanguage === 'scala') {
+      complexity += 2;
+    } else if (primaryLanguage === 'go' || primaryLanguage === 'python') {
+      complexity -= 1;
+    }
+    
+    // Adjust based on size
+    if (size === 'enterprise') complexity += 2;
+    else if (size === 'large') complexity += 1;
+    else if (size === 'small') complexity -= 2;
+    
+    // Ensure complexity is within bounds
+    complexity = Math.max(1, Math.min(10, complexity));
+    
+    // Determine analysis depth
+    let analysisDepth: RepositoryContext['analysisDepth'] = 'standard';
+    if (options?.prContext) {
+      const pr = options.prContext;
+      if (pr.changedFiles < 5 && pr.additions < 100) {
+        analysisDepth = 'quick';
+      } else if (pr.changedFiles > 50 || pr.additions > 1000) {
+        analysisDepth = 'comprehensive';
+      }
+    }
+    
+    return {
+      url: repositoryUrl,
+      size,
+      primaryLanguage,
+      languages,
+      frameworks: this.detectFrameworks(cachedData?.files || []),
+      fileCount,
+      totalLines,
+      complexity,
+      analysisDepth,
+      prContext: options?.prContext ? {
+        changedFiles: options.prContext.changedFiles || 0,
+        additions: options.prContext.additions || 0,
+        deletions: options.prContext.deletions || 0
+      } : undefined
+    };
+  }
+
+  /**
+   * Get language from file extension
+   */
+  private getLanguageFromExtension(ext: string): string | null {
+    const languageMap: Record<string, string> = {
+      '.js': 'javascript',
+      '.jsx': 'javascript',
+      '.ts': 'typescript',
+      '.tsx': 'typescript',
+      '.py': 'python',
+      '.java': 'java',
+      '.go': 'go',
+      '.rs': 'rust',
+      '.cpp': 'c++',
+      '.c': 'c',
+      '.cs': 'c#',
+      '.rb': 'ruby',
+      '.php': 'php',
+      '.swift': 'swift',
+      '.kt': 'kotlin',
+      '.scala': 'scala',
+      '.r': 'r',
+      '.m': 'objective-c',
+      '.dart': 'dart',
+      '.lua': 'lua',
+      '.pl': 'perl',
+      '.sh': 'shell',
+      '.sql': 'sql'
+    };
+    
+    return languageMap[ext] || null;
+  }
+
+  /**
+   * Detect frameworks from file patterns
+   */
+  private detectFrameworks(files: any[]): string[] {
+    const frameworks = new Set<string>();
+    
+    for (const file of files) {
+      const filePath = file.path.toLowerCase();
+      
+      // React
+      if (filePath.includes('react') || filePath.endsWith('.jsx') || filePath.endsWith('.tsx')) {
+        frameworks.add('react');
+      }
+      
+      // Angular
+      if (filePath.includes('angular') || filePath.endsWith('.component.ts')) {
+        frameworks.add('angular');
+      }
+      
+      // Vue
+      if (filePath.endsWith('.vue') || filePath.includes('vue')) {
+        frameworks.add('vue');
+      }
+      
+      // Express
+      if (file.content?.includes('express()') || file.content?.includes('require("express")')) {
+        frameworks.add('express');
+      }
+      
+      // Django
+      if (filePath.includes('django') || filePath === 'manage.py') {
+        frameworks.add('django');
+      }
+      
+      // Rails
+      if (filePath.includes('rails') || filePath === 'Gemfile') {
+        frameworks.add('rails');
+      }
+      
+      // Spring
+      if (filePath.includes('spring') || file.content?.includes('@SpringBootApplication')) {
+        frameworks.add('spring');
+      }
+    }
+    
+    return Array.from(frameworks);
+  }
+  
+  /**
+   * Get analysis results from cache or Vector DB
+   */
+  private async getAnalysisResults(repositoryUrl: string, options?: AnalysisOptions): Promise<AnalysisResults | null> {
+    try {
+      const agentAuthenticatedUser = this.convertToAgentUser(this.authenticatedUser);
+      const results = await this.vectorContextService.getRepositoryContext(
+        repositoryUrl,
+        'orchestrator' as any,
+        agentAuthenticatedUser,
+        { minSimilarity: 0.95 }
+      );
+      
+      if (results.recentAnalysis.length > 0) {
+        return results.recentAnalysis[0] as any;
+      }
+    } catch (error) {
+      this.logger.error('Failed to get analysis results:', error);
+    }
+    return null;
+  }
+  
+  /**
+   * Cache analysis results
+   */
+  private cacheAnalysisResults(repositoryUrl: string, results: AnalysisResults, options?: AnalysisOptions): void {
+    const cacheKey = this.getCacheKey(repositoryUrl, options);
+    this.recentAnalyses.set(cacheKey, {
+      results,
+      timestamp: Date.now(),
+      options
+    });
+    this.logger.debug('Cached analysis results', { repositoryUrl, cacheKey });
+  }
+  
+  /**
+   * Get cached analysis if fresh enough
+   */
+  private async getCachedAnalysis(repositoryUrl: string, options?: AnalysisOptions): Promise<AnalysisResults | null> {
+    const cacheKey = this.getCacheKey(repositoryUrl, options);
+    const cached = this.recentAnalyses.get(cacheKey);
+    
+    if (cached && this.isFreshEnough(cached, options)) {
+      this.logger.info('[DeepWiki] Using cached analysis');
+      return cached.results;
+    }
+    
+    // Try base branch cache for small PRs
+    if (options?.prSize === 'small' && options.branch !== 'main') {
+      const baseCacheKey = this.getCacheKey(repositoryUrl, { branch: 'main' });
+      const baseCached = this.recentAnalyses.get(baseCacheKey);
+      if (baseCached && this.isFreshEnough(baseCached, { ...options, prSize: 'medium' })) {
+        this.logger.info('[DeepWiki] Using base branch cache for small PR');
+        return baseCached.results;
+      }
+    }
+    
+    return null;
+  }
+  
+  /**
+   * Check if cached analysis is fresh enough
+   */
+  private isFreshEnough(cached: CachedAnalysis, options?: AnalysisOptions): boolean {
+    const age = Date.now() - cached.timestamp;
+    
+    // Different freshness requirements based on PR size
+    if (options?.prSize === 'small') {
+      return age < 48 * 60 * 60 * 1000; // 48 hours for small PRs
+    } else if (options?.prSize === 'medium') {
+      return age < 24 * 60 * 60 * 1000; // 24 hours
+    } else {
+      return age < 12 * 60 * 60 * 1000; // 12 hours for large PRs
+    }
+  }
+  
+  /**
+   * Determine if analysis should be skipped
+   */
+  private shouldSkipAnalysis(options: AnalysisOptions): boolean {
+    if (!options.changedFiles || options.changedFiles.length === 0) {
+      return false;
+    }
+    
+    // Skip if all changes are documentation or non-code files
+    return options.changedFiles.every(file => 
+      file.endsWith('.md') ||
+      file.endsWith('.txt') ||
+      file.match(/\.(yml|yaml|json)$/) ||
+      file.includes('docs/') ||
+      file.includes('README') ||
+      file.includes('LICENSE') ||
+      file.includes('.github/')
+    );
+  }
+  
+  /**
+   * Generate cache key
+   */
+  private getCacheKey(repositoryUrl: string, options?: AnalysisOptions): string {
+    const branch = options?.branch || 'main';
+    const prNumber = options?.prNumber || 'none';
+    return `${repositoryUrl}:${branch}:${prNumber}`;
+  }
+  
+  /**
+   * Get batch key for repository
+   */
+  private getBatchKey(repositoryUrl: string): string {
+    return `batch:${repositoryUrl}`;
+  }
+  
+  /**
+   * Schedule batch processing
+   */
+  private scheduleBatchProcessing(): void {
+    if (this.batchTimer) return;
+    
+    this.batchTimer = setTimeout(() => {
+      this.processBatches();
+      this.batchTimer = undefined;
+    }, 10000); // 10 second batch window
+  }
+  
+  /**
+   * Process pending batches
+   */
+  private async processBatches(): Promise<void> {
+    for (const [batchKey, optionsSet] of this.pendingBatches) {
+      const repositoryUrl = batchKey.replace('batch:', '');
+      const optionsArray = Array.from(optionsSet);
+      
+      // Analyze the main branch once for all PRs
+      this.logger.info(`[DeepWiki] Processing batch of ${optionsArray.length} PRs for ${repositoryUrl}`);
+      
+      // Use the first PR's options as the base
+      const baseOptions = { ...optionsArray[0], branch: 'main', prNumber: undefined };
+      
+      try {
+        // This single analysis will serve all pending PRs
+        await this.triggerRepositoryAnalysis(repositoryUrl, baseOptions);
+      } catch (error) {
+        this.logger.error('Batch analysis failed:', error);
+      }
+    }
+    
+    this.pendingBatches.clear();
+  }
+  
+  /**
+   * Load model configuration from Vector DB
+   * Retrieves models stored by the Researcher agent
+   */
+  private async loadModelConfiguration(vectorStorage?: VectorStorageService): Promise<void> {
+    if (!vectorStorage) return;
+    
+    try {
+      // Query for DeepWiki model configuration stored by Researcher
+      // Using the special repository UUID for model configurations
+      const SPECIAL_REPO_UUID = '00000000-0000-0000-0000-000000000001';
+      
+      const agentAuthenticatedUser = this.convertToAgentUser(this.authenticatedUser);
+      const results = await this.vectorContextService.getRepositoryContext(
+        SPECIAL_REPO_UUID,
+        AgentRole.ORCHESTRATOR, // DeepWiki uses orchestrator role
+        agentAuthenticatedUser,
+        { minSimilarity: 0.8 }
+      );
+      
+      if (results.recentAnalysis && results.recentAnalysis.length > 0) {
+        // Look for model configuration in recent analysis
+        const latestAnalysis = results.recentAnalysis[0] as any;
+        if (latestAnalysis.findings) {
+          // Find DeepWiki-specific model configuration
+          const deepwikiConfigs = latestAnalysis.findings.filter(
+            (f: any) => f.type && (f.type.includes('deepwiki') || f.type.includes('orchestrator'))
+          );
+          
+          if (deepwikiConfigs.length > 0) {
+            const config = deepwikiConfigs[0];
+            if (config.description) {
+              // Primary model is usually the first finding
+              this.primaryModel = config.description as ModelVersionInfo;
+              
+              // Look for fallback model in subsequent findings
+              if (deepwikiConfigs.length > 1 && deepwikiConfigs[1].description) {
+                this.fallbackModel = deepwikiConfigs[1].description as ModelVersionInfo;
+              }
+              
+              this.logger.info('Loaded DeepWiki model configuration from Vector DB', {
+                primary: this.primaryModel ? `${this.primaryModel.provider}/${this.primaryModel.model}` : 'none',
+                fallback: this.fallbackModel ? `${this.fallbackModel.provider}/${this.fallbackModel.model}` : 'none',
+                source: 'Researcher agent'
+              });
+            }
+          }
+        }
+      }
+      
+      // If no configuration found, log warning
+      if (!this.primaryModel) {
+        this.logger.warn('No DeepWiki model configuration found in Vector DB. Run research-deepwiki-models.ts to configure.');
+      }
+      
+    } catch (error) {
+      this.logger.error('Failed to load model configuration from Vector DB', { error });
+    }
   }
 }

@@ -14,6 +14,8 @@ import { VectorContextService } from '@codequal/agents/multi-agent/vector-contex
 import { ToolResultRetrievalService, AgentToolResults } from '@codequal/core/services/deepwiki-tools';
 import { VectorStorageService } from '@codequal/database';
 import { createLogger, LoggableData } from '@codequal/core/utils';
+// @ts-ignore - Module will be available after build
+import { deepWikiScoreExtractor, DeepWikiScores, DeepWikiInsight } from '@codequal/core/src/services/deepwiki-score-extractor';
 import { AuthenticatedUser as AgentAuthenticatedUser, UserRole, UserStatus, UserPermissions } from '@codequal/agents/multi-agent/types/auth';
 import { RepositorySchedulerService } from '@codequal/core/services/scheduling';
 import { EducationalAgent } from '@codequal/agents/multi-agent/educational-agent';
@@ -620,6 +622,8 @@ export class ResultOrchestrator {
           deepWikiData: processedResults?.deepWikiData, // Pass DeepWiki data to Reporter
           deepWikiSummary: deepWikiData?.summary || '', // Pass DeepWiki summary
           deepWikiRecommendations: deepWikiData?.recommendations || {}, // Pass DeepWiki recommendations
+          deepWikiScores: deepWikiData?.scores || null, // Pass DeepWiki scores
+          deepWikiInsights: deepWikiData?.structuredInsights || [], // Pass structured insights
           userSkills: currentSkills, // Pass current skill levels
           skillProgressions, // Pass skill progression history
           skillRecommendations // Pass skill-based recommendations
@@ -673,7 +677,7 @@ export class ResultOrchestrator {
 
       // Step 10: Compile final analysis result
       const analysisResult: AnalysisResult = {
-        analysisId: `analysis_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        analysisId: analysisId, // Use the same analysisId from progress tracker
         status: 'complete',
         repository: {
           url: request.repositoryUrl,
@@ -1331,7 +1335,9 @@ export class ResultOrchestrator {
         suggestions: mergedResult.suggestions,
         crossAgentPatterns: mergedResult.crossAgentPatterns,
         statistics: mergedResult.statistics,
-        deepWikiData: deepWikiData // Include full DeepWiki data with chunks
+        deepWikiData: deepWikiData, // Include full DeepWiki data with chunks
+        deepWikiScores: deepWikiData?.scores || null, // Include DeepWiki scores
+        deepWikiInsights: deepWikiData?.structuredInsights || [] // Include structured insights
       };
       
       this.logger.info('Intelligent result processing complete', {
@@ -1354,7 +1360,9 @@ export class ResultOrchestrator {
         const fallbackResults = await this.resultProcessor.processAgentResults(agentResults);
         return {
           ...fallbackResults,
-          deepWikiData: deepWikiData
+          deepWikiData: deepWikiData,
+          deepWikiScores: deepWikiData?.scores || null,
+          deepWikiInsights: deepWikiData?.structuredInsights || []
         };
       } catch (fallbackError) {
         this.logger.error('Fallback processing also failed', {
@@ -2618,6 +2626,9 @@ Primary Language: TypeScript
 
       // If we have stored analysis results, merge them
       let analysisData = {};
+      let deepWikiScores: DeepWikiScores | null = null;
+      let deepWikiInsights: DeepWikiInsight[] = [];
+      
       if (hasAnalysis) {
         try {
           console.log('[DeepWiki] Retrieving full analysis report...');
@@ -2626,6 +2637,19 @@ Primary Language: TypeScript
           console.log('[DeepWiki] Report keys:', Object.keys(deepWikiReport || {}));
           analysisData = deepWikiReport.analysis || {};
           console.log('[DeepWiki] Analysis sections:', Object.keys(analysisData));
+          
+          // Extract scores and insights from DeepWiki report
+          if ((deepWikiReport as any).report) {
+            const reportContent = typeof (deepWikiReport as any).report === 'string' 
+              ? (deepWikiReport as any).report 
+              : JSON.stringify((deepWikiReport as any).report);
+            
+            deepWikiScores = deepWikiScoreExtractor.extractScores(reportContent);
+            deepWikiInsights = deepWikiScoreExtractor.extractInsights(reportContent);
+            
+            console.log('[DeepWiki] Extracted scores:', deepWikiScores);
+            console.log('[DeepWiki] Extracted insights count:', deepWikiInsights.length);
+          }
         } catch (e) {
           console.log('[DeepWiki] Could not retrieve stored DeepWiki analysis, using chunks only:', e);
         }
@@ -2651,7 +2675,10 @@ Primary Language: TypeScript
           performance: (analysisData as any)?.performance?.recommendations || [],
           codeQuality: (analysisData as any)?.codeQuality?.recommendations || [],
           dependencies: (analysisData as any)?.dependencies?.recommendations || []
-        }
+        },
+        // Include DeepWiki scores and structured insights
+        scores: deepWikiScores,
+        structuredInsights: deepWikiInsights
       };
     } catch (error) {
       console.error('Error retrieving DeepWiki summary:', error);
