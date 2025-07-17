@@ -1,0 +1,63 @@
+FOCUS: DeepWiki Repository Analysis Agent
+
+OBJECTIVE: Select AI models optimized for deep repository analysis, architectural understanding, and comprehensive codebase evaluation.
+
+KEY REQUIREMENTS:
+1. Deep Code Understanding
+   - Ability to analyze entire codebases holistically
+   - Understanding of architectural patterns and design principles
+   - Detection of cross-file dependencies and relationships
+   - Recognition of framework-specific patterns and idioms
+
+2. Large Context Window
+   - CRITICAL: Minimum 100k tokens preferred, 200k+ ideal
+   - Must handle multiple files simultaneously
+   - Ability to maintain context across entire repository structure
+   - Support for analyzing large monorepos and enterprise codebases
+
+3. Technical Expertise
+   - Strong understanding of multiple programming languages
+   - Knowledge of modern frameworks (React, Angular, Vue, Spring, Django, etc.)
+   - Familiarity with cloud architectures and microservices
+   - Understanding of security patterns and vulnerabilities
+
+4. Analysis Capabilities
+   - Generate comprehensive architectural diagrams conceptually
+   - Identify performance bottlenecks and optimization opportunities
+   - Detect security vulnerabilities and compliance issues
+   - Evaluate code quality metrics and technical debt
+   - Understand build systems and deployment configurations
+
+5. Cost-Performance Balance
+   - Quality Weight: 50% - Accuracy and depth of analysis critical
+   - Cost Weight: 30% - Must be economical for large-scale analysis
+   - Speed Weight: 20% - Background process, can tolerate slower speeds
+   - Consider: Repository analysis may require 50k-500k tokens per analysis
+
+SPECIAL CONSIDERATIONS:
+- DeepWiki runs as a background service analyzing entire repositories
+- Must handle GitLab, GitHub, and other VCS platforms
+- Needs to understand CI/CD configurations and DevOps practices
+- Should recognize and analyze infrastructure-as-code (Terraform, CloudFormation)
+- Must maintain consistency across multiple analysis sessions
+
+EVALUATION CRITERIA:
+1. Accuracy in identifying architectural patterns
+2. Completeness of security vulnerability detection
+3. Quality of code improvement recommendations
+4. Understanding of business logic and domain concepts
+5. Ability to trace data flow through complex systems
+
+OUTPUT EXPECTATIONS:
+- Structured analysis reports with clear categorization
+- Actionable recommendations with code examples
+- Severity ratings for issues found
+- Architectural insights and improvement suggestions
+- Dependency analysis and upgrade recommendations
+
+ANTI-PATTERNS TO AVOID:
+- Models that hallucinate file contents or structures
+- Models with limited programming language support
+- Models that cannot maintain context across files
+- Models that provide generic, non-specific advice
+- Models with context windows under 50k tokens
