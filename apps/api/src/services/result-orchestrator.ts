@@ -27,6 +27,23 @@ import { SkillTrackingService } from '@codequal/agents/services/skill-tracking-s
 import { IssueResolutionDetector } from '@codequal/agents/services/issue-resolution-detector';
 import { dataFlowMonitor } from './data-flow-monitor';
 import { getUnifiedProgressTracer } from './unified-progress-tracer';
+import { reportIdMappingService } from './report-id-mapping-service';
+
+// State management for tracking analyses and completed reports
+interface OrchestratorState {
+  activeAnalyses: Map<string, any>;
+  completedAnalyses: Map<string, any>;
+}
+
+const resultOrchestratorState: OrchestratorState = {
+  activeAnalyses: new Map(),
+  completedAnalyses: new Map()
+};
+
+// Export function to get the state (for use in routes)
+export function getResultOrchestratorState(): OrchestratorState {
+  return resultOrchestratorState;
+}
 
 export interface PRAnalysisRequest {
   repositoryUrl: string;
@@ -191,6 +208,13 @@ export class ResultOrchestrator {
     const startTime = Date.now();
     const processingSteps: string[] = [];
     
+    this.logger.info('🚀 Starting PR analysis', {
+      repositoryUrl: request.repositoryUrl,
+      prNumber: request.prNumber,
+      analysisMode: request.analysisMode,
+      timestamp: new Date().toISOString()
+    });
+    
     // Start unified progress tracking
     const unifiedTracer = getUnifiedProgressTracer();
     const { analysisId, sessionId } = unifiedTracer.startAnalysis(
@@ -200,6 +224,11 @@ export class ResultOrchestrator {
       5, // total agents
       5  // total tools (MCP tools)
     );
+    
+    this.logger.info('📋 Analysis tracking initialized', {
+      analysisId,
+      sessionId
+    });
     
     // Store IDs for later use
     (this as any).currentAnalysisId = analysisId;
@@ -610,7 +639,19 @@ export class ResultOrchestrator {
       
       // Step 12: Store standardized report in Supabase for UI consumption
       processingSteps.push('Storing report in database');
+      this.logger.info('📝 Storing report in Vector DB', {
+        reportId: standardReport.id,
+        repositoryUrl: standardReport.repositoryUrl,
+        prNumber: standardReport.prNumber,
+        reportSize: JSON.stringify(standardReport).length
+      });
+      
       const reportId = await this.storeReportInSupabase(standardReport, request.authenticatedUser);
+      
+      this.logger.info('✅ Report stored successfully', {
+        reportId,
+        storageType: 'vector-db'
+      });
 
       // Step 13: Track skill development based on PR analysis
       processingSteps.push('Tracking skill development');
@@ -713,10 +754,41 @@ export class ResultOrchestrator {
       // Complete monitoring session
       dataFlowMonitor.completeSession(sessionId);
       
+      this.logger.info('🎉 PR analysis completed successfully', {
+        analysisId: analysisResult.analysisId,
+        status: analysisResult.status,
+        totalFindings: analysisResult.analysis?.totalFindings,
+        processingTime: analysisResult.analysis?.processingTime,
+        totalSteps: processingSteps.length,
+        timestamp: new Date().toISOString()
+      });
+      
+      // Add a simple console.log to confirm we reach this point
+      console.log('🎯 ANALYSIS COMPLETE - About to return result', {
+        analysisId: analysisResult.analysisId,
+        hasReport: !!analysisResult.report,
+        reportType: typeof analysisResult.report
+      });
+      
       return analysisResult;
 
     } catch (error) {
+      this.logger.error('❌ PR analysis failed', {
+        analysisId,
+        sessionId,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        processingSteps,
+        timestamp: new Date().toISOString()
+      });
+      
       console.error('PR analysis orchestration error:', error);
+      console.error('🚨 CRITICAL ERROR IN ANALYSIS:', {
+        errorMessage: error instanceof Error ? error.message : String(error),
+        errorStack: error instanceof Error ? error.stack : undefined,
+        analysisId,
+        sessionId
+      });
       
       // Mark session as failed
       if (sessionId) {
@@ -1344,7 +1416,18 @@ export class ResultOrchestrator {
       return 'comprehensive';
     }
     
-    const { complexity, riskLevel, changeTypes, totalChanges } = prContentAnalysis;
+    const { complexity, riskLevel, changeTypes, totalChanges, changedFiles } = prContentAnalysis;
+    
+    // Security-critical files always trigger deep analysis
+    if (changeTypes?.includes('security') || this.containsSecurityFiles(changedFiles)) {
+      this.logger.info('Security-critical files detected, automatically selecting deep mode', {
+        riskLevel,
+        changeTypes,
+        totalChanges,
+        securityFiles: changedFiles?.filter((f: string) => this.isSecurityFile(f))
+      });
+      return 'deep';
+    }
     
     // High risk always triggers deep analysis
     if (riskLevel === 'high') {
@@ -2823,62 +2906,265 @@ Primary Language: TypeScript
   }
 
   /**
-   * Store standardized report in Supabase for UI consumption
+   * Store standardized report in Vector DB for retrieval
    */
   private async storeReportInSupabase(
     report: StandardReport,
     authenticatedUser: AuthenticatedUser
   ): Promise<string> {
+    this.logger.info('🗄️ Starting Vector DB chunked storage', {
+      reportId: report.id,
+      repositoryUrl: report.repositoryUrl,
+      startTime: new Date().toISOString()
+    });
+    
     try {
-      const { getSupabase } = await import('@codequal/database/supabase/client');
-      
-      // Store the report in the analysis_reports table
-      const { error } = await getSupabase()
-        .from('analysis_reports')
-        .insert({
-          id: report.id,
-          repository_url: report.repositoryUrl,
-          pr_number: report.prNumber,
-          user_id: authenticatedUser.id,
-          organization_id: authenticatedUser.organizationId,
-          report_data: report, // Store entire report as JSONB
-          overview: report.overview, // Store overview separately for quick access
-          metadata: report.metadata,
-          created_at: report.timestamp,
-          analysis_mode: report.metadata.analysisMode,
-          total_findings: report.overview.totalFindings,
-          risk_level: report.overview.riskLevel,
-          analysis_score: report.overview.analysisScore
-        });
-      
-      if (error) {
-        this.logger.error('Failed to store report in Supabase', { error, reportId: report.id });
-        throw error;
-      }
-      
-      this.logger.info('Report stored successfully in Supabase', {
+      // Step 1: Store report ID mapping for retrieval
+      this.logger.info('📍 Storing report ID mapping', {
         reportId: report.id,
         repositoryUrl: report.repositoryUrl
       });
       
+      await reportIdMappingService.storeMapping(
+        report.id,
+        report.repositoryUrl,
+        report.prNumber,
+        authenticatedUser.id
+      );
+      
+      // Step 2: Create chunked analysis results for Vector DB
+      const analysisChunks = this.createReportChunks(report);
+      
+      this.logger.info('🔄 Storing chunked report in Vector DB', {
+        repositoryUrl: report.repositoryUrl,
+        chunkCount: analysisChunks.length,
+        chunkTypes: analysisChunks.map(c => c.metadata.contentType)
+      });
+      
+      // Store all chunks in Vector DB
+      await this.vectorContextService.storeAnalysisResults(
+        report.repositoryUrl,
+        analysisChunks,
+        authenticatedUser.id
+      );
+      
+      this.logger.info('✅ Vector DB storage completed', {
+        reportId: report.id,
+        repositoryUrl: report.repositoryUrl,
+        chunks: analysisChunks.length
+      });
+      
+      // Report is already stored in temporary storage (done above)
+      
       return report.id;
     } catch (error) {
-      this.logger.error('Error storing report in Supabase', { error });
+      this.logger.error('❌ Error storing report in Vector DB', { 
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        reportId: report.id,
+        timestamp: new Date().toISOString()
+      });
       
-      // If database storage fails, use temporary in-memory storage
-      try {
-        const { storeReportTemporarily } = await import('../routes/analysis-reports.js');
-        storeReportTemporarily(report.id, report);
-        this.logger.info('Report stored in temporary memory storage', { reportId: report.id });
-      } catch (tempError) {
-        this.logger.error('Failed to store report temporarily', { tempError });
-      }
+      // Report is already stored in temporary storage (done in storeReportInSupabase)
+      this.logger.info('Report available in temporary memory storage', { reportId: report.id });
       
       // Don't fail the entire analysis if storage fails
       // The report is still available in the response
       // Return the report ID even if storage fails
       return report.id;
     }
+  }
+  
+  /**
+   * Create chunked analysis results for Vector DB storage
+   * Each chunk is optimized for specific agent roles
+   */
+  private createReportChunks(report: StandardReport): any[] {
+    const chunks: any[] = [];
+    const baseMetadata = {
+      reportId: report.id,
+      prNumber: report.prNumber,
+      timestamp: report.timestamp,
+      repositoryUrl: report.repositoryUrl,
+      analysisMode: report.metadata?.analysisMode || 'comprehensive'
+    };
+    
+    // Chunk 1: Full report for orchestrator and general retrieval
+    chunks.push({
+      repositoryUrl: report.repositoryUrl,
+      analysis: {
+        reportId: report.id,
+        fullReport: report,
+        contentType: 'full_report'
+      },
+      metadata: {
+        ...baseMetadata,
+        contentType: 'full_report',
+        agentRole: 'orchestrator',
+        searchTerms: ['full report', 'complete analysis', 'overview']
+      }
+    });
+    
+    // Chunk 2: Overview and summary for orchestrator
+    chunks.push({
+      repositoryUrl: report.repositoryUrl,
+      analysis: {
+        reportId: report.id,
+        overview: report.overview,
+        executiveSummary: report.overview.executiveSummary,
+        decision: (report.overview as any).decision || { status: 'PENDING', confidence: 0 },
+        contentType: 'analysis_overview'
+      },
+      metadata: {
+        ...baseMetadata,
+        contentType: 'analysis_overview',
+        agentRole: 'orchestrator',
+        searchTerms: ['summary', 'overview', 'decision', 'executive summary']
+      }
+    });
+    
+    // Chunk 3: Security findings
+    const securityFindings = report.modules?.findings?.categories?.security;
+    if (securityFindings) {
+      chunks.push({
+        repositoryUrl: report.repositoryUrl,
+        analysis: {
+          reportId: report.id,
+          findings: securityFindings.findings,
+          summary: securityFindings.summary,
+          score: (securityFindings as any).score || 0,
+          contentType: 'security_analysis'
+        },
+        metadata: {
+          ...baseMetadata,
+          contentType: 'security_analysis',
+          agentRole: 'security',
+          searchTerms: ['security', 'vulnerability', 'authentication', 'authorization', 'compliance']
+        }
+      });
+    }
+    
+    // Chunk 4: Performance findings
+    const performanceFindings = report.modules?.findings?.categories?.performance;
+    if (performanceFindings) {
+      chunks.push({
+        repositoryUrl: report.repositoryUrl,
+        analysis: {
+          reportId: report.id,
+          findings: performanceFindings.findings,
+          summary: performanceFindings.summary,
+          score: (performanceFindings as any).score || 0,
+          contentType: 'performance_analysis'
+        },
+        metadata: {
+          ...baseMetadata,
+          contentType: 'performance_analysis',
+          agentRole: 'performance',
+          searchTerms: ['performance', 'optimization', 'bottleneck', 'latency', 'throughput']
+        }
+      });
+    }
+    
+    // Chunk 5: Code quality findings
+    const codeQualityFindings = report.modules?.findings?.categories?.codeQuality;
+    if (codeQualityFindings) {
+      chunks.push({
+        repositoryUrl: report.repositoryUrl,
+        analysis: {
+          reportId: report.id,
+          findings: codeQualityFindings.findings,
+          summary: codeQualityFindings.summary,
+          score: (codeQualityFindings as any).score || 0,
+          contentType: 'code_quality_analysis'
+        },
+        metadata: {
+          ...baseMetadata,
+          contentType: 'code_quality_analysis',
+          agentRole: 'codeQuality',
+          searchTerms: ['code quality', 'complexity', 'maintainability', 'technical debt', 'code smell']
+        }
+      });
+    }
+    
+    // Chunk 6: Dependencies findings
+    const dependencyFindings = report.modules?.findings?.categories?.dependencies;
+    if (dependencyFindings) {
+      chunks.push({
+        repositoryUrl: report.repositoryUrl,
+        analysis: {
+          reportId: report.id,
+          findings: dependencyFindings.findings,
+          summary: dependencyFindings.summary,
+          score: (dependencyFindings as any).score || 0,
+          contentType: 'dependency_analysis'
+        },
+        metadata: {
+          ...baseMetadata,
+          contentType: 'dependency_analysis',
+          agentRole: 'dependency',
+          searchTerms: ['dependency', 'package', 'version', 'vulnerability', 'license']
+        }
+      });
+    }
+    
+    // Chunk 7: Architecture findings
+    const architectureFindings = report.modules?.findings?.categories?.architecture;
+    if (architectureFindings) {
+      chunks.push({
+        repositoryUrl: report.repositoryUrl,
+        analysis: {
+          reportId: report.id,
+          findings: architectureFindings.findings,
+          summary: architectureFindings.summary,
+          score: (architectureFindings as any).score || 0,
+          contentType: 'architecture_analysis'
+        },
+        metadata: {
+          ...baseMetadata,
+          contentType: 'architecture_analysis',
+          agentRole: 'architecture',
+          searchTerms: ['architecture', 'design', 'pattern', 'structure', 'modularity']
+        }
+      });
+    }
+    
+    // Chunk 8: Recommendations
+    if (report.modules?.recommendations) {
+      chunks.push({
+        repositoryUrl: report.repositoryUrl,
+        analysis: {
+          reportId: report.id,
+          recommendations: report.modules.recommendations,
+          contentType: 'recommendations'
+        },
+        metadata: {
+          ...baseMetadata,
+          contentType: 'recommendations',
+          agentRole: 'orchestrator',
+          searchTerms: ['recommendations', 'improvements', 'suggestions', 'next steps']
+        }
+      });
+    }
+    
+    // Chunk 9: Educational content
+    if (report.modules?.educational || (report.modules as any)?.educationalContent) {
+      chunks.push({
+        repositoryUrl: report.repositoryUrl,
+        analysis: {
+          reportId: report.id,
+          educational: report.modules.educational || (report.modules as any).educationalContent,
+          contentType: 'educational_content'
+        },
+        metadata: {
+          ...baseMetadata,
+          contentType: 'educational_content',
+          agentRole: 'educational',
+          searchTerms: ['learning', 'education', 'skills', 'training', 'resources']
+        }
+      });
+    }
+    
+    return chunks;
   }
 
   /**
@@ -2980,5 +3266,40 @@ Primary Language: TypeScript
       const category = rec.category.charAt(0).toUpperCase() + rec.category.slice(1);
       return `[${priority}] ${category}: ${rec.title}`;
     });
+  }
+
+  /**
+   * Check if any of the files are security-related
+   */
+  private containsSecurityFiles(files?: string[]): boolean {
+    if (!files || files.length === 0) return false;
+    return files.some(file => this.isSecurityFile(file));
+  }
+
+  /**
+   * Check if a file is security-related based on its path
+   */
+  private isSecurityFile(filePath: string): boolean {
+    const securityPatterns = [
+      /auth/i,
+      /security/i,
+      /crypto/i,
+      /password/i,
+      /token/i,
+      /session/i,
+      /jwt/i,
+      /oauth/i,
+      /api[_-]?key/i,
+      /secret/i,
+      /credential/i,
+      /\.env/,
+      /private[_-]?key/i,
+      /public[_-]?key/i,
+      /certificate/i,
+      /ssl/i,
+      /tls/i
+    ];
+    
+    return securityPatterns.some(pattern => pattern.test(filePath));
   }
 }
