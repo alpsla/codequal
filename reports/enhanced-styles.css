@@ -1,0 +1,2601 @@
+/* Enhanced CodeQual Report Styles */
+
+/* CSS Variables for Theming */
+:root {
+    /* Light Mode Colors */
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8f9fa;
+    --bg-tertiary: #e9ecef;
+    --text-primary: #212529;
+    --text-secondary: #6c757d;
+    --text-tertiary: #adb5bd;
+    
+    /* Brand Colors */
+    --primary: #6366f1;
+    --primary-dark: #4f46e5;
+    --primary-light: #818cf8;
+    --secondary: #ec4899;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --info: #3b82f6;
+    
+    /* Gradients */
+    --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --success-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    --danger-gradient: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    --warning-gradient: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    --info-gradient: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    
+    /* Transitions */
+    --transition-base: all 0.2s ease;
+    --transition-slow: all 0.3s ease;
+    --transition-fast: all 0.1s ease;
+    
+    /* Spacing */
+    --header-height: 60px;
+}
+
+/* Dark Mode */
+body.dark-mode {
+    --bg-primary: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-tertiary: #334155;
+    --text-primary: #f1f5f9;
+    --text-secondary: #cbd5e1;
+    --text-tertiary: #64748b;
+    
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+    --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
+}
+
+/* Reset and Base */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--text-primary);
+    background-color: var(--bg-tertiary);
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+body.dark-mode {
+    background-color: #0f172a; /* Dark background for body */
+}
+
+/* Fixed Header */
+.fixed-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--header-height);
+    background: var(--bg-primary);
+    box-shadow: var(--shadow);
+    z-index: 1000;
+    transition: var(--transition-base);
+}
+
+.header-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    height: 100%;
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.logo-section {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.logo-icon {
+    font-size: 1.5rem;
+}
+
+.logo-image {
+    height: 40px;
+    width: auto;
+}
+
+.footer-logo {
+    height: 24px;
+    width: auto;
+    vertical-align: middle;
+    margin-right: 8px;
+}
+
+.footer-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Navigation */
+.nav-menu {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
+.nav-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-weight: 500;
+    transition: var(--transition-base);
+}
+
+.nav-link:hover {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.nav-link.active {
+    background: var(--primary);
+    color: white;
+}
+
+.nav-link i {
+    font-size: 0.875rem;
+}
+
+/* Header Actions */
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.icon-btn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition-base);
+}
+
+.icon-btn:hover {
+    background: var(--bg-tertiary);
+    transform: translateY(-1px);
+}
+
+/* Main Content */
+.main-content {
+    margin-top: var(--header-height);
+    padding: 20px;
+    max-width: 1400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Sections */
+.section {
+    background: var(--bg-primary);
+    border-radius: 12px;
+    padding: 30px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow);
+    transition: var(--transition-base);
+}
+
+.section:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.section-header h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Dashboard Section */
+.dashboard-section {
+    background: var(--primary-gradient);
+    color: white;
+    padding: 40px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+    position: relative;
+    overflow: hidden;
+}
+
+.dashboard-section::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -30%;
+    width: 60%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    transform: rotate(45deg);
+}
+
+.dashboard-header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    position: relative;
+}
+
+.subtitle {
+    font-size: 1.25rem;
+    opacity: 0.9;
+    margin-bottom: 20px;
+}
+
+.report-meta {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    position: relative;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    opacity: 0.9;
+}
+
+/* Metrics Grid */
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-top: 30px;
+    position: relative;
+}
+
+.metric-card {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    transition: var(--transition-base);
+}
+
+.metric-card:hover {
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.metric-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+}
+
+.metric-value {
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.metric-label {
+    font-size: 0.875rem;
+    opacity: 0.9;
+}
+
+/* PR Decision Section */
+.pr-decision-section {
+    border-top: 4px solid transparent;
+    position: relative;
+}
+
+.pr-decision-section.approved {
+    border-top-color: var(--success);
+}
+
+.pr-decision-section.conditionally-approved {
+    border-top-color: var(--warning);
+}
+
+.pr-decision-section.blocked {
+    border-top-color: var(--danger);
+}
+
+.decision-container {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 40px;
+    align-items: start;
+}
+
+.decision-visual {
+    text-align: center;
+}
+
+.decision-icon-wrapper {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 20px;
+}
+
+.decision-icon {
+    font-size: 5rem;
+    animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+.decision-ring {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 120px;
+    height: 120px;
+    border: 3px solid currentColor;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0.2;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: translate(-50%, -50%) scale(1); opacity: 0.2; }
+    50% { transform: translate(-50%, -50%) scale(1.1); opacity: 0.1; }
+    100% { transform: translate(-50%, -50%) scale(1); opacity: 0.2; }
+}
+
+.confidence-meter {
+    margin-top: 20px;
+}
+
+.confidence-label {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-bottom: 5px;
+}
+
+.confidence-bar {
+    height: 8px;
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.confidence-fill {
+    height: 100%;
+    background: var(--primary-gradient);
+    transition: width 1s ease;
+}
+
+.confidence-value {
+    text-align: center;
+    margin-top: 5px;
+    font-weight: 600;
+}
+
+.decision-title {
+    font-size: 2rem;
+    margin-bottom: 10px;
+}
+
+.decision-message {
+    color: var(--text-secondary);
+    margin-bottom: 30px;
+}
+
+.decision-factors {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.factor-card {
+    background: var(--bg-secondary);
+    padding: 20px;
+    border-radius: 8px;
+}
+
+.factor-card h3 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+    font-size: 1.125rem;
+}
+
+/* Issues Container */
+.issues-container {
+    margin-top: 20px;
+}
+
+/* Finding Cards */
+.finding {
+    background: var(--bg-secondary);
+    border-left: 4px solid var(--primary);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 15px;
+    transition: var(--transition-base);
+    position: relative;
+}
+
+.finding:hover {
+    transform: translateX(5px);
+    box-shadow: var(--shadow-md);
+}
+
+.finding.critical {
+    border-left-color: var(--danger);
+    background: rgba(239, 68, 68, 0.05);
+}
+
+.finding.high {
+    border-left-color: var(--warning);
+    background: rgba(245, 158, 11, 0.05);
+}
+
+.finding.medium {
+    border-left-color: #eab308;
+    background: rgba(234, 179, 8, 0.05);
+}
+
+.finding.low {
+    border-left-color: var(--success);
+    background: rgba(16, 185, 129, 0.05);
+}
+
+/* Badges */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge.critical {
+    background: var(--danger);
+    color: white;
+}
+
+.badge.high {
+    background: var(--warning);
+    color: white;
+}
+
+.badge.medium {
+    background: #eab308;
+    color: #713f12;
+}
+
+.badge.low {
+    background: var(--success);
+    color: white;
+}
+
+/* Code Snippets */
+.code-snippet {
+    background: #1e293b;
+    color: #e2e8f0;
+    padding: 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 10px 0;
+    font-family: 'Monaco', 'Consolas', 'Courier New', monospace;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    position: relative;
+}
+
+.code-snippet::before {
+    content: 'Copy';
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    padding: 4px 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.code-snippet:hover::before {
+    opacity: 1;
+}
+
+/* Recommendation Box */
+.recommendation-box {
+    background: var(--bg-tertiary);
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 15px;
+    border-left: 3px solid var(--primary);
+}
+
+/* Issues Stats */
+.issues-stats {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 40px;
+    margin-bottom: 30px;
+}
+
+.stats-summary {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+}
+
+.stat-item {
+    background: var(--bg-secondary);
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    transition: var(--transition-base);
+}
+
+.stat-item:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.stat-item.critical {
+    border-top: 3px solid var(--danger);
+}
+
+.stat-item.high {
+    border-top: 3px solid var(--warning);
+}
+
+.stat-item.medium {
+    border-top: 3px solid #eab308;
+}
+
+.stat-item.low {
+    border-top: 3px solid var(--success);
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    display: block;
+}
+
+.stat-label {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+/* Score Visual */
+.score-container {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 40px;
+    align-items: start;
+}
+
+.score-visual {
+    text-align: center;
+}
+
+.score-circle-enhanced {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    margin: 0 auto 20px;
+}
+
+.score-svg {
+    transform: rotate(-90deg);
+}
+
+.score-bg {
+    fill: none;
+    stroke: var(--bg-tertiary);
+    stroke-width: 10;
+}
+
+.score-progress {
+    fill: none;
+    stroke: var(--success);
+    stroke-width: 10;
+    stroke-linecap: round;
+    stroke-dasharray: 565.48;
+    stroke-dashoffset: 565.48;
+    transition: stroke-dashoffset 1s ease, stroke 0.3s ease;
+}
+
+.score-circle-enhanced.low .score-progress {
+    stroke: var(--danger);
+}
+
+.score-circle-enhanced.medium .score-progress {
+    stroke: var(--warning);
+}
+
+.score-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+
+.score-number {
+    font-size: 3rem;
+    font-weight: 700;
+}
+
+.score-label {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.score-trend {
+    margin-top: 5px;
+    font-size: 0.875rem;
+}
+
+.score-trend.positive {
+    color: var(--success);
+}
+
+.score-trend.negative {
+    color: var(--danger);
+}
+
+/* Skills Container */
+.skills-container {
+    display: grid;
+    grid-template-columns: 400px 1fr;
+    gap: 40px;
+}
+
+.skills-radar {
+    background: var(--bg-secondary);
+    padding: 20px;
+    border-radius: 8px;
+}
+
+.skills-list {
+    display: grid;
+    gap: 15px;
+}
+
+/* Skill Cards */
+.skill-card {
+    background: var(--bg-secondary);
+    padding: 20px;
+    border-radius: 8px;
+    transition: var(--transition-base);
+}
+
+.skill-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.skill-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.skill-bar {
+    height: 8px;
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.skill-fill {
+    height: 100%;
+    background: var(--primary-gradient);
+    border-radius: 4px;
+    transition: width 1s ease;
+}
+
+/* Educational Modules */
+.educational-container {
+    display: grid;
+    gap: 20px;
+}
+
+.edu-module {
+    background: var(--bg-secondary);
+    padding: 24px;
+    border-radius: 8px;
+    border: 2px solid transparent;
+    transition: var(--transition-base);
+    position: relative;
+    overflow: hidden;
+}
+
+.edu-module:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.edu-module::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--primary-gradient);
+    transform: translateX(-4px);
+    transition: transform 0.3s ease;
+}
+
+.edu-module:hover::before {
+    transform: translateX(0);
+}
+
+.edu-link {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 10px;
+}
+
+.edu-link:hover {
+    color: var(--primary-dark);
+}
+
+/* Buttons */
+.btn-primary, .btn-secondary {
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition-base);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-secondary {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.btn-secondary:hover {
+    background: var(--bg-tertiary);
+}
+
+/* Modals */
+.search-modal, .export-modal, .filter-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.search-container, .export-container, .filter-container {
+    background: var(--bg-primary);
+    border-radius: 12px;
+    padding: 30px;
+    max-width: 500px;
+    width: 90%;
+    position: relative;
+    box-shadow: var(--shadow-xl);
+}
+
+.search-input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid var(--bg-tertiary);
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: var(--transition-base);
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.search-close, .export-close, .filter-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--text-secondary);
+}
+
+/* Export Options */
+.export-options {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.export-option {
+    background: var(--bg-secondary);
+    border: 2px solid transparent;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: var(--transition-base);
+}
+
+.export-option:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+}
+
+.export-option i {
+    font-size: 2rem;
+    display: block;
+    margin-bottom: 10px;
+    color: var(--primary);
+}
+
+/* Filter Modal */
+.filter-group {
+    margin-bottom: 20px;
+}
+
+.filter-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.filter-options {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.filter-options label {
+    font-weight: normal;
+    cursor: pointer;
+}
+
+.filter-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 20px;
+}
+
+/* Toggle Button */
+.toggle-button {
+    background: var(--bg-secondary);
+    border: 2px solid var(--bg-tertiary);
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: var(--transition-base);
+    margin: 20px 0;
+}
+
+.toggle-button:hover {
+    border-color: var(--primary);
+    background: var(--bg-tertiary);
+}
+
+/* PR Comment Preview */
+.pr-comment-preview {
+    background: var(--bg-secondary);
+    border: 2px solid var(--bg-tertiary);
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.pr-comment-preview pre {
+    white-space: pre-wrap;
+    font-family: 'Monaco', 'Consolas', monospace;
+    font-size: 0.875rem;
+    line-height: 1.6;
+}
+
+/* Footer */
+.footer {
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    padding: 40px;
+    margin-top: 40px;
+    text-align: center;
+}
+
+.footer-content {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.footer-brand {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--primary);
+    margin-bottom: 20px;
+}
+
+.footer-version {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-left: 10px;
+}
+
+.footer-links {
+    display: flex;
+    gap: 30px;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.footer-links a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: var(--transition-base);
+}
+
+.footer-links a:hover {
+    color: var(--primary);
+}
+
+.footer-meta {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+/* Feedback Widget */
+.feedback-widget {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1500;
+}
+
+.feedback-trigger {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: var(--primary-gradient);
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    box-shadow: var(--shadow-lg);
+    transition: var(--transition-base);
+}
+
+.feedback-trigger:hover {
+    transform: scale(1.1);
+}
+
+.feedback-form {
+    position: absolute;
+    bottom: 70px;
+    right: 0;
+    background: var(--bg-primary);
+    border-radius: 12px;
+    padding: 20px;
+    width: 300px;
+    box-shadow: var(--shadow-xl);
+    display: none;
+}
+
+.feedback-form.show {
+    display: block;
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.feedback-rating {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin: 20px 0;
+}
+
+.rating-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: var(--transition-base);
+}
+
+.rating-btn:hover {
+    transform: scale(1.2);
+}
+
+.rating-btn.selected {
+    transform: scale(1.3);
+}
+
+.feedback-text {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid var(--bg-tertiary);
+    border-radius: 8px;
+    resize: vertical;
+    min-height: 80px;
+    font-family: inherit;
+}
+
+/* View Toggle */
+.view-toggle {
+    display: flex;
+    gap: 5px;
+    background: var(--bg-secondary);
+    padding: 5px;
+    border-radius: 8px;
+}
+
+.view-btn {
+    background: none;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: var(--transition-base);
+}
+
+.view-btn.active {
+    background: var(--bg-primary);
+    color: var(--primary);
+}
+
+/* Loading Animation */
+.loading {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid var(--bg-tertiary);
+    border-radius: 50%;
+    border-top-color: var(--primary);
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Accessibility */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/* Print Styles */
+@media print {
+    /* Hide ALL interactive elements and modals */
+    .fixed-header,
+    .feedback-widget,
+    .icon-btn,
+    .btn-primary,
+    .btn-secondary,
+    .toggle-button,
+    .view-toggle,
+    .filter-btn,
+    .nav-menu,
+    .search-modal,
+    .export-modal,
+    .header-actions,
+    #themeToggle,
+    #searchBtn,
+    #exportBtn,
+    .export-close,
+    .search-close,
+    #google_translate_element,
+    .feedback-container,
+    .modal,
+    .modal-backdrop {
+        display: none !important;
+        visibility: hidden !important;
+    }
+    
+    /* Reset body and html for print */
+    html, body {
+        background: white !important;
+        color: black !important;
+        font-size: 12pt !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        height: auto !important;
+        overflow: visible !important;
+    }
+    
+    /* Main content adjustments */
+    .main-content {
+        margin-top: 0 !important;
+        padding: 0 !important;
+        max-width: 100% !important;
+    }
+    
+    /* Section styling for print */
+    .section, 
+    .dashboard-section,
+    .pr-decision-section {
+        break-inside: avoid;
+        page-break-inside: avoid;
+        box-shadow: none !important;
+        border: 1px solid #dee2e6 !important;
+        margin-bottom: 20px !important;
+        padding: 15px !important;
+        background: white !important;
+        display: block !important;
+        visibility: visible !important;
+    }
+    
+    /* Ensure all content is visible */
+    * {
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+    
+    /* Show hidden sections */
+    #lowerPriorityIssues,
+    .collapsed-content {
+        display: block !important;
+        height: auto !important;
+        overflow: visible !important;
+    }
+    
+    /* Code snippets for print */
+    .code-snippet {
+        background: #f5f5f5 !important;
+        border: 1px solid #ddd !important;
+        color: black !important;
+        page-break-inside: avoid;
+    }
+    
+    /* Charts and visual elements */
+    canvas {
+        max-width: 100% !important;
+        height: auto !important;
+    }
+    
+    /* Findings and issues */
+    .finding {
+        page-break-inside: avoid;
+        border: 1px solid #ddd !important;
+        margin-bottom: 10px !important;
+        padding: 10px !important;
+    }
+    
+    /* Badges for print */
+    .badge {
+        background: none !important;
+        border: 1px solid black !important;
+        color: black !important;
+        font-weight: bold !important;
+    }
+    
+    /* Headers and titles */
+    h1, h2, h3, h4, h5, h6 {
+        color: black !important;
+        page-break-after: avoid;
+    }
+    
+    /* Links for print */
+    a {
+        color: black !important;
+        text-decoration: underline !important;
+    }
+    
+    /* Grid layouts */
+    .metrics-grid,
+    .stats-grid {
+        display: grid !important;
+        grid-template-columns: repeat(4, 1fr) !important;
+    }
+    
+    /* Decision status */
+    .decision-status {
+        background: white !important;
+        border: 2px solid black !important;
+        color: black !important;
+    }
+    
+    /* Score visualization */
+    .score-circle-enhanced {
+        border: 2px solid black !important;
+    }
+    
+    /* Hide icons in print */
+    .fas,
+    .far,
+    .fab,
+    i[class*="fa-"] {
+        display: none !important;
+    }
+    
+    /* Hide icon containers */
+    .stat-item i,
+    .meta-item i,
+    .section-header i,
+    .nav-link i {
+        display: none !important;
+    }
+    
+    /* Force show all dashboard content */
+    .dashboard-section,
+    .dashboard-header,
+    .dashboard-content,
+    .metrics-section,
+    .chart-section {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+    
+    /* Clean up dashboard for print */
+    .dashboard-section {
+        page-break-before: always;
+        padding-top: 0 !important;
+    }
+    
+    /* COMPLETE OVERRIDE: Hide dashboard section entirely and create custom title */
+    .dashboard-section {
+        display: none !important;
+    }
+    
+    /* Create custom print header that will show on first page */
+    body::before {
+        content: "CodeQual Analysis Report";
+        display: block;
+        text-align: center;
+        font-size: 24pt;
+        font-weight: bold;
+        margin: 30px 0 20px 0;
+        page-break-after: avoid;
+    }
+    
+    /* Add subtitle info */
+    .main-content::before {
+        content: "Pull Request Analysis Report";
+        display: block;
+        text-align: center;
+        font-size: 12pt;
+        color: #666;
+        margin-bottom: 30px;
+        border-bottom: 2px solid #ddd;
+        padding-bottom: 20px;
+        page-break-after: avoid;
+    }
+    
+    /* Hide any remaining dashboard content */
+    body.print-mode .dashboard-section,
+    .dashboard-section + *,
+    .dashboard-content,
+    .metrics-container,
+    .chart-container {
+        display: none !important;
+    }
+    
+    /* Hide ALL stats grids in print */
+    .stats-grid,
+    .stat-item,
+    .metrics-grid,
+    .dashboard-metrics {
+        display: none !important;
+    }
+    
+    /* Hide only the dashboard section */
+    .main-content > .dashboard-section {
+        display: none !important;
+    }
+    
+    /* PR Decision section - First content after title */
+    #pr-decision,
+    .pr-decision-section {
+        display: block !important;
+        visibility: visible !important;
+        page-break-before: avoid !important;
+        margin-top: 20px !important;
+        padding: 20px !important;
+        border: 2px solid #333 !important;
+        border-radius: 8px !important;
+    }
+    
+    #pr-decision .section-header {
+        display: none !important; /* Hide section header in print */
+    }
+    
+    .pr-decision-section .decision-status,
+    #pr-decision .decision-status {
+        text-align: center !important;
+        margin: 10px auto !important;
+        padding: 15px !important;
+        max-width: 500px !important;
+    }
+    
+    .pr-decision-section .decision-icon,
+    #pr-decision .decision-icon {
+        font-size: 48pt !important;
+        margin-bottom: 10px !important;
+        display: block !important;
+    }
+    
+    .pr-decision-section .decision-title,
+    #pr-decision .decision-title {
+        font-size: 20pt !important;
+        margin-bottom: 10px !important;
+        font-weight: bold !important;
+    }
+    
+    .pr-decision-section .confidence-score,
+    #pr-decision .confidence-score {
+        font-size: 14pt !important;
+        margin-bottom: 10px !important;
+    }
+    
+    /* Show the blocked icon properly */
+    .decision-icon.blocked::before {
+        content: "⛔" !important;
+        font-family: inherit !important;
+        display: block !important;
+    }
+    
+    /* Fix decision factors layout */
+    .decision-factors {
+        margin: 30px 0 !important;
+        padding: 20px !important;
+        border: 1px solid #ddd !important;
+    }
+    
+    .decision-factors h3 {
+        font-size: 14pt !important;
+        margin-bottom: 10px !important;
+    }
+    
+    .decision-factors ul {
+        list-style: none !important;
+        padding: 0 !important;
+    }
+    
+    .decision-factors li {
+        margin: 5px 0 !important;
+        padding-left: 20px !important;
+    }
+    
+    .decision-factors li::before {
+        content: "• " !important;
+        margin-left: -20px !important;
+        position: absolute !important;
+    }
+    
+    /* Educational resources */
+    .edu-module {
+        page-break-inside: avoid;
+        border: 1px solid #ddd !important;
+        padding: 10px !important;
+        margin-bottom: 10px !important;
+    }
+    
+    /* Print header on each page */
+    @page {
+        margin: 1in 0.75in;
+        @top-center {
+            content: "CodeQual Analysis Report";
+        }
+    }
+    
+    /* First page special */
+    @page:first {
+        @top-center {
+            content: none;
+        }
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .decision-container,
+    .score-container,
+    .skills-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .nav-menu {
+        display: none;
+    }
+    
+    .metrics-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .decision-factors,
+    .stats-summary {
+        grid-template-columns: 1fr;
+    }
+    
+    .issues-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .dashboard-header h1 {
+        font-size: 1.8rem;
+    }
+    
+    .export-options {
+        grid-template-columns: 1fr;
+    }
+    
+    .filter-options {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .metrics-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .header-container {
+        padding: 0 10px;
+    }
+    
+    .main-content {
+        padding: 10px;
+    }
+    
+    .section {
+        padding: 20px;
+    }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+    :root {
+        --primary: #0066cc;
+        --danger: #cc0000;
+        --success: #008800;
+        --warning: #cc6600;
+    }
+    
+    .badge,
+    .btn-primary {
+        font-weight: 700;
+    }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}/* Chart Container Fixes */
+.chart-container {
+    position: relative;
+    max-width: 400px !important;
+    max-height: 400px !important;
+    margin: 0 auto;
+}
+
+/* Specific chart size constraints */
+#issuesChart {
+    max-width: 350px !important;
+    max-height: 350px !important;
+}
+
+#timelineChart {
+    max-width: 100% !important;
+    max-height: 300px !important;
+}
+
+#skillsRadar {
+    max-width: 300px !important;
+    max-height: 300px !important;
+}
+
+/* Metrics grid fix */
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+/* Chart wrapper to maintain aspect ratio */
+.chart-wrapper {
+    position: relative;
+    padding-bottom: 100%; /* 1:1 aspect ratio */
+    height: 0;
+    overflow: hidden;
+}
+
+.chart-wrapper canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* Score circle fix */
+.score-circle-enhanced {
+    width: 200px !important;
+    height: 200px !important;
+    margin: 0 auto;
+}
+
+/* Repository issues chart container */
+.repo-issues-chart {
+    max-width: 400px;
+    margin: 2rem auto;
+}
+
+/* Ensure charts are responsive */
+@media (max-width: 768px) {
+    .chart-container {
+        max-width: 300px !important;
+        max-height: 300px !important;
+    }
+    
+    .metrics-grid {
+        grid-template-columns: 1fr;
+    }
+}
+/* Additional chart container fixes */
+.issues-stats canvas,
+.timeline-container canvas,
+.skills-radar canvas {
+    display: block \!important;
+    max-width: 100% \!important;
+    height: auto \!important;
+}
+
+.issues-stats {
+    max-width: 600px;
+    margin: 0 auto;
+}
+/* Fix black/white icons - ensure FontAwesome icons have color */
+.section-header i,
+.nav-link i,
+.finding-icon i,
+.skill-icon i {
+    color: #6366f1 !important; /* Primary purple color */
+}
+
+/* Fix missing recommendation spacing */
+.finding {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.recommendation-box {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: rgba(99, 102, 241, 0.1);
+    border-radius: 8px;
+}
+
+/* Fix list view layout */
+.list-view .finding {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 1rem;
+    align-items: start;
+}
+
+.list-view .finding-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+/* Fix improvement suggestions layout */
+.recommendation-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.5rem;
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    margin-bottom: 1rem;
+}
+
+.recommendation-card h4 {
+    margin: 0 0 0.5rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.recommendation-card p {
+    margin: 0;
+    line-height: 1.6;
+}
+
+/* Fix skills radar visibility */
+.skills-radar {
+    background: rgba(255, 255, 255, 0.5);
+    padding: 2rem;
+    border-radius: 12px;
+}
+
+/* Fix footer layout */
+footer {
+    padding: 3rem 0;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    margin-top: 4rem;
+}
+
+.footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem;
+}
+
+.footer-links {
+    display: flex;
+    gap: 2rem;
+    margin-top: 1rem;
+}
+
+.footer-links a {
+    color: #94a3b8;
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.footer-links a:hover {
+    color: #6366f1;
+}
+
+/* Fix educational links */
+.edu-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #6366f1;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s;
+}
+
+.edu-link:hover {
+    color: #4f46e5;
+    transform: translateX(5px);
+}
+
+/* Repository issues - ensure recommendations show */
+.repo-issue {
+    padding: 1.5rem;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    border-left: 4px solid;
+}
+
+.repo-issue.high {
+    border-left-color: #f97316;
+}
+
+.repo-issue.medium {
+    border-left-color: #eab308;
+}
+
+.repo-issue .recommendation {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: rgba(99, 102, 241, 0.05);
+    border-radius: 6px;
+    font-style: italic;
+}/* 1. Fix navigation tabs to fit on one line */
+.nav-menu {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: nowrap;
+}
+
+.nav-link {
+    white-space: nowrap;
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+}
+
+.nav-link i {
+    margin-right: 0.5rem;
+}
+
+/* Responsive navigation for smaller screens */
+@media (max-width: 1200px) {
+    .nav-link {
+        font-size: 0.85rem;
+        padding: 0.5rem 0.75rem;
+    }
+    
+    .nav-link i {
+        display: none; /* Hide icons on smaller screens to save space */
+    }
+}
+
+/* 2. Fix overlapping severity tags in PR Decision */
+.blocking-issues li,
+.positive-findings li {
+    margin-bottom: 0.75rem;
+    line-height: 1.8;
+}
+
+.blocking-issues .badge,
+.positive-findings .badge {
+    margin-right: 0.5rem;
+}
+
+/* 3. Fix second issue missing recommendation */
+.finding .recommendation-box {
+    margin-top: 1rem !important;
+    width: 100%;
+}
+
+/* 4. Center Repository Issues header */
+.section-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.section-header h2 {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    justify-content: center;
+}
+
+.section-subtitle {
+    text-align: center;
+    margin-top: 0.5rem;
+}
+
+/* 5. Make doughnut chart smaller */
+#issuesChart {
+    max-width: 250px !important;
+    max-height: 250px !important;
+}
+
+.issues-stats {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3rem;
+    margin-bottom: 2rem;
+}
+
+/* 6. Hide the gray skills radar background */
+.skills-radar {
+    display: none !important;
+}
+
+/* 7. Fix Improvement Suggestions layout */
+.skill-recommendations {
+    margin-top: 2rem;
+}
+
+.recommendation-card {
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto 1rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.5rem;
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.recommendation-card h4 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.1rem;
+    color: #1f2937;
+}
+
+.recommendation-card p {
+    margin: 0;
+    color: #4b5563;
+    line-height: 1.6;
+}
+
+/* 8. Center skills bars */
+.skills-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.skill-card {
+    margin-bottom: 1.5rem;
+}
+
+/* 9. Fix footer layout - 2 lines */
+.footer-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    text-align: center;
+}
+
+.footer-brand {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.footer-logo {
+    width: 30px;
+    height: 30px;
+}
+
+.footer-links {
+    display: flex;
+    gap: 2rem;
+    margin: 0;
+}
+
+.footer-meta {
+    font-size: 0.875rem;
+    color: #94a3b8;
+}
+
+/* 10. Fix educational module spacing */
+.edu-modules {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+/* 11. Fix "15 more issues" button to show correct count */
+.toggle-button {
+    margin-top: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* 12. Fix header gradient to be less overwhelming */
+.hero {
+    padding: 3rem 2rem;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+}
+
+/* 13. Better spacing for all sections */
+.section {
+    padding: 3rem 2rem;
+    margin: 0;
+}
+
+.section + .section {
+    border-top: 1px solid #e5e7eb;
+}
+/* Fix educational container */
+.educational-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+/* ===== UI FIXES JULY 2, 2025 ===== */
+
+/* 1. Fix Overview overlay issue and reduce module size */
+.dashboard-section {
+    padding: 20px 30px; /* Reduced from 40px */
+    margin-bottom: 20px; /* Reduced from 30px */
+}
+
+.dashboard-header h1 {
+    font-size: 1.8rem; /* Reduced from 2.5rem */
+    margin-bottom: 5px; /* Reduced from 10px */
+}
+
+.subtitle {
+    font-size: 1rem; /* Reduced from 1.25rem */
+    margin-bottom: 10px; /* Reduced from 20px */
+}
+
+.metrics-grid {
+    margin-top: 15px; /* Reduced from 30px */
+    gap: 15px; /* Reduced from 20px */
+}
+
+.metric-card {
+    padding: 15px; /* Reduced from 20px */
+}
+
+.metric-icon {
+    width: 40px; /* Reduced from 50px */
+    height: 40px; /* Reduced from 50px */
+    font-size: 1.2rem; /* Reduced from 1.5rem */
+}
+
+.metric-value {
+    font-size: 1.5rem; /* Reduced from 2rem */
+}
+
+/* 2. Add spacing between sections */
+.section {
+    margin-bottom: 30px !important; /* Increased spacing between cards */
+}
+
+/* 3. Fix icon sizes */
+.badge {
+    font-size: 0.7rem !important; /* Smaller badge text */
+    padding: 3px 10px !important; /* Smaller padding */
+}
+
+.factor-card ul li {
+    line-height: 2; /* More line spacing for badges */
+}
+
+/* 4. Fix Repository Issues */
+.section-subtitle {
+    text-align: center;
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+}
+
+/* Hide code snippets in Repository Issues */
+#repo-issues .code-snippet {
+    display: block !important;
+}
+
+/* 5. Fix icons to be colorful */
+.section-header i {
+    color: var(--primary) !important;
+}
+
+.recommendation-card h4 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* 6. Fix improvement suggestions icon color */
+.improvement-icon {
+    color: var(--primary) !important;
+}
+
+/* 7. Fix footer spacing */
+.footer {
+    padding: 20px !important; /* Reduced from 40px */
+    margin-top: 30px !important; /* Reduced from 40px */
+}
+
+.footer-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px; /* Reduced gap */
+}
+
+.footer-links {
+    margin-bottom: 10px !important; /* Reduced from 20px */
+}
+
+/* 8. Fix navigation overlay */
+.nav-link.active {
+    z-index: 10; /* Ensure active tab is above others */
+}
+
+/* 9. Ensure header doesn't get overlapped */
+.fixed-header {
+    z-index: 1100; /* Higher z-index */
+}
+
+.logo-section {
+    z-index: 1; /* Lower than nav but visible */
+}
+
+/* 10. Fix skills assessment spacing */
+.skills-container {
+    grid-template-columns: 1fr !important; /* Single column layout */
+}
+
+.skill-recommendations {
+    margin-top: 30px; /* Add spacing before improvement suggestions */
+}
+
+/* 11. Remove extra repository issues or show all */
+#lowerPriorityIssues {
+    margin-top: 20px;
+}
+
+/* 12. Fix chart containers once more */
+.chart-container {
+    max-width: 300px !important;
+    max-height: 300px !important;
+}
+
+/* 13. Hide skills radar completely */
+.skills-radar {
+    display: none !important;
+}
+
+/* 14. Fix the PR decision section spacing */
+.pr-decision-section {
+    margin-bottom: 30px !important;
+}
+
+/* 15. Fix icon alignment in recommendation cards */
+.recommendation-card {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 15px;
+}
+
+.recommendation-card h4 {
+    margin: 0;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.recommendation-card h4 span:first-child {
+    font-size: 1.2rem;
+}
+
+/* 16. Fix educational links hover */
+.edu-link {
+    cursor: pointer;
+}
+
+/* 17. Fix PR decision confidence when critical issues exist */
+.pr-decision-section.blocked .confidence-fill {
+    width: 25% !important; /* Force low confidence for blocked PRs */
+}
+
+/* ===== ADDITIONAL UI FIXES JULY 2, 2025 ===== */
+
+/* 1. Fix Overview tab overlaying company name */
+.nav-link.active {
+    position: relative;
+    z-index: 5; /* Lower than logo */
+}
+
+.logo-section {
+    position: relative;
+    z-index: 10; /* Higher than nav */
+}
+
+/* 2. Fix black/white icons in PR Decision */
+.factor-card h3 i {
+    color: var(--text-primary) !important;
+}
+
+.decision-factors .fa-ban {
+    color: var(--danger) !important;
+}
+
+.decision-factors .fa-check-circle {
+    color: var(--success) !important;
+}
+
+/* 3. Make Current PR Issues more compact */
+.finding {
+    padding: 15px !important; /* Reduced from 20px */
+    margin-bottom: 10px !important; /* Reduced from 15px */
+}
+
+.finding h3 {
+    margin-bottom: 5px !important;
+    font-size: 1.1rem !important;
+}
+
+.finding p {
+    margin-bottom: 8px !important;
+}
+
+.code-snippet {
+    margin: 8px 0 !important;
+    padding: 12px !important;
+}
+
+.recommendation-box {
+    margin-top: 10px !important;
+    padding: 12px !important;
+}
+
+/* 4. Center Repository Issues subtitle */
+.section-subtitle {
+    text-align: center !important;
+    display: block;
+    width: 100%;
+}
+
+/* 5. Make Repository Issues chart smaller */
+#issuesChart {
+    max-width: 200px !important;
+    max-height: 200px !important;
+}
+
+.issues-stats {
+    gap: 2rem !important;
+}
+
+/* 6. Fix Skills Assessment spacing */
+.skills-container {
+    margin: 0 auto;
+    max-width: 600px;
+}
+
+.skill-card {
+    padding: 12px !important;
+    margin-bottom: 10px !important;
+}
+
+.skill-header {
+    font-size: 0.95rem !important;
+}
+
+.skill-bar {
+    height: 6px !important;
+}
+
+/* 7. Fix Improvement Suggestions icon color and layout */
+.improvement-suggestions h3 i,
+.skill-recommendations h3 i {
+    color: var(--text-primary) !important;
+}
+
+.recommendation-card {
+    padding: 12px 16px !important;
+    margin-bottom: 10px !important;
+}
+
+.recommendation-card h4 {
+    font-size: 0.95rem !important;
+    color: var(--text-primary) !important;
+}
+
+.recommendation-card h4 span {
+    color: inherit !important;
+}
+
+.recommendation-card p {
+    font-size: 0.875rem !important;
+}
+
+/* 8. Further reduce Skills Assessment section spacing */
+.skills-section {
+    padding: 20px !important;
+}
+
+.skills-section .section-header {
+    margin-bottom: 15px !important;
+}
+
+/* 9. Fix toggle button text */
+.toggle-button {
+    white-space: nowrap;
+}
+
+/* 10. Hide all code snippets in Repository Issues section */
+.repo-issues-section .code-snippet,
+#repo-issues .code-snippet {
+    display: block !important;
+}
+
+/* 11. Ensure educational links don't conflict with navigation */
+.edu-link[href^="http"] {
+    cursor: pointer !important;
+}
+
+/* 12. Fix PR Decision title when blocked */
+.pr-decision-section.blocked .decision-title {
+    color: var(--danger);
+}
+
+/* ===== FINAL UI FIXES JULY 2, 2025 ===== */
+
+/* 1. Fix Overview tab DEFINITELY overlaying company name */
+.nav-link {
+    padding: 6px 12px !important; /* Smaller padding */
+    font-size: 0.85rem !important; /* Smaller font */
+}
+
+.nav-link.active {
+    position: relative !important;
+    z-index: 2 !important; /* Much lower */
+}
+
+.logo-section {
+    position: relative !important;
+    z-index: 100 !important; /* Much higher */
+    margin-right: 20px !important; /* Add spacing */
+}
+
+/* 2. Fix Current PR Issues header spacing */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px !important; /* Reduced from 24px */
+}
+
+.section-header h2 {
+    font-size: 1.3rem !important; /* Smaller title */
+    margin: 0 !important;
+}
+
+/* Filter and view toggle on same line */
+.section-header {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 15px;
+}
+
+.filter-btn {
+    margin-left: auto; /* Push to right */
+}
+
+/* 3. Fix Repository Issues layout */
+.repo-issues-section .section-header h2 {
+    display: block;
+    width: 100%;
+    text-align: center !important;
+    margin-bottom: 5px !important;
+}
+
+.section-subtitle {
+    text-align: center !important;
+    font-size: 0.9rem !important;
+    margin-bottom: 15px !important;
+}
+
+/* Make chart much smaller and centered */
+.issues-stats {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 3rem;
+    margin: 20px 0;
+}
+
+.chart-container {
+    max-width: 180px !important; /* Even smaller */
+    max-height: 180px !important;
+}
+
+#issuesChart {
+    max-width: 160px !important; /* Much smaller */
+    max-height: 160px !important;
+}
+
+/* 4. Compress Skills Assessment even more */
+.skills-section {
+    padding: 15px 20px !important; /* Less padding */
+}
+
+.skill-card {
+    padding: 8px 12px !important; /* Much less padding */
+    margin-bottom: 8px !important;
+}
+
+.skill-header {
+    font-size: 0.875rem !important; /* Smaller text */
+}
+
+.skill-bar {
+    height: 5px !important; /* Thinner bar */
+}
+
+/* 5. Fix Improvement Suggestions */
+.skill-recommendations h3 {
+    font-size: 1.1rem !important;
+    margin-bottom: 12px !important;
+}
+
+.skill-recommendations h3::before {
+    content: "💡 ";
+    color: var(--primary) !important;
+}
+
+.recommendation-card {
+    padding: 10px 14px !important;
+    margin-bottom: 8px !important;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.recommendation-card h4 {
+    font-size: 0.9rem !important;
+    margin: 0 !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.recommendation-card p {
+    font-size: 0.825rem !important;
+    margin: 0 !important;
+}
+
+/* 6. Repository issues - ensure no code snippets */
+.repo-issues-section .finding .code-snippet,
+#repo-issues .code-snippet,
+.finding[id="repo-issues"] .code-snippet {
+    display: block !important;
+}
+
+/* 7. Overall section compression */
+.section {
+    padding: 20px !important; /* Reduced from 30px */
+    margin-bottom: 20px !important; /* Reduced from 30px */
+}
+
+/* 8. Dashboard section ultra-compact */
+.dashboard-section {
+    padding: 15px 20px !important; /* Much smaller */
+}
+
+.metrics-grid {
+    gap: 10px !important; /* Tighter grid */
+    margin-top: 10px !important;
+}
+
+.metric-card {
+    padding: 10px !important; /* Smaller cards */
+}
+
+/* 9. Hide skills radar for real */
+.skills-radar,
+canvas#skillsRadar {
+    display: none !important;
+}
+
+/* 10. Fix educational link that returns 404 */
+.edu-link[href*="freecodecamp"] {
+    pointer-events: all !important;
+}
+
+/* 11. Extra fix for header layout */
+.header-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    height: 100%;
+    gap: 20px; /* Add gap between logo and nav */
+}
+
+.nav-menu {
+    flex: 1;
+    display: flex;
+    gap: 5px;
+    margin-left: 20px; /* Push nav away from logo */
+}
+
+/* Ensure Overview tab doesn't extend too far left */
+.nav-link:first-child {
+    margin-left: 10px;
+}
+
+/* ===== CRITICAL FINAL FIXES ===== */
+
+/* 1. Force Current PR Issues header on single line */
+#pr-issues .section-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    flex-wrap: nowrap !important;
+    width: 100% !important;
+}
+
+#pr-issues .section-header h2 {
+    flex: 0 0 auto !important;
+    margin-right: auto !important;
+}
+
+.section-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    flex-wrap: nowrap !important;
+}
+
+.view-toggle {
+    display: flex !important;
+    gap: 2px !important;
+}
+
+.filter-btn {
+    flex: 0 0 auto !important;
+    white-space: nowrap !important;
+}
+
+/* 2. Fix Repository Issues title alignment - LEFT like others */
+.repo-issues-section .section-header {
+    display: block !important;
+    width: 100% !important;
+}
+
+.repo-issues-section .section-header h2 {
+    text-align: left !important;
+    justify-content: flex-start !important;
+    margin: 0 0 5px 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+}
+
+.repo-issues-section .section-subtitle {
+    text-align: center !important; /* Keep subtitle centered */
+    display: block !important;
+    margin: 0 0 20px 0 !important;
+    color: var(--text-secondary) !important;
+}
+
+/* 3. Show code snippets in Repository Issues */
+#repo-issues .finding .code-snippet {
+    display: block !important;
+}
+
+/* 4. Fix Improvement Suggestions icon */
+.skill-recommendations h3::before {
+    content: none !important; /* Remove CSS icon */
+}
+
+/* Keep the black icon but make it colored YELLOW */
+.skill-recommendations h3 i.fa-lightbulb,
+.skill-recommendations h3 i.fas {
+    color: #f59e0b !important; /* Yellow/Amber color */
+}
+
+/* 5. Ensure all section headers align consistently LEFT */
+.section-header h2 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-align: left !important;
+    justify-content: flex-start !important;
+}
+
+/* 6. Code snippets in repository issues - REMOVED hiding rules */
+/* Code snippets are now visible in Repository Issues section */
+
+/* 7. Fix dark mode toggle button visibility */
+.toggle-button {
+    background: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+    border: 2px solid var(--bg-tertiary) !important;
+}
+
+/* Dark mode specific fixes - ONLY for toggle button */
+body.dark-mode .toggle-button {
+    background: #334155 !important; /* Specific dark color */
+    color: #f1f5f9 !important; /* Light text */
+    border: 2px solid #6366f1 !important; /* Purple border */
+}
+
+body.dark-mode .toggle-button:hover {
+    background: #6366f1 !important; /* Purple on hover */
+    color: white !important;
+}
+
+/* 8. Code snippets in Repository Issues - now VISIBLE */
+.repo-issues-section .code-snippet,
+#repo-issues .code-snippet {
+    /* Code snippets are now visible in Repository Issues */
+    display: block;
+    margin: 10px 0;
+}
+
+/* Also ensure dark mode sections have proper styling */
+body.dark-mode .section {
+    background: var(--bg-secondary) !important;
+    border: 1px solid var(--bg-tertiary);
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.5);
+}
+
+/* Fix body background in dark mode */
+body.dark-mode {
+    background-color: #0f172a !important;
+}

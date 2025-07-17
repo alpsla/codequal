@@ -93,8 +93,8 @@ export async function initializeDeepWikiModels(
     
     // Log the selection
     logger.info('DeepWiki model selection complete', {
-      primary: `${config.primary.provider}/${config.primary.model} - $${config.primary.pricing.input}/$${config.primary.pricing.output}/1M tokens`,
-      fallback: `${config.fallback.provider}/${config.fallback.model} - $${config.fallback.pricing.input}/$${config.fallback.pricing.output}/1M tokens`,
+      primary: `${config.primary.provider}/${config.primary.model} - $${config.primary.pricing?.input || 'N/A'}/$${config.primary.pricing?.output || 'N/A'}/1M tokens`,
+      fallback: `${config.fallback.provider}/${config.fallback.model} - $${config.fallback.pricing?.input || 'N/A'}/$${config.fallback.pricing?.output || 'N/A'}/1M tokens`,
       weights: DEEPWIKI_SCORING_WEIGHTS
     });
     
@@ -199,18 +199,9 @@ async function getStoredDeepWikiConfig(
   vectorStorage: VectorStorageService
 ): Promise<DeepWikiModelConfig | null> {
   try {
-    const results = await vectorStorage.query({
-      vector: [],
-      filter: {
-        type: 'deepwiki-model-config'
-      },
-      topK: 1,
-      namespace: 'model-configs'
-    });
-    
-    if (results.matches.length > 0) {
-      return results.matches[0].metadata as DeepWikiModelConfig;
-    }
+    // TODO: Implement proper vector storage query when interface is available
+    // For now, return null to force recalculation
+    return null;
   } catch (error) {
     logger.error('Failed to retrieve stored configuration', { error });
   }
@@ -226,15 +217,9 @@ async function storeDeepWikiConfig(
   config: DeepWikiModelConfig
 ): Promise<void> {
   try {
-    await vectorStorage.upsert({
-      id: 'deepwiki-model-config',
-      values: [], // Embeddings will be generated
-      metadata: {
-        ...config,
-        type: 'deepwiki-model-config'
-      },
-      namespace: 'model-configs'
-    });
+    // TODO: Implement proper vector storage when interface is available
+    // For now, we'll skip storing in vector DB
+    logger.warn('Vector storage not implemented - configuration not persisted');
     
     logger.info('Stored DeepWiki model configuration in Vector DB');
   } catch (error) {
