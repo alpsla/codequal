@@ -104,6 +104,13 @@ interface AnalysisResponse {
  *         $ref: '#/components/responses/RateLimitError'
  */
 resultOrchestratorRoutes.post('/analyze-pr', enforceTrialLimits, incrementScanCount, async (req: Request, res: Response) => {
+  console.log('🚀 POST /analyze-pr received', {
+    repositoryUrl: req.body.repositoryUrl,
+    prNumber: req.body.prNumber,
+    analysisMode: req.body.analysisMode,
+    timestamp: new Date().toISOString()
+  });
+  
   try {
     // Validate request body
     const validationResult = validatePRAnalysisRequest(req.body);
@@ -139,10 +146,12 @@ resultOrchestratorRoutes.post('/analyze-pr', enforceTrialLimits, incrementScanCo
     const analysisId = `analysis_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     // Start analysis (async)
+    console.log(`📋 Creating analysis promise for ${analysisId}`);
     const analysisPromise = orchestrator.analyzePR({
       ...request,
       authenticatedUser: user
     });
+    console.log(`✅ Analysis promise created for ${analysisId}`);
 
     // Store analysis promise for tracking
     activeAnalyses.set(analysisId, {
@@ -159,15 +168,26 @@ resultOrchestratorRoutes.post('/analyze-pr', enforceTrialLimits, incrementScanCo
     // Handle analysis completion
     analysisPromise
       .then(result => {
+        console.log(`✅ Analysis promise resolved for ${analysisId}`, {
+          report: result?.report ? 'present' : 'missing',
+          status: result?.status,
+          timestamp: new Date().toISOString()
+        });
+        
         const analysis = activeAnalyses.get(analysisId);
         if (analysis) {
           analysis.status = 'complete';
           analysis.results = result;
           analysis.completedAt = new Date();
+          console.log(`📊 Analysis marked as complete: ${analysisId}`);
+        } else {
+          console.error(`⚠️ Analysis ${analysisId} not found in activeAnalyses map`);
         }
       })
       .catch(error => {
-        console.error(`Analysis ${analysisId} failed:`, error);
+        console.error(`❌ Analysis ${analysisId} promise rejected:`, error);
+        console.error('Stack trace:', error.stack);
+        
         const analysis = activeAnalyses.get(analysisId);
         if (analysis) {
           analysis.status = 'failed';

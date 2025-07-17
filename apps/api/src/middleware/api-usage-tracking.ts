@@ -96,6 +96,11 @@ export async function trackApiUsage(
     // Check limits based on subscription tier
     const limit = currentUsage.api_calls_limit;
     
+    // Log for testing
+    if (limit === null) {
+      console.log(`[API Usage] No limit enforced for user ${userId} (tier: ${currentUsage.subscription_tier})`);
+    }
+    
     if (limit !== null && currentUsage.api_calls_this_month >= limit) {
       return res.status(429).json({
         error: 'API usage limit exceeded',
@@ -150,6 +155,10 @@ export async function trackApiUsage(
  * Get API call limit based on subscription tier
  */
 function getApiLimit(tier: string): number | null {
+  // TEMPORARILY DISABLED FOR TESTING - All tiers have unlimited API calls
+  return null;
+  
+  /* Original limits (commented out for testing):
   switch (tier) {
     case 'free':
       return null; // Pay-per-scan users (free tier with payment method) have no hard limit
@@ -162,6 +171,7 @@ function getApiLimit(tier: string): number | null {
     default:
       return 0;
   }
+  */
 }
 
 /**

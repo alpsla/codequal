@@ -1,18 +1,14 @@
 import { Router, Request, Response } from 'express';
 import { getSupabase } from '@codequal/database/supabase/client';
 import { createLogger } from '@codequal/core/utils';
+import { VectorContextService, createVectorContextService } from '@codequal/agents/multi-agent/vector-context-service';
 
 const router = Router();
 const logger = createLogger('AnalysisReportsAPI');
 
-// Temporary in-memory storage for reports when database is unavailable
-const temporaryReportStorage = new Map<string, any>();
-
-// Export for use by result-orchestrator
-export const storeReportTemporarily = (reportId: string, report: any) => {
-  temporaryReportStorage.set(reportId, report);
-  logger.info('Report stored temporarily in memory', { reportId });
-};
+// Import Vector DB retrieval services
+import { createVectorReportRetrievalService } from '../services/vector-report-retrieval-service';
+import { reportIdMappingService } from '../services/report-id-mapping-service';
 
 /**
  * GET /analysis/real-pr-test
@@ -171,8 +167,13 @@ router.get('/analysis/demo-report', async (req: Request, res: Response) => {
     }
   };
   
-  // Store the report
-  storeReportTemporarily(testReportId, testReport);
+  // Store the demo report mapping (in production, this would be done during report generation)
+  await reportIdMappingService.storeMapping(
+    testReportId,
+    testReport.repository_url,
+    testReport.pr_number,
+    'demo-user'
+  );
   
   // Generate HTML directly
   try {
@@ -252,69 +253,129 @@ router.get('/analysis/:reportId/report', async (req: Request, res: Response) => 
     
     logger.info('Retrieving report', { reportId, userId, format });
     
-    // Check temporary storage first
+    // Try to retrieve report from Vector DB using report ID
+    try {
+      logger.info('Attempting to retrieve report from Vector DB', { reportId, userId });
+      
+      // Create authenticated user object for Vector DB access
+      const authenticatedUser: any = {
+        id: userId || 'api-user',
+        email: 'api@codequal.dev',
+        organizationId: 'default',
+        permissions: ['read'],
+        createdAt: new Date(),
+        status: 'active'
+      };
+      
+      // Create Vector context service and report retrieval service
+      const vectorContextService = createVectorContextService(authenticatedUser);
+      const reportRetrievalService = createVectorReportRetrievalService(vectorContextService);
+      
+      // Retrieve report from Vector DB
+      const report = await reportRetrievalService.retrieveReportById(reportId, userId!);
+      
+      if (report) {
+        logger.info('✅ Report retrieved from Vector DB', { reportId });
+        
+        // Generate response based on format
+        try {
+          if (format === 'html') {
+            const HtmlReportGenerator = require('../services/html-report-generator').HtmlReportGenerator;
+            const generator = new HtmlReportGenerator();
+            const htmlContent = generator.generateEnhancedHtmlReport(report);
+            res.setHeader('Content-Type', 'text/html');
+            return res.send(htmlContent);
+          } else if (format === 'markdown') {
+            res.setHeader('Content-Type', 'text/markdown');
+            return res.send(report.exports?.markdownReport || generateMarkdownReport(report));
+          } else {
+            return res.json({
+              success: true,
+              report: report,
+              metadata: {
+                id: report.id,
+                createdAt: report.timestamp,
+                repositoryUrl: report.repositoryUrl,
+                prNumber: report.prNumber,
+                analysisScore: report.overview?.analysisScore,
+                riskLevel: report.overview?.riskLevel
+              }
+            });
+          }
+        } catch (generatorError) {
+          logger.error('Error generating report format', { error: generatorError, format });
+          if (format === 'html') {
+            res.setHeader('Content-Type', 'text/html');
+            return res.send(generateBasicHTMLReport(report));
+          }
+        }
+      } else {
+        logger.warn('Report not found in Vector DB', { reportId });
+      }
+    } catch (vectorError) {
+      logger.error('Error retrieving from Vector DB', { error: vectorError, reportId });
+    }
+    
+    // If Vector DB retrieval fails, try legacy database storage
     let reportData: any = null;
     
-    if (temporaryReportStorage.has(reportId)) {
-      logger.info('Report found in temporary storage', { reportId });
-      const tempReport = temporaryReportStorage.get(reportId);
-      reportData = {
-        id: reportId,
-        report_data: tempReport,
-        created_at: tempReport.timestamp,
-        repository_url: tempReport.repositoryUrl,
-        pr_number: tempReport.prNumber
-      };
-    } else {
-      // Get the report from database
-      const { data: report, error: reportError } = await getSupabase()
+    try {
+      logger.info('Checking legacy database storage', { reportId });
+      
+      const { data: dbReport, error: reportError } = await getSupabase()
         .from('analysis_reports')
         .select('*')
         .eq('id', reportId)
         .single();
         
-      if (reportError || !report) {
-        logger.warn('Report not found in database', { reportId, error: reportError });
-        return res.status(404).json({ 
-          error: 'Report not found',
-          reportId 
-        });
+      if (dbReport && !reportError) {
+        reportData = dbReport;
       }
-      
-      reportData = report;
+    } catch (dbError) {
+      logger.warn('Legacy database check failed', { error: dbError });
     }
     
-    // Check if user has access (for now, allow all authenticated users)
-    // In production, you might want to check if the user owns the report
-    
-    const report = reportData.report_data as any;
-    
-    // Return report in requested format
-    switch (format) {
-      case 'html':
-        // Generate HTML report
-        const htmlContent = generateHTMLReport(report);
-        res.setHeader('Content-Type', 'text/html');
-        res.send(htmlContent);
-        break;
-        
-      case 'markdown':
-        res.setHeader('Content-Type', 'text/markdown');
-        res.send(report.exports?.markdownReport || 'No markdown report available');
-        break;
-        
-      case 'json':
-      default:
-        res.json({
-          success: true,
-          report: report,
-          metadata: {
-            id: reportData.id,
-            createdAt: reportData.created_at,
-            repositoryUrl: reportData.repository_url,
-            prNumber: reportData.pr_number
-          }
-        });
+    if (reportData) {
+      const report = reportData.report_data as any;
+      
+      // Return report in requested format
+      switch (format) {
+        case 'html':
+          const htmlContent = generateHTMLReport(report);
+          res.setHeader('Content-Type', 'text/html');
+          res.send(htmlContent);
+          break;
+          
+        case 'markdown':
+          res.setHeader('Content-Type', 'text/markdown');
+          res.send(report.exports?.markdownReport || generateMarkdownReport(report));
+          break;
+          
+        case 'json':
+        default:
+          res.json({
+            success: true,
+            report: report,
+            metadata: {
+              id: reportData.id,
+              createdAt: reportData.created_at,
+              repositoryUrl: reportData.repository_url,
+              prNumber: reportData.pr_number
+            }
+          });
+      }
+    } else {
+      // Report not found anywhere
+      return res.status(404).json({ 
+        error: 'Report not found',
+        reportId,
+        details: [
+          'Report may be processing or has expired',
+          'Please ensure the report ID is correct',
+          'Try regenerating the report if the issue persists'
+        ],
+        suggestion: 'Reports are now stored in Vector DB. Please regenerate if this is an old report.'
+      });
     }
   } catch (error) {
     logger.error('Error retrieving report', { error });
@@ -324,6 +385,65 @@ router.get('/analysis/:reportId/report', async (req: Request, res: Response) => 
     });
   }
 });
+
+/**
+ * Generate Markdown report from StandardReport
+ */
+function generateMarkdownReport(report: any): string {
+  const { overview, modules } = report;
+  
+  let markdown = `# CodeQual Analysis Report\n\n`;
+  markdown += `**Repository:** ${report.repositoryUrl}\n`;
+  markdown += `**PR #${report.prNumber}**\n`;
+  markdown += `**Date:** ${new Date(report.timestamp).toLocaleString()}\n\n`;
+  
+  markdown += `## Overview\n\n`;
+  markdown += `**Score:** ${overview.analysisScore}/100\n`;
+  markdown += `**Risk Level:** ${overview.riskLevel}\n`;
+  markdown += `**Total Findings:** ${overview.totalFindings}\n\n`;
+  
+  markdown += `### Executive Summary\n${overview.executiveSummary}\n\n`;
+  
+  if (overview.blockingIssues?.length > 0) {
+    markdown += `### Blocking Issues\n`;
+    overview.blockingIssues.forEach((issue: any) => {
+      markdown += `- ${issue.message || issue}\n`;
+    });
+    markdown += `\n`;
+  }
+  
+  markdown += `## Findings\n\n`;
+  Object.entries(modules.findings?.categories || {}).forEach(([category, data]: [string, any]) => {
+    if (data.findings?.length > 0) {
+      markdown += `### ${data.name} ${data.icon}\n`;
+      data.findings.forEach((finding: any) => {
+        markdown += `- **${finding.severity}**: ${finding.title}\n`;
+        markdown += `  ${finding.description}\n`;
+        if (finding.file) {
+          markdown += `  File: \`${finding.file}${finding.line ? ':' + finding.line : ''}\`\n`;
+        }
+        if (finding.recommendation) {
+          markdown += `  Recommendation: ${finding.recommendation}\n`;
+        }
+        markdown += `\n`;
+      });
+    }
+  });
+  
+  if (modules.recommendations?.categories?.length > 0) {
+    markdown += `## Recommendations\n\n`;
+    modules.recommendations.categories.forEach((cat: any) => {
+      markdown += `### ${cat.name}\n`;
+      cat.recommendations.forEach((rec: any) => {
+        markdown += `- **${rec.title}**\n`;
+        markdown += `  ${rec.description}\n`;
+        markdown += `  Effort: ${rec.effort} | Impact: ${rec.impact}\n\n`;
+      });
+    });
+  }
+  
+  return markdown;
+}
 
 /**
  * Generate HTML report from report data
@@ -919,18 +1039,52 @@ router.get('/analysis/:reportId/html', async (req: Request, res: Response) => {
       });
     }
     
-    // First check temporary storage
-    const tempReport = temporaryReportStorage.get(reportId);
-    if (tempReport) {
-      logger.info('Serving report from temporary storage', { reportId });
+    // Verify token and get user ID
+    const { data: { user }, error: authError } = await getSupabase().auth.getUser(token);
+    if (authError || !user) {
+      return res.status(401).json({ error: 'Invalid authorization token' });
+    }
+    
+    const userId = user.id;
+    
+    // Try to retrieve from Vector DB first
+    try {
+      const authenticatedUser: any = {
+        id: userId,
+        email: 'api@codequal.dev',
+        organizationId: 'default',
+        permissions: ['read'],
+        createdAt: new Date(),
+        status: 'active'
+      };
       
-      // Generate HTML using V5 generator
-      const { HtmlReportGeneratorV5 } = require('../services/html-report-generator-v5');
-      const generator = new HtmlReportGeneratorV5();
-      const html = generator.generateEnhancedHtmlReport(tempReport);
+      const vectorContextService = createVectorContextService(authenticatedUser);
+      const reportRetrievalService = createVectorReportRetrievalService(vectorContextService);
+      const vectorReport = await reportRetrievalService.retrieveReportById(reportId, userId || 'api-user');
       
-      res.setHeader('Content-Type', 'text/html');
-      return res.send(html);
+      if (vectorReport) {
+        logger.info('Serving report from Vector DB', { reportId });
+        
+        // Generate HTML using appropriate generator
+        try {
+          const { HtmlReportGeneratorV5 } = require('../services/html-report-generator-v5');
+          const generator = new HtmlReportGeneratorV5();
+          const html = generator.generateEnhancedHtmlReport(vectorReport);
+          
+          res.setHeader('Content-Type', 'text/html');
+          return res.send(html);
+        } catch (genError) {
+          // Fallback to basic generator
+          const { HtmlReportGenerator } = require('../services/html-report-generator');
+          const generator = new HtmlReportGenerator();
+          const html = generator.generateEnhancedHtmlReport(vectorReport);
+          
+          res.setHeader('Content-Type', 'text/html');
+          return res.send(html);
+        }
+      }
+    } catch (vectorError) {
+      logger.warn('Vector DB retrieval failed', { error: vectorError, reportId });
     }
     
     // Try to fetch from database

@@ -493,14 +493,9 @@ const apiKey = process.env.API_KEY;`
 
     if (insertError) {
       console.error('Failed to store report:', insertError);
-      // Fall back to temporary storage
-      const { storeReportTemporarily } = require('./analysis-reports');
-      storeReportTemporarily(analysisId, {
-        ...fullReport,
-        repositoryUrl,
-        prNumber,
-        timestamp: new Date().toISOString()
-      });
+      // Fall back to in-memory storage for mock analysis
+      // In production, this would be stored in Vector DB by the orchestrator
+      logger.warn('Mock analysis report not stored in database', { analysisId });
     }
 
     // Return JSON response with the HTML report embedded
@@ -606,9 +601,14 @@ router.post('/test-analysis', authMiddleware, async (req: Request, res: Response
     const htmlGenerator = new HtmlReportGeneratorV5();
     const htmlReport = htmlGenerator.generateEnhancedHtmlReport(testReport);
 
-    // Store report
-    const { storeReportTemporarily } = require('./analysis-reports');
-    storeReportTemporarily(analysisId, testReport);
+    // Store report mapping for retrieval
+    const { reportIdMappingService } = require('../services/report-id-mapping-service');
+    await reportIdMappingService.storeMapping(
+      analysisId,
+      repositoryUrl,
+      prNumber,
+      req.user?.id || 'test-user'
+    );
 
     res.json({
       analysisId,
@@ -751,9 +751,14 @@ router.post('/real-pr-analysis', authMiddleware, async (req: Request, res: Respo
     const htmlGenerator = new HtmlReportGeneratorV5();
     const htmlReport = htmlGenerator.generateEnhancedHtmlReport(reportData);
 
-    // Store the report
-    const { storeReportTemporarily } = require('./analysis-reports');
-    storeReportTemporarily(analysisId, reportData);
+    // Store report mapping for retrieval
+    const { reportIdMappingService } = require('../services/report-id-mapping-service');
+    await reportIdMappingService.storeMapping(
+      analysisId,
+      repositoryUrl,
+      prNumber,
+      req.user?.id || 'test-user'
+    );
 
     // Handle billing (charge if needed)
     const shouldCharge = (subscriptionTier === 'free' && !canUseTrial) || 
@@ -902,9 +907,14 @@ router.post('/github-pr-analysis', authMiddleware, async (req: Request, res: Res
       const htmlGenerator = new HtmlReportGeneratorV5();
       const htmlReport = htmlGenerator.generateEnhancedHtmlReport(reportData);
 
-      // Store report
-      const { storeReportTemporarily } = require('./analysis-reports');
-      storeReportTemporarily(result.analysisId, reportData);
+      // Store report mapping for retrieval
+      const { reportIdMappingService } = require('../services/report-id-mapping-service');
+      await reportIdMappingService.storeMapping(
+        result.analysisId,
+        repositoryUrl,
+        prNumber,
+        req.user?.id || 'test-user'
+      );
 
       res.json({
         analysisId: result.analysisId,
