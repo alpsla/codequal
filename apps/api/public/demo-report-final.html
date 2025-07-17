@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeQual Analysis Report</title>
+    <link rel="stylesheet" href="/assets/enhanced-styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="light-mode">
+    <!-- Fixed Header Bar -->
+    <header class="fixed-header">
+        <div class="header-container">
+            <div class="logo-section">
+                <img src="/reports/codequal-logo.svg" alt="CodeQual" class="logo-image">
+                <span class="logo-text">CodeQual</span>
+            </div>
+            
+            <nav class="nav-menu" id="navMenu">
+                <a href="#overview" class="nav-link active"><i class="fas fa-tachometer-alt"></i> Overview</a>
+                <a href="#pr-decision" class="nav-link"><i class="fas fa-gavel"></i> Decision</a>
+                <a href="#pr-issues" class="nav-link"><i class="fas fa-code-branch"></i> PR Issues</a>
+                <a href="#repo-issues" class="nav-link"><i class="fas fa-exclamation-triangle"></i> Repo Issues</a>
+                <a href="#metrics" class="nav-link"><i class="fas fa-chart-line"></i> Metrics</a>
+                <a href="#skills" class="nav-link"><i class="fas fa-brain"></i> Skills</a>
+                <a href="#education" class="nav-link"><i class="fas fa-graduation-cap"></i> Education</a>
+            </nav>
+            
+            <div class="header-actions">
+                <button class="icon-btn" id="searchBtn" aria-label="Search">
+                    <i class="fas fa-search"></i>
+                </button>
+                <button class="icon-btn" id="themeToggle" aria-label="Toggle theme">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button class="icon-btn" id="exportBtn" aria-label="Export">
+                    <i class="fas fa-download"></i>
+                </button>
+                <div id="google_translate_element"></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Search Modal -->
+    <div class="search-modal" id="searchModal">
+        <div class="search-container">
+            <input type="text" class="search-input" id="searchInput" placeholder="Search in report...">
+            <button class="search-close" id="searchClose">&times;</button>
+            <div class="search-results" id="searchResults"></div>
+        </div>
+    </div>
+
+    <!-- Export Modal -->
+    <div class="export-modal" id="exportModal">
+        <div class="export-container">
+            <h3>Export Report</h3>
+            <div class="export-options">
+                <button class="export-option" onclick="exportToPDF()">
+                    <i class="fas fa-file-pdf"></i>
+                    <span>Export as PDF</span>
+                </button>
+                <button class="export-option" onclick="copyShareLink()">
+                    <i class="fas fa-link"></i>
+                    <span>Copy Share Link</span>
+                </button>
+                <button class="export-option" onclick="exportToMarkdown()">
+                    <i class="fas fa-file-code"></i>
+                    <span>Export as Markdown</span>
+                </button>
+            </div>
+            <button class="export-close" onclick="closeExportModal()">&times;</button>
+        </div>
+    </div>
+
+    <main class="main-content" data-analysis-id="{{analysis_id}}">
+        <!-- Overview Dashboard -->
+        <section id="overview" class="dashboard-section">
+            <div class="dashboard-header">
+                <h1>Code Analysis Report</h1>
+                <div class="subtitle">Pull Request #{{pr_number}} - {{repository_name}}</div>
+                <div class="report-meta">
+                    <span class="meta-item"><i class="fas fa-clock"></i> {{timestamp}}</span>
+                    <span class="meta-item"><i class="fas fa-code-branch"></i> v{{report_version}}</span>
+                    <span class="meta-item"><i class="fas fa-fingerprint"></i> {{analysis_id}}</span>
+                </div>
+            </div>
+
+            <!-- Metrics Cards -->
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-icon" style="background: var(--primary-gradient)">
+                        <i class="fas fa-code"></i>
+                    </div>
+                    <div class="metric-content">
+                        <div class="metric-value">{{files_changed}}</div>
+                        <div class="metric-label">Files Changed</div>
+                    </div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-icon" style="background: var(--success-gradient)">
+                        <i class="fas fa-plus"></i>
+                    </div>
+                    <div class="metric-content">
+                        <div class="metric-value">{{lines_added}}</div>
+                        <div class="metric-label">Lines Added</div>
+                    </div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-icon" style="background: var(--danger-gradient)">
+                        <i class="fas fa-minus"></i>
+                    </div>
+                    <div class="metric-content">
+                        <div class="metric-value">{{lines_removed}}</div>
+                        <div class="metric-label">Lines Removed</div>
+                    </div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-icon" style="background: var(--info-gradient)">
+                        <i class="fas fa-laptop-code"></i>
+                    </div>
+                    <div class="metric-content">
+                        <div class="metric-value">{{primary_language}}</div>
+                        <div class="metric-label">Language</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PR Approval Decision -->
+        <section id="pr-decision" class="section pr-decision-section {{approval_class}}">
+            <div class="decision-container">
+                <div class="decision-visual">
+                    <div class="decision-icon-wrapper">
+                        <div class="decision-icon animated">{{approval_icon}}</div>
+                        <div class="decision-ring"></div>
+                    </div>
+                    <div class="confidence-meter">
+                        <div class="confidence-label">Confidence</div>
+                        <div class="confidence-bar">
+                            <div class="confidence-fill" style="width: {{confidence_percentage}}%"></div>
+                        </div>
+                        <div class="confidence-value">{{confidence_percentage}}%</div>
+                    </div>
+                </div>
+                
+                <div class="decision-content">
+                    <h2 class="decision-title">PR Decision: {{approval_status_text}}</h2>
+                    <p class="decision-message">{{approval_message}}</p>
+                    
+                    <div class="decision-factors">
+                        <div class="factor-card">
+                            <h3><i class="fas fa-ban"></i> Blocking Issues</h3>
+                            <div class="factor-list">
+                                {{blocking_issues_html}}
+                            </div>
+                        </div>
+                        
+                        <div class="factor-card">
+                            <h3><i class="fas fa-check-circle"></i> Positive Findings</h3>
+                            <div class="factor-list">
+                                {{positive_findings_html}}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PR Issues -->
+        <section id="pr-issues" class="section">
+            <div class="section-header">
+                <h2><i class="fas fa-code-branch"></i> Current PR Issues</h2>
+                <div class="section-actions">
+                    <button class="filter-btn" onclick="showFilterModal('pr')">
+                        <i class="fas fa-filter"></i> Filter
+                    </button>
+                    <div class="view-toggle">
+                        <button class="view-btn active" data-view="cards"><i class="fas fa-th"></i></button>
+                        <button class="view-btn" data-view="list"><i class="fas fa-list"></i></button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="issues-container" id="prIssuesContainer">
+                {{pr_issues_content}}
+            </div>
+        </section>
+
+        <!-- Repository Issues -->
+        <section id="repo-issues" class="section repo-issues-section">
+            <div class="section-header">
+                <h2><i class="fas fa-exclamation-triangle"></i> Repository Issues</h2>
+                <p class="section-subtitle">Existing issues in your codebase that need attention</p>
+            </div>
+            
+            <div class="issues-stats">
+                <canvas id="issuesChart" width="300" height="300"></canvas>
+                <div class="stats-summary">
+                    <div class="stat-item critical">
+                        <span class="stat-value">{{critical_count}}</span>
+                        <span class="stat-label">Critical</span>
+                    </div>
+                    <div class="stat-item high">
+                        <span class="stat-value">{{high_count}}</span>
+                        <span class="stat-label">High</span>
+                    </div>
+                    <div class="stat-item medium">
+                        <span class="stat-value">{{medium_count}}</span>
+                        <span class="stat-label">Medium</span>
+                    </div>
+                    <div class="stat-item low">
+                        <span class="stat-value">{{low_count}}</span>
+                        <span class="stat-label">Low</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="issues-container">
+                {{high_priority_issues_html}}
+                {{toggle_button_html}}
+                {{lower_priority_issues_html}}
+            </div>
+        </section>
+
+        <!-- Metrics & Score -->
+        <section id="metrics" class="section">
+            <div class="section-header">
+                <h2><i class="fas fa-chart-line"></i> Quality Metrics</h2>
+            </div>
+            
+            <div class="score-container">
+                <div class="score-visual">
+                    <div class="score-circle-enhanced {{score_class}}" data-score="{{overall_score}}">
+                        <svg class="score-svg" viewBox="0 0 200 200">
+                            <circle class="score-bg" cx="100" cy="100" r="90"></circle>
+                            <circle class="score-progress" cx="100" cy="100" r="90"></circle>
+                        </svg>
+                        <div class="score-content">
+                            <div class="score-number">{{overall_score}}</div>
+                            <div class="score-label">Quality Score</div>
+                            <div class="score-trend {{score_trend_class}}">
+                                <i class="fas {{score_trend_icon}}"></i> {{score_trend_value}}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="score-legend">
+                        <div class="legend-item">
+                            <span class="legend-color" style="background: #ef4444"></span>
+                            <span>0-40: Poor</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color" style="background: #f59e0b"></span>
+                            <span>41-60: Fair</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color" style="background: #eab308"></span>
+                            <span>61-80: Good</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color" style="background: #10b981"></span>
+                            <span>81-100: Excellent</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="timeline-container">
+                    <h3>Score Trend</h3>
+                    <canvas id="timelineChart" width="600" height="200"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Skills Assessment -->
+        <section id="skills" class="section">
+            <div class="section-header">
+                <h2><i class="fas fa-brain"></i> Skills Assessment</h2>
+                <button class="btn-secondary" onclick="showSkillDetails()">
+                    <i class="fas fa-info-circle"></i> How it works
+                </button>
+            </div>
+            
+            <div class="skills-container">
+                <div class="skills-radar">
+                    <canvas id="skillsRadar" width="400" height="400"></canvas>
+                </div>
+                
+                <div class="skills-list">
+                    {{skills_html}}
+                </div>
+                
+                <div class="skill-recommendations">
+                    <h3><i class="fas fa-lightbulb"></i> Improvement Suggestions</h3>
+                    <div class="recommendations-grid">
+                        {{skill_recommendations_html}}
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Educational Resources -->
+        <section id="education" class="section">
+            <div class="section-header">
+                <h2><i class="fas fa-graduation-cap"></i> Educational Resources</h2>
+                <div class="learning-time">
+                    <i class="fas fa-clock"></i> Estimated learning time: {{total_learning_time}}
+                </div>
+            </div>
+            
+            <div class="educational-container">
+                {{educational_html}}
+            </div>
+        </section>
+
+        <!-- PR Comment Preview -->
+        <section class="section">
+            <div class="section-header">
+                <h2><i class="fas fa-comment"></i> PR Comment Preview</h2>
+                <button class="btn-primary" onclick="copyPRComment()">
+                    <i class="fas fa-copy"></i> Copy Comment
+                </button>
+            </div>
+            <div class="pr-comment-preview">
+                <pre>{{pr_comment_text}}</pre>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <img src="/reports/codequal-logo.svg" alt="CodeQual" class="footer-logo">
+                    <span>CodeQual</span>
+                    <span class="footer-version">v{{app_version}}</span>
+                </div>
+                <div class="footer-links">
+                    <a href="https://github.com/codequal" target="_blank">GitHub</a>
+                    <a href="https://github.com/codequal/docs" target="_blank">Documentation</a>
+                    <a href="#" onclick="showFeedback()">Send Feedback</a>
+                </div>
+                <div class="footer-meta">
+                    Generated on {{timestamp}} | Report ID: {{analysis_id}}
+                </div>
+            </div>
+        </footer>
+    </main>
+
+    <!-- Feedback Widget -->
+    <div class="feedback-widget" id="feedbackWidget">
+        <button class="feedback-trigger" onclick="toggleFeedback()">
+            <i class="fas fa-comment-dots"></i>
+        </button>
+        <div class="feedback-form">
+            <h3>How was this report?</h3>
+            <div class="feedback-rating">
+                <button class="rating-btn" data-rating="1">😞</button>
+                <button class="rating-btn" data-rating="2">😐</button>
+                <button class="rating-btn" data-rating="3">😊</button>
+                <button class="rating-btn" data-rating="4">😃</button>
+                <button class="rating-btn" data-rating="5">😍</button>
+            </div>
+            <textarea class="feedback-text" placeholder="Tell us more (optional)"></textarea>
+            <button class="btn-primary" onclick="submitFeedback()">Submit Feedback</button>
+        </div>
+    </div>
+
+    <!-- Filter Modal -->
+    <div class="filter-modal" id="filterModal">
+        <div class="filter-container">
+            <h3>Filter Issues</h3>
+            <div class="filter-group">
+                <label>Severity</label>
+                <div class="filter-options">
+                    <label><input type="checkbox" name="severity" value="critical" checked> Critical</label>
+                    <label><input type="checkbox" name="severity" value="high" checked> High</label>
+                    <label><input type="checkbox" name="severity" value="medium" checked> Medium</label>
+                    <label><input type="checkbox" name="severity" value="low" checked> Low</label>
+                </div>
+            </div>
+            <div class="filter-group">
+                <label>Type</label>
+                <div class="filter-options">
+                    <label><input type="checkbox" name="type" value="security" checked> Security</label>
+                    <label><input type="checkbox" name="type" value="performance" checked> Performance</label>
+                    <label><input type="checkbox" name="type" value="quality" checked> Code Quality</label>
+                    <label><input type="checkbox" name="type" value="style" checked> Style</label>
+                </div>
+            </div>
+            <div class="filter-actions">
+                <button class="btn-secondary" onclick="resetFilters()">Reset</button>
+                <button class="btn-primary" onclick="applyFilters()">Apply</button>
+            </div>
+            <button class="filter-close" onclick="closeFilterModal()">&times;</button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/assets/enhanced-scripts.js"></script>
+    <script>
+    // Demo data
+    window.reportData = {
+        id: 'demo_report_enhanced',
+        repository_url: 'https://github.com/codequal/demo-repo',
+        pr_number: 42,
+        analysis_date: new Date().toISOString(),
+        overall_score: 84,
+        agents: {
+            security: {
+                score: 85,
+                findings: [
+                    {
+                        type: 'security',
+                        severity: 'medium',
+                        message: 'Potential SQL injection vulnerability detected',
+                        file: 'src/database/queries.ts',
+                        line: 45,
+                        recommendation: 'Use parameterized queries instead of string concatenation'
+                    }
+                ]
+            },
+            codeQuality: {
+                score: 92,
+                findings: [
+                    {
+                        type: 'code_quality',
+                        severity: 'low',
+                        message: 'Function complexity is too high',
+                        file: 'src/services/analyzer.ts',
+                        line: 123,
+                        recommendation: 'Consider breaking down this function into smaller, more focused functions'
+                    }
+                ]
+            },
+            performance: {
+                score: 78,
+                findings: [
+                    {
+                        type: 'performance',
+                        severity: 'high',
+                        message: 'Inefficient database query in loop',
+                        file: 'src/api/users.ts',
+                        line: 67,
+                        recommendation: 'Use batch queries or JOIN operations instead of N+1 queries'
+                    }
+                ]
+            },
+            architecture: {
+                score: 88,
+                findings: []
+            },
+            dependencies: {
+                score: 75,
+                findings: [
+                    {
+                        type: 'dependency',
+                        severity: 'high',
+                        message: '3 high severity vulnerabilities found in dependencies',
+                        file: 'package.json',
+                        recommendation: 'Run npm audit fix to resolve vulnerabilities'
+                    }
+                ]
+            }
+        },
+        tools: {
+            eslint: {
+                errors: 2,
+                warnings: 15,
+                results: [
+                    { file: 'src/index.ts', line: 10, message: 'Missing semicolon', severity: 'error' },
+                    { file: 'src/utils.ts', line: 25, message: 'Unused variable', severity: 'warning' }
+                ]
+            },
+            prettier: {
+                unformatted: 5,
+                results: [
+                    { file: 'src/components/Button.tsx', message: 'File not formatted' }
+                ]
+            },
+            bundlephobia: {
+                totalSize: '2.3MB',
+                gzipSize: '645KB'
+            },
+            sonarjs: {
+                bugs: 1,
+                codeSmells: 8,
+                results: [
+                    { file: 'src/api/auth.ts', line: 89, message: 'Duplicated code block', severity: 'major' }
+                ]
+            }
+        },
+        deepwiki: {
+            summary: 'This PR implements a new user authentication system with JWT tokens',
+            changes: [
+                'Added JWT authentication middleware',
+                'Implemented user login and registration endpoints',
+                'Added password hashing with bcrypt',
+                'Created user session management'
+            ]
+        },
+        educational: {
+            suggestions: [
+                {
+                    topic: 'Security Best Practices',
+                    content: 'When implementing authentication, always use secure password hashing algorithms like bcrypt or argon2',
+                    resources: ['https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html']
+                }
+            ]
+        }
+    };
+
+    // Populate report data when page loads
+    document.addEventListener('DOMContentLoaded', () => {
+        // Update basic info
+        document.getElementById('repo-name').textContent = 'codequal/demo-repo';
+        document.getElementById('pr-number').textContent = '#42';
+        document.getElementById('analysis-date').textContent = new Date().toLocaleDateString();
+        document.getElementById('overall-score').textContent = '84';
+        
+        // Update agent scores
+        document.getElementById('security-score').textContent = '85';
+        document.getElementById('quality-score').textContent = '92';
+        document.getElementById('performance-score').textContent = '78';
+        document.getElementById('architecture-score').textContent = '88';
+        document.getElementById('dependencies-score').textContent = '75';
+        
+        // Add more population logic as needed
+    });
+    </script>
+    
+    <!-- Google Translate -->
+    <script type="text/javascript">
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'en',
+                includedLanguages: 'en,ru,es,fr,de,ja,zh-CN,pt,it,ko,hi,ar,tr,pl,nl,sv,da,no,fi,cs,hu,ro,el,he,th,vi,id,ms,tl',
+                layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+                autoDisplay: false
+            }, 'google_translate_element');
+        }
+    </script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+</body>
+</html>

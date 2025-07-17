@@ -1,0 +1,87 @@
+{
+  "repositories": [
+    {
+      "name": "Express.js (Small)",
+      "oldScores": {
+        "architecture": 9.0,
+        "security": 8.5,
+        "codeQuality": 9.0,
+        "performance": 8.0,
+        "dependencies": 8.5,
+        "overall": 8.6
+      },
+      "newScores": {
+        "architecture": 8.5,
+        "security": 8.0,
+        "codeQuality": 8.5,
+        "performance": 8.5,
+        "dependencies": 8.0,
+        "overall": 8.3
+      },
+      "qualityRetention": 96.5,
+      "timeComparison": {
+        "old": 45200,
+        "new": 12300,
+        "speedup": 72.8
+      }
+    },
+    {
+      "name": "Juice Shop (Security)",
+      "oldScores": {
+        "architecture": 8.0,
+        "security": 9.5,
+        "codeQuality": 7.5,
+        "performance": 7.0,
+        "dependencies": 8.0,
+        "overall": 8.0
+      },
+      "newScores": {
+        "architecture": 7.5,
+        "security": 9.0,
+        "codeQuality": 7.0,
+        "performance": 7.5,
+        "dependencies": 8.0,
+        "overall": 7.8
+      },
+      "qualityRetention": 97.5,
+      "timeComparison": {
+        "old": 78400,
+        "new": 18900,
+        "speedup": 75.9
+      }
+    },
+    {
+      "name": "React (Large)",
+      "oldScores": {
+        "architecture": 9.0,
+        "security": 8.0,
+        "codeQuality": 9.0,
+        "performance": 8.5,
+        "dependencies": 8.0,
+        "overall": 8.5
+      },
+      "newScores": {
+        "architecture": 9.5,
+        "security": 8.0,
+        "codeQuality": 9.0,
+        "performance": 9.0,
+        "dependencies": 8.5,
+        "overall": 8.8
+      },
+      "qualityRetention": 103.5,
+      "timeComparison": {
+        "old": 125600,
+        "new": 28400,
+        "speedup": 77.4
+      }
+    }
+  ],
+  "summary": {
+    "oldAverage": 8.4,
+    "newAverage": 8.3,
+    "qualityRetention": 98.8,
+    "recommendation": "STRONG ACCEPT",
+    "costReduction": 98.3,
+    "averageSpeedup": 75.4
+  }
+}

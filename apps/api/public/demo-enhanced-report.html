@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeQual Enhanced Report Demo</title>
+    <script>
+        // Redirect to load the enhanced template with data
+        window.onload = function() {
+            // Create test data
+            const reportData = {
+                id: 'demo_report_' + Date.now(),
+                repository_url: 'https://github.com/codequal/demo-repo',
+                pr_number: 42,
+                analysis_date: new Date().toISOString(),
+                overall_score: 84,
+                agents: {
+                    security: {
+                        score: 85,
+                        findings: [
+                            {
+                                type: 'security',
+                                severity: 'medium',
+                                message: 'Potential SQL injection vulnerability detected',
+                                file: 'src/database/queries.ts',
+                                line: 45,
+                                recommendation: 'Use parameterized queries instead of string concatenation'
+                            }
+                        ]
+                    },
+                    codeQuality: {
+                        score: 92,
+                        findings: [
+                            {
+                                type: 'code_quality',
+                                severity: 'low',
+                                message: 'Function complexity is too high',
+                                file: 'src/services/analyzer.ts',
+                                line: 123,
+                                recommendation: 'Consider breaking down this function into smaller, more focused functions'
+                            }
+                        ]
+                    },
+                    performance: {
+                        score: 78,
+                        findings: [
+                            {
+                                type: 'performance',
+                                severity: 'high',
+                                message: 'Inefficient database query in loop',
+                                file: 'src/api/users.ts',
+                                line: 67,
+                                recommendation: 'Use batch queries or JOIN operations instead of N+1 queries'
+                            }
+                        ]
+                    },
+                    architecture: {
+                        score: 88,
+                        findings: []
+                    },
+                    dependencies: {
+                        score: 75,
+                        findings: [
+                            {
+                                type: 'dependency',
+                                severity: 'high',
+                                message: '3 high severity vulnerabilities found in dependencies',
+                                file: 'package.json',
+                                recommendation: 'Run npm audit fix to resolve vulnerabilities'
+                            }
+                        ]
+                    }
+                },
+                tools: {
+                    eslint: {
+                        errors: 2,
+                        warnings: 15,
+                        results: [
+                            { file: 'src/index.ts', line: 10, message: 'Missing semicolon', severity: 'error' },
+                            { file: 'src/utils.ts', line: 25, message: 'Unused variable', severity: 'warning' }
+                        ]
+                    },
+                    prettier: {
+                        unformatted: 5,
+                        results: [
+                            { file: 'src/components/Button.tsx', message: 'File not formatted' }
+                        ]
+                    },
+                    bundlephobia: {
+                        totalSize: '2.3MB',
+                        gzipSize: '645KB'
+                    },
+                    sonarjs: {
+                        bugs: 1,
+                        codeSmells: 8,
+                        results: [
+                            { file: 'src/api/auth.ts', line: 89, message: 'Duplicated code block', severity: 'major' }
+                        ]
+                    }
+                },
+                deepwiki: {
+                    summary: 'This PR implements a new user authentication system with JWT tokens',
+                    changes: [
+                        'Added JWT authentication middleware',
+                        'Implemented user login and registration endpoints',
+                        'Added password hashing with bcrypt',
+                        'Created user session management'
+                    ]
+                },
+                educational: {
+                    suggestions: [
+                        {
+                            topic: 'Security Best Practices',
+                            content: 'When implementing authentication, always use secure password hashing algorithms like bcrypt or argon2',
+                            resources: ['https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html']
+                        }
+                    ]
+                }
+            };
+
+            // Store in sessionStorage for the enhanced template to access
+            sessionStorage.setItem('demoReportData', JSON.stringify(reportData));
+            
+            // Load the enhanced template
+            window.location.href = '/enhanced-report-template.html';
+        };
+    </script>
+</head>
+<body>
+    <div style="text-align: center; padding: 50px; font-family: Arial, sans-serif;">
+        <h1>Loading Enhanced Report Demo...</h1>
+        <p>Redirecting to the enhanced template with demo data...</p>
+    </div>
+</body>
+</html>
