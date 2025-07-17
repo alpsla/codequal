@@ -330,8 +330,8 @@ export class ResultOrchestrator {
       try {
         // Initialize MCP-Hybrid tools if not already done
         console.log('[MCP Tools] Initializing MCP-Hybrid tools...');
-        const { initializeTools, parallelAgentExecutor } = await import('@codequal/mcp-hybrid');
-        await initializeTools();
+        const mcpHybrid = await import('@codequal/mcp-hybrid');
+        await mcpHybrid.initializeTools();
         console.log('[MCP Tools] Tools initialized successfully');
 
         // Determine which agents to use based on analysis mode
@@ -373,7 +373,7 @@ export class ResultOrchestrator {
         
         // Execute tools for all relevant agent roles in parallel
         console.log('[MCP Tools] Executing tools for agents...');
-        const toolExecutionResults = await parallelAgentExecutor.executeToolsForAgents(
+        const toolExecutionResults = await mcpHybrid.parallelAgentExecutor.executeToolsForAgents(
           agentRoles as any,
           {
             agentRole: 'orchestrator' as any,

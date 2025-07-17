@@ -11,9 +11,6 @@ import { VectorStorageService } from '@codequal/database';
 import axios from 'axios';
 import { 
   DeepWikiModelSelector,
-  scoreModelsForDeepWiki,
-  createDeepWikiSelectionPrompt,
-  parseDeepWikiSelection,
   DEEPWIKI_SCORING_WEIGHTS,
   DeepWikiModelScore
 } from './deepwiki-model-selector';

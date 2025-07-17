@@ -94,7 +94,7 @@ export class DeepWikiManager {
   private logger = createLogger('DeepWikiManager');
   
   // Request optimization
-  private runningAnalyses = new Map<string, Promise<AnalysisResults>>();
+  private runningAnalyses = new Map<string, Promise<AnalysisResults | null>>();
   private recentAnalyses: LRUCache<string, CachedAnalysis>;
   private pendingBatches = new Map<string, Set<AnalysisOptions>>();
   private batchTimer?: NodeJS.Timeout;
@@ -418,7 +418,11 @@ export class DeepWikiManager {
       if (this.runningAnalyses.has(cacheKey)) {
         this.logger.info('[DeepWiki] Waiting for running analysis');
         try {
-          return await this.runningAnalyses.get(cacheKey)!;
+          const result = await this.runningAnalyses.get(cacheKey)!;
+          if (!result) {
+            throw new Error('Analysis returned null result');
+          }
+          return result;
         } catch (error) {
           // Fall back to polling if the running analysis failed
         }
@@ -1513,7 +1517,7 @@ module.exports = { processData, moduleA };
         return results.recentAnalysis[0] as any;
       }
     } catch (error) {
-      this.logger.error('Failed to get analysis results:', error);
+      this.logger.error('Failed to get analysis results:', { error: error instanceof Error ? error.message : String(error) });
     }
     return null;
   }
@@ -1638,7 +1642,7 @@ module.exports = { processData, moduleA };
         // This single analysis will serve all pending PRs
         await this.triggerRepositoryAnalysis(repositoryUrl, baseOptions);
       } catch (error) {
-        this.logger.error('Batch analysis failed:', error);
+        this.logger.error('Batch analysis failed:', { error: error instanceof Error ? error.message : String(error) });
       }
     }
     

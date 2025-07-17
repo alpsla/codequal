@@ -110,7 +110,7 @@ export class AuthenticatedVectorService {
         results: data || [],
         metadata: {
           embeddingDimension: queryEmbedding.length,
-          resultCount: data?.length || 0
+          resultCount: (data && Array.isArray(data)) ? data.length : 0
         }
       };
     } catch (error) {
@@ -300,8 +300,9 @@ export class AuthenticatedVectorService {
       };
 
       // Count by operation type
-      data.forEach(op => {
-        stats.operationsByType[op.operation] = (stats.operationsByType[op.operation] || 0) + 1;
+      data.forEach((op: any) => {
+        const opType = op.operation as string;
+        stats.operationsByType[opType] = (stats.operationsByType[opType] || 0) + 1;
       });
 
       // Calculate success rate
