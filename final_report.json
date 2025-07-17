@@ -1,0 +1,454 @@
+{
+  "id": "report_1752424266837_es9gdy21m",
+  "repositoryUrl": "unknown",
+  "prNumber": 0,
+  "timestamp": "2025-07-13T16:31:06.837Z",
+  "overview": {
+    "executiveSummary": "Analysis completed successfully. No DeepWiki analysis available",
+    "analysisScore": 100,
+    "riskLevel": "low",
+    "totalFindings": 0,
+    "totalRecommendations": 0,
+    "learningPathAvailable": false,
+    "estimatedRemediationTime": "Minimal effort"
+  },
+  "modules": {
+    "findings": {
+      "summary": "No issues found in the analysis",
+      "categories": {
+        "security": {
+          "name": "Security",
+          "icon": "🔒",
+          "count": 0,
+          "findings": [],
+          "summary": "Found 0 security issues: none"
+        },
+        "architecture": {
+          "name": "Architecture",
+          "icon": "🏗️",
+          "count": 0,
+          "findings": [],
+          "summary": "Found 0 architecture issues: none"
+        },
+        "performance": {
+          "name": "Performance",
+          "icon": "⚡",
+          "count": 0,
+          "findings": [],
+          "summary": "Found 0 performance issues: none"
+        },
+        "codeQuality": {
+          "name": "Code Quality",
+          "icon": "✨",
+          "count": 0,
+          "findings": [],
+          "summary": "Found 0 codeQuality issues: none"
+        },
+        "dependencies": {
+          "name": "Dependencies",
+          "icon": "📦",
+          "count": 0,
+          "findings": [],
+          "summary": "Found 0 dependencies issues: none"
+        }
+      },
+      "criticalFindings": [],
+      "totalCount": 0
+    },
+    "recommendations": {
+      "summary": "No recommendations available",
+      "totalRecommendations": 0,
+      "categories": [],
+      "priorityMatrix": {
+        "critical": [],
+        "high": [],
+        "medium": [],
+        "low": []
+      },
+      "implementationPlan": {
+        "phases": [],
+        "totalEstimatedTime": "Variable",
+        "teamSizeRecommendation": 2
+      }
+    },
+    "educational": {
+      "summary": "Comprehensive learning path with 0 steps to address identified issues",
+      "learningPath": {
+        "id": "learning_path_1",
+        "title": "Personalized Learning Path",
+        "description": "A learning path customized for your current skill levels across . Prioritizes areas where you can make the most improvement.",
+        "difficulty": "beginner",
+        "estimatedTime": "0 minutes",
+        "steps": []
+      },
+      "content": {
+        "explanations": [],
+        "tutorials": [
+          {
+            "id": "tutorial-1",
+            "title": "Security Issue Resolution Example",
+            "description": "",
+            "type": "tutorial",
+            "content": "",
+            "relevance": 0.8,
+            "difficulty": "intermediate",
+            "tags": [],
+            "relatedTo": []
+          },
+          {
+            "id": "tutorial-2",
+            "title": "Architecture Improvement Example",
+            "description": "",
+            "type": "tutorial",
+            "content": "",
+            "relevance": 0.8,
+            "difficulty": "intermediate",
+            "tags": [],
+            "relatedTo": []
+          }
+        ],
+        "bestPractices": [],
+        "resources": []
+      },
+      "skillGaps": [],
+      "certifications": []
+    },
+    "metrics": {
+      "summary": "Overall code quality score: 100/100",
+      "scores": {
+        "overall": {
+          "name": "Overall Quality",
+          "score": 100,
+          "rating": "A",
+          "description": "Excellent overall quality with minimal issues",
+          "factors": [
+            "Code complexity",
+            "Test coverage",
+            "Documentation",
+            "Security practices"
+          ]
+        },
+        "security": {
+          "name": "Security",
+          "score": 100,
+          "rating": "A",
+          "description": "Excellent security with minimal issues",
+          "factors": [
+            "Vulnerability count",
+            "Dependency risks",
+            "Authentication patterns",
+            "Data handling"
+          ]
+        },
+        "maintainability": {
+          "name": "Maintainability",
+          "score": 100,
+          "rating": "A",
+          "description": "Excellent maintainability with minimal issues",
+          "factors": [
+            "Code complexity",
+            "Documentation quality",
+            "Module structure",
+            "Naming conventions"
+          ]
+        },
+        "performance": {
+          "name": "Performance",
+          "score": 100,
+          "rating": "A",
+          "description": "Excellent performance with minimal issues",
+          "factors": [
+            "Algorithm efficiency",
+            "Resource usage",
+            "Database queries",
+            "Caching strategy"
+          ]
+        },
+        "reliability": {
+          "name": "Reliability",
+          "score": 60,
+          "rating": "D",
+          "description": "Good reliability with some areas for improvement",
+          "factors": [
+            "Error handling",
+            "Test coverage",
+            "Logging practices",
+            "Failure recovery"
+          ]
+        }
+      },
+      "trends": [
+        {
+          "metric": "Overall Quality",
+          "dataPoints": [
+            {
+              "date": "2025-06-13T16:31:06.839Z",
+              "value": 67
+            },
+            {
+              "date": "2025-06-14T16:31:06.839Z",
+              "value": 65
+            },
+            {
+              "date": "2025-06-15T16:31:06.839Z",
+              "value": 66
+            },
+            {
+              "date": "2025-06-16T16:31:06.839Z",
+              "value": 66
+            },
+            {
+              "date": "2025-06-17T16:31:06.839Z",
+              "value": 65
+            },
+            {
+              "date": "2025-06-18T16:31:06.839Z",
+              "value": 67
+            },
+            {
+              "date": "2025-06-19T16:31:06.839Z",
+              "value": 69
+            },
+            {
+              "date": "2025-06-20T16:31:06.839Z",
+              "value": 67
+            },
+            {
+              "date": "2025-06-21T16:31:06.839Z",
+              "value": 67
+            },
+            {
+              "date": "2025-06-22T16:31:06.839Z",
+              "value": 68
+            },
+            {
+              "date": "2025-06-23T16:31:06.839Z",
+              "value": 66
+            },
+            {
+              "date": "2025-06-24T16:31:06.839Z",
+              "value": 65
+            },
+            {
+              "date": "2025-06-25T16:31:06.839Z",
+              "value": 64
+            },
+            {
+              "date": "2025-06-26T16:31:06.839Z",
+              "value": 64
+            },
+            {
+              "date": "2025-06-27T16:31:06.839Z",
+              "value": 66
+            },
+            {
+              "date": "2025-06-28T16:31:06.839Z",
+              "value": 67
+            },
+            {
+              "date": "2025-06-29T16:31:06.839Z",
+              "value": 68
+            },
+            {
+              "date": "2025-06-30T16:31:06.839Z",
+              "value": 67
+            },
+            {
+              "date": "2025-07-01T16:31:06.839Z",
+              "value": 68
+            },
+            {
+              "date": "2025-07-02T16:31:06.839Z",
+              "value": 68
+            },
+            {
+              "date": "2025-07-03T16:31:06.839Z",
+              "value": 67
+            },
+            {
+              "date": "2025-07-04T16:31:06.839Z",
+              "value": 67
+            },
+            {
+              "date": "2025-07-05T16:31:06.839Z",
+              "value": 69
+            },
+            {
+              "date": "2025-07-06T16:31:06.839Z",
+              "value": 69
+            },
+            {
+              "date": "2025-07-07T16:31:06.839Z",
+              "value": 68
+            },
+            {
+              "date": "2025-07-08T16:31:06.839Z",
+              "value": 66
+            },
+            {
+              "date": "2025-07-09T16:31:06.839Z",
+              "value": 68
+            },
+            {
+              "date": "2025-07-10T16:31:06.839Z",
+              "value": 69
+            },
+            {
+              "date": "2025-07-11T16:31:06.839Z",
+              "value": 69
+            },
+            {
+              "date": "2025-07-12T16:31:06.839Z",
+              "value": 71
+            },
+            {
+              "date": "2025-07-13T16:31:06.839Z",
+              "value": 72
+            }
+          ],
+          "trend": "improving"
+        }
+      ],
+      "benchmarks": [
+        {
+          "metric": "Overall Quality",
+          "yourValue": 100,
+          "industryAverage": 65,
+          "topPerformers": 90,
+          "percentile": 95
+        },
+        {
+          "metric": "Security",
+          "yourValue": 100,
+          "industryAverage": 65,
+          "topPerformers": 90,
+          "percentile": 95
+        },
+        {
+          "metric": "Maintainability",
+          "yourValue": 100,
+          "industryAverage": 65,
+          "topPerformers": 90,
+          "percentile": 95
+        },
+        {
+          "metric": "Performance",
+          "yourValue": 100,
+          "industryAverage": 65,
+          "topPerformers": 90,
+          "percentile": 95
+        },
+        {
+          "metric": "Reliability",
+          "yourValue": 60,
+          "industryAverage": 65,
+          "topPerformers": 90,
+          "percentile": 40
+        }
+      ],
+      "improvements": [
+        {
+          "metric": "Reliability",
+          "currentValue": 60,
+          "targetValue": 80,
+          "recommendation": "Focus on reliability improvements",
+          "estimatedImpact": "High"
+        }
+      ]
+    },
+    "insights": {
+      "summary": "0 key insights identified from the analysis (enhanced with DeepWiki context)",
+      "keyInsights": [],
+      "patterns": [],
+      "predictions": [],
+      "contextualAdvice": []
+    }
+  },
+  "visualizations": {
+    "severityDistribution": {
+      "type": "pie",
+      "title": "Finding Severity Distribution",
+      "data": {
+        "labels": [
+          "Critical",
+          "High",
+          "Medium",
+          "Low"
+        ],
+        "datasets": [
+          {
+            "data": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "backgroundColor": [
+              "#dc3545",
+              "#fd7e14",
+              "#ffc107",
+              "#28a745"
+            ]
+          }
+        ]
+      }
+    },
+    "categoryBreakdown": {
+      "type": "bar",
+      "title": "Findings by Category",
+      "data": {
+        "labels": [
+          "security",
+          "architecture",
+          "performance",
+          "dependencies",
+          "codeQuality"
+        ],
+        "datasets": [
+          {
+            "label": "Number of Findings",
+            "data": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    "learningPathProgress": {
+      "type": "radar",
+      "title": "Skill Development Areas",
+      "data": {
+        "labels": [],
+        "datasets": [
+          {
+            "label": "Current Level",
+            "data": []
+          },
+          {
+            "label": "Required Level",
+            "data": []
+          }
+        ]
+      }
+    }
+  },
+  "exports": {
+    "prComment": "No PR comment available",
+    "emailFormat": "# CodeQual Analysis Report\n\n**Repository:** unknown\n**PR #0:** Unknown PR\n**Analysis Date:** 7/13/2025, 12:31:06 PM\n\n## Executive Summary\nAnalysis completed\n\n## Key Findings\n- Total Issues: 0\n- Critical: 0\n- High: 0\n- Medium: 0\n- Low: 0\n\n## Top Recommendations\n\n\n## Learning Path\n0 steps identified for skill development\nEstimated time: 0 minutes\n\nView the full report in your CodeQual dashboard for detailed analysis and interactive visualizations.",
+    "slackFormat": "✅ *CodeQual Analysis Complete*\n*Repo:* unknown | *PR:* #0\n\n*Findings:* 0 total\n🔴 Critical: 0 | 🟠 High: 0\n\n*Top Priority:* No critical issues\n\n<#/pull/0|View Full Report>",
+    "markdownReport": "# CodeQual Analysis Report\n\n## Repository Information\n- **Repository:** unknown\n- **URL:** unknown\n- **Primary Language:** unknown\n- **PR Number:** #0\n- **PR Title:** Unknown PR\n- **Changed Files:** 0\n\n## Analysis Summary\n- **Mode:** unknown\n- **Processing Time:** 0ms\n- **Agents Used:** \n\n## Findings Overview\n| Severity | Count |\n|----------|-------|\n| Critical | 0 |\n| High     | 0 |\n| Medium   | 0 |\n| Low      | 0 |\n| **Total**| **0** |\n\n## Recommendations\n\n\n## Learning Path\n**Difficulty:** beginner\n**Estimated Time:** 0 minutes\n**Total Steps:** 0\n\n### Learning Steps\n\n\n## Next Steps\n1. Address critical and high-priority issues immediately\n2. Follow the implementation plan for systematic improvements\n3. Utilize the learning path to build necessary skills\n4. Schedule regular code reviews to maintain quality\n\n---\n*Generated by CodeQual on 2025-07-13T16:31:06.841Z*",
+    "jsonReport": "{\n  \"analysisResult\": {\n    \"findings\": {\n      \"security\": [],\n      \"architecture\": [],\n      \"performance\": [],\n      \"dependencies\": [],\n      \"codeQuality\": []\n    },\n    \"insights\": [],\n    \"suggestions\": [],\n    \"crossAgentPatterns\": [],\n    \"statistics\": {\n      \"totalFindings\": {\n        \"beforeMerge\": 0,\n        \"afterMerge\": 0\n      }\n    },\n    \"deepWikiData\": {\n      \"suggestions\": [],\n      \"insights\": [],\n      \"patterns\": [],\n      \"summary\": \"No DeepWiki analysis available\",\n      \"metrics\": {\n        \"totalChunks\": 0,\n        \"avgConfidence\": 0\n      },\n      \"analysis\": {},\n      \"chunks\": []\n    },\n    \"metrics\": {\n      \"totalFindings\": 0,\n      \"severity\": {\n        \"critical\": 0,\n        \"high\": 0,\n        \"medium\": 0,\n        \"low\": 0\n      },\n      \"confidence\": 0,\n      \"coverage\": 85\n    },\n    \"userSkills\": [],\n    \"skillProgressions\": {},\n    \"skillRecommendations\": []\n  },\n  \"recommendationModule\": {\n    \"summary\": {\n      \"totalRecommendations\": 0,\n      \"priorityBreakdown\": {\n        \"critical\": 0,\n        \"high\": 0,\n        \"medium\": 0,\n        \"low\": 0\n      },\n      \"estimatedTotalEffort\": \"0 minutes\",\n      \"focusAreas\": []\n    },\n    \"recommendations\": [],\n    \"learningPathGuidance\": {\n      \"suggestedOrder\": [],\n      \"parallelizable\": [],\n      \"dependencies\": {}\n    },\n    \"metadata\": {\n      \"generatedAt\": \"2025-07-13T16:31:06.194Z\",\n      \"basedOnFindings\": 0,\n      \"confidence\": 0,\n      \"generationMethod\": \"hybrid\"\n    }\n  },\n  \"educationalData\": {\n    \"educational\": {\n      \"learningPath\": {\n        \"title\": \"Personalized Skill-Based Learning Path\",\n        \"description\": \"A learning path customized for your current skill levels across . Prioritizes areas where you can make the most improvement.\",\n        \"totalSteps\": 0,\n        \"estimatedTime\": \"0 minutes\",\n        \"difficulty\": \"beginner\",\n        \"steps\": []\n      },\n      \"content\": {\n        \"explanations\": [],\n        \"tutorials\": [\n          {\n            \"id\": \"tutorial-1\",\n            \"title\": \"Security Issue Resolution Example\",\n            \"category\": \"security\",\n            \"estimatedTime\": \"30 minutes\",\n            \"totalSteps\": 1,\n            \"prerequisites\": [],\n            \"actionableSteps\": [\n              {\n                \"stepNumber\": 1,\n                \"title\": \"Example Implementation\",\n                \"description\": \"\",\n                \"codeExample\": \"// Example based on compiled security findings\\nfunction validateInput(input: string): boolean {\\n  // Addresses security findings from analysis\\n  if (!input || input.length === 0) return false;\\n  return /^[a-zA-Z0-9_]+$/.test(input);\\n}\"\n              }\n            ]\n          },\n          {\n            \"id\": \"tutorial-2\",\n            \"title\": \"Architecture Improvement Example\",\n            \"category\": \"architecture\",\n            \"estimatedTime\": \"30 minutes\",\n            \"totalSteps\": 1,\n            \"prerequisites\": [],\n            \"actionableSteps\": [\n              {\n                \"stepNumber\": 1,\n                \"title\": \"Example Implementation\",\n                \"description\": \"\",\n                \"codeExample\": \"// Example based on compiled architecture findings\\ninterface Repository<T> {\\n  findById(id: string): Promise<T>;\\n  save(entity: T): Promise<T>;\\n}\"\n              }\n            ]\n          }\n        ],\n        \"bestPractices\": [],\n        \"resources\": []\n      },\n      \"insights\": {\n        \"skillGaps\": [],\n        \"relatedTopics\": [],\n        \"nextSteps\": []\n      }\n    },\n    \"recommendationMapping\": {\n      \"totalRecommendations\": 0,\n      \"priorityBreakdown\": {\n        \"critical\": 0,\n        \"high\": 0,\n        \"medium\": 0,\n        \"low\": 0\n      },\n      \"categoryBreakdown\": {},\n      \"learningPathMapping\": []\n    },\n    \"metadata\": {\n      \"compiledAt\": \"2025-07-13T16:31:06.558Z\",\n      \"sourceDataQuality\": {\n        \"recommendationConfidence\": 0,\n        \"educationalContentCoverage\": 1,\n        \"totalDataPoints\": 2\n      },\n      \"processingInfo\": {\n        \"recommendationsProcessed\": 0,\n        \"educationalItemsGenerated\": 2,\n        \"compilationMethod\": \"recommendation-based-compilation\"\n      }\n    }\n  }\n}"
+  },
+  "metadata": {
+    "analysisMode": "unknown",
+    "agentsUsed": [],
+    "toolsExecuted": [],
+    "processingTime": 0,
+    "modelVersions": {},
+    "reportVersion": "1.0.0"
+  }
+}
