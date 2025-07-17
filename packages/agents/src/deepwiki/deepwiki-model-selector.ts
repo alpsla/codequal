@@ -13,6 +13,7 @@
 import { ModelVersionInfo, ModelVersionSync } from '@codequal/core';
 import { createLogger } from '@codequal/core/utils';
 import { VectorStorageService } from '@codequal/database';
+import { DeepWikiConfigStorage } from './deepwiki-config-storage';
 
 export interface DeepWikiModelScore {
   id: string;
@@ -72,6 +73,7 @@ export class DeepWikiModelSelector {
   private readonly logger = createLogger('DeepWikiModelSelector');
   private modelVersionSync: ModelVersionSync;
   private vectorStorage?: VectorStorageService;
+  private configStorage: DeepWikiConfigStorage;
   private configCache = new Map<string, DeepWikiModelSelection>();
 
   constructor(
@@ -80,6 +82,7 @@ export class DeepWikiModelSelector {
   ) {
     this.modelVersionSync = modelVersionSync;
     this.vectorStorage = vectorStorage;
+    this.configStorage = new DeepWikiConfigStorage();
   }
 
   /**
@@ -400,26 +403,11 @@ export class DeepWikiModelSelector {
   }
 
   /**
-   * Store configuration in Vector DB
+   * Store configuration in storage
    */
   private async storeConfiguration(selection: DeepWikiModelSelection): Promise<void> {
-    if (!this.vectorStorage) return;
-    
     try {
-      const configData = {
-        repository_url: selection.context.url,
-        primary_model: `${selection.primary.provider}/${selection.primary.model}`,
-        fallback_model: `${selection.fallback.provider}/${selection.fallback.model}`,
-        context: selection.context,
-        scores: selection.scores,
-        reasoning: selection.reasoning,
-        timestamp: new Date().toISOString()
-      };
-      
-      // TODO: Implement proper vector storage when interface is available
-      // For now, we'll skip storing in vector DB
-      this.logger.warn('Vector storage not implemented - configuration not persisted');
-      
+      await this.configStorage.storeRepositoryConfig(selection.context.url, selection);
       this.logger.debug('Stored DeepWiki configuration', { repository: selection.context.url });
     } catch (error) {
       this.logger.error('Failed to store configuration', { error });
@@ -427,14 +415,36 @@ export class DeepWikiModelSelector {
   }
 
   /**
-   * Retrieve stored configuration from Vector DB
+   * Retrieve stored configuration from storage
    */
   private async getStoredConfiguration(context: RepositoryContext): Promise<DeepWikiModelSelection | null> {
-    if (!this.vectorStorage) return null;
-    
     try {
-      // TODO: Implement proper vector storage query when interface is available
-      // For now, return null to force recalculation
+      const stored = await this.configStorage.getRepositoryConfig(context.url);
+      
+      if (stored) {
+        // Reconstruct selection from stored data
+        const primary = stored.primary_model.split('/');
+        const fallback = stored.fallback_model.split('/');
+        
+        return {
+          primary: { 
+            provider: primary[0], 
+            model: primary.slice(1).join('/'),
+            versionId: 'latest'
+          } as ModelVersionInfo,
+          fallback: { 
+            provider: fallback[0], 
+            model: fallback.slice(1).join('/'),
+            versionId: 'latest'
+          } as ModelVersionInfo,
+          context: stored.context,
+          estimatedTokens: stored.estimatedTokens || this.estimateTokenUsage(context),
+          estimatedCost: stored.estimatedCost || 0,
+          scores: stored.scores,
+          reasoning: stored.reasoning
+        };
+      }
+      
       return null;
     } catch (error) {
       this.logger.error('Failed to retrieve stored configuration', { error });

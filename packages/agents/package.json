@@ -80,6 +80,18 @@
     "./translator/translator-agent": {
       "types": "./dist/translator/translator-agent.d.ts",
       "default": "./dist/translator/translator-agent.js"
+    },
+    "./deepwiki/deepwiki-model-initializer": {
+      "types": "./dist/deepwiki/deepwiki-model-initializer.d.ts",
+      "default": "./dist/deepwiki/deepwiki-model-initializer.js"
+    },
+    "./deepwiki/deepwiki-model-selector": {
+      "types": "./dist/deepwiki/deepwiki-model-selector.d.ts",
+      "default": "./dist/deepwiki/deepwiki-model-selector.js"
+    },
+    "./deepwiki/deepwiki-config-storage": {
+      "types": "./dist/deepwiki/deepwiki-config-storage.d.ts",
+      "default": "./dist/deepwiki/deepwiki-config-storage.js"
     }
   },
   "scripts": {

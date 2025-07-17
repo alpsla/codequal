@@ -8,6 +8,7 @@
 import { ModelVersionInfo, ModelVersionSync } from '@codequal/core';
 import { createLogger } from '@codequal/core/utils';
 import { VectorStorageService } from '@codequal/database';
+import { DeepWikiConfigStorage } from './deepwiki-config-storage';
 import axios from 'axios';
 import { 
   DeepWikiModelSelector,
@@ -35,16 +36,16 @@ export async function initializeDeepWikiModels(
   modelVersionSync: ModelVersionSync,
   vectorStorage?: VectorStorageService
 ): Promise<DeepWikiModelConfig> {
+  // Use dedicated config storage to avoid RLS issues
+  const configStorage = new DeepWikiConfigStorage();
   logger.info('Starting DeepWiki model initialization');
   
   try {
-    // Check if we have a recent configuration in Vector DB
-    if (vectorStorage) {
-      const existingConfig = await getStoredDeepWikiConfig(vectorStorage);
-      if (existingConfig && isConfigFresh(existingConfig)) {
-        logger.info('Using existing DeepWiki model configuration from Vector DB');
-        return existingConfig;
-      }
+    // Check if we have a recent configuration
+    const existingConfig = await configStorage.getGlobalConfig();
+    if (existingConfig && isConfigFresh(existingConfig)) {
+      logger.info('Using existing DeepWiki model configuration from storage');
+      return existingConfig;
     }
     
     // Fetch available models from OpenRouter
@@ -83,10 +84,8 @@ export async function initializeDeepWikiModels(
       }
     };
     
-    // Store in Vector DB
-    if (vectorStorage) {
-      await storeDeepWikiConfig(vectorStorage, config);
-    }
+    // Store configuration
+    await configStorage.storeGlobalConfig(config);
     
     // Log the selection
     logger.info('DeepWiki model selection complete', {
@@ -196,14 +195,28 @@ async function getStoredDeepWikiConfig(
   vectorStorage: VectorStorageService
 ): Promise<DeepWikiModelConfig | null> {
   try {
-    // TODO: Implement proper vector storage query when interface is available
-    // For now, return null to force recalculation
+    // Search for existing DeepWiki configuration
+    const results = await vectorStorage.searchByMetadata({
+      'metadata.type': 'deepwiki-model-config',
+      'metadata.configType': 'model-selection'
+    }, 1);
+    
+    if (results && results.length > 0) {
+      const stored = results[0];
+      const config = stored.metadata as DeepWikiModelConfig;
+      
+      // Check if configuration is still fresh
+      if (isConfigFresh(config)) {
+        logger.info('Using existing DeepWiki model configuration from Vector DB');
+        return config;
+      }
+    }
+    
     return null;
   } catch (error) {
     logger.error('Failed to retrieve stored configuration', { error });
+    return null;
   }
-  
-  return null;
 }
 
 /**
@@ -214,9 +227,29 @@ async function storeDeepWikiConfig(
   config: DeepWikiModelConfig
 ): Promise<void> {
   try {
-    // TODO: Implement proper vector storage when interface is available
-    // For now, we'll skip storing in vector DB
-    logger.warn('Vector storage not implemented - configuration not persisted');
+    // Create a chunk to store the configuration
+    const configChunk: any = {
+      id: `deepwiki-config-${Date.now()}`,
+      content: JSON.stringify(config),
+      metadata: {
+        ...config,
+        type: 'deepwiki-model-config',
+        configType: 'model-selection',
+        timestamp: config.timestamp
+      }
+    };
+    
+    // Store with a dummy embedding (configuration doesn't need semantic search)
+    const dummyEmbedding = new Array(1536).fill(0);
+    
+    await vectorStorage.storeChunk(
+      configChunk,
+      dummyEmbedding,
+      'deepwiki-system', // Special repository ID for system configs
+      'configuration',
+      'model-selection',
+      'permanent' // Keep configuration permanently
+    );
     
     logger.info('Stored DeepWiki model configuration in Vector DB');
   } catch (error) {
