@@ -13,6 +13,7 @@ import { ModelVersionSync } from '@codequal/core/services/model-selection/ModelV
 // @ts-ignore - Module will be available after build
 import { createDeepWikiModelSelector, DeepWikiModelSelector, RepositoryContext } from '@codequal/agents/src/deepwiki/deepwiki-model-selector';
 import { VectorStorageService } from '@codequal/database';
+// @ts-ignore - LRU Cache types
 import { LRUCache } from 'lru-cache';
 import { AgentRole } from '@codequal/core/config/agent-registry';
 import { ModelVersionInfo } from '@codequal/core';
