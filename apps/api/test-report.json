@@ -1,0 +1,41 @@
+{
+  "timestamp": "2025-07-17T23:20:05.674Z",
+  "results": [
+    {
+      "name": "System Health Check",
+      "status": "failed",
+      "duration": 3212,
+      "error": "[WARN] [DeepWikiConfigStorage] Failed to retrieve global config (table may not exist): { error: '[object Object]' }\n[ERROR] [VectorContextService] Invalid authenticatedRAGService: missing search method { hasService: true, hasSearch: 'undefined' }\n[WARN] [VectorContextService] RAG service search method not available \n"
+    },
+    {
+      "name": "DeepWiki Integration",
+      "status": "passed",
+      "duration": 2480
+    },
+    {
+      "name": "Check DeepWiki Config",
+      "status": "passed",
+      "duration": 1530
+    },
+    {
+      "name": "Test Analysis with Embeddings",
+      "status": "failed",
+      "duration": 2479,
+      "error": "/Users/alpinro/Code Prjects/codequal/node_modules/ts-node/src/index.ts:1085\n          throw new TypeError(\n                ^\nTypeError: Unable to require file: src/types/express.d.ts\nThis is usually the result of a faulty configuration or import. Make sure there is a `.js`, `.json` or other executable extension with loader attached before `ts-node` available.\n    at getOutput (/Users/alpinro/Code Prjects/codequal/node_modules/ts-node/src/index.ts:1085:17)\n    at Object.compile (/Users/alpinro/Code Prjects/codequal/node_modules/ts-node/src/index.ts:1433:41)\n    at Module.m._compile (/Users/alpinro/Code Prjects/codequal/node_modules/ts-node/src/index.ts:1617:30)\n    at loadTS (node:internal/modules/cjs/loader:1826:10)\n    at Object.require.extensions.<computed> [as .ts] (/Users/alpinro/Code Prjects/codequal/node_modules/ts-node/src/index.ts:1621:12)\n    at Module.load (node:internal/modules/cjs/loader:1469:32)\n    at Function._load (node:internal/modules/cjs/loader:1286:12)\n    at TracingChannel.traceSync (node:diagnostics_channel:322:14)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)\n    at Module.require (node:internal/modules/cjs/loader:1491:12)\n"
+    },
+    {
+      "name": "Test Embedding Adapter",
+      "status": "failed",
+      "duration": 3849,
+      "error": "Error: Package subpath './services/vector-db/embedding-service-with-adapter' is not defined by \"exports\" in /Users/alpinro/Code Prjects/codequal/node_modules/@codequal/core/package.json\n    at exportsNotFound (node:internal/modules/esm/resolve:314:10)\n    at packageExportsResolve (node:internal/modules/esm/resolve:661:9)\n    at resolveExports (node:internal/modules/cjs/loader:661:36)\n    at Function._findPath (node:internal/modules/cjs/loader:753:31)\n    at Function.<anonymous> (node:internal/modules/cjs/loader:1391:27)\n    at Function.Module._resolveFilename.sharedData.moduleResolveFilenameHook.installedValue [as _resolveFilename] (/Users/alpinro/Code Prjects/codequal/node_modules/@cspotcode/source-map-support/source-map-support.js:811:30)\n    at defaultResolveImpl (node:internal/modules/cjs/loader:1061:19)\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1066:22)\n    at Function._load (node:internal/modules/cjs/loader:1215:37)\n    at TracingChannel.traceSync (node:diagnostics_channel:322:14) {\n  code: 'ERR_PACKAGE_PATH_NOT_EXPORTED'\n}\n"
+    }
+  ],
+  "summary": {
+    "total": 5,
+    "passed": 2,
+    "failed": 3,
+    "skipped": 0,
+    "successRate": 40,
+    "criticalFailure": true
+  }
+}

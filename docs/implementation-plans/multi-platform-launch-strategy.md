@@ -3,7 +3,7 @@
 
 ## 🚨 CRITICAL UPDATE: E2E Testing Findings & Action Items
 
-**Current Status** (July 17, 2025):
+**Current Status** (July 18, 2025):
 - ✅ TypeScript build errors FIXED (was 144, now 0)
 - ✅ ESLint passing with warnings only
 - ✅ Enhanced UI ready with all major fixes
@@ -25,11 +25,15 @@
 - ✅ Vector DB storage and retrieval working
 - ✅ API call limits removed for testing
 - ✅ Report generation completing successfully
+- ✅ Billing integration merged to main branch
+- ✅ Webhook handlers for Stripe events implemented
+- ✅ User billing record creation on signup fixed
 - ❌ MCP tools execution not implemented (stubbed)
 - ❌ Agent results aggregation broken (shows 0 successful)
 - ❌ Progress tracking not visible to users
 - ❌ DeepWiki scores not integrated in reports
 - ❌ Code snippets not linked to insights
+- ❌ Embedding configuration failures blocking DeepWiki
 - ⏳ Profile features planned (see roadmap)
 - ⏳ Team collaboration features in design
 - ⏳ Skills logic implementation pending
@@ -60,6 +64,13 @@
    - Storage and retrieval fixed
    - But not leveraging for cross-repo insights
    - Impact: Missing competitive advantage
+
+### New Issues Found (July 18):
+6. **Embedding Configuration Failures**:
+   - OpenRouter embedding service failing with model/API errors
+   - Blocking DeepWiki initialization and pattern matching
+   - Impact: Cannot generate embeddings for code analysis
+   - Fix: Debug and fix embedding adapter configuration
 
 ## 🎯 Revised Strategy: Web + API Launch Together
 
@@ -1195,24 +1206,31 @@ Content:
   - 10+ case studies
 ```
 
-## ✅ Immediate Next Steps (July 17, 2025)
+## ✅ Immediate Next Steps (July 18, 2025)
 
 ### Today's Critical Path
 ```yaml
-Priority 1 - Fix MCP Tools (alpinro working on):
+Priority 1 - Fix Embedding Configuration (URGENT):
+  1. Debug OpenRouter embedding service errors
+  2. Check API key and model configuration
+  3. Fix embedding adapter initialization
+  4. Test with simple text embeddings
+  5. Verify DeepWiki can initialize
+
+Priority 2 - Fix MCP Tools:
   1. Open enhanced-executor.ts
   2. Find executeMCPToolsForAgent method
   3. Replace stub with real tool execution
   4. Import toolManager from @codequal/mcp-hybrid
   5. Test with a real repository
 
-Priority 2 - Fix Results Aggregation:
+Priority 3 - Fix Results Aggregation:
   1. Debug why results show 0 successful
   2. Check agent response processing
   3. Fix results collection logic
   4. Verify in final report
 
-Priority 3 - Basic Progress Tracking:
+Priority 4 - Basic Progress Tracking:
   1. Create simple progress service
   2. Add progress updates in executor
   3. Create /api/analysis/:id/progress endpoint

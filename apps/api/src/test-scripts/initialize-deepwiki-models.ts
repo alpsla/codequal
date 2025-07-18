@@ -7,8 +7,8 @@
 
 import { config } from 'dotenv';
 import { resolve } from 'path';
-import { createModelVersionSync } from '@codequal/core';
-import { createSupabaseClient } from '@codequal/database';
+import { ModelVersionSync } from '@codequal/core';
+import { initSupabase, getSupabase } from '@codequal/database';
 import { initializeDeepWikiModels } from '@codequal/agents/deepwiki/deepwiki-model-initializer';
 import { createLogger } from '@codequal/core/utils';
 
@@ -22,8 +22,16 @@ async function main() {
     logger.info('Starting DeepWiki model initialization...');
     
     // Initialize dependencies
-    const supabase = createSupabaseClient();
-    const modelVersionSync = createModelVersionSync(supabase);
+    const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('Missing Supabase credentials');
+    }
+    
+    initSupabase(supabaseUrl, supabaseKey);
+    const supabase = getSupabase();
+    const modelVersionSync = new ModelVersionSync(supabase as any, 'deepwiki-init');
     
     // Initialize vector storage (optional, but recommended)
     const vectorStorage = undefined; // You can add vector storage here if available
@@ -36,14 +44,14 @@ async function main() {
     console.log('Primary Model:');
     console.log(`  Provider: ${config.primary.provider}`);
     console.log(`  Model: ${config.primary.model}`);
-    console.log(`  Cost: $${config.primary.pricing.input}/$${config.primary.pricing.output} per 1M tokens`);
-    console.log(`  Context: ${config.primary.capabilities.contextWindow.toLocaleString()} tokens`);
+    console.log(`  Cost: $${config.primary.pricing?.input || 'N/A'}/$${config.primary.pricing?.output || 'N/A'} per 1M tokens`);
+    console.log(`  Context: ${config.primary.capabilities?.contextWindow?.toLocaleString() || 'N/A'} tokens`);
     
     console.log('\nFallback Model:');
     console.log(`  Provider: ${config.fallback.provider}`);
     console.log(`  Model: ${config.fallback.model}`);
-    console.log(`  Cost: $${config.fallback.pricing.input}/$${config.fallback.pricing.output} per 1M tokens`);
-    console.log(`  Context: ${config.fallback.capabilities.contextWindow.toLocaleString()} tokens`);
+    console.log(`  Cost: $${config.fallback.pricing?.input || 'N/A'}/$${config.fallback.pricing?.output || 'N/A'} per 1M tokens`);
+    console.log(`  Context: ${config.fallback.capabilities?.contextWindow?.toLocaleString() || 'N/A'} tokens`);
     
     console.log('\nScoring Weights:');
     console.log(`  Quality: ${config.scoringWeights.quality * 100}%`);

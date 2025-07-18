@@ -8,7 +8,6 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as os from 'os';
 import simpleGit, { SimpleGit } from 'simple-git';
-import * as k8s from '@kubernetes/client-node';
 import { createLogger } from '@codequal/core/utils';
 import { ModelVersionSync } from '@codequal/core/services/model-selection/ModelVersionSync';
 // @ts-ignore - Module will be available after build

@@ -60,6 +60,14 @@
     "./services/vector-db/embedding-config-service": {
       "types": "./dist/services/vector-db/embedding-config-service.d.ts",
       "default": "./dist/services/vector-db/embedding-config-service.js"
+    },
+    "./services/vector-db/embedding-service-with-adapter": {
+      "types": "./dist/services/vector-db/embedding-service-with-adapter.d.ts",
+      "default": "./dist/services/vector-db/embedding-service-with-adapter.js"
+    },
+    "./services/vector-db/openrouter-embedding-service": {
+      "types": "./dist/services/vector-db/openrouter-embedding-service.d.ts",
+      "default": "./dist/services/vector-db/openrouter-embedding-service.js"
     }
   },
   "scripts": {

@@ -1018,12 +1018,13 @@ export class EnhancedMultiAgentExecutor {
     );
     
     // Create and execute the actual agent
-    return new Promise(async (resolve, reject) => {
+    return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         reject(new Error(`Agent execution timeout: ${cleanAgentConfig.provider}`));
       }, this.options.agentTimeout);
       
-      try {
+      (async () => {
+        try {
         this.logger.debug('Inside try block, about to create agent options');
         
         // Create agent using factory - avoid circular references
@@ -1183,7 +1184,8 @@ export class EnhancedMultiAgentExecutor {
         });
         
         reject(error);
-      }
+        }
+      })();
     });
   }
 
@@ -1585,7 +1587,12 @@ export class EnhancedMultiAgentExecutor {
                 results[agentName] = result;
                 
                 // Store the result in the results Map
-                const agentConfig = this.config.agents.find(a => a.role.toString() === agentName);
+                const agentConfig = this.config.agents.find(a => {
+                  // Handle both string and enum comparisons
+                  const roleString = String(a.role);
+                  return roleString.toLowerCase() === agentName.toLowerCase() || 
+                         roleString === agentName;
+                });
                 if (agentConfig) {
                   const agentId = `${agentConfig.provider}-${agentConfig.role}`;
                   const executionResult: EnhancedAgentExecutionResult = {
@@ -1623,6 +1630,12 @@ export class EnhancedMultiAgentExecutor {
                     agentId,
                     resultsSize: this.results.size,
                     allKeys: Array.from(this.results.keys())
+                  });
+                } else {
+                  this.logger.warn('Could not find agent config for storing result', {
+                    agentName,
+                    availableRoles: this.config.agents.map(a => a.role),
+                    searchedFor: agentName
                   });
                 }
                 

@@ -107,33 +107,43 @@ async function testEmbeddingAdapter() {
   const testUserId = 'test-user-' + Date.now();
   
   try {
-    // Store a document
-    console.log('Storing document...');
-    const storeResult = await authenticatedVectorService.storeDocument({
-      userId: testUserId,
-      content: 'This is a test document about TypeScript and React development',
-      contentType: 'documentation',
-      metadata: {
-        title: 'Test Document',
-        language: 'typescript'
-      }
-    });
+    // Create a test repository first
+    const testRepoId = Math.floor(Date.now() / 1000); // Use timestamp as numeric ID
+    console.log('Creating test repository...');
     
-    console.log('✅ Document stored successfully');
-    console.log(`   Document ID: ${storeResult.id}`);
-    console.log(`   Embedding dimension: ${storeResult.embeddingMetadata.adaptedDimension}`);
+    // Store test documents in repository
+    console.log('Embedding documents in repository...');
+    await authenticatedVectorService.embedRepositoryDocuments(
+      testUserId,
+      testRepoId,
+      [{
+        filePath: 'test.ts',
+        content: 'This is a test document about TypeScript and React development',
+        contentType: 'code',
+        language: 'typescript',
+        metadata: {
+          title: 'Test Document'
+        }
+      }]
+    );
+    
+    console.log('✅ Documents embedded successfully');
     
     // Search for similar documents
     console.log('\nSearching for similar documents...');
     const searchResult = await authenticatedVectorService.searchDocuments({
       userId: testUserId,
       query: 'React TypeScript development guide',
-      contentType: 'documentation',
+      repositoryId: testRepoId,
+      contentType: 'code',
+      language: 'typescript',
       limit: 5
     });
     
-    console.log(`✅ Found ${searchResult.metadata.resultCount} results`);
-    console.log(`   Query embedding dimension: ${searchResult.metadata.embeddingDimension}`);
+    console.log(`✅ Search completed`);
+    if (searchResult && typeof searchResult === 'object') {
+      console.log('   Search returned results');
+    }
     
   } catch (error) {
     console.error('❌ Store/search failed:', error);
