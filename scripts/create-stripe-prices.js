@@ -1,7 +1,8 @@
 const Stripe = require('stripe');
+require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 
 // Use your test secret key
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_51RiLenH9VfPdHERjw6vRQ9IqaG4g2opDmmGBLHYpmGNKGxoYGo7jnWJS7QlMya6OVh8MLNWe5lhTSC7OhnIYSl3G00tf2ryUnu');
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 async function createPrices() {
   try {

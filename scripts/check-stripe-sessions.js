@@ -1,5 +1,7 @@
 const Stripe = require('stripe');
-const stripe = new Stripe('sk_test_51RiLenH9VfPdHERjw6vRQ9IqaG4g2opDmmGBLHYpmGNKGxoYGo7jnWJS7QlMya6OVh8MLNWe5lhTSC7OhnIYSl3G00tf2ryUnu');
+require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 async function checkSessions() {
   try {
