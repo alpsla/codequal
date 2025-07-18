@@ -13,6 +13,7 @@ import { VectorContextService } from '@codequal/agents/multi-agent/vector-contex
 import { createLogger } from '@codequal/core/utils';
 import { AgentRole } from '@codequal/core/config/agent-registry';
 import { scoreModelsForDeepWiki, DEEPWIKI_SCORING_WEIGHTS } from '@codequal/agents/deepwiki/deepwiki-model-selector';
+import { AuthenticatedUser, UserRole, UserStatus } from '@codequal/agents/multi-agent/types/auth';
 
 // Load environment variables
 config({ path: resolve(__dirname, '../../.env') });
@@ -23,11 +24,10 @@ const logger = createLogger('DeepWikiModelDiscovery');
 const testUser = {
   id: 'deepwiki-discovery-user',
   email: 'deepwiki@codequal.dev',
-  role: 'admin' as const,
-  status: 'active' as const,
-  tenantId: 'deepwiki-tenant',
+  role: UserRole.ADMIN,
+  status: UserStatus.ACTIVE,
   session: {
-    id: 'discovery-session',
+    token: 'discovery-token',
     fingerprint: 'discovery-fingerprint',
     ipAddress: '127.0.0.1',
     userAgent: 'DeepWiki-Discovery',
@@ -49,11 +49,6 @@ const testUser = {
     loginCount: 1,
     preferredLanguage: 'en',
     timezone: 'UTC'
-  },
-  features: {
-    deepAnalysis: true,
-    aiRecommendations: true,
-    advancedReports: true
   }
 };
 
@@ -62,9 +57,16 @@ async function main() {
     logger.info('Starting DeepWiki model discovery...');
     
     // Initialize dependencies
-    initSupabase();
+    const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('Missing Supabase credentials');
+    }
+    
+    initSupabase(supabaseUrl, supabaseKey);
     const supabase = getSupabase();
-    const discoveryService = new ResearcherDiscoveryService();
+    const discoveryService = new ResearcherDiscoveryService(supabase as any, testUser.id);
     const vectorContextService = new VectorContextService(testUser);
     
     // Fetch available models from OpenRouter
@@ -140,16 +142,28 @@ async function main() {
     // Store in Vector DB
     logger.info('Storing DeepWiki model configuration in Vector DB...');
     
-    await storeResearcherConfigInVectorDB(
-      modelConfig,
-      {
+    // Convert to StoredResearcherConfig format
+    const storedConfig: any = {
+      provider: primaryModel.provider,
+      model: primaryModel.model,
+      versionId: 'latest',
+      capabilities: modelConfig.primary.capabilities,
+      pricing: modelConfig.primary.pricing,
+      tier: modelConfig.primary.tier,
+      preferredFor: modelConfig.primary.preferredFor,
+      reason: modelConfig.primary.reason,
+      metadata: {
         language: 'multi-language', // DeepWiki analyzes all languages
         sizeCategory: 'large', // DeepWiki handles large repos
-        agentRole: AgentRole.ORCHESTRATOR // DeepWiki orchestrates analysis
-      },
-      'deepwiki-model-discovery',
-      10, // High priority
-      vectorContextService
+        agentRole: AgentRole.ORCHESTRATOR, // DeepWiki orchestrates analysis
+        fallback: modelConfig.fallback
+      }
+    };
+    
+    await storeResearcherConfigInVectorDB(
+      testUser,
+      storedConfig,
+      'deepwiki-model-discovery'
     );
     
     console.log('\n✅ DeepWiki model configuration stored in Vector DB');

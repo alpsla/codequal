@@ -33,7 +33,7 @@ export class DebugLogger {
   private activeExecutions: Map<string, ExecutionTrace> = new Map();
   private debugMode: boolean;
   
-  constructor(debugMode: boolean = false) {
+  constructor(debugMode = false) {
     this.debugMode = debugMode;
   }
   

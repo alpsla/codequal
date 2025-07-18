@@ -10,6 +10,8 @@ import { initSupabase, getSupabase } from '@codequal/database';
 import { VectorContextService } from '@codequal/agents/multi-agent/vector-context-service';
 import { createLogger } from '@codequal/core/utils';
 import { AgentRole } from '@codequal/core/config/agent-registry';
+import { AuthenticatedUser, UserRole, UserStatus } from '@codequal/agents/multi-agent/types/auth';
+import type { RepositoryVectorContext } from '@codequal/agents/multi-agent/enhanced-executor';
 
 // Load environment variables
 config({ path: resolve(__dirname, '../../.env') });
@@ -17,18 +19,16 @@ config({ path: resolve(__dirname, '../../.env') });
 const logger = createLogger('DeepWikiConfigCheck');
 
 // Test user
-const testUser = {
+const testUser: AuthenticatedUser = {
   id: 'config-check',
   email: 'check@codequal.dev',
-  role: 'admin' as const,
-  status: 'active' as const,
-  tenantId: 'check-tenant',
+  role: UserRole.ADMIN,
+  status: UserStatus.ACTIVE,
   session: {
-    id: 'check-session',
+    token: 'check-token',
     fingerprint: 'check',
     ipAddress: '127.0.0.1',
     userAgent: 'ConfigCheck',
-    createdAt: new Date(),
     expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
   },
   permissions: {
@@ -37,8 +37,7 @@ const testUser = {
     globalPermissions: ['manageUsers'],
     quotas: { requestsPerHour: 10000, maxConcurrentExecutions: 10, storageQuotaMB: 10000 }
   },
-  metadata: { lastLogin: new Date(), loginCount: 1, preferredLanguage: 'en', timezone: 'UTC' },
-  features: { deepAnalysis: true, aiRecommendations: true, advancedReports: true }
+  metadata: { lastLogin: new Date(), loginCount: 1, preferredLanguage: 'en', timezone: 'UTC' }
 };
 
 async function main() {
@@ -73,41 +72,34 @@ async function main() {
       
       for (const analysis of results.recentAnalysis) {
         console.log('\n--- Analysis Record ---');
-        console.log(`Type: ${analysis.type}`);
-        console.log(`Timestamp: ${analysis.timestamp || 'N/A'}`);
+        console.log(`Type: ${analysis.metadata?.content_type || 'N/A'}`);
+        console.log(`Timestamp: ${analysis.metadata?.created_at || 'N/A'}`);
         
-        if (analysis.findings && analysis.findings.length > 0) {
-          console.log(`Findings: ${analysis.findings.length}`);
+        // Parse content to check for DeepWiki configurations
+        try {
+          const content = JSON.parse(analysis.content);
           
-          // Look for DeepWiki or orchestrator configurations
-          const deepwikiConfigs = analysis.findings.filter(f => {
-            return f.type && (
-              f.type.includes('deepwiki') || 
-              f.type.includes('orchestrator') ||
-              f.type === 'multi-language/large/orchestrator'
-            );
-          });
-          
-          if (deepwikiConfigs.length > 0) {
-            console.log('\n🎯 DeepWiki Configurations Found:');
-            deepwikiConfigs.forEach((config, i) => {
-              console.log(`\n${i + 1}. Type: ${config.type}`);
-              console.log(`   Location: ${config.location}`);
-              if (config.description) {
-                try {
-                  const desc = typeof config.description === 'string' 
-                    ? JSON.parse(config.description) 
-                    : config.description;
-                  console.log(`   Model: ${desc.provider}/${desc.model}`);
-                  console.log(`   Cost: Input $${desc.pricing?.input}, Output $${desc.pricing?.output}`);
-                  console.log(`   Context: ${desc.capabilities?.contextWindow || 'N/A'}`);
-                  console.log(`   Reason: ${desc.reason || 'N/A'}`);
-                } catch (e) {
-                  console.log(`   Description: ${config.description}`);
-                }
+          if (content && typeof content === 'object') {
+            const isDeepWikiConfig = 
+              analysis.metadata?.content_type?.includes('deepwiki') || 
+              analysis.metadata?.content_type?.includes('orchestrator') ||
+              analysis.metadata?.content_type === 'multi-language/large/orchestrator';
+            
+            if (isDeepWikiConfig) {
+              console.log('\n🎯 DeepWiki Configuration Found:');
+              console.log(`   Type: ${analysis.metadata?.content_type}`);
+              console.log(`   File Path: ${analysis.metadata?.file_path || 'N/A'}`);
+              
+              if (content.provider && content.model) {
+                console.log(`   Model: ${content.provider}/${content.model}`);
+                console.log(`   Cost: Input $${content.pricing?.input || 'N/A'}, Output $${content.pricing?.output || 'N/A'}`);
+                console.log(`   Context: ${content.capabilities?.contextWindow || 'N/A'}`);
+                console.log(`   Reason: ${content.reason || 'N/A'}`);
               }
-            });
+            }
           }
+        } catch (e) {
+          // Content might not be JSON, skip
         }
       }
     } else {
@@ -118,13 +110,9 @@ async function main() {
     console.log('\n=== All Model Configuration Types ===');
     if (results.recentAnalysis) {
       const allConfigs = new Set<string>();
-      results.recentAnalysis.forEach(analysis => {
-        if (analysis.findings) {
-          analysis.findings.forEach(f => {
-            if (f.type && f.type.includes('/')) {
-              allConfigs.add(f.type);
-            }
-          });
+      results.recentAnalysis.forEach((analysis) => {
+        if (analysis.metadata?.content_type && analysis.metadata.content_type.includes('/')) {
+          allConfigs.add(analysis.metadata.content_type);
         }
       });
       

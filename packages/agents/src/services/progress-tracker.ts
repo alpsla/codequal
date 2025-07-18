@@ -310,7 +310,7 @@ export class ProgressTracker extends EventEmitter {
   /**
    * Complete analysis
    */
-  completeAnalysis(analysisId: string, success: boolean = true): void {
+  completeAnalysis(analysisId: string, success = true): void {
     const progress = this.analyses.get(analysisId);
     if (!progress) return;
     

@@ -61,7 +61,14 @@ async function main() {
     logger.info('Starting DeepWiki model research...');
     
     // Initialize dependencies
-    initSupabase();
+    const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('Missing Supabase credentials');
+    }
+    
+    initSupabase(supabaseUrl, supabaseKey);
     const supabase = getSupabase();
     const vectorContextService = new VectorContextService(testUser);
     const researcherService = new ResearcherService(testUser, vectorContextService);
@@ -97,41 +104,19 @@ Select models that can handle 50k-500k tokens per analysis efficiently.`
     
     // Perform research for DeepWiki role
     logger.info('Researching optimal models for DeepWiki...');
-    const researchResult = await researcherService.researchModelVersions(
-      'javascript', // Primary language (will search across all)
-      'large',      // Repository size category
-      AgentRole.ORCHESTRATOR, // Using orchestrator as DeepWiki coordinates analysis
-      researchConfig
-    );
+    const researchResult = await researcherService.triggerResearch(researchConfig);
     
     // Display results
     console.log('\n=== DeepWiki Model Research Results ===\n');
     
-    if (researchResult.primaryModel) {
-      console.log('Primary Model Selected:');
-      console.log(`  Provider: ${researchResult.primaryModel.provider}`);
-      console.log(`  Model: ${researchResult.primaryModel.model}`);
-      console.log(`  Version: ${researchResult.primaryModel.versionId}`);
-      console.log(`  Input Cost: $${researchResult.primaryModel.pricing.input}/token`);
-      console.log(`  Output Cost: $${researchResult.primaryModel.pricing.output}/token`);
-      console.log(`  Context Window: ${researchResult.primaryModel.capabilities.contextWindow?.toLocaleString() || 'Unknown'}`);
-      console.log(`  Reason: ${researchResult.reasoning}`);
-    }
+    console.log('Research Operation Started:');
+    console.log(`  Operation ID: ${researchResult.operationId}`);
+    console.log(`  Status: ${researchResult.status}`);
+    console.log(`  Estimated Duration: ${researchResult.estimatedDuration}`);
     
-    if (researchResult.fallbackModel) {
-      console.log('\nFallback Model Selected:');
-      console.log(`  Provider: ${researchResult.fallbackModel.provider}`);
-      console.log(`  Model: ${researchResult.fallbackModel.model}`);
-      console.log(`  Version: ${researchResult.fallbackModel.versionId}`);
-      console.log(`  Input Cost: $${researchResult.fallbackModel.pricing.input}/token`);
-      console.log(`  Output Cost: $${researchResult.fallbackModel.pricing.output}/token`);
-      console.log(`  Context Window: ${researchResult.fallbackModel.capabilities.contextWindow?.toLocaleString() || 'Unknown'}`);
-    }
-    
-    console.log('\nResearch Metadata:');
-    console.log(`  Models Evaluated: ${researchResult.alternativeModels?.length || 0}`);
-    console.log(`  Research Timestamp: ${researchResult.researchTimestamp}`);
-    console.log(`  Confidence Score: ${researchResult.confidenceScore || 'N/A'}`);
+    console.log('\nℹ️ The research operation has been triggered.');
+    console.log('Results will be stored in Vector DB once complete.');
+    console.log('Use the operation ID to check status or retrieve results later.');
     
     // The Researcher service automatically stores results in Vector DB
     console.log('\n✅ Model configuration has been stored in Vector DB');
