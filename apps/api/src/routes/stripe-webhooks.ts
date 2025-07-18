@@ -24,9 +24,10 @@ router.post('/webhook', async (req: Request, res: Response) => {
       sig,
       webhookSecret
     );
-  } catch (err: any) {
-    console.error('Webhook signature verification failed:', err.message);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+    console.error('Webhook signature verification failed:', errorMessage);
+    return res.status(400).send(`Webhook Error: ${errorMessage}`);
   }
 
   // Handle the event
@@ -57,6 +58,10 @@ router.post('/webhook', async (req: Request, res: Response) => {
         await handlePaymentMethodDetached(event.data.object as Stripe.PaymentMethod);
         break;
 
+      case 'checkout.session.completed':
+        await handleCheckoutSessionCompleted(event.data.object as Stripe.Checkout.Session);
+        break;
+
       default:
         console.log(`Unhandled event type: ${event.type}`);
     }
@@ -75,28 +80,90 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
   const customerId = subscription.customer as string;
   
   // Get user ID from customer ID
-  const { data: userBilling } = await getSupabase()
+  let { data: userBilling } = await getSupabase()
     .from('user_billing')
     .select('user_id')
     .eq('stripe_customer_id', customerId)
     .single();
 
   if (!userBilling) {
-    console.error('No user found for customer:', customerId);
-    return;
+    console.log('No user found by customer ID, trying to find by checkout session...');
+    
+    // Try to find user through checkout session
+    try {
+      // Get customer email
+      const customer = await stripe.customers.retrieve(customerId) as Stripe.Customer;
+      if ('email' in customer && customer.email) {
+        console.log(`Looking for recent checkout sessions for ${customer.email}`);
+        
+        // Find recent checkout sessions for this customer
+        const sessions = await stripe.checkout.sessions.list({
+          customer: customerId,
+          limit: 10
+        });
+        
+        // Find session with user_id metadata
+        const sessionWithUserId = sessions.data.find(s => s.metadata?.user_id);
+        
+        if (sessionWithUserId && sessionWithUserId.metadata?.user_id) {
+          const userId = sessionWithUserId.metadata.user_id;
+          console.log(`Found user_id ${userId} from checkout session`);
+          
+          // Update user_billing with customer ID
+          const { error: linkError } = await getSupabase()
+            .from('user_billing')
+            .update({
+              stripe_customer_id: customerId,
+              updated_at: new Date().toISOString()
+            })
+            .eq('user_id', userId);
+          
+          if (!linkError) {
+            console.log('Successfully linked customer to user via checkout session');
+            // Re-fetch the user billing
+            const { data: updatedBilling } = await getSupabase()
+              .from('user_billing')
+              .select('user_id')
+              .eq('stripe_customer_id', customerId)
+              .single();
+            userBilling = updatedBilling;
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error finding user through checkout session:', error);
+    }
+    
+    if (!userBilling) {
+      console.error('Still no user found for customer:', customerId);
+      return;
+    }
   }
 
   // Update subscription data
-  await getSupabase()
+  const tier = determineSubscriptionTier(subscription);
+  console.log(`Updating subscription for customer ${customerId}:`, {
+    subscription_id: subscription.id,
+    status: subscription.status,
+    tier: tier
+  });
+
+  const { error } = await getSupabase()
     .from('user_billing')
     .update({
       stripe_subscription_id: subscription.id,
       subscription_status: subscription.status,
-      subscription_tier: determineSubscriptionTier(subscription),
+      subscription_tier: tier,
       trial_ends_at: subscription.trial_end ? new Date(subscription.trial_end * 1000).toISOString() : null,
       updated_at: new Date().toISOString()
     })
     .eq('stripe_customer_id', customerId);
+
+  if (error) {
+    console.error('Error updating user_billing:', error);
+  } else {
+    console.log('Successfully updated user_billing for customer:', customerId);
+  }
 }
 
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
@@ -168,7 +235,9 @@ function determineSubscriptionTier(subscription: Stripe.Subscription): string {
   const priceId = subscription.items.data[0]?.price.id;
   
   // Map your Stripe price IDs to tiers
-  if (priceId === process.env.STRIPE_INDIVIDUAL_PRICE_ID) {
+  if (priceId === process.env.STRIPE_API_PRICE_ID) {
+    return 'api';
+  } else if (priceId === process.env.STRIPE_INDIVIDUAL_PRICE_ID) {
     return 'individual';
   } else if (priceId === process.env.STRIPE_TEAM_PRICE_ID) {
     return 'team';
@@ -178,7 +247,8 @@ function determineSubscriptionTier(subscription: Stripe.Subscription): string {
 }
 
 async function logBillingEvent(event: Stripe.Event) {
-  const customerId = (event.data.object as any).customer;
+  const eventObject = event.data.object as Record<string, unknown>;
+  const customerId = eventObject.customer as string | undefined;
   
   if (customerId) {
     const { data: userBilling } = await getSupabase()
@@ -197,6 +267,37 @@ async function logBillingEvent(event: Stripe.Event) {
           data: event.data.object
         });
     }
+  }
+}
+
+async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) {
+  console.log('Processing checkout.session.completed:', session.id);
+  
+  const customerId = session.customer as string;
+  const userIdFromMetadata = session.metadata?.user_id;
+  
+  if (!customerId || !userIdFromMetadata) {
+    console.error('Missing customer ID or user ID in checkout session');
+    return;
+  }
+  
+  console.log(`Linking user ${userIdFromMetadata} to Stripe customer ${customerId}`);
+  
+  // Update user_billing with the Stripe customer ID
+  const { error } = await getSupabase()
+    .from('user_billing')
+    .update({
+      stripe_customer_id: customerId,
+      updated_at: new Date().toISOString()
+    })
+    .eq('user_id', userIdFromMetadata);
+  
+  if (error) {
+    console.error('Error linking Stripe customer to user:', error);
+  } else {
+    console.log('Successfully linked Stripe customer to user');
+    
+    // If there's a subscription, it will be handled by the subscription.created event
   }
 }
 
