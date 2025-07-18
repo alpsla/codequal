@@ -107,6 +107,38 @@ router.post('/signup', async (req, res) => {
       return res.status(400).json({ error: error.message });
     }
 
+    // Create user_billing record immediately after signup
+    // This is a fallback in case the database trigger doesn't work
+    if (data.user && process.env.SUPABASE_SERVICE_KEY) {
+      const serviceSupabase = createClient(
+        config.supabase.url,
+        process.env.SUPABASE_SERVICE_KEY
+      );
+      
+      // Check if user_billing already exists (in case trigger already created it)
+      const { data: existingBilling } = await serviceSupabase
+        .from('user_billing')
+        .select('id')
+        .eq('user_id', data.user.id)
+        .single();
+      
+      if (!existingBilling) {
+        const { error: billingError } = await serviceSupabase
+          .from('user_billing')
+          .insert({
+            user_id: data.user.id,
+            subscription_tier: 'free',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+        
+        if (billingError) {
+          console.error('Failed to create user_billing record:', billingError);
+          // Don't fail the signup if billing creation fails
+        }
+      }
+    }
+
     res.json({ 
       message: 'User created successfully. Please check your email to verify your account.',
       user: data.user 
@@ -213,9 +245,10 @@ router.get('/:provider', async (req, res) => {
 
     // Redirect the user to the OAuth provider
     res.redirect(data.url);
-  } catch (error: any) {
+  } catch (error) {
     console.error('OAuth error:', error);
-    if (error.message && error.message.includes('ECONNREFUSED')) {
+    const errorMessage = error instanceof Error ? error.message : '';
+    if (errorMessage.includes('ECONNREFUSED')) {
       return res.status(503).json({ error: 'Authentication service unavailable' });
     }
     res.status(500).json({ error: 'Failed to initiate OAuth flow' });
@@ -260,9 +293,10 @@ router.post('/oauth/:provider', async (req, res) => {
       url: data.url,
       provider: provider 
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('OAuth error:', error);
-    if (error.message && error.message.includes('ECONNREFUSED')) {
+    const errorMessage = error instanceof Error ? error.message : '';
+    if (errorMessage.includes('ECONNREFUSED')) {
       return res.status(503).json({ error: 'Authentication service unavailable' });
     }
     res.status(500).json({ error: 'Failed to initiate OAuth flow' });
@@ -276,7 +310,7 @@ router.post('/callback', async (req, res) => {
     
     const { code, state } = oauthCallbackSchema.parse(req.body);
     
-    console.log('OAuth callback received:', { code: code.substring(0, 10) + '...', state });
+    // Log callback received with truncated code for security
     
     // Exchange code for session
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
@@ -309,6 +343,36 @@ router.post('/callback', async (req, res) => {
       });
     }
 
+    // Create user_billing record for OAuth users
+    if (data.user && process.env.SUPABASE_SERVICE_KEY) {
+      const serviceSupabase = createClient(
+        config.supabase.url,
+        process.env.SUPABASE_SERVICE_KEY
+      );
+      
+      // Check if user_billing already exists
+      const { data: existingBilling } = await serviceSupabase
+        .from('user_billing')
+        .select('id')
+        .eq('user_id', data.user.id)
+        .single();
+      
+      if (!existingBilling) {
+        const { error: billingError } = await serviceSupabase
+          .from('user_billing')
+          .insert({
+            user_id: data.user.id,
+            subscription_tier: 'free',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+        
+        if (billingError) {
+          console.error('Failed to create user_billing record for OAuth user:', billingError);
+        }
+      }
+    }
+
     // Return session data
     res.json({ 
       success: true,
@@ -335,7 +399,7 @@ router.get('/callback', async (req, res) => {
       return res.status(400).json({ error: 'Missing authorization code' });
     }
     
-    const { code, state } = oauthCallbackSchema.parse(req.query);
+    const { code } = oauthCallbackSchema.parse(req.query);
     
     // Exchange code for session
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
@@ -345,6 +409,36 @@ router.get('/callback', async (req, res) => {
     }
 
     // Profile syncing is handled by database triggers
+
+    // Create user_billing record for OAuth users
+    if (data.user && process.env.SUPABASE_SERVICE_KEY) {
+      const serviceSupabase = createClient(
+        config.supabase.url,
+        process.env.SUPABASE_SERVICE_KEY
+      );
+      
+      // Check if user_billing already exists
+      const { data: existingBilling } = await serviceSupabase
+        .from('user_billing')
+        .select('id')
+        .eq('user_id', data.user.id)
+        .single();
+      
+      if (!existingBilling) {
+        const { error: billingError } = await serviceSupabase
+          .from('user_billing')
+          .insert({
+            user_id: data.user.id,
+            subscription_tier: 'free',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+        
+        if (billingError) {
+          console.error('Failed to create user_billing record for OAuth user:', billingError);
+        }
+      }
+    }
 
     // Get the original redirectTo from query params
     const redirectTo = req.query.redirect_to as string || `${config.app.url}/dashboard`;
