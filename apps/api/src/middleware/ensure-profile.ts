@@ -66,7 +66,6 @@ export const ensureUserProfile = async (
         profileData
       });
       // Continue anyway - the user is authenticated, just missing profile
-    } else {
     }
 
     next();

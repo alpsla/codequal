@@ -4,6 +4,7 @@ import { getSupabase } from '@codequal/database/supabase/client';
 import { normalizeRepositoryUrl } from '../utils/repository-utils';
 import { ResultOrchestrator } from '../services/result-orchestrator';
 import { createLogger } from '@codequal/core/utils';
+import { reportIdMappingService } from '../services/report-id-mapping-service';
 import Stripe from 'stripe';
 
 const router = Router();
@@ -284,7 +285,7 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
     };
 
     // Store report mapping for retrieval
-    const { reportIdMappingService } = require('../services/report-id-mapping-service');
+    // reportIdMappingService already imported
     await reportIdMappingService.storeMapping(
       analysisId,
       repositoryUrl,

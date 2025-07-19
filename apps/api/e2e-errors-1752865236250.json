@@ -1,0 +1,113 @@
+[
+  {
+    "timestamp": "2025-07-18T19:00:35.733Z",
+    "scenario": "Database Check",
+    "stage": "Health Request",
+    "error": {
+      "message": "Request failed with status code 404",
+      "stack": "AxiosError: Request failed with status code 404\n    at settle (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/settle.js:19:12)\n    at IncomingMessage.handleStreamEnd (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/adapters/http.js:599:11)\n    at IncomingMessage.emit (node:events:519:35)\n    at IncomingMessage.emit (node:domain:489:12)\n    at endReadableNT (node:internal/streams/readable:1696:12)\n    at processTicksAndRejections (node:internal/process/task_queues:90:21)\n    at Axios.request (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/Axios.js:45:41)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async testDatabaseConnection (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:136:22)\n    at async main (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:350:3)",
+      "code": "ERR_BAD_REQUEST",
+      "statusCode": 404,
+      "response": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<pre>Cannot GET /v1/monitoring/health</pre>\n</body>\n</html>\n"
+    },
+    "request": {
+      "url": "http://localhost:3001/v1/monitoring/health",
+      "method": "GET"
+    }
+  },
+  {
+    "timestamp": "2025-07-18T19:00:35.753Z",
+    "scenario": "Quick PR Analysis",
+    "stage": "Analysis Request",
+    "error": {
+      "message": "Request failed with status code 500",
+      "stack": "AxiosError: Request failed with status code 500\n    at settle (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/settle.js:19:12)\n    at IncomingMessage.handleStreamEnd (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/adapters/http.js:599:11)\n    at IncomingMessage.emit (node:events:519:35)\n    at IncomingMessage.emit (node:domain:489:12)\n    at endReadableNT (node:internal/streams/readable:1696:12)\n    at processTicksAndRejections (node:internal/process/task_queues:90:21)\n    at Axios.request (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/Axios.js:45:41)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async runAnalysisScenario (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:166:27)\n    at async main (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:355:5)",
+      "code": "ERR_BAD_RESPONSE",
+      "statusCode": 500,
+      "response": {
+        "error": "Internal server error",
+        "message": "lru_cache_1.LRUCache is not a constructor"
+      }
+    },
+    "request": {
+      "url": "http://localhost:3001/v1/analyze-pr",
+      "method": "POST",
+      "data": {
+        "repositoryUrl": "https://github.com/expressjs/express",
+        "prNumber": 5500,
+        "analysisMode": "quick"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-07-18T19:00:35.757Z",
+    "scenario": "Comprehensive PR Analysis",
+    "stage": "Analysis Request",
+    "error": {
+      "message": "Request failed with status code 500",
+      "stack": "AxiosError: Request failed with status code 500\n    at settle (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/settle.js:19:12)\n    at IncomingMessage.handleStreamEnd (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/adapters/http.js:599:11)\n    at IncomingMessage.emit (node:events:519:35)\n    at IncomingMessage.emit (node:domain:489:12)\n    at endReadableNT (node:internal/streams/readable:1696:12)\n    at processTicksAndRejections (node:internal/process/task_queues:90:21)\n    at Axios.request (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/Axios.js:45:41)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async runAnalysisScenario (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:166:27)\n    at async main (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:355:5)",
+      "code": "ERR_BAD_RESPONSE",
+      "statusCode": 500,
+      "response": {
+        "error": "Internal server error",
+        "message": "lru_cache_1.LRUCache is not a constructor"
+      }
+    },
+    "request": {
+      "url": "http://localhost:3001/v1/analyze-pr",
+      "method": "POST",
+      "data": {
+        "repositoryUrl": "https://github.com/facebook/react",
+        "prNumber": 28000,
+        "analysisMode": "comprehensive"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-07-18T19:00:35.760Z",
+    "scenario": "Deep PR Analysis",
+    "stage": "Analysis Request",
+    "error": {
+      "message": "Request failed with status code 500",
+      "stack": "AxiosError: Request failed with status code 500\n    at settle (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/settle.js:19:12)\n    at IncomingMessage.handleStreamEnd (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/adapters/http.js:599:11)\n    at IncomingMessage.emit (node:events:519:35)\n    at IncomingMessage.emit (node:domain:489:12)\n    at endReadableNT (node:internal/streams/readable:1696:12)\n    at processTicksAndRejections (node:internal/process/task_queues:90:21)\n    at Axios.request (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/Axios.js:45:41)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async runAnalysisScenario (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:166:27)\n    at async main (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:355:5)",
+      "code": "ERR_BAD_RESPONSE",
+      "statusCode": 500,
+      "response": {
+        "error": "Internal server error",
+        "message": "lru_cache_1.LRUCache is not a constructor"
+      }
+    },
+    "request": {
+      "url": "http://localhost:3001/v1/analyze-pr",
+      "method": "POST",
+      "data": {
+        "repositoryUrl": "https://github.com/vercel/next.js",
+        "prNumber": 59000,
+        "analysisMode": "deep"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-07-18T19:00:36.250Z",
+    "scenario": "Repository Analysis",
+    "stage": "Analysis Request",
+    "error": {
+      "message": "Request failed with status code 500",
+      "stack": "AxiosError: Request failed with status code 500\n    at settle (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/settle.js:19:12)\n    at IncomingMessage.handleStreamEnd (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/adapters/http.js:599:11)\n    at IncomingMessage.emit (node:events:519:35)\n    at IncomingMessage.emit (node:domain:489:12)\n    at endReadableNT (node:internal/streams/readable:1696:12)\n    at processTicksAndRejections (node:internal/process/task_queues:90:21)\n    at Axios.request (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/Axios.js:45:41)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async runAnalysisScenario (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:166:27)\n    at async main (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:355:5)",
+      "code": "ERR_BAD_RESPONSE",
+      "statusCode": 500,
+      "response": {
+        "error": "Internal server error",
+        "message": "lru_cache_1.LRUCache is not a constructor"
+      }
+    },
+    "request": {
+      "url": "http://localhost:3001/v1/repository/analyze",
+      "method": "POST",
+      "data": {
+        "repositoryUrl": "https://github.com/nodejs/node",
+        "force": false
+      }
+    }
+  }
+]

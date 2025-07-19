@@ -2,6 +2,12 @@ import { Router, Request, Response } from 'express';
 import { getSupabase } from '@codequal/database/supabase/client';
 import { createLogger } from '@codequal/core/utils';
 import { VectorContextService, createVectorContextService } from '@codequal/agents/multi-agent/vector-context-service';
+import { ResultOrchestrator } from '../services/result-orchestrator';
+import { HtmlReportGenerator } from '../services/html-report-generator';
+import { HtmlReportGeneratorV5 } from '../services/html-report-generator-v5';
+import * as crypto from 'crypto';
+import * as fs from 'fs';
+import * as path from 'path';
 
 const router = Router();
 const logger = createLogger('AnalysisReportsAPI');
@@ -20,27 +26,41 @@ router.get('/analysis/real-pr-test', async (req: Request, res: Response) => {
   }
 
   try {
-    // Import the result orchestrator to run real analysis
-    const { ResultOrchestrator } = require('../services/result-orchestrator');
-    const orchestrator = new ResultOrchestrator();
+    // Create test user for development
+    const testUser: any = {
+      id: 'test-user-id',
+      email: 'test@example.com',
+      permissions: [],
+      role: 'user',
+      status: 'active',
+      session: {
+        token: 'test-token',
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
+      },
+      subscription: {
+        status: 'active' as const,
+        plan: 'professional' as const,
+        tier: 'professional' as const
+      }
+    };
+    
+    // Create result orchestrator to run real analysis
+    const orchestrator = new ResultOrchestrator(testUser);
     
     // Use a small public PR for testing
     const testPR = {
-      repository_url: 'https://github.com/facebook/react',
-      pr_number: 28000, // A small, recent PR
-      api_key: 'test_key'
+      repositoryUrl: 'https://github.com/facebook/react',
+      prNumber: 28000, // A small, recent PR
+      analysisMode: 'comprehensive' as const,
+      authenticatedUser: testUser
     };
     
     logger.info('Starting real PR analysis', testPR);
     
     // Run the analysis
-    const result = await orchestrator.analyzePullRequest(
-      testPR.repository_url,
-      testPR.pr_number
-    );
+    const result = await orchestrator.analyzePR(testPR);
     
     // Generate enhanced HTML report
-    const HtmlReportGenerator = require('../services/html-report-generator').HtmlReportGenerator;
     const generator = new HtmlReportGenerator();
     const html = generator.generateEnhancedHtmlReport(result);
     
@@ -177,7 +197,7 @@ router.get('/analysis/demo-report', async (req: Request, res: Response) => {
   
   // Generate HTML directly
   try {
-    const HtmlReportGenerator = require('../services/html-report-generator').HtmlReportGenerator;
+    // HtmlReportGenerator already imported
     const generator = new HtmlReportGenerator();
     const html = generator.generateEnhancedHtmlReport(testReport);
     
@@ -227,7 +247,7 @@ router.get('/analysis/:reportId/report', async (req: Request, res: Response) => 
       if (apiKey === 'test_key' && process.env.NODE_ENV !== 'production') {
         userId = 'test_user';
       } else {
-        const keyHash = require('crypto').createHash('sha256').update(apiKey).digest('hex');
+        const keyHash = crypto.createHash('sha256').update(apiKey).digest('hex');
         const { data: keyData } = await getSupabase()
           .from('api_keys')
           .select('user_id, active')
@@ -280,7 +300,7 @@ router.get('/analysis/:reportId/report', async (req: Request, res: Response) => 
         // Generate response based on format
         try {
           if (format === 'html') {
-            const HtmlReportGenerator = require('../services/html-report-generator').HtmlReportGenerator;
+            // HtmlReportGenerator already imported
             const generator = new HtmlReportGenerator();
             const htmlContent = generator.generateEnhancedHtmlReport(report);
             res.setHeader('Content-Type', 'text/html');
@@ -340,11 +360,12 @@ router.get('/analysis/:reportId/report', async (req: Request, res: Response) => 
       
       // Return report in requested format
       switch (format) {
-        case 'html':
+        case 'html': {
           const htmlContent = generateHTMLReport(report);
           res.setHeader('Content-Type', 'text/html');
           res.send(htmlContent);
           break;
+        }
           
         case 'markdown':
           res.setHeader('Content-Type', 'text/markdown');
@@ -457,8 +478,7 @@ function generateHTMLReport(report: any): string {
   const { overview, modules, visualizations } = report;
   
   // Read the enhanced template
-  const fs = require('fs');
-  const path = require('path');
+  // fs and path already imported
   // When compiled, __dirname is dist/routes, so we need to go up to dist, then to src/templates
   const templatePath = path.join(__dirname, '../../src/templates/modular/enhanced-template.html');
   
@@ -475,7 +495,7 @@ function generateHTMLReport(report: any): string {
   const getSeverityCounts = (findings: any[]) => {
     const counts = { critical: 0, high: 0, medium: 0, low: 0 };
     findings.forEach(f => {
-      if (counts.hasOwnProperty(f.severity)) {
+      if (Object.prototype.hasOwnProperty.call(counts, f.severity)) {
         counts[f.severity as keyof typeof counts]++;
       }
     });
@@ -1067,7 +1087,7 @@ router.get('/analysis/:reportId/html', async (req: Request, res: Response) => {
         
         // Generate HTML using appropriate generator
         try {
-          const { HtmlReportGeneratorV5 } = require('../services/html-report-generator-v5');
+          // HtmlReportGeneratorV5 already imported
           const generator = new HtmlReportGeneratorV5();
           const html = generator.generateEnhancedHtmlReport(vectorReport);
           
@@ -1075,7 +1095,7 @@ router.get('/analysis/:reportId/html', async (req: Request, res: Response) => {
           return res.send(html);
         } catch (genError) {
           // Fallback to basic generator
-          const { HtmlReportGenerator } = require('../services/html-report-generator');
+          // HtmlReportGenerator already imported
           const generator = new HtmlReportGenerator();
           const html = generator.generateEnhancedHtmlReport(vectorReport);
           
@@ -1100,7 +1120,7 @@ router.get('/analysis/:reportId/html', async (req: Request, res: Response) => {
     }
     
     // Generate HTML
-    const { HtmlReportGeneratorV5 } = require('../services/html-report-generator-v5');
+    // HtmlReportGeneratorV5 already imported
     const generator = new HtmlReportGeneratorV5();
     const html = generator.generateEnhancedHtmlReport(report.report_data || report);
     

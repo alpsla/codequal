@@ -15,7 +15,7 @@ import { ToolResultRetrievalService, AgentToolResults } from '@codequal/core/ser
 import { VectorStorageService } from '@codequal/database';
 import { createLogger, LoggableData } from '@codequal/core/utils';
 // @ts-ignore - Module will be available after build
-import { deepWikiScoreExtractor, DeepWikiScores, DeepWikiInsight } from '@codequal/core/src/services/deepwiki-score-extractor';
+import { deepWikiScoreExtractor, DeepWikiScores, DeepWikiInsight } from '@codequal/core';
 import { AuthenticatedUser as AgentAuthenticatedUser, UserRole, UserStatus, UserPermissions } from '@codequal/agents/multi-agent/types/auth';
 import { RepositorySchedulerService } from '@codequal/core/services/scheduling';
 import { EducationalAgent } from '@codequal/agents/multi-agent/educational-agent';
