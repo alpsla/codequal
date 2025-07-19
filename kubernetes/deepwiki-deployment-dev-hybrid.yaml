@@ -31,10 +31,10 @@ spec:
           value: http://deepwiki-api:8001
         # Direct OpenAI key for embeddings (text-embedding-3-large)
         - name: OPENAI_API_KEY
-          value: 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
+          value: YOUR_OPENAI_API_KEY_HERE
         # OpenRouter configuration for LLM requests
         - name: OPENROUTER_API_KEY
-          value: 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
+          value: YOUR_OPENROUTER_API_KEY_HERE
         - name: OPENROUTER_BASE_URL
           value: https://openrouter.ai/api/v1
         # Model configuration
@@ -44,13 +44,13 @@ spec:
           value: text-embedding-3-large
         # GitHub token for repository access
         - name: GITHUB_TOKEN
-          value: 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
+          value: YOUR_GITHUB_TOKEN_HERE
         # Google API key for DeepWiki (required)
         - name: GOOGLE_API_KEY
-          value: AIzaSyBu7x9zzI5Irb8fh-Tl0vHn7h-uUEruYFw
+          value: YOUR_GOOGLE_API_KEY_HERE
         # Additional environment variables
         - name: VOYAGE_API_KEY
-          value: pa-jfWsls1NO_dlNNNn9nGFCxYpuW0zytbVr2B3CFug8w0
+          value: YOUR_VOYAGE_API_KEY_HERE
         envFrom:
         - secretRef:
             name: deepwiki-env

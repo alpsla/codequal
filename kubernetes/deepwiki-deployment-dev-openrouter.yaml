@@ -31,10 +31,10 @@ spec:
           value: http://deepwiki-api:8001
         # OpenRouter configuration
         - name: OPENROUTER_API_KEY
-          value: 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
+          value: YOUR_OPENROUTER_API_KEY_HERE
         # Set OPENAI_API_KEY to use OpenRouter endpoint
         - name: OPENAI_API_KEY
-          value: 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
+          value: YOUR_OPENROUTER_API_KEY_HERE
         - name: OPENAI_BASE_URL
           value: https://openrouter.ai/api/v1
         # Model configuration for OpenRouter
@@ -44,7 +44,7 @@ spec:
           value: openai/text-embedding-3-large
         # GitHub token for repository access
         - name: GITHUB_TOKEN
-          value: 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
+          value: YOUR_GITHUB_TOKEN_HERE
         envFrom:
         - secretRef:
             name: deepwiki-env
