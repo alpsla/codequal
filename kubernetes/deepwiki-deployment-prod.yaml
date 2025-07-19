@@ -40,7 +40,7 @@ spec:
               key: GOOGLE_API_KEY
               name: google-ai-api-key
         - name: GITHUB_TOKEN
-          value: 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
+          value: YOUR_GITHUB_TOKEN_HERE
         envFrom:
         - secretRef:
             name: deepwiki-env
