@@ -1,0 +1,148 @@
+name: Deploy DeepWiki
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - prod
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'latest'
+    
+    - name: Configure kubectl
+      run: |
+        # You'll need to add KUBE_CONFIG as a secret containing your kubeconfig
+        echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > ${HOME}/.kube/config
+    
+    - name: Create namespace if not exists
+      run: |
+        kubectl create namespace codequal-${{ github.event.inputs.environment }} --dry-run=client -o yaml | kubectl apply -f -
+    
+    - name: Create DeepWiki secrets
+      run: |
+        kubectl create secret generic deepwiki-secrets \
+          --namespace=codequal-${{ github.event.inputs.environment }} \
+          --from-literal=openai-api-key="${{ secrets.OPENAI_API_KEY }}" \
+          --from-literal=openrouter-api-key="${{ secrets.OPENROUTER_API_KEY }}" \
+          --from-literal=github-token="${{ secrets.GITHUB_TOKEN }}" \
+          --from-literal=google-api-key="${{ secrets.GOOGLE_API_KEY }}" \
+          --from-literal=voyage-api-key="${{ secrets.VOYAGE_API_KEY }}" \
+          --dry-run=client -o yaml | kubectl apply -f -
+    
+    - name: Update deployment file with secrets
+      run: |
+        # Create a temporary deployment file that uses secrets
+        cat > /tmp/deepwiki-deployment.yaml << 'EOF'
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: deepwiki
+          namespace: codequal-${{ github.event.inputs.environment }}
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app: deepwiki
+          template:
+            metadata:
+              labels:
+                app: deepwiki
+            spec:
+              containers:
+              - name: deepwiki
+                image: mrdiplomatic/deepwiki:v2.0
+                env:
+                - name: SERVER_BASE_URL
+                  value: http://deepwiki-api:8001
+                - name: NEXT_PUBLIC_SERVER_BASE_URL
+                  value: http://deepwiki-api:8001
+                - name: OPENAI_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: deepwiki-secrets
+                      key: openai-api-key
+                - name: OPENROUTER_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: deepwiki-secrets
+                      key: openrouter-api-key
+                - name: OPENROUTER_BASE_URL
+                  value: https://openrouter.ai/api/v1
+                - name: GITHUB_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: deepwiki-secrets
+                      key: github-token
+                - name: GOOGLE_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: deepwiki-secrets
+                      key: google-api-key
+                - name: VOYAGE_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: deepwiki-secrets
+                      key: voyage-api-key
+                - name: LLM_MODEL
+                  value: openai/gpt-4-turbo-preview
+                - name: EMBEDDING_MODEL
+                  value: text-embedding-3-large
+                resources:
+                  requests:
+                    memory: "1Gi"
+                    cpu: "500m"
+                  limits:
+                    memory: "2Gi"
+                    cpu: "1000m"
+                volumeMounts:
+                - name: deepwiki-storage
+                  mountPath: /app/storage
+              volumes:
+              - name: deepwiki-storage
+                persistentVolumeClaim:
+                  claimName: deepwiki-pvc
+        ---
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: deepwiki-api
+          namespace: codequal-${{ github.event.inputs.environment }}
+        spec:
+          selector:
+            app: deepwiki
+          ports:
+          - protocol: TCP
+            port: 8001
+            targetPort: 8001
+        EOF
+    
+    - name: Apply deployment
+      run: |
+        kubectl apply -f /tmp/deepwiki-deployment.yaml
+    
+    - name: Wait for deployment
+      run: |
+        kubectl rollout status deployment/deepwiki \
+          --namespace=codequal-${{ github.event.inputs.environment }} \
+          --timeout=300s
+    
+    - name: Check deployment status
+      run: |
+        echo "🚀 DeepWiki deployed to ${{ github.event.inputs.environment }} environment"
+        kubectl get pods --namespace=codequal-${{ github.event.inputs.environment }} -l app=deepwiki
+        kubectl get svc --namespace=codequal-${{ github.event.inputs.environment }} -l app=deepwiki
