@@ -5,6 +5,7 @@ import { normalizeRepositoryUrl } from '../utils/repository-utils';
 import { HtmlReportGeneratorV5 } from '../services/html-report-generator-v5';
 import { ResultOrchestrator } from '../services/result-orchestrator';
 import { createLogger } from '@codequal/core/utils';
+import { reportIdMappingService } from '../services/report-id-mapping-service';
 import Stripe from 'stripe';
 
 const router = Router();
@@ -602,7 +603,7 @@ router.post('/test-analysis', authMiddleware, async (req: Request, res: Response
     const htmlReport = htmlGenerator.generateEnhancedHtmlReport(testReport);
 
     // Store report mapping for retrieval
-    const { reportIdMappingService } = require('../services/report-id-mapping-service');
+    // reportIdMappingService already imported
     await reportIdMappingService.storeMapping(
       analysisId,
       repositoryUrl,
@@ -752,7 +753,7 @@ router.post('/real-pr-analysis', authMiddleware, async (req: Request, res: Respo
     const htmlReport = htmlGenerator.generateEnhancedHtmlReport(reportData);
 
     // Store report mapping for retrieval
-    const { reportIdMappingService } = require('../services/report-id-mapping-service');
+    // reportIdMappingService already imported
     await reportIdMappingService.storeMapping(
       analysisId,
       repositoryUrl,
@@ -908,7 +909,7 @@ router.post('/github-pr-analysis', authMiddleware, async (req: Request, res: Res
       const htmlReport = htmlGenerator.generateEnhancedHtmlReport(reportData);
 
       // Store report mapping for retrieval
-      const { reportIdMappingService } = require('../services/report-id-mapping-service');
+      // reportIdMappingService already imported
       await reportIdMappingService.storeMapping(
         result.analysisId,
         repositoryUrl,

@@ -1,0 +1,55 @@
+{
+  "timestamp": "2025-07-18T18:47:25.408Z",
+  "summary": {
+    "totalScenarios": 2,
+    "totalStages": 2,
+    "validStages": 1,
+    "invalidStages": 1,
+    "missingDataPoints": [],
+    "dataIssues": [
+      "PR Analysis > Error: Flow interrupted by error"
+    ]
+  },
+  "scenarios": [
+    {
+      "scenario": "PR Analysis",
+      "timestamp": "2025-07-18T18:47:25.372Z",
+      "stages": [
+        {
+          "stage": "Initial Request",
+          "data": {
+            "repositoryUrl": "https://github.com/expressjs/express",
+            "prNumber": 5500,
+            "analysisMode": "quick"
+          },
+          "validation": {
+            "valid": true,
+            "missing": [],
+            "issues": []
+          }
+        },
+        {
+          "stage": "Error",
+          "data": {
+            "error": ""
+          },
+          "validation": {
+            "valid": false,
+            "missing": [],
+            "issues": [
+              "Flow interrupted by error"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "scenario": "Vector Storage",
+      "timestamp": "2025-07-18T18:47:25.401Z",
+      "stages": []
+    }
+  ],
+  "recommendations": [
+    "Fix data validation issues in API responses"
+  ]
+}

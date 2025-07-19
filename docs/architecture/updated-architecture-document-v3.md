@@ -327,8 +327,9 @@ Kubernetes-Native Integration
 
 Direct access to DeepWiki pods in Kubernetes cluster
 Command execution via kubectl exec
-Repository analysis via DeepWiki API
+Repository analysis via DeepWiki API (ALL LLM requests go through OpenRouter)
 Tool execution within DeepWiki pod (NEW)
+NO direct connections to AI providers - OpenRouter handles all LLM routing
 
 DeepWiki Tool Runner (NEW)
 
@@ -1221,6 +1222,17 @@ The Enhanced Monitoring Service provides complete observability for the CodeQual
 ## 18. User Skill Tracking & Personalized Learning System (NEW - June 15, 2025)
 
 The system implements a comprehensive **User Skill Tracking System** that integrates with the Educational Agent to provide personalized, skill-aware code analysis and learning experiences that grow with users over time.
+
+**IMPORTANT ARCHITECTURE CLARIFICATION**:
+All LLM (Language Model) requests in CodeQual go through **OpenRouter** as a unified gateway. We do NOT make direct connections to OpenAI, Anthropic, or Google for LLM tasks. OpenRouter handles:
+- Routing to the appropriate provider
+- Unified billing and token management
+- Model availability and failover
+- Cost optimization across providers
+
+The only direct AI provider connections are for embeddings:
+- OpenAI `text-embedding-3-large` for documentation
+- Voyage AI for code embeddings
 
 ### **18.1 Core Skill Tracking Architecture**
 

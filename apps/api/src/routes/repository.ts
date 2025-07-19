@@ -117,6 +117,7 @@ repositoryRoutes.post('/analyze', enforceTrialLimits, incrementScanCount, async 
       message: 'Repository analysis triggered successfully',
       repositoryUrl,
       jobId,
+      analysisId: jobId, // Add analysisId for consistency with PR analysis
       status: 'queued',
       estimatedTime: 300 // 5 minutes
     });

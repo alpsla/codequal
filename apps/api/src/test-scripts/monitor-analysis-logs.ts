@@ -10,7 +10,7 @@ config({ path: resolve(__dirname, '../../.env') });
 
 const API_URL = process.env.API_URL || 'http://localhost:3001';
 
-async function monitorAnalysisLogs(analysisId: string, duration: number = 120) {
+async function monitorAnalysisLogs(analysisId: string, duration = 120) {
   console.log(chalk.cyan(`\n📊 Monitoring Analysis: ${analysisId}\n`));
   console.log(chalk.gray(`Will check every 5 seconds for ${duration} seconds\n`));
   

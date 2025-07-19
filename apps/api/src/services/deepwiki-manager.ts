@@ -1,3 +1,23 @@
+/**
+ * DeepWiki Manager - Handles repository analysis through the DeepWiki service
+ * 
+ * ARCHITECTURE:
+ * 1. Embeddings (Direct connections, NOT through OpenRouter):
+ *    - OpenAI text-embedding-3-large: For documentation embeddings
+ *    - Voyage AI: For code embeddings
+ * 
+ * 2. LLM Requests (ALL through OpenRouter):
+ *    - OpenRouter acts as a single gateway for ALL language models
+ *    - Handles unified billing/token tracking
+ *    - Models are dynamically selected from Vector DB
+ *    - NO direct connections to model providers for LLMs
+ * 
+ * 3. Model Selection:
+ *    - Models are stored and updated in Vector DB
+ *    - Selection based on task/role requirements
+ *    - Avoids expensive/outdated models through scheduled updates
+ */
+
 import { AuthenticatedUser } from '../middleware/auth-middleware';
 import { VectorContextService, createVectorContextService } from '@codequal/agents/multi-agent/vector-context-service';
 import { AuthenticatedUser as AgentAuthenticatedUser, UserRole, UserStatus, UserPermissions } from '@codequal/agents/multi-agent/types/auth';
@@ -10,11 +30,10 @@ import * as os from 'os';
 import simpleGit, { SimpleGit } from 'simple-git';
 import { createLogger } from '@codequal/core/utils';
 import { ModelVersionSync } from '@codequal/core/services/model-selection/ModelVersionSync';
-// @ts-ignore - Module will be available after build
-import { createDeepWikiModelSelector, DeepWikiModelSelector, RepositoryContext } from '@codequal/agents/src/deepwiki/deepwiki-model-selector';
+// @ts-expect-error - Module will be available after build
+import { createDeepWikiModelSelector, DeepWikiModelSelector, RepositoryContext } from '@codequal/agents';
 import { VectorStorageService } from '@codequal/database';
-// @ts-ignore - LRU Cache types
-import { LRUCache } from 'lru-cache';
+import LRUCache from 'lru-cache';
 import { AgentRole } from '@codequal/core/config/agent-registry';
 import { ModelVersionInfo } from '@codequal/core';
 
@@ -100,13 +119,16 @@ export class DeepWikiManager {
   private batchTimer?: NodeJS.Timeout;
   
   // Configuration
-  private readonly DEEPWIKI_NAMESPACE = process.env.DEEPWIKI_NAMESPACE || 'codequal-dev';
-  private readonly DEEPWIKI_POD_SELECTOR = process.env.DEEPWIKI_POD_SELECTOR || 'deepwiki-fixed';
+  private readonly DEEPWIKI_NAMESPACE = process.env.DEEPWIKI_NAMESPACE || 'codequal-prod';
+  private readonly DEEPWIKI_POD_SELECTOR = process.env.DEEPWIKI_POD_SELECTOR || 'deepwiki';
   private readonly DEEPWIKI_PORT = process.env.DEEPWIKI_PORT || '8001';
   
-  // Model configuration
+  // Model configuration - ALL models go through OpenRouter
+  // Models are dynamically selected from Vector DB based on role/task
   private primaryModel?: ModelVersionInfo;
   private fallbackModel?: ModelVersionInfo;
+  // DEPRECATED: These hardcoded models should not be used
+  // All model selection should come from Vector DB via ModelVersionSync
   private readonly LEGACY_PRIMARY_MODEL = process.env.DEEPWIKI_MODEL || 'anthropic/claude-3-opus';
   private readonly LEGACY_FALLBACK_MODELS = [
     'openai/gpt-4.1',
@@ -948,7 +970,8 @@ export class DeepWikiManager {
           }
         }
 
-        // Prepare the request
+        // Prepare the request - ALL requests go through OpenRouter
+        // OpenRouter handles routing to the actual model provider and billing
         const deepwikiRequest: DeepWikiRequest = {
           repo_url: repositoryUrl,
           messages: [{
@@ -956,8 +979,8 @@ export class DeepWikiManager {
             content: prompt
           }],
           stream: false,
-          provider: 'openrouter',
-          model: selectedModel,
+          provider: 'openrouter', // Always use OpenRouter as the gateway
+          model: selectedModel,     // Model name as registered in OpenRouter
           temperature: 0.2
         };
 

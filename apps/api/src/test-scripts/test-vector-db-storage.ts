@@ -63,7 +63,8 @@ async function testVectorDBStorage() {
     // Check if repo exists in Vector DB
     console.log('\n3️⃣ Checking if test repository exists in Vector DB...');
     try {
-      const context = await vectorService.getRepositoryContext(testRepo, 'test', authenticatedUser);
+      // Use a valid AgentRole instead of 'test'
+      const context = await vectorService.getRepositoryContext(testRepo, 'orchestrator' as any, testUser);
       console.log('   Repository context:', {
         exists: context.recentAnalysis.length > 0,
         recentAnalysisCount: context.recentAnalysis.length,
@@ -133,7 +134,7 @@ async function testVectorDBStorage() {
     // Verify storage by querying again
     console.log('\n6️⃣ Verifying storage by querying repository again...');
     try {
-      const verifyContext = await vectorService.getRepositoryContext(testRepo, 'test', authenticatedUser);
+      const verifyContext = await vectorService.getRepositoryContext(testRepo, 'orchestrator' as any, testUser);
       console.log('   Repository context after storage:', {
         exists: verifyContext.recentAnalysis.length > 0,
         recentAnalysisCount: verifyContext.recentAnalysis.length,

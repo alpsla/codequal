@@ -1,0 +1,436 @@
+[
+  {
+    "timestamp": "2025-07-18T18:43:42.848Z",
+    "scenario": "Database Check",
+    "stage": "Health Request",
+    "error": {
+      "message": "Request failed with status code 404",
+      "stack": "AxiosError: Request failed with status code 404\n    at settle (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/settle.js:19:12)\n    at IncomingMessage.handleStreamEnd (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/adapters/http.js:599:11)\n    at IncomingMessage.emit (node:events:519:35)\n    at IncomingMessage.emit (node:domain:489:12)\n    at endReadableNT (node:internal/streams/readable:1696:12)\n    at processTicksAndRejections (node:internal/process/task_queues:90:21)\n    at Axios.request (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/Axios.js:45:41)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async testDatabaseConnection (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:136:22)\n    at async main (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:363:3)",
+      "code": "ERR_BAD_REQUEST",
+      "statusCode": 404,
+      "response": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<pre>Cannot GET /v1/monitoring/health</pre>\n</body>\n</html>\n"
+    },
+    "request": {
+      "url": "http://localhost:3001/v1/monitoring/health",
+      "method": "GET"
+    }
+  },
+  {
+    "timestamp": "2025-07-18T18:45:43.306Z",
+    "scenario": "Educational PR Analysis",
+    "stage": "Analysis Request",
+    "error": {
+      "message": "Request failed with status code 400",
+      "stack": "AxiosError: Request failed with status code 400\n    at settle (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/settle.js:19:12)\n    at IncomingMessage.handleStreamEnd (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/adapters/http.js:599:11)\n    at IncomingMessage.emit (node:events:519:35)\n    at IncomingMessage.emit (node:domain:489:12)\n    at endReadableNT (node:internal/streams/readable:1696:12)\n    at processTicksAndRejections (node:internal/process/task_queues:90:21)\n    at Axios.request (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/Axios.js:45:41)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async runAnalysisScenario (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:166:27)\n    at async main (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:368:5)",
+      "code": "ERR_BAD_REQUEST",
+      "statusCode": 400,
+      "response": {
+        "error": "Invalid request",
+        "details": [
+          "analysisMode must be one of: quick, comprehensive, deep, auto"
+        ]
+      }
+    },
+    "request": {
+      "url": "http://localhost:3001/v1/analyze-pr",
+      "method": "POST",
+      "data": {
+        "repositoryUrl": "https://github.com/vercel/next.js",
+        "prNumber": 59000,
+        "analysisMode": "educational"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-07-18T18:45:50.052Z",
+    "scenario": "Repository Analysis",
+    "stage": "Status Polling",
+    "error": {
+      "message": "AggregateError",
+      "stack": "AggregateError\n    at Function.AxiosError.from (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/AxiosError.js:92:14)\n    at RedirectableRequest.handleRequestError (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/adapters/http.js:620:25)\n    at RedirectableRequest.emit (node:events:507:28)\n    at RedirectableRequest.emit (node:domain:489:12)\n    at ClientRequest.eventHandlers.<computed> (/Users/alpinro/Code Prjects/codequal/node_modules/follow-redirects/index.js:49:24)\n    at ClientRequest.emit (node:events:507:28)\n    at ClientRequest.emit (node:domain:489:12)\n    at emitErrorEvent (node:_http_client:104:11)\n    at Socket.socketErrorListener (node:_http_client:518:5)\n    at Socket.emit (node:events:507:28)\n    at Axios.request (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/Axios.js:45:41)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async runAnalysisScenario (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:191:32)\n    at async main (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:368:5)",
+      "code": "ECONNREFUSED"
+    },
+    "request": {
+      "url": "http://localhost:3001/v1/analysis/undefined",
+      "method": "GET"
+    }
+  },
+  {
+    "timestamp": "2025-07-18T18:45:52.058Z",
+    "scenario": "Repository Analysis",
+    "stage": "Status Polling",
+    "error": {
+      "message": "AggregateError",
+      "stack": "AggregateError\n    at Function.AxiosError.from (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/AxiosError.js:92:14)\n    at RedirectableRequest.handleRequestError (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/adapters/http.js:620:25)\n    at RedirectableRequest.emit (node:events:507:28)\n    at RedirectableRequest.emit (node:domain:489:12)\n    at ClientRequest.eventHandlers.<computed> (/Users/alpinro/Code Prjects/codequal/node_modules/follow-redirects/index.js:49:24)\n    at ClientRequest.emit (node:events:507:28)\n    at ClientRequest.emit (node:domain:489:12)\n    at emitErrorEvent (node:_http_client:104:11)\n    at Socket.socketErrorListener (node:_http_client:518:5)\n    at Socket.emit (node:events:507:28)\n    at Axios.request (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/Axios.js:45:41)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async runAnalysisScenario (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:191:32)\n    at async main (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:368:5)",
+      "code": "ECONNREFUSED"
+    },
+    "request": {
+      "url": "http://localhost:3001/v1/analysis/undefined",
+      "method": "GET"
+    }
+  },
+  {
+    "timestamp": "2025-07-18T18:45:54.061Z",
+    "scenario": "Repository Analysis",
+    "stage": "Status Polling",
+    "error": {
+      "message": "AggregateError",
+      "stack": "AggregateError\n    at Function.AxiosError.from (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/AxiosError.js:92:14)\n    at RedirectableRequest.handleRequestError (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/adapters/http.js:620:25)\n    at RedirectableRequest.emit (node:events:507:28)\n    at RedirectableRequest.emit (node:domain:489:12)\n    at ClientRequest.eventHandlers.<computed> (/Users/alpinro/Code Prjects/codequal/node_modules/follow-redirects/index.js:49:24)\n    at ClientRequest.emit (node:events:507:28)\n    at ClientRequest.emit (node:domain:489:12)\n    at emitErrorEvent (node:_http_client:104:11)\n    at Socket.socketErrorListener (node:_http_client:518:5)\n    at Socket.emit (node:events:507:28)\n    at Axios.request (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/Axios.js:45:41)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async runAnalysisScenario (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:191:32)\n    at async main (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:368:5)",
+      "code": "ECONNREFUSED"
+    },
+    "request": {
+      "url": "http://localhost:3001/v1/analysis/undefined",
+      "method": "GET"
+    }
+  },
+  {
+    "timestamp": "2025-07-18T18:45:56.066Z",
+    "scenario": "Repository Analysis",
+    "stage": "Status Polling",
+    "error": {
+      "message": "AggregateError",
+      "stack": "AggregateError\n    at Function.AxiosError.from (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/AxiosError.js:92:14)\n    at RedirectableRequest.handleRequestError (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/adapters/http.js:620:25)\n    at RedirectableRequest.emit (node:events:507:28)\n    at RedirectableRequest.emit (node:domain:489:12)\n    at ClientRequest.eventHandlers.<computed> (/Users/alpinro/Code Prjects/codequal/node_modules/follow-redirects/index.js:49:24)\n    at ClientRequest.emit (node:events:507:28)\n    at ClientRequest.emit (node:domain:489:12)\n    at emitErrorEvent (node:_http_client:104:11)\n    at Socket.socketErrorListener (node:_http_client:518:5)\n    at Socket.emit (node:events:507:28)\n    at Axios.request (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/Axios.js:45:41)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async runAnalysisScenario (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:191:32)\n    at async main (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:368:5)",
+      "code": "ECONNREFUSED"
+    },
+    "request": {
+      "url": "http://localhost:3001/v1/analysis/undefined",
+      "method": "GET"
+    }
+  },
+  {
+    "timestamp": "2025-07-18T18:45:58.071Z",
+    "scenario": "Repository Analysis",
+    "stage": "Status Polling",
+    "error": {
+      "message": "AggregateError",
+      "stack": "AggregateError\n    at Function.AxiosError.from (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/AxiosError.js:92:14)\n    at RedirectableRequest.handleRequestError (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/adapters/http.js:620:25)\n    at RedirectableRequest.emit (node:events:507:28)\n    at RedirectableRequest.emit (node:domain:489:12)\n    at ClientRequest.eventHandlers.<computed> (/Users/alpinro/Code Prjects/codequal/node_modules/follow-redirects/index.js:49:24)\n    at ClientRequest.emit (node:events:507:28)\n    at ClientRequest.emit (node:domain:489:12)\n    at emitErrorEvent (node:_http_client:104:11)\n    at Socket.socketErrorListener (node:_http_client:518:5)\n    at Socket.emit (node:events:507:28)\n    at Axios.request (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/Axios.js:45:41)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async runAnalysisScenario (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:191:32)\n    at async main (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:368:5)",
+      "code": "ECONNREFUSED"
+    },
+    "request": {
+      "url": "http://localhost:3001/v1/analysis/undefined",
+      "method": "GET"
+    }
+  },
+  {
+    "timestamp": "2025-07-18T18:46:00.075Z",
+    "scenario": "Repository Analysis",
+    "stage": "Status Polling",
+    "error": {
+      "message": "AggregateError",
+      "stack": "AggregateError\n    at Function.AxiosError.from (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/AxiosError.js:92:14)\n    at RedirectableRequest.handleRequestError (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/adapters/http.js:620:25)\n    at RedirectableRequest.emit (node:events:507:28)\n    at RedirectableRequest.emit (node:domain:489:12)\n    at ClientRequest.eventHandlers.<computed> (/Users/alpinro/Code Prjects/codequal/node_modules/follow-redirects/index.js:49:24)\n    at ClientRequest.emit (node:events:507:28)\n    at ClientRequest.emit (node:domain:489:12)\n    at emitErrorEvent (node:_http_client:104:11)\n    at Socket.socketErrorListener (node:_http_client:518:5)\n    at Socket.emit (node:events:507:28)\n    at Axios.request (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/Axios.js:45:41)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async runAnalysisScenario (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:191:32)\n    at async main (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:368:5)",
+      "code": "ECONNREFUSED"
+    },
+    "request": {
+      "url": "http://localhost:3001/v1/analysis/undefined",
+      "method": "GET"
+    }
+  },
+  {
+    "timestamp": "2025-07-18T18:46:02.080Z",
+    "scenario": "Repository Analysis",
+    "stage": "Status Polling",
+    "error": {
+      "message": "AggregateError",
+      "stack": "AggregateError\n    at Function.AxiosError.from (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/AxiosError.js:92:14)\n    at RedirectableRequest.handleRequestError (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/adapters/http.js:620:25)\n    at RedirectableRequest.emit (node:events:507:28)\n    at RedirectableRequest.emit (node:domain:489:12)\n    at ClientRequest.eventHandlers.<computed> (/Users/alpinro/Code Prjects/codequal/node_modules/follow-redirects/index.js:49:24)\n    at ClientRequest.emit (node:events:507:28)\n    at ClientRequest.emit (node:domain:489:12)\n    at emitErrorEvent (node:_http_client:104:11)\n    at Socket.socketErrorListener (node:_http_client:518:5)\n    at Socket.emit (node:events:507:28)\n    at Axios.request (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/Axios.js:45:41)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async runAnalysisScenario (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:191:32)\n    at async main (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:368:5)",
+      "code": "ECONNREFUSED"
+    },
+    "request": {
+      "url": "http://localhost:3001/v1/analysis/undefined",
+      "method": "GET"
+    }
+  },
+  {
+    "timestamp": "2025-07-18T18:46:04.084Z",
+    "scenario": "Repository Analysis",
+    "stage": "Status Polling",
+    "error": {
+      "message": "AggregateError",
+      "stack": "AggregateError\n    at Function.AxiosError.from (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/AxiosError.js:92:14)\n    at RedirectableRequest.handleRequestError (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/adapters/http.js:620:25)\n    at RedirectableRequest.emit (node:events:507:28)\n    at RedirectableRequest.emit (node:domain:489:12)\n    at ClientRequest.eventHandlers.<computed> (/Users/alpinro/Code Prjects/codequal/node_modules/follow-redirects/index.js:49:24)\n    at ClientRequest.emit (node:events:507:28)\n    at ClientRequest.emit (node:domain:489:12)\n    at emitErrorEvent (node:_http_client:104:11)\n    at Socket.socketErrorListener (node:_http_client:518:5)\n    at Socket.emit (node:events:507:28)\n    at Axios.request (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/Axios.js:45:41)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async runAnalysisScenario (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:191:32)\n    at async main (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:368:5)",
+      "code": "ECONNREFUSED"
+    },
+    "request": {
+      "url": "http://localhost:3001/v1/analysis/undefined",
+      "method": "GET"
+    }
+  },
+  {
+    "timestamp": "2025-07-18T18:46:06.087Z",
+    "scenario": "Repository Analysis",
+    "stage": "Status Polling",
+    "error": {
+      "message": "AggregateError",
+      "stack": "AggregateError\n    at Function.AxiosError.from (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/AxiosError.js:92:14)\n    at RedirectableRequest.handleRequestError (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/adapters/http.js:620:25)\n    at RedirectableRequest.emit (node:events:507:28)\n    at RedirectableRequest.emit (node:domain:489:12)\n    at ClientRequest.eventHandlers.<computed> (/Users/alpinro/Code Prjects/codequal/node_modules/follow-redirects/index.js:49:24)\n    at ClientRequest.emit (node:events:507:28)\n    at ClientRequest.emit (node:domain:489:12)\n    at emitErrorEvent (node:_http_client:104:11)\n    at Socket.socketErrorListener (node:_http_client:518:5)\n    at Socket.emit (node:events:507:28)\n    at Axios.request (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/Axios.js:45:41)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async runAnalysisScenario (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:191:32)\n    at async main (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:368:5)",
+      "code": "ECONNREFUSED"
+    },
+    "request": {
+      "url": "http://localhost:3001/v1/analysis/undefined",
+      "method": "GET"
+    }
+  },
+  {
+    "timestamp": "2025-07-18T18:46:08.102Z",
+    "scenario": "Repository Analysis",
+    "stage": "Status Polling",
+    "error": {
+      "message": "AggregateError",
+      "stack": "AggregateError\n    at Function.AxiosError.from (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/AxiosError.js:92:14)\n    at RedirectableRequest.handleRequestError (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/adapters/http.js:620:25)\n    at RedirectableRequest.emit (node:events:507:28)\n    at RedirectableRequest.emit (node:domain:489:12)\n    at ClientRequest.eventHandlers.<computed> (/Users/alpinro/Code Prjects/codequal/node_modules/follow-redirects/index.js:49:24)\n    at ClientRequest.emit (node:events:507:28)\n    at ClientRequest.emit (node:domain:489:12)\n    at emitErrorEvent (node:_http_client:104:11)\n    at Socket.socketErrorListener (node:_http_client:518:5)\n    at Socket.emit (node:events:507:28)\n    at Axios.request (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/Axios.js:45:41)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async runAnalysisScenario (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:191:32)\n    at async main (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:368:5)",
+      "code": "ECONNREFUSED"
+    },
+    "request": {
+      "url": "http://localhost:3001/v1/analysis/undefined",
+      "method": "GET"
+    }
+  },
+  {
+    "timestamp": "2025-07-18T18:46:10.118Z",
+    "scenario": "Repository Analysis",
+    "stage": "Status Polling",
+    "error": {
+      "message": "AggregateError",
+      "stack": "AggregateError\n    at Function.AxiosError.from (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/AxiosError.js:92:14)\n    at RedirectableRequest.handleRequestError (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/adapters/http.js:620:25)\n    at RedirectableRequest.emit (node:events:507:28)\n    at RedirectableRequest.emit (node:domain:489:12)\n    at ClientRequest.eventHandlers.<computed> (/Users/alpinro/Code Prjects/codequal/node_modules/follow-redirects/index.js:49:24)\n    at ClientRequest.emit (node:events:507:28)\n    at ClientRequest.emit (node:domain:489:12)\n    at emitErrorEvent (node:_http_client:104:11)\n    at Socket.socketErrorListener (node:_http_client:518:5)\n    at Socket.emit (node:events:507:28)\n    at Axios.request (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/Axios.js:45:41)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async runAnalysisScenario (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:191:32)\n    at async main (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:368:5)",
+      "code": "ECONNREFUSED"
+    },
+    "request": {
+      "url": "http://localhost:3001/v1/analysis/undefined",
+      "method": "GET"
+    }
+  },
+  {
+    "timestamp": "2025-07-18T18:46:12.122Z",
+    "scenario": "Repository Analysis",
+    "stage": "Status Polling",
+    "error": {
+      "message": "AggregateError",
+      "stack": "AggregateError\n    at Function.AxiosError.from (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/AxiosError.js:92:14)\n    at RedirectableRequest.handleRequestError (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/adapters/http.js:620:25)\n    at RedirectableRequest.emit (node:events:507:28)\n    at RedirectableRequest.emit (node:domain:489:12)\n    at ClientRequest.eventHandlers.<computed> (/Users/alpinro/Code Prjects/codequal/node_modules/follow-redirects/index.js:49:24)\n    at ClientRequest.emit (node:events:507:28)\n    at ClientRequest.emit (node:domain:489:12)\n    at emitErrorEvent (node:_http_client:104:11)\n    at Socket.socketErrorListener (node:_http_client:518:5)\n    at Socket.emit (node:events:507:28)\n    at Axios.request (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/Axios.js:45:41)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async runAnalysisScenario (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:191:32)\n    at async main (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:368:5)",
+      "code": "ECONNREFUSED"
+    },
+    "request": {
+      "url": "http://localhost:3001/v1/analysis/undefined",
+      "method": "GET"
+    }
+  },
+  {
+    "timestamp": "2025-07-18T18:46:14.125Z",
+    "scenario": "Repository Analysis",
+    "stage": "Status Polling",
+    "error": {
+      "message": "AggregateError",
+      "stack": "AggregateError\n    at Function.AxiosError.from (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/AxiosError.js:92:14)\n    at RedirectableRequest.handleRequestError (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/adapters/http.js:620:25)\n    at RedirectableRequest.emit (node:events:507:28)\n    at RedirectableRequest.emit (node:domain:489:12)\n    at ClientRequest.eventHandlers.<computed> (/Users/alpinro/Code Prjects/codequal/node_modules/follow-redirects/index.js:49:24)\n    at ClientRequest.emit (node:events:507:28)\n    at ClientRequest.emit (node:domain:489:12)\n    at emitErrorEvent (node:_http_client:104:11)\n    at Socket.socketErrorListener (node:_http_client:518:5)\n    at Socket.emit (node:events:507:28)\n    at Axios.request (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/Axios.js:45:41)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async runAnalysisScenario (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:191:32)\n    at async main (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:368:5)",
+      "code": "ECONNREFUSED"
+    },
+    "request": {
+      "url": "http://localhost:3001/v1/analysis/undefined",
+      "method": "GET"
+    }
+  },
+  {
+    "timestamp": "2025-07-18T18:46:16.127Z",
+    "scenario": "Repository Analysis",
+    "stage": "Status Polling",
+    "error": {
+      "message": "AggregateError",
+      "stack": "AggregateError\n    at Function.AxiosError.from (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/AxiosError.js:92:14)\n    at RedirectableRequest.handleRequestError (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/adapters/http.js:620:25)\n    at RedirectableRequest.emit (node:events:507:28)\n    at RedirectableRequest.emit (node:domain:489:12)\n    at ClientRequest.eventHandlers.<computed> (/Users/alpinro/Code Prjects/codequal/node_modules/follow-redirects/index.js:49:24)\n    at ClientRequest.emit (node:events:507:28)\n    at ClientRequest.emit (node:domain:489:12)\n    at emitErrorEvent (node:_http_client:104:11)\n    at Socket.socketErrorListener (node:_http_client:518:5)\n    at Socket.emit (node:events:507:28)\n    at Axios.request (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/Axios.js:45:41)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async runAnalysisScenario (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:191:32)\n    at async main (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:368:5)",
+      "code": "ECONNREFUSED"
+    },
+    "request": {
+      "url": "http://localhost:3001/v1/analysis/undefined",
+      "method": "GET"
+    }
+  },
+  {
+    "timestamp": "2025-07-18T18:46:18.130Z",
+    "scenario": "Repository Analysis",
+    "stage": "Status Polling",
+    "error": {
+      "message": "AggregateError",
+      "stack": "AggregateError\n    at Function.AxiosError.from (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/AxiosError.js:92:14)\n    at RedirectableRequest.handleRequestError (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/adapters/http.js:620:25)\n    at RedirectableRequest.emit (node:events:507:28)\n    at RedirectableRequest.emit (node:domain:489:12)\n    at ClientRequest.eventHandlers.<computed> (/Users/alpinro/Code Prjects/codequal/node_modules/follow-redirects/index.js:49:24)\n    at ClientRequest.emit (node:events:507:28)\n    at ClientRequest.emit (node:domain:489:12)\n    at emitErrorEvent (node:_http_client:104:11)\n    at Socket.socketErrorListener (node:_http_client:518:5)\n    at Socket.emit (node:events:507:28)\n    at Axios.request (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/Axios.js:45:41)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async runAnalysisScenario (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:191:32)\n    at async main (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:368:5)",
+      "code": "ECONNREFUSED"
+    },
+    "request": {
+      "url": "http://localhost:3001/v1/analysis/undefined",
+      "method": "GET"
+    }
+  },
+  {
+    "timestamp": "2025-07-18T18:46:20.133Z",
+    "scenario": "Repository Analysis",
+    "stage": "Status Polling",
+    "error": {
+      "message": "AggregateError",
+      "stack": "AggregateError\n    at Function.AxiosError.from (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/AxiosError.js:92:14)\n    at RedirectableRequest.handleRequestError (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/adapters/http.js:620:25)\n    at RedirectableRequest.emit (node:events:507:28)\n    at RedirectableRequest.emit (node:domain:489:12)\n    at ClientRequest.eventHandlers.<computed> (/Users/alpinro/Code Prjects/codequal/node_modules/follow-redirects/index.js:49:24)\n    at ClientRequest.emit (node:events:507:28)\n    at ClientRequest.emit (node:domain:489:12)\n    at emitErrorEvent (node:_http_client:104:11)\n    at Socket.socketErrorListener (node:_http_client:518:5)\n    at Socket.emit (node:events:507:28)\n    at Axios.request (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/Axios.js:45:41)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async runAnalysisScenario (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:191:32)\n    at async main (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:368:5)",
+      "code": "ECONNREFUSED"
+    },
+    "request": {
+      "url": "http://localhost:3001/v1/analysis/undefined",
+      "method": "GET"
+    }
+  },
+  {
+    "timestamp": "2025-07-18T18:46:22.137Z",
+    "scenario": "Repository Analysis",
+    "stage": "Status Polling",
+    "error": {
+      "message": "AggregateError",
+      "stack": "AggregateError\n    at Function.AxiosError.from (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/AxiosError.js:92:14)\n    at RedirectableRequest.handleRequestError (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/adapters/http.js:620:25)\n    at RedirectableRequest.emit (node:events:507:28)\n    at RedirectableRequest.emit (node:domain:489:12)\n    at ClientRequest.eventHandlers.<computed> (/Users/alpinro/Code Prjects/codequal/node_modules/follow-redirects/index.js:49:24)\n    at ClientRequest.emit (node:events:507:28)\n    at ClientRequest.emit (node:domain:489:12)\n    at emitErrorEvent (node:_http_client:104:11)\n    at Socket.socketErrorListener (node:_http_client:518:5)\n    at Socket.emit (node:events:507:28)\n    at Axios.request (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/Axios.js:45:41)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async runAnalysisScenario (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:191:32)\n    at async main (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:368:5)",
+      "code": "ECONNREFUSED"
+    },
+    "request": {
+      "url": "http://localhost:3001/v1/analysis/undefined",
+      "method": "GET"
+    }
+  },
+  {
+    "timestamp": "2025-07-18T18:46:24.141Z",
+    "scenario": "Repository Analysis",
+    "stage": "Status Polling",
+    "error": {
+      "message": "AggregateError",
+      "stack": "AggregateError\n    at Function.AxiosError.from (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/AxiosError.js:92:14)\n    at RedirectableRequest.handleRequestError (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/adapters/http.js:620:25)\n    at RedirectableRequest.emit (node:events:507:28)\n    at RedirectableRequest.emit (node:domain:489:12)\n    at ClientRequest.eventHandlers.<computed> (/Users/alpinro/Code Prjects/codequal/node_modules/follow-redirects/index.js:49:24)\n    at ClientRequest.emit (node:events:507:28)\n    at ClientRequest.emit (node:domain:489:12)\n    at emitErrorEvent (node:_http_client:104:11)\n    at Socket.socketErrorListener (node:_http_client:518:5)\n    at Socket.emit (node:events:507:28)\n    at Axios.request (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/Axios.js:45:41)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async runAnalysisScenario (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:191:32)\n    at async main (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:368:5)",
+      "code": "ECONNREFUSED"
+    },
+    "request": {
+      "url": "http://localhost:3001/v1/analysis/undefined",
+      "method": "GET"
+    }
+  },
+  {
+    "timestamp": "2025-07-18T18:46:26.156Z",
+    "scenario": "Repository Analysis",
+    "stage": "Status Polling",
+    "error": {
+      "message": "AggregateError",
+      "stack": "AggregateError\n    at Function.AxiosError.from (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/AxiosError.js:92:14)\n    at RedirectableRequest.handleRequestError (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/adapters/http.js:620:25)\n    at RedirectableRequest.emit (node:events:507:28)\n    at RedirectableRequest.emit (node:domain:489:12)\n    at ClientRequest.eventHandlers.<computed> (/Users/alpinro/Code Prjects/codequal/node_modules/follow-redirects/index.js:49:24)\n    at ClientRequest.emit (node:events:507:28)\n    at ClientRequest.emit (node:domain:489:12)\n    at emitErrorEvent (node:_http_client:104:11)\n    at Socket.socketErrorListener (node:_http_client:518:5)\n    at Socket.emit (node:events:507:28)\n    at Axios.request (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/Axios.js:45:41)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async runAnalysisScenario (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:191:32)\n    at async main (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:368:5)",
+      "code": "ECONNREFUSED"
+    },
+    "request": {
+      "url": "http://localhost:3001/v1/analysis/undefined",
+      "method": "GET"
+    }
+  },
+  {
+    "timestamp": "2025-07-18T18:46:28.160Z",
+    "scenario": "Repository Analysis",
+    "stage": "Status Polling",
+    "error": {
+      "message": "AggregateError",
+      "stack": "AggregateError\n    at Function.AxiosError.from (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/AxiosError.js:92:14)\n    at RedirectableRequest.handleRequestError (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/adapters/http.js:620:25)\n    at RedirectableRequest.emit (node:events:507:28)\n    at RedirectableRequest.emit (node:domain:489:12)\n    at ClientRequest.eventHandlers.<computed> (/Users/alpinro/Code Prjects/codequal/node_modules/follow-redirects/index.js:49:24)\n    at ClientRequest.emit (node:events:507:28)\n    at ClientRequest.emit (node:domain:489:12)\n    at emitErrorEvent (node:_http_client:104:11)\n    at Socket.socketErrorListener (node:_http_client:518:5)\n    at Socket.emit (node:events:507:28)\n    at Axios.request (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/Axios.js:45:41)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async runAnalysisScenario (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:191:32)\n    at async main (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:368:5)",
+      "code": "ECONNREFUSED"
+    },
+    "request": {
+      "url": "http://localhost:3001/v1/analysis/undefined",
+      "method": "GET"
+    }
+  },
+  {
+    "timestamp": "2025-07-18T18:46:30.162Z",
+    "scenario": "Repository Analysis",
+    "stage": "Status Polling",
+    "error": {
+      "message": "AggregateError",
+      "stack": "AggregateError\n    at Function.AxiosError.from (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/AxiosError.js:92:14)\n    at RedirectableRequest.handleRequestError (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/adapters/http.js:620:25)\n    at RedirectableRequest.emit (node:events:507:28)\n    at RedirectableRequest.emit (node:domain:489:12)\n    at ClientRequest.eventHandlers.<computed> (/Users/alpinro/Code Prjects/codequal/node_modules/follow-redirects/index.js:49:24)\n    at ClientRequest.emit (node:events:507:28)\n    at ClientRequest.emit (node:domain:489:12)\n    at emitErrorEvent (node:_http_client:104:11)\n    at Socket.socketErrorListener (node:_http_client:518:5)\n    at Socket.emit (node:events:507:28)\n    at Axios.request (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/Axios.js:45:41)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async runAnalysisScenario (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:191:32)\n    at async main (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:368:5)",
+      "code": "ECONNREFUSED"
+    },
+    "request": {
+      "url": "http://localhost:3001/v1/analysis/undefined",
+      "method": "GET"
+    }
+  },
+  {
+    "timestamp": "2025-07-18T18:46:32.165Z",
+    "scenario": "Repository Analysis",
+    "stage": "Status Polling",
+    "error": {
+      "message": "AggregateError",
+      "stack": "AggregateError\n    at Function.AxiosError.from (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/AxiosError.js:92:14)\n    at RedirectableRequest.handleRequestError (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/adapters/http.js:620:25)\n    at RedirectableRequest.emit (node:events:507:28)\n    at RedirectableRequest.emit (node:domain:489:12)\n    at ClientRequest.eventHandlers.<computed> (/Users/alpinro/Code Prjects/codequal/node_modules/follow-redirects/index.js:49:24)\n    at ClientRequest.emit (node:events:507:28)\n    at ClientRequest.emit (node:domain:489:12)\n    at emitErrorEvent (node:_http_client:104:11)\n    at Socket.socketErrorListener (node:_http_client:518:5)\n    at Socket.emit (node:events:507:28)\n    at Axios.request (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/Axios.js:45:41)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async runAnalysisScenario (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:191:32)\n    at async main (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:368:5)",
+      "code": "ECONNREFUSED"
+    },
+    "request": {
+      "url": "http://localhost:3001/v1/analysis/undefined",
+      "method": "GET"
+    }
+  },
+  {
+    "timestamp": "2025-07-18T18:46:34.168Z",
+    "scenario": "Repository Analysis",
+    "stage": "Status Polling",
+    "error": {
+      "message": "AggregateError",
+      "stack": "AggregateError\n    at Function.AxiosError.from (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/AxiosError.js:92:14)\n    at RedirectableRequest.handleRequestError (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/adapters/http.js:620:25)\n    at RedirectableRequest.emit (node:events:507:28)\n    at RedirectableRequest.emit (node:domain:489:12)\n    at ClientRequest.eventHandlers.<computed> (/Users/alpinro/Code Prjects/codequal/node_modules/follow-redirects/index.js:49:24)\n    at ClientRequest.emit (node:events:507:28)\n    at ClientRequest.emit (node:domain:489:12)\n    at emitErrorEvent (node:_http_client:104:11)\n    at Socket.socketErrorListener (node:_http_client:518:5)\n    at Socket.emit (node:events:507:28)\n    at Axios.request (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/Axios.js:45:41)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async runAnalysisScenario (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:191:32)\n    at async main (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:368:5)",
+      "code": "ECONNREFUSED"
+    },
+    "request": {
+      "url": "http://localhost:3001/v1/analysis/undefined",
+      "method": "GET"
+    }
+  },
+  {
+    "timestamp": "2025-07-18T18:46:36.171Z",
+    "scenario": "Repository Analysis",
+    "stage": "Status Polling",
+    "error": {
+      "message": "AggregateError",
+      "stack": "AggregateError\n    at Function.AxiosError.from (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/AxiosError.js:92:14)\n    at RedirectableRequest.handleRequestError (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/adapters/http.js:620:25)\n    at RedirectableRequest.emit (node:events:507:28)\n    at RedirectableRequest.emit (node:domain:489:12)\n    at ClientRequest.eventHandlers.<computed> (/Users/alpinro/Code Prjects/codequal/node_modules/follow-redirects/index.js:49:24)\n    at ClientRequest.emit (node:events:507:28)\n    at ClientRequest.emit (node:domain:489:12)\n    at emitErrorEvent (node:_http_client:104:11)\n    at Socket.socketErrorListener (node:_http_client:518:5)\n    at Socket.emit (node:events:507:28)\n    at Axios.request (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/Axios.js:45:41)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async runAnalysisScenario (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:191:32)\n    at async main (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:368:5)",
+      "code": "ECONNREFUSED"
+    },
+    "request": {
+      "url": "http://localhost:3001/v1/analysis/undefined",
+      "method": "GET"
+    }
+  },
+  {
+    "timestamp": "2025-07-18T18:46:38.174Z",
+    "scenario": "Repository Analysis",
+    "stage": "Status Polling",
+    "error": {
+      "message": "AggregateError",
+      "stack": "AggregateError\n    at Function.AxiosError.from (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/AxiosError.js:92:14)\n    at RedirectableRequest.handleRequestError (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/adapters/http.js:620:25)\n    at RedirectableRequest.emit (node:events:507:28)\n    at RedirectableRequest.emit (node:domain:489:12)\n    at ClientRequest.eventHandlers.<computed> (/Users/alpinro/Code Prjects/codequal/node_modules/follow-redirects/index.js:49:24)\n    at ClientRequest.emit (node:events:507:28)\n    at ClientRequest.emit (node:domain:489:12)\n    at emitErrorEvent (node:_http_client:104:11)\n    at Socket.socketErrorListener (node:_http_client:518:5)\n    at Socket.emit (node:events:507:28)\n    at Axios.request (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/Axios.js:45:41)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async runAnalysisScenario (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:191:32)\n    at async main (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:368:5)",
+      "code": "ECONNREFUSED"
+    },
+    "request": {
+      "url": "http://localhost:3001/v1/analysis/undefined",
+      "method": "GET"
+    }
+  },
+  {
+    "timestamp": "2025-07-18T18:46:40.181Z",
+    "scenario": "Repository Analysis",
+    "stage": "Status Polling",
+    "error": {
+      "message": "AggregateError",
+      "stack": "AggregateError\n    at Function.AxiosError.from (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/AxiosError.js:92:14)\n    at RedirectableRequest.handleRequestError (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/adapters/http.js:620:25)\n    at RedirectableRequest.emit (node:events:507:28)\n    at RedirectableRequest.emit (node:domain:489:12)\n    at ClientRequest.eventHandlers.<computed> (/Users/alpinro/Code Prjects/codequal/node_modules/follow-redirects/index.js:49:24)\n    at ClientRequest.emit (node:events:507:28)\n    at ClientRequest.emit (node:domain:489:12)\n    at emitErrorEvent (node:_http_client:104:11)\n    at Socket.socketErrorListener (node:_http_client:518:5)\n    at Socket.emit (node:events:507:28)\n    at Axios.request (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/Axios.js:45:41)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async runAnalysisScenario (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:191:32)\n    at async main (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:368:5)",
+      "code": "ECONNREFUSED"
+    },
+    "request": {
+      "url": "http://localhost:3001/v1/analysis/undefined",
+      "method": "GET"
+    }
+  },
+  {
+    "timestamp": "2025-07-18T18:46:42.184Z",
+    "scenario": "Repository Analysis",
+    "stage": "Status Polling",
+    "error": {
+      "message": "AggregateError",
+      "stack": "AggregateError\n    at Function.AxiosError.from (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/AxiosError.js:92:14)\n    at RedirectableRequest.handleRequestError (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/adapters/http.js:620:25)\n    at RedirectableRequest.emit (node:events:507:28)\n    at RedirectableRequest.emit (node:domain:489:12)\n    at ClientRequest.eventHandlers.<computed> (/Users/alpinro/Code Prjects/codequal/node_modules/follow-redirects/index.js:49:24)\n    at ClientRequest.emit (node:events:507:28)\n    at ClientRequest.emit (node:domain:489:12)\n    at emitErrorEvent (node:_http_client:104:11)\n    at Socket.socketErrorListener (node:_http_client:518:5)\n    at Socket.emit (node:events:507:28)\n    at Axios.request (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/Axios.js:45:41)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async runAnalysisScenario (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:191:32)\n    at async main (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:368:5)",
+      "code": "ECONNREFUSED"
+    },
+    "request": {
+      "url": "http://localhost:3001/v1/analysis/undefined",
+      "method": "GET"
+    }
+  },
+  {
+    "timestamp": "2025-07-18T18:46:44.190Z",
+    "scenario": "Repository Analysis",
+    "stage": "Status Polling",
+    "error": {
+      "message": "AggregateError",
+      "stack": "AggregateError\n    at Function.AxiosError.from (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/AxiosError.js:92:14)\n    at RedirectableRequest.handleRequestError (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/adapters/http.js:620:25)\n    at RedirectableRequest.emit (node:events:507:28)\n    at RedirectableRequest.emit (node:domain:489:12)\n    at ClientRequest.eventHandlers.<computed> (/Users/alpinro/Code Prjects/codequal/node_modules/follow-redirects/index.js:49:24)\n    at ClientRequest.emit (node:events:507:28)\n    at ClientRequest.emit (node:domain:489:12)\n    at emitErrorEvent (node:_http_client:104:11)\n    at Socket.socketErrorListener (node:_http_client:518:5)\n    at Socket.emit (node:events:507:28)\n    at Axios.request (/Users/alpinro/Code Prjects/codequal/node_modules/axios/lib/core/Axios.js:45:41)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async runAnalysisScenario (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:191:32)\n    at async main (/Users/alpinro/Code Prjects/codequal/apps/api/src/test-scripts/e2e-with-monitoring.ts:368:5)",
+      "code": "ECONNREFUSED"
+    },
+    "request": {
+      "url": "http://localhost:3001/v1/analysis/undefined",
+      "method": "GET"
+    }
+  }
+]

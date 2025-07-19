@@ -7,7 +7,7 @@ import { enforceTrialLimits, incrementScanCount } from '../middleware/trial-enfo
 export const resultOrchestratorRoutes = Router();
 
 // Store for tracking active analyses
-const activeAnalyses = new Map<string, any>();
+export const activeAnalyses = new Map<string, any>();
 
 interface PRAnalysisRequest {
   repositoryUrl: string;
@@ -309,6 +309,80 @@ resultOrchestratorRoutes.get('/analysis/:id/progress', (req: Request, res: Respo
 
   } catch (error) {
     console.error('Progress check error:', error);
+    res.status(500).json({ 
+      error: 'Internal server error',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+/**
+ * GET /v1/analysis/:id
+ * Get analysis status and results
+ */
+resultOrchestratorRoutes.get('/analysis/:id', (req: Request, res: Response) => {
+  try {
+    const analysisId = req.params.id;
+    const user = req.user;
+
+    // For test API key, we don't require user authentication
+    const isTestKey = req.headers['x-api-key'] === 'test_key';
+    
+    if (!isTestKey && !user) {
+      return res.status(401).json({ 
+        error: 'Authentication required' 
+      });
+    }
+
+    const analysis = activeAnalyses.get(analysisId);
+    if (!analysis) {
+      return res.status(404).json({ 
+        error: 'Analysis not found',
+        analysisId 
+      });
+    }
+
+    // Check if user owns this analysis (skip for test key)
+    if (!isTestKey && user && analysis.user !== user.id) {
+      return res.status(403).json({ 
+        error: 'Access denied to analysis results',
+        analysisId 
+      });
+    }
+
+    // Calculate progress
+    const elapsed = Date.now() - analysis.startTime.getTime();
+    const estimatedTotal = getEstimatedTime(analysis.request.analysisMode) * 1000;
+    const progress = Math.min(95, (elapsed / estimatedTotal) * 100);
+
+    // Build response based on status
+    const response: any = {
+      analysisId,
+      status: analysis.status,
+      progress: analysis.status === 'complete' ? 100 : Math.round(progress),
+      startTime: analysis.startTime,
+      currentStep: getCurrentStep(analysis.status, progress)
+    };
+
+    // Add completion data if available
+    if (analysis.status === 'complete' && analysis.results) {
+      response.status = 'completed'; // Normalize to 'completed'
+      response.result = analysis.results;
+      response.completedTime = new Date();
+      response.processingTime = elapsed;
+    } else if (analysis.status === 'failed' && analysis.error) {
+      response.error = analysis.error;
+      response.failedTime = new Date();
+    } else {
+      // Still processing
+      response.estimatedTimeRemaining = Math.max(0, estimatedTotal - elapsed);
+      response.elapsedTime = Math.floor(elapsed / 1000);
+    }
+
+    res.json(response);
+
+  } catch (error) {
+    console.error('Analysis status check error:', error);
     res.status(500).json({ 
       error: 'Internal server error',
       message: error instanceof Error ? error.message : 'Unknown error'

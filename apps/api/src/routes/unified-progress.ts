@@ -7,6 +7,8 @@ import { Router, Request, Response } from 'express';
 import { AuthenticatedRequest, authMiddleware } from '../middleware/auth-middleware';
 import { getUnifiedProgressTracer } from '../services/unified-progress-tracer';
 import { createLogger } from '@codequal/core/utils';
+import { getProgressTracker } from '@codequal/agents/services/progress-tracker';
+import { dataFlowMonitor } from '../services/data-flow-monitor';
 
 const router = Router();
 const logger = createLogger('UnifiedProgressAPI');
@@ -137,8 +139,8 @@ router.get('/:analysisId/stream', authMiddleware, async (req: Request, res: Resp
     })}\n\n`);
     
     // Listen to both progress systems
-    const progressTracker = require('@codequal/agents/services/progress-tracker').getProgressTracker();
-    const dataFlowMonitor = require('../services/data-flow-monitor').dataFlowMonitor;
+    const progressTracker = getProgressTracker();
+    // dataFlowMonitor already imported
     
     // Forward progress tracker events
     const onProgressUpdate = (id: string, update: any) => {

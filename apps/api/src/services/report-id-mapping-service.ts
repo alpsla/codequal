@@ -84,7 +84,7 @@ export class ReportIdMappingService {
   /**
    * Clean up old mappings (run periodically)
    */
-  async cleanupOldMappings(daysToKeep: number = 30): Promise<void> {
+  async cleanupOldMappings(daysToKeep = 30): Promise<void> {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
     

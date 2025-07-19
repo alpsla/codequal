@@ -1,0 +1,104 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deepwiki
+  namespace: codequal-dev
+  labels:
+    app: deepwiki
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: deepwiki
+  template:
+    metadata:
+      labels:
+        app: deepwiki
+    spec:
+      containers:
+      - name: deepwiki
+        image: ghcr.io/asyncfuncai/deepwiki-open:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
+          name: frontend
+        - containerPort: 8001
+          name: api
+        env:
+        - name: SERVER_BASE_URL
+          value: http://deepwiki-api:8001
+        - name: NEXT_PUBLIC_SERVER_BASE_URL
+          value: http://deepwiki-api:8001
+        # Direct OpenAI key for embeddings (text-embedding-3-large)
+        - name: OPENAI_API_KEY
+          value: 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
+        # OpenRouter configuration for LLM requests
+        - name: OPENROUTER_API_KEY
+          value: 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
+        - name: OPENROUTER_BASE_URL
+          value: https://openrouter.ai/api/v1
+        # Model configuration
+        - name: LLM_MODEL
+          value: openai/gpt-4-turbo-preview
+        - name: EMBEDDING_MODEL
+          value: text-embedding-3-large
+        # GitHub token for repository access
+        - name: GITHUB_TOKEN
+          value: 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
+        # Google API key for DeepWiki (required)
+        - name: GOOGLE_API_KEY
+          value: AIzaSyBu7x9zzI5Irb8fh-Tl0vHn7h-uUEruYFw
+        # Additional environment variables
+        - name: VOYAGE_API_KEY
+          value: pa-jfWsls1NO_dlNNNn9nGFCxYpuW0zytbVr2B3CFug8w0
+        envFrom:
+        - secretRef:
+            name: deepwiki-env
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "250m"
+          limits:
+            memory: "2Gi"
+            cpu: "1"
+        volumeMounts:
+        - mountPath: /root/.adalflow
+          name: deepwiki-data
+      volumes:
+      - name: deepwiki-data
+        persistentVolumeClaim:
+          claimName: deepwiki-data
+      imagePullSecrets:
+      - name: registry-codequal
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: deepwiki-frontend
+  namespace: codequal-dev
+  labels:
+    app: deepwiki
+spec:
+  selector:
+    app: deepwiki
+  ports:
+  - name: frontend
+    port: 80
+    targetPort: 3000
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: deepwiki-api
+  namespace: codequal-dev
+  labels:
+    app: deepwiki
+spec:
+  selector:
+    app: deepwiki
+  ports:
+  - name: api
+    port: 8001
+    targetPort: 8001
+  type: ClusterIP

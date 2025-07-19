@@ -155,6 +155,16 @@ DeepWiki Pod Execution:
      - dependency-cruiser: Dependency rules
      - npm-outdated: Version currency
   4. Store all results atomically
+
+AI Model Architecture:
+  - ALL LLM requests go through OpenRouter gateway
+  - NO direct connections to OpenAI/Anthropic/Google for LLMs
+  - Models dynamically selected from Vector DB
+  - Unified billing through OpenRouter tokens
+  
+Embeddings (Direct connections, NOT through OpenRouter):
+  - OpenAI text-embedding-3-large: Documentation embeddings
+  - Voyage AI: Code embeddings
 ```
 
 **Storage Format:**

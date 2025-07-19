@@ -1,0 +1,22 @@
+{
+  "dashboard": {
+    "title": "CodeQual Database Performance",
+    "panels": [
+      {
+        "title": "Slow Queries",
+        "type": "graph",
+        "targets": []
+      },
+      {
+        "title": "Security Issues",
+        "type": "stat",
+        "value": 6
+      },
+      {
+        "title": "Cache Hit Ratio",
+        "type": "gauge",
+        "value": 94
+      }
+    ]
+  }
+}
