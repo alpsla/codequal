@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document provides comprehensive scheduling recommendations for CodeQual's automated repository analysis after the initial PR report completion.
+This document provides comprehensive scheduling recommendations for CodeQual's automated repository analysis after the initial PR report completion. Updated July 2025 to include the Researcher Agent's quarterly model update schedule and dynamic model selection system.
 
 ## Scheduling Decision Framework
 
@@ -403,6 +403,46 @@ class NotificationService {
 - Time to remediation after finding
 - Schedule adjustment frequency
 - Resource utilization patterns
+- Model selection performance (via Researcher Agent)
+- Cost optimization from dynamic model selection
+
+## Researcher Agent Scheduling (NEW - July 2025)
+
+### Quarterly Model Research Schedule
+
+The Researcher Agent runs on a fixed quarterly schedule to ensure all AI model configurations remain optimal:
+
+```typescript
+interface ResearcherSchedule {
+  frequency: 'quarterly';
+  cronExpression: '0 5 1 */3 *'; // 0 AM ET (5 AM UTC) on 1st of Jan/Apr/Jul/Oct
+  executionTime: '00:00 ET';
+  nextRun: Date; // Calculated from current date
+  authentication: 'system'; // No user token required
+}
+```
+
+### What Happens During Quarterly Research
+
+1. **Model Discovery**: Fetches all 319+ models from OpenRouter
+2. **Dynamic Evaluation**: Evaluates models without hardcoded preferences
+3. **Configuration Updates**: Updates 800+ configurations (10 roles × 10 languages × 4 sizes × 2 models)
+4. **Self-Improvement**: Researcher can update its own model selection
+
+### System Authentication
+
+The Researcher runs with system-level authentication:
+- No JWT tokens required
+- Uses `SYSTEM_USER` account
+- Runs via cron or systemd timers
+- Fully autonomous operation
+
+### Schedule Configuration
+
+```bash
+# Cron entry for quarterly research
+0 5 1 */3 * OPENROUTER_API_KEY=your-key /path/to/codequal/scripts/run-scheduled-research.sh
+```
 
 ## Conclusion
 
@@ -411,5 +451,6 @@ The scheduling system should be:
 - **Efficient**: Minimizes unnecessary analyses
 - **Timely**: Catches issues quickly without overwhelming
 - **Configurable**: Respects user preferences and constraints
+- **Self-Maintaining**: Researcher Agent keeps AI models current automatically
 
-Start with activity-based scheduling, then layer on risk-based adjustments and user preferences for an optimal balance of security and efficiency.
+Start with activity-based scheduling, then layer on risk-based adjustments and user preferences for an optimal balance of security and efficiency. The Researcher Agent ensures your AI model selections remain optimal without manual intervention.

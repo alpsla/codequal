@@ -162,7 +162,7 @@ export class TranslatorResearcherService {
     const currentConfig = this.currentConfigs.get(role);
     
     // Simulate model selection based on role requirements
-    const candidates = this.getModelCandidates(role);
+    const candidates = await this.getModelCandidates(role);
     const selected = this.selectBestModel(candidates, roleConfig.evaluationCriteria);
     
     // Calculate improvements
@@ -193,77 +193,30 @@ export class TranslatorResearcherService {
   /**
    * Get model candidates for a role
    */
-  private getModelCandidates(role: TranslatorRole): any[] {
-    // Model candidates with characteristics
-    const models = [
+  private async getModelCandidates(role: TranslatorRole): Promise<any[]> {
+    // TODO: Implement dynamic model selection
+    // Need to inject ModelVersionSync or use a different approach
+    this.logger.warn('Using placeholder model candidates - dynamic selection not yet implemented');
+    
+    // Return placeholder models for now
+    return [
       {
         provider: 'openai',
-        model: 'gpt-4-turbo',
-        versionId: 'gpt-4-1106-preview',
+        model: 'gpt-4',
         capabilities: {
-          translationQuality: 9.5,
-          speed: 7.0,
-          contextWindow: 128000,
-          languageSupport: 9.5,
-          formatPreservation: 9.5
-        },
-        pricing: { input: 10.0, output: 30.0 }
-      },
-      {
-        provider: 'openai',
-        model: 'gpt-3.5-turbo',
-        versionId: 'gpt-3.5-turbo-1106',
-        capabilities: {
-          translationQuality: 8.5,
-          speed: 9.0,
-          contextWindow: 16000,
           languageSupport: 9.0,
-          formatPreservation: 8.5
-        },
-        pricing: { input: 1.0, output: 2.0 }
+          contextWindow: 128000
+        }
       },
       {
         provider: 'anthropic',
         model: 'claude-3-opus',
-        versionId: 'claude-3-opus-20240229',
         capabilities: {
-          translationQuality: 9.8,
-          speed: 6.0,
-          contextWindow: 200000,
           languageSupport: 9.5,
-          formatPreservation: 9.5
-        },
-        pricing: { input: 15.0, output: 75.0 }
-      },
-      {
-        provider: 'anthropic',
-        model: 'claude-3-sonnet',
-        versionId: 'claude-3-sonnet-20240229',
-        capabilities: {
-          translationQuality: 9.2,
-          speed: 7.5,
-          contextWindow: 200000,
-          languageSupport: 9.5,
-          formatPreservation: 9.0
-        },
-        pricing: { input: 3.0, output: 15.0 }
-      },
-      {
-        provider: 'anthropic',
-        model: 'claude-3-haiku',
-        versionId: 'claude-3-haiku-20240307',
-        capabilities: {
-          translationQuality: 8.2,
-          speed: 9.5,
-          contextWindow: 200000,
-          languageSupport: 9.0,
-          formatPreservation: 8.0
-        },
-        pricing: { input: 0.25, output: 1.25 }
+          contextWindow: 200000
+        }
       }
     ];
-
-    return models;
   }
 
   /**

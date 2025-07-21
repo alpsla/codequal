@@ -7,12 +7,33 @@
 
 import { Logger } from 'winston';
 import { 
-  ResearcherSelectionResult,
-  scoreModelsForResearcher,
-  createSimpleSelectionPrompt,
-  parseResearcherSelection,
-  DEFAULT_RESEARCHER_CONFIG
-} from './researcher-model-selector';
+  UnifiedModelSelection as ResearcherSelectionResult,
+  ROLE_SCORING_PROFILES
+} from '../../model-selection/unified-model-selector';
+
+// Use local implementations for OpenRouter specific logic
+// These functions handle the OpenRouter API response format
+
+// Default configuration fallback
+const DEFAULT_RESEARCHER_CONFIG: ResearcherSelectionResult = {
+  primary: {
+    provider: 'openai',
+    model: 'gpt-4o-mini',
+    versionId: 'latest',
+    pricing: { input: 0.15, output: 0.60 }
+  },
+  fallback: {
+    provider: 'anthropic', 
+    model: 'claude-3.5-sonnet',
+    versionId: 'latest',
+    pricing: { input: 3.00, output: 15.00 }
+  },
+  reasoning: ['Default configuration - no API available'],
+  scores: {
+    primary: {} as any,
+    fallback: {} as any
+  }
+};
 
 export interface OpenRouterModel {
   id: string;
@@ -75,7 +96,10 @@ export class ResearcherDiscoveryService {
       
       if (scoredModels.length === 0) {
         this.logger.warn('No suitable models found, using defaults');
-        return DEFAULT_RESEARCHER_CONFIG;
+        return {
+        ...DEFAULT_RESEARCHER_CONFIG,
+        reasoning: ['Using default configuration - OpenRouter API unavailable']
+      } as ResearcherSelectionResult;
       }
 
       // Create simple prompt with top 5
@@ -149,12 +173,16 @@ export class ResearcherDiscoveryService {
         scores: {
           primary: scoredModels.find(m => m.id === `${selection.primary!.provider}/${selection.primary!.model}`) || scoredModels[0],
           fallback: scoredModels.find(m => m.id === `${selection.fallback!.provider}/${selection.fallback!.model}`) || scoredModels[1]
-        }
-      };
+        },
+        reasoning: ['Selected using AI model evaluation based on composite scoring']
+      } as ResearcherSelectionResult;
 
     } catch (error) {
       this.logger.error('Failed to select researcher model', { error });
-      return DEFAULT_RESEARCHER_CONFIG;
+      return {
+        ...DEFAULT_RESEARCHER_CONFIG,
+        reasoning: ['Using default configuration - OpenRouter API unavailable']
+      } as ResearcherSelectionResult;
     }
   }
 
@@ -170,7 +198,10 @@ export class ResearcherDiscoveryService {
     
     if (models.length === 0) {
       this.logger.warn('No models found, using default configuration');
-      return DEFAULT_RESEARCHER_CONFIG;
+      return {
+        ...DEFAULT_RESEARCHER_CONFIG,
+        reasoning: ['Using default configuration - OpenRouter API unavailable']
+      } as ResearcherSelectionResult;
     }
 
     // Select best researcher
@@ -181,7 +212,7 @@ export class ResearcherDiscoveryService {
       fallback: result.fallback.provider + '/' + result.fallback.model,
       primaryScore: result.scores.primary.compositeScore.toFixed(2),
       fallbackScore: result.scores.fallback.compositeScore.toFixed(2),
-      tokenCost: `$${result.tokenUsage.cost.toFixed(6)}`
+      tokenCost: `$${result.tokenUsage?.cost.toFixed(6) || '0.000000'}`
     });
 
     return result;
@@ -230,4 +261,110 @@ export class ResearcherDiscoveryService {
       costDifference
     };
   }
+}
+
+// Helper functions for OpenRouter model processing
+
+function scoreModelsForResearcher(models: any[]): any[] {
+  const weights = ROLE_SCORING_PROFILES.researcher;
+  
+  return models
+    .filter(m => {
+      const id = m.id.toLowerCase();
+      return !id.includes('embed') && 
+             !id.includes('vision') && 
+             m.pricing &&
+             (parseFloat(m.pricing.prompt) > 0 || parseFloat(m.pricing.completion) > 0);
+    })
+    .map(m => {
+      const inputCost = parseFloat(m.pricing.prompt) * 1000000;
+      const outputCost = parseFloat(m.pricing.completion) * 1000000;
+      const avgCost = (inputCost + outputCost) / 2;
+      
+      const quality = inferQuality(m.id);
+      const speed = inferSpeed(m.id);
+      const priceScore = 10 - (Math.min(avgCost, 20) / 2);
+      const compositeScore = quality * weights.quality + priceScore * weights.cost + speed * weights.speed;
+      
+      const [provider, ...modelParts] = m.id.split('/');
+      
+      return {
+        id: m.id,
+        provider,
+        model: modelParts.join('/'),
+        inputCost,
+        outputCost,
+        avgCost,
+        contextWindow: m.context_length || 128000,
+        quality,
+        speed,
+        priceScore,
+        compositeScore
+      };
+    })
+    .sort((a, b) => b.compositeScore - a.compositeScore);
+}
+
+function createSimpleSelectionPrompt(topModels: any[]): string {
+  const top5 = topModels.slice(0, 5);
+  
+  return `Pick the best 2 models for AI research from this ranked list:
+
+${top5.map((m, i) => 
+  `${i + 1}. ${m.id} - Score: ${m.compositeScore.toFixed(2)} - $${m.inputCost.toFixed(2)}/$${m.outputCost.toFixed(2)}`
+).join('\n')}
+
+Output only 2 CSV rows for #1 and #2:
+provider,model,input,output,RESEARCHER,context`;
+}
+
+function parseResearcherSelection(response: string): {
+  primary?: any;
+  fallback?: any;
+} {
+  const lines = response.split('\n')
+    .filter(line => line.trim() && line.includes(','))
+    .map(line => {
+      const parts = line.split(',').map(p => p.trim());
+      if (parts.length >= 6) {
+        return {
+          provider: parts[0],
+          model: parts[1],
+          versionId: 'latest',
+          pricing: {
+            input: parseFloat(parts[2]),
+            output: parseFloat(parts[3])
+          },
+          capabilities: {
+            contextWindow: parseInt(parts[5]) || 128000
+          }
+        };
+      }
+      return undefined;
+    })
+    .filter(item => item !== undefined);
+  
+  return {
+    primary: lines[0],
+    fallback: lines[1]
+  };
+}
+
+function inferQuality(modelId: string): number {
+  const id = modelId.toLowerCase();
+  if (id.includes('gpt-4.5')) return 9.7;
+  if (id.includes('opus') || id.includes('claude-3.7')) return 9.5;
+  if (id.includes('gpt-4o') && !id.includes('mini')) return 8.8;
+  if (id.includes('claude-3.5')) return 8.9;
+  if (id.includes('gemini') && id.includes('2.0')) return 8.5;
+  if (id.includes('gpt-4o-mini')) return 7.9;
+  return 7.0;
+}
+
+function inferSpeed(modelId: string): number {
+  const id = modelId.toLowerCase();
+  if (id.includes('flash') || id.includes('mini')) return 9.0;
+  if (id.includes('sonnet')) return 7.5;
+  if (id.includes('opus')) return 5.0;
+  return 7.0;
 }

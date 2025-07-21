@@ -97,13 +97,29 @@ export class ResearcherAgent {
    * Perform research to find the best model
    */
   async research(): Promise<ResearchResult> {
-    // Placeholder implementation
+    // TODO: Implement context-aware model selection from Vector DB
+    // For now, return a placeholder result
+    const selection = {
+      primary: {
+        provider: 'openai',
+        model: 'gpt-4',
+        pricing: {
+          input: 0.03,
+          output: 0.06
+        }
+      }
+    };
+    
+    // Extract cost information
+    const avgCost = ((selection.primary.pricing?.input || 0) + (selection.primary.pricing?.output || 0)) / 2;
+    const costPerMillion = avgCost * 1000000;
+    
     return {
-      provider: 'anthropic',
-      model: 'claude-3-opus-20240229',
-      reasoning: 'Selected based on performance and cost balance',
-      performanceScore: 8.5,
-      costPerMillion: 15.0,
+      provider: selection.primary.provider,
+      model: selection.primary.model,
+      reasoning: 'Model selected based on default configuration', // Placeholder
+      performanceScore: 9.0, // Placeholder score
+      costPerMillion: costPerMillion,
       timestamp: new Date()
     };
   }

@@ -30,7 +30,6 @@ import * as os from 'os';
 import simpleGit, { SimpleGit } from 'simple-git';
 import { createLogger } from '@codequal/core/utils';
 import { ModelVersionSync } from '@codequal/core/services/model-selection/ModelVersionSync';
-// @ts-expect-error - Module will be available after build
 import { createDeepWikiModelSelector, DeepWikiModelSelector, RepositoryContext } from '@codequal/agents';
 import { VectorStorageService } from '@codequal/database';
 import LRUCache from 'lru-cache';
@@ -954,7 +953,7 @@ export class DeepWikiManager {
           try {
             // Estimate repository context
             const repoContext = await this.estimateRepositoryContext(repositoryUrl, options);
-            const modelSelection = await this.modelSelector.selectModel(repoContext);
+            const modelSelection = await this.modelSelector.selectModel('deepwiki', repoContext);
             
             selectedModel = `${modelSelection.primary.provider}/${modelSelection.primary.model}`;
             fallbackModel = `${modelSelection.fallback.provider}/${modelSelection.fallback.model}`;
@@ -962,7 +961,7 @@ export class DeepWikiManager {
             console.log(`[DeepWiki] Model selection:`, {
               primary: selectedModel,
               fallback: fallbackModel,
-              estimatedCost: `$${modelSelection.estimatedCost.toFixed(3)}`,
+              estimatedCost: modelSelection.estimatedCost ? `$${modelSelection.estimatedCost.toFixed(3)}` : 'N/A',
               reasoning: modelSelection.reasoning
             });
           } catch (error) {

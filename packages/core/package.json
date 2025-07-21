@@ -65,6 +65,10 @@
       "types": "./dist/services/vector-db/embedding-service-with-adapter.d.ts",
       "default": "./dist/services/vector-db/embedding-service-with-adapter.js"
     },
+    "./auth/system-auth": {
+      "types": "./dist/auth/system-auth.d.ts",
+      "default": "./dist/auth/system-auth.js"
+    },
     "./services/vector-db/openrouter-embedding-service": {
       "types": "./dist/services/vector-db/openrouter-embedding-service.d.ts",
       "default": "./dist/services/vector-db/openrouter-embedding-service.js"
@@ -90,7 +94,7 @@
     "node-fetch": "^2.7.0",
     "pg": "^8.16.3",
     "prom-client": "^15.1.0",
-    "uuid": "^11.0.0",
+    "uuid": "^11.1.0",
     "voyageai": "^0.0.4",
     "winston": "^3.17.0",
     "ws": "^8.18.2"

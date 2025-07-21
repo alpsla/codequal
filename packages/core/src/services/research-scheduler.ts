@@ -14,7 +14,7 @@ import { AuthenticatedUser, IResearcherAgent, ResearchParams, ResearchResult } f
 export interface SchedulerConfig {
   /**
    * Cron expression for quarterly research
-   * Default cron: 0 9 1 * /3 * (9 AM on 1st day of every 3rd month)
+   * Default cron: '0 5 1 star/3 star' where star means asterisk (0 AM ET / 5 AM UTC on 1st day of every 3rd month)
    */
   quarterlyCron?: string;
   
@@ -78,7 +78,7 @@ export class ResearchScheduler {
     this.logger = createLogger('ResearchScheduler');
     
     this.config = {
-      quarterlyCron: config.quarterlyCron || '0 9 1 */3 *', // 9 AM, 1st day, every 3 months
+      quarterlyCron: config.quarterlyCron || '0 5 1 */3 *', // 0 AM ET (5 AM UTC), 1st day, every 3 months
       enabled: config.enabled ?? true,
       timezone: config.timezone || 'UTC',
       maxConcurrentJobs: config.maxConcurrentJobs || 2,

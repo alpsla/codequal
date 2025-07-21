@@ -26,12 +26,19 @@ export * from './prompts/prompt-loader';
 // Researcher
 export * from './researcher/researcher-agent';
 export * from './researcher/researcher-service';
+export { ProductionResearcherService, ModelConfiguration } from './researcher/production-researcher-service';
+export * from './researcher/enhanced-model-selection-rules';
 
 // Services
 export * from './services/skill-tracking-service';
 export * from './services/report-formatter.service';
 export * from './services/recommendation-service';
 export * from './services/educational-compilation-service';
+
+// Model Selection
+export * from './model-selection/unified-model-selector';
+export * from './model-selection/dynamic-model-evaluator';
+export * from './model-selection/ai-model-selector';
 
 // Translator
 export * from './translator';

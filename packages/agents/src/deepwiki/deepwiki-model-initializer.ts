@@ -11,10 +11,14 @@ import { VectorStorageService } from '@codequal/database';
 import { DeepWikiConfigStorage } from './deepwiki-config-storage';
 import axios from 'axios';
 import { 
-  DeepWikiModelSelector,
-  DEEPWIKI_SCORING_WEIGHTS,
-  DeepWikiModelScore
-} from './deepwiki-model-selector';
+  UnifiedModelSelector,
+  createUnifiedModelSelector,
+  ROLE_SCORING_PROFILES,
+  ModelScore as DeepWikiModelScore
+} from '../model-selection/unified-model-selector';
+
+// Use DeepWiki scoring weights from unified selector
+const DEEPWIKI_SCORING_WEIGHTS = ROLE_SCORING_PROFILES.deepwiki;
 
 const logger = createLogger('DeepWikiModelInitializer');
 
@@ -361,6 +365,68 @@ export function parseDeepWikiSelection(response: string): {
 }
 
 /**
+ * Infer quality score for DeepWiki analysis
+ * (Copied from original DeepWikiModelSelector for compatibility)
+ */
+function inferDeepWikiQuality(modelId: string, contextWindow: number): number {
+  const id = modelId.toLowerCase();
+  let score = 7.0; // default
+  
+  // Latest high-capability models ideal for code analysis
+  if (id.includes('opus-4') || id.includes('claude-opus-4')) score = 9.8;
+  else if (id.includes('gpt-4.5')) score = 9.7;
+  else if (id.includes('sonnet-4') || id.includes('claude-sonnet-4')) score = 9.5;
+  else if (id.includes('gpt-4.1') && !id.includes('nano')) score = 9.3;
+  else if (id.includes('claude-3.7-sonnet')) score = 9.2;
+  else if (id.includes('opus') || id.includes('gpt-4-turbo')) score = 9.0;
+  
+  // Good mid-range models for standard analysis
+  else if (id.includes('gpt-4.1-nano')) score = 8.5;
+  else if (id.includes('claude-3.5-sonnet')) score = 8.7;
+  else if (id.includes('gpt-4o') && !id.includes('mini')) score = 8.6;
+  else if (id.includes('gemini') && id.includes('pro')) score = 8.4;
+  else if (id.includes('deepseek') && id.includes('r1')) score = 8.3;
+  
+  // Efficient models for simple repos
+  else if (id.includes('gpt-4o-mini')) score = 7.8;
+  else if (id.includes('claude') && id.includes('haiku')) score = 7.5;
+  else if (id.includes('gemini') && id.includes('flash')) score = 7.6;
+  else if (id.includes('mistral') && id.includes('large')) score = 7.4;
+  
+  // Code-specific model boost
+  if (id.includes('code') || id.includes('coder')) score += 0.4;
+  
+  // Large context windows crucial for repo analysis
+  if (contextWindow >= 100000) score += 0.3;
+  if (contextWindow >= 200000) score += 0.5;
+  
+  return Math.min(score, 10);
+}
+
+/**
+ * Infer speed score from model characteristics
+ */
+function inferSpeed(modelId: string): number {
+  const id = modelId.toLowerCase();
+  
+  // Fast models
+  if (id.includes('haiku') || id.includes('flash')) return 9.5;
+  if (id.includes('gpt-4o-mini')) return 9.0;
+  if (id.includes('nano')) return 8.8;
+  if (id.includes('mini')) return 8.5;
+  
+  // Medium speed
+  if (id.includes('sonnet') || id.includes('gpt-4o')) return 7.5;
+  if (id.includes('mistral')) return 7.0;
+  
+  // Slower but powerful
+  if (id.includes('opus') || id.includes('gpt-4.5')) return 5.0;
+  if (id.includes('gpt-4-turbo')) return 6.0;
+  
+  return 7.0; // default
+}
+
+/**
  * Score models for DeepWiki use case
  */
 export function scoreModelsForDeepWiki(models: any[]): DeepWikiModelScore[] {
@@ -380,10 +446,9 @@ export function scoreModelsForDeepWiki(models: any[]): DeepWikiModelScore[] {
       const outputCost = parseFloat(m.pricing.completion) * 1000000;
       const avgCost = (inputCost + outputCost) / 2;
       
-      // Import quality and speed functions from selector
-      const selector = new DeepWikiModelSelector(null as any);
-      const quality = (selector as any).inferDeepWikiQuality(m.id, m.context_length || 0);
-      const speed = (selector as any).calculateSpeedScore(m);
+      // Use unified scoring logic
+      const quality = inferDeepWikiQuality(m.id, m.context_length || 0);
+      const speed = inferSpeed(m.id);
       const priceScore = 10 - (Math.min(avgCost, 20) / 2);
       
       const compositeScore = 

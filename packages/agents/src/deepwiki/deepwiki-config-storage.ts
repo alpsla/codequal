@@ -8,7 +8,7 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { createLogger } from '@codequal/core/utils';
 import { DeepWikiModelConfig } from './deepwiki-model-initializer';
-import { DeepWikiModelSelection } from './deepwiki-model-selector';
+import { UnifiedModelSelection as DeepWikiModelSelection } from '../model-selection/unified-model-selector';
 
 const logger = createLogger('DeepWikiConfigStorage');
 
@@ -111,7 +111,7 @@ export class DeepWikiConfigStorage {
         primary_model: `${selection.primary.provider}/${selection.primary.model}`,
         fallback_model: `${selection.fallback.provider}/${selection.fallback.model}`,
         config_data: {
-          context: selection.context,
+          context: (selection as any).context || {},
           scores: selection.scores,
           reasoning: selection.reasoning,
           estimatedTokens: selection.estimatedTokens,

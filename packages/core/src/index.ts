@@ -7,6 +7,7 @@
 // Logging
 export * as logging from './utils/logger';
 export { createLogger } from './utils/logger';
+export type { Logger } from './utils/logger';
 
 // DeepWiki Integration
 export * as deepwiki from './deepwiki';
@@ -77,5 +78,9 @@ export * from './services/pr-review-service';
 // Monitoring
 export * from './monitoring/production-monitoring';
 export * from './monitoring/enhanced-monitoring-service';
+
+// Authentication
+export * from './auth/system-auth';
+export type { AuthenticatedUser } from './services/rag/authenticated-rag-service';
 
 // Other core modules will be exported here as they are added

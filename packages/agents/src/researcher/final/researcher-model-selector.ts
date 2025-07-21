@@ -1,6 +1,14 @@
 /**
  * Researcher Model Selector
  * 
+ * @deprecated Use UnifiedModelSelector from '../../model-selection/unified-model-selector' instead.
+ * This module is maintained for backward compatibility only.
+ * 
+ * Migration guide:
+ * 1. Import from '../../model-selection/unified-model-selector'
+ * 2. Use createUnifiedModelSelector() instead of functions from this module
+ * 3. Call selectModel('researcher') for researcher-specific selection
+ * 
  * Dynamically selects the best AI model for the researcher role
  * based on composite scoring of quality, cost, and speed.
  * 
