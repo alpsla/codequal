@@ -1639,9 +1639,9 @@ body.dark-mode {
 .issues-stats canvas,
 .timeline-container canvas,
 .skills-radar canvas {
-    display: block \!important;
-    max-width: 100% \!important;
-    height: auto \!important;
+    display: block !important;
+    max-width: 100% !important;
+    height: auto !important;
 }
 
 .issues-stats {

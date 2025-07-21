@@ -6,7 +6,9 @@ const router = Router();
 export function getGlobalMonitoringService(): any {
   // Return a mock service for now
   return {
-    trackAnalysis: () => {},
+    trackAnalysis: () => {
+      // Intentionally empty - placeholder for future implementation
+    },
     getMetrics: () => ({}),
     recordComponentLatency: (component: string, operation: string, duration: number) => {
       // Mock implementation - just log for now

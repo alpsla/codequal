@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { getSupabase } from '@codequal/database/supabase/client';
 import { AuthenticatedRequest } from '../middleware/auth-middleware';
@@ -18,7 +18,7 @@ const multer = {
   memoryStorage: () => ({}),
   default: function() {
     return {
-      single: (fieldName: string) => (req: Request, res: Response, next: Function) => {
+      single: (_fieldName: string) => (_req: Request, _res: Response, next: NextFunction) => {
         next();
       }
     };

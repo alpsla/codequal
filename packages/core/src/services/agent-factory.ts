@@ -23,7 +23,7 @@ export class AgentFactory {
    * @param config Configuration options
    * @returns Agent instance
    */
-  static createAgent(role: AgentRole, provider: AgentProvider | ProviderGroup, config: AgentConfig = {}): Agent {
+  static async createAgent(role: AgentRole, provider: AgentProvider | ProviderGroup, config: AgentConfig = {}): Promise<Agent> {
     // If a provider group was provided, convert it to the default model for that group
     let resolvedProvider: AgentProvider;
     if (Object.values(ProviderGroup).includes(provider as ProviderGroup)) {
@@ -77,8 +77,8 @@ export class AgentFactory {
       // }
         
       case ProviderGroup.MCP: {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        const { MCPAgent } = require('@codequal/agents');
+        // Using dynamic import to avoid circular dependencies
+        const { MCPAgent } = await import('@codequal/agents');
         return new MCPAgent(role, resolvedProvider, config);
       }
         
