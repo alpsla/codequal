@@ -35,6 +35,7 @@ import usageStatsRoutes from './routes/usage-stats';
 import dataFlowMonitoringRoutes from './routes/data-flow-monitoring';
 import testMonitoringRoutes from './routes/test-monitoring';
 import devTestMonitoringRoutes from './routes/dev-test-monitoring';
+import researcherRoutes from './routes/researcher';
 import { errorHandler } from './middleware/error-handler';
 // import { i18nMiddleware, translateResponse, validateLanguage } from './middleware/i18n-middleware';
 import { requestLogger } from './middleware/request-logger';
@@ -350,6 +351,9 @@ app.use('/api', reportRoutes);
 app.use('/api/monitoring', monitoringRoutes);
 app.use('/api/monitoring', dataFlowMonitoringRoutes);
 app.use('/api', testMonitoringRoutes);
+
+// Researcher routes (requires user authentication)
+app.use('/api/researcher', authMiddleware, researcherRoutes);
 
 // Dev test routes (NO AUTH - DEV ONLY)
 if (process.env.NODE_ENV !== 'production') {

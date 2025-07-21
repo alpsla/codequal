@@ -12,6 +12,7 @@ import { Logger } from '../../../utils/logger';
 // Import provider plugins
 import { OpenAIModelProvider } from './OpenAIModelProvider';
 import { AnthropicModelProvider } from './AnthropicModelProvider';
+import { DynamicModelProvider } from './DynamicModelProvider';
 
 /**
  * Model provider registry

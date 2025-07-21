@@ -77,6 +77,10 @@
       "types": "./dist/services/vector-db-retention-policy.d.ts",
       "default": "./dist/services/vector-db-retention-policy.js"
     },
+    "./researcher/production-researcher-service": {
+      "types": "./dist/researcher/production-researcher-service.d.ts",
+      "default": "./dist/researcher/production-researcher-service.js"
+    },
     "./translator/translator-agent": {
       "types": "./dist/translator/translator-agent.d.ts",
       "default": "./dist/translator/translator-agent.js"
@@ -86,8 +90,12 @@
       "default": "./dist/deepwiki/deepwiki-model-initializer.js"
     },
     "./deepwiki/deepwiki-model-selector": {
-      "types": "./dist/deepwiki/deepwiki-model-selector.d.ts",
-      "default": "./dist/deepwiki/deepwiki-model-selector.js"
+      "types": "./dist/model-selection/unified-model-selector.d.ts",
+      "default": "./dist/model-selection/unified-model-selector.js"
+    },
+    "./model-selection/unified-model-selector": {
+      "types": "./dist/model-selection/unified-model-selector.d.ts",
+      "default": "./dist/model-selection/unified-model-selector.js"
     },
     "./deepwiki/deepwiki-config-storage": {
       "types": "./dist/deepwiki/deepwiki-config-storage.d.ts",

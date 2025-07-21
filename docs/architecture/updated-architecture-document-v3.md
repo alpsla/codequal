@@ -9,7 +9,7 @@ Agent Types
 
 LLM Agents: Claude, ChatGPT, DeepSeek, Gemini
 Specialized Agents: Architecture Analyzer, Code Quality Assessor, Security Auditor, Performance Optimizer, Dependency Inspector
-RESEARCHER Agent: Dynamic model configuration optimizer (see section 10)
+RESEARCHER Agent: Dynamic model configuration optimizer - automatically researches and updates AI model selections quarterly (see section 10)
 Orchestrator Agent: Analyzes PR complexity and coordinates the analysis flow
 
 Agent Roles
@@ -18,7 +18,7 @@ Orchestrator: PR analysis, complexity detection, DeepWiki request generation
 Analysis Agents: Security, Code Quality, Architecture, Performance, Dependencies
 Post-Analysis Agents: Educational (with MCP tools), Reporting (with MCP tools)
 Support Agents: Repository Data Provider, Repository Interaction Provider
-Research Agent: Model configuration researcher and optimizer
+Research Agent: Model configuration researcher and optimizer - runs quarterly at 0 AM ET (Jan/Apr/Jul/Oct 1st)
 
 2. Vector Database Integration
 A comprehensive vector storage system for repository analyses:
@@ -70,6 +70,8 @@ Repository ID: 00000000-0000-0000-0000-000000000001
 Name: "CodeQual Researcher Configurations"
 Type: Internal system repository
 Purpose: Stores optimal model configurations discovered by RESEARCHER agent
+Update Frequency: Every 3 months via scheduled research
+Current Model: nousresearch/nous-hermes-2-mixtral-8x7b-dpo (6.5/10) - will be upgraded to Gemini 2.5 Flash (8.3/10) on next run
 3. MCP Hybrid Tool Integration (Updated June 2025)
 The system integrates Model Context Protocol (MCP) tools to provide concrete analysis data for all agents:
 Core Architecture
@@ -541,7 +543,7 @@ export class SupabaseAuthService implements AuthenticationService {
   }
 }
 10. RESEARCHER Agent Architecture (June 2025)
-The RESEARCHER agent is a specialized component that continuously researches and optimizes AI model configurations for all agents in the system:
+The RESEARCHER agent is a specialized component that researches and optimizes AI model configurations for all agents in the system on a quarterly schedule (every 3 months at 0 AM ET):
 Core RESEARCHER Capabilities
 typescript/**
  * RESEARCHER Agent - Continuously researches and updates optimal AI model configurations
@@ -551,11 +553,20 @@ typescript/**
  * 2. Analyzes pricing, performance, and capabilities
  * 3. Generates optimal configurations for all agent roles, languages, and repository sizes
  * 4. Updates the CANONICAL_MODEL_VERSIONS collection dynamically
- * 5. Runs on scheduled intervals to keep configurations current
+ * 5. Runs quarterly (Jan/Apr/Jul/Oct 1st at 0 AM ET) to keep configurations current
  * 6. Can evaluate and upgrade itself based on meta-research
  */
 Configuration Management Architecture
-1. Current Configuration (June 5, 2025)
+
+**Quarterly Research Schedule (NEW - July 2025)**
+- **Schedule**: Every 3 months on 1st day at 0 AM ET (5 AM UTC)
+- **Cron Expression**: `0 5 1 */3 *`
+- **Months**: January, April, July, October
+- **Authentication**: Uses SYSTEM_USER - no JWT required
+- **Duration**: 10-20 minutes to evaluate 319+ models
+- **Updates**: 800 configurations (10 roles × 10 languages × 4 sizes × 2 models)
+
+1. Current Configuration (July 2025)
 
 Primary Model: OpenAI GPT-4.1-nano (optimal performance/cost for research tasks)
 
@@ -571,10 +582,14 @@ Caching: Persistent template cache (saves 1301 tokens per request)
 
 2. Dynamic Model Discovery
 
-No hardcoded model lists
-Searches web for latest AI model announcements
-Queries provider APIs for current offerings
-Monitors tech news and research papers
+No hardcoded model lists or quality scores
+Fetches all available models from OpenRouter API (319+ models)
+Dynamically evaluates models based on:
+  - Provider patterns (e.g., 'gemini-2.5' newer than 'gemini-2.0')
+  - Model metadata (preview/beta status, capabilities)
+  - Cost per token and context window size
+  - Response latency and reliability scores
+AI-powered selection using dynamically chosen model (not hardcoded)
 
 3. Token-Efficient Caching System
 
@@ -585,7 +600,7 @@ Persistent cache with no expiration
 
 4. Self-Evaluation Process
 
-Quarterly meta-research (every 90 days)
+Quarterly research on fixed schedule (Jan/Apr/Jul/Oct 1st at 0 AM ET)
 Evaluates own performance
 Searches for better research models
 Automatic upgrade for high-confidence recommendations
@@ -611,6 +626,49 @@ Languages: 6 (typescript, python, java, javascript, go, rust)
 Repository Sizes: 3 (small, medium, large)
 Price Tiers: 4 (budget, standard, premium, enterprise)
 Total Contexts: ~3,000 unique combinations
+
+**Researcher Agent Execution Process**
+
+When the Researcher Agent runs (quarterly or manually triggered):
+
+1. **Model Discovery Phase**
+   - Connects to OpenRouter API with provided API key
+   - Fetches all available models (currently 319+)
+   - No hardcoded model lists or preferences
+
+2. **Dynamic Evaluation Phase**
+   - Evaluates each model without hardcoded quality scores
+   - Uses pattern matching to infer model capabilities:
+     - Provider versioning (e.g., gemini-2.5 > gemini-2.0)
+     - Model naming conventions (e.g., 'large' > 'small')
+     - Preview/beta status penalties (10-30% score reduction)
+   - Considers cost efficiency, context window, and capabilities
+
+3. **AI-Powered Selection Phase**
+   - Uses a dynamically selected AI model (not hardcoded)
+   - Analyzes top candidates for each role/language/size combination
+   - Selects primary and fallback models with justification
+
+4. **Configuration Storage Phase**
+   - Stores all 800 configurations in Vector DB
+   - Repository ID: 00000000-0000-0000-0000-000000000001
+   - Replaces all previous configurations
+
+5. **Self-Update Capability**
+   - Can update its own model selection
+   - Current: nousresearch/nous-hermes-2-mixtral-8x7b-dpo (6.5/10)
+   - Next: Likely Gemini 2.5 Flash (8.3/10) based on evaluations
+
+**Running the Researcher Manually**
+
+```bash
+# Set OpenRouter API key
+export OPENROUTER_API_KEY='your-key-here'
+
+# Run the researcher
+cd "/Users/alpinro/Code Prjects/codequal"
+npx tsx packages/agents/src/researcher/scheduled-research-runner.ts
+```
 
 11. Core Processes (Updated June 2025)
 Orchestrator-Driven Analysis Process

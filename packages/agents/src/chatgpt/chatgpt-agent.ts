@@ -145,10 +145,9 @@ export class ChatGPTAgent extends BaseAgent {
     super(cleanConfig);
     this.promptTemplate = promptTemplate;
     
-    // Import OPENAI_MODELS directly to avoid unused import warning
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { GPT_3_5_TURBO } = require('@codequal/core/config/models/model-versions').OPENAI_MODELS;
-    this.model = cleanConfig.model || DEFAULT_MODELS_BY_PROVIDER['openai'] || GPT_3_5_TURBO;
+    // Use default model from provider configuration
+    // No hardcoded fallback - rely on DEFAULT_MODELS_BY_PROVIDER
+    this.model = cleanConfig.model || DEFAULT_MODELS_BY_PROVIDER['openai'];
     
     // Log model configuration for debugging
     this.log('ChatGPTAgent initialized with model:', { 

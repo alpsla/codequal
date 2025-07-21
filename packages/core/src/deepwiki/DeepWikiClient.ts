@@ -91,68 +91,18 @@ export class DeepWikiClient {
   private readonly LARGE_REPO_THRESHOLD = 50 * 1024 * 1024; // 50MB
   
   /**
-   * Best model configurations by language and size
-   * This is being populated based on our testing results
+   * Model selector for dynamic configuration
+   * Will be injected if available, otherwise uses defaults
    */
-  private readonly MODEL_CONFIGS: Record<string, Record<'small' | 'medium' | 'large', ModelConfig<DeepWikiProvider>>> = {
-    // Based on testing results
-    'python': {
-      'small': {
-        provider: 'openai',
-        model: 'gpt-4o'
-      },
-      'medium': {
-        provider: 'google',
-        model: 'gemini-2.5-pro-preview-05-06'
-      },
-      'large': {
-        provider: 'google',
-        model: 'gemini-2.5-pro-preview-05-06'
-      }
-    },
-    'javascript': {
-      'small': {
-        provider: 'openai',
-        model: 'gpt-4o'
-      },
-      'medium': {
-        provider: 'google',
-        model: 'gemini-2.5-pro-preview-05-06'
-      },
-      'large': {
-        provider: 'google',
-        model: 'gemini-2.5-pro-preview-05-06'
-      }
-    },
-    'typescript': {
-      'small': {
-        provider: 'openai',
-        model: 'gpt-4o'
-      },
-      'medium': {
-        provider: 'google',
-        model: 'gemini-2.5-pro-preview-05-06'
-      },
-      'large': {
-        provider: 'google',
-        model: 'gemini-2.5-pro-preview-05-06'
-      }
-    },
-    // Default for other languages
-    'default': {
-      'small': {
-        provider: 'openai',
-        model: 'gpt-4o'
-      },
-      'medium': {
-        provider: 'google',
-        model: 'gemini-2.5-pro-preview-05-06'
-      },
-      'large': {
-        provider: 'google',
-        model: 'gemini-2.5-pro-preview-05-06'
-      }
-    }
+  private modelSelector?: any; // ContextAwareModelSelector type
+  
+  /**
+   * Default model configuration as fallback
+   * Used only when no model selector is available
+   */
+  private readonly DEFAULT_MODEL: ModelConfig<DeepWikiProvider> = {
+    provider: 'google',
+    model: 'gemini-2.5-flash'
   };
   
   /**
@@ -160,8 +110,9 @@ export class DeepWikiClient {
    * @param baseUrl DeepWiki API base URL
    * @param logger Logger instance
    */
-  constructor(baseUrl: string, logger: Logger) {
+  constructor(baseUrl: string, logger: Logger, modelSelector?: any) {
     this.logger = logger;
+    this.modelSelector = modelSelector;
     this.client = axios.create({
       baseURL: baseUrl,
       timeout: 600000, // 10-minute timeout for large repositories
@@ -346,7 +297,7 @@ export class DeepWikiClient {
    * @param sizeBytes Size of the repository in bytes
    * @returns Recommended model configuration
    */
-  recommendModelConfig(language: string, sizeBytes: number): ModelConfig<DeepWikiProvider> {
+  async recommendModelConfig(language: string, sizeBytes: number): Promise<ModelConfig<DeepWikiProvider>> {
     // Determine size category
     let sizeCategory: 'small' | 'medium' | 'large';
     
@@ -358,16 +309,35 @@ export class DeepWikiClient {
       sizeCategory = 'large';
     }
     
-    // Normalize language for lookup
-    const normalizedLang = language.toLowerCase();
-    
-    // Find configuration for this language and size
-    if (this.MODEL_CONFIGS[normalizedLang]?.[sizeCategory]) {
-      return this.MODEL_CONFIGS[normalizedLang][sizeCategory];
+    // Use dynamic model selection if available
+    if (this.modelSelector) {
+      try {
+        const context = {
+          primaryLanguage: language,
+          size: sizeCategory as any
+        };
+        
+        const selection = await this.modelSelector.selectModelForContext('deepwiki', context);
+        
+        this.logger.debug('Selected model from Vector DB', {
+          provider: selection.primary.provider,
+          model: selection.primary.model,
+          language,
+          size: sizeCategory
+        });
+        
+        return {
+          provider: selection.primary.provider as DeepWikiProvider,
+          model: selection.primary.model as any
+        };
+      } catch (error) {
+        this.logger.warn('Model selector failed, using default', { error });
+      }
     }
     
-    // Fall back to default configuration if not found
-    return this.MODEL_CONFIGS.default[sizeCategory];
+    // Fall back to default configuration
+    this.logger.debug('Using default model configuration');
+    return this.DEFAULT_MODEL;
   }
   
   /**

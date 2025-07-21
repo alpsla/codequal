@@ -10,17 +10,132 @@
 
 import { Router, Request, Response } from 'express';
 import { AuthenticatedUser } from '../middleware/auth-middleware';
-import { ResearcherService } from '@codequal/agents/researcher/researcher-service';
-import { VectorContextService } from '@codequal/agents/multi-agent/vector-context-service';
-import { ResearchConfig } from '@codequal/agents/researcher/researcher-agent';
-import '../types/express';
+import { VectorStorageService } from '@codequal/database';
+import { ModelVersionSync } from '@codequal/core';
+import { ProductionResearcherService } from '@codequal/agents/researcher/production-researcher-service';
+import { createLogger } from '@codequal/core';
 
 const router = Router();
+const logger = createLogger('ResearcherAPI');
 
-// Helper function to create researcher service
+// Mock researcher service for testing
+interface ResearcherService {
+  triggerResearch(config: any): Promise<any>;
+  getOperationStatus(operationId: string): Promise<any>;
+  getActiveOperations(): Promise<any[]>;
+  getOperationHistory(limit: number): Promise<any[]>;
+  generateConfigurationOverview(): Promise<any>;
+  getRecommendedOptimizations(): Promise<any>;
+  startScheduledResearch(intervalHours: number): Promise<void>;
+}
+
+// Mock implementation
+const mockOperations = new Map<string, any>();
+
+// Helper function to create researcher service (mock for now)
 function createResearcherService(user: AuthenticatedUser): ResearcherService {
-  const vectorContextService = new VectorContextService(user);
-  return new ResearcherService(user, vectorContextService);
+  return {
+    async triggerResearch(config: any) {
+      const operationId = `research_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const operation = {
+        operationId,
+        userId: user.id,
+        startedAt: new Date(),
+        status: 'running',
+        configurationsUpdated: 0,
+        totalCostSavings: 0,
+        performanceImprovements: 0
+      };
+      mockOperations.set(operationId, operation);
+      
+      // Simulate research completion after delay
+      setTimeout(() => {
+        const op = mockOperations.get(operationId);
+        if (op) {
+          op.status = 'completed';
+          op.completedAt = new Date();
+          op.configurationsUpdated = 5;
+          op.totalCostSavings = 25;
+          op.performanceImprovements = 3;
+        }
+      }, 5000);
+      
+      return {
+        operationId,
+        status: 'started',
+        estimatedDuration: config?.researchDepth === 'deep' ? '10-15 minutes' : '3-5 minutes'
+      };
+    },
+    
+    async getOperationStatus(operationId: string) {
+      return mockOperations.get(operationId) || null;
+    },
+    
+    async getActiveOperations() {
+      return Array.from(mockOperations.values()).filter(op => op.status === 'running');
+    },
+    
+    async getOperationHistory(limit: number) {
+      return Array.from(mockOperations.values())
+        .filter(op => op.status === 'completed')
+        .sort((a, b) => b.startedAt.getTime() - a.startedAt.getTime())
+        .slice(0, limit);
+    },
+    
+    async generateConfigurationOverview() {
+      return {
+        totalConfigurations: 25,
+        configurationsByProvider: {
+          anthropic: 10,
+          openai: 8,
+          google: 4,
+          deepseek: 3
+        },
+        configurationsByRole: {
+          security: 5,
+          architecture: 5,
+          performance: 5,
+          codeQuality: 5,
+          dependency: 5
+        },
+        averageCostPerMillion: 15.5,
+        lastUpdated: new Date()
+      };
+    },
+    
+    async getRecommendedOptimizations() {
+      return {
+        costOptimizations: [
+          {
+            context: 'typescript/small/security',
+            currentCost: 10.0,
+            recommendedCost: 2.5,
+            savings: 75
+          }
+        ],
+        performanceOptimizations: [
+          {
+            context: 'python/large/architecture',
+            currentPerformance: 7.5,
+            recommendedPerformance: 9.2,
+            improvement: 22.7
+          }
+        ],
+        outdatedConfigurations: [
+          {
+            context: 'java/medium/performance',
+            currentModel: 'gpt-4',
+            lastUpdated: new Date('2025-01-01'),
+            recommendedUpdate: 'claude-3.5-sonnet'
+          }
+        ]
+      };
+    },
+    
+    async startScheduledResearch(intervalHours: number) {
+      console.log(`Mock: Scheduled research every ${intervalHours} hours`);
+    }
+  };
 }
 
 /**
@@ -30,7 +145,7 @@ function createResearcherService(user: AuthenticatedUser): ResearcherService {
 router.post('/trigger', async (req: Request, res: Response) => {
   try {
     const user = req.user as AuthenticatedUser;
-    const config: Partial<ResearchConfig> = req.body.config || {};
+    const config: any = req.body.config || {};
     
     // Validate research config
     if (config.maxCostPerMillion && config.maxCostPerMillion < 0) {
@@ -281,6 +396,76 @@ router.get('/status', async (req: Request, res: Response) => {
     
   } catch (error) {
     console.error('Failed to get researcher status:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+/**
+ * POST /api/researcher/research
+ * Perform comprehensive production research
+ */
+router.post('/research', async (req: Request, res: Response) => {
+  try {
+    const user = req.user as AuthenticatedUser;
+    const { 
+      trigger = 'manual',
+      includeAllRoles = true,
+      includeAllLanguages = true,
+      includeAllSizes = true
+    } = req.body;
+    
+    logger.info('Starting production research', {
+      userId: user.id,
+      trigger,
+      includeAllRoles,
+      includeAllLanguages,
+      includeAllSizes
+    });
+
+    // Initialize vector storage
+    const vectorStorage = new VectorStorageService();
+
+    // Initialize model sync
+    const modelSync = new ModelVersionSync(
+      logger,
+      '00000000-0000-0000-0000-000000000001' // Special RESEARCHER repository
+    );
+
+    // Create production researcher service
+    const productionService = new ProductionResearcherService(
+      vectorStorage,
+      modelSync
+    );
+
+    // Perform comprehensive research
+    const result = await productionService.performComprehensiveResearch(
+      user,
+      trigger as 'scheduled' | 'manual'
+    );
+
+    // Return summary
+    res.json({
+      success: true,
+      data: {
+        operationId: result.operationId,
+        configurationsUpdated: result.configurationsUpdated,
+        modelsEvaluated: result.modelsEvaluated,
+        timestamp: result.timestamp,
+        nextScheduledUpdate: result.nextScheduledUpdate,
+        selectedConfigurations: result.selectedConfigurations.slice(0, 5).map(config => ({
+          role: config.role,
+          primary: `${config.primary.provider}/${config.primary.model}`,
+          fallback: `${config.fallback.provider}/${config.fallback.model}`,
+          reasoning: config.reasoning.join(' ')
+        }))
+      }
+    });
+    
+  } catch (error) {
+    logger.error('Failed to perform production research:', { error });
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'

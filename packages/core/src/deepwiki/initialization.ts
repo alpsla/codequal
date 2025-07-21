@@ -17,6 +17,12 @@ export interface DeepWikiIntegrationOptions {
   logger: Logger;
   
   /**
+   * Model selector for dynamic model selection (optional)
+   * If provided, will use context-aware model selection from Vector DB
+   */
+  modelSelector?: any; // ContextAwareModelSelector type
+  
+  /**
    * Supabase URL for cache storage (optional)
    */
   supabaseUrl?: string;
@@ -59,6 +65,7 @@ export function initializeDeepWikiIntegration(options: DeepWikiIntegrationOption
   const {
     apiUrl,
     logger,
+    modelSelector,
     supabaseUrl,
     supabaseKey,
     apiKeys,
@@ -68,12 +75,13 @@ export function initializeDeepWikiIntegration(options: DeepWikiIntegrationOption
   // Log initialization
   logger.info('Initializing DeepWiki integration', {
     apiUrl,
+    hasModelSelector: !!modelSelector,
     hasSupabase: !!(supabaseUrl && supabaseKey),
     availableProviders: apiKeys ? Object.keys(apiKeys).filter(k => !!apiKeys[k as keyof typeof apiKeys]) : []
   });
   
-  // Create DeepWiki client
-  const client = new DeepWikiClient(apiUrl, logger);
+  // Create DeepWiki client with optional model selector
+  const client = new DeepWikiClient(apiUrl, logger, modelSelector);
   
   // Create repository size detector
   const sizeDetector = new RepositorySizeDetector(logger);

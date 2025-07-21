@@ -77,8 +77,11 @@ export interface ModelPricing {
  * Model usage tier classification
  */
 export enum ModelTier {
-  STANDARD = 'standard',
   PREMIUM = 'premium',
+  ADVANCED = 'advanced',
+  STANDARD = 'standard',
+  SPECIALIZED = 'specialized',
+  ECONOMY = 'economy',
   ENTERPRISE = 'enterprise'
 }
 
@@ -142,11 +145,11 @@ export interface ModelVersionInfo {
  * These are ONLY used when database is completely unavailable
  */
 const EMERGENCY_FALLBACK_MODELS: Record<string, ModelVersionInfo> = {
-  'openai/gpt-4o': {
+  'openai/gpt-4o-2025-07': {
     provider: 'openai',
-    model: 'gpt-4o',
+    model: 'gpt-4o-2025-07',
     versionId: 'emergency-fallback',
-    releaseDate: '2024-01-01',
+    releaseDate: '2025-07-01',
     description: 'Emergency fallback model - database unavailable',
     capabilities: {
       codeQuality: 8.0,

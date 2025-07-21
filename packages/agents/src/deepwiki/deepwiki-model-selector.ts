@@ -1,6 +1,14 @@
 /**
  * DeepWiki Model Selector
  * 
+ * @deprecated Use UnifiedModelSelector from '../model-selection/unified-model-selector' instead.
+ * This class is maintained for backward compatibility only.
+ * 
+ * Migration guide:
+ * 1. Import from '../model-selection/unified-model-selector'
+ * 2. Use createUnifiedModelSelector() instead of createDeepWikiModelSelector()
+ * 3. Call selectModel('deepwiki', context) instead of selectModel(context)
+ * 
  * Dynamically selects optimal AI models for DeepWiki repository analysis
  * based on repository context, size, and complexity.
  * 
@@ -407,7 +415,7 @@ export class DeepWikiModelSelector {
    */
   private async storeConfiguration(selection: DeepWikiModelSelection): Promise<void> {
     try {
-      await this.configStorage.storeRepositoryConfig(selection.context.url, selection);
+      await this.configStorage.storeRepositoryConfig(selection.context.url, selection as any);
       this.logger.debug('Stored DeepWiki configuration', { repository: selection.context.url });
     } catch (error) {
       this.logger.error('Failed to store configuration', { error });
