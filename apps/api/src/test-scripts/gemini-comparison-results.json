@@ -1,0 +1,59 @@
+{
+  "timestamp": "2025-07-20T18:24:04.486Z",
+  "models": {
+    "gemini20FlashLite": {
+      "id": "google/gemini-2.0-flash-lite-001",
+      "name": "Google: Gemini 2.0 Flash Lite",
+      "inputCost": 0.075,
+      "outputCost": 0.3,
+      "avgCost": 0.1875,
+      "contextWindow": 1048576,
+      "created": "2025-02-25T17:56:52.000Z"
+    },
+    "gemini25FlashLite": {
+      "id": "google/gemini-2.5-flash-lite-preview-06-17",
+      "name": "Google: Gemini 2.5 Flash Lite Preview 06-17",
+      "inputCost": 0.09999999999999999,
+      "outputCost": 0.39999999999999997,
+      "avgCost": 0.25,
+      "contextWindow": 1048576,
+      "created": "2025-06-17T15:23:51.000Z"
+    },
+    "gemini25Flash": {
+      "id": "google/gemini-2.5-flash",
+      "name": "Google: Gemini 2.5 Flash",
+      "inputCost": 0.3,
+      "outputCost": 2.5,
+      "avgCost": 1.4000000000000001,
+      "contextWindow": 1048576,
+      "created": "2025-06-17T15:01:28.000Z"
+    }
+  },
+  "scores": {
+    "gemini20FlashLite": {
+      "quality": 8.5,
+      "costScore": 9.98125,
+      "speed": 9.5,
+      "composite": 9.2925
+    },
+    "gemini25FlashLite": {
+      "quality": 8.7,
+      "costScore": 9.975,
+      "speed": 9.5,
+      "composite": 9.370000000000001
+    },
+    "gemini25Flash": {
+      "quality": 9,
+      "costScore": 9.86,
+      "speed": 9,
+      "composite": 9.344000000000001
+    }
+  },
+  "monthlyProjections": {
+    "gemini20FlashLite": 16.875,
+    "gemini25FlashLite": 22.5,
+    "gemini25Flash": 126.00000000000001
+  },
+  "recommendation": "Gemini 2.5 Flash Lite Preview",
+  "verdict": "Update to Gemini 2.5 Flash Lite Preview"
+}

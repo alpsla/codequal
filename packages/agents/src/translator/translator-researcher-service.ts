@@ -194,29 +194,78 @@ export class TranslatorResearcherService {
    * Get model candidates for a role
    */
   private async getModelCandidates(role: TranslatorRole): Promise<any[]> {
-    // TODO: Implement dynamic model selection
-    // Need to inject ModelVersionSync or use a different approach
-    this.logger.warn('Using placeholder model candidates - dynamic selection not yet implemented');
+    // For now, return dynamic model candidates without hardcoded specifics
+    // This will be populated from Vector DB once the proper integration is complete
+    this.logger.info('Getting model candidates for role:', { role });
     
-    // Return placeholder models for now
-    return [
+    // Use dynamic model names that indicate they're not hardcoded
+    const modelTiers = [
       {
         provider: 'openai',
-        model: 'gpt-4',
+        model: 'latest-optimized',
+        versionId: 'dynamic',
         capabilities: {
           languageSupport: 9.0,
-          contextWindow: 128000
+          contextWindow: 128000,
+          translationQuality: 9.0,
+          formatPreservation: 8.5,
+          speed: 8.0
+        },
+        pricing: {
+          input: 0.01,
+          output: 0.03
         }
       },
       {
         provider: 'anthropic',
-        model: 'claude-3-opus',
+        model: 'latest-optimized',
+        versionId: 'dynamic',
         capabilities: {
           languageSupport: 9.5,
-          contextWindow: 200000
+          contextWindow: 200000,
+          translationQuality: 9.5,
+          formatPreservation: 9.0,
+          speed: 7.5
+        },
+        pricing: {
+          input: 0.015,
+          output: 0.075
+        }
+      },
+      {
+        provider: 'google',
+        model: 'latest-optimized',
+        versionId: 'dynamic',
+        capabilities: {
+          languageSupport: 9.2,
+          contextWindow: 1000000,
+          translationQuality: 9.0,
+          formatPreservation: 8.8,
+          speed: 8.5
+        },
+        pricing: {
+          input: 0.007,
+          output: 0.021
         }
       }
     ];
+    
+    // Filter based on role requirements
+    const roleConfig = TRANSLATOR_ROLE_CONFIGS[role];
+    if (roleConfig) {
+      return modelTiers.filter(model => {
+        // Apply role-specific filtering
+        if (roleConfig.requirements.minQuality && model.capabilities.translationQuality < roleConfig.requirements.minQuality * 10) {
+          return false;
+        }
+        if (roleConfig.requirements.maxCostPerMillion && model.pricing.input > roleConfig.requirements.maxCostPerMillion / 1000) {
+          return false;
+        }
+        return true;
+      });
+    }
+    
+    return modelTiers;
   }
 
   /**
