@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { getSupabase } from '@codequal/database/supabase/client';
 import { AuthenticatedRequest } from '../middleware/auth-middleware';
@@ -132,7 +132,7 @@ const checkOrgMembership = async (req: Request, res: Response, next: Function) =
 };
 
 // Middleware to check admin/owner permissions
-const checkAdminPermission = async (req: Request, res: Response, next: Function) => {
+const checkAdminPermission = async (req: Request, res: Response, next: NextFunction) => {
   const membership = (req as any).membership;
   
   if (!['owner', 'admin'].includes(membership.role)) {

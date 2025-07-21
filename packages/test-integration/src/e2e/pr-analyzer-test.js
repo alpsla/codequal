@@ -95,7 +95,7 @@ const MIXED_PR = [
     additions: 30,
     deletions: 10,
     changes: 40,
-    patch: `+export function validateEmail(email) { return /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email); }`
+    patch: `+export function validateEmail(email) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email); }`
   },
   {
     filename: 'README.md',

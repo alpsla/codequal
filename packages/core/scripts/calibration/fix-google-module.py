@@ -1,4 +1,4 @@
-#\!/usr/bin/env python3
+#!/usr/bin/env python3
 
 import sys
 
@@ -49,6 +49,6 @@ if "def extract_base_model_name(" not in code:
     with open(file_path, 'w') as f:
         f.write(modified_code)
     
-    print("Fixed the Google module initialization\!")
+    print("Fixed the Google module initialization!")
 else:
     print("The fix has already been applied.")

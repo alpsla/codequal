@@ -9,6 +9,8 @@ import { config } from 'dotenv';
 import { resolve } from 'path';
 import { createClient } from '@supabase/supabase-js';
 import { createLogger } from '@codequal/core/utils';
+import axios from 'axios';
+import { promises as fs } from 'fs';
 
 // Load environment variables
 config({ path: resolve(__dirname, '../../.env') });
@@ -116,7 +118,6 @@ async function setupTestAuth(): Promise<TestAuthConfig> {
   console.log('\n🧪 Testing authentication setup...');
   
   try {
-    const axios = require('axios');
     const apiUrl = process.env.API_URL || 'http://localhost:3001';
     
     // Test with API key
@@ -144,7 +145,6 @@ async function setupTestAuth(): Promise<TestAuthConfig> {
  * Save test configuration to environment file
  */
 async function saveTestConfig(config: TestAuthConfig) {
-  const fs = require('fs').promises;
   const envPath = resolve(__dirname, '../../.env.test');
   
   const envContent = `# Test Authentication Configuration

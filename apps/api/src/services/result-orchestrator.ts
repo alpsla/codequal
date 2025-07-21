@@ -14,7 +14,7 @@ import { VectorContextService } from '@codequal/agents/multi-agent/vector-contex
 import { ToolResultRetrievalService, AgentToolResults } from '@codequal/core/services/deepwiki-tools';
 import { VectorStorageService } from '@codequal/database';
 import { createLogger, LoggableData } from '@codequal/core/utils';
-// @ts-ignore - Module will be available after build
+// @ts-expect-error - Module will be available after build
 import { deepWikiScoreExtractor, DeepWikiScores, DeepWikiInsight } from '@codequal/core';
 import { AuthenticatedUser as AgentAuthenticatedUser, UserRole, UserStatus, UserPermissions } from '@codequal/agents/multi-agent/types/auth';
 import { RepositorySchedulerService } from '@codequal/core/services/scheduling';

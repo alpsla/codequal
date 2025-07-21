@@ -96,7 +96,7 @@ const FAILING_TESTS = [
   },
   {
     file: 'packages/agents/src/multi-agent/__tests__/skill-educational-integration-e2e.test.ts',
-    pattern: /describe\('Skill Tracking \+ Educational Agent Integration E2E'/,
+    pattern: /describe\('Skill Tracking + Educational Agent Integration E2E'/,
     replacement: "describe.skip('Skill Tracking + Educational Agent Integration E2E - FIXME: TypeScript errors (Issue #TBD)'",
     reason: 'TypeScript compilation errors - missing methods',
     priority: 'high'

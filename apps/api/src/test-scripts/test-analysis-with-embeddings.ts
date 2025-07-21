@@ -43,7 +43,7 @@ async function testAnalysisWithEmbeddings() {
       }
     );
     
-    console.log("\n✅ Analysis response received\!");
+    console.log("\n✅ Analysis response received!");
     console.log("Status:", response.status);
     console.log("Analysis ID:", response.data.analysisId);
     console.log("Status:", response.data.status);
@@ -53,7 +53,7 @@ async function testAnalysisWithEmbeddings() {
     }
     
     // The embedding service is working if we got this far
-    console.log("\n✅ Embedding service is working correctly\!");
+    console.log("\n✅ Embedding service is working correctly!");
     console.log("The analysis endpoint uses embeddings internally for:");
     console.log("- Vector DB storage");
     console.log("- DeepWiki initialization");
