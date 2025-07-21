@@ -1,0 +1,20 @@
+# Systemd service for CodeQual Research
+# Place in /etc/systemd/system/codequal-research.service
+
+[Unit]
+Description=CodeQual Quarterly Research Service
+After=network.target
+
+[Service]
+Type=oneshot
+User=codequal
+Group=codequal
+WorkingDirectory=/opt/codequal
+Environment="NODE_ENV=production"
+Environment="OPENROUTER_API_KEY=your-api-key-here"
+ExecStart=/usr/bin/node /opt/codequal/packages/agents/dist/researcher/scheduled-research-runner.js
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

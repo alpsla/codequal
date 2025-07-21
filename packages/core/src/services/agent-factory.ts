@@ -76,11 +76,12 @@ export class AgentFactory {
       //   return new SnykAgent(role, config);
       // }
         
-      case ProviderGroup.MCP: {
-        // Using dynamic import to avoid circular dependencies
-        const { MCPAgent } = await import('@codequal/agents');
-        return new MCPAgent(role, resolvedProvider, config);
-      }
+      // Temporarily disabled - MCPAgent is not exported from @codequal/agents
+      // case ProviderGroup.MCP: {
+      //   // Using dynamic import to avoid circular dependencies
+      //   const { MCPAgent } = await import('@codequal/agents');
+      //   return new MCPAgent(role, resolvedProvider, config);
+      // }
         
       default:
         throw new Error(`Unsupported agent provider: ${provider}`);

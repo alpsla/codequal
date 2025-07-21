@@ -1,0 +1,145 @@
+/**
+ * Enhanced Scheduled Research Runner
+ * 
+ * Runs the full 800 configuration research
+ */
+
+import { EnhancedProductionResearcherService } from './enhanced-production-researcher-service';
+import { ModelVersionSync } from '@codequal/core';
+import { VectorStorageService } from '@codequal/database';
+import { createLogger } from '@codequal/core/utils';
+import { SystemAuthService, SYSTEM_USER } from '@codequal/core/auth/system-auth';
+
+const logger = createLogger('EnhancedScheduledResearchRunner');
+
+export class EnhancedScheduledResearchRunner {
+  private static instance: EnhancedScheduledResearchRunner;
+  private researcherService: EnhancedProductionResearcherService;
+  private systemAuth: SystemAuthService;
+  
+  private constructor() {
+    // Initialize services
+    const modelVersionSync = new ModelVersionSync(logger);
+    const vectorStorage = new VectorStorageService();
+    
+    this.researcherService = new EnhancedProductionResearcherService(
+      vectorStorage,
+      modelVersionSync
+    );
+    
+    this.systemAuth = SystemAuthService.getInstance();
+    
+    logger.info('Enhanced Scheduled Research Runner initialized');
+  }
+  
+  static getInstance(): EnhancedScheduledResearchRunner {
+    if (!EnhancedScheduledResearchRunner.instance) {
+      EnhancedScheduledResearchRunner.instance = new EnhancedScheduledResearchRunner();
+    }
+    return EnhancedScheduledResearchRunner.instance;
+  }
+  
+  /**
+   * Run enhanced scheduled quarterly research
+   */
+  async runScheduledResearch(): Promise<void> {
+    logger.info('=== ENHANCED SCHEDULED QUARTERLY RESEARCH STARTING ===');
+    logger.info(`Timestamp: ${new Date().toISOString()}`);
+    logger.info('Running as: SYSTEM USER (no authentication required)');
+    logger.info('Expected configurations: 800 (10 roles × 10 languages × 4 sizes)');
+    
+    try {
+      // Use system user for scheduled runs
+      const systemUser = this.systemAuth.getSystemUser();
+      
+      // Run comprehensive research with all 800 configurations
+      const startTime = Date.now();
+      const result = await this.researcherService.performComprehensiveResearch(
+        systemUser,
+        'scheduled' // Mark as scheduled trigger
+      );
+      const duration = Date.now() - startTime;
+      
+      logger.info('✅ Enhanced scheduled research completed successfully', {
+        operationId: result.operationId,
+        modelsEvaluated: result.modelsEvaluated,
+        configurationsUpdated: result.configurationsUpdated,
+        expectedConfigurations: 800,
+        completionRate: `${(result.configurationsUpdated / 800 * 100).toFixed(1)}%`,
+        duration: `${(duration / 1000).toFixed(1)} seconds`,
+        nextScheduledUpdate: result.nextScheduledUpdate.toISOString()
+      });
+      
+      // Log summary for monitoring
+      this.logResearchSummary(result);
+      
+    } catch (error) {
+      logger.error('❌ Enhanced scheduled research failed', { error });
+      throw error;
+    }
+  }
+  
+  /**
+   * Log enhanced research summary
+   */
+  private logResearchSummary(result: any): void {
+    logger.info('=== ENHANCED RESEARCH SUMMARY ===');
+    
+    if (result.breakdown) {
+      logger.info('Configuration breakdown:');
+      logger.info(`  Roles: ${result.breakdown.roles}`);
+      logger.info(`  Languages: ${result.breakdown.languages}`);
+      logger.info(`  Repository sizes: ${result.breakdown.sizes}`);
+      logger.info(`  Total configurations: ${result.breakdown.total}`);
+    }
+    
+    if (result.selectedConfigurations && result.selectedConfigurations.length > 0) {
+      // Show sample configurations
+      logger.info('\nSample configurations (first 5):');
+      result.selectedConfigurations.slice(0, 5).forEach((config: any, index: number) => {
+        logger.info(`  ${index + 1}. ${config.role}/${config.language}/${config.repositorySize}:`);
+        logger.info(`     Primary: ${config.primary.provider}/${config.primary.model}`);
+        logger.info(`     Fallback: ${config.fallback.provider}/${config.fallback.model}`);
+      });
+      
+      // Check if researcher's own model was updated
+      const researcherConfigs = result.selectedConfigurations.filter(
+        (c: any) => c.role === 'researcher'
+      );
+      
+      if (researcherConfigs.length > 0) {
+        logger.info('\n🔄 RESEARCHER SELF-UPDATE (all language/size combinations):');
+        logger.info(`  Total researcher configurations: ${researcherConfigs.length}`);
+        
+        // Show unique models selected for researcher
+        const uniqueModels = new Set(
+          researcherConfigs.map((c: any) => `${c.primary.provider}/${c.primary.model}`)
+        );
+        logger.info(`  Unique models selected: ${Array.from(uniqueModels).join(', ')}`);
+      }
+    }
+    
+    logger.info(`\nNext scheduled run: ${result.nextScheduledUpdate.toISOString()}`);
+  }
+}
+
+/**
+ * Main entry point for enhanced cron jobs
+ */
+export async function runEnhancedScheduledResearch(): Promise<void> {
+  const runner = EnhancedScheduledResearchRunner.getInstance();
+  await runner.runScheduledResearch();
+}
+
+// If called directly
+if (require.main === module) {
+  runEnhancedScheduledResearch()
+    .then(() => {
+      logger.info('Enhanced scheduled research completed');
+      process.exit(0);
+    })
+    .catch((error) => {
+      logger.error('Enhanced scheduled research failed', { error });
+      process.exit(1);
+    });
+}

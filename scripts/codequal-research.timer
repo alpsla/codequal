@@ -1,0 +1,14 @@
+# Systemd timer for CodeQual Research
+# Place in /etc/systemd/system/codequal-research.timer
+
+[Unit]
+Description=Run CodeQual Research quarterly
+Requires=codequal-research.service
+
+[Timer]
+# Run at 5 AM UTC (0 AM ET) on the 1st day of Jan, Apr, Jul, Oct
+OnCalendar=*-01,04,07,10-01 05:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
