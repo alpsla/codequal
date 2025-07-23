@@ -1,5 +1,109 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, no-console */
+/* eslint-disable no-console */
 import { AuthenticatedUser } from '../middleware/auth-middleware';
+
+// Type definitions for findings and recommendations
+export interface Finding {
+  id?: string;
+  title: string;
+  description: string;
+  severity: 'critical' | 'high' | 'medium' | 'low';
+  category: string;
+  file?: string;
+  line?: number;
+  column?: number;
+  impact?: string;
+  recommendation?: string;
+  tool?: string;
+  metadata?: Record<string, unknown>;
+  ruleId?: string;
+  message?: string;
+  type?: string;
+  agent?: string;
+  confidence?: number;
+}
+
+export interface Recommendation {
+  title: string;
+  description: string;
+  priority: 'critical' | 'high' | 'medium' | 'low';
+  category: string;
+  effort: 'low' | 'medium' | 'high';
+  impact: 'critical' | 'high' | 'medium' | 'low';
+  implementation?: string;
+}
+
+export interface EducationalItem {
+  topic: string;
+  content: string;
+  level: 'beginner' | 'intermediate' | 'advanced';
+  resources?: Array<{ title: string; url: string; type: string }>;
+  examples?: string[];
+  relatedFindings?: string[];
+}
+
+export interface PRDetails {
+  number: number;
+  title: string;
+  body?: string;
+  description?: string;
+  author?: string;
+  user?: { login: string; id?: number };
+  created_at?: string;
+  updated_at?: string;
+  base?: { ref: string; sha: string };
+  head?: { ref: string; sha: string };
+  state?: 'open' | 'closed' | 'merged';
+  labels?: string[];
+  assignees?: string[];
+  reviewers?: string[];
+  headBranch?: string;
+  baseBranch?: string;
+}
+
+export interface DiffData {
+  files: Array<{
+    filename: string;
+    status: 'added' | 'modified' | 'deleted' | 'renamed';
+    additions: number;
+    deletions: number;
+    changes: number;
+    patch?: string;
+    previous_filename?: string;
+  }>;
+}
+
+export interface DiffInfo extends DiffData {
+  stats: {
+    total: number;
+    additions: number;
+    deletions: number;
+  };
+}
+
+export interface DeepWikiSummary {
+  overview: string;
+  keyComponents: string[];
+  architectureInsights: string[];
+  dependencies: Array<{ name: string; version: string; purpose: string }>;
+  patterns: string[];
+  metadata?: Record<string, unknown>;
+  summary?: string;
+  chunks?: Array<{ content: string; metadata?: Record<string, unknown> }>;
+  recommendations?: Record<string, unknown>;
+  scores?: DeepWikiScores | null;
+  structuredInsights?: unknown[];
+}
+
+export interface ExistingIssue {
+  id: string;
+  title: string;
+  description: string;
+  status: 'open' | 'closed' | 'in_progress';
+  priority: 'high' | 'medium' | 'low';
+  labels: string[];
+  created_at: string;
+  updated_at: string;
+}
 import { DeepWikiManager } from './deepwiki-manager';
 import { PRContextService } from './pr-context-service';
 import { ResultProcessor } from './result-processor';
@@ -8,33 +112,37 @@ import { EducationalToolOrchestrator } from './educational-tool-orchestrator';
 import { storeAnalysisInHistory } from '../routes/analysis';
 
 // Import existing packages
-import { EnhancedMultiAgentExecutor } from '@codequal/agents/multi-agent/enhanced-executor';
-import { ModelVersionSync, RepositorySizeCategory } from '@codequal/core/services/model-selection/ModelVersionSync';
-import { VectorContextService } from '@codequal/agents/multi-agent/vector-context-service';
+import { EnhancedMultiAgentExecutor, AnalysisStrategy, AgentPosition } from '@codequal/agents';
+import { ModelVersionSync, RepositorySizeCategory } from '@codequal/core';
+import { VectorContextService } from '@codequal/agents';
 import { ToolResultRetrievalService, AgentToolResults } from '@codequal/core/services/deepwiki-tools';
-import { VectorStorageService } from '@codequal/database';
+import { VectorStorageService, EnhancedChunk } from '@codequal/database';
 import { createLogger, LoggableData } from '@codequal/core/utils';
 // @ts-expect-error - Module will be available after build
 import { deepWikiScoreExtractor, DeepWikiScores, DeepWikiInsight } from '@codequal/core';
-import { AuthenticatedUser as AgentAuthenticatedUser, UserRole, UserStatus, UserPermissions } from '@codequal/agents/multi-agent/types/auth';
+import { AuthenticatedUser as AgentAuthenticatedUser, UserRole, UserStatus, UserPermissions } from '@codequal/agents';
+import { AgentRole, AgentProvider } from '@codequal/core/config/agent-registry';
+import { AgentRole as MCPAgentRole } from '@codequal/mcp-hybrid';
 import { RepositorySchedulerService } from '@codequal/core/services/scheduling';
-import { EducationalAgent } from '@codequal/agents/multi-agent/educational-agent';
-import { ReporterAgent, ReportFormat } from '@codequal/agents/multi-agent/reporter-agent';
-import { StandardReport } from '@codequal/agents/services/report-formatter.service';
-import { RecommendationService } from '@codequal/agents/services/recommendation-service';
-import { EducationalCompilationService } from '@codequal/agents/services/educational-compilation-service';
-import { PRContentAnalyzer, PRFile } from './intelligence/pr-content-analyzer';
+import { EducationalAgent, ReportFormat, ReporterAgent } from '@codequal/agents';
+import { ReportFormatterService, StandardReport } from '@codequal/agents';
+import { RecommendationService } from '@codequal/agents';
+import { EducationalCompilationService } from '@codequal/agents';
+import { PRContentAnalyzer } from './intelligence/pr-content-analyzer';
+import type { PRFile } from './intelligence/pr-content-analyzer';
 import { IntelligentResultMerger } from './intelligence/intelligent-result-merger';
-import { SkillTrackingService } from '@codequal/agents/services/skill-tracking-service';
-import { IssueResolutionDetector } from '@codequal/agents/services/issue-resolution-detector';
+import { SkillTrackingService } from '@codequal/agents';
+import type { ToolFinding } from '../types/tool-finding';
+import { IssueResolutionDetector, IssueComparison } from '@codequal/agents';
 import { dataFlowMonitor } from './data-flow-monitor';
+import { createClient } from '@supabase/supabase-js';
 import { getUnifiedProgressTracer } from './unified-progress-tracer';
 import { reportIdMappingService } from './report-id-mapping-service';
 
 // State management for tracking analyses and completed reports
 interface OrchestratorState {
-  activeAnalyses: Map<string, any>;
-  completedAnalyses: Map<string, any>;
+  activeAnalyses: Map<string, { startTime: Date; status: string; context: PRContext }>;
+  completedAnalyses: Map<string, AnalysisResult>;
 }
 
 const resultOrchestratorState: OrchestratorState = {
@@ -59,8 +167,8 @@ export interface PRAnalysisRequest {
 export interface PRContext {
   repositoryUrl: string;
   prNumber: number;
-  prDetails: any;
-  diff: any;
+  prDetails: PRDetails;
+  diff: DiffInfo;
   changedFiles: string[];
   primaryLanguage: string;
   repositorySize: RepositorySizeCategory;
@@ -73,8 +181,8 @@ export interface PRContext {
     previousContent?: string;
   }>;
   repositoryInsights?: string;
-  deepWikiSummary?: any;
-  existingIssues?: any;
+  deepWikiSummary?: DeepWikiSummary;
+  existingIssues?: ExistingIssue[];
 }
 
 export interface RepositoryStatus {
@@ -82,6 +190,169 @@ export interface RepositoryStatus {
   lastAnalyzed?: Date;
   analysisQuality: 'fresh' | 'stale' | 'outdated';
   needsReanalysis: boolean;
+}
+
+// Additional type definitions for better type safety
+export interface ProcessedResults {
+  findings: {
+    security?: Finding[];
+    architecture?: Finding[];
+    performance?: Finding[];
+    codeQuality?: Finding[];
+    dependency?: Finding[];
+    [key: string]: Finding[] | undefined;
+  };
+  insights?: Array<{ category: string; description: string; severity?: string }>;
+  suggestions?: Array<{ title: string; description: string; priority?: string }>;
+  educationalContent?: EducationalItem[];
+  criticalIssues?: Finding[];
+  metadata?: Record<string, unknown>;
+  complexity?: 'trivial' | 'moderate' | 'complex';
+  riskLevel?: 'low' | 'medium' | 'high';
+  changeTypes?: string[];
+  deepWikiData?: DeepWikiSummary;
+  agentsToSkip?: string[];
+  agentsToKeep?: string[];
+  skipReasons?: Record<string, string>;
+  prContext?: PRContext;
+  crossAgentPatterns?: unknown[];
+  totalChanges?: number;
+  changedFiles?: string[];
+}
+
+export interface AgentResult {
+  agentId?: string;
+  agentRole?: string;
+  findings?: Finding[];
+  insights?: Array<{ category: string; description: string }>;
+  recommendations?: Recommendation[];
+  suggestions?: Array<{ title: string; description: string }>;
+  vectorChunks?: unknown[];
+  model?: string;
+  processingTime?: number;
+  modelVersion?: string;
+  educationalContent?: EducationalItem[];
+  educational?: unknown[];
+  toolsExecuted?: string[];
+  result?: {
+    findings?: ProcessedResults['findings'];
+    insights?: unknown[];
+    suggestions?: unknown[];
+    educational?: unknown[];
+    metadata?: unknown;
+  };
+  agentsUsed?: string[];
+  totalFindings?: number;
+  metadata?: unknown;
+  deduplicationResult?: unknown;
+  deduplicationStats?: unknown;
+  agentConfig?: { provider?: string; role?: string };
+  config?: { provider?: string; role?: string };
+}
+
+export interface CompiledFindings {
+  codeQuality: {
+    complexityIssues: Finding[];
+    maintainabilityIssues: Finding[];
+    codeSmells: Finding[];
+    patterns: unknown[];
+  };
+  security: {
+    vulnerabilities: Finding[];
+    securityPatterns: unknown[];
+    complianceIssues: Finding[];
+    threatLandscape: unknown[];
+  };
+  architecture: {
+    designPatternViolations: Finding[];
+    technicalDebt: Finding[];
+    refactoringOpportunities: Finding[];
+    architecturalDecisions: unknown[];
+  };
+  performance: {
+    performanceIssues: Finding[];
+    optimizationOpportunities: Finding[];
+    bottlenecks: Finding[];
+    benchmarkResults: unknown[];
+  };
+  dependency: {
+    vulnerabilityIssues: Finding[];
+    licenseIssues: Finding[];
+    outdatedPackages: Finding[];
+    conflictResolution: unknown[];
+  };
+  criticalIssues: Finding[];
+  learningOpportunities: unknown[];
+  knowledgeGaps: unknown[];
+  prContext?: PRContext;
+}
+
+export interface EducationalToolResults {
+  toolsExecuted?: string[];
+  resources?: Array<{ title: string; url: string }>;
+  modules?: EducationalItem[];
+}
+
+export interface EducationalResult {
+  modules?: EducationalItem[];
+  resources?: Array<{ title: string; url: string }>;
+  skillCategories?: string[];
+  learningPath?: {
+    duration?: string;
+    modules?: Array<{
+      title: string;
+      description?: string;
+      duration?: string;
+      resources?: Array<{ title: string; url: string }>;
+    }>;
+  };
+}
+
+export interface CompiledEducationalData {
+  modules?: EducationalItem[];
+  resources?: Array<{ title: string; url: string }>;
+  content?: EducationalItem[];
+  summary?: string;
+  keyTopics?: string[];
+  skillLevel?: 'beginner' | 'intermediate' | 'advanced';
+  educational?: {
+    bestPractices?: {
+      practices?: Array<{ title: string; description: string; severity?: string }>;
+    };
+    codeExamples?: {
+      examples?: Array<{ title: string; description: string; language?: string; code?: string }>;
+    };
+    documentation?: {
+      findings?: Array<{ title: string; description: string; severity?: string }>;
+    };
+    insights?: {
+      learningOpportunities?: Array<{ title: string; description: string }>;
+      skillGaps?: Array<{ title: string; description: string }>;
+      relatedTopics?: string[];
+      nextSteps?: string[];
+    };
+  };
+}
+
+export interface ModelConfig {
+  model: string;
+  provider?: string;
+  temperature?: number;
+  maxTokens?: number;
+}
+
+export interface AgentConfiguration {
+  type: string;
+  configuration: unknown;
+  context: unknown;
+  model?: string;
+  temperature?: number;
+  maxTokens?: number;
+  priority?: number;
+  fallbackConfiguration?: unknown;
+  role?: string;
+  provider?: string;
+  position?: string;
 }
 
 export interface AnalysisResult {
@@ -104,14 +375,19 @@ export interface AnalysisResult {
     processingTime: number;
   };
   findings: {
-    security: any[];
-    architecture: any[];
-    performance: any[];
-    codeQuality: any[];
+    security: Finding[];
+    architecture: Finding[];
+    performance: Finding[];
+    codeQuality: Finding[];
   };
-  recommendations?: any; // Recommendation Module
-  educationalContent: any[]; // Legacy field for backward compatibility
-  compiledEducationalData?: any; // NEW: Compiled educational data for Reporter Agent
+  recommendations?: Recommendation[]; // Recommendation Module
+  educationalContent: EducationalItem[]; // Legacy field for backward compatibility
+  compiledEducationalData?: {
+    content: EducationalItem[];
+    summary: string;
+    keyTopics: string[];
+    skillLevel: 'beginner' | 'intermediate' | 'advanced';
+  }; // NEW: Compiled educational data for Reporter Agent
   metrics: {
     totalFindings: number;
     severity: { critical: number; high: number; medium: number; low: number };
@@ -122,7 +398,7 @@ export interface AnalysisResult {
     summary: string;
     recommendations: string[];
     prComment: string;
-    fullReport?: any; // Full enhanced report from Reporter Agent
+    fullReport?: StandardReport; // Full enhanced report from Reporter Agent
     htmlReportUrl?: string;
     uiReportUrl?: string;
     reportId?: string;
@@ -139,6 +415,15 @@ export interface AnalysisResult {
       skipReasons: Record<string, string>;
     } | null;
   };
+}
+
+/**
+ * Helper function to convert AgentRole to MCPAgentRole
+ * Filters out roles that don't exist in MCP
+ */
+function toMCPAgentRoles(roles: AgentRole[]): MCPAgentRole[] {
+  const validMCPRoles: MCPAgentRole[] = ['security', 'codeQuality', 'architecture', 'performance', 'dependency', 'educational', 'reporting'];
+  return roles.filter(role => validMCPRoles.includes(role as MCPAgentRole)) as MCPAgentRole[];
 }
 
 /**
@@ -161,6 +446,8 @@ export class ResultOrchestrator {
   private agentAuthenticatedUser: AgentAuthenticatedUser;
   private prContentAnalyzer: PRContentAnalyzer;
   private intelligentResultMerger: IntelligentResultMerger;
+  private currentAnalysisId?: string;
+  private currentSessionId?: string;
 
   constructor(private authenticatedUser: AuthenticatedUser) {
     // Initialize services with authenticated user context
@@ -177,9 +464,8 @@ export class ResultOrchestrator {
     // Convert API AuthenticatedUser to Agent AuthenticatedUser
     this.agentAuthenticatedUser = this.convertToAgentUser(authenticatedUser);
     
-    // Create RAG service for VectorContextService
-    const ragService = this.createRAGService();
-    this.vectorContextService = new VectorContextService(ragService);
+    // Vector context service will be initialized in init method
+    this.vectorContextService = null as unknown as VectorContextService;
     
     // Initialize tool result retrieval service with actual Vector Storage
     const vectorStorage = this.createVectorStorageService();
@@ -204,9 +490,21 @@ export class ResultOrchestrator {
   }
 
   /**
+   * Initialize async services
+   */
+  private async ensureInitialized(): Promise<void> {
+    if (!this.vectorContextService) {
+      const ragService = await this.createRAGService();
+      this.vectorContextService = new VectorContextService(ragService);
+    }
+  }
+
+  /**
    * Main orchestration method - coordinates entire PR analysis workflow
    */
   async analyzePR(request: PRAnalysisRequest): Promise<AnalysisResult> {
+    // Ensure async services are initialized
+    await this.ensureInitialized();
     const startTime = Date.now();
     const processingSteps: string[] = [];
     
@@ -233,8 +531,8 @@ export class ResultOrchestrator {
     });
     
     // Store IDs for later use
-    (this as any).currentAnalysisId = analysisId;
-    (this as any).currentSessionId = sessionId;
+    this.currentAnalysisId = analysisId;
+    this.currentSessionId = sessionId;
 
     try {
       // Step 1: Extract PR context
@@ -257,7 +555,7 @@ export class ResultOrchestrator {
       const prContentAnalysis = await this.analyzePRContent(prContext);
       
       // Step 2.5: Automatic mode selection if 'auto' is specified
-      if (request.analysisMode === 'auto') {
+      if (request.analysisMode === 'auto' && prContentAnalysis) {
         const autoSelectedMode = this.selectAnalysisModeBasedOnPR(prContentAnalysis);
         this.logger.info('Automatic mode selection', {
           originalMode: 'auto',
@@ -329,17 +627,17 @@ export class ResultOrchestrator {
       
       try {
         // Initialize MCP-Hybrid tools if not already done
-        console.log('[MCP Tools] Initializing MCP-Hybrid tools...');
+        this.logger.info('[MCP Tools] Initializing MCP-Hybrid tools...');
         const mcpHybrid = await import('@codequal/mcp-hybrid');
         await mcpHybrid.initializeTools();
-        console.log('[MCP Tools] Tools initialized successfully');
+        this.logger.info('[MCP Tools] Tools initialized successfully');
 
         // Determine which agents to use based on analysis mode
-        const agentRoles = this.selectAgentsForAnalysis(request.analysisMode, prContentAnalysis);
-        console.log('[MCP Tools] Selected agent roles:', agentRoles);
+        const agentRoles = this.selectAgentsForAnalysis(request.analysisMode, prContentAnalysis || undefined);
+        this.logger.info('[MCP Tools] Selected agent roles:', { roles: agentRoles });
         
         // Get PR files from DeepWiki cache (which now has PR branch files)
-        console.log('[MCP Tools] Getting files from DeepWiki PR branch cache...');
+        this.logger.info('[MCP Tools] Getting files from DeepWiki PR branch cache...');
         let enrichedFiles = prContext.files || [];
         
         try {
@@ -350,7 +648,7 @@ export class ResultOrchestrator {
             request.repositoryUrl,
             prBranch // Get PR branch specific cache
           );
-          console.log(`[MCP Tools] Retrieved ${cachedFiles.length} cached files from DeepWiki (branch: ${prBranch || 'main'})`);
+          this.logger.info(`[MCP Tools] Retrieved ${cachedFiles.length} cached files from DeepWiki (branch: ${prBranch || 'main'})`);
           
           // Enrich PR files with content from cache
           enrichedFiles = prContext.files?.map(prFile => {
@@ -365,18 +663,18 @@ export class ResultOrchestrator {
             return prFile;
           }) || [];
           
-          console.log(`[MCP Tools] Enriched ${enrichedFiles.filter(f => f.content).length} files with content`);
+          this.logger.info(`[MCP Tools] Enriched ${enrichedFiles.filter(f => f.content).length} files with content`);
         } catch (error) {
-          console.error('[MCP Tools] Failed to get cached files from DeepWiki:', error);
+          this.logger.error('[MCP Tools] Failed to get cached files from DeepWiki:', error as Error);
           // Continue with original files if cache fails
         }
         
         // Execute tools for all relevant agent roles in parallel
-        console.log('[MCP Tools] Executing tools for agents...');
+        this.logger.info('[MCP Tools] Executing tools for agents...');
         const toolExecutionResults = await mcpHybrid.parallelAgentExecutor.executeToolsForAgents(
-          agentRoles as any,
+          toMCPAgentRoles(agentRoles),
           {
-            agentRole: 'orchestrator' as any,
+            agentRole: 'security' as MCPAgentRole,
             pr: {
               prNumber: prContext.prNumber,
               title: prContext.prDetails?.title || '',
@@ -388,7 +686,7 @@ export class ResultOrchestrator {
                 path: f.path,
                 content: f.content || '',
                 diff: f.diff,
-                changeType: 'modified' as any
+                changeType: 'modified'
               })), // Use enriched files with content
               commits: []
             },
@@ -412,21 +710,21 @@ export class ResultOrchestrator {
           }
         );
 
-        console.log('[MCP Tools] Execution completed. Results:', toolExecutionResults.size);
+        this.logger.info('[MCP Tools] Execution completed. Results:', toolExecutionResults.size);
 
         // Convert to the expected format for agents
         toolExecutionResults.forEach((results, role) => {
-          console.log(`[MCP Tools] Processing results for role: ${role}`);
-          console.log(`[MCP Tools] - Tools executed: ${results.toolsExecuted.join(', ')}`);
-          console.log(`[MCP Tools] - Findings count: ${results.findings.length}`);
+          this.logger.info(`[MCP Tools] Processing results for role: ${role}`);
+          this.logger.info(`[MCP Tools] - Tools executed: ${results.toolsExecuted.join(', ')}`);
+          this.logger.info(`[MCP Tools] - Findings count: ${results.findings.length}`);
           
           toolResults[role] = {
             agentRole: role,
             repositoryId: request.repositoryUrl,
             lastExecuted: new Date().toISOString(),
-            toolResults: results.findings.map((f: any, index: number) => ({
-              toolId: `${role}-${f.ruleId || f.tool || 'tool'}-${index}`,
-              agentRole: role,
+            toolResults: results.findings.map((f, index) => ({
+              toolId: `${role}-${f.ruleId || 'tool'}-${index}`,
+              agentRole: role as string,
               content: JSON.stringify(f),
               repositoryId: request.repositoryUrl,
               metadata: {
@@ -440,9 +738,9 @@ export class ResultOrchestrator {
               totalTools: results.toolsExecuted?.length || 0,
               latestResults: true,
               scores: {},
-              keyFindings: results.findings.map((f: any) => f.message || f.description || '').slice(0, 5)
+              keyFindings: results.findings.map((f) => f.message || '').slice(0, 5)
             }
-          } as any;
+          };
         });
 
         // Log what tools provided data
@@ -451,7 +749,7 @@ export class ResultOrchestrator {
           .map(([agent, results]) => ({
             agent,
             toolCount: results.toolResults.length,
-            tools: (results as any).toolsExecuted || []
+            tools: (results as AgentResult).toolsExecuted || []
           }));
         
         dataFlowMonitor.completeStep(mcpToolsStepId, {
@@ -461,7 +759,7 @@ export class ResultOrchestrator {
           executionStrategy: 'parallel-all'
         });
       } catch (error) {
-        console.error('Failed to execute MCP-Hybrid tools:', error);
+        this.logger.error('Failed to execute MCP-Hybrid tools:', error as Error);
         
         // Fall back to Vector DB results if MCP tool execution fails
         toolResults = await this.retrieveToolResults(request.repositoryUrl);
@@ -479,7 +777,7 @@ export class ResultOrchestrator {
         toolResultsProvided: Object.keys(toolResults).length > 0
       });
       
-      const agentResults = await this.coordinateAgents(prContext, orchestratorModel, toolResults, prContentAnalysis);
+      const agentResults = await this.coordinateAgents(prContext, orchestratorModel, toolResults, prContentAnalysis || undefined);
       
       dataFlowMonitor.completeStep(agentCoordinationStepId, {
         agentsExecuted: agentResults?.agentsUsed || [],
@@ -519,17 +817,35 @@ export class ResultOrchestrator {
         inputSources: ['processedResults', 'recommendations', 'deepWikiSummary']
       });
       
+      // Convert ActionableRecommendation to Recommendation
+      const convertedRecommendationModule = {
+        recommendations: recommendationModule.recommendations.map(rec => ({
+          title: rec.title,
+          description: rec.description,
+          priority: rec.priority.level === 'critical' ? 'high' as const : rec.priority.level,
+          category: rec.category,
+          effort: 'medium' as const, // Default since not in ActionableRecommendation
+          impact: rec.priority.level === 'critical' ? 'high' as const : rec.priority.level === 'high' ? 'high' as const : 'medium' as const,
+          implementation: rec.actionSteps.map(step => `${step.step}. ${step.action}`).join('\n')
+        })),
+        summary: recommendationModule.summary
+      };
+      
+      const deepWikiSummary: DeepWikiSummary = typeof deepWikiData === 'string' 
+        ? { overview: deepWikiData, keyComponents: [], architectureInsights: [], dependencies: [], patterns: [] } 
+        : ((deepWikiData?.summary || deepWikiData || { overview: '', keyComponents: [], architectureInsights: [], dependencies: [], patterns: [] }) as DeepWikiSummary);
+      
       const educationalToolResults = await this.educationalToolOrchestrator.executeEducationalTools(
-        processedResults,
-        recommendationModule,
-        deepWikiData?.summary || deepWikiData,
-        { prContext, processedResults }
+        this.convertToCompiledFindings(processedResults),
+        convertedRecommendationModule,
+        deepWikiSummary,
+        { prContext }
       );
       
       dataFlowMonitor.completeStep(educatorToolsStepId, {
-        toolsExecuted: (educationalToolResults as any)?.toolsExecuted || [],
-        resourcesFound: (educationalToolResults as any)?.resources?.length || 0,
-        modulesGenerated: (educationalToolResults as any)?.modules?.length || 0
+        toolsExecuted: (educationalToolResults as EducationalToolResults)?.toolsExecuted || [],
+        resourcesFound: (educationalToolResults as EducationalToolResults)?.resources?.length || 0,
+        modulesGenerated: (educationalToolResults as EducationalToolResults)?.modules?.length || 0
       });
 
       // Step 10: Generate educational content using Educational Agent with tool results
@@ -545,9 +861,9 @@ export class ResultOrchestrator {
       );
       
       dataFlowMonitor.completeStep(educatorAgentStepId, {
-        educationalModules: (educationalResult as any)?.modules?.length || 0,
-        resources: (educationalResult as any)?.resources?.length || 0,
-        skillCategories: (educationalResult as any)?.skillCategories || []
+        educationalModules: (educationalResult as EducationalResult)?.modules?.length || 0,
+        resources: (educationalResult as EducationalResult)?.resources?.length || 0,
+        skillCategories: (educationalResult as EducationalResult)?.skillCategories || []
       });
 
       // Step 10: Compile educational data for Reporter Agent
@@ -563,8 +879,8 @@ export class ResultOrchestrator {
       );
       
       dataFlowMonitor.completeStep(compileEducStepId, {
-        compiledModules: (compiledEducationalData as any)?.modules?.length || 0,
-        totalResources: (compiledEducationalData as any)?.resources?.length || 0
+        compiledModules: (compiledEducationalData as unknown as CompiledEducationalData)?.modules?.length || 0,
+        totalResources: (compiledEducationalData as unknown as CompiledEducationalData)?.resources?.length || 0
       });
 
       // Step 11: Get current skill levels and progression history for report
@@ -583,7 +899,7 @@ export class ResultOrchestrator {
       });
       
       // Get skill progression for each skill category
-      const skillProgressions: Record<string, any> = {};
+      const skillProgressions: Record<string, unknown> = {};
       for (const skill of currentSkills) {
         const progression = await skillTracker.getSkillProgression(skill.categoryId, '3m');
         if (progression) {
@@ -637,8 +953,8 @@ export class ResultOrchestrator {
         reportGenerated: true,
         reportType: reportFormat.type,
         sections: Object.keys(standardReport || {}),
-        hasEducational: !!(standardReport as any)?.educational,
-        hasRecommendations: !!(standardReport as any)?.recommendations
+        hasEducational: !!(standardReport as StandardReport)?.modules?.educational,
+        hasRecommendations: !!(standardReport as StandardReport)?.modules?.recommendations
       });
       
       // Step 12: Store standardized report in Supabase for UI consumption
@@ -661,8 +977,16 @@ export class ResultOrchestrator {
       processingSteps.push('Tracking skill development');
       await this.trackSkillDevelopment(
         processedResults,
-        recommendationModule,
-        compiledEducationalData,
+        { recommendations: recommendationModule.recommendations.map((rec) => ({
+          title: rec.title,
+          description: rec.description,
+          priority: rec.priority.level,
+          category: rec.category,
+          effort: (rec.actionSteps?.[0]?.estimatedEffort as 'low' | 'medium' | 'high') || 'medium',
+          impact: rec.priority.level,
+          implementation: rec.actionSteps?.map((s) => s.action).join('; ')
+        })) },
+        compiledEducationalData as unknown as CompiledEducationalData,
         prContext,
         request.authenticatedUser
       );
@@ -695,17 +1019,68 @@ export class ResultOrchestrator {
           totalFindings: this.countTotalFindings(processedResults),
           processingTime
         },
-        findings: processedResults?.findings || {},
-        recommendations: recommendationModule, // NEW: Include the Recommendation Module
-        educationalContent: [standardReport.modules.educational], // Educational module from standard report
-        compiledEducationalData: compiledEducationalData, // NEW: Compiled format for Reporter Agent
+        findings: {
+          security: processedResults?.findings?.security || [],
+          architecture: processedResults?.findings?.architecture || [],
+          performance: processedResults?.findings?.performance || [],
+          codeQuality: processedResults?.findings?.codeQuality || []
+        },
+        recommendations: recommendationModule.recommendations.map((rec) => ({
+          title: rec.title,
+          description: rec.description,
+          priority: rec.priority.level,
+          category: rec.category,
+          effort: (rec.actionSteps?.[0]?.estimatedEffort as 'low' | 'medium' | 'high') || 'medium',
+          impact: rec.priority.level,
+          implementation: rec.actionSteps?.map((s) => s.action).join('; ')
+        })), // NEW: Include the Recommendation Module
+        educationalContent: ((eduContent) => {
+          const items: EducationalItem[] = [];
+          // Convert explanations
+          if (eduContent?.explanations?.length) {
+            items.push(...eduContent.explanations.map((exp) => ({
+              topic: exp.title || 'Explanation',
+              content: exp.content || exp.description || '',
+              level: 'intermediate' as const,
+              resources: (exp as { resources?: Array<{ title: string; url: string; type: string }> }).resources || [],
+              examples: (exp as { examples?: string[] }).examples || []
+            })));
+          }
+          // Convert tutorials
+          if (eduContent?.tutorials?.length) {
+            items.push(...eduContent.tutorials.map((tut) => ({
+              topic: tut.title || 'Tutorial',
+              content: tut.content || tut.description || '',
+              level: 'beginner' as const,
+              resources: (tut as { resources?: Array<{ title: string; url: string; type: string }> }).resources || [],
+              examples: (tut as { examples?: string[] }).examples || []
+            })));
+          }
+          // Convert best practices
+          if (eduContent?.bestPractices?.length) {
+            items.push(...eduContent.bestPractices.map((bp) => ({
+              topic: bp.title || 'Best Practice',
+              content: bp.content || bp.description || '',
+              level: 'advanced' as const,
+              resources: (bp as { resources?: Array<{ title: string; url: string; type: string }> }).resources || [],
+              examples: (bp as { examples?: string[] }).examples || []
+            })));
+          }
+          return items;
+        })(standardReport.modules.educational.content), // Educational module from standard report
+        compiledEducationalData: {
+          content: (compiledEducationalData as unknown as CompiledEducationalData)?.content || [],
+          summary: (compiledEducationalData as unknown as CompiledEducationalData)?.summary || '',
+          keyTopics: (compiledEducationalData as unknown as CompiledEducationalData)?.keyTopics || [],
+          skillLevel: (compiledEducationalData as unknown as CompiledEducationalData)?.skillLevel || 'intermediate'
+        }, // NEW: Compiled format for Reporter Agent
         metrics: this.calculateMetrics(processedResults),
         report: {
           summary: standardReport.overview.executiveSummary,
           recommendations: standardReport.modules.recommendations.categories
-            .flatMap(cat => cat.recommendations)
+            .flatMap((cat) => cat.recommendations)
             .slice(0, 5)
-            .map(r => r.title),
+            .map((r) => r.title),
           prComment: standardReport.exports.prComment,
           fullReport: standardReport,
           htmlReportUrl,
@@ -717,17 +1092,20 @@ export class ResultOrchestrator {
           modelVersions: this.extractModelVersions(agentResults),
           processingSteps,
           prContentAnalysis: prContentAnalysis ? {
-            changeTypes: prContentAnalysis.changeTypes,
-            complexity: prContentAnalysis.complexity,
-            riskLevel: prContentAnalysis.riskLevel,
-            agentsSkipped: prContentAnalysis.agentsToSkip,
-            skipReasons: prContentAnalysis.skipReasons
+            changeTypes: prContentAnalysis.changeTypes || [],
+            complexity: prContentAnalysis.complexity || 'moderate',
+            riskLevel: prContentAnalysis.riskLevel || 'medium',
+            agentsSkipped: prContentAnalysis.agentsToSkip || [],
+            skipReasons: prContentAnalysis.skipReasons || {}
           } : null
         }
       };
 
       // Store analysis in user's history
-      storeAnalysisInHistory(this.authenticatedUser.id, analysisResult);
+      storeAnalysisInHistory(this.authenticatedUser.id, {
+        ...analysisResult,
+        // Add any additional properties that might be needed
+      } as any);
 
       // Step 11: Initialize automatic scheduling if this is the first analysis
       try {
@@ -737,11 +1115,21 @@ export class ResultOrchestrator {
         if (!existingSchedule) {
           // First analysis - create automatic schedule
           processingSteps.push('Creating automatic analysis schedule');
+          // Convert findings to array format for scheduler
+          const schedulerAnalysisResult = {
+            ...analysisResult,
+            findings: [
+              ...(analysisResult.findings.security || []),
+              ...(analysisResult.findings.architecture || []),
+              ...(analysisResult.findings.performance || []),
+              ...(analysisResult.findings.codeQuality || [])
+            ]
+          };
           const schedule = await scheduler.initializeAutomaticSchedule(
             request.repositoryUrl,
-            analysisResult
+            schedulerAnalysisResult
           );
-          console.log(`Automatic schedule created for ${request.repositoryUrl}:`, {
+          this.logger.info(`Automatic schedule created for ${request.repositoryUrl}:`, {
             frequency: schedule.frequency,
             reason: schedule.reason
           });
@@ -752,7 +1140,7 @@ export class ResultOrchestrator {
         }
       } catch (error) {
         // Don't fail the analysis if scheduling fails
-        console.error('Failed to initialize automatic schedule:', error);
+        this.logger.error('Failed to initialize automatic schedule:', error as Error);
       }
 
       // Complete monitoring session
@@ -768,7 +1156,7 @@ export class ResultOrchestrator {
       });
       
       // Add a simple console.log to confirm we reach this point
-      console.log('🎯 ANALYSIS COMPLETE - About to return result', {
+      this.logger.info('🎯 ANALYSIS COMPLETE - About to return result', {
         analysisId: analysisResult.analysisId,
         hasReport: !!analysisResult.report,
         reportType: typeof analysisResult.report
@@ -786,8 +1174,8 @@ export class ResultOrchestrator {
         timestamp: new Date().toISOString()
       });
       
-      console.error('PR analysis orchestration error:', error);
-      console.error('🚨 CRITICAL ERROR IN ANALYSIS:', {
+      this.logger.error('PR analysis orchestration error:', error as Error);
+      this.logger.error('🚨 CRITICAL ERROR IN ANALYSIS:', {
         errorMessage: error instanceof Error ? error.message : String(error),
         errorStack: error instanceof Error ? error.stack : undefined,
         analysisId,
@@ -806,38 +1194,38 @@ export class ResultOrchestrator {
   /**
    * Compile findings into format expected by Educational Agent
    */
-  private compileFindings(processedResults: any): any {
+  private compileFindings(processedResults: ProcessedResults): CompiledFindings {
     const findings = processedResults?.findings || {};
     
     return {
       codeQuality: {
-        complexityIssues: findings.codeQuality?.filter((f: any) => f.type === 'complexity') || [],
-        maintainabilityIssues: findings.codeQuality?.filter((f: any) => f.type === 'maintainability') || [],
-        codeSmells: findings.codeQuality?.filter((f: any) => f.type === 'code-smell') || [],
+        complexityIssues: findings.codeQuality?.filter((f: Finding) => f.type === 'complexity') || [],
+        maintainabilityIssues: findings.codeQuality?.filter((f: Finding) => f.type === 'maintainability') || [],
+        codeSmells: findings.codeQuality?.filter((f: Finding) => f.type === 'code-smell') || [],
         patterns: []
       },
       security: {
         vulnerabilities: findings.security || [],
         securityPatterns: [],
-        complianceIssues: findings.security?.filter((f: any) => f.type === 'compliance') || [],
+        complianceIssues: findings.security?.filter((f: Finding) => f.type === 'compliance') || [],
         threatLandscape: []
       },
       architecture: {
-        designPatternViolations: findings.architecture?.filter((f: any) => f.type === 'pattern-violation') || [],
-        technicalDebt: findings.architecture?.filter((f: any) => f.type === 'technical-debt') || [],
-        refactoringOpportunities: findings.architecture?.filter((f: any) => f.type === 'refactoring') || [],
+        designPatternViolations: findings.architecture?.filter((f: Finding) => f.type === 'pattern-violation') || [],
+        technicalDebt: findings.architecture?.filter((f: Finding) => f.type === 'technical-debt') || [],
+        refactoringOpportunities: findings.architecture?.filter((f: Finding) => f.type === 'refactoring') || [],
         architecturalDecisions: []
       },
       performance: {
         performanceIssues: findings.performance || [],
-        optimizationOpportunities: findings.performance?.filter((f: any) => f.type === 'optimization') || [],
-        bottlenecks: findings.performance?.filter((f: any) => f.type === 'bottleneck') || [],
+        optimizationOpportunities: findings.performance?.filter((f: Finding) => f.type === 'optimization') || [],
+        bottlenecks: findings.performance?.filter((f: Finding) => f.type === 'bottleneck') || [],
         benchmarkResults: []
       },
       dependency: {
-        vulnerabilityIssues: findings.dependency?.filter((f: any) => f.type === 'vulnerability') || [],
-        licenseIssues: findings.dependency?.filter((f: any) => f.type === 'license') || [],
-        outdatedPackages: findings.dependency?.filter((f: any) => f.type === 'outdated') || [],
+        vulnerabilityIssues: findings.dependency?.filter((f: Finding) => f.type === 'vulnerability') || [],
+        licenseIssues: findings.dependency?.filter((f: Finding) => f.type === 'license') || [],
+        outdatedPackages: findings.dependency?.filter((f: Finding) => f.type === 'outdated') || [],
         conflictResolution: []
       },
       criticalIssues: processedResults.criticalIssues || [],
@@ -849,7 +1237,7 @@ export class ResultOrchestrator {
   /**
    * Generate PR comment with educational insights
    */
-  private generatePRComment(processedResults: any, educationalResult: any): string {
+  private generatePRComment(processedResults: ProcessedResults, educationalResult: EducationalResult): string {
     const findings = processedResults?.findings || {};
     const totalFindings = this.countTotalFindings(processedResults);
     
@@ -861,7 +1249,7 @@ export class ResultOrchestrator {
       comment += `Found ${totalFindings} issue${totalFindings > 1 ? 's' : ''} to review:\n\n`;
       
       // Add findings summary
-      Object.entries(findings).forEach(([category, categoryFindings]: [string, any]) => {
+      Object.entries(findings).forEach(([category, categoryFindings]: [string, Finding[] | undefined]) => {
         if (Array.isArray(categoryFindings) && categoryFindings.length > 0) {
           comment += `### ${category.charAt(0).toUpperCase() + category.slice(1)}\n`;
           categoryFindings.slice(0, 3).forEach(finding => {
@@ -873,20 +1261,20 @@ export class ResultOrchestrator {
     }
     
     // Add educational insights if available
-    if (educationalResult && educationalResult.learningPath.steps.length > 0) {
+    if (educationalResult && educationalResult.learningPath?.modules && educationalResult.learningPath.modules.length > 0) {
       comment += "### 📚 Learning Opportunities\n";
-      comment += `A ${educationalResult.learningPath.difficulty} learning path with ${educationalResult.learningPath.steps.length} topics has been identified:\n\n`;
+      comment += `A learning path with ${educationalResult.learningPath?.modules?.length || 0} topics has been identified:\n\n`;
       
       // Show top 3 learning topics
-      educationalResult.learningPath.steps.slice(0, 3).forEach((step: string) => {
-        comment += `- ${step}\n`;
+      educationalResult.learningPath?.modules?.slice(0, 3).forEach((module) => {
+        comment += `- ${module.title}\n`;
       });
       
-      if (educationalResult.learningPath.steps.length > 3) {
-        comment += `- ...and ${educationalResult.learningPath.steps.length - 3} more\n`;
+      if ((educationalResult.learningPath?.modules?.length || 0) > 3) {
+        comment += `- ...and ${(educationalResult.learningPath?.modules?.length || 0) - 3} more\n`;
       }
       
-      comment += `\n**Estimated learning time**: ${educationalResult.learningPath.estimatedTime}\n\n`;
+      comment += `\n**Estimated learning time**: ${educationalResult.learningPath?.duration || 'Not specified'}\n\n`;
     }
     
     comment += "*View the full analysis report for detailed educational content and resources.*";
@@ -962,18 +1350,45 @@ export class ResultOrchestrator {
     }
 
     // Get existing issues for context
-    let existingIssues;
+    let existingIssues: ExistingIssue[] | undefined;
     try {
-      existingIssues = await this.getExistingRepositoryIssues(request.repositoryUrl);
+      const issuesByCategory = await this.getExistingRepositoryIssues(request.repositoryUrl);
+      // Convert findings to ExistingIssue format
+      existingIssues = [];
+      Object.entries(issuesByCategory).forEach(([category, findings]) => {
+        if (findings) {
+          existingIssues?.push(...findings.map((f, index) => ({
+            id: `${category}-${index}`,
+            title: f.title,
+            description: f.description,
+            status: 'open' as const,
+            priority: f.severity === 'critical' || f.severity === 'high' ? 'high' as const : 
+                     f.severity === 'medium' ? 'medium' as const : 'low' as const,
+            labels: [category, f.severity],
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })));
+        }
+      });
     } catch (error) {
       this.logger.warn('Failed to get existing issues in PR context extraction', { error });
     }
+
+    // Convert DiffData to DiffInfo by adding stats
+    const diffInfo: DiffInfo = {
+      ...diff,
+      stats: {
+        total: diff.files.length,
+        additions: diff.files.reduce((sum, f) => sum + f.additions, 0),
+        deletions: diff.files.reduce((sum, f) => sum + f.deletions, 0)
+      }
+    };
 
     return {
       repositoryUrl: request.repositoryUrl,
       prNumber: request.prNumber,
       prDetails,
-      diff,
+      diff: diffInfo,
       changedFiles,
       primaryLanguage,
       repositorySize,
@@ -989,7 +1404,7 @@ export class ResultOrchestrator {
   /**
    * Analyze PR content to determine which agents to skip
    */
-  private async analyzePRContent(prContext: PRContext): Promise<any> {
+  private async analyzePRContent(prContext: PRContext): Promise<ProcessedResults | null> {
     try {
       // Convert PR context files to PRFile format
       const prFiles: PRFile[] = (prContext.files || []).map(file => ({
@@ -1011,7 +1426,17 @@ export class ResultOrchestrator {
         totalChanges: analysis.totalChanges
       });
       
-      return analysis;
+      // Convert PRContentAnalysis to ProcessedResults format
+      return {
+        findings: {}, // Empty findings since this is just PR analysis
+        complexity: analysis.complexity,
+        riskLevel: analysis.riskLevel,
+        changeTypes: analysis.changeTypes,
+        agentsToSkip: analysis.agentsToSkip,
+        agentsToKeep: analysis.agentsToKeep,
+        skipReasons: analysis.skipReasons,
+        prContext
+      };
     } catch (error) {
       this.logger.warn('Failed to analyze PR content, proceeding with all agents', { error });
       return null; // Return null to use default agent selection
@@ -1035,8 +1460,8 @@ export class ResultOrchestrator {
     // Get repository context which may include last analysis info
     const existingContext = await this.vectorContextService.getRepositoryContext(
       repositoryUrl,
-      'orchestrator' as any,
-      this.authenticatedUser as any
+      AgentRole.ORCHESTRATOR,
+      this.agentAuthenticatedUser
     );
     const lastAnalyzed = existingContext.lastUpdated ? 
       new Date(existingContext.lastUpdated) : undefined;
@@ -1077,9 +1502,9 @@ export class ResultOrchestrator {
     prNumber?: number,
     githubToken?: string
   ): Promise<void> {
-    console.log('[DeepWiki] Triggering repository analysis for:', repositoryUrl);
+    this.logger.info('[DeepWiki] Triggering repository analysis for:', repositoryUrl);
     if (prBranch) {
-      console.log('[DeepWiki] Using PR branch:', prBranch);
+      this.logger.info('[DeepWiki] Using PR branch:', prBranch);
     }
     
     const jobId = await this.deepWikiManager.triggerRepositoryAnalysis(repositoryUrl, {
@@ -1089,19 +1514,19 @@ export class ResultOrchestrator {
       prNumber: prNumber,
       accessToken: githubToken
     });
-    console.log('[DeepWiki] Analysis job created with ID:', jobId);
+    this.logger.info('[DeepWiki] Analysis job created with ID:', jobId);
     
     // Wait for analysis completion
-    console.log('[DeepWiki] Waiting for analysis completion...');
+    this.logger.info('[DeepWiki] Waiting for analysis completion...');
     const results = await this.deepWikiManager.waitForAnalysisCompletion(repositoryUrl);
-    console.log('[DeepWiki] Analysis completed. Has results:', !!results);
-    console.log('[DeepWiki] Result structure:', Object.keys(results || {}));
+    this.logger.info('[DeepWiki] Analysis completed. Has results:', !!results);
+    this.logger.info('[DeepWiki] Result structure:', { keys: Object.keys(results || {}) });
   }
 
   /**
    * Select optimal orchestrator model based on context
    */
-  private async selectOrchestratorModel(context: PRContext): Promise<any> {
+  private async selectOrchestratorModel(context: PRContext): Promise<unknown> {
     return this.modelVersionSync.findOptimalModel({
       language: context.primaryLanguage,
       sizeCategory: context.repositorySize,
@@ -1121,12 +1546,12 @@ export class ResultOrchestrator {
       const summary = await this.toolResultRetrievalService.getRepositoryToolSummary(repositoryId);
       
       if (!summary?.hasResults) {
-        console.log(`No tool results found for repository ${repositoryId}, agents will analyze without tool context`);
+        this.logger.info(`No tool results found for repository ${repositoryId}, agents will analyze without tool context`);
         return {};
       }
       
       // Retrieve tool results for all agent roles that have tool mappings
-      const agentRoles = ['security', 'architecture', 'dependency', 'performance', 'codeQuality'];
+      const agentRoles = ['security', 'architecture', 'dependency', 'performance', 'codeQuality'] as AgentRole[];
       const toolResults = await this.toolResultRetrievalService.getToolResultsForAgents(
         repositoryId,
         agentRoles,
@@ -1139,7 +1564,7 @@ export class ResultOrchestrator {
       
       // Log available tool results for debugging
       Object.entries(toolResults).forEach(([agentRole, results]) => {
-        console.log(`Retrieved ${results.toolResults.length} tool results for ${agentRole} agent`);
+        this.logger.info(`Retrieved ${results.toolResults.length} tool results for ${agentRole} agent`);
       });
       
       return toolResults;
@@ -1155,17 +1580,17 @@ export class ResultOrchestrator {
    */
   private async coordinateAgents(
     context: PRContext, 
-    orchestratorModel: any, 
+    orchestratorModel: unknown, 
     toolResults: Record<string, AgentToolResults> = {},
-    prContentAnalysis?: any
-  ): Promise<any> {
+    prContentAnalysis?: ProcessedResults
+  ): Promise<AgentResult> {
     // Create repository data for the executor
     const repositoryData = {
       owner: context.repositoryUrl.split('/')[3],
       repo: context.repositoryUrl.split('/')[4],
       prNumber: context.prNumber,
       branch: context.baseBranch,
-      files: context.files?.map((f: any) => ({
+      files: context.files?.map((f) => ({
         path: f.path,
         content: f.content || '',
         diff: f.diff,
@@ -1190,33 +1615,74 @@ export class ResultOrchestrator {
     
     this.logger.info('Agent configurations prepared', {
       agentCount: agentConfigurations.length,
-      agents: agentConfigurations.map(a => ({ type: a.type, role: a.role }))
+      agents: agentConfigurations.map(a => ({ type: a.type }))
     });
 
     // Create multi-agent config with agents already configured
+    // Transform AgentConfiguration to AgentConfig format
+    const agentConfigs = agentConfigurations.map(config => {
+      // Map string roles to AgentRole enum
+      let role: AgentRole;
+      switch (config.role || config.type) {
+        case 'security':
+          role = AgentRole.SECURITY;
+          break;
+        case 'codeQuality':
+          role = AgentRole.CODE_QUALITY;
+          break;
+        case 'architecture':
+          role = AgentRole.ARCHITECTURE;
+          break;
+        case 'performance':
+          role = AgentRole.PERFORMANCE;
+          break;
+        case 'dependency':
+          role = AgentRole.DEPENDENCY;
+          break;
+        case 'educational':
+          role = AgentRole.EDUCATIONAL;
+          break;
+        default:
+          role = AgentRole.CODE_QUALITY; // Default fallback
+      }
+      
+      return {
+        provider: (config.provider as AgentProvider) || AgentProvider.OPENAI,
+        role: role,
+        position: (config.position === 'secondary' ? AgentPosition.SECONDARY : AgentPosition.PRIMARY),
+        modelVersion: config.model,
+        maxTokens: config.maxTokens,
+        temperature: config.temperature,
+        priority: config.priority
+      };
+    });
+    
     const multiAgentConfig = {
       name: 'PR Analysis',
-      strategy: 'parallel' as any,
-      agents: agentConfigurations, // Set agents before creating executor
+      strategy: AnalysisStrategy.PARALLEL,
+      agents: agentConfigs,
       fallbackEnabled: true
     };
 
     // Create DeepWiki report retriever function with error handling
-    const deepWikiReportRetriever = async (agentRole: string, requestContext: any) => {
+    const deepWikiReportRetriever = async (agentRole: string, requestContext: unknown) => {
       try {
+        // Cast requestContext to a known type
+        const ctx = requestContext as { repositoryId?: string; repositoryUrl?: string; changedFiles?: string[] };
+        
         // Create a clean context to prevent circular references
         // Only pass primitive values
         const cleanContext = {
-          repositoryId: String(requestContext.repositoryId || requestContext.repositoryUrl || ''),
-          changedFiles: Array.isArray(requestContext.changedFiles) 
-            ? requestContext.changedFiles.slice(0, 5).map((f: any) => String(f))
+          repositoryId: String(ctx.repositoryId || ctx.repositoryUrl || ''),
+          changedFiles: Array.isArray(ctx.changedFiles) 
+            ? ctx.changedFiles.slice(0, 5).map((f: unknown) => String(f))
             : [],
-          focusArea: String(requestContext.focusArea || agentRole),
+          focusArea: String((requestContext as Record<string, unknown>).focusArea || agentRole),
           // Add other safe context data
-          vectorConfidence: Number(requestContext.vectorConfidence || 0),
-          crossRepoCount: Number(requestContext.crossRepoCount || 0),
-          hasToolResults: Boolean(requestContext.hasToolResults),
-          analysisMode: String(requestContext.analysisMode || 'quick')
+          vectorConfidence: Number((requestContext as Record<string, unknown>).vectorConfidence || 0),
+          crossRepoCount: Number((requestContext as Record<string, unknown>).crossRepoCount || 0),
+          hasToolResults: Boolean((requestContext as Record<string, unknown>).hasToolResults),
+          analysisMode: String((requestContext as Record<string, unknown>).analysisMode || 'quick')
         };
         
         // Ensure no circular references by stringifying and parsing
@@ -1250,46 +1716,46 @@ export class ResultOrchestrator {
     // Monitor individual agent execution results - check different result structures
     if (results) {
       // Check if results contain agent-specific data
-      const agentData = (results as any).agents || (results as any).agentResults || results;
+      const agentData = (results as AgentResult & { agents?: unknown; agentResults?: unknown }).agents || (results as AgentResult & { agents?: unknown; agentResults?: unknown }).agentResults || results;
       
       if (typeof agentData === 'object' && agentData !== null) {
         for (const [agentRole, agentResult] of Object.entries(agentData)) {
           if (typeof agentResult === 'object' && agentResult !== null) {
             const stepId = dataFlowMonitor.startStep(
-              (this as any).currentSessionId || 'unknown-session',
+              this.currentSessionId || 'unknown-session',
               `${agentRole} Agent Execution`,
               {
                 role: agentRole,
                 hasToolResults: !!toolResults[agentRole],
-                hasVectorChunks: !!(agentResult as any).vectorChunks,
-                model: (agentResult as any).model || 'unknown'
+                hasVectorChunks: !!(agentResult as AgentResult).vectorChunks,
+                model: (agentResult as AgentResult).model || 'unknown'
               }
             );
             
             dataFlowMonitor.completeStep(stepId, {
-              findings: (agentResult as any).findings?.length || 0,
-              insights: (agentResult as any).insights?.length || 0,
-              recommendations: (agentResult as any).recommendations?.length || 0,
-              processingTime: (agentResult as any).processingTime || 0
+              findings: (agentResult as AgentResult).findings?.length || 0,
+              insights: (agentResult as AgentResult).insights?.length || 0,
+              recommendations: (agentResult as AgentResult).recommendations?.length || 0,
+              processingTime: (agentResult as AgentResult).processingTime || 0
             });
           }
         }
       }
     }
 
-    return results;
+    return results as unknown as AgentResult;
   }
 
   /**
    * Process and deduplicate agent results using intelligent merging
    */
-  private async processResults(agentResults: any, deepWikiData?: any): Promise<any> {
+  private async processResults(agentResults: AgentResult, deepWikiData?: unknown): Promise<ProcessedResults> {
     try {
       // Extract agent results in the expected format
       const formattedResults = this.formatAgentResults(agentResults);
       
       // Check if we have any results to process
-      if (!formattedResults || formattedResults.length === 0) {
+      if (!formattedResults || (formattedResults as unknown[]).length === 0) {
         this.logger.warn('No formatted results to process');
         return {
           findings: {
@@ -1301,18 +1767,14 @@ export class ResultOrchestrator {
           },
           insights: [],
           suggestions: [],
-          crossAgentPatterns: [],
-          statistics: {
-            totalFindings: { beforeMerge: 0, afterMerge: 0 }
-          },
-          deepWikiData: deepWikiData
+          deepWikiData: deepWikiData as DeepWikiSummary | undefined
         };
       }
       
       // Use intelligent result merger for cross-agent deduplication
       const mergedResult = await this.intelligentResultMerger.mergeResults(
-        formattedResults,
-        deepWikiData?.summary || deepWikiData,
+        formattedResults as unknown as Parameters<typeof this.intelligentResultMerger.mergeResults>[0],
+        ((deepWikiData as DeepWikiSummary)?.summary || deepWikiData) as string,
         {
           crossAgentDeduplication: true,
           semanticMerging: true,
@@ -1331,13 +1793,32 @@ export class ResultOrchestrator {
           dependencies: mergedResult.findings.filter(f => f.category === 'dependencies'),
           codeQuality: mergedResult.findings.filter(f => f.category === 'codeQuality')
         },
-        insights: mergedResult.insights,
-        suggestions: mergedResult.suggestions,
-        crossAgentPatterns: mergedResult.crossAgentPatterns,
-        statistics: mergedResult.statistics,
-        deepWikiData: deepWikiData, // Include full DeepWiki data with chunks
-        deepWikiScores: deepWikiData?.scores || null, // Include DeepWiki scores
-        deepWikiInsights: deepWikiData?.structuredInsights || [] // Include structured insights
+        metrics: {
+          totalFindings: mergedResult.findings.length,
+          duplicatesRemoved: mergedResult.statistics?.totalFindings?.beforeMerge - mergedResult.statistics?.totalFindings?.afterMerge || 0,
+          conflictsResolved: (mergedResult.statistics as unknown as Record<string, unknown>)?.conflictsResolved as number || 0,
+          avgConfidence: mergedResult.findings.reduce((sum, f) => sum + (f.confidence || 0.5), 0) / (mergedResult.findings.length || 1)
+        },
+        insights: Array.isArray(mergedResult.insights) 
+          ? mergedResult.insights 
+          : Object.entries(mergedResult.insights || {}).map(([category, descriptions]) => ({
+              category,
+              description: Array.isArray(descriptions) ? descriptions.join('; ') : String(descriptions)
+            })),
+        suggestions: Array.isArray(mergedResult.suggestions) 
+          ? mergedResult.suggestions.map((s) => 
+              typeof s === 'string' 
+                ? { title: s, description: s, priority: 'medium' }
+                : s
+            )
+          : mergedResult.suggestions,
+        deepWikiData: deepWikiData as DeepWikiSummary | undefined,
+        metadata: {
+          crossAgentPatterns: mergedResult.crossAgentPatterns,
+          statistics: mergedResult.statistics,
+          deepWikiScores: (deepWikiData as DeepWikiSummary & { scores?: unknown })?.scores || null,
+          deepWikiInsights: (deepWikiData as DeepWikiSummary & { structuredInsights?: unknown[] })?.structuredInsights || []
+        }
       };
       
       this.logger.info('Intelligent result processing complete', {
@@ -1357,12 +1838,10 @@ export class ResultOrchestrator {
       
       // Fallback to basic processing
       try {
-        const fallbackResults = await this.resultProcessor.processAgentResults(agentResults);
+        const fallbackResults = await this.resultProcessor.processAgentResults([agentResults]);
         return {
           ...fallbackResults,
-          deepWikiData: deepWikiData,
-          deepWikiScores: deepWikiData?.scores || null,
-          deepWikiInsights: deepWikiData?.structuredInsights || []
+          deepWikiData: deepWikiData as DeepWikiSummary | undefined
         };
       } catch (fallbackError) {
         this.logger.error('Fallback processing also failed', {
@@ -1380,11 +1859,7 @@ export class ResultOrchestrator {
           },
           insights: [],
           suggestions: [],
-          crossAgentPatterns: [],
-          statistics: {
-            totalFindings: { beforeMerge: 0, afterMerge: 0 }
-          },
-          deepWikiData: deepWikiData
+          deepWikiData: deepWikiData as DeepWikiSummary | undefined
         };
       }
     }
@@ -1393,24 +1868,118 @@ export class ResultOrchestrator {
   /**
    * Generate educational content based on findings
    */
-  private async generateEducationalContent(processedResults: any): Promise<any[]> {
-    return this.educationalService.generateContentForFindings(
-      processedResults?.findings || {},
+  private async generateEducationalContent(processedResults: ProcessedResults): Promise<EducationalItem[]> {
+    const findings: Record<string, Finding[]> = {};
+    if (processedResults?.findings) {
+      Object.entries(processedResults.findings).forEach(([key, value]) => {
+        if (value) findings[key] = value;
+      });
+    }
+    
+    // Convert findings object to array
+    const findingsArray: Finding[] = [];
+    Object.values(findings).forEach(categoryFindings => {
+      if (Array.isArray(categoryFindings)) {
+        findingsArray.push(...categoryFindings);
+      }
+    });
+    
+    const educationalContent = await this.educationalService.generateContentForFindings(
+      findings as any,
       this.authenticatedUser
     );
+    
+    // Convert EducationalContent to EducationalItem
+    return educationalContent.map(content => ({
+      topic: content.content.title,
+      content: `${content.content.summary}\n\n${content.content.explanation}`,
+      level: content.content.skillLevel,
+      resources: content.content.references?.map(ref => ({
+        title: ref,
+        url: ref,
+        type: 'reference'
+      })),
+      examples: content.content.examples,
+      relatedFindings: [content.findingId]
+    }));
   }
 
   /**
    * Generate final report
    */
-  private async generateReport(processedResults: any, educationalContent: any[]): Promise<any> {
+  private async generateReport(processedResults: ProcessedResults, educationalContent: EducationalItem[]): Promise<StandardReport> {
     // For now, return a basic report structure
     // This would be replaced with actual Report Agent integration
+    const totalFindings = (processedResults as { metrics?: { totalFindings?: number } }).metrics?.totalFindings || 0;
+    const recommendations = this.extractRecommendations(processedResults);
+    
     return {
-      summary: 'PR analysis completed successfully',
-      recommendations: this.extractRecommendations(processedResults),
-      prComment: this.generatePRComment(processedResults, educationalContent)
-    };
+      id: `report-${Date.now()}`,
+      repositoryUrl: '',
+      prNumber: 0,
+      timestamp: new Date(),
+      overview: {
+        executiveSummary: 'PR analysis completed successfully',
+        analysisScore: 85,
+        riskLevel: totalFindings > 10 ? 'high' : totalFindings > 5 ? 'medium' : 'low',
+        totalFindings,
+        totalRecommendations: recommendations.length,
+        learningPathAvailable: educationalContent.length > 0,
+        estimatedRemediationTime: '2-4 hours'
+      },
+      modules: {
+        findings: {
+          items: [],
+          categories: [],
+          filters: { severity: [], category: [], agent: [] }
+        },
+        recommendations: {
+          items: recommendations,
+          categories: []
+        },
+        educational: {
+          learningPath: {
+            title: 'Learning Path',
+            description: 'Custom learning path based on PR findings',
+            estimatedTime: '2-4 hours',
+            difficulty: 'intermediate',
+            steps: []
+          },
+          explanations: [],
+          tutorials: [],
+          bestPractices: [],
+          additionalResources: [],
+          skillGaps: []
+        },
+        metrics: {
+          codeQuality: { score: 85, improvements: [] },
+          performance: { score: 90, bottlenecks: [] },
+          security: { score: 80, vulnerabilities: [] },
+          architecture: { score: 75, suggestions: [] }
+        },
+        insights: {
+          crossAgentPatterns: [],
+          trends: [],
+          anomalies: []
+        }
+      },
+      visualizations: {
+        severityDistribution: { type: 'pie', data: [] },
+        categoryBreakdown: { type: 'bar', data: [] },
+        learningPathProgress: { type: 'progress', data: [] }
+      },
+      exports: {
+        prComment: this.generatePRComment(processedResults, {
+          learningPath: {
+            duration: '2-4 hours',
+            modules: []
+          }
+        } as EducationalResult),
+        markdown: '',
+        pdf: null,
+        json: null
+      }
+    } as unknown as StandardReport;
   }
 
   // Helper methods
@@ -1418,7 +1987,7 @@ export class ResultOrchestrator {
   /**
    * Automatically select analysis mode based on PR content analysis
    */
-  private selectAnalysisModeBasedOnPR(prContentAnalysis: any): 'quick' | 'comprehensive' | 'deep' {
+  private selectAnalysisModeBasedOnPR(prContentAnalysis: ProcessedResults): 'quick' | 'comprehensive' | 'deep' {
     if (!prContentAnalysis) {
       // Default to comprehensive if no analysis available
       return 'comprehensive';
@@ -1448,7 +2017,7 @@ export class ResultOrchestrator {
     }
     
     // Complex changes with mixed types trigger deep analysis
-    if (complexity === 'complex' && changeTypes.includes('mixed')) {
+    if (complexity === 'complex' && changeTypes?.includes('mixed')) {
       this.logger.info('Complex mixed changes detected, automatically selecting deep mode', {
         complexity,
         changeTypes,
@@ -1468,7 +2037,7 @@ export class ResultOrchestrator {
     }
     
     // Simple changes trigger quick analysis
-    if (complexity === 'trivial' && (
+    if (complexity === 'trivial' && changeTypes && (
       changeTypes.includes('docs-only') ||
       changeTypes.includes('test-only') ||
       changeTypes.includes('style-only') ||
@@ -1492,21 +2061,21 @@ export class ResultOrchestrator {
     return 'comprehensive';
   }
   
-  private selectAgentsForAnalysis(mode: string, prContentAnalysis?: any): string[] {
+  private selectAgentsForAnalysis(mode: string, prContentAnalysis?: ProcessedResults): AgentRole[] {
     // Start with default agents based on analysis mode
-    let baseAgents: string[];
+    let baseAgents: AgentRole[];
     switch (mode) {
       case 'quick': 
-        baseAgents = ['security', 'codeQuality'];
+        baseAgents = ['security', 'codeQuality'] as AgentRole[];
         break;
       case 'comprehensive': 
-        baseAgents = ['security', 'architecture', 'performance', 'codeQuality', 'dependency'];
+        baseAgents = ['security', 'architecture', 'performance', 'codeQuality', 'dependency'] as AgentRole[];
         break;
       case 'deep': 
-        baseAgents = ['security', 'architecture', 'performance', 'codeQuality', 'dependency', 'educational', 'reporting'];
+        baseAgents = ['security', 'architecture', 'performance', 'codeQuality', 'dependency', 'educational', 'reporting'] as AgentRole[];
         break;
       default: 
-        baseAgents = ['security', 'codeQuality'];
+        baseAgents = ['security', 'codeQuality'] as AgentRole[];
     }
     
     // If no PR content analysis, return base agents
@@ -1524,10 +2093,10 @@ export class ResultOrchestrator {
     }
     
     // Filter out agents marked for skipping
-    const filteredAgents = baseAgents.filter(agent => !agentsToSkip.includes(agent));
+    const filteredAgents = baseAgents.filter(agent => !agentsToSkip?.includes(agent));
     
     // Ensure we keep at least the recommended agents
-    const finalAgents = [...new Set([...filteredAgents, ...agentsToKeep])];
+    const finalAgents = [...new Set([...filteredAgents, ...(agentsToKeep || [])])] as AgentRole[];
     
     this.logger.info('Agent selection optimized based on PR content', {
       mode,
@@ -1537,20 +2106,20 @@ export class ResultOrchestrator {
       finalAgents
     });
     
-    return finalAgents;
+    return finalAgents as AgentRole[];
   }
 
   private async configureAgents(
     agents: string[], 
     context: PRContext, 
     toolResults: Record<string, AgentToolResults> = {}
-  ): Promise<any[]> {
+  ): Promise<AgentConfiguration[]> {
     const configurations = [];
     
     for (let i = 0; i < agents.length; i++) {
       const agentType = agents[i];
-      let config;
-      let fallbackConfig;
+      let config: ModelConfig | undefined;
+      let fallbackConfig: ModelConfig | undefined;
       try {
         // Request both primary and fallback models from Vector DB
         const models = await this.modelVersionSync.findOptimalModel({
@@ -1629,13 +2198,13 @@ export class ResultOrchestrator {
       
       // Monitor agent data preparation
       const agentDataStepId = dataFlowMonitor.startStep(
-        (this as any).currentSessionId || 'unknown-session',
+        this.currentSessionId || 'unknown-session',
         `Prepare ${agentType} Agent Data`,
         {
           agent: agentType,
           hasToolResults: !!toolResults[agentType],
           toolCount: toolResults[agentType]?.toolResults?.length || 0,
-          model: (config as any)?.model || 'unknown'
+          model: config?.model || 'unknown'
         }
       );
       
@@ -1654,9 +2223,9 @@ export class ResultOrchestrator {
       
       // Pass only necessary fields to avoid circular references
       const agentConfig = {
-        model: (config as any)?.model || 'gpt-4',
-        temperature: (config as any)?.temperature || 0.7,
-        maxTokens: (config as any)?.maxTokens || 4000,
+        model: config?.model || 'gpt-4',
+        temperature: config?.temperature || 0.7,
+        maxTokens: config?.maxTokens || 4000,
         useOpenRouter: true, // Ensure OpenRouter is used
         // Don't spread the entire config to avoid circular references
       };
@@ -1668,15 +2237,15 @@ export class ResultOrchestrator {
         position: position,
         configuration: agentConfig,
         fallbackConfiguration: fallbackConfig ? {
-          model: (fallbackConfig as any)?.model,
-          temperature: (fallbackConfig as any)?.temperature || 0.7,
-          maxTokens: (fallbackConfig as any)?.maxTokens || 4000,
+          model: fallbackConfig?.model,
+          temperature: fallbackConfig?.temperature || 0.7,
+          maxTokens: fallbackConfig?.maxTokens || 4000,
           useOpenRouter: true
         } : undefined,
         context: agentContext,
-        model: (config as any)?.model || 'gpt-4',
-        temperature: (config as any)?.temperature || 0.7,
-        maxTokens: (config as any)?.maxTokens || 4000,
+        model: config?.model || 'gpt-4',
+        temperature: config?.temperature || 0.7,
+        maxTokens: config?.maxTokens || 4000,
         priority: agents.length - i // Higher priority for agents that appear first
       });
     }
@@ -1689,11 +2258,13 @@ export class ResultOrchestrator {
     agentType: string, 
     context: PRContext, 
     toolResults?: AgentToolResults
-  ): any {
+  ): unknown {
     // Return context specific to each agent type
     // Limit diff size to prevent stack overflow issues
     const truncatedDiff = context.diff ? 
-      (context.diff.length > 10000 ? context.diff.substring(0, 10000) + '\n... (diff truncated)' : context.diff) : 
+      (JSON.stringify(context.diff).length > 10000 ? 
+        { ...context.diff, files: context.diff.files.slice(0, 10), truncated: true } : 
+        context.diff) : 
       undefined;
     
     // Extract role-specific DeepWiki data
@@ -1705,45 +2276,45 @@ export class ResultOrchestrator {
       switch (agentType) {
         case 'security':
           roleSpecificDeepWiki = {
-            analysis: deepWiki.analysis?.security || {},
+            analysis: (deepWiki as DeepWikiSummary & { analysis?: { security?: unknown } }).analysis?.security || {},
             recommendations: deepWiki.recommendations?.security || [],
-            insights: deepWiki.insights?.filter((i: string) => i.toLowerCase().includes('security')) || [],
-            score: deepWiki.analysis?.security?.score
+            insights: ((deepWiki as DeepWikiSummary & { insights?: string[] }).insights?.filter((i) => i.toLowerCase().includes('security')) || []),
+            score: (deepWiki as DeepWikiSummary & { analysis?: { security?: { score?: number } } }).analysis?.security?.score
           };
           break;
         case 'architecture':
           roleSpecificDeepWiki = {
-            analysis: deepWiki.analysis?.architecture || {},
+            analysis: (deepWiki as DeepWikiSummary & { analysis?: { architecture?: unknown } }).analysis?.architecture || {},
             recommendations: deepWiki.recommendations?.architecture || [],
-            insights: deepWiki.insights?.filter((i: string) => i.toLowerCase().includes('architect')) || [],
+            insights: ((deepWiki as DeepWikiSummary & { insights?: string[] }).insights?.filter((i) => i.toLowerCase().includes('architect')) || []),
             patterns: deepWiki.patterns || []
           };
           break;
         case 'dependency':
           roleSpecificDeepWiki = {
-            analysis: deepWiki.analysis?.dependencies || {},
+            analysis: (deepWiki as DeepWikiSummary & { analysis?: { dependencies?: unknown } }).analysis?.dependencies || {},
             recommendations: deepWiki.recommendations?.dependencies || [],
-            insights: deepWiki.insights?.filter((i: string) => i.toLowerCase().includes('dependen')) || []
+            insights: ((deepWiki as DeepWikiSummary & { insights?: string[] }).insights?.filter((i) => i.toLowerCase().includes('dependen')) || [])
           };
           break;
         case 'performance':
           roleSpecificDeepWiki = {
-            analysis: deepWiki.analysis?.performance || {},
+            analysis: (deepWiki as DeepWikiSummary & { analysis?: { performance?: unknown } }).analysis?.performance || {},
             recommendations: deepWiki.recommendations?.performance || [],
-            insights: deepWiki.insights?.filter((i: string) => i.toLowerCase().includes('perform')) || []
+            insights: ((deepWiki as DeepWikiSummary & { insights?: string[] }).insights?.filter((i) => i.toLowerCase().includes('perform')) || [])
           };
           break;
         case 'codeQuality':
           roleSpecificDeepWiki = {
-            analysis: deepWiki.analysis?.codeQuality || {},
+            analysis: (deepWiki as DeepWikiSummary & { analysis?: { codeQuality?: unknown } }).analysis?.codeQuality || {},
             recommendations: deepWiki.recommendations?.codeQuality || [],
-            insights: deepWiki.insights?.filter((i: string) => i.toLowerCase().includes('quality') || i.toLowerCase().includes('maintain')) || []
+            insights: ((deepWiki as DeepWikiSummary & { insights?: string[] }).insights?.filter((i) => i.toLowerCase().includes('quality') || i.toLowerCase().includes('maintain')) || [])
           };
           break;
         default:
           roleSpecificDeepWiki = {
             summary: deepWiki.summary,
-            suggestions: deepWiki.suggestions || []
+            suggestions: (deepWiki as DeepWikiSummary & { suggestions?: unknown[] }).suggestions || []
           };
       }
     }
@@ -1826,20 +2397,20 @@ export class ResultOrchestrator {
     return `${owner}/${name}`;
   }
 
-  private extractAgentNames(agentResults: any): string[] {
+  private extractAgentNames(agentResults: AgentResult & { agentResults?: Record<string, unknown> }): string[] {
     return Object.keys(agentResults.agentResults || {});
   }
 
-  private countTotalFindings(processedResults: any): number {
+  private countTotalFindings(processedResults: ProcessedResults): number {
     const findings = processedResults?.findings || {};
-    return Object.values(findings).reduce((total: number, categoryFindings: any) => {
+    return Object.values(findings).reduce((total: number, categoryFindings: Finding[] | undefined) => {
       return total + (Array.isArray(categoryFindings) ? categoryFindings.length : 0);
     }, 0) as number;
   }
 
-  private calculateMetrics(processedResults: any): any {
+  private calculateMetrics(processedResults: ProcessedResults): { totalFindings: number; severity: { critical: number; high: number; medium: number; low: number; }; confidence: number; coverage: number; } {
     const findings = processedResults?.findings || {};
-    const allFindings = Object.values(findings).flat() as any[];
+    const allFindings = Object.values(findings).flat() as Finding[];
     
     const severityCounts = {
       critical: allFindings.filter(f => f.severity === 'critical').length,
@@ -1859,11 +2430,11 @@ export class ResultOrchestrator {
     };
   }
 
-  private extractModelVersions(agentResults: any): Record<string, string> {
+  private extractModelVersions(agentResults: AgentResult & { agentResults?: Record<string, AgentResult> }): Record<string, string> {
     const versions: Record<string, string> = {};
     
     if (agentResults.agentResults) {
-      Object.entries(agentResults.agentResults).forEach(([agentName, result]: [string, any]) => {
+      Object.entries(agentResults.agentResults).forEach(([agentName, result]: [string, AgentResult]) => {
         if (result.modelVersion) {
           versions[agentName] = result.modelVersion;
         }
@@ -1873,12 +2444,12 @@ export class ResultOrchestrator {
     return versions;
   }
 
-  private extractRecommendations(processedResults: any): string[] {
+  private extractRecommendations(processedResults: ProcessedResults): string[] {
     // Extract key recommendations from findings
     const findings = processedResults?.findings || {};
     const recommendations: string[] = [];
     
-    Object.values(findings).forEach((categoryFindings: any) => {
+    Object.values(findings).forEach((categoryFindings: Finding[] | undefined) => {
       if (Array.isArray(categoryFindings)) {
         categoryFindings.forEach(finding => {
           if (finding.recommendation) {
@@ -1903,7 +2474,7 @@ export class ResultOrchestrator {
       language: string;
       sizeCategory: RepositorySizeCategory;
     }
-  ): Promise<{ primary: any; fallback: any } | null> {
+  ): Promise<{ primary: ModelConfig; fallback: ModelConfig } | null> {
     try {
       this.logger.info('Requesting Researcher agent for model configuration', {
         agentType,
@@ -1951,46 +2522,60 @@ export class ResultOrchestrator {
    * @param role Agent role
    * @returns Weights for capabilities and cost
    */
-  private getRoleSpecificWeights(role: string): any {
+  private getRoleSpecificWeights(role: string): { capabilities: Record<string, number>; cost: Record<string, number> } {
     // Role-specific weights already defined in the system
-    const roleWeights: Record<string, any> = {
+    const roleWeights: Record<string, { capabilities: Record<string, number>; cost: Record<string, number>; costWeight?: number }> = {
       security: {
         capabilities: { codeQuality: 0.3, reasoning: 0.4, detailLevel: 0.2, speed: 0.1 },
-        costWeight: 0.2 // Lower cost weight, prioritize quality
+        cost: { weight: 0.2 }, // Lower cost weight, prioritize quality
+        costWeight: 0.2
       },
       architecture: {
         capabilities: { reasoning: 0.4, detailLevel: 0.3, codeQuality: 0.2, speed: 0.1 },
+        cost: { weight: 0.25 },
         costWeight: 0.25
       },
       performance: {
         capabilities: { speed: 0.3, codeQuality: 0.3, reasoning: 0.2, detailLevel: 0.2 },
+        cost: { weight: 0.3 },
         costWeight: 0.3
       },
       codeQuality: {
         capabilities: { codeQuality: 0.4, detailLevel: 0.3, reasoning: 0.2, speed: 0.1 },
+        cost: { weight: 0.35 },
         costWeight: 0.35
       },
       dependency: {
         capabilities: { speed: 0.4, codeQuality: 0.3, reasoning: 0.2, detailLevel: 0.1 },
-        costWeight: 0.4 // Higher cost weight, can use cheaper models
+        cost: { weight: 0.4 }, // Higher cost weight, can use cheaper models
+        costWeight: 0.4
       },
       educational: {
         capabilities: { detailLevel: 0.4, reasoning: 0.3, codeQuality: 0.2, speed: 0.1 },
+        cost: { weight: 0.2 },
         costWeight: 0.2
       },
       reporter: {
         capabilities: { speed: 0.4, detailLevel: 0.3, reasoning: 0.2, codeQuality: 0.1 },
+        cost: { weight: 0.35 },
         costWeight: 0.35
       },
       orchestrator: {
         capabilities: { reasoning: 0.4, speed: 0.3, codeQuality: 0.2, detailLevel: 0.1 },
-        costWeight: 0.15 // Orchestrator needs high quality
+        cost: { weight: 0.15 }, // Orchestrator needs high quality
+        costWeight: 0.15
       }
     };
     
-    return roleWeights[role] || {
+    const weights = roleWeights[role] || {
       capabilities: { codeQuality: 0.25, reasoning: 0.25, detailLevel: 0.25, speed: 0.25 },
+      cost: { weight: 0.3 },
       costWeight: 0.3
+    };
+    
+    return {
+      capabilities: weights.capabilities,
+      cost: weights.cost
     };
   }
 
@@ -2095,27 +2680,29 @@ export class ResultOrchestrator {
   /**
    * Create RAG service for VectorContextService
    */
-  private createRAGService(): any {
+  private async createRAGService(): Promise<unknown> {
     const logger = this.logger;
     
     try {
       // Import and create AuthenticatedVectorService
-      const { AuthenticatedVectorService } = require('@codequal/core/services/vector-db/authenticated-vector-service');
+      const authVectorModule = await import('@codequal/core/services/vector-db/authenticated-vector-service');
+      const { AuthenticatedVectorService } = authVectorModule;
       const authenticatedVectorService = new AuthenticatedVectorService();
       
       // Return an object with the search method for compatibility
       return {
-        search: async (options: any) => {
+        search: async (options: unknown) => {
+          const opts = options as Record<string, unknown>;
           return authenticatedVectorService.searchDocuments({
             userId: this.authenticatedUser.id,
-            query: options.query || '',
-            repositoryId: options.repositoryId,
-            contentType: options.contentType,
-            language: options.language,
-            minImportance: options.minSimilarity || 0.7,
+            query: String(opts.query || ''),
+            repositoryId: typeof opts.repositoryId === 'string' ? parseInt(opts.repositoryId, 10) : opts.repositoryId as number | undefined,
+            contentType: opts.contentType as 'code' | 'documentation' | 'config' | 'test' | undefined,
+            language: opts.language as string | undefined,
+            minImportance: Number(opts.minSimilarity || 0.7),
             includeOrganization: true,
             includePublic: true,
-            limit: options.limit || 10
+            limit: Number(opts.limit || 10)
           });
         },
         searchDocuments: authenticatedVectorService.searchDocuments.bind(authenticatedVectorService),
@@ -2153,41 +2740,45 @@ export class ResultOrchestrator {
       logger.warn('Supabase credentials not configured, using limited Vector Storage service');
       return {
         searchByMetadata: async () => [],
-        storeChunks: async () => {},
+        storeChunks: async (chunks: EnhancedChunk[], embeddings: number[][], repositoryId: string, sourceType: string, sourceId: string, storageType: 'permanent' | 'cached' | 'temporary' = 'cached') => {
+          // No-op when Supabase is not configured
+          return { stored: 0, failed: 0, errors: [] };
+        },
         deleteChunksBySource: async () => 0,
-      } as any;
+      } as unknown as VectorStorageService;
     }
 
     // Create actual Vector Storage service connected to Supabase
-    const { createClient } = require('@supabase/supabase-js');
     const supabase = createClient(supabaseUrl, supabaseKey);
     
     return {
-      searchByMetadata: async (criteria: any, options: any) => {
+      searchByMetadata: async (criteria: unknown, options: unknown) => {
         try {
-          logger.debug('Vector Storage: searching with criteria:', criteria);
+          const criteriaObj = criteria as Record<string, unknown>;
+          const opts = options as Record<string, unknown>;
+          logger.debug('Vector Storage: searching with criteria:', criteriaObj);
           
           // Build query based on criteria
           let query = supabase.from('vector_chunks').select('*');
           
-          if (criteria.repository_id) {
-            query = query.eq('repository_id', criteria.repository_id);
+          if (criteriaObj.repository_id) {
+            query = query.eq('repository_id', criteriaObj.repository_id);
           }
-          if (criteria.analysis_type) {
-            query = query.eq('analysis_type', criteria.analysis_type);
+          if (criteriaObj.analysis_type) {
+            query = query.eq('analysis_type', criteriaObj.analysis_type);
           }
-          if (criteria.tool_name) {
-            query = query.eq('tool_name', criteria.tool_name);
+          if (criteriaObj.tool_name) {
+            query = query.eq('tool_name', criteriaObj.tool_name);
           }
           
           // Apply limit and ordering
           query = query.order('created_at', { ascending: false })
-                      .limit(options?.limit || 20);
+                      .limit(Number(opts?.limit || 20));
           
           const { data, error } = await query;
           
           if (error) {
-            logger.error('Vector search error:', error);
+            logger.error('Vector search error:', error as Error);
             return [];
           }
           
@@ -2201,21 +2792,22 @@ export class ResultOrchestrator {
           return [];
         }
       },
-      storeChunks: async (chunks: any[]) => {
+      storeChunks: async (chunks: EnhancedChunk[], embeddings: number[][], repositoryId: string, sourceType: string, sourceId: string, storageType: 'permanent' | 'cached' | 'temporary' = 'cached') => {
         try {
           const { data, error } = await supabase
             .from('vector_chunks')
             .insert(chunks);
           
           if (error) {
-            logger.error('Error storing chunks:', error);
+            logger.error('Error storing chunks:', error as Error);
           }
-          return data;
+          return { stored: error ? 0 : chunks.length, failed: error ? chunks.length : 0, errors: error ? [new Error(error.message)] : [] };
         } catch (error) {
           const errorData: LoggableData = error instanceof Error 
             ? error 
             : { message: String(error) };
           logger.error('Store chunks error:', errorData);
+          return { stored: 0, failed: chunks.length, errors: [error instanceof Error ? error : new Error(String(error))] };
         }
       },
       deleteChunksBySource: async (sourceId: string) => {
@@ -2226,10 +2818,10 @@ export class ResultOrchestrator {
             .eq('source_id', sourceId);
           
           if (error) {
-            logger.error('Error deleting chunks:', error);
+            logger.error('Error deleting chunks:', error as Error);
             return 0;
           }
-          return data?.length || 0;
+          return (data as unknown as unknown[])?.length || 0;
         } catch (error) {
           const errorData: LoggableData = error instanceof Error 
             ? error 
@@ -2238,7 +2830,7 @@ export class ResultOrchestrator {
           return 0;
         }
       },
-    } as any;
+    } as unknown as VectorStorageService;
   }
 
   /**
@@ -2247,15 +2839,15 @@ export class ResultOrchestrator {
   private async evaluateScheduleAdjustment(
     repositoryUrl: string,
     analysisResult: AnalysisResult,
-    currentSchedule: any
+    currentSchedule: unknown
   ): Promise<void> {
     const scheduler = RepositorySchedulerService.getInstance();
     const criticalFindings = analysisResult.metrics.severity.critical;
     const totalFindings = analysisResult.metrics.totalFindings || 0;
     
     // Check if we need to escalate due to critical findings
-    if (criticalFindings > 0 && currentSchedule.frequency !== 'every-6-hours') {
-      console.log(`Escalating schedule for ${repositoryUrl} due to ${criticalFindings} critical findings`);
+    if (criticalFindings > 0 && (currentSchedule as { frequency?: string }).frequency !== 'every-6-hours') {
+      this.logger.info(`Escalating schedule for ${repositoryUrl} due to ${criticalFindings} critical findings`);
       await scheduler.updateSchedule(repositoryUrl, {
         frequency: 'every-6-hours',
         priority: 'critical',
@@ -2266,8 +2858,8 @@ export class ResultOrchestrator {
     }
     
     // Check if we can reduce frequency if all issues resolved
-    if (totalFindings === 0 && currentSchedule.frequency !== 'monthly') {
-      console.log(`Reducing schedule frequency for ${repositoryUrl} - all issues resolved`);
+    if (totalFindings === 0 && (currentSchedule as { frequency?: string }).frequency !== 'monthly') {
+      this.logger.info(`Reducing schedule frequency for ${repositoryUrl} - all issues resolved`);
       await scheduler.updateSchedule(repositoryUrl, {
         frequency: 'weekly',
         priority: 'low',
@@ -2283,7 +2875,7 @@ export class ResultOrchestrator {
   /**
    * Safe JSON stringify that handles circular references
    */
-  private safeStringify(obj: any, maxLength = 500): string {
+  private safeStringify(obj: unknown, maxLength = 500): string {
     const seen = new WeakSet();
     try {
       const result = JSON.stringify(obj, (key, value) => {
@@ -2304,7 +2896,7 @@ export class ResultOrchestrator {
   /**
    * Format agent results for intelligent merger
    */
-  private formatAgentResults(agentResults: any): any[] {
+  private formatAgentResults(agentResults: AgentResult | { results?: Record<string, AgentResult>; agents?: Record<string, AgentResult> }): AgentResult[] {
     if (!agentResults) return [];
     
     // Log the structure to understand what we're getting
@@ -2312,34 +2904,34 @@ export class ResultOrchestrator {
       type: typeof agentResults,
       isArray: Array.isArray(agentResults),
       keys: Object.keys(agentResults || {}),
-      hasResults: !!agentResults.results,
-      hasAggregatedInsights: !!agentResults.aggregatedInsights,
-      hasAgentResults: !!agentResults.agentResults
+      hasResults: !!(agentResults as { results?: unknown }).results,
+      hasAggregatedInsights: !!(agentResults as { aggregatedInsights?: unknown }).aggregatedInsights,
+      hasAgentResults: !!(agentResults as { agentResults?: unknown }).agentResults
     });
     
     // Handle different result formats
-    let results = [];
+    let results: unknown[] = [];
     
     // Check if agentResults itself is an array
     if (Array.isArray(agentResults)) {
       results = agentResults;
-    } else if (agentResults.results && typeof agentResults.results === 'object' && !Array.isArray(agentResults.results)) {
+    } else if ((agentResults as { results?: unknown }).results && typeof (agentResults as { results?: unknown }).results === 'object' && !Array.isArray((agentResults as { results?: unknown }).results)) {
       // Handle the MultiAgentResult format from enhanced executor
       // results is an object with agent IDs as keys
-      results = Object.entries(agentResults.results).map(([agentId, result]: [string, any]) => ({
+      results = Object.entries((agentResults as { results: Record<string, unknown> }).results).map(([agentId, result]: [string, unknown]) => ({
         agentId,
-        ...result
+        ...(result as Record<string, unknown>)
       }));
-    } else if (agentResults.results && Array.isArray(agentResults.results)) {
-      results = agentResults.results;
-    } else if (agentResults.combinedResult?.aggregatedInsights && Array.isArray(agentResults.combinedResult.aggregatedInsights)) {
+    } else if ((agentResults as { results?: unknown[] }).results && Array.isArray((agentResults as { results?: unknown[] }).results)) {
+      results = (agentResults as { results: unknown[] }).results;
+    } else if ((agentResults as { combinedResult?: { aggregatedInsights?: unknown[] } }).combinedResult?.aggregatedInsights && Array.isArray((agentResults as { combinedResult?: { aggregatedInsights?: unknown[] } }).combinedResult?.aggregatedInsights)) {
       // Handle MCP coordinated results
-      results = agentResults.combinedResult.aggregatedInsights;
-    } else if (agentResults.aggregatedInsights && Array.isArray(agentResults.aggregatedInsights)) {
-      results = agentResults.aggregatedInsights;
-    } else if (agentResults.agentResults) {
+      results = (agentResults as { combinedResult: { aggregatedInsights: unknown[] } }).combinedResult.aggregatedInsights;
+    } else if ((agentResults as { aggregatedInsights?: unknown[] }).aggregatedInsights && Array.isArray((agentResults as { aggregatedInsights?: unknown[] }).aggregatedInsights)) {
+      results = (agentResults as { aggregatedInsights: unknown[] }).aggregatedInsights;
+    } else if ((agentResults as { agentResults?: unknown }).agentResults) {
       // Handle the case where results are in agentResults property
-      results = Object.values(agentResults.agentResults);
+      results = Object.values((agentResults as { agentResults: Record<string, unknown> }).agentResults);
     } else {
       this.logger.warn('Unable to extract results array from agent results', {
         structure: this.safeStringify(agentResults)
@@ -2347,20 +2939,20 @@ export class ResultOrchestrator {
       return [];
     }
     
-    return results.map((result: any) => {
+    return results.map((result: unknown) => {
       // Extract findings from various formats
-      let findings: any[] = [];
+      let findings: Finding[] = [];
       
       // Direct findings
-      if (result.findings) {
-        findings = Array.isArray(result.findings) ? result.findings : [];
+      if ((result as AgentResult).findings) {
+        findings = Array.isArray((result as AgentResult).findings) ? (result as AgentResult).findings || [] : [];
       }
       
       // Result.result.findings (nested format)
-      if (result.result?.findings) {
-        for (const [category, categoryFindings] of Object.entries(result.result.findings)) {
+      if ((result as AgentResult).result?.findings) {
+        for (const [category, categoryFindings] of Object.entries((result as AgentResult).result?.findings || {})) {
           if (Array.isArray(categoryFindings)) {
-            findings.push(...categoryFindings.map((f: any) => ({
+            findings.push(...categoryFindings.map((f: Finding) => ({
               ...f,
               category: f.category || category
             })));
@@ -2368,15 +2960,34 @@ export class ResultOrchestrator {
         }
       }
       
+      // Type-safe access to result properties
+      const r = result as {
+        agentId?: string;
+        agentConfig?: { provider?: string; role?: string };
+        config?: { provider?: string; role?: string };
+        agentRole?: string;
+        result?: {
+          insights?: unknown[];
+          suggestions?: unknown[];
+          educational?: unknown[];
+          metadata?: unknown;
+        };
+        insights?: unknown[];
+        suggestions?: unknown[];
+        educational?: unknown[];
+        metadata?: unknown;
+        deduplicationStats?: unknown;
+      };
+      
       return {
-        agentId: result.agentId || `${result.agentConfig?.provider}-${result.agentConfig?.role}` || `${result.config?.provider}-${result.config?.role}`,
-        agentRole: result.agentConfig?.role || result.config?.role || result.agentRole || 'unknown',
+        agentId: r.agentId || `${r.agentConfig?.provider || 'unknown'}-${r.agentConfig?.role || 'unknown'}` || `${r.config?.provider || 'unknown'}-${r.config?.role || 'unknown'}` || 'unknown-agent',
+        agentRole: r.agentConfig?.role || r.config?.role || r.agentRole || 'unknown',
         findings,
-        insights: result.result?.insights || result.insights || [],
-        suggestions: result.result?.suggestions || result.suggestions || [],
-        educational: result.result?.educational || result.educational || [],
-        metadata: result.result?.metadata || result.metadata,
-        deduplicationResult: result.deduplicationStats
+        insights: (r.result?.insights || r.insights || []) as Array<{ category: string; description: string }>,
+        suggestions: (r.result?.suggestions || r.suggestions || []) as Array<{ title: string; description: string }>,
+        educational: r.result?.educational || r.educational || [],
+        metadata: r.result?.metadata || r.metadata,
+        deduplicationResult: r.deduplicationStats
       };
     });
   }
@@ -2384,20 +2995,20 @@ export class ResultOrchestrator {
   /**
    * Extract educational topics from recommendations
    */
-  private extractEducationalTopics(recommendationModule: any): string[] {
+  private extractEducationalTopics(recommendationModule: { recommendations: Recommendation[] }): string[] {
     const topics = new Set<string>();
     
     // Extract from recommendations
-    recommendationModule.recommendations.forEach((rec: any) => {
+    recommendationModule.recommendations.forEach((rec: Recommendation) => {
       topics.add(rec.category);
       topics.add(rec.title);
-      rec.learningContext?.relatedConcepts?.forEach((concept: string) => {
+      (rec as Recommendation & { learningContext?: { relatedConcepts?: string[] } }).learningContext?.relatedConcepts?.forEach((concept) => {
         topics.add(concept);
       });
     });
     
     // Extract from focus areas
-    recommendationModule.summary?.focusAreas?.forEach((area: string) => {
+    (recommendationModule as { summary?: { focusAreas?: string[] } }).summary?.focusAreas?.forEach((area) => {
       topics.add(area);
     });
     
@@ -2429,7 +3040,7 @@ export class ResultOrchestrator {
   /**
    * Group DeepWiki chunks by analysis type for better organization
    */
-  private groupDeepWikiChunks(chunks: any[], agentRole: string): any {
+  private groupDeepWikiChunks(chunks: unknown[], agentRole: string): { summary: string; insights: string[]; recommendations: string[]; patterns: string[]; metadata: Record<string, unknown> } {
     const grouped = {
       summary: '',
       patterns: [] as string[],
@@ -2438,19 +3049,19 @@ export class ResultOrchestrator {
     };
 
     // Sort chunks by relevance score
-    const sortedChunks = chunks.sort((a, b) => b.score - a.score);
+    const sortedChunks = chunks.sort((a, b) => (b as { score?: number }).score || 0 - ((a as { score?: number }).score || 0));
 
     // Extract key insights based on chunk metadata
     sortedChunks.forEach(chunk => {
-      const content = chunk.content;
-      const metadata: any = chunk.metadata || {};
+      const content = (chunk as { content?: string }).content || '';
+      const metadata: Record<string, unknown> = (chunk as { metadata?: Record<string, unknown> }).metadata || {};
 
       // Categorize based on content type
       if (metadata.analysis_type === 'code_patterns' || content.includes('pattern')) {
         grouped.patterns.push(content);
       } else if (metadata.analysis_type === 'best_practices' || content.includes('recommend')) {
         grouped.recommendations.push(content);
-      } else if (metadata.created_at && new Date(metadata.created_at) < new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)) {
+      } else if (metadata.created_at && new Date(metadata.created_at as string) < new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)) {
         grouped.historicalContext.push(content);
       }
     });
@@ -2458,18 +3069,24 @@ export class ResultOrchestrator {
     // Create a summary from top chunks
     grouped.summary = sortedChunks
       .slice(0, 3)
-      .map(chunk => chunk.content)
+      .map(chunk => (chunk as { content?: string }).content || '')
       .join('\n\n');
 
-    return grouped;
+    return {
+      summary: grouped.summary,
+      insights: grouped.recommendations,
+      recommendations: grouped.recommendations,
+      patterns: grouped.patterns,
+      metadata: {}
+    };
   }
 
   /**
    * Retrieve relevant DeepWiki report sections based on agent role and context
    */
-  private async retrieveRelevantDeepWikiReport(agentRole: string, requestContext: any): Promise<any> {
+  private async retrieveRelevantDeepWikiReport(agentRole: string, requestContext: { repositoryId?: string; changedFiles?: string[] }): Promise<unknown> {
     try {
-      console.log(`Retrieving DeepWiki report for ${agentRole} agent`, {
+      this.logger.info(`Retrieving DeepWiki report for ${agentRole} agent`, {
         repositoryId: requestContext.repositoryId,
         changedFiles: requestContext.changedFiles?.length || 0
       });
@@ -2480,7 +3097,7 @@ export class ResultOrchestrator {
       const searchQuery = `${agentRole} analysis ${limitedFiles.join(' ')}`.trim();
       
       const vectorResults = await this.vectorContextService.getCrossRepositoryPatterns(
-        agentRole as any,
+        agentRole as AgentRole,
         searchQuery,
         this.agentAuthenticatedUser,
         {
@@ -2509,7 +3126,6 @@ export class ResultOrchestrator {
           chunks: relevantChunks,
           patterns: groupedAnalysis.patterns,
           recommendations: groupedAnalysis.recommendations,
-          historicalContext: groupedAnalysis.historicalContext,
           summary: `DeepWiki analysis found ${relevantChunks.length} relevant insights for ${agentRole} analysis.`
         };
       }
@@ -2556,7 +3172,7 @@ Code Quality Assessment:
         `.trim() : undefined,
 
         summary: `
-Repository: ${requestContext.repositoryId}
+Repository: ${(requestContext as { repositoryId?: string }).repositoryId}
 Last Analysis: ${new Date().toISOString()}
 Repository Type: Multi-agent CodeQual analysis system
 Primary Language: TypeScript
@@ -2571,7 +3187,7 @@ Primary Language: TypeScript
       return Object.keys(filteredReport).length > 0 ? filteredReport : null;
 
     } catch (error) {
-      console.error('Error retrieving DeepWiki report:', error);
+      this.logger.error('Error retrieving DeepWiki report:', error as Error);
       return null;
     }
   }
@@ -2579,19 +3195,19 @@ Primary Language: TypeScript
   /**
    * Get DeepWiki summary for recommendation generation
    */
-  private async getDeepWikiSummary(repositoryUrl: string): Promise<any> {
+  private async getDeepWikiSummary(repositoryUrl: string): Promise<DeepWikiSummary> {
     try {
-      console.log('[DeepWiki] Getting DeepWiki summary for:', repositoryUrl);
+      this.logger.info('[DeepWiki] Getting DeepWiki summary for:', repositoryUrl);
       
       // First, check if we have a completed DeepWiki analysis
       const hasAnalysis = await this.deepWikiManager.checkRepositoryExists(repositoryUrl);
-      console.log('[DeepWiki] Repository exists in DeepWiki:', hasAnalysis);
+      this.logger.info('[DeepWiki] Repository exists in DeepWiki:', hasAnalysis);
       
       // Query Vector DB for DeepWiki chunks regardless
       const repositoryId = this.extractRepositoryId(repositoryUrl);
-      console.log('[DeepWiki] Querying Vector DB for chunks...');
+      this.logger.info('[DeepWiki] Querying Vector DB for chunks...');
       const deepWikiChunks = await this.vectorContextService.getCrossRepositoryPatterns(
-        'orchestrator' as any, // Using orchestrator role for general queries
+        AgentRole.ORCHESTRATOR, // Using orchestrator role for general queries
         'repository analysis summary insights patterns deepwiki',
         this.agentAuthenticatedUser,
         {
@@ -2610,7 +3226,7 @@ Primary Language: TypeScript
       
       deepWikiChunks.forEach(chunk => {
         const content = chunk.content;
-        const metadata: any = chunk.metadata || {};
+        const metadata: Record<string, unknown> = chunk.metadata as Record<string, unknown> || {};
         
         if (metadata.analysis_type === 'key_insights' || content.includes('insight')) {
           insights.push(content);
@@ -2621,8 +3237,12 @@ Primary Language: TypeScript
         }
       });
 
-      console.log('[DeepWiki] Found chunks:', deepWikiChunks.length);
-      console.log('[DeepWiki] Suggestions:', suggestions.length, 'Insights:', insights.length, 'Patterns:', patterns.length);
+      this.logger.info('[DeepWiki] Found chunks:', { count: deepWikiChunks.length });
+      this.logger.info('[DeepWiki] Content analysis:', { 
+        suggestions: suggestions.length, 
+        insights: insights.length, 
+        patterns: patterns.length 
+      });
 
       // If we have stored analysis results, merge them
       let analysisData = {};
@@ -2631,60 +3251,64 @@ Primary Language: TypeScript
       
       if (hasAnalysis) {
         try {
-          console.log('[DeepWiki] Retrieving full analysis report...');
+          this.logger.info('[DeepWiki] Retrieving full analysis report...');
           const deepWikiReport = await this.deepWikiManager.waitForAnalysisCompletion(repositoryUrl);
-          console.log('[DeepWiki] Full report retrieved:', !!deepWikiReport);
-          console.log('[DeepWiki] Report keys:', Object.keys(deepWikiReport || {}));
+          this.logger.info('[DeepWiki] Full report retrieved:', !!deepWikiReport);
+          this.logger.info('[DeepWiki] Report keys:', { keys: Object.keys(deepWikiReport || {}) });
           analysisData = deepWikiReport.analysis || {};
-          console.log('[DeepWiki] Analysis sections:', Object.keys(analysisData));
+          this.logger.info('[DeepWiki] Analysis sections:', { sections: Object.keys(analysisData) });
           
           // Extract scores and insights from DeepWiki report
-          if ((deepWikiReport as any).report) {
-            const reportContent = typeof (deepWikiReport as any).report === 'string' 
-              ? (deepWikiReport as any).report 
-              : JSON.stringify((deepWikiReport as any).report);
+          if ((deepWikiReport as { report?: unknown }).report) {
+            const reportContent = typeof (deepWikiReport as { report?: unknown }).report === 'string' 
+              ? (deepWikiReport as { report?: string }).report 
+              : JSON.stringify((deepWikiReport as { report?: unknown }).report);
             
             deepWikiScores = deepWikiScoreExtractor.extractScores(reportContent);
             deepWikiInsights = deepWikiScoreExtractor.extractInsights(reportContent);
             
-            console.log('[DeepWiki] Extracted scores:', deepWikiScores);
-            console.log('[DeepWiki] Extracted insights count:', deepWikiInsights.length);
+            this.logger.info('[DeepWiki] Extracted scores:', deepWikiScores);
+            this.logger.info('[DeepWiki] Extracted insights count:', deepWikiInsights.length);
           }
         } catch (e) {
-          console.log('[DeepWiki] Could not retrieve stored DeepWiki analysis, using chunks only:', e);
+          this.logger.info('[DeepWiki] Could not retrieve stored DeepWiki analysis, using chunks only:', e as Error);
         }
       }
 
       return {
-        suggestions: suggestions.slice(0, 5), // Top 5 suggestions
-        insights: insights.slice(0, 10), // Top 10 insights
+        overview: insights.slice(0, 3).join('\n\n'),
+        keyComponents: insights.slice(0, 5),
+        architectureInsights: insights.filter(i => i.includes('architecture') || i.includes('design')),
+        dependencies: [],
         patterns: patterns.slice(0, 5), // Top 5 patterns
         summary: deepWikiChunks.length > 0 
           ? `DeepWiki analysis found ${deepWikiChunks.length} relevant insights across ${new Set(deepWikiChunks.map(c => c.metadata?.analysis_type)).size} categories`
           : 'No DeepWiki analysis available',
-        metrics: {
+        metadata: {
           totalChunks: deepWikiChunks.length,
-          avgConfidence: deepWikiChunks.reduce((sum, c) => sum + c.similarity_score, 0) / (deepWikiChunks.length || 1)
+          avgConfidence: deepWikiChunks.reduce((sum, c) => sum + c.similarity_score, 0) / (deepWikiChunks.length || 1),
+          analysis: analysisData
         },
-        analysis: analysisData,
         chunks: deepWikiChunks, // Include raw chunks for transparency
         // Extract structured recommendations from analysis data
         recommendations: {
-          architecture: (analysisData as any)?.architecture?.recommendations || [],
-          security: (analysisData as any)?.security?.recommendations || [],
-          performance: (analysisData as any)?.performance?.recommendations || [],
-          codeQuality: (analysisData as any)?.codeQuality?.recommendations || [],
-          dependencies: (analysisData as any)?.dependencies?.recommendations || []
+          architecture: (analysisData as { architecture?: { recommendations?: string[] } })?.architecture?.recommendations || [],
+          security: (analysisData as { security?: { recommendations?: string[] } })?.security?.recommendations || [],
+          performance: (analysisData as { performance?: { recommendations?: string[] } })?.performance?.recommendations || [],
+          codeQuality: (analysisData as { codeQuality?: { recommendations?: string[] } })?.codeQuality?.recommendations || [],
+          dependencies: (analysisData as { dependencies?: { recommendations?: string[] } })?.dependencies?.recommendations || []
         },
         // Include DeepWiki scores and structured insights
         scores: deepWikiScores,
         structuredInsights: deepWikiInsights
       };
     } catch (error) {
-      console.error('Error retrieving DeepWiki summary:', error);
+      this.logger.error('Error retrieving DeepWiki summary:', error as Error);
       return {
-        suggestions: [],
-        insights: [],
+        overview: 'DeepWiki analysis failed',
+        keyComponents: [],
+        architectureInsights: [],
+        dependencies: [],
         patterns: [],
         summary: 'DeepWiki analysis failed',
         chunks: []
@@ -2696,9 +3320,9 @@ Primary Language: TypeScript
    * Track skill development based on PR analysis
    */
   private async trackSkillDevelopment(
-    processedResults: any,
-    recommendationModule: any,
-    compiledEducationalData: any,
+    processedResults: ProcessedResults,
+    recommendationModule: { recommendations: Recommendation[] },
+    compiledEducationalData: CompiledEducationalData,
     prContext: PRContext,
     authenticatedUser: AuthenticatedUser
   ): Promise<void> {
@@ -2721,11 +3345,11 @@ Primary Language: TypeScript
       
       // Track fixed issues for skill points
       if (fixedIssues.length > 0) {
-        const fixedIssuesForTracking = fixedIssues.map((issue: any) => ({
+        const fixedIssuesForTracking = fixedIssues.map((issue: IssueComparison) => ({
           issueId: issue.issueId,
-          category: issue.category,
+          category: issue.category || 'general',
           severity: issue.severity,
-          repository: issue.repository,
+          repository: issue.repository || prContext.repositoryUrl,
           prNumber: prContext.prNumber
         }));
         
@@ -2740,11 +3364,11 @@ Primary Language: TypeScript
       
       // Apply degradation for unresolved repository issues
       if (unchangedIssues.length > 0) {
-        const unresolvedIssuesForDegradation = unchangedIssues.map((issue: any) => ({
+        const unresolvedIssuesForDegradation = unchangedIssues.map((issue: IssueComparison) => ({
           issueId: issue.issueId,
-          category: issue.category,
+          category: issue.category || 'general',
           severity: issue.severity,
-          repository: issue.repository
+          repository: issue.repository || 'unknown'
         }));
         
         const totalDegradation = await skillTracker.applyRepoIssueDegradation(unresolvedIssuesForDegradation);
@@ -2782,7 +3406,7 @@ Primary Language: TypeScript
       await skillTracker.updateSkillsFromAssessments(skillAssessments);
       
       // Track educational engagement if user viewed educational content
-      if (compiledEducationalData?.educational?.learningPath?.steps?.length > 0) {
+      if ((compiledEducationalData?.educational as { learningPath?: { steps?: unknown[] } })?.learningPath?.steps && ((compiledEducationalData?.educational as { learningPath?: { steps?: unknown[] } })?.learningPath?.steps?.length ?? 0) > 0) {
         const engagement = {
           educationalContentId: `pr-${prContext.prNumber}-education`,
           engagementType: 'viewed' as const,
@@ -2817,11 +3441,11 @@ Primary Language: TypeScript
     return filesChanged * 50; // Rough estimate
   }
   
-  private calculatePRComplexity(processedResults: any, prContext: PRContext): number {
+  private calculatePRComplexity(processedResults: ProcessedResults, prContext: PRContext): number {
     // Calculate complexity based on findings and file changes
     const totalFindings = this.countTotalFindings(processedResults);
     const filesChanged = prContext.changedFiles.length;
-    const criticalFindings = processedResults.findings?.security?.filter((f: any) => 
+    const criticalFindings = processedResults.findings?.security?.filter((f: Finding) => 
       f.severity === 'critical' || f.severity === 'high'
     ).length || 0;
     
@@ -2839,11 +3463,11 @@ Primary Language: TypeScript
    * Get existing repository issues from DeepWiki or other sources
    */
   private async getExistingRepositoryIssues(repositoryUrl: string): Promise<{
-    security?: any[];
-    codeQuality?: any[];
-    architecture?: any[];
-    performance?: any[];
-    dependencies?: any[];
+    security?: Finding[];
+    codeQuality?: Finding[];
+    architecture?: Finding[];
+    performance?: Finding[];
+    dependencies?: Finding[];
   }> {
     try {
       // Get DeepWiki data which should contain existing issues
@@ -2851,11 +3475,11 @@ Primary Language: TypeScript
       
       // Extract existing issues from DeepWiki analysis
       const existingIssues = {
-        security: deepWikiData.analysis?.security?.vulnerabilities || [],
-        codeQuality: deepWikiData.analysis?.codeQuality?.issues || [],
-        architecture: deepWikiData.analysis?.architecture?.issues || [],
-        performance: deepWikiData.analysis?.performance?.issues || [],
-        dependencies: deepWikiData.analysis?.dependencies?.vulnerabilities || []
+        security: ((deepWikiData as { analysis?: { security?: { vulnerabilities?: unknown[] } } }).analysis?.security?.vulnerabilities || []) as Finding[],
+        codeQuality: ((deepWikiData as { analysis?: { codeQuality?: { issues?: unknown[] } } }).analysis?.codeQuality?.issues || []) as Finding[],
+        architecture: ((deepWikiData as { analysis?: { architecture?: { issues?: unknown[] } } }).analysis?.architecture?.issues || []) as Finding[],
+        performance: ((deepWikiData as { analysis?: { performance?: { issues?: unknown[] } } }).analysis?.performance?.issues || []) as Finding[],
+        dependencies: ((deepWikiData as { analysis?: { dependencies?: { vulnerabilities?: unknown[] } } }).analysis?.dependencies?.vulnerabilities || []) as Finding[]
       };
       
       // Also check if we have stored analysis results in Vector DB
@@ -2864,10 +3488,26 @@ Primary Language: TypeScript
       
       // Merge with tool results if available
       if (toolResults.security?.toolResults) {
-        existingIssues.security = [...existingIssues.security, ...toolResults.security.toolResults];
+        const securityFindings = toolResults.security.toolResults.map((result): Finding => ({
+          title: `Tool: ${result.toolId}`,
+          description: result.content,
+          severity: 'medium',
+          category: 'security',
+          file: '',
+          line: 0
+        }));
+        existingIssues.security = [...existingIssues.security, ...securityFindings];
       }
       if (toolResults.codeQuality?.toolResults) {
-        existingIssues.codeQuality = [...existingIssues.codeQuality, ...toolResults.codeQuality.toolResults];
+        const codeQualityFindings = toolResults.codeQuality.toolResults.map((result): Finding => ({
+          title: `Tool: ${result.toolId}`,
+          description: result.content,
+          severity: 'medium',
+          category: 'codeQuality',
+          file: '',
+          line: 0
+        }));
+        existingIssues.codeQuality = [...existingIssues.codeQuality, ...codeQualityFindings];
       }
       
       this.logger.info('Retrieved existing repository issues', {
@@ -2890,13 +3530,13 @@ Primary Language: TypeScript
     }
   }
   
-  private extractTargetedSkills(compiledEducationalData: any): string[] {
+  private extractTargetedSkills(compiledEducationalData: CompiledEducationalData): string[] {
     const skills = new Set<string>();
     
     // Extract from skill gaps
     const skillGaps = compiledEducationalData?.educational?.insights?.skillGaps || [];
-    skillGaps.forEach((gap: any) => {
-      if (gap.skill) {
+    skillGaps.forEach((gap: { title: string; description: string }) => {
+      if (gap.title) {
         // Map skill names to categories
         const categoryMap: Record<string, string> = {
           'security': 'security',
@@ -2907,7 +3547,7 @@ Primary Language: TypeScript
           'dependency': 'dependencies'
         };
         
-        const skill = gap.skill.toLowerCase();
+        const skill = gap.title.toLowerCase();
         for (const [key, value] of Object.entries(categoryMap)) {
           if (skill.includes(key)) {
             skills.add(value);
@@ -2918,10 +3558,10 @@ Primary Language: TypeScript
     });
     
     // Extract from learning path topics
-    const learningPath = compiledEducationalData?.educational?.learningPath;
-    if (learningPath?.steps) {
-      learningPath.steps.forEach((step: any) => {
-        const topic = (step.topic || '').toLowerCase();
+    const learningPath = (compiledEducationalData?.educational as { learningPath?: { modules?: unknown[] } })?.learningPath;
+    if (learningPath?.modules) {
+      learningPath.modules.forEach((module) => {
+        const topic = ((module as { title?: string }).title || '').toLowerCase();
         if (topic.includes('security')) skills.add('security');
         if (topic.includes('architecture') || topic.includes('design')) skills.add('architecture');
         if (topic.includes('performance')) skills.add('performance');
@@ -2965,7 +3605,7 @@ Primary Language: TypeScript
       this.logger.info('🔄 Storing chunked report in Vector DB', {
         repositoryUrl: report.repositoryUrl,
         chunkCount: analysisChunks.length,
-        chunkTypes: analysisChunks.map(c => c.metadata.contentType)
+        chunkTypes: analysisChunks.map(c => (c as { metadata?: { contentType?: string } }).metadata?.contentType)
       });
       
       // Store all chunks in Vector DB
@@ -3006,8 +3646,8 @@ Primary Language: TypeScript
    * Create chunked analysis results for Vector DB storage
    * Each chunk is optimized for specific agent roles
    */
-  private createReportChunks(report: StandardReport): any[] {
-    const chunks: any[] = [];
+  private createReportChunks(report: StandardReport): unknown[] {
+    const chunks: unknown[] = [];
     const baseMetadata = {
       reportId: report.id,
       prNumber: report.prNumber,
@@ -3039,7 +3679,7 @@ Primary Language: TypeScript
         reportId: report.id,
         overview: report.overview,
         executiveSummary: report.overview.executiveSummary,
-        decision: (report.overview as any).decision || { status: 'PENDING', confidence: 0 },
+        decision: (report.overview as { decision?: { status: string; confidence: number } }).decision || { status: 'PENDING', confidence: 0 },
         contentType: 'analysis_overview'
       },
       metadata: {
@@ -3059,7 +3699,7 @@ Primary Language: TypeScript
           reportId: report.id,
           findings: securityFindings.findings,
           summary: securityFindings.summary,
-          score: (securityFindings as any).score || 0,
+          score: (securityFindings as { score?: number }).score || 0,
           contentType: 'security_analysis'
         },
         metadata: {
@@ -3080,7 +3720,7 @@ Primary Language: TypeScript
           reportId: report.id,
           findings: performanceFindings.findings,
           summary: performanceFindings.summary,
-          score: (performanceFindings as any).score || 0,
+          score: (performanceFindings as { score?: number }).score || 0,
           contentType: 'performance_analysis'
         },
         metadata: {
@@ -3101,7 +3741,7 @@ Primary Language: TypeScript
           reportId: report.id,
           findings: codeQualityFindings.findings,
           summary: codeQualityFindings.summary,
-          score: (codeQualityFindings as any).score || 0,
+          score: (codeQualityFindings as { score?: number }).score || 0,
           contentType: 'code_quality_analysis'
         },
         metadata: {
@@ -3122,7 +3762,7 @@ Primary Language: TypeScript
           reportId: report.id,
           findings: dependencyFindings.findings,
           summary: dependencyFindings.summary,
-          score: (dependencyFindings as any).score || 0,
+          score: (dependencyFindings as { score?: number }).score || 0,
           contentType: 'dependency_analysis'
         },
         metadata: {
@@ -3143,7 +3783,7 @@ Primary Language: TypeScript
           reportId: report.id,
           findings: architectureFindings.findings,
           summary: architectureFindings.summary,
-          score: (architectureFindings as any).score || 0,
+          score: (architectureFindings as { score?: number }).score || 0,
           contentType: 'architecture_analysis'
         },
         metadata: {
@@ -3174,12 +3814,12 @@ Primary Language: TypeScript
     }
     
     // Chunk 9: Educational content
-    if (report.modules?.educational || (report.modules as any)?.educationalContent) {
+    if (report.modules?.educational || (report.modules as { educationalContent?: unknown })?.educationalContent) {
       chunks.push({
         repositoryUrl: report.repositoryUrl,
         analysis: {
           reportId: report.id,
-          educational: report.modules.educational || (report.modules as any).educationalContent,
+          educational: report.modules.educational || (report.modules as { educationalContent?: unknown }).educationalContent,
           contentType: 'educational_content'
         },
         metadata: {
@@ -3197,10 +3837,10 @@ Primary Language: TypeScript
   /**
    * Generate executive summary from processed results and recommendations
    */
-  private generateExecutiveSummary(processedResults: any, recommendationModule: any): string {
+  private generateExecutiveSummary(processedResults: ProcessedResults, recommendationModule: { recommendations: Recommendation[] }): string {
     const totalFindings = this.countTotalFindings(processedResults);
-    const totalRecommendations = recommendationModule.summary.totalRecommendations;
-    const focusAreas = recommendationModule.summary.focusAreas.join(', ');
+    const totalRecommendations = (recommendationModule as { summary?: { totalRecommendations?: number } }).summary?.totalRecommendations || recommendationModule.recommendations.length;
+    const focusAreas = (recommendationModule as { summary?: { focusAreas?: string[] } }).summary?.focusAreas?.join(', ') || 'code quality';
     
     let summary = `PR analysis completed successfully. `;
     
@@ -3222,81 +3862,120 @@ Primary Language: TypeScript
   /**
    * Convert compiled educational data to sections format
    */
-  private convertCompiledDataToSections(compiledEducationalData: any): any[] {
+  private convertCompiledDataToSections(compiledEducationalData: CompiledEducationalData): EducationalItem[] {
     const sections = [];
     
     // Learning Path Section
-    if (compiledEducationalData.educational.learningPath.totalSteps > 0) {
+    const edData = compiledEducationalData.educational as {
+      learningPath?: {
+        totalSteps?: number;
+        description?: string;
+        steps?: unknown[];
+        estimatedTime?: string;
+        difficulty?: string;
+      };
+      content?: {
+        explanations?: unknown[];
+        insights?: unknown;
+      };
+    };
+    
+    if (edData.learningPath?.totalSteps && edData.learningPath.totalSteps > 0) {
       sections.push({
         title: 'Learning Path',
-        summary: compiledEducationalData.educational.learningPath.description,
+        summary: edData.learningPath?.description,
         content: {
-          steps: compiledEducationalData.educational.learningPath.steps,
-          estimatedTime: compiledEducationalData.educational.learningPath.estimatedTime,
-          difficulty: compiledEducationalData.educational.learningPath.difficulty
+          steps: edData.learningPath?.steps,
+          estimatedTime: edData.learningPath?.estimatedTime,
+          difficulty: edData.learningPath?.difficulty
         },
         type: 'learning-path'
       });
     }
     
     // Educational Content Sections
-    if (compiledEducationalData.educational.content.explanations.length > 0) {
+    if (edData.content?.explanations?.length && edData.content.explanations.length > 0) {
       sections.push({
         title: 'Key Concepts',
-        summary: `${compiledEducationalData.educational.content.explanations.length} concepts explained`,
-        content: compiledEducationalData.educational.content.explanations,
+        summary: `${edData.content?.explanations?.length} concepts explained`,
+        content: edData.content?.explanations,
         type: 'explanations'
       });
     }
     
-    if (compiledEducationalData.educational.content.tutorials.length > 0) {
+    const educational = compiledEducationalData?.educational;
+    if (!educational) {
+      // Return existing sections mapped to EducationalItem format
+      return sections.map(section => ({
+        topic: section.title,
+        content: typeof section.content === 'string' ? section.content : JSON.stringify(section.content),
+        level: 'intermediate' as const,
+        resources: [],
+        examples: []
+      }));
+    }
+    
+    const content = (educational as { content?: Record<string, unknown> }).content || {};
+    const insights = (educational as { insights?: Record<string, unknown> }).insights || {};
+    
+    const tutorials = (content as { tutorials?: unknown[] }).tutorials;
+    if (tutorials && tutorials.length > 0) {
       sections.push({
         title: 'Step-by-Step Tutorials',
-        summary: `${compiledEducationalData.educational.content.tutorials.length} actionable tutorials`,
-        content: compiledEducationalData.educational.content.tutorials,
+        summary: `${tutorials.length} actionable tutorials`,
+        content: tutorials,
         type: 'tutorials'
       });
     }
     
-    if (compiledEducationalData.educational.content.bestPractices.length > 0) {
+    const bestPractices = (content as { bestPractices?: unknown[] }).bestPractices;
+    if (bestPractices && bestPractices.length > 0) {
       sections.push({
         title: 'Best Practices',
-        summary: `${compiledEducationalData.educational.content.bestPractices.length} recommended practices`,
-        content: compiledEducationalData.educational.content.bestPractices,
+        summary: `${bestPractices.length} recommended practices`,
+        content: bestPractices,
         type: 'best-practices'
       });
     }
     
     // Insights Section
-    if (compiledEducationalData.educational.insights.skillGaps.length > 0) {
+    const skillGaps = (insights as { skillGaps?: unknown[] }).skillGaps;
+    if (skillGaps && skillGaps.length > 0) {
       sections.push({
         title: 'Skill Development',
-        summary: `${compiledEducationalData.educational.insights.skillGaps.length} skill gaps identified`,
+        summary: `${skillGaps.length} skill gaps identified`,
         content: {
-          skillGaps: compiledEducationalData.educational.insights.skillGaps,
-          relatedTopics: compiledEducationalData.educational.insights.relatedTopics,
-          nextSteps: compiledEducationalData.educational.insights.nextSteps
+          skillGaps: skillGaps,
+          relatedTopics: (insights as { relatedTopics?: unknown[] }).relatedTopics || [],
+          nextSteps: (insights as { nextSteps?: unknown[] }).nextSteps || []
         },
         type: 'insights'
       });
     }
     
-    return sections;
+    // Map sections to EducationalItem format
+    return sections.map(section => ({
+      topic: section.title,
+      content: typeof section.content === 'string' ? section.content : JSON.stringify(section.content),
+      level: 'intermediate' as const,
+      resources: [],
+      examples: []
+    }));
   }
 
   /**
    * Extract recommendations list from recommendation module
    */
-  private extractRecommendationsList(recommendationModule: any): string[] {
-    return recommendationModule.recommendations.map((rec: any) => {
-      const priority = rec.priority.level.toUpperCase();
+  private extractRecommendationsList(recommendationModule: { recommendations: Recommendation[] }): string[] {
+    return recommendationModule.recommendations.map((rec: Recommendation) => {
+      const priority = rec.priority.toUpperCase();
       const category = rec.category.charAt(0).toUpperCase() + rec.category.slice(1);
       return `[${priority}] ${category}: ${rec.title}`;
     });
   }
 
   /**
-   * Check if any of the files are security-related
+   * Check if the files are security-related
    */
   private containsSecurityFiles(files?: string[]): boolean {
     if (!files || files.length === 0) return false;
@@ -3328,5 +4007,49 @@ Primary Language: TypeScript
     ];
     
     return securityPatterns.some(pattern => pattern.test(filePath));
+  }
+
+  /**
+   * Convert ProcessedResults to CompiledFindings for educational tools
+   */
+  private convertToCompiledFindings(processedResults: ProcessedResults): CompiledFindings {
+    const findings = processedResults.findings || {};
+    
+    return {
+      codeQuality: {
+        complexityIssues: findings.codeQuality || [],
+        maintainabilityIssues: [],
+        codeSmells: [],
+        patterns: []
+      },
+      security: {
+        vulnerabilities: findings.security || [],
+        securityPatterns: [],
+        complianceIssues: [],
+        threatLandscape: []
+      },
+      architecture: {
+        designPatternViolations: findings.architecture || [],
+        technicalDebt: [],
+        refactoringOpportunities: [],
+        architecturalDecisions: []
+      },
+      performance: {
+        performanceIssues: findings.performance || [],
+        optimizationOpportunities: [],
+        bottlenecks: [],
+        benchmarkResults: []
+      },
+      dependency: {
+        vulnerabilityIssues: findings.dependency || [],
+        licenseIssues: [],
+        outdatedPackages: [],
+        conflictResolution: []
+      },
+      criticalIssues: [],
+      learningOpportunities: [],
+      knowledgeGaps: [],
+      prContext: processedResults.prContext
+    };
   }
 }

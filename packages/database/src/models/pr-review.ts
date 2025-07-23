@@ -1,6 +1,9 @@
 import { getSupabase } from '../supabase/client';
 import type { Tables } from '../supabase/client';
-import { AgentProvider, AgentRole, AnalysisResult } from '../shims/core-types';
+import { AgentProvider, AgentRole, AnalysisResult, Insight, EducationalContent } from '../shims/core-types';
+
+// Type alias for database row - using any since the actual type is not available
+type DatabaseRow = any;
 
 /**
  * Analysis mode for PR reviews
@@ -87,7 +90,7 @@ export class PRReviewModel {
       throw new Error('Failed to create PR review: No data returned');
     }
     
-    return this.mapToPRReview(data as any);
+    return this.mapToPRReview(data as DatabaseRow);
   }
   
   /**
@@ -206,7 +209,7 @@ export class PRReviewModel {
       throw new Error(`PR review not found: ${id}`);
     }
     
-    return this.mapToPRReview(data as any);
+    return this.mapToPRReview(data as DatabaseRow);
   }
   
   /**
@@ -288,11 +291,14 @@ export class PRReviewModel {
     const record = data as Tables['combined_results'];
     
     return {
-      insights: record.insights,
+      insights: record.insights as Insight[],
       suggestions: record.suggestions,
-      educational: record.educational || [],
+      educational: ((record.educational || []) as unknown as Array<{ topic: string; content: string; resources?: string[] }>).map(item => ({
+        title: item.topic,
+        content: item.content
+      })) as EducationalContent[],
       metadata: record.metadata || {}
-    };
+    } as AnalysisResult;
   }
   
   /**

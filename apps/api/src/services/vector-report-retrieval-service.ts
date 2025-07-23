@@ -2,6 +2,24 @@ import { createLogger } from '@codequal/core/utils';
 import { VectorContextService, createVectorContextService } from '@codequal/agents/multi-agent/vector-context-service';
 import { reportIdMappingService } from './report-id-mapping-service';
 import { StandardReport } from '@codequal/agents/services/report-formatter.service';
+import { AgentRole } from '@codequal/core/config/agent-registry';
+import { AuthenticatedUser } from '../middleware/auth-middleware';
+import { AuthenticatedUser as AgentAuthenticatedUser } from '@codequal/agents/multi-agent/types/auth';
+
+interface User {
+  id: string;
+}
+
+interface VectorChunk {
+  type: string;
+  content: unknown;
+  metadata?: Record<string, unknown>;
+  analysis?: {
+    reportId?: string;
+  };
+  reportId?: string;
+  contentType?: string;
+}
 
 /**
  * Service to retrieve full reports from Vector DB using report IDs
@@ -13,6 +31,41 @@ export class VectorReportRetrievalService {
   constructor(
     private readonly vectorContextService: VectorContextService
   ) {}
+  
+  /**
+   * Convert API AuthenticatedUser to Agent AuthenticatedUser
+   */
+  private toAgentAuthenticatedUser(userId: string): AgentAuthenticatedUser {
+    return {
+      id: userId,
+      email: '',
+      role: 'user',
+      status: 'active',
+      session: {
+        token: '',
+        expiresAt: new Date(),
+        fingerprint: '',
+        ipAddress: '',
+        userAgent: ''
+      },
+      permissions: {
+        repositories: {},
+        organizations: [],
+        globalPermissions: [],
+        quotas: {
+          requestsPerHour: 1000,
+          maxConcurrentExecutions: 5,
+          storageQuotaMB: 1000
+        }
+      },
+      metadata: {
+        lastLogin: new Date(),
+        loginCount: 1,
+        preferredLanguage: 'en',
+        timezone: 'UTC'
+      }
+    } as AgentAuthenticatedUser;
+  }
   
   /**
    * Retrieve a full report from Vector DB using report ID
@@ -55,7 +108,7 @@ export class VectorReportRetrievalService {
     reportId: string,
     agentRole: string,
     userId: string
-  ): Promise<any[]> {
+  ): Promise<VectorChunk[]> {
     const repositoryUrl = await reportIdMappingService.getRepositoryUrl(reportId);
     if (!repositoryUrl) {
       return [];
@@ -73,8 +126,8 @@ export class VectorReportRetrievalService {
     // Get context for the specific agent role
     const results = await this.vectorContextService.getRepositoryContext(
       repositoryUrl,
-      agentRole as any,
-      { id: userId } as any,
+      agentRole as AgentRole,
+      this.toAgentAuthenticatedUser(userId),
       { maxResults: 10 }
     );
     
@@ -84,21 +137,33 @@ export class VectorReportRetrievalService {
     }
     
     // Convert RepositoryVectorContext to array of chunks
-    const chunks: any[] = [];
+    const chunks: VectorChunk[] = [];
     
     // Extract recent analysis
     if (results.recentAnalysis && Array.isArray(results.recentAnalysis)) {
-      chunks.push(...results.recentAnalysis);
+      chunks.push(...results.recentAnalysis.map((r) => ({
+        type: 'analysis',
+        content: r.content || r,
+        metadata: r.metadata || {}
+      })));
     }
     
     // Extract historical patterns
     if (results.historicalPatterns && Array.isArray(results.historicalPatterns)) {
-      chunks.push(...results.historicalPatterns);
+      chunks.push(...results.historicalPatterns.map((r) => ({
+        type: 'pattern',
+        content: r.content || r,
+        metadata: r.metadata || {}
+      })));
     }
     
     // Extract similar issues
     if (results.similarIssues && Array.isArray(results.similarIssues)) {
-      chunks.push(...results.similarIssues);
+      chunks.push(...results.similarIssues.map((r) => ({
+        type: 'issue',
+        content: r.content || r,
+        metadata: r.metadata || {}
+      })));
     }
     
     return chunks;
@@ -108,7 +173,7 @@ export class VectorReportRetrievalService {
     repositoryUrl: string,
     reportId: string,
     userId: string
-  ): Promise<any[]> {
+  ): Promise<VectorChunk[]> {
     // Retrieve all chunks that match the report ID
     // This would search for chunks with metadata.reportId === reportId
     const searchQuery = {
@@ -127,109 +192,139 @@ export class VectorReportRetrievalService {
     // Get all context for orchestrator role (has access to full reports)
     const allContext = await this.vectorContextService.getRepositoryContext(
       repositoryUrl,
-      'orchestrator' as any,
-      { id: userId } as any,
+      'reporting' as AgentRole,
+      this.toAgentAuthenticatedUser(userId),
       { maxResults: 50 }
     );
     
     // Extract all chunks from the context
-    const chunks: any[] = [];
+    const chunks: VectorChunk[] = [];
     
     if (allContext) {
       // Extract recent analysis
       if (allContext.recentAnalysis && Array.isArray(allContext.recentAnalysis)) {
-        chunks.push(...allContext.recentAnalysis);
+        chunks.push(...allContext.recentAnalysis.map((r) => ({
+          type: 'analysis',
+          content: r.content || r,
+          metadata: r.metadata || {}
+        })));
       }
       
       // Extract historical patterns
       if (allContext.historicalPatterns && Array.isArray(allContext.historicalPatterns)) {
-        chunks.push(...allContext.historicalPatterns);
+        chunks.push(...allContext.historicalPatterns.map((r) => ({
+          type: 'pattern',
+          content: r.content || r,
+          metadata: r.metadata || {}
+        })));
       }
       
       // Extract similar issues
       if (allContext.similarIssues && Array.isArray(allContext.similarIssues)) {
-        chunks.push(...allContext.similarIssues);
+        chunks.push(...allContext.similarIssues.map((r) => ({
+          type: 'issue',
+          content: r.content || r,
+          metadata: r.metadata || {}
+        })));
       }
     }
     
     // Filter chunks by reportId from metadata
-    return chunks.filter((chunk: any) => 
+    return chunks.filter((chunk) => 
       chunk.metadata?.reportId === reportId ||
       chunk.analysis?.reportId === reportId ||
       chunk.reportId === reportId
     );
   }
   
-  private reconstructReport(chunks: any[]): StandardReport {
+  private reconstructReport(chunks: VectorChunk[]): StandardReport {
     // Reconstruct the full report from chunks
     // This is a simplified version - you'd need to match your actual report structure
     
-    const report: any = {
-      id: chunks[0]?.metadata?.reportId || 'unknown',
-      repositoryUrl: chunks[0]?.metadata?.repositoryUrl || '',
-      prNumber: chunks[0]?.metadata?.prNumber || 0,
-      timestamp: chunks[0]?.metadata?.timestamp || new Date().toISOString(),
-      overview: {},
+    const report: Partial<StandardReport> = {
+      id: (chunks[0]?.metadata?.reportId as string) || 'unknown',
+      repositoryUrl: (chunks[0]?.metadata?.repositoryUrl as string) || '',
+      prNumber: (chunks[0]?.metadata?.prNumber as number) || 0,
+      timestamp: new Date((chunks[0]?.metadata?.timestamp as string) || new Date().toISOString()),
+      overview: {} as StandardReport['overview'],
       modules: {
         findings: { categories: {} },
         recommendations: { categories: [] },
         educationalContent: { resources: [] },
         skillsAssessment: { skills: [] }
-      }
+      } as unknown as StandardReport['modules']
     };
     
     // Process each chunk based on its content type
     chunks.forEach(chunk => {
       const contentType = chunk.metadata?.contentType || chunk.contentType;
-      const content = chunk.content || chunk.analysis;
+      const content = chunk.content || (chunk as { analysis?: unknown }).analysis;
       
       switch (contentType) {
         case 'analysis_overview':
-          report.overview = content.overview || content;
+          report.overview = (content as any).overview || content;
           break;
           
         case 'security_analysis':
-          if (!report.modules.findings.categories.security) {
-            report.modules.findings.categories.security = {
-              name: 'Security',
-              icon: '🔒',
-              findings: []
-            };
+          if (report.modules && !report.modules.findings.categories.security) {
+            if (report.modules) {
+              report.modules.findings.categories.security = {
+                name: 'Security',
+                icon: '🔒',
+                findings: [],
+                count: 0,
+                summary: ''
+              };
+            }
           }
-          report.modules.findings.categories.security.findings = content.findings || [];
+          if (report.modules) {
+            report.modules.findings.categories.security.findings = (content as any).findings || [];
+          }
           break;
           
         case 'performance_analysis':
-          if (!report.modules.findings.categories.performance) {
+          if (report.modules && !report.modules.findings.categories.performance) {
             report.modules.findings.categories.performance = {
               name: 'Performance',
               icon: '⚡',
-              findings: []
+              findings: [],
+              count: 0,
+              summary: ''
             };
           }
-          report.modules.findings.categories.performance.findings = content.findings || [];
+          if (report.modules) {
+            report.modules.findings.categories.performance.findings = (content as any).findings || [];
+          }
           break;
           
         case 'dependency_analysis':
-          if (!report.modules.findings.categories.dependencies) {
+          if (report.modules && !report.modules.findings.categories.dependencies) {
             report.modules.findings.categories.dependencies = {
               name: 'Dependencies',
               icon: '📦',
-              findings: []
+              findings: [],
+              count: 0,
+              summary: ''
             };
           }
-          report.modules.findings.categories.dependencies.findings = content.findings || [];
+          if (report.modules) {
+            report.modules.findings.categories.dependencies.findings = (content as any).findings || [];
+          }
           break;
           
         case 'code_quality_analysis':
-          if (!report.modules.findings.categories.codeQuality) {
+          if (report.modules && !report.modules.findings.categories.codeQuality) {
             report.modules.findings.categories.codeQuality = {
               name: 'Code Quality',
               icon: '✨',
-              findings: []
+              findings: [],
+              count: 0,
+              summary: ''
             };
           }
-          report.modules.findings.categories.codeQuality.findings = content.findings || [];
+          if (report.modules) {
+            report.modules.findings.categories.codeQuality.findings = (content as any).findings || [];
+          }
           break;
           
         case 'full_report':

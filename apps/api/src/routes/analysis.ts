@@ -1,11 +1,64 @@
 import { Router, Request, Response } from 'express';
+import { createLogger } from '@codequal/core/utils';
+import { Finding } from '../services/result-processor';
 
+interface AnalysisReport {
+  repository: {
+    name: string;
+  };
+  pr: {
+    number: number;
+    title: string;
+  };
+  analysis: {
+    mode: string;
+    totalFindings: number;
+    processingTime: number;
+  };
+  metadata: {
+    timestamp: string | Date;
+  };
+  metrics: {
+    confidence: number;
+    severity: {
+      critical: number;
+      high: number;
+      medium: number;
+      low: number;
+    };
+  };
+  findings: Record<string, Finding[]>;
+  report: {
+    recommendations: string[];
+  };
+}
+
+const logger = createLogger('analysis-routes');
 const analysisRoutes = Router();
 
 export default analysisRoutes;
 
 // Store for user analysis history (in production, this would be a database)
-const analysisHistory = new Map<string, any[]>();
+interface AnalysisHistoryItem {
+  analysisId: string;
+  repository: { url: string };
+  pr?: {
+    number: number;
+    title?: string;
+    branch?: string;
+    [key: string]: unknown;
+  };
+  analysis: {
+    mode: string;
+    totalFindings: number;
+    processingTime: number;
+  };
+  completedAt?: Date;
+  timestamp?: Date;
+  [key: string]: unknown;
+}
+
+const analysisHistory = new Map<string, AnalysisHistoryItem[]>();
 
 /**
  * @swagger
@@ -116,8 +169,8 @@ analysisRoutes.get('/history', async (req: Request, res: Response) => {
           totalFindings: analysis.analysis.totalFindings,
           processingTime: analysis.analysis.processingTime
         },
-        metrics: analysis.metrics,
-        timestamp: analysis.metadata.timestamp,
+        metrics: analysis.metrics as any,
+        timestamp: (analysis.metadata as any)?.timestamp || analysis.timestamp,
         status: 'complete'
       })),
       pagination: {
@@ -129,7 +182,7 @@ analysisRoutes.get('/history', async (req: Request, res: Response) => {
     });
 
   } catch (error) {
-    console.error('Analysis history fetch error:', error);
+    logger.error('Analysis history fetch error:', error as Error);
     res.status(500).json({ 
       error: 'Internal server error',
       message: error instanceof Error ? error.message : 'Unknown error'
@@ -163,7 +216,7 @@ analysisRoutes.get('/:id/results', async (req: Request, res: Response) => {
     res.json(analysis);
 
   } catch (error) {
-    console.error('Analysis results fetch error:', error);
+    logger.error('Analysis results fetch error:', error as Error);
     res.status(500).json({ 
       error: 'Internal server error',
       message: error instanceof Error ? error.message : 'Unknown error'
@@ -196,12 +249,12 @@ analysisRoutes.get('/:id/report', async (req: Request, res: Response) => {
     }
 
     if (format === 'markdown') {
-      const markdownReport = generateMarkdownReport(analysis);
+      const markdownReport = generateMarkdownReport(analysis as any);
       res.set('Content-Type', 'text/markdown');
       res.send(markdownReport);
     } else if (format === 'pr-comment') {
       res.json({
-        comment: analysis.report.prComment,
+        comment: (analysis.report as any)?.prComment || '',
         analysisId: analysis.analysisId
       });
     } else {
@@ -211,14 +264,14 @@ analysisRoutes.get('/:id/report', async (req: Request, res: Response) => {
         report: analysis.report,
         summary: {
           totalFindings: analysis.analysis.totalFindings,
-          severity: analysis.metrics.severity,
-          confidence: analysis.metrics.confidence
+          severity: (analysis.metrics as any)?.severity || {},
+          confidence: (analysis.metrics as any)?.confidence || {}
         }
       });
     }
 
   } catch (error) {
-    console.error('Analysis report fetch error:', error);
+    logger.error('Analysis report fetch error:', error as Error);
     res.status(500).json({ 
       error: 'Internal server error',
       message: error instanceof Error ? error.message : 'Unknown error'
@@ -275,7 +328,7 @@ analysisRoutes.post('/:id/feedback', async (req: Request, res: Response) => {
     if (!analysis.feedback) {
       analysis.feedback = [];
     }
-    analysis.feedback.push(feedback);
+    (analysis.feedback as any[]).push(feedback);
 
     res.json({
       message: 'Feedback submitted successfully',
@@ -284,7 +337,7 @@ analysisRoutes.post('/:id/feedback', async (req: Request, res: Response) => {
     });
 
   } catch (error) {
-    console.error('Feedback submission error:', error);
+    logger.error('Feedback submission error:', error as Error);
     res.status(500).json({ 
       error: 'Internal server error',
       message: error instanceof Error ? error.message : 'Unknown error'
@@ -324,7 +377,7 @@ analysisRoutes.get('/stats', async (req: Request, res: Response) => {
     }
     
     const recentAnalyses = userHistory.filter(analysis => 
-      new Date(analysis.metadata.timestamp) >= cutoffDate
+      new Date((analysis.metadata as any)?.timestamp || analysis.timestamp || 0) >= cutoffDate
     );
 
     // Calculate statistics
@@ -334,21 +387,21 @@ analysisRoutes.get('/stats', async (req: Request, res: Response) => {
       averageFindings: recentAnalyses.length > 0 ? 
         recentAnalyses.reduce((sum, a) => sum + a.analysis.totalFindings, 0) / recentAnalyses.length : 0,
       severityBreakdown: {
-        critical: recentAnalyses.reduce((sum, a) => sum + a.metrics.severity.critical, 0),
-        high: recentAnalyses.reduce((sum, a) => sum + a.metrics.severity.high, 0),
-        medium: recentAnalyses.reduce((sum, a) => sum + a.metrics.severity.medium, 0),
-        low: recentAnalyses.reduce((sum, a) => sum + a.metrics.severity.low, 0)
+        critical: recentAnalyses.reduce((sum, a) => sum + ((a.metrics as any)?.severity?.critical || 0), 0),
+        high: recentAnalyses.reduce((sum, a) => sum + ((a.metrics as any)?.severity?.high || 0), 0),
+        medium: recentAnalyses.reduce((sum, a) => sum + ((a.metrics as any)?.severity?.medium || 0), 0),
+        low: recentAnalyses.reduce((sum, a) => sum + ((a.metrics as any)?.severity?.low || 0), 0)
       },
       averageProcessingTime: recentAnalyses.length > 0 ? 
         recentAnalyses.reduce((sum, a) => sum + a.analysis.processingTime, 0) / recentAnalyses.length : 0,
-      mostAnalyzedLanguages: calculateLanguageStats(recentAnalyses),
+      mostAnalyzedLanguages: calculateLanguageStats(recentAnalyses as any),
       timeRange
     };
 
     res.json(stats);
 
   } catch (error) {
-    console.error('Analysis stats fetch error:', error);
+    logger.error('Analysis stats fetch error:', error as Error);
     res.status(500).json({ 
       error: 'Internal server error',
       message: error instanceof Error ? error.message : 'Unknown error'
@@ -357,7 +410,7 @@ analysisRoutes.get('/stats', async (req: Request, res: Response) => {
 });
 
 // Helper function to generate markdown report
-function generateMarkdownReport(analysis: any): string {
+function generateMarkdownReport(analysis: AnalysisReport): string {
   const report = `# CodeQual Analysis Report
 
 **Repository:** ${analysis.repository.name}
@@ -383,7 +436,7 @@ ${generateFindingsMarkdown(analysis.findings)}
 
 ## Recommendations
 
-${analysis.report.recommendations.map((rec: string, i: number) => `${i + 1}. ${rec}`).join('\n')}
+${analysis.report.recommendations.map((rec, i) => `${i + 1}. ${rec}`).join('\n')}
 
 ---
 *Generated by CodeQual Analysis Engine*
@@ -392,14 +445,14 @@ ${analysis.report.recommendations.map((rec: string, i: number) => `${i + 1}. ${r
   return report;
 }
 
-function generateFindingsMarkdown(findings: any): string {
+function generateFindingsMarkdown(findings: Record<string, Finding[]>): string {
   let markdown = '';
   
-  Object.entries(findings).forEach(([category, categoryFindings]: [string, any]) => {
+  Object.entries(findings).forEach(([category, categoryFindings]) => {
     if (Array.isArray(categoryFindings) && categoryFindings.length > 0) {
       markdown += `### ${category.charAt(0).toUpperCase() + category.slice(1)}\n\n`;
       
-      categoryFindings.slice(0, 5).forEach((finding: any, index: number) => {
+      categoryFindings.slice(0, 5).forEach((finding, index) => {
         const severityIconMap: Record<string, string> = {
           critical: '🔴',
           high: '🟡',
@@ -424,7 +477,7 @@ function generateFindingsMarkdown(findings: any): string {
   return markdown;
 }
 
-function calculateLanguageStats(analyses: any[]): Array<{language: string, count: number}> {
+function calculateLanguageStats(analyses: Array<{ repository: { primaryLanguage: string } }>): Array<{language: string, count: number}> {
   const languageCounts: Record<string, number> = {};
   
   analyses.forEach(analysis => {
@@ -439,16 +492,35 @@ function calculateLanguageStats(analyses: any[]): Array<{language: string, count
 }
 
 // Helper function to store completed analysis in history
-export function storeAnalysisInHistory(userId: string, analysis: any): void {
+export function storeAnalysisInHistory(userId: string, analysis: {
+  analysisId: string;
+  repository: { url: string };
+  pr?: {
+    number: number;
+    title?: string;
+    branch?: string;
+    [key: string]: unknown;
+  };
+  analysis: {
+    mode: string;
+    totalFindings: number;
+    processingTime: number;
+  };
+  completedAt?: Date;
+  timestamp?: Date;
+  [key: string]: unknown;
+}): void {
   if (!analysisHistory.has(userId)) {
     analysisHistory.set(userId, []);
   }
   
-  const userHistory = analysisHistory.get(userId)!;
-  userHistory.unshift(analysis); // Add to beginning
-  
-  // Keep only last 100 analyses per user
-  if (userHistory.length > 100) {
-    userHistory.splice(100);
+  const userHistory = analysisHistory.get(userId);
+  if (userHistory) {
+    userHistory.unshift(analysis); // Add to beginning
+    
+    // Keep only last 100 analyses per user
+    if (userHistory.length > 100) {
+      userHistory.splice(100);
+    }
   }
 }
