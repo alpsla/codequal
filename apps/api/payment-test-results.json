@@ -1,0 +1,46 @@
+{
+  "timestamp": "2025-07-23T20:45:47.568Z",
+  "summary": {
+    "total": 6,
+    "passed": 1,
+    "failed": 5
+  },
+  "tests": [
+    {
+      "name": "Billing status with auth",
+      "passed": false,
+      "expected": "200 with proper structure",
+      "actual": "401 missing structure"
+    },
+    {
+      "name": "Create checkout session",
+      "passed": false,
+      "expected": "200 or 500 (Stripe not configured)",
+      "actual": 401
+    },
+    {
+      "name": "Create setup intent",
+      "passed": false,
+      "expected": "200 or 500 (Stripe not configured)",
+      "actual": 401
+    },
+    {
+      "name": "Confirm payment method",
+      "passed": false,
+      "expected": "200 or 400",
+      "actual": 401
+    },
+    {
+      "name": "Charge for scan",
+      "passed": false,
+      "expected": "400 or 500 with payment error",
+      "actual": "401 unexpected"
+    },
+    {
+      "name": "Webhook processing",
+      "passed": true,
+      "expected": "400 with Webhook Error",
+      "actual": "400 with error"
+    }
+  ]
+}
