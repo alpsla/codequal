@@ -1,0 +1,18 @@
+# OpenRouter Configuration Template
+# Copy this file to openrouter_config.yaml and fill in your API key
+# NEVER commit the actual config file with API keys to version control
+
+api_key: YOUR_OPENROUTER_API_KEY_HERE
+base_url: https://openrouter.ai/api/v1
+timeout: 30000
+
+# Available models for calibration testing
+models:
+  - gpt-4-turbo
+  - claude-3-opus
+  - claude-3-sonnet
+  
+# SECURITY REMINDER:
+# 1. Add openrouter_config.yaml to .gitignore
+# 2. Use environment variables in production
+# 3. Never hardcode API keys in source code

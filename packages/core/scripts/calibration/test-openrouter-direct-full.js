@@ -6,7 +6,12 @@
 const axios = require('axios');
 
 // Configuration
-const OPENROUTER_API_KEY = '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';
+// SECURITY: Never hardcode API keys
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+if (!OPENROUTER_API_KEY) {
+  console.error('ERROR: OPENROUTER_API_KEY environment variable is required');
+  process.exit(1);
+}
 const REPO_URL = 'https://github.com/jpadilla/pyjwt';
 const MODEL = 'anthropic/claude-3-7-sonnet'; // Known working model
 

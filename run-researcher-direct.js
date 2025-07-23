@@ -6,7 +6,11 @@
 require('dotenv').config();
 
 // Set OpenRouter API key
-process.env.OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || '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';
+// SECURITY: Never hardcode API keys. Use environment variables only
+if (!process.env.OPENROUTER_API_KEY) {
+  console.error('ERROR: OPENROUTER_API_KEY environment variable is required');
+  process.exit(1);
+}
 
 console.log('=== STARTING RESEARCHER EXECUTION ===');
 console.log(`Time: ${new Date().toISOString()}`);
