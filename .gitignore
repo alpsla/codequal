@@ -156,3 +156,14 @@ pnpm-lock.yaml
 
 # Kubernetes secrets
 kubernetes/production/secrets.yaml
+
+# OpenRouter configs with API keys
+packages/core/scripts/calibration/openrouter_config.yaml
+packages/core/scripts/calibration/openrouter_config_fix.yaml
+packages/core/scripts/deepwiki_integration/deepwiki-api-keys.yaml
+
+# Any file containing API keys
+*-api-keys.yaml
+*-api-key.yaml
+*.key
+*.pem

@@ -6,7 +6,12 @@
 const axios = require('axios');
 
 // OpenRouter API key
-const OPENROUTER_API_KEY = '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';
+// SECURITY: Never hardcode API keys
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+if (!OPENROUTER_API_KEY) {
+  console.error('ERROR: OPENROUTER_API_KEY environment variable is required');
+  process.exit(1);
+}
 
 // Models to test
 const models = [
