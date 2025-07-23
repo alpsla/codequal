@@ -10,6 +10,23 @@ import { createLogger } from '@codequal/core/utils';
 import { getProgressTracker } from '@codequal/agents/services/progress-tracker';
 import { dataFlowMonitor } from '../services/data-flow-monitor';
 
+interface ProgressStep {
+  name: string;
+  status: string;
+}
+
+interface DebugProgress {
+  steps: ProgressStep[];
+  sessionId?: string;
+}
+
+interface DataFlowStep {
+  id: string;
+  name: string;
+  duration?: number;
+  status: string;
+}
+
 const router = Router();
 const logger = createLogger('UnifiedProgressAPI');
 
@@ -134,7 +151,7 @@ router.get('/:analysisId/stream', authMiddleware, async (req: Request, res: Resp
       userProgress: progress.userProgress,
       debugSummary: {
         steps: progress.debugProgress?.steps.length || 0,
-        currentStep: progress.debugProgress?.steps.find((s: any) => s.status === 'in-progress')?.name
+        currentStep: (progress.debugProgress as DebugProgress | undefined)?.steps.find((s) => s.status === 'in-progress')?.name
       }
     })}\n\n`);
     
@@ -143,7 +160,7 @@ router.get('/:analysisId/stream', authMiddleware, async (req: Request, res: Resp
     // dataFlowMonitor already imported
     
     // Forward progress tracker events
-    const onProgressUpdate = (id: string, update: any) => {
+    const onProgressUpdate = (id: string, update: unknown) => {
       if (id === analysisId) {
         res.write(`data: ${JSON.stringify({
           type: 'progress',
@@ -155,8 +172,8 @@ router.get('/:analysisId/stream', authMiddleware, async (req: Request, res: Resp
     
     // Forward data flow monitor events if we have sessionId
     const sessionId = progress.debugProgress?.sessionId;
-    const onStepComplete = (step: any) => {
-      if (sessionId && progress.debugProgress?.steps.find((s: any) => s.id === step.id)) {
+    const onStepComplete = (step: DataFlowStep) => {
+      if (sessionId && (progress.debugProgress as DebugProgress | undefined)?.steps.find((s) => s.name === step.name)) {
         res.write(`data: ${JSON.stringify({
           type: 'debug',
           source: 'dataflow',

@@ -2,6 +2,7 @@
 
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import { Logger } from '../utils/logger';
+import { RepositorySizeCategory } from '../config/models/repository-model-config';
 
 /**
  * Repository context interface
@@ -27,6 +28,16 @@ export interface DeepWikiModels {
   openrouter: 'openai/gpt-4o' | 'openai/gpt-4.1' | 'openai/o1' | 'openai/o3' | 'openai/o4-mini' | 'anthropic/claude-3.7-sonnet' | 'anthropic/claude-3.5-sonnet';
   ollama: 'qwen3:1.7b' | 'llama3:8b' | 'qwen3:8b';
   deepseek: 'deepseek-coder' | 'deepseek-coder-plus' | string;
+}
+
+/**
+ * Model selector interface
+ */
+export interface ModelSelector {
+  selectModelForContext(mode: string, context: { primaryLanguage: string; size: RepositorySizeCategory }): Promise<{
+    primary: { provider: string; model: string };
+    fallback?: { provider: string; model: string };
+  }>;
 }
 
 /**
@@ -94,7 +105,7 @@ export class DeepWikiClient {
    * Model selector for dynamic configuration
    * Will be injected if available, otherwise uses defaults
    */
-  private modelSelector?: any; // ContextAwareModelSelector type
+  private modelSelector?: ModelSelector;
   
   /**
    * Default model configuration as fallback
@@ -110,7 +121,7 @@ export class DeepWikiClient {
    * @param baseUrl DeepWiki API base URL
    * @param logger Logger instance
    */
-  constructor(baseUrl: string, logger: Logger, modelSelector?: any) {
+  constructor(baseUrl: string, logger: Logger, modelSelector?: ModelSelector) {
     this.logger = logger;
     this.modelSelector = modelSelector;
     this.client = axios.create({
@@ -314,7 +325,7 @@ export class DeepWikiClient {
       try {
         const context = {
           primaryLanguage: language,
-          size: sizeCategory as any
+          size: sizeCategory as RepositorySizeCategory
         };
         
         const selection = await this.modelSelector.selectModelForContext('deepwiki', context);
@@ -328,7 +339,7 @@ export class DeepWikiClient {
         
         return {
           provider: selection.primary.provider as DeepWikiProvider,
-          model: selection.primary.model as any
+          model: selection.primary.model
         };
       } catch (error) {
         this.logger.warn('Model selector failed, using default', { error });
@@ -350,7 +361,7 @@ export class DeepWikiClient {
     if (axios.isAxiosError(error)) {
       const axiosError = error as AxiosError;
       const status = axiosError.response?.status;
-      const data = axiosError.response?.data as Record<string, any>;
+      const data = axiosError.response?.data as Record<string, unknown>;
       
       if (status === 413) {
         return new Error('Repository is too large for analysis. Please try a smaller repository or use chunked analysis.');

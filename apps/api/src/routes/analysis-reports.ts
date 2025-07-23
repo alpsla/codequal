@@ -1,16 +1,141 @@
 import { Router, Request, Response } from 'express';
-import { getSupabase } from '@codequal/database/supabase/client';
+import { getSupabase } from '@codequal/database';
 import { createLogger } from '@codequal/core/utils';
-import { VectorContextService, createVectorContextService } from '@codequal/agents/multi-agent/vector-context-service';
+import { StandardReport } from '@codequal/agents/services';
+
+interface Finding {
+  title: string;
+  file?: string;
+  line?: number;
+  severity: 'critical' | 'high' | 'medium' | 'low';
+  message: string;
+  description?: string;
+  recommendation?: string;
+  isPRIssue?: boolean;
+  isRepoIssue?: boolean;
+  type?: string;
+  category?: string;
+  codeSnippet?: string;
+}
+
+interface ReportStructure {
+  id?: string;
+  repositoryUrl?: string;
+  prNumber?: string;
+  timestamp?: string;
+  reportUrl?: string;
+  filesAnalyzed?: number;
+  linesAdded?: number;
+  linesRemoved?: number;
+  primaryLanguage?: string;
+  overview?: {
+    analysisScore?: number;
+    riskLevel?: string;
+    totalFindings?: number;
+    executiveSummary?: string;
+    blockingIssues?: Array<{ message?: string }>;
+    decision?: {
+      status: string;
+      reason?: string;
+      confidence?: number;
+      message?: string;
+    };
+    positiveFindings?: Array<{ message?: string }>;
+  };
+  modules?: {
+    findings?: {
+      categories?: Record<string, {
+        name: string;
+        icon: string;
+        summary?: string;
+        findings: Finding[];
+      }>;
+    };
+    recommendations?: {
+      categories: Array<{
+        name: string;
+        recommendations: Array<{
+          title: string;
+          priority: string;
+          impact: string;
+          description?: string;
+          effort?: string;
+        }>;
+      }>;
+    };
+    educationalContent?: {
+      totalTime?: string;
+      resources?: Array<{
+        title: string;
+        description?: string;
+        links?: Array<{
+          url: string;
+          title: string;
+        }>;
+        [key: string]: unknown;
+      }>;
+      [key: string]: unknown;
+    };
+    skillsAssessment?: {
+      skills?: Array<{
+        name: string;
+        level: string;
+        score: number;
+      }>;
+      [key: string]: unknown;
+    };
+  };
+  exports?: {
+    prComment?: string;
+    htmlReport?: string;
+    markdownReport?: string;
+  };
+  agents?: Record<string, unknown>;
+  tools?: Record<string, unknown>;
+  visualizations?: unknown;
+}
+import { VectorContextService, createVectorContextService } from '@codequal/agents/multi-agent';
+import { AuthenticatedUser as AgentAuthenticatedUser, UserRole, UserStatus, UserPermissions } from '@codequal/agents/multi-agent/types';
+import { AuthenticatedUser } from '../middleware/auth-middleware';
 import { ResultOrchestrator } from '../services/result-orchestrator';
-import { HtmlReportGenerator } from '../services/html-report-generator';
-import { HtmlReportGeneratorV5 } from '../services/html-report-generator-v5';
+import { HtmlReportGeneratorV5, ReportInput } from '../services/html-report-generator-v5';
+// Use V5 as the main generator
+const HtmlReportGenerator = HtmlReportGeneratorV5;
 import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
 
 const router = Router();
 const logger = createLogger('AnalysisReportsAPI');
+
+// Helper function to convert API AuthenticatedUser to Agent AuthenticatedUser
+function toAgentAuthenticatedUser(user: AuthenticatedUser): AgentAuthenticatedUser {
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.email,
+    organizationId: user.organizationId,
+    permissions: {
+      repositories: {},
+      organizations: [],
+      globalPermissions: [],
+      quotas: {
+        requestsPerHour: 1000,
+        maxConcurrentExecutions: 5,
+        storageQuotaMB: 100
+      }
+    },
+    role: UserRole.USER,
+    status: UserStatus.ACTIVE,
+    session: {
+      token: user.session.token,
+      expiresAt: user.session.expiresAt,
+      fingerprint: 'api-fingerprint',
+      ipAddress: '127.0.0.1',
+      userAgent: 'CodeQual-API'
+    }
+  };
+}
 
 // Import Vector DB retrieval services
 import { createVectorReportRetrievalService } from '../services/vector-report-retrieval-service';
@@ -27,7 +152,7 @@ router.get('/analysis/real-pr-test', async (req: Request, res: Response) => {
 
   try {
     // Create test user for development
-    const testUser: any = {
+    const testUser: AuthenticatedUser = {
       id: 'test-user-id',
       email: 'test@example.com',
       permissions: [],
@@ -36,11 +161,6 @@ router.get('/analysis/real-pr-test', async (req: Request, res: Response) => {
       session: {
         token: 'test-token',
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
-      },
-      subscription: {
-        status: 'active' as const,
-        plan: 'professional' as const,
-        tier: 'professional' as const
       }
     };
     
@@ -177,11 +297,13 @@ router.get('/analysis/demo-report', async (req: Request, res: Response) => {
       ]
     },
     educational: {
-      suggestions: [
+      modules: [
         {
-          topic: 'Security Best Practices',
+          title: 'Security Best Practices',
           content: 'When implementing authentication, always use secure password hashing algorithms like bcrypt or argon2',
-          resources: ['https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html']
+          difficulty: 'intermediate',
+          estimatedTime: '5 minutes',
+          tags: ['security', 'authentication', 'best-practices']
         }
       ]
     }
@@ -199,7 +321,24 @@ router.get('/analysis/demo-report', async (req: Request, res: Response) => {
   try {
     // HtmlReportGenerator already imported
     const generator = new HtmlReportGenerator();
-    const html = generator.generateEnhancedHtmlReport(testReport);
+    // Convert testReport to ReportInput format
+    const reportInput: ReportInput = {
+      overall_score: testReport.overall_score,
+      report_data: {
+        pr_details: {
+          number: testReport.pr_number
+        },
+        deepwiki: {
+          changes: testReport.deepwiki.changes.map((c) => ({ 
+            additions: 10, 
+            deletions: 5 
+          })),
+          score: 85
+        },
+        educational: testReport.educational
+      }
+    };
+    const html = generator.generateEnhancedHtmlReport(reportInput);
     
     res.setHeader('Content-Type', 'text/html');
     res.send(html);
@@ -278,21 +417,26 @@ router.get('/analysis/:reportId/report', async (req: Request, res: Response) => 
       logger.info('Attempting to retrieve report from Vector DB', { reportId, userId });
       
       // Create authenticated user object for Vector DB access
-      const authenticatedUser: any = {
+      const authenticatedUser: AuthenticatedUser = {
         id: userId || 'api-user',
         email: 'api@codequal.dev',
         organizationId: 'default',
-        permissions: ['read'],
-        createdAt: new Date(),
-        status: 'active'
+        permissions: [],
+        role: 'user',
+        status: 'active',
+        session: {
+          token: 'api-token',
+          expiresAt: new Date(Date.now() + 3600000)
+        }
       };
       
       // Create Vector context service and report retrieval service
-      const vectorContextService = createVectorContextService(authenticatedUser);
+      const agentUser = toAgentAuthenticatedUser(authenticatedUser);
+      const vectorContextService = createVectorContextService(agentUser);
       const reportRetrievalService = createVectorReportRetrievalService(vectorContextService);
       
       // Retrieve report from Vector DB
-      const report = await reportRetrievalService.retrieveReportById(reportId, userId!);
+      const report = await reportRetrievalService.retrieveReportById(reportId, userId || 'api-user');
       
       if (report) {
         logger.info('✅ Report retrieved from Vector DB', { reportId });
@@ -302,12 +446,18 @@ router.get('/analysis/:reportId/report', async (req: Request, res: Response) => 
           if (format === 'html') {
             // HtmlReportGenerator already imported
             const generator = new HtmlReportGenerator();
-            const htmlContent = generator.generateEnhancedHtmlReport(report);
+            const htmlContent = generator.generateEnhancedHtmlReport({
+              ...report,
+              timestamp: report.timestamp.toISOString()
+            });
             res.setHeader('Content-Type', 'text/html');
             return res.send(htmlContent);
           } else if (format === 'markdown') {
             res.setHeader('Content-Type', 'text/markdown');
-            return res.send(report.exports?.markdownReport || generateMarkdownReport(report));
+            return res.send(report.exports?.markdownReport || generateMarkdownReport({
+              ...report,
+              prNumber: report.prNumber?.toString()
+            } as unknown as ReportStructure));
           } else {
             return res.json({
               success: true,
@@ -337,7 +487,7 @@ router.get('/analysis/:reportId/report', async (req: Request, res: Response) => 
     }
     
     // If Vector DB retrieval fails, try legacy database storage
-    let reportData: any = null;
+    let reportData: { id: string; report_data: unknown; created_at: string; repository_url?: string; pr_number?: number } | null = null;
     
     try {
       logger.info('Checking legacy database storage', { reportId });
@@ -349,14 +499,14 @@ router.get('/analysis/:reportId/report', async (req: Request, res: Response) => 
         .single();
         
       if (dbReport && !reportError) {
-        reportData = dbReport;
+        reportData = dbReport as { id: string; report_data: unknown; created_at: string; repository_url?: string; pr_number?: number };
       }
     } catch (dbError) {
       logger.warn('Legacy database check failed', { error: dbError });
     }
     
     if (reportData) {
-      const report = reportData.report_data as any;
+      const report = reportData.report_data as ReportStructure;
       
       // Return report in requested format
       switch (format) {
@@ -369,7 +519,7 @@ router.get('/analysis/:reportId/report', async (req: Request, res: Response) => 
           
         case 'markdown':
           res.setHeader('Content-Type', 'text/markdown');
-          res.send(report.exports?.markdownReport || generateMarkdownReport(report));
+          res.send(report.exports?.markdownReport || report.exports?.prComment || generateMarkdownReport(report));
           break;
           
         case 'json':
@@ -380,8 +530,8 @@ router.get('/analysis/:reportId/report', async (req: Request, res: Response) => 
             metadata: {
               id: reportData.id,
               createdAt: reportData.created_at,
-              repositoryUrl: reportData.repository_url,
-              prNumber: reportData.pr_number
+              repositoryUrl: reportData.repository_url || report.repositoryUrl,
+              prNumber: reportData.pr_number || Number(report.prNumber)
             }
           });
       }
@@ -410,34 +560,34 @@ router.get('/analysis/:reportId/report', async (req: Request, res: Response) => 
 /**
  * Generate Markdown report from StandardReport
  */
-function generateMarkdownReport(report: any): string {
+function generateMarkdownReport(report: ReportStructure): string {
   const { overview, modules } = report;
   
   let markdown = `# CodeQual Analysis Report\n\n`;
   markdown += `**Repository:** ${report.repositoryUrl}\n`;
   markdown += `**PR #${report.prNumber}**\n`;
-  markdown += `**Date:** ${new Date(report.timestamp).toLocaleString()}\n\n`;
+  markdown += `**Date:** ${report.timestamp ? new Date(report.timestamp).toLocaleString() : 'Not available'}\n\n`;
   
   markdown += `## Overview\n\n`;
-  markdown += `**Score:** ${overview.analysisScore}/100\n`;
-  markdown += `**Risk Level:** ${overview.riskLevel}\n`;
-  markdown += `**Total Findings:** ${overview.totalFindings}\n\n`;
+  markdown += `**Score:** ${overview?.analysisScore || 0}/100\n`;
+  markdown += `**Risk Level:** ${overview?.riskLevel || 'Unknown'}\n`;
+  markdown += `**Total Findings:** ${overview?.totalFindings || 0}\n\n`;
   
-  markdown += `### Executive Summary\n${overview.executiveSummary}\n\n`;
+  markdown += `### Executive Summary\n${overview?.executiveSummary || 'No summary available'}\n\n`;
   
-  if (overview.blockingIssues?.length > 0) {
+  if (overview?.blockingIssues && overview.blockingIssues.length > 0) {
     markdown += `### Blocking Issues\n`;
-    overview.blockingIssues.forEach((issue: any) => {
+    overview.blockingIssues.forEach((issue) => {
       markdown += `- ${issue.message || issue}\n`;
     });
     markdown += `\n`;
   }
   
   markdown += `## Findings\n\n`;
-  Object.entries(modules.findings?.categories || {}).forEach(([category, data]: [string, any]) => {
+  Object.entries(modules?.findings?.categories || {}).forEach(([category, data]) => {
     if (data.findings?.length > 0) {
       markdown += `### ${data.name} ${data.icon}\n`;
-      data.findings.forEach((finding: any) => {
+      data.findings.forEach((finding) => {
         markdown += `- **${finding.severity}**: ${finding.title}\n`;
         markdown += `  ${finding.description}\n`;
         if (finding.file) {
@@ -451,11 +601,11 @@ function generateMarkdownReport(report: any): string {
     }
   });
   
-  if (modules.recommendations?.categories?.length > 0) {
+  if (modules?.recommendations?.categories && modules.recommendations.categories.length > 0) {
     markdown += `## Recommendations\n\n`;
-    modules.recommendations.categories.forEach((cat: any) => {
+    modules.recommendations.categories.forEach((cat) => {
       markdown += `### ${cat.name}\n`;
-      cat.recommendations.forEach((rec: any) => {
+      cat.recommendations.forEach((rec) => {
         markdown += `- **${rec.title}**\n`;
         markdown += `  ${rec.description}\n`;
         markdown += `  Effort: ${rec.effort} | Impact: ${rec.impact}\n\n`;
@@ -469,7 +619,7 @@ function generateMarkdownReport(report: any): string {
 /**
  * Generate HTML report from report data
  */
-function generateHTMLReport(report: any): string {
+function generateHTMLReport(report: ReportStructure): string {
   // Handle both new format (with overview/modules) and old format (with agents/tools)
   if (report.agents || report.tools) {
     return generateLegacyHTMLReport(report);
@@ -492,10 +642,10 @@ function generateHTMLReport(report: any): string {
   }
   
   // Helper function to get severity counts
-  const getSeverityCounts = (findings: any[]) => {
+  const getSeverityCounts = (findings: Finding[]) => {
     const counts = { critical: 0, high: 0, medium: 0, low: 0 };
     findings.forEach(f => {
-      if (Object.prototype.hasOwnProperty.call(counts, f.severity)) {
+      if (f.severity && Object.prototype.hasOwnProperty.call(counts, f.severity)) {
         counts[f.severity as keyof typeof counts]++;
       }
     });
@@ -503,9 +653,9 @@ function generateHTMLReport(report: any): string {
   };
   
   // Extract all findings
-  const allFindings: any[] = [];
-  if (modules.findings?.categories) {
-    Object.values(modules.findings.categories).forEach((category: any) => {
+  const allFindings: Finding[] = [];
+  if (modules?.findings?.categories) {
+    Object.values(modules.findings.categories).forEach((category) => {
       if (category.findings) {
         allFindings.push(...category.findings);
       }
@@ -542,7 +692,7 @@ function generateHTMLReport(report: any): string {
   }
   
   // Override with report decision if available
-  if (overview.decision?.status) {
+  if (overview?.decision?.status) {
     approvalStatus = overview.decision.status;
     approvalMessage = overview.decision.message || approvalMessage;
     confidence = Math.round((overview.decision.confidence || confidence / 100) * 100);
@@ -578,21 +728,21 @@ function generateHTMLReport(report: any): string {
     low_count: severityCounts.low.toString(),
     
     // Overall score
-    overall_score: overview.analysisScore?.toString() || '0',
-    score_class: overview.analysisScore >= 80 ? 'excellent' : 
-                 overview.analysisScore >= 60 ? 'good' : 
-                 overview.analysisScore >= 40 ? 'fair' : 'poor',
+    overall_score: overview?.analysisScore?.toString() || '0',
+    score_class: (overview?.analysisScore || 0) >= 80 ? 'excellent' : 
+                 (overview?.analysisScore || 0) >= 60 ? 'good' : 
+                 (overview?.analysisScore || 0) >= 40 ? 'fair' : 'poor',
     score_trend_class: 'neutral',
     score_trend_icon: 'fa-equals',
     score_trend_value: 'No change',
     
     // Learning time
-    total_learning_time: modules.educationalContent?.totalTime || '30 minutes',
+    total_learning_time: modules?.educationalContent?.totalTime || '30 minutes',
   };
   
   // Generate blocking issues HTML
-  templateData.blocking_issues_html = overview.blockingIssues?.length > 0 ?
-    overview.blockingIssues.map((issue: any) => `
+  templateData.blocking_issues_html = (overview?.blockingIssues && overview.blockingIssues.length > 0) ?
+    overview.blockingIssues.map((issue) => `
       <div class="factor-item blocking">
         <i class="fas fa-times-circle"></i>
         <span>${issue.message || issue}</span>
@@ -600,8 +750,8 @@ function generateHTMLReport(report: any): string {
     `).join('') : '<div class="factor-item"><i class="fas fa-check"></i> No blocking issues found</div>';
   
   // Generate positive findings HTML
-  templateData.positive_findings_html = overview.positiveFindings?.length > 0 ?
-    overview.positiveFindings.map((finding: any) => `
+  templateData.positive_findings_html = (overview?.positiveFindings && overview.positiveFindings.length > 0) ?
+    overview.positiveFindings.map((finding) => `
       <div class="factor-item positive">
         <i class="fas fa-check-circle"></i>
         <span>${finding.message || finding}</span>
@@ -623,8 +773,8 @@ function generateHTMLReport(report: any): string {
     `<button class="btn-secondary" onclick="toggleLowerPriorityIssues()">Show ${lowerPriorityRepoIssues.length} lower priority issues</button>` : '';
   
   // Generate skills HTML
-  templateData.skills_html = modules.skillsAssessment?.skills ? 
-    modules.skillsAssessment.skills.map((skill: any) => `
+  templateData.skills_html = modules?.skillsAssessment?.skills ? 
+    modules.skillsAssessment.skills.map((skill) => `
       <div class="skill-item">
         <div class="skill-header">
           <span class="skill-name">${skill.name}</span>
@@ -638,9 +788,9 @@ function generateHTMLReport(report: any): string {
     `).join('') : '<p>No skills assessment available</p>';
   
   // Generate skill recommendations HTML
-  templateData.skill_recommendations_html = modules.recommendations?.categories ?  
-    modules.recommendations.categories.slice(0, 3).map((cat: any) => 
-      cat.recommendations.slice(0, 1).map((rec: any) => `
+  templateData.skill_recommendations_html = modules?.recommendations?.categories ?  
+    modules?.recommendations.categories.slice(0, 3).map((cat) => 
+      cat.recommendations.slice(0, 1).map((rec) => `
         <div class="recommendation-card">
           <h4>${rec.title}</h4>
           <p>${rec.description}</p>
@@ -649,8 +799,8 @@ function generateHTMLReport(report: any): string {
     ).join('') : '';
   
   // Generate educational content HTML
-  templateData.educational_html = modules.educationalContent?.resources ?
-    modules.educationalContent.resources.map((resource: any) => `
+  templateData.educational_html = modules?.educationalContent?.resources ?
+    modules.educationalContent.resources.map((resource) => `
       <div class="educational-card">
         <div class="educational-icon">
           <i class="fas fa-book"></i>
@@ -664,7 +814,7 @@ function generateHTMLReport(report: any): string {
           </div>
           ${resource.links ? `
             <div class="educational-links">
-              ${resource.links.map((link: any) => `<a href="${link.url}" target="_blank">${link.title}</a>`).join(' • ')}
+              ${resource.links.map((link) => `<a href="${link.url}" target="_blank">${link.title}</a>`).join(' • ')}
             </div>
           ` : ''}
         </div>
@@ -687,7 +837,7 @@ function generateHTMLReport(report: any): string {
 /**
  * Generate issues HTML for the template
  */
-function generateIssuesHTML(issues: any[]): string {
+function generateIssuesHTML(issues: Finding[]): string {
   if (issues.length === 0) {
     return '<p class="no-issues">No issues found in this category.</p>';
   }
@@ -709,11 +859,11 @@ function generateIssuesHTML(issues: any[]): string {
 /**
  * Generate PR comment text
  */
-function generatePRComment(report: any): string {
+function generatePRComment(report: ReportStructure): string {
   const { overview } = report;
-  const decision = overview.decision?.status || 'NEEDS_REVIEW';
-  const score = overview.analysisScore || 0;
-  const blockingCount = overview.blockingIssues?.length || 0;
+  const decision = overview?.decision?.status || 'NEEDS_REVIEW';
+  const score = overview?.analysisScore || 0;
+  const blockingCount = overview?.blockingIssues?.length || 0;
   
   return `## CodeQual Analysis Report
 
@@ -721,16 +871,16 @@ function generatePRComment(report: any): string {
 **Quality Score:** ${score}/100
 **Blocking Issues:** ${blockingCount}
 
-${overview.executiveSummary || 'Analysis complete.'}
+${overview?.executiveSummary || 'Analysis complete.'}
 
-${blockingCount > 0 ? `
+${blockingCount > 0 && overview?.blockingIssues ? `
 ### ⚠️ Blocking Issues
-${overview.blockingIssues.map((issue: any) => `- ${issue.message || issue}`).join('\n')}
+${overview.blockingIssues.map((issue) => `- ${issue.message || issue}`).join('\n')}
 ` : ''}
 
-${overview.positiveFindings?.length > 0 ? `
+${overview?.positiveFindings && overview.positiveFindings.length > 0 ? `
 ### ✅ Positive Findings
-${overview.positiveFindings.map((finding: any) => `- ${finding.message || finding}`).join('\n')}
+${overview.positiveFindings.map((finding) => `- ${finding.message || finding}`).join('\n')}
 ` : ''}
 
 [View Full Report](${report.reportUrl || '#'})`;
@@ -739,8 +889,12 @@ ${overview.positiveFindings.map((finding: any) => `- ${finding.message || findin
 /**
  * Fallback to basic HTML report if enhanced template fails
  */
-function generateBasicHTMLReport(report: any): string {
+function generateBasicHTMLReport(report: ReportStructure | StandardReport): string {
   const { overview, modules } = report;
+  
+  if (!overview) {
+    return `<!DOCTYPE html><html><body><h1>Error: No overview data available</h1></body></html>`;
+  }
   
   return `
 <!DOCTYPE html>
@@ -826,18 +980,20 @@ function generateBasicHTMLReport(report: any): string {
           <strong>Total Findings:</strong> ${overview.totalFindings}
         </div>
         <div class="metric">
-          <strong>Total Recommendations:</strong> ${overview.totalRecommendations}
+          <strong>Total Recommendations:</strong> ${'totalRecommendations' in overview ? overview.totalRecommendations : 0}
         </div>
       </div>
     </section>
     
     <section>
       <h2>Findings</h2>
-      ${Object.entries(modules.findings?.categories || {}).map(([category, data]: [string, any]) => `
-        <h3>${data.name} ${data.icon}</h3>
-        <p>${data.summary}</p>
-        ${data.findings.length === 0 ? '<p>No issues found.</p>' : 
-          data.findings.map((finding: any) => `
+      ${Object.entries(modules?.findings?.categories || {}).map(([category, data]) => {
+        const categoryData = data as {name: string, icon: string, summary?: string, findings: Finding[]};
+        return `
+        <h3>${categoryData.name} ${categoryData.icon}</h3>
+        <p>${categoryData.summary}</p>
+        ${categoryData.findings.length === 0 ? '<p>No issues found.</p>' : 
+          categoryData.findings.map((finding) => `
             <div class="finding severity-${finding.severity}">
               <h4>${finding.title}</h4>
               <p>${finding.description}</p>
@@ -846,14 +1002,15 @@ function generateBasicHTMLReport(report: any): string {
             </div>
           `).join('')
         }
-      `).join('')}
+      `;
+      }).join('')}
     </section>
     
     <section>
       <h2>Recommendations</h2>
-      ${modules.recommendations?.categories?.map((cat: any) => `
+      ${modules?.recommendations?.categories?.map((cat: {name: string, recommendations: Array<{title: string, description?: string, effort?: string, impact?: string}>}) => `
         <h3>${cat.name}</h3>
-        ${cat.recommendations.map((rec: any) => `
+        ${cat.recommendations.map((rec: {title: string, description?: string, effort?: string, impact?: string}) => `
           <div class="recommendation">
             <h4>${rec.title}</h4>
             <p>${rec.description}</p>
@@ -864,7 +1021,7 @@ function generateBasicHTMLReport(report: any): string {
     </section>
     
     <footer>
-      <p><em>Generated by CodeQual on ${new Date(report.timestamp).toLocaleString()}</em></p>
+      <p><em>Generated by CodeQual on ${report.timestamp ? new Date(report.timestamp).toLocaleString() : 'unknown date'}</em></p>
     </footer>
   </div>
 </body>
@@ -875,16 +1032,26 @@ function generateBasicHTMLReport(report: any): string {
 /**
  * Generate HTML report for legacy format (agents/tools structure)
  */
-function generateLegacyHTMLReport(report: any): string {
+interface LegacyReport {
+  agents?: Record<string, unknown>;
+  tools?: Record<string, unknown>;
+  overall_score?: number;
+  repository_url?: string;
+  pr_number?: number;
+  timestamp?: string;
+}
+
+function generateLegacyHTMLReport(report: LegacyReport): string {
   const { agents = {}, tools = {}, overall_score, repository_url, pr_number } = report;
   
   // Collect all findings from agents
-  const allFindings: any[] = [];
-  Object.entries(agents).forEach(([agentName, agentData]: [string, any]) => {
-    if (agentData.findings && Array.isArray(agentData.findings)) {
-      agentData.findings.forEach((finding: any) => {
+  const allFindings: Finding[] = [];
+  Object.entries(agents).forEach(([agentName, agentData]) => {
+    const data = agentData as { findings?: unknown[] };
+    if (data.findings && Array.isArray(data.findings)) {
+      data.findings.forEach((finding) => {
         allFindings.push({
-          ...finding,
+          ...(finding as Finding),
           category: agentName
         });
       });
@@ -1069,7 +1236,7 @@ router.get('/analysis/:reportId/html', async (req: Request, res: Response) => {
     
     // Try to retrieve from Vector DB first
     try {
-      const authenticatedUser: any = {
+      const authenticatedUser = {
         id: userId,
         email: 'api@codequal.dev',
         organizationId: 'default',
@@ -1089,7 +1256,10 @@ router.get('/analysis/:reportId/html', async (req: Request, res: Response) => {
         try {
           // HtmlReportGeneratorV5 already imported
           const generator = new HtmlReportGeneratorV5();
-          const html = generator.generateEnhancedHtmlReport(vectorReport);
+          const html = generator.generateEnhancedHtmlReport({
+            ...vectorReport,
+            timestamp: vectorReport.timestamp.toISOString()
+          });
           
           res.setHeader('Content-Type', 'text/html');
           return res.send(html);
@@ -1097,7 +1267,10 @@ router.get('/analysis/:reportId/html', async (req: Request, res: Response) => {
           // Fallback to basic generator
           // HtmlReportGenerator already imported
           const generator = new HtmlReportGenerator();
-          const html = generator.generateEnhancedHtmlReport(vectorReport);
+          const html = generator.generateEnhancedHtmlReport({
+            ...vectorReport,
+            timestamp: vectorReport.timestamp.toISOString()
+          });
           
           res.setHeader('Content-Type', 'text/html');
           return res.send(html);

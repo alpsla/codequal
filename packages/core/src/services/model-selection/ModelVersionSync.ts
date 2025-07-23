@@ -269,26 +269,29 @@ export class ModelVersionSync {
       // Convert database configs to ModelVersionInfo format
       for (const [language, sizeConfigs] of Object.entries(dbConfigs)) {
         for (const [size, config] of Object.entries(sizeConfigs)) {
-          const modelConfig = config as any;
+          const modelConfig = config as unknown as { provider: string; model: string; capabilities: string[]; tier: ModelTier; contextWindow: number; costPerMillion: number; testResults?: TestResults; notes?: string; pricing?: ModelPricing; };
           const key = `${modelConfig.provider}/${modelConfig.model}`;
           
           // Track all contexts where this model is used
           if (!modelContextMap.has(key)) {
             modelContextMap.set(key, new Set());
           }
-          modelContextMap.get(key)!.add(language);
-          modelContextMap.get(key)!.add(`${size}_repositories`);
+          const contextSet = modelContextMap.get(key);
+          if (contextSet) {
+            contextSet.add(language);
+            contextSet.add(`${size}_repositories`);
+          }
           
           // Create or update ModelVersionInfo
           if (!models[key]) {
             // First time seeing this model - create full entry
-            const pricing = modelConfig.testResults?.pricing || this.getPricingForModel(modelConfig.provider, modelConfig.model);
+            const pricing = modelConfig.pricing || this.getPricingForModel(modelConfig.provider, modelConfig.model);
             
             // Debug logging
             if (key.includes('nano')) {
               this.logger.info('Loading model with pricing', {
                 model: key,
-                testResultsPricing: modelConfig.testResults?.pricing,
+                testResultsPricing: modelConfig.pricing,
                 finalPricing: pricing
               });
             }
@@ -313,7 +316,10 @@ export class ModelVersionSync {
           }
           
           // Update preferredFor with all contexts
-          models[key].preferredFor = Array.from(modelContextMap.get(key)!);
+          const contexts = modelContextMap.get(key);
+          if (contexts) {
+            models[key].preferredFor = Array.from(contexts);
+          }
         }
       }
 
@@ -578,8 +584,8 @@ export class ModelVersionSync {
       standardizedMap[language] = { ...sizeConfigs };
       
       for (const [sizeCategory, config] of Object.entries(sizeConfigs)) {
-        if (standardizedMap[language] && typeof standardizedMap[language] === 'object') {
-          (standardizedMap[language] as Record<string, RepositoryModelConfig>)[sizeCategory] = await this.standardizeModelConfig(config);
+        if (standardizedMap[language]) {
+          standardizedMap[language][sizeCategory as RepositorySizeCategory] = await this.standardizeModelConfig(config);
         }
       }
     }
