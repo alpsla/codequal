@@ -28,7 +28,7 @@ async function main() {
   console.log(chalk.blue('1. Primary and Fallback Model Selection:'));
   
   const testContexts = [
-    { name: 'Orchestrator Agent', language: 'orchestrator_agent', sizeCategory: 'universal' as any },
+    { name: 'Orchestrator Agent', language: 'orchestrator_agent', sizeCategory: RepositorySizeCategory.SMALL },
     { name: 'Small JavaScript', language: 'javascript', sizeCategory: RepositorySizeCategory.SMALL },
     { name: 'Large Python', language: 'python', sizeCategory: RepositorySizeCategory.LARGE }
   ];

@@ -18,35 +18,75 @@ import { createLogger } from '@codequal/core';
 const router = Router();
 const logger = createLogger('ResearcherAPI');
 
+interface ResearchConfig {
+  language?: string;
+  sizeCategory?: string;
+  frameworks?: string[];
+  tags?: string[];
+  urgency?: string;
+  researchDepth?: 'shallow' | 'deep';
+  maxCostPerMillion?: number;
+  minPerformanceThreshold?: number;
+}
+
+interface ResearchOperation {
+  operationId: string;
+  userId: string;
+  startedAt: Date;
+  completedAt?: Date;
+  status: 'running' | 'completed' | 'failed';
+  config: ResearchConfig;
+  result?: Record<string, unknown>;
+  error?: string;
+  configurationsUpdated?: number;
+  totalCostSavings?: number;
+  performanceImprovements?: number;
+}
+
+interface ConfigurationOverview {
+  totalConfigurations: number;
+  byLanguage: Record<string, number>;
+  byProvider: Record<string, number>;
+  lastUpdated: Date;
+}
+
+interface Optimization {
+  type: string;
+  description: string;
+  impact: 'high' | 'medium' | 'low';
+  estimatedSavings?: number;
+}
+
 // Mock researcher service for testing
 interface ResearcherService {
-  triggerResearch(config: any): Promise<any>;
-  getOperationStatus(operationId: string): Promise<any>;
-  getActiveOperations(): Promise<any[]>;
-  getOperationHistory(limit: number): Promise<any[]>;
-  generateConfigurationOverview(): Promise<any>;
-  getRecommendedOptimizations(): Promise<any>;
+  triggerResearch(config: ResearchConfig): Promise<ResearchOperation>;
+  getOperationStatus(operationId: string): Promise<ResearchOperation | null>;
+  getActiveOperations(): Promise<ResearchOperation[]>;
+  getOperationHistory(limit: number): Promise<ResearchOperation[]>;
+  generateConfigurationOverview(): Promise<ConfigurationOverview>;
+  getRecommendedOptimizations(): Promise<Optimization[]>;
   startScheduledResearch(intervalHours: number): Promise<void>;
 }
 
 // Mock implementation
-const mockOperations = new Map<string, any>();
+const mockOperations = new Map<string, ResearchOperation>();
 
 // Helper function to create researcher service (mock for now)
 function createResearcherService(user: AuthenticatedUser): ResearcherService {
   return {
-    async triggerResearch(config: any) {
+    async triggerResearch(config: ResearchConfig): Promise<ResearchOperation> {
       const operationId = `research_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      const operation = {
+      const operation: ResearchOperation & { configurationsUpdated?: number; totalCostSavings?: number; performanceImprovements?: number } = {
         operationId,
         userId: user.id,
         startedAt: new Date(),
         status: 'running',
+        config,
         configurationsUpdated: 0,
         totalCostSavings: 0,
         performanceImprovements: 0
       };
-      mockOperations.set(operationId, operation);
+      mockOperations.set(operationId, operation as ResearchOperation);
       
       // Simulate research completion after delay
       setTimeout(() => {
@@ -60,11 +100,7 @@ function createResearcherService(user: AuthenticatedUser): ResearcherService {
         }
       }, 5000);
       
-      return {
-        operationId,
-        status: 'started',
-        estimatedDuration: config?.researchDepth === 'deep' ? '10-15 minutes' : '3-5 minutes'
-      };
+      return operation as ResearchOperation;
     },
     
     async getOperationStatus(operationId: string) {
@@ -82,28 +118,56 @@ function createResearcherService(user: AuthenticatedUser): ResearcherService {
         .slice(0, limit);
     },
     
-    async generateConfigurationOverview() {
+    async generateConfigurationOverview(): Promise<ConfigurationOverview> {
       return {
         totalConfigurations: 25,
-        configurationsByProvider: {
+        byLanguage: {
+          typescript: 10,
+          javascript: 8,
+          python: 4,
+          java: 3
+        },
+        byProvider: {
           anthropic: 10,
           openai: 8,
           google: 4,
           deepseek: 3
         },
-        configurationsByRole: {
-          security: 5,
-          architecture: 5,
-          performance: 5,
-          codeQuality: 5,
-          dependency: 5
-        },
-        averageCostPerMillion: 15.5,
         lastUpdated: new Date()
       };
     },
     
-    async getRecommendedOptimizations() {
+    async getRecommendedOptimizations(): Promise<Optimization[]> {
+      return [
+        {
+          type: 'cost',
+          description: 'Switch typescript/small/security from GPT-4 to Claude-3 Haiku',
+          impact: 'high' as const,
+          estimatedSavings: 8.0
+        },
+        {
+          type: 'performance',
+          description: 'Enable caching for architecture agent in large repositories',
+          impact: 'medium' as const,
+          estimatedSavings: 2.5
+        },
+        {
+          type: 'cost',
+          description: 'Use DeepSeek for dependency analysis in Python projects',
+          impact: 'medium' as const,
+          estimatedSavings: 3.0
+        }
+      ];
+    },
+    
+    async startScheduledResearch(intervalHours: number) {
+      logger.info(`Mock: Scheduled research every ${intervalHours} hours`);
+    }
+  };
+}
+
+// Remove the old implementation that was causing issues
+/*
       return {
         costOptimizations: [
           {
@@ -133,7 +197,7 @@ function createResearcherService(user: AuthenticatedUser): ResearcherService {
     },
     
     async startScheduledResearch(intervalHours: number) {
-      console.log(`Mock: Scheduled research every ${intervalHours} hours`);
+      logger.info(`Mock: Scheduled research every ${intervalHours} hours`);
     }
   };
 }
@@ -145,7 +209,7 @@ function createResearcherService(user: AuthenticatedUser): ResearcherService {
 router.post('/trigger', async (req: Request, res: Response) => {
   try {
     const user = req.user as AuthenticatedUser;
-    const config: any = req.body.config || {};
+    const config: ResearchConfig = req.body.config || {};
     
     // Validate research config
     if (config.maxCostPerMillion && config.maxCostPerMillion < 0) {
@@ -155,7 +219,7 @@ router.post('/trigger', async (req: Request, res: Response) => {
       });
     }
     
-    if (config.minPerformanceThreshold && (config.minPerformanceThreshold < 1 || config.minPerformanceThreshold > 10)) {
+    if (config.minPerformanceThreshold !== undefined && (config.minPerformanceThreshold < 1 || config.minPerformanceThreshold > 10)) {
       return res.status(400).json({
         success: false,
         error: 'minPerformanceThreshold must be between 1 and 10'
@@ -171,7 +235,7 @@ router.post('/trigger', async (req: Request, res: Response) => {
     });
     
   } catch (error) {
-    console.error('Failed to trigger research:', error);
+    logger.error('Failed to trigger research:', error as Error);
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
@@ -204,7 +268,7 @@ router.get('/operations/:operationId', async (req: Request, res: Response) => {
     });
     
   } catch (error) {
-    console.error('Failed to get operation status:', error);
+    logger.error('Failed to get operation status:', error as Error);
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
@@ -232,7 +296,7 @@ router.get('/operations', async (req: Request, res: Response) => {
     });
     
   } catch (error) {
-    console.error('Failed to get active operations:', error);
+    logger.error('Failed to get active operations:', error as Error);
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
@@ -268,7 +332,7 @@ router.get('/history', async (req: Request, res: Response) => {
     });
     
   } catch (error) {
-    console.error('Failed to get operation history:', error);
+    logger.error('Failed to get operation history:', error as Error);
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
@@ -293,7 +357,7 @@ router.get('/configuration-overview', async (req: Request, res: Response) => {
     });
     
   } catch (error) {
-    console.error('Failed to get configuration overview:', error);
+    logger.error('Failed to get configuration overview:', error as Error);
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
@@ -318,7 +382,7 @@ router.get('/recommendations', async (req: Request, res: Response) => {
     });
     
   } catch (error) {
-    console.error('Failed to get recommendations:', error);
+    logger.error('Failed to get recommendations:', error as Error);
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
@@ -355,7 +419,7 @@ router.post('/schedule', async (req: Request, res: Response) => {
     });
     
   } catch (error) {
-    console.error('Failed to schedule research:', error);
+    logger.error('Failed to schedule research:', error as Error);
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
@@ -395,7 +459,7 @@ router.get('/status', async (req: Request, res: Response) => {
     });
     
   } catch (error) {
-    console.error('Failed to get researcher status:', error);
+    logger.error('Failed to get researcher status:', error as Error);
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
@@ -465,7 +529,7 @@ router.post('/research', async (req: Request, res: Response) => {
     });
     
   } catch (error) {
-    logger.error('Failed to perform production research:', { error });
+    logger.error('Failed to perform production research:', { error: error as Error });
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'

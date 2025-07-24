@@ -315,7 +315,7 @@ function validateUserInput(input: any): UserInput | null {
   
   // Validate email
   if (typeof input.email !== 'string' ||
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email)) {
+      !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(input.email)) {
     throw new Error('Invalid email format');
   }
   

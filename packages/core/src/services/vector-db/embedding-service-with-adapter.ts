@@ -231,6 +231,7 @@ export class AdaptedEmbeddingService {
     }
     
     // Check for control characters that might cause issues
+    // eslint-disable-next-line no-control-regex
     if (/[\x00-\x08\x0B\x0C\x0E-\x1F]/.test(text)) {
       this.logger.warn('Text contains control characters');
     }

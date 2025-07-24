@@ -1,6 +1,20 @@
 import { Request, Response, NextFunction } from 'express';
 import { getSupabase } from '@codequal/database/supabase/client';
 import { AuthenticatedRequest, AuthenticatedUser } from './auth-middleware';
+import { createLogger } from '@codequal/core/utils';
+
+const logger = createLogger('auth-middleware-workaround');
+
+interface JWTPayload {
+  sub?: string;
+  email?: string;
+  exp?: number;
+  role?: string;
+  user_metadata?: {
+    organization_id?: string;
+    permissions?: string[];
+  };
+}
 
 export const authMiddlewareWorkaround = async (
   req: Request,
@@ -23,7 +37,7 @@ export const authMiddlewareWorkaround = async (
     const token = authHeader.substring(7);
 
     // Decode token without verification (workaround for Supabase bug)
-    let decoded: any;
+    let decoded: JWTPayload;
     try {
       // Manual JWT decode without library
       const parts = token.split('.');
@@ -68,7 +82,7 @@ export const authMiddlewareWorkaround = async (
       status: 'active',
       session: {
         token,
-        expiresAt: new Date(decoded.exp * 1000)
+        expiresAt: decoded.exp ? new Date(decoded.exp * 1000) : new Date(Date.now() + 24 * 60 * 60 * 1000)
       }
     };
 
@@ -88,7 +102,7 @@ export const authMiddlewareWorkaround = async (
     next();
 
   } catch (error) {
-    console.error('Authentication middleware error:', error);
+    logger.error('Authentication middleware error:', error as Error);
     res.status(500).json({ error: 'Authentication service error' });
   }
 };

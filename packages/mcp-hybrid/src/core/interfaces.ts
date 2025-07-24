@@ -69,7 +69,7 @@ export interface AnalysisContext {
   vectorDBConfig?: {
     enabledTools?: string[];
     disabledTools?: string[];
-    toolConfigs?: Record<string, any>;
+    toolConfigs?: Record<string, unknown>;
   };
 }
 
@@ -203,7 +203,7 @@ export interface ToolConfiguration {
     lastUsed?: Date;
     totalExecutions: number;
   };
-  settings?: Record<string, any>;
+  settings?: Record<string, unknown>;
 }
 
 /**

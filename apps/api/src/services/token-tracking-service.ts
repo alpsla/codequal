@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createLogger } from '@codequal/core/utils';
 
 export interface TokenUsageMetric {
@@ -90,7 +89,10 @@ export class TokenTrackingService {
     if (!this.metrics.has(analysisId)) {
       this.metrics.set(analysisId, []);
     }
-    this.metrics.get(analysisId)!.push(metric);
+    const analysisMetrics = this.metrics.get(analysisId);
+    if (analysisMetrics) {
+      analysisMetrics.push(metric);
+    }
 
     this.logger.debug('Token usage tracked', {
       analysisId,
@@ -113,7 +115,7 @@ export class TokenTrackingService {
     agentRole: string,
     prompt: string,
     messageType: 'natural' | 'cap' = 'natural',
-    metadata: any = {}
+    metadata: Partial<TokenUsageMetric['metadata']> = {}
   ): TokenUsageMetric {
     return this.trackMessage(
       analysisId,
@@ -137,7 +139,7 @@ export class TokenTrackingService {
     agentRole: string,
     response: string,
     messageType: 'natural' | 'cap' = 'natural',
-    metadata: any = {}
+    metadata: Partial<TokenUsageMetric['metadata']> = {}
   ): TokenUsageMetric {
     return this.trackMessage(
       analysisId,
@@ -162,7 +164,7 @@ export class TokenTrackingService {
     targetAgent: string,
     message: string,
     messageType: 'natural' | 'cap' = 'natural',
-    metadata: any = {}
+    metadata: Partial<TokenUsageMetric['metadata']> = {}
   ): TokenUsageMetric {
     return this.trackMessage(
       analysisId,

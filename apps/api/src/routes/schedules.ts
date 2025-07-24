@@ -257,7 +257,13 @@ function getAnalysisModeFromFrequency(frequency: string): 'quick' | 'comprehensi
   }
 }
 
-async function calculateScheduleSuggestions(repositoryUrl: string, currentSchedule: any): Promise<any[]> {
+interface ScheduleSuggestion {
+  frequency: string;
+  reason: string;
+  condition: string;
+}
+
+async function calculateScheduleSuggestions(repositoryUrl: string, currentSchedule: { frequency: string; canBeDisabled?: boolean }): Promise<ScheduleSuggestion[]> {
   const suggestions = [];
   
   // Suggest based on current frequency

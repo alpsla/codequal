@@ -1,6 +1,18 @@
 import { Request, Response, NextFunction } from 'express';
 import { getSupabase } from '@codequal/database/supabase/client';
 import { createHash, randomBytes } from 'crypto';
+import { createLogger } from '@codequal/core/utils/logger';
+import { AuthenticatedRequest } from './auth-middleware';
+
+const logger = createLogger('api-key-auth');
+
+// Define permission types
+interface ApiKeyPermissions {
+  endpoints?: string[] | '*';
+  scopes?: string[];
+  repositories?: string[];
+  [key: string]: unknown;
+}
 
 // ApiKeyData interface is defined in types/express.d.ts
 interface ApiKeyDataDB {
@@ -10,7 +22,7 @@ interface ApiKeyDataDB {
   name: string;
   key_hash: string;
   key_prefix?: string;
-  permissions: any;
+  permissions: ApiKeyPermissions;
   usage_limit: number;
   usage_count: number;
   rate_limit_per_minute: number;
@@ -19,7 +31,7 @@ interface ApiKeyDataDB {
   expires_at: string | null;
   last_used_at: string | null;
   created_at: string;
-  metadata: any;
+  metadata: Record<string, unknown>;
 }
 
 // Type augmentation is handled in types/express.d.ts
@@ -63,12 +75,19 @@ export async function apiKeyAuth(
     };
     
     // Also set user for downstream middleware
-    (req as any).user = {
+    (req as AuthenticatedRequest).user = {
       id: testUserId,
-      email: 'test@codequal.dev'
+      email: 'test@codequal.dev',
+      role: 'admin',
+      status: 'active',
+      permissions: [],
+      session: {
+        token: 'test-token',
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
+      }
     };
     
-    console.log('[API Key Auth] Test key authenticated successfully');
+    logger.info('Test key authenticated successfully');
     return next();
   }
 
@@ -82,7 +101,7 @@ export async function apiKeyAuth(
       .select('*')
       .eq('key_hash', keyHash)
       .eq('active', true)
-      .single() as { data: ApiKeyDataDB | null; error: any };
+      .single() as { data: ApiKeyDataDB | null; error: Error | null };
 
     if (error || !keyData) {
       // Log failed attempt
@@ -105,7 +124,7 @@ export async function apiKeyAuth(
     }
 
     // Check endpoint permissions
-    const permissions = keyData.permissions as any;
+    const permissions = keyData.permissions;
     const endpoints = permissions?.endpoints;
     
     // Skip permission check if endpoints is '*' or permissions is empty/null
@@ -175,7 +194,7 @@ export async function apiKeyAuth(
       .from('api_usage_logs')
       .insert(usageLogEntry)
       .select()
-      .single() as { data: any; error: any };
+      .single() as { data: (typeof usageLogEntry & { id: string }) | null; error: Error | null };
 
     // Attach data to request - convert to express ApiKeyData type
     req.apiKey = {
@@ -195,16 +214,16 @@ export async function apiKeyAuth(
     req.customerId = keyData.user_id as string;
     
     // Also set req.user for compatibility with other middleware
-    (req as any).user = {
+    (req as AuthenticatedRequest).user = {
       id: keyData.user_id,
       email: 'api-user@codequal.com', // Placeholder for API users
       role: 'user',
       status: 'active',
-      organizationId: keyData.organization_id || null,
+      organizationId: keyData.organization_id || undefined,
       permissions: [],
       session: {
         token: 'api-key-auth',
-        expiresAt: new Date(Date.now() + 3600000).toISOString()
+        expiresAt: new Date(Date.now() + 3600000)
       },
       isApiKeyAuth: true
     };
@@ -214,7 +233,7 @@ export async function apiKeyAuth(
     res.send = function(data) {
       // Update usage log with response details
       if (logData) {
-        const responseTime = Date.now() - req.requestStartTime!;
+        const responseTime = Date.now() - (req.requestStartTime || Date.now());
         (async () => {
           try {
             await getSupabase()
@@ -225,7 +244,7 @@ export async function apiKeyAuth(
                 tokens_used: res.locals.tokensUsed || 0,
                 cost_usd: res.locals.costUsd || 0
               })
-              .eq('id', logData.id as string);
+              .eq('id', logData?.id as string);
               
             // Update usage count using database function
             await getSupabase().rpc('increment_api_usage', {
@@ -234,7 +253,7 @@ export async function apiKeyAuth(
               p_cost_usd: res.locals.costUsd || 0
             });
           } catch (err) {
-            console.error('Failed to update usage:', err);
+            logger.error('Failed to update usage:', { error: err });
           }
         })();
       }
@@ -244,7 +263,7 @@ export async function apiKeyAuth(
 
     next();
   } catch (error) {
-    console.error('API key authentication error:', error);
+    logger.error('API key authentication error:', { error });
     res.status(500).json({
       error: 'Authentication failed',
       code: 'AUTH_ERROR',
@@ -269,7 +288,7 @@ async function logFailedAuth(req: Request, reason: string, apiKeyId?: string) {
         timestamp: new Date().toISOString()
       });
   } catch (err) {
-    console.error('Failed to log authentication failure:', err);
+    logger.error('Failed to log authentication failure:', { error: err });
   }
 }
 

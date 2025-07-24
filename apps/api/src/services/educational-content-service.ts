@@ -1,5 +1,8 @@
 import { AuthenticatedUser } from '../middleware/auth-middleware';
 import { Finding } from './result-processor';
+import { createLogger } from '@codequal/core/utils';
+
+const logger = createLogger('EducationalContentService');
 
 // Import existing RAG service
 // Note: We'll need to adjust the import path based on actual structure
@@ -47,7 +50,7 @@ export class EducationalContentService {
    * Generate educational content for all findings
    */
   async generateContentForFindings(
-    findings: any,
+    findings: Record<string, Finding[]>,
     user: AuthenticatedUser
   ): Promise<EducationalContent[]> {
     try {
@@ -63,7 +66,7 @@ export class EducationalContentService {
             educationalContent.push(content);
           }
         } catch (error) {
-          console.error(`Failed to generate content for finding ${finding.id}:`, error);
+          logger.error(`Failed to generate content for finding ${finding.id}:`, error as Error);
           // Continue with other findings even if one fails
         }
       }
@@ -73,7 +76,7 @@ export class EducationalContentService {
 
       return educationalContent.slice(0, 10); // Limit to top 10 most relevant
     } catch (error) {
-      console.error('Educational content generation error:', error);
+      logger.error('Educational content generation error:', error as Error);
       return []; // Return empty array instead of throwing
     }
   }
@@ -89,7 +92,7 @@ export class EducationalContentService {
       // Validate finding category
       const validCategories = ['security', 'architecture', 'performance', 'codeQuality'];
       if (!validCategories.includes(finding.category)) {
-        console.error(`Invalid finding category: ${finding.category}`);
+        logger.error(`Invalid finding category: ${finding.category}`);
         return null;
       }
 
@@ -126,7 +129,7 @@ export class EducationalContentService {
         }
       };
     } catch (error) {
-      console.error(`Content generation failed for finding ${finding.id}:`, error);
+      logger.error(`Content generation failed for finding ${finding.id}:`, error as Error);
       return null;
     }
   }
@@ -148,7 +151,7 @@ export class EducationalContentService {
         }
       };
     } catch (error) {
-      console.error('Failed to get user skill level:', error);
+      logger.error('Failed to get user skill level:', error as Error);
       // Return default intermediate level
       return {
         overall: 'intermediate',
@@ -175,7 +178,7 @@ export class EducationalContentService {
   /**
    * Search educational content using RAG system
    */
-  private async searchEducationalContent(query: string): Promise<any[]> {
+  private async searchEducationalContent(query: string): Promise<unknown[]> {
     try {
       // Mock implementation - in real system would use RAG service
       // return await this.ragService.searchEducationalContent(query);
@@ -190,7 +193,7 @@ export class EducationalContentService {
         }
       ];
     } catch (error) {
-      console.error('RAG search failed:', error);
+      logger.error('RAG search failed:', error as Error);
       return [];
     }
   }
@@ -199,17 +202,26 @@ export class EducationalContentService {
    * Adapt content to user's skill level
    */
   private async adaptContentToSkillLevel(
-    rawContent: any,
+    rawContent: unknown,
     finding: Finding,
     skillLevel: string
   ): Promise<EducationalContent['content']> {
+    // Type assertion for rawContent
+    const content = rawContent as {
+      title?: string;
+      content?: string;
+      summary?: string;
+      examples?: string[];
+      references?: string[];
+    };
+    
     // Extract and adapt content based on skill level
     const baseContent = {
-      title: rawContent.title || `Understanding ${finding.title}`,
-      summary: this.generateSummary(rawContent, skillLevel),
-      explanation: this.adaptExplanation(rawContent.content, skillLevel),
-      examples: this.adaptExamples(rawContent.examples || [], skillLevel),
-      references: rawContent.references || [],
+      title: content.title || `Understanding ${finding.title}`,
+      summary: this.generateSummary(content, skillLevel),
+      explanation: this.adaptExplanation(content.content || '', skillLevel),
+      examples: this.adaptExamples(content.examples || [], skillLevel),
+      references: content.references || [],
       skillLevel: skillLevel as 'beginner' | 'intermediate' | 'advanced'
     };
 
@@ -247,7 +259,7 @@ export class EducationalContentService {
   /**
    * Calculate relevance score for educational content
    */
-  private calculateRelevanceScore(finding: Finding, content: any): number {
+  private calculateRelevanceScore(finding: Finding, content: unknown): number {
     let score = 0.5; // Base score
 
     // Boost score based on finding severity
@@ -259,10 +271,17 @@ export class EducationalContentService {
     };
     score += severityBoost[finding.severity];
 
+    // Type assertion for content
+    const typedContent = content as {
+      examples?: unknown[];
+      references?: unknown[];
+      explanation?: string;
+    };
+    
     // Boost score based on content quality indicators
-    if (content.examples && content.examples.length > 0) score += 0.1;
-    if (content.references && content.references.length > 0) score += 0.05;
-    if (content.explanation && content.explanation.length > 100) score += 0.05;
+    if (typedContent.examples && typedContent.examples.length > 0) score += 0.1;
+    if (typedContent.references && typedContent.references.length > 0) score += 0.05;
+    if (typedContent.explanation && typedContent.explanation.length > 100) score += 0.05;
 
     return Math.min(1.0, score);
   }
@@ -277,8 +296,12 @@ export class EducationalContentService {
     }
   }
 
-  private generateSummary(rawContent: any, skillLevel: string): string {
-    const baseText = rawContent.content || rawContent.summary || '';
+  private generateSummary(rawContent: unknown, skillLevel: string): string {
+    const content = rawContent as {
+      content?: string;
+      summary?: string;
+    };
+    const baseText = content.content || content.summary || '';
     
     if (skillLevel === 'beginner') {
       return `This is a ${skillLevel}-friendly explanation of the issue. ${baseText.substring(0, 150)}...`;
@@ -404,10 +427,10 @@ export class EducationalContentService {
   }
 
   // Utility methods
-  private flattenFindings(findings: any): Finding[] {
+  private flattenFindings(findings: Record<string, Finding[]>): Finding[] {
     const allFindings: Finding[] = [];
 
-    Object.values(findings).forEach((categoryFindings: any) => {
+    Object.values(findings).forEach((categoryFindings) => {
       if (Array.isArray(categoryFindings)) {
         allFindings.push(...categoryFindings);
       }

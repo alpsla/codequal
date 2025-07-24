@@ -23,15 +23,15 @@ async function main() {
   await new Promise(resolve => setTimeout(resolve, 2000));
 
   // Get all available models to see pricing
-  const models = await (modelVersionSync as any).getAvailableModels();
+  const models = await (modelVersionSync as unknown as { getAvailableModels(): Promise<Record<string, unknown>> }).getAvailableModels();
   
   console.log(chalk.yellow('📊 Available Models with Pricing:\n'));
   
   // Group models by cost
-  const modelsByPrice: { model: string; pricing: any; avgCost: number }[] = [];
+  const modelsByPrice: { model: string; pricing: { input: number; output: number }; avgCost: number }[] = [];
   
   for (const [key, model] of Object.entries(models)) {
-    const m = model as any;
+    const m = model as { pricing?: { input: number; output: number } };
     if (m.pricing && (m.pricing.input > 0 || m.pricing.output > 0)) {
       const avgCost = (m.pricing.input + m.pricing.output) / 2;
       modelsByPrice.push({
@@ -86,7 +86,7 @@ async function main() {
     
     if (selected) {
       const model = Array.isArray(selected) ? selected[0] : selected;
-      const pricing = (model as any).pricing || { input: 0, output: 0 };
+      const pricing = model.pricing || { input: 0, output: 0 };
       const avgCost = (pricing.input + pricing.output) / 2;
       const displayCost = avgCost * 1000000; // Convert to per-million-tokens
       
@@ -94,7 +94,7 @@ async function main() {
       console.log(`  Cost: $${displayCost.toFixed(2)}/1M tokens`);
       
       // Calculate the model's score
-      const score = (modelVersionSync as any).calculateModelScore(model, scenario.context);
+      const score = (modelVersionSync as unknown as { calculateModelScore(model: unknown, context: unknown): number }).calculateModelScore(model, scenario.context);
       console.log(`  Score: ${score.toFixed(2)}`);
     }
   }
@@ -133,7 +133,7 @@ async function main() {
       }
       selections.get(key)!.add(size);
       
-      const pricing = (m as any).pricing || { input: 0, output: 0 };
+      const pricing = m.pricing || { input: 0, output: 0 };
       const displayCost = ((pricing.input + pricing.output) / 2) * 1000000;
       
       console.log(`${size}: ${key} ($${displayCost.toFixed(2)}/1M)`);

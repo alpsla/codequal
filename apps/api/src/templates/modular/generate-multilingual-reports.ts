@@ -1,6 +1,9 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import Handlebars from 'handlebars';
+import { createLogger } from '@codequal/core/utils';
+
+const logger = createLogger('multilingual-reports');
 
 interface ReportData {
   pr_number: string;
@@ -159,11 +162,11 @@ export class MultilingualReportGenerator {
   }
   
   private registerHelpers() {
-    Handlebars.registerHelper('ifEquals', function(this: any, a: any, b: any, options: any) {
+    Handlebars.registerHelper('ifEquals', function(this: unknown, a: unknown, b: unknown, options: Handlebars.HelperOptions) {
       return a === b ? options.fn(this) : options.inverse(this);
     });
     
-    Handlebars.registerHelper('severityClass', function(this: any, score: number) {
+    Handlebars.registerHelper('severityClass', function(this: unknown, score: number) {
       if (score < 40) return 'low';
       if (score < 70) return 'medium';
       return 'high';
@@ -219,10 +222,10 @@ export class MultilingualReportGenerator {
     
     // Write to file
     await fs.writeFile(outputPath, html);
-    console.log(`Generated ${language} report: ${outputPath}`);
+    logger.info(`Generated ${language} report: ${outputPath}`);
   }
   
-  private getRealEducationalLink(module: any): string {
+  private getRealEducationalLink(module: { title: string }): string {
     // Map template links to real educational resources
     const linkMappings: { [key: string]: string } = {
       'secure-coding': 'https://owasp.org/www-project-secure-coding-practices-quick-reference-guide/',
@@ -264,7 +267,7 @@ export class MultilingualReportGenerator {
       await fs.copyFile(cssSource, cssTarget);
       await fs.copyFile(jsSource, jsTarget);
     } catch (error) {
-      console.warn('Could not copy asset files:', error);
+      logger.warn('Could not copy asset files:', error as Error);
     }
   }
 }

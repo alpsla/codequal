@@ -5,11 +5,11 @@
 
 export const logger = {
   // eslint-disable-next-line no-console
-  info: (message: string, ...args: any[]) => console.log(`[INFO] ${message}`, ...args),
+  info: (message: string, ...args: unknown[]) => console.log(`[INFO] ${message}`, ...args),
   // eslint-disable-next-line no-console
-  warn: (message: string, ...args: any[]) => console.warn(`[WARN] ${message}`, ...args),
+  warn: (message: string, ...args: unknown[]) => console.warn(`[WARN] ${message}`, ...args),
   // eslint-disable-next-line no-console
-  error: (message: string, ...args: any[]) => console.error(`[ERROR] ${message}`, ...args),
+  error: (message: string, ...args: unknown[]) => console.error(`[ERROR] ${message}`, ...args),
   // eslint-disable-next-line no-console
-  debug: (message: string, ...args: any[]) => console.log(`[DEBUG] ${message}`, ...args),
+  debug: (message: string, ...args: unknown[]) => console.log(`[DEBUG] ${message}`, ...args),
 };

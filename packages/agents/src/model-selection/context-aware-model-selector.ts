@@ -7,7 +7,7 @@
 
 import { ModelVersionSync, ModelVersionInfo, Logger, createLogger } from '@codequal/core';
 import { VectorStorageService } from '@codequal/database';
-import { UnifiedModelSelector, RepositoryContext, UnifiedModelSelection } from './unified-model-selector';
+import { UnifiedModelSelector, RepositoryContext, UnifiedModelSelection, ROLE_SCORING_PROFILES } from './unified-model-selector';
 
 // Global logger instance removed - using instance logger instead
 
@@ -36,7 +36,7 @@ interface StoredConfiguration {
 
 export class ContextAwareModelSelector extends UnifiedModelSelector {
   private configurationCache: Map<string, StoredConfiguration> = new Map();
-  private lastCacheRefresh: number = 0;
+  private lastCacheRefresh = 0;
   private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
   private readonly RESEARCHER_CONFIG_REPO_ID = '00000000-0000-0000-0000-000000000001';
 
@@ -114,12 +114,12 @@ export class ContextAwareModelSelector extends UnifiedModelSelector {
       
       // Fall back to base unified selector if no context config found
       this.logger.warn(`No context-specific configuration found for ${role}/${language}/${size}, using default selection`);
-      return super.selectModel(role as any, repositoryContext);
+      return super.selectModel(role as keyof typeof ROLE_SCORING_PROFILES, repositoryContext);
       
     } catch (error) {
       this.logger.error('Error in context-aware model selection', { error, role });
       // Fall back to base selector on any error
-      return super.selectModel(role as any, repositoryContext);
+      return super.selectModel(role as keyof typeof ROLE_SCORING_PROFILES, repositoryContext);
     }
   }
 
@@ -143,7 +143,7 @@ export class ContextAwareModelSelector extends UnifiedModelSelector {
       // TODO: Fix Vector DB search - method signature mismatch
       // Query Vector DB for configuration
       const query = `model configuration for ${role} ${language} ${size}`;
-      const results: any[] = []; // Temporarily disabled due to method signature issue
+      const results: ModelVersionInfo[] = []; // Temporarily disabled due to method signature issue
       /* const results = await this.vectorStorage.searchSimilar(
         this.RESEARCHER_CONFIG_REPO_ID,
         query,
@@ -159,11 +159,11 @@ export class ContextAwareModelSelector extends UnifiedModelSelector {
       if (results && results.length > 0) {
         // Find exact match
         const exactMatch = results.find(r => 
-          r.metadata?.contextKey === contextKey
+          (r as any).metadata?.contextKey === contextKey
         );
         
         if (exactMatch) {
-          const config = JSON.parse(exactMatch.content) as StoredConfiguration;
+          const config = JSON.parse((exactMatch as any).content) as StoredConfiguration;
           
           // Validate configuration has required fields
           if (config.primary && config.fallback) {
@@ -178,7 +178,7 @@ export class ContextAwareModelSelector extends UnifiedModelSelector {
       
       // TODO: Fix alternative search
       // Try alternative search without exact context key
-      const alternativeResults: any[] = []; // Temporarily disabled
+      const alternativeResults: ModelVersionInfo[] = []; // Temporarily disabled
       /* const alternativeResults = await this.vectorStorage.searchSimilar(
         this.RESEARCHER_CONFIG_REPO_ID,
         query,
@@ -231,7 +231,7 @@ export class ContextAwareModelSelector extends UnifiedModelSelector {
       this.configurationCache.clear();
       
       // TODO: Fix load all configurations from Vector DB
-      const allConfigs: any[] = []; // Temporarily disabled
+      const allConfigs: { provider: string; model: string; context: string }[] = []; // Temporarily disabled
       /* const allConfigs = await this.vectorStorage.searchSimilar(
         this.RESEARCHER_CONFIG_REPO_ID,
         'model configuration',
@@ -246,7 +246,7 @@ export class ContextAwareModelSelector extends UnifiedModelSelector {
       if (allConfigs) {
         for (const result of allConfigs) {
           try {
-            const config = JSON.parse(result.content) as StoredConfiguration;
+            const config = JSON.parse((result as any).content || result.context) as StoredConfiguration;
             if (config.contextKey && config.primary && config.fallback) {
               this.configurationCache.set(config.contextKey, config);
             }
@@ -284,7 +284,7 @@ export class ContextAwareModelSelector extends UnifiedModelSelector {
     const mapped = aliases[normalized] || normalized;
     
     // Return if it's a supported language
-    if (SUPPORTED_LANGUAGES.includes(mapped as any)) {
+    if (SUPPORTED_LANGUAGES.includes(mapped as typeof SUPPORTED_LANGUAGES[number])) {
       return mapped;
     }
     
@@ -305,7 +305,7 @@ export class ContextAwareModelSelector extends UnifiedModelSelector {
     }
     
     // Return if it's a supported size
-    if (REPOSITORY_SIZES.includes(normalized as any)) {
+    if (REPOSITORY_SIZES.includes(normalized as typeof REPOSITORY_SIZES[number])) {
       return normalized;
     }
     

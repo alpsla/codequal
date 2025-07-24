@@ -12,8 +12,13 @@ export interface PRAnalysisRequest {
 export interface PRContext {
     repositoryUrl: string;
     prNumber: number;
-    prDetails: any;
-    diff: any;
+    prDetails: {
+        title: string;
+        description?: string;
+        author?: string;
+        [key: string]: unknown;
+    };
+    diff: string;
     changedFiles: string[];
     primaryLanguage: string;
     repositorySize: RepositorySizeCategory;
@@ -52,14 +57,23 @@ export interface AnalysisResult {
         processingTime: number;
     };
     findings: {
-        security: any[];
-        architecture: any[];
-        performance: any[];
-        codeQuality: any[];
+        security: Finding[];
+        architecture: Finding[];
+        performance: Finding[];
+        codeQuality: Finding[];
     };
-    recommendations?: any;
-    educationalContent: any[];
-    compiledEducationalData?: any;
+    recommendations?: {
+        categories: Array<{
+            name: string;
+            recommendations: string[];
+        }>;
+    };
+    educationalContent: Array<{
+        topic: string;
+        content: string;
+        resources?: string[];
+    }>;
+    compiledEducationalData?: Record<string, unknown>;
     metrics: {
         totalFindings: number;
         severity: {
@@ -75,7 +89,7 @@ export interface AnalysisResult {
         summary: string;
         recommendations: string[];
         prComment: string;
-        fullReport?: any;
+        fullReport?: Record<string, unknown>;
         htmlReportUrl?: string;
     };
     metadata: {

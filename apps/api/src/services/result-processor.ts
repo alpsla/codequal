@@ -1,3 +1,7 @@
+import { createLogger } from '@codequal/core/utils';
+
+const logger = createLogger('ResultProcessor');
+
 export interface Finding {
   id: string;
   type: string;
@@ -10,8 +14,51 @@ export interface Finding {
   category: string;
   agent: string;
   recommendation?: string;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 }
+
+interface AgentInsight {
+  type?: string;
+  title?: string;
+  summary?: string;
+  description?: string;
+  content?: string;
+  severity?: string | number;
+  priority?: string | number;
+  confidence?: number;
+  file?: string;
+  line?: number;
+  location?: {
+    file?: string;
+    line?: number;
+  };
+  recommendation?: string;
+  suggestion?: string;
+  metadata?: Record<string, unknown>;
+}
+
+interface AgentSuggestion {
+  title?: string;
+  description?: string;
+  content?: string;
+  severity?: string | number;
+  confidence?: number;
+  recommendation?: string;
+}
+
+interface AgentResult {
+  agentRole?: string;
+  agentId?: string;
+  insights?: AgentInsight[];
+  suggestions?: AgentSuggestion[];
+}
+
+interface AgentResultsWrapper {
+  agentResults?: Record<string, AgentResult>;
+  results?: AgentResult[];
+}
+
+type AgentResultsInput = AgentResultsWrapper | AgentResult[] | Record<string, AgentResult>;
 
 export interface ProcessedResults {
   findings: {
@@ -43,7 +90,7 @@ export class ResultProcessor {
   /**
    * Main processing method - processes raw agent results
    */
-  async processAgentResults(agentResults: any): Promise<ProcessedResults> {
+  async processAgentResults(agentResults: AgentResultsInput): Promise<ProcessedResults> {
     try {
       // Extract findings from agent results
       const allFindings = this.extractFindings(agentResults);
@@ -69,7 +116,7 @@ export class ResultProcessor {
         metrics
       };
     } catch (error) {
-      console.error('Result processing error:', error);
+      logger.error('Result processing error:', error as Error);
       throw new Error(`Result processing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -77,7 +124,7 @@ export class ResultProcessor {
   /**
    * Extract findings from raw agent results
    */
-  private extractFindings(agentResults: any): Finding[] {
+  private extractFindings(agentResults: AgentResultsInput): Finding[] {
     const findings: Finding[] = [];
     
     // Defensive programming: handle null/undefined input
@@ -86,41 +133,49 @@ export class ResultProcessor {
     }
     
     if (typeof agentResults !== 'object') {
-      console.warn('Invalid agentResults provided to extractFindings');
+      logger.warn('Invalid agentResults provided to extractFindings');
       return findings;
     }
 
     // Handle different structures: agentResults property, direct array, or object
-    let resultsToProcess: Record<string, any> = {};
+    let resultsToProcess: Record<string, AgentResult> = {};
     
-    if (agentResults.agentResults && typeof agentResults.agentResults === 'object') {
-      resultsToProcess = agentResults.agentResults;
+    if ('agentResults' in agentResults && agentResults.agentResults && typeof agentResults.agentResults === 'object') {
+      // Check if it's a record of AgentResult objects (not a single AgentResult)
+      if (!('agentRole' in agentResults.agentResults) && !('agentId' in agentResults.agentResults)) {
+        resultsToProcess = agentResults.agentResults as Record<string, AgentResult>;
+      } else {
+        // It's a single AgentResult, wrap it
+        const singleResult = agentResults.agentResults as AgentResult;
+        const agentName = singleResult.agentRole || singleResult.agentId || 'agent';
+        resultsToProcess[agentName] = singleResult;
+      }
     } else if (Array.isArray(agentResults)) {
       // Convert array to object keyed by agent name
-      agentResults.forEach((result: any, index: number) => {
+      agentResults.forEach((result: AgentResult, index: number) => {
         const agentName = result.agentRole || result.agentId || `agent_${index}`;
         resultsToProcess[agentName] = result;
       });
-    } else if (agentResults.results && Array.isArray(agentResults.results)) {
+    } else if ('results' in agentResults && agentResults.results && Array.isArray(agentResults.results)) {
       // Handle wrapped results
-      agentResults.results.forEach((result: any, index: number) => {
+      agentResults.results.forEach((result: AgentResult, index: number) => {
         const agentName = result.agentRole || result.agentId || `agent_${index}`;
         resultsToProcess[agentName] = result;
       });
     } else {
-      console.warn('No recognizable results structure found in provided data');
+      logger.warn('No recognizable results structure found in provided data');
       return findings;
     }
 
-    Object.entries(resultsToProcess).forEach(([agentName, result]: [string, any]) => {
+    Object.entries(resultsToProcess).forEach(([agentName, result]) => {
       // Defensive programming: validate agent result structure
       if (!result || typeof result !== 'object') {
-        console.warn(`Invalid result structure for agent: ${agentName}`);
+        logger.warn(`Invalid result structure for agent: ${agentName}`);
         return;
       }
 
       if (result.insights && Array.isArray(result.insights)) {
-        result.insights.forEach((insight: any, index: number) => {
+        result.insights.forEach((insight, index) => {
           try {
             const finding: Finding = {
               id: `${agentName}_${index}_${Date.now()}`,
@@ -142,17 +197,17 @@ export class ResultProcessor {
             
             findings.push(finding);
           } catch (error) {
-            console.error(`Error processing insight for agent ${agentName}:`, error);
+            logger.error(`Error processing insight for agent ${agentName}:`, error as Error);
           }
         });
       }
 
       if (result.suggestions && Array.isArray(result.suggestions)) {
-        result.suggestions.forEach((suggestion: any, index: number) => {
+        result.suggestions.forEach((suggestion, index) => {
           try {
             // Defensive programming: validate suggestion structure
             if (!suggestion || typeof suggestion !== 'object') {
-              console.warn(`Invalid suggestion structure for agent ${agentName} at index ${index}`);
+              logger.warn(`Invalid suggestion structure for agent ${agentName} at index ${index}`);
               return;
             }
 
@@ -174,7 +229,7 @@ export class ResultProcessor {
             
             findings.push(finding);
           } catch (error) {
-            console.error(`Error processing suggestion for agent ${agentName}:`, error);
+            logger.error(`Error processing suggestion for agent ${agentName}:`, error as Error);
           }
         });
       }
@@ -457,7 +512,7 @@ export class ResultProcessor {
   }
 
   // Helper methods
-  private normalizeSeverity(severity: any): 'critical' | 'high' | 'medium' | 'low' {
+  private normalizeSeverity(severity: unknown): 'critical' | 'high' | 'medium' | 'low' {
     if (typeof severity === 'string') {
       const lower = severity.toLowerCase();
       if (['critical', 'high', 'medium', 'low'].includes(lower)) {
@@ -475,7 +530,7 @@ export class ResultProcessor {
     return 'medium';
   }
 
-  private normalizeConfidence(confidence: any): number {
+  private normalizeConfidence(confidence: unknown): number {
     if (typeof confidence === 'number') {
       return Math.max(0, Math.min(1, confidence));
     }
@@ -490,7 +545,7 @@ export class ResultProcessor {
     return 0.8; // Default confidence
   }
 
-  private determineCategory(agentName: string, _finding: any): string {
+  private determineCategory(agentName: string, _finding?: unknown): string {
     // Map agent names to categories (including agent suffixes)
     const agentCategoryMap: Record<string, string> = {
       'security': 'security',
@@ -698,14 +753,14 @@ export class ResultProcessor {
     return 1.0 - (actualDiff / maxDiff);
   }
 
-  private safeStringValue(value: any, defaultValue = ''): string {
+  private safeStringValue(value: unknown, defaultValue = ''): string {
     if (value === null || value === undefined) return defaultValue;
     if (typeof value === 'string') return value.trim();
     if (typeof value === 'number' || typeof value === 'boolean') return String(value);
     return defaultValue;
   }
 
-  private safeNumberValue(value: any): number | undefined {
+  private safeNumberValue(value: unknown): number | undefined {
     if (value === null || value === undefined) return undefined;
     if (typeof value === 'number') return isNaN(value) ? undefined : value;
     if (typeof value === 'string') {

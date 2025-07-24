@@ -331,11 +331,15 @@ async function generateExampleReport() {
 
   // Generate the report
   const markdown = generator.generateMarkdownReport(analysisData);
-  console.log(markdown);
+  // console.log(markdown); // Uncomment for debugging
   
   // Save to file
   await generator.saveReport(analysisData, './reports');
 }
 
 // Run the example
-generateExampleReport().catch(console.error);
+generateExampleReport().catch((error) => {
+  // eslint-disable-next-line no-console
+  console.error('Failed to generate example report:', error);
+  process.exit(1);
+});

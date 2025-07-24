@@ -24,7 +24,8 @@ async function main() {
   await new Promise(resolve => setTimeout(resolve, 2000));
 
   // Get all available models
-  const models = await (modelVersionSync as any).getAvailableModels();
+  // Access private method for testing purposes
+  const models = await (modelVersionSync as unknown as { getAvailableModels(): Promise<Record<string, unknown>> }).getAvailableModels();
   
   console.log(chalk.yellow('Available Models:\n'));
   

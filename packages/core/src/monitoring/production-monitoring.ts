@@ -22,7 +22,7 @@ export interface LogContext {
     message: string;
     stack?: string;
   };
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 class ProductionLogger {
@@ -196,7 +196,7 @@ export function requestTracing(logger: ProductionLogger) {
     const startTime = Date.now();
 
     // Attach trace ID to request
-    (req as any).traceId = traceId;
+    (req as Request & { traceId: string }).traceId = traceId;
 
     // Log request start
     logger.info('Request started', {
@@ -211,7 +211,7 @@ export function requestTracing(logger: ProductionLogger) {
 
     // Override res.json to log response
     const originalJson = res.json;
-    res.json = function(body: any) {
+    res.json = function(body: unknown) {
       const duration = Date.now() - startTime;
       
       logger.info('Request completed', {

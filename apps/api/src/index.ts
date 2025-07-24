@@ -7,6 +7,9 @@ import helmet from 'helmet';
 import compression from 'compression';
 import path from 'path';
 import { authMiddleware } from './middleware/auth-middleware';
+import { createLogger } from '@codequal/core/utils';
+
+const logger = createLogger('api-server');
 import { resultOrchestratorRoutes } from './routes/result-orchestrator';
 import { repositoryRoutes } from './routes/repository';
 import analysisRoutes from './routes/analysis';
@@ -29,12 +32,7 @@ import organizationsRoutes from './routes/organizations';
 import billingRoutes from './routes/billing';
 import stripeWebhookRoutes from './routes/stripe-webhooks';
 import simpleScanRoutes from './routes/simple-scan-fixed';
-import mockPRAnalysisRoutes from './routes/mock-pr-analysis';
-import testAuthRoutes from './routes/test-auth';
 import usageStatsRoutes from './routes/usage-stats';
-import dataFlowMonitoringRoutes from './routes/data-flow-monitoring';
-import testMonitoringRoutes from './routes/test-monitoring';
-import devTestMonitoringRoutes from './routes/dev-test-monitoring';
 import researcherRoutes from './routes/researcher';
 import { errorHandler } from './middleware/error-handler';
 // import { i18nMiddleware, translateResponse, validateLanguage } from './middleware/i18n-middleware';
@@ -130,7 +128,7 @@ app.get('/metrics', (req, res) => {
     res.set('Content-Type', 'text/plain; version=0.0.4; charset=utf-8');
     res.send(metrics);
   } catch (error) {
-    console.error('Error getting Prometheus metrics:', error);
+    logger.error('Error getting Prometheus metrics:', error as Error);
     res.status(500).json({ 
       error: 'Failed to get metrics',
       message: error instanceof Error ? error.message : 'Unknown error'
@@ -143,13 +141,15 @@ app.use('/docs', openapiDocsRoutes);
 app.use('/api/docs', openapiDocsRoutes);
 
 // Demo report route (no authentication required in dev mode)
-app.get('/demo/enhanced-report', (req, res) => {
+app.get('/demo/enhanced-report', async (req, res) => {
   if (process.env.NODE_ENV === 'production') {
     return res.status(403).json({ error: 'Demo not available in production' });
   }
   
-  const HtmlReportGenerator = require('./services/html-report-generator').HtmlReportGenerator;
-  const generator = new HtmlReportGenerator();
+  // Dynamic import to avoid circular dependencies
+  const imported = await import('./services/html-report-generator-v5.js');
+  const HtmlReportGeneratorV5 = imported.HtmlReportGeneratorV5;
+  const generator = new HtmlReportGeneratorV5();
   
   const demoReport = {
     id: `report_demo_${Date.now()}`,
@@ -262,7 +262,33 @@ app.get('/demo/enhanced-report', (req, res) => {
   };
   
   try {
-    const html = generator.generateEnhancedHtmlReport(demoReport);
+    // Convert demoReport to ReportInput format
+    const reportInput = {
+      overall_score: demoReport.overall_score,
+      report_data: {
+        pr_details: {
+          number: demoReport.pr_number
+        },
+        deepwiki: {
+          changes: demoReport.deepwiki.changes.map((c) => ({ 
+            additions: 10, 
+            deletions: 5 
+          })),
+          score: 85
+        },
+        educational: {
+          modules: demoReport.educational.suggestions.map((s: { topic: string; content: string }) => ({
+            title: s.topic,
+            content: s.content,
+            difficulty: 'intermediate',
+            estimatedTime: '5 minutes',
+            tags: ['security', 'best-practices']
+          }))
+        }
+      }
+    };
+    
+    const html = generator.generateEnhancedHtmlReport(reportInput);
     res.setHeader('Content-Type', 'text/html');
     res.send(html);
   } catch (error) {
@@ -288,7 +314,6 @@ app.use('/api/webhooks', webhookRoutes);
 app.use('/api/keys', authMiddleware, apiKeyRoutes);
 
 // Test auth routes
-app.use('/api/test-auth', authMiddleware, testAuthRoutes);
 
 // Public API routes (authenticated via API key)
 app.use('/v1', apiKeyAuth); // All v1 API routes require API key
@@ -330,10 +355,8 @@ app.use('/api/vector-retention', authMiddleware, vectorRetentionRoutes);
 
 // Simple scan routes (for testing) - also track API usage for subscribed users
 app.use('/api/simple-scan', authMiddleware, trackApiUsage, simpleScanRoutes);
-app.use('/api/mock-pr-analysis', authMiddleware, trackApiUsage, mockPRAnalysisRoutes);
 // Other simple routes without tracking
 // app.use('/api', simpleScanRoutes);  // Commented out to avoid duplicate registration
-app.use('/api', mockPRAnalysisRoutes);
 
 // Stripe webhook routes (no authentication required)
 app.use('/stripe', stripeWebhookRoutes);
@@ -349,15 +372,13 @@ app.use('/api/analysis', analysisRoutes);
 app.use('/api', scheduleRoutes);
 app.use('/api', reportRoutes);
 app.use('/api/monitoring', monitoringRoutes);
-app.use('/api/monitoring', dataFlowMonitoringRoutes);
-app.use('/api', testMonitoringRoutes);
 
 // Researcher routes (requires user authentication)
 app.use('/api/researcher', authMiddleware, researcherRoutes);
 
 // Dev test routes (NO AUTH - DEV ONLY)
 if (process.env.NODE_ENV !== 'production') {
-  app.use('/api', devTestMonitoringRoutes);
+  // Dev routes removed - use specific development endpoints instead
 }
 
 // Error handling
@@ -372,13 +393,13 @@ async function startServer() {
     
     // Start server
     app.listen(PORT, () => {
-      console.log(`CodeQual API Server running on port ${PORT}`);
-      console.log(`Health check available at http://localhost:${PORT}/health`);
-      console.log(`Auth endpoints available at http://localhost:${PORT}/auth`);
-      console.log(`Test OAuth at http://localhost:${PORT}/auth-test.html`);
+      logger.info(`CodeQual API Server running on port ${PORT}`);
+      logger.info(`Health check available at http://localhost:${PORT}/health`);
+      logger.info(`Auth endpoints available at http://localhost:${PORT}/auth`);
+      logger.info(`Test OAuth at http://localhost:${PORT}/auth-test.html`);
     });
   } catch (error) {
-    console.error('Failed to start server:', error);
+    logger.error('Failed to start server:', error as Error);
     process.exit(1);
   }
 }

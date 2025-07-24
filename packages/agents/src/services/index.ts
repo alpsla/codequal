@@ -9,8 +9,8 @@ export { RecommendationService } from './recommendation-service';
 export { AgentResultProcessor } from './agent-result-processor';
 export { BasicDeduplicator } from './basic-deduplicator';
 export { EducationalCompilationService } from './educational-compilation-service';
-export { IssueResolutionDetector } from './issue-resolution-detector';
-export { ReportFormatterService } from './report-formatter.service';
+export { IssueResolutionDetector, type IssueComparison } from './issue-resolution-detector';
+export { ReportFormatterService, StandardReport } from './report-formatter.service';
 
 // Export debug logger
 export { DebugLogger, getDebugLogger } from './debug-logger';

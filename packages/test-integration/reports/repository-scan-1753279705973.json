@@ -1,0 +1,125 @@
+{
+  "repositoryUrl": "https://github.com/facebook/react",
+  "prNumber": 28958,
+  "scanTimestamp": "2025-07-23T14:08:25.963Z",
+  "repository": {
+    "name": "react",
+    "owner": "facebook",
+    "size": "178.3 MB",
+    "primaryLanguage": "TypeScript",
+    "languages": {
+      "TypeScript": 65.2,
+      "JavaScript": 20.1,
+      "CSS": 8.3,
+      "HTML": 4.2,
+      "Other": 2.2
+    },
+    "lastCommit": "2025-07-23T13:08:25.972Z",
+    "defaultBranch": "main"
+  },
+  "structure": {
+    "totalFiles": 3421,
+    "totalDirectories": 234,
+    "maxDepth": 5,
+    "rootFiles": [
+      "README.md",
+      "package.json",
+      "tsconfig.json",
+      ".gitignore",
+      "LICENSE"
+    ],
+    "mainDirectories": [
+      {
+        "name": "src",
+        "fileCount": 1523,
+        "purpose": "source code"
+      },
+      {
+        "name": "tests",
+        "fileCount": 456,
+        "purpose": "test files"
+      },
+      {
+        "name": "docs",
+        "fileCount": 89,
+        "purpose": "documentation"
+      },
+      {
+        "name": "public",
+        "fileCount": 234,
+        "purpose": "static assets"
+      },
+      {
+        "name": "scripts",
+        "fileCount": 12,
+        "purpose": "build scripts"
+      }
+    ]
+  },
+  "codeAnalysis": {
+    "totalLines": 125678,
+    "codeLines": 89234,
+    "commentLines": 12456,
+    "blankLines": 23988,
+    "complexity": {
+      "average": 3.4,
+      "highest": [
+        {
+          "file": "src/core/engine.ts",
+          "complexity": 45
+        },
+        {
+          "file": "src/utils/parser.ts",
+          "complexity": 38
+        },
+        {
+          "file": "src/components/DataGrid.tsx",
+          "complexity": 32
+        }
+      ]
+    }
+  },
+  "dependencies": {
+    "production": {
+      "react": "^18.2.0",
+      "next": "^14.0.0",
+      "typescript": "^5.0.0"
+    },
+    "development": {
+      "jest": "^29.0.0",
+      "eslint": "^8.0.0",
+      "prettier": "^3.0.0"
+    },
+    "outdated": 12,
+    "vulnerabilities": {
+      "critical": 0,
+      "high": 2,
+      "medium": 5,
+      "low": 8
+    }
+  },
+  "quality": {
+    "hasTests": true,
+    "testCoverage": 78.5,
+    "hasLinting": true,
+    "hasFormatting": true,
+    "hasCI": true,
+    "hasDocumentation": true,
+    "readmeQuality": "excellent"
+  },
+  "prContext": {
+    "filesChanged": 23,
+    "additions": 456,
+    "deletions": 123,
+    "modifiedPaths": [
+      "src/components/Button.tsx",
+      "src/utils/validation.ts",
+      "tests/Button.test.tsx"
+    ],
+    "impactedAreas": [
+      "UI Components",
+      "Validation Logic",
+      "Test Coverage"
+    ]
+  }
+}

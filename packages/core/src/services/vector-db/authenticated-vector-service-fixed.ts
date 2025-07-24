@@ -247,7 +247,7 @@ export class AuthenticatedVectorService {
     action: string,
     resourceType: string,
     resource: string,
-    success: boolean = true,
+    success = true,
     errorMessage?: string
   ): Promise<void> {
     try {

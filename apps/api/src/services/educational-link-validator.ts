@@ -287,8 +287,9 @@ export class EducationalLinkValidator {
    */
   async validateUrl(url: string): Promise<boolean> {
     // Check cache first
-    if (this.validatedLinks.has(url)) {
-      return this.validatedLinks.get(url)!;
+    const cachedResult = this.validatedLinks.get(url);
+    if (cachedResult !== undefined) {
+      return cachedResult;
     }
 
     try {

@@ -10,6 +10,7 @@ export { ExecutionStrategyFactory } from './execution-strategies';
 export { TimeoutManager, createTimeoutManager, withTimeout } from './timeout-manager';
 export { ExecutionMonitor } from './execution-monitor';
 export { EducationalAgent } from './educational-agent';
+export { ReportFormat, ReporterAgent } from './reporter-agent';
 export { VectorContextService, createVectorContextService } from './vector-context-service';
 export { VectorStorageService, createVectorStorageService } from './vector-storage-service';
 

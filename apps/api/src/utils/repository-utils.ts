@@ -4,13 +4,13 @@
  */
 export function normalizeRepositoryUrl(url: string): string {
   // Remove GitHub PR path if present
-  const githubPrMatch = url.match(/^(https:\/\/github\.com\/[^\/]+\/[^\/]+)\/pull\/\d+/);
+  const githubPrMatch = url.match(/^(https:\/\/github\.com\/[^/]+\/[^/]+)\/pull\/\d+/);
   if (githubPrMatch) {
     return githubPrMatch[1];
   }
   
   // Remove GitLab MR (merge request) path if present
-  const gitlabMrMatch = url.match(/^(https:\/\/gitlab\.com\/[^\/]+\/[^\/]+)(?:\/-)?\/merge_requests\/\d+/);
+  const gitlabMrMatch = url.match(/^(https:\/\/gitlab\.com\/[^/]+\/[^/]+)(?:\/-)?\/merge_requests\/\d+/);
   if (gitlabMrMatch) {
     return gitlabMrMatch[1];
   }
@@ -29,7 +29,7 @@ export function normalizeRepositoryUrl(url: string): string {
  */
 export function parseRepositoryUrl(url: string): { repositoryUrl: string; prNumber?: number } {
   // GitHub PR
-  const githubPrMatch = url.match(/^(https:\/\/github\.com\/[^\/]+\/[^\/]+)\/pull\/(\d+)/);
+  const githubPrMatch = url.match(/^(https:\/\/github\.com\/[^/]+\/[^/]+)\/pull\/(\d+)/);
   if (githubPrMatch) {
     return {
       repositoryUrl: githubPrMatch[1],
@@ -38,7 +38,7 @@ export function parseRepositoryUrl(url: string): { repositoryUrl: string; prNumb
   }
   
   // GitLab MR
-  const gitlabMrMatch = url.match(/^(https:\/\/gitlab\.com\/[^\/]+\/[^\/]+)(?:\/-)?\/merge_requests\/(\d+)/);
+  const gitlabMrMatch = url.match(/^(https:\/\/gitlab\.com\/[^/]+\/[^/]+)(?:\/-)?\/merge_requests\/(\d+)/);
   if (gitlabMrMatch) {
     return {
       repositoryUrl: gitlabMrMatch[1],

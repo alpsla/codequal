@@ -1,0 +1,525 @@
+{
+  "id": "report_fb_react_28958_20250723",
+  "repositoryUrl": "https://github.com/facebook/react",
+  "prNumber": 28958,
+  "timestamp": "2025-07-23T14:30:00Z",
+  "analysisMode": "comprehensive",
+  
+  "overview": {
+    "executiveSummary": "Analysis of PR #28958 for facebook/react reveals a well-maintained codebase with minor security concerns and opportunities for performance optimization. The PR introduces changes to UI components with proper test coverage. DeepWiki Analysis: This repository has a strong history of code quality with consistent architectural patterns. Recent trends show increased focus on performance optimizations and TypeScript adoption.",
+    "analysisScore": 73,
+    "riskLevel": "medium",
+    "totalFindings": 47,
+    "criticalFindings": 0,
+    "highFindings": 3,
+    "totalRecommendations": 15,
+    "learningPathAvailable": true,
+    "estimatedRemediationTime": "4-6 hours",
+    "prDecision": {
+      "status": "APPROVED_WITH_SUGGESTIONS",
+      "confidence": 0.82,
+      "reason": "No blocking issues found. High-priority items can be addressed in follow-up PRs."
+    }
+  },
+  
+  "deepwiki": {
+    "summary": "React is Facebook's declarative JavaScript library for building user interfaces. This PR modifies the Button component's event handling system, which is a critical part of the UI framework used by millions of applications.",
+    "repositoryInsights": [
+      "Button component has been refactored 12 times in the past year for performance improvements",
+      "Event handling system follows a consistent delegation pattern throughout the codebase",
+      "Test coverage for UI components averages 87%, exceeding industry standards"
+    ],
+    "historicalPatterns": [
+      "Performance regressions typically occur when event handlers create new function instances",
+      "Previous Button component changes required updates to 23 dependent components on average"
+    ],
+    "pendingIssues": [
+      "TODO: Migrate remaining class components to hooks (tracked in #15762)",
+      "Technical debt: Event system needs optimization for React 19 concurrent features",
+      "Unresolved: Memory leak in development mode when rapidly mounting/unmounting"
+    ],
+    "contextScore": 92,
+    "lastUpdated": "2025-07-23T14:00:00Z"
+  },
+  
+  "findings": {
+    "security": [
+      {
+        "id": "SEC-001",
+        "severity": "high",
+        "type": "security",
+        "category": "input-validation",
+        "title": "Potential XSS vulnerability in event handler",
+        "description": "The onClick handler in Button.tsx accepts unsanitized user input that could lead to XSS attacks",
+        "file": "src/components/Button.tsx",
+        "line": 145,
+        "column": 23,
+        "codeSnippet": "onClick={(e) => handleClick(e.target.value)}",
+        "impact": "High - Could allow arbitrary JavaScript execution",
+        "likelihood": "Medium - Requires specific user interaction",
+        "recommendation": "Sanitize input using DOMPurify or React's built-in escaping",
+        "references": [
+          "https://owasp.org/www-community/attacks/xss/",
+          "https://react.dev/learn/escape-hatches#dangerously-setting-the-inner-html"
+        ],
+        "agent": "security",
+        "tool": "semgrep",
+        "confidence": 0.89
+      },
+      {
+        "id": "SEC-002",
+        "severity": "medium",
+        "type": "security",
+        "category": "dependency",
+        "title": "Outdated dependency with known vulnerabilities",
+        "description": "The 'ws' package version 7.4.6 has known vulnerabilities",
+        "file": "package.json",
+        "line": 42,
+        "impact": "Medium - DoS vulnerability in WebSocket handling",
+        "recommendation": "Update to ws@8.11.0 or later",
+        "cve": "CVE-2024-37890",
+        "agent": "dependencies",
+        "tool": "npm-audit"
+      }
+    ],
+    
+    "codeQuality": [
+      {
+        "id": "CQ-001",
+        "severity": "high",
+        "type": "code-quality",
+        "category": "complexity",
+        "title": "Function complexity exceeds threshold",
+        "description": "The handleButtonClick function has a cyclomatic complexity of 15, exceeding the recommended maximum of 10",
+        "file": "src/components/Button.tsx",
+        "line": 78,
+        "complexity": 15,
+        "recommendation": "Refactor into smaller, focused functions",
+        "suggestedRefactoring": "```typescript\n// Split into separate concern handlers\nconst validateInput = (value: string): boolean => { /* ... */ }\nconst processClick = (event: ClickEvent): void => { /* ... */ }\nconst updateState = (newState: State): void => { /* ... */ }\n```",
+        "agent": "codeQuality",
+        "tool": "eslint-complexity"
+      },
+      {
+        "id": "CQ-002",
+        "severity": "medium",
+        "type": "code-quality",
+        "category": "maintainability",
+        "title": "Duplicate code detected",
+        "description": "Similar code block found in 3 locations",
+        "files": [
+          "src/components/Button.tsx:45-67",
+          "src/components/IconButton.tsx:23-45",
+          "src/components/LinkButton.tsx:34-56"
+        ],
+        "recommendation": "Extract common logic into a shared hook or utility function",
+        "agent": "codeQuality",
+        "tool": "jscpd"
+      }
+    ],
+    
+    "performance": [
+      {
+        "id": "PERF-001",
+        "severity": "high",
+        "type": "performance",
+        "category": "react-optimization",
+        "title": "Missing React.memo on pure component",
+        "description": "Button component re-renders unnecessarily on parent updates",
+        "file": "src/components/Button.tsx",
+        "line": 12,
+        "impact": "Can cause 200+ unnecessary re-renders per minute in list views",
+        "recommendation": "Wrap component with React.memo",
+        "example": "```typescript\nexport const Button = React.memo(({ onClick, children, ...props }: ButtonProps) => {\n  // component implementation\n});\n```",
+        "performanceGain": "~15% reduction in render time",
+        "agent": "performance",
+        "tool": "react-devtools-profiler"
+      },
+      {
+        "id": "PERF-002",
+        "severity": "medium",
+        "type": "performance",
+        "category": "bundle-size",
+        "title": "Large dependency impacting bundle size",
+        "description": "Importing entire lodash library instead of specific functions",
+        "file": "src/utils/helpers.ts",
+        "line": 3,
+        "currentSize": "71.2 KB",
+        "optimizedSize": "4.3 KB",
+        "recommendation": "Use named imports: import { debounce } from 'lodash/debounce'",
+        "agent": "performance",
+        "tool": "webpack-bundle-analyzer"
+      }
+    ],
+    
+    "architecture": [
+      {
+        "id": "ARCH-001",
+        "severity": "medium",
+        "type": "architecture",
+        "category": "pattern-violation",
+        "title": "Direct DOM manipulation in React component",
+        "description": "Using document.querySelector instead of React refs",
+        "file": "src/components/Button.tsx",
+        "line": 156,
+        "violation": "React Anti-Pattern",
+        "recommendation": "Use useRef hook for DOM element access",
+        "agent": "architecture",
+        "tool": "custom-rules"
+      }
+    ],
+    
+    "testing": [
+      {
+        "id": "TEST-001",
+        "severity": "low",
+        "type": "testing",
+        "category": "coverage",
+        "title": "Insufficient test coverage for error scenarios",
+        "description": "Button component error handling paths are not tested",
+        "file": "src/components/__tests__/Button.test.tsx",
+        "currentCoverage": 76,
+        "targetCoverage": 80,
+        "uncoveredLines": [145, 146, 189, 190],
+        "recommendation": "Add test cases for error boundaries and failed prop validation",
+        "agent": "testing",
+        "tool": "jest-coverage"
+      }
+    ]
+  },
+  
+  "recommendations": {
+    "immediate": [
+      {
+        "id": "REC-001",
+        "priority": "critical",
+        "category": "security",
+        "title": "Fix XSS vulnerability in Button component",
+        "description": "Sanitize user input in event handlers to prevent XSS attacks",
+        "rationale": "This is a high-impact security issue that could affect all applications using this component",
+        "effort": "low",
+        "estimatedTime": "30 minutes",
+        "implementation": [
+          "Import DOMPurify library or use React's escape utilities",
+          "Wrap user input with sanitization function",
+          "Add unit tests for XSS prevention",
+          "Update security documentation"
+        ],
+        "relatedFindings": ["SEC-001"],
+        "resources": [
+          {
+            "title": "React Security Best Practices",
+            "url": "https://react.dev/learn/escape-hatches",
+            "type": "documentation"
+          }
+        ]
+      },
+      {
+        "id": "REC-002",
+        "priority": "high",
+        "category": "performance",
+        "title": "Optimize component re-renders with React.memo",
+        "description": "Prevent unnecessary re-renders of Button component",
+        "rationale": "Significant performance impact in applications with many buttons",
+        "effort": "low",
+        "estimatedTime": "15 minutes",
+        "implementation": [
+          "Wrap Button component with React.memo",
+          "Ensure props comparison function if needed",
+          "Test with React DevTools Profiler",
+          "Document performance improvement"
+        ],
+        "relatedFindings": ["PERF-001"],
+        "expectedImprovement": "15% reduction in render time"
+      }
+    ],
+    
+    "shortTerm": [
+      {
+        "id": "REC-003",
+        "priority": "medium",
+        "category": "code-quality",
+        "title": "Refactor complex event handler",
+        "description": "Break down handleButtonClick into smaller functions",
+        "rationale": "Improves maintainability and testability",
+        "effort": "medium",
+        "estimatedTime": "2 hours",
+        "implementation": [
+          "Identify distinct responsibilities in the function",
+          "Extract validation logic",
+          "Extract state update logic",
+          "Extract side effects",
+          "Update unit tests"
+        ],
+        "relatedFindings": ["CQ-001"]
+      },
+      {
+        "id": "REC-004",
+        "priority": "medium",
+        "category": "architecture",
+        "title": "Replace DOM manipulation with React patterns",
+        "description": "Use React refs instead of querySelector",
+        "rationale": "Maintains React's declarative paradigm and prevents potential bugs",
+        "effort": "low",
+        "estimatedTime": "45 minutes",
+        "relatedFindings": ["ARCH-001"]
+      }
+    ],
+    
+    "longTerm": [
+      {
+        "id": "REC-005",
+        "priority": "low",
+        "category": "maintenance",
+        "title": "Create shared button behavior hook",
+        "description": "Extract common button logic to reduce duplication",
+        "rationale": "Reduces code duplication across button variants",
+        "effort": "high",
+        "estimatedTime": "4 hours",
+        "implementation": [
+          "Analyze common patterns across button components",
+          "Design useButton hook API",
+          "Implement and test hook",
+          "Migrate existing components",
+          "Update documentation"
+        ],
+        "relatedFindings": ["CQ-002"]
+      }
+    ]
+  },
+  
+  "educational": {
+    "skillGaps": [
+      {
+        "skill": "React Performance Optimization",
+        "currentLevel": "intermediate",
+        "targetLevel": "advanced",
+        "gap": 2,
+        "findings": ["PERF-001", "PERF-002"]
+      },
+      {
+        "skill": "Security Best Practices",
+        "currentLevel": "beginner",
+        "targetLevel": "intermediate",
+        "gap": 3,
+        "findings": ["SEC-001"]
+      }
+    ],
+    
+    "learningPaths": [
+      {
+        "id": "LP-001",
+        "title": "React Performance Mastery",
+        "difficulty": "intermediate",
+        "estimatedTime": "8 hours",
+        "modules": [
+          {
+            "title": "Understanding React Rendering",
+            "description": "Deep dive into React's reconciliation algorithm",
+            "duration": "2 hours",
+            "resources": [
+              {
+                "title": "React Fiber Architecture",
+                "url": "https://github.com/acdlite/react-fiber-architecture",
+                "type": "article"
+              }
+            ]
+          },
+          {
+            "title": "Optimization Techniques",
+            "description": "memo, useMemo, useCallback, and when to use them",
+            "duration": "3 hours",
+            "exercises": [
+              "Optimize a todo list with 1000+ items",
+              "Profile and fix performance bottlenecks"
+            ]
+          },
+          {
+            "title": "Bundle Size Optimization",
+            "description": "Code splitting and lazy loading strategies",
+            "duration": "3 hours"
+          }
+        ],
+        "certification": {
+          "available": true,
+          "provider": "React Training",
+          "credential": "React Performance Expert"
+        }
+      },
+      {
+        "id": "LP-002",
+        "title": "Secure React Development",
+        "difficulty": "beginner",
+        "estimatedTime": "4 hours",
+        "modules": [
+          {
+            "title": "Common Security Vulnerabilities",
+            "description": "XSS, CSRF, and injection attacks in React",
+            "duration": "1.5 hours"
+          },
+          {
+            "title": "Input Sanitization",
+            "description": "Properly handling user input in React applications",
+            "duration": "1.5 hours"
+          },
+          {
+            "title": "Security Testing",
+            "description": "Writing tests for security vulnerabilities",
+            "duration": "1 hour"
+          }
+        ]
+      }
+    ],
+    
+    "contextualExplanations": [
+      {
+        "concept": "React.memo",
+        "explanation": "React.memo is a higher order component that memoizes the result. It only re-renders if props change, similar to PureComponent for class components.",
+        "whenToUse": "Use when a component renders often with the same props",
+        "whenNotToUse": "Avoid for components that almost always receive new props",
+        "example": "Ideal for list items, buttons in toolbars, or any component that receives stable props"
+      },
+      {
+        "concept": "XSS Prevention",
+        "explanation": "Cross-Site Scripting (XSS) allows attackers to inject malicious scripts. React escapes values by default, but dangerouslySetInnerHTML and user-provided URLs need special attention.",
+        "bestPractices": [
+          "Never use dangerouslySetInnerHTML with user input",
+          "Sanitize URLs and validate protocols",
+          "Use Content Security Policy headers"
+        ]
+      }
+    ]
+  },
+  
+  "metrics": {
+    "scores": {
+      "overall": 73,
+      "security": 65,
+      "codeQuality": 78,
+      "performance": 70,
+      "architecture": 82,
+      "testing": 76,
+      "documentation": 88
+    },
+    
+    "trends": {
+      "lastAnalysis": {
+        "date": "2025-07-16T10:00:00Z",
+        "score": 71
+      },
+      "improvement": 2,
+      "consistentIssues": [
+        "Performance optimizations needed",
+        "Test coverage below target"
+      ]
+    },
+    
+    "benchmarks": {
+      "industryAverage": 75,
+      "repositoryAverage": 82,
+      "topPercentile": 95
+    },
+    
+    "distribution": {
+      "critical": 0,
+      "high": 3,
+      "medium": 12,
+      "low": 32,
+      "info": 15
+    }
+  },
+  
+  "visualizations": {
+    "severityDistribution": {
+      "type": "pie",
+      "data": [
+        { "label": "Critical", "value": 0, "color": "#DC2626" },
+        { "label": "High", "value": 3, "color": "#F59E0B" },
+        { "label": "Medium", "value": 12, "color": "#3B82F6" },
+        { "label": "Low", "value": 32, "color": "#10B981" }
+      ]
+    },
+    
+    "categoryBreakdown": {
+      "type": "bar",
+      "data": [
+        { "category": "Security", "findings": 2, "score": 65 },
+        { "category": "Code Quality", "findings": 15, "score": 78 },
+        { "category": "Performance", "findings": 8, "score": 70 },
+        { "category": "Architecture", "findings": 5, "score": 82 },
+        { "category": "Testing", "findings": 17, "score": 76 }
+      ]
+    },
+    
+    "trendAnalysis": {
+      "type": "line",
+      "data": [
+        { "date": "2025-06-01", "score": 68 },
+        { "date": "2025-06-15", "score": 70 },
+        { "date": "2025-07-01", "score": 71 },
+        { "date": "2025-07-16", "score": 71 },
+        { "date": "2025-07-23", "score": 73 }
+      ]
+    }
+  },
+  
+  "exports": {
+    "prComment": "## CodeQual Analysis Results 🔍\n\n**Overall Score**: 73/100 (Medium Risk)\n\n### Summary\nThis PR has been analyzed and **approved with suggestions**. While no blocking issues were found, there are 3 high-priority items that should be addressed.\n\n### Key Findings\n- 🔴 **Security**: 1 high-priority XSS vulnerability\n- 🟡 **Performance**: Missing optimization opportunities\n- 🟢 **Code Quality**: Generally good with minor improvements needed\n\n### Immediate Actions Required\n1. Fix XSS vulnerability in Button.tsx line 145\n2. Add React.memo to prevent unnecessary re-renders\n\nView full report: [Dashboard Link]\n\n*Generated by CodeQual*",
+    
+    "emailFormat": {
+      "subject": "Code Review: PR #28958 - Approved with Suggestions (Score: 73/100)",
+      "preview": "Your PR has been analyzed and approved. 3 high-priority issues need attention.",
+      "htmlBody": "<!-- Full HTML email template with formatted report -->"
+    },
+    
+    "slackFormat": {
+      "text": "PR #28958 Analysis Complete",
+      "blocks": [
+        {
+          "type": "header",
+          "text": "CodeQual Analysis: PR #28958"
+        },
+        {
+          "type": "section",
+          "fields": [
+            { "title": "Status", "value": "✅ Approved with Suggestions" },
+            { "title": "Score", "value": "73/100" },
+            { "title": "High Priority", "value": "3 issues" },
+            { "title": "Time to Fix", "value": "~45 minutes" }
+          ]
+        }
+      ]
+    }
+  },
+  
+  "metadata": {
+    "analysisId": "analysis_fb_react_28958_20250723",
+    "reportVersion": "2.0",
+    "generatedAt": "2025-07-23T14:30:00Z",
+    "processingTime": 31523,
+    "agentsUsed": [
+      "security-v2.1",
+      "codeQuality-v3.0",
+      "performance-v2.3",
+      "architecture-v1.8",
+      "dependencies-v2.0",
+      "testing-v1.5"
+    ],
+    "toolsExecuted": [
+      "semgrep",
+      "eslint",
+      "prettier",
+      "npm-audit",
+      "jest",
+      "webpack-bundle-analyzer",
+      "react-devtools-profiler",
+      "jscpd"
+    ],
+    "modelVersions": {
+      "security": "claude-3.5-sonnet",
+      "codeQuality": "gpt-4-turbo",
+      "performance": "claude-3-opus",
+      "architecture": "gpt-4",
+      "reporter": "claude-3.5-sonnet"
+    }
+  }
+}

@@ -35,7 +35,7 @@ export declare class EducationalContentService {
     /**
      * Generate educational content for all findings
      */
-    generateContentForFindings(findings: any, user: AuthenticatedUser): Promise<EducationalContent[]>;
+    generateContentForFindings(findings: Finding[], user: AuthenticatedUser): Promise<EducationalContent[]>;
     /**
      * Generate educational content for a specific finding
      */

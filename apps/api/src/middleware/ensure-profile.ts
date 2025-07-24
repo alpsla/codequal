@@ -1,6 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import { getSupabase } from '@codequal/database/supabase/client';
 import { AuthenticatedRequest } from './auth-middleware';
+import { createLogger } from '@codequal/core/utils';
+
+const logger = createLogger('ensure-profile');
 
 /**
  * Middleware to ensure user profile exists after authentication
@@ -57,7 +60,7 @@ export const ensureUserProfile = async (
       .insert(profileData);
 
     if (createError) {
-      console.error('Failed to create user profile:', {
+      logger.error('Failed to create user profile:', {
         error: createError,
         code: createError.code,
         message: createError.message,
@@ -70,7 +73,7 @@ export const ensureUserProfile = async (
 
     next();
   } catch (error) {
-    console.error('Error in ensureUserProfile middleware:', error);
+    logger.error('Error in ensureUserProfile middleware:', error as Error);
     // Don't block the request, just log the error
     next();
   }

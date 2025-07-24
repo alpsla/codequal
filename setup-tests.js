@@ -17,7 +17,7 @@ jest.mock('@codequal/database', () => ({
   }))
 }));
 
-jest.mock('@codequal/database/models/skill', () => ({
+jest.mock('@codequal/database/src/models/skill', () => ({
   SkillModel: {
     getUserSkills: jest.fn(() => Promise.resolve([])),
     updateSkill: jest.fn(() => Promise.resolve()),

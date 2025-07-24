@@ -124,7 +124,7 @@ index 0000000..1234567
 +  return jwt.sign({ userId }, secret, { expiresIn: '1h' });
 +}
 +
-+export function verifyToken(token: string): any {
++export function verifyToken(token: string): unknown {
 +  const secret = process.env.JWT_SECRET;
 +  return jwt.verify(token, secret); // No error handling
 +}
@@ -162,7 +162,7 @@ export function generateToken(userId: string): string {
   return jwt.sign({ userId }, secret, { expiresIn: '1h' });
 }
 
-export function verifyToken(token: string): any {
+export function verifyToken(token: string): unknown {
   const secret = process.env.JWT_SECRET;
   return jwt.verify(token, secret); // No error handling
 }`,

@@ -78,6 +78,6 @@ export class SystemAuthService {
    * Check if a user is the system user
    */
   isSystemUser(user: AuthenticatedUser): boolean {
-    return user.id === SYSTEM_USER.id && (user as any).isSystemUser === true;
+    return user.id === SYSTEM_USER.id && 'isSystemUser' in user && (user as { isSystemUser: boolean }).isSystemUser === true;
   }
 }

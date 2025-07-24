@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as cron from 'node-cron';
 import { getSupabaseClient } from '../supabase/supabase-client.factory';
 import { WebhookHandlerService } from '../deepwiki-tools/webhook-handler.service';
@@ -62,7 +61,38 @@ export interface AnalysisResult {
       low: number;
     };
   };
-  findings: any;
+  findings: unknown[];
+}
+
+interface ScheduledAnalysisResult {
+  success: boolean;
+  toolResults?: unknown[];
+  error?: string;
+}
+
+interface ScheduleRunRecord {
+  status: 'success' | 'failed' | 'error';
+  findingsCount?: number;
+  criticalFindings?: number;
+  executionTimeMs?: number;
+  error?: string;
+}
+
+interface DatabaseScheduleRecord {
+  id: string;
+  repository_url: string;
+  cron_expression: string;
+  frequency: ScheduleConfig['frequency'];
+  enabled_tools: string[];
+  notification_channels: string[];
+  priority: ScheduleConfig['priority'];
+  reason: string;
+  can_be_disabled: boolean;
+  is_active: boolean;
+  last_run_at?: string;
+  next_run_at?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export class RepositorySchedulerService {
@@ -75,12 +105,13 @@ export class RepositorySchedulerService {
   private constructor() {
     // TODO: Inject proper dependencies for WebhookHandlerService
     // For now, create a minimal instance for scheduled scans
-    const mockVectorStorage = {} as any;
-    const mockEmbeddingService = {} as any;
+    // TODO: Replace with proper dependency injection
+    const mockVectorStorage = {} as unknown;
+    const mockEmbeddingService = {} as unknown;
     const mockLogger = createLogger('WebhookHandler');
     this.webhookHandler = new WebhookHandlerService(
-      mockVectorStorage,
-      mockEmbeddingService,
+      mockVectorStorage as any,
+      mockEmbeddingService as any,
       mockLogger
     );
     this.loadActiveSchedules();
@@ -465,7 +496,7 @@ export class RepositorySchedulerService {
   /**
    * Evaluate if schedule needs adjustment based on results
    */
-  private async evaluateScheduleAdjustment(repositoryUrl: string, result: any): Promise<void> {
+  private async evaluateScheduleAdjustment(repositoryUrl: string, result: ScheduledAnalysisResult): Promise<void> {
     // TODO: Implement schedule adjustment logic based on:
     // - New critical findings
     // - Significant changes in findings
@@ -476,7 +507,7 @@ export class RepositorySchedulerService {
   /**
    * Record schedule run history
    */
-  private async recordScheduleRun(scheduleId: string, run: any): Promise<void> {
+  private async recordScheduleRun(scheduleId: string, run: ScheduleRunRecord): Promise<void> {
     await this.supabase
       .from('schedule_runs')
       .insert({
@@ -567,7 +598,7 @@ export class RepositorySchedulerService {
   /**
    * Map database record to ScheduleConfig
    */
-  private mapDbToScheduleConfig(data: any): ScheduleConfig {
+  private mapDbToScheduleConfig(data: DatabaseScheduleRecord): ScheduleConfig {
     return {
       id: data.id,
       repositoryUrl: data.repository_url,

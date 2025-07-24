@@ -68,7 +68,7 @@ const getSupabaseClient = () => {
 router.get('/stats', authMiddleware, async (req: Request, res: Response) => {
   try {
     // Check if user is admin (in production, implement proper role checks)
-    const user = (req as any).user;
+    const user = req.user;
     if (!user || user.role !== 'admin') {
       return res.status(403).json({
         error: 'Admin access required',
@@ -113,7 +113,7 @@ router.get('/stats', authMiddleware, async (req: Request, res: Response) => {
  */
 router.get('/config', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const user = (req as any).user;
+    const user = req.user;
     if (!user || user.role !== 'admin') {
       return res.status(403).json({
         error: 'Admin access required',
@@ -186,7 +186,7 @@ router.get('/config', authMiddleware, async (req: Request, res: Response) => {
  */
 router.post('/cleanup', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const user = (req as any).user;
+    const user = req.user;
     if (!user || user.role !== 'admin') {
       return res.status(403).json({
         error: 'Admin access required',
@@ -260,7 +260,7 @@ router.post('/cleanup', authMiddleware, async (req: Request, res: Response) => {
  */
 router.put('/schedule', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const user = (req as any).user;
+    const user = req.user;
     if (!user || user.role !== 'admin') {
       return res.status(403).json({
         error: 'Admin access required',
@@ -345,7 +345,7 @@ router.put('/schedule', authMiddleware, async (req: Request, res: Response) => {
  */
 router.get('/preview', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const user = (req as any).user;
+    const user = req.user;
     if (!user || user.role !== 'admin') {
       return res.status(403).json({
         error: 'Admin access required',

@@ -128,7 +128,7 @@ router.put('/profile', async (req: Request, res: Response) => {
 router.post('/avatar', upload.single('avatar'), async (req: Request, res: Response) => {
   try {
     const { user } = req as AuthenticatedRequest;
-    const file = (req as any).file as MulterFile | undefined;
+    const file = (req as AuthenticatedRequest & { file?: MulterFile }).file;
 
     if (!file) {
       return res.status(400).json({ error: 'No file uploaded' });

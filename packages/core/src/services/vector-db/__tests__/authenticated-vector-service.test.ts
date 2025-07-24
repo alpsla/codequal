@@ -199,7 +199,7 @@ describe('AuthenticatedVectorService', () => {
   describe('Document Embedding', () => {
     beforeEach(() => {
       // Mock repository access check
-      mockSupabaseClient.rpc.mockImplementation((fnName: string, params: any) => {
+      mockSupabaseClient.rpc.mockImplementation((fnName: string, params: { user_id: string; repository_id: string }) => {
         if (fnName === 'user_has_repository_access') {
           return Promise.resolve({ data: true, error: null });
         }
@@ -412,7 +412,7 @@ describe('AuthenticatedVectorService', () => {
   describe('Repository Access Sharing', () => {
     beforeEach(() => {
       // Default to granting admin access for tests
-      mockSupabaseClient.rpc.mockImplementation((fnName: string, params: any) => {
+      mockSupabaseClient.rpc.mockImplementation((fnName: string, params: { user_id: string; repository_id: string; share_with_user_id?: string; permission_level?: string }) => {
         if (fnName === 'user_has_repository_access') {
           return Promise.resolve({ data: true, error: null });
         }

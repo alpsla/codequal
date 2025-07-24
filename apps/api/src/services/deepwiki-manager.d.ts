@@ -7,14 +7,30 @@ export interface AnalysisJob {
     completedAt?: Date;
     error?: string;
 }
+export interface AnalysisFinding {
+    type: string;
+    severity: string;
+    message: string;
+    file?: string;
+    line?: number;
+}
+
+export interface AnalysisSection {
+    summary: string;
+    score: number;
+    findings: AnalysisFinding[];
+    recommendations: string[];
+    metrics?: Record<string, unknown>;
+}
+
 export interface AnalysisResults {
     repositoryUrl: string;
     analysis: {
-        architecture: any;
-        security: any;
-        performance: any;
-        codeQuality: any;
-        dependencies: any;
+        architecture: AnalysisSection;
+        security: AnalysisSection;
+        performance: AnalysisSection;
+        codeQuality: AnalysisSection;
+        dependencies: AnalysisSection;
     };
     metadata: {
         analyzedAt: Date;

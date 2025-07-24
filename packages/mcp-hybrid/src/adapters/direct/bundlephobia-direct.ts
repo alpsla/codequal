@@ -215,16 +215,22 @@ export class BundlephobiaDirectAdapter extends DirectToolAdapter {
         return null;
       }
       
-      const data = await response.json();
+      const data = await response.json() as {
+        gzip?: number;
+        size?: number;
+        dependencyCount?: number;
+        hasJSModule?: boolean;
+        hasSideEffects?: boolean;
+      };
       
       return {
         name: packageName,
         version: cleanVersion,
-        gzip: (data as any).gzip || 0,
-        size: (data as any).size || 0,
-        dependencyCount: (data as any).dependencyCount || 0,
-        hasJSModule: (data as any).hasJSModule,
-        hasSideEffects: (data as any).hasSideEffects
+        gzip: data.gzip || 0,
+        size: data.size || 0,
+        dependencyCount: data.dependencyCount || 0,
+        hasJSModule: data.hasJSModule,
+        hasSideEffects: data.hasSideEffects
       };
     } catch (error) {
       return null;
@@ -553,19 +559,14 @@ export class BundlephobiaDirectAdapter extends DirectToolAdapter {
         totalBundleSize: 0,
         totalGzipSize: 0,
         averagePackageSize: 0,
-        largestPackages: [],
         performanceScore: 10,
-        bundleSizeBreakdown: {
-          small: 0,
-          medium: 0,
-          large: 0,
-          veryLarge: 0
-        },
-        esmSupport: {
-          withESM: 0,
-          withoutESM: 0
-        }
-      } as any
+        smallPackages: 0,
+        mediumPackages: 0,
+        largePackages: 0,
+        veryLargePackages: 0,
+        packagesWithESM: 0,
+        packagesWithoutESM: 0
+      }
     };
   }
   

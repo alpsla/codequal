@@ -493,7 +493,7 @@ export default { state: readonly(state) };`,
                 {
                   title: 'Input Validation Pattern',
                   code: `function validateEmail(email) {
-  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const regex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
   return regex.test(email);
 }`,
                   pattern: 'input-validation',

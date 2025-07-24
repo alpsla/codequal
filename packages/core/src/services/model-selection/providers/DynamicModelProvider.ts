@@ -26,7 +26,7 @@ export class DynamicModelProvider implements ModelProviderPlugin {
   private logger: Logger;
   private config: DynamicProviderConfig;
   private modelCache: ModelVersionInfo[] = [];
-  private lastFetch: number = 0;
+  private lastFetch = 0;
   
   constructor(config: DynamicProviderConfig, logger: Logger) {
     this.provider = config.provider;

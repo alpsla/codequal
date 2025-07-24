@@ -6,8 +6,38 @@
 import { toolRegistry } from '../core/registry';
 import { toolManager } from '../core/tool-manager';
 import { agentToolService } from './tool-aware-agent';
-import { AnalysisContext } from '../core/interfaces';
+import { AnalysisContext, AgentRole } from '../core/interfaces';
 import { logging } from '@codequal/core';
+
+// Type definitions for multi-agent system
+export interface AgentConfig {
+  role: string;
+  model?: string;
+  temperature?: number;
+  maxTokens?: number;
+  [key: string]: unknown;
+}
+
+export interface AgentData {
+  repositoryUrl?: string;
+  prNumber?: number;
+  files?: Array<{
+    path: string;
+    content?: string;
+    diff?: string;
+  }>;
+  [key: string]: unknown;
+}
+
+export interface Agent {
+  analyze(data: AgentData): Promise<unknown>;
+  [key: string]: unknown;
+}
+
+export interface MultiAgentExecutor {
+  createAgent(agentConfig: AgentConfig, name: string): Promise<Agent>;
+  [key: string]: unknown;
+}
 
 /**
  * Configuration for multi-agent tool integration
@@ -49,11 +79,11 @@ export class MultiAgentToolIntegration {
    * Enhance the multi-agent executor's createAgent method
    * This wraps agents with tool capabilities
    */
-  enhanceExecutor(executor: any): void { // eslint-disable-line @typescript-eslint/no-explicit-any
+  enhanceExecutor(executor: MultiAgentExecutor): void {
     const originalCreateAgent = executor.createAgent.bind(executor);
     
     // Override createAgent method
-    executor.createAgent = async (agentConfig: any, name: string) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+    executor.createAgent = async (agentConfig: AgentConfig, name: string) => {
       // Create agent using original method
       const agent = await originalCreateAgent(agentConfig, name);
       
@@ -80,16 +110,16 @@ export class MultiAgentToolIntegration {
   /**
    * Storage for tool results across all agents
    */
-  private toolResults = new Map<string, any>();
+  private toolResults = new Map<string, unknown>();
   
   /**
    * Wrap an agent with tool execution capabilities
    */
-  private wrapAgentWithTools(agent: any, agentConfig: any, name: string): any { // eslint-disable-line @typescript-eslint/no-explicit-any
+  private wrapAgentWithTools(agent: Agent, agentConfig: AgentConfig, name: string): Agent {
     const originalAnalyze = agent.analyze.bind(agent);
     
     // Create enhanced analyze method
-    agent.analyze = async (data: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+    agent.analyze = async (data: AgentData) => {
       this.logger.info(`Running tools FIRST for ${name} (${agentConfig.role})`);
       
       try {
@@ -98,7 +128,7 @@ export class MultiAgentToolIntegration {
         
         // Step 2: Run tools FIRST to get concrete findings
         const toolResults = await agentToolService.runToolsForRole(
-          agentConfig.role,
+          agentConfig.role as AgentRole,
           context,
           {
             timeout: this.config.toolTimeout,
@@ -118,7 +148,7 @@ export class MultiAgentToolIntegration {
           toolAnalysis: {
             findings: toolResults.findings,
             metrics: toolResults.metrics,
-            summary: agentToolService.formatToolResultsForPrompt(toolResults, agentConfig.role),
+            summary: agentToolService.formatToolResultsForPrompt(toolResults, agentConfig.role as AgentRole),
             toolsExecuted: toolResults.toolsExecuted,
             executionTime: toolResults.executionTime
           },
@@ -135,8 +165,8 @@ export class MultiAgentToolIntegration {
         // Agent result is a compiled report, not raw tool findings
         // Add metadata about tool usage
         if (result && typeof result === 'object') {
-          result.metadata = {
-            ...result.metadata,
+          (result as any).metadata = {
+            ...(result as any).metadata,
             toolsUsed: toolResults.toolsExecuted,
             toolFindingsCount: toolResults.findings.length,
             toolExecutionTime: toolResults.executionTime
@@ -158,14 +188,14 @@ export class MultiAgentToolIntegration {
   /**
    * Create analysis context from agent data
    */
-  private createAnalysisContext(agentConfig: any, data: any): AnalysisContext { // eslint-disable-line @typescript-eslint/no-explicit-any
+  private createAnalysisContext(agentConfig: AgentConfig, data: AgentData): AnalysisContext {
     // Extract PR information from data
-    const pr = data.pull_request || data.pr || {};
-    const repo = data.repository || data.repo || {};
-    const files = data.files || pr.files || [];
+    const pr: any = data.pull_request || data.pr || {};
+    const repo: any = data.repository || data.repo || {};
+    const files: any[] = data.files || pr.files || [];
     
     return {
-      agentRole: agentConfig.role,
+      agentRole: agentConfig.role as AgentRole,
       pr: {
         prNumber: pr.number || data.prNumber || 0,
         title: pr.title || data.title || '',
@@ -173,39 +203,39 @@ export class MultiAgentToolIntegration {
         baseBranch: pr.base?.ref || data.baseBranch || 'main',
         targetBranch: pr.head?.ref || data.targetBranch || 'feature',
         author: pr.user?.login || data.author || '',
-        files: files.map((f: any) => ({ // eslint-disable-line @typescript-eslint/no-explicit-any
+        files: files.map((f) => ({
           path: f.filename || f.path,
           content: f.content || '',
           changeType: f.status === 'removed' ? 'deleted' : 
                       f.status === 'added' ? 'added' : 'modified',
           diff: f.patch || f.diff
         })),
-        commits: data.commits || []
+        commits: (data.commits || []) as Array<{ sha: string; message: string; author: string }>
       },
       repository: {
         name: repo.name || data.repoName || '',
         owner: repo.owner?.login || data.owner || '',
         languages: this.detectLanguages(files),
         frameworks: this.detectFrameworks(files),
-        primaryLanguage: data.primaryLanguage
+        primaryLanguage: data.primaryLanguage as string | undefined
       },
       userContext: {
-        userId: data.userId || 'unknown',
-        organizationId: data.organizationId,
-        permissions: data.permissions || ['read', 'write']
+        userId: (data.userId || 'unknown') as string,
+        organizationId: data.organizationId as string | undefined,
+        permissions: (data.permissions || ['read', 'write']) as string[]
       },
-      vectorDBConfig: data.vectorDBConfig || data.specializedContext
+      vectorDBConfig: (data.vectorDBConfig || data.specializedContext) as any
     };
   }
   
   /**
    * Detect languages from files
    */
-  private detectLanguages(files: any[]): string[] { // eslint-disable-line @typescript-eslint/no-explicit-any
+  private detectLanguages(files: AgentData['files']): string[] {
     const languages = new Set<string>();
     
-    files.forEach((file: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
-      const ext = (file.filename || file.path || '').split('.').pop()?.toLowerCase();
+    files?.forEach((file) => {
+      const ext = ((file as any).filename || file.path || '').split('.').pop()?.toLowerCase();
       switch (ext) {
         case 'js':
         case 'jsx':
@@ -236,12 +266,12 @@ export class MultiAgentToolIntegration {
   /**
    * Detect frameworks from files
    */
-  private detectFrameworks(files: any[]): string[] { // eslint-disable-line @typescript-eslint/no-explicit-any
+  private detectFrameworks(files: AgentData['files']): string[] {
     const frameworks = new Set<string>();
     
-    files.forEach((file: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+    files?.forEach((file) => {
       const content = file.content || '';
-      const filename = file.filename || file.path || '';
+      const filename = (file as any).filename || file.path || '';
       
       // React detection
       if (content.includes('import React') || content.includes('from "react"')) {
@@ -275,7 +305,7 @@ export class MultiAgentToolIntegration {
   /**
    * Get tool results for all agents
    */
-  getToolResults(): Map<string, any> {
+  getToolResults(): Map<string, unknown> {
     return new Map(this.toolResults);
   }
   
@@ -290,14 +320,14 @@ export class MultiAgentToolIntegration {
 /**
  * Factory function to create enhanced executor
  */
-export function createToolEnhancedExecutor(
-  ExecutorClass: any,
+export function createToolEnhancedExecutor<T extends new (...args: any[]) => MultiAgentExecutor>(
+  ExecutorClass: T,
   config?: MultiAgentToolConfig
-): any {
+): T {
   return class ToolEnhancedExecutor extends ExecutorClass {
     private toolIntegration: MultiAgentToolIntegration;
     
-    constructor(...args: any[]) { // eslint-disable-line @typescript-eslint/no-explicit-any
+    constructor(...args: any[]) {
       super(...args);
       
       // Create tool integration

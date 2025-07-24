@@ -196,7 +196,7 @@ export const MIXED_PR: PRFile[] = [
     changes: 40,
     patch: `
 +export function validateEmail(email: string): boolean {
-+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
++  const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
 +  return emailRegex.test(email);
 +}
     `

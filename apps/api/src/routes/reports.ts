@@ -6,6 +6,30 @@ import { createLogger } from '@codequal/core/utils';
 const router = Router();
 const logger = createLogger('ReportsAPI');
 
+interface ReportData {
+  report_data: {
+    exports: {
+      markdownReport: string;
+      plainText: string;
+      jsonReport?: string;
+      emailFormat?: string;
+      slackFormat?: string;
+    };
+  };
+}
+
+interface ReportDataRow {
+  id: string;
+  created_at: string;
+  repository_url: string;
+  pr_number: number;
+  analysis_score: number;
+  risk_level: string;
+  report_data: unknown;
+  total_findings?: number;
+  total_recommendations?: number;
+}
+
 /**
  * GET /api/reports/:reportId
  * Retrieve a specific analysis report by ID
@@ -13,13 +37,16 @@ const logger = createLogger('ReportsAPI');
 router.get('/reports/:reportId', authMiddleware, async (req, res) => {
   try {
     const { reportId } = req.params;
-    const userId = req.user!.id;
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
     
     logger.info('Retrieving report', { reportId, userId });
     
     // Use the secure function to get report with access control
     const { data, error } = await getSupabase()
-      .rpc('get_analysis_report', { report_id: reportId }) as { data: any; error: any };
+      .rpc('get_analysis_report', { report_id: reportId });
     
     if (error) {
       if (error.message.includes('not found or access denied')) {
@@ -30,7 +57,7 @@ router.get('/reports/:reportId', authMiddleware, async (req, res) => {
       throw error;
     }
     
-    const reportData = data as any;
+    const reportData = data as ReportDataRow;
     res.json({
       success: true,
       report: reportData.report_data, // Return the complete StandardReport
@@ -59,7 +86,10 @@ router.get('/reports/:reportId', authMiddleware, async (req, res) => {
 router.get('/reports/repository/:repoUrl/pr/:prNumber', authMiddleware, async (req, res) => {
   try {
     const { repoUrl, prNumber } = req.params;
-    const userId = req.user!.id;
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
     
     // Decode the repository URL
     const repositoryUrl = decodeURIComponent(repoUrl);
@@ -75,7 +105,7 @@ router.get('/reports/repository/:repoUrl/pr/:prNumber', authMiddleware, async (r
       .rpc('get_latest_analysis_report', { 
         p_repository_url: repositoryUrl,
         p_pr_number: parseInt(prNumber)
-      }) as { data: any; error: any };
+      });
     
     if (error) {
       throw error;
@@ -87,7 +117,7 @@ router.get('/reports/repository/:repoUrl/pr/:prNumber', authMiddleware, async (r
       });
     }
     
-    const reportData = data as any;
+    const reportData = data as ReportDataRow;
     res.json({
       success: true,
       report: reportData.report_data,
@@ -115,7 +145,10 @@ router.get('/reports/repository/:repoUrl/pr/:prNumber', authMiddleware, async (r
  */
 router.get('/reports', authMiddleware, async (req, res) => {
   try {
-    const userId = req.user!.id;
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
     const { 
       page = 1, 
       limit = 10, 
@@ -192,7 +225,10 @@ router.get('/reports', authMiddleware, async (req, res) => {
  */
 router.get('/reports/statistics', authMiddleware, async (req, res) => {
   try {
-    const userId = req.user!.id;
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
     
     logger.info('Getting report statistics', { userId });
     
@@ -223,7 +259,10 @@ router.get('/reports/statistics', authMiddleware, async (req, res) => {
 router.delete('/reports/:reportId', authMiddleware, async (req, res) => {
   try {
     const { reportId } = req.params;
-    const userId = req.user!.id;
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
     
     logger.info('Deleting report', { reportId, userId });
     
@@ -263,7 +302,10 @@ router.delete('/reports/:reportId', authMiddleware, async (req, res) => {
 router.get('/reports/:reportId/export/:format', authMiddleware, async (req, res) => {
   try {
     const { reportId, format } = req.params;
-    const userId = req.user!.id;
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
     
     logger.info('Exporting report', { reportId, format, userId });
     
@@ -280,7 +322,7 @@ router.get('/reports/:reportId/export/:format', authMiddleware, async (req, res)
       throw error;
     }
     
-    const report = (data as any).report_data;
+    const report = (data as ReportData).report_data;
     
     switch (format) {
       case 'markdown':

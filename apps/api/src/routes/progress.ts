@@ -339,7 +339,7 @@ router.get('/:analysisId/stream', authMiddleware, async (req: Request, res: Resp
     })}\n\n`);
     
     // Set up event listeners
-    const sendUpdate = (eventType: string, data: any) => {
+    const sendUpdate = (eventType: string, data: unknown) => {
       res.write(`data: ${JSON.stringify({
         type: eventType,
         timestamp: new Date(),
@@ -347,31 +347,31 @@ router.get('/:analysisId/stream', authMiddleware, async (req: Request, res: Resp
       })}\n\n`);
     };
     
-    const onProgressUpdate = (id: string, update: any) => {
+    const onProgressUpdate = (id: string, update: unknown) => {
       if (id === analysisId) {
         sendUpdate('update', update);
       }
     };
     
-    const onPhaseUpdate = (id: string, phase: string, phaseProgress: any) => {
+    const onPhaseUpdate = (id: string, phase: string, phaseProgress: unknown) => {
       if (id === analysisId) {
         sendUpdate('phase', { phase, progress: phaseProgress });
       }
     };
     
-    const onAgentUpdate = (id: string, agentName: string, agentProgress: any) => {
+    const onAgentUpdate = (id: string, agentName: string, agentProgress: unknown) => {
       if (id === analysisId) {
         sendUpdate('agent', { agentName, progress: agentProgress });
       }
     };
     
-    const onToolUpdate = (id: string, toolId: string, toolProgress: any) => {
+    const onToolUpdate = (id: string, toolId: string, toolProgress: unknown) => {
       if (id === analysisId) {
         sendUpdate('tool', { toolId, progress: toolProgress });
       }
     };
     
-    const onComplete = (id: string, finalProgress: any) => {
+    const onComplete = (id: string, finalProgress: unknown) => {
       if (id === analysisId) {
         sendUpdate('complete', finalProgress);
         cleanup();

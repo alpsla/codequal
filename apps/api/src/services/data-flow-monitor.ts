@@ -8,9 +8,9 @@ export interface DataFlowStep {
   endTime?: number;
   duration?: number;
   status: 'pending' | 'in_progress' | 'completed' | 'failed';
-  data?: any;
+  data?: unknown;
   error?: Error;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface DataFlowSession {
@@ -30,6 +30,31 @@ export interface DataFlowSession {
     bottlenecks: string[];
     warnings: string[];
   };
+}
+
+export interface SessionMetrics {
+  sessionId: string;
+  totalDuration: number;
+  stepCount: number;
+  avgStepDuration: number;
+  slowestStep: {
+    name: string;
+    duration: number;
+    status: string;
+    hasError: boolean;
+  };
+  errorRate: number;
+  stepMetrics: Array<{
+    name: string;
+    duration: number;
+    status: string;
+    hasError: boolean;
+  }>;
+}
+
+export interface ExportedSession extends DataFlowSession {
+  metrics: SessionMetrics | null;
+  visualization: string;
 }
 
 export class DataFlowMonitor extends EventEmitter {
@@ -78,7 +103,7 @@ export class DataFlowMonitor extends EventEmitter {
   /**
    * Start a new step in the data flow
    */
-  startStep(sessionId: string, stepName: string, metadata?: Record<string, any>): string {
+  startStep(sessionId: string, stepName: string, metadata?: Record<string, unknown>): string {
     const session = this.sessions.get(sessionId);
     if (!session) {
       throw new Error(`Session ${sessionId} not found`);
@@ -109,7 +134,7 @@ export class DataFlowMonitor extends EventEmitter {
   /**
    * Complete a step with data
    */
-  completeStep(stepId: string, data?: any): void {
+  completeStep(stepId: string, data?: unknown): void {
     const step = this.activeSteps.get(stepId);
     if (!step) {
       this.logger.warn(`Step ${stepId} not found`);
@@ -222,7 +247,7 @@ export class DataFlowMonitor extends EventEmitter {
 
     // Check for missing DeepWiki data
     const deepWikiStep = session.steps.find(s => s.name.includes('DeepWiki'));
-    if (deepWikiStep?.data?.empty) {
+    if (deepWikiStep?.data && typeof deepWikiStep.data === 'object' && 'empty' in deepWikiStep.data && deepWikiStep.data.empty) {
       warnings.push('DeepWiki data not found - repository may need analysis');
     }
 
@@ -290,7 +315,7 @@ export class DataFlowMonitor extends EventEmitter {
   /**
    * Get session metrics
    */
-  getSessionMetrics(sessionId: string): any {
+  getSessionMetrics(sessionId: string): SessionMetrics | null {
     const session = this.sessions.get(sessionId);
     if (!session) return null;
 
@@ -388,7 +413,7 @@ export class DataFlowMonitor extends EventEmitter {
   /**
    * Export session data for analysis
    */
-  exportSession(sessionId: string): any {
+  exportSession(sessionId: string): ExportedSession | null {
     const session = this.sessions.get(sessionId);
     if (!session) return null;
 

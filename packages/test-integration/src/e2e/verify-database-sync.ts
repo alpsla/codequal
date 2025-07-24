@@ -47,7 +47,7 @@ async function main() {
       for (const [language, sizeConfigs] of Object.entries(dbConfigs)) {
         console.log(chalk.blue(`\n${language}:`));
         for (const [size, config] of Object.entries(sizeConfigs)) {
-          const modelConfig = config as any;
+          const modelConfig = config as { provider: string; model: string; testResults?: { lastTested?: string } };
           console.log(chalk.gray(`  ${size}: ${modelConfig.provider}/${modelConfig.model}`));
           if (modelConfig.testResults?.lastTested) {
             console.log(chalk.gray(`    Last tested: ${modelConfig.testResults.lastTested}`));

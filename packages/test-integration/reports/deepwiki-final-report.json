@@ -1,0 +1,1079 @@
+{
+  "id": "deepwiki_scan_codequal_20250723_final",
+  "repositoryUrl": "https://github.com/codequal-dev/codequal",
+  "scanType": "repository_comprehensive",
+  "timestamp": "2025-07-23T16:00:00Z",
+  "modelUsed": "anthropic/claude-3-opus",
+  
+  "summary": {
+    "overallScore": 72,
+    "overallGrade": "C+",
+    "executiveSummary": "CodeQual repository demonstrates solid architectural foundations with a well-structured monorepo. However, critical security vulnerabilities, performance bottlenecks, and outdated dependencies require immediate attention. The codebase shows good TypeScript adoption but needs improvements in error handling and test coverage.",
+    "riskLevel": "HIGH",
+    "totalIssues": 287,
+    "issueDistribution": {
+      "critical": 12,
+      "high": 34,
+      "medium": 98,
+      "low": 143
+    },
+    "estimatedRemediationTime": "2-3 weeks for critical issues",
+    "trend": {
+      "direction": "improving",
+      "changeFromLastScan": "+3 points",
+      "date": "2025-07-16"
+    }
+  },
+  
+  "reports": {
+    "architecture": {
+      "category": "Architecture",
+      "score": 82,
+      "grade": "B+",
+      "summary": "Well-structured monorepo with clear separation of concerns. Event-driven patterns are well-implemented, but circular dependencies and missing API gateway layer need attention.",
+      "totalIssues": 23,
+      "issuesByPriority": {
+        "critical": 0,
+        "high": 3,
+        "medium": 8,
+        "low": 12
+      },
+      
+      "findings": [
+        {
+          "id": "ARCH-001",
+          "severity": "HIGH",
+          "title": "Circular Dependencies Between Core Packages",
+          "description": "Circular import dependencies create tight coupling between packages, making testing and maintenance difficult",
+          "impact": "Build failures, testing difficulties, increased coupling",
+          "dependencyChain": [
+            "packages/core → packages/database → packages/agents → packages/core"
+          ],
+          "affectedFiles": [
+            {
+              "file": "packages/core/src/services/model-service.ts",
+              "line": 12,
+              "issue": "Imports from @codequal/database"
+            },
+            {
+              "file": "packages/database/src/models/agent-config.ts",
+              "line": 8,
+              "issue": "Imports from @codequal/agents"
+            },
+            {
+              "file": "packages/agents/src/base/agent.ts",
+              "line": 5,
+              "issue": "Imports from @codequal/core"
+            }
+          ]
+        },
+        {
+          "id": "ARCH-002",
+          "severity": "HIGH",
+          "title": "Missing API Gateway Pattern",
+          "description": "Services are directly exposed without a central gateway for cross-cutting concerns",
+          "impact": "No centralized auth, rate limiting, monitoring, or request routing",
+          "currentState": "Direct service exposure via Express routes",
+          "desiredState": "API Gateway handling all external requests"
+        },
+        {
+          "id": "ARCH-003",
+          "severity": "MEDIUM",
+          "title": "Inconsistent Service Communication",
+          "description": "Mix of direct calls, events, and HTTP between services",
+          "impact": "Difficult to trace requests, inconsistent error handling",
+          "examples": [
+            "ResultOrchestrator uses direct imports",
+            "DeepWikiManager uses events",
+            "ReporterAgent uses HTTP calls"
+          ]
+        }
+      ],
+      
+      "positivePatterns": [
+        "Clean monorepo structure with Yarn workspaces",
+        "Good use of dependency injection",
+        "Event-driven architecture for decoupling",
+        "Clear package boundaries",
+        "TypeScript used throughout"
+      ],
+      
+      "recommendations": {
+        "immediate": [
+          {
+            "title": "Extract Shared Types",
+            "priority": "HIGH",
+            "description": "Create @codequal/types package for shared interfaces",
+            "effort": "1-2 days",
+            "example": "packages/types/src/index.ts with all shared interfaces"
+          },
+          {
+            "title": "Implement API Gateway",
+            "priority": "HIGH",
+            "description": "Add Kong or AWS API Gateway for centralized concerns",
+            "effort": "3-5 days",
+            "benefits": ["Central auth", "Rate limiting", "Request logging", "API versioning"]
+          }
+        ],
+        "shortTerm": [
+          {
+            "title": "Standardize Service Communication",
+            "priority": "MEDIUM",
+            "description": "Choose one pattern: events or direct calls",
+            "effort": "1 week"
+          },
+          {
+            "title": "Add Service Mesh",
+            "priority": "MEDIUM",
+            "description": "Implement Istio for microservices communication",
+            "effort": "2 weeks"
+          }
+        ],
+        "longTerm": [
+          {
+            "title": "Implement Event Sourcing",
+            "priority": "LOW",
+            "description": "Add event sourcing for audit trail",
+            "effort": "1 month"
+          }
+        ]
+      },
+      
+      "metrics": {
+        "packageCoupling": 0.73,
+        "cohesion": 0.82,
+        "modularity": 0.78,
+        "layerViolations": 12,
+        "architecturalDebt": "15%"
+      }
+    },
+    
+    "performance": {
+      "category": "Performance",
+      "score": 70,
+      "grade": "C",
+      "summary": "Significant performance issues in database queries and frontend bundle size. N+1 queries causing 3+ second load times. Bundle size 4x larger than optimal.",
+      "totalIssues": 42,
+      "issuesByPriority": {
+        "critical": 3,
+        "high": 8,
+        "medium": 15,
+        "low": 16
+      },
+      
+      "findings": [
+        {
+          "id": "PERF-001",
+          "severity": "CRITICAL",
+          "title": "N+1 Query Problem in Report Loading",
+          "description": "Loading analysis reports executes 147 separate database queries",
+          "impact": "3-5 second page load times, database overload under concurrent users",
+          "measurements": {
+            "currentLatency": "3200ms average",
+            "targetLatency": "200ms",
+            "queryCount": 147,
+            "optimalQueryCount": 3,
+            "databaseCPU": "85% during report loads"
+          },
+          "rootCause": "Lazy loading in loops without batching",
+          "affectedCode": {
+            "file": "packages/database/src/services/report-service.ts",
+            "lines": "145-189",
+            "snippet": "for (const finding of report.findings) {\n  finding.details = await FindingDetails.findById(finding.detailId);\n}"
+          }
+        },
+        {
+          "id": "PERF-002",
+          "severity": "HIGH",
+          "title": "Oversized Frontend Bundle",
+          "description": "Main JavaScript bundle is 2.3MB, causing slow initial loads",
+          "impact": "Poor mobile experience, high bounce rates",
+          "measurements": {
+            "currentSize": "2.3MB",
+            "gzippedSize": "812KB",
+            "parseTime": "1.2s on mobile",
+            "targetSize": "500KB"
+          },
+          "breakdown": {
+            "lodash": "524KB (using 3 functions)",
+            "moment": "329KB (can use date-fns: 23KB)",
+            "@mui/material": "892KB (importing all)",
+            "unusedCode": "67%"
+          }
+        },
+        {
+          "id": "PERF-003",
+          "severity": "HIGH",
+          "title": "Memory Leak in WebSocket Handlers",
+          "description": "Event listeners not cleaned up, causing unbounded memory growth",
+          "impact": "Browser tab crashes after 30 minutes of use",
+          "measurements": {
+            "leakRate": "50MB/hour",
+            "affectedUsers": "100% of long sessions"
+          },
+          "location": {
+            "file": "apps/web/src/hooks/useWebSocket.ts",
+            "lines": "34-45"
+          }
+        },
+        {
+          "id": "PERF-004",
+          "severity": "MEDIUM",
+          "title": "Missing Database Indexes",
+          "description": "Critical queries doing full table scans",
+          "impact": "Slow queries as data grows",
+          "queries": [
+            "SELECT * FROM analyses WHERE repository_url = ?",
+            "SELECT * FROM reports WHERE user_id = ? ORDER BY created_at"
+          ]
+        }
+      ],
+      
+      "recommendations": {
+        "immediate": [
+          {
+            "title": "Fix N+1 Queries",
+            "priority": "CRITICAL",
+            "description": "Implement eager loading or DataLoader pattern",
+            "effort": "2 days",
+            "expectedImprovement": "90% latency reduction",
+            "implementation": "Use .populate() or implement GraphQL DataLoader"
+          },
+          {
+            "title": "Enable Code Splitting",
+            "priority": "HIGH",
+            "description": "Split bundle by routes and lazy load",
+            "effort": "3 days",
+            "expectedImprovement": "70% initial load reduction"
+          }
+        ],
+        "shortTerm": [
+          {
+            "title": "Add Redis Caching",
+            "priority": "HIGH",
+            "description": "Cache report data and user sessions",
+            "effort": "1 week",
+            "expectedImprovement": "50% API response time reduction"
+          },
+          {
+            "title": "Optimize Database Indexes",
+            "priority": "MEDIUM",
+            "description": "Add indexes for common query patterns",
+            "effort": "2 days"
+          }
+        ],
+        "longTerm": [
+          {
+            "title": "Implement CDN",
+            "priority": "MEDIUM",
+            "description": "Serve static assets from CDN",
+            "effort": "3 days"
+          }
+        ]
+      },
+      
+      "benchmarks": {
+        "apiLatency": {
+          "p50": "450ms",
+          "p95": "1200ms",
+          "p99": "3200ms",
+          "target": "200ms"
+        },
+        "throughput": {
+          "current": "150 req/s",
+          "target": "500 req/s"
+        },
+        "errorRate": {
+          "current": "0.3%",
+          "acceptable": "0.1%"
+        }
+      }
+    },
+    
+    "codeQuality": {
+      "category": "Code Quality",
+      "score": 78,
+      "grade": "B",
+      "summary": "Good TypeScript adoption and modern practices. Main issues are high complexity functions, inconsistent error handling, and excessive use of 'any' types.",
+      "totalIssues": 67,
+      "issuesByPriority": {
+        "critical": 0,
+        "high": 12,
+        "medium": 23,
+        "low": 32
+      },
+      
+      "findings": [
+        {
+          "id": "QUAL-001",
+          "severity": "HIGH",
+          "title": "High Cyclomatic Complexity",
+          "description": "23 functions exceed complexity threshold of 10",
+          "impact": "Difficult to test and maintain, high bug risk",
+          "worstOffenders": [
+            {
+              "function": "ResultOrchestrator.processAnalysis",
+              "file": "apps/api/src/services/result-orchestrator.ts",
+              "complexity": 24,
+              "lines": "234-456",
+              "paths": 16
+            },
+            {
+              "function": "DeepWikiManager.analyzeRepository",
+              "file": "packages/core/src/deepwiki/DeepWikiManager.ts",
+              "complexity": 19,
+              "lines": "123-289"
+            },
+            {
+              "function": "AuthMiddleware.validateToken",
+              "file": "apps/api/src/middleware/auth-middleware.ts",
+              "complexity": 17,
+              "lines": "45-123"
+            }
+          ]
+        },
+        {
+          "id": "QUAL-002",
+          "severity": "HIGH",
+          "title": "Inconsistent Error Handling",
+          "description": "Mix of try-catch, .catch(), and unhandled promise rejections",
+          "impact": "Unpredictable error behavior, silent failures",
+          "patterns": [
+            {
+              "pattern": "Unhandled promise rejection",
+              "count": 34,
+              "example": "fetchData().then(data => process(data));"
+            },
+            {
+              "pattern": "Swallowed errors",
+              "count": 23,
+              "example": "catch(e) { console.log(e); }"
+            },
+            {
+              "pattern": "Generic catch blocks",
+              "count": 56,
+              "example": "catch(error) { throw error; }"
+            }
+          ]
+        },
+        {
+          "id": "QUAL-003",
+          "severity": "MEDIUM",
+          "title": "TypeScript 'any' Overuse",
+          "description": "234 instances of 'any' type weakening type safety",
+          "impact": "Runtime errors, lost IntelliSense",
+          "hotspots": [
+            {
+              "file": "packages/core/src/services/model-service.ts",
+              "count": 23
+            },
+            {
+              "file": "apps/api/src/routes/analysis.ts",
+              "count": 18
+            }
+          ]
+        },
+        {
+          "id": "QUAL-004",
+          "severity": "MEDIUM",
+          "title": "Code Duplication",
+          "description": "15.3% of code is duplicated across files",
+          "impact": "Maintenance burden, inconsistency risk",
+          "duplicates": [
+            {
+              "pattern": "Database connection boilerplate",
+              "locations": 12,
+              "lines": 22
+            },
+            {
+              "pattern": "Error logging logic",
+              "locations": 8,
+              "lines": 15
+            }
+          ]
+        }
+      ],
+      
+      "metrics": {
+        "maintainabilityIndex": 72,
+        "cyclomaticComplexity": {
+          "average": 8.3,
+          "max": 24,
+          "threshold": 10
+        },
+        "technicalDebt": {
+          "ratio": 15.3,
+          "hours": 234,
+          "cost": "$23,400"
+        },
+        "codeSmells": 234,
+        "duplicatedLines": 15.3,
+        "linesOfCode": 156789,
+        "testCoverage": 68.4
+      },
+      
+      "recommendations": {
+        "immediate": [
+          {
+            "title": "Refactor Complex Functions",
+            "priority": "HIGH",
+            "description": "Break down functions with complexity > 10",
+            "effort": "3 days",
+            "approach": "Extract method, use strategy pattern"
+          },
+          {
+            "title": "Standardize Error Handling",
+            "priority": "HIGH",
+            "description": "Implement centralized error handler",
+            "effort": "2 days",
+            "pattern": "Error boundary with custom error types"
+          }
+        ],
+        "shortTerm": [
+          {
+            "title": "Eliminate 'any' Types",
+            "priority": "MEDIUM",
+            "description": "Replace with proper types or 'unknown'",
+            "effort": "1 week",
+            "tooling": "ESLint no-explicit-any rule"
+          },
+          {
+            "title": "Extract Shared Code",
+            "priority": "MEDIUM",
+            "description": "Create utility modules for common patterns",
+            "effort": "3 days"
+          }
+        ],
+        "longTerm": [
+          {
+            "title": "Increase Test Coverage",
+            "priority": "MEDIUM",
+            "description": "Achieve 80% coverage minimum",
+            "effort": "2 weeks"
+          }
+        ]
+      }
+    },
+    
+    "security": {
+      "category": "Security",
+      "score": 65,
+      "grade": "D",
+      "summary": "Critical security vulnerabilities require immediate attention. Exposed secrets, SQL injection risks, and authentication weaknesses pose severe threats.",
+      "totalIssues": 45,
+      "issuesByPriority": {
+        "critical": 8,
+        "high": 12,
+        "medium": 15,
+        "low": 10
+      },
+      
+      "findings": [
+        {
+          "id": "SEC-001",
+          "severity": "CRITICAL",
+          "title": "Hardcoded Secrets in Repository",
+          "description": "API keys and credentials exposed in Kubernetes manifests",
+          "impact": "Complete system compromise if repository accessed",
+          "cvssScore": 9.8,
+          "cwe": "CWE-798",
+          "locations": [
+            {
+              "file": "k8s/deployments/production/api-deployment.yaml",
+              "lines": [23, 45, 67],
+              "secret": "OPENROUTER_API_KEY",
+              "value": "sk-or-v1-EXPOSED"
+            },
+            {
+              "file": "k8s/deployments/production/deepwiki-deployment.yaml",
+              "lines": [34, 56],
+              "secret": "ANTHROPIC_API_KEY",
+              "value": "sk-ant-EXPOSED"
+            }
+          ],
+          "exploitability": "Trivial - accessible via git history"
+        },
+        {
+          "id": "SEC-002",
+          "severity": "CRITICAL",
+          "title": "SQL Injection Vulnerabilities",
+          "description": "Unparameterized queries allow database manipulation",
+          "impact": "Data breach, privilege escalation, data loss",
+          "cvssScore": 9.1,
+          "cwe": "CWE-89",
+          "locations": [
+            {
+              "file": "packages/database/src/services/analysis-service.ts",
+              "line": 234,
+              "vulnerable": "WHERE user_id = ${userId}",
+              "attack": "1 OR 1=1; DROP TABLE users;--"
+            },
+            {
+              "file": "packages/database/src/services/user-service.ts",
+              "line": 156,
+              "vulnerable": "WHERE email = '${email}'"
+            }
+          ]
+        },
+        {
+          "id": "SEC-003",
+          "severity": "HIGH",
+          "title": "Weak JWT Configuration",
+          "description": "Predictable secret allows token forgery",
+          "impact": "Authentication bypass",
+          "cvssScore": 7.5,
+          "issue": "JWT_SECRET='dev-secret-123'",
+          "location": "packages/core/src/config/auth.config.ts:12"
+        },
+        {
+          "id": "SEC-004",
+          "severity": "HIGH",
+          "title": "CORS Misconfiguration",
+          "description": "Allows requests from any origin",
+          "impact": "CSRF attacks, data theft",
+          "cvssScore": 7.1,
+          "configuration": "cors({ origin: '*', credentials: true })"
+        },
+        {
+          "id": "SEC-005",
+          "severity": "MEDIUM",
+          "title": "Missing Rate Limiting",
+          "description": "APIs vulnerable to brute force and DoS",
+          "impact": "Service disruption, credential stuffing",
+          "affectedEndpoints": [
+            "/api/auth/login",
+            "/api/analysis/start",
+            "/api/researcher/query"
+          ]
+        }
+      ],
+      
+      "vulnerableDependencies": [
+        {
+          "package": "jsonwebtoken",
+          "version": "8.5.1",
+          "vulnerability": "CVE-2022-23541",
+          "severity": "CRITICAL",
+          "patchedVersion": "9.0.0"
+        },
+        {
+          "package": "ws",
+          "version": "7.4.6",
+          "vulnerability": "CVE-2024-37890",
+          "severity": "HIGH",
+          "patchedVersion": "8.11.0"
+        }
+      ],
+      
+      "recommendations": {
+        "immediate": [
+          {
+            "title": "Remove and Rotate Secrets",
+            "priority": "CRITICAL",
+            "description": "Remove all hardcoded secrets and rotate keys",
+            "effort": "4 hours",
+            "steps": [
+              "Remove secrets from all files",
+              "Rotate all exposed API keys",
+              "Implement Kubernetes secrets",
+              "Add .gitignore for sensitive files"
+            ]
+          },
+          {
+            "title": "Fix SQL Injections",
+            "priority": "CRITICAL",
+            "description": "Use parameterized queries exclusively",
+            "effort": "6 hours",
+            "example": "db.query('SELECT * FROM users WHERE id = $1', [userId])"
+          }
+        ],
+        "shortTerm": [
+          {
+            "title": "Implement Proper Authentication",
+            "priority": "HIGH",
+            "description": "Strong JWT secrets, refresh tokens, MFA",
+            "effort": "1 week"
+          },
+          {
+            "title": "Add Security Headers",
+            "priority": "HIGH",
+            "description": "CSP, HSTS, X-Frame-Options",
+            "effort": "1 day"
+          }
+        ],
+        "longTerm": [
+          {
+            "title": "Security Audit Program",
+            "priority": "MEDIUM",
+            "description": "Regular penetration testing",
+            "effort": "Ongoing"
+          }
+        ]
+      },
+      
+      "compliance": {
+        "owaspTop10": {
+          "covered": 3,
+          "total": 10,
+          "missing": ["A01", "A02", "A03", "A05", "A07", "A08", "A09"]
+        },
+        "pciDss": {
+          "compliant": false,
+          "gaps": ["Encryption at rest", "Key management", "Access logging"]
+        }
+      }
+    },
+    
+    "dependencies": {
+      "category": "Dependencies",
+      "score": 60,
+      "grade": "D",
+      "summary": "Significant dependency risks with 23 known vulnerabilities and 156 outdated packages. Immediate updates required for security.",
+      "totalIssues": 87,
+      "issuesByPriority": {
+        "critical": 5,
+        "high": 18,
+        "medium": 34,
+        "low": 30
+      },
+      
+      "statistics": {
+        "totalDependencies": 1247,
+        "directDependencies": 89,
+        "devDependencies": 156,
+        "outdated": 234,
+        "vulnerable": 23,
+        "deprecated": 8,
+        "unused": 15,
+        "duplicates": 12
+      },
+      
+      "vulnerabilities": [
+        {
+          "id": "DEP-001",
+          "severity": "CRITICAL",
+          "package": "jsonwebtoken",
+          "installed": "8.5.1",
+          "patched": "9.0.0",
+          "latest": "9.0.2",
+          "vulnerability": {
+            "cve": "CVE-2022-23541",
+            "description": "Weak verification allows JWT bypass",
+            "exploitVector": "Network",
+            "exploitComplexity": "Low",
+            "impact": "Authentication bypass"
+          },
+          "dependencyPath": "codequal → @codequal/core → jsonwebtoken"
+        },
+        {
+          "id": "DEP-002",
+          "severity": "HIGH",
+          "package": "ws",
+          "installed": "7.4.6",
+          "patched": "8.11.0",
+          "vulnerability": {
+            "cve": "CVE-2024-37890",
+            "description": "DoS via memory exhaustion",
+            "impact": "Service disruption"
+          }
+        },
+        {
+          "id": "DEP-003",
+          "severity": "HIGH",
+          "package": "lodash",
+          "installed": "4.17.20",
+          "patched": "4.17.21",
+          "vulnerability": {
+            "cve": "CVE-2021-23337",
+            "description": "Command injection via template"
+          }
+        }
+      ],
+      
+      "outdatedMajor": [
+        {
+          "package": "react",
+          "current": "17.0.2",
+          "latest": "18.2.0",
+          "released": "2022-03-29",
+          "breaking": true,
+          "migrationComplexity": "HIGH",
+          "dependents": 23
+        },
+        {
+          "package": "typescript",
+          "current": "4.5.0",
+          "latest": "5.2.0",
+          "breaking": true,
+          "benefits": ["Better performance", "New type features"]
+        }
+      ],
+      
+      "unusedDependencies": [
+        {
+          "package": "gulp",
+          "reason": "Legacy build tool, using webpack now",
+          "lastUsed": "Never"
+        },
+        {
+          "package": "moment",
+          "reason": "Can use date-fns (smaller)",
+          "currentSize": "329KB",
+          "alternative": "date-fns (23KB)"
+        }
+      ],
+      
+      "recommendations": {
+        "immediate": [
+          {
+            "title": "Update Critical Vulnerabilities",
+            "priority": "CRITICAL",
+            "description": "Update jsonwebtoken, ws, and lodash",
+            "effort": "2 hours",
+            "command": "npm update jsonwebtoken@^9.0.0 ws@^8.11.0 lodash@^4.17.21"
+          },
+          {
+            "title": "Remove Unused Dependencies",
+            "priority": "HIGH",
+            "description": "Remove 15 unused packages",
+            "effort": "1 hour",
+            "sizeReduction": "1.2MB"
+          }
+        ],
+        "shortTerm": [
+          {
+            "title": "Update Major Versions",
+            "priority": "MEDIUM",
+            "description": "Plan React 18 and TypeScript 5 migration",
+            "effort": "2 weeks"
+          },
+          {
+            "title": "Add Dependency Scanning",
+            "priority": "HIGH",
+            "description": "Add Snyk or npm audit to CI/CD",
+            "effort": "2 hours"
+          }
+        ],
+        "longTerm": [
+          {
+            "title": "Dependency Update Policy",
+            "priority": "MEDIUM",
+            "description": "Monthly update cycles with testing",
+            "effort": "Ongoing"
+          }
+        ]
+      },
+      
+      "licenseCompliance": {
+        "compatible": 1234,
+        "incompatible": 2,
+        "unknown": 11,
+        "problematic": [
+          {
+            "package": "some-gpl-package",
+            "license": "GPL-3.0",
+            "issue": "Copyleft incompatible with MIT"
+          }
+        ]
+      }
+    }
+  },
+  
+  "priorityNextSteps": {
+    "summary": "Based on the analysis, the most critical path forward focuses on security vulnerabilities and performance bottlenecks that directly impact users.",
+    "immediateActions": {
+      "week1": {
+        "title": "Critical Security Remediation",
+        "priority": "CRITICAL",
+        "tasks": [
+          {
+            "task": "Remove hardcoded secrets from repository",
+            "assignTo": "Security Team",
+            "effort": "4 hours",
+            "dependency": "None",
+            "impact": "Prevents system compromise"
+          },
+          {
+            "task": "Fix SQL injection vulnerabilities",
+            "assignTo": "Backend Team",
+            "effort": "6 hours",
+            "dependency": "Database access review",
+            "impact": "Prevents data breach"
+          },
+          {
+            "task": "Update vulnerable dependencies",
+            "assignTo": "DevOps",
+            "effort": "2 hours",
+            "dependency": "Testing suite ready",
+            "impact": "Patches known exploits"
+          }
+        ],
+        "blockers": ["Need to rotate API keys with providers", "Regression test suite needs update"],
+        "successCriteria": "All critical vulnerabilities patched, secrets removed from git history"
+      },
+      "week2": {
+        "title": "Performance Crisis Resolution",
+        "priority": "HIGH",
+        "focus": "User-facing performance issues",
+        "tasks": [
+          {
+            "task": "Implement eager loading for N+1 queries",
+            "assignTo": "Database Team",
+            "effort": "16 hours",
+            "impact": "90% reduction in page load time"
+          },
+          {
+            "task": "Enable webpack code splitting",
+            "assignTo": "Frontend Team",
+            "effort": "24 hours",
+            "impact": "70% smaller initial bundle"
+          }
+        ]
+      }
+    },
+    "strategicInitiatives": {
+      "quarter1": {
+        "goals": [
+          "Achieve 80% test coverage",
+          "Implement API gateway pattern",
+          "Zero critical vulnerabilities"
+        ],
+        "keyProjects": [
+          {
+            "project": "Security Hardening",
+            "outcomes": ["SOC2 compliance", "Automated security scanning", "Incident response plan"]
+          },
+          {
+            "project": "Performance Optimization",
+            "outcomes": ["Sub-1s page loads", "500 req/s throughput", "99.9% uptime"]
+          }
+        ]
+      }
+    }
+  },
+  
+  "educationalRecommendations": {
+    "skillGapAnalysis": {
+      "summary": "Team shows strong TypeScript skills but needs improvement in security practices and performance optimization",
+      "identifiedGaps": [
+        {
+          "area": "Security Best Practices",
+          "currentLevel": "Beginner",
+          "targetLevel": "Advanced",
+          "gap": 3,
+          "evidence": ["Hardcoded secrets", "SQL injections", "Weak auth"],
+          "impact": "Critical - directly causes vulnerabilities"
+        },
+        {
+          "area": "Database Optimization",
+          "currentLevel": "Intermediate",
+          "targetLevel": "Advanced",
+          "gap": 2,
+          "evidence": ["N+1 queries", "Missing indexes", "No query analysis"],
+          "impact": "High - causes performance issues"
+        },
+        {
+          "area": "Frontend Performance",
+          "currentLevel": "Intermediate",
+          "targetLevel": "Expert",
+          "gap": 2,
+          "evidence": ["Large bundle", "No code splitting", "Memory leaks"],
+          "impact": "High - affects user experience"
+        },
+        {
+          "area": "Testing Practices",
+          "currentLevel": "Intermediate",
+          "targetLevel": "Advanced",
+          "gap": 1,
+          "evidence": ["68% coverage", "Missing integration tests", "Flaky tests"],
+          "impact": "Medium - increases bug risk"
+        }
+      ]
+    },
+    
+    "learningPaths": [
+      {
+        "path": "Secure Coding Fundamentals",
+        "priority": "CRITICAL",
+        "targetAudience": "All developers",
+        "duration": "2 weeks",
+        "modules": [
+          {
+            "module": "OWASP Top 10 Prevention",
+            "duration": "8 hours",
+            "topics": ["SQL Injection", "XSS", "Authentication", "Secrets Management"],
+            "resources": [
+              {
+                "title": "OWASP Secure Coding Practices",
+                "url": "https://owasp.org/www-project-secure-coding-practices",
+                "type": "guide"
+              },
+              {
+                "title": "SQL Injection Prevention Cheat Sheet",
+                "url": "https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html",
+                "type": "reference"
+              }
+            ],
+            "exercises": [
+              "Refactor vulnerable code samples",
+              "Implement parameterized queries",
+              "Set up secrets management"
+            ]
+          },
+          {
+            "module": "Kubernetes Security",
+            "duration": "4 hours",
+            "topics": ["Secrets management", "RBAC", "Network policies"],
+            "certification": "CKS preparation"
+          }
+        ],
+        "assessment": {
+          "type": "Practical exercise",
+          "description": "Secure a vulnerable application",
+          "passingScore": 80
+        }
+      },
+      {
+        "path": "Performance Engineering",
+        "priority": "HIGH",
+        "targetAudience": "Backend developers",
+        "duration": "3 weeks",
+        "modules": [
+          {
+            "module": "Database Performance Tuning",
+            "duration": "12 hours",
+            "topics": ["Query optimization", "Indexing strategies", "N+1 prevention", "Connection pooling"],
+            "labs": [
+              "Analyze slow query logs",
+              "Implement DataLoader pattern",
+              "Design efficient indexes"
+            ]
+          },
+          {
+            "module": "Frontend Optimization",
+            "duration": "8 hours",
+            "topics": ["Bundle optimization", "Code splitting", "Lazy loading", "Memory management"]
+          }
+        ]
+      },
+      {
+        "path": "Advanced Testing Strategies",
+        "priority": "MEDIUM",
+        "targetAudience": "Senior developers",
+        "duration": "1 week",
+        "modules": [
+          {
+            "module": "Integration Testing",
+            "topics": ["Test doubles", "Contract testing", "E2E strategies"],
+            "tools": ["Jest", "Cypress", "Pact"]
+          }
+        ]
+      }
+    ],
+    
+    "teamDevelopmentPlan": {
+      "immediate": [
+        {
+          "action": "Security workshop for all developers",
+          "timeline": "Next sprint",
+          "outcome": "Prevent future security vulnerabilities"
+        },
+        {
+          "action": "Code review checklist update",
+          "timeline": "This week",
+          "outcome": "Catch issues before merge"
+        }
+      ],
+      "quarterly": [
+        {
+          "action": "Performance optimization hackathon",
+          "timeline": "Q1 2025",
+          "outcome": "Improve key metrics by 50%"
+        },
+        {
+          "action": "Testing coverage sprint",
+          "timeline": "Q1 2025",
+          "outcome": "Reach 80% coverage"
+        }
+      ]
+    },
+    
+    "recommendedCertifications": [
+      {
+        "certification": "AWS Certified Security - Specialty",
+        "relevance": "Addresses cloud security gaps",
+        "targetRoles": ["DevOps", "Backend developers"]
+      },
+      {
+        "certification": "Certified Kubernetes Security Specialist",
+        "relevance": "Kubernetes security issues found",
+        "targetRoles": ["DevOps", "SRE"]
+      }
+    ],
+    
+    "knowledgeBaseUpdates": [
+      "Create internal security guidelines based on findings",
+      "Document performance optimization patterns",
+      "Establish coding standards for SQL queries",
+      "Update onboarding with security training"
+    ]
+  },
+  
+  "aggregatedRecommendations": {
+    "week1": {
+      "focus": "Critical Security & Performance",
+      "tasks": [
+        "Remove all hardcoded secrets (4 hours)",
+        "Fix SQL injection vulnerabilities (6 hours)",
+        "Update critical dependencies (2 hours)",
+        "Fix N+1 query problems (16 hours)",
+        "Implement basic rate limiting (8 hours)"
+      ],
+      "effort": "36 hours",
+      "impact": "Eliminate critical vulnerabilities"
+    },
+    "week2": {
+      "focus": "High Priority Issues",
+      "tasks": [
+        "Implement proper error handling (16 hours)",
+        "Add authentication improvements (24 hours)",
+        "Optimize bundle size (24 hours)",
+        "Fix memory leaks (8 hours)"
+      ],
+      "effort": "72 hours",
+      "impact": "Major UX and security improvements"
+    },
+    "week3_4": {
+      "focus": "Code Quality & Architecture",
+      "tasks": [
+        "Refactor complex functions (24 hours)",
+        "Resolve circular dependencies (16 hours)",
+        "Add test coverage (40 hours)",
+        "Implement monitoring (16 hours)"
+      ],
+      "effort": "96 hours",
+      "impact": "Long-term maintainability"
+    }
+  },
+  
+  "executiveMetrics": {
+    "technicalDebtCost": "$45,600",
+    "estimatedDowntimeRisk": "HIGH",
+    "securityBreachProbability": "73%",
+    "performanceImpactOnUsers": "Severe (3+ second loads)",
+    "developerProductivityImpact": "-23% due to complexity",
+    "recommendedInvestment": "3 developers × 3 weeks"
+  },
+  
+  "metadata": {
+    "scanId": "deepwiki_complete_20250723",
+    "duration": 52341,
+    "filesAnalyzed": 3456,
+    "rulesApplied": 1567,
+    "tokensConsumed": 156234,
+    "modelsUsed": {
+      "primary": "claude-3-opus",
+      "fallback": ["gpt-4", "claude-3.5-sonnet"]
+    }
+  }
+}

@@ -1,17 +1,51 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import Handlebars from 'handlebars';
+import { createLogger } from '@codequal/core/utils';
+
+const logger = createLogger('report-generator');
+
+export interface ReportData {
+    analysisId: string;
+    repository: {
+        name: string;
+        url: string;
+    };
+    summary: {
+        totalIssues: number;
+        criticalIssues: number;
+        score: number;
+    };
+    issues: Array<{
+        severity: string;
+        type: string;
+        message: string;
+        file?: string;
+        line?: number;
+    }>;
+    timestamp: string;
+    [key: string]: unknown;
+}
+
+export interface TranslationData {
+    [key: string]: string | TranslationData;
+}
 
 export interface ReportConfig {
     language: string;
-    data: any;
+    data: ReportData;
     outputPath: string;
+}
+
+interface HandlebarsContext {
+    i18n?: TranslationData;
+    [key: string]: unknown;
 }
 
 export class ModularReportGenerator {
     private templatesPath: string;
     private componentsCache: Map<string, string> = new Map();
-    private translationsCache: Map<string, any> = new Map();
+    private translationsCache: Map<string, TranslationData> = new Map();
     
     constructor(templatesPath: string) {
         this.templatesPath = templatesPath;
@@ -20,24 +54,25 @@ export class ModularReportGenerator {
     
     private registerHelpers() {
         // Register i18n helper
-        Handlebars.registerHelper('i18n', function(this: any, key: string) {
+        Handlebars.registerHelper('i18n', function(this: HandlebarsContext, key: string) {
             const keys = key.split('.');
-            let value = this.i18n;
+            let value: unknown = this.i18n;
             for (const k of keys) {
-                value = value?.[k];
+                value = value && typeof value === 'object' ? (value as Record<string, unknown>)[k] : undefined;
             }
-            return value || key;
+            return (typeof value === 'string' ? value : key) as string;
         });
         
         // Register conditional helpers
-        Handlebars.registerHelper('ifEquals', function(this: any, a: any, b: any, options: any) {
+        Handlebars.registerHelper('ifEquals', function(this: HandlebarsContext, a: unknown, b: unknown, options: Handlebars.HelperOptions) {
             return a === b ? options.fn(this) : options.inverse(this);
         });
     }
     
     private async loadComponent(componentName: string): Promise<string> {
-        if (this.componentsCache.has(componentName)) {
-            return this.componentsCache.get(componentName)!;
+        const cached = this.componentsCache.get(componentName);
+        if (cached) {
+            return cached;
         }
         
         const componentPath = path.join(this.templatesPath, 'components', `${componentName}.html`);
@@ -46,9 +81,10 @@ export class ModularReportGenerator {
         return content;
     }
     
-    private async loadTranslations(language: string): Promise<any> {
-        if (this.translationsCache.has(language)) {
-            return this.translationsCache.get(language);
+    private async loadTranslations(language: string): Promise<TranslationData> {
+        const cached = this.translationsCache.get(language);
+        if (cached) {
+            return cached;
         }
         
         const translationPath = path.join(this.templatesPath, 'languages', `${language}.json`);
@@ -100,7 +136,7 @@ export class ModularReportGenerator {
             
             // Generate final HTML
             const finalHtml = layoutTemplate({
-                title: translations.title.replace('{{pr_number}}', config.data.pr_number),
+                title: (typeof translations.title === 'string' ? translations.title : '').replace('{{pr_number}}', String(config.data.pr_number)),
                 lang: config.language,
                 [`lang_${config.language}`]: true,
                 styles_path: './styles.css',
@@ -110,7 +146,7 @@ export class ModularReportGenerator {
             
             // Write output file
             await fs.writeFile(config.outputPath, finalHtml);
-            console.log(`Report generated: ${config.outputPath}`);
+            logger.info(`Report generated: ${config.outputPath}`);
             
             // Copy CSS and JS files if they don't exist in output directory
             const outputDir = path.dirname(config.outputPath);
@@ -127,12 +163,12 @@ export class ModularReportGenerator {
             }
             
         } catch (error) {
-            console.error('Error generating report:', error);
+            logger.error('Error generating report:', error as Error);
             throw error;
         }
     }
     
-    async generateMultilingualReports(data: any, outputDir: string): Promise<void> {
+    async generateMultilingualReports(data: ReportData, outputDir: string): Promise<void> {
         const languages = ['en', 'ru', 'es', 'fr', 'de', 'ja', 'zh', 'pt', 'it', 'ko'];
         
         for (const lang of languages) {
@@ -143,14 +179,14 @@ export class ModularReportGenerator {
                     outputPath: path.join(outputDir, `report-${lang}.html`)
                 });
             } catch (error) {
-                console.error(`Failed to generate report for language ${lang}:`, error);
+                logger.error(`Failed to generate report for language ${lang}:`, error as Error);
             }
         }
     }
 }
 
 // Example usage
-export async function generateReports(data: any, outputDir: string) {
+export async function generateReports(data: ReportData, outputDir: string) {
     const generator = new ModularReportGenerator(
         path.join(__dirname, 'templates')
     );

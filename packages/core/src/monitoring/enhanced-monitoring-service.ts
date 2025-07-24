@@ -65,7 +65,7 @@ export interface WidgetConfig {
   query: string;
   refreshInterval: number; // milliseconds
   embeddable: boolean;
-  props?: Record<string, any>;
+  props?: Record<string, unknown>;
 }
 
 export interface AlertConfig {
@@ -88,7 +88,7 @@ export interface MetricSnapshot {
 export interface DashboardData {
   panels: Array<{
     id: string;
-    data: any[];
+    data: unknown[];
     lastUpdated: Date;
   }>;
   alerts: AlertStatus[];
@@ -265,13 +265,15 @@ export class EnhancedMonitoringService extends EventEmitter {
       // In production, this would make actual API calls to Grafana
       const response = await this.postToGrafanaAPI('/api/dashboards/db', grafanaConfig);
       
+      const grafanaResponse = response as { id: string; url: string };
+      
       this.logger.info('Created Grafana dashboard', {
         dashboardId: dashboardConfig.id,
-        grafanaId: response.id,
-        url: response.url
+        grafanaId: grafanaResponse.id,
+        url: grafanaResponse.url
       });
 
-      return response.url;
+      return grafanaResponse.url;
     } catch (error) {
       this.logger.error('Failed to create Grafana dashboard', {
         dashboardId: dashboardConfig.id,
@@ -281,7 +283,7 @@ export class EnhancedMonitoringService extends EventEmitter {
     }
   }
 
-  private convertPanelToGrafana(panel: PanelConfig): any {
+  private convertPanelToGrafana(panel: PanelConfig): Record<string, unknown> {
     return {
       id: parseInt(panel.id),
       title: panel.title,
@@ -313,7 +315,7 @@ export class EnhancedMonitoringService extends EventEmitter {
     };
   }
 
-  private generateTemplateVariables(): any[] {
+  private generateTemplateVariables(): Array<Record<string, unknown>> {
     return [
       {
         name: 'service',
@@ -338,7 +340,7 @@ export class EnhancedMonitoringService extends EventEmitter {
     return this.config.widgets.filter(w => w.embeddable);
   }
 
-  async getWidgetData(widgetId: string): Promise<any> {
+  async getWidgetData(widgetId: string): Promise<unknown> {
     const widget = this.config.widgets.find(w => w.id === widgetId);
     if (!widget) {
       throw new Error(`Widget ${widgetId} not found`);
@@ -466,7 +468,7 @@ export const ${widget.name.replace(/\s+/g, '')}Widget = (props) => {
     };
   }
 
-  async getMetricsForAI(timeRange?: string): Promise<any> {
+  async getMetricsForAI(timeRange?: string): Promise<Record<string, unknown>> {
     const metrics = await this.metrics.metrics();
     const parsed = this.parsePrometheusMetrics(metrics);
     
@@ -487,7 +489,7 @@ export const ${widget.name.replace(/\s+/g, '')}Widget = (props) => {
     };
   }
 
-  private generateAIRecommendations(metrics: any): string[] {
+  private generateAIRecommendations(metrics: Record<string, unknown>): string[] {
     const recommendations: string[] = [];
     
     const successRate = this.calculateSuccessRate(metrics);
@@ -500,7 +502,7 @@ export const ${widget.name.replace(/\s+/g, '')}Widget = (props) => {
       recommendations.push(`Average analysis time is ${avgTime}s - consider optimization`);
     }
     
-    const activeCount = metrics.codequal_active_analyses || 0;
+    const activeCount = metrics.codequal_active_analyses as number || 0;
     if (activeCount > 10) {
       recommendations.push(`${activeCount} active analyses - monitor resource usage`);
     }
@@ -640,7 +642,7 @@ export const ${widget.name.replace(/\s+/g, '')}Widget = (props) => {
   // HELPER METHODS
   // ============================================================================
 
-  private async executeQuery(query: string): Promise<any> {
+  private async executeQuery(query: string): Promise<unknown> {
     // In production, this would execute against Prometheus
     // For now, return mock data based on the query
     return {
@@ -660,7 +662,7 @@ export const ${widget.name.replace(/\s+/g, '')}Widget = (props) => {
     const panels = await Promise.all(
       dashboard.panels.map(async panel => ({
         id: panel.id,
-        data: await this.executeQuery(panel.query),
+        data: await this.executeQuery(panel.query) as unknown[],
         lastUpdated: new Date()
       }))
     );
@@ -758,15 +760,15 @@ export const ${widget.name.replace(/\s+/g, '')}Widget = (props) => {
     return metrics;
   }
 
-  private calculateSuccessRate(metrics: any): number {
-    const started = metrics.codequal_analysis_started_total || 0;
-    const completed = metrics.codequal_analysis_completed_total || 0;
+  private calculateSuccessRate(metrics: { totalRequests?: number; successfulRequests?: number }): number {
+    const started = (metrics as any).codequal_analysis_started_total || metrics.totalRequests || 0;
+    const completed = (metrics as any).codequal_analysis_completed_total || metrics.successfulRequests || 0;
     return started > 0 ? completed / started : 1;
   }
 
-  private calculateAverageTime(metrics: any): number {
-    const sum = metrics.codequal_analysis_duration_seconds_sum || 0;
-    const count = metrics.codequal_analysis_duration_seconds_count || 0;
+  private calculateAverageTime(metrics: { totalTime?: number; totalRequests?: number }): number {
+    const sum = (metrics as any).codequal_analysis_duration_seconds_sum || metrics.totalTime || 0;
+    const count = (metrics as any).codequal_analysis_duration_seconds_count || metrics.totalRequests || 0;
     return count > 0 ? sum / count : 0;
   }
 
@@ -778,7 +780,7 @@ export const ${widget.name.replace(/\s+/g, '')}Widget = (props) => {
     };
   }
 
-  private extractValueFromQueryResult(result: any): number | null {
+  private extractValueFromQueryResult(result: unknown): number | null {
     // Extract numeric value from Prometheus query result
     return null; // Implement based on query result format
   }
@@ -792,7 +794,7 @@ export const ${widget.name.replace(/\s+/g, '')}Widget = (props) => {
     return `${alert.name}: ${alert.description} (value: ${value})`;
   }
 
-  private async postToGrafanaAPI(endpoint: string, data: any): Promise<any> {
+  private async postToGrafanaAPI(endpoint: string, data: unknown): Promise<unknown> {
     // Implement Grafana API calls
     return { id: '1', url: 'http://grafana.example.com/d/dashboard' };
   }

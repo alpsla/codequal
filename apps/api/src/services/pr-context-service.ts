@@ -1,5 +1,8 @@
 import axios from 'axios';
 import { RepositorySizeCategory } from '@codequal/core/services/model-selection/ModelVersionSync';
+import { createLogger } from '@codequal/core/utils';
+
+const logger = createLogger('PRContextService');
 
 export interface PRDetails {
   number: number;
@@ -68,7 +71,7 @@ export class PRContextService {
         throw new Error(`Unsupported platform: ${repoInfo.platform}`);
       }
     } catch (error) {
-      console.error('Failed to fetch PR details:', error);
+      logger.error('Failed to fetch PR details:', error as Error);
       
       // Re-throw parsing and platform errors directly for better test compatibility
       if (error instanceof Error && (
@@ -97,7 +100,7 @@ export class PRContextService {
         throw new Error(`Unsupported platform: ${repoInfo.platform}`);
       }
     } catch (error) {
-      console.error('Failed to fetch PR diff:', error);
+      logger.error('Failed to fetch PR diff:', error as Error);
       throw new Error(`Diff fetch failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -171,7 +174,7 @@ export class PRContextService {
 
       return primaryLanguage;
     } catch (error) {
-      console.error('Failed to detect primary language:', error);
+      logger.error('Failed to detect primary language:', error as Error);
       return 'unknown';
     }
   }
@@ -199,7 +202,7 @@ export class PRContextService {
       // Default to medium if we can't determine size
       return RepositorySizeCategory.MEDIUM;
     } catch (error) {
-      console.error('Failed to estimate repository size:', error);
+      logger.error('Failed to estimate repository size:', error as Error);
       return RepositorySizeCategory.MEDIUM;
     }
   }
@@ -286,7 +289,7 @@ export class PRContextService {
         deletions: pr.deletions || 0
       };
     } catch (error) {
-      console.error('Failed to fetch GitHub PR details:', error);
+      logger.error('Failed to fetch GitHub PR details:', error as Error);
       throw new Error(`GitHub PR fetch failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -332,7 +335,7 @@ export class PRContextService {
         deletions: 0  // GitLab doesn't provide this directly
       };
     } catch (error) {
-      console.error('Failed to fetch GitLab MR details:', error);
+      logger.error('Failed to fetch GitLab MR details:', error as Error);
       throw new Error(`GitLab MR fetch failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -353,9 +356,9 @@ export class PRContextService {
         throw new Error('Invalid diff data received from GitHub API');
       }
 
-      const files: FileDiff[] = response.data.map((file: any) => ({
+      const files: FileDiff[] = response.data.map((file: { filename?: string; status?: string; additions?: number; deletions?: number; changes?: number; patch?: string; previous_filename?: string }) => ({
         filename: file?.filename || 'unknown',
-        status: file?.status || 'modified',
+        status: (file?.status as 'added' | 'modified' | 'deleted' | 'renamed') || 'modified',
         additions: file?.additions || 0,
         deletions: file?.deletions || 0,
         changes: file?.changes || 0,
@@ -374,7 +377,7 @@ export class PRContextService {
         totalChanges
       };
     } catch (error) {
-      console.error('Failed to fetch GitHub diff:', error);
+      logger.error('Failed to fetch GitHub diff:', error as Error);
       throw new Error(`GitHub diff fetch failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -397,7 +400,7 @@ export class PRContextService {
       }
 
       const changes = response.data.changes;
-      const files: FileDiff[] = changes.map((file: any) => ({
+      const files: FileDiff[] = changes.map((file: { new_path?: string; new_file?: boolean; deleted_file?: boolean; diff?: string; old_path?: string }) => ({
         filename: file?.new_path || 'unknown',
         status: file?.new_file ? 'added' : file?.deleted_file ? 'deleted' : 'modified',
         additions: 0, // GitLab doesn't provide line-level stats easily
@@ -414,7 +417,7 @@ export class PRContextService {
         totalChanges: files.length
       };
     } catch (error) {
-      console.error('Failed to fetch GitLab diff:', error);
+      logger.error('Failed to fetch GitLab diff:', error as Error);
       throw new Error(`GitLab diff fetch failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }

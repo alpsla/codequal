@@ -1,8 +1,10 @@
 import { Router, Request, Response } from 'express';
 import Stripe from 'stripe';
 import { getSupabase } from '@codequal/database/supabase/client';
+import { createLogger } from '@codequal/core/utils';
 
 const router = Router();
+const logger = createLogger('stripe-webhooks');
 
 // Initialize Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
@@ -26,7 +28,7 @@ router.post('/webhook', async (req: Request, res: Response) => {
     );
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-    console.error('Webhook signature verification failed:', errorMessage);
+    logger.error('Webhook signature verification failed', { error: errorMessage });
     return res.status(400).send(`Webhook Error: ${errorMessage}`);
   }
 
@@ -63,7 +65,7 @@ router.post('/webhook', async (req: Request, res: Response) => {
         break;
 
       default:
-        console.log(`Unhandled event type: ${event.type}`);
+        logger.info('Unhandled event type', { eventType: event.type });
     }
 
     // Log the event
@@ -71,7 +73,7 @@ router.post('/webhook', async (req: Request, res: Response) => {
 
     res.json({ received: true });
   } catch (error) {
-    console.error('Error processing webhook:', error);
+    logger.error('Error processing webhook', error instanceof Error ? error : { error: String(error) });
     res.status(500).send('Webhook processing failed');
   }
 });
@@ -87,14 +89,14 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
     .single();
 
   if (!userBilling) {
-    console.log('No user found by customer ID, trying to find by checkout session...');
+    logger.info('No user found by customer ID, trying to find by checkout session');
     
     // Try to find user through checkout session
     try {
       // Get customer email
       const customer = await stripe.customers.retrieve(customerId) as Stripe.Customer;
       if ('email' in customer && customer.email) {
-        console.log(`Looking for recent checkout sessions for ${customer.email}`);
+        logger.info('Looking for recent checkout sessions', { email: customer.email });
         
         // Find recent checkout sessions for this customer
         const sessions = await stripe.checkout.sessions.list({
@@ -107,7 +109,7 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
         
         if (sessionWithUserId && sessionWithUserId.metadata?.user_id) {
           const userId = sessionWithUserId.metadata.user_id;
-          console.log(`Found user_id ${userId} from checkout session`);
+          logger.info('Found user_id from checkout session', { userId });
           
           // Update user_billing with customer ID
           const { error: linkError } = await getSupabase()
@@ -119,7 +121,7 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
             .eq('user_id', userId);
           
           if (!linkError) {
-            console.log('Successfully linked customer to user via checkout session');
+            logger.info('Successfully linked customer to user via checkout session');
             // Re-fetch the user billing
             const { data: updatedBilling } = await getSupabase()
               .from('user_billing')
@@ -131,18 +133,18 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
         }
       }
     } catch (error) {
-      console.error('Error finding user through checkout session:', error);
+      logger.error('Error finding user through checkout session', error instanceof Error ? error : { error: String(error) });
     }
     
     if (!userBilling) {
-      console.error('Still no user found for customer:', customerId);
+      logger.error('Still no user found for customer', { customerId });
       return;
     }
   }
 
   // Update subscription data
   const tier = determineSubscriptionTier(subscription);
-  console.log(`Updating subscription for customer ${customerId}:`, {
+  logger.info('Updating subscription for customer', { customerId,
     subscription_id: subscription.id,
     status: subscription.status,
     tier: tier
@@ -160,9 +162,9 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
     .eq('stripe_customer_id', customerId);
 
   if (error) {
-    console.error('Error updating user_billing:', error);
+    logger.error('Error updating user_billing', error);
   } else {
-    console.log('Successfully updated user_billing for customer:', customerId);
+    logger.info('Successfully updated user_billing for customer', { customerId });
   }
 }
 
@@ -180,7 +182,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
 
 async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
   // Log successful payment
-  console.log('Payment succeeded for invoice:', invoice.id);
+  logger.info('Payment succeeded for invoice', { invoiceId: invoice.id });
 }
 
 async function handlePaymentFailed(invoice: Stripe.Invoice) {
@@ -271,17 +273,17 @@ async function logBillingEvent(event: Stripe.Event) {
 }
 
 async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) {
-  console.log('Processing checkout.session.completed:', session.id);
+  logger.info('Processing checkout.session.completed', { sessionId: session.id });
   
   const customerId = session.customer as string;
   const userIdFromMetadata = session.metadata?.user_id;
   
   if (!customerId || !userIdFromMetadata) {
-    console.error('Missing customer ID or user ID in checkout session');
+    logger.error('Missing customer ID or user ID in checkout session');
     return;
   }
   
-  console.log(`Linking user ${userIdFromMetadata} to Stripe customer ${customerId}`);
+  logger.info('Linking user to Stripe customer', { userId: userIdFromMetadata, customerId });
   
   // Update user_billing with the Stripe customer ID
   const { error } = await getSupabase()
@@ -293,9 +295,9 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     .eq('user_id', userIdFromMetadata);
   
   if (error) {
-    console.error('Error linking Stripe customer to user:', error);
+    logger.error('Error linking Stripe customer to user', error);
   } else {
-    console.log('Successfully linked Stripe customer to user');
+    logger.info('Successfully linked Stripe customer to user');
     
     // If there's a subscription, it will be handled by the subscription.created event
   }

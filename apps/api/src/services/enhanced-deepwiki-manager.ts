@@ -1,11 +1,14 @@
 import { AuthenticatedUser } from '../middleware/auth-middleware';
 import { VectorContextService } from '@codequal/agents/multi-agent/vector-context-service';
 import { VectorSearchResult } from '@codequal/agents/multi-agent/enhanced-executor';
-import { DeepWikiWithToolsService } from '@codequal/core/services/deepwiki-tools';
+import { AgentRole } from '@codequal/core/config/agent-registry';
+import { AuthenticatedUser as AuthenticatedUserAgent } from '@codequal/agents/multi-agent/types/auth';
+import { DeepWikiWithToolsService, ToolExecutionResult } from '@codequal/core/services/deepwiki-tools';
 import { ToolResultStorageService } from '@codequal/core/services/deepwiki-tools';
 import { ToolResultReviewService, ToolReviewConfiguration } from '@codequal/core/services/deepwiki-tools/tool-result-review.service';
 import { VectorStorageService } from '@codequal/database/services/ingestion/vector-storage.service';
 import { Logger } from '@codequal/core/utils/logger';
+import { createLogger } from '@codequal/core/utils';
 
 export interface AnalysisJob {
   jobId: string;
@@ -19,27 +22,35 @@ export interface AnalysisJob {
   reviewUrl?: string;
 }
 
-interface ToolMetadata extends Record<string, any> {
+interface ToolMetadata extends Record<string, unknown> {
   tool_id?: string;
   tool_name?: string;
   content_type?: string;
-  [key: string]: any;
+  [key: string]: unknown;
+}
+
+interface AnalysisSection {
+  summary?: string;
+  score?: number;
+  findings?: unknown[];
+  recommendations?: string[];
+  metrics?: Record<string, unknown>;
 }
 
 export interface AnalysisResults {
   repositoryUrl: string;
   analysis: {
-    architecture: any;
-    security: any;
-    performance: any;
-    codeQuality: any;
-    dependencies: any;
+    architecture: AnalysisSection;
+    security: AnalysisSection;
+    performance: AnalysisSection;
+    codeQuality: AnalysisSection;
+    dependencies: AnalysisSection;
   };
   toolResults?: {
     [toolId: string]: {
       success: boolean;
-      findings?: any[];
-      metrics?: any;
+      findings?: unknown[];
+      metrics?: Record<string, unknown>;
       error?: string;
       reviewStatus?: string;
     };
@@ -50,7 +61,7 @@ export interface AnalysisResults {
     processingTime: number;
     toolsExecuted?: string[];
     reviewRequired?: boolean;
-    reviewStatus?: any;
+    reviewStatus?: unknown;
   };
 }
 
@@ -105,7 +116,7 @@ export class EnhancedDeepWikiManager {
     try {
       const existing = await this.vectorContextService.getRepositoryContext(
         repositoryUrl,
-        'orchestrator' as any,
+        AgentRole.ORCHESTRATOR,
         this.authenticatedUser as any,
         { minSimilarity: 0.95 }
       );
@@ -320,7 +331,7 @@ export class EnhancedDeepWikiManager {
   /**
    * Get review summary for a job
    */
-  async getReviewSummary(jobId: string): Promise<any> {
+  async getReviewSummary(jobId: string): Promise<unknown> {
     const job = this.activeJobs.get(jobId);
     if (!job) {
       throw new Error('Job not found');
@@ -336,7 +347,7 @@ export class EnhancedDeepWikiManager {
   /**
    * Get temporary tool results (before approval)
    */
-  private async getTemporaryToolResults(jobId: string): Promise<any> {
+  private async getTemporaryToolResults(jobId: string): Promise<Record<string, ToolExecutionResult>> {
     // In production, this would retrieve from temporary storage
     // For now, return mock data
     return {
@@ -457,7 +468,7 @@ export class EnhancedDeepWikiManager {
 
   // ... (keep all other private methods from the original implementation)
 
-  private async storeDeepWikiResults(repositoryUrl: string, results: any): Promise<void> {
+  private async storeDeepWikiResults(repositoryUrl: string, results: { output?: unknown; endTime?: Date; duration?: number; toolResults?: unknown }): Promise<void> {
     try {
       await this.vectorContextService.storeAnalysisResults(
         repositoryUrl,
@@ -472,8 +483,8 @@ export class EnhancedDeepWikiManager {
     }
   }
 
-  private formatDeepWikiResults(repositoryUrl: string, result: any): AnalysisResults {
-    const analysis = result.output || {};
+  private formatDeepWikiResults(repositoryUrl: string, result: { output?: unknown; endTime?: Date; duration?: number; toolResults?: unknown }): AnalysisResults {
+    const analysis = (result.output as Record<string, unknown>) || {};
     
     return {
       repositoryUrl,
@@ -485,9 +496,9 @@ export class EnhancedDeepWikiManager {
         dependencies: analysis.dependencies || {}
       },
       metadata: {
-        analyzedAt: result.endTime,
+        analyzedAt: result.endTime || new Date(),
         analysisVersion: '2.0.0',
-        processingTime: result.duration * 1000,
+        processingTime: (result.duration || 0) * 1000,
         toolsExecuted: result.toolResults ? Object.keys(result.toolResults) : []
       }
     };
@@ -497,14 +508,14 @@ export class EnhancedDeepWikiManager {
     try {
       const deepwikiContext = await this.vectorContextService.getRepositoryContext(
         repositoryUrl,
-        'orchestrator' as any,
+        AgentRole.ORCHESTRATOR,
         this.authenticatedUser as any
       );
 
       // Get tool results from Vector DB with content type filter
       const toolContext = await this.vectorContextService.getRepositoryContext(
         repositoryUrl,
-        'security' as any,
+        AgentRole.SECURITY,
         this.authenticatedUser as any
       );
       
@@ -533,7 +544,7 @@ export class EnhancedDeepWikiManager {
     const toolResults: any = {};
     // Use recentAnalysis instead of chunks
     toolContext.recentAnalysis.forEach((result: VectorSearchResult) => {
-      const metadata = result.metadata as any; // Cast to any to access tool-specific properties
+      const metadata = result.metadata as ToolMetadata;
       const toolId = metadata?.tool_id || metadata?.tool_name;
       if (toolId && !toolResults[toolId]) {
         toolResults[toolId] = {
@@ -558,11 +569,6 @@ export class EnhancedDeepWikiManager {
   }
 
   private createDefaultLogger(): Logger {
-    return {
-      info: (message: string, meta?: any) => console.log(`[INFO] ${message}`, meta),
-      warn: (message: string, meta?: any) => console.warn(`[WARN] ${message}`, meta),
-      error: (message: string, meta?: any) => console.error(`[ERROR] ${message}`, meta),
-      debug: (message: string, meta?: any) => console.debug(`[DEBUG] ${message}`, meta)
-    } as Logger;
+    return createLogger('enhanced-deepwiki-manager');
   }
 }

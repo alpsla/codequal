@@ -2,7 +2,37 @@ import { spawn } from 'child_process';
 import { Logger } from '../utils/logger';
 
 // Use dynamic import for Kubernetes client to avoid module resolution issues
-let k8s: any;
+interface K8sClient {
+  KubeConfig: new () => KubeConfig;
+  CoreV1Api: new () => CoreV1Api;
+  Exec: new () => Exec;
+}
+
+interface KubeConfig {
+  loadFromDefault(): void;
+  makeApiClient<T>(apiClientType: new () => T): T;
+}
+
+interface CoreV1Api {
+  // Add methods as needed
+  [key: string]: unknown; // Placeholder to avoid empty interface error
+}
+
+interface Exec {
+  exec(
+    namespace: string,
+    podName: string,
+    containerName: string,
+    command: string[],
+    stdout: NodeJS.WritableStream | null,
+    stderr: NodeJS.WritableStream | null,
+    stdin: NodeJS.ReadableStream | null,
+    tty: boolean,
+    statusCallback: (status: { status: string }) => void
+  ): Promise<void>;
+}
+
+let k8s: K8sClient | undefined;
 
 // Repository configuration interface used in various places
 // (prefixed with underscore to indicate it's not currently used but may be needed later)
@@ -201,8 +231,8 @@ export interface DeepWikiChatResult {
  * Service for interacting with DeepWiki deployed in Kubernetes
  */
 export class DeepWikiKubernetesService {
-  private readonly kc: any;
-  private readonly k8sExecApi: any;
+  private readonly kc!: KubeConfig;
+  private readonly k8sExecApi!: CoreV1Api;
   private readonly namespace: string;
   private readonly podName: string;
   private readonly containerName: string;
@@ -240,11 +270,11 @@ export class DeepWikiKubernetesService {
     if (this.k8sInitialized) return;
     
     try {
-      k8s = await import('@kubernetes/client-node');
+      k8s = await import('@kubernetes/client-node') as unknown as K8sClient;
       const kc = new k8s.KubeConfig();
       kc.loadFromDefault();
-      (this as any).kc = kc;
-      (this as any).k8sExecApi = kc.makeApiClient(k8s.CoreV1Api);
+      Object.defineProperty(this, 'kc', { value: kc, writable: false });
+      Object.defineProperty(this, 'k8sExecApi', { value: kc.makeApiClient(k8s.CoreV1Api), writable: false });
       this.k8sInitialized = true;
     } catch (error) {
       this.logger.warn('Kubernetes client not available', { error: error instanceof Error ? error.message : String(error) });
@@ -583,17 +613,17 @@ export class DeepWikiKubernetesService {
     await this.initializeK8s();
     try {
       // Real implementation that communicates with Kubernetes
-      const response = await this.k8sExecApi.readNamespacedPod({
-        name: this.podName,
-        namespace: this.namespace
-      });
+      const response = await (this.k8sExecApi as any).readNamespacedPod(
+        this.podName,
+        this.namespace
+      );
       
       return {
-        name: response.metadata?.name,
-        namespace: response.metadata?.namespace,
-        status: response.status?.phase,
-        containerStatuses: response.status?.containerStatuses,
-        creationTimestamp: response.metadata?.creationTimestamp
+        name: (response as any).metadata?.name,
+        namespace: (response as any).metadata?.namespace,
+        status: (response as any).status?.phase,
+        containerStatuses: (response as any).status?.containerStatuses,
+        creationTimestamp: (response as any).metadata?.creationTimestamp
       };
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error);

@@ -1,0 +1,78 @@
+{
+  "testDate": "2025-07-23",
+  "testType": "repository_scan",
+  "metrics": {
+    "timing": {
+      "urlParsing": 1,
+      "orchestratorInit": 202,
+      "gitClone": 4500,
+      "repositoryAnalysis": 2810,
+      "reportGeneration": 10,
+      "totalTime": 7523
+    },
+    "repositoryMetrics": {
+      "small": {
+        "sizeRange": "0-50MB",
+        "exampleSize": "45.2 MB",
+        "fileRange": "0-2000",
+        "cloneTime": 2100,
+        "scanTime": 1500,
+        "totalTime": 3800
+      },
+      "medium": {
+        "sizeRange": "50-200MB",
+        "exampleSize": "178.3 MB",
+        "fileRange": "2000-5000",
+        "cloneTime": 4500,
+        "scanTime": 2800,
+        "totalTime": 7500
+      },
+      "large": {
+        "sizeRange": "200MB+",
+        "exampleSize": "312.7 MB",
+        "fileRange": "5000+",
+        "cloneTime": 6200,
+        "scanTime": 4500,
+        "totalTime": 11000
+      }
+    },
+    "progressPhases": [
+      {
+        "phase": "initialization",
+        "message": "Preparing analysis...",
+        "duration": 200,
+        "percentage": 3
+      },
+      {
+        "phase": "cloning",
+        "message": "Cloning repository...",
+        "duration": 4500,
+        "percentage": 60
+      },
+      {
+        "phase": "scanning",
+        "message": "Analyzing repository structure...",
+        "duration": 2810,
+        "percentage": 37
+      }
+    ]
+  },
+  "uiRecommendations": {
+    "progressIndicator": {
+      "type": "multi-phase",
+      "showPercentage": true,
+      "showTimeElapsed": true,
+      "showEstimatedTime": true,
+      "phases": [
+        "Initialization (3%)",
+        "Cloning Repository (60%)",
+        "Analyzing Structure (37%)"
+      ]
+    },
+    "dataDisplay": {
+      "duringClone": ["Repository size", "Download progress"],
+      "duringScan": ["Files analyzed", "Languages detected", "Dependencies found"],
+      "onComplete": ["Total files", "Code quality metrics", "Vulnerability summary"]
+    }
+  }
+}

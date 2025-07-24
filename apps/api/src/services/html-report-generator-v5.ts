@@ -1,8 +1,110 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { createLogger } from '@codequal/core/utils';
+
+const logger = createLogger('html-report-generator-v5');
+
+interface Issue {
+  type: string;
+  severity: string;
+  message: string;
+  file?: string;
+  line?: number;
+  context?: string;
+  fix?: string;
+  additions?: number;
+  deletions?: number;
+  title?: string;
+  description?: string;
+  codeSnippet?: string;
+  recommendation?: string;
+}
+
+interface IssuesBySeverity {
+  critical?: Issue[];
+  high?: Issue[];
+  medium?: Issue[];
+  low?: Issue[];
+}
+
+interface EducationalModule {
+  title: string;
+  content: string;
+  resources?: Array<{
+    type: string;
+    title: string;
+    url: string;
+  }>;
+}
+
+export interface ReportInput {
+  report_data?: {
+    pr_issues?: IssuesBySeverity;
+    repository_issues?: IssuesBySeverity;
+    pr_details?: {
+      additions?: number;
+      deletions?: number;
+      number?: number;
+      changed_files?: number;
+    };
+    educational?: {
+      modules: EducationalModule[];
+    };
+    summary?: Record<string, unknown>;
+    deepwiki?: {
+      changes?: Array<{
+        additions?: number;
+        deletions?: number;
+      }>;
+      score?: number;
+    };
+    repository?: {
+      url?: string;
+      name?: string;
+    };
+    timestamp?: string;
+    analysis_id?: string;
+    overall_score?: number;
+    decision?: {
+      status?: string;
+      reason?: string;
+      confidence?: number;
+    };
+  };
+  pr_issues?: IssuesBySeverity;
+  overall_score?: number;
+  decision?: {
+    status?: string;
+    reason?: string;
+    confidence?: number;
+  };
+  repository_issues?: IssuesBySeverity;
+  pr_details?: {
+    additions?: number;
+    deletions?: number;
+    number?: number;
+    changed_files?: number;
+  };
+  educational?: {
+    modules: EducationalModule[];
+  };
+  summary?: Record<string, unknown>;
+  deepwiki?: {
+    changes?: Array<{
+      additions?: number;
+      deletions?: number;
+    }>;
+    score?: number;
+  };
+  repository?: {
+    url?: string;
+    name?: string;
+  };
+  timestamp?: string;
+}
 
 export class HtmlReportGeneratorV5 {
-  generateEnhancedHtmlReport(reportInput: any): string {
+  generateEnhancedHtmlReport(reportInput: ReportInput): string {
     // Handle nested report_data structure
     const report = reportInput.report_data || reportInput;
     
@@ -22,37 +124,37 @@ export class HtmlReportGeneratorV5 {
     const totalIssues = totalCritical + totalHigh + totalMedium + totalLow;
     
     // Calculate overall score (lower score for more severe issues)
-    const overallScore = report.overall_score || 42;
+    const overallScore = reportInput.overall_score || reportInput.report_data?.overall_score || 42;
     
     // Decision data
-    const isBlocked = report.decision?.status === 'BLOCKED';
+    const isBlocked = (reportInput.decision || reportInput.report_data?.decision)?.status === 'BLOCKED';
     const decisionClass = isBlocked ? 'blocked' : 'approved';
     const decisionIcon = isBlocked ? '🚫' : '✅';
-    const decisionText = report.decision?.status || 'PENDING';
-    const decisionReason = report.decision?.reason || 'Analysis in progress';
-    const confidence = report.decision?.confidence || 95;
+    const decisionText = (reportInput.decision || reportInput.report_data?.decision)?.status || 'PENDING';
+    const decisionReason = (reportInput.decision || reportInput.report_data?.decision)?.reason || 'Analysis in progress';
+    const confidence = (reportInput.decision || reportInput.report_data?.decision)?.confidence || 95;
     
     // Repository info
-    const repoName = report.repository_url?.split('/').slice(-2).join('/') || 'Repository';
-    const prNumber = report.pr_number || 0;
+    const repoName = (report.repository?.url || reportInput.report_data?.repository?.url)?.split('/').slice(-2).join('/') || 'Repository';
+    const prNumber = report.pr_details?.number || reportInput.report_data?.pr_details?.number || 0;
     
     // Debug logging
-    console.log('[HtmlReportGeneratorV5] Report structure:', {
-      hasReportData: !!report.report_data,
-      hasPrDetails: !!report.prDetails,
+    logger.debug('[HtmlReportGeneratorV5] Report structure:', {
+      hasReportData: !!reportInput.report_data,
+      hasPrDetails: !!report.pr_details,
       hasDeepwiki: !!report.deepwiki,
       reportKeys: Object.keys(report).slice(0, 10),
-      prDetailsPath: report.prDetails,
-      reportDataPrDetails: report.report_data?.prDetails
+      prDetailsPath: report.pr_details,
+      reportDataPrDetails: reportInput.report_data?.pr_details
     });
     
     // Check multiple possible locations for PR details
-    const prDetails = report.prDetails || report.report_data?.prDetails || {};
-    const deepwiki = report.deepwiki || report.report_data?.deepwiki || {};
+    const prDetails = report.pr_details || reportInput.report_data?.pr_details || {};
+    const deepwiki = report.deepwiki || reportInput.report_data?.deepwiki || {};
     
     const filesChanged = prDetails.changed_files || deepwiki.changes?.length || 0;
-    const linesAdded = prDetails.additions || deepwiki.changes?.reduce((sum: number, c: any) => sum + (c.additions || 0), 0) || 0;
-    const linesRemoved = prDetails.deletions || deepwiki.changes?.reduce((sum: number, c: any) => sum + (c.deletions || 0), 0) || 0;
+    const linesAdded = prDetails.additions || deepwiki.changes?.reduce((sum, c) => sum + (c.additions || 0), 0) || 0;
+    const linesRemoved = prDetails.deletions || deepwiki.changes?.reduce((sum, c) => sum + (c.deletions || 0), 0) || 0;
     
     const html = `
 <!DOCTYPE html>
@@ -1078,7 +1180,7 @@ export class HtmlReportGeneratorV5 {
                 </span>
                 <span class="meta-item">
                     <i class="fas fa-code-branch"></i>
-                    ${report.analysis_id || 'abc-123-def-456'}
+                    ${reportInput.report_data?.analysis_id || 'abc-123-def-456'}
                 </span>
             </div>
             
@@ -1188,7 +1290,7 @@ export class HtmlReportGeneratorV5 {
                     </div>
                 </div>
                 
-                ${this.renderIssues(report.pr_issues)}
+                ${this.renderIssues(report.pr_issues || {})}
             </div>
         </div>
         
@@ -1199,7 +1301,7 @@ export class HtmlReportGeneratorV5 {
                     <h2><i class="fas fa-exclamation-triangle"></i> Repository Issues</h2>
                 </div>
                 
-                ${this.renderRepositoryIssues(report.repository_issues)}
+                ${this.renderRepositoryIssues(report.repository_issues || {})}
             </div>
         </div>
         
@@ -1294,7 +1396,7 @@ export class HtmlReportGeneratorV5 {
             <h2><i class="fas fa-graduation-cap"></i> Educational Resources</h2>
             
             <div class="resource-grid">
-                ${this.renderEducationalResources(report.educational)}
+                ${this.renderEducationalResources(report.educational || { modules: [] })}
             </div>
         </div>
         
@@ -1397,13 +1499,14 @@ export class HtmlReportGeneratorV5 {
     return html;
   }
   
-  private renderIssues(issues: any): string {
+  private renderIssues(issues: IssuesBySeverity): string {
     let html = '';
     let hiddenCount = 0;
     
     ['critical', 'high', 'medium', 'low'].forEach(severity => {
-      if (issues[severity]?.length > 0) {
-        issues[severity].forEach((issue: any, index: number) => {
+      const severityIssues = issues[severity as keyof IssuesBySeverity];
+      if (severityIssues && severityIssues.length > 0) {
+        severityIssues.forEach((issue: Issue, index: number) => {
           const hideClass = (severity === 'medium' || severity === 'low') && index >= 2 ? 'hideable hidden' : '';
           if (hideClass) hiddenCount++;
           
@@ -1442,8 +1545,8 @@ export class HtmlReportGeneratorV5 {
         });
         
         // Add "View all" button for medium/low issues if there are hidden ones
-        if ((severity === 'medium' || severity === 'low') && issues[severity].length > 2) {
-          html += `<button class="view-all-btn" data-severity="${severity}" onclick="toggleIssues('${severity}')">View all ${issues[severity].length - 2} more ${severity} issues</button>`;
+        if ((severity === 'medium' || severity === 'low') && severityIssues.length > 2) {
+          html += `<button class="view-all-btn" data-severity="${severity}" onclick="toggleIssues('${severity}')">View all ${severityIssues.length - 2} more ${severity} issues</button>`;
         }
       }
     });
@@ -1451,12 +1554,13 @@ export class HtmlReportGeneratorV5 {
     return html;
   }
   
-  private renderRepositoryIssues(issues: any): string {
+  private renderRepositoryIssues(issues: IssuesBySeverity): string {
     let html = '';
     
     ['high', 'medium'].forEach(severity => {
-      if (issues[severity]?.length > 0) {
-        issues[severity].forEach((issue: any) => {
+      const severityIssues = issues[severity as keyof IssuesBySeverity];
+      if (severityIssues && severityIssues.length > 0) {
+        severityIssues.forEach((issue: Issue) => {
           html += `
             <div class="issue-item ${severity}">
                 <div class="issue-header">
@@ -1489,10 +1593,10 @@ export class HtmlReportGeneratorV5 {
     return html;
   }
   
-  private renderEducationalResources(educational: any): string {
+  private renderEducationalResources(educational: { modules: EducationalModule[] }): string {
     if (!educational?.modules) return '';
     
-    return educational.modules.map((module: any) => `
+    return educational.modules.map((module: EducationalModule) => `
       <div class="resource-card">
           <div class="resource-icon">
               <i class="fas fa-book"></i>
@@ -1500,7 +1604,7 @@ export class HtmlReportGeneratorV5 {
           <h3 class="resource-title">${module.title}</h3>
           <p class="resource-description">${module.content}</p>
           <div class="resource-links">
-              ${module.resources?.map((resource: any) => `
+              ${module.resources?.map((resource) => `
                   <a href="${resource.url}" class="resource-link" target="_blank">
                       <i class="fas fa-external-link-alt"></i>
                       ${resource.title}

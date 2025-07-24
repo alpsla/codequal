@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, jest } from '@jest/globals';
 import request from 'supertest';
-import express from 'express';
+import express, { RequestHandler } from 'express';
 
 // Set up environment variables before imports
 process.env.SUPABASE_URL = 'https://test.supabase.co';
@@ -90,7 +90,7 @@ describe('Vector Search API Tests', () => {
     app.use(express.json());
     
     // Apply routes
-    app.use('/api/vector', authMiddleware as any, vectorSearchRoutes);
+    app.use('/api/vector', authMiddleware as RequestHandler, vectorSearchRoutes);
   });
 
   afterAll(() => {

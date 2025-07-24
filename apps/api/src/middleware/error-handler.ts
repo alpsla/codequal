@@ -5,7 +5,7 @@ import { AuthenticatedRequest } from './auth-middleware';
 export interface ApiError extends Error {
   statusCode?: number;
   code?: string;
-  details?: any;
+  details?: unknown;
   userMessage?: string;
 }
 
@@ -25,7 +25,7 @@ export const errorHandler = async (
   const errorCode = await ErrorLogger.log({
     code: error.code || ErrorCodes.INTERNAL_ERROR,
     message: error.message || 'Internal server error',
-    details: error.details || {},
+    details: (error.details || {}) as Record<string, unknown>,
     stack: error.stack,
     userId,
     endpoint: req.path,
@@ -34,7 +34,15 @@ export const errorHandler = async (
   });
 
   // Determine error response
-  const response: any = {
+  const response: {
+    error: string;
+    code: string;
+    timestamp: string;
+    path: string;
+    method: string;
+    details?: unknown;
+    stack?: string;
+  } = {
     error: error.userMessage || error.message || 'Internal server error',
     code: errorCode,
     timestamp: new Date().toISOString(),
@@ -56,7 +64,7 @@ export const errorHandler = async (
 };
 
 // Async error wrapper to catch errors in async route handlers
-export function asyncHandler(fn: (req: Request, res: Response, next: NextFunction) => Promise<any> | any) {
+export function asyncHandler(fn: (req: Request, res: Response, next: NextFunction) => Promise<unknown> | unknown) {
   return (req: Request, res: Response, next: NextFunction) => {
     Promise.resolve(fn(req, res, next)).catch(next);
   };
@@ -67,13 +75,13 @@ export class AppError extends Error implements ApiError {
   statusCode: number;
   code: string;
   userMessage: string;
-  details?: any;
+  details?: unknown;
 
   constructor(
     message: string,
     statusCode = 500,
     code: string = ErrorCodes.INTERNAL_ERROR,
-    details?: any
+    details?: unknown
   ) {
     super(message);
     this.statusCode = statusCode;

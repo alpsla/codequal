@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/ban-types */
+/* eslint-disable @typescript-eslint/ban-types */
 
 
 /**
@@ -33,7 +33,7 @@ export interface ChunkMetadata {
   timestamp?: string;
   scheduled_run?: boolean;
   is_latest?: boolean;
-  [key: string]: any;
+  [key: string]: string | number | boolean | undefined;
 }
 
 export interface VectorStorageService {
@@ -44,7 +44,7 @@ export interface VectorStorageService {
     sourceType: string,
     sourceId: string,
     storageType?: 'permanent' | 'cached' | 'temporary'
-  ): Promise<any>;
+  ): Promise<{ stored: number; failed: number; errors: Error[] }>;
   
   deleteChunksBySource(
     sourceType: string,
@@ -53,7 +53,7 @@ export interface VectorStorageService {
   ): Promise<number>;
   
   searchByMetadata?(
-    criteria: Record<string, any>,
+    criteria: Record<string, unknown>,
     limit?: number
-  ): Promise<any[]>;
+  ): Promise<unknown[]>;
 }

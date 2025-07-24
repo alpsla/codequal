@@ -3,7 +3,14 @@ import { getSupabase } from '@codequal/database/supabase/client';
 import { generateApiKey } from '../middleware/api-key-auth';
 import { authMiddleware } from '../middleware/auth-middleware';
 import { createHash } from 'crypto';
+import { createLogger } from '@codequal/core/utils';
 
+interface DatabaseError extends Error {
+  details?: string;
+  hint?: string;
+}
+
+const logger = createLogger('api-keys');
 const router = Router();
 
 // All routes require user authentication
@@ -58,7 +65,7 @@ router.use(authMiddleware);
  */
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = req.user?.id;
     
     if (!userId) {
       return res.status(401).json({
@@ -73,7 +80,7 @@ router.get('/', async (req: Request, res: Response) => {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Database error fetching API keys:', error);
+      logger.error('Database error fetching API keys:', { error });
       throw error;
     }
 
@@ -82,10 +89,10 @@ router.get('/', async (req: Request, res: Response) => {
       keys: keys || []
     });
   } catch (error) {
-    console.error('Error fetching API keys:', error);
+    logger.error('Error fetching API keys:', { error });
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    const errorDetails = (error as any)?.details || (error as any)?.hint || '';
-    console.error('Error details:', { message: errorMessage, details: errorDetails });
+    const errorDetails = (error as DatabaseError)?.details || (error as DatabaseError)?.hint || '';
+    logger.error('Error details:', { message: errorMessage, details: errorDetails });
     
     res.status(500).json({
       error: 'Failed to fetch API keys',
@@ -168,7 +175,7 @@ router.get('/', async (req: Request, res: Response) => {
  */
 router.post('/', async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = req.user?.id;
     
     if (!userId) {
       return res.status(401).json({
@@ -264,10 +271,10 @@ router.post('/', async (req: Request, res: Response) => {
       message: 'Save this API key securely. It will not be shown again.'
     });
   } catch (error) {
-    console.error('Error creating API key:', error);
+    logger.error('Error creating API key:', { error });
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    const errorDetails = (error as any)?.details || (error as any)?.hint || '';
-    console.error('Error details:', { message: errorMessage, details: errorDetails });
+    const errorDetails = (error as DatabaseError)?.details || (error as DatabaseError)?.hint || '';
+    logger.error('Error details:', { message: errorMessage, details: errorDetails });
     
     res.status(500).json({
       error: 'Failed to create API key',
@@ -315,7 +322,7 @@ router.post('/', async (req: Request, res: Response) => {
  */
 router.delete('/:id', async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = req.user?.id;
     
     if (!userId) {
       return res.status(401).json({
@@ -338,7 +345,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
       message: 'API key revoked successfully'
     });
   } catch (error) {
-    console.error('Error revoking API key:', error);
+    logger.error('Error revoking API key:', { error });
     res.status(500).json({
       error: 'Failed to revoke API key'
     });
@@ -410,7 +417,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
  */
 router.get('/:id/usage', async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = req.user?.id;
     
     if (!userId) {
       return res.status(401).json({
@@ -442,7 +449,7 @@ router.get('/:id/usage', async (req: Request, res: Response) => {
       .limit(100);
 
     // Calculate usage by endpoint
-    const endpointUsage = usage?.reduce((acc: any, log) => {
+    const endpointUsage = usage?.reduce((acc: Record<string, number>, log) => {
       const key = `${log.method} ${log.endpoint}`;
       acc[key] = (acc[key] || 0) + 1;
       return acc;
@@ -460,7 +467,7 @@ router.get('/:id/usage', async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
-    console.error('Error fetching usage:', error);
+    logger.error('Error fetching usage:', { error });
     res.status(500).json({
       error: 'Failed to fetch usage statistics'
     });

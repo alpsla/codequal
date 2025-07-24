@@ -221,7 +221,7 @@ export class ESLintMCPAdapter extends BaseMCPAdapter {
     const frameworks = context.repository.frameworks || [];
     const isTypeScript = context.repository.languages.includes('typescript');
     
-    const config: Record<string, any> = {
+    const config: Record<string, unknown> = {
       env: {
         browser: true,
         es2021: true,
@@ -248,22 +248,22 @@ export class ESLintMCPAdapter extends BaseMCPAdapter {
     if (isTypeScript) {
       config.parser = '@typescript-eslint/parser';
       config.plugins = ['@typescript-eslint'];
-      config.extends.push(
+      (config.extends as string[]).push(
         'plugin:@typescript-eslint/recommended'
       );
-      config.rules['@typescript-eslint/no-unused-vars'] = 'warn';
-      config.rules['no-unused-vars'] = 'off';
+      (config.rules as Record<string, any>)['@typescript-eslint/no-unused-vars'] = 'warn';
+      (config.rules as Record<string, any>)['no-unused-vars'] = 'off';
     }
     
     // Add React support
     if (frameworks.includes('react')) {
       config.plugins = config.plugins || [];
-      config.plugins.push('react', 'react-hooks');
-      config.extends.push(
+      (config.plugins as string[]).push('react', 'react-hooks');
+      (config.extends as string[]).push(
         'plugin:react/recommended',
         'plugin:react-hooks/recommended'
       );
-      config.parserOptions.ecmaFeatures = {
+      (config.parserOptions as any).ecmaFeatures = {
         jsx: true
       };
       config.settings = {
@@ -275,9 +275,9 @@ export class ESLintMCPAdapter extends BaseMCPAdapter {
     
     // Add Vue support
     if (frameworks.includes('vue')) {
-      config.extends.push('plugin:vue/vue3-recommended');
+      (config.extends as string[]).push('plugin:vue/vue3-recommended');
       if (isTypeScript) {
-        config.parserOptions.parser = '@typescript-eslint/parser';
+        (config.parserOptions as any).parser = '@typescript-eslint/parser';
       }
     }
     

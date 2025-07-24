@@ -1,5 +1,19 @@
 import { Request, Response, NextFunction } from 'express';
 import { getSupabase } from '@codequal/database/supabase/client';
+import { createLogger } from '@codequal/core/utils/logger';
+import { AuthenticatedUser } from './auth-middleware';
+
+const logger = createLogger('api-usage-tracking');
+
+// Use the Express augmented Request type which already has apiKey and user
+interface ApiRequest extends Request {
+  apiUsage?: {
+    userId: string;
+    subscriptionTier: string;
+    usage: number;
+    limit: number | null;
+  };
+}
 
 interface ApiUsageData {
   user_id: string;
@@ -13,21 +27,21 @@ interface ApiUsageData {
  * Middleware to track API usage based on subscription tier
  */
 export async function trackApiUsage(
-  req: Request,
+  req: ApiRequest,
   res: Response,
   next: NextFunction
 ) {
   try {
     // Get user from API key data or authenticated request
-    const userId = (req as any).apiKey?.user_id || (req as any).user?.id;
+    const userId = req.apiKey?.user_id || req.user?.id;
     
     if (!userId) {
       return next(); // No user context, skip tracking
     }
     
     // Skip tracking for test key
-    if ((req as any).apiKey?.id === 'test_key_id') {
-      console.log('[API Usage] Skipping tracking for test key');
+    if (req.apiKey?.id === 'test_key_id') {
+      logger.info('Skipping tracking for test key');
       return next();
     }
 
@@ -38,10 +52,10 @@ export async function trackApiUsage(
       .eq('user_id', userId)
       .single();
 
-    console.log('trackApiUsage - userId:', userId, 'billing:', billing);
+    logger.debug('trackApiUsage', { userId, billing });
     
     if (!billing || billingError) {
-      console.log('No billing record found:', billingError?.message);
+      logger.warn('No billing record found:', billingError?.message);
       return next(); // No billing record, skip tracking
     }
 
@@ -72,7 +86,7 @@ export async function trackApiUsage(
         .single();
 
       if (createError) {
-        console.error('Failed to create API usage record:', createError);
+        logger.error('Failed to create API usage record:', createError);
         return next();
       }
 
@@ -98,7 +112,7 @@ export async function trackApiUsage(
     
     // Log for testing
     if (limit === null) {
-      console.log(`[API Usage] No limit enforced for user ${userId} (tier: ${currentUsage.subscription_tier})`);
+      logger.info(`No limit enforced for user ${userId} (tier: ${currentUsage.subscription_tier})`);
     }
     
     if (limit !== null && currentUsage.api_calls_this_month >= limit) {
@@ -126,13 +140,14 @@ export async function trackApiUsage(
       .gte('month_start', monthStart);
 
     if (updateError) {
-      console.error('Failed to update API usage:', updateError);
+      logger.error('Failed to update API usage:', updateError);
     }
 
     // Add usage info to request for logging
-    (req as any).apiUsage = {
-      tier: currentUsage.subscription_tier,
-      used: currentUsage.api_calls_this_month + 1,
+    req.apiUsage = {
+      userId,
+      subscriptionTier: currentUsage.subscription_tier,
+      usage: currentUsage.api_calls_this_month + 1,
       limit: currentUsage.api_calls_limit
     };
 
@@ -145,7 +160,7 @@ export async function trackApiUsage(
 
     next();
   } catch (error) {
-    console.error('Error in API usage tracking:', error);
+    logger.error('Error in API usage tracking:', { error });
     // Don't block the request on tracking errors
     next();
   }
@@ -192,16 +207,16 @@ export function requireApiAccess(
   next: NextFunction
 ) {
   // Get tier from apiUsage (set by trackApiUsage) or from the user's apiKey
-  const tier = (req as any).apiUsage?.tier;
-  const userId = (req as any).apiKey?.user_id || (req as any).user?.id;
+  const tier = (req as ApiRequest).apiUsage?.subscriptionTier;
+  const userId = (req as ApiRequest).apiKey?.user_id || (req as ApiRequest).user?.id;
   
   // Log for debugging
-  console.log('requireApiAccess - tier:', tier, 'userId:', userId);
+  logger.debug('requireApiAccess', { tier, userId });
   
   // If no tier from apiUsage, check the API key directly
   if (!tier && userId) {
     // This shouldn't happen if trackApiUsage ran successfully
-    console.log('Warning: apiUsage not set, falling back to checking user');
+    logger.warn('apiUsage not set, falling back to checking user');
     return next(); // Let it through, the actual limits will be enforced in trackApiUsage
   }
   

@@ -3,14 +3,25 @@ import { getSupabase } from '@codequal/database/supabase/client';
 import { AuthenticatedRequest, authMiddleware } from '../middleware/auth-middleware';
 import { AppError } from '../middleware/error-handler';
 import { ErrorCodes } from '../utils/error-logger';
+import { createLogger } from '@codequal/core/utils';
 import Stripe from 'stripe';
 
 const router = Router();
+const logger = createLogger('billing-routes');
 
 // Initialize Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2023-10-16',
 });
+
+// Stripe error interface
+interface StripeError extends Error {
+  raw?: {
+    message?: string;
+    code?: string;
+    type?: string;
+  };
+}
 
 // Get billing status
 router.get('/status', async (req: Request, res: Response) => {
@@ -24,7 +35,7 @@ router.get('/status', async (req: Request, res: Response) => {
       });
     }
 
-    console.log(`[Billing Status] Fetching for user: ${user.id} (${user.email})`);
+    logger.info('Fetching billing status', { userId: user.id, email: user.email });
     
     // Get billing information
     const { data: billing, error: billingError } = await getSupabase()
@@ -56,7 +67,7 @@ router.get('/status', async (req: Request, res: Response) => {
     
     // If no billing record exists, create one
     if (!billing) {
-      console.log(`[Billing Status] No billing record found, creating one for user: ${user.id}`);
+      logger.info('No billing record found, creating one', { userId: user.id });
       const { data: newBilling, error: createError } = await getSupabase()
         .from('user_billing')
         .upsert({
@@ -69,12 +80,12 @@ router.get('/status', async (req: Request, res: Response) => {
         .single();
       
       if (createError) {
-        console.error(`[Billing Status] Error creating billing record:`, createError);
+        logger.error('Error creating billing record', createError);
       }
       
       if (newBilling) {
         billingData = newBilling;
-        console.log(`[Billing Status] Created billing record:`, billingData);
+        logger.info('Created billing record', billingData);
       }
     }
 
@@ -114,7 +125,7 @@ router.get('/status', async (req: Request, res: Response) => {
             .single();
         }
       } catch (error) {
-        console.error('Error checking payment methods:', error);
+        logger.error('Error checking payment methods', error instanceof Error ? error : { error: String(error) });
       }
     }
 
@@ -153,7 +164,7 @@ router.get('/status', async (req: Request, res: Response) => {
       hasPaymentMethod
     });
   } catch (error) {
-    console.error('Error fetching billing status:', error);
+    logger.error('Error fetching billing status', error instanceof Error ? error : { error: String(error) });
     res.status(500).json({ 
       error: 'Failed to fetch billing status',
       code: ErrorCodes.INTERNAL_ERROR
@@ -227,10 +238,10 @@ router.post('/create-checkout', async (req: Request, res: Response) => {
 
     res.json({ checkoutUrl: session.url });
   } catch (error) {
-    console.error('Error creating checkout session:', error);
+    logger.error('Error creating checkout session', error instanceof Error ? error : { error: String(error) });
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    const errorDetails = error instanceof Error && (error as any).raw ? (error as any).raw : null;
-    console.error('Error details:', { message: errorMessage, details: errorDetails });
+    const errorDetails = error instanceof Error && (error as StripeError).raw ? (error as StripeError).raw : null;
+    logger.error('Error details', { message: errorMessage, details: errorDetails });
     res.status(500).json({ 
       error: 'Failed to create checkout session',
       code: ErrorCodes.INTERNAL_ERROR,
@@ -292,7 +303,7 @@ router.post('/create-setup-intent', async (req: Request, res: Response) => {
       customerId 
     });
   } catch (error) {
-    console.error('Error creating setup intent:', error);
+    logger.error('Error creating setup intent', error instanceof Error ? error : { error: String(error) });
     res.status(500).json({ 
       error: 'Failed to create setup intent',
       code: ErrorCodes.INTERNAL_ERROR
@@ -359,7 +370,7 @@ router.post('/confirm-payment-method', async (req: Request, res: Response) => {
       paymentMethodCount: paymentMethods.data.length
     });
   } catch (error) {
-    console.error('Error confirming payment method:', error);
+    logger.error('Error confirming payment method', error instanceof Error ? error : { error: String(error) });
     res.status(500).json({ 
       error: 'Failed to confirm payment method',
       code: ErrorCodes.INTERNAL_ERROR
@@ -409,7 +420,7 @@ router.post('/charge-scan', async (req: Request, res: Response) => {
       paymentIntentId: paymentIntent.id
     });
   } catch (error) {
-    console.error('Error charging for scan:', error);
+    logger.error('Error charging for scan', error instanceof Error ? error : { error: String(error) });
     res.status(500).json({ 
       error: 'Failed to process payment',
       code: ErrorCodes.PAYMENT_FAILED

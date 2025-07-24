@@ -6,6 +6,16 @@ import { authMiddlewareWorkaround } from '../middleware/auth-middleware-workarou
 import { ensureUserProfile } from '../middleware/ensure-profile';
 import { v4 as uuidv4 } from 'uuid';
 
+// Extended request interface with organization membership
+interface OrganizationRequest extends AuthenticatedRequest {
+  membership?: {
+    role: string;
+    can_manage_billing?: boolean;
+    can_manage_members?: boolean;
+    can_manage_settings?: boolean;
+  };
+}
+
 const router = Router();
 
 // Debug endpoint (before auth middleware)
@@ -101,7 +111,7 @@ const updateMemberRoleSchema = z.object({
 });
 
 // Middleware to check organization membership
-const checkOrgMembership = async (req: Request, res: Response, next: Function) => {
+const checkOrgMembership = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { user } = req as AuthenticatedRequest;
     const { organizationId } = req.params;
@@ -123,7 +133,12 @@ const checkOrgMembership = async (req: Request, res: Response, next: Function) =
       return res.status(403).json({ error: 'Not a member of this organization' });
     }
 
-    (req as any).membership = membership;
+    (req as OrganizationRequest).membership = membership as {
+      role: string;
+      can_manage_billing?: boolean;
+      can_manage_members?: boolean;
+      can_manage_settings?: boolean;
+    };
     next();
   } catch (error) {
     console.error('Error checking organization membership:', error);
@@ -133,9 +148,9 @@ const checkOrgMembership = async (req: Request, res: Response, next: Function) =
 
 // Middleware to check admin/owner permissions
 const checkAdminPermission = async (req: Request, res: Response, next: NextFunction) => {
-  const membership = (req as any).membership;
+  const membership = (req as OrganizationRequest).membership;
   
-  if (!['owner', 'admin'].includes(membership.role)) {
+  if (!membership || !['owner', 'admin'].includes(membership.role)) {
     return res.status(403).json({ error: 'Admin permissions required' });
   }
   
@@ -168,7 +183,7 @@ router.post('/', async (req: Request, res: Response) => {
         id: uuidv4()
       })
       .select()
-      .single() as { data: any; error: any };
+      .single() as { data: { id: string; name: string; tier: string } | null; error: { code?: string; details?: string; hint?: string; message?: string } | null };
 
     if (createError) {
       console.error('Organization creation error:', {
@@ -187,7 +202,7 @@ router.post('/', async (req: Request, res: Response) => {
     const { error: memberError } = await getSupabase()
       .from('organization_members')
       .insert({
-        organization_id: newOrg.id,
+        organization_id: newOrg?.id,
         user_id: user.id,
         role: 'owner',
         can_manage_billing: true,
@@ -207,7 +222,7 @@ router.post('/', async (req: Request, res: Response) => {
       await getSupabase()
         .from('organizations')
         .delete()
-        .eq('id', newOrg.id);
+        .eq('id', newOrg?.id || '');
       
       return res.status(500).json({ 
         error: 'Failed to create organization', 
@@ -218,7 +233,7 @@ router.post('/', async (req: Request, res: Response) => {
     // Update user's primary organization if they don't have one
     await getSupabase()
       .from('user_profiles')
-      .update({ organization_id: newOrg.id })
+      .update({ organization_id: newOrg?.id })
       .eq('user_id', user.id)
       .is('organization_id', null);
 
@@ -304,7 +319,7 @@ router.get('/:organizationId', checkOrgMembership, async (req: Request, res: Res
         organization || {},
         {
           member_count: count || 0,
-          user_role: (req as any).membership.role
+          user_role: (req as OrganizationRequest).membership?.role || 'unknown'
         }
       )
     });
@@ -422,7 +437,7 @@ router.post('/:organizationId/members', checkOrgMembership, checkAdminPermission
       .from('organization_members')
       .select('id')
       .eq('organization_id', organizationId)
-      .eq('user_id', (invitedUser as any).user_id)
+      .eq('user_id', (invitedUser as { user_id: string }).user_id)
       .single();
 
     if (existingMember) {
@@ -434,13 +449,13 @@ router.post('/:organizationId/members', checkOrgMembership, checkAdminPermission
       .from('organization_members')
       .insert({
         organization_id: organizationId,
-        user_id: (invitedUser as any).user_id,
+        user_id: (invitedUser as { user_id: string }).user_id,
         role,
         invited_by: user.id,
         can_manage_billing: false,
         can_manage_members: role === 'admin',
         can_manage_settings: role === 'admin'
-      } as any);
+      });
 
     if (error) {
       return res.status(500).json({ error: 'Failed to add member' });
@@ -656,7 +671,7 @@ router.put('/:organizationId/settings', checkOrgMembership, checkAdminPermission
       .single();
 
     // Deep merge settings
-    const currentSettings = currentOrg?.settings as any || {};
+    const currentSettings = (currentOrg?.settings as Record<string, unknown>) || {};
     const updatedSettings = {
       ...currentSettings,
       ...updates,

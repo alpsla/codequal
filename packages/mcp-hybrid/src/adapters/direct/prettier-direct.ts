@@ -86,14 +86,14 @@ export class PrettierDirectAdapter extends DirectToolAdapter {
           formattingRate: formattedCount / (formattedCount + needsFormattingCount)
         }
       };
-    } catch (error: any) {
+    } catch (error) {
       return {
         success: false,
         toolId: this.id,
         executionTime: Date.now() - startTime,
         error: {
           code: 'PRETTIER_FAILED',
-          message: error.message,
+          message: error instanceof Error ? error.message : String(error),
           recoverable: true
         }
       };

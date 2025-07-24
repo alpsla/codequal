@@ -1,9 +1,12 @@
 import { getSupabase } from '@codequal/database/supabase/client';
+import { createLogger } from '@codequal/core/utils';
+
+const logger = createLogger('error-logger');
 
 export interface ErrorLog {
   code: string;
   message: string;
-  details?: any;
+  details?: Record<string, unknown>;
   stack?: string;
   userId?: string;
   endpoint?: string;
@@ -40,11 +43,11 @@ export class ErrorLogger {
         });
     } catch (dbError) {
       // If database logging fails, at least log to console
-      console.error('Failed to log error to database:', dbError);
+      logger.error('Failed to log error to database:', { error: dbError });
     }
 
     // Always log to console for immediate visibility
-    console.error(`[${errorCode}]`, error.message, {
+    logger.error(`[${errorCode}] ${error.message}`, {
       details: error.details,
       endpoint: error.endpoint,
       userId: error.userId
@@ -53,7 +56,7 @@ export class ErrorLogger {
     return errorCode;
   }
 
-  static formatUserError(errorCode: string, message: string, details?: any) {
+  static formatUserError(errorCode: string, message: string, details?: Record<string, unknown>) {
     return {
       error: message,
       code: errorCode,

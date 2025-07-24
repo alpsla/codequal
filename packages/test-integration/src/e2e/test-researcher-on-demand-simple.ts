@@ -142,20 +142,32 @@ class SimpleResearcherTest {
    * Log test results
    */
   private logResults(): void {
+    // eslint-disable-next-line no-console
     console.log('\n📊 Test Results');
+    // eslint-disable-next-line no-console
     console.log('================');
+    // eslint-disable-next-line no-console
     console.log(`Total Time: ${(this.metrics.totalTime / 1000).toFixed(2)}s`);
+    // eslint-disable-next-line no-console
     console.log(`Config Check: ${this.metrics.configCheckTime}ms`);
+    // eslint-disable-next-line no-console
     console.log(`Researcher Activation: ${(this.metrics.researcherActivationTime / 1000).toFixed(2)}s`);
     
+    // eslint-disable-next-line no-console
     console.log('\n💡 Key Insights:');
     if (this.metrics.researcherActivationTime > 0) {
+      // eslint-disable-next-line no-console
       console.log('- On-demand researcher was triggered successfully');
+      // eslint-disable-next-line no-console
       console.log('- This adds overhead but ensures optimal model selection');
+      // eslint-disable-next-line no-console
       console.log('- Configuration will be cached for future requests');
     } else {
+      // eslint-disable-next-line no-console
       console.log('- Configuration was already cached');
+      // eslint-disable-next-line no-console
       console.log('- No researcher activation needed');
+      // eslint-disable-next-line no-console
       console.log('- Fast path was used');
     }
   }

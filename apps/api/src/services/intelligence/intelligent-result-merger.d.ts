@@ -5,8 +5,8 @@ export interface AgentResult {
     findings?: Finding[];
     insights?: string[];
     suggestions?: string[];
-    metadata?: any;
-    deduplicationResult?: any;
+    metadata?: Record<string, unknown>;
+    deduplicationResult?: unknown;
 }
 export interface MergedResult {
     findings: Finding[];

@@ -22,7 +22,7 @@ export function validatePRAnalysisRequest(body: unknown): ValidationResult {
     };
   }
 
-  const request = body as Record<string, any>;
+  const request = body as Record<string, unknown>;
 
   // Check required fields
   if (!request.repositoryUrl) {
@@ -35,13 +35,13 @@ export function validatePRAnalysisRequest(body: unknown): ValidationResult {
 
   if (request.prNumber === undefined || request.prNumber === null) {
     errors.push('prNumber is required');
-  } else if (!Number.isInteger(request.prNumber) || request.prNumber <= 0) {
+  } else if (!Number.isInteger(request.prNumber) || (request.prNumber as number) <= 0) {
     errors.push('prNumber must be a positive integer');
   }
 
   if (!request.analysisMode) {
     errors.push('analysisMode is required');
-  } else if (!['quick', 'comprehensive', 'deep', 'auto'].includes(request.analysisMode)) {
+  } else if (!['quick', 'comprehensive', 'deep', 'auto'].includes(request.analysisMode as string)) {
     errors.push('analysisMode must be one of: quick, comprehensive, deep, auto');
   }
 

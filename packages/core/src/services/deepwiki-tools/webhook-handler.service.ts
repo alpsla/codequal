@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types, @typescript-eslint/no-unused-vars, no-console */
+/* eslint-disable @typescript-eslint/explicit-module-boundary-types, @typescript-eslint/no-unused-vars, no-console */
 
 import { RepositoryCloneIntegrationService, RepositoryCloneEvent, RepositoryEventType } from './repository-clone-integration.service';
 import { VectorStorageService } from '@codequal/database';
@@ -82,7 +82,7 @@ export interface GitLabWebhookPayload {
       path_with_namespace: string;
     };
   };
-  changes?: Record<string, any>;
+  changes?: Record<string, unknown>;
   repository?: {
     name: string;
     url: string;
@@ -111,7 +111,7 @@ export interface WebhookProcessingResult {
   success: boolean;
   message: string;
   jobId?: string;
-  toolResults?: any;
+  toolResults?: unknown[];
   error?: string;
 }
 
@@ -124,7 +124,7 @@ export class WebhookHandlerService {
   
   constructor(
     vectorStorageService: VectorStorageService,
-    embeddingService: any,
+    embeddingService: unknown,
     logger: Logger,
     kubernetesConfig?: {
       namespace?: string;
@@ -692,7 +692,7 @@ export class WebhookHandlerService {
   async getWebhookStatus(): Promise<{
     isConfigured: boolean;
     supportedEvents: { github: string[]; gitlab: string[] };
-    recentProcessing: any[];
+    recentProcessing: unknown[];
   }> {
     return {
       isConfigured: true,

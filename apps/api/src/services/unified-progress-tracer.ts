@@ -5,8 +5,15 @@
 
 import { EventEmitter } from 'events';
 import { createLogger } from '@codequal/core/utils';
-import { getProgressTracker, ProgressTracker } from '@codequal/agents/services/progress-tracker';
+import { getProgressTracker, ProgressTracker, AnalysisProgress } from '@codequal/agents/services/progress-tracker';
 import { dataFlowMonitor, DataFlowMonitor } from './data-flow-monitor';
+
+type AnalysisPhase = keyof AnalysisProgress['phases'];
+
+interface PhaseMapping {
+  phase: AnalysisPhase;
+  percentage: number;
+}
 
 export class UnifiedProgressTracer extends EventEmitter {
   private logger = createLogger('UnifiedProgressTracer');
@@ -68,7 +75,7 @@ export class UnifiedProgressTracer extends EventEmitter {
       if (phaseMapping) {
         this.progressTracker.updatePhase(
           analysisId,
-          phaseMapping.phase as any,
+          phaseMapping.phase,
           'in_progress',
           phaseMapping.percentage,
           data.step.name
@@ -113,7 +120,7 @@ export class UnifiedProgressTracer extends EventEmitter {
       if (phaseMapping) {
         this.progressTracker.updatePhase(
           analysisId,
-          phaseMapping.phase as any,
+          phaseMapping.phase,
           'completed',
           100,
           `${step.name} completed`
@@ -160,8 +167,8 @@ export class UnifiedProgressTracer extends EventEmitter {
   /**
    * Map DataFlowMonitor step names to ProgressTracker phases
    */
-  private mapStepToPhase(stepName: string): { phase: keyof any; percentage: number } | null {
-    const mappings: Record<string, { phase: string; percentage: number }> = {
+  private mapStepToPhase(stepName: string): PhaseMapping | null {
+    const mappings: Record<string, PhaseMapping> = {
       'Extract PR Context': { phase: 'initialization', percentage: 50 },
       'Check Repository Status': { phase: 'initialization', percentage: 100 },
       'Retrieve MCP Tool Results': { phase: 'toolExecution', percentage: 50 },
@@ -173,15 +180,15 @@ export class UnifiedProgressTracer extends EventEmitter {
     };
     
     const mapping = mappings[stepName];
-    return mapping ? { phase: mapping.phase as any, percentage: mapping.percentage } : null;
+    return mapping || null;
   }
   
   /**
    * Get comprehensive progress data
    */
   getProgress(analysisId: string): {
-    userProgress: any;
-    debugProgress: any;
+    userProgress: ReturnType<ProgressTracker['getProgress']>;
+    debugProgress: ReturnType<DataFlowMonitor['getSession']>;
     visualization?: string;
   } | null {
     // Get user-facing progress
@@ -198,7 +205,7 @@ export class UnifiedProgressTracer extends EventEmitter {
     }
     
     // Get debug progress if session exists
-    const debugProgress = sessionId ? this.dataFlowMonitor.getSession(sessionId) : null;
+    const debugProgress = sessionId ? this.dataFlowMonitor.getSession(sessionId) : undefined;
     const visualization = sessionId ? this.dataFlowMonitor.generateFlowVisualization(sessionId) : undefined;
     
     return {
