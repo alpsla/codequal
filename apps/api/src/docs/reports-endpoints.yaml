@@ -1,0 +1,380 @@
+paths:
+  /api/reports:
+    get:
+      summary: List all reports for the current user
+      tags: [Reports]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: repository_id
+          schema:
+            type: string
+            format: uuid
+          description: Filter by repository ID
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [pending, in_progress, completed, failed]
+          description: Filter by report status
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+          description: Number of reports to return
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+          description: Number of reports to skip
+      responses:
+        '200':
+          description: Reports retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reports:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ReportSummary'
+                  total:
+                    type: integer
+                  limit:
+                    type: integer
+                  offset:
+                    type: integer
+        '401':
+          description: Unauthorized
+
+    post:
+      summary: Create a new analysis report
+      tags: [Reports]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [repository_url]
+              properties:
+                repository_url:
+                  type: string
+                  format: uri
+                  example: "https://github.com/user/repo"
+                pr_number:
+                  type: integer
+                  description: Optional PR number for PR-specific analysis
+                branch:
+                  type: string
+                  default: main
+                  description: Branch to analyze
+                analysis_depth:
+                  type: string
+                  enum: [quick, standard, deep]
+                  default: standard
+      responses:
+        '201':
+          description: Report created and analysis started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  report_id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    enum: [pending, in_progress]
+                  estimated_completion_time:
+                    type: integer
+                    description: Estimated seconds until completion
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized
+        '402':
+          description: Payment required
+        '429':
+          description: Rate limit exceeded
+
+  /api/reports/{reportId}:
+    get:
+      summary: Get a specific report
+      tags: [Reports]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: reportId
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The report ID
+      responses:
+        '200':
+          description: Report retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FullReport'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Report not found
+
+    delete:
+      summary: Delete a report
+      tags: [Reports]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: reportId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Report deleted successfully
+        '401':
+          description: Unauthorized
+        '404':
+          description: Report not found
+
+  /api/reports/{reportId}/download:
+    get:
+      summary: Download report in various formats
+      tags: [Reports]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: reportId
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: format
+          schema:
+            type: string
+            enum: [json, html, pdf, markdown]
+            default: html
+          description: Report format
+      responses:
+        '200':
+          description: Report file
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FullReport'
+            text/html:
+              schema:
+                type: string
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+            text/markdown:
+              schema:
+                type: string
+        '401':
+          description: Unauthorized
+        '404':
+          description: Report not found
+
+  /api/reports/{reportId}/share:
+    post:
+      summary: Generate a shareable link for a report
+      tags: [Reports]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: reportId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                expires_in_days:
+                  type: integer
+                  default: 7
+                  minimum: 1
+                  maximum: 30
+                password_protected:
+                  type: boolean
+                  default: false
+      responses:
+        '200':
+          description: Share link created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  share_url:
+                    type: string
+                    format: uri
+                  expires_at:
+                    type: string
+                    format: date-time
+                  password:
+                    type: string
+                    description: Only returned if password_protected is true
+        '401':
+          description: Unauthorized
+        '404':
+          description: Report not found
+
+tags:
+  - name: Reports
+    description: Analysis report management
+
+components:
+  schemas:
+    ReportSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        repository_url:
+          type: string
+          format: uri
+        repository_name:
+          type: string
+        pr_number:
+          type: integer
+          nullable: true
+        branch:
+          type: string
+        status:
+          type: string
+          enum: [pending, in_progress, completed, failed]
+        created_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        overall_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          nullable: true
+        critical_issues:
+          type: integer
+          nullable: true
+        high_issues:
+          type: integer
+          nullable: true
+
+    FullReport:
+      allOf:
+        - $ref: '#/components/schemas/ReportSummary'
+        - type: object
+          properties:
+            analysis_results:
+              type: object
+              properties:
+                architecture:
+                  $ref: '#/components/schemas/CategoryResult'
+                performance:
+                  $ref: '#/components/schemas/CategoryResult'
+                security:
+                  $ref: '#/components/schemas/CategoryResult'
+                maintainability:
+                  $ref: '#/components/schemas/CategoryResult'
+                testing:
+                  $ref: '#/components/schemas/CategoryResult'
+                documentation:
+                  $ref: '#/components/schemas/CategoryResult'
+            recommendations:
+              type: array
+              items:
+                type: object
+                properties:
+                  category:
+                    type: string
+                  priority:
+                    type: string
+                    enum: [critical, high, medium, low]
+                  title:
+                    type: string
+                  description:
+                    type: string
+                  effort:
+                    type: string
+                    enum: [minimal, moderate, significant]
+            skill_gaps:
+              type: array
+              items:
+                type: object
+                properties:
+                  area:
+                    type: string
+                  current_level:
+                    type: string
+                  recommended_level:
+                    type: string
+                  resources:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        title:
+                          type: string
+                        url:
+                          type: string
+                        type:
+                          type: string
+                          enum: [documentation, tutorial, course, book]
+
+    CategoryResult:
+      type: object
+      properties:
+        score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+        findings:
+          type: array
+          items:
+            type: object
+            properties:
+              severity:
+                type: string
+                enum: [critical, high, medium, low]
+              title:
+                type: string
+              description:
+                type: string
+              file_path:
+                type: string
+                nullable: true
+              line_number:
+                type: integer
+                nullable: true
+              recommendation:
+                type: string

@@ -1,5 +1,13 @@
 CodeQual Architecture Document
-Last Updated: January 2025 (Enhanced PR Branch Analysis & Optimization Strategy)
+Last Updated: January 2025 (Rate Limiting & API Documentation Updates)
+
+Recent Updates (January 2025):
+- Section 19: Rate Limiting Architecture - Comprehensive rate limiting strategy with user-friendly limits
+- Section 21: API Documentation - Complete OpenAPI 3.0 specifications for all endpoints
+- Enhanced rate limits: 1000 req/15min global, tiered API limits (30-300 req/min)
+- Client-side rate limit handling with exponential backoff
+- 50+ documented API endpoints across 9 categories
+
 System Overview Please review the file model-version-management.md
 CodeQual is a flexible, multi-agent system for comprehensive code analysis, quality assessment, and improvement. The system leverages a combination of specialized AI agents, vector database storage, MCP (Model Context Protocol) tools, and a scoring system to deliver actionable insights for developers and teams.
 Core Components
@@ -1685,6 +1693,149 @@ This system realizes the original vision of tracing user skill growth over time 
 ✅ **NEW**: Learning engagement tracking and progression analytics
 ✅ **NEW**: API endpoints and integration architecture for skill management
 
+## 19. Rate Limiting Architecture (NEW - January 2025)
+
+The system implements a comprehensive rate limiting strategy to protect against abuse while ensuring legitimate users have adequate capacity for normal operations.
+
+### **19.1 Rate Limiting Overview**
+
+```typescript
+/**
+ * Multi-tiered rate limiting system
+ * Provides protection at multiple levels with user-friendly limits
+ */
+interface RateLimitingArchitecture {
+  globalProtection: GlobalRateLimiter;
+  authenticationProtection: AuthRateLimiter;
+  apiEndpointLimits: ApiRateLimiter;
+  resourceIntensiveLimits: ReportRateLimiter;
+  webhookProtection: WebhookRateLimiter;
+  readOperationOptimization: ReadOnlyRateLimiter;
+}
+```
+
+### **19.2 Rate Limiter Configuration**
+
+**Global Rate Limiter** (All Routes):
+- **Limit**: 1000 requests per 15 minutes (~66 req/min)
+- **Exemptions**: Static assets (.css, .js, images), health checks, metrics
+- **Purpose**: Prevent general abuse while allowing normal browsing
+
+**Authentication Rate Limiter** (Login/Signup):
+- **Limit**: 10 attempts per 15 minutes
+- **Skip**: Successful requests don't count
+- **Purpose**: Prevent brute force attacks
+
+**API Rate Limiter** (Main API Endpoints):
+```typescript
+// Tiered limits based on subscription
+const apiLimits = {
+  unauthenticated: 30,        // requests per minute
+  authenticated_free: 60,     // requests per minute
+  basic_individual: 120,      // requests per minute
+  premium_team_enterprise: 300 // requests per minute
+};
+```
+
+**Report Generation Limiter** (Resource Intensive):
+```typescript
+// Tiered limits for report generation
+const reportLimits = {
+  free: 10,                   // reports per hour
+  basic_individual: 30,       // reports per hour
+  premium_team_enterprise: 100 // reports per hour
+};
+// Note: GET requests (viewing reports) are exempt
+```
+
+**Webhook Rate Limiter**:
+- **Limit**: 200 webhooks per minute per source
+- **Key**: Based on webhook signature headers
+- **Purpose**: Handle high-volume webhook traffic
+
+**Read-Only Rate Limiter** (NEW):
+- **Limit**: 200 GET requests per minute
+- **Purpose**: Additional capacity for read operations
+- **Skip**: Only applies to GET methods
+
+### **19.3 Client-Side Rate Limit Handling**
+
+The system includes a comprehensive client-side rate limit handler:
+
+```typescript
+// Rate limit information extraction
+interface RateLimitInfo {
+  limit: number;        // Total requests allowed
+  remaining: number;    // Requests remaining
+  reset: number;        // Unix timestamp for reset
+  retryAfter?: number;  // Seconds to wait
+}
+
+// Client-side features
+class RateLimitHandler {
+  // Extract rate limit info from headers
+  extractRateLimitInfo(response: Response): RateLimitInfo | null;
+  
+  // Track approaching limits
+  isApproachingLimit(endpoint: string, threshold = 0.2): boolean;
+  
+  // Calculate recommended delay
+  getRecommendedDelay(endpoint: string): number;
+  
+  // Handle 429 with exponential backoff
+  handleRateLimitError(response, request, maxRetries = 3): Promise<Response>;
+  
+  // Batch requests to reduce impact
+  batchRequests<T>(requests: Array<() => Promise<T>>, batchSize = 5): Promise<T[]>;
+}
+```
+
+### **19.4 Implementation Details**
+
+All rate limiters are implemented using the `express-rate-limit` package with custom configuration:
+
+```typescript
+// Example: Global rate limiter with exemptions
+export const globalRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 1000,
+  keyGenerator: getClientIdentifier,
+  skip: (req: Request) => {
+    const path = req.path.toLowerCase();
+    return path.match(/\.(css|js|jpg|jpeg|png|gif|ico|svg|woff|woff2)$/i) !== null ||
+           path === '/health' ||
+           path === '/metrics';
+  },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+```
+
+### **19.5 Rate Limit Headers**
+
+All rate-limited responses include standard headers:
+```
+X-RateLimit-Limit: 100
+X-RateLimit-Remaining: 45
+X-RateLimit-Reset: 1706234567
+Retry-After: 60
+```
+
+### **19.6 Monitoring and Alerts**
+
+Rate limit violations are tracked and monitored:
+- Violation count per identifier
+- Automatic alerts for repeated violations
+- Metrics exposed via Prometheus
+- Dashboard visualization in Grafana
+
+### **19.7 Best Practices for API Consumers**
+
+1. **Monitor Headers**: Check rate limit headers in responses
+2. **Implement Backoff**: Use exponential backoff for 429 responses
+3. **Batch Requests**: Combine multiple API calls where possible
+4. **Cache Responses**: Reduce unnecessary API calls
+5. **Use Webhooks**: For real-time updates instead of polling
 
 
  Backend Support Analysis for Educational Overlays UX
@@ -1800,7 +1951,7 @@ This system realizes the original vision of tracing user skill growth over time 
 
 ---
 
-## 19. Dynamic Embedding Configuration System (NEW - January 6, 2025)
+## 20. Dynamic Embedding Configuration System (NEW - January 6, 2025)
 
 The system implements a **database-driven embedding configuration system** that allows dynamic model selection and configuration updates without code changes, supporting easy migration to more advanced embedding models as they become available.
 
@@ -2155,7 +2306,235 @@ Common issues and solutions:
 
 ---
 
-## 20. Beta Testing Progress & Completed Features (July 11, 2025)
+## 21. Comprehensive API Documentation (NEW - January 2025)
+
+The system provides extensive API documentation through OpenAPI 3.0 specifications, enabling developers to integrate with CodeQual's analysis capabilities.
+
+### **21.1 API Documentation Architecture**
+
+```typescript
+/**
+ * Multi-file OpenAPI specification system
+ * Organized by functional domain for maintainability
+ */
+interface APIDocumentationStructure {
+  specifications: {
+    'auth-endpoints.yaml': AuthenticationEndpoints;
+    'billing-endpoints.yaml': BillingEndpoints;
+    'users-endpoints.yaml': UserManagementEndpoints;
+    'organizations-endpoints.yaml': TeamEndpoints;
+    'analysis-endpoints.yaml': CodeAnalysisEndpoints;
+    'reports-endpoints.yaml': ReportEndpoints;
+    'api-keys-endpoints.yaml': APIKeyEndpoints;
+    'vector-endpoints.yaml': VectorSearchEndpoints;
+    'monitoring-endpoints.yaml': MonitoringEndpoints;
+  };
+  servers: SwaggerUIServer | StaticHTMLDemo | ProductionDocs;
+}
+```
+
+### **21.2 Core API Categories**
+
+**Authentication & Authorization**:
+- User registration and signin
+- OAuth integration (GitHub, GitLab)
+- JWT token management
+- Session handling
+- Magic link authentication
+
+**Code Analysis**:
+- Pull request analysis (async and sync modes)
+- Repository scanning
+- File-level analysis
+- Real-time progress tracking
+- Analysis cancellation
+
+**Reports & Results**:
+- Report generation in multiple formats (JSON, HTML, PDF, Markdown)
+- Report sharing with expirable links
+- Historical report access
+- Export capabilities
+
+**API Key Management**:
+- Key creation with scoped permissions
+- Usage tracking and statistics
+- Rate limit configuration
+- Key rotation and regeneration
+
+**Vector Search & AI**:
+- Semantic code search
+- Embedding generation
+- Similar pattern detection
+- Knowledge base queries
+
+**Organizations & Teams**:
+- Team creation and management
+- Member invitation system
+- Role-based permissions
+- Usage analytics per team
+
+**Billing & Subscriptions**:
+- Stripe integration
+- Subscription management
+- Usage-based billing
+- Payment method handling
+
+**Monitoring & Health**:
+- System health checks
+- Performance metrics (Prometheus format)
+- Distributed tracing
+- Alert management
+
+### **21.3 API Authentication Methods**
+
+**Bearer Token (JWT)**:
+```bash
+curl -H "Authorization: Bearer <jwt-token>" \
+  https://api.codequal.com/api/analysis/pr
+```
+
+**API Key**:
+```bash
+curl -H "X-API-Key: <api-key>" \
+  https://api.codequal.com/v1/analysis/pr
+```
+
+### **21.4 Rate Limits by Endpoint**
+
+Different endpoints have different rate limits based on resource intensity:
+
+| Endpoint Category | Free Tier | Basic/Individual | Premium/Team |
+|------------------|-----------|------------------|-------------|
+| Authentication | 10/15min | 10/15min | 10/15min |
+| Analysis | 30/min | 120/min | 300/min |
+| Reports | 10/hour | 30/hour | 100/hour |
+| Vector Search | 30/min | 120/min | 300/min |
+| Monitoring | 200/min | 200/min | 200/min |
+
+### **21.5 Swagger UI Access**
+
+**Development**:
+```bash
+cd apps/api
+node swagger-demo.js
+# Access at http://localhost:3002/docs
+```
+
+**Production**:
+- https://api.codequal.com/api-docs
+
+**Static Demo**:
+- Open `apps/api/swagger-ui-complete.html` in browser
+
+### **21.6 Example API Workflows**
+
+**Analyze a Pull Request**:
+```typescript
+// 1. Authenticate
+POST /auth/signin
+{
+  "email": "user@example.com",
+  "password": "secure-password"
+}
+
+// 2. Start analysis
+POST /api/analysis/pr
+Authorization: Bearer <token>
+{
+  "pr_url": "https://github.com/user/repo/pull/123",
+  "analysis_mode": "deep"
+}
+
+// 3. Check status
+GET /api/analysis/{analysisId}/status
+
+// 4. Get report
+GET /api/reports/{reportId}
+```
+
+**Create and Use API Key**:
+```typescript
+// 1. Create API key
+POST /api/keys
+Authorization: Bearer <token>
+{
+  "name": "CI/CD Pipeline",
+  "scopes": ["read:analysis", "write:analysis"]
+}
+
+// 2. Use API key
+POST /v1/analysis/pr
+X-API-Key: <api-key>
+{
+  "pr_url": "https://github.com/user/repo/pull/456"
+}
+```
+
+### **21.7 Webhook Integration**
+
+CodeQual supports webhooks for real-time events:
+
+**Available Events**:
+- `analysis.started`
+- `analysis.completed`
+- `analysis.failed`
+- `report.generated`
+- `subscription.updated`
+
+**Webhook Payload**:
+```json
+{
+  "event": "analysis.completed",
+  "timestamp": "2025-01-20T10:30:00Z",
+  "data": {
+    "analysisId": "uuid",
+    "reportId": "uuid",
+    "repository": "user/repo",
+    "prNumber": 123,
+    "overallScore": 85
+  },
+  "signature": "sha256=..."
+}
+```
+
+### **21.8 Error Handling**
+
+Standardized error responses across all endpoints:
+
+```json
+{
+  "error": "ValidationError",
+  "message": "Invalid repository URL format",
+  "details": {
+    "field": "repository_url",
+    "reason": "Must be a valid GitHub or GitLab URL"
+  },
+  "requestId": "req_123abc",
+  "timestamp": "2025-01-20T10:30:00Z"
+}
+```
+
+### **21.9 SDK Support**
+
+Official SDKs planned for:
+- JavaScript/TypeScript
+- Python
+- Go
+- Java
+
+Community SDKs encouraged for other languages.
+
+### **21.10 API Versioning**
+
+CodeQual uses URL-based versioning:
+- Current: `/v1/*` 
+- Legacy support: 12 months
+- Deprecation notices: 6 months advance
+- Breaking changes: New version only
+
+---
+
+## 22. Beta Testing Progress & Completed Features (July 11, 2025)
 
 ### **20.1 Major Features Completed**
 
@@ -2280,7 +2659,7 @@ GET /api/usage-stats/history      // Historical usage for charts
 
 ---
 
-## 21. PR Analysis Strategy & Optimization (NEW - January 2025)
+## 23. PR Analysis Strategy & Optimization (NEW - January 2025)
 
 ### **21.1 Current Analysis Challenges**
 
@@ -2500,7 +2879,7 @@ Based on user impact and technical complexity:
 
 ---
 
-## 22. Future Architecture Considerations
+## 24. Future Architecture Considerations
 
 ### **22.1 Scalability Enhancements**
 - Horizontal scaling for analysis workloads

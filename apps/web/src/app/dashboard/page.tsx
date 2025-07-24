@@ -18,9 +18,12 @@ export default function DashboardPage() {
       refreshBilling();
       
       // Hide message after 5 seconds
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         setShowSuccessMessage(false);
       }, 5000);
+      
+      // Cleanup timer on unmount
+      return () => clearTimeout(timer);
     }
   }, [searchParams]); // Remove refreshBilling from deps to prevent infinite loop
 

@@ -40,6 +40,8 @@ import { requestLogger } from './middleware/request-logger';
 import { monitoringMiddleware, analysisMonitoringMiddleware } from './middleware/monitoring-middleware';
 import { apiKeyAuth } from './middleware/api-key-auth';
 import { trackApiUsage, requireApiAccess } from './middleware/api-usage-tracking';
+import { globalRateLimiter, authRateLimiter, apiRateLimiter, webhookRateLimiter, reportRateLimiter, readOnlyRateLimiter } from './middleware/rate-limiter';
+import { setupSwagger } from './middleware/swagger';
 // import { initializeTranslators } from './services/translator-initialization-service';
 
 // Environment variables are already loaded in setup.ts
@@ -101,6 +103,9 @@ app.use(express.static(path.join(__dirname, '../public')));
 // Request logging
 app.use(requestLogger);
 
+// Global rate limiting - applies to all routes
+app.use(globalRateLimiter);
+
 // Internationalization middleware
 // app.use(i18nMiddleware);
 // app.use(validateLanguage);
@@ -136,9 +141,8 @@ app.get('/metrics', (req, res) => {
   }
 });
 
-// OpenAPI documentation (no authentication required)
-app.use('/docs', openapiDocsRoutes);
-app.use('/api/docs', openapiDocsRoutes);
+// Setup Swagger UI documentation
+setupSwagger(app);
 
 // Demo report route (no authentication required in dev mode)
 app.get('/demo/enhanced-report', async (req, res) => {
@@ -303,12 +307,12 @@ app.get('/demo/enhanced-report', async (req, res) => {
 // app.use('/languages', languageRoutes);
 // app.use('/v1/languages', languageRoutes);
 
-// Authentication routes (no authentication required)
-app.use('/auth', authRoutes);
-app.use('/api/auth', authRoutes);
+// Authentication routes (no authentication required, but rate limited)
+app.use('/auth', authRateLimiter, authRoutes);
+app.use('/api/auth', authRateLimiter, authRoutes);
 
-// Webhook routes (no authentication required for external webhooks)
-app.use('/api/webhooks', webhookRoutes);
+// Webhook routes (no authentication required for external webhooks, but rate limited)
+app.use('/api/webhooks', webhookRateLimiter, webhookRoutes);
 
 // API Key management routes (requires user authentication)
 app.use('/api/keys', authMiddleware, apiKeyRoutes);
@@ -317,6 +321,7 @@ app.use('/api/keys', authMiddleware, apiKeyRoutes);
 
 // Public API routes (authenticated via API key)
 app.use('/v1', apiKeyAuth); // All v1 API routes require API key
+app.use('/v1', apiRateLimiter); // Apply API rate limiting
 app.use('/v1', trackApiUsage); // Track API usage based on subscription
 // app.use('/v1', requireApiAccess); // Temporarily disabled - limits enforced in trackApiUsage
 // app.use('/v1', translateResponse('api')); // Auto-translate API responses
@@ -327,7 +332,7 @@ app.use('/v1', analysisReportsRoutes); // Register analysis reports first to cat
 app.use('/v1', resultOrchestratorRoutes);
 app.use('/v1/repository', repositoryRoutes);
 app.use('/v1/analysis', analysisRoutes);
-app.use('/v1/reports', reportRoutes);
+app.use('/v1/reports', reportRateLimiter, reportRoutes); // Apply stricter rate limiting for reports
 
 // Vector search routes (requires user authentication)
 app.use('/api/vector', authMiddleware, vectorSearchRoutes);
@@ -363,6 +368,7 @@ app.use('/stripe', stripeWebhookRoutes);
 
 // Internal API routes (requires user authentication)
 app.use('/api', authMiddleware);
+app.use('/api', apiRateLimiter); // Apply API rate limiting
 // app.use('/api', translateResponse('api')); // Auto-translate API responses
 app.use('/api', analysisMonitoringMiddleware);
 app.use('/api', analysisReportsRoutes); // Register analysis reports first to catch specific routes
@@ -370,7 +376,7 @@ app.use('/api', resultOrchestratorRoutes);
 app.use('/api/repository', repositoryRoutes);
 app.use('/api/analysis', analysisRoutes);
 app.use('/api', scheduleRoutes);
-app.use('/api', reportRoutes);
+app.use('/api', reportRateLimiter, reportRoutes); // Apply stricter rate limiting for reports
 app.use('/api/monitoring', monitoringRoutes);
 
 // Researcher routes (requires user authentication)

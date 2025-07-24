@@ -1,0 +1,389 @@
+paths:
+  /api/monitoring/health:
+    get:
+      summary: Health check endpoint
+      tags: [Monitoring]
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [healthy, degraded, unhealthy]
+                  version:
+                    type: string
+                  uptime_seconds:
+                    type: integer
+                  timestamp:
+                    type: string
+                    format: date-time
+                  checks:
+                    type: object
+                    properties:
+                      database:
+                        $ref: '#/components/schemas/HealthCheck'
+                      redis:
+                        $ref: '#/components/schemas/HealthCheck'
+                      vector_db:
+                        $ref: '#/components/schemas/HealthCheck'
+                      external_apis:
+                        $ref: '#/components/schemas/HealthCheck'
+        '503':
+          description: Service unhealthy
+
+  /api/monitoring/metrics:
+    get:
+      summary: Get service metrics
+      tags: [Monitoring]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: format
+          schema:
+            type: string
+            enum: [json, prometheus]
+            default: json
+      responses:
+        '200':
+          description: Metrics retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  http:
+                    type: object
+                    properties:
+                      requests_total:
+                        type: integer
+                      requests_per_minute:
+                        type: number
+                        format: float
+                      average_response_time_ms:
+                        type: number
+                        format: float
+                      status_codes:
+                        type: object
+                        additionalProperties:
+                          type: integer
+                  analysis:
+                    type: object
+                    properties:
+                      total_analyses:
+                        type: integer
+                      active_analyses:
+                        type: integer
+                      completed_today:
+                        type: integer
+                      average_duration_seconds:
+                        type: number
+                        format: float
+                      queue_length:
+                        type: integer
+                  system:
+                    type: object
+                    properties:
+                      cpu_usage_percent:
+                        type: number
+                        format: float
+                      memory_usage_mb:
+                        type: number
+                        format: float
+                      disk_usage_percent:
+                        type: number
+                        format: float
+            text/plain:
+              schema:
+                type: string
+                description: Prometheus format metrics
+        '401':
+          description: Unauthorized
+
+  /api/monitoring/logs:
+    get:
+      summary: Get application logs
+      tags: [Monitoring]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: level
+          schema:
+            type: string
+            enum: [error, warn, info, debug]
+            default: info
+        - in: query
+          name: start_time
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: end_time
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 100
+            maximum: 1000
+        - in: query
+          name: search
+          schema:
+            type: string
+            description: Search logs containing this text
+      responses:
+        '200':
+          description: Logs retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  logs:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        timestamp:
+                          type: string
+                          format: date-time
+                        level:
+                          type: string
+                        message:
+                          type: string
+                        context:
+                          type: object
+                          additionalProperties: true
+                        trace_id:
+                          type: string
+                  total:
+                    type: integer
+                  filtered:
+                    type: integer
+        '401':
+          description: Unauthorized
+        '403':
+          description: Insufficient permissions
+
+  /api/monitoring/trace/{traceId}:
+    get:
+      summary: Get distributed trace details
+      tags: [Monitoring]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: traceId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Trace details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  trace_id:
+                    type: string
+                  start_time:
+                    type: string
+                    format: date-time
+                  duration_ms:
+                    type: number
+                  spans:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        span_id:
+                          type: string
+                        parent_span_id:
+                          type: string
+                          nullable: true
+                        operation_name:
+                          type: string
+                        start_time:
+                          type: string
+                          format: date-time
+                        duration_ms:
+                          type: number
+                        status:
+                          type: string
+                          enum: [ok, error]
+                        tags:
+                          type: object
+                          additionalProperties: true
+                        logs:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              timestamp:
+                                type: string
+                                format: date-time
+                              message:
+                                type: string
+        '401':
+          description: Unauthorized
+        '404':
+          description: Trace not found
+
+  /api/monitoring/alerts:
+    get:
+      summary: Get active alerts
+      tags: [Monitoring]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Active alerts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  alerts:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        severity:
+                          type: string
+                          enum: [critical, warning, info]
+                        type:
+                          type: string
+                          enum: [performance, error_rate, availability, capacity]
+                        message:
+                          type: string
+                        triggered_at:
+                          type: string
+                          format: date-time
+                        details:
+                          type: object
+                          additionalProperties: true
+                        acknowledged:
+                          type: boolean
+                  total_active:
+                    type: integer
+                  by_severity:
+                    type: object
+                    properties:
+                      critical:
+                        type: integer
+                      warning:
+                        type: integer
+                      info:
+                        type: integer
+        '401':
+          description: Unauthorized
+
+  /api/monitoring/performance:
+    get:
+      summary: Get performance analytics
+      tags: [Monitoring]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: period
+          schema:
+            type: string
+            enum: [hour, day, week, month]
+            default: day
+      responses:
+        '200':
+          description: Performance analytics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  endpoints:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        path:
+                          type: string
+                        method:
+                          type: string
+                        avg_response_time_ms:
+                          type: number
+                          format: float
+                        p95_response_time_ms:
+                          type: number
+                          format: float
+                        p99_response_time_ms:
+                          type: number
+                          format: float
+                        request_count:
+                          type: integer
+                        error_rate:
+                          type: number
+                          format: float
+                  slowest_endpoints:
+                    type: array
+                    items:
+                      type: string
+                  highest_error_rates:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        endpoint:
+                          type: string
+                        error_rate:
+                          type: number
+                          format: float
+                  database_queries:
+                    type: object
+                    properties:
+                      slow_queries:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            query:
+                              type: string
+                            avg_duration_ms:
+                              type: number
+                              format: float
+                            execution_count:
+                              type: integer
+        '401':
+          description: Unauthorized
+
+tags:
+  - name: Monitoring
+    description: System monitoring and observability endpoints
+
+components:
+  schemas:
+    HealthCheck:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        latency_ms:
+          type: number
+          format: float
+          nullable: true
+        error:
+          type: string
+          nullable: true
+        last_check:
+          type: string
+          format: date-time

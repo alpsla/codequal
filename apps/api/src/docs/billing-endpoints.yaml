@@ -1,0 +1,449 @@
+openapi: 3.0.0
+info:
+  title: CodeQual Billing API
+  version: 1.0.0
+  description: Billing and payment management endpoints
+
+paths:
+  /api/billing/status:
+    get:
+      summary: Get billing status
+      tags:
+        - Billing
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Current billing status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  subscription:
+                    type: object
+                    nullable: true
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      status:
+                        type: string
+                        enum: [active, past_due, canceled, trialing]
+                      tier:
+                        type: string
+                        enum: [free, individual, team, api]
+                      current_period_start:
+                        type: string
+                        format: date-time
+                      current_period_end:
+                        type: string
+                        format: date-time
+                      cancel_at_period_end:
+                        type: boolean
+                      trialEndsAt:
+                        type: string
+                        format: date-time
+                        nullable: true
+                  trialUsage:
+                    type: object
+                    nullable: true
+                    properties:
+                      scansUsed:
+                        type: integer
+                        description: Number of scans used in trial
+                      scansLimit:
+                        type: integer
+                        description: Total scans allowed in trial
+                      trialRepository:
+                        type: string
+                        nullable: true
+                        description: Repository URL for trial
+                  webScanUsage:
+                    type: object
+                    nullable: true
+                    properties:
+                      scansUsed:
+                        type: integer
+                      scansLimit:
+                        type: integer
+                  hasPaymentMethod:
+                    type: boolean
+                    description: Whether user has a payment method on file
+                  apiKey:
+                    type: object
+                    nullable: true
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      prefix:
+                        type: string
+                        example: ck_a1b2c3d4
+        '401':
+          description: Not authenticated
+
+  /api/billing/create-subscription:
+    post:
+      summary: Create a new subscription
+      tags:
+        - Billing
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - priceId
+              properties:
+                priceId:
+                  type: string
+                  description: Stripe price ID for the subscription tier
+                  example: price_1234567890
+                paymentMethodId:
+                  type: string
+                  description: Stripe payment method ID (if not using saved payment method)
+      responses:
+        '200':
+          description: Subscription created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  subscriptionId:
+                    type: string
+                  clientSecret:
+                    type: string
+                    description: Client secret for confirming payment (if required)
+                  status:
+                    type: string
+                    enum: [active, requires_payment_method, requires_confirmation]
+        '400':
+          description: Invalid request or payment method required
+        '401':
+          description: Not authenticated
+
+  /api/billing/cancel-subscription:
+    post:
+      summary: Cancel current subscription
+      tags:
+        - Billing
+      security:
+        - BearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                immediately:
+                  type: boolean
+                  default: false
+                  description: Cancel immediately or at period end
+      responses:
+        '200':
+          description: Subscription cancelled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  cancelAt:
+                    type: string
+                    format: date-time
+                    description: When the subscription will be cancelled
+        '400':
+          description: No active subscription to cancel
+        '401':
+          description: Not authenticated
+
+  /api/billing/update-subscription:
+    post:
+      summary: Update subscription tier
+      tags:
+        - Billing
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - newPriceId
+              properties:
+                newPriceId:
+                  type: string
+                  description: New Stripe price ID to switch to
+                  example: price_9876543210
+      responses:
+        '200':
+          description: Subscription updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  subscription:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      status:
+                        type: string
+                      tier:
+                        type: string
+        '400':
+          description: Invalid price or no active subscription
+        '401':
+          description: Not authenticated
+
+  /api/billing/create-setup-intent:
+    post:
+      summary: Create payment method setup intent
+      tags:
+        - Billing
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Setup intent created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  clientSecret:
+                    type: string
+                    description: Client secret for Stripe Elements
+        '401':
+          description: Not authenticated
+
+  /api/billing/payment-methods:
+    get:
+      summary: List saved payment methods
+      tags:
+        - Billing
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of payment methods
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  paymentMethods:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        type:
+                          type: string
+                          enum: [card]
+                        card:
+                          type: object
+                          properties:
+                            brand:
+                              type: string
+                              example: visa
+                            last4:
+                              type: string
+                              example: "4242"
+                            exp_month:
+                              type: integer
+                            exp_year:
+                              type: integer
+                        isDefault:
+                          type: boolean
+        '401':
+          description: Not authenticated
+
+  /api/billing/payment-methods/{paymentMethodId}:
+    delete:
+      summary: Remove a payment method
+      tags:
+        - Billing
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: paymentMethodId
+          required: true
+          schema:
+            type: string
+          description: Stripe payment method ID
+      responses:
+        '200':
+          description: Payment method removed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '400':
+          description: Cannot remove default payment method while subscription active
+        '404':
+          description: Payment method not found
+        '401':
+          description: Not authenticated
+
+  /api/billing/invoices:
+    get:
+      summary: Get billing invoices
+      tags:
+        - Billing
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+            maximum: 100
+          description: Number of invoices to return
+        - in: query
+          name: starting_after
+          schema:
+            type: string
+          description: Cursor for pagination
+      responses:
+        '200':
+          description: List of invoices
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  invoices:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        number:
+                          type: string
+                        amount_paid:
+                          type: integer
+                          description: Amount in cents
+                        currency:
+                          type: string
+                          example: usd
+                        status:
+                          type: string
+                          enum: [draft, open, paid, void, uncollectible]
+                        created:
+                          type: integer
+                          description: Unix timestamp
+                        period_start:
+                          type: integer
+                          description: Unix timestamp
+                        period_end:
+                          type: integer
+                          description: Unix timestamp
+                        invoice_pdf:
+                          type: string
+                          format: uri
+                  has_more:
+                    type: boolean
+        '401':
+          description: Not authenticated
+
+  /api/billing/usage:
+    get:
+      summary: Get current billing period usage
+      tags:
+        - Billing
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Usage statistics for current period
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  period:
+                    type: object
+                    properties:
+                      start:
+                        type: string
+                        format: date-time
+                      end:
+                        type: string
+                        format: date-time
+                  usage:
+                    type: object
+                    properties:
+                      api_calls:
+                        type: integer
+                        description: Total API calls this period
+                      scans:
+                        type: integer
+                        description: Repository scans this period
+                      pr_analyses:
+                        type: integer
+                        description: PR analyses this period
+                  limits:
+                    type: object
+                    properties:
+                      api_calls:
+                        type: integer
+                        nullable: true
+                      scans:
+                        type: integer
+                        nullable: true
+                      pr_analyses:
+                        type: integer
+                        nullable: true
+                  overage:
+                    type: object
+                    properties:
+                      api_calls:
+                        type: integer
+                        default: 0
+                      estimated_cost:
+                        type: number
+                        description: Estimated overage cost in USD
+        '401':
+          description: Not authenticated
+
+  /stripe/webhook:
+    post:
+      summary: Stripe webhook endpoint
+      tags:
+        - Billing
+      description: Webhook endpoint for Stripe events (no authentication required)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Stripe event object
+      responses:
+        '200':
+          description: Webhook processed successfully
+        '400':
+          description: Invalid webhook signature
+
+tags:
+  - name: Billing
+    description: Subscription and payment management endpoints
