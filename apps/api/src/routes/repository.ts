@@ -20,7 +20,10 @@ repositoryRoutes.get('/status', async (req: Request, res: Response) => {
       });
     }
 
-    const user = req.user!;
+    const user = req.user;
+    if (!user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
 
     // Check repository access
     const hasAccess = await checkRepositoryAccess(user, repositoryUrl);
@@ -73,7 +76,10 @@ repositoryRoutes.post('/analyze', enforceTrialLimits, incrementScanCount, async 
       });
     }
 
-    const user = req.user!;
+    const user = req.user;
+    if (!user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
 
     // For trial users, access is already checked by enforceTrialLimits middleware
     // For paid users, check repository access
@@ -137,7 +143,10 @@ repositoryRoutes.post('/analyze', enforceTrialLimits, incrementScanCount, async 
  */
 repositoryRoutes.get('/jobs', async (req: Request, res: Response) => {
   try {
-    const user = req.user!;
+    const user = req.user;
+    if (!user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
     const deepWikiManager = new DeepWikiManager(user);
     
     const activeJobs = await deepWikiManager.getActiveJobs();
@@ -169,7 +178,10 @@ repositoryRoutes.get('/jobs', async (req: Request, res: Response) => {
 repositoryRoutes.get('/job/:jobId', async (req: Request, res: Response) => {
   try {
     const { jobId } = req.params;
-    const user = req.user!;
+    const user = req.user;
+    if (!user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
     
     const deepWikiManager = new DeepWikiManager(user);
     const job = await deepWikiManager.getJobStatus(jobId);
@@ -209,7 +221,10 @@ repositoryRoutes.get('/job/:jobId', async (req: Request, res: Response) => {
 repositoryRoutes.delete('/job/:jobId', async (req: Request, res: Response) => {
   try {
     const { jobId } = req.params;
-    const user = req.user!;
+    const user = req.user;
+    if (!user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
     
     const deepWikiManager = new DeepWikiManager(user);
     const cancelled = await deepWikiManager.cancelJob(jobId);

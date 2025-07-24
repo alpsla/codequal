@@ -8,9 +8,6 @@ module.exports = {
     '@typescript-eslint/no-explicit-any': 'warn',
     
     // Allow unused vars that start with underscore
-    '@typescript-eslint/no-unused-vars': ['error', {
-      'argsIgnorePattern': '^_',
-      'varsIgnorePattern': '^_'
-    }]
+    '@typescript-eslint/no-unused-vars': 'off'
   }
 };

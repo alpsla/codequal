@@ -10,7 +10,7 @@ export interface Finding {
     category: string;
     agent: string;
     recommendation?: string;
-    metadata?: any;
+    metadata?: Record<string, unknown>;
 }
 export interface ProcessedResults {
     findings: {
@@ -33,6 +33,19 @@ export interface Conflict {
     confidence: number;
     description: string;
 }
+export interface AgentResult {
+    findings?: unknown[];
+    insights?: unknown[];
+    suggestions?: unknown[];
+    recommendations?: unknown[];
+    agent?: string;
+}
+export interface AgentResultsWrapper {
+    results?: AgentResult[];
+    agentResults?: AgentResult[];
+    data?: AgentResult[];
+}
+export type AgentResultsInput = AgentResultsWrapper | AgentResult[] | Record<string, AgentResult>;
 /**
  * Result Processor - handles deduplication, conflict resolution, and result organization
  */
@@ -40,7 +53,7 @@ export declare class ResultProcessor {
     /**
      * Main processing method - processes raw agent results
      */
-    processAgentResults(agentResults: any): Promise<ProcessedResults>;
+    processAgentResults(agentResults: AgentResultsInput): Promise<ProcessedResults>;
     /**
      * Extract findings from raw agent results
      */

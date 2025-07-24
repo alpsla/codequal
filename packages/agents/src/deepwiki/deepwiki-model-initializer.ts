@@ -207,7 +207,7 @@ async function getStoredDeepWikiConfig(
     
     if (results && results.length > 0) {
       const stored = results[0];
-      const config = stored.metadata as DeepWikiModelConfig;
+      const config = (stored as any).metadata as DeepWikiModelConfig;
       
       // Check if configuration is still fresh
       if (isConfigFresh(config)) {

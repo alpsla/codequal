@@ -32,12 +32,12 @@ async function main() {
   for (const agent of agents) {
     const selected = await modelVersionSync.findOptimalModel({
       language: `${agent}_agent`,
-      sizeCategory: 'universal' as any
+      sizeCategory: RepositorySizeCategory.SMALL
     });
     
     if (selected) {
       const model = Array.isArray(selected) ? selected[0] : selected;
-      const pricing = (model as any).pricing || { input: 0, output: 0 };
+      const pricing = model.pricing || { input: 0, output: 0 };
       const avgCost = (pricing.input + pricing.output) / 2;
       
       console.log(`  ${agent}: ${model.provider}/${model.model} - $${avgCost.toFixed(2)}/1M tokens`);
@@ -60,7 +60,7 @@ async function main() {
     
     if (selected) {
       const model = Array.isArray(selected) ? selected[0] : selected;
-      const pricing = (model as any).pricing || { input: 0, output: 0 };
+      const pricing = model.pricing || { input: 0, output: 0 };
       const avgCost = (pricing.input + pricing.output) / 2;
       
       console.log(`  ${test.language}/${test.sizeCategory}: ${model.provider}/${model.model} - $${avgCost.toFixed(2)}/1M tokens`);
@@ -71,15 +71,15 @@ async function main() {
 
   // Test 3: Cost-based selection differences
   console.log(chalk.blue('\n3. Cost Impact on Selection:'));
-  const models = await (modelVersionSync as any).getAvailableModels();
+  const models = await (modelVersionSync as unknown as { getAvailableModels(): Promise<Record<string, unknown>> }).getAvailableModels();
   
   // Get unique models with pricing
-  const uniqueModels = new Map<string, any>();
+  const uniqueModels = new Map<string, { provider: string; model: string; pricing?: { input: number; output: number }; avgCost?: number }>();
   for (const [key, model] of Object.entries(models)) {
-    const m = model as any;
+    const m = model as { provider?: string; model?: string; pricing?: { input: number; output: number } };
     if (m.pricing && (m.pricing.input > 0 || m.pricing.output > 0)) {
       const avgCost = (m.pricing.input + m.pricing.output) / 2;
-      uniqueModels.set(key, { ...m, avgCost });
+      uniqueModels.set(key, { provider: m.provider, model: m.model, pricing: m.pricing, avgCost });
     }
   }
 

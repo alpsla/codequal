@@ -59,7 +59,7 @@ export interface ChatMessage {
   /** Timestamp when the message was created */
   timestamp: Date;
   /** Any additional metadata */
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -75,7 +75,7 @@ export interface VectorSearchResult {
   /** Repository identifier */
   repositoryId: string;
   /** Any additional metadata */
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 /**

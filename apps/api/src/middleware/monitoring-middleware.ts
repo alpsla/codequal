@@ -1,6 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthenticatedRequest } from './auth-middleware';
 import { getGlobalMonitoringService } from '../routes/monitoring';
+import { createLogger } from '@codequal/core/utils/logger';
+
+const logger = createLogger('monitoring-middleware');
 
 // Extended Request interface to include monitoring data
 interface MonitoredRequest extends Request {
@@ -46,23 +49,24 @@ export const monitoringMiddleware = (
     const originalEnd = res.end;
     const originalJson = res.json;
 
-    // Track response completion
-    res.end = function(chunk?: any, encoding?: any) {
+    // Track response completion - use proper overload handling
+    res.end = ((...args: Parameters<typeof originalEnd>) => {
       try {
         recordRequestMetrics(req as MonitoredRequest, res);
       } catch (error) {
-        console.error('Error recording request metrics:', error);
+        logger.error('Error recording request metrics:', { error });
       }
       
-      return originalEnd.call(this, chunk, encoding);
-    };
+      // Call original end with arguments spread
+      return originalEnd.apply(res, args);
+    }) as typeof originalEnd;
 
     // Track JSON responses specifically
-    res.json = function(body?: any) {
+    res.json = function(body?: unknown) {
       try {
         recordRequestMetrics(req as MonitoredRequest, res, body);
       } catch (error) {
-        console.error('Error recording JSON response metrics:', error);
+        logger.error('Error recording JSON response metrics:', { error });
       }
       
       return originalJson.call(this, body);
@@ -70,7 +74,7 @@ export const monitoringMiddleware = (
 
     next();
   } catch (error) {
-    console.error('Monitoring middleware error:', error);
+    logger.error('Monitoring middleware error:', { error });
     next(); // Continue even if monitoring fails
   }
 };
@@ -78,7 +82,7 @@ export const monitoringMiddleware = (
 /**
  * Record metrics for completed requests
  */
-function recordRequestMetrics(req: MonitoredRequest, res: Response, responseBody?: any): void {
+function recordRequestMetrics(req: MonitoredRequest, res: Response, responseBody?: unknown): void {
   try {
     const monitoringService = getGlobalMonitoringService();
     const duration = req.startTime ? (Date.now() - req.startTime) / 1000 : 0;
@@ -112,7 +116,7 @@ function recordRequestMetrics(req: MonitoredRequest, res: Response, responseBody
     recordOperationCosts(req, res, duration, monitoringService);
 
   } catch (error) {
-    console.error('Error in recordRequestMetrics:', error);
+    logger.error('Error in recordRequestMetrics:', { error });
   }
 }
 
@@ -122,8 +126,8 @@ function recordRequestMetrics(req: MonitoredRequest, res: Response, responseBody
 function recordBusinessEvents(
   req: MonitoredRequest, 
   res: Response, 
-  responseBody: any,
-  monitoringService: any
+  responseBody: unknown,
+  monitoringService: ReturnType<typeof getGlobalMonitoringService>
 ): void {
   try {
     const labels = req.monitoringLabels;
@@ -134,7 +138,7 @@ function recordBusinessEvents(
       monitoringService.recordBusinessEvent(
         'analysis_initiated',
         labels.userTier || 'unknown',
-        extractRepositoryLanguage(req.body) || 'unknown'
+        { language: extractRepositoryLanguage(req.body as Record<string, unknown>) || 'unknown' }
       );
     }
 
@@ -143,7 +147,7 @@ function recordBusinessEvents(
       monitoringService.recordBusinessEvent(
         'dashboard_accessed',
         labels.userTier || 'unknown',
-        'web'
+        { source: 'web' }
       );
     }
 
@@ -152,7 +156,7 @@ function recordBusinessEvents(
       monitoringService.recordBusinessEvent(
         'widget_embedded',
         labels.userTier || 'unknown',
-        'web'
+        { source: 'web' }
       );
     }
 
@@ -161,11 +165,11 @@ function recordBusinessEvents(
       monitoringService.recordBusinessEvent(
         'alerts_checked',
         labels.userTier || 'unknown',
-        'web'
+        { source: 'web' }
       );
     }
   } catch (error) {
-    console.error('Error recording business events:', error);
+    logger.error('Error recording business events:', { error });
   }
 }
 
@@ -176,7 +180,7 @@ function recordOperationCosts(
   req: MonitoredRequest,
   res: Response,
   duration: number,
-  monitoringService: any
+  monitoringService: ReturnType<typeof getGlobalMonitoringService>
 ): void {
   try {
     // Estimate costs based on operation type and duration
@@ -185,7 +189,7 @@ function recordOperationCosts(
 
     if (req.path.includes('/analyze-pr')) {
       // Analysis operations are more expensive
-      cost = estimateAnalysisCost(req.body?.analysisMode, duration);
+      cost = estimateAnalysisCost((req.body as { analysisMode?: string })?.analysisMode || '', duration);
       operation = 'analysis';
     } else if (req.path.includes('/dashboards')) {
       // Dashboard queries have moderate cost
@@ -205,7 +209,7 @@ function recordOperationCosts(
       monitoringService.recordCost(operation, 'codequal', cost);
     }
   } catch (error) {
-    console.error('Error recording operation costs:', error);
+    logger.error('Error recording operation costs:', { error });
   }
 }
 
@@ -230,12 +234,13 @@ function estimateAnalysisCost(analysisMode: string, duration: number): number {
 /**
  * Extract repository language from request body
  */
-function extractRepositoryLanguage(body: any): string | null {
+function extractRepositoryLanguage(body: unknown): string | null {
   try {
     // Try to extract from repository URL or other fields
-    if (body?.repositoryUrl) {
+    const bodyObj = body as { repositoryUrl?: string };
+    if (bodyObj?.repositoryUrl) {
       // Simple heuristic - could be enhanced with actual repo analysis
-      const url = body.repositoryUrl.toLowerCase();
+      const url = bodyObj.repositoryUrl.toLowerCase();
       if (url.includes('javascript') || url.includes('js')) return 'javascript';
       if (url.includes('typescript') || url.includes('ts')) return 'typescript';
       if (url.includes('python') || url.includes('py')) return 'python';
@@ -285,13 +290,14 @@ export const analysisMonitoringMiddleware = (
     // Override response methods to capture analysis-specific metrics
     const originalJson = res.json;
     
-    res.json = function(body?: any) {
+    res.json = function(body?: unknown) {
       try {
         // Record analysis events based on response
         if (req.method === 'POST' && req.path.includes('analyze-pr')) {
+          const requestBody = req.body as { analysisMode?: string; repositoryUrl?: string };
           const labels = {
-            mode: req.body?.analysisMode || 'unknown',
-            repository_size: estimateRepositorySize(req.body?.repositoryUrl) || 'unknown',
+            mode: requestBody?.analysisMode || 'unknown',
+            repository_size: estimateRepositorySize(requestBody?.repositoryUrl || '') || 'unknown',
             user_tier: user?.role || 'unknown'
           };
 
@@ -308,13 +314,14 @@ export const analysisMonitoringMiddleware = (
 
         // Handle analysis progress/completion endpoints
         if (req.method === 'GET' && req.path.includes('/analysis/') && req.path.includes('/progress')) {
-          if (body?.status === 'complete') {
+          const responseBody = body as { status?: string; results?: { duration?: number }; request?: { analysisMode?: string } };
+          if (responseBody?.status === 'complete') {
             const analysisId = req.params?.id;
-            const duration = body?.results?.duration || 0;
+            const duration = responseBody?.results?.duration || 0;
             
             // This would typically come from stored analysis data
             const labels = {
-              mode: body?.request?.analysisMode || 'unknown',
+              mode: responseBody?.request?.analysisMode || 'unknown',
               repository_size: 'unknown',
               user_tier: user?.role || 'unknown',
               duration_bucket: getDurationBucket(duration)
@@ -324,7 +331,7 @@ export const analysisMonitoringMiddleware = (
           }
         }
       } catch (error) {
-        console.error('Error in analysis monitoring:', error);
+        logger.error('Error in analysis monitoring:', { error });
       }
       
       return originalJson.call(this, body);
@@ -332,7 +339,7 @@ export const analysisMonitoringMiddleware = (
 
     next();
   } catch (error) {
-    console.error('Analysis monitoring middleware error:', error);
+    logger.error('Analysis monitoring middleware error:', { error });
     next();
   }
 };

@@ -1,8 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
 import { getSupabase } from '@codequal/database/supabase/client';
-import { AuthenticatedRequest } from './auth-middleware';
+import { AuthenticatedRequest, AuthenticatedUser } from './auth-middleware';
 import { normalizeRepositoryUrl } from '../utils/repository-utils';
 import Stripe from 'stripe';
+import { createLogger } from '@codequal/core/utils/logger';
+
+const logger = createLogger('trial-enforcement');
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2023-10-16',
@@ -28,12 +31,12 @@ export async function enforceTrialLimits(
     
     // Skip trial limits for test user
     if (user?.id === '00000000-0000-0000-0000-000000000000') {
-      console.log('[Trial Enforcement] Skipping for test user');
+      logger.info('Skipping for test user');
       return next();
     }
     
     // Check if this is an API key request with a valid subscription
-    if ((user as any)?.isApiKeyAuth) {
+    if ((user as AuthenticatedUser & { isApiKeyAuth?: boolean })?.isApiKeyAuth) {
       // Get user's billing to check subscription
       const { data: billing } = await getSupabase()
         .from('user_billing')
@@ -45,7 +48,7 @@ export async function enforceTrialLimits(
           ['api', 'individual', 'team'].includes(billing.subscription_tier as string) &&
           billing.subscription_status === 'active') {
         // Valid API/Individual/Team subscription - skip trial limits
-        console.log('API key user with valid subscription - skipping trial limits');
+        logger.info('API key user with valid subscription - skipping trial limits');
         return next();
       }
     }
@@ -69,7 +72,7 @@ export async function enforceTrialLimits(
     
     if (paymentMethods && paymentMethods.length > 0) {
       // User has payment method - allow any repository
-      console.log('User has payment method - skipping trial restrictions');
+      logger.info('User has payment method - skipping trial restrictions');
       return next();
     }
 
@@ -81,7 +84,7 @@ export async function enforceTrialLimits(
       });
 
     if (checkError) {
-      console.error('Error checking scan permissions:', checkError);
+      logger.error('Error checking scan permissions:', checkError);
       return res.status(500).json({ 
         error: 'Failed to check scan permissions',
         code: 'SCAN_CHECK_FAILED'
@@ -126,13 +129,18 @@ export async function enforceTrialLimits(
         }
       }
 
-      if (billing && (billing as any).trial_scans_used >= (billing as any).trial_scans_limit) {
+      interface BillingData {
+        trial_scans_used?: number;
+        trial_scans_limit?: number;
+      }
+      const billingData = billing as BillingData;
+      if (billing && billingData.trial_scans_used && billingData.trial_scans_limit && billingData.trial_scans_used >= billingData.trial_scans_limit) {
         return res.status(403).json({
           error: 'Trial scan limit reached',
           code: 'TRIAL_LIMIT_REACHED',
           details: {
-            scans_used: (billing as any).trial_scans_used,
-            scans_limit: (billing as any).trial_scans_limit,
+            scans_used: billingData.trial_scans_used,
+            scans_limit: billingData.trial_scans_limit,
             upgrade_required: true
           }
         });
@@ -156,16 +164,16 @@ export async function enforceTrialLimits(
         });
       
       if (insertError) {
-        console.error('Error setting trial repository:', insertError);
+        logger.error('Error setting trial repository:', insertError);
       } else {
-        console.log(`Set trial repository for user ${user.id}: ${normalizedUrl}`);
+        logger.info(`Set trial repository for user ${user.id}: ${normalizedUrl}`);
       }
     }
 
     // Continue to next middleware
     next();
   } catch (error) {
-    console.error('Trial enforcement error:', error);
+    logger.error('Trial enforcement error:', { error });
     res.status(500).json({ 
       error: 'Internal server error',
       code: 'TRIAL_CHECK_ERROR'
@@ -183,7 +191,7 @@ export async function incrementScanCount(
   // We'll hook it into the response
   const originalSend = res.send;
   
-  res.send = function(data: any): Response {
+  res.send = function(data: unknown): Response {
     if (res.statusCode === 200) {
       const { user } = req as AuthenticatedRequest;
       const trialsReq = req as TrialCheckRequest;
@@ -225,9 +233,9 @@ export async function incrementScanCount(
                   }
                 });
                 
-                console.log(`Charged $0.50 for scan: ${paymentIntent.id}`);
+                logger.info(`Charged $0.50 for scan: ${paymentIntent.id}`);
               } catch (chargeError) {
-                console.error('Error charging for scan:', chargeError);
+                logger.error('Error charging for scan:', { error: chargeError });
                 // Don't fail the scan if payment fails - we already delivered the service
               }
             }
@@ -239,7 +247,7 @@ export async function incrementScanCount(
               .eq('user_id', user.id)
               .single();
 
-            const currentCount = (currentBilling as any)?.trial_scans_used || 0;
+            const currentCount = (currentBilling as { trial_scans_used?: number })?.trial_scans_used || 0;
 
             await getSupabase()
               .from('user_billing')
@@ -258,7 +266,7 @@ export async function incrementScanCount(
               scan_type: req.path.includes('pull-request') ? 'pull_request' : 'repository'
             });
         } catch (err) {
-          console.error('Error processing scan billing:', err);
+          logger.error('Error processing scan billing:', { error: err });
         }
       })();
     }

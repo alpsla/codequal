@@ -115,7 +115,7 @@ async function runTest() {
     );
 
     // Check DeepWiki integration
-    const hasDeepWikiData = result.compiledEducationalData?.deepWikiContext ||
+    const hasDeepWikiData = (result.compiledEducationalData as any)?.deepWikiContext ||
                            (result.report?.fullReport && JSON.stringify(result.report.fullReport).includes('DeepWiki')) ||
                            (result.educationalContent && JSON.stringify(result.educationalContent).includes('deepwiki'));
     console.log(hasDeepWikiData
@@ -128,11 +128,11 @@ async function runTest() {
     let toolSourcedFindings = 0;
     let totalFindings = 0;
     
-    Object.values(result.findings || {}).forEach((categoryFindings: any) => {
+    Object.values(result.findings || {}).forEach((categoryFindings) => {
       if (Array.isArray(categoryFindings)) {
         totalFindings += categoryFindings.length;
         categoryFindings.forEach(finding => {
-          if (finding.tool || finding.source || finding.metadata?.tool) {
+          if (finding.tool || (finding as any).source || finding.metadata?.tool) {
             toolSourcedFindings++;
           }
         });

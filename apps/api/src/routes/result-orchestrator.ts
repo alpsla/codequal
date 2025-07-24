@@ -3,11 +3,27 @@ import { checkRepositoryAccess } from '../middleware/auth-middleware';
 import { ResultOrchestrator } from '../services/result-orchestrator';
 import { validatePRAnalysisRequest, validateAnalysisMode } from '../validators/request-validators';
 import { enforceTrialLimits, incrementScanCount } from '../middleware/trial-enforcement';
+import { createLogger } from '@codequal/core/utils';
+
+const logger = createLogger('result-orchestrator-routes');
 
 export const resultOrchestratorRoutes = Router();
 
+// Interface for analysis state
+interface AnalysisState {
+  promise: Promise<unknown>;
+  status: 'processing' | 'complete' | 'failed' | 'cancelled';
+  startTime: Date;
+  request: PRAnalysisRequest;
+  user: string;
+  results?: unknown;
+  error?: string;
+  completedAt?: Date;
+  cancelledAt?: Date;
+}
+
 // Store for tracking active analyses
-export const activeAnalyses = new Map<string, any>();
+export const activeAnalyses = new Map<string, AnalysisState>();
 
 interface PRAnalysisRequest {
   repositoryUrl: string;
@@ -21,7 +37,27 @@ interface AnalysisResponse {
   status: 'queued' | 'processing' | 'complete' | 'failed';
   estimatedTime: number;
   progress?: number;
-  results?: any;
+  results?: unknown;
+}
+
+interface StatusResponse {
+  analysisId: string;
+  status: string;
+  progress: number;
+  startTime: Date;
+  currentStep: string;
+  result?: {
+    reportId?: string;
+    analysisComplete?: boolean;
+    reportUrl?: string;
+    [key: string]: unknown;
+  };
+  completedTime?: Date;
+  processingTime?: number;
+  error?: string;
+  failedTime?: Date;
+  estimatedTimeRemaining?: number;
+  elapsedTime?: number;
 }
 
 /**
@@ -104,7 +140,7 @@ interface AnalysisResponse {
  *         $ref: '#/components/responses/RateLimitError'
  */
 resultOrchestratorRoutes.post('/analyze-pr', enforceTrialLimits, incrementScanCount, async (req: Request, res: Response) => {
-  console.log('🚀 POST /analyze-pr received', {
+  logger.info('🚀 POST /analyze-pr received', {
     repositoryUrl: req.body.repositoryUrl,
     prNumber: req.body.prNumber,
     analysisMode: req.body.analysisMode,
@@ -146,12 +182,12 @@ resultOrchestratorRoutes.post('/analyze-pr', enforceTrialLimits, incrementScanCo
     const analysisId = `analysis_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     // Start analysis (async)
-    console.log(`📋 Creating analysis promise for ${analysisId}`);
+    logger.info(`📋 Creating analysis promise for ${analysisId}`);
     const analysisPromise = orchestrator.analyzePR({
       ...request,
       authenticatedUser: user
     });
-    console.log(`✅ Analysis promise created for ${analysisId}`);
+    logger.info(`✅ Analysis promise created for ${analysisId}`);
 
     // Store analysis promise for tracking
     activeAnalyses.set(analysisId, {
@@ -168,7 +204,7 @@ resultOrchestratorRoutes.post('/analyze-pr', enforceTrialLimits, incrementScanCo
     // Handle analysis completion
     analysisPromise
       .then(result => {
-        console.log(`✅ Analysis promise resolved for ${analysisId}`, {
+        logger.info(`✅ Analysis promise resolved for ${analysisId}`, {
           report: result?.report ? 'present' : 'missing',
           status: result?.status,
           timestamp: new Date().toISOString()
@@ -179,14 +215,14 @@ resultOrchestratorRoutes.post('/analyze-pr', enforceTrialLimits, incrementScanCo
           analysis.status = 'complete';
           analysis.results = result;
           analysis.completedAt = new Date();
-          console.log(`📊 Analysis marked as complete: ${analysisId}`);
+          logger.info(`📊 Analysis marked as complete: ${analysisId}`);
         } else {
-          console.error(`⚠️ Analysis ${analysisId} not found in activeAnalyses map`);
+          logger.error(`⚠️ Analysis ${analysisId} not found in activeAnalyses map`);
         }
       })
       .catch(error => {
-        console.error(`❌ Analysis ${analysisId} promise rejected:`, error);
-        console.error('Stack trace:', error.stack);
+        logger.error(`❌ Analysis ${analysisId} promise rejected:`, error as Error);
+        logger.error('Stack trace:', error instanceof Error ? error.stack : 'No stack trace available');
         
         const analysis = activeAnalyses.get(analysisId);
         if (analysis) {
@@ -205,7 +241,7 @@ resultOrchestratorRoutes.post('/analyze-pr', enforceTrialLimits, incrementScanCo
     res.json(response);
 
   } catch (error) {
-    console.error('PR analysis request error:', error);
+    logger.error('PR analysis request error:', error as Error);
     res.status(500).json({ 
       error: 'Internal server error',
       message: error instanceof Error ? error.message : 'Unknown error'
@@ -301,14 +337,14 @@ resultOrchestratorRoutes.get('/analysis/:id/progress', (req: Request, res: Respo
       progress: analysis.status === 'complete' ? 100 : Math.round(progress),
       estimatedTimeRemaining: analysis.status === 'complete' ? 0 : Math.max(0, estimatedTotal - elapsed),
       currentStep: getCurrentStep(analysis.status, progress),
-      ...(analysis.results && { results: analysis.results }),
+      ...(analysis.results ? { results: analysis.results } : {}),
       ...(analysis.error && { error: analysis.error })
     };
 
     res.json(response);
 
   } catch (error) {
-    console.error('Progress check error:', error);
+    logger.error('Progress check error:', error as Error);
     res.status(500).json({ 
       error: 'Internal server error',
       message: error instanceof Error ? error.message : 'Unknown error'
@@ -356,7 +392,7 @@ resultOrchestratorRoutes.get('/analysis/:id', (req: Request, res: Response) => {
     const progress = Math.min(95, (elapsed / estimatedTotal) * 100);
 
     // Build response based on status
-    const response: any = {
+    const response: StatusResponse = {
       analysisId,
       status: analysis.status,
       progress: analysis.status === 'complete' ? 100 : Math.round(progress),
@@ -367,7 +403,7 @@ resultOrchestratorRoutes.get('/analysis/:id', (req: Request, res: Response) => {
     // Add completion data if available
     if (analysis.status === 'complete' && analysis.results) {
       response.status = 'completed'; // Normalize to 'completed'
-      response.result = analysis.results;
+      response.result = analysis.results as { reportId?: string; analysisComplete?: boolean; reportUrl?: string; [key: string]: unknown };
       response.completedTime = new Date();
       response.processingTime = elapsed;
     } else if (analysis.status === 'failed' && analysis.error) {
@@ -382,7 +418,7 @@ resultOrchestratorRoutes.get('/analysis/:id', (req: Request, res: Response) => {
     res.json(response);
 
   } catch (error) {
-    console.error('Analysis status check error:', error);
+    logger.error('Analysis status check error:', error as Error);
     res.status(500).json({ 
       error: 'Internal server error',
       message: error instanceof Error ? error.message : 'Unknown error'
@@ -431,7 +467,7 @@ resultOrchestratorRoutes.delete('/analysis/:id', (req: Request, res: Response) =
     });
 
   } catch (error) {
-    console.error('Analysis cancellation error:', error);
+    logger.error('Analysis cancellation error:', error as Error);
     res.status(500).json({ 
       error: 'Internal server error',
       message: error instanceof Error ? error.message : 'Unknown error'

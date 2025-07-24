@@ -14,10 +14,8 @@ import openapiDocsRouter from './openapi-docs';
 import generateReportRouter from './generate-report'; // Add new report generation route
 import usersRouter from './users';
 import organizationsRouter from './organizations';
-import testProfileRouter from './test-profile';
 import billingRouter from './billing';
 import stripeWebhooksRouter from './stripe-webhooks';
-import testMonitoringNoAuthRouter from './test-monitoring-no-auth';
 
 const router = Router();
 
@@ -38,8 +36,6 @@ router.use('/api/monitoring', monitoringRouter);
 router.use('/api/generate-report', generateReportRouter); // Add new endpoint
 router.use('/api/users', usersRouter);
 router.use('/api/organizations', organizationsRouter);
-router.use('/api/test', testProfileRouter); // Test endpoints
-router.use('/api/test-monitoring', testMonitoringNoAuthRouter); // Test monitoring without auth
 router.use('/api/billing', billingRouter);
 router.use('/api/stripe', stripeWebhooksRouter);
 

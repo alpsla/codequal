@@ -41,6 +41,41 @@ export interface VersionInfo {
     source: 'cache' | 'context7';
     expiresAt: Date;
 }
+
+export interface CompiledFindings {
+    findings: Array<{
+        category: string;
+        severity: string;
+        message: string;
+        file?: string;
+        line?: number;
+    }>;
+    summary: string;
+    totalIssues: number;
+}
+
+export interface RecommendationModule {
+    recommendations: Array<{
+        category: string;
+        title: string;
+        description: string;
+        priority: 'high' | 'medium' | 'low';
+    }>;
+}
+
+export interface DeepWikiSummary {
+    overview: string;
+    keyInsights: string[];
+    timestamp: Date;
+}
+
+export interface AnalysisContext {
+    repositoryUrl: string;
+    branch?: string;
+    primaryLanguage?: string;
+    dependencies?: Record<string, string>;
+    metadata?: Record<string, unknown>;
+}
 export interface EducationalDataStorageConfig {
     cacheOnlyPatterns: {
         documentation: {
@@ -79,7 +114,7 @@ export declare class EducationalToolOrchestrator {
      * Called by orchestrator AFTER specialized agents complete
      * Tools receive the compiled findings as context for educational content generation
      */
-    executeEducationalTools(compiledFindings: any, recommendationModule: any, deepWikiSummary: any, analysisContext: any): Promise<EducationalToolResult>;
+    executeEducationalTools(compiledFindings: CompiledFindings, recommendationModule: RecommendationModule, deepWikiSummary: DeepWikiSummary, analysisContext: AnalysisContext): Promise<EducationalToolResult>;
     /**
      * Check cache for existing content
      */

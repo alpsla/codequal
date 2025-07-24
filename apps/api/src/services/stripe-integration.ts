@@ -9,11 +9,70 @@ const PricingConfig = {
     scale: { name: 'Scale', basePrice: 990, currency: 'USD', stripePriceId: '' },
     enterprise: { name: 'Enterprise', basePrice: 0, currency: 'USD', stripePriceId: '' }
   },
-  PROMO_CODES: {} as Record<string, any>
+  PROMO_CODES: {} as Record<string, { discount: number; description: string }>
 };
 
 // Stripe type definition (since we don't have the module)
-type Stripe = any;
+interface StripeCustomer {
+  id: string;
+}
+
+interface StripeSubscription {
+  id: string;
+  status: string;
+  current_period_end: Date;
+}
+
+interface StripeCheckoutSession {
+  url: string;
+}
+
+interface StripeEvent {
+  id: string;
+  type: string;
+  data: {
+    object: Record<string, unknown>;
+  };
+}
+
+interface StripeProduct {
+  id: string;
+  name: string;
+}
+
+interface StripePrice {
+  id: string;
+  unit_amount: number;
+}
+
+interface Stripe {
+  customers: {
+    create(params: { email: string; metadata?: Record<string, unknown> }): Promise<StripeCustomer>;
+  };
+  subscriptions: {
+    create(params: { customer: string; items: Array<{ price: string }>; metadata?: Record<string, unknown> }): Promise<StripeSubscription>;
+  };
+  subscriptionItems: {
+    createUsageRecord(itemId: string, params: { quantity: number; timestamp: number; action: string }): Promise<unknown>;
+  };
+  products: {
+    create(params: { name: string; type: string }): Promise<StripeProduct>;
+  };
+  prices: {
+    create(params: Record<string, unknown>): Promise<StripePrice>;
+  };
+  checkout: {
+    sessions: {
+      create(params: Record<string, unknown>): Promise<StripeCheckoutSession>;
+    };
+  };
+  webhookEndpoints: {
+    create(params: { url: string; enabled_events: string[] }): Promise<{ secret: string }>;
+  };
+  webhooks: {
+    constructEvent(payload: string | Buffer, signature: string, secret: string): StripeEvent;
+  };
+}
 
 export class StripeIntegration {
   private stripe: Stripe | null = null;
@@ -35,7 +94,7 @@ export class StripeIntegration {
   }
 
   // Placeholder methods that will work when Stripe is connected
-  async createCustomer(email: string, metadata?: any): Promise<string> {
+  async createCustomer(email: string, metadata?: Record<string, unknown>): Promise<string> {
     if (!this.stripe) {
       this.logger.warn('Stripe not configured, returning mock customer ID');
       return `mock_customer_${Date.now()}`;
@@ -56,7 +115,7 @@ export class StripeIntegration {
     customerId: string,
     tierId: string,
     promoCode?: string
-  ): Promise<any> {
+  ): Promise<StripeSubscription> {
     if (!this.stripe) {
       this.logger.warn('Stripe not configured, returning mock subscription');
       return {
@@ -72,7 +131,7 @@ export class StripeIntegration {
     }
 
     // Apply promo code if provided
-    const params: any = {
+    const params: { customer: string; items: Array<{ price: string }>; metadata?: Record<string, unknown> } = {
       customer: customerId,
       items: [{ price: tier.stripePriceId }],
       metadata: {
@@ -92,7 +151,7 @@ export class StripeIntegration {
     tierId: string,
     successUrl: string,
     cancelUrl: string,
-    metadata?: any
+    metadata?: Record<string, unknown>
   ): Promise<string> {
     if (!this.stripe) {
       this.logger.warn('Stripe not configured, returning mock checkout URL');
@@ -128,13 +187,16 @@ export class StripeIntegration {
       }
     });
 
-    return session.url!;
+    if (!session.url) {
+      throw new Error('Failed to create checkout session URL');
+    }
+    return session.url;
   }
 
   async handleWebhook(
     rawBody: string,
     signature: string
-  ): Promise<{ type: string; data: any }> {
+  ): Promise<{ type: string; data: unknown }> {
     if (!this.stripe) {
       this.logger.warn('Stripe not configured, ignoring webhook');
       return { type: 'ignored', data: {} };
@@ -223,9 +285,7 @@ export class StripeIntegration {
       // Create or update product
       const product = await this.stripe.products.create({
         name: `CodeQual ${tier.name}`,
-        metadata: {
-          tier_id: tierId
-        }
+        type: 'service'
       });
 
       // Create price

@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types, @typescript-eslint/no-unused-vars, no-console */
+/* eslint-disable @typescript-eslint/explicit-module-boundary-types, @typescript-eslint/no-unused-vars, no-console */
 
 import { Logger } from '../../utils/logger';
 import { exec } from 'child_process';
@@ -14,10 +14,32 @@ const execAsync = promisify(exec);
 export interface ToolExecutionResult {
   toolId: string;
   success: boolean;
-  output?: any;
+  output?: unknown;
   error?: string;
   executionTime: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
+}
+
+interface PackageInfo {
+  licenses?: string | string[];
+  current?: string;
+  latest?: string;
+  [key: string]: unknown;
+}
+
+interface ESLintResult {
+  errorCount?: number;
+  warningCount?: number;
+  fixableErrorCount?: number;
+  fixableWarningCount?: number;
+  filePath?: string;
+  messages?: Array<{
+    severity: number;
+    message: string;
+    ruleId?: string;
+    line?: number;
+    column?: number;
+  }>;
 }
 
 /**
@@ -380,7 +402,8 @@ export class ToolRunnerService {
       const riskyLicenses = [];
       
       for (const [pkg, info] of Object.entries(licenseData)) {
-        const license = (info as any).licenses || 'Unknown';
+        const licenses = (info as PackageInfo).licenses || 'Unknown';
+        const license = Array.isArray(licenses) ? licenses.join(', ') : licenses;
         licenseTypes.add(license);
         
         // Check for risky licenses
@@ -501,8 +524,8 @@ export class ToolRunnerService {
       let major = 0, minor = 0, patch = 0;
       
       for (const pkg of Object.values(outdatedData)) {
-        const current = (pkg as any).current;
-        const latest = (pkg as any).latest;
+        const current = (pkg as PackageInfo).current;
+        const latest = (pkg as PackageInfo).latest;
         
         if (!current || !latest) continue;
         
@@ -648,8 +671,8 @@ export class ToolRunnerService {
         }];
       }
       
-      const totalErrors = eslintResults.reduce((sum: number, file: any) => sum + (file.errorCount || 0), 0);
-      const totalWarnings = eslintResults.reduce((sum: number, file: any) => sum + (file.warningCount || 0), 0);
+      const totalErrors = eslintResults.reduce((sum: number, file: ESLintResult) => sum + (file.errorCount || 0), 0);
+      const totalWarnings = eslintResults.reduce((sum: number, file: ESLintResult) => sum + (file.warningCount || 0), 0);
       
       return {
         toolId: 'eslint',
@@ -660,7 +683,7 @@ export class ToolRunnerService {
           totalFiles: eslintResults.length,
           totalErrors,
           totalWarnings,
-          fixableIssues: eslintResults.reduce((sum: number, file: any) => sum + (file.fixableErrorCount || 0) + (file.fixableWarningCount || 0), 0)
+          fixableIssues: eslintResults.reduce((sum: number, file: ESLintResult) => sum + (file.fixableErrorCount || 0) + (file.fixableWarningCount || 0), 0)
         }
       };
     } catch (error) {
@@ -700,10 +723,10 @@ export class ToolRunnerService {
           needsFormatting: unformattedFiles.length > 0
         }
       };
-    } catch (error: any) {
+    } catch (error) {
       // Prettier returns exit code 1 if files need formatting
-      if (error.code === 1 && error.stdout) {
-        const unformattedFiles = error.stdout.trim().split('\n').filter((line: string) => line.trim());
+      if ((error as any).code === 1 && (error as any).stdout) {
+        const unformattedFiles = (error as any).stdout.trim().split('\n').filter((line: string) => line.trim());
         return {
           toolId: 'prettier-check',
           success: true,
@@ -754,9 +777,9 @@ export class ToolRunnerService {
           errorCount: stderr ? stderr.split('\n').filter(line => line.includes('error')).length : 0
         }
       };
-    } catch (error: any) {
+    } catch (error) {
       // TypeScript returns exit code when there are errors
-      const errors = error.stderr ? error.stderr.split('\n').filter((line: string) => line.trim()) : [];
+      const errors = (error as any).stderr ? (error as any).stderr.split('\n').filter((line: string) => line.trim()) : [];
       
       return {
         toolId: 'typescript-strict',
@@ -764,7 +787,7 @@ export class ToolRunnerService {
         output: {
           compileErrors: errors,
           hasErrors: true,
-          stdout: error.stdout || ''
+          stdout: (error as any).stdout || ''
         },
         executionTime: Date.now() - startTime,
         metadata: {

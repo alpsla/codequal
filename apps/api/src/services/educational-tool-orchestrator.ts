@@ -7,6 +7,7 @@
 import { createLogger } from '@codequal/core/utils';
 import { ToolResultRetrievalService } from '@codequal/core/services/deepwiki-tools';
 import { AuthenticatedUser } from '../middleware/auth-middleware';
+import { Finding, Recommendation, PRContext, CompiledFindings, DeepWikiSummary } from './result-orchestrator';
 
 export interface EducationalToolResult {
   documentation: EducationalDocumentation[];
@@ -48,6 +49,48 @@ export interface VersionInfo {
   expiresAt: Date;
 }
 
+export interface RecommendationModule {
+  recommendations: Recommendation[];
+  summary?: {
+    totalRecommendations: number;
+    focusAreas: string[];
+    priorityBreakdown?: {
+      critical: number;
+      high: number;
+      medium: number;
+      low: number;
+    };
+    estimatedTotalEffort?: string;
+  };
+}
+
+export interface AnalysisContext {
+  prContext: PRContext;
+  repositoryUrl?: string;
+  analysisId?: string;
+}
+
+interface VectorDBResult {
+  content: string;
+  metadata?: {
+    url?: string;
+    version?: string;
+    lastUpdated?: string | number;
+  };
+}
+
+interface VectorDBRecommendation {
+  content: string;
+  learningContext?: {
+    relatedConcepts?: string[];
+  };
+  metadata?: {
+    url?: string;
+    version?: string;
+    lastUpdated?: string | number;
+  };
+}
+
 export interface EducationalDataStorageConfig {
   // Cache-only data (expires quickly, no persistent storage)
   cacheOnlyPatterns: {
@@ -82,7 +125,7 @@ export interface EducationalDataStorageConfig {
 
 export class EducationalToolOrchestrator {
   private readonly logger = createLogger('EducationalToolOrchestrator');
-  private readonly cacheManager: Map<string, { data: any; expiresAt: Date }> = new Map();
+  private readonly cacheManager: Map<string, { data: unknown; expiresAt: Date }> = new Map();
   
   // Default storage configuration with strict limits
   private readonly storageConfig: EducationalDataStorageConfig = {
@@ -123,10 +166,10 @@ export class EducationalToolOrchestrator {
    * Tools receive the compiled findings as context for educational content generation
    */
   async executeEducationalTools(
-    compiledFindings: any,
-    recommendationModule: any,
-    deepWikiSummary: any,
-    analysisContext: any
+    compiledFindings: CompiledFindings,
+    recommendationModule: RecommendationModule,
+    deepWikiSummary: DeepWikiSummary,
+    analysisContext: AnalysisContext
   ): Promise<EducationalToolResult> {
     const startTime = Date.now();
     const result: EducationalToolResult = {
@@ -148,14 +191,14 @@ export class EducationalToolOrchestrator {
         topics: topics.length,
         packages: packages.length,
         compiledFindings: Object.keys(compiledFindings || {}).length,
-        recommendations: recommendationModule?.summary?.totalRecommendations || 0
+        recommendations: recommendationModule?.recommendations?.length || 0
       });
 
       // Step 2: Execute educational tools with compiled context
       for (const topic of topics) {
         const cached = await this.checkCache('documentation', topic);
         if (cached) {
-          result.documentation.push(cached);
+          result.documentation.push(cached as EducationalDocumentation);
           result.cachedResults++;
         } else {
           // Execute educational tools with compiled findings context
@@ -186,7 +229,7 @@ export class EducationalToolOrchestrator {
       for (const pkg of packages.slice(0, 10)) { // Limit to 10 packages
         const cached = await this.checkCache('version', pkg);
         if (cached) {
-          result.versionInfo.push(cached);
+          result.versionInfo.push(cached as VersionInfo);
           result.cachedResults++;
         } else {
           const fresh = await this.fetchVersionInfo(pkg);
@@ -222,7 +265,7 @@ export class EducationalToolOrchestrator {
   /**
    * Check cache for existing content
    */
-  private async checkCache(type: string, key: string): Promise<any | null> {
+  private async checkCache(type: string, key: string): Promise<unknown | null> {
     const cacheKey = `${this.authenticatedUser.id}:${type}:${key}`;
     const cached = this.cacheManager.get(cacheKey);
     
@@ -241,7 +284,7 @@ export class EducationalToolOrchestrator {
   /**
    * Fetch documentation with Context 7 integration
    */
-  private async fetchDocumentation(topic: string, context: any): Promise<EducationalDocumentation[]> {
+  private async fetchDocumentation(topic: string, context: AnalysisContext): Promise<EducationalDocumentation[]> {
     try {
       // First try Vector DB (lowest cost)
       const vectorResults = await this.searchVectorDB(topic, context);
@@ -272,7 +315,7 @@ export class EducationalToolOrchestrator {
   /**
    * Fetch working examples (prefer curated content)
    */
-  private async fetchWorkingExamples(topics: string[], context: any): Promise<WorkingExample[]> {
+  private async fetchWorkingExamples(topics: string[], context: AnalysisContext): Promise<WorkingExample[]> {
     const examples: WorkingExample[] = [];
     
     // First check curated examples (no external cost)
@@ -314,7 +357,7 @@ export class EducationalToolOrchestrator {
   /**
    * Search Vector DB for existing educational content
    */
-  private async searchVectorDB(topic: string, context: any): Promise<any[]> {
+  private async searchVectorDB(topic: string, context: AnalysisContext): Promise<VectorDBResult[]> {
     try {
       // This would use the actual Vector DB service
       // For now, return empty to show the pattern
@@ -420,29 +463,23 @@ function validateInput(input: string): boolean {
    * Extract educational topics from compiled findings and recommendations
    */
   private extractTopicsFromCompiledFindings(
-    compiledFindings: any, 
-    recommendationModule: any
+    compiledFindings: CompiledFindings, 
+    recommendationModule: RecommendationModule
   ): string[] {
     const topics = new Set<string>();
     
     // Extract from compiled findings
-    Object.keys(compiledFindings?.findings || {}).forEach(category => {
-      topics.add(category);
-      const findings = compiledFindings?.findings?.[category] || [];
-      findings.forEach((finding: any) => {
-        if (finding.category) topics.add(finding.category);
-        if (finding.type) topics.add(finding.type);
-      });
+    const findingsArray = this.extractFindingsArray(compiledFindings);
+    findingsArray.forEach((finding: Finding) => {
+      if (finding.category) topics.add(finding.category);
     });
     
     // Extract from recommendations
     if (recommendationModule?.recommendations) {
-      recommendationModule.recommendations.forEach((rec: any) => {
+      recommendationModule.recommendations.forEach((rec: Recommendation) => {
         topics.add(rec.category);
         topics.add(rec.title);
-        rec.learningContext?.relatedConcepts?.forEach((concept: string) => {
-          topics.add(concept);
-        });
+        // Skip learningContext for now as it's not part of Recommendation interface
       });
     }
     
@@ -459,12 +496,12 @@ function validateInput(input: string): boolean {
   /**
    * Extract package names from analysis context
    */
-  private extractPackagesFromAnalysis(analysisContext: any): string[] {
+  private extractPackagesFromAnalysis(analysisContext: AnalysisContext): string[] {
     const packages = new Set<string>();
     
     // Extract from PR context if available
     if (analysisContext.prContext?.files) {
-      analysisContext.prContext.files.forEach((file: any) => {
+      analysisContext.prContext.files.forEach((file) => {
         if (file.path === 'package.json' && file.content) {
           try {
             const packageJson = JSON.parse(file.content);
@@ -486,9 +523,9 @@ function validateInput(input: string): boolean {
    */
   private async fetchDocumentationWithCompiledContext(
     topic: string,
-    compiledFindings: any,
-    recommendationModule: any,
-    analysisContext: any
+    compiledFindings: CompiledFindings,
+    recommendationModule: RecommendationModule,
+    analysisContext: AnalysisContext
   ): Promise<EducationalDocumentation[]> {
     try {
       // First try Vector DB (lowest cost)
@@ -527,9 +564,9 @@ function validateInput(input: string): boolean {
    */
   private async fetchWorkingExamplesWithCompiledContext(
     topics: string[],
-    compiledFindings: any,
-    recommendationModule: any,
-    analysisContext: any
+    compiledFindings: CompiledFindings,
+    recommendationModule: RecommendationModule,
+    analysisContext: AnalysisContext
   ): Promise<WorkingExample[]> {
     const examples: WorkingExample[] = [];
     
@@ -559,15 +596,15 @@ function validateInput(input: string): boolean {
    */
   private async executeContext7WithCompiledContext(
     topic: string,
-    compiledFindings: any,
-    recommendationModule: any
+    compiledFindings: CompiledFindings,
+    recommendationModule: RecommendationModule
   ): Promise<EducationalDocumentation[]> {
     try {
       // This would execute the Context 7 MCP tool through the tool manager
       // For now, return placeholder showing the pattern
       this.logger.info('Would execute Context 7 MCP tool with compiled context', {
         topic,
-        findingsCount: Object.keys(compiledFindings?.findings || {}).length,
+        findingsCount: this.extractFindingsArray(compiledFindings).length,
         recommendationsCount: recommendationModule?.recommendations?.length || 0
       });
       
@@ -583,14 +620,14 @@ function validateInput(input: string): boolean {
    */
   private async executeWorkingExamplesToolWithCompiledContext(
     topics: string[],
-    compiledFindings: any,
-    recommendationModule: any
+    compiledFindings: CompiledFindings,
+    recommendationModule: RecommendationModule
   ): Promise<WorkingExample[]> {
     try {
       // This would execute the working examples MCP tool through the tool manager
       this.logger.info('Would execute working examples MCP tool with compiled context', {
         topics: topics.length,
-        findingsCount: Object.keys(compiledFindings?.findings || {}).length
+        findingsCount: this.extractFindingsArray(compiledFindings).length
       });
       
       return [];
@@ -605,13 +642,17 @@ function validateInput(input: string): boolean {
    */
   private async getCuratedExamplesForCompiledFindings(
     topics: string[],
-    compiledFindings: any,
-    recommendationModule: any
+    compiledFindings: CompiledFindings,
+    recommendationModule: RecommendationModule
   ): Promise<WorkingExample[]> {
     const examples: WorkingExample[] = [];
     
     // Generate examples based on actual findings
-    Object.keys(compiledFindings?.findings || {}).forEach(category => {
+    const categories = new Set<string>();
+    this.extractFindingsArray(compiledFindings).forEach(f => {
+      if (f.category) categories.add(f.category);
+    });
+    categories.forEach(category => {
       if (category === 'security') {
         examples.push({
           id: 'curated-security-compiled',
@@ -647,5 +688,47 @@ interface Repository<T> {
     });
     
     return examples;
+  }
+
+  /**
+   * Extract findings array from CompiledFindings structure
+   */
+  private extractFindingsArray(compiledFindings: CompiledFindings): Finding[] {
+    const findings: Finding[] = [];
+    
+    if (compiledFindings.codeQuality) {
+      findings.push(...compiledFindings.codeQuality.complexityIssues);
+      findings.push(...compiledFindings.codeQuality.maintainabilityIssues);
+      findings.push(...compiledFindings.codeQuality.codeSmells);
+    }
+    
+    if (compiledFindings.security) {
+      findings.push(...compiledFindings.security.vulnerabilities);
+      findings.push(...compiledFindings.security.complianceIssues);
+    }
+    
+    if (compiledFindings.performance) {
+      findings.push(...compiledFindings.performance.performanceIssues);
+      findings.push(...compiledFindings.performance.optimizationOpportunities);
+      findings.push(...compiledFindings.performance.bottlenecks);
+    }
+    
+    if (compiledFindings.architecture) {
+      findings.push(...compiledFindings.architecture.designPatternViolations);
+      findings.push(...compiledFindings.architecture.technicalDebt);
+      findings.push(...compiledFindings.architecture.refactoringOpportunities);
+    }
+    
+    if (compiledFindings.dependency) {
+      findings.push(...compiledFindings.dependency.vulnerabilityIssues);
+      findings.push(...compiledFindings.dependency.licenseIssues);
+      findings.push(...compiledFindings.dependency.outdatedPackages);
+    }
+    
+    if (compiledFindings.criticalIssues) {
+      findings.push(...compiledFindings.criticalIssues);
+    }
+    
+    return findings;
   }
 }

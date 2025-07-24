@@ -14,7 +14,7 @@ interface ApiKeyData {
   expires_at: string | null;
   created_at: string;
   last_used_at: string | null;
-  metadata: any;
+  metadata: Record<string, unknown>;
 }
 
 declare global {

@@ -45,7 +45,7 @@ const BENCHMARK_SCENARIOS = [
     name: 'Security Analysis Agent',
     context: { 
       language: 'security_agent', 
-      sizeCategory: 'universal' as any,
+      sizeCategory: RepositorySizeCategory.SMALL,
       tags: ['security', 'vulnerability-scanning']
     },
     expectedCharacteristics: 'High quality, thorough analysis'
@@ -54,7 +54,7 @@ const BENCHMARK_SCENARIOS = [
     name: 'Performance Analysis Agent',
     context: { 
       language: 'performance_agent', 
-      sizeCategory: 'universal' as any,
+      sizeCategory: RepositorySizeCategory.SMALL,
       tags: ['performance', 'optimization']
     },
     expectedCharacteristics: 'Fast, efficient'
@@ -63,7 +63,7 @@ const BENCHMARK_SCENARIOS = [
     name: 'Educational Content Agent',
     context: { 
       language: 'educational_agent', 
-      sizeCategory: 'universal' as any,
+      sizeCategory: RepositorySizeCategory.SMALL,
       tags: ['education', 'documentation']
     },
     expectedCharacteristics: 'Clear, detailed explanations'
@@ -101,13 +101,13 @@ async function main() {
         const modelKey = `${model.provider}/${model.model}`;
         selectedModels.set(modelKey, (selectedModels.get(modelKey) || 0) + 1);
         
-        const pricing = (model as any).pricing || { input: 0, output: 0 };
+        const pricing = model.pricing || { input: 0, output: 0 };
         const avgCost = (pricing.input + pricing.output) / 2;
         
         const role = index === 0 ? 'Primary' : 'Fallback';
         console.log(chalk.green(`  ${role}: ${modelKey}`));
         console.log(`    Cost: $${avgCost.toFixed(4)}/1M tokens`);
-        console.log(`    Context: ${(model as any).capabilities?.contextWindow || 'N/A'} tokens`);
+        console.log(`    Context: ${model.capabilities?.contextWindow || 'N/A'} tokens`);
         
         if (index === 0) {
           costAnalysis.push({

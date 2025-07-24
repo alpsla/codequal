@@ -205,7 +205,7 @@ export class ModelConfigurationFactory {
     // Update the static configuration with the generated one
     for (const [language, sizeConfigs] of Object.entries(updatedConfigs)) {
       // Create a mutable copy of REPOSITORY_MODEL_CONFIGS
-      const mutableConfigs = { ...REPOSITORY_MODEL_CONFIGS } as any;
+      const mutableConfigs = { ...REPOSITORY_MODEL_CONFIGS } as unknown as Record<string, Record<RepositorySizeCategory, RepositoryModelConfig>>;
       
       if (!mutableConfigs[language]) {
         mutableConfigs[language] = {} as Record<RepositorySizeCategory, RepositoryModelConfig>;

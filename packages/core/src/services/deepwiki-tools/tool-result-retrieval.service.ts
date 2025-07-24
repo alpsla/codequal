@@ -273,9 +273,10 @@ export class ToolResultRetrievalService {
       
       // Apply score filter if specified
       if (filter.minScore !== undefined) {
+        const minScore = filter.minScore;
         return toolResults.filter(result => 
           result.metadata.score !== undefined && 
-          result.metadata.score >= filter.minScore!
+          result.metadata.score >= minScore
         );
       }
       

@@ -7,7 +7,7 @@ export async function monitorStep<T>(
   sessionId: string,
   stepName: string,
   operation: () => Promise<T>,
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 ): Promise<T> {
   const stepId = dataFlowMonitor.startStep(sessionId, stepName, metadata);
   
@@ -15,17 +15,17 @@ export async function monitorStep<T>(
     const result = await operation();
     
     // Extract meaningful data from result for monitoring
-    let stepData: any = {};
+    let stepData: Record<string, unknown> = {};
     if (result && typeof result === 'object') {
       if ('length' in result) {
-        stepData.count = (result as any).length;
+        stepData.count = (result as { length: number }).length;
       }
       if ('existsInVectorDB' in result) {
         stepData = result;
       }
       if ('findings' in result) {
-        stepData.findingsCount = Object.values((result as any).findings || {})
-          .reduce((sum: number, arr: any) => sum + (Array.isArray(arr) ? arr.length : 0), 0);
+        stepData.findingsCount = Object.values((result as { findings?: Record<string, unknown[]> }).findings || {})
+          .reduce((sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0), 0);
       }
     }
     
@@ -41,7 +41,7 @@ export async function monitorStep<T>(
  * Monitor DeepWiki data retrieval
  */
 export function monitorDeepWikiRetrieval(sessionId: string, repositoryUrl: string) {
-  return async (operation: () => Promise<any>) => {
+  return async <T>(operation: () => Promise<T>) => {
     return monitorStep(sessionId, 'Fetch DeepWiki Data', operation, {
       repositoryUrl,
       source: 'VectorDB'
@@ -53,7 +53,7 @@ export function monitorDeepWikiRetrieval(sessionId: string, repositoryUrl: strin
  * Monitor agent execution
  */
 export function monitorAgentExecution(sessionId: string, agentRole: string) {
-  return async (operation: () => Promise<any>) => {
+  return async <T>(operation: () => Promise<T>) => {
     return monitorStep(sessionId, `Execute ${agentRole} Agent`, operation, {
       agentRole
     });
@@ -64,7 +64,7 @@ export function monitorAgentExecution(sessionId: string, agentRole: string) {
  * Monitor Vector DB operations
  */
 export function monitorVectorDBOperation(sessionId: string, operation: string) {
-  return async (op: () => Promise<any>) => {
+  return async <T>(op: () => Promise<T>) => {
     return monitorStep(sessionId, `VectorDB: ${operation}`, op, {
       database: 'VectorDB',
       operation

@@ -1,11 +1,15 @@
 import { AuthenticatedUser } from '../middleware/auth-middleware';
 import { VectorContextService, createVectorContextService } from '@codequal/agents/multi-agent/vector-context-service';
 import { AuthenticatedUser as AgentAuthenticatedUser, UserRole, UserStatus, UserPermissions } from '@codequal/agents/multi-agent/types/auth';
+import { AgentRole } from '@codequal/core/config/agent-registry';
+import { VectorSearchResult } from '@codequal/agents/multi-agent/enhanced-executor';
 import axios, { AxiosInstance } from 'axios';
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import { createLogger } from '@codequal/core/utils';
 
 const execAsync = promisify(exec);
+const logger = createLogger('DeepWikiManager');
 
 export interface AnalysisJob {
   jobId: string;
@@ -20,14 +24,27 @@ export interface AnalysisJob {
   prNumber?: number;
 }
 
+interface AgentAnalysis {
+  findings?: Array<{
+    type: string;
+    severity: string;
+    message: string;
+    file?: string;
+    line?: number;
+  }>;
+  score?: number;
+  recommendations?: string[];
+  [key: string]: unknown;
+}
+
 export interface AnalysisResults {
   repositoryUrl: string;
   analysis: {
-    architecture: any;
-    security: any;
-    performance: any;
-    codeQuality: any;
-    dependencies: any;
+    architecture: AgentAnalysis;
+    security: AgentAnalysis;
+    performance: AgentAnalysis;
+    codeQuality: AgentAnalysis;
+    dependencies: AgentAnalysis;
   };
   metadata: {
     analyzedAt: Date;
@@ -56,10 +73,17 @@ interface DeepWikiRequest {
 /**
  * Real DeepWiki Manager - integrates with actual DeepWiki Kubernetes service
  */
+interface RepositoryCacheEntry {
+  files: unknown[];
+  cachedAt: Date;
+  repositoryUrl: string;
+  branch: string;
+}
+
 export class DeepWikiManager {
   private vectorContextService: VectorContextService;
   private activeJobs = new Map<string, AnalysisJob>();
-  private repositoryCache = new Map<string, any>();
+  private repositoryCache = new Map<string, RepositoryCacheEntry>();
   private deepwikiClient: AxiosInstance;
   
   // Configuration
@@ -90,7 +114,7 @@ export class DeepWikiManager {
   /**
    * Convert middleware AuthenticatedUser to agent-compatible format
    */
-  private convertToAgentUser(user: AuthenticatedUser): any {
+  private convertToAgentUser(user: AuthenticatedUser): AgentAuthenticatedUser {
     // Implementation remains the same as original
     if (user.email === 'test@codequal.dev') {
       return {
@@ -98,13 +122,12 @@ export class DeepWikiManager {
         email: user.email,
         role: 'admin' as UserRole,
         status: 'active' as UserStatus,
-        tenantId: user.id,
+        organizationId: user.id,
         session: {
-          id: 'test-session',
+          token: 'test-session',
           fingerprint: 'test-fingerprint',
           ipAddress: '127.0.0.1',
           userAgent: 'test-agent',
-          createdAt: new Date(),
           expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
         },
         permissions: {
@@ -124,11 +147,6 @@ export class DeepWikiManager {
           loginCount: 1,
           preferredLanguage: 'en',
           timezone: 'UTC'
-        },
-        features: {
-          deepAnalysis: true,
-          aiRecommendations: true,
-          advancedReports: true
         }
       };
     }
@@ -138,13 +156,12 @@ export class DeepWikiManager {
       email: user.email,
       role: 'user' as UserRole,
       status: 'active' as UserStatus,
-      tenantId: user.id,
+      organizationId: user.id,
       session: {
-        id: `session-${user.id}`,
+        token: `session-${user.id}`,
         fingerprint: `fingerprint-${user.id}`,
         ipAddress: '127.0.0.1',
         userAgent: 'CodeQual-API',
-        createdAt: new Date(),
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
       },
       permissions: {
@@ -162,11 +179,6 @@ export class DeepWikiManager {
         loginCount: 1,
         preferredLanguage: 'en',
         timezone: 'UTC'
-      },
-      features: {
-        deepAnalysis: true,
-        aiRecommendations: true,
-        advancedReports: true
       }
     };
   }
@@ -179,21 +191,22 @@ export class DeepWikiManager {
       const agentAuthenticatedUser = this.convertToAgentUser(this.authenticatedUser);
       const existing = await this.vectorContextService.getRepositoryContext(
         repositoryUrl,
-        'orchestrator' as any,
+        AgentRole.ORCHESTRATOR,
         agentAuthenticatedUser,
         { minSimilarity: 0.95 }
       );
 
       // Check if we have analysis for the specific branch
       if (branch) {
-        return existing.recentAnalysis.some((analysis: any) => 
-          analysis.metadata?.branch === branch
-        );
+        return existing.recentAnalysis.some((analysis: VectorSearchResult) => {
+          const metadata = analysis.metadata as Record<string, unknown>;
+          return metadata?.branch === branch;
+        });
       }
 
       return existing.recentAnalysis.length > 0;
     } catch (error) {
-      console.error('Repository existence check failed:', error);
+      logger.error('Repository existence check failed:', error as Error);
       return false;
     }
   }
@@ -214,7 +227,7 @@ export class DeepWikiManager {
       
       return podName;
     } catch (error) {
-      console.error('[DeepWiki] Failed to get pod:', error);
+      logger.error('[DeepWiki] Failed to get pod:', error as Error);
       throw new Error('DeepWiki service unavailable');
     }
   }
@@ -262,7 +275,7 @@ export class DeepWikiManager {
 
       // Get DeepWiki pod
       const podName = await this.getDeepWikiPod();
-      console.log(`[DeepWiki] Using pod: ${podName}`);
+      logger.info(`[DeepWiki] Using pod: ${podName}`);
 
       // Set up port forwarding
       const killPortForward = await this.setupPortForwarding(podName);
@@ -295,9 +308,9 @@ export class DeepWikiManager {
           deepwikiRequest.include_diff = true;
         }
 
-        console.log(`[DeepWiki] Analyzing repository: ${repositoryUrl}`);
-        console.log(`[DeepWiki] Branch: ${options?.branch || 'main'} (base: ${options?.baseBranch || 'main'})`);
-        console.log(`[DeepWiki] Model: ${this.PRIMARY_MODEL}`);
+        logger.info(`[DeepWiki] Analyzing repository: ${repositoryUrl}`);
+        logger.info(`[DeepWiki] Branch: ${options?.branch || 'main'} (base: ${options?.baseBranch || 'main'})`);
+        logger.info(`[DeepWiki] Model: ${this.PRIMARY_MODEL}`);
 
         // Call DeepWiki API
         let response;
@@ -309,11 +322,11 @@ export class DeepWikiManager {
             deepwikiRequest
           );
         } catch (primaryError) {
-          console.warn(`[DeepWiki] Primary model failed: ${primaryError}`);
+          logger.warn(`[DeepWiki] Primary model failed: ${primaryError}`);
           
           // Try fallback models
           for (const fallbackModel of this.FALLBACK_MODELS) {
-            console.log(`[DeepWiki] Trying fallback model: ${fallbackModel}`);
+            logger.info(`[DeepWiki] Trying fallback model: ${fallbackModel}`);
             try {
               deepwikiRequest.model = fallbackModel;
               response = await this.deepwikiClient.post(
@@ -323,7 +336,7 @@ export class DeepWikiManager {
               modelUsed = fallbackModel;
               break;
             } catch (fallbackError) {
-              console.warn(`[DeepWiki] Fallback model ${fallbackModel} failed:`, fallbackError);
+              logger.warn(`[DeepWiki] Fallback model ${fallbackModel} failed:`, fallbackError as Error);
             }
           }
           
@@ -347,7 +360,7 @@ export class DeepWikiManager {
         job.status = 'completed';
         job.completedAt = new Date();
         
-        console.log(`[DeepWiki] Analysis completed for ${repositoryUrl} using ${modelUsed}`);
+        logger.info(`[DeepWiki] Analysis completed for ${repositoryUrl} using ${modelUsed}`);
         
       } finally {
         // Clean up port forwarding
@@ -359,7 +372,7 @@ export class DeepWikiManager {
       job.error = error instanceof Error ? error.message : 'Analysis failed';
       job.completedAt = new Date();
       
-      console.error(`[DeepWiki] Analysis failed for ${repositoryUrl}:`, error);
+      logger.error(`[DeepWiki] Analysis failed for ${repositoryUrl}:`, error as Error);
       throw error;
     }
   }
@@ -367,7 +380,7 @@ export class DeepWikiManager {
   /**
    * Get analysis prompt based on template
    */
-  private getAnalysisPrompt(template: string, repositoryUrl: string, options?: any): string {
+  private getAnalysisPrompt(template: string, repositoryUrl: string, options?: Record<string, unknown>): string {
     // In production, these would be loaded from files or database
     const prompts: { [key: string]: string } = {
       standard: `Analyze the repository at ${repositoryUrl} and provide a comprehensive analysis including:
@@ -408,18 +421,18 @@ ${options?.includeDiff ? '\nInclude analysis of changes between branches' : ''}`
    * Parse DeepWiki response into structured analysis results
    */
   private parseDeepWikiResponse(
-    response: any, 
+    response: { choices?: Array<{ message?: { content?: string } }> } | string, 
     repositoryUrl: string, 
     modelUsed: string,
-    options?: any,
+    options?: Record<string, unknown>,
     jobId?: string
   ): AnalysisResults {
     // Extract content from the response
     let content = '';
-    if (response.choices && response.choices[0]) {
-      content = response.choices[0].message?.content || '';
-    } else if (typeof response === 'string') {
+    if (typeof response === 'string') {
       content = response;
+    } else if (response && typeof response === 'object' && 'choices' in response && response.choices && response.choices[0]) {
+      content = response.choices[0].message?.content || '';
     }
 
     // Parse the content into structured analysis
@@ -439,7 +452,7 @@ ${options?.includeDiff ? '\nInclude analysis of changes between branches' : ''}`
         analyzedAt: new Date(),
         analysisVersion: '2.0.0',
         processingTime: Date.now() - (jobId && this.activeJobs.get(jobId)?.startedAt.getTime() || Date.now()),
-        branch: options?.branch,
+        branch: options?.branch as string | undefined,
         model: modelUsed
       }
     };
@@ -448,9 +461,9 @@ ${options?.includeDiff ? '\nInclude analysis of changes between branches' : ''}`
   /**
    * Extract section from analysis content
    */
-  private extractSection(content: string, section: string): any {
+  private extractSection(content: string, section: string): AgentAnalysis {
     // Simple extraction logic - in production this would be more sophisticated
-    const sectionRegex = new RegExp(`${section}[:\s]*([^]*?)(?=\n\n|\n[A-Z]|$)`, 'i');
+    const sectionRegex = new RegExp(`${section}[:\\s]*([^]*?)(?=\\n\\n|\\n[A-Z]|$)`, 'i');
     const match = content.match(sectionRegex);
     
     if (match) {
@@ -499,20 +512,20 @@ ${options?.includeDiff ? '\nInclude analysis of changes between branches' : ''}`
 
       this.activeJobs.set(jobId, job);
 
-      console.log(`[DeepWiki] Triggering analysis for ${repositoryUrl}`);
-      console.log(`[DeepWiki] Branch: ${job.branch}${options?.baseBranch ? ` (base: ${options.baseBranch})` : ''}`);
+      logger.info(`[DeepWiki] Triggering analysis for ${repositoryUrl}`);
+      logger.info(`[DeepWiki] Branch: ${job.branch}${options?.baseBranch ? ` (base: ${options.baseBranch})` : ''}`);
       if (options?.includeDiff) {
-        console.log('[DeepWiki] Diff analysis enabled');
+        logger.info('[DeepWiki] Diff analysis enabled');
       }
 
       // Call real DeepWiki API
       this.callDeepWikiAPI(repositoryUrl, jobId, options).catch(error => {
-        console.error('[DeepWiki] Background analysis failed:', error);
+        logger.error('[DeepWiki] Background analysis failed:', error as Error);
       });
 
       return jobId;
     } catch (error) {
-      console.error('Failed to trigger repository analysis:', error);
+      logger.error('Failed to trigger repository analysis:', error as Error);
       throw new Error(`Repository analysis trigger failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -536,20 +549,20 @@ ${options?.includeDiff ? '\nInclude analysis of changes between branches' : ''}`
         const agentAuthenticatedUser = this.convertToAgentUser(this.authenticatedUser);
         const results = await this.vectorContextService.getRepositoryContext(
           repositoryUrl,
-          'orchestrator' as any,
+          AgentRole.ORCHESTRATOR,
           agentAuthenticatedUser,
           { minSimilarity: 0.95 }
         );
         
         if (results.recentAnalysis.length > 0) {
-          return results.recentAnalysis[0] as any;
+          return results.recentAnalysis[0] as unknown as AnalysisResults;
         }
       }
 
       // Otherwise, poll for completion
       return await this.pollForResults(job);
     } catch (error) {
-      console.error('Failed to wait for analysis completion:', error);
+      logger.error('Failed to wait for analysis completion:', error as Error);
       throw new Error(`Analysis completion failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -579,13 +592,13 @@ ${options?.includeDiff ? '\nInclude analysis of changes between branches' : ''}`
             const agentAuthenticatedUser = this.convertToAgentUser(this.authenticatedUser);
             const results = await this.vectorContextService.getRepositoryContext(
               job.repositoryUrl,
-              'orchestrator' as any,
+              AgentRole.ORCHESTRATOR,
               agentAuthenticatedUser,
               { minSimilarity: 0.95 }
             );
             
             if (results.recentAnalysis.length > 0) {
-              resolve(results.recentAnalysis[0] as any);
+              resolve(results.recentAnalysis[0] as unknown as AnalysisResults);
             } else {
               reject(new Error('Analysis completed but results not found'));
             }
@@ -622,9 +635,9 @@ ${options?.includeDiff ? '\nInclude analysis of changes between branches' : ''}`
         this.authenticatedUser.id
       );
 
-      console.log(`[DeepWiki] Analysis results stored in Vector DB for ${repositoryUrl}`);
+      logger.info(`[DeepWiki] Analysis results stored in Vector DB for ${repositoryUrl}`);
     } catch (error) {
-      console.error('Failed to store analysis results in Vector DB:', error);
+      logger.error('Failed to store analysis results in Vector DB:', error as Error);
       throw new Error(`Vector DB storage failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -633,13 +646,13 @@ ${options?.includeDiff ? '\nInclude analysis of changes between branches' : ''}`
    * Get cached repository files for MCP tools
    * Now branch-aware to return correct version
    */
-  async getCachedRepositoryFiles(repositoryUrl: string, branch?: string): Promise<any[]> {
+  async getCachedRepositoryFiles(repositoryUrl: string, branch?: string): Promise<unknown[]> {
     // Create branch-specific cache key
     const cacheKey = branch ? `${repositoryUrl}:${branch}` : repositoryUrl;
     const cached = this.repositoryCache.get(cacheKey);
     
     if (cached) {
-      console.log(`[DeepWiki] Returning ${cached.files.length} cached files for ${repositoryUrl} (branch: ${branch || 'main'})`);
+      logger.info(`[DeepWiki] Returning ${cached.files.length} cached files for ${repositoryUrl} (branch: ${branch || 'main'})`);
       return cached.files;
     }
     
@@ -647,12 +660,12 @@ ${options?.includeDiff ? '\nInclude analysis of changes between branches' : ''}`
     if (branch && branch !== 'main') {
       const mainCached = this.repositoryCache.get(repositoryUrl);
       if (mainCached) {
-        console.log(`[DeepWiki] No cache for branch ${branch}, falling back to main branch cache`);
+        logger.info(`[DeepWiki] No cache for branch ${branch}, falling back to main branch cache`);
         return mainCached.files;
       }
     }
     
-    console.log(`[DeepWiki] No cache found for ${repositoryUrl} (branch: ${branch || 'main'})`);
+    logger.info(`[DeepWiki] No cache found for ${repositoryUrl} (branch: ${branch || 'main'})`);
     return [];
   }
 
@@ -673,13 +686,13 @@ ${options?.includeDiff ? '\nInclude analysis of changes between branches' : ''}`
       branch
     });
     
-    console.log(`[DeepWiki] Cached ${mockFiles.length} files for ${repositoryUrl} (branch: ${branch})`);
+    logger.info(`[DeepWiki] Cached ${mockFiles.length} files for ${repositoryUrl} (branch: ${branch})`);
   }
 
   /**
    * Extract file information from analysis results
    */
-  private extractFilesFromAnalysis(analysisResults: AnalysisResults): any[] {
+  private extractFilesFromAnalysis(analysisResults: AnalysisResults): unknown[] {
     // In a real implementation, DeepWiki would provide actual file list and contents
     // For now, return empty array since we don't have file data in the analysis
     return [];

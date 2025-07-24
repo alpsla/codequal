@@ -1,15 +1,78 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-export function populateEnhancedReport(reportData: any): string {
+interface Issue {
+  severity: string;
+  title?: string;
+  description?: string;
+  details?: string;
+  file?: string;
+  line?: number;
+}
+
+interface FullReport {
+  modules?: {
+    metrics?: {
+      scores?: Record<string, { score?: number }>;
+    };
+    educational?: {
+      learningPath?: {
+        estimatedTime?: string;
+      };
+      content?: {
+        tutorials?: Array<{
+          title?: string;
+          description?: string;
+          estimatedTime?: string;
+          difficulty?: string;
+        }>;
+      };
+    };
+  };
+  overview?: {
+    executiveSummary?: string;
+  };
+  metadata?: {
+    reportVersion?: string;
+  };
+  exports?: {
+    prComment?: string;
+  };
+}
+
+interface PRData {
+  number?: number;
+  changedFiles?: number;
+  additions?: number;
+  deletions?: number;
+}
+
+interface RepositoryData {
+  name?: string;
+  primaryLanguage?: string;
+}
+
+interface ReportData {
+  report?: {
+    fullReport?: FullReport;
+  };
+  pr?: PRData;
+  repository?: RepositoryData;
+  analysis?: Record<string, unknown>;
+  findings?: Record<string, Issue[] | unknown>;
+  analysisId?: string;
+  [key: string]: unknown;
+}
+
+export function populateEnhancedReport(reportData: ReportData): string {
   // Read the enhanced template
   const templatePath = path.join(__dirname, '../../public/enhanced-report-template.html');
   let template = fs.readFileSync(templatePath, 'utf-8');
   
   // Extract data from the report structure
-  const fullReport = reportData.report?.fullReport || reportData;
-  const prData = reportData.pr || {};
-  const repository = reportData.repository || {};
+  const fullReport = (reportData.report?.fullReport || reportData) as FullReport;
+  const prData = (reportData.pr || {}) as PRData;
+  const repository = (reportData.repository || {}) as RepositoryData;
   const analysis = reportData.analysis || {};
   const findings = reportData.findings || {};
   const metrics = fullReport.modules?.metrics || {};
@@ -18,23 +81,23 @@ export function populateEnhancedReport(reportData: any): string {
   // Count issues by severity
   const countBySeverity = (severity: string) => {
     let count = 0;
-    Object.values(findings).forEach((categoryFindings: any) => {
+    Object.values(findings).forEach((categoryFindings) => {
       if (Array.isArray(categoryFindings)) {
-        count += categoryFindings.filter((f: any) => f.severity === severity).length;
+        count += categoryFindings.filter((f) => f.severity === severity).length;
       }
     });
     return count;
   };
   
   // Generate HTML for issues
-  const generateIssuesHtml = (issues: any, category: string) => {
+  const generateIssuesHtml = (issues: Issue[] | undefined, category: string) => {
     if (!issues) return '';
     
     // Ensure issues is an array
     const issuesArray = Array.isArray(issues) ? issues : [];
     if (issuesArray.length === 0) return '';
     
-    return issuesArray.map((issue: any) => `
+    return issuesArray.map((issue) => `
       <div class="issue-card ${issue.severity}">
         <div class="issue-header">
           <span class="issue-badge">${category}</span>
@@ -51,8 +114,8 @@ export function populateEnhancedReport(reportData: any): string {
   const calculateOverallScore = () => {
     const scores = metrics.scores || {};
     const validScores = Object.values(scores)
-      .map((s: any) => s.score)
-      .filter((score: any) => typeof score === 'number');
+      .map((s) => (s as { score?: number }).score)
+      .filter((score): score is number => typeof score === 'number');
     
     if (validScores.length === 0) return 100;
     return Math.round(validScores.reduce((a: number, b: number) => a + b, 0) / validScores.length);
@@ -65,7 +128,7 @@ export function populateEnhancedReport(reportData: any): string {
   const replacements: Record<string, string> = {
     // Meta information
     '{{analysis_id}}': reportData.analysisId || 'N/A',
-    '{{pr_number}}': prData.number || '0',
+    '{{pr_number}}': String(prData.number || '0'),
     '{{repository_name}}': repository.name || 'Unknown Repository',
     '{{timestamp}}': new Date().toLocaleString(),
     '{{report_version}}': fullReport.metadata?.reportVersion || '1.0.0',
@@ -84,15 +147,15 @@ export function populateEnhancedReport(reportData: any): string {
     '{{approval_status_text}}': overallScore >= 80 ? 'Approved' : 'Needs Review',
     '{{approval_message}}': overview.executiveSummary || 'Analysis completed successfully',
     '{{blocking_issues_html}}': generateIssuesHtml(
-      Object.values(findings).flatMap((f: any) => Array.isArray(f) ? f : []).filter((f: any) => f.severity === 'critical'),
+      Object.values(findings).flatMap((f) => Array.isArray(f) ? f : []).filter((f): f is Issue => (f as Issue).severity === 'critical') as Issue[],
       'Blocking'
     ),
     '{{positive_findings_html}}': '<div class="positive-item"><i class="fas fa-check"></i> Clean code structure</div>',
     
     // PR Issues
     '{{pr_issues_content}}': Object.entries(findings)
-      .map(([category, categoryFindings]: [string, any]) => 
-        generateIssuesHtml(categoryFindings, category)
+      .map(([category, categoryFindings]) => 
+        generateIssuesHtml(categoryFindings as Issue[] | undefined, category)
       ).join('') || '<p class="no-issues">No issues found in this pull request.</p>',
     
     // Repository Issues
@@ -101,18 +164,18 @@ export function populateEnhancedReport(reportData: any): string {
     '{{medium_count}}': String(countBySeverity('medium')),
     '{{low_count}}': String(countBySeverity('low')),
     '{{high_priority_issues_html}}': generateIssuesHtml(
-      Object.values(findings).flatMap((f: any) => Array.isArray(f) ? f : []).filter((f: any) => 
-        f.severity === 'critical' || f.severity === 'high'
-      ),
+      Object.values(findings).flatMap((f) => Array.isArray(f) ? f : []).filter((f): f is Issue => 
+        (f as Issue).severity === 'critical' || (f as Issue).severity === 'high'
+      ) as Issue[],
       'High Priority'
     ),
     '{{toggle_button_html}}': countBySeverity('medium') + countBySeverity('low') > 0 
       ? '<button class="toggle-btn" onclick="toggleLowerPriority()">Show Lower Priority Issues</button>' 
       : '',
     '{{lower_priority_issues_html}}': generateIssuesHtml(
-      Object.values(findings).flatMap((f: any) => Array.isArray(f) ? f : []).filter((f: any) => 
-        f.severity === 'medium' || f.severity === 'low'
-      ),
+      Object.values(findings).flatMap((f) => Array.isArray(f) ? f : []).filter((f): f is Issue => 
+        (f as Issue).severity === 'medium' || (f as Issue).severity === 'low'
+      ) as Issue[],
       'Lower Priority'
     ),
     
@@ -129,7 +192,7 @@ export function populateEnhancedReport(reportData: any): string {
     
     // Educational Resources
     '{{total_learning_time}}': fullReport.modules?.educational?.learningPath?.estimatedTime || '0 minutes',
-    '{{educational_html}}': fullReport.modules?.educational?.content?.tutorials?.map((t: any) => `
+    '{{educational_html}}': fullReport.modules?.educational?.content?.tutorials?.map((t: { title?: string; description?: string; estimatedTime?: string; difficulty?: string }) => `
       <div class="edu-card">
         <h4>${t.title}</h4>
         <p>${t.description || 'Tutorial available'}</p>

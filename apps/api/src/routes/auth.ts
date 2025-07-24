@@ -3,6 +3,9 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { getConfig } from '@codequal/core/config/index';
 import rateLimit from 'express-rate-limit';
+import { createLogger } from '@codequal/core/utils';
+
+const logger = createLogger('auth-routes');
 
 const router = Router();
 
@@ -133,7 +136,7 @@ router.post('/signup', async (req, res) => {
           });
         
         if (billingError) {
-          console.error('Failed to create user_billing record:', billingError);
+          logger.error('Failed to create user_billing record:', billingError);
           // Don't fail the signup if billing creation fails
         }
       }
@@ -246,7 +249,7 @@ router.get('/:provider', async (req, res) => {
     // Redirect the user to the OAuth provider
     res.redirect(data.url);
   } catch (error) {
-    console.error('OAuth error:', error);
+    logger.error('OAuth error:', { error });
     const errorMessage = error instanceof Error ? error.message : '';
     if (errorMessage.includes('ECONNREFUSED')) {
       return res.status(503).json({ error: 'Authentication service unavailable' });
@@ -294,7 +297,7 @@ router.post('/oauth/:provider', async (req, res) => {
       provider: provider 
     });
   } catch (error) {
-    console.error('OAuth error:', error);
+    logger.error('OAuth error:', { error });
     const errorMessage = error instanceof Error ? error.message : '';
     if (errorMessage.includes('ECONNREFUSED')) {
       return res.status(503).json({ error: 'Authentication service unavailable' });
@@ -316,7 +319,7 @@ router.post('/callback', async (req, res) => {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
     
     if (error) {
-      console.error('OAuth exchange error:', error);
+      logger.error('OAuth exchange error:', { error });
       // Use safe stringify to handle potential circular references in error objects
       const safeErrorString = (() => {
         const seen = new WeakSet();
@@ -334,7 +337,7 @@ router.post('/callback', async (req, res) => {
           return `[Unable to stringify error: ${err instanceof Error ? err.message : 'Unknown error'}]`;
         }
       })();
-      console.error('Error details:', safeErrorString);
+      logger.error('Error details:', { details: safeErrorString });
       return res.status(401).json({ 
         error: 'Authentication failed', 
         details: error.message,
@@ -368,7 +371,7 @@ router.post('/callback', async (req, res) => {
           });
         
         if (billingError) {
-          console.error('Failed to create user_billing record for OAuth user:', billingError);
+          logger.error('Failed to create user_billing record for OAuth user:', { error: billingError });
         }
       }
     }
@@ -384,7 +387,7 @@ router.post('/callback', async (req, res) => {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid callback parameters' });
     }
-    console.error('Callback error:', error);
+    logger.error('Callback error:', { error });
     res.status(500).json({ error: 'Authentication failed' });
   }
 });
@@ -435,7 +438,7 @@ router.get('/callback', async (req, res) => {
           });
         
         if (billingError) {
-          console.error('Failed to create user_billing record for OAuth user:', billingError);
+          logger.error('Failed to create user_billing record for OAuth user:', { error: billingError });
         }
       }
     }
@@ -452,7 +455,7 @@ router.get('/callback', async (req, res) => {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid callback parameters' });
     }
-    console.error('Callback error:', error);
+    logger.error('Callback error:', { error });
     res.status(500).json({ error: 'Authentication failed' });
   }
 });

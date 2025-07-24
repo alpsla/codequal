@@ -18,7 +18,7 @@ export class VectorDatabaseService {
    */
   async storeRepositoryData(
     repositoryId: string,
-    chunks: { content: string; filePath: string; metadata?: Record<string, any> }[],
+    chunks: { content: string; filePath: string; metadata?: Record<string, unknown> }[],
     replace = false
   ): Promise<void> {
     console.log(`Storing ${chunks.length} chunks for repository ${repositoryId}`);
@@ -59,8 +59,8 @@ export class VectorDatabaseService {
    */
   async incrementalUpdate(
     repositoryId: string,
-    added: { content: string; filePath: string; metadata?: Record<string, any> }[],
-    modified: { content: string; filePath: string; metadata?: Record<string, any> }[],
+    added: { content: string; filePath: string; metadata?: Record<string, unknown> }[],
+    modified: { content: string; filePath: string; metadata?: Record<string, unknown> }[],
     removed: string[]
   ): Promise<void> {
     console.log(`Incremental update for repository ${repositoryId}:`);

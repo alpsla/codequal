@@ -162,7 +162,7 @@ export class EmbeddingAdapter {
   /**
    * Log vector operations for monitoring
    */
-  private async logVectorOperation(operation: string, metadata: any): Promise<void> {
+  private async logVectorOperation(operation: string, metadata: Record<string, unknown>): Promise<void> {
     try {
       await this.supabase
         .from('vector_operation_logs')
@@ -180,7 +180,7 @@ export class EmbeddingAdapter {
   /**
    * Get embedding configuration from database
    */
-  async getEmbeddingConfig(modelKey: string): Promise<any> {
+  async getEmbeddingConfig(modelKey: string): Promise<{ dimensions: number; provider: string; model: string; cost_per_million: number } | null> {
     try {
       const { data, error } = await this.supabase
         .from('embedding_configurations')
@@ -194,7 +194,7 @@ export class EmbeddingAdapter {
         return this.getEmbeddingConfig('default');
       }
 
-      return data;
+      return data as unknown as { dimensions: number; provider: string; model: string; cost_per_million: number };
     } catch (error) {
       this.logger.error('Failed to get embedding config', { error });
       return null;
@@ -244,7 +244,7 @@ export class EmbeddingAdapter {
    * Batch adapt multiple embeddings
    */
   async batchAdaptEmbeddings(
-    embeddings: Array<{ embedding: number[]; modelKey: string; metadata?: any }>
+    embeddings: Array<{ embedding: number[]; modelKey: string; metadata?: Record<string, unknown> }>
   ): Promise<Array<{ embedding: number[]; metadata: EmbeddingMetadata }>> {
     const startTime = Date.now();
     const results = [];

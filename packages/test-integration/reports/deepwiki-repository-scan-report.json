@@ -1,0 +1,402 @@
+{
+  "id": "deepwiki_scan_codequal_20250723",
+  "repositoryUrl": "https://github.com/codequal-dev/codequal",
+  "scanType": "repository",
+  "timestamp": "2025-07-23T15:30:00Z",
+  "modelUsed": "anthropic/claude-3-opus",
+  
+  "overview": {
+    "executiveSummary": "CodeQual repository shows strong architectural patterns with TypeScript adoption and modular design. However, several security vulnerabilities and performance optimizations need attention. The codebase demonstrates good separation of concerns but has accumulated technical debt in authentication and error handling.",
+    "overallScore": 7.2,
+    "trend": "improving",
+    "lastFullScan": "2025-07-16T10:00:00Z",
+    "totalIssues": 156,
+    "criticalIssues": 8,
+    "highIssues": 24,
+    "mediumIssues": 67,
+    "lowIssues": 57
+  },
+  
+  "categoryScores": {
+    "security": {
+      "score": 6.5,
+      "trend": "declining",
+      "issues": 32,
+      "critical": 5,
+      "details": "Found exposed API keys in deployment files, insufficient input validation, and outdated dependencies with known vulnerabilities"
+    },
+    "performance": {
+      "score": 7.0,
+      "trend": "stable",
+      "issues": 28,
+      "critical": 1,
+      "details": "Database queries lack optimization, missing caching strategies, and inefficient bundle sizes"
+    },
+    "codeQuality": {
+      "score": 7.8,
+      "trend": "improving",
+      "issues": 45,
+      "critical": 0,
+      "details": "Good TypeScript adoption but inconsistent error handling and some complex functions exceeding maintainability thresholds"
+    },
+    "architecture": {
+      "score": 8.2,
+      "trend": "improving",
+      "issues": 18,
+      "critical": 0,
+      "details": "Well-structured monorepo with clear separation of concerns, though some circular dependencies detected"
+    },
+    "testing": {
+      "score": 6.8,
+      "trend": "stable",
+      "issues": 33,
+      "critical": 2,
+      "details": "Test coverage at 68% (below 80% target), missing integration tests for critical paths"
+    }
+  },
+  
+  "findings": [
+    {
+      "id": "SEC-REPO-001",
+      "category": "security",
+      "severity": "critical",
+      "title": "Exposed API Keys in Kubernetes Deployment",
+      "description": "Found hardcoded API keys in deployment YAML files that could be exploited if repository is public or compromised",
+      "files": [
+        "k8s/deployments/production/*.yaml",
+        "k8s/secrets/api-keys.yaml"
+      ],
+      "impact": "Critical - Direct access to production services",
+      "recommendation": "Move all secrets to Kubernetes secrets or external secret management (HashiCorp Vault, AWS Secrets Manager)",
+      "effort": "2-3 hours",
+      "references": [
+        "https://kubernetes.io/docs/concepts/configuration/secret/",
+        "https://www.vaultproject.io/docs/platform/k8s"
+      ]
+    },
+    {
+      "id": "SEC-REPO-002",
+      "category": "security",
+      "severity": "critical",
+      "title": "SQL Injection Vulnerabilities",
+      "description": "Multiple instances of string concatenation in SQL queries without proper parameterization",
+      "files": [
+        "packages/database/src/services/analysis-service.ts:234",
+        "packages/database/src/services/user-service.ts:156",
+        "packages/database/src/repositories/report-repository.ts:89"
+      ],
+      "impact": "Critical - Database compromise possible",
+      "recommendation": "Use parameterized queries or ORM query builders exclusively",
+      "codeExample": "// BAD\nconst query = `SELECT * FROM users WHERE id = ${userId}`;\n\n// GOOD\nconst query = 'SELECT * FROM users WHERE id = $1';\nconst result = await db.query(query, [userId]);"
+    },
+    {
+      "id": "SEC-REPO-003",
+      "category": "security",
+      "severity": "high",
+      "title": "Missing CORS Configuration",
+      "description": "API endpoints lack proper CORS configuration, potentially allowing unauthorized cross-origin requests",
+      "files": [
+        "apps/api/src/index.ts",
+        "apps/api/src/middleware/cors.ts"
+      ],
+      "impact": "High - Potential for CSRF attacks",
+      "recommendation": "Implement strict CORS policy with allowed origins whitelist"
+    },
+    {
+      "id": "PERF-REPO-001",
+      "category": "performance",
+      "severity": "critical",
+      "title": "N+1 Query Problem in Analysis Reports",
+      "description": "Loading analysis reports triggers separate queries for each related entity",
+      "files": [
+        "packages/database/src/services/report-service.ts:145-189"
+      ],
+      "impact": "Critical - 100+ queries for single report load",
+      "recommendation": "Use eager loading with joins or implement DataLoader pattern",
+      "performanceImpact": "Page load time could improve by 80%"
+    },
+    {
+      "id": "PERF-REPO-002",
+      "category": "performance",
+      "severity": "high",
+      "title": "Large Bundle Size",
+      "description": "Main bundle exceeds 2MB due to unoptimized imports and missing code splitting",
+      "files": [
+        "apps/web/src/index.tsx",
+        "apps/web/webpack.config.js"
+      ],
+      "currentSize": "2.3MB",
+      "targetSize": "< 500KB",
+      "recommendation": "Implement code splitting, lazy loading, and tree shaking"
+    },
+    {
+      "id": "QUAL-REPO-001",
+      "category": "codeQuality",
+      "severity": "high",
+      "title": "Inconsistent Error Handling",
+      "description": "Mix of try-catch, promises, and unhandled rejections throughout codebase",
+      "files": [
+        "packages/agents/src/**/*.ts",
+        "apps/api/src/services/**/*.ts"
+      ],
+      "recommendation": "Implement centralized error handling with consistent patterns",
+      "example": "// Create error boundary and consistent error types\nexport class AppError extends Error {\n  constructor(public code: string, message: string, public statusCode: number) {\n    super(message);\n  }\n}"
+    },
+    {
+      "id": "QUAL-REPO-002",
+      "category": "codeQuality",
+      "severity": "medium",
+      "title": "High Cyclomatic Complexity",
+      "description": "23 functions exceed complexity threshold of 10",
+      "topOffenders": [
+        "ResultOrchestrator.processAnalysis (complexity: 24)",
+        "DeepWikiManager.analyzeRepository (complexity: 19)",
+        "AuthMiddleware.validateToken (complexity: 17)"
+      ],
+      "recommendation": "Refactor complex functions into smaller, focused units"
+    },
+    {
+      "id": "ARCH-REPO-001",
+      "category": "architecture",
+      "severity": "medium",
+      "title": "Circular Dependencies Detected",
+      "description": "Circular dependency chain between core, database, and agent packages",
+      "cycle": "core → database → agents → core",
+      "files": [
+        "packages/core/src/services/model-service.ts",
+        "packages/database/src/models/agent-config.ts",
+        "packages/agents/src/base/agent.ts"
+      ],
+      "recommendation": "Extract shared interfaces to separate package or use dependency injection"
+    },
+    {
+      "id": "TEST-REPO-001",
+      "category": "testing",
+      "severity": "critical",
+      "title": "Missing Integration Tests for Payment Flow",
+      "description": "Critical payment processing paths lack integration test coverage",
+      "uncoveredPaths": [
+        "Stripe webhook handling",
+        "Subscription creation/cancellation",
+        "Usage-based billing calculations"
+      ],
+      "currentCoverage": 12,
+      "targetCoverage": 90,
+      "recommendation": "Add comprehensive integration tests for all payment scenarios"
+    },
+    {
+      "id": "TEST-REPO-002",
+      "category": "testing",
+      "severity": "high",
+      "title": "Flaky Tests Detected",
+      "description": "8 tests fail intermittently due to timing issues and external dependencies",
+      "flakyTests": [
+        "ResultOrchestrator.spec.ts:234 - 'should handle concurrent analyses'",
+        "VectorDBService.spec.ts:89 - 'should retry on connection failure'",
+        "AuthService.spec.ts:156 - 'should refresh token before expiry'"
+      ],
+      "failureRate": "15%",
+      "recommendation": "Use proper test doubles and control time in tests"
+    }
+  ],
+  
+  "recommendations": {
+    "immediate": [
+      {
+        "title": "Remove Exposed Secrets",
+        "priority": "critical",
+        "category": "security",
+        "description": "Immediately remove all hardcoded secrets from repository and rotate affected credentials",
+        "effort": "2-4 hours",
+        "impact": "Prevents potential security breach"
+      },
+      {
+        "title": "Fix SQL Injection Vulnerabilities",
+        "priority": "critical",
+        "category": "security",
+        "description": "Replace all string concatenation in SQL queries with parameterized queries",
+        "effort": "4-6 hours",
+        "impact": "Prevents database compromise"
+      },
+      {
+        "title": "Resolve N+1 Query Issues",
+        "priority": "critical",
+        "category": "performance",
+        "description": "Implement eager loading for analysis report queries",
+        "effort": "3-4 hours",
+        "impact": "80% reduction in database load"
+      }
+    ],
+    "shortTerm": [
+      {
+        "title": "Implement Comprehensive Error Handling",
+        "priority": "high",
+        "category": "codeQuality",
+        "description": "Create error handling middleware and standardize error responses",
+        "effort": "1-2 days",
+        "impact": "Improved debugging and user experience"
+      },
+      {
+        "title": "Add Missing Test Coverage",
+        "priority": "high",
+        "category": "testing",
+        "description": "Focus on payment flows and critical user paths",
+        "effort": "3-4 days",
+        "impact": "Reduced production incidents"
+      },
+      {
+        "title": "Optimize Bundle Size",
+        "priority": "medium",
+        "category": "performance",
+        "description": "Implement code splitting and lazy loading",
+        "effort": "2-3 days",
+        "impact": "50% faster initial page load"
+      }
+    ],
+    "longTerm": [
+      {
+        "title": "Refactor Architecture to Eliminate Circular Dependencies",
+        "priority": "medium",
+        "category": "architecture",
+        "description": "Extract shared types and implement dependency injection",
+        "effort": "1-2 weeks",
+        "impact": "Improved maintainability and testability"
+      },
+      {
+        "title": "Implement Comprehensive Monitoring",
+        "priority": "medium",
+        "category": "operations",
+        "description": "Add APM, error tracking, and performance monitoring",
+        "effort": "1 week",
+        "impact": "Proactive issue detection"
+      }
+    ]
+  },
+  
+  "codePatterns": {
+    "positive": [
+      {
+        "pattern": "TypeScript Strict Mode",
+        "description": "Consistent use of TypeScript with strict mode enabled",
+        "occurrences": 89,
+        "impact": "Reduces runtime errors"
+      },
+      {
+        "pattern": "Async/Await Usage",
+        "description": "Modern async patterns used throughout",
+        "occurrences": 234,
+        "impact": "Cleaner async code"
+      },
+      {
+        "pattern": "Dependency Injection",
+        "description": "Services use constructor injection",
+        "occurrences": 67,
+        "impact": "Better testability"
+      }
+    ],
+    "negative": [
+      {
+        "pattern": "Console Logging in Production",
+        "description": "Direct console.log statements that should use logger",
+        "occurrences": 156,
+        "files": ["apps/api/src/**/*.ts"],
+        "recommendation": "Use structured logging library"
+      },
+      {
+        "pattern": "Magic Numbers",
+        "description": "Hardcoded values without named constants",
+        "occurrences": 89,
+        "example": "if (retries > 3) { ... }",
+        "recommendation": "Extract to named constants"
+      },
+      {
+        "pattern": "Any Type Usage",
+        "description": "TypeScript 'any' type weakens type safety",
+        "occurrences": 234,
+        "recommendation": "Use specific types or unknown"
+      }
+    ]
+  },
+  
+  "architectureInsights": [
+    {
+      "insight": "Monorepo Structure",
+      "description": "Well-organized monorepo with clear package boundaries using Lerna/Yarn workspaces",
+      "strength": true,
+      "impact": "Enables code sharing and atomic commits"
+    },
+    {
+      "insight": "Event-Driven Architecture",
+      "description": "Good use of event emitters for decoupling, but missing event sourcing for audit trail",
+      "strength": true,
+      "recommendation": "Consider event sourcing for critical business events"
+    },
+    {
+      "insight": "Missing API Gateway",
+      "description": "Direct service exposure without central API gateway for rate limiting and auth",
+      "strength": false,
+      "recommendation": "Implement API gateway pattern (Kong, AWS API Gateway)"
+    }
+  ],
+  
+  "technicalDebt": {
+    "score": 6.8,
+    "items": [
+      {
+        "area": "Authentication System",
+        "description": "Multiple auth implementations (JWT, API keys, OAuth) not unified",
+        "effort": "2 weeks",
+        "impact": "Security vulnerabilities and maintenance burden"
+      },
+      {
+        "area": "Database Migrations",
+        "description": "Ad-hoc migration scripts without version control",
+        "effort": "1 week",
+        "impact": "Deployment risks and data inconsistencies"
+      },
+      {
+        "area": "Configuration Management",
+        "description": "Mix of env files, hardcoded values, and config files",
+        "effort": "3-4 days",
+        "impact": "Deployment complexity"
+      }
+    ]
+  },
+  
+  "dependencies": {
+    "total": 1247,
+    "direct": 89,
+    "outdated": 34,
+    "vulnerable": 12,
+    "criticalUpdates": [
+      {
+        "package": "ws",
+        "current": "7.4.6",
+        "recommended": "8.11.0",
+        "vulnerability": "CVE-2024-37890 - DoS vulnerability"
+      },
+      {
+        "package": "jsonwebtoken",
+        "current": "8.5.1",
+        "recommended": "9.0.0",
+        "vulnerability": "CVE-2022-23541 - Weak key validation"
+      }
+    ]
+  },
+  
+  "metadata": {
+    "scanDuration": 28456,
+    "filesAnalyzed": 3456,
+    "linesOfCode": 156789,
+    "languages": {
+      "TypeScript": 78,
+      "JavaScript": 12,
+      "JSON": 6,
+      "YAML": 3,
+      "Other": 1
+    },
+    "lastCommit": "adfb6be",
+    "branch": "main",
+    "contributors": 23
+  }
+}

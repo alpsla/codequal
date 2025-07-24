@@ -1,3 +1,8 @@
+// Types
+export * from './types/agent-types';
+export * from './types/research';
+export * from './types/recommendation-types';
+
 // Agents
 export * from './base/base-agent';
 export * from './claude/claude-agent';
@@ -16,6 +21,7 @@ export * from './factory/agent-factory';
 
 // Multi-Agent System
 export * from './multi-agent';
+export * from './multi-agent/types';
 
 // Orchestrator
 export * from './orchestrator/report-enhancer';
@@ -24,16 +30,17 @@ export * from './orchestrator/report-enhancer';
 export * from './prompts/prompt-loader';
 
 // Researcher
-export * from './researcher/researcher-agent';
+export { ResearcherAgent } from './researcher/researcher-agent';
 export * from './researcher/researcher-service';
 export { ProductionResearcherService, ModelConfiguration } from './researcher/production-researcher-service';
 export * from './researcher/enhanced-model-selection-rules';
 
 // Services
 export * from './services/skill-tracking-service';
-export * from './services/report-formatter.service';
-export * from './services/recommendation-service';
+export { ReportFormatterService, StandardReport } from './services/report-formatter.service';
+export { RecommendationService } from './services/recommendation-service';
 export * from './services/educational-compilation-service';
+export { IssueResolutionDetector, type IssueComparison } from './services/issue-resolution-detector';
 
 // Model Selection
 export * from './model-selection/unified-model-selector';

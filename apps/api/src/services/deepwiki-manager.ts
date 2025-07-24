@@ -37,6 +37,7 @@ import { AgentRole } from '@codequal/core/config/agent-registry';
 import { ModelVersionInfo } from '@codequal/core';
 
 const execAsync = promisify(exec);
+const logger = createLogger('deepwiki-manager');
 
 export interface AnalysisJob {
   jobId: string;
@@ -49,12 +50,16 @@ export interface AnalysisJob {
   baseBranch?: string;
   includeDiff?: boolean;
   prNumber?: number;
+  timers?: {
+    processingTimer?: NodeJS.Timeout;
+    completionTimer?: NodeJS.Timeout;
+  };
 }
 
 export interface CachedAnalysis {
   results: AnalysisResults;
   timestamp: number;
-  options?: any;
+  options?: AnalysisOptions;
 }
 
 export interface AnalysisOptions {
@@ -69,14 +74,35 @@ export interface AnalysisOptions {
   changedFiles?: string[];
 }
 
+interface AnalysisSection {
+  findings?: Array<{
+    type: string;
+    severity: string;
+    message: string;
+    file?: string;
+    line?: number;
+  }>;
+  score?: number;
+  recommendations?: string[];
+  summary?: string;
+  metrics?: Record<string, unknown>;
+}
+
+interface RepositoryFile {
+  path: string;
+  content: string;
+  size: number;
+  language?: string;
+}
+
 export interface AnalysisResults {
   repositoryUrl: string;
   analysis: {
-    architecture: any;
-    security: any;
-    performance: any;
-    codeQuality: any;
-    dependencies: any;
+    architecture: AnalysisSection;
+    security: AnalysisSection;
+    performance: AnalysisSection;
+    codeQuality: AnalysisSection;
+    dependencies: AnalysisSection;
   };
   metadata: {
     analyzedAt: Date;
@@ -103,10 +129,17 @@ interface DeepWikiRequest {
  * Simplified DeepWiki Manager - handles Vector DB existence checks and repository analysis coordination
  * Design decision: Only checks Vector DB existence, delegates actual analysis to DeepWiki service
  */
+interface RepositoryCacheEntry {
+  files: RepositoryFile[];
+  cachedAt: Date;
+  repositoryUrl: string;
+  branch: string;
+}
+
 export class DeepWikiManager {
   private vectorContextService: VectorContextService;
   private activeJobs = new Map<string, AnalysisJob>();
-  private repositoryCache = new Map<string, any>();
+  private repositoryCache = new Map<string, RepositoryCacheEntry>();
   private deepwikiClient: AxiosInstance;
   private modelSelector?: DeepWikiModelSelector;
   private logger = createLogger('DeepWikiManager');
@@ -174,7 +207,7 @@ export class DeepWikiManager {
   /**
    * Convert middleware AuthenticatedUser to agent-compatible format
    */
-  private convertToAgentUser(user: AuthenticatedUser): any {
+  private convertToAgentUser(user: AuthenticatedUser): AgentAuthenticatedUser {
     // For test user, create a simplified authenticated user with all permissions
     if (user.email === 'test@codequal.dev') {
       return {
@@ -182,13 +215,12 @@ export class DeepWikiManager {
         email: user.email,
         role: 'admin' as UserRole,
         status: 'active' as UserStatus,
-        tenantId: user.id, // Use user ID as tenant ID for test
+        organizationId: user.id, // Use user ID as organization ID for test
         session: {
-          id: 'test-session',
+          token: 'test-token',
           fingerprint: 'test-fingerprint',
           ipAddress: '127.0.0.1',
           userAgent: 'test-agent',
-          createdAt: new Date(),
           expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // 1 day
         },
         permissions: {
@@ -209,11 +241,6 @@ export class DeepWikiManager {
           loginCount: 1,
           preferredLanguage: 'en',
           timezone: 'UTC'
-        },
-        features: {
-          deepAnalysis: true,
-          aiRecommendations: true,
-          advancedReports: true
         }
       };
     }
@@ -224,13 +251,12 @@ export class DeepWikiManager {
       email: user.email,
       role: 'user' as UserRole,
       status: 'active' as UserStatus,
-      tenantId: user.id,
+      organizationId: user.id,
       session: {
-        id: `session-${user.id}`,
+        token: `token-${user.id}`,
         fingerprint: `fingerprint-${user.id}`,
         ipAddress: '127.0.0.1',
         userAgent: 'CodeQual-API',
-        createdAt: new Date(),
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
       },
       permissions: {
@@ -248,11 +274,6 @@ export class DeepWikiManager {
         loginCount: 1,
         preferredLanguage: 'en',
         timezone: 'UTC'
-      },
-      features: {
-        deepAnalysis: true,
-        aiRecommendations: true,
-        advancedReports: true
       }
     };
   }
@@ -266,14 +287,14 @@ export class DeepWikiManager {
       const agentAuthenticatedUser = this.convertToAgentUser(this.authenticatedUser);
       const existing = await this.vectorContextService.getRepositoryContext(
         repositoryUrl,
-        'orchestrator' as any, // Using orchestrator role for general queries
+        AgentRole.ORCHESTRATOR, // Using orchestrator role for general queries
         agentAuthenticatedUser,
         { minSimilarity: 0.95 }
       );
 
       return existing.recentAnalysis.length > 0;
     } catch (error) {
-      console.error('Repository existence check failed:', error);
+      logger.error('Repository existence check failed:', error as Error);
       return false;
     }
   }
@@ -314,14 +335,17 @@ export class DeepWikiManager {
         this.activeJobs.set(jobId, job);
         
         // Wait for the running analysis to complete
-        this.runningAnalyses.get(cacheKey)!.then(() => {
-          job.status = 'completed';
-          job.completedAt = new Date();
-        }).catch(error => {
-          job.status = 'failed';
-          job.error = error.message;
-          job.completedAt = new Date();
-        });
+        const runningAnalysis = this.runningAnalyses.get(cacheKey);
+        if (runningAnalysis) {
+          runningAnalysis.then(() => {
+            job.status = 'completed';
+            job.completedAt = new Date();
+          }).catch(error => {
+            job.status = 'failed';
+            job.error = error.message;
+            job.completedAt = new Date();
+          });
+        }
         
         return jobId;
       }
@@ -348,17 +372,20 @@ export class DeepWikiManager {
         if (!this.pendingBatches.has(batchKey)) {
           this.pendingBatches.set(batchKey, new Set());
         }
-        this.pendingBatches.get(batchKey)!.add(options);
-        
-        // If we have multiple PRs pending, wait for batch window
-        if (this.pendingBatches.get(batchKey)!.size > 1 && !this.batchTimer) {
-          this.scheduleBatchProcessing();
-          return jobId;
+        const pendingBatch = this.pendingBatches.get(batchKey);
+        if (pendingBatch) {
+          pendingBatch.add(options);
+          
+          // If we have multiple PRs pending, wait for batch window
+          if (pendingBatch.size > 1 && !this.batchTimer) {
+            this.scheduleBatchProcessing();
+            return jobId;
+          }
         }
       }
 
-      console.log(`[DeepWiki] Triggering analysis for ${repositoryUrl}`);
-      console.log(`[DeepWiki] Branch: ${job.branch}${options?.baseBranch ? ` (base: ${options.baseBranch})` : ''}`);
+      logger.info(`[DeepWiki] Triggering analysis for ${repositoryUrl}`);
+      logger.info(`[DeepWiki] Branch: ${job.branch}${options?.baseBranch ? ` (base: ${options.baseBranch})` : ''}`);
       
       // Determine if we need to clone locally
       const isGitLab = repositoryUrl.includes('gitlab.com');
@@ -366,11 +393,11 @@ export class DeepWikiManager {
       const needsLocalClone = isGitLab || isFeatureBranch;
       
       if (needsLocalClone) {
-        console.log('[DeepWiki] Repository requires local clone (GitLab or feature branch)');
+        logger.info('[DeepWiki] Repository requires local clone (GitLab or feature branch)');
         
         // Clone and analyze locally
         this.analyzeWithLocalClone(repositoryUrl, jobId, options).catch(error => {
-          console.error('[DeepWiki] Local analysis failed:', error);
+          logger.error('[DeepWiki] Local analysis failed:', error as Error);
           const job = this.activeJobs.get(jobId);
           if (job) {
             job.status = 'failed';
@@ -391,7 +418,7 @@ export class DeepWikiManager {
             return results;
           })
           .catch(error => {
-            console.error('[DeepWiki] Background analysis failed:', error);
+            logger.error('[DeepWiki] Background analysis failed:', error as Error);
             this.runningAnalyses.delete(cacheKey);
             throw error;
           });
@@ -402,7 +429,7 @@ export class DeepWikiManager {
 
       return jobId;
     } catch (error) {
-      console.error('Failed to trigger repository analysis:', error);
+      logger.error('Failed to trigger repository analysis:', error as Error);
       throw new Error(`Repository analysis trigger failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -424,13 +451,13 @@ export class DeepWikiManager {
         }
         
         // If no job exists, check if we already have results and return mock data
-        console.log('No job found, returning mock analysis results');
+        logger.info('No job found, returning mock analysis results');
         return this.generateMockAnalysisResults(repositoryUrl);
       }
 
       // If job is already completed, return the results directly
       if (job.status === 'completed') {
-        console.log('Job already completed, returning results');
+        logger.info('Job already completed, returning results');
         return this.generateMockAnalysisResults(repositoryUrl);
       }
 
@@ -439,7 +466,11 @@ export class DeepWikiManager {
       if (this.runningAnalyses.has(cacheKey)) {
         this.logger.info('[DeepWiki] Waiting for running analysis');
         try {
-          const result = await this.runningAnalyses.get(cacheKey)!;
+          const runningAnalysis = this.runningAnalyses.get(cacheKey);
+          if (!runningAnalysis) {
+            throw new Error('No running analysis found');
+          }
+          const result = await runningAnalysis;
           if (!result) {
             throw new Error('Analysis returned null result');
           }
@@ -460,7 +491,7 @@ export class DeepWikiManager {
 
       return results;
     } catch (error) {
-      console.error('Failed to wait for analysis completion:', error);
+      logger.error('Failed to wait for analysis completion:', error as Error);
       throw new Error(`Analysis completion failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -490,7 +521,7 @@ export class DeepWikiManager {
     }
 
     // Clear any pending timers
-    const timers = (job as any).timers;
+    const timers = job.timers;
     if (timers) {
       clearTimeout(timers.processingTimer);
       clearTimeout(timers.completionTimer);
@@ -509,13 +540,13 @@ export class DeepWikiManager {
    * Get cached repository files for MCP tools
    * Now branch-aware to return correct version
    */
-  async getCachedRepositoryFiles(repositoryUrl: string, branch?: string): Promise<any[]> {
+  async getCachedRepositoryFiles(repositoryUrl: string, branch?: string): Promise<RepositoryFile[]> {
     // Create branch-specific cache key
     const cacheKey = branch ? `${repositoryUrl}:${branch}` : repositoryUrl;
     const cached = this.repositoryCache.get(cacheKey);
     
     if (cached) {
-      console.log(`[DeepWiki] Returning ${cached.files.length} cached files for ${repositoryUrl} (branch: ${branch || 'main'})`);
+      logger.info(`[DeepWiki] Returning ${cached.files.length} cached files for ${repositoryUrl} (branch: ${branch || 'main'})`);
       return cached.files;
     }
     
@@ -523,13 +554,13 @@ export class DeepWikiManager {
     if (branch && branch !== 'main') {
       const mainCached = this.repositoryCache.get(repositoryUrl);
       if (mainCached) {
-        console.log(`[DeepWiki] No cache for branch ${branch}, falling back to main branch cache`);
+        logger.info(`[DeepWiki] No cache for branch ${branch}, falling back to main branch cache`);
         return mainCached.files;
       }
     }
     
     // If not cached, return mock files for testing
-    console.log(`[DeepWiki] No cache found for ${repositoryUrl} (branch: ${branch || 'main'}), returning mock files`);
+    logger.info(`[DeepWiki] No cache found for ${repositoryUrl} (branch: ${branch || 'main'}), returning mock files`);
     return this.generateMockRepositoryFiles();
   }
 
@@ -558,7 +589,7 @@ export class DeepWikiManager {
         }
       }
       
-      console.log(`[DeepWiki] Cloning repository: ${repositoryUrl} (branch: ${branch})`);
+      logger.info(`[DeepWiki] Cloning repository: ${repositoryUrl} (branch: ${branch})`);
       
       // Clone and checkout branch
       await execAsync(`git clone ${cloneUrl} ${tempDir}`);
@@ -580,7 +611,7 @@ export class DeepWikiManager {
         throw new Error(`Failed to checkout branch '${branch}': ${errorMessage}`);
       }
       
-      console.log(`[DeepWiki] Successfully cloned to: ${tempDir}`);
+      logger.info(`[DeepWiki] Successfully cloned to: ${tempDir}`);
       
       // Return path and cleanup function
       return {
@@ -588,9 +619,9 @@ export class DeepWikiManager {
         cleanup: async () => {
           try {
             await fs.rm(tempDir, { recursive: true, force: true });
-            console.log(`[DeepWiki] Cleaned up temp directory: ${tempDir}`);
+            logger.info(`[DeepWiki] Cleaned up temp directory: ${tempDir}`);
           } catch (error) {
-            console.error(`[DeepWiki] Failed to cleanup temp directory: ${tempDir}`, error);
+            logger.error(`[DeepWiki] Failed to cleanup temp directory: ${tempDir}`, error as Error);
           }
         }
       };
@@ -598,7 +629,9 @@ export class DeepWikiManager {
       // Cleanup on error
       try {
         await fs.rm(tempDir, { recursive: true, force: true });
-      } catch {}
+      } catch {
+        // Ignore cleanup errors
+      }
       
       throw new Error(`Failed to clone repository: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
@@ -607,8 +640,8 @@ export class DeepWikiManager {
   /**
    * Extract files from local repository
    */
-  private async extractFilesFromLocalRepo(localPath: string): Promise<any[]> {
-    const files: any[] = [];
+  private async extractFilesFromLocalRepo(localPath: string): Promise<RepositoryFile[]> {
+    const files: RepositoryFile[] = [];
     
     async function walkDir(dir: string, baseDir: string) {
       const entries = await fs.readdir(dir, { withFileTypes: true });
@@ -633,12 +666,14 @@ export class DeepWikiManager {
           if (['.js', '.ts', '.jsx', '.tsx', '.py', '.java', '.go', '.rs', '.c', '.cpp', '.h', '.hpp'].includes(ext)) {
             try {
               const content = await fs.readFile(fullPath, 'utf-8');
+              const stats = await fs.stat(fullPath);
               files.push({
                 path: relativePath,
-                content: content
+                content: content,
+                size: stats.size
               });
             } catch (error) {
-              console.warn(`[DeepWiki] Failed to read file: ${relativePath}`);
+              logger.warn(`[DeepWiki] Failed to read file: ${relativePath}`, error as Error);
             }
           }
         }
@@ -681,7 +716,7 @@ export class DeepWikiManager {
       
       // Extract files from local repository
       const files = await this.extractFilesFromLocalRepo(localPath);
-      console.log(`[DeepWiki] Extracted ${files.length} files from local repository`);
+      logger.info(`[DeepWiki] Extracted ${files.length} files from local repository`);
       
       // Cache the files for this branch
       this.cacheRepository(repositoryUrl, options?.branch || 'main', undefined, files);
@@ -743,7 +778,7 @@ export class DeepWikiManager {
       job.status = 'completed';
       job.completedAt = new Date();
       
-      console.log(`[DeepWiki] Local analysis completed for ${repositoryUrl} (branch: ${options?.branch})`);
+      logger.info(`[DeepWiki] Local analysis completed for ${repositoryUrl} (branch: ${options?.branch})`);
       
     } catch (error) {
       job.status = 'failed';
@@ -787,7 +822,7 @@ export class DeepWikiManager {
       
       return podName;
     } catch (error) {
-      console.error('[DeepWiki] Failed to get pod:', error);
+      logger.error('[DeepWiki] Failed to get pod:', error as Error);
       throw new Error('DeepWiki service unavailable');
     }
   }
@@ -815,7 +850,7 @@ export class DeepWikiManager {
   /**
    * Get analysis prompt based on template
    */
-  private getAnalysisPrompt(template: string, repositoryUrl: string, options?: any): string {
+  private getAnalysisPrompt(template: string, repositoryUrl: string, options?: AnalysisOptions): string {
     const prompts: { [key: string]: string } = {
       standard: `Analyze the repository at ${repositoryUrl} and provide a comprehensive analysis including:
 1. Architecture overview and patterns
@@ -853,18 +888,18 @@ export class DeepWikiManager {
    * Parse DeepWiki response into structured analysis results
    */
   private parseDeepWikiResponse(
-    response: any, 
+    response: { choices?: Array<{ message?: { content?: string } }> } | string, 
     repositoryUrl: string, 
     modelUsed: string,
-    options?: any,
+    options?: AnalysisOptions,
     jobId?: string
   ): AnalysisResults {
     // Extract content from the response
     let content = '';
-    if (response.choices && response.choices[0]) {
-      content = response.choices[0].message?.content || '';
-    } else if (typeof response === 'string') {
+    if (typeof response === 'string') {
       content = response;
+    } else if (response.choices && response.choices[0]) {
+      content = response.choices[0].message?.content || '';
     }
 
     // Parse the content into structured analysis
@@ -892,8 +927,8 @@ export class DeepWikiManager {
   /**
    * Extract section from analysis content
    */
-  private extractSection(content: string, section: string): any {
-    const sectionRegex = new RegExp(`${section}[:\s]*([^]*?)(?=\n\n|\n[A-Z]|$)`, 'i');
+  private extractSection(content: string, section: string): AnalysisSection {
+    const sectionRegex = new RegExp(`${section}[:\\s]*([^]*?)(?=\\n\\n|\\n[A-Z]|$)`, 'i');
     const match = content.match(sectionRegex);
     
     if (match) {
@@ -936,7 +971,7 @@ export class DeepWikiManager {
 
       // Get DeepWiki pod
       const podName = await this.getDeepWikiPod();
-      console.log(`[DeepWiki] Using pod: ${podName}`);
+      logger.info(`[DeepWiki] Using pod: ${podName}`);
 
       // Set up port forwarding
       const killPortForward = await this.setupPortForwarding(podName);
@@ -958,14 +993,14 @@ export class DeepWikiManager {
             selectedModel = `${modelSelection.primary.provider}/${modelSelection.primary.model}`;
             fallbackModel = `${modelSelection.fallback.provider}/${modelSelection.fallback.model}`;
             
-            console.log(`[DeepWiki] Model selection:`, {
+            logger.info(`[DeepWiki] Model selection:`, {
               primary: selectedModel,
               fallback: fallbackModel,
               estimatedCost: modelSelection.estimatedCost ? `$${modelSelection.estimatedCost.toFixed(3)}` : 'N/A',
               reasoning: modelSelection.reasoning
             });
           } catch (error) {
-            console.warn('[DeepWiki] Model selection failed, using defaults:', error);
+            logger.warn('[DeepWiki] Model selection failed, using defaults:', error as Error);
           }
         }
 
@@ -986,9 +1021,9 @@ export class DeepWikiManager {
         // Note: DeepWiki doesn't support branch parameters directly
         // Branch information should be included in the prompt if needed
 
-        console.log(`[DeepWiki] Analyzing repository: ${repositoryUrl}`);
-        console.log(`[DeepWiki] Branch: ${options?.branch || 'main'} (base: ${options?.baseBranch || 'main'})`);
-        console.log(`[DeepWiki] Model: ${selectedModel}`);
+        logger.info(`[DeepWiki] Analyzing repository: ${repositoryUrl}`);
+        logger.info(`[DeepWiki] Branch: ${options?.branch || 'main'} (base: ${options?.baseBranch || 'main'})`);
+        logger.info(`[DeepWiki] Model: ${selectedModel}`);
 
         // Call DeepWiki API
         let response;
@@ -1001,10 +1036,10 @@ export class DeepWikiManager {
           );
           modelUsed = selectedModel;
         } catch (primaryError) {
-          console.warn(`[DeepWiki] Primary model ${selectedModel} failed: ${primaryError}`);
+          logger.warn(`[DeepWiki] Primary model ${selectedModel} failed: ${primaryError}`);
           
           // Try fallback model
-          console.log(`[DeepWiki] Trying fallback model: ${fallbackModel}`);
+          logger.info(`[DeepWiki] Trying fallback model: ${fallbackModel}`);
           try {
             deepwikiRequest.model = fallbackModel;
             response = await this.deepwikiClient.post(
@@ -1013,12 +1048,12 @@ export class DeepWikiManager {
             );
             modelUsed = fallbackModel;
           } catch (fallbackError) {
-            console.warn(`[DeepWiki] Fallback model ${fallbackModel} failed:`, fallbackError);
+            logger.warn(`[DeepWiki] Fallback model ${fallbackModel} failed:`, fallbackError as Error);
             
             // Last resort - try legacy models
             for (const legacyModel of this.LEGACY_FALLBACK_MODELS) {
               if (legacyModel === fallbackModel) continue;
-              console.log(`[DeepWiki] Trying legacy model: ${legacyModel}`);
+              logger.info(`[DeepWiki] Trying legacy model: ${legacyModel}`);
               try {
                 deepwikiRequest.model = legacyModel;
                 response = await this.deepwikiClient.post(
@@ -1028,7 +1063,7 @@ export class DeepWikiManager {
                 modelUsed = legacyModel;
                 break;
               } catch (legacyError) {
-                console.warn(`[DeepWiki] Legacy model ${legacyModel} failed:`, legacyError);
+                logger.warn(`[DeepWiki] Legacy model ${legacyModel} failed:`, legacyError as Error);
               }
             }
           }
@@ -1056,7 +1091,7 @@ export class DeepWikiManager {
         job.status = 'completed';
         job.completedAt = new Date();
         
-        console.log(`[DeepWiki] Analysis completed for ${repositoryUrl} using ${modelUsed}`);
+        logger.info(`[DeepWiki] Analysis completed for ${repositoryUrl} using ${modelUsed}`);
         
         // Clean up running analyses tracking
         const cacheKey = this.getCacheKey(repositoryUrl, options);
@@ -1072,7 +1107,7 @@ export class DeepWikiManager {
       job.error = error instanceof Error ? error.message : 'Analysis failed';
       job.completedAt = new Date();
       
-      console.error(`[DeepWiki] Analysis failed for ${repositoryUrl}:`, error);
+      logger.error(`[DeepWiki] Analysis failed for ${repositoryUrl}:`, error as Error);
       throw error;
     }
   }
@@ -1102,13 +1137,30 @@ export class DeepWikiManager {
             const agentAuthenticatedUser = this.convertToAgentUser(this.authenticatedUser);
             const results = await this.vectorContextService.getRepositoryContext(
               job.repositoryUrl,
-              'orchestrator' as any,
+              AgentRole.ORCHESTRATOR,
               agentAuthenticatedUser,
               { minSimilarity: 0.95 }
             );
             
             if (results.recentAnalysis.length > 0) {
-              resolve(results.recentAnalysis[0] as any);
+              // Convert VectorSearchResult to AnalysisResults
+              const vectorResult = results.recentAnalysis[0];
+              const analysisResults: AnalysisResults = {
+                repositoryUrl: job.repositoryUrl,
+                analysis: (typeof vectorResult.content === 'object' && vectorResult.content !== null ? vectorResult.content : {}) as {
+                  architecture: Record<string, unknown>,
+                  security: Record<string, unknown>,
+                  performance: Record<string, unknown>,
+                  codeQuality: Record<string, unknown>,
+                  dependencies: Record<string, unknown>
+                },
+                metadata: {
+                  analyzedAt: new Date(),
+                  analysisVersion: '1.0.0',
+                  processingTime: Date.now() - job.startedAt.getTime()
+                }
+              };
+              resolve(analysisResults);
             } else {
               // Fallback to mock if no real results found
               resolve(this.generateMockAnalysisResults(job.repositoryUrl));
@@ -1147,9 +1199,9 @@ export class DeepWikiManager {
         this.authenticatedUser.id
       );
 
-      console.log(`Analysis results stored in Vector DB for ${repositoryUrl}`);
+      logger.info(`Analysis results stored in Vector DB for ${repositoryUrl}`);
     } catch (error) {
-      console.error('Failed to store analysis results in Vector DB:', error);
+      logger.error('Failed to store analysis results in Vector DB:', error as Error);
       throw new Error(`Vector DB storage failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -1165,51 +1217,69 @@ export class DeepWikiManager {
       repositoryUrl,
       analysis: {
         architecture: {
-          patterns: ['MVC', 'Dependency Injection'],
-          complexity: 'medium',
-          maintainability: 0.8,
-          recommendations: ['Consider extracting service layer', 'Reduce cyclomatic complexity']
+          findings: [],
+          score: 0.8,
+          recommendations: ['Consider extracting service layer', 'Reduce cyclomatic complexity'],
+          summary: 'MVC architecture with dependency injection patterns',
+          metrics: {
+            patterns: ['MVC', 'Dependency Injection'],
+            complexity: 'medium',
+            maintainability: 0.8
+          }
         },
         security: {
-          vulnerabilities: [
+          findings: [
             {
               type: 'potential-sql-injection',
               severity: 'medium',
+              message: 'Potential SQL injection vulnerability in user query',
               file: 'src/database/queries.ts',
-              line: 42,
-              description: 'Potential SQL injection vulnerability in user query'
+              line: 42
             }
           ],
           score: 0.85,
-          recommendations: ['Use parameterized queries', 'Implement input validation']
+          recommendations: ['Use parameterized queries', 'Implement input validation'],
+          summary: 'Generally secure with some areas for improvement'
         },
         performance: {
-          hotspots: ['Database queries', 'File I/O operations'],
+          findings: [],
           score: 0.75,
-          recommendations: ['Implement query optimization', 'Add caching layer']
+          recommendations: ['Implement query optimization', 'Add caching layer'],
+          summary: 'Performance is acceptable with optimization opportunities',
+          metrics: {
+            hotspots: ['Database queries', 'File I/O operations']
+          }
         },
         codeQuality: {
+          findings: [
+            {
+              type: 'high-complexity-function',
+              severity: 'medium',
+              message: 'High complexity function detected',
+              file: 'src/services/processor.ts',
+              line: 100
+            }
+          ],
+          score: 0.82,
+          recommendations: ['Increase test coverage', 'Refactor complex functions'],
+          summary: 'Good code quality with room for improvement',
           metrics: {
             maintainability: 0.82,
             testCoverage: 0.65,
             codeComplexity: 0.3
-          },
-          issues: [
-            {
-              type: 'high-complexity-function',
-              file: 'src/services/processor.ts',
-              function: 'processData',
-              complexity: 15
-            }
-          ],
-          recommendations: ['Increase test coverage', 'Refactor complex functions']
+          }
         },
         dependencies: {
-          outdated: [
-            { name: 'express', current: '4.17.1', latest: '4.18.2', severity: 'low' }
+          findings: [
+            {
+              type: 'outdated-dependency',
+              severity: 'low',
+              message: 'Dependency express is outdated (current: 4.17.1, latest: 4.18.2)'
+            }
           ],
-          vulnerabilities: [],
-          recommendations: ['Update dependencies to latest versions']
+          score: 0.9,
+          recommendations: ['Update dependencies to latest versions'],
+          summary: 'Dependencies are mostly up to date'
         }
       },
       metadata: {
@@ -1232,9 +1302,9 @@ export class DeepWikiManager {
   /**
    * Create mock RAG service for VectorContextService
    */
-  private createMockRAGService(): any {
+  private createMockRAGService(): unknown {
     return {
-      search: async (options: any, userId: string) => {
+      search: async (options: unknown, userId: string) => {
         // Return empty results for now
         // In production, this would be the actual RAG service
         return [];
@@ -1256,7 +1326,7 @@ export class DeepWikiManager {
    * Cache repository files (simulated)
    * In production, this would store actual cloned repository files
    */
-  private cacheRepository(repositoryUrl: string, branch = 'main', analysisResults?: AnalysisResults, files?: any[]): void {
+  private cacheRepository(repositoryUrl: string, branch = 'main', analysisResults?: AnalysisResults, files?: RepositoryFile[]): void {
     const filesToCache = files || this.generateMockRepositoryFiles();
     const cacheKey = branch !== 'main' ? `${repositoryUrl}:${branch}` : repositoryUrl;
     
@@ -1266,16 +1336,17 @@ export class DeepWikiManager {
       repositoryUrl,
       branch
     });
-    console.log(`[DeepWiki] Cached ${filesToCache.length} files for ${repositoryUrl} (branch: ${branch})`);
+    logger.info(`[DeepWiki] Cached ${filesToCache.length} files for ${repositoryUrl} (branch: ${branch})`);
   }
   
   /**
    * Generate mock repository files with actual content for testing
    */
-  private generateMockRepositoryFiles(): any[] {
+  private generateMockRepositoryFiles(): RepositoryFile[] {
     return [
       {
         path: 'src/components/UserAuth.js',
+        size: 500, // Mock size
         content: `
 import React from 'react';
 import { db } from '../database';
@@ -1300,6 +1371,7 @@ export function UserAuth({ userId }) {
       },
       {
         path: 'src/utils/dataProcessor.js',
+        size: 400, // Mock size
         content: `
 // Complex function with high cyclomatic complexity
 function processData(data) {
@@ -1324,6 +1396,7 @@ module.exports = { processData, moduleA };
       },
       {
         path: 'package.json',
+        size: 200, // Mock size
         content: `{
   "name": "test-app",
   "version": "1.0.0",
@@ -1344,11 +1417,17 @@ module.exports = { processData, moduleA };
     repositoryUrl: string,
     options?: {
       branch?: string;
-      prContext?: any;
+      prContext?: {
+        pullRequest?: {
+          changedFiles?: number;
+          additions?: number;
+          deletions?: number;
+        };
+      };
     }
   ): Promise<RepositoryContext> {
     // Extract repository info from URL
-    const repoPath = repositoryUrl.replace(/^https?:\/\/[^\/]+\//, '');
+    const repoPath = repositoryUrl.replace(/^https?:\/\/[^/]+\//, '');
     const [owner, repo] = repoPath.split('/');
     
     // Try to get cached repository info
@@ -1362,13 +1441,13 @@ module.exports = { processData, moduleA };
     
     if (cachedData?.files) {
       fileCount = cachedData.files.length;
-      totalLines = cachedData.files.reduce((sum: number, file: any) => 
+      totalLines = cachedData.files.reduce((sum: number, file: RepositoryFile) => 
         sum + (file.content?.split('\n').length || 0), 0
       );
       
       // Detect languages from file extensions
       const langMap = new Map<string, number>();
-      cachedData.files.forEach((file: any) => {
+      cachedData.files.forEach((file: RepositoryFile) => {
         const ext = path.extname(file.path).toLowerCase();
         const lang = this.getLanguageFromExtension(ext);
         if (lang) {
@@ -1414,11 +1493,11 @@ module.exports = { processData, moduleA };
     
     // Determine analysis depth
     let analysisDepth: RepositoryContext['analysisDepth'] = 'standard';
-    if (options?.prContext) {
-      const pr = options.prContext;
-      if (pr.changedFiles < 5 && pr.additions < 100) {
+    if (options?.prContext?.pullRequest) {
+      const pr = options.prContext.pullRequest;
+      if (pr.changedFiles && pr.changedFiles < 5 && pr.additions && pr.additions < 100) {
         analysisDepth = 'quick';
-      } else if (pr.changedFiles > 50 || pr.additions > 1000) {
+      } else if ((pr.changedFiles && pr.changedFiles > 50) || (pr.additions && pr.additions > 1000)) {
         analysisDepth = 'comprehensive';
       }
     }
@@ -1433,10 +1512,10 @@ module.exports = { processData, moduleA };
       totalLines,
       complexity,
       analysisDepth,
-      prContext: options?.prContext ? {
-        changedFiles: options.prContext.changedFiles || 0,
-        additions: options.prContext.additions || 0,
-        deletions: options.prContext.deletions || 0
+      prContext: options?.prContext?.pullRequest ? {
+        changedFiles: options.prContext.pullRequest.changedFiles || 0,
+        additions: options.prContext.pullRequest.additions || 0,
+        deletions: options.prContext.pullRequest.deletions || 0
       } : undefined
     };
   }
@@ -1477,7 +1556,7 @@ module.exports = { processData, moduleA };
   /**
    * Detect frameworks from file patterns
    */
-  private detectFrameworks(files: any[]): string[] {
+  private detectFrameworks(files: RepositoryFile[]): string[] {
     const frameworks = new Set<string>();
     
     for (const file of files) {
@@ -1530,13 +1609,30 @@ module.exports = { processData, moduleA };
       const agentAuthenticatedUser = this.convertToAgentUser(this.authenticatedUser);
       const results = await this.vectorContextService.getRepositoryContext(
         repositoryUrl,
-        'orchestrator' as any,
+        AgentRole.ORCHESTRATOR,
         agentAuthenticatedUser,
         { minSimilarity: 0.95 }
       );
       
       if (results.recentAnalysis.length > 0) {
-        return results.recentAnalysis[0] as any;
+        // Convert VectorSearchResult to AnalysisResults
+        const vectorResult = results.recentAnalysis[0];
+        const analysisResults: AnalysisResults = {
+          repositoryUrl: repositoryUrl,
+          analysis: (typeof vectorResult.content === 'object' && vectorResult.content !== null ? vectorResult.content : {}) as {
+            architecture: Record<string, unknown>,
+            security: Record<string, unknown>,
+            performance: Record<string, unknown>,
+            codeQuality: Record<string, unknown>,
+            dependencies: Record<string, unknown>
+          },
+          metadata: {
+            analyzedAt: new Date(),
+            analysisVersion: '1.0.0',
+            processingTime: 0
+          }
+        };
+        return analysisResults;
       }
     } catch (error) {
       this.logger.error('Failed to get analysis results:', { error: error instanceof Error ? error.message : String(error) });
@@ -1693,12 +1789,14 @@ module.exports = { processData, moduleA };
       
       if (results.recentAnalysis && results.recentAnalysis.length > 0) {
         // Look for model configuration in recent analysis
-        const latestAnalysis = results.recentAnalysis[0] as any;
-        if (latestAnalysis.findings) {
+        const latestAnalysis = results.recentAnalysis[0];
+        if (latestAnalysis.content && typeof latestAnalysis.content === 'object' && latestAnalysis.content !== null && 'findings' in (latestAnalysis.content as object)) {
           // Find DeepWiki-specific model configuration
-          const deepwikiConfigs = latestAnalysis.findings.filter(
-            (f: any) => f.type && (f.type.includes('deepwiki') || f.type.includes('orchestrator'))
-          );
+          const content = latestAnalysis.content as { findings?: Array<{ type?: string; description?: unknown }> };
+          const findings = content.findings;
+          const deepwikiConfigs = Array.isArray(findings) ? findings.filter(
+            (f) => f.type && (f.type.includes('deepwiki') || f.type.includes('orchestrator'))
+          ) : [];
           
           if (deepwikiConfigs.length > 0) {
             const config = deepwikiConfigs[0];

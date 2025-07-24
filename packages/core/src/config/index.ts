@@ -48,6 +48,15 @@ export function getConfig(): AppConfig {
   const isDevelopment = env === 'development';
   const isProduction = env === 'production';
   
+  // Validate required environment variables
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+  const databaseUrl = process.env.DATABASE_URL;
+  
+  if (!supabaseUrl) throw new Error('SUPABASE_URL is required');
+  if (!supabaseAnonKey) throw new Error('SUPABASE_ANON_KEY is required');
+  if (!databaseUrl) throw new Error('DATABASE_URL is required');
+  
   return {
     env,
     isDevelopment,
@@ -60,8 +69,8 @@ export function getConfig(): AppConfig {
       url: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
     },
     supabase: {
-      url: process.env.SUPABASE_URL!,
-      anonKey: process.env.SUPABASE_ANON_KEY!,
+      url: supabaseUrl,
+      anonKey: supabaseAnonKey,
       serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
     },
     oauth: {
@@ -73,7 +82,7 @@ export function getConfig(): AppConfig {
       gitlabAuth: isOAuthProviderEnabled('gitlab'),
     },
     database: {
-      url: process.env.DATABASE_URL!,
+      url: databaseUrl,
     },
     redis: process.env.REDIS_URL ? {
       url: process.env.REDIS_URL,

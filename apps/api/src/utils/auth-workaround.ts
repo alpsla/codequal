@@ -1,4 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
+import { createLogger } from '@codequal/core/utils';
+
+const logger = createLogger('auth-workaround');
 
 export interface AuthToken {
   access_token: string;
@@ -12,7 +15,7 @@ export interface DecodedToken {
   aud?: string;
   role?: string;
   exp?: number;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export function extractBearerToken(authHeader: string | undefined): string | null {
@@ -36,7 +39,7 @@ export function decodeTokenWithoutVerification(token: string): DecodedToken | nu
     
     return payload as DecodedToken;
   } catch (error) {
-    console.error('Error decoding token:', error);
+    logger.error('Error decoding token:', error as Error);
     return null;
   }
 }
@@ -58,7 +61,16 @@ export function authMiddlewareWorkaround(req: Request, res: Response, next: Next
     return res.status(401).json({ error: 'Token expired' });
   }
   
-  (req as any).user = {
+  // Extend request with user property
+  interface AuthRequestWithUser {
+    user?: {
+      id: string;
+      email?: string;
+      role: string;
+    };
+  }
+  
+  ((req as Request) as AuthRequestWithUser).user = {
     id: decoded.sub,
     email: decoded.email,
     role: decoded.role || 'authenticated'

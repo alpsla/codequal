@@ -54,7 +54,11 @@ async function requestResearcherForMissingConfig(
     const modelSync = new ModelVersionSync(logger);
     
     // Trigger Researcher agent (this would be async in production)
-    await triggerResearcherAgent(researchRequest);
+    await triggerResearcherAgent({
+      role: researchRequest.role,
+      context: researchRequest.context,
+      reason: `Missing model configuration for ${role} agent in ${context.language}/${context.sizeCategory} context`
+    });
     
     // After research is complete, try to find the model again
     const updatedOptimalModel = await modelSync.findOptimalModel({
@@ -95,7 +99,7 @@ async function requestResearcherForMissingConfig(
 /**
  * Trigger the Researcher agent to search web for new model configurations
  */
-async function triggerResearcherAgent(researchRequest: any): Promise<void> {
+async function triggerResearcherAgent(researchRequest: { role: string; context: RepositoryContext; reason: string }): Promise<void> {
   // TODO: Implement actual Researcher agent integration
   // This would:
   // 1. Send request to Researcher agent service
@@ -129,11 +133,11 @@ async function getDynamicFallback(role: AgentRole, context: RepositoryContext): 
     // 1. Same language, any role
     { ...context, tags: [] },
     // 2. Same size category, any language  
-    { language: '', sizeCategory: context.sizeCategory as any, tags: [] },
+    { language: '', sizeCategory: context.sizeCategory, tags: [] },
     // 3. Any configuration for this role
-    { language: '', sizeCategory: 'medium' as any, tags: [role] },
+    { language: '', sizeCategory: RepositorySizeCategory.MEDIUM, tags: [role] },
     // 4. Most general available model
-    { language: '', sizeCategory: 'medium' as any, tags: [] }
+    { language: '', sizeCategory: RepositorySizeCategory.MEDIUM, tags: [] }
   ];
   
   for (const fallbackContext of fallbackStrategies) {

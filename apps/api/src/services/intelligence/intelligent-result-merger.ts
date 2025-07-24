@@ -7,8 +7,8 @@ export interface AgentResult {
   findings?: Finding[];
   insights?: string[];
   suggestions?: string[];
-  metadata?: any;
-  deduplicationResult?: any;
+  metadata?: Record<string, unknown>;
+  deduplicationResult?: unknown;
 }
 
 export interface MergedResult {
@@ -166,7 +166,10 @@ export class IntelligentResultMerger {
       if (!locationGroups.has(key)) {
         locationGroups.set(key, []);
       }
-      locationGroups.get(key)!.push(finding);
+      const group = locationGroups.get(key);
+      if (group) {
+        group.push(finding);
+      }
     }
     
     const deduplicated: Finding[] = [];
@@ -266,7 +269,10 @@ export class IntelligentResultMerger {
       if (!categoryGroups.has(key)) {
         categoryGroups.set(key, []);
       }
-      categoryGroups.get(key)!.push(finding);
+      const group = categoryGroups.get(key);
+      if (group) {
+        group.push(finding);
+      }
     }
     
     // Detect patterns

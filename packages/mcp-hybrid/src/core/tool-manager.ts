@@ -61,7 +61,7 @@ export class MCPToolManager {
    * Initialize persistent tools that benefit from warm state
    */
   private async initializePersistentTools(): Promise<void> {
-    for (const toolId of this.PERSISTENT_TOOL_IDS) {
+    for (const toolId of Array.from(this.PERSISTENT_TOOL_IDS)) {
       try {
         if (this.shouldStartPersistentTool(toolId)) {
           const process = await this.startPersistentTool(toolId);
@@ -183,7 +183,7 @@ export class MCPToolManager {
    * Validate on-demand tools are available
    */
   private async validateOnDemandTools(): Promise<void> {
-    for (const toolId of this.ON_DEMAND_TOOL_IDS) {
+    for (const toolId of Array.from(this.ON_DEMAND_TOOL_IDS)) {
       try {
         const available = await this.checkToolAvailability(toolId);
         if (!available) {
@@ -354,14 +354,14 @@ export class MCPToolManager {
         ...result,
         executionTime: Date.now() - startTime
       };
-    } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
+    } catch (error) {
       return {
         success: false,
         toolId: tool.id,
         executionTime: Date.now() - startTime,
         error: {
           code: 'EXECUTION_ERROR',
-          message: error.message,
+          message: error instanceof Error ? error.message : String(error),
           recoverable: true
         }
       };
@@ -396,14 +396,14 @@ export class MCPToolManager {
         ...result,
         executionTime: Date.now() - startTime
       };
-    } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
+    } catch (error) {
       return {
         success: false,
         toolId: tool.id,
         executionTime: Date.now() - startTime,
         error: {
           code: 'EXECUTION_ERROR',
-          message: error.message,
+          message: error instanceof Error ? error.message : String(error),
           recoverable: true
         }
       };
@@ -421,7 +421,7 @@ export class MCPToolManager {
     const statuses = new Map();
     
     // Check persistent tools
-    for (const [toolId, process] of this.persistentTools) {
+    for (const [toolId, process] of Array.from(this.persistentTools)) {
       statuses.set(toolId, {
         available: process.status === 'running',
         type: 'persistent',
@@ -430,7 +430,7 @@ export class MCPToolManager {
     }
     
     // Check on-demand tools
-    for (const toolId of this.ON_DEMAND_TOOL_IDS) {
+    for (const toolId of Array.from(this.ON_DEMAND_TOOL_IDS)) {
       statuses.set(toolId, {
         available: true, // Assume available if validated during init
         type: 'on-demand'
@@ -444,7 +444,7 @@ export class MCPToolManager {
    * Shutdown all persistent tools
    */
   async shutdown(): Promise<void> {
-    for (const [toolId, process] of this.persistentTools) {
+    for (const [toolId, process] of Array.from(this.persistentTools)) {
       try {
         await process.stop();
         console.info(`Stopped persistent tool: ${toolId}`);

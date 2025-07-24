@@ -37,6 +37,12 @@ interface DependencyMetrics {
   dependencyDepth: number;
 }
 
+interface FileInfo {
+  path: string;
+  changeType?: 'added' | 'modified' | 'deleted';
+  content?: string;
+}
+
 export class MadgeDirectAdapter extends DirectToolAdapter {
   readonly id = 'madge-direct';
   readonly name = 'Madge Circular Dependency Detector';
@@ -165,7 +171,7 @@ export class MadgeDirectAdapter extends DirectToolAdapter {
   /**
    * Analyze imports in changed files
    */
-  private analyzeImportsInChangedFiles(files: any[]): Map<string, Set<string>> {
+  private analyzeImportsInChangedFiles(files: FileInfo[]): Map<string, Set<string>> {
     const imports = new Map<string, Set<string>>();
     
     files.forEach(file => {
@@ -235,7 +241,7 @@ export class MadgeDirectAdapter extends DirectToolAdapter {
   /**
    * Analyze file structure and organization
    */
-  private analyzeFileStructure(files: any[]): ToolFinding[] {
+  private analyzeFileStructure(files: FileInfo[]): ToolFinding[] {
     const findings: ToolFinding[] = [];
     
     // Check for deeply nested files
@@ -308,7 +314,7 @@ export class MadgeDirectAdapter extends DirectToolAdapter {
   /**
    * Get unique directories from file list
    */
-  private getUniqueDirectories(files: any[]): string[] {
+  private getUniqueDirectories(files: FileInfo[]): string[] {
     const dirs = new Set<string>();
     
     files.forEach(file => {
@@ -761,7 +767,7 @@ export class MadgeDirectAdapter extends DirectToolAdapter {
     circularDeps: string[][],
     totalModules: number,
     findings: ToolFinding[]
-  ): Record<string, any> {
+  ): Record<string, unknown> {
     const architectureScore = this.calculateArchitectureScore(
       circularDeps.length,
       totalModules,

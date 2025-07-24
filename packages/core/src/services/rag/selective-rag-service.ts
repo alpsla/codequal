@@ -2,8 +2,11 @@ import { SupabaseClient as SupabaseJSClient } from '@supabase/supabase-js';
 
 // Compatible interface for our RAG services
 interface SupabaseClient {
-  from(table: string): any;
-  rpc(functionName: string, params: any): Promise<{ data: any; error: any }>;
+  from(table: string): {
+    select(columns: string): Promise<{ data: unknown[] | null; error: Error | null }>;
+    insert(data: Record<string, unknown> | Record<string, unknown>[]): Promise<{ data: unknown[] | null; error: Error | null }>;
+  };
+  rpc(functionName: string, params: Record<string, unknown>): Promise<{ data: unknown; error: Error | null }>;
 }
 import { getSupabaseClient } from '../supabase/supabase-client.factory';
 import { createLogger } from '../../utils/logger';
@@ -103,7 +106,7 @@ export class SelectiveRAGService {
     supabaseClient?: SupabaseJSClient
   ) {
     this.queryAnalyzer = new QueryAnalyzer();
-    this.supabase = (supabaseClient || getSupabaseClient()) as any;
+    this.supabase = (supabaseClient || getSupabaseClient()) as unknown as SupabaseClient;
   }
   
   /**
@@ -274,14 +277,14 @@ export class SelectiveRAGService {
         return [];
       }
       
-      if (!data || data.length === 0) {
+      if (!data || (data as any[]).length === 0) {
         this.logger.info('No documents found', { filters });
         return [];
       }
       
       // Re-rank results with additional scoring
       const rerankedResults = this.rerankDocumentResults(
-        data,
+        data as any[],
         analyzedQuery,
         { importanceWeight, recencyWeight, frameworkWeight }
       );
@@ -332,7 +335,7 @@ export class SelectiveRAGService {
         return [];
       }
       
-      return (data || []).map((item: any) => ({
+      return ((data as any[]) || []).map((item: any) => ({
         id: item.id.toString(),
         title: item.title,
         content: item.content,
@@ -420,7 +423,7 @@ export class SelectiveRAGService {
     analyzedQuery: AnalyzedQuery,
     weights: { importanceWeight: number; recencyWeight: number; frameworkWeight: number }
   ): RAGSearchResult[] {
-    return results.map(item => {
+    return results.map((item: any) => {
       const baseScore = item.similarity;
       const importanceBoost = item.importance_score * weights.importanceWeight;
       
@@ -512,7 +515,7 @@ export class SelectiveRAGService {
     documentResults: RAGSearchResult[],
     educationalResults: EducationalContentResult[]
   ) {
-    const insights: any = {};
+    const insights: Record<string, unknown> = {};
     
     // Add refinement suggestions if confidence is low
     if (analyzedQuery.analysisConfidence < 0.6) {

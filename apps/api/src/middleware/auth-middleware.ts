@@ -1,5 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { getSupabase } from '@codequal/database/supabase/client';
+import { createLogger } from '@codequal/core/utils';
+
+const logger = createLogger('auth-middleware');
 
 // Extended Request interface to include authenticated user
 export interface AuthenticatedRequest extends Request {
@@ -17,6 +20,7 @@ export interface AuthenticatedUser {
     token: string;
     expiresAt: Date;
   };
+  isApiKeyAuth?: boolean;
 }
 
 export const authMiddleware = async (
@@ -91,7 +95,7 @@ export const authMiddleware = async (
       status: 'active',
       session: {
         token: session.session.access_token,
-        expiresAt: new Date(session.session.expires_at! * 1000)
+        expiresAt: new Date((session.session.expires_at || 0) * 1000)
       }
     };
 
@@ -99,7 +103,7 @@ export const authMiddleware = async (
     next();
 
   } catch (error) {
-    console.error('Authentication middleware error:', error);
+    logger.error('Authentication middleware error:', { error });
     res.status(500).json({ error: 'Authentication service error' });
   }
 };
@@ -111,7 +115,7 @@ export const checkRepositoryAccess = async (
   try {
     // Allow test user to access any repository
     if (user.id === '00000000-0000-0000-0000-000000000000') {
-      console.log('[Repository Access] Allowing test user access to all repositories');
+      logger.info('Allowing test user access to all repositories');
       return true;
     }
     
@@ -124,7 +128,7 @@ export const checkRepositoryAccess = async (
     
     if (paymentMethods && paymentMethods.length > 0) {
       // User has payment method - allow access to any repository
-      console.log('User has payment method - granting repository access');
+      logger.info('User has payment method - granting repository access');
       return true;
     }
 
@@ -136,7 +140,7 @@ export const checkRepositoryAccess = async (
       .eq('repository_url', repositoryUrl);
 
     if (error) {
-      console.error('Repository access check error:', error);
+      logger.error('Repository access check error:', error);
       return false;
     }
 
@@ -155,7 +159,7 @@ export const checkRepositoryAccess = async (
 
     return repositories && repositories.length > 0;
   } catch (error) {
-    console.error('Repository access check error:', error);
+    logger.error('Repository access check error:', error as Error);
     return false;
   }
 };

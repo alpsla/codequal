@@ -12,7 +12,11 @@ const logger = createLogger('UsageStatsAPI');
  */
 router.get('/usage-stats', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const userId = req.user!.id;
+    const user = req.user;
+    if (!user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    const userId = user.id;
     const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
     
     // Get user's subscription info
@@ -136,7 +140,11 @@ router.get('/usage-stats', authMiddleware, async (req: Request, res: Response) =
  */
 router.get('/usage-stats/history', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const userId = req.user!.id;
+    const user = req.user;
+    if (!user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    const userId = user.id;
     const months = 6; // Last 6 months
     
     // Generate list of last 6 months

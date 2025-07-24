@@ -57,8 +57,8 @@ class OpenAIEmbeddingService {
       })
     });
     
-    const data = await response.json();
-    return data.data.map((item: any) => item.embedding);
+    const data = await response.json() as { data: Array<{ embedding: number[] }> };
+    return data.data.map((item) => item.embedding);
   }
 }
 
@@ -389,7 +389,7 @@ export class RAGIntegrationExample {
       generateEmbeddings: true
     });
     
-    console.log('Update result:', result);
+    // console.log('Update result:', result);
     return result;
   }
   

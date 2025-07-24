@@ -35,7 +35,7 @@ export class DirectEmbeddingService {
   private providers: Map<string, EmbeddingProvider> = new Map();
   private openaiClient: OpenAI;
   private togetherClient?: OpenAI;
-  private voyageClient?: any; // Will be VoyageAIClient when available
+  private voyageClient?: unknown; // Will be VoyageAIClient when available
   private currentConfig: EmbeddingConfig;
   
   private dbConfigLoaded = false;
@@ -302,7 +302,7 @@ export class DirectEmbeddingService {
       }
       
       // Use Voyage AI client
-      return await this.voyageClient.embed(text, config.model);
+      return await (this.voyageClient as any).embed(text, config.model);
     }
     
     // Handle Together AI (if they add embedding support)
@@ -416,7 +416,12 @@ export class DirectEmbeddingService {
     available: boolean;
     config: EmbeddingConfig;
   }> {
-    const models: Array<any> = [];
+    const models: Array<{
+      provider: string;
+      model: string;
+      available: boolean;
+      config: EmbeddingConfig;
+    }> = [];
     
     for (const [providerKey, provider] of this.providers) {
       for (const [modelKey, config] of provider.models) {

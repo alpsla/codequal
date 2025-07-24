@@ -34,6 +34,34 @@ interface NpmAuditVulnerability {
   };
 }
 
+interface NpmAuditAdvisory {
+  id: number;
+  title: string;
+  module_name: string;
+  severity: string;
+  url: string;
+  findings?: Array<{
+    version: string;
+    paths: string[];
+  }>;
+  recommendation?: string;
+  cves?: string[];
+  patched_versions?: string;
+}
+
+interface NpmAuditV1Report {
+  advisories: Record<string, NpmAuditAdvisory>;
+  metadata?: {
+    vulnerabilities: {
+      info: number;
+      low: number;
+      moderate: number;
+      high: number;
+      critical: number;
+    };
+  };
+}
+
 interface NpmAuditReport {
   vulnerabilities: Record<string, NpmAuditVulnerability>;
   metadata: {
@@ -301,25 +329,25 @@ export class NpmAuditDirectAdapter extends DirectToolAdapter {
   /**
    * Convert older npm audit format to v2
    */
-  private convertToV2Format(auditData: any): NpmAuditReport {
+  private convertToV2Format(auditData: NpmAuditV1Report): NpmAuditReport {
     // Handle older npm audit formats
     const vulnerabilities: Record<string, NpmAuditVulnerability> = {};
     const metadata = auditData.metadata || {};
     
     if (auditData.advisories) {
       // npm 6 format
-      Object.entries(auditData.advisories).forEach(([id, advisory]: [string, any]) => {
+      Object.entries(auditData.advisories).forEach(([id, advisory]: [string, NpmAuditAdvisory]) => {
         vulnerabilities[advisory.module_name] = {
           name: advisory.module_name,
-          severity: advisory.severity,
+          severity: advisory.severity as 'info' | 'low' | 'moderate' | 'high' | 'critical',
           via: [{
             title: advisory.title,
             url: advisory.url,
             severity: advisory.severity
           }],
-          effects: advisory.findings?.map((f: any) => f.paths[0]) || [],
-          range: advisory.vulnerable_versions,
-          nodes: advisory.findings?.map((f: any) => f.version) || [],
+          effects: advisory.findings?.map((f) => f.paths[0]) || [],
+          range: (advisory as any).vulnerable_versions || '',
+          nodes: advisory.findings?.map((f) => f.version) || [],
           fixAvailable: advisory.patched_versions !== '<0.0.0'
         };
       });
@@ -328,7 +356,7 @@ export class NpmAuditDirectAdapter extends DirectToolAdapter {
     return {
       vulnerabilities,
       metadata: {
-        vulnerabilities: metadata.vulnerabilities || {
+        vulnerabilities: (metadata as any).vulnerabilities || {
           info: 0,
           low: 0,
           moderate: 0,
@@ -336,7 +364,7 @@ export class NpmAuditDirectAdapter extends DirectToolAdapter {
           critical: 0,
           total: 0
         },
-        dependencies: metadata.dependencies || {
+        dependencies: (metadata as any).dependencies || {
           prod: 0,
           dev: 0,
           optional: 0,
@@ -420,7 +448,7 @@ export class NpmAuditDirectAdapter extends DirectToolAdapter {
   /**
    * Check if vulnerability is auto-fixable
    */
-  private isAutoFixable(fixAvailable: boolean | any): boolean {
+  private isAutoFixable(fixAvailable: boolean | { name: string; version: string; isSemVerMajor: boolean }): boolean {
     if (typeof fixAvailable === 'boolean') {
       return fixAvailable;
     }
@@ -430,7 +458,7 @@ export class NpmAuditDirectAdapter extends DirectToolAdapter {
   /**
    * Get fix description
    */
-  private getFixDescription(fixAvailable: boolean | any): string {
+  private getFixDescription(fixAvailable: boolean | { name: string; version: string; isSemVerMajor: boolean }): string {
     if (typeof fixAvailable === 'boolean') {
       return fixAvailable ? 'Run npm audit fix' : 'Manual update required';
     }
@@ -479,7 +507,7 @@ export class NpmAuditDirectAdapter extends DirectToolAdapter {
   /**
    * Format summary documentation
    */
-  private formatSummaryDoc(vulnerabilities: any): string {
+  private formatSummaryDoc(vulnerabilities: NpmAuditReport['metadata']['vulnerabilities']): string {
     let doc = '## Security Vulnerability Summary\n\n';
     doc += '| Severity | Count |\n';
     doc += '|----------|-------|\n';
@@ -502,7 +530,7 @@ export class NpmAuditDirectAdapter extends DirectToolAdapter {
   /**
    * Calculate security score (0-10)
    */
-  private calculateSecurityScore(vulnerabilities: any): number {
+  private calculateSecurityScore(vulnerabilities: NpmAuditReport['metadata']['vulnerabilities']): number {
     if (vulnerabilities.total === 0) return 10;
     
     // Weighted scoring based on severity

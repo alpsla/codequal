@@ -147,7 +147,7 @@ export class ToolResultReviewService {
     switch (toolId) {
       case 'npm-audit':
         if (thresholds.npmAudit && result.metadata) {
-          const vulns = result.metadata.vulnerabilities || {};
+          const vulns = result.metadata.vulnerabilities as any || {};
           if ((vulns.critical || 0) <= thresholds.npmAudit.maxCritical &&
               (vulns.high || 0) <= thresholds.npmAudit.maxHigh) {
             return { 
@@ -164,7 +164,7 @@ export class ToolResultReviewService {
 
       case 'license-checker':
         if (thresholds.licenseChecker && result.metadata) {
-          const risky = result.metadata.riskyLicenses || 0;
+          const risky = result.metadata.riskyLicenses as number || 0;
           if (risky <= thresholds.licenseChecker.maxRiskyLicenses) {
             return { 
               approved: true, 
@@ -180,7 +180,7 @@ export class ToolResultReviewService {
 
       case 'madge':
         if (thresholds.madge && result.metadata) {
-          const circular = result.metadata.circularDependencies || 0;
+          const circular = result.metadata.circularDependencies as number || 0;
           if (circular <= thresholds.madge.maxCircularDependencies) {
             return { 
               approved: true, 
@@ -196,7 +196,7 @@ export class ToolResultReviewService {
 
       case 'dependency-cruiser':
         if (thresholds.dependencyCruiser && result.metadata) {
-          const violations = result.metadata.violations || 0;
+          const violations = result.metadata.violations as number || 0;
           if (violations <= thresholds.dependencyCruiser.maxViolations) {
             return { 
               approved: true, 
@@ -212,7 +212,7 @@ export class ToolResultReviewService {
 
       case 'npm-outdated':
         if (thresholds.npmOutdated && result.metadata) {
-          const major = result.metadata.majorUpdates || 0;
+          const major = result.metadata.majorUpdates as number || 0;
           if (major <= thresholds.npmOutdated.maxMajorUpdates) {
             return { 
               approved: true, 
@@ -382,20 +382,20 @@ export class ToolResultReviewService {
     
     switch (toolId) {
       case 'npm-audit':
-        return (metadata.vulnerabilities?.critical || 0) > 0 || 
-               (metadata.vulnerabilities?.high || 0) > 0;
+        return ((metadata.vulnerabilities as any)?.critical || 0) > 0 || 
+               ((metadata.vulnerabilities as any)?.high || 0) > 0;
       
       case 'license-checker':
-        return (metadata.riskyLicenses || 0) > 0;
+        return (metadata.riskyLicenses as number || 0) > 0;
       
       case 'madge':
-        return (metadata.circularDependencies || 0) > 0;
+        return (metadata.circularDependencies as number || 0) > 0;
       
       case 'dependency-cruiser':
-        return (metadata.violations || 0) > 0;
+        return (metadata.violations as number || 0) > 0;
       
       case 'npm-outdated':
-        return (metadata.majorUpdates || 0) > 5;
+        return (metadata.majorUpdates as number || 0) > 5;
       
       default:
         return false;

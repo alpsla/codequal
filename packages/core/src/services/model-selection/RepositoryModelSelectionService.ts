@@ -200,14 +200,14 @@ export class RepositoryModelSelectionService {
     });
     
     // Check if we have configurations for this language
-    const repositoryConfigs = REPOSITORY_MODEL_CONFIGS as any;
+    const repositoryConfigs = REPOSITORY_MODEL_CONFIGS as unknown as Record<string, Record<string, RepositoryModelConfig>>;
     if (!repositoryConfigs[language]) {
       return {
         requiresCalibration: true,
         calibrationType: 'full',
         estimatedCalibrationTime: this.estimateCalibrationTime(repository),
         reason: `No configurations found for language: ${language}`,
-        temporaryConfig: (REPOSITORY_MODEL_CONFIGS as any).default?.[sizeCategory]
+        temporaryConfig: (REPOSITORY_MODEL_CONFIGS as unknown as Record<string, Record<string, RepositoryModelConfig>>).default?.[sizeCategory]
       };
     }
     
@@ -380,7 +380,7 @@ export class RepositoryModelSelectionService {
     const normalizedLang = language?.toLowerCase() || 'default';
     
     // Get the baseline configuration
-    const repositoryConfigs = REPOSITORY_MODEL_CONFIGS as any;
+    const repositoryConfigs = REPOSITORY_MODEL_CONFIGS as unknown as Record<string, Record<string, RepositoryModelConfig>>;
     const config = repositoryConfigs[normalizedLang]?.[sizeCategory] 
       || repositoryConfigs.default?.[sizeCategory];
     
@@ -388,13 +388,13 @@ export class RepositoryModelSelectionService {
     if (strategy === ModelSelectionStrategy.PERFORMANCE) {
       // Small repositories always use OpenAI for speed
       if (sizeCategory === RepositorySizeCategory.SMALL) {
-        return (REPOSITORY_MODEL_CONFIGS as any).default?.[RepositorySizeCategory.SMALL] || config;
+        return (REPOSITORY_MODEL_CONFIGS as unknown as Record<string, Record<string, RepositoryModelConfig>>).default?.[RepositorySizeCategory.SMALL] || config;
       }
       
       // For medium repositories, use OpenAI if testing status is not completed
       if (sizeCategory === RepositorySizeCategory.MEDIUM && 
           config.testResults?.status !== TestingStatus.TESTED) {
-        return (REPOSITORY_MODEL_CONFIGS as any).default?.[RepositorySizeCategory.SMALL] || config;
+        return (REPOSITORY_MODEL_CONFIGS as unknown as Record<string, Record<string, RepositoryModelConfig>>).default?.[RepositorySizeCategory.SMALL] || config;
       }
       
       // Return the standard config for this language/size
@@ -407,7 +407,7 @@ export class RepositoryModelSelectionService {
       // unless the language has a tested configuration
       if ((sizeCategory === RepositorySizeCategory.MEDIUM || sizeCategory === RepositorySizeCategory.LARGE) && 
           config.testResults?.status !== TestingStatus.TESTED) {
-        return (REPOSITORY_MODEL_CONFIGS as any).default?.[RepositorySizeCategory.MEDIUM] || config; // Claude has best detail for unknown langs
+        return (REPOSITORY_MODEL_CONFIGS as unknown as Record<string, Record<string, RepositoryModelConfig>>).default?.[RepositorySizeCategory.MEDIUM] || config; // Claude has best detail for unknown langs
       }
       
       // Return the standard config for this language/size

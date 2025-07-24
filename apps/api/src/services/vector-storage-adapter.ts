@@ -1,6 +1,13 @@
 import { VectorStorageService as DatabaseVectorStorage } from '@codequal/database';
 import { VectorStorageService as CoreVectorStorage, EnhancedChunk as CoreEnhancedChunk } from '@codequal/core/services/deepwiki-tools/types';
 
+// Storage result interface to match database service
+interface StorageResult {
+  stored: number;
+  failed: number;
+  errors: Error[];
+}
+
 /**
  * Adapter to make database VectorStorageService compatible with core interface
  */
@@ -14,7 +21,7 @@ export class VectorStorageAdapter implements CoreVectorStorage {
     sourceType: string,
     sourceId: string,
     storageType?: 'permanent' | 'cached' | 'temporary'
-  ): Promise<any> {
+  ): Promise<StorageResult> {
     // Convert core chunks to database chunks by ensuring filePath is defined
     const databaseChunks = chunks.map(chunk => ({
       ...chunk,
@@ -23,7 +30,7 @@ export class VectorStorageAdapter implements CoreVectorStorage {
     }));
 
     return this.databaseVectorStorage.storeChunks(
-      databaseChunks as any,
+      databaseChunks,
       embeddings,
       repositoryId,
       sourceType,
@@ -45,9 +52,9 @@ export class VectorStorageAdapter implements CoreVectorStorage {
   }
 
   async searchByMetadata(
-    criteria: Record<string, any>,
+    criteria: Record<string, unknown>,
     limit?: number
-  ): Promise<any[]> {
+  ): Promise<unknown[]> {
     if (this.databaseVectorStorage.searchByMetadata) {
       return this.databaseVectorStorage.searchByMetadata(criteria, limit);
     }

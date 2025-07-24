@@ -101,8 +101,11 @@ export class EmbeddingConfigService {
     try {
       // Check cache first
       const cacheKey = `content:${contentType}`;
-      if (this.isCacheValid() && this.configCache.has(cacheKey)) {
-        return this.configCache.get(cacheKey)!;
+      if (this.isCacheValid()) {
+        const cachedConfig = this.configCache.get(cacheKey);
+        if (cachedConfig) {
+          return cachedConfig;
+        }
       }
 
       // First try to find a config specifically for this content type
@@ -138,8 +141,11 @@ export class EmbeddingConfigService {
   async getConfigByName(configName: string): Promise<EmbeddingConfiguration | null> {
     try {
       // Check cache first
-      if (this.isCacheValid() && this.configCache.has(configName)) {
-        return this.configCache.get(configName)!;
+      if (this.isCacheValid()) {
+        const cachedConfig = this.configCache.get(configName);
+        if (cachedConfig) {
+          return cachedConfig;
+        }
       }
 
       const { data, error } = await this.supabase

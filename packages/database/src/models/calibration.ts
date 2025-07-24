@@ -9,7 +9,7 @@ export interface CalibrationRun {
   runId: string;
   timestamp: Date;
   modelVersions: Record<string, string>;
-  metrics: Record<string, any>[];
+  metrics: Record<string, unknown>[];
   createdAt: Date;
 }
 
@@ -41,7 +41,7 @@ export class CalibrationModel {
   static async storeCalibrationRun(
     runId: string,
     modelVersions: Record<string, string>,
-    metrics: Record<string, any>[]
+    metrics: Record<string, unknown>[]
   ): Promise<CalibrationRun> {
     const supabase = getSupabase();
     
@@ -182,7 +182,7 @@ export class CalibrationModel {
       return [];
     }
     
-    return data.map((item: any) => this.mapToCalibrationTestResult(item as Tables['calibration_test_results']));
+    return data.map((item) => this.mapToCalibrationTestResult(item as Tables['calibration_test_results']));
   }
   
   /**

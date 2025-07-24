@@ -20,9 +20,10 @@ export class OpenAIEmbeddingService implements EmbeddingService {
   async generateEmbedding(text: string): Promise<number[]> {
     // Check cache first
     const cacheKey = this.generateCacheKey(text);
-    if (this.cache.has(cacheKey)) {
+    const cachedEmbedding = this.cache.get(cacheKey);
+    if (cachedEmbedding) {
       this.logger.debug('Returning cached embedding');
-      return this.cache.get(cacheKey)!;
+      return cachedEmbedding;
     }
 
     try {

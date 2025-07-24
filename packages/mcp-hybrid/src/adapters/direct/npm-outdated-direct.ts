@@ -132,7 +132,7 @@ export class NpmOutdatedDirectAdapter extends DirectToolAdapter {
         toolId: this.id,
         executionTime: Date.now() - startTime,
         findings,
-        metrics
+        metrics: metrics as Record<string, number>
       };
     } catch (error) {
       return {
@@ -174,15 +174,22 @@ export class NpmOutdatedDirectAdapter extends DirectToolAdapter {
       const packages: OutdatedPackage[] = [];
       
       // Parse npm outdated JSON output
-      for (const [packageName, info] of Object.entries(outdatedData)) {
+      for (const [packageName, info] of Object.entries(outdatedData) as [string, {
+        current?: string;
+        wanted?: string;
+        latest?: string;
+        type?: string;
+        dependent?: string;
+        location?: string;
+      }][]) {
         packages.push({
           name: packageName,
-          current: (info as any).current || 'not installed',
-          wanted: (info as any).wanted,
-          latest: (info as any).latest,
-          type: (info as any).type || 'dependencies',
-          dependent: (info as any).dependent,
-          location: (info as any).location
+          current: info.current || 'not installed',
+          wanted: info.wanted || '',
+          latest: info.latest || '',
+          type: (info.type || 'dependencies') as 'dependencies' | 'devDependencies' | 'peerDependencies',
+          dependent: info.dependent,
+          location: info.location
         });
       }
       
@@ -269,7 +276,7 @@ export class NpmOutdatedDirectAdapter extends DirectToolAdapter {
   /**
    * Calculate metrics from outdated packages
    */
-  private calculateMetrics(packages: OutdatedPackage[]): Record<string, any> {
+  private calculateMetrics(packages: OutdatedPackage[]): Record<string, unknown> {
     const majorUpdates = packages.filter(p => this.isMajorUpdate(p.current, p.latest));
     const minorUpdates = packages.filter(p => 
       !this.isMajorUpdate(p.current, p.latest) && this.isMinorUpdate(p.current, p.latest)
@@ -289,11 +296,7 @@ export class NpmOutdatedDirectAdapter extends DirectToolAdapter {
       patchUpdates: patchUpdates.length,
       upToDate: packages.filter(p => p.current === p.latest).length,
       updateScore, // 0-10 score for how up-to-date dependencies are
-      recommendations: {
-        immediate: patchUpdates.length,
-        review: minorUpdates.length,
-        planning: majorUpdates.length
-      }
+      recommendations: patchUpdates.length + minorUpdates.length + majorUpdates.length
     };
   }
   
@@ -452,11 +455,7 @@ export class NpmOutdatedDirectAdapter extends DirectToolAdapter {
         patchUpdates: 0,
         upToDate: 0,
         updateScore: 10,
-        recommendations: {
-          immediate: 0,
-          review: 0,
-          planning: 0
-        } as any
+        recommendations: 0
       }
     };
   }

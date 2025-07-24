@@ -1,0 +1,697 @@
+{
+  "id": "deepwiki_scan_codequal_20250723_detailed",
+  "repositoryUrl": "https://github.com/codequal-dev/codequal",
+  "scanType": "repository_comprehensive",
+  "timestamp": "2025-07-23T15:45:00Z",
+  "modelUsed": "anthropic/claude-3-opus",
+  
+  "summary": {
+    "executiveSummary": "CodeQual repository analysis reveals a well-architected TypeScript monorepo with significant security vulnerabilities and performance bottlenecks. While the codebase demonstrates modern development practices, immediate attention is required for exposed secrets, SQL injection vulnerabilities, and database query optimization.",
+    "overallScore": 72,
+    "scoreBreakdown": {
+      "security": 65,
+      "performance": 70,
+      "codeQuality": 78,
+      "architecture": 82,
+      "testing": 68,
+      "documentation": 75,
+      "dependencies": 60,
+      "bestPractices": 80
+    },
+    "totalIssues": 287,
+    "issuesByPriority": {
+      "critical": 12,
+      "high": 34,
+      "medium": 98,
+      "low": 143
+    },
+    "estimatedRemediationTime": "2-3 weeks",
+    "riskLevel": "HIGH",
+    "trend": {
+      "direction": "improving",
+      "change": "+3",
+      "sinceLastScan": "2025-07-16"
+    }
+  },
+  
+  "securityAnalysis": {
+    "score": 65,
+    "grade": "D",
+    "summary": "Critical security vulnerabilities found including exposed secrets and SQL injection risks. Immediate remediation required.",
+    "totalIssues": 45,
+    "criticalIssues": 8,
+    
+    "findings": [
+      {
+        "id": "SEC-001",
+        "severity": "CRITICAL",
+        "type": "Exposed Secrets",
+        "title": "Hardcoded API Keys in Kubernetes Manifests",
+        "description": "Multiple API keys and credentials are hardcoded in Kubernetes deployment files, exposing production secrets.",
+        "impact": "Complete system compromise if repository is breached",
+        "likelihood": "HIGH",
+        "cvssScore": 9.8,
+        "locations": [
+          {
+            "file": "k8s/deployments/production/api-deployment.yaml",
+            "lines": [23, 45, 67],
+            "snippet": "- name: OPENROUTER_API_KEY\n  value: \"sk-or-v1-1234567890abcdef\""
+          },
+          {
+            "file": "k8s/deployments/production/deepwiki-deployment.yaml",
+            "lines": [34, 56],
+            "snippet": "- name: ANTHROPIC_API_KEY\n  value: \"sk-ant-api03-xyz123\""
+          },
+          {
+            "file": "k8s/secrets/api-keys.yaml",
+            "lines": [12, 18, 24],
+            "snippet": "apiKey: \"plaintext_api_key_here\""
+          }
+        ],
+        "recommendation": {
+          "immediate": "Remove all hardcoded secrets immediately and rotate compromised keys",
+          "longTerm": "Implement Kubernetes secrets or external secret management (Vault, AWS Secrets Manager)",
+          "example": "kubectl create secret generic api-keys --from-literal=openrouter-key=$OPENROUTER_API_KEY"
+        },
+        "references": [
+          "https://kubernetes.io/docs/concepts/configuration/secret/",
+          "https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html",
+          "CWE-798: Use of Hard-coded Credentials"
+        ]
+      },
+      {
+        "id": "SEC-002",
+        "severity": "CRITICAL",
+        "type": "SQL Injection",
+        "title": "Unparameterized SQL Queries",
+        "description": "Direct string concatenation in SQL queries allows SQL injection attacks",
+        "impact": "Database compromise, data exfiltration, privilege escalation",
+        "likelihood": "HIGH",
+        "cvssScore": 9.1,
+        "locations": [
+          {
+            "file": "packages/database/src/services/analysis-service.ts",
+            "lines": [234, 235, 236],
+            "snippet": "const query = `SELECT * FROM analyses WHERE user_id = ${userId} AND status = '${status}'`;"
+          },
+          {
+            "file": "packages/database/src/services/user-service.ts",
+            "lines": [156, 157],
+            "snippet": "db.query(`UPDATE users SET last_login = NOW() WHERE email = '${email}'`);"
+          },
+          {
+            "file": "packages/database/src/repositories/report-repository.ts",
+            "lines": [89, 90, 91],
+            "snippet": "const results = await db.raw(`\n  SELECT * FROM reports \n  WHERE repo_url LIKE '%${searchTerm}%'\n`);"
+          }
+        ],
+        "recommendation": {
+          "immediate": "Use parameterized queries for all database operations",
+          "example": "const query = 'SELECT * FROM analyses WHERE user_id = $1 AND status = $2';\nconst result = await db.query(query, [userId, status]);",
+          "bestPractice": "Use query builders or ORMs with built-in SQL injection protection"
+        },
+        "references": [
+          "https://owasp.org/www-community/attacks/SQL_Injection",
+          "CWE-89: SQL Injection",
+          "https://node-postgres.com/features/queries#parameterized-query"
+        ]
+      },
+      {
+        "id": "SEC-003",
+        "severity": "HIGH",
+        "type": "Authentication Bypass",
+        "title": "Weak JWT Secret",
+        "description": "JWT secret is too short and predictable",
+        "impact": "Token forgery, unauthorized access",
+        "likelihood": "MEDIUM",
+        "cvssScore": 7.5,
+        "locations": [
+          {
+            "file": "packages/core/src/config/auth.config.ts",
+            "lines": [12],
+            "snippet": "jwtSecret: process.env.JWT_SECRET || 'dev-secret-123'"
+          }
+        ],
+        "recommendation": {
+          "immediate": "Use cryptographically strong secret (min 256 bits)",
+          "example": "openssl rand -base64 32",
+          "configuration": "JWT_SECRET=$(openssl rand -base64 32)"
+        }
+      },
+      {
+        "id": "SEC-004",
+        "severity": "HIGH",
+        "type": "CORS Misconfiguration",
+        "title": "Overly Permissive CORS Policy",
+        "description": "CORS allows all origins in production",
+        "impact": "Cross-site request forgery, data theft",
+        "likelihood": "HIGH",
+        "cvssScore": 7.1,
+        "locations": [
+          {
+            "file": "apps/api/src/middleware/cors.ts",
+            "lines": [8, 9, 10],
+            "snippet": "cors({\n  origin: '*',\n  credentials: true\n})"
+          }
+        ],
+        "recommendation": {
+          "immediate": "Whitelist specific allowed origins",
+          "example": "origin: ['https://app.codequal.com', 'https://codequal.com']"
+        }
+      },
+      {
+        "id": "SEC-005",
+        "severity": "MEDIUM",
+        "type": "Vulnerable Dependencies",
+        "title": "Outdated packages with known vulnerabilities",
+        "description": "12 dependencies have known security vulnerabilities",
+        "impact": "Various impacts depending on vulnerability",
+        "vulnerabilities": [
+          {
+            "package": "ws",
+            "version": "7.4.6",
+            "vulnerability": "CVE-2024-37890",
+            "severity": "HIGH",
+            "description": "DoS via memory exhaustion"
+          },
+          {
+            "package": "jsonwebtoken",
+            "version": "8.5.1",
+            "vulnerability": "CVE-2022-23541",
+            "severity": "CRITICAL",
+            "description": "Weak key validation allows bypass"
+          }
+        ]
+      }
+    ],
+    
+    "recommendations": {
+      "immediate": [
+        "Remove all hardcoded secrets and rotate keys",
+        "Fix SQL injection vulnerabilities",
+        "Update critical vulnerable dependencies"
+      ],
+      "shortTerm": [
+        "Implement proper secret management",
+        "Add security scanning to CI/CD",
+        "Conduct security training for team"
+      ],
+      "longTerm": [
+        "Implement WAF and rate limiting",
+        "Regular security audits",
+        "Adopt secure coding standards"
+      ]
+    },
+    
+    "complianceGaps": [
+      "Missing encryption at rest for sensitive data",
+      "No audit logging for security events",
+      "Insufficient access controls"
+    ]
+  },
+  
+  "performanceAnalysis": {
+    "score": 70,
+    "grade": "C",
+    "summary": "Significant performance bottlenecks in database queries and frontend bundle size affecting user experience",
+    "totalIssues": 42,
+    "criticalIssues": 3,
+    
+    "findings": [
+      {
+        "id": "PERF-001",
+        "severity": "CRITICAL",
+        "type": "Database Performance",
+        "title": "N+1 Query Problem in Report Loading",
+        "description": "Loading a single analysis report triggers 100+ individual database queries",
+        "impact": "3-5 second page load times, database overload",
+        "measurementData": {
+          "currentLatency": "3200ms",
+          "expectedLatency": "200ms",
+          "queryCount": 147,
+          "optimalQueryCount": 3
+        },
+        "locations": [
+          {
+            "file": "packages/database/src/services/report-service.ts",
+            "lines": [145, 189],
+            "snippet": "const report = await Report.findById(id);\nfor (const finding of report.findings) {\n  finding.details = await FindingDetails.findById(finding.detailId);\n  finding.recommendations = await Recommendation.findByFindingId(finding.id);\n}"
+          }
+        ],
+        "recommendation": {
+          "immediate": "Use eager loading with joins",
+          "example": "const report = await Report.findById(id)\n  .populate('findings')\n  .populate('findings.details')\n  .populate('findings.recommendations');",
+          "alternativeSolution": "Implement DataLoader pattern for batching"
+        },
+        "references": [
+          "https://github.com/graphql/dataloader",
+          "https://vincit.github.io/objection.js/guide/query-examples.html#eager-loading"
+        ]
+      },
+      {
+        "id": "PERF-002",
+        "severity": "HIGH",
+        "type": "Bundle Size",
+        "title": "Unoptimized Frontend Bundle",
+        "description": "Main bundle is 2.3MB, causing slow initial page loads",
+        "impact": "Poor user experience, especially on mobile",
+        "measurementData": {
+          "currentSize": "2.3MB",
+          "targetSize": "500KB",
+          "unusedCode": "67%",
+          "largestDependencies": [
+            {"name": "lodash", "size": "524KB", "usage": "3 functions"},
+            {"name": "moment", "size": "329KB", "alternative": "date-fns"},
+            {"name": "@mui/material", "size": "892KB", "treeShakeable": false}
+          ]
+        },
+        "locations": [
+          {
+            "file": "apps/web/src/index.tsx",
+            "lines": [1, 15],
+            "snippet": "import * as _ from 'lodash';\nimport moment from 'moment';"
+          }
+        ],
+        "recommendation": {
+          "immediate": "Enable code splitting and tree shaking",
+          "webpack": "optimization: { usedExports: true, sideEffects: false }",
+          "imports": "import { debounce } from 'lodash/debounce';"
+        }
+      },
+      {
+        "id": "PERF-003",
+        "severity": "HIGH",
+        "type": "Memory Leak",
+        "title": "Event Listener Memory Leak",
+        "description": "WebSocket event listeners not cleaned up",
+        "impact": "Browser memory usage grows unbounded",
+        "locations": [
+          {
+            "file": "apps/web/src/hooks/useWebSocket.ts",
+            "lines": [34, 45],
+            "snippet": "useEffect(() => {\n  socket.on('message', handleMessage);\n  // Missing cleanup\n});"
+          }
+        ],
+        "recommendation": {
+          "fix": "return () => socket.off('message', handleMessage);"
+        }
+      },
+      {
+        "id": "PERF-004",
+        "severity": "MEDIUM",
+        "type": "Rendering Performance",
+        "title": "Unnecessary Re-renders",
+        "description": "Components re-rendering on every state change",
+        "impact": "UI lag, poor responsiveness",
+        "locations": [
+          {
+            "file": "apps/web/src/components/AnalysisReport.tsx",
+            "lines": [23, 156],
+            "snippet": "// Missing React.memo\nexport const AnalysisReport = ({ data, onUpdate }) => {"
+          }
+        ]
+      }
+    ],
+    
+    "recommendations": {
+      "immediate": [
+        "Fix N+1 queries with eager loading",
+        "Implement code splitting",
+        "Add memory leak fixes"
+      ],
+      "shortTerm": [
+        "Add caching layer (Redis)",
+        "Optimize database indexes",
+        "Implement virtual scrolling for lists"
+      ],
+      "longTerm": [
+        "Move to microservices for scaling",
+        "Implement CDN for static assets",
+        "Add performance monitoring (APM)"
+      ]
+    },
+    
+    "benchmarks": {
+      "pageLoadTime": {
+        "current": "3.2s",
+        "target": "1.5s",
+        "p95": "5.1s"
+      },
+      "apiResponseTime": {
+        "current": "450ms",
+        "target": "200ms",
+        "p95": "1200ms"
+      },
+      "throughput": {
+        "current": "150 req/s",
+        "target": "500 req/s"
+      }
+    }
+  },
+  
+  "codeQualityAnalysis": {
+    "score": 78,
+    "grade": "B",
+    "summary": "Good TypeScript adoption and modern patterns, but complexity and error handling need improvement",
+    "totalIssues": 67,
+    "criticalIssues": 0,
+    
+    "findings": [
+      {
+        "id": "QUAL-001",
+        "severity": "HIGH",
+        "type": "Complexity",
+        "title": "Functions Exceeding Complexity Threshold",
+        "description": "23 functions have cyclomatic complexity > 10",
+        "impact": "Hard to maintain, test, and understand",
+        "locations": [
+          {
+            "file": "apps/api/src/services/result-orchestrator.ts",
+            "lines": [234, 456],
+            "complexity": 24,
+            "function": "processAnalysis",
+            "snippet": "async processAnalysis(request) {\n  // 200+ lines with 15 if statements\n}"
+          },
+          {
+            "file": "packages/agents/src/deepwiki/DeepWikiManager.ts",
+            "lines": [123, 289],
+            "complexity": 19,
+            "function": "analyzeRepository"
+          },
+          {
+            "file": "apps/api/src/middleware/auth-middleware.ts",
+            "lines": [45, 123],
+            "complexity": 17,
+            "function": "validateToken"
+          }
+        ],
+        "recommendation": {
+          "refactor": "Break into smaller functions with single responsibilities",
+          "pattern": "Extract method, Strategy pattern, Chain of Responsibility"
+        }
+      },
+      {
+        "id": "QUAL-002",
+        "severity": "HIGH",
+        "type": "Error Handling",
+        "title": "Inconsistent Error Handling Patterns",
+        "description": "Mix of try-catch, .catch(), and unhandled promises",
+        "impact": "Unpredictable error behavior, poor debugging",
+        "locations": [
+          {
+            "file": "packages/agents/src/researcher/researcher-agent.ts",
+            "lines": [89, 90],
+            "snippet": "fetchData().then(data => process(data)); // Unhandled rejection"
+          },
+          {
+            "file": "apps/api/src/routes/analysis.ts",
+            "lines": [156],
+            "snippet": "try { await analyze(); } catch(e) { console.log(e); } // Swallowed error"
+          }
+        ],
+        "recommendation": {
+          "pattern": "Centralized error handling middleware",
+          "example": "app.use(errorHandler);"
+        }
+      },
+      {
+        "id": "QUAL-003",
+        "severity": "MEDIUM",
+        "type": "Code Duplication",
+        "title": "Duplicate Code Blocks",
+        "description": "Similar code repeated in 15 locations",
+        "impact": "Maintenance burden, inconsistency risk",
+        "duplicates": [
+          {
+            "pattern": "Database connection and error handling",
+            "locations": ["user-service.ts:45-67", "report-service.ts:23-45", "analysis-service.ts:34-56"],
+            "linesOfCode": 22
+          }
+        ]
+      },
+      {
+        "id": "QUAL-004",
+        "severity": "MEDIUM",
+        "type": "Type Safety",
+        "title": "TypeScript 'any' Usage",
+        "description": "234 uses of 'any' type weakening type safety",
+        "locations": [
+          {
+            "file": "packages/core/src/services/model-service.ts",
+            "lines": [45, 67, 89],
+            "snippet": "function processData(data: any): any { }"
+          }
+        ]
+      }
+    ],
+    
+    "metrics": {
+      "maintainabilityIndex": 72,
+      "technicalDebtRatio": 15.3,
+      "codeSmells": 234,
+      "duplicatedLines": 8.2,
+      "testCoverage": 68.4,
+      "complexityPerFile": 12.3
+    },
+    
+    "recommendations": {
+      "immediate": [
+        "Refactor high-complexity functions",
+        "Implement error boundary pattern",
+        "Remove 'any' types"
+      ],
+      "shortTerm": [
+        "Add linting rules for complexity",
+        "Extract shared code to utilities",
+        "Increase test coverage to 80%"
+      ]
+    }
+  },
+  
+  "architectureAnalysis": {
+    "score": 82,
+    "grade": "B+",
+    "summary": "Well-structured monorepo with good separation of concerns, but circular dependencies need resolution",
+    "totalIssues": 23,
+    
+    "findings": [
+      {
+        "id": "ARCH-001",
+        "severity": "HIGH",
+        "type": "Circular Dependencies",
+        "title": "Circular Dependency Chain",
+        "description": "Packages have circular import dependencies",
+        "impact": "Build issues, testing difficulties, coupling",
+        "dependencyChain": [
+          "packages/core → packages/database",
+          "packages/database → packages/agents",
+          "packages/agents → packages/core"
+        ],
+        "locations": [
+          {
+            "file": "packages/core/src/services/model-service.ts",
+            "lines": [12],
+            "snippet": "import { AgentConfig } from '@codequal/database';"
+          },
+          {
+            "file": "packages/database/src/models/agent-config.ts",
+            "lines": [8],
+            "snippet": "import { BaseAgent } from '@codequal/agents';"
+          },
+          {
+            "file": "packages/agents/src/base/agent.ts",
+            "lines": [5],
+            "snippet": "import { ModelService } from '@codequal/core';"
+          }
+        ],
+        "recommendation": {
+          "solution": "Extract shared types to @codequal/types package",
+          "pattern": "Dependency Inversion Principle"
+        }
+      },
+      {
+        "id": "ARCH-002",
+        "severity": "MEDIUM",
+        "type": "Missing Abstraction",
+        "title": "No API Gateway Layer",
+        "description": "Services directly exposed without gateway",
+        "impact": "No central auth, rate limiting, or monitoring",
+        "recommendation": {
+          "implement": "API Gateway (Kong, AWS API Gateway)",
+          "benefits": ["Central auth", "Rate limiting", "Request routing", "Monitoring"]
+        }
+      }
+    ],
+    
+    "patterns": {
+      "positive": [
+        "Monorepo with clear boundaries",
+        "Dependency injection usage",
+        "Event-driven communication",
+        "TypeScript throughout"
+      ],
+      "improvements": [
+        "Add API gateway",
+        "Implement event sourcing",
+        "Add distributed tracing",
+        "Service mesh for microservices"
+      ]
+    }
+  },
+  
+  "testingAnalysis": {
+    "score": 68,
+    "grade": "C+",
+    "summary": "Moderate test coverage with critical gaps in integration testing",
+    "coverage": {
+      "overall": 68.4,
+      "unit": 78.2,
+      "integration": 23.5,
+      "e2e": 12.0
+    },
+    
+    "findings": [
+      {
+        "id": "TEST-001",
+        "severity": "CRITICAL",
+        "type": "Missing Coverage",
+        "title": "Payment Flow Untested",
+        "description": "Critical payment paths have no integration tests",
+        "impact": "High risk of payment failures in production",
+        "uncoveredPaths": [
+          "Stripe webhook processing",
+          "Subscription lifecycle",
+          "Usage-based billing calculation",
+          "Refund processing"
+        ],
+        "locations": [
+          {
+            "file": "apps/api/src/services/stripe-integration.ts",
+            "coverage": 12,
+            "uncoveredLines": [45, 89, 123, 156]
+          }
+        ]
+      },
+      {
+        "id": "TEST-002",
+        "severity": "HIGH",
+        "type": "Flaky Tests",
+        "title": "Intermittent Test Failures",
+        "description": "8 tests fail randomly due to timing/async issues",
+        "failureRate": 15,
+        "flakyTests": [
+          {
+            "test": "ResultOrchestrator should handle concurrent analyses",
+            "file": "result-orchestrator.spec.ts:234",
+            "failurePattern": "Timeout waiting for promise"
+          }
+        ]
+      }
+    ],
+    
+    "recommendations": {
+      "immediate": [
+        "Add payment flow integration tests",
+        "Fix flaky tests with proper async handling",
+        "Add test coverage requirements to CI"
+      ]
+    }
+  },
+  
+  "dependencyAnalysis": {
+    "score": 60,
+    "grade": "D",
+    "summary": "Many outdated and vulnerable dependencies requiring immediate attention",
+    "statistics": {
+      "total": 1247,
+      "direct": 89,
+      "outdated": 156,
+      "vulnerable": 23,
+      "deprecated": 8
+    },
+    
+    "vulnerabilities": [
+      {
+        "package": "ws",
+        "installed": "7.4.6",
+        "patched": "8.11.0",
+        "vulnerability": "CVE-2024-37890",
+        "severity": "HIGH",
+        "description": "DoS via memory exhaustion in WebSocket",
+        "exploitability": "Network attack vector",
+        "recommendation": "npm update ws@^8.11.0"
+      },
+      {
+        "package": "jsonwebtoken",
+        "installed": "8.5.1",
+        "patched": "9.0.0",
+        "vulnerability": "CVE-2022-23541",
+        "severity": "CRITICAL",
+        "description": "Weak verification allows JWT bypass",
+        "exploitability": "Authentication bypass"
+      }
+    ],
+    
+    "outdatedMajor": [
+      {
+        "package": "react",
+        "current": "17.0.2",
+        "latest": "18.2.0",
+        "breaking": true,
+        "migrationEffort": "HIGH"
+      }
+    ],
+    
+    "unusedDependencies": [
+      "gulp",
+      "grunt",
+      "bower"
+    ]
+  },
+  
+  "actionPlan": {
+    "week1": {
+      "priority": "CRITICAL",
+      "tasks": [
+        "Remove all hardcoded secrets",
+        "Fix SQL injection vulnerabilities",
+        "Update critical security dependencies",
+        "Fix N+1 query problems"
+      ],
+      "effort": "40 hours"
+    },
+    "week2": {
+      "priority": "HIGH",
+      "tasks": [
+        "Implement proper error handling",
+        "Add payment integration tests",
+        "Optimize bundle size",
+        "Fix memory leaks"
+      ],
+      "effort": "60 hours"
+    },
+    "week3_4": {
+      "priority": "MEDIUM",
+      "tasks": [
+        "Refactor complex functions",
+        "Resolve circular dependencies",
+        "Implement monitoring",
+        "Add remaining test coverage"
+      ],
+      "effort": "80 hours"
+    }
+  },
+  
+  "metadata": {
+    "scanId": "deepwiki_full_20250723",
+    "duration": 45234,
+    "filesScanned": 3456,
+    "linesAnalyzed": 234567,
+    "rulesApplied": 1289,
+    "modelPerformance": {
+      "primary": "claude-3-opus",
+      "fallback": ["gpt-4-turbo", "claude-3.5-sonnet"],
+      "tokensUsed": 125000
+    }
+  }
+}

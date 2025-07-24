@@ -10,7 +10,7 @@ interface CacheEntry<T> {
 }
 
 export class DatabaseMetadataCache {
-  private cache = new Map<string, CacheEntry<any>>();
+  private cache = new Map<string, CacheEntry<unknown>>();
   private readonly DEFAULT_TTL = 5 * 60 * 1000; // 5 minutes
   
   constructor(private supabase: SupabaseClient) {}
@@ -18,13 +18,13 @@ export class DatabaseMetadataCache {
   /**
    * Get timezones with caching
    */
-  async getTimezones(): Promise<any[]> {
+  async getTimezones(): Promise<Array<{ name: string; abbrev: string; utc_offset: string }>> {
     const cacheKey = 'timezones';
     const cached = this.cache.get(cacheKey);
     
     if (cached && Date.now() - cached.timestamp < this.DEFAULT_TTL) {
       console.log('Returning cached timezones');
-      return cached.data;
+      return cached.data as Array<{ name: string; abbrev: string; utc_offset: string }>;
     }
     
     try {
@@ -43,19 +43,19 @@ export class DatabaseMetadataCache {
     } catch (error) {
       console.error('Failed to fetch timezones:', error);
       // Return cached data if available, even if stale
-      return cached?.data || [];
+      return (cached?.data as Array<{ name: string; abbrev: string; utc_offset: string }>) || [];
     }
   }
 
   /**
    * Get table metadata with caching
    */
-  async getTableMetadata(schemas: string[] = ['public']): Promise<any[]> {
+  async getTableMetadata(schemas: string[] = ['public']): Promise<Array<{ table_schema: string; table_name: string; column_name: string; data_type: string; is_nullable: string }>> {
     const cacheKey = `tables_${schemas.join('_')}`;
     const cached = this.cache.get(cacheKey);
     
     if (cached && Date.now() - cached.timestamp < this.DEFAULT_TTL) {
-      return cached.data;
+      return cached.data as Array<{ table_schema: string; table_name: string; column_name: string; data_type: string; is_nullable: string }>;
     }
     
     try {
@@ -72,7 +72,7 @@ export class DatabaseMetadataCache {
       return data || [];
     } catch (error) {
       console.error('Failed to fetch table metadata:', error);
-      return cached?.data || [];
+      return (cached?.data as Array<{ table_schema: string; table_name: string; column_name: string; data_type: string; is_nullable: string }>) || [];
     }
   }
 
@@ -103,7 +103,7 @@ export class DatabaseMetadataCache {
 // =============================================================================
 
 export class RequestDeduplicator {
-  private inFlight = new Map<string, Promise<any>>();
+  private inFlight = new Map<string, Promise<unknown>>();
   private stats = {
     total: 0,
     deduplicated: 0,
@@ -123,7 +123,7 @@ export class RequestDeduplicator {
     if (existing) {
       this.stats.deduplicated++;
       console.log(`Deduplicating request: ${key}`);
-      return existing;
+      return existing as T;
     }
     
     const promise = fetchFn()
@@ -219,7 +219,7 @@ export class PerformanceMonitor {
   /**
    * Get performance statistics
    */
-  async getPerformanceStats(limit = 10): Promise<any[]> {
+  async getPerformanceStats(limit = 10): Promise<Array<{ query: string; calls: number; total_time: number; mean_time: number; min_time: number; max_time: number }>> {
     const { data, error } = await this.supabase
       .from('query_performance_log')
       .select('*')

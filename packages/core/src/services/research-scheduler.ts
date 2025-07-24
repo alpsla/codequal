@@ -10,6 +10,7 @@ import * as cron from 'node-cron';
 import { Logger, createLogger } from '../utils';
 import { ResearcherUpgradeCoordinator } from './researcher-upgrade-coordinator';
 import { AuthenticatedUser, IResearcherAgent, ResearchParams, ResearchResult } from '../types';
+import { RepositorySizeCategory } from './model-selection/ModelVersionSync';
 
 export interface SchedulerConfig {
   /**
@@ -361,7 +362,7 @@ export class ResearchScheduler {
       // Use upgrade coordinator which handles concurrent upgrades gracefully
       const coordinatorResult = await this.upgradeCoordinator.handleResearchRequest(
         language as string,
-        sizeCategory as any, // Will be properly typed
+        sizeCategory as RepositorySizeCategory,
         agentRole as string,
         [], // frameworks will be determined dynamically
         2.0, // default complexity
@@ -431,7 +432,7 @@ export class ResearchScheduler {
       // Use cached researcher for context-specific research
       const researchResult = await this.researcherAgent!.useResearcherForContext(
         language as string,
-        sizeCategory as any,
+        sizeCategory as string,
         agentRole as string,
         [], // frameworks will be determined dynamically
         2.0 // default complexity

@@ -30,7 +30,7 @@ interface VectorRecord {
   repository_id: string;
   content: string;
   embedding: number[];
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   source_type: string;
   source_id: string;
   chunk_index: number;
@@ -43,6 +43,15 @@ interface VectorRecord {
   ttl?: string;
 }
 
+interface DatabaseRecord {
+  id: string;
+  repository_id: string;
+  source_type?: string;
+  source_id?: string;
+  storage_type?: string;
+  [key: string]: unknown;
+}
+
 interface StorageResult {
   stored: number;
   failed: number;
@@ -52,7 +61,7 @@ interface StorageResult {
 interface _SearchResult {
   id: string;
   content: string;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   similarity: number;
 }
 
@@ -222,7 +231,7 @@ export class VectorStorageService {
    * This is a simple metadata search without vector similarity
    */
   async searchByMetadata(
-    criteria: Record<string, any>,
+    criteria: Record<string, unknown>,
     limit = 10
   ): Promise<VectorRecord[]> {
     let query = this.supabase
@@ -289,7 +298,7 @@ export class VectorStorageService {
    */
   async updateChunkMetadata(
     chunkId: string,
-    metadata: Record<string, any>
+    metadata: Record<string, unknown>
   ): Promise<void> {
     const { error } = await this.supabase
       .from('analysis_chunks')
@@ -491,9 +500,9 @@ export class VectorStorageService {
     }
     
     return (data || []).map((record: any) => ({
-      chunk: record.target_chunk,
-      relationshipType: record.relationship_type,
-      strength: record.strength
+      chunk: record.target_chunk as VectorRecord,
+      relationshipType: record.relationship_type as string,
+      strength: record.strength as number
     }));
   }
 }

@@ -24,7 +24,7 @@ const embedDocumentsSchema = z.object({
     content: z.string(),
     contentType: z.string(),
     language: z.string().optional(),
-    metadata: z.any().optional()
+    metadata: z.record(z.unknown()).optional()
   })).min(1).max(100)
 });
 

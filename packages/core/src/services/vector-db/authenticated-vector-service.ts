@@ -121,7 +121,7 @@ export class AuthenticatedVectorService {
       content: string;
       contentType: string;
       language?: string;
-      metadata?: any;
+      metadata?: Record<string, unknown>;
     }>
   ) {
     try {
@@ -438,7 +438,13 @@ export class AuthenticatedVectorService {
   /**
    * Calculate importance score for a document
    */
-  private calculateImportance(doc: any): number {
+  private calculateImportance(doc: {
+    filePath: string;
+    content: string;
+    contentType: string;
+    language?: string;
+    metadata?: Record<string, unknown>;
+  }): number {
     let score = 0.5; // Base score
 
     // Boost for certain file types

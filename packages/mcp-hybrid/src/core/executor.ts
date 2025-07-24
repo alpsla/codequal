@@ -255,14 +255,14 @@ export class ToolExecutor {
           console.info('Stopping execution due to failFast strategy');
           break;
         }
-      } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
+      } catch (error) {
         results.push({
           success: false,
           toolId: tool.id,
           executionTime: 0,
           error: {
             code: 'EXECUTION_FAILED',
-            message: error.message,
+            message: error instanceof Error ? error.message : String(error),
             recoverable: true
           }
         });
@@ -303,14 +303,14 @@ export class ToolExecutor {
       ]);
       
       return result;
-    } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
+    } catch (error) {
       return {
         success: false,
         toolId: tool.id,
         executionTime: timeoutMs,
         error: {
           code: 'TIMEOUT',
-          message: error.message,
+          message: error instanceof Error ? error.message : String(error),
           recoverable: true
         }
       };

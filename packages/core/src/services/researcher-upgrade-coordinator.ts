@@ -9,6 +9,24 @@ import { Logger, createLogger } from '../utils';
 import { AuthenticatedUser, IResearcherAgent } from '../types';
 import { RepositorySizeCategory } from './model-selection/ModelVersionSync';
 
+export interface ResearchResult {
+  provider: string;
+  model: string;
+  temperature?: number;
+  maxTokens?: number;
+  reasoning?: string;
+  confidence?: number;
+  metadata?: Record<string, unknown>;
+}
+
+export interface ResearcherStats {
+  totalRequests: number;
+  completedRequests: number;
+  failedRequests: number;
+  averageLatency: number;
+  successRate: number;
+}
+
 export interface ResearchRequest {
   id: string;
   context: {
@@ -23,7 +41,7 @@ export interface ResearchRequest {
   status: 'received' | 'queued' | 'processing' | 'completed' | 'failed';
   startedAt?: Date;
   completedAt?: Date;
-  result?: any;
+  result?: ResearchResult;
   error?: string;
 }
 
@@ -91,7 +109,7 @@ export class ResearcherUpgradeCoordinator {
     status: string;
     message?: string;
     estimatedDelay?: number;
-    result?: any;
+    result?: ResearchResult;
   }> {
     const requestId = this.generateRequestId();
     const request: ResearchRequest = {
@@ -166,7 +184,7 @@ export class ResearcherUpgradeCoordinator {
     requestId: string;
     status: string;
     message?: string;
-    result?: any;
+    result?: ResearchResult;
   }> {
     if (this.activeRequests.size >= this.maxConcurrentRequests) {
       // Queue if too many active requests
@@ -203,7 +221,7 @@ export class ResearcherUpgradeCoordinator {
       // Complete request
       request.status = 'completed';
       request.completedAt = new Date();
-      request.result = result;
+      request.result = result as unknown as ResearchResult;
       this.activeRequests.delete(request.id);
 
       this.logger.info('Research request completed', {
@@ -215,7 +233,7 @@ export class ResearcherUpgradeCoordinator {
       return {
         requestId: request.id,
         status: 'completed',
-        result
+        result: result as unknown as ResearchResult
       };
 
     } catch (error) {
@@ -466,7 +484,7 @@ export class ResearcherUpgradeCoordinator {
     requestId: string;
     status: string;
     message?: string;
-    result?: any;
+    result?: ResearchResult;
   }> {
     this.logger.warn('Handling critical interrupt', {
       requestId: request.id,
@@ -544,14 +562,21 @@ export class ResearcherUpgradeCoordinator {
     currentUpgrade: UpgradeOperation | null;
     activeRequests: number;
     queuedRequests: number;
-    researcherStats: any;
+    researcherStats: ResearcherStats;
   } {
     return {
       upgradeInProgress: this.upgradeInProgress,
       currentUpgrade: this.currentUpgrade,
       activeRequests: this.activeRequests.size,
       queuedRequests: this.queuedRequests.length,
-      researcherStats: this.researcherAgent.getCacheStats()
+      researcherStats: {
+        ...this.researcherAgent.getCacheStats(),
+        totalRequests: 0,
+        completedRequests: 0,
+        failedRequests: 0,
+        averageLatency: 0,
+        successRate: 0
+      } as ResearcherStats
     };
   }
 

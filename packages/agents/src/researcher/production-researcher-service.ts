@@ -424,10 +424,10 @@ export class ProductionResearcherService {
     // Get latest configuration for each role
     for (const result of results) {
       const metadata = result.metadata;
-      const existing = latestByRole.get(metadata.role);
+      const existing = latestByRole.get((metadata as any).role);
       
-      if (!existing || new Date(metadata.last_updated) > new Date(existing.last_updated)) {
-        latestByRole.set(metadata.role, result);
+      if (!existing || new Date((metadata as any).last_updated) > new Date(existing.last_updated)) {
+        latestByRole.set((metadata as any).role, result);
       }
     }
 
@@ -453,7 +453,7 @@ export class ProductionResearcherService {
             pricing: content.pricing?.fallback
           } as ModelVersionInfo,
           reasoning: content.reasoning || [],
-          lastUpdated: new Date(result.metadata.last_updated),
+          lastUpdated: new Date((result.metadata as any).last_updated),
           updateFrequency: 'quarterly'
         });
       } catch (error) {
@@ -520,12 +520,12 @@ export class ProductionResearcherService {
     const configs = await this.getCurrentConfigurations();
     
     const latestOp = operations.sort((a, b) => 
-      new Date(b.metadata.timestamp).getTime() - new Date(a.metadata.timestamp).getTime()
+      new Date((b.metadata as any).timestamp).getTime() - new Date((a.metadata as any).timestamp).getTime()
     )[0];
     
     return {
       totalResearchOperations: operations.length,
-      lastResearchDate: latestOp ? new Date(latestOp.metadata.timestamp) : undefined,
+      lastResearchDate: latestOp ? new Date((latestOp.metadata as any).timestamp) : undefined,
       nextScheduledUpdate: this.calculateNextQuarterlyUpdate(),
       modelCount: new Set(configs.flatMap(c => [
         `${c.primary.provider}/${c.primary.model}`,
