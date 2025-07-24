@@ -72,6 +72,14 @@
     "./services/vector-db/openrouter-embedding-service": {
       "types": "./dist/services/vector-db/openrouter-embedding-service.d.ts",
       "default": "./dist/services/vector-db/openrouter-embedding-service.js"
+    },
+    "./utils": {
+      "types": "./dist/utils/index.d.ts",
+      "default": "./dist/utils/index.js"
+    },
+    "./utils/logger": {
+      "types": "./dist/utils/logger.d.ts",
+      "default": "./dist/utils/logger.js"
     }
   },
   "scripts": {

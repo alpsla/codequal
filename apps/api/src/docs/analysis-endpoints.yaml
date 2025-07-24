@@ -1,0 +1,430 @@
+paths:
+  /api/analysis/pr:
+    post:
+      summary: Analyze a pull request
+      tags: [Analysis]
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [pr_url]
+              properties:
+                pr_url:
+                  type: string
+                  format: uri
+                  example: "https://github.com/user/repo/pull/123"
+                analysis_mode:
+                  type: string
+                  enum: [quick, standard, deep]
+                  default: standard
+                  description: Depth of analysis to perform
+                include_suggestions:
+                  type: boolean
+                  default: true
+                  description: Include code improvement suggestions
+                focus_areas:
+                  type: array
+                  items:
+                    type: string
+                    enum: [security, performance, architecture, testing, documentation]
+                  description: Specific areas to focus on
+      responses:
+        '200':
+          description: Analysis completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalysisResult'
+        '202':
+          description: Analysis started (async mode)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  analysis_id:
+                    type: string
+                    format: uuid
+                  status_url:
+                    type: string
+                    format: uri
+                  estimated_completion_time:
+                    type: integer
+                    description: Estimated seconds until completion
+        '400':
+          description: Invalid PR URL or parameters
+        '401':
+          description: Unauthorized
+        '402':
+          description: Payment required
+        '429':
+          description: Rate limit exceeded
+
+  /api/analysis/repository:
+    post:
+      summary: Analyze an entire repository
+      tags: [Analysis]
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [repository_url]
+              properties:
+                repository_url:
+                  type: string
+                  format: uri
+                  example: "https://github.com/user/repo"
+                branch:
+                  type: string
+                  default: main
+                  description: Branch to analyze
+                analysis_depth:
+                  type: string
+                  enum: [quick, standard, deep]
+                  default: standard
+                include_dependencies:
+                  type: boolean
+                  default: false
+                  description: Analyze dependency security and updates
+                generate_report:
+                  type: boolean
+                  default: true
+                  description: Generate comprehensive report
+      responses:
+        '202':
+          description: Repository analysis started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  analysis_id:
+                    type: string
+                    format: uuid
+                  report_id:
+                    type: string
+                    format: uuid
+                  status_url:
+                    type: string
+                    format: uri
+                  estimated_completion_time:
+                    type: integer
+                    description: Estimated seconds until completion
+        '400':
+          description: Invalid repository URL
+        '401':
+          description: Unauthorized
+        '402':
+          description: Payment required
+        '429':
+          description: Rate limit exceeded
+
+  /api/analysis/file:
+    post:
+      summary: Analyze a single file
+      tags: [Analysis]
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content, file_name]
+              properties:
+                content:
+                  type: string
+                  description: File content to analyze
+                file_name:
+                  type: string
+                  description: Name of the file (with extension)
+                language:
+                  type: string
+                  description: Programming language (auto-detected if not provided)
+                context:
+                  type: object
+                  description: Additional context for better analysis
+                  properties:
+                    framework:
+                      type: string
+                    project_type:
+                      type: string
+      responses:
+        '200':
+          description: File analysis completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileAnalysisResult'
+        '400':
+          description: Invalid file content
+        '401':
+          description: Unauthorized
+        '429':
+          description: Rate limit exceeded
+
+  /api/analysis/{analysisId}/status:
+    get:
+      summary: Get analysis status
+      tags: [Analysis]
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      parameters:
+        - in: path
+          name: analysisId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Analysis status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    enum: [pending, in_progress, completed, failed]
+                  progress:
+                    type: integer
+                    minimum: 0
+                    maximum: 100
+                  current_step:
+                    type: string
+                    description: Current analysis step
+                  steps_completed:
+                    type: array
+                    items:
+                      type: string
+                  estimated_remaining_time:
+                    type: integer
+                    description: Estimated seconds remaining
+                  result_available:
+                    type: boolean
+                  result_url:
+                    type: string
+                    format: uri
+                    nullable: true
+        '401':
+          description: Unauthorized
+        '404':
+          description: Analysis not found
+
+  /api/analysis/{analysisId}/cancel:
+    post:
+      summary: Cancel an ongoing analysis
+      tags: [Analysis]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: analysisId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Analysis cancelled
+        '401':
+          description: Unauthorized
+        '404':
+          description: Analysis not found
+        '409':
+          description: Analysis already completed or cancelled
+
+tags:
+  - name: Analysis
+    description: Code analysis endpoints
+
+components:
+  schemas:
+    AnalysisResult:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        pr_url:
+          type: string
+          format: uri
+        repository:
+          type: string
+        pr_number:
+          type: integer
+        overall_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+        summary:
+          type: string
+          description: Executive summary of the analysis
+        categories:
+          type: object
+          properties:
+            code_quality:
+              $ref: '#/components/schemas/CategoryAnalysis'
+            security:
+              $ref: '#/components/schemas/CategoryAnalysis'
+            performance:
+              $ref: '#/components/schemas/CategoryAnalysis'
+            testing:
+              $ref: '#/components/schemas/CategoryAnalysis'
+        findings:
+          type: array
+          items:
+            $ref: '#/components/schemas/Finding'
+        suggestions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Suggestion'
+        metrics:
+          type: object
+          properties:
+            lines_analyzed:
+              type: integer
+            files_analyzed:
+              type: integer
+            issues_found:
+              type: integer
+            analysis_duration_ms:
+              type: integer
+
+    CategoryAnalysis:
+      type: object
+      properties:
+        score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+        status:
+          type: string
+          enum: [excellent, good, needs_improvement, poor]
+        issues_count:
+          type: integer
+        key_findings:
+          type: array
+          items:
+            type: string
+
+    Finding:
+      type: object
+      properties:
+        id:
+          type: string
+        severity:
+          type: string
+          enum: [critical, high, medium, low, info]
+        category:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        file_path:
+          type: string
+        line_start:
+          type: integer
+        line_end:
+          type: integer
+        code_snippet:
+          type: string
+        recommendation:
+          type: string
+        references:
+          type: array
+          items:
+            type: object
+            properties:
+              title:
+                type: string
+              url:
+                type: string
+
+    Suggestion:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [refactor, optimize, security, best_practice]
+        title:
+          type: string
+        description:
+          type: string
+        impact:
+          type: string
+          enum: [high, medium, low]
+        effort:
+          type: string
+          enum: [minimal, moderate, significant]
+        code_before:
+          type: string
+        code_after:
+          type: string
+
+    FileAnalysisResult:
+      type: object
+      properties:
+        file_name:
+          type: string
+        language:
+          type: string
+        analysis:
+          type: object
+          properties:
+            complexity:
+              type: object
+              properties:
+                cyclomatic:
+                  type: integer
+                cognitive:
+                  type: integer
+            issues:
+              type: array
+              items:
+                $ref: '#/components/schemas/Finding'
+            suggestions:
+              type: array
+              items:
+                $ref: '#/components/schemas/Suggestion'
+            metrics:
+              type: object
+              properties:
+                lines_of_code:
+                  type: integer
+                comment_ratio:
+                  type: number
+                  format: float
+                test_coverage:
+                  type: number
+                  format: float
+                  nullable: true
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API key for programmatic access

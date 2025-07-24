@@ -1,0 +1,288 @@
+paths:
+  /api/users/profile:
+    get:
+      summary: Get current user profile
+      tags: [Users]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '401':
+          description: Unauthorized
+        '404':
+          description: User profile not found
+  
+    patch:
+      summary: Update user profile
+      tags: [Users]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                full_name:
+                  type: string
+                  example: "John Doe"
+                skills:
+                  type: array
+                  items:
+                    type: string
+                  example: ["JavaScript", "TypeScript", "React"]
+                experience_level:
+                  type: string
+                  enum: [beginner, intermediate, advanced, expert]
+                programming_languages:
+                  type: array
+                  items:
+                    type: string
+                  example: ["JavaScript", "Python", "Go"]
+                frameworks:
+                  type: array
+                  items:
+                    type: string
+                  example: ["React", "Node.js", "Django"]
+      responses:
+        '200':
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized
+  
+  /api/users/profile/onboarding:
+    post:
+      summary: Complete user onboarding
+      tags: [Users]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [experience_level, programming_languages]
+              properties:
+                experience_level:
+                  type: string
+                  enum: [beginner, intermediate, advanced, expert]
+                programming_languages:
+                  type: array
+                  items:
+                    type: string
+                  minItems: 1
+                frameworks:
+                  type: array
+                  items:
+                    type: string
+                skills:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: Onboarding completed successfully
+        '400':
+          description: Invalid onboarding data
+        '401':
+          description: Unauthorized
+
+  /api/users/preferences:
+    get:
+      summary: Get user preferences
+      tags: [Users]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User preferences retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreferences'
+        '401':
+          description: Unauthorized
+    
+    put:
+      summary: Update user preferences
+      tags: [Users]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserPreferences'
+      responses:
+        '200':
+          description: Preferences updated successfully
+        '400':
+          description: Invalid preferences data
+        '401':
+          description: Unauthorized
+
+  /api/users/organizations:
+    get:
+      summary: List user's organizations
+      tags: [Users, Organizations]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Organizations retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  organizations:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Organization'
+        '401':
+          description: Unauthorized
+
+  /api/users/api-usage:
+    get:
+      summary: Get API usage statistics for current user
+      tags: [Users]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: startDate
+          schema:
+            type: string
+            format: date
+          description: Start date for usage period
+        - in: query
+          name: endDate
+          schema:
+            type: string
+            format: date
+          description: End date for usage period
+      responses:
+        '200':
+          description: Usage statistics retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_requests:
+                    type: integer
+                  successful_requests:
+                    type: integer
+                  failed_requests:
+                    type: integer
+                  tokens_used:
+                    type: integer
+                  cost_usd:
+                    type: number
+                    format: float
+                  by_endpoint:
+                    type: object
+                    additionalProperties:
+                      type: object
+                      properties:
+                        count:
+                          type: integer
+                        tokens:
+                          type: integer
+        '401':
+          description: Unauthorized
+
+tags:
+  - name: Users
+    description: User profile and preference management
+  - name: Organizations
+    description: Organization management
+
+components:
+  schemas:
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        full_name:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        skills:
+          type: array
+          items:
+            type: string
+        experience_level:
+          type: string
+          enum: [beginner, intermediate, advanced, expert]
+        programming_languages:
+          type: array
+          items:
+            type: string
+        frameworks:
+          type: array
+          items:
+            type: string
+        onboarding_completed:
+          type: boolean
+        github_username:
+          type: string
+    
+    UserPreferences:
+      type: object
+      properties:
+        email_notifications:
+          type: boolean
+          default: true
+        analysis_auto_approve:
+          type: boolean
+          default: false
+        default_analysis_depth:
+          type: string
+          enum: [quick, standard, deep]
+          default: standard
+        preferred_language:
+          type: string
+          default: en
+        theme:
+          type: string
+          enum: [light, dark, system]
+          default: system
+    
+    Organization:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        role:
+          type: string
+          enum: [owner, admin, member]
+        created_at:
+          type: string
+          format: date-time
