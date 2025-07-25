@@ -1,0 +1,198 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: codequal-dev
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: deepwiki-analyzer-config
+  namespace: codequal-dev
+data:
+  deepwiki.conf: |
+    # DeepWiki Analyzer Configuration
+    analysis:
+      timeout: 300s
+      max_file_size: 100MB
+      include_patterns:
+        - "*.js"
+        - "*.ts"
+        - "*.jsx"
+        - "*.tsx"
+        - "*.py"
+        - "*.java"
+        - "*.go"
+        - "*.rs"
+        - "*.rb"
+        - "*.php"
+        - "*.cs"
+        - "*.cpp"
+        - "*.c"
+        - "*.h"
+        - "*.yaml"
+        - "*.yml"
+        - "*.json"
+        - "*.xml"
+        - "*.sql"
+      exclude_patterns:
+        - "node_modules/**"
+        - ".git/**"
+        - "dist/**"
+        - "build/**"
+        - ".next/**"
+        - "coverage/**"
+        - "*.min.js"
+        - "*.map"
+    
+    security:
+      enable_cvss_scoring: true
+      enable_cwe_mapping: true
+      scan_dependencies: true
+      check_secrets: true
+      check_vulnerabilities: true
+    
+    performance:
+      analyze_complexity: true
+      analyze_bundle_size: true
+      analyze_query_patterns: true
+      analyze_memory_usage: true
+    
+    quality:
+      check_coverage: true
+      check_duplicates: true
+      check_complexity: true
+      check_maintainability: true
+    
+    output:
+      format: json
+      include_code_snippets: true
+      include_recommendations: true
+      include_time_estimates: true
+      include_learning_paths: true
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deepwiki-analyzer
+  namespace: codequal-dev
+  labels:
+    app: deepwiki-analyzer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: deepwiki-analyzer
+  template:
+    metadata:
+      labels:
+        app: deepwiki-analyzer
+    spec:
+      containers:
+      - name: deepwiki-analyzer
+        image: codequal/deepwiki-analyzer:v2.0
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 9090
+          name: health
+        env:
+        - name: DEEPWIKI_MODE
+          value: "production"
+        - name: DEEPWIKI_CONFIG_PATH
+          value: "/etc/deepwiki/deepwiki.conf"
+        - name: DEEPWIKI_TEMP_DIR
+          value: "/tmp/analyses"
+        - name: DEEPWIKI_LOG_LEVEL
+          value: "info"
+        - name: DEEPWIKI_MAX_CONCURRENT_ANALYSES
+          value: "5"
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+            ephemeral-storage: "50Gi"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+            ephemeral-storage: "100Gi"
+        volumeMounts:
+        - name: config
+          mountPath: /etc/deepwiki
+        - name: temp-storage
+          mountPath: /tmp/analyses
+        livenessProbe:
+          exec:
+            command:
+            - /app/health-check.sh
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - /bin/bash
+            - -c
+            - "deepwiki --version"
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+      volumes:
+      - name: config
+        configMap:
+          name: deepwiki-analyzer-config
+      - name: temp-storage
+        emptyDir:
+          sizeLimit: 100Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: deepwiki-analyzer-service
+  namespace: codequal-dev
+spec:
+  selector:
+    app: deepwiki-analyzer
+  ports:
+  - protocol: TCP
+    port: 9090
+    targetPort: 9090
+    name: health
+  type: ClusterIP
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: deepwiki-analyzer-pdb
+  namespace: codequal-dev
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: deepwiki-analyzer
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: deepwiki-analyzer-hpa
+  namespace: codequal-dev
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: deepwiki-analyzer
+  minReplicas: 1
+  maxReplicas: 3
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80

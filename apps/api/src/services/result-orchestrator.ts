@@ -104,7 +104,7 @@ export interface ExistingIssue {
   created_at: string;
   updated_at: string;
 }
-import { DeepWikiManager } from './deepwiki-manager';
+import { deepWikiApiManager } from './deepwiki-api-manager';
 import { PRContextService } from './pr-context-service';
 import { ResultProcessor } from './result-processor';
 import { EducationalContentService } from './educational-content-service';
@@ -434,7 +434,7 @@ export class ResultOrchestrator {
   private modelVersionSync: ModelVersionSync;
   private vectorContextService: VectorContextService;
   private toolResultRetrievalService: ToolResultRetrievalService;
-  private deepWikiManager: DeepWikiManager;
+  private deepWikiManager: any; // Using simplified DeepWiki manager
   private prContextService: PRContextService;
   private resultProcessor: ResultProcessor;
   private educationalService: EducationalContentService;
@@ -471,7 +471,7 @@ export class ResultOrchestrator {
     const vectorStorage = this.createVectorStorageService();
     this.toolResultRetrievalService = new ToolResultRetrievalService(vectorStorage, this.logger);
     
-    this.deepWikiManager = new DeepWikiManager(authenticatedUser);
+    this.deepWikiManager = new (require('./deepwiki-integration-simplified').DeepWikiIntegration)();
     this.prContextService = new PRContextService();
     this.resultProcessor = new ResultProcessor();
     this.educationalService = new EducationalContentService(authenticatedUser);
@@ -644,7 +644,7 @@ export class ResultOrchestrator {
           const prBranch = prContext.prDetails?.head?.ref || prContext.prDetails?.headBranch;
           
           // Get cached files from DeepWiki (now contains PR branch files)
-          const cachedFiles = await this.deepWikiManager.getCachedRepositoryFiles(
+          const cachedFiles = await deepWikiApiManager.getCachedRepositoryFiles(
             request.repositoryUrl,
             prBranch // Get PR branch specific cache
           );
@@ -653,7 +653,7 @@ export class ResultOrchestrator {
           // Enrich PR files with content from cache
           enrichedFiles = prContext.files?.map(prFile => {
             const filePath = prFile.path;
-            const cachedFile = cachedFiles.find(cf => cf.path === filePath);
+            const cachedFile = cachedFiles.find((cf: any) => cf.path === filePath);
             if (cachedFile) {
               return {
                 ...prFile,
@@ -1447,7 +1447,7 @@ export class ResultOrchestrator {
    * Check if repository exists in Vector DB and its freshness
    */
   private async checkRepositoryStatus(repositoryUrl: string): Promise<RepositoryStatus> {
-    const existsInVectorDB = await this.deepWikiManager.checkRepositoryExists(repositoryUrl);
+    const existsInVectorDB = await deepWikiApiManager.checkRepositoryExists(repositoryUrl);
     
     if (!existsInVectorDB) {
       return {
@@ -1507,7 +1507,7 @@ export class ResultOrchestrator {
       this.logger.info('[DeepWiki] Using PR branch:', prBranch);
     }
     
-    const jobId = await this.deepWikiManager.triggerRepositoryAnalysis(repositoryUrl, {
+    const jobId = await deepWikiApiManager.triggerRepositoryAnalysis(repositoryUrl, {
       branch: prBranch,
       baseBranch: baseBranch,
       includeDiff: !!prBranch && !!baseBranch,
@@ -1518,7 +1518,7 @@ export class ResultOrchestrator {
     
     // Wait for analysis completion
     this.logger.info('[DeepWiki] Waiting for analysis completion...');
-    const results = await this.deepWikiManager.waitForAnalysisCompletion(repositoryUrl);
+    const results = await deepWikiApiManager.waitForAnalysisCompletion(repositoryUrl);
     this.logger.info('[DeepWiki] Analysis completed. Has results:', !!results);
     this.logger.info('[DeepWiki] Result structure:', { keys: Object.keys(results || {}) });
   }
@@ -3200,7 +3200,7 @@ Primary Language: TypeScript
       this.logger.info('[DeepWiki] Getting DeepWiki summary for:', repositoryUrl);
       
       // First, check if we have a completed DeepWiki analysis
-      const hasAnalysis = await this.deepWikiManager.checkRepositoryExists(repositoryUrl);
+      const hasAnalysis = await deepWikiApiManager.checkRepositoryExists(repositoryUrl);
       this.logger.info('[DeepWiki] Repository exists in DeepWiki:', hasAnalysis);
       
       // Query Vector DB for DeepWiki chunks regardless
@@ -3252,7 +3252,7 @@ Primary Language: TypeScript
       if (hasAnalysis) {
         try {
           this.logger.info('[DeepWiki] Retrieving full analysis report...');
-          const deepWikiReport = await this.deepWikiManager.waitForAnalysisCompletion(repositoryUrl);
+          const deepWikiReport = await deepWikiApiManager.waitForAnalysisCompletion(repositoryUrl);
           this.logger.info('[DeepWiki] Full report retrieved:', !!deepWikiReport);
           this.logger.info('[DeepWiki] Report keys:', { keys: Object.keys(deepWikiReport || {}) });
           analysisData = deepWikiReport.analysis || {};

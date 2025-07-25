@@ -1,0 +1,74 @@
+{
+  "repository_url": "https://github.com/facebook/react",
+  "analysis_id": "03a5963d-c852-42c0-9492-094957d7b2c1",
+  "issues": [
+    {
+      "type": "security",
+      "severity": "critical",
+      "message": "Hardcoded API keys found in environment configuration",
+      "file": "config/env.js",
+      "line": 23,
+      "category": "Security",
+      "suggestion": "Use environment variables or secure secret management"
+    },
+    {
+      "type": "security",
+      "severity": "high",
+      "message": "Potential XSS vulnerability in user input handling",
+      "file": "src/components/UserInput.js",
+      "line": 145,
+      "category": "Security",
+      "suggestion": "Sanitize user input before rendering"
+    },
+    {
+      "type": "performance",
+      "severity": "high",
+      "message": "Large bundle size detected (>2MB)",
+      "file": "webpack.config.js",
+      "line": 89,
+      "category": "Performance",
+      "suggestion": "Enable code splitting and tree shaking"
+    },
+    {
+      "type": "maintainability",
+      "severity": "medium",
+      "message": "Cyclomatic complexity exceeds threshold (15)",
+      "file": "src/utils/dataProcessor.js",
+      "line": 234,
+      "category": "Code Quality",
+      "suggestion": "Refactor complex functions into smaller units"
+    }
+  ],
+  "recommendations": [
+    {
+      "type": "security",
+      "title": "Implement Content Security Policy",
+      "description": "Add CSP headers to prevent XSS attacks",
+      "priority": "high",
+      "category": "Security",
+      "impact": "Prevents injection attacks",
+      "effort": "low"
+    },
+    {
+      "type": "performance",
+      "title": "Enable Bundle Analysis",
+      "description": "Use webpack-bundle-analyzer to identify large dependencies",
+      "priority": "medium",
+      "category": "Performance",
+      "impact": "Reduce load time by 30-50%",
+      "effort": "low"
+    }
+  ],
+  "scores": {
+    "overall": 75,
+    "security": 70,
+    "performance": 72,
+    "maintainability": 82
+  },
+  "metadata": {
+    "analyzed_at": "2025-07-24T17:26:42.899Z",
+    "duration_ms": 5166,
+    "commit_hash": "3d14fcf03f4e296d21b52b362f5adefd9e366375",
+    "branch": "main"
+  }
+}

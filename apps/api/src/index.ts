@@ -34,6 +34,8 @@ import stripeWebhookRoutes from './routes/stripe-webhooks';
 import simpleScanRoutes from './routes/simple-scan-fixed';
 import usageStatsRoutes from './routes/usage-stats';
 import researcherRoutes from './routes/researcher';
+import deepwikiTempStorageRoutes from './routes/deepwiki-temp-storage';
+import metricsRoutes from './routes/metrics';
 import { errorHandler } from './middleware/error-handler';
 // import { i18nMiddleware, translateResponse, validateLanguage } from './middleware/i18n-middleware';
 import { requestLogger } from './middleware/request-logger';
@@ -382,6 +384,12 @@ app.use('/api/monitoring', monitoringRoutes);
 // Researcher routes (requires user authentication)
 app.use('/api/researcher', authMiddleware, researcherRoutes);
 
+// DeepWiki temp storage monitoring routes (requires user authentication)
+app.use('/api/deepwiki/temp', authMiddleware, deepwikiTempStorageRoutes);
+
+// Metrics endpoint for Prometheus/monitoring (token auth via middleware)
+app.use('/api/metrics', metricsRoutes);
+
 // Dev test routes (NO AUTH - DEV ONLY)
 if (process.env.NODE_ENV !== 'production') {
   // Dev routes removed - use specific development endpoints instead
@@ -403,6 +411,13 @@ async function startServer() {
       logger.info(`Health check available at http://localhost:${PORT}/health`);
       logger.info(`Auth endpoints available at http://localhost:${PORT}/auth`);
       logger.info(`Test OAuth at http://localhost:${PORT}/auth-test.html`);
+      
+      // Start metrics auto-push if configured
+      if (process.env.DO_METRICS_TOKEN) {
+        const { metricsExporter } = require('./services/metrics-exporter');
+        metricsExporter.startAutoPush(60000); // Push every minute
+        logger.info('Started metrics auto-push to DigitalOcean');
+      }
     });
   } catch (error) {
     logger.error('Failed to start server:', error as Error);

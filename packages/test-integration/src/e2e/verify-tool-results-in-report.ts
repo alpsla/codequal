@@ -21,7 +21,7 @@ import { AuthenticatedUser as AgentAuthenticatedUser, UserRole, UserStatus } fro
 import { AnalysisStrategy } from '../../../../packages/agents/src/multi-agent/types';
 import { AuthenticatedUser as ApiAuthenticatedUser } from '../../../../apps/api/src/middleware/auth-middleware';
 import { ReporterAgent, ReportFormat } from '../../../../packages/agents/src/multi-agent/reporter-agent';
-import { DeepWikiManager } from '../../../../apps/api/src/services/deepwiki-manager';
+// DeepWiki manager is now simplified and doesn't need importing for tests
 import { PRContextService } from '../../../../apps/api/src/services/pr-context-service';
 import { ResultProcessor } from '../../../../apps/api/src/services/result-processor';
 
@@ -189,7 +189,8 @@ router.get('/users/:id', async (req, res) => {
     // Initialize services
     const _modelVersionSync = new ModelVersionSync(logger);
     const vectorContextService = new VectorContextService(apiAuthenticatedUser);
-    const deepWikiManager = new DeepWikiManager(apiAuthenticatedUser);
+    // DeepWikiManager is now simplified - using singleton
+    const deepWikiManager = require('../../../../apps/api/src/services/deepwiki-manager-simplified').deepWikiManager;
     const _prContextService = new PRContextService();
     const resultProcessor = new ResultProcessor();
 

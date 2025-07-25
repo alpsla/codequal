@@ -1,0 +1,253 @@
+{
+  "dashboard": {
+    "title": "DeepWiki Temp Storage Monitoring",
+    "uid": "deepwiki-temp-storage",
+    "version": 1,
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Storage Usage",
+        "type": "gauge",
+        "gridPos": { "x": 0, "y": 0, "w": 8, "h": 8 },
+        "targets": [
+          {
+            "expr": "(deepwiki_temp_used_gb / deepwiki_temp_total_gb) * 100",
+            "legendFormat": "Usage %"
+          }
+        ],
+        "options": {
+          "reduceOptions": {
+            "calcs": ["lastNotNull"]
+          },
+          "showThresholdLabels": true,
+          "showThresholdMarkers": true
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 100,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": null },
+                { "color": "yellow", "value": 70 },
+                { "color": "red", "value": 85 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "Active Analyses",
+        "type": "stat",
+        "gridPos": { "x": 8, "y": 0, "w": 8, "h": 8 },
+        "targets": [
+          {
+            "expr": "deepwiki_active_analyses_count",
+            "legendFormat": "Active"
+          }
+        ],
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": null },
+                { "color": "yellow", "value": 5 },
+                { "color": "red", "value": 10 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "Available Space",
+        "type": "stat",
+        "gridPos": { "x": 16, "y": 0, "w": 8, "h": 8 },
+        "targets": [
+          {
+            "expr": "deepwiki_temp_available_gb",
+            "legendFormat": "Available GB"
+          }
+        ],
+        "options": {
+          "colorMode": "value",
+          "graphMode": "none"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "decgbytes",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": null },
+                { "color": "yellow", "value": 2 },
+                { "color": "green", "value": 5 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 4,
+        "title": "Storage Usage Over Time",
+        "type": "graph",
+        "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "deepwiki_temp_used_gb",
+            "legendFormat": "Used GB"
+          },
+          {
+            "expr": "deepwiki_temp_total_gb",
+            "legendFormat": "Total GB"
+          }
+        ],
+        "yaxes": [
+          {
+            "format": "decgbytes",
+            "label": "Storage (GB)"
+          }
+        ],
+        "lines": true,
+        "fill": 1,
+        "linewidth": 2
+      },
+      {
+        "id": 5,
+        "title": "Analysis Duration",
+        "type": "graph",
+        "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, deepwiki_analysis_duration_seconds_bucket)",
+            "legendFormat": "P95 Duration"
+          },
+          {
+            "expr": "histogram_quantile(0.50, deepwiki_analysis_duration_seconds_bucket)",
+            "legendFormat": "P50 Duration"
+          }
+        ],
+        "yaxes": [
+          {
+            "format": "s",
+            "label": "Duration (seconds)"
+          }
+        ],
+        "lines": true,
+        "fill": 0,
+        "linewidth": 2
+      },
+      {
+        "id": 6,
+        "title": "Cleanup Success Rate",
+        "type": "stat",
+        "gridPos": { "x": 0, "y": 16, "w": 8, "h": 8 },
+        "targets": [
+          {
+            "expr": "(deepwiki_cleanup_success_total / deepwiki_cleanup_total) * 100",
+            "legendFormat": "Success Rate"
+          }
+        ],
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 100,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": null },
+                { "color": "yellow", "value": 95 },
+                { "color": "green", "value": 99 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 7,
+        "title": "Auto-Scaling Events",
+        "type": "table",
+        "gridPos": { "x": 8, "y": 16, "w": 16, "h": 8 },
+        "targets": [
+          {
+            "expr": "deepwiki_autoscale_events",
+            "format": "table",
+            "instant": true
+          }
+        ],
+        "options": {
+          "showHeader": true
+        },
+        "fieldConfig": {
+          "overrides": [
+            {
+              "matcher": { "id": "byName", "options": "Time" },
+              "properties": [
+                { "id": "custom.width", "value": 200 }
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "refresh": "10s",
+    "time": {
+      "from": "now-6h",
+      "to": "now"
+    },
+    "timepicker": {
+      "refresh_intervals": ["5s", "10s", "30s", "1m", "5m"]
+    },
+    "annotations": {
+      "list": [
+        {
+          "datasource": "Prometheus",
+          "enable": true,
+          "expr": "deepwiki_storage_alert{severity=\"critical\"}",
+          "iconColor": "red",
+          "name": "Critical Alerts",
+          "tagKeys": "alertname,severity"
+        },
+        {
+          "datasource": "Prometheus",
+          "enable": true,
+          "expr": "deepwiki_storage_alert{severity=\"warning\"}",
+          "iconColor": "yellow",
+          "name": "Warning Alerts",
+          "tagKeys": "alertname,severity"
+        }
+      ]
+    },
+    "templating": {
+      "list": [
+        {
+          "name": "namespace",
+          "type": "custom",
+          "current": {
+            "text": "codequal-dev",
+            "value": "codequal-dev"
+          },
+          "options": [
+            { "text": "codequal-dev", "value": "codequal-dev" },
+            { "text": "codequal-prod", "value": "codequal-prod" }
+          ]
+        }
+      ]
+    }
+  }
+}

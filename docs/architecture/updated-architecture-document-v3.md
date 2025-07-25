@@ -331,54 +331,79 @@ The Educational Agent operates in a post-analysis phase with orchestrator-manage
 - Chart generation, PDF export, Grafana skill trend integration
 - Tool metrics included in dashboards
 
-6. DeepWiki Integration (Enhanced June 2025)
-The system integrates with DeepWiki for comprehensive repository analysis:
-Kubernetes-Native Integration
+6. DeepWiki Integration (Simplified - July 2025)
+The system integrates with DeepWiki for comprehensive repository analysis using a simplified, cost-effective approach:
 
-Direct access to DeepWiki pods in Kubernetes cluster
-Command execution via kubectl exec
-Repository analysis via DeepWiki API (ALL LLM requests go through OpenRouter)
-Tool execution within DeepWiki pod (NEW)
-NO direct connections to AI providers - OpenRouter handles all LLM routing
+**Simplified Architecture**
+- **No Repository Storage**: Repositories are cloned to temporary directories only during analysis
+- **Automatic Cleanup**: Immediate cleanup after each analysis completes
+- **Cost Effective**: 90% reduction in storage costs compared to persistent storage
+- **Always Fresh**: No stale cached data - analysis always uses latest code
 
-DeepWiki Tool Runner (NEW)
+**Temporary Analysis Flow**
+```typescript
+// Simple flow: Clone → Analyze → Store Results → Delete
+async analyzeRepository(repositoryUrl: string) {
+  const tempDir = `/tmp/analysis-${uuid()}`;
+  try {
+    await clone(repositoryUrl, tempDir);
+    const results = await analyze(tempDir);
+    await storeResults(results);  // Only results stored in Supabase
+    return results;
+  } finally {
+    await cleanup(tempDir);  // Always cleanup
+  }
+}
+```
 
-Integrated tool execution using cloned repository
-Parallel execution of 5 repository-level tools
-Results stored alongside DeepWiki analysis
-Single atomic operation for consistency
+**DeepWiki Components**
 
-Tiered Analysis Approach
+1. **DeepWiki Manager Simplified**
+   - Handles repository and PR analysis
+   - Manages temporary clones with automatic cleanup
+   - No caching or storage management
+   - Direct integration with DeepWiki pod
 
-Quick PR-Only Analysis:
+2. **Temp Storage Manager**
+   - Tracks active analyses
+   - Ensures cleanup after completion
+   - Monitors disk usage for capacity planning
+   - Auto-scaling support (10GB to 100GB)
 
-1-3 minutes execution time
-Local tools only (ESLint, Bundlephobia)
-Immediate developer feedback
+3. **Monitoring & Alerts**
+   - Real-time temp storage metrics
+   - Active analysis tracking
+   - Orphaned directory cleanup
+   - Capacity warnings and auto-scaling
 
+**Storage Strategy**
 
-Comprehensive Repository Analysis:
+What We Store:
+- Analysis results → Supabase (permanent)
+- Vector embeddings → Supabase (for search)
+- Reports → Supabase (for users)
 
-5-10 minutes execution time
-Full DeepWiki + integrated tools
-Results cached in Vector DB
-Scheduled or on-demand
+What We DON'T Store:
+- Repository code (already in GitHub/GitLab)
+- Clone history
+- Cached analyses
 
+**Performance Characteristics**
+- Repository analysis: 2-5 minutes
+- PR analysis: 1-3 minutes
+- Cleanup: <10 seconds
+- Concurrent capacity: 5 analyses (default 10GB)
 
-Targeted Deep Dives:
+**Cost Optimization**
+- Before: 100GB persistent storage = $50/month
+- After: 10-30GB elastic storage = $5-15/month
+- Savings: 70-90%
 
-Focused on specific aspects
-Leverages DeepWiki Chat API
-Custom tool configuration
-
-
-
-Scheduling Strategy (NEW)
-
-Single Scheduler: DeepWiki + Tools run together
-User Configurable: Daily, weekly, or monthly
-Smart Notifications: Only on significant changes
-Atomic Operations: Ensures consistency
+**API Endpoints**
+- `GET /api/deepwiki/temp/metrics` - Current usage and capacity
+- `GET /api/deepwiki/temp/active-analyses` - Running analyses
+- `POST /api/deepwiki/temp/estimate-capacity` - Capacity planning
+- `POST /api/deepwiki/temp/cleanup-orphaned` - Manual cleanup
 
 7. RAG Framework
 The system implements a comprehensive Retrieval-Augmented Generation (RAG) framework that serves both the chat functionality and other services:

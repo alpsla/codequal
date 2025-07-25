@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { checkRepositoryAccess } from '../middleware/auth-middleware';
-import { DeepWikiManager } from '../services/deepwiki-manager';
+import { deepWikiManager } from '../services/deepwiki-manager-simplified';
 import { enforceTrialLimits, incrementScanCount } from '../middleware/trial-enforcement';
 import { getSupabase } from '@codequal/database/supabase/client';
 
@@ -35,7 +35,7 @@ repositoryRoutes.get('/status', async (req: Request, res: Response) => {
     }
 
     // Check repository status
-    const deepWikiManager = new DeepWikiManager(user);
+    // deepWikiManager is now a singleton, no need to instantiate
     const existsInVectorDB = await deepWikiManager.checkRepositoryExists(repositoryUrl);
 
     // Calculate next scheduled analysis (mock implementation)
@@ -102,7 +102,7 @@ repositoryRoutes.post('/analyze', enforceTrialLimits, incrementScanCount, async 
       }
     }
 
-    const deepWikiManager = new DeepWikiManager(user);
+    // deepWikiManager is now a singleton, no need to instantiate
 
     // Check if analysis already exists (unless forced)
     if (!force) {
@@ -147,12 +147,12 @@ repositoryRoutes.get('/jobs', async (req: Request, res: Response) => {
     if (!user) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
-    const deepWikiManager = new DeepWikiManager(user);
+    // deepWikiManager is now a singleton, no need to instantiate
     
     const activeJobs = await deepWikiManager.getActiveJobs();
 
     res.json({
-      activeJobs: activeJobs.map(job => ({
+      activeJobs: activeJobs.map((job: any) => ({
         jobId: job.jobId,
         repositoryUrl: job.repositoryUrl,
         status: job.status,
@@ -183,7 +183,7 @@ repositoryRoutes.get('/job/:jobId', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
     
-    const deepWikiManager = new DeepWikiManager(user);
+    // deepWikiManager is now a singleton, no need to instantiate
     const job = await deepWikiManager.getJobStatus(jobId);
 
     if (!job) {
@@ -193,17 +193,25 @@ repositoryRoutes.get('/job/:jobId', async (req: Request, res: Response) => {
       });
     }
 
-    res.json({
-      jobId: job.jobId,
-      repositoryUrl: job.repositoryUrl,
-      status: job.status,
-      startedAt: job.startedAt,
-      completedAt: job.completedAt,
-      error: job.error,
-      progress: job.status === 'completed' ? 100 : 
-               job.status === 'processing' ? 75 : 
-               job.status === 'failed' ? 0 : 25
-    });
+    if ('jobId' in job) {
+      res.json({
+        jobId: job.jobId,
+        repositoryUrl: job.repositoryUrl,
+        status: job.status,
+        startedAt: job.startedAt,
+        completedAt: 'completedAt' in job ? job.completedAt : undefined,
+        error: 'error' in job ? job.error : undefined,
+        progress: job.status === 'completed' ? 100 : 
+                 job.status === 'processing' ? 75 : 
+                 job.status === 'failed' ? 0 : 25
+      });
+    } else {
+      res.json({
+        jobId,
+        status: job.status,
+        progress: 100
+      });
+    }
 
   } catch (error) {
     console.error('Job status fetch error:', error);
@@ -226,7 +234,7 @@ repositoryRoutes.delete('/job/:jobId', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
     
-    const deepWikiManager = new DeepWikiManager(user);
+    // deepWikiManager is now a singleton, no need to instantiate
     const cancelled = await deepWikiManager.cancelJob(jobId);
 
     if (!cancelled) {
