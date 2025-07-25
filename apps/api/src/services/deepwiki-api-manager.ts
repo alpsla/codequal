@@ -746,6 +746,39 @@ Provide at least 100-200 detailed findings for a comprehensive analysis.`;
       return false;
     }
   }
+
+  /**
+   * Check if repository exists in the system
+   */
+  async checkRepositoryExists(repositoryUrl: string): Promise<boolean> {
+    // TODO: Implement actual check
+    return false;
+  }
+
+  /**
+   * Get cached repository files
+   */
+  async getCachedRepositoryFiles(repositoryUrl: string, branch?: string): Promise<any[]> {
+    // TODO: Implement actual cache retrieval
+    return [];
+  }
+
+  /**
+   * Trigger repository analysis
+   */
+  async triggerRepositoryAnalysis(repositoryUrl: string, options?: any): Promise<string> {
+    // Use the existing analyzeRepository method
+    const result = await this.analyzeRepository(repositoryUrl, options);
+    return result.metadata?.job_id || 'analysis-' + Date.now();
+  }
+
+  /**
+   * Wait for analysis completion
+   */
+  async waitForAnalysisCompletion(repositoryUrl: string): Promise<DeepWikiAnalysisResult> {
+    // For now, just run the analysis directly
+    return await this.analyzeRepository(repositoryUrl);
+  }
 }
 
 // Export singleton instance

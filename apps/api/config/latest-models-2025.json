@@ -1,0 +1,491 @@
+{
+  "timestamp": "2025-07-25T02:18:30.537Z",
+  "models": [
+    {
+      "provider": "anthropic",
+      "model": "claude-opus-4",
+      "model_id": "claude-opus-4",
+      "versionId": "latest",
+      "version": "4.0",
+      "created_at": "2025-04-01T00:00:00Z",
+      "deprecated": false,
+      "pricing": {
+        "input": 0.000015,
+        "output": 0.000075
+      },
+      "capabilities": {
+        "contextWindow": 200000,
+        "codeQuality": 9.5,
+        "speed": 7.5,
+        "reasoning": 9.5
+      },
+      "metadata": {
+        "status": "stable",
+        "tier": "tier_5",
+        "releaseDate": "2025-04-01",
+        "source": "openrouter",
+        "lastUpdated": "2025-07-25T02:18:30.521Z"
+      }
+    },
+    {
+      "provider": "anthropic",
+      "model": "claude-sonnet-4",
+      "model_id": "claude-sonnet-4",
+      "versionId": "latest",
+      "version": "4.0",
+      "created_at": "2025-04-01T00:00:00Z",
+      "deprecated": false,
+      "pricing": {
+        "input": 0.000003,
+        "output": 0.000015
+      },
+      "capabilities": {
+        "contextWindow": 200000,
+        "codeQuality": 9,
+        "speed": 8.5,
+        "reasoning": 9
+      },
+      "metadata": {
+        "status": "stable",
+        "tier": "tier_4",
+        "releaseDate": "2025-04-01",
+        "source": "openrouter",
+        "lastUpdated": "2025-07-25T02:18:30.522Z"
+      }
+    },
+    {
+      "provider": "anthropic",
+      "model": "claude-3.7-sonnet",
+      "model_id": "claude-3.7-sonnet",
+      "versionId": "latest",
+      "version": "3.7",
+      "created_at": "2025-01-15T00:00:00Z",
+      "deprecated": false,
+      "pricing": {
+        "input": 0.000003,
+        "output": 0.000015
+      },
+      "capabilities": {
+        "contextWindow": 200000,
+        "codeQuality": 8.8,
+        "speed": 8.5,
+        "reasoning": 8.8
+      },
+      "metadata": {
+        "status": "stable",
+        "tier": "tier_4",
+        "releaseDate": "2025-01-15",
+        "source": "openrouter",
+        "lastUpdated": "2025-07-25T02:18:30.522Z"
+      }
+    },
+    {
+      "provider": "openai",
+      "model": "gpt-4.1",
+      "model_id": "gpt-4.1",
+      "versionId": "latest",
+      "version": "4.1",
+      "created_at": "2025-04-15T00:00:00Z",
+      "deprecated": false,
+      "pricing": {
+        "input": 0.000002,
+        "output": 0.000008
+      },
+      "capabilities": {
+        "contextWindow": 1047576,
+        "codeQuality": 9.2,
+        "speed": 8,
+        "reasoning": 9.2
+      },
+      "metadata": {
+        "status": "stable",
+        "tier": "tier_4",
+        "releaseDate": "2025-04-15",
+        "source": "openrouter",
+        "lastUpdated": "2025-07-25T02:18:30.522Z"
+      }
+    },
+    {
+      "provider": "google",
+      "model": "gemini-2.5-pro",
+      "model_id": "gemini-2.5-pro",
+      "versionId": "latest",
+      "version": "2.5",
+      "created_at": "2025-06-01T00:00:00Z",
+      "deprecated": false,
+      "pricing": {
+        "input": 0.00000125,
+        "output": 0.00001
+      },
+      "capabilities": {
+        "contextWindow": 1048576,
+        "codeQuality": 8.5,
+        "speed": 9,
+        "reasoning": 8.5
+      },
+      "metadata": {
+        "status": "stable",
+        "tier": "tier_3",
+        "releaseDate": "2025-06-01",
+        "source": "openrouter",
+        "lastUpdated": "2025-07-25T02:18:30.522Z"
+      }
+    },
+    {
+      "provider": "meta-llama",
+      "model": "llama-4-maverick",
+      "model_id": "llama-4-maverick",
+      "versionId": "latest",
+      "version": "4.0",
+      "created_at": "2025-04-20T00:00:00Z",
+      "deprecated": false,
+      "pricing": {
+        "input": 1.5e-7,
+        "output": 6e-7
+      },
+      "capabilities": {
+        "contextWindow": 1048576,
+        "codeQuality": 8,
+        "speed": 9.5,
+        "reasoning": 8
+      },
+      "metadata": {
+        "status": "stable",
+        "tier": "tier_2",
+        "releaseDate": "2025-04-20",
+        "source": "openrouter",
+        "lastUpdated": "2025-07-25T02:18:30.522Z"
+      }
+    }
+  ],
+  "roleConfigs": {
+    "deepwiki": {
+      "primary": {
+        "provider": "anthropic",
+        "model": "claude-opus-4",
+        "model_id": "claude-opus-4",
+        "versionId": "latest",
+        "version": "4.0",
+        "created_at": "2025-04-01T00:00:00Z",
+        "deprecated": false,
+        "pricing": {
+          "input": 0.000015,
+          "output": 0.000075
+        },
+        "capabilities": {
+          "contextWindow": 200000,
+          "codeQuality": 9.5,
+          "speed": 7.5,
+          "reasoning": 9.5
+        },
+        "metadata": {
+          "status": "stable",
+          "tier": "tier_5",
+          "releaseDate": "2025-04-01",
+          "source": "openrouter",
+          "lastUpdated": "2025-07-25T02:18:30.521Z"
+        }
+      },
+      "fallback": [
+        {
+          "provider": "anthropic",
+          "model": "claude-sonnet-4",
+          "model_id": "claude-sonnet-4",
+          "versionId": "latest",
+          "version": "4.0",
+          "created_at": "2025-04-01T00:00:00Z",
+          "deprecated": false,
+          "pricing": {
+            "input": 0.000003,
+            "output": 0.000015
+          },
+          "capabilities": {
+            "contextWindow": 200000,
+            "codeQuality": 9,
+            "speed": 8.5,
+            "reasoning": 9
+          },
+          "metadata": {
+            "status": "stable",
+            "tier": "tier_4",
+            "releaseDate": "2025-04-01",
+            "source": "openrouter",
+            "lastUpdated": "2025-07-25T02:18:30.522Z"
+          }
+        },
+        {
+          "provider": "openai",
+          "model": "gpt-4.1",
+          "model_id": "gpt-4.1",
+          "versionId": "latest",
+          "version": "4.1",
+          "created_at": "2025-04-15T00:00:00Z",
+          "deprecated": false,
+          "pricing": {
+            "input": 0.000002,
+            "output": 0.000008
+          },
+          "capabilities": {
+            "contextWindow": 1047576,
+            "codeQuality": 9.2,
+            "speed": 8,
+            "reasoning": 9.2
+          },
+          "metadata": {
+            "status": "stable",
+            "tier": "tier_4",
+            "releaseDate": "2025-04-15",
+            "source": "openrouter",
+            "lastUpdated": "2025-07-25T02:18:30.522Z"
+          }
+        }
+      ]
+    },
+    "comprehensive-analyzer": {
+      "primary": {
+        "provider": "google",
+        "model": "gemini-2.5-pro",
+        "model_id": "gemini-2.5-pro",
+        "versionId": "latest",
+        "version": "2.5",
+        "created_at": "2025-06-01T00:00:00Z",
+        "deprecated": false,
+        "pricing": {
+          "input": 0.00000125,
+          "output": 0.00001
+        },
+        "capabilities": {
+          "contextWindow": 1048576,
+          "codeQuality": 8.5,
+          "speed": 9,
+          "reasoning": 8.5
+        },
+        "metadata": {
+          "status": "stable",
+          "tier": "tier_3",
+          "releaseDate": "2025-06-01",
+          "source": "openrouter",
+          "lastUpdated": "2025-07-25T02:18:30.522Z"
+        }
+      },
+      "fallback": [
+        {
+          "provider": "anthropic",
+          "model": "claude-opus-4",
+          "model_id": "claude-opus-4",
+          "versionId": "latest",
+          "version": "4.0",
+          "created_at": "2025-04-01T00:00:00Z",
+          "deprecated": false,
+          "pricing": {
+            "input": 0.000015,
+            "output": 0.000075
+          },
+          "capabilities": {
+            "contextWindow": 200000,
+            "codeQuality": 9.5,
+            "speed": 7.5,
+            "reasoning": 9.5
+          },
+          "metadata": {
+            "status": "stable",
+            "tier": "tier_5",
+            "releaseDate": "2025-04-01",
+            "source": "openrouter",
+            "lastUpdated": "2025-07-25T02:18:30.521Z"
+          }
+        },
+        {
+          "provider": "anthropic",
+          "model": "claude-sonnet-4",
+          "model_id": "claude-sonnet-4",
+          "versionId": "latest",
+          "version": "4.0",
+          "created_at": "2025-04-01T00:00:00Z",
+          "deprecated": false,
+          "pricing": {
+            "input": 0.000003,
+            "output": 0.000015
+          },
+          "capabilities": {
+            "contextWindow": 200000,
+            "codeQuality": 9,
+            "speed": 8.5,
+            "reasoning": 9
+          },
+          "metadata": {
+            "status": "stable",
+            "tier": "tier_4",
+            "releaseDate": "2025-04-01",
+            "source": "openrouter",
+            "lastUpdated": "2025-07-25T02:18:30.522Z"
+          }
+        }
+      ]
+    },
+    "researcher": {
+      "primary": {
+        "provider": "anthropic",
+        "model": "claude-sonnet-4",
+        "model_id": "claude-sonnet-4",
+        "versionId": "latest",
+        "version": "4.0",
+        "created_at": "2025-04-01T00:00:00Z",
+        "deprecated": false,
+        "pricing": {
+          "input": 0.000003,
+          "output": 0.000015
+        },
+        "capabilities": {
+          "contextWindow": 200000,
+          "codeQuality": 9,
+          "speed": 8.5,
+          "reasoning": 9
+        },
+        "metadata": {
+          "status": "stable",
+          "tier": "tier_4",
+          "releaseDate": "2025-04-01",
+          "source": "openrouter",
+          "lastUpdated": "2025-07-25T02:18:30.522Z"
+        }
+      },
+      "fallback": [
+        {
+          "provider": "openai",
+          "model": "gpt-4.1",
+          "model_id": "gpt-4.1",
+          "versionId": "latest",
+          "version": "4.1",
+          "created_at": "2025-04-15T00:00:00Z",
+          "deprecated": false,
+          "pricing": {
+            "input": 0.000002,
+            "output": 0.000008
+          },
+          "capabilities": {
+            "contextWindow": 1047576,
+            "codeQuality": 9.2,
+            "speed": 8,
+            "reasoning": 9.2
+          },
+          "metadata": {
+            "status": "stable",
+            "tier": "tier_4",
+            "releaseDate": "2025-04-15",
+            "source": "openrouter",
+            "lastUpdated": "2025-07-25T02:18:30.522Z"
+          }
+        },
+        {
+          "provider": "anthropic",
+          "model": "claude-3.7-sonnet",
+          "model_id": "claude-3.7-sonnet",
+          "versionId": "latest",
+          "version": "3.7",
+          "created_at": "2025-01-15T00:00:00Z",
+          "deprecated": false,
+          "pricing": {
+            "input": 0.000003,
+            "output": 0.000015
+          },
+          "capabilities": {
+            "contextWindow": 200000,
+            "codeQuality": 8.8,
+            "speed": 8.5,
+            "reasoning": 8.8
+          },
+          "metadata": {
+            "status": "stable",
+            "tier": "tier_4",
+            "releaseDate": "2025-01-15",
+            "source": "openrouter",
+            "lastUpdated": "2025-07-25T02:18:30.522Z"
+          }
+        }
+      ]
+    },
+    "code-reviewer": {
+      "primary": {
+        "provider": "anthropic",
+        "model": "claude-3.7-sonnet",
+        "model_id": "claude-3.7-sonnet",
+        "versionId": "latest",
+        "version": "3.7",
+        "created_at": "2025-01-15T00:00:00Z",
+        "deprecated": false,
+        "pricing": {
+          "input": 0.000003,
+          "output": 0.000015
+        },
+        "capabilities": {
+          "contextWindow": 200000,
+          "codeQuality": 8.8,
+          "speed": 8.5,
+          "reasoning": 8.8
+        },
+        "metadata": {
+          "status": "stable",
+          "tier": "tier_4",
+          "releaseDate": "2025-01-15",
+          "source": "openrouter",
+          "lastUpdated": "2025-07-25T02:18:30.522Z"
+        }
+      },
+      "fallback": [
+        {
+          "provider": "meta-llama",
+          "model": "llama-4-maverick",
+          "model_id": "llama-4-maverick",
+          "versionId": "latest",
+          "version": "4.0",
+          "created_at": "2025-04-20T00:00:00Z",
+          "deprecated": false,
+          "pricing": {
+            "input": 1.5e-7,
+            "output": 6e-7
+          },
+          "capabilities": {
+            "contextWindow": 1048576,
+            "codeQuality": 8,
+            "speed": 9.5,
+            "reasoning": 8
+          },
+          "metadata": {
+            "status": "stable",
+            "tier": "tier_2",
+            "releaseDate": "2025-04-20",
+            "source": "openrouter",
+            "lastUpdated": "2025-07-25T02:18:30.522Z"
+          }
+        },
+        {
+          "provider": "openai",
+          "model": "gpt-4.1",
+          "model_id": "gpt-4.1",
+          "versionId": "latest",
+          "version": "4.1",
+          "created_at": "2025-04-15T00:00:00Z",
+          "deprecated": false,
+          "pricing": {
+            "input": 0.000002,
+            "output": 0.000008
+          },
+          "capabilities": {
+            "contextWindow": 1047576,
+            "codeQuality": 9.2,
+            "speed": 8,
+            "reasoning": 9.2
+          },
+          "metadata": {
+            "status": "stable",
+            "tier": "tier_4",
+            "releaseDate": "2025-04-15",
+            "source": "openrouter",
+            "lastUpdated": "2025-07-25T02:18:30.522Z"
+          }
+        }
+      ]
+    }
+  }
+}

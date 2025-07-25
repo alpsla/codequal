@@ -34,7 +34,7 @@ export class DeepWikiEmbeddingAdapter {
       try {
         const { VectorStorageService } = await import('@codequal/database');
         const dbVectorStorage = new VectorStorageService();
-        const { VectorStorageAdapter } = await import('./vector-storage-adapter');
+        const { VectorStorageAdapter } = await import('./vector-storage-adapter.js');
         this.vectorStorageAdapter = new VectorStorageAdapter(dbVectorStorage);
       } catch (error) {
         logger.warn('Vector storage not available:', error as Error);

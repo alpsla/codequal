@@ -1,0 +1,300 @@
+openapi: 3.0.0
+info:
+  title: DeepWiki Storage API
+  version: 1.0.0
+  description: API endpoints for DeepWiki storage management and cost optimization
+
+paths:
+  /api/deepwiki/storage/metrics:
+    get:
+      summary: Get current storage metrics
+      tags: [DeepWiki]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Storage metrics retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  usedGB:
+                    type: number
+                    example: 45.2
+                  totalGB:
+                    type: number
+                    example: 100
+                  percentageUsed:
+                    type: number
+                    example: 45.2
+                  availableGB:
+                    type: number
+                    example: 54.8
+                  repositoryCount:
+                    type: number
+                    example: 127
+                  averageRepoSizeMB:
+                    type: number
+                    example: 365.8
+                  growthRateGBPerDay:
+                    type: number
+                    example: -0.5
+
+  /api/deepwiki/storage/status:
+    get:
+      summary: Get storage status with alerts and predictions
+      tags: [DeepWiki]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Storage status retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  metrics:
+                    $ref: '#/components/schemas/StorageMetrics'
+                  alert:
+                    $ref: '#/components/schemas/StorageAlert'
+                  prediction:
+                    $ref: '#/components/schemas/StoragePrediction'
+                  status:
+                    type: string
+                    enum: [healthy, warning, critical]
+
+  /api/deepwiki/storage/optimization:
+    get:
+      summary: Get storage optimization recommendations
+      tags: [DeepWiki]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Optimization recommendations retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OptimizationRecommendation'
+
+  /api/deepwiki/storage/archive-candidates:
+    get:
+      summary: Get list of repositories that can be archived
+      tags: [DeepWiki]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: days
+          schema:
+            type: integer
+            default: 30
+          description: Inactivity threshold in days
+      responses:
+        '200':
+          description: Archive candidates retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  candidates:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ArchiveCandidate'
+                  summary:
+                    type: object
+                    properties:
+                      count:
+                        type: integer
+                      totalSizeMB:
+                        type: string
+                      totalSizeGB:
+                        type: string
+                      potentialSavingsPerMonth:
+                        type: string
+
+  /api/deepwiki/storage/archive:
+    post:
+      summary: Archive selected repositories to S3
+      tags: [DeepWiki]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                repositories:
+                  type: array
+                  items:
+                    type: string
+                  description: Repository names to archive
+      responses:
+        '200':
+          description: Repositories archived successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  archived:
+                    type: integer
+                  freedSpaceGB:
+                    type: number
+                  errors:
+                    type: array
+                    items:
+                      type: string
+                  message:
+                    type: string
+
+  /api/deepwiki/storage/expand:
+    post:
+      summary: Manually expand DeepWiki storage (Admin only)
+      tags: [DeepWiki]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sizeGB:
+                  type: number
+                  description: New size in GB
+                  minimum: 20
+                  maximum: 500
+      responses:
+        '200':
+          description: Storage expanded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  oldSize:
+                    type: number
+                  newSize:
+                    type: number
+
+  /api/deepwiki/storage/monitor:
+    post:
+      summary: Run storage monitoring check (Admin only)
+      tags: [DeepWiki]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Monitoring check completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+
+components:
+  schemas:
+    StorageMetrics:
+      type: object
+      properties:
+        usedGB:
+          type: number
+        totalGB:
+          type: number
+        percentageUsed:
+          type: number
+        availableGB:
+          type: number
+        repositoryCount:
+          type: number
+        averageRepoSizeMB:
+          type: number
+        growthRateGBPerDay:
+          type: number
+
+    StorageAlert:
+      type: object
+      properties:
+        level:
+          type: string
+          enum: [info, warning, critical]
+        message:
+          type: string
+        metrics:
+          $ref: '#/components/schemas/StorageMetrics'
+
+    StoragePrediction:
+      type: object
+      properties:
+        daysUntilFull:
+          type: number
+        predictedFullDate:
+          type: string
+          format: date-time
+        growthRateGBPerDay:
+          type: number
+
+    OptimizationRecommendation:
+      type: object
+      properties:
+        action:
+          type: string
+          enum: [contract, maintain, expand, archive]
+        currentSizeGB:
+          type: number
+        recommendedSizeGB:
+          type: number
+        potentialMonthlySavings:
+          type: number
+        riskLevel:
+          type: string
+          enum: [low, medium, high]
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 100
+        reasoning:
+          type: array
+          items:
+            type: string
+        prerequisites:
+          type: array
+          items:
+            type: string
+
+    ArchiveCandidate:
+      type: object
+      properties:
+        repositoryName:
+          type: string
+        path:
+          type: string
+        sizeMB:
+          type: number
+        lastAccessedDays:
+          type: number
+        accessCount:
+          type: number
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

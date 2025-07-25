@@ -100,6 +100,14 @@
     "./deepwiki/deepwiki-config-storage": {
       "types": "./dist/deepwiki/deepwiki-config-storage.d.ts",
       "default": "./dist/deepwiki/deepwiki-config-storage.js"
+    },
+    "./multi-agent": {
+      "types": "./dist/multi-agent/index.d.ts",
+      "default": "./dist/multi-agent/index.js"
+    },
+    "./multi-agent/types": {
+      "types": "./dist/multi-agent/types/index.d.ts",
+      "default": "./dist/multi-agent/types/index.js"
     }
   },
   "scripts": {

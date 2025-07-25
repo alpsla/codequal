@@ -1,0 +1,111 @@
+{
+  "repository_url": "https://github.com/anthropics/claude-code",
+  "analysis_id": "8362fb32-ec05-4b51-9a0a-bda8eef6f596",
+  "issues": [
+    {
+      "type": "security",
+      "severity": "critical",
+      "message": "Hardcoded API key found in configuration file",
+      "file": "src/config/api-keys.ts",
+      "line": 45,
+      "code": "SECURITY_001",
+      "category": "Security",
+      "recommendation": "Use environment variables or secure key management service"
+    },
+    {
+      "type": "security",
+      "severity": "high",
+      "message": "SQL injection vulnerability in user query",
+      "file": "src/database/queries.ts",
+      "line": 123,
+      "code": "SECURITY_002",
+      "category": "Security",
+      "recommendation": "Use parameterized queries or ORM"
+    },
+    {
+      "type": "performance",
+      "severity": "high",
+      "message": "Unbounded memory allocation in data processing",
+      "file": "src/services/data-processor.ts",
+      "line": 89,
+      "code": "PERF_001",
+      "category": "Performance",
+      "recommendation": "Implement streaming or chunked processing"
+    },
+    {
+      "type": "performance",
+      "severity": "medium",
+      "message": "Inefficient algorithm complexity O(n²) in sorting function",
+      "file": "src/utils/sorting.ts",
+      "line": 34,
+      "code": "PERF_002",
+      "category": "Performance",
+      "recommendation": "Use built-in sort or optimize algorithm"
+    },
+    {
+      "type": "maintainability",
+      "severity": "medium",
+      "message": "Complex function with cyclomatic complexity of 15",
+      "file": "src/services/analyzer.ts",
+      "line": 156,
+      "code": "MAINT_001",
+      "category": "Code Quality",
+      "recommendation": "Refactor into smaller, focused functions"
+    },
+    {
+      "type": "maintainability",
+      "severity": "low",
+      "message": "Missing JSDoc comments for public API",
+      "file": "src/api/endpoints.ts",
+      "line": 78,
+      "code": "MAINT_002",
+      "category": "Documentation",
+      "recommendation": "Add comprehensive JSDoc comments"
+    }
+  ],
+  "recommendations": [
+    {
+      "title": "Implement Security Headers",
+      "description": "Add security headers like CSP, HSTS, X-Frame-Options to prevent common attacks",
+      "priority": "high",
+      "category": "Security",
+      "impact": "Protects against XSS, clickjacking, and other client-side attacks",
+      "effort": "low"
+    },
+    {
+      "title": "Add Rate Limiting",
+      "description": "Implement rate limiting on API endpoints to prevent abuse",
+      "priority": "high",
+      "category": "Security",
+      "impact": "Prevents API abuse and DoS attacks",
+      "effort": "medium"
+    },
+    {
+      "title": "Optimize Database Queries",
+      "description": "Add indexes and optimize slow queries identified in performance analysis",
+      "priority": "medium",
+      "category": "Performance",
+      "impact": "Can improve response times by up to 50%",
+      "effort": "medium"
+    }
+  ],
+  "scores": {
+    "overall": 72,
+    "security": 65,
+    "performance": 75,
+    "maintainability": 80
+  },
+  "metadata": {
+    "analyzed_at": "2025-07-24T16:58:17.349Z",
+    "duration_ms": 45678,
+    "commit_hash": "a1b2c3d4e5f6",
+    "branch": "main",
+    "files_analyzed": 234,
+    "language_breakdown": {
+      "TypeScript": 65,
+      "JavaScript": 20,
+      "JSON": 10,
+      "Other": 5
+    }
+  }
+}

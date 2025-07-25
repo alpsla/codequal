@@ -1,0 +1,63 @@
+# Prometheus metrics configuration for DeepWiki monitoring
+# This should be added to your Prometheus configuration
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'deepwiki-metrics'
+    static_configs:
+      - targets: ['codequal-api:3001']
+    metrics_path: '/api/metrics'
+    bearer_token: '${PROMETHEUS_BEARER_TOKEN}'
+    
+    # Custom metric relabeling for DeepWiki
+    metric_relabel_configs:
+      # Extract analysis ID from labels
+      - source_labels: [__name__]
+        regex: 'deepwiki_.*'
+        target_label: subsystem
+        replacement: 'deepwiki'
+      
+      # Add environment label
+      - source_labels: [__address__]
+        regex: '.*'
+        target_label: environment
+        replacement: '${ENVIRONMENT}'
+
+# Recording rules for DeepWiki metrics
+rule_files:
+  - '/etc/prometheus/rules/deepwiki.yml'
+
+# DeepWiki recording rules
+# Save as /etc/prometheus/rules/deepwiki.yml
+groups:
+  - name: deepwiki_aggregations
+    interval: 30s
+    rules:
+      # Storage usage percentage
+      - record: deepwiki:storage:usage_percentage
+        expr: (deepwiki_temp_used_gb / deepwiki_temp_total_gb) * 100
+      
+      # Average analysis duration over 5m
+      - record: deepwiki:analysis:duration_5m_avg
+        expr: rate(deepwiki_analysis_duration_seconds_sum[5m]) / rate(deepwiki_analysis_duration_seconds_count[5m])
+      
+      # Cleanup success rate
+      - record: deepwiki:cleanup:success_rate
+        expr: rate(deepwiki_cleanup_success_total[5m]) / rate(deepwiki_cleanup_total[5m])
+      
+      # Concurrent analyses average
+      - record: deepwiki:analyses:concurrent_avg
+        expr: avg_over_time(deepwiki_active_analyses_count[5m])
+      
+      # Storage pressure (high when > 70%)
+      - record: deepwiki:storage:pressure
+        expr: deepwiki:storage:usage_percentage > 70
+
+# Alerting configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['alertmanager:9093']

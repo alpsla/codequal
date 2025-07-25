@@ -54,6 +54,7 @@ export interface DeepWikiMetadata {
   commit_hash?: string;
   branch?: string;
   files_analyzed?: number;
+  job_id?: string;
   language_breakdown?: Record<string, number>;
   languages?: Record<string, number>;
   quality_metrics?: {
@@ -80,6 +81,7 @@ export interface DeepWikiAnalysisResult {
   recommendations: DeepWikiRecommendation[];
   scores: DeepWikiScores;
   metadata: DeepWikiMetadata;
+  analysis?: any; // For backward compatibility
   statistics?: {
     files_analyzed: number;
     total_issues: number;

@@ -1,0 +1,116 @@
+{
+  "alerts": [
+    {
+      "name": "DeepWikiHighStorageUsage",
+      "expression": "(deepwiki_temp_used_gb / deepwiki_temp_total_gb) * 100 > 80",
+      "for": "5m",
+      "labels": {
+        "severity": "warning",
+        "component": "deepwiki",
+        "team": "platform"
+      },
+      "annotations": {
+        "summary": "DeepWiki temp storage usage is high ({{ $value }}%)",
+        "description": "DeepWiki temporary storage is at {{ $value }}% capacity. Consider scaling up or cleaning up orphaned directories.",
+        "runbook_url": "https://docs.codequal.dev/runbooks/deepwiki-storage-high"
+      }
+    },
+    {
+      "name": "DeepWikiCriticalStorageUsage",
+      "expression": "(deepwiki_temp_used_gb / deepwiki_temp_total_gb) * 100 > 90",
+      "for": "2m",
+      "labels": {
+        "severity": "critical",
+        "component": "deepwiki",
+        "team": "platform",
+        "page": "true"
+      },
+      "annotations": {
+        "summary": "DeepWiki temp storage critically low ({{ $value }}%)",
+        "description": "DeepWiki temporary storage is at {{ $value }}% capacity. Immediate action required to prevent analysis failures.",
+        "runbook_url": "https://docs.codequal.dev/runbooks/deepwiki-storage-critical"
+      }
+    },
+    {
+      "name": "DeepWikiLongRunningAnalysis",
+      "expression": "deepwiki_analysis_duration_seconds > 1800",
+      "for": "1m",
+      "labels": {
+        "severity": "warning",
+        "component": "deepwiki",
+        "team": "platform"
+      },
+      "annotations": {
+        "summary": "DeepWiki analysis running for > 30 minutes",
+        "description": "Analysis {{ $labels.analysis_id }} has been running for {{ humanize $value }}s. Consider checking for stuck processes.",
+        "runbook_url": "https://docs.codequal.dev/runbooks/deepwiki-long-running"
+      }
+    },
+    {
+      "name": "DeepWikiAutoScalingFailed",
+      "expression": "deepwiki_autoscale_failure_total > 0",
+      "for": "1m",
+      "labels": {
+        "severity": "critical",
+        "component": "deepwiki",
+        "team": "platform"
+      },
+      "annotations": {
+        "summary": "DeepWiki auto-scaling failed",
+        "description": "DeepWiki failed to auto-scale storage. Manual intervention required.",
+        "runbook_url": "https://docs.codequal.dev/runbooks/deepwiki-autoscale-failed"
+      }
+    },
+    {
+      "name": "DeepWikiCleanupFailures",
+      "expression": "rate(deepwiki_cleanup_failed_total[5m]) > 0.1",
+      "for": "10m",
+      "labels": {
+        "severity": "warning",
+        "component": "deepwiki",
+        "team": "platform"
+      },
+      "annotations": {
+        "summary": "High rate of DeepWiki cleanup failures",
+        "description": "DeepWiki cleanup is failing at {{ $value }} failures/sec. Check permissions and disk space.",
+        "runbook_url": "https://docs.codequal.dev/runbooks/deepwiki-cleanup-failures"
+      }
+    },
+    {
+      "name": "DeepWikiNoCapacity",
+      "expression": "deepwiki_temp_available_gb < 2",
+      "for": "1m",
+      "labels": {
+        "severity": "critical",
+        "component": "deepwiki",
+        "team": "platform",
+        "page": "true"
+      },
+      "annotations": {
+        "summary": "DeepWiki has no capacity for new analyses",
+        "description": "Only {{ $value }}GB available. New analyses will fail. Immediate cleanup or scaling required.",
+        "runbook_url": "https://docs.codequal.dev/runbooks/deepwiki-no-capacity"
+      }
+    }
+  ],
+  "notification_channels": [
+    {
+      "name": "platform-team-slack",
+      "type": "slack",
+      "webhook_url": "${SLACK_WEBHOOK_URL}",
+      "channel": "#platform-alerts"
+    },
+    {
+      "name": "platform-team-pagerduty",
+      "type": "pagerduty",
+      "service_key": "${PAGERDUTY_SERVICE_KEY}",
+      "severity_filter": ["critical"]
+    },
+    {
+      "name": "platform-team-email",
+      "type": "email",
+      "addresses": ["platform@codequal.dev"],
+      "severity_filter": ["warning", "critical"]
+    }
+  ]
+}

@@ -1,5 +1,28 @@
 import { VectorStorageService as DatabaseVectorStorage } from '@codequal/database';
-import { VectorStorageService as CoreVectorStorage, EnhancedChunk as CoreEnhancedChunk } from '@codequal/core/services/deepwiki-tools/types';
+
+// Define minimal interfaces to avoid import issues
+interface CoreVectorStorage {
+  storeChunks(
+    chunks: CoreEnhancedChunk[],
+    embeddings: number[][],
+    repositoryId: string,
+    sourceType: string,
+    sourceId: string,
+    storageType?: 'permanent' | 'cached' | 'temporary'
+  ): Promise<StorageResult>;
+  searchSimilar(query: string, limit?: number): Promise<CoreEnhancedChunk[]>;
+  deleteChunks(filter: { repository_id?: string }): Promise<{ deleted: number }>;
+}
+
+interface CoreEnhancedChunk {
+  id: string;
+  content: string;
+  metadata: Record<string, any>;
+  embedding?: number[];
+  repository_id?: string;
+  filePath?: string;
+  type?: string;
+}
 
 // Storage result interface to match database service
 interface StorageResult {

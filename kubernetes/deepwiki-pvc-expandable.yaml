@@ -1,0 +1,43 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: deepwiki-expandable-storage
+allowVolumeExpansion: true  # Critical: enables PVC expansion
+parameters:
+  type: pd-ssd  # Use SSD for better performance
+provisioner: kubernetes.io/gce-persistent-disk  # Adjust for your cloud provider
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: deepwiki-data-expandable
+  namespace: codequal-dev
+  labels:
+    app: deepwiki
+    storage-type: expandable
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: deepwiki-expandable-storage
+  resources:
+    requests:
+      storage: 20Gi  # Start with 20GB
+---
+# For production - larger initial size
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: deepwiki-data-expandable
+  namespace: codequal-prod
+  labels:
+    app: deepwiki
+    storage-type: expandable
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: deepwiki-expandable-storage
+  resources:
+    requests:
+      storage: 50Gi  # Start with 50GB for production

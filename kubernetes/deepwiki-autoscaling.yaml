@@ -1,0 +1,189 @@
+# DeepWiki Temp Storage Auto-Scaling Configuration
+
+---
+# Base PVC - Start with 10GB, expandable
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: deepwiki-temp
+  namespace: codequal-dev
+  annotations:
+    # Enable volume expansion
+    volume.beta.kubernetes.io/storage-class: expandable-storage
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: expandable-storage
+
+---
+# Storage Class that supports expansion
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: expandable-storage
+provisioner: kubernetes.io/aws-ebs  # or your cloud provider
+allowVolumeExpansion: true
+parameters:
+  type: gp3
+  fsType: ext4
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+
+---
+# DeepWiki Pod with temp storage
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deepwiki
+  namespace: codequal-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: deepwiki
+  template:
+    metadata:
+      labels:
+        app: deepwiki
+    spec:
+      containers:
+      - name: deepwiki
+        image: codequal/deepwiki:latest
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1"
+          limits:
+            memory: "4Gi"
+            cpu: "2"
+        volumeMounts:
+        - name: temp-storage
+          mountPath: /tmp
+        env:
+        - name: TEMP_STORAGE_PATH
+          value: "/tmp"
+        - name: AUTO_CLEANUP_ENABLED
+          value: "true"
+        - name: MAX_ANALYSIS_DURATION
+          value: "1800"  # 30 minutes
+      volumes:
+      - name: temp-storage
+        persistentVolumeClaim:
+          claimName: deepwiki-temp
+
+---
+# CronJob for regular cleanup
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: deepwiki-temp-cleanup
+  namespace: codequal-dev
+spec:
+  schedule: "*/30 * * * *"  # Every 30 minutes
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: cleanup
+            image: busybox
+            command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Cleaning up orphaned temp directories..."
+              find /tmp -name "analysis-*" -type d -mmin +60 -exec rm -rf {} + || true
+              find /tmp -name "pr-analysis-*" -type d -mmin +60 -exec rm -rf {} + || true
+              echo "Cleanup completed"
+            volumeMounts:
+            - name: temp-storage
+              mountPath: /tmp
+          volumes:
+          - name: temp-storage
+            persistentVolumeClaim:
+              claimName: deepwiki-temp
+          restartPolicy: OnFailure
+
+---
+# HPA for scaling based on temp storage usage
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: deepwiki-scaling-script
+  namespace: codequal-dev
+data:
+  scale-storage.sh: |
+    #!/bin/bash
+    # Script to monitor and scale storage
+    
+    NAMESPACE="codequal-dev"
+    PVC_NAME="deepwiki-temp"
+    MIN_SIZE_GB=10
+    MAX_SIZE_GB=100
+    SCALE_UP_THRESHOLD=80
+    SCALE_STEP_GB=20
+    
+    # Get current PVC size
+    CURRENT_SIZE=$(kubectl get pvc $PVC_NAME -n $NAMESPACE -o jsonpath='{.spec.resources.requests.storage}')
+    CURRENT_GB=$(echo $CURRENT_SIZE | sed 's/Gi//')
+    
+    # Get usage from pod
+    POD=$(kubectl get pods -n $NAMESPACE -l app=deepwiki -o jsonpath='{.items[0].metadata.name}')
+    USAGE=$(kubectl exec -n $NAMESPACE $POD -- df -h /tmp | tail -1 | awk '{print $5}' | sed 's/%//')
+    
+    echo "Current size: ${CURRENT_GB}GB, Usage: ${USAGE}%"
+    
+    # Scale up if needed
+    if [ $USAGE -gt $SCALE_UP_THRESHOLD ]; then
+      NEW_SIZE=$((CURRENT_GB + SCALE_STEP_GB))
+      
+      if [ $NEW_SIZE -le $MAX_SIZE_GB ]; then
+        echo "Scaling up from ${CURRENT_GB}GB to ${NEW_SIZE}GB"
+        kubectl patch pvc $PVC_NAME -n $NAMESPACE -p '{"spec":{"resources":{"requests":{"storage":"'${NEW_SIZE}'Gi"}}}}'
+        
+        # Send notification
+        curl -X POST http://api-service/api/deepwiki/temp/scale-notification \
+          -H "Content-Type: application/json" \
+          -d '{"event":"scale-up","from":'$CURRENT_GB',"to":'$NEW_SIZE',"usage":'$USAGE'}'
+      else
+        echo "Cannot scale beyond ${MAX_SIZE_GB}GB limit"
+      fi
+    fi
+
+---
+# Monitoring alerts
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: deepwiki-alerts
+  namespace: codequal-dev
+data:
+  alerts.yaml: |
+    groups:
+    - name: deepwiki-temp-storage
+      rules:
+      - alert: HighTempStorageUsage
+        expr: |
+          (kubelet_volume_stats_used_bytes{namespace="codequal-dev",persistentvolumeclaim="deepwiki-temp"} / 
+           kubelet_volume_stats_capacity_bytes{namespace="codequal-dev",persistentvolumeclaim="deepwiki-temp"}) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          component: deepwiki
+        annotations:
+          summary: "DeepWiki temp storage usage is high"
+          description: "Temp storage usage is {{ $value | humanizePercentage }} on {{ $labels.node }}"
+          
+      - alert: LongRunningAnalysis
+        expr: |
+          deepwiki_analysis_duration_seconds > 1800
+        for: 5m
+        labels:
+          severity: warning
+          component: deepwiki
+        annotations:
+          summary: "Long-running DeepWiki analysis detected"
+          description: "Analysis {{ $labels.analysis_id }} has been running for {{ $value | humanizeDuration }}"
