@@ -165,8 +165,8 @@ class PRAnalysisFlowTest {
     // GitHub: https://github.com/owner/repo/pull/123
     // GitLab: https://gitlab.com/owner/repo/-/merge_requests/123
     
-    const githubMatch = url.match(/github\.com\/([^\/]+)\/([^\/]+)\/pull\/(\d+)/);
-    const gitlabMatch = url.match(/gitlab\.com\/([^\/]+)\/([^\/]+)\/-\/merge_requests\/(\d+)/);
+    const githubMatch = url.match(/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/);
+    const gitlabMatch = url.match(/gitlab\.com\/([^/]+)\/([^/]+)\/-\/merge_requests\/(\d+)/);
     
     if (githubMatch) {
       return {
@@ -264,7 +264,8 @@ class PRAnalysisFlowTest {
     const agentTimings: Record<string, number> = {};
     let currentAgent = '';
     
-    while (true) {
+    let isComplete = false;
+    while (!isComplete) {
       const progress = await this.getProgress(analysisId);
       
       // Track individual agent timings
@@ -281,10 +282,12 @@ class PRAnalysisFlowTest {
         if (currentAgent) {
           agentTimings[currentAgent] = Date.now() - agentStart;
         }
-        break;
+        isComplete = true;
       }
       
-      await this.delay(2000);
+      if (!isComplete) {
+        await this.delay(2000);
+      }
     }
     
     this.metrics.agentExecutionTime = Date.now() - agentStart;

@@ -145,7 +145,7 @@ class PRAnalysisDemo {
   }
 
   private parsePRUrl(url: string): { repo: string; prNumber: number } {
-    const match = url.match(/github\.com\/([^\/]+\/[^\/]+)\/pull\/(\d+)/);
+    const match = url.match(/github\.com\/([^/]+\/[^/]+)\/pull\/(\d+)/);
     if (!match) throw new Error('Invalid GitHub PR URL');
     return { repo: match[1], prNumber: parseInt(match[2]) };
   }
