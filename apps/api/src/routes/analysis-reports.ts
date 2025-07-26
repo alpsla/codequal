@@ -98,9 +98,7 @@ import { VectorContextService, createVectorContextService } from '@codequal/agen
 import { AuthenticatedUser as AgentAuthenticatedUser, UserRole, UserStatus, UserPermissions } from '@codequal/agents/multi-agent/types';
 import { AuthenticatedUser } from '../middleware/auth-middleware';
 import { ResultOrchestrator } from '../services/result-orchestrator';
-import { HtmlReportGeneratorV5, ReportInput } from '../services/html-report-generator-v5';
-// Use V5 as the main generator
-const HtmlReportGenerator = HtmlReportGeneratorV5;
+// HTML report generation removed - using JSON reports only
 import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -180,12 +178,11 @@ router.get('/analysis/real-pr-test', async (req: Request, res: Response) => {
     // Run the analysis
     const result = await orchestrator.analyzePR(testPR);
     
-    // Generate enhanced HTML report
-    const generator = new HtmlReportGenerator();
-    const html = generator.generateEnhancedHtmlReport(result);
-    
-    res.setHeader('Content-Type', 'text/html');
-    res.send(html);
+    // Return JSON report - HTML generation removed
+    res.json({
+      success: true,
+      report: result
+    });
     
   } catch (error) {
     logger.error('Real PR test failed', { error });
@@ -317,12 +314,10 @@ router.get('/analysis/demo-report', async (req: Request, res: Response) => {
     'demo-user'
   );
   
-  // Generate HTML directly
+  // Return JSON directly - HTML generation removed
   try {
-    // HtmlReportGenerator already imported
-    const generator = new HtmlReportGenerator();
-    // Convert testReport to ReportInput format
-    const reportInput: ReportInput = {
+    // Convert testReport to standard format
+    const reportData = {
       overall_score: testReport.overall_score,
       report_data: {
         pr_details: {
@@ -338,12 +333,13 @@ router.get('/analysis/demo-report', async (req: Request, res: Response) => {
         educational: testReport.educational
       }
     };
-    const html = generator.generateEnhancedHtmlReport(reportInput);
-    
-    res.setHeader('Content-Type', 'text/html');
-    res.send(html);
+    // Return JSON response
+    res.json({
+      success: true,
+      report: reportData
+    });
   } catch (error) {
-    // Fallback to JSON response
+    // Error handling
     res.json({
       success: true,
       reportId: testReportId,
@@ -444,14 +440,13 @@ router.get('/analysis/:reportId/report', async (req: Request, res: Response) => 
         // Generate response based on format
         try {
           if (format === 'html') {
-            // HtmlReportGenerator already imported
-            const generator = new HtmlReportGenerator();
-            const htmlContent = generator.generateEnhancedHtmlReport({
-              ...report,
-              timestamp: report.timestamp.toISOString()
+            // HTML generation removed - return JSON
+            return res.json({
+              success: true,
+              report: report,
+              format: 'json',
+              message: 'HTML generation has been deprecated. Returning JSON format.'
             });
-            res.setHeader('Content-Type', 'text/html');
-            return res.send(htmlContent);
           } else if (format === 'markdown') {
             res.setHeader('Content-Type', 'text/markdown');
             return res.send(report.exports?.markdownReport || generateMarkdownReport({
@@ -475,8 +470,13 @@ router.get('/analysis/:reportId/report', async (req: Request, res: Response) => 
         } catch (generatorError) {
           logger.error('Error generating report format', { error: generatorError, format });
           if (format === 'html') {
-            res.setHeader('Content-Type', 'text/html');
-            return res.send(generateBasicHTMLReport(report));
+            // Fallback to JSON for HTML requests
+            return res.json({
+              success: true,
+              report: report,
+              format: 'json',
+              message: 'HTML generation error. Returning JSON format.'
+            });
           }
         }
       } else {
@@ -638,7 +638,8 @@ function generateHTMLReport(report: ReportStructure): string {
   } catch (error) {
     logger.error('Failed to read enhanced template, falling back to basic template', { error });
     // Fallback to basic template if enhanced template is not found
-    return generateBasicHTMLReport(report);
+    // HTML generation removed - return empty string
+    return '';
   }
   
   // Helper function to get severity counts
@@ -889,6 +890,7 @@ ${overview.positiveFindings.map((finding) => `- ${finding.message || finding}`).
 /**
  * Fallback to basic HTML report if enhanced template fails
  */
+// HTML generation removed - keeping function signature for compatibility
 function generateBasicHTMLReport(report: ReportStructure | StandardReport): string {
   const { overview, modules } = report;
   
@@ -1254,26 +1256,22 @@ router.get('/analysis/:reportId/html', async (req: Request, res: Response) => {
         
         // Generate HTML using appropriate generator
         try {
-          // HtmlReportGeneratorV5 already imported
-          const generator = new HtmlReportGeneratorV5();
-          const html = generator.generateEnhancedHtmlReport({
-            ...vectorReport,
-            timestamp: vectorReport.timestamp.toISOString()
+          // HTML generation removed - return JSON
+          return res.json({
+            success: true,
+            report: vectorReport,
+            format: 'json',
+            message: 'HTML generation has been deprecated. Returning JSON format.'
           });
-          
-          res.setHeader('Content-Type', 'text/html');
-          return res.send(html);
         } catch (genError) {
           // Fallback to basic generator
-          // HtmlReportGenerator already imported
-          const generator = new HtmlReportGenerator();
-          const html = generator.generateEnhancedHtmlReport({
-            ...vectorReport,
-            timestamp: vectorReport.timestamp.toISOString()
+          // HTML generation removed - return JSON
+          return res.json({
+            success: true,
+            report: vectorReport,
+            format: 'json',
+            message: 'HTML generation fallback. Returning JSON format.'
           });
-          
-          res.setHeader('Content-Type', 'text/html');
-          return res.send(html);
         }
       }
     } catch (vectorError) {
@@ -1293,12 +1291,13 @@ router.get('/analysis/:reportId/html', async (req: Request, res: Response) => {
     }
     
     // Generate HTML
-    // HtmlReportGeneratorV5 already imported
-    const generator = new HtmlReportGeneratorV5();
-    const html = generator.generateEnhancedHtmlReport(report.report_data || report);
-    
-    res.setHeader('Content-Type', 'text/html');
-    res.send(html);
+    // HTML generation removed - return JSON
+    res.json({
+      success: true,
+      report: report.report_data || report,
+      format: 'json',
+      message: 'HTML generation has been deprecated. Returning JSON format.'
+    });
     
   } catch (error) {
     logger.error('Failed to retrieve HTML report', { error });

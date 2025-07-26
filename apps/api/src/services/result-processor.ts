@@ -243,17 +243,19 @@ export class ResultProcessor {
    */
   private async deduplicateFindings(findings: Finding[]): Promise<Finding[]> {
     const groups = await this.groupSimilarFindings(findings);
-    const deduplicated: Finding[] = [];
-
-    for (const group of groups) {
+    
+    // Process all groups in parallel to avoid N+1 queries
+    const deduplicationPromises = groups.map(async (group) => {
       if (group.length === 1) {
-        deduplicated.push(group[0]);
+        return group[0];
       } else {
         // Merge similar findings
-        const merged = await this.mergeFindings(group);
-        deduplicated.push(merged);
+        return await this.mergeFindings(group);
       }
-    }
+    });
+
+    // Wait for all deduplication to complete
+    const deduplicated = await Promise.all(deduplicationPromises);
 
     return deduplicated;
   }
@@ -265,6 +267,30 @@ export class ResultProcessor {
     const groups: Finding[][] = [];
     const processed = new Set<string>();
 
+    // Pre-calculate all similarity scores in parallel to avoid N+1 queries
+    const similarityCache = new Map<string, number>();
+    const similarityPromises: Promise<void>[] = [];
+
+    for (let i = 0; i < findings.length; i++) {
+      for (let j = i + 1; j < findings.length; j++) {
+        const finding1 = findings[i];
+        const finding2 = findings[j];
+        const key = `${finding1.id}-${finding2.id}`;
+        
+        similarityPromises.push(
+          this.calculateSimilarity(finding1, finding2).then(similarity => {
+            similarityCache.set(key, similarity);
+            // Also cache the reverse key for easy lookup
+            similarityCache.set(`${finding2.id}-${finding1.id}`, similarity);
+          })
+        );
+      }
+    }
+
+    // Wait for all similarity calculations to complete
+    await Promise.all(similarityPromises);
+
+    // Now group findings using the cached similarity scores
     for (const finding of findings) {
       if (processed.has(finding.id)) continue;
 
@@ -274,7 +300,9 @@ export class ResultProcessor {
       for (const otherFinding of findings) {
         if (processed.has(otherFinding.id)) continue;
 
-        const similarity = await this.calculateSimilarity(finding, otherFinding);
+        const key = `${finding.id}-${otherFinding.id}`;
+        const similarity = similarityCache.get(key) || 0;
+        
         if (similarity > 0.65) { // 65% similarity threshold - more practical for real findings
           similarFindings.push(otherFinding);
           processed.add(otherFinding.id);

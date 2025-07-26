@@ -11,6 +11,17 @@ test_logs.txt
 *.log
 *.pem
 
+# CRITICAL: Never commit secrets!
+kubernetes/production/secrets.yaml
+kubernetes/*/secrets.yaml
+k8s/*/secrets.yaml
+**/secrets.yaml
+!**/secrets-template.yaml
+.env
+.env.*
+!.env.example
+!.env.template
+
 # Test files and temporary scripts
 apps/api/test-*.js
 apps/api/test-*.html

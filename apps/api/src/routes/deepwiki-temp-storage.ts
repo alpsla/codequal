@@ -136,10 +136,10 @@ router.post('/estimate-capacity', authMiddleware, async (req, res) => {
         availableGB: metrics.availableGB,
         activeAnalyses: metrics.activeAnalyses
       },
-      recommendation: estimate.needsScaling ? {
+      recommendation: (estimate.requiredSpaceGB > metrics.availableGB) ? {
         action: 'scale-up',
-        reason: `Need ${estimate.requiredGB.toFixed(1)}GB but only ${metrics.availableGB.toFixed(1)}GB available`,
-        suggestedSize: Math.ceil(metrics.totalGB + estimate.requiredGB - metrics.availableGB + 5)
+        reason: `Need ${estimate.requiredSpaceGB.toFixed(1)}GB but only ${metrics.availableGB.toFixed(1)}GB available`,
+        suggestedSize: Math.ceil(metrics.totalGB + estimate.requiredSpaceGB - metrics.availableGB + 5)
       } : null
     });
   } catch (error) {
@@ -255,15 +255,20 @@ router.post('/scale', authMiddleware, async (req, res) => {
 });
 
 // Listen for temp manager events and log them
-deepWikiTempManager.on('scale-up-needed', (data) => {
+// Type assertions to fix TypeScript errors - stub implementation doesn't support events
+interface TempManagerWithEvents {
+  on?: (event: string, handler: (data: Record<string, unknown>) => void) => void;
+}
+
+(deepWikiTempManager as TempManagerWithEvents).on?.('scale-up-needed', (data: Record<string, unknown>) => {
   logger.warn('Scale up needed:', data);
 });
 
-deepWikiTempManager.on('scale-down-possible', (data) => {
+(deepWikiTempManager as TempManagerWithEvents).on?.('scale-down-possible', (data: Record<string, unknown>) => {
   logger.info('Scale down possible:', data);
 });
 
-deepWikiTempManager.on('long-running-analysis', (data) => {
+(deepWikiTempManager as TempManagerWithEvents).on?.('long-running-analysis', (data: Record<string, unknown>) => {
   logger.warn('Long running analysis detected:', data);
 });
 

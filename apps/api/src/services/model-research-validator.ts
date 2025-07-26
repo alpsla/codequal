@@ -106,7 +106,7 @@ Return ONLY valid model names from 2025, not older versions.`;
   /**
    * Validate research results
    */
-  validateResearchResult(result: any): {
+  validateResearchResult(result: Record<string, unknown>): {
     valid: boolean;
     errors: string[];
     warnings: string[];
@@ -115,7 +115,7 @@ Return ONLY valid model names from 2025, not older versions.`;
     const warnings: string[] = [];
     
     // Check primary model
-    if (result.primary) {
+    if (result.primary && typeof result.primary === 'string') {
       const primaryValidation = this.validateModel(result.primary);
       errors.push(...primaryValidation.errors);
       warnings.push(...primaryValidation.warnings);
@@ -124,14 +124,15 @@ Return ONLY valid model names from 2025, not older versions.`;
     }
     
     // Check fallback model
-    if (result.fallback) {
+    if (result.fallback && typeof result.fallback === 'string') {
       const fallbackValidation = this.validateModel(result.fallback);
       errors.push(...fallbackValidation.errors.map(e => `Fallback: ${e}`));
       warnings.push(...fallbackValidation.warnings.map(w => `Fallback: ${w}`));
     }
     
     // Ensure different providers for resilience
-    if (result.primary && result.fallback) {
+    if (result.primary && result.fallback && 
+        typeof result.primary === 'string' && typeof result.fallback === 'string') {
       const primaryProvider = result.primary.split('/')[0];
       const fallbackProvider = result.fallback.split('/')[0];
       if (primaryProvider === fallbackProvider) {
@@ -213,7 +214,7 @@ Return ONLY valid model names from 2025, not older versions.`;
   }
   
   private getQualityWeight(size: string): string {
-    const weights = {
+    const weights: Record<string, string> = {
       'small': '40%',
       'medium': '50%',
       'large': '60%',
@@ -223,7 +224,7 @@ Return ONLY valid model names from 2025, not older versions.`;
   }
   
   private getCostWeight(size: string): string {
-    const weights = {
+    const weights: Record<string, string> = {
       'small': '40%',
       'medium': '35%',
       'large': '30%',
@@ -233,7 +234,7 @@ Return ONLY valid model names from 2025, not older versions.`;
   }
   
   private getSpeedWeight(size: string): string {
-    const weights = {
+    const weights: Record<string, string> = {
       'small': '20%',
       'medium': '15%',
       'large': '10%',

@@ -62,6 +62,23 @@ export class VectorStorageAdapter implements CoreVectorStorage {
     );
   }
 
+  async searchSimilar(query: string, limit?: number): Promise<CoreEnhancedChunk[]> {
+    // This is a simplified implementation - in production you'd need proper embedding search
+    return [];
+  }
+
+  async deleteChunks(filter: { repository_id?: string }): Promise<{ deleted: number }> {
+    if (filter.repository_id) {
+      const deleted = await this.databaseVectorStorage.deleteChunksBySource(
+        'repository',
+        filter.repository_id,
+        filter.repository_id
+      );
+      return { deleted };
+    }
+    return { deleted: 0 };
+  }
+
   async deleteChunksBySource(
     sourceType: string,
     sourceId: string,
