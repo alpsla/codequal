@@ -190,7 +190,7 @@ router.get('/users/:id', async (req, res) => {
     const _modelVersionSync = new ModelVersionSync(logger);
     const vectorContextService = new VectorContextService(apiAuthenticatedUser);
     // DeepWikiManager is now simplified - using singleton
-    const deepWikiManager = require('../../../../apps/api/src/services/deepwiki-manager-simplified').deepWikiManager;
+    const { deepWikiApiManager: deepWikiManager } = await import('../../../../apps/api/src/services/deepwiki-api-manager.js');
     const _prContextService = new PRContextService();
     const resultProcessor = new ResultProcessor();
 

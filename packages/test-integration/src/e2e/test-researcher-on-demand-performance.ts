@@ -398,7 +398,7 @@ async function main() {
   const metrics = await test.runPerformanceTests();
   
   // Save metrics to UI documentation
-  const fs = require('fs').promises;
+  const fs = (await import('fs')).promises;
   const metricsPath = '/Users/alpinro/Code Prjects/codequal/docs/ui-preparation/e2e-testing-ui-insights.md';
   
   try {

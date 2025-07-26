@@ -434,7 +434,7 @@ export class ResultOrchestrator {
   private modelVersionSync: ModelVersionSync;
   private vectorContextService: VectorContextService;
   private toolResultRetrievalService: ToolResultRetrievalService;
-  private deepWikiManager: any; // Using simplified DeepWiki manager
+  // private deepWikiManager: any; // Removed - file doesn't exist
   private prContextService: PRContextService;
   private resultProcessor: ResultProcessor;
   private educationalService: EducationalContentService;
@@ -471,7 +471,7 @@ export class ResultOrchestrator {
     const vectorStorage = this.createVectorStorageService();
     this.toolResultRetrievalService = new ToolResultRetrievalService(vectorStorage, this.logger);
     
-    this.deepWikiManager = new (require('./deepwiki-integration-simplified').DeepWikiIntegration)();
+    // DeepWikiManager removed - file doesn't exist
     this.prContextService = new PRContextService();
     this.resultProcessor = new ResultProcessor();
     this.educationalService = new EducationalContentService(authenticatedUser);

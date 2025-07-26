@@ -194,8 +194,8 @@ class RepositoryScanTest {
    * Parse GitHub/GitLab PR URL
    */
   private parsePRUrl(url: string): { owner: string; repo: string; prNumber: number; platform: string } {
-    const githubMatch = url.match(/github\.com\/([^\/]+)\/([^\/]+)\/pull\/(\d+)/);
-    const gitlabMatch = url.match(/gitlab\.com\/([^\/]+)\/([^\/]+)\/-\/merge_requests\/(\d+)/);
+    const githubMatch = url.match(/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/);
+    const gitlabMatch = url.match(/gitlab\.com\/([^/]+)\/([^/]+)\/-\/merge_requests\/(\d+)/);
     
     if (githubMatch) {
       return {
