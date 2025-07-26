@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import AuthenticatedLayout from '../../components/authenticated-layout';
 import { useBilling } from '../../contexts/billing-context';
 
-export default function DashboardPage() {
+function DashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { subscription, hasPaymentMethod, refreshBilling } = useBilling();
@@ -111,5 +111,13 @@ export default function DashboardPage() {
       </div>
     </div>
     </AuthenticatedLayout>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <DashboardContent />
+    </Suspense>
   );
 }

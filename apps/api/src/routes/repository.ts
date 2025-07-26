@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { checkRepositoryAccess } from '../middleware/auth-middleware';
-import { deepWikiManager } from '../services/deepwiki-manager-simplified';
+import { deepWikiApiManager as deepWikiManager } from '../services/deepwiki-api-manager';
 import { enforceTrialLimits, incrementScanCount } from '../middleware/trial-enforcement';
 import { getSupabase } from '@codequal/database/supabase/client';
 

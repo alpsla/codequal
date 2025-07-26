@@ -386,12 +386,12 @@ Provide at least 100-200 detailed findings for a comprehensive analysis.`;
       await new Promise(resolve => setTimeout(resolve, latency));
       
       // Get enhanced mock data
-      const mockModule = require('./deepwiki-mock-enhanced');
-      const mockAnalysis = mockModule.generateEnhancedMockAnalysis(repositoryUrl);
+      const { generateEnhancedMockAnalysis } = await import('./deepwiki-mock-enhanced.js');
+      const mockAnalysis = generateEnhancedMockAnalysis(repositoryUrl);
       
       // Track token usage for mock
       try {
-        const monitoringModule = require('./monitoring-enhancements');
+        const monitoringModule = await import('./monitoring-enhancements.js');
         if (monitoringModule.performanceMonitor && repositoryUrl.includes('analysis-id=')) {
           const analysisId = repositoryUrl.split('analysis-id=')[1];
           monitoringModule.performanceMonitor.recordTokenUsage(analysisId, model, 15000, 8000);
@@ -758,7 +758,7 @@ Provide at least 100-200 detailed findings for a comprehensive analysis.`;
   /**
    * Get cached repository files
    */
-  async getCachedRepositoryFiles(repositoryUrl: string, branch?: string): Promise<any[]> {
+  async getCachedRepositoryFiles(repositoryUrl: string, branch?: string): Promise<Array<Record<string, unknown>>> {
     // TODO: Implement actual cache retrieval
     return [];
   }
@@ -766,7 +766,7 @@ Provide at least 100-200 detailed findings for a comprehensive analysis.`;
   /**
    * Trigger repository analysis
    */
-  async triggerRepositoryAnalysis(repositoryUrl: string, options?: any): Promise<string> {
+  async triggerRepositoryAnalysis(repositoryUrl: string, options?: Record<string, unknown>): Promise<string> {
     // Use the existing analyzeRepository method
     const result = await this.analyzeRepository(repositoryUrl, options);
     return result.metadata?.job_id || 'analysis-' + Date.now();
@@ -778,6 +778,35 @@ Provide at least 100-200 detailed findings for a comprehensive analysis.`;
   async waitForAnalysisCompletion(repositoryUrl: string): Promise<DeepWikiAnalysisResult> {
     // For now, just run the analysis directly
     return await this.analyzeRepository(repositoryUrl);
+  }
+
+  /**
+   * Get active jobs - stub implementation
+   */
+  async getActiveJobs(): Promise<Array<Record<string, unknown>>> {
+    logger.warn('DeepWikiApiManager.getActiveJobs() - stub implementation');
+    return [];
+  }
+
+  /**
+   * Get job status - stub implementation
+   */
+  async getJobStatus(jobId: string): Promise<Record<string, unknown>> {
+    logger.warn('DeepWikiApiManager.getJobStatus() - stub implementation');
+    return {
+      id: jobId,
+      status: 'completed',
+      progress: 100,
+      result: null
+    };
+  }
+
+  /**
+   * Cancel job - stub implementation
+   */
+  async cancelJob(jobId: string): Promise<boolean> {
+    logger.warn('DeepWikiApiManager.cancelJob() - stub implementation');
+    return true;
   }
 }
 

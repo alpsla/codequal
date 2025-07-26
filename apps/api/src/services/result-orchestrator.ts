@@ -657,7 +657,9 @@ export class ResultOrchestrator {
             if (cachedFile) {
               return {
                 ...prFile,
-                content: cachedFile.content // PR branch content from DeepWiki
+                content: typeof cachedFile.content === 'string' ? 
+                  cachedFile.content : 
+                  cachedFile.content ? String(cachedFile.content) : undefined
               };
             }
             return prFile;

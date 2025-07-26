@@ -57,19 +57,23 @@ export class EducationalContentService {
       const allFindings: Finding[] = this.flattenFindings(findings);
       const userSkillLevel = await this.getUserSkillLevel(user);
       
-      const educationalContent: EducationalContent[] = [];
-
-      for (const finding of allFindings) {
+      // Process all findings in parallel to avoid N+1 queries
+      const contentPromises = allFindings.map(async (finding) => {
         try {
           const content = await this.generateContentForFinding(finding, userSkillLevel);
-          if (content) {
-            educationalContent.push(content);
-          }
+          return content;
         } catch (error) {
           logger.error(`Failed to generate content for finding ${finding.id}:`, error as Error);
-          // Continue with other findings even if one fails
+          // Return null for failed findings
+          return null;
         }
-      }
+      });
+
+      // Wait for all content generation to complete
+      const contentResults = await Promise.all(contentPromises);
+      
+      // Filter out null results and collect valid content
+      const educationalContent = contentResults.filter((content): content is EducationalContent => content !== null);
 
       // Sort by relevance score
       educationalContent.sort((a, b) => b.relevanceScore - a.relevanceScore);
