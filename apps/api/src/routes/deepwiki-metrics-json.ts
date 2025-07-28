@@ -93,9 +93,47 @@ async function collectMetrics() {
 }
 
 /**
- * JSON metrics endpoint for Grafana JSON datasource plugin
+ * @swagger
+ * /api/monitoring/repository/metrics.json:
+ *   get:
+ *     summary: Get repository storage metrics in JSON format
+ *     description: Returns current repository storage metrics for Grafana JSON datasource plugin
+ *     tags: [Monitoring]
+ *     responses:
+ *       200:
+ *         description: DeepWiki metrics in JSON format
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
+ *                 disk:
+ *                   type: object
+ *                   properties:
+ *                     totalGB:
+ *                       type: number
+ *                     usedGB:
+ *                       type: number
+ *                     availableGB:
+ *                       type: number
+ *                     percentUsed:
+ *                       type: number
+ *                 repositories:
+ *                   type: object
+ *                   properties:
+ *                     active:
+ *                       type: integer
+ *                     analyzed_total:
+ *                       type: integer
+ *                     failed_total:
+ *                       type: integer
+ *       500:
+ *         description: Failed to collect metrics
  */
-router.get('/api/monitoring/deepwiki/metrics.json', async (req, res) => {
+router.get('/api/monitoring/repository/metrics.json', async (req, res) => {
   try {
     const metrics = await collectMetrics();
     res.json(metrics);
@@ -106,9 +144,35 @@ router.get('/api/monitoring/deepwiki/metrics.json', async (req, res) => {
 });
 
 /**
- * Get historical metrics
+ * @swagger
+ * /api/monitoring/repository/history.json:
+ *   get:
+ *     summary: Get repository storage metrics history
+ *     description: Returns last 24 hours of repository storage metrics for trend analysis
+ *     tags: [Monitoring]
+ *     responses:
+ *       200:
+ *         description: Array of historical metrics
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   timestamp:
+ *                     type: string
+ *                     format: date-time
+ *                   disk:
+ *                     type: object
+ *                   repositories:
+ *                     type: object
+ *                   cleanup:
+ *                     type: object
+ *                   alerts:
+ *                     type: object
  */
-router.get('/api/monitoring/deepwiki/history.json', async (req, res) => {
+router.get('/api/monitoring/repository/history.json', async (req, res) => {
   try {
     const history = await fs.readFile(METRICS_FILE, 'utf-8');
     res.json(JSON.parse(history));
@@ -118,9 +182,32 @@ router.get('/api/monitoring/deepwiki/history.json', async (req, res) => {
 });
 
 /**
- * Simple test endpoint that returns mock data
+ * @swagger
+ * /api/monitoring/repository/test-metrics.json:
+ *   get:
+ *     summary: Test endpoint for repository storage metrics
+ *     description: Returns mock repository storage metrics for testing Grafana integration
+ *     tags: [Monitoring]
+ *     responses:
+ *       200:
+ *         description: Mock metrics data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               example:
+ *                 timestamp: "2024-01-01T00:00:00Z"
+ *                 disk:
+ *                   totalGB: 10
+ *                   usedGB: 2
+ *                   availableGB: 8
+ *                   percentUsed: 20
+ *                 repositories:
+ *                   active: 3
+ *                   analyzed_total: 156
+ *                   failed_total: 4
  */
-router.get('/api/monitoring/deepwiki/test-metrics.json', (req, res) => {
+router.get('/api/monitoring/repository/test-metrics.json', (req, res) => {
   res.json({
     timestamp: new Date().toISOString(),
     disk: {

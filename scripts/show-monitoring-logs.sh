@@ -41,9 +41,9 @@ echo "------------------------"
 echo "Testing monitoring endpoints..."
 
 # Test metrics endpoint
-METRICS_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/api/monitoring/deepwiki/metrics 2>/dev/null || echo "000")
+METRICS_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/api/monitoring/repository/metrics 2>/dev/null || echo "000")
 if [ "$METRICS_STATUS" = "200" ]; then
-    echo "✅ Metrics endpoint: http://localhost:3001/api/monitoring/deepwiki/metrics (Status: 200 OK)"
+    echo "✅ Metrics endpoint: http://localhost:3001/api/monitoring/repository/metrics (Status: 200 OK)"
 elif [ "$METRICS_STATUS" = "401" ]; then
     echo "⚠️  Metrics endpoint: Requires authentication (Status: 401)"
 else
@@ -51,9 +51,9 @@ else
 fi
 
 # Test alerts endpoint
-ALERTS_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/api/monitoring/deepwiki/alerts 2>/dev/null || echo "000")
+ALERTS_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/api/monitoring/repository/alerts 2>/dev/null || echo "000")
 if [ "$ALERTS_STATUS" = "200" ]; then
-    echo "✅ Alerts endpoint: http://localhost:3001/api/monitoring/deepwiki/alerts (Status: 200 OK)"
+    echo "✅ Alerts endpoint: http://localhost:3001/api/monitoring/repository/alerts (Status: 200 OK)"
 elif [ "$ALERTS_STATUS" = "401" ]; then
     echo "⚠️  Alerts endpoint: Requires authentication (Status: 401)"
 else

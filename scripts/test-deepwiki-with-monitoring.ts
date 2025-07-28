@@ -20,7 +20,7 @@ async function testDeepWikiWithMonitoring() {
   
   try {
     // 1. Check disk usage before
-    const diskBefore = await axios.get(`${API_URL}/api/monitoring/deepwiki/metrics`);
+    const diskBefore = await axios.get(`${API_URL}/api/monitoring/repository/metrics`);
     logger.info(`📊 Disk usage before: ${diskBefore.data.disk.percent}%`);
     
     // 2. Trigger DeepWiki analysis
@@ -45,7 +45,7 @@ async function testDeepWikiWithMonitoring() {
     
     const monitorInterval = setInterval(async () => {
       try {
-        const metrics = await axios.get(`${API_URL}/api/monitoring/deepwiki/metrics`);
+        const metrics = await axios.get(`${API_URL}/api/monitoring/repository/metrics`);
         const currentUsage = metrics.data.disk.percent;
         
         logger.info(`📊 Current disk usage: ${currentUsage}% (repos: ${metrics.data.activeRepositories})`);
@@ -76,7 +76,7 @@ async function testDeepWikiWithMonitoring() {
     });
     
     // 5. Get final results
-    const finalMetrics = await axios.get(`${API_URL}/api/monitoring/deepwiki/metrics`);
+    const finalMetrics = await axios.get(`${API_URL}/api/monitoring/repository/metrics`);
     const result = await axios.get(`${API_URL}/api/deepwiki/report/${analysisId}`);
     
     logger.info('📈 Analysis Summary:');

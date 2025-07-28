@@ -7,8 +7,45 @@ const router = Router();
 const logger = createLogger('monitoring-public');
 const execAsync = promisify(exec);
 
+/**
+ * @swagger
+ * /repository/metrics:
+ *   get:
+ *     summary: Public repository storage metrics endpoint
+ *     description: Returns real-time repository storage metrics for public monitoring dashboard (no auth required)
+ *     tags: [Monitoring]
+ *     responses:
+ *       200:
+ *         description: Current DeepWiki metrics
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 disk:
+ *                   type: object
+ *                   properties:
+ *                     totalGB:
+ *                       type: number
+ *                     usedGB:
+ *                       type: number
+ *                     availableGB:
+ *                       type: number
+ *                     percentUsed:
+ *                       type: number
+ *                 repositories:
+ *                   type: object
+ *                   properties:
+ *                     active:
+ *                       type: integer
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
+ *       500:
+ *         description: Failed to get metrics
+ */
 // Public monitoring endpoint for dashboard - no auth required
-router.get('/deepwiki/metrics', async (req, res) => {
+router.get('/repository/metrics', async (req, res) => {
   try {
     // Get disk usage
     const { stdout: diskInfo } = await execAsync(
