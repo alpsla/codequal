@@ -167,6 +167,7 @@
         
         <div style="text-align: center;">
             <button class="refresh-button" onclick="refreshData()">🔄 Refresh Data</button>
+            <button class="refresh-button" onclick="updateToken()" style="margin-left: 10px;">🔑 Update Token</button>
             <div class="last-updated" id="last-updated">Never updated</div>
         </div>
     </div>
@@ -174,18 +175,35 @@
     <script>
         // Configuration
         const API_BASE = 'http://localhost:3001';
-        const JWT_TOKEN = localStorage.getItem('jwt_token') || prompt('Enter your JWT token:');
+        let JWT_TOKEN = localStorage.getItem('jwt_token') || '';
         
-        if (JWT_TOKEN) {
-            localStorage.setItem('jwt_token', JWT_TOKEN);
+        // If no token in storage, prompt for one
+        if (!JWT_TOKEN) {
+            const tokenInput = prompt('Enter your JWT token:');
+            if (tokenInput && tokenInput.trim()) {
+                JWT_TOKEN = tokenInput.trim();
+                localStorage.setItem('jwt_token', JWT_TOKEN);
+            }
+        }
+        
+        // Validate token exists before making requests
+        function hasValidToken() {
+            return JWT_TOKEN && JWT_TOKEN !== 'null' && JWT_TOKEN.trim() !== '';
         }
         
         // Fetch and display metrics
         async function fetchMetrics() {
+            if (!hasValidToken()) {
+                showError('No JWT token provided. Please refresh the page and enter a valid token.');
+                return;
+            }
+            
             try {
                 const response = await fetch(`${API_BASE}/api/deepwiki/temp/metrics`, {
+                    method: 'GET',
                     headers: {
-                        'Authorization': `Bearer ${JWT_TOKEN}`
+                        'Authorization': `Bearer ${JWT_TOKEN}`,
+                        'Content-Type': 'application/json'
                     }
                 });
                 
@@ -204,10 +222,17 @@
         
         // Fetch active analyses
         async function fetchActiveAnalyses() {
+            if (!hasValidToken()) {
+                // Don't show error again if already shown by fetchMetrics
+                return;
+            }
+            
             try {
                 const response = await fetch(`${API_BASE}/api/deepwiki/temp/active-analyses`, {
+                    method: 'GET',
                     headers: {
-                        'Authorization': `Bearer ${JWT_TOKEN}`
+                        'Authorization': `Bearer ${JWT_TOKEN}`,
+                        'Content-Type': 'application/json'
                     }
                 });
                 
@@ -310,17 +335,45 @@
             }
         }
         
+        // Update token function
+        function updateToken() {
+            const newToken = prompt('Enter new JWT token:', JWT_TOKEN || '');
+            if (newToken && newToken.trim() && newToken !== 'null') {
+                JWT_TOKEN = newToken.trim();
+                localStorage.setItem('jwt_token', JWT_TOKEN);
+                showError(null); // Clear any errors
+                refreshData(); // Refresh with new token
+            } else if (newToken === '') {
+                // Clear token if empty string entered
+                JWT_TOKEN = '';
+                localStorage.removeItem('jwt_token');
+                showError('Token cleared. Please refresh the page.');
+            }
+        }
+        
         // Refresh all data
         async function refreshData() {
+            if (!hasValidToken()) {
+                showError('No JWT token provided. Click "Update Token" to add one.');
+                return;
+            }
             await fetchMetrics();
             await fetchActiveAnalyses();
         }
         
-        // Auto-refresh every 10 seconds
-        setInterval(refreshData, 10000);
+        // Auto-refresh every 10 seconds (only if token is valid)
+        setInterval(() => {
+            if (hasValidToken()) {
+                refreshData();
+            }
+        }, 10000);
         
         // Initial load
-        refreshData();
+        if (hasValidToken()) {
+            refreshData();
+        } else {
+            showError('No JWT token found. Click "Update Token" to add one.');
+        }
     </script>
 </body>
 </html>

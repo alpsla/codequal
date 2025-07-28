@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepWiki Monitoring Dashboard</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .metric-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .metric-title {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .metric-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .metric-subtitle {
+            font-size: 14px;
+            color: #999;
+        }
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .status.healthy { background: #d4edda; color: #155724; }
+        .status.warning { background: #fff3cd; color: #856404; }
+        .status.critical { background: #f8d7da; color: #721c24; }
+        .chart-container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #28a745;
+            transition: width 0.3s ease;
+        }
+        .progress-fill.warning { background: #ffc107; }
+        .progress-fill.critical { background: #dc3545; }
+        .refresh-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .refresh-button:hover {
+            background: #0056b3;
+        }
+        .last-updated {
+            color: #666;
+            font-size: 14px;
+            margin-top: 20px;
+        }
+        .active-analyses {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .analysis-item {
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .analysis-item:last-child {
+            border-bottom: none;
+        }
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗄️ DeepWiki Monitoring Dashboard</h1>
+        
+        <div id="error-container"></div>
+        
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-title">Storage Usage</div>
+                <div class="metric-value" id="storage-percent">--%</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="storage-progress" style="width: 0%"></div>
+                </div>
+                <div class="metric-subtitle">
+                    <span id="storage-used">0</span> GB / <span id="storage-total">0</span> GB
+                </div>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-title">Active Analyses</div>
+                <div class="metric-value" id="active-count">0</div>
+                <div class="metric-subtitle">Currently running</div>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-title">Available Space</div>
+                <div class="metric-value" id="available-gb">-- GB</div>
+                <div class="metric-subtitle">For new analyses</div>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-title">System Status</div>
+                <div style="margin-top: 10px;">
+                    <span class="status" id="system-status">Unknown</span>
+                </div>
+                <div class="metric-subtitle" id="status-message">Checking...</div>
+            </div>
+        </div>
+        
+        <div class="chart-container">
+            <h3>Active Analyses</h3>
+            <div id="analyses-list">
+                <p style="color: #999;">No active analyses</p>
+            </div>
+        </div>
+        
+        <div style="text-align: center;">
+            <button class="refresh-button" onclick="refreshData()">🔄 Refresh Data</button>
+            <button class="refresh-button" onclick="updateToken()" style="margin-left: 10px;">🔑 Update Token</button>
+            <button class="refresh-button" onclick="updateRefreshInterval()" style="margin-left: 10px;">⏱️ Set Interval</button>
+            <div class="last-updated" id="last-updated">Never updated</div>
+            <div class="last-updated" id="refresh-status" style="margin-top: 5px;">Auto-refresh: every 10 seconds</div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration - use relative paths since we're served from the same origin
+        const API_BASE = '';
+        let JWT_TOKEN = localStorage.getItem('jwt_token') || '';
+        
+        // If no token in storage, prompt for one
+        if (!JWT_TOKEN) {
+            const tokenInput = prompt('Enter your JWT token:');
+            if (tokenInput && tokenInput.trim()) {
+                JWT_TOKEN = tokenInput.trim();
+                localStorage.setItem('jwt_token', JWT_TOKEN);
+            }
+        }
+        
+        // Validate token exists before making requests
+        function hasValidToken() {
+            return JWT_TOKEN && JWT_TOKEN !== 'null' && JWT_TOKEN.trim() !== '';
+        }
+        
+        // Fetch and display metrics
+        async function fetchMetrics() {
+            if (!hasValidToken()) {
+                showError('No JWT token provided. Please refresh the page and enter a valid token.');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/deepwiki/temp/metrics`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${JWT_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                updateMetrics(data);
+                showError(null);
+            } catch (error) {
+                showError(`Failed to fetch metrics: ${error.message}`);
+                console.error('Metrics fetch error:', error);
+            }
+        }
+        
+        // Fetch active analyses
+        async function fetchActiveAnalyses() {
+            if (!hasValidToken()) {
+                // Don't show error again if already shown by fetchMetrics
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/deepwiki/temp/active-analyses`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${JWT_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                updateAnalysesList(data);
+            } catch (error) {
+                console.error('Active analyses fetch error:', error);
+            }
+        }
+        
+        // Update metrics display
+        function updateMetrics(data) {
+            // Storage metrics
+            document.getElementById('storage-percent').textContent = 
+                `${data.percentUsed.toFixed(1)}%`;
+            document.getElementById('storage-used').textContent = 
+                data.usedGB.toFixed(2);
+            document.getElementById('storage-total').textContent = 
+                data.totalGB.toFixed(2);
+            document.getElementById('available-gb').textContent = 
+                `${data.availableGB.toFixed(1)} GB`;
+            document.getElementById('active-count').textContent = 
+                data.activeAnalyses;
+            
+            // Progress bar
+            const progressBar = document.getElementById('storage-progress');
+            progressBar.style.width = `${data.percentUsed}%`;
+            progressBar.className = 'progress-fill';
+            if (data.percentUsed > 85) {
+                progressBar.classList.add('critical');
+            } else if (data.percentUsed > 70) {
+                progressBar.classList.add('warning');
+            }
+            
+            // System status
+            const statusEl = document.getElementById('system-status');
+            const messageEl = document.getElementById('status-message');
+            
+            if (data.status === 'critical') {
+                statusEl.textContent = 'Critical';
+                statusEl.className = 'status critical';
+                messageEl.textContent = 'Storage critically low!';
+            } else if (data.status === 'warning') {
+                statusEl.textContent = 'Warning';
+                statusEl.className = 'status warning';
+                messageEl.textContent = 'Storage usage high';
+            } else {
+                statusEl.textContent = 'Healthy';
+                statusEl.className = 'status healthy';
+                messageEl.textContent = 'All systems operational';
+            }
+            
+            // Update timestamp
+            document.getElementById('last-updated').textContent = 
+                `Last updated: ${new Date().toLocaleTimeString()}`;
+        }
+        
+        // Update analyses list
+        function updateAnalysesList(data) {
+            const listEl = document.getElementById('analyses-list');
+            
+            if (data.analyses.length === 0) {
+                listEl.innerHTML = '<p style="color: #999;">No active analyses</p>';
+                return;
+            }
+            
+            const html = data.analyses.map(analysis => {
+                const duration = Math.floor(analysis.duration / 1000);
+                const minutes = Math.floor(duration / 60);
+                const seconds = duration % 60;
+                
+                return `
+                    <div class="analysis-item">
+                        <strong>${analysis.repositoryUrl}</strong>
+                        <br>
+                        <small>
+                            ID: ${analysis.analysisId} | 
+                            Type: ${analysis.type} | 
+                            Duration: ${minutes}m ${seconds}s |
+                            Status: <span class="status ${analysis.status === 'long-running' ? 'warning' : ''}">${analysis.status}</span>
+                        </small>
+                    </div>
+                `;
+            }).join('');
+            
+            listEl.innerHTML = html;
+        }
+        
+        // Show error message
+        function showError(message) {
+            const errorEl = document.getElementById('error-container');
+            if (message) {
+                errorEl.innerHTML = `<div class="error-message">${message}</div>`;
+            } else {
+                errorEl.innerHTML = '';
+            }
+        }
+        
+        // Update token function
+        function updateToken() {
+            const newToken = prompt('Enter new JWT token:', JWT_TOKEN || '');
+            if (newToken && newToken.trim() && newToken !== 'null') {
+                JWT_TOKEN = newToken.trim();
+                localStorage.setItem('jwt_token', JWT_TOKEN);
+                showError(null); // Clear any errors
+                refreshData(); // Refresh with new token
+            } else if (newToken === '') {
+                // Clear token if empty string entered
+                JWT_TOKEN = '';
+                localStorage.removeItem('jwt_token');
+                showError('Token cleared. Please refresh the page.');
+            }
+        }
+        
+        // Refresh all data
+        async function refreshData() {
+            if (!hasValidToken()) {
+                showError('No JWT token provided. Click "Update Token" to add one.');
+                return;
+            }
+            await fetchMetrics();
+            await fetchActiveAnalyses();
+        }
+        
+        // Configurable refresh interval (default 10 seconds, minimum 2 seconds)
+        const REFRESH_INTERVAL = Math.max(2000, parseInt(localStorage.getItem('refresh_interval') || '10000'));
+        console.log(`Dashboard refresh interval: ${REFRESH_INTERVAL/1000} seconds`);
+        
+        // Update refresh status display
+        document.getElementById('refresh-status').textContent = 
+            `Auto-refresh: every ${REFRESH_INTERVAL/1000} seconds`;
+        
+        // Auto-refresh at configured interval (only if token is valid)
+        setInterval(() => {
+            if (hasValidToken()) {
+                refreshData();
+            }
+        }, REFRESH_INTERVAL);
+        
+        // Function to update refresh interval
+        function updateRefreshInterval() {
+            const currentSeconds = REFRESH_INTERVAL / 1000;
+            const newSeconds = prompt(
+                'Enter refresh interval in seconds (minimum 2):\n\n' +
+                'Recommended values:\n' +
+                '- 2-5 seconds: For active testing\n' +
+                '- 10 seconds: Normal monitoring\n' +
+                '- 30-60 seconds: Low-frequency monitoring',
+                currentSeconds
+            );
+            
+            if (newSeconds && !isNaN(newSeconds)) {
+                const newInterval = Math.max(2, parseInt(newSeconds)) * 1000;
+                localStorage.setItem('refresh_interval', newInterval.toString());
+                alert(`Refresh interval updated to ${newInterval/1000} seconds.\nPlease refresh the page for changes to take effect.`);
+            }
+        }
+        
+        // Initial load
+        if (hasValidToken()) {
+            refreshData();
+        } else {
+            showError('No JWT token found. Click "Update Token" to add one.');
+        }
+    </script>
+</body>
+</html>

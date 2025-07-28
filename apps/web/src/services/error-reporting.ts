@@ -7,7 +7,7 @@ interface ErrorContext {
   userId?: string;
   componentStack?: string;
   errorBoundary?: boolean;
-  errorBoundaryProps?: Record<string, any>;
+  errorBoundaryProps?: Record<string, unknown>;
   url?: string;
   userAgent?: string;
 }

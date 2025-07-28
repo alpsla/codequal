@@ -1,0 +1,17 @@
+{
+	"ulid": "01K171TSGGR6A3W4KH5D926NB5",
+	"minTime": 1753646406247,
+	"maxTime": 1753653600000,
+	"stats": {
+		"numSamples": 6240,
+		"numSeries": 13,
+		"numChunks": 54
+	},
+	"compaction": {
+		"level": 1,
+		"sources": [
+			"01K171TSGGR6A3W4KH5D926NB5"
+		]
+	},
+	"version": 1
+}

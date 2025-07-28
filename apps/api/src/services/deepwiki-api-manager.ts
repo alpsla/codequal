@@ -310,6 +310,10 @@ export class DeepWikiApiManager {
         true // success
       );
       
+      // NOTE: We do NOT clean up the repository here anymore
+      // The repository needs to stay available for MCP tools and agents
+      // Cleanup should be called by the orchestrator after ALL analysis is complete
+      
       return result;
 
     } catch (error) {
@@ -756,11 +760,74 @@ Provide at least 100-200 detailed findings for a comprehensive analysis.`;
   }
 
   /**
-   * Get cached repository files
+   * Get cached repository files from the cloned repository
    */
   async getCachedRepositoryFiles(repositoryUrl: string, branch?: string): Promise<Array<Record<string, unknown>>> {
-    // TODO: Implement actual cache retrieval
-    return [];
+    try {
+      // Extract repo name from URL
+      const repoName = repositoryUrl.split('/').pop()?.replace('.git', '') || '';
+      if (!repoName) {
+        logger.warn('[DeepWiki] Could not extract repository name from URL');
+        return [];
+      }
+
+      const repoPath = `/root/.adalflow/repos/${repoName}`;
+      
+      // Check if repository exists
+      const { stdout: exists } = await execAsync(
+        `kubectl exec -n ${this.NAMESPACE} deployment/${this.POD_NAME} -- test -d ${repoPath} && echo "exists" || echo "not found"`
+      );
+      
+      if (exists.trim() !== 'exists') {
+        logger.warn(`[DeepWiki] Repository not found at ${repoPath}`);
+        return [];
+      }
+
+      // If branch is specified, checkout that branch
+      if (branch) {
+        logger.info(`[DeepWiki] Checking out branch: ${branch}`);
+        try {
+          await execAsync(
+            `kubectl exec -n ${this.NAMESPACE} deployment/${this.POD_NAME} -- bash -c "cd ${repoPath} && git fetch origin ${branch} && git checkout ${branch}"`
+          );
+        } catch (error) {
+          logger.warn(`[DeepWiki] Failed to checkout branch ${branch}:`, error as Error);
+        }
+      }
+
+      // Get list of all files in the repository
+      const { stdout: fileList } = await execAsync(
+        `kubectl exec -n ${this.NAMESPACE} deployment/${this.POD_NAME} -- bash -c "cd ${repoPath} && find . -type f -name '*.js' -o -name '*.ts' -o -name '*.tsx' -o -name '*.jsx' -o -name '*.py' -o -name '*.java' -o -name '*.go' -o -name '*.rs' -o -name '*.cpp' -o -name '*.c' -o -name '*.h' -o -name '*.cs' | grep -v node_modules | grep -v .git | head -100"`
+      );
+
+      const files = fileList.trim().split('\n').filter(f => f);
+      const cachedFiles: Array<Record<string, unknown>> = [];
+
+      // Read content of each file
+      for (const filePath of files) {
+        try {
+          const cleanPath = filePath.replace('./', '');
+          const { stdout: content } = await execAsync(
+            `kubectl exec -n ${this.NAMESPACE} deployment/${this.POD_NAME} -- cat "${repoPath}/${cleanPath}"`
+          );
+          
+          cachedFiles.push({
+            path: cleanPath,
+            content: content,
+            size: content.length
+          });
+        } catch (error) {
+          logger.debug(`[DeepWiki] Failed to read file ${filePath}:`, error as Error);
+        }
+      }
+
+      logger.info(`[DeepWiki] Retrieved ${cachedFiles.length} cached files from cloned repository`);
+      return cachedFiles;
+      
+    } catch (error) {
+      logger.error('[DeepWiki] Failed to get cached repository files:', error as Error);
+      return [];
+    }
   }
 
   /**
@@ -786,6 +853,73 @@ Provide at least 100-200 detailed findings for a comprehensive analysis.`;
   async getActiveJobs(): Promise<Array<Record<string, unknown>>> {
     logger.warn('DeepWikiApiManager.getActiveJobs() - stub implementation');
     return [];
+  }
+
+  /**
+   * Clean up the cloned repository after all analysis is complete
+   * This should be called by the orchestrator after MCP tools and agents have finished
+   */
+  async cleanupRepository(repositoryUrl: string): Promise<void> {
+    return this.cleanupDeepWikiRepositories(repositoryUrl);
+  }
+
+  /**
+   * Internal cleanup method
+   */
+  private async cleanupDeepWikiRepositories(currentRepoUrl?: string): Promise<void> {
+    if (!currentRepoUrl) {
+      logger.warn('[DeepWiki] No repository URL provided for cleanup');
+      return;
+    }
+
+    try {
+      logger.info('[DeepWiki] Starting post-analysis repository cleanup');
+      
+      // Extract repo name from URL
+      const repoName = currentRepoUrl.split('/').pop()?.replace('.git', '') || '';
+      if (!repoName) {
+        logger.warn('[DeepWiki] Could not extract repository name from URL');
+        return;
+      }
+      
+      // Get disk usage before cleanup
+      const { stdout: beforeUsage } = await execAsync(
+        `kubectl exec -n ${this.NAMESPACE} deployment/${this.POD_NAME} -- df -h /root/.adalflow | awk 'NR==2 {print $5}' | sed 's/%//'`
+      );
+      logger.info(`[DeepWiki] Disk usage before cleanup: ${beforeUsage.trim()}%`);
+      
+      // Delete the specific repository that was just analyzed
+      const deleteCommand = `rm -rf /root/.adalflow/repos/${repoName}`;
+      
+      await execAsync(
+        `kubectl exec -n ${this.NAMESPACE} deployment/${this.POD_NAME} -- bash -c "${deleteCommand}"`
+      );
+      
+      logger.info(`[DeepWiki] Deleted analyzed repository: ${repoName}`);
+      
+      // Get disk usage after cleanup
+      const { stdout: afterUsage } = await execAsync(
+        `kubectl exec -n ${this.NAMESPACE} deployment/${this.POD_NAME} -- df -h /root/.adalflow | awk 'NR==2 {print $5}' | sed 's/%//'`
+      );
+      
+      logger.info(`[DeepWiki] Cleanup complete. Disk usage: ${beforeUsage.trim()}% -> ${afterUsage.trim()}%`);
+      
+      // Also clean up any orphaned old repositories (safety net)
+      // This handles cases where previous cleanups might have failed
+      const cleanupOldCommand = `find /root/.adalflow/repos -mindepth 1 -maxdepth 1 -type d -mtime +1 -exec rm -rf {} \\; || true`;
+      
+      const { stdout: oldRepos } = await execAsync(
+        `kubectl exec -n ${this.NAMESPACE} deployment/${this.POD_NAME} -- bash -c "${cleanupOldCommand}"`
+      );
+      
+      if (oldRepos.trim()) {
+        logger.info(`[DeepWiki] Also cleaned up old orphaned repositories`);
+      }
+      
+    } catch (error) {
+      // Don't fail the analysis if cleanup fails
+      logger.warn('[DeepWiki] Repository cleanup failed:', error as Error);
+    }
   }
 
   /**

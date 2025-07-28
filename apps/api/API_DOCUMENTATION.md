@@ -264,6 +264,160 @@ Configure webhooks to receive analysis completion notifications:
 }
 ```
 
+## Monitoring and Alerts
+
+### System Monitoring Endpoints
+
+Real-time monitoring and alerting for performance, security, financial metrics, and critical issues.
+
+#### Health Check
+- **Endpoint**: `GET /api/monitoring/health`
+- **Auth**: None required
+- **Response**:
+```json
+{
+  "status": "ok",
+  "timestamp": "2025-01-26T10:00:00Z",
+  "database": {
+    "status": "healthy",
+    "tables": 72
+  },
+  "vectorDB": {
+    "status": "healthy"
+  },
+  "background": {
+    "status": "healthy"
+  }
+}
+```
+
+#### Prometheus Metrics
+- **Endpoint**: `GET /api/monitoring/metrics`
+- **Auth**: None required
+- **Format**: Prometheus text format
+- **Use Case**: Grafana integration for metrics visualization
+
+Example metrics:
+```
+# HELP codequal_deepwiki_storage_used_gb DeepWiki storage used in GB
+# TYPE codequal_deepwiki_storage_used_gb gauge
+codequal_deepwiki_storage_used_gb{source="deepwiki"} 45.2 1706264400000
+
+# HELP codequal_api_response_time_ms API response time in milliseconds
+# TYPE codequal_api_response_time_ms gauge
+codequal_api_response_time_ms{source="api"} 234 1706264400000
+```
+
+#### Alert Status
+- **Endpoint**: `GET /api/monitoring/alerts`
+- **Auth**: None required
+- **Response**:
+```json
+{
+  "healthy": 8,
+  "warning": 2,
+  "critical": 0,
+  "alerts": [
+    {
+      "metric": "deepwiki_storage_percent_used",
+      "value": 72.5,
+      "threshold": 70,
+      "severity": "warning",
+      "message": "DeepWiki storage usage high"
+    }
+  ]
+}
+```
+
+### DeepWiki Monitoring
+
+Specialized monitoring for DeepWiki temporary storage and active analyses.
+
+#### Storage Metrics
+- **Endpoint**: `GET /api/deepwiki/temp/metrics`
+- **Auth**: Bearer token required
+- **Response**:
+```json
+{
+  "usedGB": 45.2,
+  "totalGB": 100,
+  "availableGB": 54.8,
+  "percentUsed": 45.2,
+  "activeAnalyses": 3,
+  "maxConcurrentCapacity": 5,
+  "averageAnalysisSize": 2.5,
+  "recommendations": [
+    {
+      "type": "scale-up",
+      "urgency": "medium",
+      "message": "Usage approaching 50%, consider monitoring",
+      "suggestedSize": 120
+    }
+  ],
+  "status": "healthy"
+}
+```
+
+#### Active Analyses
+- **Endpoint**: `GET /api/deepwiki/temp/active-analyses`
+- **Auth**: Bearer token required
+- **Response**:
+```json
+{
+  "active": 3,
+  "analyses": [
+    {
+      "analysisId": "uuid-1234",
+      "repositoryUrl": "https://github.com/org/repo",
+      "type": "comprehensive",
+      "sizeMB": 2500,
+      "startTime": 1706264100000,
+      "duration": 300000,
+      "status": "active"
+    }
+  ],
+  "longRunning": 0
+}
+```
+
+### Monitoring Dashboard
+
+A real-time web dashboard is available at `/testing/deepwiki-dashboard.html` providing:
+- Live storage metrics
+- Active analyses tracking
+- System status indicators
+- Auto-refresh every 10 seconds
+
+### Alert Categories
+
+The monitoring system tracks four main categories:
+
+#### 1. Performance Alerts
+- API response time > 5 seconds
+- Database query time > 1 second
+- Analysis execution time thresholds
+
+#### 2. Security Alerts
+- Unauthorized access attempts > 10/hour
+- Rate limit violations > 50/5min
+- Suspicious activity patterns
+
+#### 3. Financial Alerts
+- Daily API cost > $100
+- Per-analysis cost > $5
+- Token usage approaching limits (80% warning, 90% critical)
+
+#### 4. Critical System Alerts
+- Analysis failure rate > 10%
+- DeepWiki storage > 85%
+- Service availability < 99%
+
+### Grafana Integration
+
+1. **Prometheus Endpoint**: Configure Grafana to scrape `/api/monitoring/metrics`
+2. **Alert Dashboard**: Import `monitoring/codequal-alerts-dashboard.json`
+3. **Notification Channels**: Configure Slack, Email, PagerDuty for alerts
+
 ## Admin Features
 
 ### Vector DB Management

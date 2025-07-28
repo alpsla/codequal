@@ -73,10 +73,6 @@
       "types": "./dist/services/vector-db/openrouter-embedding-service.d.ts",
       "default": "./dist/services/vector-db/openrouter-embedding-service.js"
     },
-    "./utils": {
-      "types": "./dist/utils/index.d.ts",
-      "default": "./dist/utils/index.js"
-    },
     "./utils/logger": {
       "types": "./dist/utils/logger.d.ts",
       "default": "./dist/utils/logger.js"
@@ -119,6 +115,7 @@
     "@typescript-eslint/parser": "^5.62.0",
     "eslint": "^8.36.0",
     "jest": "^29.7.0",
+    "jsonwebtoken": "^9.0.2",
     "ts-jest": "^29.1.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.0.0"

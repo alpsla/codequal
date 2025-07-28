@@ -1,0 +1,394 @@
+{
+  "dashboard": {
+    "title": "CodeQual Alert System Dashboard",
+    "uid": "codequal-alerts",
+    "version": 1,
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "🚨 Critical Issues Alert",
+        "type": "stat",
+        "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 },
+        "targets": [{
+          "format": "table",
+          "rawSql": "SELECT COUNT(*) as value FROM pr_reviews WHERE status = 'failed' AND created_at > NOW() - INTERVAL '15 minutes'",
+          "refId": "A"
+        }],
+        "alert": {
+          "name": "Critical Analysis Failures",
+          "conditions": [{
+            "evaluator": {
+              "params": [3],
+              "type": "gt"
+            },
+            "operator": {
+              "type": "and"
+            },
+            "query": {
+              "params": ["A", "5m", "now"]
+            },
+            "reducer": {
+              "params": [],
+              "type": "avg"
+            },
+            "type": "query"
+          }],
+          "frequency": "1m",
+          "handler": 1,
+          "message": "Multiple analysis failures detected in the last 15 minutes",
+          "noDataState": "no_data",
+          "notifications": []
+        },
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": null },
+                { "color": "yellow", "value": 1 },
+                { "color": "red", "value": 3 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "⚡ Performance Alert - API Response Time",
+        "type": "graph",
+        "gridPos": { "x": 6, "y": 0, "w": 12, "h": 8 },
+        "targets": [{
+          "format": "time_series",
+          "rawSql": "SELECT created_at as time, AVG(execution_time_ms) as \"Response Time (ms)\" FROM analysis_results WHERE created_at > NOW() - INTERVAL '1 hour' GROUP BY created_at ORDER BY created_at",
+          "refId": "A"
+        }],
+        "alert": {
+          "name": "High API Response Time",
+          "conditions": [{
+            "evaluator": {
+              "params": [5000],
+              "type": "gt"
+            },
+            "operator": {
+              "type": "and"
+            },
+            "query": {
+              "params": ["A", "5m", "now"]
+            },
+            "reducer": {
+              "params": [],
+              "type": "avg"
+            },
+            "type": "query"
+          }],
+          "frequency": "1m",
+          "handler": 1,
+          "message": "API response time is above 5 seconds",
+          "noDataState": "no_data"
+        },
+        "yaxes": [{
+          "format": "ms",
+          "label": "Response Time",
+          "show": true
+        }]
+      },
+      {
+        "id": 3,
+        "title": "🔒 Security Alert - Unauthorized Access Attempts",
+        "type": "stat",
+        "gridPos": { "x": 18, "y": 0, "w": 6, "h": 4 },
+        "targets": [{
+          "format": "table",
+          "rawSql": "SELECT COUNT(*) as value FROM auth.audit_log_entries WHERE severity = 'error' AND (payload->>'event_message' LIKE '%unauthorized%' OR payload->>'event_message' LIKE '%denied%') AND created_at > NOW() - INTERVAL '1 hour'",
+          "refId": "A"
+        }],
+        "alert": {
+          "name": "Security - Unauthorized Access",
+          "conditions": [{
+            "evaluator": {
+              "params": [10],
+              "type": "gt"
+            },
+            "operator": {
+              "type": "and"
+            },
+            "query": {
+              "params": ["A", "5m", "now"]
+            },
+            "reducer": {
+              "params": [],
+              "type": "avg"
+            },
+            "type": "query"
+          }],
+          "frequency": "1m",
+          "handler": 1,
+          "message": "Multiple unauthorized access attempts detected",
+          "noDataState": "no_data"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": null },
+                { "color": "yellow", "value": 5 },
+                { "color": "red", "value": 10 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 4,
+        "title": "💰 Financial Risk - High Cost Operations",
+        "type": "table",
+        "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+        "targets": [{
+          "format": "table",
+          "rawSql": "SELECT pr.id, pr.repository_url, SUM((ar.input_tokens * 0.00001) + (ar.output_tokens * 0.00003)) as estimated_cost, MAX(ar.model) as models_used FROM pr_reviews pr JOIN analysis_results ar ON pr.id = ar.pr_review_id WHERE pr.created_at > NOW() - INTERVAL '1 hour' GROUP BY pr.id, pr.repository_url HAVING SUM((ar.input_tokens * 0.00001) + (ar.output_tokens * 0.00003)) > 1.0 ORDER BY estimated_cost DESC",
+          "refId": "A"
+        }],
+        "alert": {
+          "name": "High Cost Analysis",
+          "conditions": [{
+            "evaluator": {
+              "params": [5.0],
+              "type": "gt"
+            },
+            "operator": {
+              "type": "and"
+            },
+            "query": {
+              "params": ["A", "5m", "now"]
+            },
+            "reducer": {
+              "params": [],
+              "type": "max"
+            },
+            "type": "query"
+          }],
+          "frequency": "1m",
+          "handler": 1,
+          "message": "Analysis cost exceeds $5 threshold",
+          "noDataState": "no_data"
+        }
+      },
+      {
+        "id": 5,
+        "title": "🔥 Performance Alert - Database Query Time",
+        "type": "gauge",
+        "gridPos": { "x": 12, "y": 8, "w": 6, "h": 8 },
+        "targets": [{
+          "format": "table",
+          "rawSql": "SELECT AVG(duration_ms) as value FROM query_performance_logs WHERE created_at > NOW() - INTERVAL '5 minutes'",
+          "refId": "A"
+        }],
+        "alert": {
+          "name": "Slow Database Queries",
+          "conditions": [{
+            "evaluator": {
+              "params": [1000],
+              "type": "gt"
+            },
+            "operator": {
+              "type": "and"
+            },
+            "query": {
+              "params": ["A", "5m", "now"]
+            },
+            "reducer": {
+              "params": [],
+              "type": "avg"
+            },
+            "type": "query"
+          }],
+          "frequency": "1m",
+          "handler": 1,
+          "message": "Database queries are taking too long",
+          "noDataState": "no_data"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "min": 0,
+            "max": 2000,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": null },
+                { "color": "yellow", "value": 500 },
+                { "color": "red", "value": 1000 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 6,
+        "title": "📊 System Health Score",
+        "type": "gauge",
+        "gridPos": { "x": 18, "y": 8, "w": 6, "h": 8 },
+        "targets": [{
+          "format": "table",
+          "rawSql": "SELECT (100 - (failed_count::float / total_count * 100)) as value FROM (SELECT COUNT(*) FILTER (WHERE status = 'failed') as failed_count, COUNT(*) as total_count FROM pr_reviews WHERE created_at > NOW() - INTERVAL '1 hour') t",
+          "refId": "A"
+        }],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 100,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": null },
+                { "color": "yellow", "value": 80 },
+                { "color": "green", "value": 95 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 7,
+        "title": "🚨 Critical: Token Limit Approaching",
+        "type": "stat",
+        "gridPos": { "x": 0, "y": 16, "w": 8, "h": 4 },
+        "targets": [{
+          "format": "table",
+          "rawSql": "SELECT (SUM(input_tokens + output_tokens)::float / 10000000 * 100) as value FROM analysis_results WHERE created_at > DATE_TRUNC('day', NOW())",
+          "refId": "A"
+        }],
+        "alert": {
+          "name": "Token Limit Warning",
+          "conditions": [{
+            "evaluator": {
+              "params": [80],
+              "type": "gt"
+            },
+            "operator": {
+              "type": "and"
+            },
+            "query": {
+              "params": ["A", "5m", "now"]
+            },
+            "reducer": {
+              "params": [],
+              "type": "avg"
+            },
+            "type": "query"
+          }],
+          "frequency": "5m",
+          "handler": 1,
+          "message": "Daily token usage is approaching limit",
+          "noDataState": "no_data"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": null },
+                { "color": "yellow", "value": 70 },
+                { "color": "red", "value": 90 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 8,
+        "title": "💰 Financial Alert - Daily Spend",
+        "type": "stat",
+        "gridPos": { "x": 8, "y": 16, "w": 8, "h": 4 },
+        "targets": [{
+          "format": "table",
+          "rawSql": "SELECT SUM((input_tokens * 0.00001) + (output_tokens * 0.00003)) as value FROM analysis_results WHERE created_at > DATE_TRUNC('day', NOW())",
+          "refId": "A"
+        }],
+        "alert": {
+          "name": "Daily Spend Limit",
+          "conditions": [{
+            "evaluator": {
+              "params": [100],
+              "type": "gt"
+            },
+            "operator": {
+              "type": "and"
+            },
+            "query": {
+              "params": ["A", "5m", "now"]
+            },
+            "reducer": {
+              "params": [],
+              "type": "avg"
+            },
+            "type": "query"
+          }],
+          "frequency": "5m",
+          "handler": 1,
+          "message": "Daily spending exceeds $100",
+          "noDataState": "no_data"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "currencyUSD",
+            "decimals": 2,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": null },
+                { "color": "yellow", "value": 50 },
+                { "color": "red", "value": 100 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 9,
+        "title": "🔒 Security: Rate Limit Violations",
+        "type": "timeseries",
+        "gridPos": { "x": 16, "y": 16, "w": 8, "h": 4 },
+        "targets": [{
+          "format": "time_series",
+          "rawSql": "SELECT created_at as time, COUNT(*) as violations FROM rate_limit_violations WHERE created_at > NOW() - INTERVAL '1 hour' GROUP BY created_at ORDER BY created_at",
+          "refId": "A"
+        }],
+        "alert": {
+          "name": "Rate Limit Violations",
+          "conditions": [{
+            "evaluator": {
+              "params": [50],
+              "type": "gt"
+            },
+            "operator": {
+              "type": "and"
+            },
+            "query": {
+              "params": ["A", "5m", "now"]
+            },
+            "reducer": {
+              "params": [],
+              "type": "sum"
+            },
+            "type": "query"
+          }],
+          "frequency": "1m",
+          "handler": 1,
+          "message": "High rate of rate limit violations detected",
+          "noDataState": "no_data"
+        }
+      }
+    ],
+    "tags": ["monitoring", "alerts", "production"],
+    "time": {
+      "from": "now-6h",
+      "to": "now"
+    },
+    "refresh": "10s"
+  }
+}

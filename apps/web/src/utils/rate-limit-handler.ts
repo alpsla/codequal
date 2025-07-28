@@ -12,7 +12,7 @@ interface RateLimitInfo {
 
 export class RateLimitHandler {
   private rateLimitInfo: Map<string, RateLimitInfo> = new Map();
-  private requestQueue: Map<string, Promise<any>[]> = new Map();
+  private requestQueue: Map<string, Promise<unknown>[]> = new Map();
 
   /**
    * Extract rate limit info from response headers

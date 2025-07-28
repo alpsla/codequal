@@ -1,0 +1,17 @@
+{
+	"ulid": "01K16TZ27Y1C4188DJHMDQ909H",
+	"minTime": 1753639206255,
+	"maxTime": 1753646400000,
+	"stats": {
+		"numSamples": 6240,
+		"numSeries": 13,
+		"numChunks": 53
+	},
+	"compaction": {
+		"level": 1,
+		"sources": [
+			"01K16TZ27Y1C4188DJHMDQ909H"
+		]
+	},
+	"version": 1
+}

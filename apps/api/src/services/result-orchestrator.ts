@@ -138,6 +138,7 @@ import { dataFlowMonitor } from './data-flow-monitor';
 import { createClient } from '@supabase/supabase-js';
 import { getUnifiedProgressTracer } from './unified-progress-tracer';
 import { reportIdMappingService } from './report-id-mapping-service';
+import { metricsCollector } from './deepwiki-metrics-collector';
 
 // State management for tracking analyses and completed reports
 interface OrchestratorState {
@@ -598,6 +599,10 @@ export class ResultOrchestrator {
         const prBranch = prContext.prDetails?.head?.ref || prContext.prDetails?.headBranch;
         const baseBranch = prContext.prDetails?.baseBranch || prContext.baseBranch || 'main';
         
+        // Record analysis start in metrics
+        const analysisStartTime = Date.now();
+        const metricsAnalysisId = await metricsCollector.recordAnalysisStart(request.repositoryUrl);
+        
         await this.ensureFreshRepositoryAnalysis(
           request.repositoryUrl,
           prBranch,
@@ -609,6 +614,17 @@ export class ResultOrchestrator {
         dataFlowMonitor.completeStep(deepWikiStepId, {
           status: 'Analysis triggered and completed'
         });
+        
+        // Record analysis completion in metrics
+        if (metricsAnalysisId) {
+          const analysisTime = (Date.now() - analysisStartTime) / 1000; // Convert to seconds
+          await metricsCollector.recordAnalysisComplete(
+            metricsAnalysisId,
+            true, // success
+            undefined, // disk usage will be captured by periodic collector
+            analysisTime
+          );
+        }
       }
 
       // Step 4: Select optimal orchestrator model
@@ -1163,6 +1179,31 @@ export class ResultOrchestrator {
         hasReport: !!analysisResult.report,
         reportType: typeof analysisResult.report
       });
+      
+      // Clean up the DeepWiki cloned repository now that all analysis is complete
+      try {
+        this.logger.info('🧹 Cleaning up DeepWiki repository after complete analysis');
+        await deepWikiApiManager.cleanupRepository(request.repositoryUrl);
+        
+        // Record successful cleanup in metrics
+        await metricsCollector.recordCleanup(
+          true, // success
+          1, // repositories cleaned
+          0 // disk freed will be calculated by periodic collector
+        );
+      } catch (cleanupError) {
+        this.logger.warn('Failed to cleanup DeepWiki repository', { error: cleanupError });
+        
+        // Record failed cleanup in metrics
+        await metricsCollector.recordCleanup(
+          false, // failed
+          0, // no repositories cleaned
+          0,
+          cleanupError instanceof Error ? cleanupError.message : 'Unknown error'
+        );
+        
+        // Don't fail the analysis if cleanup fails
+      }
       
       return analysisResult;
 
