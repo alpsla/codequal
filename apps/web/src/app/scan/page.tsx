@@ -7,10 +7,19 @@ import { fetchWithAuth } from '../../utils/api';
 import ScanResults from '../../components/scan-results';
 import ScanProgress from '../../components/scan-progress';
 
+interface ScanResult {
+  message: string;
+  repositoryUrl: string;
+  jobId: string;
+  status: string;
+  estimatedTime?: number;
+  reportUrl?: string;
+}
+
 export default function ScanPage() {
   const [repositoryUrl, setRepositoryUrl] = useState('');
   const [scanning, setScanning] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<ScanResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [showProgress, setShowProgress] = useState(false);

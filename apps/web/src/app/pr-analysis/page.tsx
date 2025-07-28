@@ -5,10 +5,51 @@ import { useBilling } from '../../contexts/billing-context';
 import AuthenticatedLayout from '../../components/authenticated-layout';
 import { fetchWithAuth } from '../../utils/api';
 
+interface BlockingIssue {
+  severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+  type: string;
+  description: string;
+}
+
+interface PositiveFinding {
+  icon: string;
+  text: string;
+}
+
+interface PRDecision {
+  status: 'BLOCKED' | 'APPROVED';
+  reason: string;
+  confidence?: number;
+}
+
+interface PRInfo {
+  number: string;
+  title: string;
+  filesChanged: number;
+  additions: number;
+  deletions: number;
+}
+
+interface Repository {
+  primaryLanguage: string;
+}
+
+interface AnalysisResult {
+  analysisId?: string;
+  pr?: PRInfo;
+  repository?: Repository;
+  decision?: PRDecision;
+  blockingIssues?: BlockingIssue[];
+  positiveFindings?: PositiveFinding[];
+  summary?: string;
+  recommendations?: string[];
+  reportUrl?: string;
+}
+
 export default function PRAnalysisPage() {
   const [prUrl, setPrUrl] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [useRealAnalysis, setUseRealAnalysis] = useState(false);
   const [useGitHubData, setUseGitHubData] = useState(false);
@@ -479,7 +520,7 @@ export default function PRAnalysisPage() {
                         Blocking Issues
                       </h4>
                       <div className="space-y-3">
-                        {result.blockingIssues.map((issue: any, index: number) => (
+                        {result.blockingIssues.map((issue, index) => (
                           <div key={index} className="border-l-4 border-red-500 pl-4 py-2">
                             <div className="flex items-center">
                               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -509,7 +550,7 @@ export default function PRAnalysisPage() {
                         Positive Findings
                       </h4>
                       <div className="space-y-2">
-                        {result.positiveFindings.map((finding: any, index: number) => (
+                        {result.positiveFindings.map((finding, index) => (
                           <div key={index} className="flex items-start">
                             <span className="text-green-500 mr-2">{finding.icon}</span>
                             <span className="text-sm text-gray-700">{finding.text}</span>

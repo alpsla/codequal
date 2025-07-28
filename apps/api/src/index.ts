@@ -36,7 +36,10 @@ import usageStatsRoutes from './routes/usage-stats';
 import researcherRoutes from './routes/researcher';
 import deepwikiTempStorageRoutes from './routes/deepwiki-temp-storage';
 import metricsRoutes from './routes/metrics';
+import monitoringPublicRoutes from './routes/monitoring-public';
 import { errorHandler } from './middleware/error-handler';
+import { deepWikiAlertService } from './services/deepwiki-alerts';
+import { metricsCollector } from './services/deepwiki-metrics-collector';
 // import { i18nMiddleware, translateResponse, validateLanguage } from './middleware/i18n-middleware';
 import { requestLogger } from './middleware/request-logger';
 import { monitoringMiddleware, analysisMonitoringMiddleware } from './middleware/monitoring-middleware';
@@ -210,6 +213,14 @@ app.use('/api/simple-scan', authMiddleware, trackApiUsage, simpleScanRoutes);
 // Stripe webhook routes (no authentication required)
 app.use('/stripe', stripeWebhookRoutes);
 
+// Public monitoring routes (no authentication required)
+// Note: This must come before the auth middleware to allow public access
+app.use('/api/monitoring/public', monitoringPublicRoutes);
+
+// DeepWiki temp storage monitoring routes (before global auth middleware)
+// Note: Individual route auth is handled in the router
+app.use('/api/deepwiki/temp', deepwikiTempStorageRoutes);
+
 // Internal API routes (requires user authentication)
 app.use('/api', authMiddleware);
 app.use('/api', apiRateLimiter); // Apply API rate limiting
@@ -225,9 +236,6 @@ app.use('/api/monitoring', monitoringRoutes);
 
 // Researcher routes (requires user authentication)
 app.use('/api/researcher', authMiddleware, researcherRoutes);
-
-// DeepWiki temp storage monitoring routes (requires user authentication)
-app.use('/api/deepwiki/temp', authMiddleware, deepwikiTempStorageRoutes);
 
 // Metrics endpoint for Prometheus/monitoring (token auth via middleware)
 app.use('/api/metrics', metricsRoutes);
@@ -253,6 +261,14 @@ async function startServer() {
       logger.info(`Health check available at http://localhost:${PORT}/health`);
       logger.info(`Auth endpoints available at http://localhost:${PORT}/auth`);
       logger.info(`Test OAuth at http://localhost:${PORT}/auth-test.html`);
+      
+      // Start DeepWiki alert service
+      deepWikiAlertService.start();
+      logger.info('Started DeepWiki disk monitoring alerts');
+      
+      // Start DeepWiki metrics collection (every 60 seconds)
+      metricsCollector.startCollection(60000);
+      logger.info('Started DeepWiki metrics collection to Supabase');
       
       // Start metrics auto-push if configured
       if (process.env.DO_METRICS_TOKEN) {

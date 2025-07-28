@@ -1,0 +1,41 @@
+# Prometheus configuration for DeepWiki monitoring
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - localhost:9093
+
+# Load rules
+rule_files:
+  - "deepwiki-alerts.yml"
+
+# Scrape configurations
+scrape_configs:
+  # DeepWiki metrics endpoint
+  - job_name: 'deepwiki'
+    scrape_interval: 30s
+    static_configs:
+      - targets: ['localhost:3001']
+    metrics_path: '/api/monitoring/deepwiki/metrics'
+    
+  # Optional: Kubernetes pod metrics
+  - job_name: 'kubernetes-pods'
+    kubernetes_sd_configs:
+      - role: pod
+        namespaces:
+          names:
+            - codequal-dev
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_label_app]
+        action: keep
+        regex: deepwiki
+      - source_labels: [__meta_kubernetes_pod_name]
+        target_label: pod
+      - source_labels: [__meta_kubernetes_namespace]
+        target_label: namespace

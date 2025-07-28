@@ -54,7 +54,23 @@ export function getGlobalMonitoringService(): MonitoringService {
   };
 }
 
-// Basic monitoring endpoints
+/**
+ * @swagger
+ * /api/monitoring/health:
+ *   get:
+ *     summary: System health check
+ *     description: Returns the current health status of all system components
+ *     tags: [Monitoring]
+ *     responses:
+ *       200:
+ *         description: System health status
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/HealthStatus'
+ *       500:
+ *         description: Health check failed
+ */
 router.get('/health', async (req, res) => {
   try {
     // Check database connection
@@ -101,6 +117,74 @@ router.get('/health', async (req, res) => {
       timestamp: new Date().toISOString(),
       error: error instanceof Error ? error.message : 'Unknown error'
     });
+  }
+});
+
+/**
+ * @swagger
+ * /api/monitoring/metrics:
+ *   get:
+ *     summary: Prometheus metrics export
+ *     description: Returns system metrics in Prometheus text format for Grafana integration
+ *     tags: [Monitoring]
+ *     produces:
+ *       - text/plain
+ *     responses:
+ *       200:
+ *         description: Prometheus formatted metrics
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: |
+ *                 # HELP codequal_deepwiki_storage_used_gb DeepWiki storage used in GB
+ *                 # TYPE codequal_deepwiki_storage_used_gb gauge
+ *                 codequal_deepwiki_storage_used_gb{source="deepwiki"} 45.2 1706264400000
+ *       500:
+ *         description: Failed to export metrics
+ */
+router.get('/metrics', async (req, res) => {
+  try {
+    // Import the bridge service
+    const { monitoringGrafanaBridge } = await import('../services/monitoring-grafana-bridge.js');
+    
+    // Get metrics in Prometheus format
+    const metrics = monitoringGrafanaBridge.exportPrometheusMetrics();
+    
+    // Set appropriate content type
+    res.setHeader('Content-Type', 'text/plain; version=0.0.4');
+    res.send(metrics);
+  } catch (error) {
+    logger.error('Failed to export metrics:', error as Error);
+    res.status(500).send('# Error exporting metrics\n');
+  }
+});
+
+/**
+ * @swagger
+ * /api/monitoring/alerts:
+ *   get:
+ *     summary: Get current alert status
+ *     description: Returns the current status of all monitoring alerts
+ *     tags: [Monitoring]
+ *     responses:
+ *       200:
+ *         description: Alert status information
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AlertStatus'
+ *       500:
+ *         description: Failed to get alert status
+ */
+router.get('/alerts', async (req, res) => {
+  try {
+    const { monitoringGrafanaBridge } = await import('../services/monitoring-grafana-bridge.js');
+    const status = monitoringGrafanaBridge.getAlertStatus();
+    res.json(status);
+  } catch (error) {
+    logger.error('Failed to get alert status:', error as Error);
+    res.status(500).json({ error: 'Failed to get alert status' });
   }
 });
 

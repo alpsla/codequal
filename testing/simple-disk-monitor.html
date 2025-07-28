@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DeepWiki Disk Monitor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            margin: 10px 0;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        .metric-label {
+            font-weight: bold;
+            color: #666;
+        }
+        .metric-value {
+            color: #333;
+            font-family: monospace;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #4CAF50;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        .status {
+            text-align: center;
+            padding: 10px;
+            margin: 20px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .status.good { background: #d4edda; color: #155724; }
+        .status.warning { background: #fff3cd; color: #856404; }
+        .status.danger { background: #f8d7da; color: #721c24; }
+        .refresh-btn {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .refresh-btn:hover {
+            background: #0056b3;
+        }
+        .timestamp {
+            text-align: center;
+            color: #999;
+            font-size: 14px;
+        }
+        .command-output {
+            background: #000;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            white-space: pre;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗄️ DeepWiki Disk Monitor</h1>
+        
+        <div class="metric">
+            <span class="metric-label">Total Space:</span>
+            <span class="metric-value" id="total">Loading...</span>
+        </div>
+        
+        <div class="metric">
+            <span class="metric-label">Used Space:</span>
+            <span class="metric-value" id="used">Loading...</span>
+        </div>
+        
+        <div class="metric">
+            <span class="metric-label">Available Space:</span>
+            <span class="metric-value" id="available">Loading...</span>
+        </div>
+        
+        <div class="metric">
+            <span class="metric-label">Repositories:</span>
+            <span class="metric-value" id="repos">Loading...</span>
+        </div>
+        
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress" style="width: 0%">0%</div>
+        </div>
+        
+        <div class="status good" id="status">Checking status...</div>
+        
+        <h3>Raw Output:</h3>
+        <div class="command-output" id="raw-output">Waiting for data...</div>
+        
+        <button class="refresh-btn" onclick="refreshData()">🔄 Refresh Now</button>
+        
+        <div class="timestamp" id="timestamp">Never updated</div>
+    </div>
+
+    <script>
+        // This simple monitor fetches data from a local endpoint
+        // that runs kubectl commands directly
+        
+        async function refreshData() {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = 'Refreshing...';
+            statusEl.className = 'status good';
+            
+            try {
+                // For demo purposes, we'll simulate the data
+                // In production, this would fetch from an API endpoint
+                const mockData = {
+                    disk: {
+                        total: '9.8G',
+                        used: '191M',
+                        available: '9.1G',
+                        percentUsed: 3
+                    },
+                    repos: 0,
+                    rawOutput: `Filesystem                                                                Size  Used Avail Use% Mounted on
+/dev/disk/by-id/scsi-0DO_Volume_pvc-32668f63-050d-4b3e-ae4a-5fba310c6f20  9.8G  191M  9.1G   3% /root/.adalflow
+
+Repositories in /root/.adalflow/repos:
+total 8
+drwxr-xr-x  2 root root 4096 Jul 26 21:34 .
+drwxr-xr-x 14 root root 4096 Jul 25 11:21 ..`
+                };
+                
+                updateDisplay(mockData);
+                
+            } catch (error) {
+                statusEl.textContent = 'Error: ' + error.message;
+                statusEl.className = 'status danger';
+            }
+        }
+        
+        function updateDisplay(data) {
+            // Update metrics
+            document.getElementById('total').textContent = data.disk.total;
+            document.getElementById('used').textContent = data.disk.used;
+            document.getElementById('available').textContent = data.disk.available;
+            document.getElementById('repos').textContent = data.repos + ' repositories';
+            
+            // Update progress bar
+            const progress = document.getElementById('progress');
+            progress.style.width = data.disk.percentUsed + '%';
+            progress.textContent = data.disk.percentUsed + '%';
+            
+            // Update progress bar color based on usage
+            if (data.disk.percentUsed < 50) {
+                progress.style.background = '#4CAF50'; // Green
+            } else if (data.disk.percentUsed < 80) {
+                progress.style.background = '#ff9800'; // Orange
+            } else {
+                progress.style.background = '#f44336'; // Red
+            }
+            
+            // Update status
+            const status = document.getElementById('status');
+            if (data.disk.percentUsed < 50) {
+                status.textContent = '✅ Healthy - Plenty of space available';
+                status.className = 'status good';
+            } else if (data.disk.percentUsed < 80) {
+                status.textContent = '⚠️ Warning - Disk usage above 50%';
+                status.className = 'status warning';
+            } else {
+                status.textContent = '🚨 Critical - Disk usage above 80%';
+                status.className = 'status danger';
+            }
+            
+            // Update raw output
+            document.getElementById('raw-output').textContent = data.rawOutput;
+            
+            // Update timestamp
+            document.getElementById('timestamp').textContent = 'Last updated: ' + new Date().toLocaleString();
+        }
+        
+        // Auto-refresh every 10 seconds
+        setInterval(refreshData, 10000);
+        
+        // Initial load
+        refreshData();
+    </script>
+</body>
+</html>

@@ -1,0 +1,150 @@
+{
+  "integration": {
+    "name": "CodeQual Monitoring Integration",
+    "description": "Connects DeepWiki dashboard metrics to Grafana for alerting",
+    "components": {
+      "deepwiki_dashboard": {
+        "url": "file:///Users/alpinro/Code%20Prjects/codequal/testing/deepwiki-dashboard.html",
+        "metrics_endpoint": "/api/deepwiki/temp/metrics",
+        "analyses_endpoint": "/api/deepwiki/temp/active-analyses"
+      },
+      "grafana_alerts": {
+        "dashboard_file": "monitoring/codequal-alerts-dashboard.json",
+        "alert_rules": [
+          {
+            "name": "Storage Critical",
+            "condition": "percentUsed > 85",
+            "severity": "critical",
+            "notification": "slack,email"
+          },
+          {
+            "name": "Storage Warning",
+            "condition": "percentUsed > 70",
+            "severity": "warning",
+            "notification": "slack"
+          },
+          {
+            "name": "Long Running Analysis",
+            "condition": "analysis_duration > 1800000",
+            "severity": "warning",
+            "notification": "slack"
+          },
+          {
+            "name": "High Active Analyses",
+            "condition": "activeAnalyses > 10",
+            "severity": "warning",
+            "notification": "slack"
+          }
+        ]
+      },
+      "prometheus_metrics": {
+        "enabled": true,
+        "metrics": [
+          "deepwiki_storage_used_gb",
+          "deepwiki_storage_total_gb",
+          "deepwiki_storage_percent_used",
+          "deepwiki_active_analyses_count",
+          "deepwiki_analysis_duration_seconds",
+          "codequal_api_response_time_ms",
+          "codequal_analysis_cost_usd",
+          "codequal_token_usage_total",
+          "codequal_security_violations_count",
+          "codequal_error_rate_percent"
+        ]
+      }
+    },
+    "sync_interval": "10s",
+    "retention": "30d"
+  },
+  "monitoring_categories": {
+    "performance": {
+      "metrics": [
+        "api_response_time",
+        "database_query_time",
+        "analysis_execution_time",
+        "concurrent_analyses"
+      ],
+      "alerts": [
+        {
+          "metric": "api_response_time",
+          "threshold": 5000,
+          "unit": "ms",
+          "severity": "warning"
+        },
+        {
+          "metric": "database_query_time",
+          "threshold": 1000,
+          "unit": "ms",
+          "severity": "critical"
+        }
+      ]
+    },
+    "security": {
+      "metrics": [
+        "unauthorized_access_attempts",
+        "rate_limit_violations",
+        "suspicious_activity_score",
+        "api_key_usage"
+      ],
+      "alerts": [
+        {
+          "metric": "unauthorized_access_attempts",
+          "threshold": 10,
+          "window": "1h",
+          "severity": "critical"
+        },
+        {
+          "metric": "rate_limit_violations",
+          "threshold": 50,
+          "window": "5m",
+          "severity": "warning"
+        }
+      ]
+    },
+    "financial": {
+      "metrics": [
+        "daily_api_cost",
+        "per_analysis_cost",
+        "token_usage_by_model",
+        "cost_per_user"
+      ],
+      "alerts": [
+        {
+          "metric": "daily_api_cost",
+          "threshold": 100,
+          "unit": "USD",
+          "severity": "warning"
+        },
+        {
+          "metric": "per_analysis_cost",
+          "threshold": 5,
+          "unit": "USD",
+          "severity": "warning"
+        }
+      ]
+    },
+    "critical_issues": {
+      "metrics": [
+        "analysis_failure_rate",
+        "system_error_count",
+        "service_availability",
+        "data_integrity_score"
+      ],
+      "alerts": [
+        {
+          "metric": "analysis_failure_rate",
+          "threshold": 10,
+          "unit": "percent",
+          "severity": "critical"
+        },
+        {
+          "metric": "service_availability",
+          "threshold": 99,
+          "unit": "percent",
+          "operator": "lt",
+          "severity": "critical"
+        }
+      ]
+    }
+  }
+}

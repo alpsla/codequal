@@ -479,6 +479,211 @@ export const openapiSpecification = {
             }
           },
           required: ['name', 'agentRole', 'status', 'percentage']
+        },
+        HealthStatus: {
+          type: 'object',
+          properties: {
+            status: {
+              type: 'string',
+              enum: ['ok', 'degraded', 'error'],
+              description: 'Overall system health status'
+            },
+            timestamp: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Health check timestamp'
+            },
+            database: {
+              type: 'object',
+              properties: {
+                status: {
+                  type: 'string',
+                  enum: ['healthy', 'unhealthy', 'unknown']
+                },
+                tables: {
+                  type: 'integer',
+                  description: 'Number of database tables'
+                }
+              }
+            },
+            vectorDB: {
+              type: 'object',
+              properties: {
+                status: {
+                  type: 'string',
+                  enum: ['healthy', 'unavailable']
+                }
+              }
+            },
+            background: {
+              type: 'object',
+              properties: {
+                status: {
+                  type: 'string',
+                  enum: ['healthy', 'unhealthy']
+                }
+              }
+            }
+          },
+          required: ['status', 'timestamp']
+        },
+        AlertStatus: {
+          type: 'object',
+          properties: {
+            healthy: {
+              type: 'integer',
+              description: 'Number of healthy metrics'
+            },
+            warning: {
+              type: 'integer',
+              description: 'Number of warning alerts'
+            },
+            critical: {
+              type: 'integer',
+              description: 'Number of critical alerts'
+            },
+            alerts: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  metric: {
+                    type: 'string',
+                    description: 'Metric name'
+                  },
+                  value: {
+                    type: 'number',
+                    description: 'Current metric value'
+                  },
+                  threshold: {
+                    type: 'number',
+                    description: 'Alert threshold'
+                  },
+                  severity: {
+                    type: 'string',
+                    enum: ['warning', 'critical']
+                  },
+                  message: {
+                    type: 'string',
+                    description: 'Alert message'
+                  }
+                },
+                required: ['metric', 'value', 'threshold', 'severity', 'message']
+              }
+            }
+          },
+          required: ['healthy', 'warning', 'critical', 'alerts']
+        },
+        DeepWikiMetrics: {
+          type: 'object',
+          properties: {
+            usedGB: {
+              type: 'number',
+              description: 'Storage used in GB'
+            },
+            totalGB: {
+              type: 'number',
+              description: 'Total storage capacity in GB'
+            },
+            availableGB: {
+              type: 'number',
+              description: 'Available storage in GB'
+            },
+            percentUsed: {
+              type: 'number',
+              description: 'Percentage of storage used'
+            },
+            activeAnalyses: {
+              type: 'integer',
+              description: 'Number of active analyses'
+            },
+            maxConcurrentCapacity: {
+              type: 'integer',
+              description: 'Maximum concurrent analysis capacity'
+            },
+            averageAnalysisSize: {
+              type: 'number',
+              description: 'Average analysis size in GB'
+            },
+            recommendations: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  type: {
+                    type: 'string',
+                    enum: ['scale-up', 'capacity', 'cleanup']
+                  },
+                  urgency: {
+                    type: 'string',
+                    enum: ['low', 'medium', 'high']
+                  },
+                  message: {
+                    type: 'string'
+                  },
+                  suggestedSize: {
+                    type: 'number',
+                    nullable: true
+                  }
+                }
+              }
+            },
+            status: {
+              type: 'string',
+              enum: ['healthy', 'warning', 'critical']
+            }
+          },
+          required: ['usedGB', 'totalGB', 'availableGB', 'percentUsed', 'activeAnalyses', 'status']
+        },
+        ActiveAnalyses: {
+          type: 'object',
+          properties: {
+            active: {
+              type: 'integer',
+              description: 'Number of active analyses'
+            },
+            analyses: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  analysisId: {
+                    type: 'string',
+                    format: 'uuid'
+                  },
+                  repositoryUrl: {
+                    type: 'string',
+                    format: 'uri'
+                  },
+                  type: {
+                    type: 'string',
+                    enum: ['quick', 'comprehensive', 'deep']
+                  },
+                  sizeMB: {
+                    type: 'number',
+                    description: 'Analysis size in MB'
+                  },
+                  startTime: {
+                    type: 'integer',
+                    description: 'Start timestamp'
+                  },
+                  duration: {
+                    type: 'integer',
+                    description: 'Duration in milliseconds'
+                  },
+                  status: {
+                    type: 'string',
+                    enum: ['active', 'long-running']
+                  }
+                }
+              }
+            },
+            longRunning: {
+              type: 'integer',
+              description: 'Number of long-running analyses'
+            }
+          },
+          required: ['active', 'analyses', 'longRunning']
         }
       },
       responses: {
@@ -588,6 +793,14 @@ export const openapiSpecification = {
       {
         name: 'Health',
         description: 'Service health and status'
+      },
+      {
+        name: 'Monitoring',
+        description: 'System monitoring, metrics, and alerts'
+      },
+      {
+        name: 'DeepWiki',
+        description: 'DeepWiki storage and analysis monitoring'
       },
       {
         name: 'Vector DB Management',
