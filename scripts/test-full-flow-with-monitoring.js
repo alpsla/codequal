@@ -7,7 +7,7 @@ const execAsync = promisify(exec);
 
 // Configuration
 const API_URL = 'http://localhost:3001';
-const DASHBOARD_URL = 'http://localhost:3001/api/monitoring/deepwiki/metrics';
+const DASHBOARD_URL = 'http://localhost:3001/api/monitoring/repository/metrics';
 const TEST_REPO = 'https://github.com/vercel/swr';
 const TEST_PR = 3058; // A real PR from the repo
 

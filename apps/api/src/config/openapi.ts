@@ -574,7 +574,7 @@ export const openapiSpecification = {
           },
           required: ['healthy', 'warning', 'critical', 'alerts']
         },
-        DeepWikiMetrics: {
+        RepositoryStorageMetrics: {
           type: 'object',
           properties: {
             usedGB: {
@@ -799,8 +799,8 @@ export const openapiSpecification = {
         description: 'System monitoring, metrics, and alerts'
       },
       {
-        name: 'DeepWiki',
-        description: 'DeepWiki storage and analysis monitoring'
+        name: 'Repository Storage',
+        description: 'Repository storage and analysis monitoring'
       },
       {
         name: 'Vector DB Management',

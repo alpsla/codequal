@@ -1,7 +1,14 @@
 CodeQual Architecture Document
-Last Updated: January 2025 (Rate Limiting & API Documentation Updates)
+Last Updated: July 2025 (DeepWiki Monitoring Infrastructure)
 
-Recent Updates (January 2025):
+Recent Updates (July 2025):
+- Section 17.10: DeepWiki Monitoring Infrastructure - Real-time metrics collection and alerting
+- Comprehensive monitoring for DeepWiki storage and analysis operations
+- JWT-authenticated public dashboard with 10-second refresh
+- Prometheus/Grafana integration for historical analysis
+- Automated alerts for disk usage thresholds (70%/85%/95%)
+
+Previous Updates (January 2025):
 - Section 19: Rate Limiting Architecture - Comprehensive rate limiting strategy with user-friendly limits
 - Section 21: API Documentation - Complete OpenAPI 3.0 specifications for all endpoints
 - Enhanced rate limits: 1000 req/15min global, tiered API limits (30-300 req/min)
@@ -1307,6 +1314,106 @@ Docker Configuration:
 - Graceful shutdown with metric finalization
 
 The Enhanced Monitoring Service provides complete observability for the CodeQual platform, enabling proactive monitoring, performance optimization, and integration with external monitoring tools while supporting embedded widgets for web applications and AI-powered monitoring insights.
+
+---
+
+## 17.10 DeepWiki Monitoring Infrastructure (NEW - July 28, 2025)
+
+The system implements specialized monitoring infrastructure for DeepWiki operations, providing real-time disk usage tracking, analysis monitoring, and automated alerting:
+
+**DeepWiki Metrics Collection Service**
+
+```typescript
+/**
+ * Real-time metrics collection from DeepWiki Kubernetes pods
+ * Tracks disk usage, active analyses, and cleanup operations
+ */
+export class DeepWikiMetricsCollector {
+  // Kubernetes pod metrics via kubectl exec
+  // Disk usage monitoring (/root/.adalflow directory)
+  // Repository count tracking
+  // Analysis lifecycle recording
+  // Cleanup operation logging
+}
+```
+
+**Key Monitoring Components:**
+
+1. **Disk Usage Tracking**
+   - Real-time monitoring of DeepWiki storage (50GB volume)
+   - Automatic collection every 60 seconds
+   - Alert thresholds: 70% (warning), 85% (critical), 95% (emergency)
+   - Metrics stored in `deepwiki_metrics` table
+
+2. **Analysis Lifecycle Monitoring**
+   - Track analysis start/completion/failure
+   - Record disk usage per analysis
+   - Monitor analysis duration
+   - Store in `analysis_history` table
+
+3. **Public Monitoring Dashboard**
+   - Real-time web dashboard at `/testing/deepwiki-dashboard.html`
+   - JWT-based authentication
+   - 10-second auto-refresh
+   - Visual progress bars for disk usage
+   - Active analyses tracking
+
+4. **Prometheus Integration**
+   - Export metrics in Prometheus format
+   - Endpoints: `/api/monitoring/deepwiki/metrics-prometheus`
+   - Grafana dashboard integration
+   - Historical trend analysis
+
+5. **Alert System**
+   ```typescript
+   interface DeepWikiAlerts {
+     diskUsageHigh: { threshold: 70, severity: 'warning' };
+     diskUsageCritical: { threshold: 85, severity: 'critical' };
+     diskUsageEmergency: { threshold: 95, severity: 'emergency' };
+     analysisStalled: { duration: 3600, severity: 'warning' };
+     cleanupFailed: { attempts: 3, severity: 'critical' };
+   }
+   ```
+
+6. **Service Authentication**
+   - JWT-based authentication middleware
+   - Secure token generation utilities
+   - Service-specific auth for metrics endpoints
+
+**API Endpoints:**
+- `GET /api/monitoring/deepwiki/metrics` - JSON metrics
+- `GET /api/monitoring/deepwiki/metrics-prometheus` - Prometheus format
+- `GET /api/monitoring/public/dashboard` - Dashboard data
+- `POST /api/monitoring/deepwiki/cleanup` - Trigger cleanup
+
+**Database Schema:**
+```sql
+-- Time-series metrics storage
+CREATE TABLE deepwiki_metrics (
+  id SERIAL PRIMARY KEY,
+  disk_total_gb INTEGER,
+  disk_used_gb INTEGER,
+  disk_available_gb INTEGER,
+  disk_usage_percent INTEGER,
+  active_repositories INTEGER,
+  metadata JSONB,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Analysis tracking
+CREATE TABLE analysis_history (
+  id SERIAL PRIMARY KEY,
+  repository_url TEXT,
+  repository_name TEXT,
+  status TEXT,
+  disk_usage_mb INTEGER,
+  analysis_duration_seconds INTEGER,
+  error_message TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+The DeepWiki monitoring infrastructure provides critical observability for storage-intensive operations, enabling proactive management and automated responses to resource constraints.
 
 ---
 

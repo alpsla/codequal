@@ -30,9 +30,33 @@ For internal API endpoints, use JWT bearer tokens:
 Authorization: Bearer your_jwt_token_here
 ```
 
-## Recent Updates (January 2025)
+## Recent Updates
 
-### Progress Tracking API
+### July 2025 - Repository Storage Monitoring Infrastructure
+
+Comprehensive monitoring system for repository storage operations:
+
+1. **Real-time Metrics Collection**
+   - Kubernetes pod metrics via kubectl
+   - Disk usage tracking with 60-second intervals
+   - Repository count monitoring
+
+2. **New Monitoring Endpoints**
+   - `GET /api/monitoring/repository/metrics` - JSON format
+   - `GET /api/monitoring/repository/metrics-prometheus` - Prometheus format
+   - `GET /api/monitoring/public/dashboard` - Dashboard data
+
+3. **Public Monitoring Dashboard**
+   - JWT-authenticated web interface
+   - Real-time updates every 10 seconds
+   - Visual progress bars and status indicators
+
+4. **Alert System**
+   - Configurable thresholds (70%, 85%, 95%)
+   - Integration with notification channels
+   - Automated cleanup triggers
+
+### January 2025 - Progress Tracking API
 
 Real-time progress tracking for PR analysis with Server-Sent Events (SSE) support.
 
@@ -329,13 +353,62 @@ codequal_api_response_time_ms{source="api"} 234 1706264400000
 }
 ```
 
-### DeepWiki Monitoring
+### Repository Storage Monitoring (Updated July 2025)
 
-Specialized monitoring for DeepWiki temporary storage and active analyses.
+Comprehensive monitoring infrastructure for repository storage operations with real-time metrics, Prometheus integration, and automated alerting.
 
-#### Storage Metrics
+#### New Monitoring Endpoints
+
+##### JSON Metrics
+- **Endpoint**: `GET /api/monitoring/repository/metrics`
+- **Auth**: Bearer token required
+- **Description**: Real-time repository storage metrics in JSON format
+- **Response**:
+```json
+{
+  "diskUsage": {
+    "totalGB": 50,
+    "usedGB": 35,
+    "availableGB": 15,
+    "percentUsed": 70
+  },
+  "activeRepositories": 12,
+  "lastCollection": "2025-07-28T10:30:00Z",
+  "alerts": [
+    {
+      "level": "warning",
+      "message": "Disk usage above 70%",
+      "threshold": 70
+    }
+  ]
+}
+```
+
+##### Prometheus Metrics
+- **Endpoint**: `GET /api/monitoring/repository/metrics-prometheus`
+- **Auth**: Bearer token required
+- **Description**: Prometheus-format metrics for Grafana integration
+- **Response**: Text format metrics
+```
+# HELP deepwiki_disk_usage_percent DeepWiki disk usage percentage
+# TYPE deepwiki_disk_usage_percent gauge
+deepwiki_disk_usage_percent 70
+
+# HELP deepwiki_active_repositories Number of active repositories
+# TYPE deepwiki_active_repositories gauge
+deepwiki_active_repositories 12
+```
+
+##### Public Dashboard Data
+- **Endpoint**: `GET /api/monitoring/public/dashboard`
+- **Auth**: JWT token required
+- **Description**: Data for public monitoring dashboard
+- **Response**: Similar to JSON metrics but optimized for dashboard display
+
+#### Legacy Storage Metrics
 - **Endpoint**: `GET /api/deepwiki/temp/metrics`
 - **Auth**: Bearer token required
+- **Note**: Still supported but consider using new monitoring endpoints
 - **Response**:
 ```json
 {
@@ -380,13 +453,35 @@ Specialized monitoring for DeepWiki temporary storage and active analyses.
 }
 ```
 
-### Monitoring Dashboard
+### Monitoring Dashboard (Enhanced July 2025)
 
-A real-time web dashboard is available at `/testing/deepwiki-dashboard.html` providing:
-- Live storage metrics
-- Active analyses tracking
-- System status indicators
-- Auto-refresh every 10 seconds
+#### Public Repository Storage Dashboard
+A comprehensive real-time monitoring dashboard is available:
+
+**Development**: `/testing/deepwiki-dashboard.html`  
+**Production**: `/api/public/deepwiki-dashboard.html`
+
+**Features**:
+- Real-time disk usage visualization with progress bars
+- Active repository count tracking
+- Color-coded status indicators:
+  - Green (0-70%): Healthy
+  - Yellow (70-85%): Warning
+  - Red (85%+): Critical
+- JWT authentication for secure access
+- 10-second auto-refresh
+- Responsive design for mobile viewing
+
+**Authentication**:
+Dashboard requires a valid JWT token. Generate one using:
+```bash
+node scripts/generate-test-jwt.js
+```
+
+#### Grafana Integration
+Import the enhanced dashboard configuration:
+- **File**: `/monitoring/codequal-alerts-dashboard.json`
+- **Features**: Historical trends, alert configuration, multi-metric views
 
 ### Alert Categories
 
@@ -409,7 +504,7 @@ The monitoring system tracks four main categories:
 
 #### 4. Critical System Alerts
 - Analysis failure rate > 10%
-- DeepWiki storage > 85%
+- Repository storage > 85%
 - Service availability < 99%
 
 ### Grafana Integration

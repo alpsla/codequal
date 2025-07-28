@@ -135,9 +135,29 @@ async function getAnalysisStats(): Promise<any> {
 }
 
 /**
- * Prometheus metrics endpoint
+ * @swagger
+ * /api/monitoring/repository/metrics:
+ *   get:
+ *     summary: Get repository storage metrics in Prometheus format
+ *     description: Returns repository storage and analysis metrics in Prometheus text format for Grafana integration
+ *     tags: [Monitoring]
+ *     produces:
+ *       - text/plain
+ *     responses:
+ *       200:
+ *         description: Prometheus formatted metrics
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: |
+ *                 # HELP deepwiki_disk_total_gb Total disk capacity in GB
+ *                 # TYPE deepwiki_disk_total_gb gauge
+ *                 deepwiki_disk_total_gb 100
+ *       500:
+ *         description: Failed to collect metrics
  */
-router.get('/api/monitoring/deepwiki/metrics', async (req, res) => {
+router.get('/api/monitoring/repository/metrics', async (req, res) => {
   try {
     const now = Date.now();
     
@@ -163,9 +183,43 @@ router.get('/api/monitoring/deepwiki/metrics', async (req, res) => {
 });
 
 /**
- * Health check endpoint for monitoring
+ * @swagger
+ * /api/monitoring/repository/health:
+ *   get:
+ *     summary: Repository storage health check
+ *     description: Checks if repository storage service is healthy and responding
+ *     tags: [Monitoring]
+ *     responses:
+ *       200:
+ *         description: Repository storage is healthy
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   enum: [healthy, unhealthy]
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
+ *                 pod_count:
+ *                   type: integer
+ *                   description: Number of running storage service pods
+ *       503:
+ *         description: Repository storage is unhealthy
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   enum: [error]
+ *                 error:
+ *                   type: string
  */
-router.get('/api/monitoring/deepwiki/health', async (req, res) => {
+router.get('/api/monitoring/repository/health', async (req, res) => {
   try {
     const { stdout } = await execAsync(
       'kubectl get pod -n codequal-dev -l app=deepwiki -o json'
