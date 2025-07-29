@@ -1,7 +1,14 @@
 CodeQual Architecture Document
-Last Updated: July 2025 (DeepWiki Monitoring Infrastructure)
+Last Updated: July 28, 2025 (DeepWiki Dual-Branch Architecture)
 
-Recent Updates (July 2025):
+Recent Updates (July 28, 2025):
+- Section 24: DeepWiki Dual-Branch Analysis Architecture - Major pivot to DeepWiki-centric approach
+- Comprehensive analysis revealed 9/10 MCP tools provide no value for PR analysis
+- New architecture focuses on dual-branch DeepWiki comparison
+- 85% code reduction planned by removing non-value components
+- Enhanced PR insights through DeepWiki chat API integration
+
+Previous Updates (July 2025):
 - Section 17.10: DeepWiki Monitoring Infrastructure - Real-time metrics collection and alerting
 - Comprehensive monitoring for DeepWiki storage and analysis operations
 - JWT-authenticated public dashboard with 10-second refresh
@@ -3011,9 +3018,138 @@ Based on user impact and technical complexity:
 
 ---
 
-## 24. Future Architecture Considerations
+## 24. DeepWiki Dual-Branch Analysis Architecture (NEW - July 28, 2025)
 
-### **22.1 Scalability Enhancements**
+### **24.1 Overview**
+After comprehensive testing of MCP tools with real PR data, we discovered that 9 out of 10 tools provide no meaningful value for PR analysis. This led to a major architectural pivot focusing on DeepWiki as the primary analysis engine using a dual-branch comparison approach.
+
+### **24.2 Key Findings from MCP Tool Analysis**
+- **Tools providing no value (0 findings)**: dependency-cruiser, eslint, jscpd, lighthouse, semgrep, serena, sonarjs
+- **Tools with limited value**: ref-mcp (generic info), context-retrieval (mock data)
+- **Only valuable tool**: deepwiki-mcp (requires enhancement)
+
+### **24.3 New Architecture Design**
+
+#### Core Components
+```typescript
+interface DeepWikiDualBranchArchitecture {
+  // Repository Management
+  gitOperations: {
+    clone(url: string): Promise<string>;
+    switchBranch(branch: string): Promise<void>;
+    getDiff(base: string, head: string): Promise<GitDiff>;
+  };
+  
+  // DeepWiki Analysis
+  deepwikiAnalyzer: {
+    analyzeRepository(path: string): Promise<DeepWikiResults>;
+    compareResults(main: DeepWikiResults, feature: DeepWikiResults): Promise<ChangeAnalysis>;
+    chatAboutChanges(context: ChangeAnalysis, question: string): Promise<string>;
+  };
+  
+  // Storage
+  vectorDB: {
+    storeAnalysis(analysis: DeepWikiResults): Promise<void>;
+    retrieveContext(query: string): Promise<Context[]>;
+  };
+}
+```
+
+#### Analysis Flow
+1. **Clone Repository** - Single clone operation
+2. **Analyze Main Branch** - Run DeepWiki on baseline
+3. **Switch to Feature Branch** - Git checkout operation
+4. **Analyze Feature Branch** - Run DeepWiki on changes
+5. **Compare Results** - Identify what changed
+6. **Generate Insights** - Use DeepWiki chat for Q&A
+
+### **24.4 Components to Remove**
+Based on analysis, the following will be removed:
+- 9 MCP tool adapters (no value)
+- Complex aggregation modules
+- Multi-tool orchestration logic
+- Mock implementations
+- Redundant abstraction layers
+
+### **24.5 Components to Keep**
+- Git operations infrastructure
+- Vector DB storage (with fallback)
+- Basic PR context extraction
+- DeepWiki integration (enhanced)
+- Simple orchestration flow
+
+### **24.6 Implementation Benefits**
+- **85% code reduction** by removing non-value components
+- **Improved accuracy** with dual-branch comparison
+- **Better performance** with simplified pipeline
+- **Enhanced insights** via DeepWiki chat API
+- **Reduced maintenance** with focused architecture
+
+### **24.7 Migration Strategy**
+1. **Phase 1**: Build DeepWiki dual-branch POC
+2. **Phase 2**: Validate with real PR data
+3. **Phase 3**: Incrementally remove unused tools
+4. **Phase 4**: Simplify orchestration logic
+5. **Phase 5**: Optimize performance
+
+### **24.8 Technical Implementation**
+
+#### DeepWiki Service Enhancement
+```typescript
+class EnhancedDeepWikiService {
+  async analyzePullRequest(pr: PullRequest): Promise<PRAnalysis> {
+    // 1. Clone and analyze main branch
+    const mainAnalysis = await this.analyzeBaseline(pr.baseRef);
+    
+    // 2. Analyze feature branch
+    const featureAnalysis = await this.analyzeFeature(pr.headRef);
+    
+    // 3. Compare and identify changes
+    const changes = await this.compareAnalyses(mainAnalysis, featureAnalysis);
+    
+    // 4. Generate contextual insights
+    const insights = await this.generateInsights(changes, pr.context);
+    
+    return { changes, insights, chat: this.chatInterface };
+  }
+}
+```
+
+#### Simplified Orchestration
+```typescript
+class SimplifiedOrchestrator {
+  async analyzePR(request: AnalysisRequest): Promise<AnalysisResult> {
+    // Direct DeepWiki analysis - no complex tool selection
+    const deepwikiResult = await this.deepwiki.analyzePullRequest(request.pr);
+    
+    // Store in vector DB for context
+    await this.vectorDB.store(deepwikiResult);
+    
+    // Generate report
+    return this.reporter.generate(deepwikiResult);
+  }
+}
+```
+
+### **24.9 Risk Mitigation**
+- Maintain backward compatibility during transition
+- Incremental removal of components
+- Comprehensive testing at each phase
+- Rollback capability for each change
+- Performance monitoring throughout
+
+### **24.10 Future Enhancements**
+- DeepWiki model fine-tuning for PR analysis
+- Advanced change detection algorithms
+- Multi-language support improvements
+- Real-time analysis capabilities
+- Integration with CI/CD pipelines
+
+---
+
+## 25. Future Architecture Considerations
+
+### **25.1 Scalability Enhancements**
 - Horizontal scaling for analysis workloads
 - Caching layer for frequent queries
 - CDN integration for report delivery
