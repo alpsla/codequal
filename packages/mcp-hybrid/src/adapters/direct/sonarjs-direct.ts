@@ -127,7 +127,7 @@ export class SonarJSDirectAdapter extends DirectToolAdapter {
           }
         }
       } as any,
-      overrideConfigFile: true,
+      // Don't include overrideConfigFile at all - let ESLint use default behavior
       fix: false
     });
   }

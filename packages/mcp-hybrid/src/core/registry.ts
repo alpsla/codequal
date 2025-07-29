@@ -31,6 +31,7 @@ export class ToolRegistry {
       'mcp-scan',           // Primary: security verification
       'semgrep-mcp',        // Primary: code security scanning
       'npm-audit-direct',   // Primary: vulnerability scanning (NEW)
+      'ref-mcp',            // Primary: real-time CVE/vulnerability research
       'sonarqube'           // Fallback: general security checks
     ]));
     
@@ -40,13 +41,14 @@ export class ToolRegistry {
       'jscpd-direct',       // Primary: copy-paste detection (NEW)
       'sonarjs-direct',     // Primary: advanced quality rules (NEW)
       'prettier-direct',    // Primary: formatting checks
+      'serena-mcp',         // Primary: semantic code understanding & refactoring
       'sonarqube'           // Fallback: multi-language quality
     ]));
     
     // Architecture role tools
     this.roleMapping.set('architecture', new Set([
-      'dependency-cruiser-direct',  // Primary: dependency analysis
       'madge-direct',              // Primary: circular dependency detection
+      'serena-mcp',                // Primary: code structure & architecture analysis
       'git-mcp'                    // Fallback: file structure analysis
     ]));
     
@@ -62,7 +64,9 @@ export class ToolRegistry {
     this.roleMapping.set('dependency', new Set([
       'npm-audit-direct',          // Primary: security vulnerabilities (NEW)
       'license-checker-direct',    // Primary: license compliance (NEW)
-      'npm-outdated-direct'        // Primary: version currency (NEW)
+      'npm-outdated-direct',       // Primary: version currency (NEW)
+      'dependency-cruiser-direct', // Primary: dependency validation & rules
+      'ref-mcp'                    // Primary: package research, licenses, known issues
     ]));
     
     // Educational role tools
@@ -71,6 +75,7 @@ export class ToolRegistry {
       'context7-mcp',             // Primary: real-time documentation & version info (Context 7)
       'working-examples-mcp',     // Primary: real working code examples
       'mcp-docs-service',         // Primary: documentation analysis
+      'ref-mcp',                  // Primary: tutorials, documentation, best practices research
       'knowledge-graph-mcp',      // Secondary: identifies learning paths
       'mcp-memory',              // Fallback: stores/retrieves learning progress
       'web-search-mcp'           // Fallback: finds educational resources

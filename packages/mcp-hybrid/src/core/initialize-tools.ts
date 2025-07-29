@@ -33,6 +33,9 @@ import { MermaidMCPAdapter } from '../adapters/mcp/mermaid-mcp';
 import { MockESLintMCPAdapter } from '../adapters/mcp/mock-eslint';
 import { SemgrepMCPAdapter } from '../adapters/mcp/semgrep-mcp';
 import { ContextRetrievalMCPAdapter } from '../adapters/mcp/context-retrieval-mcp';
+import { RefMCPAdapter } from '../adapters/mcp/ref-mcp';
+import { TavilyMCPAdapter } from '../adapters/mcp/tavily-mcp';
+import { SerenaMCPAdapter } from '../adapters/mcp/serena-mcp';
 
 const logger = createLogger('ToolInitializer');
 
@@ -71,6 +74,9 @@ export async function initializeTools(): Promise<void> {
       new ESLintMCPAdapterFixed(),  // Use real ESLint MCP adapter
       new SemgrepMCPAdapter(),      // Security analysis
       new ContextRetrievalMCPAdapter(), // Context retrieval
+      new RefMCPAdapter(),          // Perplexity web search integration
+      new TavilyMCPAdapter(),       // Tavily AI-powered web search
+      new SerenaMCPAdapter(),       // Semantic code understanding
       // new MockESLintMCPAdapter(),  // Keep mock as fallback
       // new ChartJSMCPAdapter(),
       // new ContextMCPAdapter(),

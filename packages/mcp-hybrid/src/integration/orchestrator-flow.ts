@@ -84,7 +84,7 @@ export class ToolEnhancedOrchestrator {
       
       return finalReport;
     } catch (error) {
-      this.logger.error('Orchestration failed:', error as Error);
+      this.logger.error(`Orchestration failed: ${error}`);
       throw error;
     }
   }
@@ -364,15 +364,16 @@ export class ToolEnhancedOrchestrator {
     };
     
     // Run Educational agent with its tools
-    const educationalTools = await toolRegistry.getToolsForRole('educational');
+    const educationalRole: AgentRole = 'educational';
+    const educationalTools = await toolRegistry.getToolsForRole(educationalRole);
     const eduContext = this.createAgentContext(
-      'educational',
+      educationalRole,
       educationalContext,
       {},
       userId
     );
     
-    const eduToolResults = await agentToolService.runToolsForRole('educational', eduContext);
+    const eduToolResults = await agentToolService.runToolsForRole(educationalRole, eduContext);
     
     // Educational agent creates learning materials
     const educationalOutput = {
@@ -389,15 +390,16 @@ export class ToolEnhancedOrchestrator {
     };
     
     // Run Reporting agent with its tools
-    const reportingTools = await toolRegistry.getToolsForRole('reporting');
+    const reportingRole: AgentRole = 'reporting';
+    const reportingTools = await toolRegistry.getToolsForRole(reportingRole);
     const repContext = this.createAgentContext(
-      'reporting',
+      reportingRole,
       reportingContext,
       {},
       userId
     );
     
-    const repToolResults = await agentToolService.runToolsForRole('reporting', repContext);
+    const repToolResults = await agentToolService.runToolsForRole(reportingRole, repContext);
     
     // Generate final report
     return {
@@ -747,39 +749,46 @@ export const ORCHESTRATOR_TOOL_MAPPING = {
   security: [
     'mcp-scan',        // Security verification
     'semgrep-mcp',     // Code security scanning
-    'sonarqube'        // General security checks
+    'sonarqube',       // General security checks
+    'tavily-mcp'       // Real-time vulnerability search
   ],
   codeQuality: [
     'eslint-mcp',      // JS/TS linting
     'sonarqube',       // Multi-language quality
-    'prettier-direct'  // Code formatting
+    'prettier-direct', // Code formatting
+    'tavily-mcp'       // Best practices search
   ],
   architecture: [
     'dependency-cruiser-direct',  // Dependency analysis
     'madge-direct',              // Circular dependencies
-    'git-mcp'                    // Structure analysis
+    'git-mcp',                   // Structure analysis
+    'tavily-mcp'                 // Architecture patterns search
   ],
   performance: [
     'lighthouse-direct',    // Web performance
     'sonarqube',           // Code complexity
-    'bundlephobia-direct'  // Bundle size
+    'bundlephobia-direct', // Bundle size
+    'tavily-mcp'           // Performance optimization search
   ],
   dependency: [
     'npm-audit-direct',     // Security vulnerabilities
     'license-checker-direct', // License compliance
-    'outdated-direct'       // Version currency
+    'outdated-direct',      // Version currency
+    'tavily-mcp'            // Package alternatives search
   ],
   educational: [
     'context-mcp',          // Knowledge retrieval
     'knowledge-graph-mcp',  // Learning paths
     'mcp-memory',          // Progress tracking
+    'tavily-mcp',          // Tutorial and documentation search
     'web-search-mcp'       // External resources
   ],
   reporting: [
     'chartjs-mcp',      // Visualizations
     'mermaid-mcp',      // Diagrams
     'markdown-pdf-mcp', // Report formatting
-    'grafana-direct'    // Dashboards
+    'grafana-direct',   // Dashboards
+    'tavily-mcp'        // Organize web data into presentable views
   ]
 };
 

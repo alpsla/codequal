@@ -59,6 +59,8 @@ export interface AnalysisContext {
     languages: string[];
     frameworks: string[];
     primaryLanguage?: string;
+    // Path to cloned repository (for tools that need full context)
+    clonedPath?: string;
   };
   userContext: {
     userId: string;

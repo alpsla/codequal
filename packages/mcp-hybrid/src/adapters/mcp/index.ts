@@ -14,6 +14,9 @@ export { ESLintMCPAdapterFixed } from './eslint-mcp-fixed';
 export { MCPScanAdapter } from './mcp-scan';
 export { MarkdownPDFMCPAdapter } from './markdown-pdf-mcp';
 export { MermaidMCPAdapter } from './mermaid-mcp';
+export { RefMCPAdapter, refMCPAdapter } from './ref-mcp';
+export { TavilyMCPAdapter, tavilyMCPAdapter } from './tavily-mcp';
+export { SerenaMCPAdapter, serenaMCPAdapter } from './serena-mcp';
 
 // Type exports
 export type {

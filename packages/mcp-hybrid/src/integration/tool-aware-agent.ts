@@ -27,6 +27,10 @@ export interface ParallelExecutionOptions {
   strategy?: 'parallel-all' | 'parallel-by-role' | 'sequential';
   maxParallel?: number;
   timeout?: number;
+  toolConfig?: {
+    fullRepoTools?: string[];
+    prOnlyTools?: string[];
+  };
 }
 
 /**
