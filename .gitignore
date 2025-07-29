@@ -178,3 +178,6 @@ packages/core/scripts/deepwiki_integration/deepwiki-api-keys.yaml
 *-api-key.yaml
 *.key
 *.pem
+
+# Time-series database data
+data/
