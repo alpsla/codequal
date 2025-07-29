@@ -383,19 +383,38 @@ describe('Repository Access Control', () => {
     const user = createMockAuthenticatedUser();
     const repositoryUrl = 'https://github.com/owner/repo';
     
-    mockSupabase.from.mockReturnValueOnce({
+    // Create mock chain for payment_methods
+    const paymentChain = {
       select: jest.fn().mockReturnThis(),
-      eq: jest.fn().mockReturnValueOnce({
-        eq: jest.fn().mockResolvedValueOnce({
-          data: [{ repository_url: repositoryUrl }],
-          error: null
-        })
+      eq: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockResolvedValue({
+        data: [],
+        error: null
       })
-    });
+    };
+    
+    // Create mock chain for user_repositories
+    const repoChain = {
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis()
+    };
+    // The second eq() call returns the promise
+    repoChain.eq = jest.fn()
+      .mockReturnValueOnce(repoChain)  // First eq returns this
+      .mockResolvedValueOnce({         // Second eq returns promise
+        data: [{ repository_url: repositoryUrl }],
+        error: null
+      });
+    
+    // Set up the from() calls
+    mockSupabase.from
+      .mockReturnValueOnce(paymentChain)
+      .mockReturnValueOnce(repoChain);
     
     const hasAccess = await checkRepositoryAccess(user, repositoryUrl);
     
     expect(hasAccess).toBe(true);
+    expect(mockSupabase.from).toHaveBeenCalledWith('payment_methods');
     expect(mockSupabase.from).toHaveBeenCalledWith('user_repositories');
   });
 
@@ -403,13 +422,33 @@ describe('Repository Access Control', () => {
     const user = createMockAuthenticatedUser();
     const repositoryUrl = 'https://github.com/owner/private-repo';
     
+    // Mock payment_methods check (no payment method)
     mockSupabase.from.mockReturnValueOnce({
       select: jest.fn().mockReturnThis(),
-      eq: jest.fn().mockReturnValueOnce({
-        eq: jest.fn().mockResolvedValueOnce({
-          data: [],
-          error: null
-        })
+      eq: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockResolvedValueOnce({
+        data: [],
+        error: null
+      })
+    });
+    
+    // Mock user_repositories check (no access)
+    mockSupabase.from.mockReturnValueOnce({
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockResolvedValueOnce({
+        data: [],
+        error: null
+      })
+    });
+    
+    // Mock user_trial_repository check (no trial repo)
+    mockSupabase.from.mockReturnValueOnce({
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      single: jest.fn().mockResolvedValueOnce({
+        data: null,
+        error: null
       })
     });
     
@@ -422,13 +461,13 @@ describe('Repository Access Control', () => {
     const user = createMockAuthenticatedUser();
     const repositoryUrl = 'https://github.com/owner/repo';
     
+    // Mock payment_methods check with error
     mockSupabase.from.mockReturnValueOnce({
       select: jest.fn().mockReturnThis(),
-      eq: jest.fn().mockReturnValueOnce({
-        eq: jest.fn().mockResolvedValueOnce({
-          data: null,
-          error: new Error('Database connection failed')
-        })
+      eq: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockResolvedValueOnce({
+        data: null,
+        error: new Error('Database connection failed')
       })
     });
     
@@ -454,22 +493,37 @@ describe('Repository Access Control', () => {
     const user = createMockAuthenticatedUser();
     const repositoryUrl = 'https://github.com/owner/repo';
     
-    const mockEq = jest.fn().mockReturnValueOnce({
-      eq: jest.fn().mockResolvedValueOnce({
-        data: [{ repository_url: repositoryUrl }],
-        error: null
-      })
+    // Mock payment_methods check
+    const mockPaymentEq = jest.fn().mockReturnThis();
+    const mockPaymentLimit = jest.fn().mockResolvedValueOnce({
+      data: [],
+      error: null
     });
     
     mockSupabase.from.mockReturnValueOnce({
-      select: jest.fn().mockReturnValueOnce({
-        eq: mockEq
+      select: jest.fn().mockReturnThis(),
+      eq: mockPaymentEq,
+      limit: mockPaymentLimit
+    });
+    
+    // Mock user_repositories check
+    const mockRepoEq1 = jest.fn().mockReturnThis();
+    const mockRepoEq2 = jest.fn().mockResolvedValueOnce({
+      data: [{ repository_url: repositoryUrl }],
+      error: null
+    });
+    
+    mockSupabase.from.mockReturnValueOnce({
+      select: jest.fn().mockReturnThis(),
+      eq: mockRepoEq1.mockReturnValueOnce({
+        eq: mockRepoEq2
       })
     });
     
     await checkRepositoryAccess(user, repositoryUrl);
     
-    expect(mockEq).toHaveBeenCalledWith('user_id', user.id);
+    expect(mockPaymentEq).toHaveBeenCalledWith('user_id', user.id);
+    expect(mockRepoEq1).toHaveBeenCalledWith('user_id', user.id);
   });
 });
 
@@ -523,22 +577,40 @@ describe('Integration Tests', () => {
     const user = createMockAuthenticatedUser();
     const repositoryUrl = 'https://github.com/owner/test-repo';
     
-    // Mock successful repository access
-    mockSupabase.from.mockReturnValueOnce({
+    // Create mock chain for payment_methods
+    const paymentChain = {
       select: jest.fn().mockReturnThis(),
-      eq: jest.fn().mockReturnValueOnce({
-        eq: jest.fn().mockResolvedValueOnce({
-          data: [{ repository_url: repositoryUrl }],
-          error: null
-        })
+      eq: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockResolvedValue({
+        data: [],
+        error: null
       })
-    });
+    };
+    
+    // Create mock chain for user_repositories
+    const repoChain = {
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis()
+    };
+    // The second eq() call returns the promise
+    repoChain.eq = jest.fn()
+      .mockReturnValueOnce(repoChain)  // First eq returns this
+      .mockResolvedValueOnce({         // Second eq returns promise
+        data: [{ repository_url: repositoryUrl }],
+        error: null
+      });
+    
+    // Set up the from() calls
+    mockSupabase.from
+      .mockReturnValueOnce(paymentChain)
+      .mockReturnValueOnce(repoChain);
     
     const hasAccess = await checkRepositoryAccess(user, repositoryUrl);
     
     expect(hasAccess).toBe(true);
     
     // Verify the query was constructed correctly
+    expect(mockSupabase.from).toHaveBeenCalledWith('payment_methods');
     expect(mockSupabase.from).toHaveBeenCalledWith('user_repositories');
   });
 });

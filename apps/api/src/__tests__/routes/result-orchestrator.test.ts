@@ -537,7 +537,7 @@ describe('Result Orchestrator Routes', () => {
     test('should validate analysis mode values', async () => {
       (validatePRAnalysisRequest as jest.Mock).mockReturnValueOnce({
         isValid: false,
-        errors: ['analysisMode must be one of: quick, comprehensive, deep']
+        errors: ['analysisMode must be one of: quick, comprehensive, deep, auto']
       });
 
       const response = await request(app)
@@ -550,7 +550,7 @@ describe('Result Orchestrator Routes', () => {
         .expect(400);
 
       expect(response.body.details).toContain(
-        'analysisMode must be one of: quick, comprehensive, deep'
+        'analysisMode must be one of: quick, comprehensive, deep, auto'
       );
     });
   });

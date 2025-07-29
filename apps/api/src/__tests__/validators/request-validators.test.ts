@@ -217,11 +217,11 @@ describe('Request Validators', () => {
         const result = validatePRAnalysisRequest(request);
 
         expect(result.isValid).toBe(false);
-        expect(result.errors).toContain('analysisMode must be one of: quick, comprehensive, deep');
+        expect(result.errors).toContain('analysisMode must be one of: quick, comprehensive, deep, auto');
       });
 
       test('should accept all valid analysis modes', () => {
-        const validModes = ['quick', 'comprehensive', 'deep'];
+        const validModes = ['quick', 'comprehensive', 'deep', 'auto'];
 
         validModes.forEach(mode => {
           const request = {
@@ -294,7 +294,7 @@ describe('Request Validators', () => {
         expect(result.errors).toHaveLength(4);
         expect(result.errors).toContain('repositoryUrl must be a string');
         expect(result.errors).toContain('prNumber must be a positive integer');
-        expect(result.errors).toContain('analysisMode must be one of: quick, comprehensive, deep');
+        expect(result.errors).toContain('analysisMode must be one of: quick, comprehensive, deep, auto');
         expect(result.errors).toContain('githubToken must be a string if provided');
       });
 
