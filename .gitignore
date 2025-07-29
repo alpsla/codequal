@@ -181,3 +181,5 @@ packages/core/scripts/deepwiki_integration/deepwiki-api-keys.yaml
 
 # Time-series database data
 data/
+# Time-series database data (generated during testing)
+data/
