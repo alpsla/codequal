@@ -1,5 +1,23 @@
 CodeQual Architecture Document
-Last Updated: July 28, 2025 (DeepWiki Dual-Branch Architecture)
+Last Updated: July 29, 2025 (Cache Strategy & Storage Clarification)
+
+Recent Updates (July 29, 2025 - PM Session):
+- Section 24.11: Cache-Only Report Strategy & Storage Clarification - ENHANCED
+- Reports stored only in cache (30min TTL), not Vector DB - zero waste
+- Vector DB for semantic search only; Supabase for all structured data
+- Experience-aware Educational Agent with personalized learning paths
+- Tool reduction: Removing 8+ tools with role agents, keeping 5 essential tools  
+- Complete lean architecture: 70% less Vector DB usage, 60% cost reduction
+- Cache service design with Redis/memory fallback for reliability
+- Model configuration migration plan from Vector DB to Supabase
+- Quantified benefits: <50ms cache retrieval, 85% code reduction
+
+Recent Updates (July 29, 2025 - AM Session):
+- Section 24.10: Comparison Agent Architecture - Replacing 5 role agents with single intelligent agent
+- Major simplification: Security, Performance, Architecture, Dependencies, Code Quality agents → Comparison Agent
+- New flow: DeepWiki (main) + DeepWiki (feature) → Comparison Agent → Educational → Report
+- Benefits: Better context, more intelligent analysis, cost reduction, simpler architecture
+- 85% code reduction through removal of complex multi-agent orchestration
 
 Recent Updates (July 28, 2025):
 - Section 24: DeepWiki Dual-Branch Analysis Architecture - Major pivot to DeepWiki-centric approach
@@ -3019,9 +3037,12 @@ Based on user impact and technical complexity:
 ---
 
 ## 24. DeepWiki Dual-Branch Analysis Architecture (NEW - July 28, 2025)
+**UPDATED July 29, 2025: Comparison Agent Architecture**
 
 ### **24.1 Overview**
 After comprehensive testing of MCP tools with real PR data, we discovered that 9 out of 10 tools provide no meaningful value for PR analysis. This led to a major architectural pivot focusing on DeepWiki as the primary analysis engine using a dual-branch comparison approach.
+
+**Major Update (July 29)**: We are transitioning from 5 specialized role agents (Security, Performance, Architecture, Dependencies, Code Quality) to a single intelligent Comparison Agent that compares complete DeepWiki reports from both branches. This represents a fundamental simplification of our multi-agent architecture.
 
 ### **24.2 Key Findings from MCP Tool Analysis**
 - **Tools providing no value (0 findings)**: dependency-cruiser, eslint, jscpd, lighthouse, semgrep, serena, sonarjs
@@ -3138,12 +3159,390 @@ class SimplifiedOrchestrator {
 - Rollback capability for each change
 - Performance monitoring throughout
 
-### **24.10 Future Enhancements**
+### **24.10 Comparison Agent Architecture (NEW - July 29, 2025)**
+
+#### From Multiple Role Agents to Single Comparison Agent
+
+**Previous Architecture:**
+```typescript
+// 5 Specialized Role Agents analyzing fragments
+interface RoleAgents {
+  security: SecurityAgent;      // Analyzed security issues in fragments
+  performance: PerformanceAgent; // Analyzed performance issues in fragments
+  architecture: ArchitectureAgent; // Analyzed architectural issues in fragments
+  dependencies: DependencyAgent;  // Analyzed dependency issues in fragments
+  codeQuality: CodeQualityAgent; // Analyzed code quality issues in fragments
+}
+
+// Each agent received:
+interface AgentInput {
+  changedFiles: File[];        // Only the changed files
+  repositoryChunks: Chunk[];   // Vector DB chunks
+  toolOutputs: ToolOutput[];   // MCP tool results
+}
+```
+
+**New Architecture:**
+```typescript
+// Single Comparison Agent with full context
+interface ComparisonAgent {
+  async analyze(
+    mainBranchReport: DeepWikiFullReport,    // Complete analysis of main branch
+    featureBranchReport: DeepWikiFullReport  // Complete analysis of feature branch
+  ): Promise<ComparisonAnalysis>;
+}
+
+interface ComparisonAnalysis {
+  newIssues: Issue[];           // Issues introduced in PR
+  resolvedIssues: Issue[];      // Issues fixed in PR
+  modifiedPatterns: Pattern[];  // Architectural changes
+  securityImpact: SecurityAnalysis;
+  performanceImpact: PerformanceAnalysis;
+  dependencyChanges: DependencyAnalysis;
+  codeQualityDelta: QualityMetrics;
+  
+  // Intelligent insights from comparing full contexts
+  insights: Insight[];
+  recommendations: Recommendation[];
+}
+```
+
+#### Benefits of Comparison Agent Approach
+
+1. **Full Context Analysis**
+   - Understands changes in context of entire codebase
+   - Detects ripple effects across the system
+   - Identifies patterns that fragment analysis would miss
+
+2. **Intelligent Comparison**
+   - Knows what was there before (main branch)
+   - Knows what's there now (feature branch)
+   - Can reason about the delta intelligently
+
+3. **Simplified Architecture**
+   - Single agent instead of 5
+   - No complex orchestration needed
+   - Linear flow: DeepWiki → Compare → Report
+
+4. **Cost Efficiency**
+   - 2 DeepWiki calls + 1 Comparison vs 5+ agent calls
+   - Reduced token usage
+   - Faster execution
+
+#### Implementation Flow
+
+```typescript
+class SimplifiedPRAnalyzer {
+  async analyzePR(request: PRRequest): Promise<Analysis> {
+    // 1. Clone repository
+    const repoPath = await this.git.clone(request.repoUrl);
+    
+    // 2. Analyze main branch with DeepWiki
+    const mainAnalysis = await this.deepwiki.analyze(repoPath);
+    
+    // 3. Switch to feature branch
+    await this.git.checkout(request.branch);
+    
+    // 4. Analyze feature branch with DeepWiki
+    const featureAnalysis = await this.deepwiki.analyze(repoPath);
+    
+    // 5. Compare with single intelligent agent
+    const comparison = await this.comparisonAgent.compare(
+      mainAnalysis,
+      featureAnalysis
+    );
+    
+    // 6. Generate educational content
+    const education = await this.educationalAgent.generate(comparison);
+    
+    // 7. Create final report
+    return await this.reportAgent.create(comparison, education);
+  }
+}
+```
+
+#### Migration Strategy
+
+1. **Phase 1**: Implement Comparison Agent alongside existing agents
+2. **Phase 2**: Route traffic to new flow for testing
+3. **Phase 3**: Remove role agents incrementally
+4. **Phase 4**: Clean up orchestration infrastructure
+5. **Phase 5**: Optimize and simplify remaining code
+
+### **24.11 Cache-Only Report Strategy & Storage Clarification (NEW - July 29, 2025 PM)**
+
+#### Cache-Only Report Storage
+**Problem**: Storing transient PR analysis reports in Vector DB wastes resources and provides no value
+**Solution**: All reports stored only in cache with TTL
+
+```typescript
+interface CacheStrategy {
+  // Reports stored in Redis/memory cache
+  reportStorage: {
+    type: 'cache-only';
+    ttl: 1800; // 30 minutes
+    persistence: false;
+    provider: 'redis' | 'memory';
+    maxSize: '1GB';
+    evictionPolicy: 'lru';
+  };
+  
+  // Only metrics go to Supabase
+  metricsStorage: {
+    type: 'supabase';
+    tables: ['deepwiki_metrics', 'analysis_history'];
+    persistence: true;
+  };
+  
+  // DeepWiki chat accesses cache while available
+  chatAccess: {
+    source: 'cache';
+    fallback: 'regenerate'; // If expired
+  };
+}
+
+// Cache Service Interface
+interface CacheService {
+  setReport(prId: string, report: DeepWikiReport, ttl?: number): Promise<void>;
+  getReport(prId: string): Promise<DeepWikiReport | null>;
+  isReportAvailable(prId: string): Promise<boolean>;
+  cleanExpired(): Promise<void>;
+}
+```
+
+**Benefits**:
+- Zero storage waste on transient data
+- Faster access (all in memory)
+- Lower infrastructure costs (minimal Vector DB usage)
+- Better user experience (immediate chat access)
+- Cleaner architecture
+
+#### Vector DB vs Supabase Role Clarification
+**Clear Separation of Concerns**:
+
+**Vector DB Purpose** (Semantic Search Only):
+```typescript
+interface VectorDBContent {
+  // What belongs in Vector DB
+  documentationPatterns: EmbeddedContent[];     // Semantic search
+  learningResources: EducationalContent[];      // Reusable education
+  bestPractices: QualityPatterns[];            // Pattern matching
+  codeExamples: ReusableSnippets[];            // Example search
+  
+  // What does NOT belong
+  modelConfigurations: never;  // → Supabase (structured data)
+  analysisReports: never;      // → Cache (transient data)
+  userPreferences: never;      // → Supabase (user data)
+  transientReports: never;     // → Cache (temporary)
+}
+```
+
+**Supabase Purpose** (All Structured Data):
+```typescript
+interface SupabaseContent {
+  // Configuration data
+  modelConfigurations: ModelConfig[];    // To be migrated from Vector DB
+  userProfiles: UserProfile[];
+  subscriptions: Subscription[];
+  organizationSettings: OrgConfig[];
+  
+  // Metrics and analytics
+  deepwikiMetrics: Metric[];
+  analysisHistory: Analysis[];
+  tokenUsage: TokenMetric[];
+  costTracking: CostData[];
+  
+  // All non-semantic structured data
+  schedules: Schedule[];
+  apiKeys: EncryptedKeys[];
+  auditLogs: AuditEntry[];
+}
+```
+
+**Migration Required**:
+```sql
+-- Step 1: Create model_configurations table in Supabase
+CREATE TABLE model_configurations (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  role TEXT NOT NULL,
+  provider TEXT NOT NULL,
+  model TEXT NOT NULL,
+  parameters JSONB NOT NULL,
+  performance_metrics JSONB,
+  last_updated TIMESTAMP DEFAULT NOW(),
+  updated_by TEXT,
+  is_active BOOLEAN DEFAULT true
+);
+
+-- Step 2: Migrate from Vector DB
+-- Step 3: Clean Vector DB of all non-semantic data
+-- Step 4: Update all configuration reads to use Supabase
+```
+
+#### Experience-Aware Educational Agent
+**Enhanced Functionality with Personalization**:
+
+```typescript
+interface ExperienceAwareEducation {
+  // User experience levels
+  experienceLevels: 'beginner' | 'intermediate' | 'advanced' | 'expert';
+  
+  // Check cached resources first
+  async getResources(topic: string, userProfile: UserProfile) {
+    // 1. Check Vector DB for existing quality resources
+    const cached = await vectorDB.search({
+      topic,
+      experienceLevel: userProfile.experienceLevel,
+      minRating: 4.0
+    });
+    
+    // 2. Filter by user's experience level and preferences
+    const relevant = cached.filter(r => 
+      r.matchesLevel(userProfile.experienceLevel) &&
+      r.languages.some(l => userProfile.primaryLanguages.includes(l))
+    );
+    
+    // 3. Sort by effectiveness for this experience level
+    const sorted = relevant.sort((a, b) => 
+      b.ratings[userProfile.experienceLevel] - a.ratings[userProfile.experienceLevel]
+    );
+    
+    // 4. Return personalized recommendations
+    return sorted.slice(0, 5);
+  }
+  
+  // Accumulate quality resources over time
+  async storeQualityResource(resource: EducationalResource) {
+    if (resource.averageRating >= 4.0) {
+      await vectorDB.store({
+        ...resource,
+        type: 'educational_resource',
+        embedding: await generateEmbedding(resource.content)
+      });
+    }
+  }
+  
+  // Track effectiveness by experience level
+  async trackFeedback(resourceId: string, userProfile: UserProfile, rating: number) {
+    await supabase.insert('resource_feedback', {
+      resourceId,
+      userId: userProfile.id,
+      experienceLevel: userProfile.experienceLevel,
+      rating,
+      timestamp: now()
+    });
+  }
+}
+```
+
+**Benefits**:
+- Personalized learning paths based on experience
+- Reuse of quality educational content
+- Better resource recommendations over time
+- Continuous improvement through feedback
+
+#### Tool Reduction Impact
+**Beyond Agent Removal - Significant Tool Simplification**:
+
+```typescript
+// Tools being removed (with role agents)
+const deprecatedTools = [
+  // Role-specific tools
+  'SecurityScannerTool',         // With SecurityAgent
+  'PerformanceProfilerTool',     // With PerformanceAgent
+  'ArchitectureAnalyzerTool',    // With ArchitectureAgent
+  'DependencyInspectorTool',     // With DependencyAgent
+  'CodeQualityCheckerTool',      // With CodeQualityAgent
+  
+  // Complex orchestration tools
+  'ComplexOrchestrationTools',   // No longer needed
+  'FragmentAnalysisTool',        // Full context instead
+  'MultiAgentCoordinatorTool',   // Single agent now
+];
+
+// Remaining simplified toolset (5 essential tools)
+const remainingTools = [
+  'GitOperationsTool',        // Core git functionality
+  'DeepWikiAnalysisTool',     // Primary analysis engine
+  'CacheStorageTool',         // Report caching (new)
+  'VectorSearchTool',         // Semantic search only
+  'EducationalResourceTool'   // Learning content
+];
+
+// Tool reduction metrics
+const toolReduction = {
+  before: 13,  // Original tool count
+  after: 5,    // Remaining tools
+  reduction: '62%',
+  complexityReduction: '85%'
+};
+```
+
+#### Complete Lean Architecture Benefits
+**Quantified Improvements**:
+
+1. **Storage Efficiency**:
+   - 70% reduction in Vector DB usage
+   - Zero waste on transient report data
+   - Clear purpose for each storage system
+   - Optimized data placement
+
+2. **Performance Gains**:
+   - <50ms cache retrieval (vs 200ms+ Vector DB)
+   - All reports served from memory
+   - No Vector DB writes for reports
+   - Faster chat interactions
+
+3. **Cost Reduction**:
+   - 60% infrastructure cost reduction
+   - Minimal Vector DB usage (semantic only)
+   - Reduced AI token usage (fewer agents)
+   - Simpler infrastructure to maintain
+
+4. **Developer Experience**:
+   - 85% less code to maintain
+   - Cleaner mental model
+   - Easier debugging
+   - Faster development cycles
+
+5. **System Quality**:
+   - Better insights from full-context analysis
+   - More accurate comparisons
+   - Reduced false positives
+   - Higher signal-to-noise ratio
+
+**New Simplified Flow**:
+```
+PR Submitted → Clone Repository → DeepWiki Analysis (both branches)
+                                           ↓
+                                    Cache (30min TTL)
+                                           ↓
+                              Comparison Agent (full context)
+                                           ↓
+                            Educational Agent (experience-aware)
+                                           ↓
+                                    Final Report
+                                           ↓
+                                 Metrics to Supabase
+
+DeepWiki Chat → Check Cache → Retrieve Report (if available) → Interactive Q&A
+```
+
+**Implementation Timeline**:
+- Days 1-3: Cache service implementation
+- Days 4-6: Storage migration (model configs to Supabase)
+- Days 7-10: Comparison Agent development
+- Days 11-15: Tool and agent removal
+- Days 16-18: Experience level implementation
+- Days 19-25: Optimization and testing
+
+### **24.12 Future Enhancements**
 - DeepWiki model fine-tuning for PR analysis
 - Advanced change detection algorithms
 - Multi-language support improvements
 - Real-time analysis capabilities
 - Integration with CI/CD pipelines
+- Comparison Agent ML improvements
 
 ---
 

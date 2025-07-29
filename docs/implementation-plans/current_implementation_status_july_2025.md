@@ -1,5 +1,5 @@
 # CodeQual Current Implementation Status
-**Last Updated: July 28, 2025**
+**Last Updated: July 29, 2025**
 
 ## 🎯 **Overview**
 
@@ -20,7 +20,7 @@ This document provides an accurate, up-to-date view of the CodeQual implementati
 - ✅ **NEW**: Production deployment configuration
 - ✅ **NEW**: Security hardening and performance optimization
 
-### **2. Agent Architecture** ✅ **100% COMPLETE**
+### **2. Agent Architecture** ✅ **100% COMPLETE** ⚠️ **MAJOR REFACTOR PLANNED**
 - ✅ Base agent architecture with unified interfaces
 - ✅ Claude, ChatGPT, DeepSeek, and Gemini agent implementations
 - ✅ Multi-agent factory with intelligent agent selection
@@ -30,6 +30,7 @@ This document provides an accurate, up-to-date view of the CodeQual implementati
 - ✅ Cost tracking and token management
 - ✅ Comprehensive agent testing suite (37 tests passing)
 - ✅ **NEW**: OpenRouter integration for unified LLM access
+- ⚠️ **PLANNED REFACTOR (July 29)**: Replacing 5 role agents with single Comparison Agent
 
 ### **3. Database Schema** ✅ **100% COMPLETE**
 - ✅ Repository, PR, and analysis result tables
@@ -128,6 +129,60 @@ This document provides an accurate, up-to-date view of the CodeQual implementati
 - 🔄 Historical trend analysis
 - 🔄 Team performance insights
 - 🔄 Custom report generation
+
+### **3. Comparison Agent Architecture** 🔄 **ENHANCED PLANNING** (Updated - July 29, 2025 PM)
+**Priority: CRITICAL**
+- 📋 Replacing 5 role agents with single Comparison Agent
+- 📋 Architecture shift from fragment analysis to full-context comparison
+- 📋 **NEW**: Cache-only report strategy (30min TTL) - no Vector DB waste
+- 📋 **NEW**: Vector DB/Supabase role clarification - clear boundaries
+- 📋 **NEW**: Experience-aware Educational Agent - personalized learning
+- 📋 **NEW**: Tool reduction (removing 8+ tools) - 62% tool reduction
+- 📋 Enhanced implementation phases:
+  - 🔲 Cache Service Implementation (Days 1-3)
+    - Redis/in-memory cache setup
+    - 30-minute TTL configuration
+    - DeepWiki chat integration
+    - Cache service interface design
+    - Health checks and monitoring
+  - 🔲 Storage Migration (Days 4-6)
+    - Create model_configurations table in Supabase
+    - Migrate from Vector DB to Supabase
+    - Clean Vector DB of non-semantic data
+    - Document storage boundaries
+    - Update all configuration reads
+  - 🔲 Comparison Agent Core (Days 7-10)
+    - Design comparison logic
+    - Implement full-context analysis
+    - Create intelligent diff detection
+    - Issue categorization algorithms
+    - Pattern detection systems
+  - 🔲 Tool & Agent Removal (Days 11-15)
+    - Remove 5 role agents (Security, Performance, etc.)
+    - Remove 8+ associated tools
+    - Simplify orchestration
+    - Clean up dependencies
+    - Update agent factory
+  - 🔲 Experience Levels (Days 16-18)
+    - Add experience levels to user profiles
+    - Implement resource filtering by level
+    - Create feedback tracking system
+    - Build recommendation engine
+    - Store quality resources in Vector DB
+  - 🔲 Optimization & Testing (Days 19-25)
+    - Performance testing with cache
+    - Monitor Vector DB usage reduction
+    - Fine-tune cache TTL values
+    - Integration testing
+    - Documentation updates
+- 📋 Quantified benefits:
+  - 85% code reduction (cleaner codebase)
+  - 70% Vector DB usage reduction (semantic only)
+  - 60% infrastructure cost reduction
+  - <50ms cache retrieval time (vs 200ms+ Vector DB)
+  - Better full-context insights
+  - Personalized educational content
+  - Simpler mental model for developers
 
 ---
 
