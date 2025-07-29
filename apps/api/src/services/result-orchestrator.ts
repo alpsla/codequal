@@ -139,6 +139,7 @@ import { createClient } from '@supabase/supabase-js';
 import { getUnifiedProgressTracer } from './unified-progress-tracer';
 import { reportIdMappingService } from './report-id-mapping-service';
 import { metricsCollector } from './deepwiki-metrics-collector';
+import { GitDiffAnalyzerService } from '@codequal/core/services/deepwiki-tools';
 
 // State management for tracking analyses and completed reports
 interface OrchestratorState {
@@ -447,6 +448,7 @@ export class ResultOrchestrator {
   private agentAuthenticatedUser: AgentAuthenticatedUser;
   private prContentAnalyzer: PRContentAnalyzer;
   private intelligentResultMerger: IntelligentResultMerger;
+  private gitDiffAnalyzer: GitDiffAnalyzerService;
   private currentAnalysisId?: string;
   private currentSessionId?: string;
 
@@ -488,6 +490,7 @@ export class ResultOrchestrator {
     this.educationalCompilationService = new EducationalCompilationService();
     this.prContentAnalyzer = new PRContentAnalyzer();
     this.intelligentResultMerger = new IntelligentResultMerger();
+    this.gitDiffAnalyzer = new GitDiffAnalyzerService(this.logger);
   }
 
   /**
@@ -687,8 +690,69 @@ export class ResultOrchestrator {
           // Continue with original files if cache fails
         }
         
+        // Step 5.1: Get changed files from cloned repository
+        let gitDiffResult: Awaited<ReturnType<typeof this.gitDiffAnalyzer.analyzeGitDiff>> | undefined;
+        try {
+          this.logger.info('[MCP Tools] Analyzing git diff from cloned repository...');
+          gitDiffResult = await this.gitDiffAnalyzer.analyzeGitDiff(
+            request.repositoryUrl,
+            {
+              baseBranch: prContext.baseBranch || 'main',
+              headBranch: prContext.prDetails?.head?.ref || 'HEAD',
+              prNumber: prContext.prNumber,
+              includeFileContents: true
+            }
+          );
+          
+          this.logger.info('[MCP Tools] Git diff analysis complete', {
+            changedFiles: gitDiffResult.changedFiles.length,
+            filesWithContent: gitDiffResult.fileContents.size,
+            filesWithDiff: gitDiffResult.diffs.size
+          });
+          
+          // Merge git diff results with existing file data
+          if (gitDiffResult && gitDiffResult.fileContents.size > 0) {
+            enrichedFiles = enrichedFiles.map(file => {
+              const content = gitDiffResult!.fileContents.get(file.path);
+              const diff = gitDiffResult!.diffs.get(file.path);
+              if (content || diff) {
+                return {
+                  ...file,
+                  content: content || file.content,
+                  diff: diff || file.diff
+                };
+              }
+              return file;
+            });
+            
+            // Add any files from git diff that weren't in the original list
+            gitDiffResult.changedFiles.forEach(filePath => {
+              if (!enrichedFiles.find(f => f.path === filePath)) {
+                enrichedFiles.push({
+                  path: filePath,
+                  content: gitDiffResult!.fileContents.get(filePath),
+                  diff: gitDiffResult!.diffs.get(filePath)
+                });
+              }
+            });
+            
+            this.logger.info(`[MCP Tools] Enhanced ${enrichedFiles.length} files with git diff data`);
+          }
+        } catch (error) {
+          this.logger.warn('[MCP Tools] Failed to analyze git diff from cloned repo:', error as Error);
+          // Continue with existing files if git diff fails
+        }
+        
         // Execute tools for all relevant agent roles in parallel
         this.logger.info('[MCP Tools] Executing tools for agents...');
+        
+        // Determine which tools need full repository context
+        const fullRepoTools = ['npm-audit', 'madge', 'dependency-cruiser', 'license-checker'];
+        const prOnlyTools = ['eslint', 'semgrep'];
+        
+        // Add repository path to context if git diff analysis was successful
+        const repositoryPath = gitDiffResult ? this.gitDiffAnalyzer.getRepositoryPath(request.repositoryUrl) : undefined;
+        
         const toolExecutionResults = await mcpHybrid.parallelAgentExecutor.executeToolsForAgents(
           toMCPAgentRoles(agentRoles),
           {
@@ -713,7 +777,9 @@ export class ResultOrchestrator {
               owner: request.repositoryUrl.split('/')[3] || '',
               languages: [prContext.primaryLanguage],
               frameworks: [],
-              primaryLanguage: prContext.primaryLanguage
+              primaryLanguage: prContext.primaryLanguage,
+              // Add cloned repository path for tools that need full context
+              clonedPath: repositoryPath
             },
             userContext: {
               userId: request.authenticatedUser.id,
@@ -724,7 +790,12 @@ export class ResultOrchestrator {
           {
             strategy: 'sequential', // Run tools sequentially to prevent overload
             maxParallel: 1, // Only one tool at a time
-            timeout: 30000
+            timeout: 30000,
+            // Specify which tools should use full repository vs PR files only
+            toolConfig: {
+              fullRepoTools,
+              prOnlyTools
+            }
           }
         );
 

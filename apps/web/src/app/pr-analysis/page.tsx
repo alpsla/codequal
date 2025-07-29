@@ -9,6 +9,8 @@ interface BlockingIssue {
   severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
   type: string;
   description: string;
+  file?: string;
+  line?: number;
 }
 
 interface PositiveFinding {
