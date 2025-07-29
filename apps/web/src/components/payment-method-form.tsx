@@ -42,9 +42,15 @@ function PaymentMethodFormContent({ onSuccess }: { onSuccess: () => void }) {
       const { clientSecret } = await response.json();
 
       // Confirm the setup intent with the card element
+      const cardElement = elements.getElement(CardElement);
+      if (!cardElement) {
+        setError('Card element not found');
+        return;
+      }
+      
       const result = await stripe.confirmCardSetup(clientSecret, {
         payment_method: {
-          card: elements.getElement(CardElement)!,
+          card: cardElement,
         },
       });
 

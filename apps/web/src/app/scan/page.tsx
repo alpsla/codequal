@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { logger } from '@/utils/logger';
 import { useBilling } from '../../contexts/billing-context';
 import AuthenticatedLayout from '../../components/authenticated-layout';
 import { fetchWithAuth } from '../../utils/api';
@@ -33,14 +34,14 @@ export default function ScanPage() {
     setScanning(true);
 
     try {
-      console.log('Starting scan for:', repositoryUrl);
+      logger.info('Starting scan for:', repositoryUrl);
       
       const response = await fetchWithAuth('/api/simple-scan', {
         method: 'POST',
         body: JSON.stringify({ repositoryUrl: repositoryUrl }),
       });
 
-      console.log('Scan response status:', response.status);
+      logger.info('Scan response status:', response.status);
 
       // Try to parse response as JSON
       let data;
@@ -323,11 +324,13 @@ export default function ScanPage() {
               analysisId={analysisId} 
               onComplete={async (reportUrl) => {
                 setShowProgress(false);
-                setResult({
-                  ...result,
-                  reportUrl,
-                  status: 'complete'
-                });
+                if (result) {
+                  setResult({
+                    ...result,
+                    reportUrl,
+                    status: 'complete'
+                  });
+                }
                 // Refresh billing to update scan count
                 await refreshBilling();
               }}

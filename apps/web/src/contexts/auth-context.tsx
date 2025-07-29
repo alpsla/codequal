@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { logger } from '@/utils/logger';
 import { setupTokenRefresh, isTokenExpired, refreshAccessToken } from '../utils/auth';
 
 interface AuthContextType {
@@ -25,13 +26,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setMounted(true);
     
     const initAuth = async () => {
-      console.log('[Auth Context] Initializing authentication...');
+      logger.info('[Auth Context] Initializing authentication...');
       
       if (typeof window !== 'undefined') {
         const storedToken = localStorage.getItem('access_token');
         const refreshToken = localStorage.getItem('refresh_token');
         
-        console.log('[Auth Context] Tokens found:', {
+        logger.info('[Auth Context] Tokens found:', {
           hasAccessToken: !!storedToken,
           hasRefreshToken: !!refreshToken
         });
@@ -39,36 +40,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (storedToken) {
           // Check if token is expired or about to expire
           if (isTokenExpired(storedToken)) {
-            console.log('[Auth Context] Token expired or expiring soon, attempting refresh...');
+            logger.info('[Auth Context] Token expired or expiring soon, attempting refresh...');
             
             if (refreshToken) {
               // Try to refresh the token
               const newTokenInfo = await refreshAccessToken();
               
               if (newTokenInfo) {
-                console.log('[Auth Context] Token refresh successful');
+                logger.info('[Auth Context] Token refresh successful');
                 setTokenState(newTokenInfo.accessToken);
                 // Set up automatic token refresh
                 cleanupRef.current = setupTokenRefresh();
               } else {
                 // Refresh failed, clear auth
-                console.log('[Auth Context] Token refresh failed, clearing auth');
+                logger.info('[Auth Context] Token refresh failed, clearing auth');
                 localStorage.removeItem('access_token');
                 localStorage.removeItem('refresh_token');
                 localStorage.removeItem('user');
               }
             } else {
-              console.log('[Auth Context] No refresh token available, cannot refresh');
+              logger.info('[Auth Context] No refresh token available, cannot refresh');
             }
           } else {
             // Token is valid
-            console.log('[Auth Context] Token is valid, setting up refresh');
+            logger.info('[Auth Context] Token is valid, setting up refresh');
             setTokenState(storedToken);
             // Set up automatic token refresh
             cleanupRef.current = setupTokenRefresh();
           }
         } else {
-          console.log('[Auth Context] No access token found');
+          logger.info('[Auth Context] No access token found');
         }
       }
       setLoading(false);

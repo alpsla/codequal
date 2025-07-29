@@ -1,4 +1,5 @@
 import { ensureValidToken, refreshAccessToken } from './auth';
+import { logger } from './logger';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -26,7 +27,7 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}) {
 
   // Handle 401 unauthorized - try refresh once
   if (response.status === 401 && typeof window !== 'undefined') {
-    console.log('Got 401, attempting token refresh...');
+    logger.info('Got 401, attempting token refresh...');
     
     const newTokenInfo = await refreshAccessToken();
     
@@ -43,7 +44,7 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}) {
     
     // If still 401 after refresh, redirect to login
     if (response.status === 401) {
-      console.log('Token refresh failed, redirecting to login');
+      logger.info('Token refresh failed, redirecting to login');
       
       // Clear stored auth data
       localStorage.removeItem('access_token');

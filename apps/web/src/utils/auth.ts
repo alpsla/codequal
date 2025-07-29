@@ -1,10 +1,15 @@
 import { createClient } from '@supabase/supabase-js';
+import { logger } from './logger';
 
 // Create Supabase client for auth operations
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing Supabase environment variables');
+}
+
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 interface TokenInfo {
   accessToken: string;
@@ -15,14 +20,14 @@ interface TokenInfo {
 // Check if token is expired or about to expire
 export function isTokenExpired(token: string | null): boolean {
   if (!token) {
-    console.log('[Token Check] No token provided');
+    logger.debug('[Token Check] No token provided');
     return true;
   }
   
   try {
     const parts = token.split('.');
     if (parts.length !== 3) {
-      console.log('[Token Check] Invalid token format');
+      logger.debug('[Token Check] Invalid token format');
       return true;
     }
     
@@ -35,7 +40,7 @@ export function isTokenExpired(token: string | null): boolean {
     const timeUntilExpiry = expiryTime - now;
     const isExpired = now + bufferTime >= expiryTime;
     
-    console.log('[Token Check] Token status:', {
+    logger.debug('[Token Check] Token status:', {
       expiresAt: new Date(expiryTime).toLocaleString(),
       timeUntilExpiry: `${Math.floor(timeUntilExpiry / 1000 / 60)} minutes`,
       isExpired,
@@ -44,7 +49,7 @@ export function isTokenExpired(token: string | null): boolean {
     
     return isExpired;
   } catch (error) {
-    console.error('[Token Check] Error parsing token:', error);
+    logger.error('[Token Check] Error parsing token:', error);
     return true;
   }
 }
@@ -54,18 +59,18 @@ export async function refreshAccessToken(): Promise<TokenInfo | null> {
   try {
     const refreshToken = localStorage.getItem('refresh_token');
     if (!refreshToken) {
-      console.log('No refresh token available');
+      logger.debug('No refresh token available');
       return null;
     }
 
-    console.log('Refreshing access token...');
+    logger.info('Refreshing access token...');
     
     const { data, error } = await supabase.auth.refreshSession({
       refresh_token: refreshToken
     });
 
     if (error) {
-      console.error('Error refreshing token:', error);
+      logger.error('Error refreshing token:', error);
       return null;
     }
 
@@ -74,25 +79,25 @@ export async function refreshAccessToken(): Promise<TokenInfo | null> {
       localStorage.setItem('access_token', data.session.access_token);
       localStorage.setItem('refresh_token', data.session.refresh_token);
       
-      console.log('✅ Token refreshed successfully');
+      logger.info('✅ Token refreshed successfully');
       
       return {
         accessToken: data.session.access_token,
         refreshToken: data.session.refresh_token,
-        expiresAt: data.session.expires_at!
+        expiresAt: data.session.expires_at || 0
       };
     }
 
     return null;
   } catch (error) {
-    console.error('Error in token refresh:', error);
+    logger.error('Error in token refresh:', error);
     return null;
   }
 }
 
 // Set up automatic token refresh
 export function setupTokenRefresh() {
-  console.log('[Token Refresh] Setting up automatic token refresh');
+  logger.info('[Token Refresh] Setting up automatic token refresh');
   
   // Check token immediately
   const token = localStorage.getItem('access_token');
@@ -102,20 +107,20 @@ export function setupTokenRefresh() {
   
   // Check token every minute
   const checkInterval = setInterval(async () => {
-    console.log('[Token Refresh] Running periodic token check...');
+    logger.debug('[Token Refresh] Running periodic token check...');
     const token = localStorage.getItem('access_token');
     
     if (!token) {
-      console.log('[Token Refresh] No token found, skipping check');
+      logger.debug('[Token Refresh] No token found, skipping check');
       return;
     }
     
     if (isTokenExpired(token)) {
-      console.log('[Token Refresh] Token needs refresh, attempting...');
+      logger.info('[Token Refresh] Token needs refresh, attempting...');
       const newTokenInfo = await refreshAccessToken();
       
       if (!newTokenInfo) {
-        console.error('[Token Refresh] Refresh failed, logging out');
+        logger.error('[Token Refresh] Refresh failed, logging out');
         // Refresh failed, clear interval and redirect to login
         clearInterval(checkInterval);
         localStorage.removeItem('access_token');
@@ -123,18 +128,18 @@ export function setupTokenRefresh() {
         localStorage.removeItem('user');
         window.location.href = '/login';
       } else {
-        console.log('[Token Refresh] ✅ Token refreshed successfully');
+        logger.info('[Token Refresh] ✅ Token refreshed successfully');
       }
     } else {
-      console.log('[Token Refresh] Token still valid, no refresh needed');
+      logger.debug('[Token Refresh] Token still valid, no refresh needed');
     }
   }, 60 * 1000); // Check every minute
 
-  console.log('[Token Refresh] Automatic refresh configured (checking every 60 seconds)');
+  logger.info('[Token Refresh] Automatic refresh configured (checking every 60 seconds)');
 
   // Return cleanup function
   return () => {
-    console.log('[Token Refresh] Cleaning up token refresh interval');
+    logger.info('[Token Refresh] Cleaning up token refresh interval');
     clearInterval(checkInterval);
   };
 }

@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { fetchWithAuth } from '../utils/api';
+import { logger } from '../utils/logger';
 
 interface BillingContextType {
   subscription: {
@@ -41,15 +42,15 @@ export function BillingProvider({ children }: { children: React.ReactNode }) {
       setLoading(true);
       setError(null);
       
-      console.log('Refreshing billing data...');
+      logger.info('Refreshing billing data...');
       
       // Fetch billing data from API
       const response = await fetchWithAuth('/api/billing/status');
-      console.log('Billing response status:', response.status);
+      logger.info('Billing response status:', response.status);
 
       if (response.status === 401) {
         // User is not authenticated
-        console.log('User not authenticated, clearing billing data');
+        logger.info('User not authenticated, clearing billing data');
         setIsAuthenticated(false);
         setSubscription(null);
         setTrialUsage(null);
@@ -60,12 +61,12 @@ export function BillingProvider({ children }: { children: React.ReactNode }) {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Billing fetch failed:', response.status, errorText);
+        logger.error('Billing fetch failed:', response.status, errorText);
         throw new Error(`Failed to fetch billing status: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log('Billing data received:', data);
+      logger.info('Billing data received:', data);
       
       setIsAuthenticated(true);
       setSubscription(data.subscription);
@@ -75,7 +76,7 @@ export function BillingProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
       setError(errorMessage);
-      console.error('Error fetching billing:', err);
+      logger.error('Error fetching billing:', err);
       
       // If it's a network error, show more specific message
       if (err instanceof TypeError && err.message.includes('fetch')) {
@@ -100,7 +101,7 @@ export function BillingProvider({ children }: { children: React.ReactNode }) {
       
       // Refresh billing when window regains focus (e.g., returning from payment page)
       const handleFocus = () => {
-        console.log('Window focused - refreshing billing status');
+        logger.info('Window focused - refreshing billing status');
         if (localStorage.getItem('access_token')) {
           refreshBilling();
         }
@@ -111,7 +112,7 @@ export function BillingProvider({ children }: { children: React.ReactNode }) {
       // Also refresh when visibility changes (for tab switching)
       const handleVisibilityChange = () => {
         if (!document.hidden && localStorage.getItem('access_token')) {
-          console.log('Page visible - refreshing billing status');
+          logger.info('Page visible - refreshing billing status');
           refreshBilling();
         }
       };

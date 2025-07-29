@@ -135,8 +135,11 @@ class ErrorReportingService {
    */
   flush() {
     while (this.errorQueue.length > 0) {
-      const { error, context } = this.errorQueue.shift()!;
-      this.logError(error, context);
+      const item = this.errorQueue.shift();
+      if (item) {
+        const { error, context } = item;
+        this.logError(error, context);
+      }
     }
   }
 }

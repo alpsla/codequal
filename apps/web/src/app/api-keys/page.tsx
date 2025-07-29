@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { logger } from '@/utils/logger';
 import { useRouter } from 'next/navigation';
 import AuthenticatedLayout from '../../components/authenticated-layout';
 import { fetchWithAuth } from '../../utils/api';
@@ -134,7 +135,7 @@ export default function ApiKeysPage() {
 
   // Check access after billing data is loaded
   if (!hasApiAccess) {
-    console.log('API Keys Page - No API access:', {
+    logger.info('API Keys Page - No API access:', {
       subscription,
       hasApiAccess,
       tier: subscription?.tier
@@ -205,7 +206,7 @@ export default function ApiKeysPage() {
                       <code className="text-xs break-all">{newKey.key}</code>
                     </div>
                     <button
-                      onClick={() => copyToClipboard(newKey.key!)}
+                      onClick={() => newKey.key && copyToClipboard(newKey.key)}
                       className="mt-2 text-sm text-green-600 hover:text-green-500"
                     >
                       Copy to clipboard
