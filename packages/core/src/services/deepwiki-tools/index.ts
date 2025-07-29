@@ -14,6 +14,7 @@ export * from './tool-result-storage.service';
 export * from './tool-result-retrieval.service';
 export * from './repository-clone-integration.service';
 export * from './webhook-handler.service';
+export * from './git-diff-analyzer.service';
 export { ToolResultRetrievalService } from './tool-result-retrieval.service';
 export type { AgentToolResults } from './tool-result-retrieval.service';
 
