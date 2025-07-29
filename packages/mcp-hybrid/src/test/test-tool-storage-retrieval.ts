@@ -9,6 +9,8 @@ import { AnalysisContext, AgentRole } from '../core/interfaces';
 import { toolRegistry } from '../core/registry';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { exec } from 'child_process';
+import { promisify } from 'util';
 
 // Mock Vector DB with inspection capabilities
 class InspectableVectorDB {
@@ -334,8 +336,7 @@ async function setupTestRepository(repoPath: string): Promise<void> {
   await fs.mkdir(repoPath, { recursive: true });
   
   // Initialize git repo
-  const { exec } = require('child_process');
-  const execAsync = require('util').promisify(exec);
+  const execAsync = promisify(exec);
   
   await execAsync('git init', { cwd: repoPath });
   await execAsync('git config user.email "test@example.com"', { cwd: repoPath });

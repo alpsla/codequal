@@ -50,7 +50,7 @@ export class RefMCPFullAdapter extends BaseMCPAdapter {
   version = '2.0.0';
   
   private messageId = 1;
-  private pendingRequests = new Map<number, { resolve: Function; reject: Function; timeout: NodeJS.Timeout }>();
+  private pendingRequests = new Map<number, { resolve: (value: any) => void; reject: (reason?: any) => void; timeout: NodeJS.Timeout }>();
   protected mcpProcess?: ChildProcess;
   private serverCapabilities?: any;
   private availableTools: MCPTool[] = [];

@@ -116,7 +116,7 @@ async function capturePreprocessingOutputs(prUrl: string) {
   await ensureOutputDir();
   
   // Parse PR URL
-  const urlMatch = prUrl.match(/github\.com\/([^\/]+)\/([^\/]+)\/pull\/(\d+)/);
+  const urlMatch = prUrl.match(/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/);
   if (!urlMatch) {
     throw new Error('Invalid GitHub PR URL format');
   }

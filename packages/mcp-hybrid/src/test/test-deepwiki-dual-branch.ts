@@ -30,7 +30,7 @@ async function testDualBranchAnalysis(prUrl: string): Promise<TestResult> {
   console.log(`📍 PR URL: ${prUrl}\n`);
   
   // Parse PR URL
-  const urlMatch = prUrl.match(/github\.com\/([^\/]+)\/([^\/]+)\/pull\/(\d+)/);
+  const urlMatch = prUrl.match(/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/);
   if (!urlMatch) {
     return { success: false, error: 'Invalid GitHub PR URL format' };
   }
@@ -130,7 +130,9 @@ async function testDualBranchAnalysis(prUrl: string): Promise<TestResult> {
     // Cleanup on error
     try {
       await fs.rm(testDir, { recursive: true, force: true });
-    } catch {}
+    } catch {
+      // Ignore cleanup errors
+    }
     
     return {
       success: false,

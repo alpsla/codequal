@@ -20,7 +20,7 @@ export class RefMCPAdapter extends BaseMCPAdapter {
   version = '1.0.0';
   
   private messageId = 1;
-  private pendingRequests = new Map<number, { resolve: Function; reject: Function }>();
+  private pendingRequests = new Map<number, { resolve: (value: any) => void; reject: (reason?: any) => void }>();
   protected mcpProcess?: ChildProcess;
   
   // MCP server configuration
