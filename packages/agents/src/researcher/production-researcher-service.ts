@@ -11,7 +11,7 @@
 import axios from 'axios';
 import { AuthenticatedUser } from '@codequal/core/types';
 import { Logger, createLogger } from '@codequal/core/utils';
-import { ModelVersionSync, ModelVersionInfo } from '@codequal/core';
+import { ModelVersionSync, ModelVersionInfo, RepositorySizeCategory } from '@codequal/core';
 import { VectorStorageService, EnhancedChunk } from '@codequal/database';
 import { 
   UnifiedModelSelector,
@@ -21,6 +21,7 @@ import {
 import { DynamicModelEvaluator, DYNAMIC_ROLE_WEIGHTS, ModelMetrics } from '../model-selection/dynamic-model-evaluator';
 import { AIModelSelector } from '../model-selection/ai-model-selector';
 import { Logger as WinstonLogger } from 'winston';
+import { openRouterModelValidator } from '@codequal/core/services/model-selection/openrouter-model-validator';
 
 const logger = createLogger('ProductionResearcherService');
 
@@ -137,8 +138,8 @@ export class ProductionResearcherService {
           });
           
           // Convert to ModelVersionInfo format
-          const primaryInfo = this.convertToModelVersionInfo(aiSelection.primary, models);
-          const fallbackInfo = this.convertToModelVersionInfo(aiSelection.fallback, models);
+          const primaryInfo = await this.convertToModelVersionInfo(aiSelection.primary, models);
+          const fallbackInfo = await this.convertToModelVersionInfo(aiSelection.fallback, models);
           
           const config: ModelConfiguration = {
             role,
@@ -157,6 +158,9 @@ export class ProductionResearcherService {
           
           // Store in Vector DB
           await this.storeConfiguration(config, user);
+          
+          // Note: Model configurations are stored in Vector DB
+          // The ModelConfigStore is handled internally by ModelVersionSync
           
           logger.info(`AI selected configuration for ${role}`, {
             primary: `${config.primary.provider}/${config.primary.model}`,
@@ -231,18 +235,31 @@ export class ProductionResearcherService {
   /**
    * Convert AI selection result to ModelVersionInfo
    */
-  private convertToModelVersionInfo(
+  private async convertToModelVersionInfo(
     selection: { id: string; provider: string; model: string; reasoning: string },
     originalModels: any[]
-  ): ModelVersionInfo {
+  ): Promise<ModelVersionInfo> {
     const original = originalModels.find(m => m.id === selection.id);
     if (!original) {
       throw new Error(`Model ${selection.id} not found in original models`);
     }
     
+    // Validate the model name with OpenRouter before storing
+    const fullModelName = `${selection.provider}/${selection.model}`;
+    const validatedName = await openRouterModelValidator.normalizeModelName(fullModelName);
+    
+    if (!validatedName) {
+      logger.warn(`Model ${fullModelName} is not valid in OpenRouter, using original`);
+      // Fall back to original name if validation fails
+    }
+    
+    // Parse the validated name back to provider/model
+    const [validatedProvider, ...validatedModelParts] = (validatedName || fullModelName).split('/');
+    const validatedModel = validatedModelParts.join('/');
+    
     return {
-      provider: selection.provider,
-      model: selection.model,
+      provider: validatedProvider,
+      model: validatedModel,
       versionId: 'latest',
       pricing: {
         input: parseFloat(original.pricing.prompt),

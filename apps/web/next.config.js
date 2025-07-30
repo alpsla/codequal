@@ -23,7 +23,8 @@ const nextConfig = {
       // Tree shake unused modules
       config.optimization = {
         ...config.optimization,
-        usedExports: true,
+        // Disable usedExports to fix cacheUnaffected conflict
+        // usedExports: true,
         sideEffects: false,
         // Split chunks for better caching
         splitChunks: {

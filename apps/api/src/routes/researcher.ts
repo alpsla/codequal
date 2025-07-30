@@ -537,4 +537,83 @@ router.post('/research', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * POST /api/researcher/research-dev
+ * Development-only endpoint for testing (no auth required)
+ */
+if (process.env.NODE_ENV === 'development') {
+  router.post('/research-dev', async (req: Request, res: Response) => {
+    try {
+      logger.warn('Using development-only researcher endpoint (no auth)');
+      
+      // Create a system user for dev testing
+      const systemUser = {
+        id: 'system-dev',
+        email: 'dev@system.local',
+        permissions: ['admin'],
+        role: 'admin',
+        status: 'active',
+        session: { token: 'dev', expiresAt: new Date(Date.now() + 3600000) },
+        isSystemUser: true
+      } as AuthenticatedUser;
+      
+      const { 
+        trigger = 'manual',
+        includeAllRoles = true,
+        includeAllLanguages = true,
+        includeAllSizes = true
+      } = req.body;
+      
+      logger.info('Starting development research', {
+        userId: systemUser.id,
+        trigger,
+        includeAllRoles,
+        includeAllLanguages,
+        includeAllSizes
+      });
+
+      // Initialize services
+      const vectorStorage = new VectorStorageService();
+      const modelSync = new ModelVersionSync(
+        logger,
+        '00000000-0000-0000-0000-000000000001'
+      );
+      const productionService = new ProductionResearcherService(
+        vectorStorage,
+        modelSync
+      );
+
+      // Perform research
+      const result = await productionService.performComprehensiveResearch(
+        systemUser,
+        trigger as 'scheduled' | 'manual'
+      );
+
+      res.json({
+        success: true,
+        data: {
+          operationId: result.operationId,
+          configurationsUpdated: result.configurationsUpdated,
+          modelsEvaluated: result.modelsEvaluated,
+          timestamp: result.timestamp,
+          nextScheduledUpdate: result.nextScheduledUpdate,
+          selectedConfigurations: result.selectedConfigurations.slice(0, 5).map(config => ({
+            role: config.role,
+            primary: `${config.primary.provider}/${config.primary.model}`,
+            fallback: `${config.fallback.provider}/${config.fallback.model}`,
+            reasoning: config.reasoning.join(' ')
+          }))
+        }
+      });
+      
+    } catch (error) {
+      logger.error('Failed to perform development research:', { error: error as Error });
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+}
+
 export default router;

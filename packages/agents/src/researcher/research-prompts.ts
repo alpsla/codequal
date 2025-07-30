@@ -51,12 +51,12 @@ Search across ALL providers for their LATEST available models:
 {
   "agentRole": "{AGENT_ROLE}",
   "repositoryContext": "{REPOSITORY_CONTEXT}",
-  "researchDate": "2025-06-02",
+  "researchDate": "YYYY-MM-DD",
   "recommendation": {
     "primary": {
-      "provider": "anthropic",
-      "model": "claude-3-5-sonnet",
-      "version": "claude-3-5-sonnet-20250602",
+      "provider": "<provider-name>",
+      "model": "<model-name>",
+      "version": "<model-version>",
       "roleSpecificScore": 9.8,
       "reasoning": "Exceptional reasoning capability ideal for security analysis",
       "capabilities": {
@@ -74,9 +74,9 @@ Search across ALL providers for their LATEST available models:
       "whyBestForRole": "Superior reasoning and security pattern recognition"
     },
     "fallback": {
-      "provider": "google",
-      "model": "gemini-2.5-flash",
-      "version": "gemini-2.5-flash-20250602",
+      "provider": "<provider-name>",
+      "model": "<model-name>",
+      "version": "<model-version>",
       "roleSpecificScore": 8.2,
       "reasoning": "Cost-effective with good security capabilities",
       "capabilities": {
@@ -96,14 +96,14 @@ Search across ALL providers for their LATEST available models:
   },
   "competitiveAnalysis": [
     {
-      "model": "gpt-4o",
-      "score": 8.9,
-      "reason": "Good but slightly lower reasoning for security analysis"
+      "model": "<model-name>",
+      "score": 0.0,
+      "reason": "<comparison-reason>"
     },
     {
-      "model": "deepseek-coder-v2", 
-      "score": 8.5,
-      "reason": "Strong coding but less specialized for security"
+      "model": "<model-name>", 
+      "score": 0.0,
+      "reason": "<comparison-reason>"
     }
   ],
   "confidence": 0.92,

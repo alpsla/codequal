@@ -234,6 +234,11 @@ app.use('/api', scheduleRoutes);
 app.use('/api', reportRateLimiter, reportRoutes); // Apply stricter rate limiting for reports
 app.use('/api/monitoring', monitoringRoutes);
 
+// Dev-only researcher endpoint (no auth)
+if (process.env.NODE_ENV === 'development') {
+  app.post('/api/researcher/research-dev', researcherRoutes);
+}
+
 // Researcher routes (requires user authentication)
 app.use('/api/researcher', authMiddleware, researcherRoutes);
 
