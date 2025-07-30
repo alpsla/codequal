@@ -15,7 +15,8 @@
     "composite": true,
     "tsBuildInfoFile": "./dist/.tsbuildinfo",
     "resolveJsonModule": true,
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "moduleResolution": "node"
   },
   "include": [
     "src/**/*"
@@ -27,7 +28,9 @@
     "**/__tests__/**",
     "**/__tests__.disabled/**",
     "**/*.test.ts",
-    "**/*.spec.ts"
+    "**/*.spec.ts",
+    "src/test/test-deepwiki-chat-api.ts",
+    "src/test/test-deepwiki-real-dual-branch.ts"
   ],
   "references": [
     { "path": "../core" }
