@@ -2,6 +2,7 @@ import { deepWikiTempManager } from './deepwiki-temp-manager';
 import { createLogger } from '@codequal/core/utils';
 import { TempSpaceMetrics } from '../types/deepwiki';
 import { JsonMetrics, PrometheusMetric } from '../types/metrics';
+import { tokenMetricsProvider } from './token-metrics-provider';
 
 const logger = createLogger('metrics-exporter');
 
@@ -22,6 +23,10 @@ export class MetricsExporter {
     const deepwikiMetrics = await this.getDeepWikiMetrics();
     metrics.push(...this.formatPrometheusMetrics(deepwikiMetrics));
     
+    // Add token usage metrics
+    const tokenMetrics = await tokenMetricsProvider.getMetrics();
+    metrics.push(...this.formatPrometheusMetrics(tokenMetrics, 'codequal'));
+    
     return metrics.join('\n');
   }
 
@@ -32,10 +37,12 @@ export class MetricsExporter {
     await this.updateMetrics();
     
     const deepwikiMetrics = await this.getDeepWikiMetrics();
+    const tokenMetrics = await tokenMetricsProvider.getMetrics();
     
     return {
       timestamp: new Date().toISOString(),
-      deepwiki: deepwikiMetrics
+      deepwiki: deepwikiMetrics,
+      token_usage: tokenMetrics
     };
   }
 
@@ -110,14 +117,14 @@ export class MetricsExporter {
     };
   }
 
-  private formatPrometheusMetrics(metrics: Record<string, number>): string[] {
+  private formatPrometheusMetrics(metrics: Record<string, number>, prefix = 'deepwiki'): string[] {
     const lines: string[] = [];
     
     for (const [key, value] of Object.entries(metrics)) {
       // Add metric help text
-      lines.push(`# HELP deepwiki_${key} DeepWiki ${key.replace(/_/g, ' ')}`);
-      lines.push(`# TYPE deepwiki_${key} gauge`);
-      lines.push(`deepwiki_${key} ${value}`);
+      lines.push(`# HELP ${prefix}_${key} ${prefix} ${key.replace(/_/g, ' ')}`);
+      lines.push(`# TYPE ${prefix}_${key} gauge`);
+      lines.push(`${prefix}_${key} ${value}`);
       lines.push('');
     }
     
