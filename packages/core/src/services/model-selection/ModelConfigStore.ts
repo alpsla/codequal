@@ -473,6 +473,100 @@ export class ModelConfigStore {
   }
   
   /**
+   * Store a validated model directly in the database
+   * This is used by the Researcher agent after validating model names with OpenRouter
+   * 
+   * @param provider Model provider  
+   * @param model Model name (validated)
+   * @param language Repository language
+   * @param sizeCategory Repository size category
+   * @param notes Optional notes about the model
+   * @returns Whether the storage was successful
+   */
+  async storeValidatedModel(
+    provider: string,
+    model: string,
+    language: string,
+    sizeCategory: RepositorySizeCategory,
+    notes?: string
+  ): Promise<boolean> {
+    try {
+      const normalizedLang = language.toLowerCase();
+      
+      // Check if configuration already exists
+      const { data: existingData } = await this.supabase
+        .from('model_configurations')
+        .select('id')
+        .eq('language', normalizedLang)
+        .eq('size_category', sizeCategory)
+        .limit(1);
+      
+      const configRecord = {
+        language: normalizedLang,
+        size_category: sizeCategory,
+        provider: provider,
+        model: model,
+        test_results: {
+          status: 'not_tested',
+          avgResponseTime: 0,
+          avgResponseSize: 0,
+          testCount: 0,
+          lastTested: new Date().toISOString()
+        },
+        notes: notes || `Model validated and stored by Researcher agent`,
+        updated_at: new Date().toISOString()
+      };
+      
+      let result;
+      
+      if (existingData && existingData.length > 0) {
+        // Update existing record
+        result = await this.supabase
+          .from('model_configurations')
+          .update(configRecord)
+          .eq('id', existingData[0].id);
+      } else {
+        // Insert new record
+        result = await this.supabase
+          .from('model_configurations')
+          .insert({
+            ...configRecord,
+            created_at: new Date().toISOString()
+          });
+      }
+      
+      if (result.error) {
+        this.logger.error('Error storing validated model', { 
+          provider,
+          model,
+          language: normalizedLang, 
+          sizeCategory, 
+          error: result.error 
+        });
+        return false;
+      }
+      
+      this.logger.info('Stored validated model', { 
+        provider,
+        model,
+        language: normalizedLang, 
+        sizeCategory
+      });
+      
+      return true;
+    } catch (error) {
+      this.logger.error('Unexpected error storing validated model', { 
+        provider,
+        model,
+        language, 
+        sizeCategory, 
+        error 
+      });
+      return false;
+    }
+  }
+  
+  /**
    * Sync database configurations with in-memory configurations
    * 
    * @param configMap In-memory configuration map to update

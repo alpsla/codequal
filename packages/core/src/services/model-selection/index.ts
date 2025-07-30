@@ -24,3 +24,6 @@ export type {
   ModelTier,
   ModelProviderPlugin
 } from './ModelVersionSync';
+
+// Export OpenRouter model validator
+export { openRouterModelValidator } from './openrouter-model-validator';

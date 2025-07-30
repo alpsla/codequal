@@ -15,6 +15,7 @@ import {
   RepositoryProvider
 } from '../../config/models/repository-model-config';
 import { ModelConfigStore } from './ModelConfigStore';
+import { openRouterModelValidator } from './openrouter-model-validator';
 
 // Export types for other modules
 export { RepositorySizeCategory } from '../../config/models/repository-model-config';
@@ -145,9 +146,9 @@ export interface ModelVersionInfo {
  * These are ONLY used when database is completely unavailable
  */
 const EMERGENCY_FALLBACK_MODELS: Record<string, ModelVersionInfo> = {
-  'openai/gpt-4o-2025-07': {
+  'openai/gpt-4o': {
     provider: 'openai',
-    model: 'gpt-4o-2025-07',
+    model: 'gpt-4o',
     versionId: 'emergency-fallback',
     releaseDate: '2025-07-01',
     description: 'Emergency fallback model - database unavailable',
@@ -916,6 +917,60 @@ export class ModelVersionSync {
     } catch (error) {
       this.logger.error('Error generating complete config map', { error });
       return {};
+    }
+  }
+  
+  /**
+   * Store a model version with OpenRouter validation
+   * This ensures only valid OpenRouter model names are stored in Vector DB
+   */
+  async storeValidatedModel(
+    modelInfo: ModelVersionInfo,
+    language: string,
+    sizeCategory: RepositorySizeCategory
+  ): Promise<ModelVersionInfo | null> {
+    try {
+      // For OpenRouter models, validate the model ID exists
+      if (modelInfo.provider === 'openrouter' || modelInfo.model.includes('/')) {
+        const validatedName = await openRouterModelValidator.normalizeModelName(modelInfo.model);
+        
+        if (!validatedName) {
+          this.logger.error(`Invalid OpenRouter model: ${modelInfo.model}`);
+          return null;
+        }
+        
+        // Update the model name with the validated version
+        modelInfo.model = validatedName;
+        this.logger.info(`Validated model name: ${validatedName}`);
+      }
+      
+      // Store in cache
+      const key = `${modelInfo.provider}/${modelInfo.model}`;
+      this.cachedModels[key] = modelInfo;
+      
+      // Store in database if ModelConfigStore is available
+      if (this.modelConfigStore) {
+        const success = await this.modelConfigStore.storeValidatedModel(
+          modelInfo.provider,
+          modelInfo.model,
+          language,
+          sizeCategory,
+          modelInfo.description || `Validated ${modelInfo.provider} model`
+        );
+        
+        if (success) {
+          this.logger.info(`Model stored in database: ${key}`);
+        } else {
+          this.logger.warn(`Failed to store model in database: ${key}`);
+        }
+      } else {
+        this.logger.warn('ModelConfigStore not available for database storage');
+      }
+      
+      return modelInfo;
+    } catch (error) {
+      this.logger.error('Failed to store validated model:', error as Error);
+      return null;
     }
   }
 }

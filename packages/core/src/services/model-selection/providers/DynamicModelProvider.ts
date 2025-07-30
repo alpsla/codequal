@@ -109,7 +109,7 @@ export class DynamicModelProvider implements ModelProviderPlugin {
       },
       {
         provider: 'openai',
-        model: 'gpt-4o-2025-07',
+        model: 'gpt-4o',
         versionId: '',
         releaseDate: '2025-07-01',
         description: 'July 2025 GPT-4o update',
