@@ -1,0 +1,141 @@
+service: codequal-comparison-agent
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ${opt:region, 'us-east-1'}
+  stage: ${opt:stage, 'dev'}
+  memorySize: 1024
+  timeout: 30
+  environment:
+    NODE_ENV: ${self:provider.stage}
+    REDIS_URL: ${env:REDIS_URL}
+    LOG_LEVEL: ${env:LOG_LEVEL, 'info'}
+  
+  # IAM permissions
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+          Resource: "*"
+        - Effect: Allow
+          Action:
+            - cloudwatch:PutMetricData
+          Resource: "*"
+
+functions:
+  compareReports:
+    handler: dist/comparison-agent.handler
+    events:
+      - http:
+          path: /compare
+          method: post
+          cors: true
+          request:
+            schemas:
+              application/json: ${file(schemas/comparison-request.json)}
+    environment:
+      FUNCTION_NAME: comparison-agent
+    reservedConcurrency: 10 # Prevent runaway costs
+    
+  # Health check endpoint
+  health:
+    handler: dist/health.handler
+    events:
+      - http:
+          path: /health
+          method: get
+          cors: true
+
+# Plugins
+plugins:
+  - serverless-webpack
+  - serverless-offline
+  - serverless-plugin-typescript
+
+# Package individually for smaller deployment size
+package:
+  individually: true
+  exclude:
+    - node_modules/**
+    - .git/**
+    - .serverless/**
+    - tests/**
+    - "*.test.ts"
+
+# Custom configuration
+custom:
+  webpack:
+    webpackConfig: webpack.config.js
+    includeModules:
+      forceExclude:
+        - aws-sdk
+    packager: npm
+  
+  # Alerts
+  alerts:
+    stages:
+      - prod
+    topics:
+      alarm:
+        topic: ${self:service}-${opt:stage}-alerts
+        notifications:
+          - protocol: email
+            endpoint: ${env:ALERT_EMAIL}
+    alarms:
+      - functionErrors
+      - functionThrottles
+      - functionDuration
+
+# CloudFormation resources
+resources:
+  Resources:
+    # API Gateway configuration for better error handling
+    GatewayResponseDefault4XX:
+      Type: AWS::ApiGateway::GatewayResponse
+      Properties:
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+        ResponseType: DEFAULT_4XX
+        RestApiId:
+          Ref: ApiGatewayRestApi
+    
+    # CloudWatch dashboard
+    ComparisonAgentDashboard:
+      Type: AWS::CloudWatch::Dashboard
+      Properties:
+        DashboardName: ${self:service}-${self:provider.stage}
+        DashboardBody: |
+          {
+            "widgets": [
+              {
+                "type": "metric",
+                "properties": {
+                  "metrics": [
+                    ["AWS/Lambda", "Invocations", {"stat": "Sum"}],
+                    [".", "Errors", {"stat": "Sum"}],
+                    [".", "Duration", {"stat": "Average"}]
+                  ],
+                  "period": 300,
+                  "stat": "Average",
+                  "region": "${self:provider.region}",
+                  "title": "Comparison Agent Metrics"
+                }
+              }
+            ]
+          }
+
+  Outputs:
+    CompareEndpoint:
+      Description: Comparison Agent API endpoint
+      Value:
+        Fn::Join:
+          - ""
+          - - "https://"
+            - Ref: ApiGatewayRestApi
+            - ".execute-api.${self:provider.region}.amazonaws.com/${self:provider.stage}"

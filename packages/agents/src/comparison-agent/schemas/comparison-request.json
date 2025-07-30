@@ -1,0 +1,172 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ComparisonRequest",
+  "description": "Request schema for comparing two DeepWiki analysis reports",
+  "type": "object",
+  "required": ["mainBranchReport", "featureBranchReport", "prMetadata"],
+  "properties": {
+    "mainBranchReport": {
+      "type": "object",
+      "description": "DeepWiki analysis report for the main/base branch",
+      "required": ["overall_score", "issues", "metadata"],
+      "properties": {
+        "overall_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Overall code quality score"
+        },
+        "issues": {
+          "type": "array",
+          "description": "List of identified issues",
+          "items": {
+            "$ref": "#/definitions/Issue"
+          }
+        },
+        "metadata": {
+          "$ref": "#/definitions/ReportMetadata"
+        }
+      }
+    },
+    "featureBranchReport": {
+      "type": "object",
+      "description": "DeepWiki analysis report for the feature/PR branch",
+      "required": ["overall_score", "issues", "metadata"],
+      "properties": {
+        "overall_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Overall code quality score"
+        },
+        "issues": {
+          "type": "array",
+          "description": "List of identified issues",
+          "items": {
+            "$ref": "#/definitions/Issue"
+          }
+        },
+        "metadata": {
+          "$ref": "#/definitions/ReportMetadata"
+        }
+      }
+    },
+    "prMetadata": {
+      "type": "object",
+      "description": "Pull request metadata",
+      "required": ["pr_number", "pr_title", "files_changed", "lines_added", "lines_removed"],
+      "properties": {
+        "pr_number": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Pull request number"
+        },
+        "pr_title": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Pull request title"
+        },
+        "files_changed": {
+          "type": "array",
+          "description": "List of changed files",
+          "items": {
+            "type": "string"
+          }
+        },
+        "lines_added": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of lines added"
+        },
+        "lines_removed": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of lines removed"
+        }
+      }
+    }
+  },
+  "definitions": {
+    "Issue": {
+      "type": "object",
+      "required": ["id", "title", "severity", "category", "file_path", "description", "recommendation"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Z]+-[0-9]+$",
+          "description": "Unique issue identifier (e.g., SEC-001)"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Brief issue title"
+        },
+        "severity": {
+          "type": "string",
+          "enum": ["critical", "high", "medium", "low"],
+          "description": "Issue severity level"
+        },
+        "category": {
+          "type": "string",
+          "enum": ["security", "performance", "quality", "architecture", "dependencies"],
+          "description": "Issue category"
+        },
+        "file_path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Path to the file containing the issue"
+        },
+        "line_number": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Line number where the issue occurs"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Detailed issue description"
+        },
+        "code_snippet": {
+          "type": "string",
+          "description": "Code snippet showing the issue"
+        },
+        "recommendation": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Recommended fix or improvement"
+        }
+      }
+    },
+    "ReportMetadata": {
+      "type": "object",
+      "required": ["repository", "branch", "commit", "analysis_date", "model_used"],
+      "properties": {
+        "repository": {
+          "type": "string",
+          "pattern": "^[\\w-]+/[\\w-]+$",
+          "description": "Repository name in owner/repo format"
+        },
+        "branch": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Branch name"
+        },
+        "commit": {
+          "type": "string",
+          "pattern": "^[a-f0-9]+$",
+          "description": "Git commit SHA"
+        },
+        "analysis_date": {
+          "type": "string",
+          "format": "date",
+          "description": "Analysis date in ISO format"
+        },
+        "model_used": {
+          "type": "string",
+          "minLength": 1,
+          "description": "AI model used for analysis"
+        }
+      }
+    }
+  }
+}

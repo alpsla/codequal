@@ -1,0 +1,80 @@
+{
+  "mainBranchReport": {
+    "overall_score": 72,
+    "issues": [
+      {
+        "id": "SEC-001",
+        "title": "SQL Injection Vulnerability",
+        "severity": "critical",
+        "category": "security",
+        "file_path": "src/database/queries.ts",
+        "line_number": 45,
+        "description": "Direct string concatenation in SQL query allows SQL injection attacks",
+        "code_snippet": "const query = `SELECT * FROM users WHERE id = ${userId}`;",
+        "recommendation": "Use parameterized queries or prepared statements to prevent SQL injection"
+      },
+      {
+        "id": "PERF-001",
+        "title": "N+1 Query Problem",
+        "severity": "high",
+        "category": "performance",
+        "file_path": "src/services/user-service.ts",
+        "line_number": 120,
+        "description": "Loop executes database query for each user, causing performance issues",
+        "code_snippet": "for (const user of users) { const profile = await getProfile(user.id); }",
+        "recommendation": "Batch the queries or use a join to fetch all profiles in one query"
+      }
+    ],
+    "metadata": {
+      "repository": "codequal/backend",
+      "branch": "main",
+      "commit": "abc123def456",
+      "analysis_date": "2025-07-29",
+      "model_used": "gpt-4o-mini"
+    }
+  },
+  "featureBranchReport": {
+    "overall_score": 78,
+    "issues": [
+      {
+        "id": "PERF-001",
+        "title": "N+1 Query Problem",
+        "severity": "high",
+        "category": "performance",
+        "file_path": "src/services/user-service.ts",
+        "line_number": 125,
+        "description": "Loop executes database query for each user, causing performance issues",
+        "code_snippet": "for (const user of users) { const profile = await getProfile(user.id); }",
+        "recommendation": "Batch the queries or use a join to fetch all profiles in one query"
+      },
+      {
+        "id": "QUAL-001",
+        "title": "Complex Function",
+        "severity": "low",
+        "category": "quality",
+        "file_path": "src/utils/validation.ts",
+        "line_number": 200,
+        "description": "Function has cyclomatic complexity of 15, making it hard to test and maintain",
+        "recommendation": "Refactor into smaller, more focused functions"
+      }
+    ],
+    "metadata": {
+      "repository": "codequal/backend",
+      "branch": "feature/fix-security",
+      "commit": "789ghi012jkl",
+      "analysis_date": "2025-07-29",
+      "model_used": "gpt-4o-mini"
+    }
+  },
+  "prMetadata": {
+    "pr_number": 123,
+    "pr_title": "Fix SQL injection vulnerability in user queries",
+    "files_changed": [
+      "src/database/queries.ts",
+      "src/services/user-service.ts",
+      "src/utils/validation.ts"
+    ],
+    "lines_added": 150,
+    "lines_removed": 75
+  }
+}
