@@ -1,0 +1,167 @@
+version: '3.8'
+
+services:
+  # PostgreSQL database using Supabase's Postgres image
+  supabase:
+    image: supabase/postgres:15.1.0
+    container_name: codequal-supabase
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_PASSWORD=MySecurePassword123  # Replace with your own secure password
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=postgres
+    volumes:
+      - supabase-data:/var/lib/postgresql/data
+      - ./supabase-setup:/docker-entrypoint-initdb.d  # SQL init scripts
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis cache service for DeepWiki reports
+  redis:
+    image: redis:7-alpine
+    container_name: codequal-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    command: >
+      redis-server
+      --save 60 1
+      --save 300 10
+      --save 900 100
+      --loglevel warning
+      --maxmemory 2gb
+      --maxmemory-policy allkeys-lru
+      --appendonly yes
+      --appendfsync everysec
+      --requirepass ${REDIS_PASSWORD:-MySecureRedisPassword123}
+    restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "--auth", "${REDIS_PASSWORD:-MySecureRedisPassword123}", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # CodeQual application
+  codequal:
+    build:
+      context: ./codequal
+      dockerfile: Dockerfile
+    container_name: codequal-app
+    depends_on:
+      supabase:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "8001:8001"
+    environment:
+      # Database connection (container to container)
+      - DATABASE_URL=postgresql://postgres:MySecurePassword123@supabase:5432/postgres
+      
+      # Redis cache connection
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-MySecureRedisPassword123}@redis:6379
+      - CACHE_TTL=1800  # 30 minutes
+      - CACHE_MAX_SIZE=1000
+      
+      # AI API keys (from your .env file)
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      
+      # Git provider tokens
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - GITLAB_TOKEN=${GITLAB_TOKEN}
+      
+      # Supabase connection
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - PUBLIC_SUPABASE_ANON_KEY=${PUBLIC_SUPABASE_ANON_KEY}
+      
+      # Other settings
+      - NODE_ENV=production
+      - DEEPWIKI_URL=http://deepwiki:8002
+      - LOG_LEVEL=info
+      - COST_TRACKING_ENABLED=true
+      - COST_ALERT_THRESHOLD=50
+    volumes:
+      - codequal-data:/app/data
+    restart: always
+
+  # DeepWiki application
+  deepwiki:
+    build:
+      context: ./deepwiki
+      dockerfile: Dockerfile
+    container_name: deepwiki-app
+    depends_on:
+      supabase:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "8002:8002"
+    environment:
+      # Database connection (container to container)
+      - DATABASE_URL=postgresql://postgres:MySecurePassword123@supabase:5432/postgres
+      
+      # Redis cache connection
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-MySecureRedisPassword123}@redis:6379
+      - CACHE_TTL=1800
+      
+      # API keys (from your .env file)
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      
+      # Supabase connection
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - PUBLIC_SUPABASE_ANON_KEY=${PUBLIC_SUPABASE_ANON_KEY}
+      
+      # Other settings
+      - NODE_ENV=production
+    volumes:
+      - deepwiki-data:/app/data
+    restart: always
+
+  # Nginx web server for routing and SSL
+  nginx:
+    image: nginx:latest
+    container_name: nginx-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/ssl:/etc/nginx/ssl
+    depends_on:
+      - codequal
+      - deepwiki
+    restart: always
+
+  # Redis monitoring with RedisInsight (optional, for development)
+  redis-insight:
+    image: redislabs/redisinsight:latest
+    container_name: codequal-redis-insight
+    ports:
+      - "8003:8001"
+    volumes:
+      - redis-insight-data:/db
+    restart: always
+    profiles:
+      - monitoring
+
+volumes:
+  supabase-data:
+  codequal-data:
+  deepwiki-data:
+  redis-data:
+  redis-insight-data:
