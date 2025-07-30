@@ -37,6 +37,7 @@ export interface CacheService {
   cleanExpired(): Promise<void>;
   getStats(): Promise<CacheStats>;
   disconnect(): Promise<void>;
+  delete(key: string): Promise<void>;
 }
 
 export interface CacheStats {

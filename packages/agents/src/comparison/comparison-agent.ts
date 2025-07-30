@@ -1,7 +1,45 @@
-import { BaseAgent } from '../base-agent';
-import { AgentCapability, AgentRole } from '../types';
-import { Logger } from '@codequal/core/utils';
-import { DeepWikiAnalysisResult } from '@codequal/core/types';
+import { BaseAgent } from '../base/base-agent';
+import { AnalysisResult, Insight as CoreInsight, Suggestion } from '../agent';
+import { createLogger } from '@codequal/core/utils';
+import { RepositoryAnalyzer, RepositoryAnalysis, EducationalAgentRequest, RepositoryIssueHistory } from './repository-analyzer';
+import { ComparisonReportGenerator, ComprehensiveReport } from './report-generator';
+import { SkillProfile } from './skill-tracker';
+
+// DeepWiki types - we'll define locally for now
+interface DeepWikiAnalysisResult {
+  issues: Array<{
+    id: string;
+    severity: 'critical' | 'high' | 'medium' | 'low';
+    category: string;
+    title: string;
+    description: string;
+    location?: { file: string; line: number };
+    impact?: string;
+    recommendation?: string;
+    type?: string;
+  }>;
+  recommendations: Array<{
+    id: string;
+    category: string;
+    priority: string;
+    title: string;
+    description: string;
+    impact: string;
+    effort: string;
+    steps?: string[];
+  }>;
+  scores: {
+    overall: number;
+    security: number;
+    performance: number;
+    maintainability: number;
+    testing?: number;
+  } | null;
+  metadata?: {
+    patterns?: string[];
+    [key: string]: any;
+  };
+}
 
 export interface ComparisonAnalysis {
   // What changed
@@ -42,6 +80,8 @@ interface Issue {
   category: string;
   file?: string;
   line?: number;
+  location?: { file: string; line: number };
+  [key: string]: any; // Allow additional properties from DeepWiki
 }
 
 interface ArchitecturalChanges {
@@ -103,27 +143,27 @@ type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
  * Replaces 5 specialized agents with intelligent full-context analysis
  */
 export class ComparisonAgent extends BaseAgent {
-  constructor(logger: Logger) {
-    super(
-      'comparison',
-      AgentRole.ANALYZER,
-      [AgentCapability.CODE_ANALYSIS, AgentCapability.PATTERN_DETECTION],
-      logger
-    );
+  private repositoryAnalyzer: RepositoryAnalyzer;
+  
+  constructor(config: Record<string, unknown> = {}) {
+    super(config);
+    this.logger = createLogger('ComparisonAgent');
+    this.repositoryAnalyzer = new RepositoryAnalyzer(this.logger);
   }
 
   /**
-   * Main analysis method - compares two DeepWiki reports
+   * Main analysis method - expects data from Orchestrator
    */
-  async analyze(
-    mainBranchAnalysis: DeepWikiAnalysisResult,
-    featureBranchAnalysis: DeepWikiAnalysisResult,
-    prMetadata?: {
-      title?: string;
-      description?: string;
-      files?: Array<{ filename: string; additions: number; deletions: number }>;
-    }
-  ): Promise<ComparisonAnalysis> {
+  async analyze(data: any): Promise<AnalysisResult> {
+    const { 
+      mainBranchAnalysis, 
+      featureBranchAnalysis, 
+      prMetadata, 
+      userProfile,
+      teamProfiles,
+      historicalIssues = [] // From Orchestrator/Supabase
+    } = data;
+    
     this.logger.info('Starting comparison analysis');
     
     try {
@@ -131,13 +171,34 @@ export class ComparisonAgent extends BaseAgent {
       const newIssues = this.categorizeNewIssues(mainBranchAnalysis, featureBranchAnalysis);
       const resolvedIssues = this.categorizeResolvedIssues(mainBranchAnalysis, featureBranchAnalysis);
       
-      // 2. Analyze architectural changes
+      // 2. Analyze repository history (no persistence, just analysis)
+      let repositoryAnalysis: RepositoryAnalysis | null = null;
+      let educationalRequest: EducationalAgentRequest | null = null;
+      
+      if (historicalIssues && featureBranchAnalysis.issues) {
+        repositoryAnalysis = this.repositoryAnalyzer.analyzeRepositoryIssues(
+          historicalIssues,
+          featureBranchAnalysis.issues,
+          new Date()
+        );
+        
+        // Generate educational request if user profile provided
+        if (userProfile?.skills && repositoryAnalysis) {
+          educationalRequest = this.repositoryAnalyzer.generateEducationalRequest(
+            featureBranchAnalysis.issues,
+            this.extractSkillLevels(userProfile.skills),
+            repositoryAnalysis.technicalDebt
+          );
+        }
+      }
+      
+      // 3. Analyze architectural changes
       const modifiedPatterns = this.analyzeArchitecturalChanges(
         mainBranchAnalysis,
         featureBranchAnalysis
       );
       
-      // 3. Calculate impact deltas
+      // 4. Calculate impact deltas
       const securityImpact = this.calculateSecurityImpact(
         mainBranchAnalysis,
         featureBranchAnalysis,
@@ -160,7 +221,7 @@ export class ComparisonAgent extends BaseAgent {
         featureBranchAnalysis
       );
       
-      // 4. Generate insights and recommendations
+      // 5. Generate insights and recommendations (including historical data)
       const insights = this.generateInsights({
         newIssues,
         resolvedIssues,
@@ -168,7 +229,8 @@ export class ComparisonAgent extends BaseAgent {
         securityImpact,
         performanceImpact,
         dependencyChanges,
-        codeQualityDelta
+        codeQualityDelta,
+        repositoryAnalysis
       });
       
       const recommendations = this.generateRecommendations({
@@ -207,7 +269,7 @@ export class ComparisonAgent extends BaseAgent {
         scoreChanges
       );
 
-      return {
+      const comparisonResult: ComparisonAnalysis = {
         newIssues,
         resolvedIssues,
         modifiedPatterns,
@@ -222,9 +284,26 @@ export class ComparisonAgent extends BaseAgent {
         overallScore,
         scoreChanges
       };
+      
+      // Generate comprehensive report if requested
+      if (data.generateReport) {
+        const report = ComparisonReportGenerator.generateReport(
+          comparisonResult,
+          mainBranchAnalysis,
+          featureBranchAnalysis,
+          prMetadata,
+          userProfile,
+          teamProfiles,
+          repositoryAnalysis
+        );
+        
+        return this.formatResult(comparisonResult, report, repositoryAnalysis, educationalRequest);
+      }
+      
+      return this.formatResult(comparisonResult, null, repositoryAnalysis, educationalRequest);
     } catch (error) {
-      this.logger.error('Comparison analysis failed:', error);
-      throw error;
+      this.logger.error('Comparison analysis failed:', error as any);
+      return this.handleError(error);
     }
   }
 
@@ -241,10 +320,10 @@ export class ComparisonAgent extends BaseAgent {
     );
 
     return {
-      critical: newIssues.filter(i => i.severity === 'critical'),
-      high: newIssues.filter(i => i.severity === 'high'),
-      medium: newIssues.filter(i => i.severity === 'medium'),
-      low: newIssues.filter(i => i.severity === 'low'),
+      critical: newIssues.filter((i: any) => i.severity === 'critical'),
+      high: newIssues.filter((i: any) => i.severity === 'high'),
+      medium: newIssues.filter((i: any) => i.severity === 'medium'),
+      low: newIssues.filter((i: any) => i.severity === 'low'),
       total: newIssues.length
     };
   }
@@ -262,10 +341,10 @@ export class ComparisonAgent extends BaseAgent {
     );
 
     return {
-      critical: resolvedIssues.filter(i => i.severity === 'critical'),
-      high: resolvedIssues.filter(i => i.severity === 'high'),
-      medium: resolvedIssues.filter(i => i.severity === 'medium'),
-      low: resolvedIssues.filter(i => i.severity === 'low'),
+      critical: resolvedIssues.filter((i: any) => i.severity === 'critical'),
+      high: resolvedIssues.filter((i: any) => i.severity === 'high'),
+      medium: resolvedIssues.filter((i: any) => i.severity === 'medium'),
+      low: resolvedIssues.filter((i: any) => i.severity === 'low'),
       total: resolvedIssues.length
     };
   }
@@ -287,9 +366,9 @@ export class ComparisonAgent extends BaseAgent {
     const mainPatterns = new Set(mainAnalysis.metadata?.patterns || []);
     const featurePatterns = new Set(featureAnalysis.metadata?.patterns || []);
     
-    const added = Array.from(featurePatterns).filter(p => !mainPatterns.has(p));
-    const removed = Array.from(mainPatterns).filter(p => !featurePatterns.has(p));
-    const modified = []; // Could be enhanced with more sophisticated detection
+    const added = Array.from(featurePatterns).filter((p: any) => !mainPatterns.has(p));
+    const removed = Array.from(mainPatterns).filter((p: any) => !featurePatterns.has(p));
+    const modified: string[] = []; // Could be enhanced with more sophisticated detection
     
     const impact = this.assessArchitecturalImpact(added, removed);
 
@@ -357,10 +436,10 @@ export class ComparisonAgent extends BaseAgent {
     const featureScore = featureAnalysis.scores?.performance || 0;
     
     // Extract performance-related issues
-    const mainPerfIssues = mainAnalysis.issues.filter(i => 
+    const mainPerfIssues = mainAnalysis.issues.filter((i: any) => 
       i.category === 'performance' || i.title.toLowerCase().includes('performance')
     );
-    const featurePerfIssues = featureAnalysis.issues.filter(i => 
+    const featurePerfIssues = featureAnalysis.issues.filter((i: any) => 
       i.category === 'performance' || i.title.toLowerCase().includes('performance')
     );
     
@@ -400,11 +479,11 @@ export class ComparisonAgent extends BaseAgent {
     const securityAlerts: string[] = [];
 
     // Check for dependency-related issues
-    const depIssues = featureAnalysis.issues.filter(i => 
+    const depIssues = featureAnalysis.issues.filter((i: any) => 
       i.category === 'dependencies' || i.title.toLowerCase().includes('dependency')
     );
     
-    depIssues.forEach(issue => {
+    depIssues.forEach((issue: any) => {
       if (issue.severity === 'critical' || issue.severity === 'high') {
         securityAlerts.push(issue.title);
       }
@@ -459,7 +538,7 @@ export class ComparisonAgent extends BaseAgent {
         type: 'neutral',
         title: 'Architectural Changes',
         description: data.modifiedPatterns.impact,
-        evidence: data.modifiedPatterns.added.map(p => `Added pattern: ${p}`)
+        evidence: data.modifiedPatterns.added.map((p: string) => `Added pattern: ${p}`)
       });
     }
 
@@ -471,6 +550,32 @@ export class ComparisonAgent extends BaseAgent {
         description: `Performance score improved by ${data.performanceImpact.score} points`,
         evidence: data.performanceImpact.improvements
       });
+    }
+    
+    // Repository analysis insights
+    if (data.repositoryAnalysis) {
+      const { recurringIssues, technicalDebt } = data.repositoryAnalysis;
+      
+      if (recurringIssues.length > 0) {
+        insights.push({
+          type: 'negative',
+          title: 'Recurring Issues Detected',
+          description: `${recurringIssues.length} issues have appeared multiple times in the repository history`,
+          evidence: recurringIssues.slice(0, 5)
+        });
+      }
+      
+      if (technicalDebt.debtTrend === 'increasing') {
+        insights.push({
+          type: 'negative',
+          title: 'Technical Debt Increasing',
+          description: `Technical debt is trending upward (${technicalDebt.totalDebt} hours, ~$${technicalDebt.estimatedCost})`,
+          evidence: Object.entries(technicalDebt.debtByCategory)
+            .sort(([, a], [, b]) => (b as number) - (a as number))
+            .slice(0, 3)
+            .map(([cat, hours]) => `${cat}: ${hours} hours`)
+        });
+      }
     }
 
     return insights;
@@ -619,5 +724,67 @@ export class ComparisonAgent extends BaseAgent {
     scoreChanges: Record<string, { before: number; after: number; change: number }>
   ): number {
     return featureAnalysis.scores?.overall || scoreChanges.overall?.after || 0;
+  }
+
+  /**
+   * Format the comparison result to match the standard AnalysisResult interface
+   */
+  protected formatResult(
+    comparisonResult: ComparisonAnalysis, 
+    report?: ComprehensiveReport | null,
+    repositoryAnalysis?: RepositoryAnalysis | null,
+    educationalRequest?: EducationalAgentRequest | null
+  ): AnalysisResult {
+    // Convert insights to the expected format
+    const insights: CoreInsight[] = comparisonResult.insights.map(insight => ({
+      type: insight.type === 'positive' ? 'improvement' : 
+            insight.type === 'negative' ? 'security' : 'info',
+      severity: insight.type === 'negative' ? 'high' as const : 'low' as const,
+      message: `${insight.title}: ${insight.description}`
+    }));
+
+    // Convert recommendations to suggestions - using dummy file/line for now
+    const suggestions: Suggestion[] = comparisonResult.recommendations
+      .filter(rec => rec.priority === 'critical' || rec.priority === 'high')
+      .slice(0, 5)
+      .map(rec => ({
+        file: 'README.md', // Placeholder - would be extracted from actual issues
+        line: 1,
+        suggestion: `${rec.title}: ${rec.description}. Steps: ${rec.steps.join(', ')}`
+      }));
+
+    return {
+      insights,
+      suggestions,
+      metadata: {
+        summary: comparisonResult.summary,
+        overallScore: comparisonResult.overallScore,
+        riskAssessment: comparisonResult.riskAssessment,
+        scoreChanges: comparisonResult.scoreChanges,
+        newIssuesCount: comparisonResult.newIssues.total,
+        resolvedIssuesCount: comparisonResult.resolvedIssues.total,
+        // Include the full comparison data for detailed reporting
+        comparisonData: comparisonResult,
+        // Include comprehensive report if generated
+        report,
+        // Include repository analysis results for Orchestrator
+        repositoryAnalysis,
+        // Include educational request for orchestrator
+        educationalRequest
+      }
+    };
+  }
+  
+  /**
+   * Extract skill levels from user profile for repository tracker
+   */
+  private extractSkillLevels(skills: any): Record<string, number> {
+    const levels: Record<string, number> = {};
+    
+    Object.entries(skills).forEach(([skill, data]: [string, any]) => {
+      levels[skill] = data.current || 0;
+    });
+    
+    return levels;
   }
 }

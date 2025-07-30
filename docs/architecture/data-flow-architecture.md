@@ -1,11 +1,11 @@
 # CodeQual Data Flow Architecture
 
-**Last Updated: December 2024**  
+**Last Updated: January 2025**  
 **Status: Official Architecture Document**
 
 ## Overview
 
-This document describes the complete data flow for CodeQual's PR analysis system, from initial request through final report delivery. This serves as the single source of truth for understanding how data moves through the system.
+This document describes the complete data flow for CodeQual's PR analysis system, from initial request through final report delivery. The architecture now features a simplified agent structure with the Comparison Agent replacing multiple specialized agents.
 
 ## Complete Data Flow Diagram
 
@@ -14,368 +14,338 @@ graph TB
     subgraph "1. Request Initiation"
         A[User submits PR URL] --> B[API Gateway]
         B --> C[Authentication Middleware]
-        C --> D[Result Orchestrator]
+        C --> D[Orchestrator]
     end
     
-    subgraph "2. Repository Context Check"
-        D --> E{Check Vector DB}
-        E -->|Has Fresh Data| F[Retrieve Existing Context]
-        E -->|No Data or Stale| G[Trigger DeepWiki Analysis]
+    subgraph "2. Configuration & Context"
+        D --> E[Load Model Config from Supabase]
+        D --> F[Get User/Team Skills from Supabase]
+        D --> G[Get Repository History from Supabase]
+        E & F & G --> H[Context Assembly]
     end
     
-    subgraph "3. DeepWiki + Tools Execution"
-        G --> H[DeepWiki Clones Repository]
-        H --> I[DeepWiki Analysis]
-        H --> J[Tool Execution in Parallel]
-        J --> J1[npm-audit]
-        J --> J2[license-checker]
-        J --> J3[madge]
-        J --> J4[dependency-cruiser]
-        J --> J5[npm-outdated]
-        I --> K[Store DeepWiki Results]
-        J1 & J2 & J3 & J4 & J5 --> L[Store Tool Results]
-        K & L --> M[Vector DB Storage]
+    subgraph "3. DeepWiki Analysis"
+        H --> I[DeepWiki Service]
+        I --> J[Clone Repository ONCE]
+        J --> K1[Analyze Main Branch]
+        J --> K2[Analyze Feature Branch]
+        K1 --> L1[Cache Main Report - Redis]
+        K2 --> L2[Cache Feature Report - Redis]
     end
     
-    subgraph "4. Multi-Agent Analysis"
-        F --> N[Agent Context Preparation]
-        M --> N
-        N --> DW[DeepWiki Report Distribution]
-        DW --> DW1[Security sections → Security Agent]
-        DW --> DW2[Architecture sections → Architecture Agent]
-        DW --> DW3[Performance sections → Performance Agent]
-        DW --> DW4[Code quality sections → Code Quality Agent]
-        DW --> DW5[Dependency sections → Dependency Agent]
-        
-        N --> O[Execute Specialized Agents]
-        DW1 --> O1[Security Agent]
-        DW2 --> O2[Architecture Agent]
-        DW3 --> O3[Performance Agent]
-        DW4 --> O4[Code Quality Agent]
-        DW5 --> O5[Dependency Agent]
-        
-        O1 -.-> T1[Uses: npm-audit, license-checker]
-        O2 -.-> T2[Uses: madge, dependency-cruiser]
-        O3 -.-> T3[Uses: Performance metrics]
-        O4 -.-> T4[Uses: Code analysis]
-        O5 -.-> T5[Uses: license-checker, npm-outdated]
+    subgraph "4. Comparison Analysis"
+        L1 & L2 --> M[Orchestrator Retrieves Reports]
+        M --> N[Comparison Agent]
+        G --> N
+        F --> N
+        N --> O[Generate Comparison Report]
+        N --> P[Generate Educational Request]
+        N --> Q[Calculate Issue Updates]
     end
     
-    subgraph "5. Result Processing"
-        O1 & O2 & O3 & O4 & O5 --> P[Orchestrator Processes Results]
-        M --> DSummary[DeepWiki Summary Report]
-        DSummary --> P
-        P --> Q[Deduplication & Conflict Resolution]
-        Q --> R[Priority & Severity Calculation]
+    subgraph "5. Educational Enhancement"
+        P --> R[Orchestrator]
+        R --> S[Educational Agent]
+        S --> T[Generate Learning Content]
+        T --> R
     end
     
-    subgraph "6. Educational Enhancement"
-        R --> S[Educator Agent]
-        S --> S1[Identify Learning Opportunities]
-        S1 --> S2[Generate Skill-Appropriate Content]
-        S2 --> S3[Create Learning Paths]
-        S3 --> T[Educational Content]
-    end
-    
-    subgraph "7. Report Generation"
-        R --> U[Reporter Agent]
+    subgraph "6. Report Generation"
+        O --> U[Orchestrator]
         T --> U
-        U --> U1[Aggregate All Findings]
-        U1 --> U2[Create Executive Summary]
-        U2 --> U3[Generate Visualizations]
-        U3 --> U4[Format Multiple Outputs]
-        U4 --> V[Final Report Package]
+        U --> V[Reporter Agent]
+        V --> W[Format Final Report]
     end
     
-    subgraph "8. Delivery & Scheduling"
-        V --> W[Store in Database]
-        V --> X[API Response]
-        X --> Y[UI/UX Presentation]
-        W --> Z[Schedule Background Updates]
-        Z -.-> G
+    subgraph "7. Persistence & Delivery"
+        Q --> X[Orchestrator Updates Supabase]
+        X --> X1[Update Repository Issues]
+        X --> X2[Update User Skills]
+        X --> X3[Store Trend Data]
+        W --> Y[API Response]
+        W --> Z[Store Report]
+        Y --> AA[UI/IDE/CI-CD]
     end
     
-    style S fill:#e1f5e1
-    style U fill:#ffe1e1
-    style P fill:#e1e1ff
-    style M fill:#f5f5e1
+    style N fill:#e1f5e1
+    style S fill:#ffe1e1
+    style V fill:#e1e1ff
+    style I fill:#f5f5e1
 ```
 
 ## Detailed Flow Descriptions
 
-### 1. Request Initiation (Steps A-D)
+### 1. Request Initiation
 
 **Data Structure:**
 ```typescript
 interface PRAnalysisRequest {
   repositoryUrl: string;
   prNumber: number;
-  analysisMode: 'quick' | 'comprehensive' | 'deep';
-  githubToken?: string;
-  authenticatedUser: AuthenticatedUser;
+  prMetadata: {
+    id: string;
+    title: string;
+    author: string;
+  };
+  userId: string;
+  teamId?: string;
 }
 ```
 
 **Flow:**
-1. User submits PR URL through UI or API
+1. User submits PR URL through UI, API, or CI/CD
 2. API Gateway validates request format
 3. Authentication middleware verifies user permissions
-4. Result Orchestrator receives validated request
+4. Orchestrator receives validated request
 
-### 2. Repository Context Check (Steps E-G)
+### 2. Configuration & Context Loading
 
-**Vector DB Query:**
+**Orchestrator loads from Supabase:**
 ```typescript
-interface RepositoryContextQuery {
-  repositoryUrl: string;
-  contentTypes: ['deepwiki_analysis', 'tool_result'];
-  freshnessCriteria: {
-    maxAge: number; // hours
-    requiredTools?: string[];
+interface OrchestratorContext {
+  // Model configuration based on repo size/complexity
+  modelConfig: {
+    model: string;
+    version: string;
+    costLimit: number;
   };
+  
+  // User and team skill profiles
+  userProfile: SkillProfile;
+  teamProfiles: SkillProfile[];
+  
+  // Historical repository issues
+  repositoryHistory: RepositoryIssueHistory[];
 }
 ```
 
-**Decision Logic:**
-- **Fresh Data**: Last analysis < 24 hours old
-- **Stale Data**: Last analysis 24-168 hours old (may still use)
-- **No Data/Outdated**: No analysis or > 168 hours old
-
-### 3. DeepWiki + Tools Execution (Steps H-M)
+### 3. DeepWiki Analysis Phase
 
 **Execution Strategy:**
 ```yaml
-DeepWiki Pod Execution:
-  1. Clone repository once
-  2. Run DeepWiki analysis (parallel with tools)
-  3. Execute tools using cloned repo:
-     - npm-audit: Security vulnerabilities
-     - license-checker: License compliance
-     - madge: Circular dependencies
-     - dependency-cruiser: Dependency rules
-     - npm-outdated: Version currency
-  4. Store all results atomically
+DeepWiki Service:
+  1. Receive configuration from Orchestrator
+  2. Clone repository ONCE
+  3. Analyze main branch → Generate comprehensive report
+  4. Analyze feature branch → Generate comprehensive report
+  5. Store both reports in Redis cache (30min TTL)
 
-AI Model Architecture:
-  - ALL LLM requests go through OpenRouter gateway
-  - NO direct connections to OpenAI/Anthropic/Google for LLMs
-  - Models dynamically selected from Vector DB
-  - Unified billing through OpenRouter tokens
+Cache Keys:
+  - main: "deepwiki:main:{repoId}:{commitHash}"
+  - feature: "deepwiki:feature:{prId}:{commitHash}"
+```
+
+**DeepWiki Report Structure:**
+```typescript
+interface DeepWikiAnalysisResult {
+  issues: Issue[];           // All found issues
+  scores: {
+    overall: number;
+    security: number;
+    performance: number;
+    maintainability: number;
+    testing: number;
+  };
+  recommendations: Recommendation[];
+  metadata: {
+    patterns: string[];      // Architectural patterns detected
+    analysisTime: number;
+    modelUsed: string;
+  };
+}
+```
+
+### 4. Comparison Analysis
+
+**Comparison Agent Input (from Orchestrator):**
+```typescript
+interface ComparisonAgentInput {
+  // From Redis cache via Orchestrator
+  mainBranchAnalysis: DeepWikiAnalysisResult;
+  featureBranchAnalysis: DeepWikiAnalysisResult;
   
-Embeddings (Direct connections, NOT through OpenRouter):
-  - OpenAI text-embedding-3-large: Documentation embeddings
-  - Voyage AI: Code embeddings
+  // From Supabase via Orchestrator
+  historicalIssues: RepositoryIssueHistory[];
+  userProfile: SkillProfile;
+  teamProfiles: SkillProfile[];
+  
+  // Metadata
+  prMetadata: PRMetadata;
+  generateReport: boolean;
+}
 ```
 
-**Storage Format:**
+**Comparison Agent Output:**
 ```typescript
-interface VectorDBStorage {
-  repository_id: string;
-  chunks: {
-    content: string;
-    embedding: number[];
-    metadata: {
-      content_type: 'deepwiki_analysis' | 'tool_result';
-      tool_name?: string;
-      agent_role?: string;
-      is_latest: boolean;
-      created_at: Date;
+interface ComparisonAgentOutput {
+  insights: Insight[];
+  suggestions: Suggestion[];
+  metadata: {
+    comparisonData: ComparisonAnalysis;
+    report?: ComprehensiveReport;
+    
+    // Repository analysis (NOT persisted by agent)
+    repositoryAnalysis: {
+      newIssues: string[];
+      recurringIssues: string[];
+      resolvedIssues: string[];
+      technicalDebt: TechnicalDebtMetrics;
+      issueUpdates: IssueUpdate[]; // For Orchestrator to persist
     };
-  }[];
-}
-```
-
-### 4. Multi-Agent Analysis (Steps N-O5)
-
-**Agent-Tool Mapping:**
-```typescript
-const AGENT_TOOL_MAPPING = {
-  security: ['npm-audit', 'license-checker'],
-  architecture: ['madge', 'dependency-cruiser'],
-  performance: [], // No automated tools yet
-  codeQuality: [], // No automated tools yet
-  dependency: ['license-checker', 'npm-outdated']
-};
-```
-
-**DeepWiki Report Distribution:**
-```typescript
-interface DeepWikiReportSections {
-  summary: string;              // Goes to Orchestrator
-  security: string;             // Goes to Security Agent
-  architecture: string;         // Goes to Architecture Agent
-  performance: string;          // Goes to Performance Agent
-  codeQuality: string;          // Goes to Code Quality Agent
-  dependencies: string;         // Goes to Dependency Agent
-}
-
-// Each agent receives relevant sections
-const agentContext = {
-  prDiff: string,
-  changedFiles: string[],
-  deepWikiSection: string,      // Agent-specific section from DeepWiki
-  toolResults: ToolResult[],    // Filtered by agent role
-  crossAgentInsights?: any      // From MCP coordination
-};
-```
-
-**Context Assembly:**
-```typescript
-interface AgentContext {
-  prDiff: string;
-  changedFiles: string[];
-  repositoryAnalysis: string;   // Full DeepWiki report
-  agentSpecificSection: string; // Relevant DeepWiki section
-  toolResults: ToolResult[];    // Filtered by agent role
-  crossAgentInsights?: any;     // From MCP coordination
-}
-```
-
-### 5. Result Processing (Steps P-R)
-
-**Processing Pipeline:**
-1. **Collection**: Gather all agent results
-2. **DeepWiki Summary Integration**: Incorporate overall repository insights
-3. **Deduplication**: Remove duplicate findings (65% similarity threshold)
-4. **Conflict Resolution**: Resolve contradictory findings
-5. **Prioritization**: Sort by severity and confidence
-6. **Categorization**: Group by type and impact
-
-**Orchestrator Processing:**
-```typescript
-interface OrchestratorProcessing {
-  agentResults: Map<string, AgentResult>;
-  deepWikiSummary: {
-    overallScore: number;
-    keyInsights: string[];
-    recommendations: string[];
-    technicalDebt: number;
-  };
-  processedOutput: {
-    findings: Finding[];
-    summary: string;
-    metrics: AnalysisMetrics;
+    
+    // Educational request for next step
+    educationalRequest: EducationalAgentRequest;
   };
 }
 ```
 
-### 6. Educational Enhancement (Steps S-T)
+### 5. Educational Enhancement
 
-**Educational Flow:**
+**Educational Agent Input (from Orchestrator):**
 ```typescript
-interface EducationalFlow {
-  input: {
-    findings: Finding[];
-    userSkillLevel: SkillLevel;
-    repositoryContext: any;
-  };
-  processing: {
-    identifyLearningOpportunities(): LearningOpportunity[];
-    generateContent(): EducationalContent[];
-    adaptToSkillLevel(): AdaptedContent[];
-    createLearningPaths(): LearningPath[];
-  };
-  output: {
-    educationalContent: EducationalContent[];
-    recommendedResources: Resource[];
-    interactiveExamples: Example[];
-  };
+interface EducationalAgentInput {
+  request: EducationalAgentRequest; // From Comparison Agent
+  userProfile: SkillProfile;
+  preferredFormats: string[];
 }
 ```
 
-### 7. Report Generation (Steps U-V)
-
-**Report Formats:**
+**Educational Agent Output:**
 ```typescript
-interface ReportFormats {
-  full: {
-    executiveSummary: string;
-    detailedFindings: Finding[];
-    educationalContent: EducationalContent[];
-    visualizations: Visualization[];
-    recommendations: string[];
-  };
-  summary: {
-    keyMetrics: Metrics;
-    topFindings: Finding[];
-    actionItems: string[];
-  };
-  prComment: {
-    markdown: string;
-    severity: 'info' | 'warning' | 'error';
-  };
-  dashboard: {
-    widgets: Widget[];
-    charts: Chart[];
-    metrics: Metrics;
-  };
+interface EducationalContent {
+  modules: LearningModule[];
+  resources: Resource[];
+  practiceExercises: Exercise[];
+  estimatedTime: string;
 }
 ```
 
-### 8. Delivery & Scheduling (Steps W-Z)
+### 6. Report Generation
 
-**Delivery Endpoints:**
-- `GET /api/reports/:id` - Full report
-- `GET /api/reports/:id/summary` - Summary view
-- `GET /api/reports/:id/pr-comment` - GitHub PR comment
-- `GET /api/reports/:id/dashboard` - Dashboard data
-- `GET /api/analysis/:id/stream` - Real-time updates
-
-**Scheduling Logic:**
+**Reporter Agent Input (from Orchestrator):**
 ```typescript
-interface SchedulingDecision {
-  determineSchedule(metrics: RepositoryMetrics): Schedule {
-    if (metrics.criticalFindings > 0) {
-      return { frequency: 'every-6-hours', priority: 'critical' };
+interface ReporterAgentInput {
+  comparisonReport: ComprehensiveReport;
+  educationalContent: EducationalContent;
+  targetFormat: 'markdown' | 'json' | 'github' | 'gitlab' | 'ide';
+  includeEducational: boolean;
+}
+```
+
+### 7. Persistence & Delivery
+
+**Orchestrator Persistence Responsibilities:**
+```typescript
+class Orchestrator {
+  async persistAnalysisResults(result: ComparisonAgentOutput) {
+    // 1. Update repository issues in Supabase
+    const { issueUpdates } = result.metadata.repositoryAnalysis;
+    await this.updateRepositoryIssues(issueUpdates);
+    
+    // 2. Update user skills
+    if (result.metadata.skillsUpdate) {
+      await this.updateUserSkills(userId, result.metadata.skillsUpdate);
     }
-    if (metrics.commitsPerWeek > 20) {
-      return { frequency: 'daily', priority: 'high' };
-    }
-    if (metrics.commitsPerWeek > 5) {
-      return { frequency: 'weekly', priority: 'medium' };
-    }
-    return { frequency: 'monthly', priority: 'low' };
+    
+    // 3. Store trend data
+    await this.storeTrendData(repositoryUrl, result.metadata);
+    
+    // 4. Store final report
+    await this.storeReport(reportId, finalReport);
   }
 }
 ```
 
-## Data Storage Patterns
+## Key Architecture Principles
 
-### Vector Database Schema
+### 1. Separation of Concerns
 
-```sql
--- Main storage for all analysis data
-CREATE TABLE analysis_chunks (
-  id UUID PRIMARY KEY,
-  repository_id UUID REFERENCES repositories(id),
-  content TEXT NOT NULL,
-  embedding VECTOR(1536),
-  metadata JSONB NOT NULL,
-  created_at TIMESTAMP DEFAULT NOW()
-);
+- **Orchestrator**: Manages flow, external connections, persistence
+- **DeepWiki**: Analyzes repository, generates comprehensive reports
+- **Comparison Agent**: Pure analysis, no external connections
+- **Educational Agent**: Generates learning content
+- **Reporter Agent**: Formats final output
 
--- Metadata structure
-{
-  "content_type": "deepwiki_analysis" | "tool_result",
-  "tool_name": "npm-audit" | "license-checker" | etc,
-  "agent_role": "security" | "architecture" | etc,
-  "is_latest": true | false,
-  "score": 0-100,
-  "severity": "critical" | "high" | "medium" | "low"
+### 2. Data Flow Rules
+
+1. **All external connections through Orchestrator**
+   - Supabase access
+   - Redis cache access
+   - Model API access
+
+2. **Agents are stateless analyzers**
+   - Receive data, return analysis
+   - No direct database connections
+   - No side effects
+
+3. **Single repository clone**
+   - DeepWiki clones once
+   - Analyzes both branches
+   - Results cached for reuse
+
+### 3. Caching Strategy
+
+```yaml
+Redis Cache:
+  - DeepWiki reports: 30 minute TTL
+  - Key pattern: "deepwiki:{branch}:{repoId}:{commitHash}"
+  - Retrieval target: <50ms
+
+Supabase Storage:
+  - Repository issues: Permanent history
+  - User skills: Current state + history
+  - Model configurations: Cached locally
+  - Reports: Permanent storage
+```
+
+## Data Models
+
+### Repository Issue Tracking
+
+```typescript
+interface RepositoryIssueHistory {
+  repositoryUrl: string;
+  issueId: string;
+  firstSeen: Date;
+  lastSeen: Date;
+  occurrences: number;
+  severity: 'critical' | 'high' | 'medium' | 'low';
+  category: string;
+  status: 'active' | 'resolved' | 'recurring';
+}
+
+interface IssueUpdate {
+  issueId: string;
+  action: 'create' | 'update' | 'resolve';
+  data: any;
 }
 ```
 
-### Latest-Only Storage Strategy
+### Skill Tracking
 
-**Key Principle**: Each new analysis replaces the previous one
-```sql
--- Before storing new results
-DELETE FROM analysis_chunks 
-WHERE repository_id = $1 
-  AND metadata->>'content_type' = $2;
+```typescript
+interface SkillProfile {
+  userId: string;
+  skills: {
+    security: SkillLevel;
+    performance: SkillLevel;
+    codeQuality: SkillLevel;
+    architecture: SkillLevel;
+    testing: SkillLevel;
+    debugging: SkillLevel;
+  };
+  achievements: Achievement[];
+  learningProgress: LearningProgress;
+}
 
--- Then insert new results
-INSERT INTO analysis_chunks (...) VALUES (...);
+interface SkillLevel {
+  current: number; // 0-100
+  trend: 'improving' | 'stable' | 'declining';
+  lastUpdated: Date;
+  issuesResolved: number;
+  issuesIntroduced: number;
+  experiencePoints: number;
+}
 ```
 
 ## Performance Characteristics
@@ -384,220 +354,107 @@ INSERT INTO analysis_chunks (...) VALUES (...);
 
 | Operation | Expected Time | Notes |
 |-----------|--------------|-------|
-| Vector DB Check | < 100ms | Index on repository_id |
-| DeepWiki Analysis | 30-60s | Depends on repo size |
-| Tool Execution | 5-30s | Parallel execution |
-| Agent Analysis | 10-30s each | Parallel with MCP |
-| Result Processing | < 5s | In-memory processing |
-| Report Generation | 5-10s | Template rendering |
-| **Total (New Repo)** | **2-5 minutes** | All operations |
-| **Total (Cached)** | **30-60 seconds** | Skip DeepWiki/Tools |
+| Supabase Context Load | < 200ms | Parallel queries |
+| DeepWiki Analysis | 30-60s | Both branches |
+| Redis Cache Store/Retrieve | < 50ms | Local Redis |
+| Comparison Analysis | 5-10s | In-memory processing |
+| Educational Generation | 10-15s | LLM calls |
+| Report Generation | 2-5s | Template rendering |
+| **Total (New Analysis)** | **60-90 seconds** | All operations |
+| **Total (Cached)** | **20-30 seconds** | Skip DeepWiki |
 
 ### Optimization Points
 
-1. **Parallel Execution**: Tools and agents run concurrently
-2. **Smart Caching**: Reuse results within freshness window
-3. **Incremental Updates**: Only analyze changed files when possible
-4. **Resource Limits**: Prevent runaway analysis on huge repos
+1. **Parallel Operations**
+   - Load context while DeepWiki analyzes
+   - Generate educational content during report formatting
+
+2. **Smart Caching**
+   - 30-minute Redis cache for DeepWiki reports
+   - Local model configuration cache
+   - Reuse analysis within same PR
+
+3. **Efficient Data Transfer**
+   - Only send relevant sections to agents
+   - Compress large reports
 
 ## Error Handling & Recovery
 
 ### Failure Modes
 
-1. **DeepWiki Failure**: Fall back to PR-only analysis
-2. **Tool Failure**: Continue with other tools, note in report
-3. **Agent Failure**: Use fallback models, reduce confidence
-4. **Vector DB Failure**: Complete analysis without historical context
-
-### Recovery Strategies
-
 ```typescript
 interface ErrorRecovery {
-  deepWikiFailure: () => UsePRContextOnly;
-  toolFailure: (tool: string) => ContinueWithoutTool;
-  agentFailure: (agent: string) => UseFallbackModel;
-  vectorDBFailure: () => ProceedWithoutContext;
+  deepWikiFailure: {
+    action: 'Use basic PR diff analysis',
+    confidence: 'reduced',
+    notification: 'User warned of limited analysis'
+  };
+  
+  cacheFailure: {
+    action: 'Regenerate analysis',
+    impact: 'Slower response time',
+    fallback: 'Direct DeepWiki call'
+  };
+  
+  supabaseFailure: {
+    action: 'Continue without history',
+    impact: 'No trend analysis',
+    cache: 'Use local fallback'
+  };
+  
+  agentFailure: {
+    action: 'Use fallback model',
+    retry: 'With reduced context',
+    notification: 'Degraded analysis warning'
+  };
 }
 ```
 
 ## Security Considerations
 
-1. **Authentication**: Every request requires valid user token
-2. **Authorization**: Repository access checked before analysis
-3. **Data Isolation**: User data segregated in Vector DB
-4. **Token Security**: GitHub tokens encrypted in transit/rest
-5. **Rate Limiting**: Prevent resource exhaustion
+1. **Authentication**: OAuth/JWT for all requests
+2. **Authorization**: Repository access verified
+3. **Data Isolation**: User data segregated
+4. **Credential Management**: 
+   - Orchestrator holds all credentials
+   - Agents receive only analyzed data
+5. **Rate Limiting**: Per-user and per-repository
 
-## Monitoring & Observability
+## Migration Notes
 
-### Key Metrics
+### Deprecated Components
 
-- Analysis completion rate
-- Average processing time by stage
-- Tool success/failure rates
-- Agent performance metrics
-- Vector DB query performance
-- Cache hit rates
+1. **Specialized Agents** (replaced by Comparison Agent):
+   - Security Agent
+   - Architecture Agent
+   - Performance Agent
+   - Code Quality Agent
+   - Dependency Agent
 
-### Logging Points
+2. **Direct Agent Connections**:
+   - Agents no longer connect to databases
+   - All persistence through Orchestrator
 
-1. Request received
-2. Vector DB query result
-3. DeepWiki trigger decision
-4. Tool execution status
-5. Agent analysis completion
-6. Report generation success
-7. Delivery confirmation
+3. **Vector DB for Reports**:
+   - Reports now in Redis cache
+   - Vector DB only for semantic search
 
-## Scheduling Strategies
+### Migration Steps
 
-### Option 1: On-Demand Regeneration (Current Approach)
-
-**How it works:**
-- User requests PR analysis
-- System checks Vector DB for existing data
-- If data is stale (>24 hours), regenerate immediately
-- User waits for fresh analysis
-
-**Pros:**
-- Always get the most current data when needed
-- No wasted computation on unused repositories
-- Simple to implement and understand
-
-**Cons:**
-- User experiences delay during regeneration (2-5 minutes)
-- Peak load during business hours
-- Inconsistent user experience
-
-### Option 2: Proactive Background Scheduling (Proposed)
-
-**How it works:**
-- After first analysis, schedule background updates
-- Run updates during off-peak hours (2-6 AM)
-- When user requests analysis, data is always fresh
-- Adjust schedule based on repository activity
-
-**Pros:**
-- Instant results for users (data pre-computed)
-- Consistent fast user experience
-- Better resource utilization (off-peak processing)
-- Can batch similar repositories for efficiency
-
-**Cons:**
-- More complex implementation
-- Potential waste (analyzing inactive repos)
-- Requires scheduling infrastructure
-- Higher overall compute costs
-
-### Option 3: Hybrid Approach (Recommended)
-
-**How it works:**
-```typescript
-interface HybridSchedulingStrategy {
-  // Active repositories: Proactive scheduling
-  activeRepos: {
-    criteria: 'commits > 5/week OR open PRs > 3',
-    schedule: 'nightly at 2 AM',
-    benefit: 'Always fresh data for active development'
-  },
-  
-  // Inactive repositories: On-demand only
-  inactiveRepos: {
-    criteria: 'commits < 5/week AND open PRs < 3',
-    schedule: 'on-demand only',
-    benefit: 'No wasted computation'
-  },
-  
-  // Critical repositories: Aggressive scheduling
-  criticalRepos: {
-    criteria: 'critical findings > 0 OR production flag',
-    schedule: 'every 6 hours',
-    benefit: 'Rapid detection of new issues'
-  }
-}
-```
-
-**Implementation:**
-```typescript
-class SmartScheduler {
-  async evaluateSchedulingStrategy(repo: Repository): Promise<ScheduleType> {
-    const activity = await this.getRepositoryActivity(repo);
-    const lastAnalysis = await this.getLastAnalysis(repo);
-    
-    // Critical issues: aggressive scheduling
-    if (lastAnalysis.criticalFindings > 0) {
-      return {
-        type: 'proactive',
-        frequency: 'every-6-hours',
-        reason: 'Critical security issues require constant monitoring'
-      };
-    }
-    
-    // Active development: nightly updates
-    if (activity.weeklyCommits > 5 || activity.openPRs > 3) {
-      return {
-        type: 'proactive',
-        frequency: 'nightly',
-        time: '02:00',
-        reason: 'Active repository benefits from fresh analysis'
-      };
-    }
-    
-    // Stable repositories: weekly updates
-    if (activity.monthlyCommits > 5) {
-      return {
-        type: 'proactive',
-        frequency: 'weekly',
-        day: 'sunday',
-        time: '03:00',
-        reason: 'Moderate activity warrants weekly checks'
-      };
-    }
-    
-    // Inactive: on-demand only
-    return {
-      type: 'on-demand',
-      reason: 'Low activity does not justify proactive scheduling'
-    };
-  }
-}
-```
-
-### Performance Impact Comparison
-
-| Metric | On-Demand | Proactive | Hybrid |
-|--------|-----------|-----------|--------|
-| User Wait Time | 2-5 min (if stale) | <10 sec | <10 sec (active) / 2-5 min (inactive) |
-| Server Peak Load | High (business hours) | Low (night) | Distributed |
-| Compute Cost | Low | High | Medium |
-| User Experience | Inconsistent | Excellent | Good |
-| Implementation | Simple | Complex | Moderate |
-
-### Recommendation
-
-**Go with the Hybrid Approach** because:
-
-1. **Best user experience for active repos** - Developers working on active projects get instant results
-2. **Cost-effective** - No wasted computation on dormant repositories
-3. **Scalable** - Can adjust thresholds based on system load
-4. **Flexible** - Users can override scheduling preferences
-5. **Gradual rollout** - Start with on-demand, gradually add proactive scheduling
-
-**Implementation Priority:**
-1. Start with on-demand (current state) ✅
-2. Add manual scheduling for specific repos
-3. Implement activity detection
-4. Roll out automatic hybrid scheduling
-5. Monitor and adjust thresholds
+1. **Phase 1**: Implement Comparison Agent ✅
+2. **Phase 2**: Update Orchestrator for new flow
+3. **Phase 3**: Migrate model configs to Supabase
+4. **Phase 4**: Remove deprecated agents
+5. **Phase 5**: Clean Vector DB of non-semantic data
 
 ## Future Enhancements
 
-1. **Incremental Analysis**: Only analyze changed code
-2. **Cross-Repository Learning**: Identify patterns across repos
-3. **Real-time Collaboration**: Multiple users viewing same analysis
-4. **AI-Powered Scheduling**: ML-based schedule optimization
-5. **Custom Tool Integration**: User-defined analysis tools
+1. **Incremental Analysis**: Only analyze changed files
+2. **Real-time Collaboration**: WebSocket updates
+3. **Advanced Caching**: Predictive cache warming
+4. **Custom Tool Integration**: User-defined analyzers
+5. **ML-Based Scheduling**: Smart analysis triggers
 
 ---
 
-**Note**: This document represents the current implementation as of December 2024. The Educator and Reporter agents are planned but not yet implemented. For testing without these components, the flow proceeds directly from Result Processing to API Response.
+**Note**: This document reflects the architecture as of January 2025. The system has been simplified from multiple specialized agents to a single Comparison Agent that provides comprehensive analysis. All external connections are managed by the Orchestrator to maintain clean separation of concerns.
