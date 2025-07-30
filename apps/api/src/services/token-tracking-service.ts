@@ -407,23 +407,17 @@ export class TokenTrackingService {
 
   /**
    * Calculate cost based on token count and model
+   * TODO: Integrate with ModelConfigStore to get actual pricing from Vector DB
    */
-  private calculateCost(tokenCount: number, model?: string): number {
-    // Cost per 1K tokens (simplified pricing)
-    const costPer1KTokens: Record<string, number> = {
-      'gpt-4': 0.03,
-      'gpt-4-turbo': 0.01,
-      'gpt-3.5-turbo': 0.002,
-      'claude-3-opus': 0.015,
-      'claude-3-sonnet': 0.003,
-      'claude-3-haiku': 0.00025,
-      'gemini-pro': 0.001,
-      'deepseek-coder': 0.00014,
-      default: 0.002
-    };
-
-    const rate = costPer1KTokens[model || 'default'] || costPer1KTokens.default;
-    return (tokenCount / 1000) * rate;
+  private calculateCost(tokenCount: number, _model?: string): number {
+    // Default cost per 1K tokens for unknown models
+    const defaultRate = 0.002;
+    
+    // TODO: Replace with actual pricing from Vector DB
+    // const modelConfig = await this.modelConfigStore.getModelConfig(_model);
+    // const rate = modelConfig?.pricing?.per1KTokens || defaultRate;
+    
+    return (tokenCount / 1000) * defaultRate;
   }
 }
 

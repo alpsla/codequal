@@ -135,6 +135,7 @@ import { SkillTrackingService } from '@codequal/agents';
 import type { ToolFinding } from '../types/tool-finding';
 import { IssueResolutionDetector, IssueComparison } from '@codequal/agents';
 import { dataFlowMonitor } from './data-flow-monitor';
+import { getTokenUsageAggregator, TokenUsageAggregator, AggregatedTokenUsage } from './token-usage-aggregator';
 import { createClient } from '@supabase/supabase-js';
 import { getUnifiedProgressTracer } from './unified-progress-tracer';
 import { reportIdMappingService } from './report-id-mapping-service';
@@ -416,6 +417,13 @@ export interface AnalysisResult {
       agentsSkipped: string[];
       skipReasons: Record<string, string>;
     } | null;
+    tokenUsage?: {
+      totalTokens: number;
+      totalCost: number;
+      byAgent: Record<string, any>;
+      byModel: Record<string, any>;
+      fallbackUsage: any;
+    };
   };
 }
 
@@ -451,6 +459,7 @@ export class ResultOrchestrator {
   private gitDiffAnalyzer: GitDiffAnalyzerService;
   private currentAnalysisId?: string;
   private currentSessionId?: string;
+  private tokenUsageAggregator: TokenUsageAggregator;
 
   constructor(private authenticatedUser: AuthenticatedUser) {
     // Initialize services with authenticated user context
@@ -491,6 +500,9 @@ export class ResultOrchestrator {
     this.prContentAnalyzer = new PRContentAnalyzer();
     this.intelligentResultMerger = new IntelligentResultMerger();
     this.gitDiffAnalyzer = new GitDiffAnalyzerService(this.logger);
+    
+    // Initialize Token Usage Aggregator
+    this.tokenUsageAggregator = getTokenUsageAggregator();
   }
 
   /**
@@ -868,6 +880,9 @@ export class ResultOrchestrator {
       
       const agentResults = await this.coordinateAgents(prContext, orchestratorModel, toolResults, prContentAnalysis || undefined);
       
+      // Extract token usage data from agent results
+      const tokenUsageData = (agentResults as any)?.tokenUsageData || null;
+      
       dataFlowMonitor.completeStep(agentCoordinationStepId, {
         agentsExecuted: agentResults?.agentsUsed || [],
         totalFindings: agentResults?.totalFindings || 0
@@ -1186,7 +1201,14 @@ export class ResultOrchestrator {
             riskLevel: prContentAnalysis.riskLevel || 'medium',
             agentsSkipped: prContentAnalysis.agentsToSkip || [],
             skipReasons: prContentAnalysis.skipReasons || {}
-          } : null
+          } : null,
+          tokenUsage: tokenUsageData ? {
+            totalTokens: tokenUsageData.totalTokens,
+            totalCost: tokenUsageData.totalCost,
+            byAgent: tokenUsageData.byAgent,
+            byModel: tokenUsageData.byModel,
+            fallbackUsage: tokenUsageData.fallbackStats
+          } : undefined
         }
       };
 
@@ -1825,7 +1847,35 @@ export class ResultOrchestrator {
     );
 
     // Execute agents with monitoring
+    const executionStartTime = Date.now();
     const results = await executor.execute();
+    const executionDuration = Date.now() - executionStartTime;
+    
+    // Aggregate token usage
+    let tokenUsageData: AggregatedTokenUsage | null = null;
+    try {
+      // Get the token tracker from executor if available
+      const tokenTracker = (executor as any).tokenTracker;
+      tokenUsageData = await this.tokenUsageAggregator.aggregateUsage(
+        results.analysisId || this.currentAnalysisId || 'unknown',
+        results,
+        tokenTracker,
+        executionDuration
+      );
+      
+      if (tokenUsageData) {
+        this.logger.info('Token usage aggregated for analysis', {
+          analysisId: tokenUsageData.analysisId,
+          totalTokens: tokenUsageData.totalTokens,
+          totalCost: tokenUsageData.totalCost.toFixed(4),
+          agentCount: Object.keys(tokenUsageData.byAgent).length
+        });
+      }
+    } catch (error) {
+      this.logger.warn('Failed to aggregate token usage', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
     
     // Monitor individual agent execution results - check different result structures
     if (results) {
@@ -1857,7 +1907,11 @@ export class ResultOrchestrator {
       }
     }
 
-    return results as unknown as AgentResult;
+    // Return results with tokenUsageData attached
+    return {
+      ...results,
+      tokenUsageData
+    } as unknown as AgentResult;
   }
 
   /**
@@ -2289,18 +2343,10 @@ export class ResultOrchestrator {
         } else {
           // Use emergency fallback - this should rarely happen
           this.logger.error(`Failed to get model configuration for ${agentType}, using emergency fallback`);
-          config = {
-            model: 'gpt-4',
-            provider: 'openai',
-            temperature: 0.7,
-            maxTokens: 4000
-          };
-          fallbackConfig = {
-            model: 'claude-3-haiku',
-            provider: 'anthropic',
-            temperature: 0.7,
-            maxTokens: 4000
-          };
+          // TODO: Load emergency fallback models from Vector DB or configuration
+          // For now, return undefined to force proper error handling
+          config = undefined;
+          fallbackConfig = undefined;
         }
       }
       

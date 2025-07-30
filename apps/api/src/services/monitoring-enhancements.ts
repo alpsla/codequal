@@ -212,19 +212,15 @@ export class PerformanceMonitor {
     outputCost: number;
     totalCost: number;
   } {
-    // Pricing per 1K tokens (as of 2025)
-    const pricing: Record<string, { input: number; output: number }> = {
-      'openai/gpt-4o-2025-01': { input: 0.005, output: 0.015 },
-      'openai/gpt-4.1': { input: 0.003, output: 0.009 },
-      'anthropic/claude-sonnet-4': { input: 0.003, output: 0.015 },
-      'anthropic/claude-3.7-sonnet': { input: 0.003, output: 0.015 },
-      'google/gemini-1.5-pro': { input: 0.00125, output: 0.005 },
-      'meta/llama-3-70b': { input: 0.0008, output: 0.0008 },
-      // Default for unknown models
-      'default': { input: 0.002, output: 0.006 }
-    };
+    // TODO: Load pricing from Vector DB model configurations
+    // Default pricing for unknown models
+    const defaultPricing = { input: 0.002, output: 0.006 };
     
-    const modelPricing = pricing[model] || pricing['default'];
+    // In production, this should query ModelConfigStore
+    // const modelConfig = await this.modelConfigStore.getModelConfig(model);
+    // const modelPricing = modelConfig?.pricing || defaultPricing;
+    
+    const modelPricing = defaultPricing;
     
     const inputCost = (inputTokens / 1000) * modelPricing.input;
     const outputCost = (outputTokens / 1000) * modelPricing.output;

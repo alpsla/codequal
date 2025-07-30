@@ -385,8 +385,8 @@ Provide at least 100-200 detailed findings for a comprehensive analysis.`;
     if (process.env.USE_DEEPWIKI_MOCK === 'true' || !process.env.DEEPWIKI_API_KEY) {
       logger.info('Using enhanced mock for DeepWiki analysis');
       
-      // Simulate API latency based on model
-      const latency = model.includes('gpt-4') ? 3000 : 2000;
+      // Simulate API latency
+      const latency = 2500; // Default latency for mock
       await new Promise(resolve => setTimeout(resolve, latency));
       
       // Get enhanced mock data

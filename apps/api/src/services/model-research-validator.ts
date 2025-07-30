@@ -168,14 +168,11 @@ Return ONLY valid model names from 2025, not older versions.`;
       errors.push(`Model "${model}" doesn't match valid format (provider/model-name)`);
     }
     
-    // Check for old Claude versions
-    if (model.includes('claude') && model.includes('3.5')) {
-      errors.push(`Model "${model}" is outdated. Use claude-sonnet-4 or claude-3.7-sonnet`);
-    }
-    
-    // Check for old GPT versions  
-    if (model.includes('gpt') && !model.includes('2025') && !model.includes('4.1')) {
-      warnings.push(`Model "${model}" might be outdated. Consider using gpt-4o-2025-01`);
+    // TODO: Check against Vector DB for deprecated models
+    // This should query the model configurations to validate
+    // For now, just check format
+    if (!this.rules.validModelPatterns.some(pattern => pattern.test(model))) {
+      warnings.push(`Model "${model}" format may not be standard`);
     }
     
     return { errors, warnings };
@@ -183,22 +180,11 @@ Return ONLY valid model names from 2025, not older versions.`;
   
   /**
    * Auto-fix common issues
+   * TODO: Load model mappings from Vector DB
    */
   autoFixModel(model: string): string {
-    // Fix common mistakes
-    const fixes: Record<string, string> = {
-      'claude-3.5-sonnet': 'anthropic/claude-sonnet-4',
-      'claude-3-sonnet': 'anthropic/claude-sonnet-4',
-      'gpt-4': 'openai/gpt-4o-2025-01',
-      'gpt-4-turbo': 'openai/gpt-4o-2025-01',
-      'gpt-3.5-turbo': 'openai/gpt-4.1'
-    };
-    
-    // Direct fix
-    if (fixes[model]) {
-      logger.info(`Auto-fixing model: ${model} -> ${fixes[model]}`);
-      return fixes[model];
-    }
+    // In production, this will query the model configurations
+    // from Vector DB to suggest appropriate replacements
     
     // Add provider if missing
     if (!model.includes('/')) {
