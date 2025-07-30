@@ -16,6 +16,8 @@ import { deepWikiModelConfig } from './deepwiki-model-configurations';
 import { PRContextService } from './pr-context-service';
 import { RepositorySizeCategory } from '@codequal/core/services/model-selection/ModelVersionSync';
 import { deepWikiEmbeddingAdapter } from './deepwiki-embedding-adapter';
+import { DeepWikiCacheIntegration } from './deepwiki-cache-integration';
+import { RedisCacheService } from '@codequal/core/services/cache/RedisCacheService';
 
 const execAsync = promisify(exec);
 const logger = createLogger('deepwiki-api-manager');
@@ -116,11 +118,38 @@ export class DeepWikiApiManager {
   private modelVersionSync: ModelVersionSync;
   private modelSelector: UnifiedModelSelector | null = null;
   private prContextService: PRContextService;
+  private cacheIntegration: DeepWikiCacheIntegration | null = null;
   
   constructor() {
     this.modelVersionSync = new ModelVersionSync(logger);
     this.prContextService = new PRContextService();
     // Model selector will be initialized on first use
+    // Cache integration will be initialized on first use
+  }
+  
+  /**
+   * Initialize cache integration (lazy initialization)
+   */
+  private async getCacheIntegration(): Promise<DeepWikiCacheIntegration | null> {
+    if (!this.cacheIntegration) {
+      try {
+        // Try to connect to Redis
+        const cacheService = new RedisCacheService({
+          host: process.env.REDIS_HOST || 'localhost',
+          port: parseInt(process.env.REDIS_PORT || '6379'),
+          password: process.env.REDIS_PASSWORD,
+          tls: process.env.REDIS_TLS === 'true'
+        });
+        
+        await cacheService.connect();
+        this.cacheIntegration = new DeepWikiCacheIntegration(cacheService);
+        logger.info('DeepWiki cache integration initialized successfully');
+      } catch (error) {
+        logger.warn('Failed to initialize cache integration, continuing without cache:', error);
+        return null;
+      }
+    }
+    return this.cacheIntegration;
   }
   
   private async getModelSelector(): Promise<UnifiedModelSelector> {
@@ -221,12 +250,32 @@ export class DeepWikiApiManager {
    */
   async analyzeRepository(
     repositoryUrl: string,
-    options?: { branch?: string; commit?: string }
+    options?: { branch?: string; commit?: string; prId?: string; skipCache?: boolean }
   ): Promise<DeepWikiAnalysisResult> {
     const startTime = Date.now();
     const analysisId = uuidv4();
     
     logger.info(`Starting DeepWiki API analysis for ${repositoryUrl} (${analysisId})`);
+
+    // Check cache first unless explicitly skipped
+    if (!options?.skipCache) {
+      const cache = await this.getCacheIntegration();
+      if (cache) {
+        const cachedResult = await cache.getAnalysis(repositoryUrl, {
+          branch: options?.branch,
+          prId: options?.prId
+        });
+        
+        if (cachedResult) {
+          logger.info(`Using cached DeepWiki analysis for ${repositoryUrl}`, {
+            branch: options?.branch,
+            prId: options?.prId,
+            cacheHit: true
+          });
+          return cachedResult;
+        }
+      }
+    }
 
     try {
       // Check and prepare embeddings from existing analysis
@@ -313,6 +362,21 @@ export class DeepWikiApiManager {
       // NOTE: We do NOT clean up the repository here anymore
       // The repository needs to stay available for MCP tools and agents
       // Cleanup should be called by the orchestrator after ALL analysis is complete
+      
+      // Store in cache for future use
+      const cache = await this.getCacheIntegration();
+      if (cache && !options?.skipCache) {
+        try {
+          await cache.storeAnalysis(repositoryUrl, result, {
+            branch: options?.branch,
+            prId: options?.prId
+          });
+          logger.info(`Stored DeepWiki analysis in cache for ${repositoryUrl}`);
+        } catch (cacheError) {
+          logger.warn('Failed to store analysis in cache:', cacheError);
+          // Continue even if cache storage fails
+        }
+      }
       
       return result;
 

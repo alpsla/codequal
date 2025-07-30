@@ -16,6 +16,9 @@ export * from './gemini/gemini-agent';
 export * from './specialized/dependency-agent';
 export * from './specialized/architecture-agent';
 
+// Comparison Agent
+export * from './comparison/comparison-agent';
+
 // Factory
 export * from './factory/agent-factory';
 

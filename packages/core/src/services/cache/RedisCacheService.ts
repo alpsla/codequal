@@ -344,6 +344,60 @@ export class RedisCacheService implements CacheService {
       this.logger.debug('Failed to update metrics:', error as LoggableData);
     }
   }
+
+  /**
+   * Check if a key exists in cache
+   */
+  async exists(key: string): Promise<boolean> {
+    try {
+      const exists = await this.client.exists(key);
+      return exists === 1;
+    } catch (error) {
+      this.logger.error(`Failed to check existence of key ${key}:`, error as LoggableData);
+      return false;
+    }
+  }
+
+  /**
+   * Set a generic key-value pair with optional TTL
+   */
+  async set(key: string, value: string, ttl?: number): Promise<void> {
+    try {
+      if (ttl) {
+        await this.client.setex(key, ttl, value);
+      } else {
+        await this.client.set(key, value);
+      }
+    } catch (error) {
+      this.logger.error(`Failed to set key ${key}:`, error as LoggableData);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a key
+   */
+  async delete(key: string): Promise<void> {
+    try {
+      await this.client.del(key);
+    } catch (error) {
+      this.logger.error(`Failed to delete key ${key}:`, error as LoggableData);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all keys matching a pattern
+   */
+  async getAllKeys(pattern: string = 'deepwiki:reports:*'): Promise<string[]> {
+    try {
+      const keys = await this.client.keys(pattern);
+      return keys;
+    } catch (error) {
+      this.logger.error(`Failed to get keys with pattern ${pattern}:`, error as LoggableData);
+      return [];
+    }
+  }
 }
 
 // In-memory cache fallback for development
@@ -432,6 +486,40 @@ export class InMemoryCacheService implements CacheService {
   async disconnect(): Promise<void> {
     this.cache.clear();
     this.logger.info('In-memory cache cleared');
+  }
+
+  /**
+   * Check if a key exists in cache
+   */
+  async exists(key: string): Promise<boolean> {
+    return this.cache.has(key);
+  }
+
+  /**
+   * Set a generic key-value pair with optional TTL
+   */
+  async set(key: string, value: string, ttl?: number): Promise<void> {
+    const expiresAt = ttl ? Date.now() + ttl * 1000 : Infinity;
+    this.cache.set(key, { report: { id: key, data: value } as any, expiresAt });
+  }
+
+  /**
+   * Delete a key
+   */
+  async delete(key: string): Promise<void> {
+    this.cache.delete(key);
+  }
+
+  /**
+   * Get all keys matching a pattern
+   */
+  async getAllKeys(pattern?: string): Promise<string[]> {
+    const keys = Array.from(this.cache.keys());
+    if (pattern && pattern.includes('*')) {
+      const regex = new RegExp(pattern.replace(/\*/g, '.*'));
+      return keys.filter(key => regex.test(key));
+    }
+    return keys;
   }
 }
 
