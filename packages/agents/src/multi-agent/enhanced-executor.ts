@@ -19,6 +19,8 @@ import { AgentFactory } from '../factory/agent-factory';
 import { getDebugLogger, DebugLogger } from '../services/debug-logger';
 import { getProgressTracker, ProgressTracker } from '../services/progress-tracker';
 import { getToolResultsVectorStorage, ToolResultsVectorStorage, ToolResultData } from '../services/tool-results-vector-storage';
+import { getModelTokenTracker, ModelTokenTracker } from '../services/model-token-tracker';
+import { ModelVersionSync } from '@codequal/core/services/model-selection/ModelVersionSync';
 
 /**
  * Vector DB search result for agent context
@@ -443,6 +445,7 @@ export class EnhancedMultiAgentExecutor {
   private readonly debugLogger: DebugLogger;
   private readonly progressTracker: ProgressTracker;
   private readonly toolResultsStorage?: ToolResultsVectorStorage;
+  private readonly tokenTracker?: ModelTokenTracker;
   private readonly config: MultiAgentConfig;
   private readonly repositoryData: RepositoryData;
   private readonly authenticatedUser: AuthenticatedUser;
@@ -506,6 +509,29 @@ export class EnhancedMultiAgentExecutor {
           error: error instanceof Error ? error.message : String(error)
         });
       }
+    }
+    
+    // Initialize token tracker if ModelVersionSync is available
+    try {
+      // Try to get ModelVersionSync from Vector context service
+      const modelVersionSync = (this.vectorContextService as any).modelVersionSync;
+      if (modelVersionSync && modelVersionSync instanceof ModelVersionSync) {
+        this.tokenTracker = getModelTokenTracker(modelVersionSync, this.vectorContextService as any);
+        this.logger.debug('Token tracker initialized');
+      } else {
+        // Try to create a new ModelVersionSync instance
+        const supabaseUrl = process.env.SUPABASE_URL;
+        const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
+        if (supabaseUrl && supabaseKey) {
+          const modelVersionSync = new ModelVersionSync(this.logger, supabaseUrl, supabaseKey);
+          this.tokenTracker = getModelTokenTracker(modelVersionSync, this.vectorContextService as any);
+          this.logger.debug('Token tracker initialized with new ModelVersionSync');
+        }
+      }
+    } catch (error) {
+      this.logger.warn('Failed to initialize token tracker', {
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
     
     // Initialize MCP Context Manager for multi-agent coordination
@@ -688,6 +714,30 @@ export class EnhancedMultiAgentExecutor {
       
       // Store tool results in Vector DB
       await this.storeToolResultsInVectorDB();
+      
+      // Generate token usage report if tracker is available
+      if (this.tokenTracker) {
+        try {
+          const tokenSummary = await this.tokenTracker.getSummary(this.analysisId);
+          this.logger.info('Token usage summary', {
+            analysisId: this.analysisId,
+            totalTokens: tokenSummary.totalTokens,
+            totalCost: tokenSummary.totalCost.toFixed(4),
+            modelsUsed: Object.keys(tokenSummary.modelBreakdown).length,
+            fallbackUsage: tokenSummary.fallbackStats.totalFallbacks
+          });
+          
+          // Optionally export report
+          if (this.options.debug) {
+            const report = await this.tokenTracker.exportUsageReport(this.analysisId);
+            this.logger.debug('Token usage report', { report });
+          }
+        } catch (error) {
+          this.logger.warn('Failed to generate token usage summary', {
+            error: error instanceof Error ? error.message : String(error)
+          });
+        }
+      }
       
       // Complete progress tracking
       this.progressTracker.updatePhase(this.analysisId, 'reportGeneration', 'completed', 100, 'Report generated');
@@ -896,8 +946,42 @@ export class EnhancedMultiAgentExecutor {
           
           this.results.set(agentId, executionResult);
           
-          this.performanceMonitor.completeAgentExecution(agentId, result);
+          this.performanceMonitor.completeAgentExecution(
+            agentId, 
+            result, 
+            result?.analysis?.tokenUsage
+          );
           this.progress.completedAgents++;
+          
+          // Track token usage if available
+          if (this.tokenTracker && result?.analysis?.tokenUsage) {
+            try {
+              await this.tokenTracker.trackUsage({
+                analysisId: this.analysisId,
+                agentRole: agentConfig.role,
+                model: (agentConfig as any).model || agentConfig.configuration?.model || 'unknown',
+                provider: agentConfig.provider,
+                tokenUsage: result.analysis.tokenUsage,
+                isPrimary: true,
+                isFallback: false,
+                executionTime: executionResult.timing.duration,
+                success: true
+              });
+              
+              // Update execution result with token info
+              executionResult.resources.tokenUsage = result.analysis.tokenUsage;
+              
+              // Track usage in resource manager
+              this.resourceManager.trackModelUsage(
+                agentConfig.provider,
+                result.analysis.tokenUsage.total
+              );
+            } catch (error) {
+              this.logger.warn('Failed to track token usage', {
+                error: error instanceof Error ? error.message : String(error)
+              });
+            }
+          }
           
           // Update progress tracker for agent completion
           this.progressTracker.updateAgent(
@@ -977,12 +1061,14 @@ export class EnhancedMultiAgentExecutor {
   }
   
   /**
-   * Execute agent with timeout protection
+   * Execute agent with timeout protection and fallback support
    */
   private async executeAgentWithTimeout(
     agentConfig: AgentConfig,
     additionalContext?: Record<string, any>
   ): Promise<any> {
+    const executionStartTime = Date.now();
+    
     // Clean the agentConfig to prevent circular references
     const cleanAgentConfig = JSON.parse(JSON.stringify({
       role: agentConfig.role,
@@ -993,7 +1079,9 @@ export class EnhancedMultiAgentExecutor {
       temperature: agentConfig.temperature,
       customPrompt: agentConfig.customPrompt,
       parameters: agentConfig.parameters || {},
-      focusAreas: agentConfig.focusAreas || []
+      focusAreas: agentConfig.focusAreas || [],
+      configuration: agentConfig.configuration,
+      fallbackConfiguration: agentConfig.fallbackConfiguration
     }));
     
     const agentId = `${cleanAgentConfig.provider}-${cleanAgentConfig.role}`;
@@ -1030,10 +1118,10 @@ export class EnhancedMultiAgentExecutor {
         // Create agent using factory - avoid circular references
         // Pass only the essential configuration to avoid circular references
         const agentOptions = {
-          model: String(cleanAgentConfig.model || 'aion-labs/aion-1.0-mini'),
-          maxTokens: Number(cleanAgentConfig.maxTokens || 4000),
-          temperature: Number(cleanAgentConfig.temperature || 0.7),
-          useOpenRouter: true,
+          model: String(cleanAgentConfig.configuration?.model || cleanAgentConfig.model || 'aion-labs/aion-1.0-mini'),
+          maxTokens: Number(cleanAgentConfig.configuration?.maxTokens || cleanAgentConfig.maxTokens || 4000),
+          temperature: Number(cleanAgentConfig.configuration?.temperature || cleanAgentConfig.temperature || 0.7),
+          useOpenRouter: cleanAgentConfig.configuration?.useOpenRouter ?? true,
           openRouterApiKey: String(process.env.OPENROUTER_API_KEY || ''),
           // Ensure no nested objects
           debug: false
@@ -1183,7 +1271,108 @@ export class EnhancedMultiAgentExecutor {
           error
         });
         
-        reject(error);
+        // Check if we have a fallback configuration and haven't tried it yet
+        if (agentConfig.fallbackConfiguration && !additionalContext?.isRetryWithFallback) {
+          this.logger.warn('Primary model failed, attempting with fallback model', {
+            primaryModel: agentConfig.configuration?.model || (agentConfig as any).model,
+            fallbackModel: agentConfig.fallbackConfiguration.model,
+            agentRole: agentConfig.role
+          });
+          
+          // Update metrics for fallback attempt
+          this.performanceMonitor.recordRetry(agentId);
+          
+          // Update the result metadata to track fallback attempt
+          const existingResult = this.results.get(agentId);
+          if (existingResult) {
+            existingResult.metadata.fallbackAttempts++;
+          }
+          
+          // Create a new agent config with fallback model
+          const fallbackAgentConfig: AgentConfig = {
+            ...agentConfig,
+            configuration: {
+              ...(agentConfig.configuration || {}),
+              ...agentConfig.fallbackConfiguration
+            },
+            // Mark this as a retry to prevent infinite recursion
+            parameters: {
+              ...(agentConfig.parameters || {}),
+              isRetryWithFallback: true
+            }
+          };
+          
+          // Retry with fallback configuration
+          try {
+            const fallbackContext = {
+              ...additionalContext,
+              isRetryWithFallback: true
+            };
+            const fallbackResult = await this.executeAgentWithTimeout(fallbackAgentConfig, fallbackContext);
+            
+            // Mark in result metadata that fallback was used
+            if (fallbackResult && typeof fallbackResult === 'object') {
+              fallbackResult.metadata = {
+                ...(fallbackResult.metadata || {}),
+                usedFallback: true,
+                fallbackModel: agentConfig.fallbackConfiguration.model,
+                fallbackAgent: `${agentConfig.provider}-fallback`,
+                primaryError: error instanceof Error ? error.message : String(error)
+              };
+            }
+            
+            // Update the result in our results map
+            const updatedResult = this.results.get(agentId);
+            if (updatedResult) {
+              updatedResult.metadata.usedFallback = true;
+              updatedResult.metadata.fallbackAgent = `${agentConfig.provider}-fallback`;
+              
+              // Update token usage if available
+              if (fallbackResult?.analysis?.tokenUsage) {
+                updatedResult.resources.tokenUsage = fallbackResult.analysis.tokenUsage;
+              }
+            }
+            
+            // Track fallback token usage
+            if (this.tokenTracker && fallbackResult?.analysis?.tokenUsage) {
+              try {
+                await this.tokenTracker.trackUsage({
+                  analysisId: this.analysisId,
+                  agentRole: agentConfig.role,
+                  model: agentConfig.fallbackConfiguration.model || 'unknown',
+                  provider: agentConfig.provider,
+                  tokenUsage: fallbackResult.analysis.tokenUsage,
+                  isPrimary: false,
+                  isFallback: true,
+                  fallbackReason: error instanceof Error ? error.message : 'Primary model failed',
+                  executionTime: Date.now() - executionStartTime,
+                  success: true
+                });
+              } catch (trackError) {
+                this.logger.warn('Failed to track fallback token usage', {
+                  error: trackError instanceof Error ? trackError.message : String(trackError)
+                });
+              }
+            }
+            
+            resolve(fallbackResult);
+          } catch (fallbackError) {
+            this.logger.error('Both primary and fallback models failed', {
+              agent: agentConfig.role,
+              primaryError: error instanceof Error ? error.message : error,
+              fallbackError: fallbackError instanceof Error ? fallbackError.message : fallbackError
+            });
+            
+            // Both failed, reject with combined error
+            const combinedError = new Error(
+              `Both primary and fallback models failed. Primary: ${error instanceof Error ? error.message : error}, Fallback: ${fallbackError instanceof Error ? fallbackError.message : fallbackError}`
+            );
+            reject(combinedError);
+          }
+        } else {
+          // No fallback available or this was already a fallback attempt
+          reject(error);
+        }
         }
       })();
     });
@@ -1433,12 +1622,34 @@ export class EnhancedMultiAgentExecutor {
    * Calculate total token usage across all agents
    */
   private calculateTotalTokenUsage() {
-    const stats = this.performanceMonitor.getStatistics();
+    let totalInput = 0;
+    let totalOutput = 0;
+    let totalCost = 0;
+    
+    // Calculate from stored results
+    for (const result of this.results.values()) {
+      if (result.resources.tokenUsage) {
+        totalInput += result.resources.tokenUsage.input;
+        totalOutput += result.resources.tokenUsage.output;
+      }
+      if (result.resources.estimatedCost) {
+        totalCost += result.resources.estimatedCost;
+      }
+    }
+    
+    const total = totalInput + totalOutput;
+    
+    // If we don't have cost data, estimate it
+    if (totalCost === 0 && total > 0) {
+      // Default estimate: $0.002 per 1K tokens
+      totalCost = (total / 1000) * 0.002;
+    }
+    
     return {
-      input: 0, // Would be calculated from actual results
-      output: 0, // Would be calculated from actual results
-      total: stats.totalTokens,
-      estimatedCost: stats.totalTokens * 0.002 // Example cost calculation
+      input: totalInput,
+      output: totalOutput,
+      total: total,
+      estimatedCost: totalCost
     };
   }
 

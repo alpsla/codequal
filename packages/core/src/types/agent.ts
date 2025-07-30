@@ -30,6 +30,15 @@ export interface AnalysisResult {
   educational?: EducationalContent[];
   
   /**
+   * Token usage information (optional)
+   */
+  tokenUsage?: {
+    input: number;
+    output: number;
+    total: number;
+  };
+  
+  /**
    * Additional metadata
    */
   metadata?: Record<string, unknown>;

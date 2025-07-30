@@ -1,5 +1,6 @@
 import { Agent, AnalysisResult } from '../agent';
 import { createLogger, Logger, LoggableData } from '@codequal/core/utils';
+import { extractTokenUsage, TokenUsage } from '../services/token-usage-extractor';
 
 /**
  * Abstract base class for all agents
@@ -69,5 +70,35 @@ export abstract class BaseAgent implements Agent {
         message: error instanceof Error ? error.message : String(error)
       }
     };
+  }
+  
+  /**
+   * Extract token usage from API response
+   * @param response API response object
+   * @returns Token usage or null if not found
+   */
+  protected extractTokenUsage(response: any): TokenUsage | null {
+    try {
+      return extractTokenUsage(response);
+    } catch (error) {
+      this.logger.warn('Failed to extract token usage', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+      return null;
+    }
+  }
+  
+  /**
+   * Add token usage to analysis result
+   * @param result Analysis result
+   * @param response API response containing token usage
+   * @returns Analysis result with token usage
+   */
+  protected addTokenUsage(result: AnalysisResult, response: any): AnalysisResult {
+    const tokenUsage = this.extractTokenUsage(response);
+    if (tokenUsage) {
+      result.tokenUsage = tokenUsage;
+    }
+    return result;
   }
 }

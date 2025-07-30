@@ -17,7 +17,10 @@ const ANTHROPIC_MODELS = {
  * Claude client interface
  */
 interface ClaudeClient {
-  generateResponse(prompt: string, systemPrompt?: string): Promise<string>;
+  generateResponse(prompt: string, systemPrompt?: string): Promise<{
+    text: string;
+    response?: any;
+  }>;
 }
 
 /**
@@ -124,7 +127,7 @@ export class ClaudeAgent extends BaseAgent {
     const model = this.model;  // Capture this.model for use in the closure
     
     return {
-      async generateResponse(prompt: string, systemPrompt?: string): Promise<string> {
+      async generateResponse(prompt: string, systemPrompt?: string): Promise<{ text: string; response?: any }> {
         logger.debug('Calling Claude API with model:', model);
         logger.debug('Prompt preview:', prompt.substring(0, 100) + '...');
         
@@ -141,7 +144,7 @@ export class ClaudeAgent extends BaseAgent {
           if (response.content && response.content.length > 0) {
             const content = response.content[0];
             if ('text' in content) {
-              return content.text;
+              return { text: content.text, response };
             }
           }
           throw new Error('No text content in Claude response');
@@ -176,7 +179,10 @@ export class ClaudeAgent extends BaseAgent {
       const response = await this.claudeClient.generateResponse(prompt, systemPrompt);
       
       // 4. Parse response
-      return this.formatResult(response);
+      const result = this.formatResult(response.text);
+      
+      // 5. Add token usage using the abstraction layer
+      return this.addTokenUsage(result, response.response);
     } catch (error) {
       return this.handleError(error);
     }

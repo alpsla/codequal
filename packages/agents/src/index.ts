@@ -41,6 +41,8 @@ export { ReportFormatterService, StandardReport } from './services/report-format
 export { RecommendationService } from './services/recommendation-service';
 export * from './services/educational-compilation-service';
 export { IssueResolutionDetector, type IssueComparison } from './services/issue-resolution-detector';
+export * from './services/token-usage-extractor';
+export * from './services/model-token-tracker';
 
 // Model Selection
 export * from './model-selection/unified-model-selector';

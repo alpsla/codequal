@@ -37,6 +37,14 @@ export interface AgentConfig {
   agentType?: string;
   parameters?: Record<string, any>;
   focusAreas?: string[];
+  // Fallback configuration
+  configuration?: Record<string, any>;
+  fallbackConfiguration?: {
+    model?: string;
+    temperature?: number;
+    maxTokens?: number;
+    useOpenRouter?: boolean;
+  };
 }
 
 /**

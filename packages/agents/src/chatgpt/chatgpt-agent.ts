@@ -346,13 +346,17 @@ export class ChatGPTAgent extends BaseAgent {
       
       const result = this.formatResult(responseText);
       
+      // 5. Add token usage using the abstraction layer
+      const finalResult = this.addTokenUsage(result, response);
+      
       this.log('Analysis complete', {
-        insightsCount: result.insights?.length || 0,
-        suggestionsCount: result.suggestions?.length || 0,
-        educationalCount: result.educational?.length || 0
+        insightsCount: finalResult.insights?.length || 0,
+        suggestionsCount: finalResult.suggestions?.length || 0,
+        educationalCount: finalResult.educational?.length || 0,
+        hasTokenUsage: !!finalResult.tokenUsage
       });
       
-      return result;
+      return finalResult;
     } catch (error) {
       this.log('Analysis error', {
         error: error instanceof Error ? error.message : String(error),
