@@ -45,6 +45,18 @@
       "types": "./dist/services/model-selection/ModelVersionSync.d.ts",
       "default": "./dist/services/model-selection/ModelVersionSync.js"
     },
+    "./services/model-selection/openrouter-model-validator": {
+      "types": "./dist/services/model-selection/openrouter-model-validator.d.ts",
+      "default": "./dist/services/model-selection/openrouter-model-validator.js"
+    },
+    "./services/cache/RedisCacheService": {
+      "types": "./dist/services/cache/RedisCacheService.d.ts",
+      "default": "./dist/services/cache/RedisCacheService.js"
+    },
+    "./services/cache": {
+      "types": "./dist/services/cache/index.d.ts",
+      "default": "./dist/services/cache/index.js"
+    },
     "./services/scheduling": {
       "types": "./dist/services/scheduling/index.d.ts",
       "default": "./dist/services/scheduling/index.js"
