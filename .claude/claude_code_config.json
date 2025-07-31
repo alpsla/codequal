@@ -1,0 +1,30 @@
+{
+  "mcpServers": {
+    "ref": {
+      "command": "npx",
+      "args": ["ref-tools-mcp@latest"],
+      "env": {
+        "REF_API_KEY": "ref-498218bce18e561f5cd0"
+      }
+    },
+    "semgrep": {
+      "command": "node",
+      "args": ["/opt/homebrew/lib/node_modules/mcp-server-semgrep/build/index.js"],
+      "env": {
+        "SEMGREP_APP_TOKEN": "ffb5ee37b5843c7e7eb12fbf04ff77450209db675eb1e4d2aa48998e1c67c88a",
+        "SEMGREP_PROJECT_PATH": "/Users/alpinro/Code Prjects/codequal"
+      }
+    },
+    "serena": {
+      "command": "/Users/alpinro/.local/bin/serena-mcp-server",
+      "args": []
+    },
+    "tavily": {
+      "command": "npx",
+      "args": ["-y", "tavily-mcp@latest"],
+      "env": {
+        "TAVILY_API_KEY": "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"
+      }
+    }
+  }
+}
