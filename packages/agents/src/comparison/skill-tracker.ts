@@ -292,7 +292,15 @@ export class SkillTracker {
     const userProfile = teamProfiles.find(p => p.userId === currentUserId);
     
     if (!userProfile) {
-      throw new Error('User profile not found');
+      // If user not in team, return default metrics
+      return {
+        userRank: teamProfiles.length + 1,
+        totalMembers: teamProfiles.length,
+        percentile: 0,
+        comparisonToAverage: {},
+        strongestSkill: 'codeQuality',
+        improvementSuggestion: 'Join the team to track your progress'
+      };
     }
     
     const userRank = this.calculateUserRank(userProfile, teamProfiles);

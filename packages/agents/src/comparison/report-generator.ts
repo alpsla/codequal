@@ -80,7 +80,8 @@ export class ComparisonReportGenerator {
       prDecision,
       confidence,
       skillsUpdate,
-      repositoryAnalysis
+      repositoryAnalysis,
+      userProfile
     );
     
     const prComment = this.generatePRComment(
@@ -141,7 +142,8 @@ export class ComparisonReportGenerator {
     prDecision: string,
     confidence: number,
     skillsUpdate?: any,
-    repositoryAnalysis?: RepositoryAnalysis | null
+    repositoryAnalysis?: RepositoryAnalysis | null,
+    userProfile?: SkillProfile
   ): string {
     const date = new Date().toLocaleDateString('en-US', { 
       year: 'numeric', 
@@ -151,8 +153,8 @@ export class ComparisonReportGenerator {
 
     return `# DeepWiki Pull Request Analysis Report
 
-**Repository:** ${prMetadata?.repositoryUrl || 'Unknown'}  
-**PR:** ${prMetadata?.id || 'Unknown'} - ${prMetadata?.title || 'Untitled'}  
+**Repository:** ${prMetadata?.repositoryUrl || prMetadata?.repository_url || 'Unknown'}  
+**PR:** ${prMetadata?.id || prMetadata?.number ? `#${prMetadata.number}` : 'Unknown'} - ${prMetadata?.title || 'Untitled'}  
 **Analysis Date:** ${date}  
 **Model Used:** ${mainAnalysis.metadata?.modelUsed || featureAnalysis.metadata?.modelUsed || 'Not specified'}  
 **Scan Duration:** ${Math.random() * 50 + 10}s
@@ -301,7 +303,7 @@ ${this.formatDependencyChanges(comparison.dependencyChanges)}
 
 ## 9. Skills Assessment & Progress
 
-${skillsUpdate ? this.generateSkillsSection(skillsUpdate, comparison, featureAnalysis) : this.generateBasicSkillsSection(comparison)}
+${skillsUpdate ? this.generateSkillsSection(skillsUpdate, comparison, featureAnalysis, userProfile) : this.generateBasicSkillsSection(comparison)}
 
 ---
 
@@ -441,17 +443,23 @@ ${newIssues.medium.map((issue: any) => this.formatIssue(issue)).join('\n\n')}`);
   }
 
   private static formatIssue(issue: any): string {
-    return `##### ${issue.id || 'ISSUE'}: ${issue.title}
+    const issueTitle = issue.title || issue.message || 'Untitled Issue';
+    const issueId = issue.id || `${issue.category}-${issue.file}-${issue.line}` || 'ISSUE';
+    const issueDescription = issue.description || issue.impact || issue.message || 'No description available';
+    const issueCategory = issue.category || 'general';
+    const issueRecommendation = issue.recommendation || issue.suggestion || 'Review and fix this issue';
+    
+    return `##### ${issueId}: ${issueTitle}
 - **File:** \`${issue.location?.file || issue.file || 'Not specified'}:${issue.location?.line || issue.line || 'N/A'}\`
-- **Category:** ${issue.category}
-- **Description:** ${issue.description}
+- **Category:** ${issueCategory}
+- **Description:** ${issueDescription}
 
 ${issue.codeSnippet ? `**Vulnerable Code:**
 \`\`\`${issue.language || 'javascript'}
 ${issue.codeSnippet}
 \`\`\`
 
-` : ''}**Recommendation:** ${issue.recommendation || 'Review and fix this issue'}
+` : ''}**Recommendation:** ${issueRecommendation}
 
 ${issue.fixExample ? `**How to fix:**
 \`\`\`${issue.language || 'javascript'}
@@ -459,7 +467,7 @@ ${issue.fixExample}
 \`\`\`
 
 ` : ''}**Immediate Action:**
-1. ${issue.recommendation || 'Fix this issue'}
+1. ${issueRecommendation}
 2. Add tests to prevent regression
 3. Update documentation if needed`;
   }
@@ -473,12 +481,12 @@ ${issue.fixExample}
     
     if (resolvedIssues.critical.length > 0) {
       sections.push(`#### ✅ Resolved Critical Issues
-${resolvedIssues.critical.map((i: any) => `- **${i.title}**: ${i.description}`).join('\n')}`);
+${resolvedIssues.critical.map((i: any) => `- **${i.title || i.message || 'Issue'}**: ${i.description || i.impact || 'Resolved'}`).join('\n')}`);
     }
     
     if (resolvedIssues.high.length > 0) {
       sections.push(`#### ✅ Resolved High Priority Issues
-${resolvedIssues.high.map((i: any) => `- **${i.title}**: ${i.description}`).join('\n')}`);
+${resolvedIssues.high.map((i: any) => `- **${i.title || i.message || 'Issue'}**: ${i.description || i.impact || 'Resolved'}`).join('\n')}`);
     }
     
     return sections.join('\n\n');
@@ -499,19 +507,51 @@ ${resolvedIssues.high.map((i: any) => `- **${i.title}**: ${i.description}`).join
   }
 
   private static formatTopRepositoryIssues(issues: any[]): string {
-    const criticalIssues = issues.filter(i => i.severity === 'critical').slice(0, 2);
+    // Show all high-severity issues (critical and high)
+    const highSeverityIssues = issues
+      .filter(i => i.severity === 'critical' || i.severity === 'high')
+      .slice(0, 5);
     
-    if (criticalIssues.length === 0) {
-      return 'No critical issues in the repository.';
+    if (highSeverityIssues.length === 0) {
+      // If no high-severity issues, show top medium issues
+      const mediumIssues = issues.filter(i => i.severity === 'medium').slice(0, 3);
+      if (mediumIssues.length === 0) {
+        return 'No significant issues found in the repository.';
+      }
+      return mediumIssues.map(issue => this.formatRepositoryIssue(issue)).join('\n\n');
     }
     
-    return criticalIssues.map(issue => `#### ${issue.id}: ${issue.title} (CRITICAL)
-- **Impact:** ${issue.impact || 'High'}
+    return highSeverityIssues.map(issue => this.formatRepositoryIssue(issue)).join('\n\n');
+  }
+
+  private static formatRepositoryIssue(issue: any): string {
+    const severityEmoji = {
+      critical: '🔴',
+      high: '🟠',
+      medium: '🟡',
+      low: '🟢'
+    };
+    
+    const severity = issue.severity || 'low';
+    return `#### ${severityEmoji[severity as keyof typeof severityEmoji] || '⚫'} ${issue.id || issue.type}: ${issue.title || issue.message} (${severity.toUpperCase()})
+- **File:** \`${issue.location?.file || issue.file || 'Not specified'}:${issue.location?.line || issue.line || 'N/A'}\`
 - **Category:** ${issue.category}
+- **Impact:** ${issue.impact || 'Potential security or quality issue'}
 
-**Description:** ${issue.description}
+**Description:** ${issue.description || issue.message || 'No detailed description available'}
 
-**Recommendation:** ${issue.recommendation || 'Address this critical issue immediately'}`).join('\n\n');
+${issue.codeSnippet ? `**Code:**
+\`\`\`${issue.language || 'javascript'}
+${issue.codeSnippet}
+\`\`\`
+
+` : ''}**Recommendation:** ${issue.recommendation || issue.suggestion || 'Review and address this issue'}
+
+${issue.fixExample ? `**Fix Example:**
+\`\`\`${issue.language || 'javascript'}
+${issue.fixExample}
+\`\`\`
+` : ''}`;
   }
 
   private static formatDependencyChanges(deps: any): string {
@@ -622,7 +662,7 @@ ${deps.securityAlerts.map((a: string) => `- ${a}`).join('\n')}`);
     }
   }
 
-  private static generateSkillsSection(skillsUpdate: any, comparison: ComparisonAnalysis, featureAnalysis?: any): string {
+  private static generateSkillsSection(skillsUpdate: any, comparison: ComparisonAnalysis, featureAnalysis?: any, userProfile?: any): string {
     const { before, after, recommendations, teamComparison, motivationalInsights } = skillsUpdate;
     
     return `### Your Skill Progress
@@ -699,7 +739,7 @@ ${module.practiceCode}
 
 ### 🏆 Next Achievements
 
-${this.generateUpcomingAchievements(after)}`;
+${this.generateUpcomingAchievements(after, userProfile?.isNewUser)}`;
   }
 
   private static generateBasicSkillsSection(comparison: ComparisonAnalysis): string {
@@ -771,20 +811,31 @@ ${this.generateEducationalRecommendations(comparison)}
       .join('\n');
   }
 
-  private static generateUpcomingAchievements(skills: any): string {
+  private static generateUpcomingAchievements(skills: any, isNewUser?: boolean): string {
     const achievements: string[] = [];
     
-    Object.entries(skills).forEach(([skill, data]: [string, any]) => {
-      if (data.current >= 75 && data.current < 80) {
-        achievements.push(`🏅 **${this.capitalize(skill)} Expert** - ${80 - data.current} points away!`);
-      }
-      if (data.issuesResolved >= 8 && data.issuesResolved < 10) {
-        achievements.push(`🛡️ **${this.capitalize(skill)} Guardian** - Fix ${10 - data.issuesResolved} more issues!`);
-      }
-    });
+    // Check if this is a new user
+    const totalExperience = Object.values(skills).reduce((sum: number, skill: any) => sum + skill.experiencePoints, 0);
     
-    if (achievements.length === 0) {
-      achievements.push('🎯 **Code Quality Champion** - Maintain 80+ score across all categories');
+    if (isNewUser || totalExperience === 0) {
+      // New user achievements
+      achievements.push('🌟 **First Contribution** - Make your first code improvement!');
+      achievements.push('🎯 **Code Explorer** - Analyze your first 5 repositories');
+      achievements.push('🚀 **Quick Learner** - Complete your first learning module');
+    } else {
+      // Existing user achievements
+      Object.entries(skills).forEach(([skill, data]: [string, any]) => {
+        if (data.current >= 75 && data.current < 80) {
+          achievements.push(`🏅 **${this.capitalize(skill)} Expert** - ${80 - data.current} points away!`);
+        }
+        if (data.issuesResolved >= 8 && data.issuesResolved < 10) {
+          achievements.push(`🛡️ **${this.capitalize(skill)} Guardian** - Fix ${10 - data.issuesResolved} more issues!`);
+        }
+      });
+      
+      if (achievements.length === 0) {
+        achievements.push('🎯 **Code Quality Champion** - Maintain 80+ score across all categories');
+      }
     }
     
     return achievements.slice(0, 3).join('\n');
