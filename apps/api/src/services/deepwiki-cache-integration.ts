@@ -1,4 +1,4 @@
-import { RedisCacheService } from '@codequal/core/services/cache/RedisCacheService';
+import { CacheService } from '@codequal/core/services/cache/RedisCacheService';
 import { DeepWikiAnalysisResult } from '../types/deepwiki';
 import { createLogger } from '@codequal/core/utils';
 import { v4 as uuidv4 } from 'uuid';
@@ -19,10 +19,10 @@ export interface CachedDeepWikiReport {
  * Handles storing and retrieving DeepWiki analysis reports
  */
 export class DeepWikiCacheIntegration {
-  private cache: RedisCacheService;
+  private cache: CacheService;
   private defaultTTL: number = 1800; // 30 minutes
 
-  constructor(cache: RedisCacheService) {
+  constructor(cache: CacheService) {
     this.cache = cache;
   }
 

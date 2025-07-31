@@ -1,19 +1,7 @@
-import { RedisCacheService } from './cache/RedisCacheService';
+import { RedisCacheService, DeepWikiReport } from './cache/RedisCacheService';
 import { Logger } from '../utils/logger';
 import { DeepWikiClient, RepositoryContext, ChatMessage } from '../deepwiki/DeepWikiClient';
 import { DeepWikiChatService, ChatResponse } from '../deepwiki/DeepWikiChatService';
-
-export interface DeepWikiReport {
-  id: string;
-  repository: string;
-  branch?: string;
-  analysis: any;
-  metadata: {
-    analyzedAt: string;
-    version: string;
-    tools: string[];
-  };
-}
 
 export interface CacheIntegratedChatConfig {
   cacheService: RedisCacheService;
@@ -126,7 +114,14 @@ export class DeepWikiChatCacheService {
           // Add repository analysis context to enhance responses
           systemPromptAddition: `
 Repository Analysis Context:
-${JSON.stringify(context.analysis, null, 2)}
+Main Branch: ${context.mainBranchAnalysis.summary}
+Scores: ${JSON.stringify(context.mainBranchAnalysis.scores, null, 2)}
+
+Feature Branch: ${context.featureBranchAnalysis.summary}
+Scores: ${JSON.stringify(context.featureBranchAnalysis.scores, null, 2)}
+
+Comparison:
+${JSON.stringify(context.comparison, null, 2)}
 
 Use this context to provide accurate and specific answers about the repository.
           `
@@ -204,26 +199,50 @@ Use this context to provide accurate and specific answers about the repository.
     // Note: This is a placeholder - actual DeepWiki API call would go here
     // In real implementation, this would call the DeepWiki analysis service
     const mockReport: DeepWikiReport = {
-      id: `analysis-${Date.now()}`,
-      repository: repoUrl,
-      branch: analysisOptions.branch,
-      analysis: {
-        summary: 'Repository analysis completed',
-        architecture: {
-          components: ['API', 'Frontend', 'Database'],
-          patterns: ['MVC', 'Repository Pattern']
-        },
-        metrics: {
-          files: 150,
-          lines: 25000,
-          complexity: 'Medium'
-        }
-      },
-      metadata: {
+      prId: prId || '',
+      repositoryUrl: repoUrl,
+      mainBranchAnalysis: {
+        branch: 'main',
+        commit: 'mock-commit-main',
         analyzedAt: new Date().toISOString(),
-        version: '1.0.0',
-        tools: ['DeepWiki', 'ESLint', 'Dependency Analyzer']
-      }
+        scores: {
+          overall: 85,
+          security: 90,
+          performance: 80,
+          maintainability: 85
+        },
+        patterns: ['MVC', 'Repository Pattern'],
+        summary: 'Main branch analysis completed'
+      },
+      featureBranchAnalysis: {
+        branch: analysisOptions.branch,
+        commit: 'mock-commit-feature',
+        analyzedAt: new Date().toISOString(),
+        scores: {
+          overall: 87,
+          security: 92,
+          performance: 82,
+          maintainability: 86
+        },
+        patterns: ['MVC', 'Repository Pattern', 'Observer Pattern'],
+        summary: 'Feature branch analysis completed'
+      },
+      comparison: {
+        addedPatterns: ['Observer Pattern'],
+        removedPatterns: [],
+        scoreChanges: {
+          overall: { before: 85, after: 87, change: 2 },
+          security: { before: 90, after: 92, change: 2 },
+          performance: { before: 80, after: 82, change: 2 },
+          maintainability: { before: 85, after: 86, change: 1 }
+        },
+        recommendations: [
+          'Good improvement in security score',
+          'Performance slightly improved',
+          'New Observer Pattern implementation looks good'
+        ]
+      },
+      timestamp: new Date().toISOString()
     };
     
     return mockReport;

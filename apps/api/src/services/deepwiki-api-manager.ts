@@ -15,9 +15,8 @@ import { createDeepWikiModelSelectionPrompt, DeepWikiSelectionContext } from '..
 import { deepWikiModelConfig } from './deepwiki-model-configurations';
 import { PRContextService } from './pr-context-service';
 import { RepositorySizeCategory } from '@codequal/core/services/model-selection/ModelVersionSync';
-import { deepWikiEmbeddingAdapter } from './deepwiki-embedding-adapter';
 import { DeepWikiCacheIntegration } from './deepwiki-cache-integration';
-import { RedisCacheService } from '@codequal/core/services/cache/RedisCacheService';
+import { RedisCacheService, createCacheService } from '@codequal/core/services/cache/RedisCacheService';
 
 const execAsync = promisify(exec);
 const logger = createLogger('deepwiki-api-manager');
@@ -29,6 +28,14 @@ interface DeepWikiApiResponse {
     };
   }>;
   error?: string;
+  // Direct response format from DeepWiki
+  vulnerabilities?: any[];
+  recommendations?: any[];
+  scores?: any;
+  statistics?: any;
+  quality?: any;
+  testing?: any;
+  dependencies?: any;
 }
 
 export interface ParsedAnalysis {
@@ -133,19 +140,15 @@ export class DeepWikiApiManager {
   private async getCacheIntegration(): Promise<DeepWikiCacheIntegration | null> {
     if (!this.cacheIntegration) {
       try {
-        // Try to connect to Redis
-        const cacheService = new RedisCacheService({
-          host: process.env.REDIS_HOST || 'localhost',
-          port: parseInt(process.env.REDIS_PORT || '6379'),
-          password: process.env.REDIS_PASSWORD,
-          tls: process.env.REDIS_TLS === 'true'
-        });
+        // Try to connect to Redis - use public URL if available
+        const redisUrl = process.env.REDIS_URL_PUBLIC || process.env.REDIS_URL || 
+          `redis${process.env.REDIS_TLS === 'true' ? 's' : ''}://${process.env.REDIS_PASSWORD ? `:${process.env.REDIS_PASSWORD}@` : ''}${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT || '6379'}`;
         
-        await cacheService.connect();
+        const cacheService = createCacheService(redisUrl, { logger });
         this.cacheIntegration = new DeepWikiCacheIntegration(cacheService);
         logger.info('DeepWiki cache integration initialized successfully');
       } catch (error) {
-        logger.warn('Failed to initialize cache integration, continuing without cache:', error);
+        logger.warn('Failed to initialize cache integration, continuing without cache:', error as any);
         return null;
       }
     }
@@ -278,28 +281,11 @@ export class DeepWikiApiManager {
     }
 
     try {
-      // Check and prepare embeddings from existing analysis
-      logger.info('Checking for existing embeddings...');
-      const hasEmbeddings = await deepWikiEmbeddingAdapter.hasEmbeddings(repositoryUrl);
+      // DeepWiki analyzes repositories directly without needing pre-computed embeddings
+      logger.info('Starting DeepWiki analysis...');
       
-      if (hasEmbeddings) {
-        logger.info('Found existing embeddings, preparing for DeepWiki...');
-        const prepared = await deepWikiEmbeddingAdapter.prepareRepositoryFromExistingEmbeddings(repositoryUrl);
-        
-        if (prepared) {
-          const stats = await deepWikiEmbeddingAdapter.getEmbeddingStats(repositoryUrl);
-          logger.info('Embeddings prepared successfully:', {
-            total: stats.total,
-            byType: stats.byType,
-            models: stats.models
-          });
-        }
-      } else {
-        logger.warn('No existing embeddings found. DeepWiki may need to generate them.');
-      }
-      
-      // Get the actual pod name
-      const podName = await this.getDeepWikiPodName();
+      // Use deployment for stability
+      const podName = `deployment/${this.POD_NAME}`;
       
       // Get optimal model selection
       const models = await this.getOptimalModel(repositoryUrl);
@@ -373,7 +359,7 @@ export class DeepWikiApiManager {
           });
           logger.info(`Stored DeepWiki analysis in cache for ${repositoryUrl}`);
         } catch (cacheError) {
-          logger.warn('Failed to store analysis in cache:', cacheError);
+          logger.warn('Failed to store analysis in cache:', cacheError as any);
           // Continue even if cache storage fails
         }
       }
@@ -394,16 +380,18 @@ export class DeepWikiApiManager {
   private async getDeepWikiPodName(): Promise<string> {
     try {
       const { stdout } = await execAsync(
-        `kubectl get pods -n ${this.NAMESPACE} -l app=deepwiki -o jsonpath="{.items[0].metadata.name}"`
+        `kubectl get pods -n ${this.NAMESPACE} -l app=deepwiki --field-selector=status.phase=Running -o jsonpath="{.items[0].metadata.name}"`
       );
       const podName = stdout.trim();
       if (!podName) {
-        throw new Error('No DeepWiki pod found');
+        throw new Error('No running DeepWiki pod found');
       }
+      logger.debug(`Using DeepWiki pod: ${podName}`);
       return podName;
     } catch (error) {
-      logger.warn('Could not find DeepWiki pod, using default name');
-      return this.POD_NAME;
+      logger.warn('Could not find running DeepWiki pod, using deployment');
+      // Use deployment instead of specific pod
+      return `deployment/${this.POD_NAME}`;
     }
   }
 
@@ -445,6 +433,7 @@ Provide at least 100-200 detailed findings for a comprehensive analysis.`;
     prompt: string,
     model: string
   ): Promise<DeepWikiApiResponse> {
+    logger.info(`Calling DeepWiki API for ${repositoryUrl} with model ${model}`);
     // Use enhanced mock for testing
     if (process.env.USE_DEEPWIKI_MOCK === 'true' || !process.env.DEEPWIKI_API_KEY) {
       logger.info('Using enhanced mock for DeepWiki analysis');
@@ -454,12 +443,12 @@ Provide at least 100-200 detailed findings for a comprehensive analysis.`;
       await new Promise(resolve => setTimeout(resolve, latency));
       
       // Get enhanced mock data
-      const { generateEnhancedMockAnalysis } = await import('./deepwiki-mock-enhanced.js');
+      const { generateEnhancedMockAnalysis } = require('./deepwiki-mock-enhanced');
       const mockAnalysis = generateEnhancedMockAnalysis(repositoryUrl);
       
       // Track token usage for mock
       try {
-        const monitoringModule = await import('./monitoring-enhancements.js');
+        const monitoringModule = require('./monitoring-enhancements');
         if (monitoringModule.performanceMonitor && repositoryUrl.includes('analysis-id=')) {
           const analysisId = repositoryUrl.split('analysis-id=')[1];
           monitoringModule.performanceMonitor.recordTokenUsage(analysisId, model, 15000, 8000);
@@ -489,7 +478,9 @@ Provide at least 100-200 detailed findings for a comprehensive analysis.`;
       stream: false,
       provider: "openrouter",
       model: model, // Use dynamically selected model
-      temperature: 0.2 // Lower temperature for more consistent analysis
+      temperature: 0.2, // Lower temperature for more consistent analysis
+      max_tokens: 8000, // Increase token limit
+      timeout: 120000 // 2 minute timeout
     };
 
     if (this.USE_PORT_FORWARD) {
@@ -529,9 +520,11 @@ Provide at least 100-200 detailed findings for a comprehensive analysis.`;
       }
     } else {
       // Use kubectl exec approach (default)
+      // Properly escape the JSON for bash
+      const escapedPayload = JSON.stringify(payload).replace(/"/g, '\\"').replace(/\$/g, '\\$');
       const curlCommand = `curl -s -X POST http://localhost:${this.API_PORT}/chat/completions/stream \
         -H "Content-Type: application/json" \
-        -d '${JSON.stringify(payload).replace(/'/g, "'\"'\"'")}'`;
+        -d "${escapedPayload}"`;
 
       try {
         const { stdout, stderr } = await execAsync(
@@ -544,12 +537,20 @@ Provide at least 100-200 detailed findings for a comprehensive analysis.`;
 
         // Parse the JSON response
         try {
+          logger.info('Raw API response length:', stdout.length);
+          logger.info('Raw response:', stdout);
+          
           const parsed = JSON.parse(stdout) as DeepWikiApiResponse;
-          logger.debug('API response structure:', { keys: Object.keys(parsed) });
+          logger.info('API response structure:', { 
+            keys: Object.keys(parsed),
+            hasChoices: !!parsed.choices,
+            choicesLength: parsed.choices?.length,
+            hasError: !!parsed.error
+          });
           return parsed;
         } catch (parseError) {
           logger.error('Failed to parse API response:', parseError as Error);
-          logger.debug('Raw response:', { preview: stdout.substring(0, 1000) });
+          logger.error('Raw response:', stdout.substring(0, 2000));
           return { error: 'Failed to parse API response' };
         }
 
@@ -568,6 +569,13 @@ Provide at least 100-200 detailed findings for a comprehensive analysis.`;
       throw new Error(`API error: ${response.error}`);
     }
 
+    // Check if response is already in the expected format (direct JSON)
+    if (response.vulnerabilities || response.recommendations || response.scores) {
+      logger.debug('Response is already in parsed format');
+      return response as ParsedAnalysis;
+    }
+
+    // Otherwise, try to extract from OpenAI-style response
     const content = response.choices?.[0]?.message?.content;
     if (!content) {
       throw new Error('No content in API response');
@@ -657,20 +665,30 @@ Provide at least 100-200 detailed findings for a comprehensive analysis.`;
     startTime: number
   ): DeepWikiAnalysisResult {
     // Convert vulnerabilities to issues
-    const issues: DeepWikiIssue[] = (analysis.vulnerabilities || []).map(vuln => ({
-      type: this.mapCategoryToType(vuln.category),
-      severity: vuln.severity.toLowerCase() as 'critical' | 'high' | 'medium' | 'low',
-      message: vuln.title,
-      file: vuln.location.file,
-      line: vuln.location.line,
-      category: vuln.category,
-      suggestion: vuln.remediation.immediate,
-      cwe: vuln.cwe,
-      cvss: vuln.cvss,
-      impact: vuln.impact,
-      evidence: vuln.evidence,
-      remediation: vuln.remediation
-    }));
+    const issues: DeepWikiIssue[] = (analysis.vulnerabilities || []).map(vuln => {
+      // Get location information
+      const file = vuln.location?.file || 'unknown';
+      const line = vuln.location?.line || 0;
+      
+      return {
+        type: this.mapCategoryToType(vuln.category),
+        severity: vuln.severity.toLowerCase() as 'critical' | 'high' | 'medium' | 'low',
+        category: vuln.category,
+        message: vuln.title,
+        file,
+        line,
+        suggestion: typeof vuln.remediation === 'object' && vuln.remediation?.immediate 
+          ? vuln.remediation.immediate 
+          : typeof vuln.remediation === 'string' 
+          ? vuln.remediation 
+          : undefined,
+        cwe: vuln.cwe || (vuln as any).CWE,
+        cvss: vuln.cvss || (vuln as any).CVSS,
+        impact: vuln.impact,
+        evidence: vuln.evidence,
+        remediation: vuln.remediation
+      };
+    });
 
     // Convert recommendations
     const recommendations: DeepWikiRecommendation[] = (analysis.recommendations || []).map(rec => ({
@@ -802,9 +820,8 @@ Provide at least 100-200 detailed findings for a comprehensive analysis.`;
    */
   async checkApiHealth(): Promise<boolean> {
     try {
-      const podName = await this.getDeepWikiPodName();
       const { stdout } = await execAsync(
-        `kubectl exec -n ${this.NAMESPACE} ${podName} -- curl -s http://localhost:${this.API_PORT}/health`
+        `kubectl exec -n ${this.NAMESPACE} deployment/${this.POD_NAME} -- curl -s http://localhost:${this.API_PORT}/health`
       );
       
       const health = JSON.parse(stdout);
