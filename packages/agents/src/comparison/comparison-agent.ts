@@ -139,6 +139,19 @@ interface PrioritizedRecommendation {
 type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
 
 /**
+ * Input interface for ComparisonAgent
+ */
+export interface ComparisonAgentInput {
+  mainBranchAnalysis: DeepWikiAnalysisResult;
+  featureBranchAnalysis: DeepWikiAnalysisResult;
+  prMetadata?: any;
+  userProfile?: SkillProfile;
+  teamProfiles?: SkillProfile[];
+  historicalIssues?: any[];
+  generateReport?: boolean;
+}
+
+/**
  * Comparison Agent - Analyzes differences between main and feature branches
  * Replaces 5 specialized agents with intelligent full-context analysis
  */
@@ -154,7 +167,7 @@ export class ComparisonAgent extends BaseAgent {
   /**
    * Main analysis method - expects data from Orchestrator
    */
-  async analyze(data: any): Promise<AnalysisResult> {
+  async analyze(data: ComparisonAgentInput): Promise<AnalysisResult> {
     const { 
       mainBranchAnalysis, 
       featureBranchAnalysis, 
@@ -437,10 +450,10 @@ export class ComparisonAgent extends BaseAgent {
     
     // Extract performance-related issues
     const mainPerfIssues = mainAnalysis.issues.filter((i: any) => 
-      i.category === 'performance' || i.title.toLowerCase().includes('performance')
+      i.category === 'performance' || (i.title && i.title.toLowerCase().includes('performance'))
     );
     const featurePerfIssues = featureAnalysis.issues.filter((i: any) => 
-      i.category === 'performance' || i.title.toLowerCase().includes('performance')
+      i.category === 'performance' || (i.title && i.title.toLowerCase().includes('performance'))
     );
     
     const improvements: string[] = [];
@@ -480,7 +493,7 @@ export class ComparisonAgent extends BaseAgent {
 
     // Check for dependency-related issues
     const depIssues = featureAnalysis.issues.filter((i: any) => 
-      i.category === 'dependencies' || i.title.toLowerCase().includes('dependency')
+      i.category === 'dependencies' || (i.title && i.title.toLowerCase().includes('dependency'))
     );
     
     depIssues.forEach((issue: any) => {
