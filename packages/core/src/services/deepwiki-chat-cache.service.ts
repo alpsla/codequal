@@ -153,7 +153,7 @@ Use this context to provide accurate and specific answers about the repository.
    */
   private async waitForAnalysis(
     cacheKey: string, 
-    maxWaitTime: number = 60000
+    maxWaitTime = 60000
   ): Promise<DeepWikiReport | null> {
     const startTime = Date.now();
     const checkInterval = 2000; // Check every 2 seconds
@@ -254,9 +254,9 @@ Use this context to provide accurate and specific answers about the repository.
   private parseRepositoryUrl(repoUrl: string): RepositoryContext {
     // Handle various URL formats
     const patterns = [
-      /github\.com\/([^\/]+)\/([^\/]+)/,
-      /gitlab\.com\/([^\/]+)\/([^\/]+)/,
-      /^([^\/]+)\/([^\/]+)$/
+      /github\.com\/([^/]+)\/([^/]+)/,
+      /gitlab\.com\/([^/]+)\/([^/]+)/,
+      /^([^/]+)\/([^/]+)$/
     ];
     
     for (const pattern of patterns) {

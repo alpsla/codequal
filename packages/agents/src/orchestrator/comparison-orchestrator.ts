@@ -299,7 +299,7 @@ export class ComparisonOrchestrator {
    */
   private calculateDynamicWeights(context: RepositoryContext): ModelSelectionWeights {
     // Start with base weights
-    let weights: ModelSelectionWeights = {
+    const weights: ModelSelectionWeights = {
       quality: 0.4,
       speed: 0.2,
       cost: 0.3,

@@ -108,7 +108,7 @@ interface AIComparisonAnalysis {
  * AI-Powered Comparison Agent
  */
 class AIComparisonAgent extends BaseAgent {
-  private rolePrompt: string = '';
+  private rolePrompt = '';
   private modelConfig: any = null;
 
   constructor(

@@ -17,6 +17,8 @@ import { PRContextService } from './pr-context-service';
 import { RepositorySizeCategory } from '@codequal/core/services/model-selection/ModelVersionSync';
 import { DeepWikiCacheIntegration } from './deepwiki-cache-integration';
 import { RedisCacheService, createCacheService } from '@codequal/core/services/cache/RedisCacheService';
+import { generateEnhancedMockAnalysis } from './deepwiki-mock-enhanced';
+import * as monitoringModule from './monitoring-enhancements';
 
 const execAsync = promisify(exec);
 const logger = createLogger('deepwiki-api-manager');
@@ -443,12 +445,10 @@ Provide at least 100-200 detailed findings for a comprehensive analysis.`;
       await new Promise(resolve => setTimeout(resolve, latency));
       
       // Get enhanced mock data
-      const { generateEnhancedMockAnalysis } = require('./deepwiki-mock-enhanced');
       const mockAnalysis = generateEnhancedMockAnalysis(repositoryUrl);
       
       // Track token usage for mock
       try {
-        const monitoringModule = require('./monitoring-enhancements');
         if (monitoringModule.performanceMonitor && repositoryUrl.includes('analysis-id=')) {
           const analysisId = repositoryUrl.split('analysis-id=')[1];
           monitoringModule.performanceMonitor.recordTokenUsage(analysisId, model, 15000, 8000);

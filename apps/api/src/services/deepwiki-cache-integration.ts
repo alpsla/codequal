@@ -20,7 +20,7 @@ export interface CachedDeepWikiReport {
  */
 export class DeepWikiCacheIntegration {
   private cache: CacheService;
-  private defaultTTL: number = 1800; // 30 minutes
+  private defaultTTL = 1800; // 30 minutes
 
   constructor(cache: CacheService) {
     this.cache = cache;
@@ -188,7 +188,7 @@ export class DeepWikiCacheIntegration {
    */
   async getAnalysesForComparison(
     repositoryUrl: string,
-    mainBranch: string = 'main',
+    mainBranch = 'main',
     featureBranch: string
   ): Promise<{
     main: DeepWikiAnalysisResult | null;

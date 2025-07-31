@@ -390,7 +390,7 @@ export class RedisCacheService implements CacheService {
   /**
    * Get all keys matching a pattern
    */
-  async getAllKeys(pattern: string = 'deepwiki:reports:*'): Promise<string[]> {
+  async getAllKeys(pattern = 'deepwiki:reports:*'): Promise<string[]> {
     try {
       const keys = await this.client.keys(pattern);
       return keys;
