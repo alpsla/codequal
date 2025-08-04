@@ -118,7 +118,14 @@
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
     "test": "jest --testPathIgnorePatterns=tests/archive/",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "analyze": "ts-node src/standard/scripts/run-complete-analysis.ts",
+    "analyze:mock": "ts-node src/standard/scripts/run-complete-analysis.ts --mock",
+    "test:report": "ts-node src/standard/tests/integration/test-basic-report-only.ts",
+    "scheduler": "node dist/standard/scripts/run-scheduler.js",
+    "scheduler:build": "npm run build && npm run scheduler",
+    "monitor": "node dist/standard/scripts/monitoring-dashboard.js",
+    "monitor:build": "npm run build && npm run monitor"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.19.2",
@@ -131,7 +138,7 @@
     "@types/node-cron": "^3.0.11",
     "axios": "^1.10.0",
     "cron": "^4.3.2",
-    "ioredis": "^5.6.1",
+    "ioredis": "^5.7.0",
     "node-cron": "^4.1.0",
     "node-fetch": "^2.7.0",
     "openai": "^4.43.0",

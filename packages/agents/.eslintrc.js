@@ -25,7 +25,7 @@ module.exports = {
   },
   overrides: [
     {
-      files: ['tests/**/*.ts'],
+      files: ['tests/**/*.ts', '**/*test*.ts', '**/*Test*.ts', '**/integration-test.ts'],
       rules: {
         '@typescript-eslint/no-explicit-any': 'off',
         '@typescript-eslint/no-non-null-assertion': 'off',
@@ -33,7 +33,8 @@ module.exports = {
         '@typescript-eslint/no-unsafe-assignment': 'off',
         '@typescript-eslint/no-unsafe-member-access': 'off',
         '@typescript-eslint/no-unsafe-call': 'off',
-        '@typescript-eslint/no-unsafe-return': 'off'
+        '@typescript-eslint/no-unsafe-return': 'off',
+        'no-console': 'off'
       }
     }
   ]
