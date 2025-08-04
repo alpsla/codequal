@@ -1,0 +1,289 @@
+{
+  "apiVersion": 1,
+  "datasources": [
+    {
+      "name": "Supabase-Alerts",
+      "type": "postgres",
+      "typeName": "PostgreSQL",
+      "access": "proxy",
+      "url": "${SUPABASE_URL}",
+      "database": "postgres",
+      "user": "postgres",
+      "secureJsonData": {
+        "password": "${SUPABASE_SERVICE_KEY}"
+      },
+      "jsonData": {
+        "sslmode": "require",
+        "postgresVersion": 1500,
+        "timescaledb": false
+      }
+    }
+  ],
+  "dashboards": [
+    {
+      "uid": "codequal-alerts",
+      "title": "CodeQual Alert Dashboard",
+      "tags": ["codequal", "monitoring", "alerts"],
+      "timezone": "browser",
+      "schemaVersion": 38,
+      "version": 1,
+      "refresh": "10s",
+      "panels": [
+        {
+          "id": 1,
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 0
+          },
+          "type": "table",
+          "title": "Active Alerts",
+          "targets": [
+            {
+              "datasource": "Supabase-Alerts",
+              "format": "table",
+              "rawSql": "SELECT \n  id,\n  alert_name as \"Alert\",\n  severity as \"Severity\",\n  status as \"Status\",\n  value as \"Value\",\n  threshold as \"Threshold\",\n  message as \"Message\",\n  triggered_at as \"Triggered At\"\nFROM monitoring_alerts\nWHERE status = 'firing'\n  AND service = '$service'\n  AND environment = '$environment'\nORDER BY triggered_at DESC",
+              "refId": "A"
+            }
+          ],
+          "options": {
+            "showHeader": true,
+            "sortBy": [
+              {
+                "desc": true,
+                "displayName": "Triggered At"
+              }
+            ]
+          }
+        },
+        {
+          "id": 2,
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 0
+          },
+          "type": "stat",
+          "title": "Alert Summary",
+          "targets": [
+            {
+              "datasource": "Supabase-Alerts",
+              "format": "time_series",
+              "rawSql": "SELECT \n  NOW() as time,\n  COUNT(*) FILTER (WHERE status = 'firing' AND severity = 'critical') as \"Critical\",\n  COUNT(*) FILTER (WHERE status = 'firing' AND severity = 'warning') as \"Warning\",\n  COUNT(*) FILTER (WHERE status = 'firing' AND severity = 'info') as \"Info\"\nFROM monitoring_alerts\nWHERE service = '$service'\n  AND environment = '$environment'\n  AND triggered_at >= NOW() - INTERVAL '24 hours'",
+              "refId": "A"
+            }
+          ],
+          "options": {
+            "orientation": "horizontal",
+            "textMode": "value_and_name",
+            "colorMode": "background",
+            "graphMode": "none",
+            "justifyMode": "auto"
+          }
+        },
+        {
+          "id": 3,
+          "gridPos": {
+            "h": 10,
+            "w": 24,
+            "x": 0,
+            "y": 8
+          },
+          "type": "graph",
+          "title": "Alert Trends (24h)",
+          "targets": [
+            {
+              "datasource": "Supabase-Alerts",
+              "format": "time_series",
+              "rawSql": "SELECT \n  date_trunc('hour', triggered_at) as time,\n  severity,\n  COUNT(*) as count\nFROM monitoring_alerts\nWHERE service = '$service'\n  AND environment = '$environment'\n  AND triggered_at >= NOW() - INTERVAL '24 hours'\nGROUP BY date_trunc('hour', triggered_at), severity\nORDER BY time",
+              "refId": "A"
+            }
+          ],
+          "yaxes": [
+            {
+              "format": "short",
+              "label": "Alert Count",
+              "logBase": 1,
+              "show": true
+            },
+            {
+              "format": "short",
+              "logBase": 1,
+              "show": false
+            }
+          ],
+          "xaxis": {
+            "mode": "time",
+            "show": true
+          }
+        },
+        {
+          "id": 4,
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 18
+          },
+          "type": "table",
+          "title": "Recent Resolved Alerts",
+          "targets": [
+            {
+              "datasource": "Supabase-Alerts",
+              "format": "table",
+              "rawSql": "SELECT \n  alert_name as \"Alert\",\n  severity as \"Severity\",\n  triggered_at as \"Triggered\",\n  resolved_at as \"Resolved\",\n  EXTRACT(EPOCH FROM (resolved_at - triggered_at))/60 as \"Duration (min)\"\nFROM monitoring_alerts\nWHERE status = 'resolved'\n  AND service = '$service'\n  AND environment = '$environment'\n  AND resolved_at >= NOW() - INTERVAL '24 hours'\nORDER BY resolved_at DESC\nLIMIT 20",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 18
+          },
+          "type": "gauge",
+          "title": "Mean Time to Resolution (MTTR)",
+          "targets": [
+            {
+              "datasource": "Supabase-Alerts",
+              "format": "table",
+              "rawSql": "SELECT \n  AVG(EXTRACT(EPOCH FROM (resolved_at - triggered_at))/60) as value\nFROM monitoring_alerts\nWHERE status = 'resolved'\n  AND service = '$service'\n  AND environment = '$environment'\n  AND resolved_at >= NOW() - INTERVAL '7 days'",
+              "refId": "A"
+            }
+          ],
+          "options": {
+            "orientation": "auto",
+            "showThresholdLabels": true,
+            "showThresholdMarkers": true
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "m",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 30
+                  },
+                  {
+                    "color": "red",
+                    "value": 60
+                  }
+                ]
+              },
+              "max": 120,
+              "min": 0
+            }
+          }
+        }
+      ],
+      "templating": {
+        "list": [
+          {
+            "name": "service",
+            "type": "query",
+            "datasource": "Supabase-Alerts",
+            "query": "SELECT DISTINCT service FROM monitoring_alerts",
+            "refresh": 1,
+            "regex": "",
+            "multi": false,
+            "includeAll": false,
+            "current": {
+              "text": "codequal-api",
+              "value": "codequal-api"
+            }
+          },
+          {
+            "name": "environment",
+            "type": "query",
+            "datasource": "Supabase-Alerts",
+            "query": "SELECT DISTINCT environment FROM monitoring_alerts WHERE service = '$service'",
+            "refresh": 1,
+            "regex": "",
+            "multi": false,
+            "includeAll": false,
+            "current": {
+              "text": "production",
+              "value": "production"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "alerting": {
+    "notifications": [
+      {
+        "uid": "slack-alerts",
+        "name": "Slack Alerts",
+        "type": "slack",
+        "isDefault": true,
+        "sendReminder": false,
+        "uploadImage": true,
+        "settings": {
+          "url": "${SLACK_WEBHOOK_URL}",
+          "recipient": "#alerts",
+          "username": "Grafana"
+        }
+      },
+      {
+        "uid": "email-alerts",
+        "name": "Email Alerts",
+        "type": "email",
+        "isDefault": false,
+        "sendReminder": false,
+        "settings": {
+          "addresses": "${ALERT_EMAIL_TO}",
+          "singleEmail": false
+        }
+      }
+    ],
+    "rules": [
+      {
+        "uid": "critical-alerts",
+        "title": "Critical Alerts",
+        "condition": "A",
+        "data": [
+          {
+            "refId": "A",
+            "queryType": "",
+            "model": {
+              "datasource": "Supabase-Alerts",
+              "format": "table",
+              "rawSql": "SELECT COUNT(*) as value\nFROM monitoring_alerts\nWHERE status = 'firing'\n  AND severity = 'critical'\n  AND triggered_at >= NOW() - INTERVAL '5 minutes'"
+            }
+          }
+        ],
+        "noDataState": "OK",
+        "execErrState": "Alerting",
+        "for": "1m",
+        "annotations": {
+          "description": "There are {{ $value }} critical alerts firing",
+          "runbook_url": "https://wiki.codequal.com/runbooks/critical-alerts"
+        },
+        "labels": {
+          "severity": "critical",
+          "team": "platform"
+        },
+        "notifications": [
+          {
+            "uid": "slack-alerts"
+          },
+          {
+            "uid": "email-alerts"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -78,6 +78,7 @@ export * from './services/pr-review-service';
 // Monitoring
 export * from './monitoring/production-monitoring';
 export * from './monitoring/enhanced-monitoring-service';
+export * from './monitoring/supabase-alert-storage';
 
 // Authentication
 export * from './auth/system-auth';

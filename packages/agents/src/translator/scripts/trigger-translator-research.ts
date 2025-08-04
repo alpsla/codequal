@@ -226,19 +226,19 @@ if (require.main === module) {
   const baseUrl = process.env.API_BASE_URL || 'http://localhost:3001';
   
   if (useAPI && apiKey) {
-    console.log('Using API to trigger research...');
+    console.log('Using API to trigger research...'); // eslint-disable-line no-console
     triggerViaAPI(baseUrl, apiKey)
       .then(() => process.exit(0))
       .catch(error => {
-        console.error('Fatal error:', error);
+        console.error('Fatal error:', error); // eslint-disable-line no-console
         process.exit(1);
       });
   } else {
-    console.log('Using direct service to trigger research...');
+    console.log('Using direct service to trigger research...'); // eslint-disable-line no-console
     triggerTranslatorResearch()
       .then(() => process.exit(0))
       .catch(error => {
-        console.error('Fatal error:', error);
+        console.error('Fatal error:', error); // eslint-disable-line no-console
         process.exit(1);
       });
   }

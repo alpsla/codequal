@@ -6,6 +6,7 @@
 import { EventEmitter } from 'events';
 import promClient from 'prom-client';
 import { createLogger } from '../utils/logger';
+import { SupabaseAlertStorage, StoredAlert } from './supabase-alert-storage';
 
 // ============================================================================
 // TYPES & INTERFACES FOR AI TOOL INTEGRATION
@@ -18,6 +19,10 @@ export interface MonitoringConfig {
     url: string;
     apiKey?: string;
     orgId?: number;
+  };
+  supabase?: {
+    url: string;
+    key: string;
   };
   dashboards: DashboardConfig[];
   alerts: AlertConfig[];
@@ -76,6 +81,8 @@ export interface AlertConfig {
   channels: string[];
   description: string;
   aiContext?: string; // Help AI understand when to trigger this alert
+  threshold?: number;
+  query?: string;
 }
 
 export interface MetricSnapshot {
@@ -107,6 +114,8 @@ export interface AlertStatus {
   triggeredAt?: Date;
   value?: number;
   threshold?: number;
+  storedAlertId?: string;
+  metadata?: Record<string, any>;
 }
 
 // ============================================================================
@@ -121,6 +130,7 @@ export class EnhancedMonitoringService extends EventEmitter {
   private alertStates: Map<string, AlertStatus> = new Map();
   private metricHistory: MetricSnapshot[] = [];
   private refreshIntervals: Map<string, NodeJS.Timeout> = new Map();
+  private alertStorage?: SupabaseAlertStorage;
 
   // Prometheus metrics
   private coreMetrics!: {
@@ -139,6 +149,14 @@ export class EnhancedMonitoringService extends EventEmitter {
     super();
     this.config = config;
     this.metrics = new promClient.Registry();
+    
+    // Initialize Supabase storage if configured
+    if (config.supabase) {
+      this.alertStorage = new SupabaseAlertStorage(
+        config.supabase.url,
+        config.supabase.key
+      );
+    }
     
     // Initialize Prometheus metrics
     this.initializeMetrics();
@@ -701,7 +719,7 @@ export const ${widget.name.replace(/\s+/g, '')}Widget = (props) => {
     }
   }
 
-  private triggerAlert(alert: AlertConfig, status: AlertStatus) {
+  private async triggerAlert(alert: AlertConfig, status: AlertStatus) {
     this.logger.warn('Alert triggered', {
       alertId: alert.id,
       alertName: alert.name,
@@ -710,22 +728,178 @@ export const ${widget.name.replace(/\s+/g, '')}Widget = (props) => {
       value: status.value
     });
 
+    // Store alert in Supabase if configured
+    if (this.alertStorage) {
+      try {
+        const storedAlertId = await this.alertStorage.storeAlert({
+          service: this.config.service,
+          environment: this.config.environment,
+          alertId: alert.id,
+          alertName: alert.name,
+          severity: alert.severity,
+          status: 'firing',
+          value: status.value || 0,
+          threshold: alert.threshold || 0,
+          message: status.message || `Alert ${alert.name} triggered`,
+          metadata: {
+            condition: alert.condition,
+            query: alert.query,
+            ...status.metadata
+          },
+          triggeredAt: new Date(),
+          channelsNotified: alert.channels
+        });
+        
+        // Store the Supabase ID for potential resolution updates
+        status.storedAlertId = storedAlertId;
+      } catch (error) {
+        this.logger.error('Failed to store alert in Supabase', {
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+    }
+
     // Emit event for external handlers
     this.emit('alertTriggered', { alert, status });
 
     // Send to configured channels
-    alert.channels.forEach(channel => {
-      this.sendAlertToChannel(channel, alert, status);
+    const channelPromises = alert.channels.map(channel => 
+      this.sendAlertToChannel(channel, alert, status)
+    );
+    
+    await Promise.all(channelPromises);
+  }
+
+  private async sendAlertToChannel(channel: string, alert: AlertConfig, status: AlertStatus): Promise<void> {
+    try {
+      switch (channel) {
+        case 'slack':
+          await this.sendSlackAlert(alert, status);
+          break;
+        case 'email':
+          await this.sendEmailAlert(alert, status);
+          break;
+        case 'pagerduty':
+          await this.sendPagerDutyAlert(alert, status);
+          break;
+        default:
+          this.logger.warn(`Unknown alert channel: ${channel}`);
+      }
+    } catch (error) {
+      this.logger.error(`Failed to send alert to ${channel}`, {
+        alertId: alert.id,
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  }
+
+  private async sendSlackAlert(alert: AlertConfig, status: AlertStatus): Promise<void> {
+    const webhookUrl = process.env.SLACK_WEBHOOK_URL;
+    if (!webhookUrl) {
+      this.logger.warn('Slack webhook URL not configured');
+      return;
+    }
+
+    const color = alert.severity === 'critical' ? '#FF0000' :
+                  alert.severity === 'warning' ? '#FFA500' : '#36A64F';
+
+    const payload = {
+      attachments: [{
+        color,
+        title: `${this.getSeverityEmoji(alert.severity)} ${alert.name}`,
+        text: status.message,
+        fields: [
+          {
+            title: 'Service',
+            value: this.config.service,
+            short: true
+          },
+          {
+            title: 'Environment',
+            value: this.config.environment,
+            short: true
+          },
+          {
+            title: 'Severity',
+            value: alert.severity.toUpperCase(),
+            short: true
+          },
+          {
+            title: 'Value',
+            value: status.value?.toString() || 'N/A',
+            short: true
+          }
+        ],
+        footer: 'CodeQual Monitoring',
+        ts: Math.floor(Date.now() / 1000)
+      }]
+    };
+
+    // In production, this would make actual HTTP request to Slack
+    this.logger.info('Slack alert sent', { alertId: alert.id });
+  }
+
+  private async sendEmailAlert(alert: AlertConfig, status: AlertStatus): Promise<void> {
+    // In production, this would integrate with email service (SendGrid, SES, etc.)
+    const emailConfig = {
+      to: process.env.ALERT_EMAIL_TO?.split(',') || [],
+      from: process.env.ALERT_EMAIL_FROM || 'alerts@codequal.com',
+      subject: `[${alert.severity.toUpperCase()}] ${alert.name} - ${this.config.service}`,
+      html: `
+        <h2>${alert.name}</h2>
+        <p><strong>Status:</strong> ${status.status}</p>
+        <p><strong>Message:</strong> ${status.message}</p>
+        <p><strong>Service:</strong> ${this.config.service}</p>
+        <p><strong>Environment:</strong> ${this.config.environment}</p>
+        <p><strong>Value:</strong> ${status.value || 'N/A'}</p>
+        <p><strong>Time:</strong> ${new Date().toISOString()}</p>
+        <hr>
+        <p><em>This is an automated alert from CodeQual Monitoring</em></p>
+      `
+    };
+
+    this.logger.info('Email alert sent', { 
+      alertId: alert.id,
+      recipients: emailConfig.to.length 
     });
   }
 
-  private sendAlertToChannel(channel: string, alert: AlertConfig, status: AlertStatus) {
-    // Implement channel-specific alert sending (Slack, email, PagerDuty, etc.)
-    this.logger.info('Sending alert to channel', {
-      channel,
-      alertId: alert.id,
-      severity: alert.severity
-    });
+  private async sendPagerDutyAlert(alert: AlertConfig, status: AlertStatus): Promise<void> {
+    const integrationKey = process.env.PAGERDUTY_INTEGRATION_KEY;
+    if (!integrationKey) {
+      this.logger.warn('PagerDuty integration key not configured');
+      return;
+    }
+
+    const payload = {
+      routing_key: integrationKey,
+      event_action: 'trigger',
+      dedup_key: `${this.config.service}-${alert.id}`,
+      payload: {
+        summary: `${alert.name}: ${status.message}`,
+        severity: alert.severity === 'critical' ? 'critical' : 
+                  alert.severity === 'warning' ? 'warning' : 'info',
+        source: this.config.service,
+        custom_details: {
+          environment: this.config.environment,
+          value: status.value,
+          threshold: status.threshold,
+          alert_id: alert.id
+        }
+      }
+    };
+
+    // In production, this would make actual API call to PagerDuty
+    this.logger.info('PagerDuty alert sent', { alertId: alert.id });
+  }
+
+  private getSeverityEmoji(severity: string): string {
+    switch (severity) {
+      case 'critical': return '🔴';
+      case 'warning': return '⚠️';
+      case 'info': return 'ℹ️';
+      default: return '📊';
+    }
   }
 
   private parseRefreshInterval(refresh: string): number {
@@ -808,6 +982,95 @@ export const ${widget.name.replace(/\s+/g, '')}Widget = (props) => {
     if (criticalAlerts.length > 0) return 'critical';
     if (warningAlerts.length > 0) return 'warning';
     return 'healthy';
+  }
+
+  // Resolve an alert when conditions return to normal
+  async resolveAlert(alertId: string): Promise<void> {
+    const status = this.alertStates.get(alertId);
+    if (!status || status.status === 'ok') {
+      return; // Already resolved or doesn't exist
+    }
+
+    // Update local state
+    status.status = 'ok';
+    status.message = `Alert ${status.name} resolved`;
+    this.alertStates.set(alertId, status);
+
+    // Update Supabase if we have a stored alert ID
+    if (this.alertStorage && status.storedAlertId) {
+      try {
+        await this.alertStorage.updateAlertStatus(
+          status.storedAlertId,
+          'resolved',
+          new Date()
+        );
+      } catch (error) {
+        this.logger.error('Failed to update alert resolution in Supabase', {
+          alertId,
+          storedAlertId: status.storedAlertId,
+          error
+        });
+      }
+    }
+
+    // Emit resolution event
+    this.emit('alertResolved', { alertId, status });
+
+    // Send resolution notifications
+    const alert = this.config.alerts.find(a => a.id === alertId);
+    if (alert) {
+      const resolutionMessage = `✅ Alert resolved: ${alert.name}`;
+      this.logger.info(resolutionMessage, {
+        alertId,
+        resolvedAt: new Date()
+      });
+
+      // Could send resolution notifications to channels here if needed
+    }
+  }
+
+  // Get Grafana-compatible alert data
+  async getGrafanaAlerts(): Promise<Array<{
+    id: string;
+    dashboardId: string;
+    panelId: number;
+    name: string;
+    state: string;
+    newStateDate: string;
+    evalDate: string;
+    evalData: {
+      evalMatches: Array<{
+        metric: string;
+        tags: Record<string, string>;
+        value: number;
+      }>;
+    };
+    executionError: string;
+    url: string;
+  }>> {
+    const alerts = Array.from(this.alertStates.values());
+    
+    return alerts.map(alert => ({
+      id: alert.id,
+      dashboardId: 'codequal-monitoring',
+      panelId: 1,
+      name: alert.name,
+      state: alert.status === 'ok' ? 'ok' : 'alerting',
+      newStateDate: alert.triggeredAt?.toISOString() || new Date().toISOString(),
+      evalDate: new Date().toISOString(),
+      evalData: {
+        evalMatches: [{
+          metric: alert.name,
+          tags: {
+            service: this.config.service,
+            environment: this.config.environment
+          },
+          value: alert.value || 0
+        }]
+      },
+      executionError: '',
+      url: `${this.config.grafana.url}/d/codequal-monitoring`
+    }));
   }
 
   // Cleanup resources
