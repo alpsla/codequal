@@ -69,22 +69,94 @@ export interface PRMetadata {
   linesRemoved?: number;
 }
 
+export interface AnalysisResult {
+  issues: Issue[];
+  recommendations?: string[];
+  scores?: {
+    overall: number;
+    security: number;
+    performance: number;
+    maintainability: number;
+    testing: number;
+  };
+  metadata?: any;
+}
+
+export interface ComparisonInput {
+  mainBranchAnalysis: AnalysisResult;
+  featureBranchAnalysis: AnalysisResult;
+  prMetadata?: PRMetadata;
+  userProfile?: any;
+  teamProfiles?: any[];
+  historicalIssues?: any[];
+  generateReport?: boolean;
+  includeEducation?: boolean;
+}
+
+export interface ComparisonConfig {
+  language?: string;
+  complexity?: string;
+  performance?: string;
+  sizeCategory?: string;
+  role?: string;
+  prompt?: string;
+  rolePrompt?: string;
+  qualityThreshold?: number;
+  weights?: any;
+}
+
+export interface DeveloperSkills {
+  userId: string;
+  overallScore: number;
+  categoryScores: {
+    security: number;
+    performance: number;
+    codeQuality: number;
+    architecture: number;
+    testing: number;
+  };
+  level?: {
+    current: string;
+    progress: number;
+  };
+}
+
 export interface ComparisonResult {
   success: boolean;
-  report: string;                    // Full markdown report
-  prComment: string;                 // Concise PR comment
-  analysis: any;                     // Raw analysis data
+  report?: string;                    // Full markdown report
+  prComment?: string;                 // Concise PR comment
+  comparison?: {                      // Detailed comparison data
+    resolvedIssues?: any[];
+    newIssues?: any[];
+    modifiedIssues?: any[];
+    unchangedIssues?: any[];
+    summary?: any;
+    insights?: string[];
+    recommendations?: string[];
+  };
+  analysis?: any;                     // Raw analysis data
   education?: EducationalEnhancements; // Optional course recommendations
   skillTracking?: any;               // Skill updates
-  metadata: {
-    orchestratorVersion: string;
-    modelUsed: any;
+  metadata?: {
+    orchestratorVersion?: string;
+    modelUsed?: any;
     configId?: string;
-    repositoryContext: RepositoryContext;
-    timestamp: Date;
-    estimatedCost: number;
-    format: 'markdown' | 'json';
+    repositoryContext?: RepositoryContext;
+    timestamp?: Date;
+    estimatedCost?: number;
+    format?: 'markdown' | 'json';
+    agentId?: string;
+    agentVersion?: string;
+    confidence?: number;
   };
+  // Legacy fields for backward compatibility
+  resolvedIssues?: any[];
+  newIssues?: any[];
+  modifiedIssues?: any[];
+  unchangedIssues?: any[];
+  summary?: any;
+  insights?: string[];
+  recommendations?: string[];
 }
 
 export interface ModelSelectionWeights {

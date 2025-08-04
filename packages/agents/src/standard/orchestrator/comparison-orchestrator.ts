@@ -15,7 +15,8 @@ import { IConfigProvider, AnalysisConfig, ModelSelection } from './interfaces/co
 import { ISkillProvider, DeveloperSkills, SkillUpdate } from './interfaces/skill-provider.interface';
 import { IEducatorAgent } from '../educator/interfaces/educator.interface';
 import { ResearcherAgent } from '../../researcher/researcher-agent';
-import { AIComparisonAgent } from '../../comparison/ai-comparison-agent';
+import { ComparisonAgent } from '../comparison/comparison-agent';
+import { IReportingComparisonAgent } from '../comparison/interfaces/comparison-agent.interface';
 import { IDataStore, AnalysisReport } from '../services/interfaces/data-store.interface';
 import { 
   DeepWikiAnalysisResult, 
@@ -24,12 +25,13 @@ import {
   ComparisonResult,
   ModelSelectionWeights 
 } from '../types/analysis-types';
+import { CategoryWeights } from './interfaces/config-provider.interface';
 
 /**
  * Comparison Orchestrator Service with Interface-Based Dependencies
  */
 export class ComparisonOrchestrator {
-  private comparisonAgent: AIComparisonAgent;
+  private comparisonAgent: IReportingComparisonAgent;
   
   constructor(
     private configProvider: IConfigProvider,
@@ -37,9 +39,11 @@ export class ComparisonOrchestrator {
     private dataStore: IDataStore,
     private researcherAgent: ResearcherAgent,
     private educatorAgent?: IEducatorAgent,
-    private logger?: any
+    private logger?: any,
+    private comparisonAgentInstance?: IReportingComparisonAgent
   ) {
-    this.comparisonAgent = new AIComparisonAgent();
+    // Use injected comparison agent or create default
+    this.comparisonAgent = comparisonAgentInstance || new ComparisonAgent(logger);
   }
 
   /**
@@ -52,14 +56,90 @@ export class ComparisonOrchestrator {
       // Step 1: Analyze repository context for smart model selection
       const repoContext = this.analyzeRepositoryContext(request);
       
-      // Step 2: Get model configuration from provider
+      // Step 2: Get model configuration from Supabase (no validation, just pull)
       let config = await this.getConfiguration(request.userId, repoContext);
 
       if (!config) {
         // No configuration found, use researcher to find optimal model
-        config = await this.researchOptimalConfiguration(repoContext);
-        await this.configProvider.saveConfig(config);
+        this.log('info', 'No configuration found, researching optimal model');
+        
+        // Use researcher agent to find best model for this context
+        const research = await this.researcherAgent.research();
+        
+        // Create configuration with researched model
+        config = {
+          userId: request.userId,
+          teamId: request.teamId || '00000000-0000-0000-0000-000000000000',
+          repoType: repoContext.repoType,
+          language: repoContext.language,
+          modelPreferences: {
+            primary: {
+              provider: research.provider,
+              modelId: research.model,
+              temperature: 0.3,
+              maxTokens: 4000
+            },
+            fallback: {
+              provider: 'openai',
+              modelId: 'gpt-4-turbo',
+              temperature: 0.3,
+              maxTokens: 4000
+            }
+          },
+          weights: this.calculateDynamicWeights(repoContext),
+          thresholds: {
+            critical: 90,
+            high: 70,
+            medium: 50,
+            low: 30
+          },
+          features: {
+            enableEducation: true,
+            enableSkillTracking: true,
+            enableDependencyAnalysis: true,
+            enableArchitectureReview: repoContext.sizeCategory !== 'small',
+            enablePerformanceProfiling: repoContext.hasPerformanceIssues
+          },
+          version: '2.0'
+        };
+        
+        // Save configuration for future use
+        const configId = await this.configProvider.saveConfig(config);
+        config.id = configId;
+        
+        this.log('info', 'Saved new configuration from researcher', {
+          configId,
+          model: research.model,
+          provider: research.provider
+        });
+      } else {
+        // Check if configuration is stale
+        const configAge = this.getConfigAge(config);
+        if (this.isConfigStale(config)) {
+          this.log('warn', 'Configuration is stale', {
+            age: configAge,
+            lastUpdated: config.updatedAt || config.createdAt,
+            threshold: '90 days'
+          });
+          
+          // Alert monitoring system
+          this.alertStaleConfig(config, configAge);
+        }
       }
+      
+      // At this point, config is guaranteed to exist (either retrieved or created)
+      if (!config) {
+        throw new Error('Configuration should exist at this point');
+      }
+
+      // Log the model being used
+      this.log('info', 'Using model configuration', {
+        model: config.modelPreferences.primary.modelId,
+        provider: config.modelPreferences.primary.provider,
+        version: config.version,
+        cost: this.calculateCost(repoContext, config),
+        configAge: this.getConfigAge(config)
+      });
 
       // Step 3: Get historical skill data
       const skillData = await this.getSkillData(request);
@@ -83,11 +163,7 @@ export class ComparisonOrchestrator {
         userProfile: skillData.userProfile ? this.convertToSkillProfile(skillData.userProfile) : undefined,
         teamProfiles: skillData.teamProfiles?.map(tp => this.convertToSkillProfile(tp)) || [],
         historicalIssues: request.historicalIssues,
-        generateReport: request.generateReport !== false,  // Default true
-        config: {
-          rolePrompt: rolePrompt,
-          weights: this.convertWeights(config.weights)
-        }
+        generateReport: request.generateReport !== false  // Default true
       });
 
       // Step 7: Process analysis result to expected format
@@ -103,7 +179,7 @@ export class ComparisonOrchestrator {
           educationalEnhancements = await this.educatorAgent.findMatchingCourses({
             suggestions: processedResult.educationalInsights,
             developerLevel: skillData.userProfile?.level?.current || 'beginner',
-            teamProfile: await this.skillProvider.getTeamSkills(request.teamId || 'default')
+            teamProfile: await this.skillProvider.getTeamSkills(request.teamId || '00000000-0000-0000-0000-000000000000')
           });
         } catch (error) {
           this.log('warn', 'Failed to get educational enhancements', error);
@@ -175,57 +251,6 @@ export class ComparisonOrchestrator {
     }
   }
 
-  /**
-   * Research optimal configuration using researcher agent
-   */
-  private async researchOptimalConfiguration(
-    context: RepositoryContext
-  ): Promise<AnalysisConfig> {
-    this.log('info', 'Researching optimal configuration', context);
-    
-    const weights = this.calculateDynamicWeights(context);
-    
-    // Use researcher to find optimal model
-    const research = await this.researcherAgent.research();
-    
-    // Build configuration from research
-    return {
-      userId: 'system',
-      teamId: 'default',
-      repoType: context.repoType,
-      language: context.language,
-      modelPreferences: {
-        primary: {
-          provider: research.provider,
-          modelId: research.model,
-          temperature: 0.3,
-          maxTokens: 4000
-        },
-        fallback: { provider: research.provider, modelId: research.model }
-      },
-      weights: {
-        security: context.hasSecurityIssues ? 0.25 : 0.15,
-        performance: context.hasPerformanceIssues ? 0.25 : 0.15,
-        codeQuality: 0.25,
-        architecture: 0.20,
-        dependencies: 0.15
-      },
-      thresholds: {
-        critical: 90,
-        high: 70,
-        medium: 50,
-        low: 30
-      },
-      features: {
-        enableEducation: true,
-        enableSkillTracking: true,
-        enableDependencyAnalysis: true,
-        enableArchitectureReview: context.sizeCategory !== 'small',
-        enablePerformanceProfiling: context.hasPerformanceIssues
-      },
-      version: '1.0'
-    };
-  }
 
   /**
    * Get skill data from provider
@@ -255,23 +280,43 @@ export class ComparisonOrchestrator {
   ): Promise<void> {
     if (!request.prMetadata?.author) return;
     
-    const updates: SkillUpdate[] = [];
-    
-    // Calculate skill adjustments from analysis
-    const adjustments = this.calculateSkillAdjustments(analysisResult);
-    
-    if (adjustments.length > 0) {
-      updates.push({
+    try {
+      // Get current developer skills first
+      const currentSkills = await this.skillProvider.getUserSkills(request.prMetadata.author);
+      
+      // Extract skill tracking data from analysis result
+      const skillTracking = analysisResult.skillTracking || {};
+      
+      // If no skill tracking data, skip update
+      if (!skillTracking.newScore && !skillTracking.adjustments) {
+        this.log('info', 'No skill updates found in analysis result');
+        return;
+      }
+      
+      // Create skill update with proper previous score
+      const updates: SkillUpdate[] = [{
         userId: request.prMetadata.author,
         prId: request.prMetadata.id || 'unknown',
         timestamp: new Date(),
-        previousScore: analysisResult.skillTracking?.previousScore || 50,
-        newScore: analysisResult.skillTracking?.newScore || 50,
-        adjustments,
-        categoryChanges: analysisResult.skillTracking?.categoryChanges || {}
+        previousScore: currentSkills.overallScore, // Use actual current score
+        newScore: skillTracking.newScore || currentSkills.overallScore,
+        adjustments: skillTracking.adjustments || [],
+        categoryChanges: skillTracking.categoryChanges || {}
+      }];
+      
+      // Update skills in database
+      await this.skillProvider.updateSkills(updates);
+      
+      this.log('info', 'Skills updated successfully', {
+        userId: request.prMetadata.author,
+        previousScore: currentSkills.overallScore,
+        newScore: skillTracking.newScore,
+        change: (skillTracking.newScore || currentSkills.overallScore) - currentSkills.overallScore
       });
       
-      await this.skillProvider.updateSkills(updates);
+    } catch (error) {
+      this.log('error', 'Failed to update skills', error);
+      // Don't throw - skill update failure shouldn't fail the analysis
     }
   }
 
@@ -360,34 +405,40 @@ export class ComparisonOrchestrator {
   /**
    * Calculate dynamic weights based on repository context
    */
-  private calculateDynamicWeights(context: RepositoryContext): ModelSelectionWeights {
-    const weights: ModelSelectionWeights = {
-      quality: 0.4,
-      speed: 0.2,
-      cost: 0.3,
-      recency: 0.1
+  private calculateDynamicWeights(context: RepositoryContext): CategoryWeights {
+    const weights: CategoryWeights = {
+      security: 0.25,
+      performance: 0.25,
+      codeQuality: 0.25,
+      architecture: 0.15,
+      dependencies: 0.10
     };
     
     // Adjust based on size
     if (context.sizeCategory === 'large') {
-      weights.quality += 0.2;
-      weights.cost -= 0.1;
+      weights.architecture += 0.1;
+      weights.dependencies += 0.05;
+      weights.codeQuality -= 0.1;
+      weights.performance -= 0.05;
     } else if (context.sizeCategory === 'small') {
-      weights.quality -= 0.1;
-      weights.cost += 0.1;
+      weights.codeQuality += 0.1;
+      weights.performance += 0.05;  
+      weights.architecture -= 0.1;
+      weights.dependencies -= 0.05;
     }
     
     // Adjust based on critical issues
     if (context.criticalIssueCount > 0) {
-      weights.quality += 0.1;
-      weights.speed += 0.05;
-      weights.cost -= 0.15;
+      weights.security += 0.1;
+      weights.codeQuality += 0.05;
+      weights.performance -= 0.1;
+      weights.dependencies -= 0.05;
     }
     
     // Normalize
     const sum = Object.values(weights).reduce((a, b) => a + b, 0);
     Object.keys(weights).forEach(key => {
-      weights[key as keyof ModelSelectionWeights] /= sum;
+      weights[key as keyof CategoryWeights] /= sum;
     });
     
     return weights;
@@ -455,8 +506,21 @@ export class ComparisonOrchestrator {
    * Process analysis result to expected format
    */
   private processAnalysisResult(analysisResult: any): any {
-    // The AIComparisonAgent returns a different format than expected
-    // Let's extract the needed properties from the metadata and create a compatible result
+    // The new ComparisonAgent returns a ComparisonResult
+    if (analysisResult.success) {
+      return {
+        markdownReport: analysisResult.report,
+        prComment: analysisResult.prComment,
+        analysis: analysisResult.comparison,
+        educationalInsights: [],
+        skillTracking: analysisResult.skillTracking,
+        overallScore: this.calculateOverallScore(analysisResult.comparison),
+        duration: 0,
+        issues: analysisResult.comparison?.newIssues || []
+      };
+    }
+    
+    // Fallback for other formats
     const metadata = analysisResult.metadata || {};
     const comparison = metadata.comparison || {};
     
@@ -584,7 +648,12 @@ Ensure 100% accuracy, professional language, and actionable recommendations.`;
   }
 
   private generateReportId(): string {
-    return `report_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    // Generate a UUID v4 for the report ID
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0;
+      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
   }
 
   private extractIssues(analysisResult: any) {
@@ -606,17 +675,103 @@ Ensure 100% accuracy, professional language, and actionable recommendations.`;
     return millionTokens * rate;
   }
 
+  private calculateOverallScore(comparison: any): number {
+    if (!comparison) return 75;
+    
+    // Calculate based on issues
+    const newCritical = comparison.newIssues?.filter((i: any) => i.severity === 'critical').length || 0;
+    const newHigh = comparison.newIssues?.filter((i: any) => i.severity === 'high').length || 0;
+    const resolved = comparison.resolvedIssues?.length || 0;
+    
+    let score = 85; // Base score
+    score -= newCritical * 10;
+    score -= newHigh * 5;
+    score += Math.min(resolved * 2, 10); // Bonus for fixes
+    
+    return Math.max(0, Math.min(100, score));
+  }
+
+  /**
+   * Check if configuration is stale (older than 90 days)
+   */
+  private isConfigStale(config: AnalysisConfig): boolean {
+    const lastUpdated = config.updatedAt || config.createdAt;
+    if (!lastUpdated) return true;
+    
+    const ageInDays = this.getConfigAgeInDays(config);
+    return ageInDays > 90;
+  }
+  
+  /**
+   * Get configuration age as human-readable string
+   */
+  private getConfigAge(config: AnalysisConfig): string {
+    const days = this.getConfigAgeInDays(config);
+    
+    if (days === 0) return 'today';
+    if (days === 1) return '1 day';
+    if (days < 30) return `${days} days`;
+    if (days < 60) return '1 month';
+    if (days < 90) return '2 months';
+    return `${Math.floor(days / 30)} months`;
+  }
+  
+  /**
+   * Get configuration age in days
+   */
+  private getConfigAgeInDays(config: AnalysisConfig): number {
+    const lastUpdated = config.updatedAt || config.createdAt;
+    if (!lastUpdated) return 999; // Very old
+    
+    const date = lastUpdated instanceof Date ? lastUpdated : new Date(lastUpdated);
+    const ageMs = Date.now() - date.getTime();
+    return Math.floor(ageMs / (1000 * 60 * 60 * 24));
+  }
+  
+  /**
+   * Alert monitoring system about missing configuration
+   */
+  private alertConfigMissing(context: RepositoryContext): void {
+    // In production, this would send to monitoring service
+    this.log('error', 'ALERT: Configuration missing', {
+      repoType: context.repoType,
+      language: context.language,
+      severity: 'high',
+      action: 'using_default_config'
+    });
+    
+    // TODO: Send to monitoring service
+    // this.monitoringService.alert('config_missing', { context });
+  }
+  
+  /**
+   * Alert monitoring system about stale configuration
+   */
+  private alertStaleConfig(config: AnalysisConfig, age: string): void {
+    // In production, this would send to monitoring service
+    this.log('warn', 'ALERT: Configuration stale', {
+      configId: config.id,
+      age,
+      lastUpdated: config.updatedAt || config.createdAt,
+      severity: 'medium',
+      action: 'using_stale_config'
+    });
+    
+    // TODO: Send to monitoring service
+    // this.monitoringService.alert('config_stale', { config, age });
+  }
+
   private log(level: string, message: string, data?: any) {
     if (this.logger) {
       this.logger[level](message, data);
     } else {
       const msg = `[ComparisonOrchestrator] ${message}`;
       switch (level) {
-        case 'debug': console.debug(msg, data || ''); break;
-        case 'info': console.info(msg, data || ''); break;
-        case 'warn': console.warn(msg, data || ''); break;
-        case 'error': console.error(msg, data || ''); break;
-        default: console.log(msg, data || ''); break;
+        case 'debug': console.debug(msg, data || ''); break; // eslint-disable-line no-console
+        case 'info': console.info(msg, data || ''); break; // eslint-disable-line no-console
+        case 'warn': console.warn(msg, data || ''); break; // eslint-disable-line no-console
+        case 'error': console.error(msg, data || ''); break; // eslint-disable-line no-console
+        default: console.log(msg, data || ''); break; // eslint-disable-line no-console
       }
     }
   }

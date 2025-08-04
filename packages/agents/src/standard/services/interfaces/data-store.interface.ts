@@ -4,6 +4,10 @@ export interface QueryOptions {
   orderBy?: string;
   orderDirection?: 'asc' | 'desc';
   select?: string[];
+  sort?: {
+    field: string;
+    order: 'asc' | 'desc';
+  };
 }
 
 export interface FilterCondition {
