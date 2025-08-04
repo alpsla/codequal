@@ -1,11 +1,18 @@
+import { DeveloperSkills, TeamSkills } from '../../orchestrator/interfaces/skill-provider.interface';
+// Import core types from analysis-types to match orchestrator expectations
 import { 
-  EducationalEnhancements, 
   Course, 
   Article, 
   Video, 
-  LearningPath 
+  EducationalEnhancements,
+  LearningPath
 } from '../../types/analysis-types';
-import { DeveloperSkills, TeamSkills } from '../../orchestrator/interfaces/skill-provider.interface';
+// Import educator-specific types from local types
+import { 
+  CourseRecommendation, 
+  EducationalContent,
+  TeamLearningInsights
+} from './types';
 
 /**
  * Educational suggestions from the comparison agent's report

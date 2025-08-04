@@ -1,245 +1,278 @@
-# Production-Ready Code Analysis System
+# Standard Framework - Complete Guide
 
-This directory contains the PRODUCTION-READY implementation of our AI-powered code analysis system with clean architecture principles.
+## 🚀 Quick Start
 
-## ⚠️ IMPORTANT: Use This Implementation
+### Run a Complete PR Analysis (Recommended Entry Point)
 
-This is the ONLY implementation that should be used for:
-- Production deployments
-- New feature development
-- Customer demonstrations
-- Testing and validation
+```bash
+# Navigate to the agents package
+cd packages/agents
 
-## Architecture Overview
+# Run with mock DeepWiki (fast, for testing)
+npm run analyze -- --repo https://github.com/vercel/swr --pr 2950 --mock
 
-```
-standard/
-├── README.md                           # This file
-├── orchestrator/                       # Main orchestration logic
-│   ├── comparison-orchestrator.ts      # Coordinates entire pipeline
-│   └── interfaces/                     # Abstract interfaces
-│       ├── config-provider.interface.ts
-│       └── skill-provider.interface.ts
-├── comparison/                         # Core analysis & report generation
-│   └── ai-comparison-agent.ts          # GENERATES THE FULL REPORT!
-├── researcher/                         # Model research & selection
-│   ├── researcher-agent.ts             # Dynamic model selection
-│   ├── research-prompts.ts             # Weighted research logic
-│   └── interfaces/                     # Research interfaces
-│       ├── model-registry.interface.ts
-│       └── scheduler.interface.ts
-├── educator/                           # Educational resource discovery
-│   ├── educator-agent.ts               # Finds real courses/articles
-│   └── interfaces/
-│       └── educator.interface.ts       # Education interfaces
-├── services/                           # Business services
-│   └── interfaces/
-│       └── data-store.interface.ts     # Data persistence interface
-├── types/                              # Type definitions
-│   └── analysis-types.ts               # Core types + education types
-├── templates/                          # Report templates
-│   └── pr-analysis-template.md         # Used by comparison agent
-├── examples/                           # Example outputs
-│   └── large-pr-microservices-example.md # Example report
-└── docs/                               # Documentation
-    ├── architecture-overview.md        # Clean architecture guide
-    ├── implementation-guide.md         # Quick start guide
-    ├── template-documentation.md       # Template structure guide
-    ├── skill-calculation-guide.md      # Skill scoring methodology
-    └── pr-decision-logic.md            # PR blocking rules
+# Run with real DeepWiki (slower, real analysis)
+npm run analyze -- --repo https://github.com/vercel/swr --pr 2950
+
+# Test report generation with pre-defined data
+npm run test:report
 ```
 
-## Clean Architecture Design
+The main entry point is: `src/standard/scripts/run-complete-analysis.ts`
 
-### Interface-Based Dependencies
-All external dependencies are abstracted through interfaces:
-- **IConfigProvider**: Configuration management
-- **ISkillProvider**: Developer skill tracking  
-- **IDataStore**: Data persistence
-- **IModelRegistry**: Model information
-- **IScheduler**: Task scheduling
+## 📋 Overview
 
-### Dependency Injection
-```typescript
-const orchestrator = new ComparisonOrchestrator(
-  configProvider,    // Supabase, PostgreSQL, etc.
-  skillProvider,     // Supabase, Redis, etc.
-  dataStore,        // Any database
-  researcherAgent,  // Model selection
-  educatorAgent     // Course finder (optional)
-);
-```
+The Standard Framework is a comprehensive PR analysis system that:
+- Analyzes pull requests for code quality issues
+- Generates detailed reports with actionable feedback
+- Tracks developer skills over time
+- Makes PR approval/decline decisions based on issue severity
 
-### Benefits
-- **Testable**: Easy to mock interfaces
-- **Flexible**: Swap implementations without changing core
-- **Reusable**: Works in API, CLI, or Web contexts
-- **Maintainable**: Clear boundaries between layers
+### Current State (as of 2025-08-03)
 
-## Key Features
+#### ✅ Working Features
+1. **Basic Report Generation** - Full markdown reports with all sections
+2. **PR Decision Logic** - Blocks PRs with critical/high issues
+3. **Code Snippets** - All issues include problematic code and required fixes
+4. **Score Calculation** - Equal weights for new and existing issues
+5. **User Identification** - Extracts author info for Supabase storage
+6. **DeepWiki Integration** - Real code analysis with mock fallback
 
-1. **PR Decision Logic**
-   - Automatic DECLINE for any PR with critical or high severity NEW issues
-   - Pre-existing repository issues don't block PRs but impact skill scores
-   - Clear separation between blocking and non-blocking issues
+#### 🚧 Pending Features
+1. **Dynamic Skill Updates** - Update developer skills based on PR analysis
+2. **Repository Impact** - Calculate how pre-existing issues affect scores
+3. **Supabase Persistence** - Save results to database
 
-2. **Comprehensive Analysis**
-   - Security, Performance, Code Quality, Architecture, and Dependencies
-   - Each category scored 0-100 with letter grades
-   - Detailed code snippets for all issues with fixes
-
-3. **Skill Tracking System**
-   - Individual developer scores with detailed calculations
-   - Team performance metrics
-   - Positive adjustments for fixes, negative for new issues
-   - Penalties for leaving existing issues unfixed
-
-4. **Educational Integration**
-   - Learning paths based on identified issues
-   - Anti-pattern examples from actual code
-   - Personalized recommendations
-
-## Skill Calculation Methodology
-
-### For New Developers
-- Base score: 50/100
-- PR performance adjustment:
-  - PR > 80/100: +10 to base
-  - PR 60-80/100: +5 to base
-  - PR < 60/100: +0 to base
-
-### Positive Adjustments
-- Fixed critical issue: +2.5 per issue
-- Fixed high issue: +1.5 per issue
-- Fixed medium issue: +1 per issue
-- Fixed low issue: +0.5 per issue
-- Test coverage increase: +1 per 5% increase
-
-### Negative Adjustments
-- New critical issue: -5 per issue
-- New high issue: -3 per issue
-- New medium issue: -1 per issue
-- New low issue: -0.5 per issue
-- Unfixed critical: -3 per issue
-- Unfixed high: -2 per issue
-- Unfixed medium: -1 per issue
-- Unfixed low: -0.5 per issue
-- Vulnerable dependencies: -0.75 per dependency
-- Coverage decrease: -0.3 per 1% decrease
-
-## Report Structure
-
-1. **Executive Summary** - PR decision and key metrics
-2. **Category Analysis (1-5)** - Detailed scoring for each category
-3. **PR Issues** - NEW issues that block the PR
-4. **Repository Issues** - Pre-existing issues (not blocking)
-5. **Educational Insights** - Learning recommendations
-6. **Skills Tracking** - Individual and team progress
-7. **Business Impact** - Risk and ROI analysis
-8. **Action Items** - Prioritized fixes
-9. **PR Comment** - Concise summary for PR
-
-## Usage
-
-```typescript
-import { createProductionOrchestrator } from '../infrastructure/factory';
-
-const orchestrator = createProductionOrchestrator();
-const result = await orchestrator.executeComparison({
-  mainBranchAnalysis,
-  featureBranchAnalysis,
-  prMetadata,
-  userId: 'user123',
-  includeEducation: true,  // Optional: find real courses
-  generateReport: true     // Default: true (full markdown)
-});
-
-// Result contains:
-// - result.report: Full markdown report
-// - result.prComment: Concise PR comment  
-// - result.analysis: Raw analysis data
-// - result.education: Real course/article links
-// - result.skillTracking: Developer skill updates
-```
-
-## Usage
-
-### Production Setup
-```typescript
-import { createProductionOrchestrator } from '../infrastructure/factory';
-
-const orchestrator = createProductionOrchestrator();
-const result = await orchestrator.executeComparison({
-  mainBranchAnalysis,
-  featureBranchAnalysis,
-  prMetadata,
-  userId: user.id
-});
-```
-
-### Testing Setup
-```typescript
-import { createTestOrchestrator } from '../infrastructure/factory';
-
-const orchestrator = createTestOrchestrator();
-// Uses mock providers, no external dependencies
-```
-
-### Custom Configuration
-```typescript
-import { createOrchestrator } from '../infrastructure/factory';
-
-const orchestrator = createOrchestrator(
-  {
-    SUPABASE_URL: process.env.SUPABASE_URL,
-    SUPABASE_ANON_KEY: process.env.SUPABASE_KEY,
-    NODE_ENV: 'production'
-  },
-  {
-    useCache: true,
-    cacheProvider: 'redis'
-  }
-);
-```
-
-## Data Flow
+## 🏗️ Architecture
 
 ```
-1. Orchestrator receives request
-2. Gets/creates configuration (via ConfigProvider)
-3. Finds optimal model if needed (via Researcher)
-4. Runs analysis & generates report (via Comparison Agent)
-5. Updates developer skills (via SkillProvider)
-6. Finds real courses if requested (via Educator)
-7. Stores everything (via DataStore)
-8. Returns complete result
+packages/agents/src/standard/
+├── scripts/
+│   ├── run-complete-analysis.ts    # 🎯 Main entry point
+│   └── deepwiki/
+│       └── setup-deepwiki-environment.sh
+├── orchestrator/
+│   └── comparison-orchestrator.ts  # Orchestrates the analysis flow
+├── comparison/
+│   ├── comparison-agent.ts         # Core analysis logic
+│   ├── report-generator.ts         # Report generation
+│   └── skill-calculator.ts         # Skill calculations
+├── templates/
+│   └── pr-analysis-template.md     # Report template
+├── tests/
+│   ├── integration/
+│   │   ├── test-basic-report-only.ts  # Basic report test
+│   │   └── deepwiki/               # DeepWiki integration tests
+│   └── reports/
+│       └── basic-generation/       # Generated test reports
+├── infrastructure/
+│   └── factory.ts                  # Dependency injection
+└── docs/
+    ├── README_COMPLETE.md          # This file
+    ├── QUICK_START.md              # Quick reference
+    ├── SESSION_SUMMARY_2025_08_03.md
+    └── deepwiki/                   # DeepWiki specific docs
 ```
 
-## Migration Status
+## 🔧 DeepWiki Integration
 
-✅ **Completed:**
-- Clean architecture with interfaces
-- Interface-based orchestrator (handles full pipeline)
-- Infrastructure implementations (Supabase)
-- Dependency injection factory
-- Educator agent for course discovery
-- Report template (v4.0) with all features
-- Comprehensive documentation
+### First Time Setup
 
-🚧 **In Progress:**
-- Migrating comparison agent to standard/
-- Migrating researcher agent to standard/
-- Testing end-to-end flow
+```bash
+# From project root
+./setup-deepwiki.sh
 
-📋 **Next Steps:**
-- Create mock providers for testing
-- Separate API routes from core
-- Add monitoring & observability
-- Deploy to production
+# Or manually
+./packages/agents/src/standard/scripts/deepwiki/setup-deepwiki-environment.sh
+source .env.deepwiki
+```
+
+### Running with DeepWiki
+
+```bash
+# With real DeepWiki
+USE_DEEPWIKI_MOCK=false npm run analyze -- --repo <url> --pr <number>
+
+# With mock (faster for testing)
+USE_DEEPWIKI_MOCK=true npm run analyze -- --repo <url> --pr <number>
+```
+
+### DeepWiki Resources
+- Setup Script: `scripts/deepwiki/setup-deepwiki-environment.sh`
+- Documentation: `docs/deepwiki/DEEPWIKI_QUICK_START.md`
+- Tests: `tests/integration/deepwiki/`
+
+## 📊 Report Structure
+
+### 1. PR Decision
+- **✅ APPROVED** - No critical/high issues found
+- **❌ DECLINED** - Critical or high issues must be fixed
+
+### 2. Scoring System
+Equal weights for all issues (no discount for old issues):
+- **Critical**: -5 points
+- **High**: -3 points
+- **Medium**: -1 point
+- **Low**: -0.5 points
+
+### 3. Report Sections
+1. **Executive Summary** - Overall score, metrics, issue distribution
+2. **Category Analysis** - Security, Performance, Code Quality, Architecture, Dependencies
+3. **PR Issues** - New issues introduced (with code snippets)
+4. **Repository Issues** - Pre-existing issues (not blocking but affect scores)
+5. **Skills Tracking** - Individual and team progress
+6. **Business Impact** - Risk assessment
+7. **Action Items** - What must be fixed
+
+### 4. New Team Members
+- Start at 50/100 base score
+- Receive a "first PR motivation boost" based on PR quality
+- Example: PR scores 68/100 → Member gets +4 boost → Final: 54/100
+
+## 🛠️ Common Tasks
+
+### Generate Report for Any PR
+```bash
+npm run analyze -- --repo <github-url> --pr <number> --mock
+```
+
+### Test Report Generation
+```bash
+npm run test:report
+```
+
+### View Generated Reports
+```bash
+# Test reports
+ls src/standard/tests/reports/basic-generation/
+
+# Analysis reports  
+ls src/standard/reports/
+```
+
+## 📄 Example Reports
+
+### Basic Generation Examples
+Located in `tests/reports/basic-generation/`:
+- **[critical-pr-report.md](./tests/reports/basic-generation/critical-pr-report.md)** - Example of a DECLINED PR with critical/high issues
+- **[good-pr-report.md](./tests/reports/basic-generation/good-pr-report.md)** - Example of an APPROVED PR with only low issues
+
+### Real Analysis Examples
+Located in `tests/reports/comparison-agent/`:
+- **pr-31616-report-*.md** - Real PR analysis reports
+- **pr-31616-comment-*.md** - Generated PR comments
+
+### Skill Evolution Examples
+Located in `tests/reports/skill-evolution/`:
+- **PR_2900_ANALYSIS.md** - Analysis for PR #2900
+- **PR_2950_ANALYSIS.md** - Analysis for PR #2950
+- Shows how developer skills evolve between PRs
+
+### Run Specific Tests
+```bash
+# Basic report generation
+npx ts-node src/standard/tests/integration/test-basic-report-only.ts
+
+# DeepWiki integration
+npm test src/standard/tests/integration/deepwiki/orchestrator-real-flow.test.ts
+```
+
+## 🔑 Environment Variables
+
+```bash
+# DeepWiki Configuration
+USE_DEEPWIKI_MOCK=true              # Use mock for testing
+DEEPWIKI_API_URL=http://localhost:8080
+DEEPWIKI_API_KEY=your-key
+
+# Supabase Configuration (if using persistence)
+SUPABASE_URL=your-supabase-url
+SUPABASE_SERVICE_ROLE_KEY=your-service-key
+
+# Redis Configuration (if using caching)
+REDIS_URL=redis://localhost:6379
+```
+
+## 📚 Key Documentation
+
+### Essential Guides
+- **[QUICK_START.md](./QUICK_START.md)** - Quick reference for common tasks
+- **[SESSION_SUMMARY_2025_08_03.md](./docs/SESSION_SUMMARY_2025_08_03.md)** - Latest changes
+- **[deepwiki/DEEPWIKI_QUICK_START.md](./docs/deepwiki/DEEPWIKI_QUICK_START.md)** - DeepWiki setup
+
+### Architecture & Design
+- **[ARCHITECTURE.md](./docs/ARCHITECTURE.md)** - System architecture
+- **[pr-decision-logic.md](./docs/pr-decision-logic.md)** - How PR decisions are made
+- **[skill-calculation-guide.md](./docs/skill-calculation-guide.md)** - Skill scoring explained
+
+### Implementation Details
+- **[SCORE_PERSISTENCE.md](./docs/SCORE_PERSISTENCE.md)** - Database schema
+- **[implementation-guide.md](./docs/implementation-guide.md)** - Development guide
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+1. **"Cannot find module"**
+   ```bash
+   cd packages/agents
+   npm install
+   ```
+
+2. **"DeepWiki timeout"**
+   - Use `--mock` flag for testing
+   - Check DeepWiki pod status: `kubectl get pods -n codequal-dev`
+
+3. **"Supabase error"**
+   - Check environment variables
+   - Verify Supabase connection
+
+4. **"Report not generating"**
+   - Check test data in `test-basic-report-only.ts`
+   - Verify template file exists
+
+### Debug Commands
+
+```bash
+# Check DeepWiki connection
+curl http://localhost:8080/health
+
+# Test basic report generation
+npm run test:report
+
+# Run with verbose logging
+DEBUG=* npm run analyze -- --repo <url> --pr <number> --mock
+```
+
+## 🚀 Next Steps
+
+### For Development
+1. Start with `run-complete-analysis.ts` to understand the flow
+2. Review pending tasks in todo list
+3. Run basic tests to ensure everything works
+4. Check `SESSION_SUMMARY_2025_08_03.md` for latest context
+
+### For Production
+1. Set up DeepWiki connection
+2. Configure Supabase credentials
+3. Set up Redis for caching
+4. Deploy monitoring dashboard
+
+## 📝 Contributing
+
+When making changes:
+1. Update relevant documentation
+2. Add tests for new features
+3. Run `npm run lint` before committing
+4. Update the session summary if making significant changes
+
+## 🔗 Related Resources
+
+- Main API: `packages/api/`
+- Database Schema: `packages/database/`
+- Core Utilities: `packages/core/`
+- Web Interface: `apps/web/`
 
 ---
 
-**Version:** 4.0  
-**Architecture:** Clean Architecture  
-**Status:** Production Ready  
-**Last Updated:** July 31, 2025
+For questions or issues, check the documentation in the `docs/` directory or create an issue in the repository.

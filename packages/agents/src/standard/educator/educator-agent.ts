@@ -4,6 +4,7 @@ import {
   SearchQuery,
   EducationalSuggestion 
 } from './interfaces/educator.interface';
+// Import from analysis-types instead of local types to match orchestrator expectations
 import { 
   EducationalEnhancements, 
   Course, 
@@ -410,11 +411,11 @@ export class EducatorAgent implements IEducatorAgent {
     } else {
       const msg = `[EducatorAgent] ${message}`;
       switch (level) {
-        case 'debug': console.debug(msg, data || ''); break;
-        case 'info': console.info(msg, data || ''); break;
-        case 'warn': console.warn(msg, data || ''); break;
-        case 'error': console.error(msg, data || ''); break;
-        default: console.log(msg, data || ''); break;
+        case 'debug': console.debug(msg, data || ''); break; // eslint-disable-line no-console
+        case 'info': console.info(msg, data || ''); break; // eslint-disable-line no-console
+        case 'warn': console.warn(msg, data || ''); break; // eslint-disable-line no-console
+        case 'error': console.error(msg, data || ''); break; // eslint-disable-line no-console
+        default: console.log(msg, data || ''); break; // eslint-disable-line no-console
       }
     }
   }
