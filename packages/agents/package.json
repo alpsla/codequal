@@ -108,6 +108,14 @@
     "./multi-agent/types": {
       "types": "./dist/multi-agent/types/index.d.ts",
       "default": "./dist/multi-agent/types/index.js"
+    },
+    "./standard": {
+      "types": "./dist/standard/index.d.ts",
+      "default": "./dist/standard/index.js"
+    },
+    "./dist/standard": {
+      "types": "./dist/standard/index.d.ts",
+      "default": "./dist/standard/index.js"
     }
   },
   "scripts": {

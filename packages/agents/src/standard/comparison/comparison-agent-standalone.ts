@@ -554,15 +554,15 @@ const API_KEY = process.env.API_KEY;`,
 
   private extractUsernameFromRepo(repoUrl: string): string {
     // Handle GitHub URLs: https://github.com/username/repo
-    const githubMatch = repoUrl.match(/github\.com\/([^\/]+)\//);
+    const githubMatch = repoUrl.match(/github\.com\/([^/]+)\//);
     if (githubMatch) return githubMatch[1];
     
     // Handle GitLab URLs: https://gitlab.com/username/repo
-    const gitlabMatch = repoUrl.match(/gitlab\.com\/([^\/]+)\//);
+    const gitlabMatch = repoUrl.match(/gitlab\.com\/([^/]+)\//);
     if (gitlabMatch) return gitlabMatch[1];
     
     // Handle Bitbucket URLs: https://bitbucket.org/username/repo
-    const bitbucketMatch = repoUrl.match(/bitbucket\.org\/([^\/]+)\//);
+    const bitbucketMatch = repoUrl.match(/bitbucket\.org\/([^/]+)\//);
     if (bitbucketMatch) return bitbucketMatch[1];
     
     return 'unknown';

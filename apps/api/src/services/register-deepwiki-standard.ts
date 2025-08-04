@@ -6,10 +6,10 @@
  */
 
 import { deepWikiApiManager } from './deepwiki-api-manager';
-import type { IDeepWikiApi } from '@codequal/agents/dist/standard';
+import type { IDeepWikiApi } from '@codequal/agents/standard';
 
 // Import the registration function
-import { registerDeepWikiApi } from '@codequal/agents/dist/standard';
+import { registerDeepWikiApi } from '@codequal/agents/standard';
 
 /**
  * Register the real DeepWiki API with the Standard framework
@@ -19,7 +19,36 @@ export async function registerDeepWikiWithStandard() {
     // Create adapter that implements IDeepWikiApi
     const adapter: IDeepWikiApi = {
       async analyzeRepository(repositoryUrl: string, options?: any) {
-        return await deepWikiApiManager.analyzeRepository(repositoryUrl, options);
+        const result = await deepWikiApiManager.analyzeRepository(repositoryUrl, options);
+        
+        // Transform DeepWikiAnalysisResult to DeepWikiAnalysisResponse
+        return {
+          issues: result.issues.map((issue, index) => ({
+            id: `deepwiki-${index}`,
+            severity: issue.severity as 'critical' | 'high' | 'medium' | 'low' | 'info',
+            category: issue.category,
+            title: issue.message || issue.type,
+            description: issue.message,
+            location: {
+              file: issue.file || 'unknown',
+              line: issue.line || 0
+            },
+            recommendation: issue.suggestion,
+            rule: issue.type
+          })),
+          scores: result.scores,
+          metadata: {
+            timestamp: result.metadata.analyzed_at?.toISOString() || new Date().toISOString(),
+            tool_version: '1.0.0',
+            duration_ms: result.metadata.duration_ms,
+            files_analyzed: result.metadata.files_analyzed || 0,
+            total_lines: result.metadata.languages ? 
+              Object.values(result.metadata.languages).reduce((sum, count) => sum + count, 0) : 
+              undefined,
+            model_used: 'deepwiki',
+            branch: result.metadata.branch
+          }
+        };
       }
     };
     

@@ -33,7 +33,7 @@ export class UsernameExtractorService {
     }
 
     // GitHub pattern: https://github.com/org/repo
-    const githubMatch = repositoryUrl.match(/github\.com\/([^\/]+)\/([^\/\?]+)/);
+    const githubMatch = repositoryUrl.match(/github\.com\/([^/]+)\/([^/?]+)/);
     if (githubMatch) {
       return {
         platform: 'github',
@@ -43,9 +43,9 @@ export class UsernameExtractorService {
     }
 
     // GitLab pattern: https://gitlab.com/org/repo or self-hosted
-    const gitlabMatch = repositoryUrl.match(/gitlab\.[^\/]+\/([^\/]+)\/([^\/\?]+)/);
+    const gitlabMatch = repositoryUrl.match(/gitlab\.[^/]+\/([^/]+)\/([^/?]+)/);
     if (gitlabMatch || repositoryUrl.includes('gitlab')) {
-      const match = repositoryUrl.match(/\/([^\/]+)\/([^\/\?]+)$/);
+      const match = repositoryUrl.match(/\/([^/]+)\/([^/?]+)$/);
       if (match) {
         return {
           platform: 'gitlab',
@@ -56,7 +56,7 @@ export class UsernameExtractorService {
     }
 
     // Bitbucket pattern: https://bitbucket.org/org/repo
-    const bitbucketMatch = repositoryUrl.match(/bitbucket\.org\/([^\/]+)\/([^\/\?]+)/);
+    const bitbucketMatch = repositoryUrl.match(/bitbucket\.org\/([^/]+)\/([^/?]+)/);
     if (bitbucketMatch) {
       return {
         platform: 'bitbucket',

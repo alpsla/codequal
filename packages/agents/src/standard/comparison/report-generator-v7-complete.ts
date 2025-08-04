@@ -104,19 +104,19 @@ export class ReportGeneratorV7Complete {
     if (!repoUrl) return 'unknown';
     
     // Handle GitHub URLs: https://github.com/username/repo
-    const githubMatch = repoUrl.match(/github\.com\/([^\/]+)\//);
+    const githubMatch = repoUrl.match(/github\.com\/([^/]+)\//);
     if (githubMatch) return githubMatch[1];
     
     // Handle GitLab URLs: https://gitlab.com/username/repo or https://gitlab.com/group/subgroup/repo
-    const gitlabMatch = repoUrl.match(/gitlab\.com\/([^\/]+)\//);
+    const gitlabMatch = repoUrl.match(/gitlab\.com\/([^/]+)\//);
     if (gitlabMatch) return gitlabMatch[1];
     
     // Handle Bitbucket URLs: https://bitbucket.org/username/repo
-    const bitbucketMatch = repoUrl.match(/bitbucket\.org\/([^\/]+)\//);
+    const bitbucketMatch = repoUrl.match(/bitbucket\.org\/([^/]+)\//);
     if (bitbucketMatch) return bitbucketMatch[1];
     
     // Handle Azure DevOps URLs: https://dev.azure.com/org/project/_git/repo
-    const azureMatch = repoUrl.match(/dev\.azure\.com\/([^\/]+)\//);
+    const azureMatch = repoUrl.match(/dev\.azure\.com\/([^/]+)\//);
     if (azureMatch) return azureMatch[1];
     
     return 'unknown';
@@ -281,7 +281,7 @@ export class ReportGeneratorV7Complete {
   }
   
   private extractRepoName(repoUrl: string): string {
-    const match = repoUrl.match(/\/([^\/]+)$/);
+    const match = repoUrl.match(/\/([^/]+)$/);
     return match ? match[1] : 'repository';
   }
   
