@@ -5,6 +5,7 @@
  */
 
 import { ComparisonOrchestrator } from '../standard/orchestrator/comparison-orchestrator';
+import { ComparisonAgent } from '../standard/comparison/comparison-agent';
 import { ResearcherAgent } from '../researcher/researcher-agent';
 import { AuthenticatedUser, UserPermissions, UserSession, UserRole, UserStatus } from '../multi-agent/types/auth';
 import { EducatorAgent } from '../standard/educator/educator-agent';
@@ -40,19 +41,22 @@ export interface ProviderOptions {
 /**
  * Create orchestrator with all dependencies
  */
-export function createOrchestrator(
+export async function createOrchestrator(
   env: Environment,
   options: ProviderOptions = {}
-): ComparisonOrchestrator {
+): Promise<ComparisonOrchestrator> {
   // Create providers based on environment
-  const configProvider = createConfigProvider(env, options);
-  const skillProvider = createSkillProvider(env, options);
-  const dataStore = createDataStore(env, options);
+  const configProvider = await createConfigProvider(env, options);
+  const skillProvider = await createSkillProvider(env, options);
+  const dataStore = await createDataStore(env, options);
   const researcherAgent = createResearcherAgent(env);
-  const educatorAgent = createEducatorAgent(env, options);
+  const educatorAgent = await createEducatorAgent(env, options);
   
   // Create logger if needed
   const logger = createLogger(env);
+  
+  // Create comparison agent
+  const comparisonAgent = new ComparisonAgent(logger);
   
   // Wire everything together
   return new ComparisonOrchestrator(
@@ -61,20 +65,21 @@ export function createOrchestrator(
     dataStore,
     researcherAgent,
     educatorAgent,
-    logger
+    logger,
+    comparisonAgent
   );
 }
 
 /**
  * Create config provider
  */
-function createConfigProvider(
+async function createConfigProvider(
   env: Environment,
   options: ProviderOptions
-): IConfigProvider {
+): Promise<IConfigProvider> {
   if (options.useMock) {
     // Import dynamically to avoid production dependencies
-    const { MockConfigProvider } = require('./mock/mock-config-provider');
+    const { MockConfigProvider } = await import('./mock/mock-config-provider.js');
     return new MockConfigProvider();
   }
   
@@ -87,12 +92,12 @@ function createConfigProvider(
 /**
  * Create skill provider
  */
-function createSkillProvider(
+async function createSkillProvider(
   env: Environment,
   options: ProviderOptions
-): ISkillProvider {
+): Promise<ISkillProvider> {
   if (options.useMock) {
-    const { MockSkillProvider } = require('./mock/mock-skill-provider');
+    const { MockSkillProvider } = await import('./mock/mock-skill-provider.js');
     return new MockSkillProvider();
   }
   
@@ -105,12 +110,12 @@ function createSkillProvider(
 /**
  * Create data store
  */
-function createDataStore(
+async function createDataStore(
   env: Environment,
   options: ProviderOptions
-): IDataStore {
+): Promise<IDataStore> {
   if (options.useMock) {
-    const { MockDataStore } = require('./mock/mock-data-store');
+    const { MockDataStore } = await import('./mock/mock-data-store.js');
     return new MockDataStore();
   }
   
@@ -122,8 +127,10 @@ function createDataStore(
   
   // Wrap with cache if enabled
   if (options.useCache && env.REDIS_URL) {
-    const { RedisDataStore } = require('./redis/redis-data-store');
-    return new RedisDataStore(baseStore, env.REDIS_URL);
+    // TODO: Implement Redis cache wrapper
+    // const { RedisDataStore } = await import('./redis/redis-data-store');
+    // return new RedisDataStore(baseStore, env.REDIS_URL);
+    return baseStore; // For now, return base store
   }
   
   return baseStore;
@@ -172,12 +179,12 @@ function createResearcherAgent(env: Environment): ResearcherAgent {
 /**
  * Create educator agent
  */
-function createEducatorAgent(
+async function createEducatorAgent(
   env: Environment,
   options: ProviderOptions
-): IEducatorAgent | undefined {
+): Promise<IEducatorAgent | undefined> {
   if (options.useMock) {
-    const { MockEducatorAgent } = require('./mock/mock-educator-agent');
+    const { MockEducatorAgent } = await import('./mock/mock-educator-agent.js');
     return new MockEducatorAgent();
   }
   
@@ -214,17 +221,17 @@ function createLogger(env: Environment): any {
   return {
     debug: (msg: string, data?: any) => {
       if (logLevel === 'debug') {
-        console.debug(`[DEBUG] ${msg}`, data || '');
+        console.debug(`[DEBUG] ${msg}`, data || ''); // eslint-disable-line no-console
       }
     },
     info: (msg: string, data?: any) => {
-      console.info(`[INFO] ${msg}`, data || '');
+      console.info(`[INFO] ${msg}`, data || ''); // eslint-disable-line no-console
     },
     warn: (msg: string, data?: any) => {
-      console.warn(`[WARN] ${msg}`, data || '');
+      console.warn(`[WARN] ${msg}`, data || ''); // eslint-disable-line no-console
     },
     error: (msg: string, data?: any) => {
-      console.error(`[ERROR] ${msg}`, data || '');
+      console.error(`[ERROR] ${msg}`, data || ''); // eslint-disable-line no-console
     }
   };
 }
@@ -238,11 +245,11 @@ export class OrchestratorFactory {
   /**
    * Get or create orchestrator instance (singleton per environment)
    */
-  static getInstance(env: Environment, options?: ProviderOptions): ComparisonOrchestrator {
+  static async getInstance(env: Environment, options?: ProviderOptions): Promise<ComparisonOrchestrator> {
     const key = `${env.NODE_ENV}-${options?.useMock ? 'mock' : 'real'}`;
     
     if (!this.instances.has(key)) {
-      this.instances.set(key, createOrchestrator(env, options));
+      this.instances.set(key, await createOrchestrator(env, options));
     }
     
     return this.instances.get(key)!;
@@ -257,9 +264,17 @@ export class OrchestratorFactory {
 }
 
 /**
- * Convenience function for API usage
+ * Create production orchestrator
+ * 
+ * This is the main entry point used by all integration channels (API, CLI, IDE, etc).
+ * The orchestrator will:
+ * 1. Pull current model configuration from Supabase (no validation)
+ * 2. Use the configured model (version, cost info included)
+ * 3. Fall back to defaults if no configuration exists
+ * 
+ * Model evaluation is handled separately by the scheduler service.
  */
-export function createProductionOrchestrator(): ComparisonOrchestrator {
+export async function createProductionOrchestrator(): Promise<ComparisonOrchestrator> {
   const env: Environment = {
     SUPABASE_URL: process.env.SUPABASE_URL!,
     SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY!,
@@ -277,7 +292,7 @@ export function createProductionOrchestrator(): ComparisonOrchestrator {
 /**
  * Convenience function for testing
  */
-export function createTestOrchestrator(): ComparisonOrchestrator {
+export async function createTestOrchestrator(): Promise<ComparisonOrchestrator> {
   const env: Environment = {
     SUPABASE_URL: 'mock',
     SUPABASE_ANON_KEY: 'mock',

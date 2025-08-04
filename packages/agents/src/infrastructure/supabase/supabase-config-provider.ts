@@ -21,9 +21,9 @@ export class SupabaseConfigProvider implements IConfigProvider {
       const { data, error } = await this.supabase
         .from(this.tableName)
         .select('*')
-        .eq('userId', userId)
-        .eq('repoType', repoType)
-        .order('updatedAt', { ascending: false })
+        .eq('user_id', userId)
+        .eq('repo_type', repoType)
+        .order('updated_at', { ascending: false })
         .limit(1)
         .single();
 
@@ -65,7 +65,7 @@ export class SupabaseConfigProvider implements IConfigProvider {
         .from(this.tableName)
         .update({
           ...data,
-          updatedAt: new Date().toISOString()
+          updated_at: new Date().toISOString()
         })
         .eq('id', id);
 
@@ -95,7 +95,7 @@ export class SupabaseConfigProvider implements IConfigProvider {
       let query = this.supabase
         .from(this.tableName)
         .select('*')
-        .eq('repoType', params.repoType)
+        .eq('repo_type', params.repoType)
         .eq('language', params.language);
 
       if (params.complexity) {
@@ -108,7 +108,7 @@ export class SupabaseConfigProvider implements IConfigProvider {
       }
 
       const { data, error } = await query
-        .order('updatedAt', { ascending: false })
+        .order('updated_at', { ascending: false })
         .limit(10);
 
       if (error) throw error;
@@ -123,8 +123,8 @@ export class SupabaseConfigProvider implements IConfigProvider {
   async getDefaultConfig(repoType: string): Promise<AnalysisConfig> {
     // Return a sensible default configuration
     return {
-      userId: 'default',
-      teamId: 'default',
+      userId: '00000000-0000-0000-0000-000000000000',
+      teamId: '00000000-0000-0000-0000-000000000000',
       repoType,
       language: 'typescript',
       modelPreferences: {
@@ -165,16 +165,16 @@ export class SupabaseConfigProvider implements IConfigProvider {
   private mapToConfig(data: any): AnalysisConfig {
     return {
       id: data.id,
-      userId: data.userId,
-      teamId: data.teamId,
-      repoType: data.repoType,
+      userId: data.user_id,
+      teamId: data.team_id,
+      repoType: data.repo_type,
       language: data.language,
-      modelPreferences: data.modelPreferences,
+      modelPreferences: data.model_preferences,
       weights: data.weights,
       thresholds: data.thresholds,
       features: data.features,
-      createdAt: new Date(data.createdAt),
-      updatedAt: new Date(data.updatedAt),
+      createdAt: new Date(data.created_at),
+      updatedAt: new Date(data.updated_at),
       version: data.version
     };
   }
@@ -184,17 +184,17 @@ export class SupabaseConfigProvider implements IConfigProvider {
    */
   private mapFromConfig(config: AnalysisConfig): any {
     return {
-      userId: config.userId,
-      teamId: config.teamId,
-      repoType: config.repoType,
+      user_id: config.userId,
+      team_id: config.teamId,
+      repo_type: config.repoType,
       language: config.language,
-      modelPreferences: config.modelPreferences,
+      model_preferences: config.modelPreferences,
       weights: config.weights,
       thresholds: config.thresholds,
       features: config.features,
       version: config.version,
-      createdAt: config.createdAt?.toISOString() || new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      created_at: config.createdAt?.toISOString() || new Date().toISOString(),
+      updated_at: new Date().toISOString()
     };
   }
 }

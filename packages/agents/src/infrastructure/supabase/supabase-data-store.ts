@@ -131,7 +131,7 @@ export class SupabaseDataStore implements IDataStore {
           throw error;
         }
 
-        if (!data || (data.expiresAt && new Date(data.expiresAt) < new Date())) {
+        if (!data || (data.expires_at && new Date(data.expires_at) < new Date())) {
           return null;
         }
 
@@ -144,7 +144,7 @@ export class SupabaseDataStore implements IDataStore {
 
     set: async <T>(key: string, value: T, ttl?: number): Promise<void> => {
       try {
-        const expiresAt = ttl 
+        const expires_at = ttl 
           ? new Date(Date.now() + ttl * 1000).toISOString()
           : null;
 
@@ -153,8 +153,8 @@ export class SupabaseDataStore implements IDataStore {
           .upsert({
             key,
             value,
-            expiresAt,
-            updatedAt: new Date().toISOString()
+            expires_at,
+            updated_at: new Date().toISOString()
           });
 
         if (error) throw error;
@@ -246,30 +246,32 @@ export class SupabaseDataStore implements IDataStore {
   private mapReportToDb(report: AnalysisReport): any {
     return {
       id: report.id,
-      prId: report.prId,
-      repoUrl: report.repoUrl,
-      userId: report.userId,
-      teamId: report.teamId,
+      analysis_id: report.id,  // Use report ID as analysis_id
+      pr_id: report.prId,  // Changed to snake_case
+      repository_url: report.repoUrl,  // Database expects repository_url, not repo_url
+      user_id: report.userId,  // Changed to snake_case
+      team_id: report.teamId,  // Changed to snake_case
       timestamp: report.timestamp.toISOString(),
       score: report.score,
       issues: report.issues,
       metadata: report.metadata,
-      markdownReport: report.markdownReport
+      markdown_report: report.markdownReport,  // Changed to snake_case
+      report_data: {}  // Add empty report_data as it's required by database
     };
   }
 
   private mapReportFromDb(data: any): AnalysisReport {
     return {
       id: data.id,
-      prId: data.prId,
-      repoUrl: data.repoUrl,
-      userId: data.userId,
-      teamId: data.teamId,
+      prId: data.pr_id,  // Changed from snake_case
+      repoUrl: data.repository_url,  // Database has repository_url, not repo_url
+      userId: data.user_id,  // Changed from snake_case
+      teamId: data.team_id,  // Changed from snake_case
       timestamp: new Date(data.timestamp),
       score: data.score,
       issues: data.issues,
       metadata: data.metadata,
-      markdownReport: data.markdownReport
+      markdownReport: data.markdown_report  // Changed from snake_case
     };
   }
 }
