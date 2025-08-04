@@ -45,13 +45,26 @@ async function createProductionOrchestrator(): Promise<ComparisonOrchestrator> {
   const { ResearcherAgent } = await import('../../../researcher/researcher-agent');
   
   // Create real providers with Supabase connection
-  const configProvider = new SupabaseConfigProvider(supabaseUrl, supabaseKey);
-  const skillProvider = new SupabaseSkillProvider(supabaseUrl, supabaseKey);
-  const dataStore = new SupabaseDataStore(supabaseUrl, supabaseKey);
-  const researcherAgent = new ResearcherAgent(console);
+  const configProvider = new SupabaseConfigProvider(supabaseUrl!, supabaseKey!);
+  const skillProvider = new SupabaseSkillProvider(supabaseUrl!, supabaseKey!);
+  const dataStore = new SupabaseDataStore(supabaseUrl!, supabaseKey!);
   
-  // Create comparison agent with Redis caching support
-  const comparisonAgent = new ComparisonAgent(console);
+  // Create mock authenticated user for testing
+  const mockUser: any = {
+    id: 'test-user-id',
+    email: 'test@example.com',
+    name: 'Test User'
+  };
+  const researcherAgent = new ResearcherAgent(mockUser);
+  
+  // Create comparison agent with mock logger
+  const mockLogger = {
+    debug: (msg: string, data?: any) => console.log(`[DEBUG] ${msg}`, data),
+    info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data),
+    warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data),
+    error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data)
+  };
+  const comparisonAgent = new ComparisonAgent(mockLogger);
   
   // Create orchestrator with real providers
   return new ComparisonOrchestrator(

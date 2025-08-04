@@ -18,7 +18,7 @@ import {
   Issue,
   PRMetadata
 } from '../types/analysis-types';
-import { ReportGenerator } from './report-generator';
+import { ReportGeneratorV7Complete } from './report-generator-v7-complete';
 import { SkillCalculator } from './skill-calculator';
 import { ILogger } from '../services/interfaces/logger.interface';
 
@@ -28,14 +28,14 @@ import { ILogger } from '../services/interfaces/logger.interface';
 export class ComparisonAgent implements IReportingComparisonAgent {
   private config: ComparisonConfig;
   private modelConfig: any;
-  private reportGenerator: ReportGenerator;
+  private reportGenerator: ReportGeneratorV7Complete;
   private skillCalculator: SkillCalculator;
   
   constructor(
     private logger?: ILogger,
     private modelService?: any // TODO: Define IModelService interface
   ) {
-    this.reportGenerator = new ReportGenerator();
+    this.reportGenerator = new ReportGeneratorV7Complete();
     this.skillCalculator = new SkillCalculator();
     this.config = this.getDefaultConfig();
   }

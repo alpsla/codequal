@@ -11,12 +11,12 @@
 import { ComparisonOrchestrator } from '../../../orchestrator/comparison-orchestrator';
 import { ComparisonAnalysisRequest, ComparisonResult, DeepWikiAnalysisResult } from '../../../types/analysis-types';
 import { ComparisonAgent } from '../../../comparison/comparison-agent';
-import { SupabaseConfigProvider } from '../../../infrastructure/supabase/supabase-config-provider';
-import { SupabaseSkillProvider } from '../../../infrastructure/supabase/supabase-skill-provider';
-import { SupabaseDataStore } from '../../../infrastructure/supabase/supabase-data-store';
-import { ResearcherAgent } from '../../researcher/researcher-agent';
+import { SupabaseConfigProvider } from '../../../../infrastructure/supabase/supabase-config-provider';
+import { SupabaseSkillProvider } from '../../../../infrastructure/supabase/supabase-skill-provider';
+import { SupabaseDataStore } from '../../../../infrastructure/supabase/supabase-data-store';
+import { ResearcherAgent } from '../../../../researcher/researcher-agent';
 import { EducatorAgent } from '../../../educator/educator-agent';
-import { AuthenticatedUser, UserRole, UserStatus } from '../../multi-agent/types/auth';
+import { AuthenticatedUser, UserRole, UserStatus } from '../../../../multi-agent/types/auth';
 import * as dotenv from 'dotenv';
 import * as fs from 'fs/promises';
 import * as path from 'path';
