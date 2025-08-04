@@ -16,8 +16,16 @@ export * from './gemini/gemini-agent';
 export * from './specialized/dependency-agent';
 export * from './specialized/architecture-agent';
 
-// Comparison Agent
-export * from './comparison/comparison-agent';
+// Standard Agent Implementations
+export * from './standard/comparison/comparison-agent';
+export * from './standard/orchestrator/comparison-orchestrator';
+// Export specific items to avoid conflicts
+export { 
+  ComparisonAgent,
+  ComparisonOrchestrator,
+  StandardAgentFactory,
+  createTestOrchestrator
+} from './standard';
 
 // Factory
 export * from './factory/agent-factory';
@@ -27,7 +35,7 @@ export * from './multi-agent';
 export * from './multi-agent/types';
 
 // Orchestrator
-export * from './orchestrator/report-enhancer';
+// Report enhancer functionality moved to Standard directory
 
 // Prompts
 export * from './prompts/prompt-loader';

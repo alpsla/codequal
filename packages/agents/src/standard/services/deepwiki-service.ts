@@ -1,0 +1,334 @@
+/**
+ * DeepWiki Service for Standard Framework
+ * 
+ * This service integrates the DeepWiki API for repository analysis
+ * within the Standard framework architecture.
+ */
+
+import { 
+  AnalysisResult, 
+  Issue, 
+  DeepWikiAnalysisResult 
+} from '../types/analysis-types';
+import { ILogger } from './interfaces/logger.interface';
+import { DeepWikiApiWrapper, MockDeepWikiApiWrapper, DeepWikiAnalysisResponse } from './deepwiki-api-wrapper';
+
+export interface IDeepWikiService {
+  analyzeRepository(
+    repositoryUrl: string,
+    branch?: string,
+    prId?: string
+  ): Promise<AnalysisResult>;
+  
+  analyzeRepositoryForComparison(
+    repositoryUrl: string,
+    branch?: string,
+    prId?: string
+  ): Promise<DeepWikiAnalysisResult>;
+}
+
+export class DeepWikiService implements IDeepWikiService {
+  private apiWrapper: DeepWikiApiWrapper;
+  
+  constructor(
+    private logger?: ILogger
+  ) {
+    this.apiWrapper = new DeepWikiApiWrapper();
+  }
+
+  /**
+   * Analyze a repository using DeepWiki API
+   */
+  async analyzeRepository(
+    repositoryUrl: string,
+    branch?: string,
+    prId?: string
+  ): Promise<AnalysisResult> {
+    this.log('info', `Starting DeepWiki analysis for ${repositoryUrl}`, { branch, prId });
+    
+    try {
+      // Use the wrapper to call DeepWiki
+      const deepWikiResult = await this.apiWrapper.analyzeRepository(
+        repositoryUrl,
+        {
+          branch,
+          prId,
+          skipCache: false // Use cache by default
+        }
+      );
+
+      // Convert DeepWiki result to Standard framework format
+      return this.convertDeepWikiToStandardFormat(deepWikiResult);
+      
+    } catch (error) {
+      this.log('error', 'DeepWiki analysis failed', error as Error);
+      
+      // Return empty result on error
+      return {
+        issues: [],
+        scores: {
+          overall: 0,
+          security: 0,
+          performance: 0,
+          maintainability: 0,
+          testing: 0
+        },
+        metadata: {
+          analysisDate: new Date(),
+          toolVersion: 'deepwiki-1.0.0',
+          error: (error as Error).message
+        }
+      };
+    }
+  }
+
+  /**
+   * Analyze repository and return in DeepWikiAnalysisResult format for comparison
+   */
+  async analyzeRepositoryForComparison(
+    repositoryUrl: string,
+    branch?: string,
+    prId?: string
+  ): Promise<DeepWikiAnalysisResult> {
+    const result = await this.analyzeRepository(repositoryUrl, branch, prId);
+    
+    // Convert to DeepWikiAnalysisResult format
+    return {
+      issues: result.issues.map(issue => ({
+        id: issue.id,
+        severity: issue.severity,
+        category: issue.category,
+        type: issue.type || this.determineIssueType(issue),
+        location: issue.location,
+        message: issue.message,
+        description: issue.description,
+        suggestedFix: issue.suggestedFix,
+        references: issue.references || []
+      })),
+      metadata: {
+        files_analyzed: result.metadata?.filesAnalyzed || 0,
+        total_lines: result.metadata?.totalLines || 0,
+        scan_duration: result.metadata?.duration || 0
+      },
+      score: result.scores?.overall || 0,
+      summary: `Analysis found ${result.issues.length} issues in ${result.metadata?.filesAnalyzed || 0} files`
+    };
+  }
+
+  /**
+   * Convert DeepWiki format to Standard framework format
+   */
+  private convertDeepWikiToStandardFormat(
+    deepWikiResult: DeepWikiAnalysisResponse
+  ): AnalysisResult {
+    // Convert issues
+    const issues: Issue[] = deepWikiResult.issues.map(issue => ({
+      id: issue.id,
+      severity: this.convertSeverity(issue.severity),
+      category: this.convertCategory(issue.category),
+      type: this.determineIssueTypeFromCategory(issue.category, issue.severity),
+      location: {
+        file: issue.location.file,
+        line: issue.location.line,
+        column: issue.location.column
+      },
+      message: issue.title,
+      description: issue.description,
+      suggestedFix: issue.recommendation,
+      references: []
+    }));
+
+    return {
+      issues,
+      scores: {
+        overall: deepWikiResult.scores.overall,
+        security: deepWikiResult.scores.security,
+        performance: deepWikiResult.scores.performance,
+        maintainability: deepWikiResult.scores.maintainability,
+        testing: deepWikiResult.scores.testing || 0
+      },
+      metadata: {
+        analysisDate: new Date(deepWikiResult.metadata.timestamp),
+        toolVersion: deepWikiResult.metadata.tool_version,
+        duration: deepWikiResult.metadata.duration_ms,
+        filesAnalyzed: deepWikiResult.metadata.files_analyzed,
+        totalLines: deepWikiResult.metadata.total_lines,
+        totalIssues: issues.length,
+        issuesBySeverity: this.countIssuesBySeverity(issues),
+        model: deepWikiResult.metadata.model_used
+      }
+    };
+  }
+
+  /**
+   * Convert DeepWiki severity to Standard framework severity
+   */
+  private convertSeverity(deepWikiSeverity: string): 'critical' | 'high' | 'medium' | 'low' {
+    const severityMap: Record<string, 'critical' | 'high' | 'medium' | 'low'> = {
+      critical: 'critical',
+      high: 'high',
+      medium: 'medium',
+      low: 'low',
+      info: 'low' // Map info to low
+    };
+
+    return severityMap[deepWikiSeverity] || 'low';
+  }
+
+  /**
+   * Convert DeepWiki category to Standard framework category
+   */
+  private convertCategory(deepWikiCategory: string): 'security' | 'performance' | 'code-quality' | 'architecture' | 'dependencies' {
+    const categoryMap: Record<string, 'security' | 'performance' | 'code-quality' | 'architecture' | 'dependencies'> = {
+      security: 'security',
+      performance: 'performance',
+      maintainability: 'code-quality',
+      'code-quality': 'code-quality',
+      architecture: 'architecture',
+      dependencies: 'dependencies',
+      testing: 'code-quality' // Map testing to code-quality
+    };
+
+    const normalizedCategory = deepWikiCategory.toLowerCase();
+    return categoryMap[normalizedCategory] || 'code-quality';
+  }
+
+  /**
+   * Determine issue type based on category and severity
+   */
+  private determineIssueType(issue: Issue): 'vulnerability' | 'bug' | 'code-smell' | 'optimization' | 'design-issue' {
+    if (issue.category === 'security') {
+      return 'vulnerability';
+    } else if (issue.severity === 'critical' || issue.severity === 'high') {
+      return 'bug';
+    } else if (issue.category === 'performance') {
+      return 'optimization';
+    } else if (issue.category === 'architecture') {
+      return 'design-issue';
+    } else {
+      return 'code-smell';
+    }
+  }
+
+  /**
+   * Determine issue type from category and severity strings
+   */
+  private determineIssueTypeFromCategory(category: string, severity: string): 'vulnerability' | 'bug' | 'code-smell' | 'optimization' | 'design-issue' {
+    const normalizedCategory = category.toLowerCase();
+    
+    if (normalizedCategory === 'security') {
+      return 'vulnerability';
+    } else if (severity === 'critical' || severity === 'high') {
+      return 'bug';
+    } else if (normalizedCategory === 'performance') {
+      return 'optimization';
+    } else if (normalizedCategory === 'architecture') {
+      return 'design-issue';
+    } else {
+      return 'code-smell';
+    }
+  }
+
+  /**
+   * Count issues by severity
+   */
+  private countIssuesBySeverity(issues: Issue[]): Record<string, number> {
+    return issues.reduce((acc, issue) => {
+      acc[issue.severity] = (acc[issue.severity] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+  }
+
+  /**
+   * Log helper
+   */
+  private log(level: 'info' | 'warn' | 'error', message: string, data?: any) {
+    if (this.logger) {
+      this.logger[level](message, data);
+    } else {
+      console[level](`[DeepWikiService] ${message}`, data || '');
+    }
+  }
+}
+
+/**
+ * Mock implementation for testing
+ */
+export class MockDeepWikiService implements IDeepWikiService {
+  private mockApiWrapper: MockDeepWikiApiWrapper;
+  
+  constructor(
+    private mockData?: Partial<AnalysisResult>
+  ) {
+    this.mockApiWrapper = new MockDeepWikiApiWrapper();
+  }
+
+  async analyzeRepository(
+    repositoryUrl: string,
+    branch?: string,
+    prId?: string
+  ): Promise<AnalysisResult> {
+    if (this.mockData) {
+      return {
+        issues: this.mockData.issues || [],
+        scores: this.mockData.scores || {
+          overall: 75,
+          security: 70,
+          performance: 80,
+          maintainability: 75,
+          testing: 72
+        },
+        metadata: {
+          analysisDate: new Date(),
+          toolVersion: 'deepwiki-mock-1.0.0',
+          ...this.mockData.metadata
+        }
+      };
+    }
+    
+    // Use mock wrapper
+    const mockResult = await this.mockApiWrapper.analyzeRepository(repositoryUrl, { branch, prId });
+    const service = new DeepWikiService();
+    return service['convertDeepWikiToStandardFormat'](mockResult);
+  }
+
+  async analyzeRepositoryForComparison(
+    repositoryUrl: string,
+    branch?: string,
+    prId?: string
+  ): Promise<DeepWikiAnalysisResult> {
+    const result = await this.analyzeRepository(repositoryUrl, branch, prId);
+    
+    // Convert to DeepWikiAnalysisResult format
+    return {
+      issues: result.issues.map(issue => ({
+        id: issue.id,
+        severity: issue.severity,
+        category: issue.category,
+        type: issue.type || 'code-smell',
+        location: issue.location,
+        message: issue.message,
+        description: issue.description,
+        suggestedFix: issue.suggestedFix,
+        references: issue.references || []
+      })),
+      metadata: {
+        files_analyzed: result.metadata?.filesAnalyzed || 100,
+        total_lines: result.metadata?.totalLines || 1000,
+        scan_duration: result.metadata?.duration || 5000
+      },
+      score: result.scores?.overall || 75,
+      summary: `Mock analysis found ${result.issues.length} issues`
+    };
+  }
+}
+
+/**
+ * Factory function to create DeepWiki service
+ */
+export function createDeepWikiService(logger?: ILogger, useMock?: boolean): IDeepWikiService {
+  if (useMock || process.env.USE_DEEPWIKI_MOCK === 'true') {
+    return new MockDeepWikiService();
+  }
+  return new DeepWikiService(logger);
+}

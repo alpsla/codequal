@@ -24,9 +24,14 @@ export interface Issue {
     column?: number;
   };
   message: string;
+  title?: string;
   description?: string;
+  codeSnippet?: string;
   suggestedFix?: string;
   references?: string[];
+  age?: string;
+  fingerprint?: string;
+  rule?: string;
 }
 
 export interface RepositoryContext {
@@ -121,6 +126,37 @@ export interface DeveloperSkills {
   };
 }
 
+export interface ComparisonRequest {
+  repository: string;
+  prNumber?: string;
+  mainBranch?: string;
+  prBranch: string;
+  author?: {
+    username: string;
+    name?: string;
+    email?: string;
+  };
+}
+
+export interface IssueComparison {
+  newIssues: Issue[];
+  fixedIssues: Issue[];
+  unchangedIssues: Issue[];
+  summary: {
+    totalNew: number;
+    totalFixed: number;
+    totalUnchanged: number;
+    criticalNew: number;
+    criticalFixed: number;
+    criticalUnchanged: number;
+  };
+}
+
+export interface ComparisonAgentInterface {
+  compareRepositories(request: ComparisonRequest): Promise<ComparisonResult>;
+  generateReport(comparison: ComparisonResult): Promise<string>;
+}
+
 export interface ComparisonResult {
   success: boolean;
   report?: string;                    // Full markdown report
@@ -130,11 +166,13 @@ export interface ComparisonResult {
     newIssues?: any[];
     modifiedIssues?: any[];
     unchangedIssues?: any[];
+    fixedIssues?: any[];
     summary?: any;
     insights?: string[];
     recommendations?: string[];
   };
   analysis?: any;                     // Raw analysis data
+  aiAnalysis?: any;                   // AI analysis data
   education?: EducationalEnhancements; // Optional course recommendations
   skillTracking?: any;               // Skill updates
   metadata?: {
@@ -149,6 +187,20 @@ export interface ComparisonResult {
     agentVersion?: string;
     confidence?: number;
   };
+  // Additional fields for enhanced reporting
+  repository?: string;
+  prNumber?: string;
+  mainBranch?: string;
+  prBranch?: string;
+  overallScore?: number;
+  categoryScores?: Record<string, number>;
+  timestamp?: string;
+  scanDuration?: string;
+  filesChanged?: number;
+  linesChanged?: number;
+  linesAdded?: number;
+  linesRemoved?: number;
+  scoreImpact?: number;
   // Legacy fields for backward compatibility
   resolvedIssues?: any[];
   newIssues?: any[];

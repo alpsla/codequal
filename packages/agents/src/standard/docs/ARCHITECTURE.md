@@ -10,8 +10,8 @@ The Standard Framework implements a clean, interface-based architecture for code
 The central coordinator that manages the analysis flow:
 - Pulls model configuration from Supabase (no validation)
 - Executes comparison analysis with configured model
-- Updates developer skills
-- Generates reports and PR comments
+- Updates developer skills with equal penalties for unfixed issues
+- Generates comprehensive 12-section reports via ReportGeneratorV7Complete
 - Optionally adds educational enhancements
 - **Important**: The orchestrator ONLY pulls configuration, it does NOT evaluate or validate models
 
@@ -38,6 +38,16 @@ Provides system health monitoring and alerting:
 - **Health Checks**: Monitors all services
 - **Alerting**: Sends notifications via Slack webhook
 - **Metrics**: Records performance and error metrics
+
+### 5. **Report Generation System**
+Comprehensive PR analysis reporting:
+- **ReportGeneratorV7Complete**: Generates 12-section analysis reports
+- **Dynamic Architecture Diagrams**: Based on repository type
+- **Dynamic Username Extraction**: From repository URLs
+- **Enhanced Dependencies**: Container size analysis with Dockerfile examples
+- **Complete Code Snippets**: For all issues with required fixes
+- **Skill Tracking**: Detailed calculations with equal penalties for unfixed issues
+- See `REPORT_GENERATION_GUIDE.md` for full details
 
 ## Data Providers
 

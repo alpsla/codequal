@@ -122,6 +122,7 @@
     "analyze": "ts-node src/standard/scripts/run-complete-analysis.ts",
     "analyze:mock": "ts-node src/standard/scripts/run-complete-analysis.ts --mock",
     "test:report": "ts-node src/standard/tests/integration/test-basic-report-only.ts",
+    "test:deepwiki": "ts-node src/standard/tests/test-deepwiki-integration.ts",
     "scheduler": "node dist/standard/scripts/run-scheduler.js",
     "scheduler:build": "npm run build && npm run scheduler",
     "monitor": "node dist/standard/scripts/monitoring-dashboard.js",

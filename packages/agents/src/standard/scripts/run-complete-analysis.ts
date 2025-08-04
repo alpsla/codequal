@@ -17,6 +17,7 @@
 
 import { ComparisonOrchestrator } from '../orchestrator/comparison-orchestrator';
 import { StandardAgentFactory, MockResearcherAgent } from '../infrastructure/factory';
+import { createDeepWikiService, IDeepWikiService } from '../services/deepwiki-service';
 import { writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 
@@ -30,6 +31,7 @@ interface AnalysisOptions {
 
 class CompleteAnalysisRunner {
   private orchestrator: ComparisonOrchestrator;
+  private deepWikiService: IDeepWikiService;
   private outputDir: string;
 
   constructor(options: AnalysisOptions) {
@@ -42,6 +44,10 @@ class CompleteAnalysisRunner {
     this.outputDir = options.outputDir || join(__dirname, '../reports', new Date().toISOString().split('T')[0]);
     mkdirSync(this.outputDir, { recursive: true });
 
+    // Initialize services
+    const logger = StandardAgentFactory.createLogger();
+    this.deepWikiService = createDeepWikiService(logger, options.useMock);
+
     // Initialize orchestrator using static methods
     this.orchestrator = new ComparisonOrchestrator(
       StandardAgentFactory.createConfigProvider(),
@@ -49,7 +55,7 @@ class CompleteAnalysisRunner {
       StandardAgentFactory.createDataStore(),
       new MockResearcherAgent(),
       undefined, // No educator agent for now
-      StandardAgentFactory.createLogger()
+      logger
     );
   }
 
@@ -67,16 +73,31 @@ class CompleteAnalysisRunner {
       console.log('📊 Running analysis...');
       const startTime = Date.now();
       
-      // Create mock analysis data (in production, this would come from DeepWiki)
-      const mockAnalysisData = {
-        mainBranchAnalysis: { issues: [], score: 85 },
-        featureBranchAnalysis: { issues: [], score: 87 },
+      // Step 1: Analyze main branch
+      console.log('🔍 Analyzing main branch...');
+      const mainBranchAnalysis = await this.deepWikiService.analyzeRepositoryForComparison(
+        options.repository,
+        'main'
+      );
+      
+      // Step 2: Analyze feature branch (PR branch)
+      console.log(`🔍 Analyzing PR #${options.prNumber} branch...`);
+      const featureBranchAnalysis = await this.deepWikiService.analyzeRepositoryForComparison(
+        options.repository,
+        undefined, // Let DeepWiki determine the PR branch
+        options.prNumber
+      );
+      
+      // Step 3: Create analysis request
+      const analysisRequest = {
+        mainBranchAnalysis,
+        featureBranchAnalysis,
         prMetadata: {
           id: options.prNumber,
           repository_url: options.repository,
-          author: 'Unknown',
-          linesAdded: 100,
-          linesRemoved: 50
+          author: 'Unknown', // TODO: Get from GitHub API
+          linesAdded: 100, // TODO: Get from GitHub API
+          linesRemoved: 50 // TODO: Get from GitHub API
         },
         userId: 'default-user',
         teamId: 'default-team',
@@ -84,7 +105,9 @@ class CompleteAnalysisRunner {
         includeEducation: true
       };
 
-      const result = await this.orchestrator.executeComparison(mockAnalysisData);
+      // Step 4: Execute comparison
+      console.log('🔄 Comparing branches and generating report...');
+      const result = await this.orchestrator.executeComparison(analysisRequest);
 
       const duration = ((Date.now() - startTime) / 1000).toFixed(1);
       console.log(`✅ Analysis completed in ${duration}s\n`);

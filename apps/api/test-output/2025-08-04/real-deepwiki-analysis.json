@@ -1,0 +1,47 @@
+{
+  "issues": [
+    {
+      "severity": "medium",
+      "category": "security",
+      "type": "vulnerability",
+      "location": {
+        "file": "",
+        "line": 0
+      },
+      "message": "Potential XSS in API responses",
+      "description": "Potential XSS in API responses",
+      "references": []
+    },
+    {
+      "severity": "high",
+      "category": "code-quality",
+      "type": "bug",
+      "location": {
+        "file": "",
+        "line": 0
+      },
+      "message": "Outdated React version",
+      "description": "Outdated React version",
+      "references": []
+    }
+  ],
+  "scores": {
+    "overall": 75,
+    "security": 70,
+    "performance": 65,
+    "maintainability": 70,
+    "testing": 0
+  },
+  "metadata": {
+    "analysisDate": "2025-08-04T12:59:37.193Z",
+    "toolVersion": "1.0.0",
+    "duration": 23493,
+    "filesAnalyzed": 0,
+    "totalIssues": 2,
+    "issuesBySeverity": {
+      "medium": 1,
+      "high": 1
+    },
+    "model": "openai/gpt-4o"
+  }
+}

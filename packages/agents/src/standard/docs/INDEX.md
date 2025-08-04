@@ -4,16 +4,19 @@
 
 ### Getting Started
 - **[QUICK_START.md](./QUICK_START.md)** - Quick reference guide for common tasks
-- **[SESSION_SUMMARY_2025_08_03.md](./SESSION_SUMMARY_2025_08_03.md)** - Latest session changes and fixes
+- **[session_summary/SESSION_SUMMARY_2025_08_04.md](./session_summary/SESSION_SUMMARY_2025_08_04.md)** - Latest session changes (Report Generation)
+- **[session_summary/SESSION_SUMMARY_2025_08_03.md](./session_summary/SESSION_SUMMARY_2025_08_03.md)** - Previous session changes
 
 ### Architecture & Design
 - **[ARCHITECTURE.md](./ARCHITECTURE.md)** - System architecture and component design
 - **[pr-decision-logic.md](./pr-decision-logic.md)** - How PR approval/decline decisions are made
 - **[skill-calculation-guide.md](./skill-calculation-guide.md)** - Developer skill scoring explained
+- **[REPORT_GENERATION_GUIDE.md](./REPORT_GENERATION_GUIDE.md)** - Comprehensive report generation system
 
 ### Implementation
 - **[implementation-guide.md](./implementation-guide.md)** - Development and implementation guide
 - **[SCORE_PERSISTENCE.md](./SCORE_PERSISTENCE.md)** - Database schema and persistence strategy
+- **[API_INTEGRATION_GUIDE.md](./API_INTEGRATION_GUIDE.md)** - How to integrate with API services
 
 ### DeepWiki Integration
 - **[deepwiki/README.md](./deepwiki/README.md)** - DeepWiki integration overview
@@ -42,7 +45,8 @@
 ### For Developers
 1. Review [ARCHITECTURE.md](./ARCHITECTURE.md) for system design
 2. Check [implementation-guide.md](./implementation-guide.md) for coding standards
-3. See [SESSION_SUMMARY_2025_08_03.md](./SESSION_SUMMARY_2025_08_03.md) for latest changes
+3. See [session_summary/SESSION_SUMMARY_2025_08_04.md](./session_summary/SESSION_SUMMARY_2025_08_04.md) for latest changes
+4. Read [REPORT_GENERATION_GUIDE.md](./REPORT_GENERATION_GUIDE.md) for report system details
 
 ### For DeepWiki Setup
 1. Follow [deepwiki/DEEPWIKI_QUICK_START.md](./deepwiki/DEEPWIKI_QUICK_START.md)

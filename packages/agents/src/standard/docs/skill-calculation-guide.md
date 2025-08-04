@@ -56,10 +56,11 @@ Final Score = Previous Score + PR Boost + Positive Adjustments - Negative Adjust
 - **Low Issue**: -0.5 points each
 
 ### For Leaving Issues Unfixed
-- **Critical Unfixed**: -3 points each
-- **High Unfixed**: -2 points each
-- **Medium Unfixed**: -1 point each
-- **Low Unfixed**: -0.5 points each
+**IMPORTANT: As of 2025-08-04, unfixed issues have the SAME penalty as new issues**
+- **Critical Unfixed**: -5 points each (same as new critical)
+- **High Unfixed**: -3 points each (same as new high)
+- **Medium Unfixed**: -1 point each (same as new medium)
+- **Low Unfixed**: -0.5 points each (same as new low)
 
 ### For Quality Degradation
 - **Vulnerable Dependencies**: -0.75 points each
@@ -81,22 +82,28 @@ The overall score is a weighted average based on the repository type.
 ## Example Calculation
 
 Sarah (Previous Score: 75) submits a PR that:
-- Fixes 5 critical issues (+12.5)
+- Fixes 1 critical issue (+5)
+- Fixes 1 high issue (+3)
 - Introduces 2 new critical issues (-10)
-- Introduces 3 new high issues (-9)
-- Adds 8 vulnerable dependencies (-6)
-- Decreases coverage by 11% (-3.3)
-- Leaves 3 critical unfixed (-9)
-- Leaves 5 high unfixed (-10)
+- Introduces 1 new high issue (-3)
+- Introduces 1 new medium issue (-1)
+- Introduces 1 new low issue (-0.5)
+- Leaves 1 critical unfixed (-5)
+- Leaves 1 high unfixed (-3)
+- Leaves 1 medium unfixed (-1)
+- Leaves 1 low unfixed (-0.5)
 
-PR scores 68/100, so she gets +3 boost.
+PR scores 71/100, so she gets -4 base adjustment.
 
 Calculation:
 ```
-75 (previous) + 3 (boost) + 12.5 (fixes) - 48.3 (penalties) = 42.2
+Base: 75 → 71 (PR adjustment)
+Positive: +8 (fixes)
+Negative: -17 (new + unfixed with equal penalties)
+Final: 71 + 8 - 17 = 62/100
 ```
 
-But scores can't go below 0, so Sarah would be at 61/100.
+Sarah's score drops from 75 to 62 (-13 points) due to the new issues and unfixed technical debt.
 
 ## Team Scoring
 
