@@ -128,6 +128,9 @@ Thumbs.db
 # Archive directory
 archive/
 
+# Serena cache files
+.serena/
+
 # Debug scripts and test files
 apps/api/debug-scripts/
 packages/database/test-*.js
