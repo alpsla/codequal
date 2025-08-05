@@ -1,0 +1,46 @@
+name: Build Custom DeepWiki Image
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'kubernetes/deepwiki-custom/**'
+    branches:
+      - main
+      - develop
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Install doctl
+      uses: digitalocean/action-doctl@v2
+      with:
+        token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+    - name: Log in to DigitalOcean Container Registry
+      run: doctl registry login --expiry-seconds 1200
+
+    - name: Build image
+      run: |
+        cd kubernetes/deepwiki-custom/
+        docker build -t registry.digitalocean.com/codequal/deepwiki-custom:latest .
+        docker tag registry.digitalocean.com/codequal/deepwiki-custom:latest \
+                   registry.digitalocean.com/codequal/deepwiki-custom:${{ github.sha }}
+
+    - name: Push image to DigitalOcean Container Registry
+      run: |
+        docker push registry.digitalocean.com/codequal/deepwiki-custom:latest
+        docker push registry.digitalocean.com/codequal/deepwiki-custom:${{ github.sha }}
+
+    - name: Update deployment
+      if: github.ref == 'refs/heads/main'
+      run: |
+        kubectl set image deployment/deepwiki \
+          deepwiki=registry.digitalocean.com/codequal/deepwiki-custom:${{ github.sha }} \
+          -n codequal-dev
+        
+        kubectl rollout status deployment/deepwiki -n codequal-dev

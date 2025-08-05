@@ -1,0 +1,10 @@
+FROM ghcr.io/asyncfuncai/deepwiki-open:latest
+
+# Simple patch: just replace the hardcoded model name
+RUN sed -i 's/text-embedding-3-small/text-embedding-3-large/g' /app/api/data_pipeline.py
+
+# Verify the change
+RUN grep "text-embedding-3-large" /app/api/data_pipeline.py
+
+# Add a marker to identify this is our custom image
+RUN echo "Custom DeepWiki with text-embedding-3-large" > /app/CUSTOM_BUILD
