@@ -1,5 +1,6 @@
 /* eslint-disable no-console */
 import { AuthenticatedUser } from '../middleware/auth-middleware';
+import * as path from 'path';
 
 // Type definitions for findings and recommendations
 export interface Finding {
@@ -459,6 +460,8 @@ export class ResultOrchestrator {
   private gitDiffAnalyzer: GitDiffAnalyzerService;
   private currentAnalysisId?: string;
   private currentSessionId?: string;
+  private currentRepositoryUrl?: string;
+  private currentPrNumber?: number;
   private tokenUsageAggregator: TokenUsageAggregator;
 
   constructor(private authenticatedUser: AuthenticatedUser) {
@@ -546,9 +549,11 @@ export class ResultOrchestrator {
       sessionId
     });
     
-    // Store IDs for later use
+    // Store IDs and context for later use
     this.currentAnalysisId = analysisId;
     this.currentSessionId = sessionId;
+    this.currentRepositoryUrl = request.repositoryUrl;
+    this.currentPrNumber = request.prNumber;
 
     try {
       // Step 1: Extract PR context
@@ -1371,6 +1376,21 @@ export class ResultOrchestrator {
   }
 
   /**
+   * Calculate risk level based on issues
+   */
+  private calculateRiskLevel(issues: any[]): 'critical' | 'high' | 'medium' | 'low' {
+    if (!issues || issues.length === 0) return 'low';
+    
+    const criticalCount = issues.filter(i => i.severity === 'critical').length;
+    const highCount = issues.filter(i => i.severity === 'high').length;
+    
+    if (criticalCount > 0) return 'critical';
+    if (highCount > 0) return 'high';
+    if (issues.length > 5) return 'medium';
+    return 'low';
+  }
+
+  /**
    * Generate PR comment with educational insights
    */
   private generatePRComment(processedResults: ProcessedResults, educationalResult: EducationalResult): string {
@@ -2073,81 +2093,162 @@ export class ResultOrchestrator {
   }
 
   /**
-   * Generate final report
+   * Generate final report using Standard framework
    */
   private async generateReport(processedResults: ProcessedResults, educationalContent: EducationalItem[]): Promise<StandardReport> {
-    // For now, return a basic report structure
-    // This would be replaced with actual Report Agent integration
-    const totalFindings = (processedResults as { metrics?: { totalFindings?: number } }).metrics?.totalFindings || 0;
-    const recommendations = this.extractRecommendations(processedResults);
-    
-    return {
-      id: `report-${Date.now()}`,
-      repositoryUrl: '',
-      prNumber: 0,
-      timestamp: new Date(),
-      overview: {
-        executiveSummary: 'PR analysis completed successfully',
-        analysisScore: 85,
-        riskLevel: totalFindings > 10 ? 'high' : totalFindings > 5 ? 'medium' : 'low',
-        totalFindings,
-        totalRecommendations: recommendations.length,
-        learningPathAvailable: educationalContent.length > 0,
-        estimatedRemediationTime: '2-4 hours'
-      },
-      modules: {
-        findings: {
-          items: [],
-          categories: [],
-          filters: { severity: [], category: [], agent: [] }
+    try {
+      this.logger.info('Generating report using ReportFormatterService', {
+        repositoryUrl: this.currentRepositoryUrl,
+        prNumber: this.currentPrNumber,
+        totalFindings: Object.values(processedResults.findings || {}).reduce((sum, findings) => sum + (findings?.length || 0), 0)
+      });
+
+      // Import the ReportFormatterService from the agents package
+      const agentsPath = path.join(__dirname, '../../../../packages/agents/dist/services/report-formatter.service.js');
+      const { ReportFormatterService } = await import(agentsPath);
+      const reportFormatter = new ReportFormatterService();
+
+      // Prepare the analysis result structure for the formatter
+      const analysisResult = {
+        repository: {
+          url: this.currentRepositoryUrl || 'unknown',
+          name: this.currentRepositoryUrl?.split('/').pop() || 'unknown'
         },
-        recommendations: {
-          items: recommendations,
-          categories: []
+        pr: {
+          number: this.currentPrNumber || 0,
+          title: processedResults.prContext?.prDetails?.title || 'Unknown PR',
+          author: processedResults.prContext?.prDetails?.author || 'unknown',
+          changedFiles: processedResults.changedFiles?.length || 0,
+          linesAdded: processedResults.prContext?.diff?.stats?.additions || 0,
+          linesRemoved: processedResults.prContext?.diff?.stats?.deletions || 0
         },
-        educational: {
-          learningPath: {
-            title: 'Learning Path',
-            description: 'Custom learning path based on PR findings',
-            estimatedTime: '2-4 hours',
-            difficulty: 'intermediate',
-            steps: []
-          },
+        findings: processedResults.findings || {
+          security: [],
+          architecture: [],
+          performance: [],
+          codeQuality: [],
+          dependencies: []
+        },
+        metrics: {
+          totalFindings: Object.values(processedResults.findings || {}).reduce((sum, findings) => sum + (findings?.length || 0), 0),
+          complexity: processedResults.complexity || 'moderate',
+          riskLevel: processedResults.riskLevel || 'medium'
+        },
+        insights: processedResults.insights || [],
+        suggestions: processedResults.suggestions || [],
+        deepWikiData: processedResults.deepWikiData,
+        mainBranchAnalysis: {
+          score: 75,
+          issues: [],
+          summary: 'Main branch analysis',
+          metadata: {}
+        },
+        featureBranchAnalysis: {
+          score: 75,
+          issues: [
+            ...(processedResults.findings?.security || []),
+            ...(processedResults.findings?.architecture || []),
+            ...(processedResults.findings?.performance || []),
+            ...(processedResults.findings?.codeQuality || []),
+            ...(processedResults.findings?.dependency || [])
+          ].map((finding, index) => ({
+            id: finding.id || `issue-${index}`,
+            category: finding.category || 'general',
+            severity: finding.severity,
+            location: finding.file ? { 
+              file: finding.file, 
+              line: finding.line || 0, 
+              column: finding.column || 0 
+            } : { file: 'unknown', line: 0, column: 0 },
+            message: finding.message || finding.description || finding.title
+          })),
+          summary: 'Feature branch analysis',
+          metadata: {}
+        },
+        analysis: {
+          mode: 'comprehensive',
+          agentsUsed: ['security', 'architecture', 'performance', 'codeQuality'],
+          processingTime: 0 // Time tracking is done at the analyzePR level
+        },
+        metadata: {
+          modelVersions: {},
+          crossAgentPatterns: processedResults.crossAgentPatterns || []
+        },
+        userId: 'api-user',
+        teamId: 'api-team',
+        language: 'javascript',
+        sizeCategory: 'medium'
+      };
+
+      // Log the findings being passed
+      this.logger.info('Passing findings to report formatter', {
+        securityFindings: analysisResult.findings.security?.length || 0,
+        architectureFindings: analysisResult.findings.architecture?.length || 0,
+        performanceFindings: analysisResult.findings.performance?.length || 0,
+        codeQualityFindings: analysisResult.findings.codeQuality?.length || 0,
+        dependencyFindings: analysisResult.findings.dependencies?.length || 0,
+        featureBranchIssues: analysisResult.featureBranchAnalysis.issues.length
+      });
+
+      // Prepare recommendation module from suggestions
+      const recommendationModule = {
+        recommendations: (processedResults.suggestions || []).map((suggestion, index) => ({
+          id: `rec-${index}`,
+          title: suggestion.title,
+          description: suggestion.description,
+          priority: suggestion.priority || 'medium',
+          category: 'general',
+          estimatedEffort: '30 minutes'
+        })),
+        totalRecommendations: processedResults.suggestions?.length || 0,
+        priorityBreakdown: {
+          critical: processedResults.suggestions?.filter(s => s.priority === 'critical').length || 0,
+          high: processedResults.suggestions?.filter(s => s.priority === 'high').length || 0,
+          medium: processedResults.suggestions?.filter(s => s.priority === 'medium').length || 0,
+          low: processedResults.suggestions?.filter(s => s.priority === 'low').length || 0
+        }
+      };
+
+      // Prepare educational data - educationalContent is passed as parameter
+      const compiledEducationalData = {
+        learningPath: {
+          title: 'Personalized Learning Path',
+          description: 'Learning path based on PR findings',
+          estimatedTime: '2-4 hours',  
+          difficulty: 'intermediate',
+          steps: educationalContent.map((item, index) => ({
+            stepNumber: index + 1,
+            title: `Step ${index + 1}`,
+            description: `Educational content: ${item}`,
+            estimatedTime: '30 minutes',
+            resources: []
+          }))
+        },
+        content: {
           explanations: [],
           tutorials: [],
           bestPractices: [],
-          additionalResources: [],
-          skillGaps: []
-        },
-        metrics: {
-          codeQuality: { score: 85, improvements: [] },
-          performance: { score: 90, bottlenecks: [] },
-          security: { score: 80, vulnerabilities: [] },
-          architecture: { score: 75, suggestions: [] }
+          resources: []
         },
         insights: {
-          crossAgentPatterns: [],
-          trends: [],
-          anomalies: []
+          skillGaps: [],
+          relatedTopics: [],
+          nextSteps: []
         }
-      },
-      visualizations: {
-        severityDistribution: { type: 'pie', data: [] },
-        categoryBreakdown: { type: 'bar', data: [] },
-        learningPathProgress: { type: 'progress', data: [] }
-      },
-      exports: {
-        prComment: this.generatePRComment(processedResults, {
-          learningPath: {
-            duration: '2-4 hours',
-            modules: []
-          }
-        } as EducationalResult),
-        markdown: '',
-        pdf: null,
-        json: null
-      }
-    } as unknown as StandardReport;
+      };
+
+      // Use the formatter to generate the report with Standard framework
+      const standardReport = await reportFormatter.formatReport(
+        analysisResult,
+        compiledEducationalData,
+        recommendationModule
+      );
+
+      return standardReport;
+    } catch (error) {
+      this.logger.error('Failed to generate report', { error });
+      throw error;
+    }
   }
 
   // Helper methods

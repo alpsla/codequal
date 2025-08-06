@@ -414,51 +414,159 @@ export class ReportFormatterService {
     recommendationModule: any,
     reportFormat?: any
   ): Promise<StandardReport> {
-    const reportId = `report_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
-    this.logger.info('Formatting standardized report', {
-      reportId,
-      repositoryUrl: analysisResult.repository?.url || 'unknown',
-      totalFindings: analysisResult.metrics?.totalFindings
-    });
-    
-    // Build the standardized report structure
-    const report: StandardReport = {
-      id: reportId,
+    this.logger.info('Formatting report using Standard framework', {
       repositoryUrl: analysisResult.repository?.url || 'unknown',
       prNumber: analysisResult.pr?.number || 0,
-      timestamp: new Date(),
+      totalFindings: Object.values(analysisResult.findings || {}).reduce((sum, findings: any) => sum + (findings?.length || 0), 0)
+    });
+
+    try {
+      // Use the Standard framework's ReportGeneratorV7Complete directly
+      const { ReportGeneratorV7Complete } = await import('../standard/comparison/report-generator-v7-complete.js');
       
-      // Overview Section
-      overview: this.buildOverview(analysisResult, recommendationModule, compiledEducationalData),
+      // Collect all findings from the analysis result
+      const allFindings = [
+        ...(analysisResult.findings?.security || []),
+        ...(analysisResult.findings?.architecture || []),
+        ...(analysisResult.findings?.performance || []),
+        ...(analysisResult.findings?.codeQuality || []),
+        ...(analysisResult.findings?.dependencies || [])
+      ];
+
+      // Create a mock comparison result with the actual findings
+      const comparisonResult = {
+        success: true,
+        decision: allFindings.some(f => f.severity === 'critical') ? 'NEEDS_CHANGES' : 
+                 allFindings.some(f => f.severity === 'high') ? 'NEEDS_REVIEW' : 'APPROVED',
+        overallScore: Math.max(0, 100 - (allFindings.filter(f => f.severity === 'critical').length * 20) - 
+                                       (allFindings.filter(f => f.severity === 'high').length * 10) -
+                                       (allFindings.filter(f => f.severity === 'medium').length * 5) -
+                                       (allFindings.filter(f => f.severity === 'low').length * 2)),
+        confidence: 85,
+        categoryScores: {
+          security: Math.max(0, 100 - (analysisResult.findings?.security?.length || 0) * 10),
+          architecture: Math.max(0, 100 - (analysisResult.findings?.architecture?.length || 0) * 10),
+          performance: Math.max(0, 100 - (analysisResult.findings?.performance?.length || 0) * 10),
+          codeQuality: Math.max(0, 100 - (analysisResult.findings?.codeQuality?.length || 0) * 10)
+        },
+        comparison: {
+          newIssues: allFindings.map((finding, index) => ({
+            id: finding.id || `issue-${index}`,
+            category: finding.category || 'general',
+            severity: finding.severity || 'medium',
+            title: finding.title || finding.message || finding.description || 'Unknown issue',
+            description: finding.description || finding.message || '',
+            location: finding.file ? {
+              file: finding.file,
+              line: finding.line || 0,
+              column: finding.column || 0
+            } : undefined,
+            tool: finding.tool || finding.agent || 'unknown',
+            confidence: finding.confidence || 0.8
+          })),
+          fixedIssues: [],
+          unfixedIssues: analysisResult.mainBranchAnalysis?.issues || [],
+          summary: `Found ${allFindings.length} issues in this PR`
+        },
+        skillProgressions: {},
+        educationalContent: compiledEducationalData?.learningPath?.steps || [],
+        prComment: '',
+        report: '',
+        analysisTime: Date.now(),
+        analysisMode: analysisResult.analysis?.mode || 'comprehensive',
+        metadata: {
+          orchestratorVersion: '1.0.0',
+          configId: 'default',
+          timestamp: new Date()
+        }
+      };
+
+      // Log what we're passing to the report generator
+      this.logger.info('Passing to Standard framework report generator', {
+        newIssues: comparisonResult.comparison.newIssues.length,
+        decision: comparisonResult.decision,
+        overallScore: comparisonResult.overallScore
+      });
+
+      // Generate the report using the template
+      const reportGenerator = new ReportGeneratorV7Complete();
+      const generatedReport = reportGenerator.generateReport(comparisonResult);
+
+      // Parse the markdown report to extract the standard report structure
+      const reportId = `report_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
-      // Modular sections for UI tabs
-      modules: {
-        findings: this.buildFindingsModule(analysisResult),
-        recommendations: this.buildRecommendationsModule(recommendationModule, analysisResult),
-        educational: this.buildEducationalModule(compiledEducationalData, analysisResult),
-        metrics: this.buildMetricsModule(analysisResult),
-        insights: this.buildInsightsModule(analysisResult, recommendationModule)
-      },
+      // Return a StandardReport structure with the actual report content
+      const standardReport: StandardReport = {
+        id: reportId,
+        repositoryUrl: analysisResult.repository?.url || 'unknown',
+        prNumber: analysisResult.pr?.number || 0,
+        timestamp: new Date(),
+        
+        // The overview is extracted from the report
+        overview: this.buildOverview(analysisResult, recommendationModule, compiledEducationalData),
+        
+        // Modular sections
+        modules: {
+          findings: this.buildFindingsModule(analysisResult),
+          recommendations: this.buildRecommendationsModule(recommendationModule, analysisResult),
+          educational: this.buildEducationalModule(compiledEducationalData, analysisResult),
+          metrics: this.buildMetricsModule(analysisResult),
+          insights: this.buildInsightsModule(analysisResult, recommendationModule)
+        },
+        
+        visualizations: this.buildVisualizations(analysisResult, compiledEducationalData),
+        
+        // Use the actual Standard framework report as the markdown export
+        exports: {
+          ...this.buildExportFormats(analysisResult, recommendationModule, compiledEducationalData),
+          markdownReport: generatedReport, // Use the actual Standard framework report
+          prComment: comparisonResult.prComment || 'No PR comment available'
+        },
+        
+        metadata: {
+          analysisMode: analysisResult.analysis?.mode || 'unknown',
+          agentsUsed: analysisResult.analysis?.agentsUsed || [],
+          toolsExecuted: this.extractToolsExecuted(analysisResult),
+          processingTime: analysisResult.analysis?.processingTime || 0,
+          modelVersions: analysisResult.metadata?.modelVersions || {},
+          reportVersion: '1.0.0',
+          // Using Standard framework for report generation
+        }
+      };
       
-      // Visualization data
-      visualizations: this.buildVisualizations(analysisResult, compiledEducationalData),
+      return standardReport;
       
-      // Export formats
-      exports: this.buildExportFormats(analysisResult, recommendationModule, compiledEducationalData),
+    } catch (error) {
+      this.logger.error('Failed to use Standard framework, falling back to basic formatter', { error });
       
-      // Metadata
-      metadata: {
-        analysisMode: analysisResult.analysis?.mode || 'unknown',
-        agentsUsed: analysisResult.analysis?.agentsUsed || [],
-        toolsExecuted: this.extractToolsExecuted(analysisResult),
-        processingTime: analysisResult.analysis?.processingTime || 0,
-        modelVersions: analysisResult.metadata?.modelVersions || {},
-        reportVersion: '1.0.0'
-      }
-    };
-    
-    return report;
+      // Fallback to basic formatting if Standard framework fails
+      const reportId = `report_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      return {
+        id: reportId,
+        repositoryUrl: analysisResult.repository?.url || 'unknown',
+        prNumber: analysisResult.pr?.number || 0,
+        timestamp: new Date(),
+        overview: this.buildOverview(analysisResult, recommendationModule, compiledEducationalData),
+        modules: {
+          findings: this.buildFindingsModule(analysisResult),
+          recommendations: this.buildRecommendationsModule(recommendationModule, analysisResult),
+          educational: this.buildEducationalModule(compiledEducationalData, analysisResult),
+          metrics: this.buildMetricsModule(analysisResult),
+          insights: this.buildInsightsModule(analysisResult, recommendationModule)
+        },
+        visualizations: this.buildVisualizations(analysisResult, compiledEducationalData),
+        exports: this.buildExportFormats(analysisResult, recommendationModule, compiledEducationalData),
+        metadata: {
+          analysisMode: analysisResult.analysis?.mode || 'unknown',
+          agentsUsed: analysisResult.analysis?.agentsUsed || [],
+          toolsExecuted: this.extractToolsExecuted(analysisResult),
+          processingTime: analysisResult.analysis?.processingTime || 0,
+          modelVersions: analysisResult.metadata?.modelVersions || {},
+          reportVersion: '1.0.0'
+        }
+      };
+    }
   }
   
   /**
