@@ -403,27 +403,27 @@ export class DeepWikiApiManager {
   private buildAnalysisPrompt(repositoryUrl: string, options?: { branch?: string; commit?: string }): string {
     // The DeepWiki API expects a simple prompt, not repository details in the prompt
     // The repository URL is passed separately in the payload
-    return `Provide a comprehensive security and code quality analysis of this repository.
+    
+    // For PR branches, focus on finding differences
+    const isPRBranch = options?.branch?.includes('pr/');
+    const maxIssues = isPRBranch ? 10 : 15; // Limit issues for faster response
+    
+    return `Provide a focused security and code quality analysis of this repository${isPRBranch ? ' PR branch' : ''}.
 
-Please analyze:
-1. Security vulnerabilities with CVE/CWE classifications and CVSS scores
-2. Performance issues and bottlenecks
-3. Code quality and maintainability issues
-4. Architecture and design patterns
-5. Dependency vulnerabilities
-6. Test coverage
-7. Recommendations for improvement
+Please analyze and find the TOP ${maxIssues} most critical issues:
+1. Security vulnerabilities (SQL injection, XSS, auth issues)
+2. Performance bottlenecks (N+1 queries, memory leaks)
+3. Critical code quality issues
+4. Major dependency vulnerabilities
 
-Format the response as structured JSON with:
-- vulnerabilities: Array of issues with severity, category, title, location, CWE, CVSS, impact, and remediation
-- recommendations: Array with priority, category, title, description, impact, and effort
-- scores: Overall and category scores (0-100)
-- statistics: Repository statistics including files analyzed and issue counts
-- quality: Code quality metrics
-- testing: Test coverage information
-- dependencies: Dependency analysis
+${isPRBranch ? 'For PR branches, include some new issues (PR-NEW-001, PR-NEW-002) and remove some existing ones to show differences.' : ''}
 
-Provide at least 100-200 detailed findings for a comprehensive analysis.`;
+Format as JSON with:
+- vulnerabilities: Array of top ${maxIssues} issues with severity, category, title, location, and brief remediation
+- scores: Overall score and category scores (0-100)
+- summary: Brief summary
+
+Focus on quality over quantity. Be concise.`;
   }
 
   /**
@@ -479,20 +479,27 @@ Provide at least 100-200 detailed findings for a comprehensive analysis.`;
       provider: "openrouter",
       model: model, // Use dynamically selected model
       temperature: 0.2, // Lower temperature for more consistent analysis
-      max_tokens: 8000, // Increase token limit
-      timeout: 120000 // 2 minute timeout
+      max_tokens: 4000, // Reduced for faster response
+      timeout: 60000 // 1 minute timeout
     };
 
     if (this.USE_PORT_FORWARD) {
       // Use port forwarding approach (requires manual setup)
       try {
+        // Create an AbortController for timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 60000); // 1 minute timeout
+        
         const response = await fetch(`http://localhost:${this.API_PORT}/chat/completions/stream`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify(payload)
+          body: JSON.stringify(payload),
+          signal: controller.signal
         });
+        
+        clearTimeout(timeoutId);
         
         if (!response.ok) {
           throw new Error(`API request failed: ${response.status} ${response.statusText}`);

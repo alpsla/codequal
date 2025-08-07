@@ -4,7 +4,7 @@ import { createLogger } from '@codequal/core/utils';
 
 // Mock the dependencies
 jest.mock('@codequal/core/utils');
-jest.mock('../../services/deepwiki-manager');
+jest.mock('../../services/deepwiki-api-manager');
 jest.mock('@codequal/agents/multi-agent/enhanced-executor');
 jest.mock('../../services/pr-context-service');
 

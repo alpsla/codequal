@@ -35,7 +35,7 @@ async function ensureStandardFrameworkInitialized() {
 export async function analyzeWithStandardFramework(
   repositoryUrl: string,
   prNumber: number,
-  mainBranch: string = 'main',
+  mainBranch = 'main',
   existingAnalysis?: {
     mainBranchAnalysis?: any;
     prBranchAnalysis?: any;

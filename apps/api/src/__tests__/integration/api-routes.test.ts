@@ -43,8 +43,9 @@ const mockDeepWikiManager = {
   waitForAnalysisCompletion: jest.fn().mockResolvedValue(mockAnalysisResult)
 };
 
-jest.mock('../../services/deepwiki-manager', () => ({
-  DeepWikiManager: jest.fn().mockImplementation(() => mockDeepWikiManager)
+jest.mock('../../services/deepwiki-api-manager', () => ({
+  DeepWikiApiManager: jest.fn().mockImplementation(() => mockDeepWikiManager),
+  deepWikiApiManager: mockDeepWikiManager
 }));
 jest.mock('../../validators/request-validators', () => ({
   validatePRAnalysisRequest: jest.fn().mockReturnValue({ isValid: true, errors: [] })
@@ -121,8 +122,9 @@ describe('API Routes Integration', () => {
         checkRepositoryExists: jest.fn().mockResolvedValue(true)
       };
 
-      jest.doMock('../../services/deepwiki-manager', () => ({
-        DeepWikiManager: jest.fn().mockImplementation(() => mockDeepWikiManager)
+      jest.doMock('../../services/deepwiki-api-manager', () => ({
+        DeepWikiApiManager: jest.fn().mockImplementation(() => mockDeepWikiManager),
+        deepWikiApiManager: mockDeepWikiManager
       }));
 
       const response = await request(app)

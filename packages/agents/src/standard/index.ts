@@ -38,7 +38,7 @@ export {
 export { ComparisonAgent } from './comparison/comparison-agent';
 export { ComparisonAgentComplete } from './comparison/comparison-agent-complete';
 export { ComparisonAgentStandalone } from './comparison/comparison-agent-standalone';
-export { ReportGenerator } from './comparison/report-generator';
+export { ReportGeneratorV7Complete as ReportGenerator } from './comparison/report-generator-v7-complete';
 // export { ReportGeneratorV7 } from './comparison/report-generator-v7'; // File doesn't exist
 export { ReportGeneratorV7Complete } from './comparison/report-generator-v7-complete';
 export { SkillCalculator } from './comparison/skill-calculator';

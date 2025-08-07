@@ -4,6 +4,7 @@ module.exports = {
   testTimeout: 30000,
   setupFilesAfterEnv: ['<rootDir>/setup-tests.js'],
   moduleNameMapper: {
+    '^@codequal/([^/]+)/(.*)$': '<rootDir>/packages/$1/src/$2',
     '^@codequal/(.*)$': '<rootDir>/packages/$1/src'
   },
   testPathIgnorePatterns: [

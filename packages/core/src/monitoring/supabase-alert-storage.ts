@@ -102,7 +102,7 @@ export class SupabaseAlertStorage {
    */
   async getRecentAlerts(
     service?: string,
-    limit: number = 100
+    limit = 100
   ): Promise<StoredAlert[]> {
     try {
       let query = this.supabase

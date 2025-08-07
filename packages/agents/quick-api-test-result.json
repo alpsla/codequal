@@ -1,0 +1,297 @@
+{
+  "repository_url": "https://github.com/sindresorhus/normalize-url",
+  "analysis_id": "0befb26e-2a58-45a5-9ed3-d9dc9b35396f",
+  "issues": [
+    {
+      "type": "security",
+      "severity": "critical",
+      "category": "Security",
+      "message": "Hardcoded API Keys in Repository",
+      "file": "config/secrets.js",
+      "line": 23,
+      "suggestion": "Remove all hardcoded secrets immediately",
+      "cwe": {
+        "id": "CWE-798",
+        "name": "Use of Hard-coded Credentials"
+      },
+      "cvss": {
+        "score": 9.8,
+        "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
+      },
+      "impact": "Complete system compromise if repository is breached",
+      "evidence": {
+        "snippet": "const API_KEY = 'sk-proj-1234567890abcdef'; // TODO: move to env"
+      },
+      "remediation": {
+        "immediate": "Remove all hardcoded secrets immediately",
+        "steps": [
+          "Remove hardcoded credentials from all files",
+          "Rotate all exposed API keys",
+          "Implement proper secret management (e.g., Kubernetes secrets, environment variables)",
+          "Add pre-commit hooks to prevent future credential commits"
+        ]
+      }
+    },
+    {
+      "type": "security",
+      "severity": "critical",
+      "category": "Security",
+      "message": "SQL Injection Vulnerability",
+      "file": "packages/database/src/services/analysis-service.ts",
+      "line": 234,
+      "suggestion": "Use parameterized queries",
+      "cwe": {
+        "id": "CWE-89",
+        "name": "SQL Injection"
+      },
+      "cvss": {
+        "score": 9.1,
+        "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N"
+      },
+      "impact": "Database compromise, data exfiltration, privilege escalation",
+      "evidence": {
+        "snippet": "const query = `SELECT * FROM analyses WHERE user_id = ${userId} AND status = '${status}'`;\n// INJECTABLE! Attack: userId = \"1 OR 1=1; DROP TABLE users;--\""
+      },
+      "remediation": {
+        "immediate": "Use parameterized queries",
+        "steps": [
+          "Replace string concatenation with parameterized queries",
+          "Use prepared statements for all database operations",
+          "Implement input validation and sanitization",
+          "Enable SQL query logging for security monitoring"
+        ]
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "high",
+      "category": "Performance",
+      "message": "N+1 Query Problem",
+      "file": "packages/database/src/services/report-service.ts",
+      "line": 145,
+      "suggestion": "Use eager loading or DataLoader pattern",
+      "cwe": {
+        "id": "CWE-1049",
+        "name": "Excessive Data Query Operations in a Large Data Table"
+      },
+      "cvss": {
+        "score": 6.5,
+        "vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H"
+      },
+      "impact": "Causes 3+ second load times, 147 queries per report load",
+      "evidence": {
+        "snippet": "const report = await Report.findById(id);\nfor (const finding of report.findings) {\n  finding.details = await FindingDetails.findById(finding.detailId);\n  finding.recommendations = await Recommendation.findByFindingId(finding.id);\n}"
+      },
+      "remediation": {
+        "immediate": "Use eager loading or DataLoader pattern",
+        "steps": [
+          "Implement eager loading with populate/include",
+          "Use DataLoader for batch loading",
+          "Add database query monitoring",
+          "Optimize with proper indexes"
+        ]
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "high",
+      "category": "Performance",
+      "message": "Oversized Frontend Bundle",
+      "file": "webpack.config.js",
+      "line": 89,
+      "suggestion": "Implement code splitting and tree shaking",
+      "cwe": {
+        "id": "CWE-1050",
+        "name": "Excessive Platform Resource Consumption within a Loop"
+      },
+      "cvss": {
+        "score": 5.3,
+        "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L"
+      },
+      "impact": "Bundle size 2.3MB, parse time 1.2s on mobile",
+      "evidence": {
+        "snippet": "lodash: 524KB (using only 3 functions!)\nmoment: 329KB (date-fns is 23KB)\n@mui/material: 892KB (importing entire library)"
+      },
+      "remediation": {
+        "immediate": "Implement code splitting and tree shaking",
+        "steps": [
+          "Replace lodash with lodash-es or specific imports",
+          "Replace moment.js with date-fns",
+          "Use modular imports for Material-UI",
+          "Enable webpack tree shaking"
+        ]
+      }
+    },
+    {
+      "type": "maintainability",
+      "severity": "medium",
+      "category": "Maintainability",
+      "message": "High Complexity Function",
+      "file": "packages/agents/src/services/result-orchestrator.ts",
+      "line": 234,
+      "suggestion": "Break down into smaller functions",
+      "cwe": {
+        "id": "CWE-1121",
+        "name": "Excessive McCabe Cyclomatic Complexity"
+      },
+      "cvss": {
+        "score": 3.7,
+        "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:L/A:N"
+      },
+      "impact": "Cyclomatic complexity of 24, difficult to test and maintain",
+      "evidence": {
+        "snippet": "function processAnalysis() {\n  // 234 lines of nested if/else and loops\n  // Cyclomatic complexity: 24\n}"
+      },
+      "remediation": {
+        "immediate": "Break down into smaller functions",
+        "steps": [
+          "Extract logical sections into separate methods",
+          "Implement strategy pattern for different cases",
+          "Add unit tests for each extracted function",
+          "Target complexity < 10 per function"
+        ]
+      }
+    },
+    {
+      "type": "other",
+      "severity": "high",
+      "category": "Dependencies",
+      "message": "Vulnerable Dependency: lodash < 4.17.21",
+      "file": "package.json",
+      "line": 45,
+      "suggestion": "Update to lodash@4.17.21 or later",
+      "cwe": {
+        "id": "CWE-1104",
+        "name": "Use of Unmaintained Third Party Components"
+      },
+      "cvss": {
+        "score": 7.5,
+        "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+      },
+      "impact": "Prototype pollution vulnerability (CVE-2021-23337)",
+      "evidence": {
+        "snippet": "\"lodash\": \"^4.17.15\""
+      },
+      "remediation": {
+        "immediate": "Update to lodash@4.17.21 or later",
+        "steps": [
+          "Run npm update lodash",
+          "Test for breaking changes",
+          "Consider migrating to lodash-es",
+          "Enable automated dependency updates"
+        ]
+      }
+    }
+  ],
+  "recommendations": [
+    {
+      "type": "security",
+      "title": "Implement Security Best Practices",
+      "description": "Address critical security vulnerabilities immediately",
+      "priority": "high",
+      "category": "Security",
+      "impact": "Prevents data breaches and unauthorized access",
+      "effort": "2-3 days",
+      "estimated_hours": 20,
+      "steps": [
+        "Remove all hardcoded secrets",
+        "Fix SQL injection vulnerabilities",
+        "Implement proper authentication",
+        "Add security headers"
+      ]
+    },
+    {
+      "type": "performance",
+      "title": "Optimize Database Queries",
+      "description": "Fix N+1 queries and add proper indexing",
+      "priority": "medium",
+      "category": "Performance",
+      "impact": "Reduces API response time by 50%",
+      "effort": "3-4 days",
+      "estimated_hours": 24,
+      "steps": [
+        "Implement eager loading",
+        "Add database indexes",
+        "Use query caching",
+        "Monitor query performance"
+      ]
+    },
+    {
+      "type": "code quality",
+      "title": "Refactor Complex Functions",
+      "description": "Break down functions with high complexity",
+      "priority": "low",
+      "category": "Code Quality",
+      "impact": "Improves code readability and reduces bugs",
+      "effort": "1 week",
+      "estimated_hours": 40,
+      "steps": [
+        "Identify functions with complexity > 10",
+        "Extract logical sections",
+        "Add comprehensive tests",
+        "Update documentation"
+      ]
+    }
+  ],
+  "scores": {
+    "overall": 72,
+    "security": 65,
+    "performance": 70,
+    "maintainability": 78,
+    "testing": 68
+  },
+  "metadata": {
+    "analyzed_at": "2025-08-07T15:07:29.466Z",
+    "duration_ms": 2832,
+    "files_analyzed": 1247,
+    "languages": {
+      "TypeScript": 65,
+      "JavaScript": 20,
+      "CSS": 10,
+      "Other": 5
+    },
+    "quality_metrics": {
+      "cyclomatic_complexity": 8.5,
+      "cognitive_complexity": 12.3,
+      "maintainability_index": 72
+    },
+    "test_coverage": 68.4,
+    "dependencies": {
+      "total": 842,
+      "direct": 127,
+      "vulnerable": 23,
+      "outdated": 89,
+      "deprecated": 12
+    },
+    "model_used": "openai/gpt-4o"
+  },
+  "statistics": {
+    "files_analyzed": 1247,
+    "total_issues": 6,
+    "issues_by_severity": {
+      "critical": 2,
+      "high": 3,
+      "medium": 1,
+      "low": 0
+    },
+    "languages": {
+      "TypeScript": 65,
+      "JavaScript": 20,
+      "CSS": 10,
+      "Other": 5
+    }
+  },
+  "quality": {
+    "metrics": {
+      "cyclomatic_complexity": 8.5,
+      "cognitive_complexity": 12.3,
+      "maintainability_index": 72
+    },
+    "duplicated_lines_percent": 15.3,
+    "technical_debt_hours": 234
+  },
+  "testing": {
+    "coverage_percent": 68.4,
+    "missing_tests": 156
+  }
+}
