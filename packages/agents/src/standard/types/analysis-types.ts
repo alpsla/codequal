@@ -74,6 +74,9 @@ export interface PRMetadata {
   linesRemoved?: number;
 }
 
+// Import BreakingChange type for enhanced ComparisonResult
+import { BreakingChange } from '../services/interfaces/diff-analyzer.interface';
+
 export interface AnalysisResult {
   issues: Issue[];
   recommendations?: string[];
@@ -201,6 +204,13 @@ export interface ComparisonResult {
   linesAdded?: number;
   linesRemoved?: number;
   scoreImpact?: number;
+  // Breaking changes from DiffAnalyzer
+  breakingChanges?: BreakingChange[];
+  diffAnalysis?: {
+    usedDiffAnalysis: boolean;
+    filesAnalyzed: number;
+    confidence: number;
+  };
   // Legacy fields for backward compatibility
   resolvedIssues?: any[];
   newIssues?: any[];

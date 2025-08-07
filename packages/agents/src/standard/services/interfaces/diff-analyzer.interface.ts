@@ -83,10 +83,13 @@ export interface ChangedClass {
 }
 
 export interface BreakingChange {
-  type: 'api' | 'signature' | 'removal' | 'rename' | 'schema';
+  type: 'api' | 'signature' | 'removal' | 'rename' | 'schema' | 'config_change' | 'function_signature_change' | 'removed_export';
   severity: 'critical' | 'high' | 'medium' | 'low';
   component: string;
+  file?: string;
   description: string;
+  before?: string;
+  after?: string;
   migrationPath?: string;
   affectedFiles: string[];
 }

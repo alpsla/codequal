@@ -24,7 +24,14 @@ import {
   IssueMapping,
   FixVerification
 } from './interfaces/diff-analyzer.interface';
-import { Logger } from '../../../logger/interfaces';
+
+// Simple logger interface
+interface Logger {
+  info(message: string, data?: any): void;
+  error(message: string, data?: any): void;
+  warn(message: string, data?: any): void;
+  debug(message: string, data?: any): void;
+}
 
 const execAsync = promisify(exec);
 
@@ -116,7 +123,7 @@ export class DiffAnalyzerService implements IDiffAnalyzer {
       return diff;
     } catch (error) {
       this.logger.error('Failed to fetch diff', { error, repo, baseBranch, headBranch });
-      throw new Error(`Failed to fetch diff: ${error.message}`);
+      throw new Error(`Failed to fetch diff: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
