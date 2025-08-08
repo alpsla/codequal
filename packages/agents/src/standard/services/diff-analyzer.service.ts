@@ -416,11 +416,12 @@ export class DiffAnalyzerService implements IDiffAnalyzer {
         case 'A': fileStatus = 'added'; break;
         case 'D': fileStatus = 'deleted'; break;
         case 'M': fileStatus = 'modified'; break;
-        case 'R': 
+        case 'R': {
           fileStatus = 'renamed';
           const paths = path.split('\t');
           oldPath = paths[0];
           break;
+        }
       }
 
       // Extract hunks for this file from diff output
@@ -792,7 +793,7 @@ export class DiffAnalyzerService implements IDiffAnalyzer {
       
       // Check for exposed secrets
       if (hunk.content.match(/api[_-]?key|secret|password|token/i) && 
-          hunk.content.match(/["\'][\w-]{20,}["\']/)) {
+          hunk.content.match(/["'][\w-]{20,}["']/)) {
         security.push({
           type: 'exposure',
           severity: 'critical',

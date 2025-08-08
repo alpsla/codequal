@@ -1002,14 +1002,38 @@ const apiClient = new Client({ apiKey: config.apiKey });`;
     
     section += `### Learning Path Based on This PR\n\n`;
     
+    // Check for breaking changes to customize educational content
+    const breakingChanges = comparison.breakingChanges || [];
+    const hasBreakingChanges = breakingChanges.length > 0;
+    const criticalBreaking = breakingChanges.filter(bc => bc.severity === 'critical').length;
+    const highBreaking = breakingChanges.filter(bc => bc.severity === 'high').length;
+    
     section += `#### Immediate Learning Needs (Critical - This Week)\n`;
-    section += `1. **Microservices Security** (6 hours) 🚨\n`;
+    
+    // Add breaking changes education if detected
+    if (hasBreakingChanges) {
+      section += `1. **API Versioning & Breaking Changes Management** (10 hours) 🚨\n`;
+      section += `   - Semantic versioning principles\n`;
+      section += `   - API deprecation strategies\n`;
+      section += `   - Migration guide creation\n`;
+      section += `   - Backward compatibility patterns\n`;
+      section += `   - **Why:** You introduced ${breakingChanges.length} breaking changes (${criticalBreaking} critical)\n\n`;
+      
+      section += `2. **Change Impact Analysis** (6 hours) 🚨\n`;
+      section += `   - Dependency graph analysis\n`;
+      section += `   - Automated impact detection\n`;
+      section += `   - Consumer contract testing\n`;
+      section += `   - Feature flags for gradual rollout\n`;
+      section += `   - **Why:** ${breakingChanges.reduce((sum, bc) => sum + bc.affectedFiles.length, 0)} files affected by your changes\n\n`;
+    }
+    
+    section += `3. **Microservices Security** (6 hours) 🚨\n`;
     section += `   - Service mesh security (mTLS)\n`;
     section += `   - API Gateway security patterns\n`;
     section += `   - Zero-trust networking\n`;
     section += `   - **Why:** You exposed internal APIs without auth\n\n`;
     
-    section += `2. **Distributed System Performance** (8 hours) 🚨\n`;
+    section += `4. **Distributed System Performance** (8 hours) 🚨\n`;
     section += `   - Avoiding distributed N+1 queries\n`;
     section += `   - Async communication patterns\n`;
     section += `   - Distributed tracing\n`;
@@ -1018,6 +1042,26 @@ const apiClient = new Client({ apiKey: config.apiKey });`;
     section += `### Anti-Patterns to Avoid\n\n`;
     section += `**❌ What You Did Wrong:**\n`;
     section += '```typescript\n';
+    
+    // Add breaking change anti-patterns if detected
+    if (hasBreakingChanges) {
+      section += `// Never change function signatures without deprecation period
+// Before: Your breaking change
+${breakingChanges[0]?.before || 'function oldSignature(a: string, b: number): void'}
+
+// After: Breaking consumers immediately
+${breakingChanges[0]?.after || 'function newSignature(a: string): void // Removed parameter!'}
+
+// Better: Gradual migration with overloads
+function myFunction(a: string): void;
+function myFunction(a: string, b?: number): void; // @deprecated Use single param version
+function myFunction(a: string, b?: number): void {
+  // Handle both cases
+}
+
+`;
+    }
+    
     section += `// Never expose internal APIs without auth
 router.get('/internal/users/:id/full', async (req, res) => {
   const user = await userRepository.getFullUserData(req.params.id);
@@ -1033,6 +1077,19 @@ for (const member of members) {
     
     section += `**✅ What You Did Right:**\n`;
     section += '```typescript\n';
+    
+    // Add positive patterns for breaking changes if they have migration paths
+    if (hasBreakingChanges && breakingChanges.some(bc => bc.migrationPath)) {
+      section += `// Good: Provided migration guidance for breaking changes
+/**
+ * @deprecated Use newFunction() instead
+ * @migration ${breakingChanges.find(bc => bc.migrationPath)?.migrationPath || 'See migration guide'}
+ */
+function oldFunction() { /* ... */ }
+
+`;
+    }
+    
     section += `// Good: Event-driven architecture
 eventBus.emit('payment.processed', { orderId, paymentId });
 
@@ -1042,6 +1099,34 @@ const paymentService = CircuitBreaker(externalPaymentAPI, {
   errorThreshold: 50
 });\n`;
     section += '```\n\n';
+    
+    // Add breaking changes best practices section if relevant
+    if (hasBreakingChanges) {
+      section += `### Breaking Changes Best Practices\n\n`;
+      section += `**📚 How to Handle Breaking Changes Properly:**\n\n`;
+      section += `1. **Version Your APIs**: Use semantic versioning (major.minor.patch)\n`;
+      section += `2. **Deprecation Period**: Mark as deprecated before removal\n`;
+      section += `3. **Migration Guides**: Provide clear upgrade paths\n`;
+      section += `4. **Backward Compatibility**: Support old versions temporarily\n`;
+      section += `5. **Feature Flags**: Roll out changes gradually\n`;
+      section += `6. **Consumer Testing**: Test with all known consumers\n`;
+      section += `7. **Communication**: Notify all stakeholders early\n\n`;
+      
+      section += `**Example Migration Strategy:**\n`;
+      section += '```typescript\n';
+      section += `// v1.0.0 - Original
+export function processData(data: string, options: Options): Result
+
+// v1.1.0 - Deprecate old, add new
+/** @deprecated Use processDataV2 */
+export function processData(data: string, options: Options): Result
+export function processDataV2(data: string, config: Config): Result
+
+// v2.0.0 - Remove deprecated
+export function processData(data: string, config: Config): Result
+\n`;
+      section += '```\n\n';
+    }
     
     section += `---\n\n`;
     return section;
@@ -1085,7 +1170,144 @@ const paymentService = CircuitBreaker(externalPaymentAPI, {
     section += `- Unfixed medium issues: -4 (4 × -1)\n`;
     section += `- Unfixed low issues: -1.5 (3 × -0.5)\n\n`;
     
+<<<<<<< HEAD
     section += `**Final Score: ${currentScore}/100** (${currentScore - previousScore} from previous)\n\n`;
+=======
+    section += `**PR Quality Impact:**\n`;
+    section += `- This PR's Quality Score: ${prQuality}/100 (${this.getGrade(prQuality)})\n`;
+    section += `- Quality Adjustment: ${baseAdjustment >= 0 ? '+' : ''}${baseAdjustment} points**\n`;
+    section += `- Adjusted Starting Point: ${adjustedBase}/100\n\n`;
+    
+    section += `**How Points Are Calculated:**\n`;
+    
+    // Calculate actual values from the comparison
+    const newIssues = comparison.comparison?.newIssues || comparison.newIssues || [];
+    const fixedIssues = comparison.comparison?.fixedIssues || comparison.comparison?.resolvedIssues || comparison.resolvedIssues || [];
+    const unfixedIssues = comparison.comparison?.unchangedIssues || comparison.unchangedIssues || [];
+    
+    // Calculate positive points
+    let positivePoints = 0;
+    const fixedBySevertiy = {
+      critical: fixedIssues.filter((i: any) => i.severity === 'critical').length,
+      high: fixedIssues.filter((i: any) => i.severity === 'high').length,
+      medium: fixedIssues.filter((i: any) => i.severity === 'medium').length,
+      low: fixedIssues.filter((i: any) => i.severity === 'low').length
+    };
+    
+    positivePoints += fixedBySevertiy.critical * 5;
+    positivePoints += fixedBySevertiy.high * 3;
+    positivePoints += fixedBySevertiy.medium * 1;
+    positivePoints += fixedBySevertiy.low * 0.5;
+    
+    section += `**➕ Points Earned (+${positivePoints} total):**\n`;
+    if (fixedBySevertiy.critical > 0) section += `- Fixed ${fixedBySevertiy.critical} critical issues: +${fixedBySevertiy.critical * 5} points (${fixedBySevertiy.critical} × 5)\n`;
+    if (fixedBySevertiy.high > 0) section += `- Fixed ${fixedBySevertiy.high} high issues: +${fixedBySevertiy.high * 3} points (${fixedBySevertiy.high} × 3)\n`;
+    if (fixedBySevertiy.medium > 0) section += `- Fixed ${fixedBySevertiy.medium} medium issues: +${fixedBySevertiy.medium * 1} points\n`;
+    if (fixedBySevertiy.low > 0) section += `- Fixed ${fixedBySevertiy.low} low issues: +${fixedBySevertiy.low * 0.5} points\n`;
+    if (positivePoints === 0) section += `- No issues fixed in this PR\n`;
+    section += `\n`;
+    
+    // Calculate negative points
+    let negativePoints = 0;
+    const newBySeverity = {
+      critical: newIssues.filter((i: any) => i.severity === 'critical').length,
+      high: newIssues.filter((i: any) => i.severity === 'high').length,
+      medium: newIssues.filter((i: any) => i.severity === 'medium').length,
+      low: newIssues.filter((i: any) => i.severity === 'low').length
+    };
+    
+    const unfixedBySeverity = {
+      critical: unfixedIssues.filter((i: any) => i.severity === 'critical').length,
+      high: unfixedIssues.filter((i: any) => i.severity === 'high').length,
+      medium: unfixedIssues.filter((i: any) => i.severity === 'medium').length,
+      low: unfixedIssues.filter((i: any) => i.severity === 'low').length
+    };
+    
+    // Breaking changes penalties
+    const breakingChanges = comparison.breakingChanges || [];
+    const breakingBySeverity = {
+      critical: breakingChanges.filter(bc => bc.severity === 'critical').length,
+      high: breakingChanges.filter(bc => bc.severity === 'high').length,
+      medium: breakingChanges.filter(bc => bc.severity === 'medium').length,
+      low: breakingChanges.filter(bc => bc.severity === 'low').length
+    };
+    
+    // New issues penalties
+    const newPenalties = {
+      critical: newBySeverity.critical * 5,
+      high: newBySeverity.high * 3,
+      medium: newBySeverity.medium * 1,
+      low: newBySeverity.low * 0.5
+    };
+    
+    // Unfixed issues penalties
+    const unfixedPenalties = {
+      critical: unfixedBySeverity.critical * 5,
+      high: unfixedBySeverity.high * 3,
+      medium: unfixedBySeverity.medium * 1,
+      low: unfixedBySeverity.low * 0.5
+    };
+    
+    // Breaking changes penalties (higher than regular issues)
+    const breakingPenalties = {
+      critical: breakingBySeverity.critical * 10,
+      high: breakingBySeverity.high * 5,
+      medium: breakingBySeverity.medium * 3,
+      low: breakingBySeverity.low * 1
+    };
+    
+    const totalNewPenalty = Object.values(newPenalties).reduce((a, b) => a + b, 0);
+    const totalUnfixedPenalty = Object.values(unfixedPenalties).reduce((a, b) => a + b, 0);
+    const totalBreakingPenalty = Object.values(breakingPenalties).reduce((a, b) => a + b, 0);
+    const coveragePenalty = comparison.aiAnalysis?.coverageDecrease || 0;
+    const vulnerableDeps = comparison.aiAnalysis?.vulnerableDependencies || 0;
+    const depsPenalty = vulnerableDeps * 0.75;
+    
+    negativePoints = totalNewPenalty + totalUnfixedPenalty + totalBreakingPenalty + coveragePenalty + depsPenalty;
+    
+    section += `**➖ Points Lost (-${Math.round(negativePoints)} total):**\n\n`;
+    
+    if (totalBreakingPenalty > 0) {
+      section += `*Breaking Changes Introduced:* 🚨\n`;
+      if (breakingBySeverity.critical > 0) section += `- ${breakingBySeverity.critical} critical breaking changes: -${breakingPenalties.critical} points (×10)\n`;
+      if (breakingBySeverity.high > 0) section += `- ${breakingBySeverity.high} high breaking changes: -${breakingPenalties.high} points (×5)\n`;
+      if (breakingBySeverity.medium > 0) section += `- ${breakingBySeverity.medium} medium breaking changes: -${breakingPenalties.medium} points (×3)\n`;
+      if (breakingBySeverity.low > 0) section += `- ${breakingBySeverity.low} low breaking changes: -${breakingPenalties.low} points\n`;
+      section += `\n`;
+    }
+    
+    if (totalNewPenalty > 0) {
+      section += `*New Issues Introduced (must fix):*\n`;
+      if (newBySeverity.critical > 0) section += `- ${newBySeverity.critical} new critical issues: -${newPenalties.critical} points\n`;
+      if (newBySeverity.high > 0) section += `- ${newBySeverity.high} new high issues: -${newPenalties.high} points\n`;
+      if (newBySeverity.medium > 0) section += `- ${newBySeverity.medium} new medium issues: -${newPenalties.medium} points\n`;
+      if (newBySeverity.low > 0) section += `- ${newBySeverity.low} new low issues: -${newPenalties.low} points\n`;
+      section += `\n`;
+    }
+    
+    if (totalUnfixedPenalty > 0) {
+      section += `*Pre-existing Issues Not Fixed:*\n`;
+      if (unfixedBySeverity.critical > 0) section += `- ${unfixedBySeverity.critical} critical issues remain: -${unfixedPenalties.critical} points\n`;
+      if (unfixedBySeverity.high > 0) section += `- ${unfixedBySeverity.high} high issues remain: -${unfixedPenalties.high} points\n`;
+      if (unfixedBySeverity.medium > 0) section += `- ${unfixedBySeverity.medium} medium issues remain: -${unfixedPenalties.medium} points\n`;
+      if (unfixedBySeverity.low > 0) section += `- ${unfixedBySeverity.low} low issues remain: -${unfixedPenalties.low} points\n`;
+      section += `\n`;
+    }
+    
+    if (coveragePenalty > 0 || depsPenalty > 0) {
+      section += `*Other Penalties:*\n`;
+      if (coveragePenalty > 0) section += `- Test coverage decreased: -${coveragePenalty} points\n`;
+      if (depsPenalty > 0) section += `- ${vulnerableDeps} vulnerable dependencies: -${depsPenalty} points\n`;
+      section += `\n`;
+    }
+    
+    section += `\n**📊 Final Calculation:**\n`;
+    section += `- Starting Score: ${adjustedBase}\n`;
+    section += `- Points Earned: +${positivePoints}\n`;
+    section += `- Points Lost: -${Math.round(negativePoints)}\n`;
+    section += `- **Final Score: ${currentScore}/100 (${this.getGrade(currentScore)})**\n`;
+    section += `- **Change from Previous: ${currentScore >= previousScore ? '+' : ''}${currentScore - previousScore} points**\n\n`;
+>>>>>>> f75c6a6 (fix: Complete overhaul of report generator V7 with synchronized sections)
     
     // Skills table
     section += `| Skill | Previous | Current | Change | Detailed Calculation |\n`;
@@ -1114,8 +1336,32 @@ const paymentService = CircuitBreaker(externalPaymentAPI, {
   private generateBusinessImpact(comparison: ComparisonResult): string {
     let section = `## 10. Business Impact Analysis\n\n`;
     
-    section += `### Negative Impacts (Severe)\n`;
-    section += `- ❌ **Security Risk**: CRITICAL - Data breach imminent\n`;
+    // Check for breaking changes
+    const breakingChanges = comparison.breakingChanges || [];
+    const hasBreakingChanges = breakingChanges.length > 0;
+    const criticalBreaking = breakingChanges.filter(bc => bc.severity === 'critical').length;
+    const highBreaking = breakingChanges.filter(bc => bc.severity === 'high').length;
+    
+    // Calculate business impact metrics based on actual data
+    const newIssues = comparison.comparison?.newIssues || comparison.newIssues || [];
+    const criticalIssues = newIssues.filter((i: any) => i.severity === 'critical').length;
+    const highIssues = newIssues.filter((i: any) => i.severity === 'high').length;
+    
+    section += `### Negative Impacts${hasBreakingChanges ? ' (Critical - Breaking Changes Detected)' : ''}\n`;
+    
+    // Add breaking changes impact first if present
+    if (hasBreakingChanges) {
+      section += `- ❌ **Breaking Changes**: ${breakingChanges.length} breaking changes will disrupt ${breakingChanges.reduce((sum, bc) => sum + bc.affectedFiles.length, 0)} files\n`;
+      section += `- ❌ **API Compatibility**: ${criticalBreaking} critical API changes requiring immediate migration\n`;
+      section += `- ❌ **Consumer Impact**: All downstream services must be updated\n`;
+      section += `- ❌ **Deployment Risk**: Cannot deploy without coordinated updates\n`;
+    }
+    
+    // Add standard impacts based on issues
+    if (criticalIssues > 0 || highIssues > 0) {
+      section += `- ❌ **Security Risk**: ${criticalIssues > 0 ? 'CRITICAL' : 'HIGH'} - Vulnerabilities introduced\n`;
+    }
+    
     section += `- ❌ **Performance**: 45% latency increase = SLA violations\n`;
     section += `- ❌ **Reliability**: New failure modes = increased downtime\n`;
     section += `- ❌ **Compliance**: PCI-DSS violations = potential fines\n`;
@@ -1128,11 +1374,34 @@ const paymentService = CircuitBreaker(externalPaymentAPI, {
     section += `- ✅ **Architecture**: Modern microservices foundation\n\n`;
     
     section += `### Risk Assessment\n`;
-    section += `- **Immediate Risk**: CRITICAL (from new issues)\n`;
+    
+    // Adjust risk level based on breaking changes
+    const riskLevel = hasBreakingChanges && criticalBreaking > 0 ? 'CRITICAL' : 
+                     hasBreakingChanges ? 'HIGH' :
+                     criticalIssues > 0 ? 'CRITICAL' :
+                     highIssues > 0 ? 'HIGH' : 'MEDIUM';
+    
+    section += `- **Immediate Risk**: ${riskLevel}${hasBreakingChanges ? ' (breaking changes detected)' : ' (from new issues)'}\n`;
+    
+    if (hasBreakingChanges) {
+      section += `- **Breaking Change Impact**: ${breakingChanges.length} changes affecting ${breakingChanges.reduce((sum, bc) => sum + bc.affectedFiles.length, 0)} files\n`;
+      section += `- **Migration Effort**: ${criticalBreaking * 8 + highBreaking * 4} hours estimated\n`;
+      section += `- **Rollback Complexity**: HIGH - Cannot rollback without reverting consumers\n`;
+    }
+    
     section += `- **Potential Breach Cost**: $2.5M - $5M\n`;
     section += `- **Compliance Fines**: Up to $500K\n`;
     section += `- **Customer Impact**: 45% slower = churn risk\n`;
-    section += `- **Time to Stabilize**: 4-6 sprints minimum\n\n`;
+    section += `- **Time to Stabilize**: ${hasBreakingChanges ? '6-8' : '4-6'} sprints minimum\n\n`;
+    
+    // Add breaking changes specific timeline if present
+    if (hasBreakingChanges) {
+      section += `### Breaking Changes Timeline\n`;
+      section += `- **Week 1**: Migration guide creation and stakeholder notification\n`;
+      section += `- **Week 2-3**: Consumer service updates and testing\n`;
+      section += `- **Week 4**: Coordinated deployment with all teams\n`;
+      section += `- **Week 5-6**: Monitor and handle edge cases\n\n`;
+    }
     
     section += `---\n\n`;
     return section;
@@ -1425,6 +1694,7 @@ npm audit fix --force\n`;
     const highNew = newIssues.filter((i: any) => i.severity === 'high').length;
     const breakingChanges = comparison.breakingChanges || [];
     const criticalBreaking = breakingChanges.filter(c => c.severity === 'critical').length;
+    const highBreaking = breakingChanges.filter(c => c.severity === 'high').length;
     
     // Check for critical breaking changes first
     if (criticalBreaking > 0) {
@@ -1432,6 +1702,15 @@ npm audit fix --force\n`;
         decision: '❌ DECLINED - CRITICAL BREAKING CHANGES',
         confidence: 95,
         reason: `This PR introduces ${breakingChanges.length} breaking changes (${criticalBreaking} critical) that must be addressed.`
+      };
+    }
+    
+    // Check for high severity breaking changes
+    if (highBreaking > 0) {
+      return {
+        decision: '❌ DECLINED - HIGH SEVERITY BREAKING CHANGES',
+        confidence: 93,
+        reason: `This PR introduces ${breakingChanges.length} breaking changes (${highBreaking} high severity) that require migration planning.`
       };
     }
     
@@ -1445,6 +1724,7 @@ npm audit fix --force\n`;
     }
 >>>>>>> 0fb7923 (feat: Integrate DiffAnalyzer breaking changes into V7 report template)
     
+    // Check for critical/high regular issues
     if (criticalNew > 0 || highNew > 0) {
       return {
         decision: '❌ DECLINED - CRITICAL/HIGH ISSUES MUST BE FIXED',
