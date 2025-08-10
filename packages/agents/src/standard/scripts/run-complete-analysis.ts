@@ -20,6 +20,7 @@ import { StandardAgentFactory, MockResearcherAgent } from '../infrastructure/fac
 import { createDeepWikiService, IDeepWikiService } from '../services/deepwiki-service';
 import { writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
+import { registerDeepWikiApi } from '../services/deepwiki-api-wrapper';
 
 interface AnalysisOptions {
   repository: string;
@@ -36,8 +37,13 @@ class CompleteAnalysisRunner {
 
   constructor(options: AnalysisOptions) {
     // Set environment variables
-    if (options.useMock) {
+    if (options.useMock || process.env.USE_DEEPWIKI_MOCK === 'true') {
       process.env.USE_DEEPWIKI_MOCK = 'true';
+      console.log('⚠️ DeepWiki Mock Mode is ENABLED');
+    } else {
+      // Register real DeepWiki API when not using mock
+      process.env.USE_DEEPWIKI_MOCK = 'false';
+      this.registerRealDeepWiki();
     }
 
     // Create output directory
@@ -59,12 +65,106 @@ class CompleteAnalysisRunner {
     );
   }
 
+  private registerRealDeepWiki() {
+    try {
+      // Try to import the real DeepWiki API from apps/api
+      const apiPath = join(__dirname, '../../../../../apps/api/dist/services/deepwiki-api-manager.js');
+      const { deepWikiApiManager } = require(apiPath);
+      
+      // Create an adapter that converts the API response to the expected format
+      const adapter = {
+        async analyzeRepository(repositoryUrl: string, options?: any) {
+          const result = await deepWikiApiManager.analyzeRepository(repositoryUrl, options);
+          
+          // Log first issue to see structure
+          if (result && result.issues && result.issues.length > 0) {
+            console.log('🔍 DeepWiki Issue Example:');
+            const firstIssue = result.issues[0];
+            console.log('  - Has suggestion:', !!firstIssue.suggestion);
+            console.log('  - Has remediation:', !!firstIssue.remediation);
+            console.log('  - Has recommendation:', !!firstIssue.recommendation);
+            if (firstIssue.suggestion) {
+              console.log('  - Suggestion:', firstIssue.suggestion.substring(0, 100) + '...');
+            }
+          }
+          
+          // Convert the flat issue structure to nested structure expected by DeepWiki service
+          if (result && result.issues) {
+            result.issues = result.issues.map((issue: any) => ({
+              id: issue.id || `issue-${Math.random().toString(36).substr(2, 9)}`,
+              severity: issue.severity,
+              category: issue.category,
+              title: issue.message || issue.title,
+              description: issue.description || issue.message,
+              location: {
+                file: issue.file || 'unknown',
+                line: issue.line || 0,
+                column: issue.column
+              },
+              recommendation: issue.suggestion || issue.remediation,
+              suggestion: issue.suggestion,
+              remediation: issue.remediation,
+              rule: issue.rule
+            }));
+          }
+          
+          // Ensure the response has the expected structure
+          return {
+            issues: result.issues || [],
+            scores: result.scores || {
+              overall: 0,
+              security: 0,
+              performance: 0,
+              maintainability: 0,
+              testing: 0
+            },
+            metadata: result.metadata || {
+              timestamp: new Date().toISOString(),
+              tool_version: '1.0.0',
+              duration_ms: 0,
+              files_analyzed: 0
+            }
+          };
+        }
+      };
+      
+      registerDeepWikiApi(adapter);
+      console.log('✅ Real DeepWiki API registered');
+    } catch (error) {
+      console.warn('⚠️ Could not load real DeepWiki API, will use mock:', error instanceof Error ? error.message : String(error));
+    }
+  }
+
+  private async getPRAuthor(repoUrl: string, prNumber: string): Promise<string> {
+    try {
+      // Extract owner and repo from URL
+      const match = repoUrl.match(/github\.com\/([^/]+)\/([^/]+)/);
+      if (!match) return 'Unknown';
+      
+      const [, owner, repo] = match;
+      
+      // Try to use gh CLI to get PR info
+      const { execSync } = require('child_process');
+      try {
+        const result = execSync(`gh pr view ${prNumber} --repo ${owner}/${repo} --json author --jq '.author.login' 2>/dev/null`, 
+          { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }
+        );
+        return result.trim() || 'Unknown';
+      } catch {
+        // gh CLI not available or PR not found
+        return `${owner}`;
+      }
+    } catch {
+      return 'Unknown';
+    }
+  }
+
   async run(options: AnalysisOptions) {
     console.log('🚀 Starting Complete PR Analysis');
     console.log('================================\n');
     console.log(`Repository: ${options.repository}`);
     console.log(`PR Number: ${options.prNumber}`);
-    console.log(`Mode: ${options.useMock ? 'Mock' : 'Real DeepWiki'}`);
+    console.log(`Mode: ${options.useMock || process.env.USE_DEEPWIKI_MOCK === 'true' ? 'Mock' : 'Real DeepWiki'}`);
     console.log(`Save to Supabase: ${options.saveToSupabase ? 'Yes' : 'No'}`);
     console.log(`Output Directory: ${this.outputDir}\n`);
 
@@ -95,7 +195,7 @@ class CompleteAnalysisRunner {
         prMetadata: {
           id: options.prNumber,
           repository_url: options.repository,
-          author: 'Unknown', // TODO: Get from GitHub API
+          author: await this.getPRAuthor(options.repository, options.prNumber),
           linesAdded: 100, // TODO: Get from GitHub API
           linesRemoved: 50 // TODO: Get from GitHub API
         },
@@ -107,6 +207,10 @@ class CompleteAnalysisRunner {
 
       // Step 4: Execute comparison
       console.log('🔄 Comparing branches and generating report...');
+      
+      // Add scan duration to the request before execution
+      (analysisRequest as any).scanDuration = ((Date.now() - startTime) / 1000).toFixed(1);
+      
       const result = await this.orchestrator.executeComparison(analysisRequest);
 
       const duration = ((Date.now() - startTime) / 1000).toFixed(1);

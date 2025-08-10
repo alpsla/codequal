@@ -57,8 +57,22 @@ export class DeepWikiService implements IDeepWikiService {
         }
       );
 
+      this.log('info', `DeepWiki raw result received`, {
+        hasIssues: !!deepWikiResult?.issues,
+        issueCount: deepWikiResult?.issues?.length || 0,
+        hasScores: !!deepWikiResult?.scores,
+        keys: Object.keys(deepWikiResult || {})
+      });
+
       // Convert DeepWiki result to Standard framework format
-      return this.convertDeepWikiToStandardFormat(deepWikiResult);
+      const convertedResult = this.convertDeepWikiToStandardFormat(deepWikiResult);
+      
+      this.log('info', `Converted result`, {
+        issueCount: convertedResult?.issues?.length || 0,
+        scores: convertedResult?.scores
+      });
+      
+      return convertedResult;
       
     } catch (error) {
       this.log('error', 'DeepWiki analysis failed', error as Error);
@@ -92,7 +106,7 @@ export class DeepWikiService implements IDeepWikiService {
   ): Promise<DeepWikiAnalysisResult> {
     const result = await this.analyzeRepository(repositoryUrl, branch, prId);
     
-    // Convert to DeepWikiAnalysisResult format
+    // Convert to DeepWikiAnalysisResult format - preserve all fields
     return {
       issues: result.issues.map(issue => ({
         id: issue.id,
@@ -103,7 +117,12 @@ export class DeepWikiService implements IDeepWikiService {
         message: issue.message,
         description: issue.description,
         suggestedFix: issue.suggestedFix,
-        references: issue.references || []
+        references: issue.references || [],
+        // Preserve suggestion/remediation/codeSnippet fields
+        codeSnippet: (issue as any).codeSnippet,
+        suggestion: (issue as any).suggestion,
+        remediation: (issue as any).remediation,
+        recommendation: (issue as any).recommendation
       })),
       metadata: {
         files_analyzed: result.metadata?.filesAnalyzed || 0,
@@ -121,22 +140,92 @@ export class DeepWikiService implements IDeepWikiService {
   private convertDeepWikiToStandardFormat(
     deepWikiResult: DeepWikiAnalysisResponse
   ): AnalysisResult {
-    // Convert issues
-    const issues: Issue[] = deepWikiResult.issues.map(issue => ({
-      id: issue.id,
-      severity: this.convertSeverity(issue.severity),
-      category: this.convertCategory(issue.category),
-      type: this.determineIssueTypeFromCategory(issue.category, issue.severity),
-      location: {
-        file: issue.location.file,
-        line: issue.location.line,
-        column: issue.location.column
-      },
-      message: issue.title,
-      description: issue.description,
-      suggestedFix: issue.recommendation,
-      references: []
-    }));
+    // Handle empty or invalid result
+    if (!deepWikiResult || !deepWikiResult.issues) {
+      this.log('warn', 'DeepWiki result is empty or invalid');
+      return {
+        issues: [],
+        scores: {
+          overall: 0,
+          security: 0,
+          performance: 0,
+          maintainability: 0,
+          testing: 0
+        },
+        metadata: {
+          analysisDate: new Date(),
+          toolVersion: '1.0.0',
+          duration: 0,
+          filesAnalyzed: 0
+        }
+      };
+    }
+
+    // Convert issues with proper error handling
+    const issues: Issue[] = deepWikiResult.issues.map((issue, index) => {
+      try {
+        // Handle location - it might be an object or missing
+        let location: { file: string; line: number; column?: number } = { 
+          file: 'unknown', 
+          line: 0 
+        };
+        
+        if (issue.location) {
+          if (typeof issue.location === 'object') {
+            location = {
+              file: issue.location.file || 'unknown',
+              line: issue.location.line || 0,
+              ...(issue.location.column !== undefined && { column: issue.location.column })
+            };
+          } else if (typeof issue.location === 'string') {
+            location = {
+              file: issue.location,
+              line: 0
+            };
+          }
+        }
+
+        // Extract code snippet from evidence field if available
+        let codeSnippet = (issue as any).codeSnippet;
+        if (!codeSnippet && (issue as any).evidence?.snippet) {
+          codeSnippet = (issue as any).evidence.snippet;
+        }
+        
+        // Extract remediation - can be a string or an object with immediate/steps
+        let remediation = (issue as any).remediation;
+        if (remediation && typeof remediation === 'object') {
+          // If remediation is an object, format it nicely
+          if (remediation.immediate) {
+            remediation = remediation.immediate;
+            if (remediation.steps && Array.isArray(remediation.steps)) {
+              remediation += '\n\nSteps:\n' + remediation.steps.map((s: string, i: number) => `${i + 1}. ${s}`).join('\n');
+            }
+          }
+        }
+
+        return {
+          id: issue.id || `issue-${index}`,
+          severity: this.convertSeverity(issue.severity),
+          category: this.convertCategory(issue.category),
+          type: this.determineIssueTypeFromCategory(issue.category, issue.severity),
+          location,
+          message: issue.title || (issue as any).message || 'No title provided',
+          description: issue.description || issue.title || '',
+          suggestedFix: issue.recommendation || (issue as any).suggestion || (issue as any).suggestedFix || '',
+          references: [],
+          // Preserve suggestion/remediation/codeSnippet fields from various sources
+          codeSnippet,
+          suggestion: (issue as any).suggestion,
+          remediation,
+          recommendation: issue.recommendation,
+          // Also preserve the evidence field for additional context
+          evidence: (issue as any).evidence
+        } as any;
+      } catch (err) {
+        this.log('warn', `Failed to convert issue ${index}:`, err as Error);
+        return null;
+      }
+    }).filter(issue => issue !== null) as Issue[];
 
     return {
       issues,
@@ -299,7 +388,7 @@ export class MockDeepWikiService implements IDeepWikiService {
   ): Promise<DeepWikiAnalysisResult> {
     const result = await this.analyzeRepository(repositoryUrl, branch, prId);
     
-    // Convert to DeepWikiAnalysisResult format
+    // Convert to DeepWikiAnalysisResult format - preserve all fields
     return {
       issues: result.issues.map(issue => ({
         id: issue.id,
@@ -310,7 +399,12 @@ export class MockDeepWikiService implements IDeepWikiService {
         message: issue.message,
         description: issue.description,
         suggestedFix: issue.suggestedFix,
-        references: issue.references || []
+        references: issue.references || [],
+        // Preserve suggestion/remediation/codeSnippet fields from mock
+        codeSnippet: (issue as any).codeSnippet,
+        suggestion: (issue as any).suggestion,
+        remediation: (issue as any).remediation,
+        recommendation: (issue as any).recommendation
       })),
       metadata: {
         files_analyzed: result.metadata?.filesAnalyzed || 100,

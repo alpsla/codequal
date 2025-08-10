@@ -35,6 +35,18 @@ export class ReportGeneratorV7Complete {
     const score = this.calculateOverallScore(comparison);
     const decision = this.makeDecision(comparison);
     
+    // Debug: Log what we're receiving
+    console.log('Report Generator - Received comparison:', {
+      hasPrMetadata: !!(comparison as any).prMetadata,
+      prMetadata: (comparison as any).prMetadata,
+      scanDuration: (comparison as any).scanDuration,
+      aiAnalysis: {
+        hasAuthor: !!aiAnalysis?.author,
+        author: aiAnalysis?.author,
+        scanDuration: aiAnalysis?.scanDuration
+      }
+    });
+    
     let report = '';
     
     // Header
@@ -97,22 +109,23 @@ export class ReportGeneratorV7Complete {
 
   private generateHeader(comparison: ComparisonResult): string {
     const { aiAnalysis } = comparison;
+    const prMetadata = (comparison as any).prMetadata;
+    
+    // Extract repository info from prMetadata or aiAnalysis
+    const repoUrl = prMetadata?.repository_url || aiAnalysis?.repository || comparison.repository || '';
+    const repoName = this.extractRepoName(repoUrl);
     
     // Extract username from repository URL dynamically
-    const username = this.extractUsernameFromRepo(aiAnalysis.repository || comparison.repository);
-    const authorUsername = aiAnalysis.author?.username || username || 'unknown';
-    const authorName = aiAnalysis.author?.name || this.formatUsername(authorUsername);
+    const username = this.extractUsernameFromRepo(repoUrl);
+    const authorUsername = prMetadata?.author || aiAnalysis?.author?.username || username || 'unknown';
+    const authorName = aiAnalysis?.author?.name || this.formatUsername(authorUsername);
     
     let header = `# Pull Request Analysis Report
 
-**Repository:** ${aiAnalysis.repository || comparison.repository || 'Unknown'}  
-**PR:** #${aiAnalysis.prNumber || comparison.prNumber || 'N/A'} - ${aiAnalysis.prTitle || 'Code Changes'}  
+**Repository:** ${repoName || 'Unknown'}  
+**PR:** #${prMetadata?.id || aiAnalysis?.prNumber || comparison.prNumber || 'N/A'} - ${prMetadata?.title || aiAnalysis?.prTitle || 'Code Changes'}  
 **Author:** ${authorName} (@${authorUsername})  
 **Analysis Date:** ${new Date().toISOString()}  
-<<<<<<< HEAD
-**Model Used:** ${aiAnalysis.modelUsed || 'GPT-4'} (Dynamically Selected)  
-**Scan Duration:** ${aiAnalysis.scanDuration || comparison.scanDuration || '0.0'} seconds`;
-=======
 **Model Used:** ${aiAnalysis?.modelUsed || 'GPT-4'}`;
     
     // Add diff analysis indicator if present
@@ -122,8 +135,15 @@ export class ReportGeneratorV7Complete {
       header += ` (Dynamically Selected)`;
     }
     
+    // Try to get scan duration from multiple sources
+    const scanDuration = (comparison as any).scanDuration || 
+                        aiAnalysis?.scanDuration || 
+                        comparison.analysis?.scanDuration || 
+                        (comparison.metadata as any)?.scanDuration ||
+                        '0.0';
+    
     header += `  
-**Scan Duration:** ${aiAnalysis?.scanDuration || comparison.analysis?.scanDuration || '0.0'} seconds`;
+**Scan Duration:** ${scanDuration} seconds`;
     
     // Add breaking changes count if present
     if (comparison.breakingChanges && comparison.breakingChanges.length > 0) {
@@ -132,7 +152,26 @@ export class ReportGeneratorV7Complete {
     }
     
     return header;
->>>>>>> 0fb7923 (feat: Integrate DiffAnalyzer breaking changes into V7 report template)
+  }
+  
+  private extractRepoName(repoUrl?: string): string {
+    if (!repoUrl) return 'Unknown';
+    
+    // Handle GitHub URLs: https://github.com/username/repo
+    const githubMatch = repoUrl.match(/github\.com\/([^/]+\/[^/]+)/);
+    if (githubMatch) return githubMatch[1];
+    
+    // Handle GitLab URLs
+    const gitlabMatch = repoUrl.match(/gitlab\.com\/(.+?)(?:\.git)?$/);
+    if (gitlabMatch) return gitlabMatch[1];
+    
+    // Handle Bitbucket URLs
+    const bitbucketMatch = repoUrl.match(/bitbucket\.org\/([^/]+\/[^/]+)/);
+    if (bitbucketMatch) return bitbucketMatch[1];
+    
+    // Return last part of URL as fallback
+    const parts = repoUrl.split('/');
+    return parts[parts.length - 1].replace('.git', '') || 'Unknown';
   }
   
   private extractUsernameFromRepo(repoUrl?: string): string {
@@ -178,7 +217,15 @@ export class ReportGeneratorV7Complete {
     
     let summary = `## Executive Summary\n\n`;
     summary += `**Overall Score: ${score}/100 (Grade: ${grade})**\n\n`;
-    summary += `This PR (${comparison.filesChanged || 0} files, ${comparison.linesChanged || 0} lines) `;
+    
+    // Get lines changed from various sources
+    const prMetadata = (comparison as any).prMetadata;
+    const linesChanged = comparison.linesChanged as any;
+    const linesAdded = (typeof linesChanged === 'object' ? linesChanged?.added : 0) || prMetadata?.linesAdded || 0;
+    const linesRemoved = (typeof linesChanged === 'object' ? linesChanged?.removed : 0) || prMetadata?.linesRemoved || 0;
+    const totalLines = linesAdded + linesRemoved;
+    
+    summary += `This PR (${comparison.filesChanged || 0} files, ${totalLines} lines) `;
     summary += `introduces ${criticalNew} critical and ${highNew} high severity issues`;
     
     if (criticalNew > 0 || highNew > 0) {
@@ -191,28 +238,12 @@ export class ReportGeneratorV7Complete {
     summary += `- **New Critical/High Issues:** ${criticalNew + highNew} (${criticalNew} critical, ${highNew} high)`;
     if (criticalNew > 0 || highNew > 0) summary += ' 🚨 **[BLOCKING]**';
     summary += '\n';
-<<<<<<< HEAD
-    summary += `- **Pre-existing Issues:** ${unfixedIssues.length} (${criticalUnfixed} critical, ${highUnfixed} high) ⚠️ **[Not blocking, but impacts scores]**\n`;
-=======
-    
-    // Add breaking changes to key metrics
-    const breakingChanges = comparison.breakingChanges || [];
-    if (breakingChanges.length > 0) {
-      const criticalBreaking = breakingChanges.filter(c => c.severity === 'critical').length;
-      summary += `- **Breaking Changes:** ${breakingChanges.length} total 🚨`;
-      if (criticalBreaking > 0) {
-        summary += ` **[BLOCKING]**`;
-      }
-      summary += '\n';
-    }
-    
-    summary += `- **Pre-existing Issues:** ${unfixedIssues.length} total ⚠️ **[Not blocking, but impacts scores]**\n`;
->>>>>>> 0fb7923 (feat: Integrate DiffAnalyzer breaking changes into V7 report template)
+
     summary += `- **Overall Score Impact:** ${comparison.scoreImpact || 0} points\n`;
     summary += `- **Risk Level:** ${this.getRiskLevel(comparison)}\n`;
     summary += `- **Estimated Review Time:** ${this.estimateReviewTime(comparison)} minutes\n`;
     summary += `- **Files Changed:** ${comparison.filesChanged || 0}\n`;
-    summary += `- **Lines Added/Removed:** +${comparison.linesAdded || 0} / -${comparison.linesRemoved || 0}\n\n`;
+    summary += `- **Lines Added/Removed:** +${linesAdded} / -${linesRemoved}\n\n`;
     
     summary += this.generateIssueDistribution(comparison);
     
@@ -417,11 +448,6 @@ ${change.migrationPath}
     } else {
       return this.generateGenericArchitectureDiagram(repoName, newIssues, fixedIssues);
     }
-  }
-  
-  private extractRepoName(repoUrl: string): string {
-    const match = repoUrl.match(/\/([^/]+)$/);
-    return match ? match[1] : 'repository';
   }
   
   private generateFrontendArchitectureDiagram(repoName: string, newIssues: Issue[], fixedIssues: Issue[]): string {
@@ -755,9 +781,27 @@ CMD ["node", "index.js"]
         section += `   - File: ${issue.location?.file || 'Unknown'}:${issue.location?.line || '?'}\n`;
         section += `   - Impact: ${issue.description || 'No description'}\n`;
         
-        // Include code snippet for repo issues too
-        if (issue.codeSnippet) {
-          section += `   - Code: \`${issue.codeSnippet.substring(0, 50)}...\`\n`;
+        // Only include problematic code if we have actual code snippet
+        const codeSnippet = (issue as any).codeSnippet || (issue as any).evidence?.snippet;
+        if (codeSnippet) {
+          section += `\n   **Problematic Code:**\n`;
+          section += '   ```' + this.getLanguageFromFile(issue.location?.file) + '\n';
+          const codeLines = (codeSnippet as string).split('\n');
+          codeLines.forEach((line: string) => {
+            section += '   ' + line + '\n';
+          });
+          section += '   ```\n';
+        }
+        
+        // Add remediation if available
+        if ((issue as any).remediation || (issue as any).suggestion) {
+          section += `\n   **Required Fix:**\n`;
+          section += '   ```' + this.getLanguageFromFile(issue.location?.file) + '\n';
+          const fixLines = ((issue as any).remediation || (issue as any).suggestion || '').split('\n');
+          fixLines.forEach((line: string) => {
+            section += '   ' + line + '\n';
+          });
+          section += '   ```\n\n';
         }
         
         section += `   - **Skill Impact:** -${this.UNFIXED_PENALTIES[severity as keyof typeof this.UNFIXED_PENALTIES]} points for leaving ${severity} issue unfixed\n\n`;
@@ -766,236 +810,7 @@ CMD ["node", "index.js"]
     
     return section;
   }
-<<<<<<< HEAD
-=======
-  
-  private formatRepositoryIssue(issue: any, index: number, prefix: string): string {
-    // Extract the actual issue if it's wrapped
-    const actualIssue = issue.issue || issue;
-    
-    // Get issue details with fallbacks
-    const title = actualIssue.title || actualIssue.message || actualIssue.Title || 'Unknown Issue';
-    const file = actualIssue.location?.file || actualIssue.location || actualIssue.file || 'Unknown';
-    const line = actualIssue.location?.line || actualIssue.line || '?';
-    const impact = actualIssue.impact || actualIssue.description || actualIssue.remediation || `${actualIssue.category || 'Unknown'} issue in repository`;
-    const cwe = actualIssue.CWE || actualIssue.cwe || '';
-    const age = actualIssue.age || actualIssue.metadata?.firstDetected || 'Unknown';
-    
-    let formatted = `#### ${prefix}-${String(index).padStart(3, '0')}: ${title}\n`;
-    formatted += `**File:** ${file}:${line}  \n`;
-    if (cwe) formatted += `**CWE:** ${cwe}  \n`;
-    formatted += `**Category:** ${actualIssue.category || 'Unknown'}  \n`;
-    formatted += `**Severity:** ${actualIssue.severity || 'Unknown'}  \n`;
-    formatted += `**Age:** ${age}  \n`;
-    formatted += `**Impact:** ${impact}\n\n`;
-    
-    // Include full code snippet like PR issues
-    formatted += `**Current Implementation:**\n`;
-    formatted += '```' + this.getLanguageFromFile(actualIssue.location?.file) + '\n';
-    // Check both direct property and metadata for code snippet
-    const codeSnippet = actualIssue.codeSnippet || actualIssue.metadata?.codeSnippet || '// Code snippet not available\n';
-    formatted += codeSnippet;
-    formatted += '\n```\n\n';
-    
-    formatted += `**Required Fix:**\n`;
-    formatted += '```' + this.getLanguageFromFile(actualIssue.location?.file) + '\n';
-    
-    // Generate actual code fix based on issue type
-    const remediation = actualIssue.remediation || actualIssue.metadata?.remediation;
-    let suggestedFix = actualIssue.suggestedFix || actualIssue.metadata?.suggestedFix;
-    
-    // Generate specific code fixes based on issue type
-    if (actualIssue.id === 'PR-NEW-001' || actualIssue.title?.includes('Insecure Direct Object Reference')) {
-      suggestedFix = `// Check user authorization before accessing resource
-if (!req.user || req.user.id !== resource.ownerId) {
-  return res.status(403).json({ error: 'Unauthorized access' });
-}
 
-// Proceed with resource access
-const userData = await getUserData(req.params.id, req.user.id);`;
-    } else if (actualIssue.id === 'PR-NEW-002' || actualIssue.title?.includes('Synchronous File I/O')) {
-      suggestedFix = `// Replace synchronous file operations with async
-// Before: const data = fs.readFileSync(filePath, 'utf8');
-// After:
-const data = await fs.promises.readFile(filePath, 'utf8');
-
-// Or use streaming for large files:
-const stream = fs.createReadStream(filePath);
-stream.on('data', (chunk) => {
-  // Process chunk
-});`;
-    } else if (actualIssue.title?.includes('SQL Injection')) {
-      suggestedFix = `// Use parameterized queries instead of string concatenation
-// Before: const query = "SELECT * FROM users WHERE id = " + userId;
-// After:
-const query = 'SELECT * FROM users WHERE id = ?';
-const results = await db.query(query, [userId]);
-
-// Or with named parameters:
-const results = await db.query(
-  'SELECT * FROM users WHERE id = :userId',
-  { userId }
-);`;
-    } else if (actualIssue.title?.includes('XSS')) {
-      suggestedFix = `// Sanitize user input before rendering
-import DOMPurify from 'dompurify';
-
-// Before: element.innerHTML = userContent;
-// After:
-const sanitized = DOMPurify.sanitize(userContent);
-element.innerHTML = sanitized;
-
-// Or use React's safe rendering:
-return <div>{userContent}</div>; // React auto-escapes`;
-    } else if (actualIssue.title?.includes('Memory Leak')) {
-      suggestedFix = `// Add cleanup for event listeners and subscriptions
-useEffect(() => {
-  const handleResize = () => {
-    // Handle resize
-  };
-  
-  window.addEventListener('resize', handleResize);
-  
-  // Cleanup function
-  return () => {
-    window.removeEventListener('resize', handleResize);
-  };
-}, []);`;
-    } else if (actualIssue.title?.includes('N+1 Query')) {
-      suggestedFix = `// Batch fetch all data before iteration
-// Before:
-for (const member of members) {
-  const details = await UserDetails.findOne({ userId: member.id });
-}
-
-// After:
-const memberIds = members.map(m => m.id);
-const allDetails = await UserDetails.find({ 
-  userId: { $in: memberIds } 
-});
-const detailsMap = new Map(allDetails.map(d => [d.userId, d]));
-
-for (const member of members) {
-  const details = detailsMap.get(member.id);
-  // Process details
-}`;
-    } else if (actualIssue.title?.includes('Bundle') || actualIssue.title?.includes('Oversized')) {
-      suggestedFix = `// Optimize bundle size with code splitting
-// webpack.config.js
-module.exports = {
-  optimization: {
-    splitChunks: {
-      chunks: 'all',
-      cacheGroups: {
-        vendor: {
-          test: /[\\\\]node_modules[\\\\]/,
-          name: 'vendors',
-          priority: 10
-        }
-      }
-    }
-  }
-};
-
-// Use dynamic imports for large components
-const HeavyComponent = lazy(() => import('./HeavyComponent'));`;
-    } else if (actualIssue.title?.includes('Complexity')) {
-      suggestedFix = `// Break down complex function into smaller units
-// Before: 234 lines with complexity 24
-// After:
-function processAnalysis(data) {
-  const validated = validateInput(data);
-  const normalized = normalizeData(validated);
-  const results = analyzeData(normalized);
-  return formatResults(results);
-}
-
-function validateInput(data) {
-  // Validation logic (10 lines)
-}
-
-function normalizeData(data) {
-  // Normalization logic (15 lines)
-}
-
-function analyzeData(data) {
-  // Analysis logic (20 lines)
-}`;
-    } else if (actualIssue.title?.includes('Vulnerable Dependency') || actualIssue.title?.includes('lodash')) {
-      suggestedFix = `// Update vulnerable dependencies
-// package.json
-{
-  "dependencies": {
-    "lodash": "^4.17.21",  // Updated from 4.17.15
-    // Consider using lodash-es for tree shaking:
-    // "lodash-es": "^4.17.21"
-  }
-}
-
-// Run update command:
-npm update lodash
-npm audit fix
-
-// Or use yarn:
-yarn upgrade lodash@^4.17.21`;
-    } else if (actualIssue.title?.includes('Hardcoded') || actualIssue.title?.includes('API Key')) {
-      suggestedFix = `// Move sensitive data to environment variables
-// .env file (add to .gitignore)
-DATABASE_URL=your_database_url
-API_KEY=your_api_key
-SECRET_TOKEN=your_secret_token
-
-// config.js
-require('dotenv').config();
-
-module.exports = {
-  database: process.env.DATABASE_URL,
-  apiKey: process.env.API_KEY,
-  secretToken: process.env.SECRET_TOKEN
-};
-
-// Usage
-const config = require('./config');
-const apiClient = new Client({ apiKey: config.apiKey });`;
-    } else if (remediation?.immediate && remediation?.steps) {
-      // Use remediation data if available with actual code
-      suggestedFix = `// ${remediation.immediate}\n`;
-      if (actualIssue.codeSnippet) {
-        suggestedFix += `\n// Current vulnerable code:\n// ${actualIssue.codeSnippet.replace(/\n/g, '\n// ')}\n\n`;
-      }
-      suggestedFix += `// Fixed implementation:\n`;
-      if (actualIssue.suggestedFix && !actualIssue.suggestedFix.startsWith('//')) {
-        suggestedFix += actualIssue.suggestedFix;
-      } else {
-        // Generate a more specific fix based on the remediation steps
-        suggestedFix += remediation.steps.map((step: string, i: number) => {
-          if (step.includes('parameterized')) {
-            return `// Use parameterized query\nconst result = await db.query('SELECT * FROM table WHERE id = ?', [id]);`;
-          } else if (step.includes('sanitize') || step.includes('escape')) {
-            return `// Sanitize input\nconst clean = DOMPurify.sanitize(userInput);`;
-          } else if (step.includes('validate')) {
-            return `// Validate input\nif (!validator.isEmail(email)) {\n  throw new Error('Invalid email');\n}`;
-          } else {
-            return `// ${step}`;
-          }
-        }).join('\n');
-      }
-    } else if (suggestedFix) {
-      // Use existing suggested fix if available but enhance it
-      if (!suggestedFix.includes('//') && !suggestedFix.includes('/*')) {
-        suggestedFix = `// Suggested fix:\n${suggestedFix}`;
-      }
-    } else {
-      // Generic fix template with more specific guidance
-      suggestedFix = `// Fix for ${actualIssue.title || actualIssue.category || 'this issue'}\n// Step 1: Review the vulnerable code at line ${actualIssue.location?.line || 'N/A'}\n// Step 2: Apply the following fix:\n\n// Example implementation:\nif (${actualIssue.category === 'security' ? 'validate_input(data)' : 'check_condition()'}) {\n  // Safe processing\n  const result = process_safely(data);\n  return result;\n} else {\n  throw new Error('Validation failed');\n}`;
-    }
-    
-    formatted += suggestedFix;
-    formatted += '\n```\n\n';
-    
-    return formatted;
-  }
->>>>>>> 939a392 (feat: Implement DiffAnalyzer service for accurate PR issue detection)
 
   private generateEducationalInsights(comparison: ComparisonResult): string {
     let section = `## 8. Educational Insights & Recommendations\n\n`;
@@ -1170,144 +985,7 @@ export function processData(data: string, config: Config): Result
     section += `- Unfixed medium issues: -4 (4 × -1)\n`;
     section += `- Unfixed low issues: -1.5 (3 × -0.5)\n\n`;
     
-<<<<<<< HEAD
-    section += `**Final Score: ${currentScore}/100** (${currentScore - previousScore} from previous)\n\n`;
-=======
-    section += `**PR Quality Impact:**\n`;
-    section += `- This PR's Quality Score: ${prQuality}/100 (${this.getGrade(prQuality)})\n`;
-    section += `- Quality Adjustment: ${baseAdjustment >= 0 ? '+' : ''}${baseAdjustment} points**\n`;
-    section += `- Adjusted Starting Point: ${adjustedBase}/100\n\n`;
-    
-    section += `**How Points Are Calculated:**\n`;
-    
-    // Calculate actual values from the comparison
-    const newIssues = comparison.comparison?.newIssues || comparison.newIssues || [];
-    const fixedIssues = comparison.comparison?.fixedIssues || comparison.comparison?.resolvedIssues || comparison.resolvedIssues || [];
-    const unfixedIssues = comparison.comparison?.unchangedIssues || comparison.unchangedIssues || [];
-    
-    // Calculate positive points
-    let positivePoints = 0;
-    const fixedBySevertiy = {
-      critical: fixedIssues.filter((i: any) => i.severity === 'critical').length,
-      high: fixedIssues.filter((i: any) => i.severity === 'high').length,
-      medium: fixedIssues.filter((i: any) => i.severity === 'medium').length,
-      low: fixedIssues.filter((i: any) => i.severity === 'low').length
-    };
-    
-    positivePoints += fixedBySevertiy.critical * 5;
-    positivePoints += fixedBySevertiy.high * 3;
-    positivePoints += fixedBySevertiy.medium * 1;
-    positivePoints += fixedBySevertiy.low * 0.5;
-    
-    section += `**➕ Points Earned (+${positivePoints} total):**\n`;
-    if (fixedBySevertiy.critical > 0) section += `- Fixed ${fixedBySevertiy.critical} critical issues: +${fixedBySevertiy.critical * 5} points (${fixedBySevertiy.critical} × 5)\n`;
-    if (fixedBySevertiy.high > 0) section += `- Fixed ${fixedBySevertiy.high} high issues: +${fixedBySevertiy.high * 3} points (${fixedBySevertiy.high} × 3)\n`;
-    if (fixedBySevertiy.medium > 0) section += `- Fixed ${fixedBySevertiy.medium} medium issues: +${fixedBySevertiy.medium * 1} points\n`;
-    if (fixedBySevertiy.low > 0) section += `- Fixed ${fixedBySevertiy.low} low issues: +${fixedBySevertiy.low * 0.5} points\n`;
-    if (positivePoints === 0) section += `- No issues fixed in this PR\n`;
-    section += `\n`;
-    
-    // Calculate negative points
-    let negativePoints = 0;
-    const newBySeverity = {
-      critical: newIssues.filter((i: any) => i.severity === 'critical').length,
-      high: newIssues.filter((i: any) => i.severity === 'high').length,
-      medium: newIssues.filter((i: any) => i.severity === 'medium').length,
-      low: newIssues.filter((i: any) => i.severity === 'low').length
-    };
-    
-    const unfixedBySeverity = {
-      critical: unfixedIssues.filter((i: any) => i.severity === 'critical').length,
-      high: unfixedIssues.filter((i: any) => i.severity === 'high').length,
-      medium: unfixedIssues.filter((i: any) => i.severity === 'medium').length,
-      low: unfixedIssues.filter((i: any) => i.severity === 'low').length
-    };
-    
-    // Breaking changes penalties
-    const breakingChanges = comparison.breakingChanges || [];
-    const breakingBySeverity = {
-      critical: breakingChanges.filter(bc => bc.severity === 'critical').length,
-      high: breakingChanges.filter(bc => bc.severity === 'high').length,
-      medium: breakingChanges.filter(bc => bc.severity === 'medium').length,
-      low: breakingChanges.filter(bc => bc.severity === 'low').length
-    };
-    
-    // New issues penalties
-    const newPenalties = {
-      critical: newBySeverity.critical * 5,
-      high: newBySeverity.high * 3,
-      medium: newBySeverity.medium * 1,
-      low: newBySeverity.low * 0.5
-    };
-    
-    // Unfixed issues penalties
-    const unfixedPenalties = {
-      critical: unfixedBySeverity.critical * 5,
-      high: unfixedBySeverity.high * 3,
-      medium: unfixedBySeverity.medium * 1,
-      low: unfixedBySeverity.low * 0.5
-    };
-    
-    // Breaking changes penalties (higher than regular issues)
-    const breakingPenalties = {
-      critical: breakingBySeverity.critical * 10,
-      high: breakingBySeverity.high * 5,
-      medium: breakingBySeverity.medium * 3,
-      low: breakingBySeverity.low * 1
-    };
-    
-    const totalNewPenalty = Object.values(newPenalties).reduce((a, b) => a + b, 0);
-    const totalUnfixedPenalty = Object.values(unfixedPenalties).reduce((a, b) => a + b, 0);
-    const totalBreakingPenalty = Object.values(breakingPenalties).reduce((a, b) => a + b, 0);
-    const coveragePenalty = comparison.aiAnalysis?.coverageDecrease || 0;
-    const vulnerableDeps = comparison.aiAnalysis?.vulnerableDependencies || 0;
-    const depsPenalty = vulnerableDeps * 0.75;
-    
-    negativePoints = totalNewPenalty + totalUnfixedPenalty + totalBreakingPenalty + coveragePenalty + depsPenalty;
-    
-    section += `**➖ Points Lost (-${Math.round(negativePoints)} total):**\n\n`;
-    
-    if (totalBreakingPenalty > 0) {
-      section += `*Breaking Changes Introduced:* 🚨\n`;
-      if (breakingBySeverity.critical > 0) section += `- ${breakingBySeverity.critical} critical breaking changes: -${breakingPenalties.critical} points (×10)\n`;
-      if (breakingBySeverity.high > 0) section += `- ${breakingBySeverity.high} high breaking changes: -${breakingPenalties.high} points (×5)\n`;
-      if (breakingBySeverity.medium > 0) section += `- ${breakingBySeverity.medium} medium breaking changes: -${breakingPenalties.medium} points (×3)\n`;
-      if (breakingBySeverity.low > 0) section += `- ${breakingBySeverity.low} low breaking changes: -${breakingPenalties.low} points\n`;
-      section += `\n`;
-    }
-    
-    if (totalNewPenalty > 0) {
-      section += `*New Issues Introduced (must fix):*\n`;
-      if (newBySeverity.critical > 0) section += `- ${newBySeverity.critical} new critical issues: -${newPenalties.critical} points\n`;
-      if (newBySeverity.high > 0) section += `- ${newBySeverity.high} new high issues: -${newPenalties.high} points\n`;
-      if (newBySeverity.medium > 0) section += `- ${newBySeverity.medium} new medium issues: -${newPenalties.medium} points\n`;
-      if (newBySeverity.low > 0) section += `- ${newBySeverity.low} new low issues: -${newPenalties.low} points\n`;
-      section += `\n`;
-    }
-    
-    if (totalUnfixedPenalty > 0) {
-      section += `*Pre-existing Issues Not Fixed:*\n`;
-      if (unfixedBySeverity.critical > 0) section += `- ${unfixedBySeverity.critical} critical issues remain: -${unfixedPenalties.critical} points\n`;
-      if (unfixedBySeverity.high > 0) section += `- ${unfixedBySeverity.high} high issues remain: -${unfixedPenalties.high} points\n`;
-      if (unfixedBySeverity.medium > 0) section += `- ${unfixedBySeverity.medium} medium issues remain: -${unfixedPenalties.medium} points\n`;
-      if (unfixedBySeverity.low > 0) section += `- ${unfixedBySeverity.low} low issues remain: -${unfixedPenalties.low} points\n`;
-      section += `\n`;
-    }
-    
-    if (coveragePenalty > 0 || depsPenalty > 0) {
-      section += `*Other Penalties:*\n`;
-      if (coveragePenalty > 0) section += `- Test coverage decreased: -${coveragePenalty} points\n`;
-      if (depsPenalty > 0) section += `- ${vulnerableDeps} vulnerable dependencies: -${depsPenalty} points\n`;
-      section += `\n`;
-    }
-    
-    section += `\n**📊 Final Calculation:**\n`;
-    section += `- Starting Score: ${adjustedBase}\n`;
-    section += `- Points Earned: +${positivePoints}\n`;
-    section += `- Points Lost: -${Math.round(negativePoints)}\n`;
-    section += `- **Final Score: ${currentScore}/100 (${this.getGrade(currentScore)})**\n`;
-    section += `- **Change from Previous: ${currentScore >= previousScore ? '+' : ''}${currentScore - previousScore} points**\n\n`;
->>>>>>> f75c6a6 (fix: Complete overhaul of report generator V7 with synchronized sections)
+
     
     // Skills table
     section += `| Skill | Previous | Current | Change | Detailed Calculation |\n`;
@@ -1512,36 +1190,64 @@ npm audit fix --force\n`;
   }
 
   private formatIssueWithCodeSnippet(issue: Issue, index: number, prefix: string): string {
+    // Debug: Log issue structure
+    if (index === 1) {
+      console.log('🔍 Issue structure:', {
+        hasRecommendation: !!(issue as any).recommendation,
+        hasSuggestion: !!(issue as any).suggestion,
+        hasRemediation: !!(issue as any).remediation,
+        recommendation: (issue as any).recommendation,
+        suggestion: (issue as any).suggestion,
+        remediation: (issue as any).remediation,
+        keys: Object.keys(issue)
+      });
+    }
+    
     let formatted = `#### ${prefix}-${String(index).padStart(3, '0')}: ${issue.title || issue.message || 'Unknown Issue'}\n`;
-    formatted += `**File:** ${issue.location?.file || 'Unknown'}:${issue.location?.line || '?'}  \n`;
+    
+    // Enhanced location with exact line and column if available
+    const locationString = issue.location?.file 
+      ? `${issue.location.file}${issue.location.line ? ':' + issue.location.line : ''}${issue.location.column ? ':' + issue.location.column : ''}`
+      : 'Unknown';
+    
+    formatted += `**File:** ${locationString}`;
+    
+    // Add confidence indicator if we have location confidence
+    if ((issue as any).locationConfidence) {
+      const confidence = (issue as any).locationConfidence;
+      const indicator = confidence >= 80 ? '✅' : confidence >= 60 ? '⚠️' : '❓';
+      formatted += ` ${indicator} (${confidence}% confidence)`;
+    }
+    
+    formatted += `  \n`;
     formatted += `**Impact:** ${issue.description || 'No description provided'}\n\n`;
     
-    // Always include code snippet for all severities
-    formatted += `**Problematic Code:**\n`;
-    formatted += '```' + this.getLanguageFromFile(issue.location?.file) + '\n';
-    formatted += issue.codeSnippet || '// Code snippet not available\n// TODO: Check implementation';
-    formatted += '\n```\n\n';
+    // Only include problematic code section if we have a code snippet
+    const codeSnippet = issue.codeSnippet || (issue as any).evidence?.snippet;
+    if (codeSnippet) {
+      formatted += `**Problematic Code:**\n`;
+      formatted += '```' + this.getLanguageFromFile(issue.location?.file) + '\n';
+      
+      // If we have context lines and exact line number, show with line numbers
+      if ((issue as any).contextLines && issue.location?.line) {
+        const startLine = Math.max(1, issue.location.line - 2);
+        const lines = codeSnippet.split('\n');
+        lines.forEach((line: string, idx: number) => {
+          const lineNum = startLine + idx;
+          const isTargetLine = lineNum === issue.location?.line;
+          formatted += `${lineNum.toString().padStart(4)} ${isTargetLine ? '>' : ' '} ${line}\n`;
+        });
+      } else {
+        formatted += codeSnippet;
+      }
+      
+      formatted += '\n```\n\n';
+    }
     
     formatted += `**Required Fix:**\n`;
     formatted += '```' + this.getLanguageFromFile(issue.location?.file) + '\n';
-<<<<<<< HEAD
-    formatted += issue.suggestedFix || '// TODO: Implement fix for this issue\n// Follow secure coding practices';
-=======
-    
-    // Generate specific code fix for repository issues
-    let suggestedFix = issue.suggestedFix || issue.metadata?.suggestedFix;
-    
-    // Apply same fix generation logic as PR issues
-    if (issue.title?.includes('SQL Injection')) {
-      suggestedFix = `// Use parameterized queries\nconst query = 'SELECT * FROM users WHERE id = ?';\nconst results = await db.query(query, [userId]);`;
-    } else if (issue.title?.includes('XSS')) {
-      suggestedFix = `// Sanitize HTML content\nimport DOMPurify from 'dompurify';\nconst clean = DOMPurify.sanitize(userContent);\nelement.innerHTML = clean;`;
-    } else if (!suggestedFix) {
-      suggestedFix = `// TODO: Fix ${issue.title || 'this issue'}\n// Apply security best practices`;
-    }
-    
-    formatted += suggestedFix;
->>>>>>> 939a392 (feat: Implement DiffAnalyzer service for accurate PR issue detection)
+    // Prefer remediation (full code) over suggestion (brief) over recommendation (text only)
+    formatted += (issue as any).remediation || (issue as any).suggestion || (issue as any).recommendation || '// TODO: Implement fix based on issue description';
     formatted += '\n```\n\n';
     
     formatted += `---\n\n`;
@@ -1684,45 +1390,9 @@ npm audit fix --force\n`;
   }
 
   private makeDecision(comparison: ComparisonResult): any {
-<<<<<<< HEAD
     const newIssues = comparison.comparison?.newIssues || [];
     const criticalNew = newIssues.filter(i => i.severity === 'critical').length;
     const highNew = newIssues.filter(i => i.severity === 'high').length;
-=======
-    const newIssues = comparison.comparison?.newIssues || comparison.newIssues || [];
-    const criticalNew = newIssues.filter((i: any) => i.severity === 'critical').length;
-    const highNew = newIssues.filter((i: any) => i.severity === 'high').length;
-    const breakingChanges = comparison.breakingChanges || [];
-    const criticalBreaking = breakingChanges.filter(c => c.severity === 'critical').length;
-    const highBreaking = breakingChanges.filter(c => c.severity === 'high').length;
-    
-    // Check for critical breaking changes first
-    if (criticalBreaking > 0) {
-      return {
-        decision: '❌ DECLINED - CRITICAL BREAKING CHANGES',
-        confidence: 95,
-        reason: `This PR introduces ${breakingChanges.length} breaking changes (${criticalBreaking} critical) that must be addressed.`
-      };
-    }
-    
-    // Check for high severity breaking changes
-    if (highBreaking > 0) {
-      return {
-        decision: '❌ DECLINED - HIGH SEVERITY BREAKING CHANGES',
-        confidence: 93,
-        reason: `This PR introduces ${breakingChanges.length} breaking changes (${highBreaking} high severity) that require migration planning.`
-      };
-    }
-    
-    // Check for breaking changes without migration guide
-    if (breakingChanges.length > 0 && !breakingChanges.every(c => c.migrationPath)) {
-      return {
-        decision: '❌ DECLINED - BREAKING CHANGES REQUIRE MIGRATION PLAN',
-        confidence: 92,
-        reason: `This PR introduces ${breakingChanges.length} breaking changes that require migration guides.`
-      };
-    }
->>>>>>> 0fb7923 (feat: Integrate DiffAnalyzer breaking changes into V7 report template)
     
     // Check for critical/high regular issues
     if (criticalNew > 0 || highNew > 0) {
@@ -1776,80 +1446,7 @@ npm audit fix --force\n`;
     };
     return emojis[severity as keyof typeof emojis] || '⚪';
   }
-<<<<<<< HEAD
-=======
-  
-  private generateFootnotes(): string {
-    let footnotes = '\n---\n\n';
-    footnotes += '## 📄 Report Footnotes\n\n';
-    
-    footnotes += '### Understanding the Scoring System\n\n';
-    
-    footnotes += '*** Score Calculation Method:**\n';
-    footnotes += 'The developer skill score tracks improvement over time based on code quality. Each developer starts with their previous score, ';
-    footnotes += 'which is then adjusted based on:\n\n';
-    
-    footnotes += '1. **PR Quality Adjustment**: The overall quality of this PR affects the starting point\n';
-    footnotes += '   - PRs scoring 70/100 or higher provide small positive adjustments\n';
-    footnotes += '   - PRs scoring below 70/100 provide small negative adjustments\n';
-    footnotes += '   - This encourages maintaining high code quality standards\n\n';
-    
-    footnotes += '2. **Points for Fixing Issues**: Developers earn points by fixing existing problems\n';
-    footnotes += '   - Critical issues: +5 points each\n';
-    footnotes += '   - High issues: +3 points each\n';
-    footnotes += '   - Medium issues: +1 point each\n';
-    footnotes += '   - Low issues: +0.5 points each\n\n';
-    
-    footnotes += '3. **Penalties for New Issues**: Points are deducted for introducing new problems\n';
-    footnotes += '   - Critical issues: -5 points each\n';
-    footnotes += '   - High issues: -3 points each\n';
-    footnotes += '   - Medium issues: -1 point each\n';
-    footnotes += '   - Low issues: -0.5 points each\n\n';
-    
-    footnotes += '4. **Penalties for Ignoring Existing Issues**: Pre-existing issues that remain unfixed also result in penalties\n';
-    footnotes += '   - Same point values as new issues\n';
-    footnotes += '   - This incentivizes cleaning up technical debt\n';
-    footnotes += '   - Note: These issues don\'t block PR approval but do impact scores\n\n';
-    
-    footnotes += '**** Quality Adjustment Calculation:**\n';
-    footnotes += 'For every 10 points the PR quality differs from 70/100, the developer\'s starting score adjusts by ±1 point. ';
-    footnotes += 'For example, a PR scoring 90/100 provides a +2 adjustment, while a PR scoring 50/100 provides a -2 adjustment.\n\n';
-    
-    footnotes += '***** Pre-existing Issues:**\n';
-    footnotes += 'These are problems that existed in the codebase before this PR. While they don\'t block merging, ';
-    footnotes += 'they impact developer scores to encourage gradual improvement of the codebase. The age of each issue ';
-    footnotes += 'is tracked to identify long-standing technical debt.\n\n';
-    
-    footnotes += '### Severity Definitions\n\n';
-    footnotes += '- **🚨 Critical**: Security vulnerabilities, data loss risks, or issues that can crash the application\n';
-    footnotes += '- **⚠️ High**: Major bugs, performance problems, or security risks that significantly impact users\n';
-    footnotes += '- **🔶 Medium**: Code quality issues, minor bugs, or problems that affect maintainability\n';
-    footnotes += '- **🔴 Low**: Style violations, minor improvements, or nice-to-have enhancements\n\n';
-    
-    footnotes += '### Grade Scale\n\n';
-    footnotes += '- **A (90-100)**: Exceptional - Industry best practices\n';
-    footnotes += '- **B (80-89)**: Good - Minor improvements needed\n';
-    footnotes += '- **C (70-79)**: Acceptable - Several areas for improvement\n';
-    footnotes += '- **D (60-69)**: Poor - Significant issues present\n';
-    footnotes += '- **F (0-59)**: Failing - Major problems requiring immediate attention\n\n';
-    
-    footnotes += '### Breaking Change Detection Methodology\n\n';
-    footnotes += 'This report uses advanced diff analysis to detect breaking changes by:\n';
-    footnotes += '1. **Comparing function signatures** between main and PR branches\n';
-    footnotes += '2. **Analyzing export changes** to detect removed APIs\n';
-    footnotes += '3. **Tracking configuration schema** modifications\n';
-    footnotes += '4. **Calculating impact radius** through dependency analysis\n';
-    footnotes += '5. **Providing confidence scores** based on verification\n\n';
-    
-    footnotes += '**Breaking Change Severity Levels:**\n';
-    footnotes += '- **🚨 Critical**: Will break compilation or runtime\n';
-    footnotes += '- **⚠️ High**: Requires code changes to maintain compatibility\n';
-    footnotes += '- **🔶 Medium**: May affect behavior but won\'t break\n';
-    footnotes += '- **🔴 Low**: Deprecation or minor changes\n\n';
-    
-    return footnotes;
-  }
->>>>>>> 0fb7923 (feat: Integrate DiffAnalyzer breaking changes into V7 report template)
+
 
   /**
    * Generate markdown report - wrapper for generateReport method

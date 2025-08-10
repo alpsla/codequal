@@ -369,10 +369,17 @@ export class DeepWikiApiManager {
       return result;
 
     } catch (error) {
-      logger.error(`DeepWiki API analysis failed for ${repositoryUrl}:`, error as Error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error(`DeepWiki API analysis failed for ${repositoryUrl}:`, errorMessage);
       
-      // Return a degraded result instead of throwing
-      return this.createDegradedResult(repositoryUrl, analysisId, startTime, error as Error);
+      // Only return degraded result if explicitly in development/test mode
+      if (process.env.NODE_ENV === 'development' && process.env.ALLOW_DEGRADED_RESULTS === 'true') {
+        logger.warn('Development mode: Returning degraded result instead of failing');
+        return this.createDegradedResult(repositoryUrl, analysisId, startTime, error as Error);
+      }
+      
+      // In production, throw the error so users know the analysis failed
+      throw new Error(`DeepWiki analysis failed: ${errorMessage}. Please check DeepWiki service status and configuration.`);
     }
   }
 
@@ -436,9 +443,10 @@ Focus on quality over quantity. Be concise.`;
     model: string
   ): Promise<DeepWikiApiResponse> {
     logger.info(`Calling DeepWiki API for ${repositoryUrl} with model ${model}`);
-    // Use enhanced mock for testing
-    if (process.env.USE_DEEPWIKI_MOCK === 'true' || !process.env.DEEPWIKI_API_KEY) {
-      logger.info('Using enhanced mock for DeepWiki analysis');
+    
+    // Check if mock mode is explicitly enabled
+    if (process.env.USE_DEEPWIKI_MOCK === 'true') {
+      logger.warn('⚠️ DeepWiki Mock Mode is ENABLED - returning simulated data');
       
       // Simulate API latency
       const latency = 2500; // Default latency for mock
@@ -465,6 +473,13 @@ Focus on quality over quantity. Be concise.`;
           }
         }]
       };
+    }
+    
+    // Verify DeepWiki API key is configured
+    if (!process.env.DEEPWIKI_API_KEY) {
+      const error = new Error('DeepWiki API key is not configured. Please set DEEPWIKI_API_KEY environment variable.');
+      logger.error('❌ DeepWiki configuration error:', error.message);
+      throw error;
     }
     
     const payload = {
@@ -510,7 +525,23 @@ Focus on quality over quantity. Be concise.`;
         
         // Try to parse as JSON
         try {
-          return JSON.parse(responseText) as DeepWikiApiResponse;
+          const parsed = JSON.parse(responseText);
+          
+          // Check if response is already in direct format (vulnerabilities at top level)
+          if (parsed.vulnerabilities || parsed.issues || parsed.scores) {
+            logger.info('Response is in direct format, wrapping in choices structure');
+            // Wrap direct response in OpenAI format for compatibility
+            return {
+              choices: [{
+                message: {
+                  content: JSON.stringify(parsed)
+                }
+              }]
+            } as DeepWikiApiResponse;
+          }
+          
+          // Otherwise return as-is (already in OpenAI format)
+          return parsed as DeepWikiApiResponse;
         } catch (e) {
           // If not JSON, wrap text response in expected format
           return {
@@ -545,16 +576,30 @@ Focus on quality over quantity. Be concise.`;
         // Parse the JSON response
         try {
           logger.info('Raw API response length:', stdout.length);
-          logger.info('Raw response:', stdout);
           
-          const parsed = JSON.parse(stdout) as DeepWikiApiResponse;
+          const parsed = JSON.parse(stdout);
           logger.info('API response structure:', { 
             keys: Object.keys(parsed),
             hasChoices: !!parsed.choices,
-            choicesLength: parsed.choices?.length,
+            hasVulnerabilities: !!parsed.vulnerabilities,
             hasError: !!parsed.error
           });
-          return parsed;
+          
+          // Check if response is already in direct format (vulnerabilities at top level)
+          if (parsed.vulnerabilities || parsed.issues || parsed.scores) {
+            logger.info('Response is in direct format, wrapping in choices structure');
+            // Wrap direct response in OpenAI format for compatibility
+            return {
+              choices: [{
+                message: {
+                  content: JSON.stringify(parsed)
+                }
+              }]
+            } as DeepWikiApiResponse;
+          }
+          
+          // Otherwise return as-is (already in OpenAI format)
+          return parsed as DeepWikiApiResponse;
         } catch (parseError) {
           logger.error('Failed to parse API response:', parseError as Error);
           logger.error('Raw response:', stdout.substring(0, 2000));
@@ -673,9 +718,24 @@ Focus on quality over quantity. Be concise.`;
   ): DeepWikiAnalysisResult {
     // Convert vulnerabilities to issues
     const issues: DeepWikiIssue[] = (analysis.vulnerabilities || []).map(vuln => {
-      // Get location information
-      const file = vuln.location?.file || 'unknown';
-      const line = vuln.location?.line || 0;
+      // Get location information - handle both string and object formats
+      let file = 'unknown';
+      let line = 0;
+      
+      if (typeof vuln.location === 'string') {
+        // Location is just a file path string
+        file = vuln.location;
+        // Try to extract line number if present in format "file:line"
+        const parts = (vuln.location as string).split(':');
+        if (parts.length > 1 && !isNaN(parseInt(parts[parts.length - 1]))) {
+          line = parseInt(parts[parts.length - 1]);
+          file = parts.slice(0, -1).join(':');
+        }
+      } else if (typeof vuln.location === 'object' && vuln.location) {
+        // Location is an object with file and line properties
+        file = vuln.location.file || 'unknown';
+        line = vuln.location.line || 0;
+      }
       
       return {
         type: this.mapCategoryToType(vuln.category),

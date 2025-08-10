@@ -134,7 +134,7 @@ export class SmartIssueMatcher {
             metadata: {
               ...mainIssue.metadata,
               resolution: 'Fixed in PR changes',
-              confidence: mainMapping.confidence
+              confidence: mainMapping.confidence.toString()
             }
           });
         } else {
@@ -180,7 +180,7 @@ export class SmartIssueMatcher {
             metadata: {
               ...prIssue.metadata,
               introduction: 'Introduced in PR changes',
-              confidence: prMapping.confidence
+              confidence: prMapping.confidence.toString()
             }
           });
         } else {

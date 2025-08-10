@@ -59,6 +59,16 @@ export interface SearchQuery {
  */
 export interface IEducatorAgent {
   /**
+   * Research educational content based on issues
+   * This is the main entry point for the orchestrator
+   */
+  research?(params: {
+    issues: any[];
+    developerLevel?: string;
+    teamProfile?: TeamSkills;
+  }): Promise<any>;
+  
+  /**
    * Find matching courses based on educational suggestions
    */
   findMatchingCourses(params: CourseSearchParams): Promise<EducationalEnhancements>;

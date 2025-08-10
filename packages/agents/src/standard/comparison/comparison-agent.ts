@@ -19,8 +19,10 @@ import {
   PRMetadata
 } from '../types/analysis-types';
 import { ReportGeneratorV7Complete } from './report-generator-v7-complete';
+import { ReportGeneratorV7Fixed } from './report-generator-v7-fixed';
 import { SkillCalculator } from './skill-calculator';
 import { ILogger } from '../services/interfaces/logger.interface';
+import { EnhancedIssueMatcher, IssueDuplicator } from '../services/issue-matcher-enhanced';
 
 /**
  * Clean implementation of AI-powered comparison agent
@@ -29,6 +31,7 @@ export class ComparisonAgent implements IReportingComparisonAgent {
   private config: ComparisonConfig;
   private modelConfig: any;
   private reportGenerator: ReportGeneratorV7Complete;
+  private reportGeneratorFixed: ReportGeneratorV7Fixed;
   private skillCalculator: SkillCalculator;
   
   constructor(
@@ -36,6 +39,7 @@ export class ComparisonAgent implements IReportingComparisonAgent {
     private modelService?: any // TODO: Define IModelService interface
   ) {
     this.reportGenerator = new ReportGeneratorV7Complete();
+    this.reportGeneratorFixed = new ReportGeneratorV7Fixed();
     this.skillCalculator = new SkillCalculator();
     this.config = this.getDefaultConfig();
   }
@@ -110,15 +114,19 @@ export class ComparisonAgent implements IReportingComparisonAgent {
       if (input.generateReport !== false) {
         markdownReport = await this.generateReport({
           ...comparison,
-          skillTracking
-        });
+          skillTracking,
+          prMetadata: input.prMetadata,
+          scanDuration: (input as any).scanDuration
+        } as any);
       }
 
       // Generate PR comment
       const prComment = this.generatePRComment({
         ...comparison,
-        skillTracking
-      });
+        skillTracking,
+        prMetadata: input.prMetadata,
+        scanDuration: (input as any).scanDuration
+      } as any);
 
       return {
         success: true,
@@ -145,14 +153,57 @@ export class ComparisonAgent implements IReportingComparisonAgent {
    * Generate markdown report from comparison
    */
   async generateReport(comparison: ComparisonResult): Promise<string> {
-    return this.reportGenerator.generateMarkdownReport(comparison);
+    // Use the fixed report generator instead of the template-based one
+    // It expects the comparison result directly
+    
+    console.log('ComparisonAgent - Using fixed report generator with:', {
+      hasPrMetadata: !!(comparison as any).prMetadata,
+      prMetadata: (comparison as any).prMetadata,
+      scanDuration: (comparison as any).scanDuration,
+      newIssuesCount: comparison.newIssues?.length || 0,
+      resolvedIssuesCount: comparison.resolvedIssues?.length || 0
+    });
+    
+    return this.reportGeneratorFixed.generateReport(comparison);
   }
 
   /**
    * Generate PR comment from comparison
    */
   generatePRComment(comparison: ComparisonResult): string {
-    return this.reportGenerator.generatePRComment(comparison);
+    // Use the fixed report generator for PR comments too
+    return this.reportGeneratorFixed.generatePRComment(comparison);
+  }
+
+  /**
+   * Generate final report with all enhancements including educational content
+   */
+  async generateFinalReport(params: {
+    comparison: ComparisonResult;
+    educationalContent?: any;
+    prMetadata?: any;
+    includeEducation?: boolean;
+  }): Promise<{ report: string; prComment: string }> {
+    this.log('info', 'Generating final report with enhancements', {
+      hasEducation: !!params.educationalContent,
+      includeEducation: params.includeEducation
+    });
+
+    // Merge educational content into the comparison result if provided
+    const enhancedComparison = {
+      ...params.comparison,
+      educationalInsights: params.educationalContent,
+      prMetadata: params.prMetadata
+    };
+
+    // Generate both report and PR comment
+    const report = await this.generateReport(enhancedComparison);
+    const prComment = this.generatePRComment(enhancedComparison);
+
+    return {
+      report,
+      prComment
+    };
   }
 
   /**
@@ -231,16 +282,31 @@ Provide confidence scores and reasoning for each finding.`;
   private convertAIAnalysisToComparison(
     aiAnalysis: AIComparisonAnalysis
   ): ComparisonResult {
+    // Extract the actual issues from ComparisonIssue wrappers
+    const extractIssues = (comparisonIssues: ComparisonIssue[]) => {
+      return comparisonIssues.map(ci => ({
+        ...ci.issue,
+        severity: ci.severity,
+        confidence: ci.confidence,
+        analysisReasoning: ci.reasoning,
+        // Preserve DeepWiki suggestion/remediation/codeSnippet fields
+        codeSnippet: (ci.issue as any).codeSnippet,
+        suggestion: (ci.issue as any).suggestion,
+        remediation: (ci.issue as any).remediation,
+        recommendation: (ci.issue as any).recommendation || (ci.issue as any).suggestion || (ci.issue as any).remediation
+      }));
+    };
+    
     return {
-      resolvedIssues: aiAnalysis.resolvedIssues.issues,
-      newIssues: aiAnalysis.newIssues.issues,
-      modifiedIssues: aiAnalysis.modifiedIssues.issues,
-      unchangedIssues: [], // TODO: Calculate unchanged
+      resolvedIssues: extractIssues(aiAnalysis.resolvedIssues.issues),
+      newIssues: extractIssues(aiAnalysis.newIssues.issues),
+      modifiedIssues: aiAnalysis.modifiedIssues.issues.map(mi => (mi as any).issue || mi),
+      unchangedIssues: extractIssues(aiAnalysis.unchangedIssues.issues),
       summary: {
         totalResolved: aiAnalysis.resolvedIssues.total,
         totalNew: aiAnalysis.newIssues.total,
         totalModified: aiAnalysis.modifiedIssues.total,
-        totalUnchanged: 0,
+        totalUnchanged: aiAnalysis.unchangedIssues.total,
         overallAssessment: aiAnalysis.overallAssessment
       },
       insights: this.generateInsights(aiAnalysis),
@@ -301,20 +367,114 @@ Provide confidence scores and reasoning for each finding.`;
     mainAnalysis: AnalysisResult,
     featureAnalysis: AnalysisResult
   ): AIComparisonAnalysis {
-    // Simple mock implementation
-    const mainIssueIds = new Set(mainAnalysis.issues.map(i => i.id));
-    const featureIssueIds = new Set(featureAnalysis.issues.map(i => i.id));
+    // Log what we're analyzing
+    this.log('info', 'Performing mock AI analysis', {
+      mainIssues: mainAnalysis.issues?.length || 0,
+      featureIssues: featureAnalysis.issues?.length || 0,
+      mainScores: mainAnalysis.scores,
+      featureScores: featureAnalysis.scores
+    });
     
-    const resolved = mainAnalysis.issues.filter(i => !featureIssueIds.has(i.id));
-    const newIssues = featureAnalysis.issues.filter(i => !mainIssueIds.has(i.id));
+    // For now, treat all issues from feature branch as the current state
+    // Since DeepWiki analyzes each branch independently, we can't do true diff comparison
+    // Instead, we'll use the feature branch issues as the source of truth
+    const featureIssues = featureAnalysis.issues || [];
+    const mainIssues = mainAnalysis.issues || [];
+    
+    // Create a fingerprint for each issue to match similar issues
+    // Use file, line (if available), and category for precise matching
+    const createFingerprint = (issue: Issue) => {
+      // Normalize the file path to handle slight variations
+      const file = (issue.location?.file || 'unknown').toLowerCase().replace(/\\/g, '/');
+      const category = (issue.category || 'unknown').toLowerCase();
+      // Include severity to distinguish between severity changes
+      const severity = (issue.severity || 'unknown').toLowerCase();
+      
+      // If we have exact line numbers, use them for more precise matching
+      // Allow small variations (±2 lines) for code that might have shifted
+      if (issue.location?.line) {
+        const lineRange = Math.floor(issue.location.line / 3) * 3; // Group by 3-line ranges
+        return `${file}:${lineRange}-${category}-${severity}`;
+      }
+      
+      // Fallback to file-level matching if no line number
+      return `${file}-${category}-${severity}`;
+    };
+    
+    // Use enhanced matcher for sophisticated issue matching
+    const matcher = new EnhancedIssueMatcher();
+    
+    // IMPORTANT: Do NOT deduplicate - pass actual issue lists as requested by user
+    // We want to report ALL occurrences of issues
+    const actualMainIssues = mainIssues;
+    const actualFeatureIssues = featureIssues;
+    
+    this.log('info', 'Using actual issue lists without deduplication', {
+      main: { count: actualMainIssues.length },
+      feature: { count: actualFeatureIssues.length },
+      note: 'Preserving all issue occurrences for complete visibility'
+    });
+    
+    // Use enhanced matching with multiple strategies
+    const resolved: Issue[] = [];
+    const newIssues: Issue[] = [];
+    const unchanged: Issue[] = [];
+    
+    // Track which feature issues have been matched
+    const matchedFeatureIndices = new Set<number>();
+    
+    // Find resolved and unchanged issues from main branch
+    for (const mainIssue of actualMainIssues) {
+      let bestMatch: { issue: Issue; index: number; result: any } | null = null;
+      let bestConfidence = 0;
+      
+      actualFeatureIssues.forEach((featureIssue, index) => {
+        if (matchedFeatureIndices.has(index)) return;
+        
+        const matchResult = matcher.matchIssues(mainIssue, featureIssue);
+        if (matchResult.isMatch && matchResult.confidence > bestConfidence) {
+          bestMatch = { issue: featureIssue, index, result: matchResult };
+          bestConfidence = matchResult.confidence;
+        }
+      });
+      
+      if (bestMatch) {
+        // Issue exists in both branches (unchanged)
+        const matchData = bestMatch as { issue: Issue; index: number; result: any };
+        unchanged.push({
+          ...matchData.issue,
+          _matchDetails: matchData.result.details,
+          _matchConfidence: matchData.result.confidence
+        } as any);
+        matchedFeatureIndices.add(matchData.index);
+        
+        this.log('debug', `Matched issue: ${mainIssue.title}`, matchData.result);
+      } else {
+        // Issue only in main (resolved)
+        resolved.push(mainIssue);
+      }
+    }
+    
+    // Find new issues (in feature but not matched)
+    actualFeatureIssues.forEach((featureIssue, index) => {
+      if (!matchedFeatureIndices.has(index)) {
+        newIssues.push(featureIssue);
+      }
+    });
+    
+    this.log('info', 'Mock analysis results', {
+      resolved: resolved.length,
+      new: newIssues.length,
+      unchanged: unchanged.length
+    });
     
     return {
       resolvedIssues: {
         issues: resolved.map(issue => ({
           issue,
           severity: issue.severity || 'medium',
-          confidence: 0.9,
-          reasoning: 'Issue not found in feature branch'
+          confidence: 0.85,
+          reasoning: 'Issue appears to be fixed in the feature branch'
         })),
         total: resolved.length
       },
@@ -322,8 +482,8 @@ Provide confidence scores and reasoning for each finding.`;
         issues: newIssues.map(issue => ({
           issue,
           severity: issue.severity || 'medium',
-          confidence: 0.9,
-          reasoning: 'Issue introduced in feature branch'
+          confidence: 0.85,
+          reasoning: 'New issue detected in feature branch'
         })),
         bySeverity: {
           critical: newIssues.filter((i: any) => i.severity === 'critical'),
@@ -337,17 +497,30 @@ Provide confidence scores and reasoning for each finding.`;
         issues: [],
         total: 0
       },
+      unchangedIssues: {
+        issues: unchanged.map(issue => ({
+          issue,
+          severity: issue.severity || 'medium',
+          confidence: 0.85,
+          reasoning: 'Issue exists in both branches'
+        })),
+        total: unchanged.length
+      },
       overallAssessment: {
-        securityPostureChange: resolved.length > newIssues.length ? 'improved' : 'degraded',
-        codeQualityTrend: 'stable',
-        technicalDebtImpact: 0.1,
-        prRecommendation: newIssues.some((i: any) => i.severity === 'critical') ? 'block' : 'approve',
+        securityPostureChange: resolved.length > newIssues.length ? 'improved' : 
+                               newIssues.length > resolved.length ? 'degraded' : 'unchanged',
+        codeQualityTrend: (featureAnalysis.scores?.overall || 0) > (mainAnalysis.scores?.overall || 0) ? 'improving' :
+                         (featureAnalysis.scores?.overall || 0) < (mainAnalysis.scores?.overall || 0) ? 'declining' : 'stable',
+        technicalDebtImpact: (newIssues.length - resolved.length) * 0.1,
+        prRecommendation: newIssues.some((i: any) => i.severity === 'critical') ? 'block' : 
+                          newIssues.filter((i: any) => i.severity === 'high').length > 2 ? 'review' : 'approve',
         confidence: 0.85
       },
       skillDevelopment: {
-        demonstratedSkills: ['security-awareness', 'code-quality'],
-        improvementAreas: ['performance-optimization'],
-        learningRecommendations: ['Review OWASP guidelines']
+        demonstratedSkills: resolved.length > 0 ? ['issue-resolution', 'code-quality'] : [],
+        improvementAreas: newIssues.filter(i => i.severity === 'high' || i.severity === 'critical').length > 0 ?
+                          ['security-awareness', 'quality-assurance'] : [],
+        learningRecommendations: newIssues.length > 0 ? ['Review security best practices', 'Implement code review feedback'] : []
       },
       uncertainties: [],
       evidenceQuality: 'high'

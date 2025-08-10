@@ -148,6 +148,136 @@ echo "📊 Reference: packages/test-integration/reports/codequal_deepwiki-pr-ana
 - Run `npm install` unless package.json has changed
 - Create new files unless explicitly necessary
 
+## DeepWiki Testing Setup
+
+### Verifying DeepWiki Pod Status
+
+Check if DeepWiki pod is running properly:
+```bash
+# Full pod status with details
+kubectl get pods -n codequal-dev -l app=deepwiki -o wide
+
+# Check pod logs if there are issues
+kubectl logs -n codequal-dev -l app=deepwiki --tail=50
+
+# Describe pod for troubleshooting
+kubectl describe pod -n codequal-dev -l app=deepwiki
+```
+
+### Starting Port Forwarding
+
+Establish port forwarding to DeepWiki service:
+```bash
+# Kill any existing port forwarding
+pkill -f "port-forward.*8001"
+
+# Start new port forwarding in background
+kubectl port-forward -n codequal-dev svc/deepwiki-api 8001:8001 &
+
+# Verify connection
+curl -s http://localhost:8001/health | jq '.'
+```
+
+### Testing DeepWiki Connection
+
+Verify DeepWiki is responding correctly:
+```bash
+# Health check
+curl -s http://localhost:8001/health | jq '.'
+
+# Test analyze endpoint with a simple PR
+curl -X POST http://localhost:8001/analyze \
+  -H "Content-Type: application/json" \
+  -d '{"owner":"facebook","repo":"react","prNumber":28000}' | jq '.status'
+
+# Check DeepWiki logs for errors
+kubectl logs -n codequal-dev -l app=deepwiki --tail=20 --follow
+```
+
+## Real PR Testing
+
+### Testing with Real GitHub PRs
+
+Commands for testing real PR analysis with DeepWiki:
+```bash
+# Navigate to agents directory
+cd /Users/alpinro/Code\ Prjects/codequal/packages/agents
+
+# Test with a specific PR (replace with actual PR details)
+USE_DEEPWIKI_MOCK=false npx ts-node src/standard/tests/test-real-pr-with-locations.ts
+
+# Test complete analysis flow
+USE_DEEPWIKI_MOCK=false npx ts-node src/standard/scripts/run-complete-analysis.ts \
+  --owner facebook \
+  --repo react \
+  --pr 28000
+```
+
+### Example Test Scenarios
+
+Different PR testing scenarios:
+```bash
+# Small PR (good for quick tests)
+USE_DEEPWIKI_MOCK=false npx ts-node test-real-deepwiki-pr.ts \
+  --owner vercel --repo next.js --pr 60000
+
+# Medium PR with multiple files
+USE_DEEPWIKI_MOCK=false npx ts-node test-real-deepwiki-pr.ts \
+  --owner microsoft --repo vscode --pr 200000
+
+# Large PR (stress test)
+USE_DEEPWIKI_MOCK=false npx ts-node test-real-deepwiki-pr.ts \
+  --owner kubernetes --repo kubernetes --pr 120000
+
+# Test with location enhancement
+USE_DEEPWIKI_MOCK=false npx ts-node src/standard/tests/test-location-enhancement.ts
+```
+
+### Verifying Location Finding
+
+Ensure location finding is working correctly:
+```bash
+# Test location finder service
+npx ts-node src/standard/tests/test-location-enhancement.ts
+
+# Check for location data in reports
+grep -A5 "location:" ./reports/*.md
+
+# Verify issue matching with locations
+npx ts-node src/standard/tests/test-orchestrator-deduplication.ts
+
+# Visual deduplication test
+npx ts-node src/standard/tests/test-deduplication-visual.ts
+```
+
+## Enhanced Quick Commands
+
+Updated quick commands including DeepWiki operations:
+
+```bash
+# Start DeepWiki port forwarding
+pkill -f "port-forward.*8001" && kubectl port-forward -n codequal-dev svc/deepwiki-api 8001:8001 &
+
+# Test a real PR with DeepWiki
+cd /Users/alpinro/Code\ Prjects/codequal/packages/agents && \
+USE_DEEPWIKI_MOCK=false npx ts-node test-real-deepwiki-pr.ts
+
+# Check DeepWiki logs
+kubectl logs -n codequal-dev -l app=deepwiki --tail=50 --follow
+
+# Run complete analysis with real DeepWiki
+USE_DEEPWIKI_MOCK=false npx ts-node src/standard/scripts/run-complete-analysis.ts \
+  --owner facebook --repo react --pr 28000
+
+# Test location enhancement system
+npx ts-node src/standard/tests/test-complete-enhancement-system.ts
+
+# Quick health check of all services
+echo "DeepWiki:" && curl -s http://localhost:8001/health | jq '.status' && \
+echo "Redis:" && redis-cli ping && \
+echo "Build:" && [ -d dist ] && echo "Ready" || echo "Required"
+```
+
 ## Error Handling Protocol
 
 When encountering issues:
@@ -155,6 +285,8 @@ When encountering issues:
 2. If DeepWiki is down: Immediately suggest `USE_DEEPWIKI_MOCK=true`
 3. If Redis is down: Provide `redis-server --daemonize yes` command
 4. If build is missing: Provide `npm run build` command
+5. If port forwarding fails: Check for conflicting processes with `lsof -i :8001`
+6. If DeepWiki pod crashes: Check logs with `kubectl logs -n codequal-dev -l app=deepwiki --previous`
 
 ## Time Constraint
 

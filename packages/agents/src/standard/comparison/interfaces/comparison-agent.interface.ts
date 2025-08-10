@@ -50,6 +50,16 @@ export interface IReportingComparisonAgent extends IComparisonAgent {
    * Generate PR comment from comparison
    */
   generatePRComment(comparison: ComparisonResult): string;
+  
+  /**
+   * Generate final report with all enhancements including educational content
+   */
+  generateFinalReport?(params: {
+    comparison: ComparisonResult;
+    educationalContent?: any;
+    prMetadata?: any;
+    includeEducation?: boolean;
+  }): Promise<{ report: string; prComment: string }>;
 }
 
 /**
@@ -67,6 +77,10 @@ export interface AIComparisonAnalysis {
   };
   modifiedIssues: {
     issues: ModifiedIssue[];
+    total: number;
+  };
+  unchangedIssues: {
+    issues: ComparisonIssue[];
     total: number;
   };
   overallAssessment: {

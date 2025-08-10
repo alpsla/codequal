@@ -5,7 +5,7 @@
  * to generate comprehensive PR analysis reports using the pre-developed template.
  */
 
-import { createProductionOrchestrator } from '@codequal/agents/standard/infrastructure/factory';
+// import { createProductionOrchestrator } from '@codequal/agents/standard/infrastructure/factory';
 import { ComparisonAnalysisRequest, ComparisonResult } from '@codequal/agents/standard/types/analysis-types';
 import { deepWikiApiManager } from './deepwiki-api-manager';
 import { registerDeepWikiWithStandard } from './register-deepwiki-standard';
@@ -75,10 +75,14 @@ export async function analyzeWithStandardFramework(
     
     // Create the orchestrator with Redis support
     logger.info('Creating Standard framework orchestrator with Redis caching...');
-    const orchestrator = await createProductionOrchestrator({
-      redisUrl: process.env.REDIS_URL
-    });
+    // TODO: Implement createProductionOrchestrator when available
+    // const orchestrator = await createProductionOrchestrator({
+    //   redisUrl: process.env.REDIS_URL
+    // });
+    throw new Error('Standard orchestrator not yet implemented');
     
+    // Code below is temporarily unreachable until orchestrator is implemented
+    /* 
     // Prepare the comparison request
     const comparisonRequest: ComparisonAnalysisRequest = {
       userId: 'api-user',
@@ -143,7 +147,7 @@ export async function analyzeWithStandardFramework(
     });
     
     return result;
-    
+    */
   } catch (error) {
     logger.error('Failed to analyze with Standard framework', { error });
     throw error;

@@ -1,0 +1,50 @@
+{
+  "codeQualityIssues": [
+    {
+      "file": "examples/optimistic-ui-immer/pages/api/data.js",
+      "issue": "Use of Math.random() for failure simulation can lead to non-deterministic behavior.",
+      "severity": "medium"
+    },
+    {
+      "file": "test/unit/serialize.test.ts",
+      "issue": "Test does not cover edge cases for unstable_serialize, such as circular references.",
+      "severity": "low"
+    },
+    {
+      "file": "package.json",
+      "issue": "Inconsistent dependency versions could lead to compatibility issues.",
+      "severity": "medium"
+    }
+  ],
+  "securityVulnerabilities": [
+    {
+      "file": "examples/suspense/pages/api/data.js",
+      "issue": "Fetching data from external APIs without validation can lead to SSRF attacks.",
+      "severity": "high"
+    },
+    {
+      "file": "examples/basic/pages/api/data.js",
+      "issue": "Lack of input validation for req.query.id could lead to potential injection attacks.",
+      "severity": "high"
+    }
+  ],
+  "performanceProblems": [
+    {
+      "file": "examples/suspense/pages/api/data.js",
+      "issue": "SetTimeout used for simulating delays can lead to unnecessary latency in API responses.",
+      "severity": "medium"
+    },
+    {
+      "file": "examples/infinite/pages/index.js",
+      "issue": "Inefficient state management could lead to excessive re-renders.",
+      "severity": "medium"
+    }
+  ],
+  "breakingChanges": [
+    {
+      "file": "src/index/index.react-server.ts",
+      "issue": "Exporting unstable_serialize may introduce breaking changes in future versions.",
+      "severity": "high"
+    }
+  ]
+}

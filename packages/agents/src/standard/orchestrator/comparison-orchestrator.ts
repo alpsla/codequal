@@ -26,12 +26,15 @@ import {
   ModelSelectionWeights 
 } from '../types/analysis-types';
 import { CategoryWeights } from './interfaces/config-provider.interface';
+import { BatchLocationEnhancer, LocationEnhancer } from '../services/location-enhancer';
 
 /**
  * Comparison Orchestrator Service with Interface-Based Dependencies
  */
 export class ComparisonOrchestrator {
   private comparisonAgent: IReportingComparisonAgent;
+  private batchLocationEnhancer: BatchLocationEnhancer;
+  private locationEnhancer: LocationEnhancer;
   
   constructor(
     private configProvider: IConfigProvider,
@@ -44,6 +47,8 @@ export class ComparisonOrchestrator {
   ) {
     // Use injected comparison agent or create default
     this.comparisonAgent = comparisonAgentInstance || new ComparisonAgent(logger);
+    this.batchLocationEnhancer = new BatchLocationEnhancer();
+    this.locationEnhancer = new LocationEnhancer();
   }
 
   /**
@@ -155,40 +160,144 @@ export class ComparisonOrchestrator {
         prompt: rolePrompt
       });
 
-      // Step 6: Execute comparison analysis (generates full report!)
-      const analysisResult = await this.comparisonAgent.analyze({
-        mainBranchAnalysis: this.ensureCompatibleAnalysisResult(request.mainBranchAnalysis),
-        featureBranchAnalysis: this.ensureCompatibleAnalysisResult(request.featureBranchAnalysis),
+      // Step 5.5: Parallel enhancement - Location Finding + Initial Educational Research
+      let enhancedMainAnalysis = request.mainBranchAnalysis;
+      let enhancedFeatureAnalysis = request.featureBranchAnalysis;
+      let educationalResearch = null;
+      
+      // Start parallel operations
+      const enhancementPromises = [];
+      
+      // Location enhancement promise
+      if (request.prMetadata?.repository_url && request.prMetadata?.number) {
+        const locationPromise = (async () => {
+          try {
+            this.log('info', 'Starting location enhancement for both branches');
+            
+            const repoUrl = request.prMetadata!.repository_url;
+            const prNumber = request.prMetadata!.number!.toString();
+            
+            // Enhance both branches in parallel
+            const [mainEnhancement, prEnhancement] = await Promise.all([
+              request.mainBranchAnalysis?.issues ? 
+                this.locationEnhancer.enhanceIssuesWithLocations(
+                  request.mainBranchAnalysis.issues,
+                  repoUrl || '',
+                  undefined // Use undefined for main branch
+                ) : Promise.resolve(null),
+              request.featureBranchAnalysis?.issues ?
+                this.locationEnhancer.enhanceIssuesWithLocations(
+                  request.featureBranchAnalysis.issues,
+                  repoUrl || '',
+                  prNumber // Pass PR number for feature branch
+                ) : Promise.resolve(null)
+            ]);
+            
+            if (mainEnhancement) {
+              enhancedMainAnalysis = {
+                ...request.mainBranchAnalysis,
+                issues: mainEnhancement.issues.map((issue: any) => ({
+                  ...issue,
+                  message: issue.message || issue.title || issue.description
+                }))
+              };
+              this.log('info', `Enhanced main: ${mainEnhancement.enhanced}/${mainEnhancement.issues.length}`);
+            }
+            
+            if (prEnhancement) {
+              enhancedFeatureAnalysis = {
+                ...request.featureBranchAnalysis,
+                issues: prEnhancement.issues.map((issue: any) => ({
+                  ...issue,
+                  message: issue.message || issue.title || issue.description
+                }))
+              };
+              this.log('info', `Enhanced PR: ${prEnhancement.enhanced}/${prEnhancement.issues.length}`);
+            }
+          } catch (error) {
+            this.log('warn', 'Location enhancement failed, continuing without', error);
+          }
+        })();
+        enhancementPromises.push(locationPromise);
+      }
+      
+      // Educational research promise (START EARLY - don't wait for comparison)
+      if (request.includeEducation && this.educatorAgent) {
+        const educationPromise = (async () => {
+          try {
+            this.log('info', 'Starting educational research on unique issues');
+            
+            // Combine ALL issues from both branches
+            const allIssues = [
+              ...(request.mainBranchAnalysis?.issues || []),
+              ...(request.featureBranchAnalysis?.issues || [])
+            ];
+            
+            // Deduplicate for education - we only need unique patterns
+            const uniqueIssues = this.deduplicateIssuesForEducation(allIssues);
+            
+            if (uniqueIssues.length > 0 && this.educatorAgent?.research) {
+              educationalResearch = await this.educatorAgent.research({
+                issues: uniqueIssues,
+                developerLevel: skillData.userProfile?.level?.current || 'beginner',
+                teamProfile: await this.skillProvider.getTeamSkills(
+                  request.teamId || '00000000-0000-0000-0000-000000000000'
+                )
+              });
+              this.log('info', `Educational research completed for ${uniqueIssues.length} unique issue patterns (from ${allIssues.length} total)`);
+            }
+          } catch (error) {
+            this.log('warn', 'Educational research failed', error);
+          }
+        })();
+        enhancementPromises.push(educationPromise);
+      }
+      
+      // Wait for all enhancements to complete
+      if (enhancementPromises.length > 0) {
+        await Promise.all(enhancementPromises);
+        this.log('info', 'All enhancements completed');
+      }
+
+      // Step 6: Execute comparison with enhanced data
+      const comparisonResult = await this.comparisonAgent.analyze({
+        mainBranchAnalysis: this.ensureCompatibleAnalysisResult(enhancedMainAnalysis),
+        featureBranchAnalysis: this.ensureCompatibleAnalysisResult(enhancedFeatureAnalysis),
         prMetadata: request.prMetadata,
         userProfile: skillData.userProfile ? this.convertToSkillProfile(skillData.userProfile) : undefined,
         teamProfiles: skillData.teamProfiles?.map(tp => this.convertToSkillProfile(tp)) || [],
         historicalIssues: request.historicalIssues,
-        generateReport: request.generateReport !== false  // Default true
-      });
+        generateReport: false,  // Don't generate report yet
+        scanDuration: (request as any).scanDuration
+      } as any);
 
-      // Step 7: Process analysis result to expected format
-      const processedResult = this.processAnalysisResult(analysisResult);
+      // Step 7: Generate final report with all enhancements
+      const comparisonData = comparisonResult.comparison || comparisonResult;
+      const finalReport = await (this.comparisonAgent.generateFinalReport ? 
+        this.comparisonAgent.generateFinalReport({
+          comparison: comparisonData as any,
+          educationalContent: educationalResearch,
+          prMetadata: request.prMetadata,
+          includeEducation: request.includeEducation !== false
+        }) : 
+        Promise.resolve({
+          report: await this.comparisonAgent.generateReport(comparisonData as any),
+          prComment: this.comparisonAgent.generatePRComment(comparisonData as any)
+        }));
 
-      // Step 8: Update skill scores based on analysis
+      // Step 8: Process results
+      const processedResult = {
+        ...this.processAnalysisResult(comparisonResult),
+        markdownReport: finalReport.report,
+        prComment: finalReport.prComment,
+        educationalInsights: educationalResearch
+      };
+
+      // Step 9: Update skill scores
       await this.updateSkills(processedResult, request);
 
-      // Step 9: Optionally enhance with real course recommendations
-      let educationalEnhancements = null;
-      if (request.includeEducation && this.educatorAgent && processedResult.educationalInsights) {
-        try {
-          educationalEnhancements = await this.educatorAgent.findMatchingCourses({
-            suggestions: processedResult.educationalInsights,
-            developerLevel: skillData.userProfile?.level?.current || 'beginner',
-            teamProfile: await this.skillProvider.getTeamSkills(request.teamId || '00000000-0000-0000-0000-000000000000')
-          });
-        } catch (error) {
-          this.log('warn', 'Failed to get educational enhancements', error);
-          // Continue without education enhancements
-        }
-      }
-
       // Step 9: Store complete analysis report
-      await this.storeAnalysisReport(analysisResult, request, config, educationalEnhancements);
+      await this.storeAnalysisReport(processedResult, request, config, educationalResearch);
 
       // Step 10: Return complete results
       return {
@@ -196,7 +305,7 @@ export class ComparisonOrchestrator {
         report: processedResult.markdownReport,         // Full markdown report
         prComment: processedResult.prComment,           // Concise PR comment
         analysis: processedResult.analysis || processedResult, // Raw analysis data
-        education: educationalEnhancements || undefined,            // Real course links
+        education: educationalResearch || undefined,    // Real course links
         skillTracking: processedResult.skillTracking,   // Skill updates
         metadata: {
           orchestratorVersion: '4.0',
@@ -450,8 +559,18 @@ export class ComparisonOrchestrator {
   private ensureCompatibleAnalysisResult(analysis: any): any {
     if (!analysis) return { issues: [], recommendations: [], scores: null };
     
+    // Log what we're receiving
+    this.log('info', 'Ensuring compatible analysis result', {
+      hasIssues: !!analysis.issues,
+      issueCount: analysis.issues?.length || 0,
+      hasRecommendations: !!analysis.recommendations,
+      hasScores: !!analysis.scores,
+      analysisKeys: Object.keys(analysis || {})
+    });
+    
     return {
       ...analysis,
+      issues: analysis.issues || [],  // Ensure issues are preserved
       recommendations: analysis.recommendations || [],
       scores: analysis.scores || {
         overall: 75,
@@ -689,6 +808,58 @@ Ensure 100% accuracy, professional language, and actionable recommendations.`;
     score += Math.min(resolved * 2, 10); // Bonus for fixes
     
     return Math.max(0, Math.min(100, score));
+  }
+
+  /**
+   * Deduplicate issues for educational content
+   * We only need unique issue patterns for education, not every occurrence
+   */
+  private deduplicateIssuesForEducation(issues: any[]): any[] {
+    const uniqueMap = new Map<string, any>();
+    
+    for (const issue of issues) {
+      // Create a fingerprint based on category, severity, and general pattern
+      // Don't include file/line as those are instance-specific
+      const fingerprint = [
+        issue.category || 'unknown',
+        issue.severity || 'unknown',
+        // Extract the core issue type from title/description
+        this.extractIssuePattern(issue)
+      ].join(':');
+      
+      // Keep the first occurrence of each unique pattern
+      if (!uniqueMap.has(fingerprint)) {
+        uniqueMap.set(fingerprint, issue);
+      }
+    }
+    
+    return Array.from(uniqueMap.values());
+  }
+
+  /**
+   * Extract the core pattern from an issue for deduplication
+   */
+  private extractIssuePattern(issue: any): string {
+    const title = (issue.title || issue.message || '').toLowerCase();
+    
+    // Common patterns to identify
+    if (title.includes('sql injection')) return 'sql-injection';
+    if (title.includes('xss') || title.includes('cross-site')) return 'xss';
+    if (title.includes('hardcoded') || title.includes('secret')) return 'hardcoded-secret';
+    if (title.includes('validation')) return 'missing-validation';
+    if (title.includes('csrf')) return 'csrf';
+    if (title.includes('authentication')) return 'auth-issue';
+    if (title.includes('authorization')) return 'authz-issue';
+    if (title.includes('encryption')) return 'encryption-issue';
+    if (title.includes('injection')) return 'injection';
+    if (title.includes('buffer') || title.includes('overflow')) return 'buffer-overflow';
+    if (title.includes('path traversal')) return 'path-traversal';
+    if (title.includes('race condition')) return 'race-condition';
+    if (title.includes('memory leak')) return 'memory-leak';
+    if (title.includes('null') || title.includes('undefined')) return 'null-reference';
+    
+    // Fallback to title if no pattern matches
+    return title.substring(0, 50); // Use first 50 chars as pattern
   }
 
   /**

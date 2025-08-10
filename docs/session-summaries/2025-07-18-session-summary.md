@@ -1,4 +1,4 @@
-# Session Summary - January 18, 2025
+# Session Summary - July 18, 2025
 
 ## Session Overview
 **Duration**: Full day session
