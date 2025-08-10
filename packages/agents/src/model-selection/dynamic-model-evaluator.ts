@@ -154,16 +154,72 @@ export class DynamicModelEvaluator {
       reasoning.push('Small model: -0.5');
     }
     
-    // Generation indicators
-    if (modelName.match(/\b(4\.5|3\.7|2\.5|v3|v4)\b/)) {
-      score += 0.8;
-      reasoning.push('Latest generation: +0.8');
-    } else if (modelName.match(/\b(3\.5|2\.0|v2)\b/)) {
-      score += 0.3;
-      reasoning.push('Current generation: +0.3');
-    } else if (modelName.match(/\b(1\.5|1\.0|v1)\b/)) {
-      score -= 0.5;
-      reasoning.push('Older generation: -0.5');
+    // Generation indicators - Extract and compare version numbers
+    const versionMatch = modelName.match(/(?:claude-|gemini-|gpt-)?([0-9]+(?:\.[0-9]+)?)/);
+    if (versionMatch) {
+      const version = parseFloat(versionMatch[1]);
+      
+      // Claude versions
+      if (modelName.includes('claude')) {
+        if (version >= 4.0 || modelName.includes('sonnet-4')) {
+          score += 1.5;
+          reasoning.push(`Claude ${version >= 4.0 ? version : '4'}: +1.5 (latest generation)`);
+        } else if (version >= 3.5) {
+          score += 0.8;
+          reasoning.push(`Claude ${version}: +0.8 (current generation)`);
+        } else if (version >= 3.0) {
+          score += 0.3;
+          reasoning.push(`Claude ${version}: +0.3 (previous generation)`);
+        } else {
+          score -= 0.5;
+          reasoning.push(`Claude ${version}: -0.5 (old generation)`);
+        }
+      }
+      // Gemini versions
+      else if (modelName.includes('gemini')) {
+        if (version >= 2.5) {
+          score += 1.5;
+          reasoning.push(`Gemini ${version}: +1.5 (latest generation)`);
+        } else if (version >= 2.0) {
+          score += 0.8;
+          reasoning.push(`Gemini ${version}: +0.8 (current generation)`);
+        } else if (version >= 1.5) {
+          score += 0.3;
+          reasoning.push(`Gemini ${version}: +0.3 (previous generation)`);
+        } else {
+          score -= 0.5;
+          reasoning.push(`Gemini ${version}: -0.5 (old generation)`);
+        }
+      }
+      // GPT versions
+      else if (modelName.includes('gpt')) {
+        if (version >= 4.5) {
+          score += 1.5;
+          reasoning.push(`GPT ${version}: +1.5 (latest generation)`);
+        } else if (version >= 4.0) {
+          score += 0.8;
+          reasoning.push(`GPT ${version}: +0.8 (current generation)`);
+        } else if (version >= 3.5) {
+          score += 0.3;
+          reasoning.push(`GPT ${version}: +0.3 (previous generation)`);
+        } else {
+          score -= 0.5;
+          reasoning.push(`GPT ${version}: -0.5 (old generation)`);
+        }
+      }
+      // Generic version scoring for other models
+      else {
+        if (version >= 4.0) {
+          score += 1.2;
+          reasoning.push(`Version ${version}: +1.2 (latest)`);
+        } else if (version >= 3.0) {
+          score += 0.6;
+          reasoning.push(`Version ${version}: +0.6 (current)`);
+        } else if (version >= 2.0) {
+          score += 0.3;
+          reasoning.push(`Version ${version}: +0.3 (recent)`);
+        }
+      }
     }
     
     // Specialized capabilities
@@ -480,5 +536,12 @@ export const DYNAMIC_ROLE_WEIGHTS = {
     cost: 0.25,
     freshness: 0.05,
     contextWindow: 0.05
+  },
+  location_finder: {
+    quality: 0.55,  // Accuracy is crucial for finding exact locations
+    speed: 0.20,     // Reasonable response time
+    cost: 0.25,      // Moderate cost sensitivity for volume processing
+    freshness: 0.00, // Don't need latest models, stability is better
+    contextWindow: 0.00 // Modern models all have sufficient context
   }
 };

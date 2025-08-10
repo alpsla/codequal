@@ -103,6 +103,20 @@ export const ROLE_SCORING_PROFILES = {
     cost: 0.30,     // Cost sensitive
     speed: 0.30,    // Quick turnaround
     description: 'Code and documentation translation'
+  },
+  
+  location_finder: {
+    quality: 0.55,  // Accuracy in finding correct locations is crucial
+    cost: 0.25,     // Moderate cost sensitivity for volume processing
+    speed: 0.20,    // Reasonable response time for interactive use
+    description: 'AI-powered exact issue location identification',
+    metadata: {
+      preferredProviders: ['anthropic', 'openai'],
+      minContextWindow: 32000,
+      requiresCodeCapability: true,
+      supportsBatching: true,
+      languageSpecific: true  // Uses different models per language
+    }
   }
 };
 
@@ -195,7 +209,7 @@ export class UnifiedModelSelector {
    * Replaces both selectModel() and selectResearcherModel()
    */
   async selectModel(
-    role: keyof typeof ROLE_SCORING_PROFILES,
+    role: keyof typeof ROLE_SCORING_PROFILES | string,
     context?: RepositoryContext
   ): Promise<UnifiedModelSelection> {
     logger.info(`Selecting model for role: ${role}`, { context });
@@ -207,11 +221,48 @@ export class UnifiedModelSelector {
       throw new Error('No models available for selection');
     }
     
+    // Apply role-specific filtering if metadata exists
+    let filteredModels = models;
+    const roleProfile = ROLE_SCORING_PROFILES[role as keyof typeof ROLE_SCORING_PROFILES];
+    if ((roleProfile as any)?.metadata) {
+      const metadata = (roleProfile as any).metadata;
+      
+      // Filter by preferred providers
+      if (metadata.preferredProviders) {
+        const preferred = models.filter(m => 
+          metadata.preferredProviders.includes(m.provider)
+        );
+        if (preferred.length > 0) {
+          filteredModels = preferred;
+          logger.debug(`Filtered to preferred providers: ${metadata.preferredProviders.join(', ')}`);
+        }
+      }
+      
+      // Filter by minimum context window
+      if (metadata.minContextWindow) {
+        filteredModels = filteredModels.filter(m => {
+          const contextWindow = (m as any).capabilities?.contextWindow || 
+                                (m as any).context_window || 
+                                4096;
+          return contextWindow >= metadata.minContextWindow;
+        });
+        logger.debug(`Filtered by min context window: ${metadata.minContextWindow}`);
+      }
+      
+      // Filter by code capability
+      if (metadata.requiresCodeCapability) {
+        filteredModels = filteredModels.filter(m => {
+          const caps = (m as any).capabilities || {};
+          return caps.codeQuality !== undefined || caps.code_quality !== undefined;
+        });
+      }
+    }
+    
     // Create selection context
-    const selectionContext = this.createSelectionContext(role, context);
+    const selectionContext = this.createSelectionContext(role as any, context);
     
     // Convert models to enhanced format
-    const candidates = models.map(m => this.convertToEnhancedFormat(m));
+    const candidates = filteredModels.map(m => this.convertToEnhancedFormat(m));
     
     // Run enhanced selection
     const result = this.selectionEngine.selectBestModel(candidates, selectionContext);
