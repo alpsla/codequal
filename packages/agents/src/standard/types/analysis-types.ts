@@ -28,10 +28,19 @@ export interface Issue {
   description?: string;
   codeSnippet?: string;
   suggestedFix?: string;
+  remediation?: string;
   references?: string[];
   age?: string;
   fingerprint?: string;
   rule?: string;
+  metadata?: {
+    rule?: string;
+    cwe?: string;
+    owasp?: string;
+    confidence?: string;
+    ruleSet?: string;
+    [key: string]: any;
+  };
 }
 
 export interface RepositoryContext {
@@ -288,4 +297,19 @@ export interface LearningStep {
   order: number;
   resource: Course | Article | Video;
   reason: string;
+}
+
+export interface ReportConfig {
+  includeMetadata?: boolean;
+  includeSummary?: boolean;
+  format?: 'markdown' | 'json' | 'html';
+  showRecommendations?: boolean;
+  showScores?: boolean;
+}
+
+export interface PRComment {
+  file?: string;
+  line?: number;
+  body: string;
+  position?: number;
 }

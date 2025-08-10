@@ -16,7 +16,8 @@ module.exports = {
     'src/multi-agent/evaluation/__tests__/**/*',
     'src/multi-agent/examples/**/*',
     'src/researcher/*.d.ts',
-    'src/researcher/*.js'
+    'src/researcher/*.js',
+    'src/**/_archive*/**/*'
   ],
   rules: {
     '@typescript-eslint/no-explicit-any': 'off',
@@ -25,7 +26,7 @@ module.exports = {
   },
   overrides: [
     {
-      files: ['tests/**/*.ts', '**/*test*.ts', '**/*Test*.ts', '**/integration-test.ts'],
+      files: ['tests/**/*.ts', '**/*test*.ts', '**/*Test*.ts', '**/integration-test.ts', '**/standard/tests/**/*.ts'],
       rules: {
         '@typescript-eslint/no-explicit-any': 'off',
         '@typescript-eslint/no-non-null-assertion': 'off',
@@ -34,7 +35,9 @@ module.exports = {
         '@typescript-eslint/no-unsafe-member-access': 'off',
         '@typescript-eslint/no-unsafe-call': 'off',
         '@typescript-eslint/no-unsafe-return': 'off',
-        'no-console': 'off'
+        'no-console': 'off',
+        '@typescript-eslint/no-var-requires': 'off',
+        'no-empty': 'off'
       }
     }
   ]
