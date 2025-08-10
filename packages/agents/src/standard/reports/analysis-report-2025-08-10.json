@@ -1,0 +1,264 @@
+{
+  "generated": "2025-08-10T02:53:16.721Z",
+  "configurations": [
+    {
+      "configuration": {
+        "name": "Startup SaaS - Cost Optimized",
+        "repository": {
+          "url": "https://github.com/vercel/swr",
+          "size": "small",
+          "languages": [
+            "TypeScript",
+            "React"
+          ],
+          "description": "React data fetching library"
+        },
+        "modelConfig": {
+          "weights": {
+            "quality": 0.3,
+            "speed": 0.2,
+            "cost": 0.5
+          },
+          "budget": 5
+        }
+      },
+      "modelSelection": {
+        "primary": {
+          "id": "google/gemini-2.5-flash-lite",
+          "version": "2.5",
+          "context": 500000,
+          "costPerM": 0.1875
+        },
+        "fallback": {
+          "id": "anthropic/claude-haiku-4",
+          "version": "4",
+          "context": 100000,
+          "costPerM": 0.75
+        },
+        "reasoning": "Selected for deepwiki based on:\n- Quality weight: 30%\n- Speed weight: 20%\n- Cost weight: 50%\n\nPrimary (google/gemini-2.5-flash-lite):\n- Quality score: 63/100\n- Speed score: 89/100\n- Cost score: 92/100\n- Total weighted score: 107/100\n\nFallback (anthropic/claude-haiku-4):\n- Provides redundancy with score: 80/100"
+      },
+      "performance": {
+        "selectionTimeMs": 1,
+        "qualityScore": 65,
+        "speedScore": 100,
+        "costEfficiency": 100,
+        "overallRating": 90
+      },
+      "costs": {
+        "perAnalysis": 0.009375000000000001,
+        "monthly": 0.9375000000000001,
+        "annual": 11.250000000000002
+      },
+      "timestamp": "2025-08-10T02:53:16.706Z"
+    },
+    {
+      "configuration": {
+        "name": "ML Research - Quality Focused",
+        "repository": {
+          "url": "https://github.com/huggingface/transformers",
+          "size": "large",
+          "languages": [
+            "Python",
+            "PyTorch",
+            "TensorFlow"
+          ],
+          "description": "State-of-the-art ML models"
+        },
+        "modelConfig": {
+          "weights": {
+            "quality": 0.7,
+            "speed": 0.1,
+            "cost": 0.2
+          },
+          "budget": 50
+        }
+      },
+      "modelSelection": {
+        "primary": {
+          "id": "google/gemini-2.5-pro",
+          "version": "2.5",
+          "context": 1000000,
+          "costPerM": 7
+        },
+        "fallback": {
+          "id": "openai/gpt-4-turbo",
+          "version": "4",
+          "context": 128000,
+          "costPerM": 1.5
+        },
+        "reasoning": "Selected for deepwiki based on:\n- Quality weight: 70%\n- Speed weight: 10%\n- Cost weight: 20%\n\nPrimary (google/gemini-2.5-pro):\n- Quality score: 81/100\n- Speed score: 61/100\n- Cost score: 85/100\n- Total weighted score: 136/100\n\nFallback (openai/gpt-4-turbo):\n- Provides redundancy with score: 116/100"
+      },
+      "performance": {
+        "selectionTimeMs": 0,
+        "qualityScore": 80,
+        "speedScore": 70,
+        "costEfficiency": 50,
+        "overallRating": 73
+      },
+      "costs": {
+        "perAnalysis": 3.5,
+        "monthly": 350,
+        "annual": 4200
+      },
+      "timestamp": "2025-08-10T02:53:16.720Z"
+    },
+    {
+      "configuration": {
+        "name": "Microservices - Balanced",
+        "repository": {
+          "url": "https://github.com/kubernetes/kubernetes",
+          "size": "enterprise",
+          "languages": [
+            "Go",
+            "Shell",
+            "Python"
+          ],
+          "description": "Container orchestration platform"
+        },
+        "modelConfig": {
+          "weights": {
+            "quality": 0.5,
+            "speed": 0.3,
+            "cost": 0.2
+          },
+          "budget": 30
+        }
+      },
+      "modelSelection": {
+        "primary": {
+          "id": "google/gemini-2.5-flash",
+          "version": "2.5",
+          "context": 1000000,
+          "costPerM": 0.7
+        },
+        "fallback": {
+          "id": "google/gemini-2.5-flash-lite",
+          "version": "2.5",
+          "context": 500000,
+          "costPerM": 0.1875
+        },
+        "reasoning": "Selected for deepwiki based on:\n- Quality weight: 50%\n- Speed weight: 30%\n- Cost weight: 20%\n\nPrimary (google/gemini-2.5-flash):\n- Quality score: 75/100\n- Speed score: 73/100\n- Cost score: 89/100\n- Total weighted score: 101/100\n\nFallback (google/gemini-2.5-flash-lite):\n- Provides redundancy with score: 101/100"
+      },
+      "performance": {
+        "selectionTimeMs": 0,
+        "qualityScore": 65,
+        "speedScore": 100,
+        "costEfficiency": 80,
+        "overallRating": 79
+      },
+      "costs": {
+        "perAnalysis": 0.7,
+        "monthly": 70,
+        "annual": 840
+      },
+      "timestamp": "2025-08-10T02:53:16.720Z"
+    },
+    {
+      "configuration": {
+        "name": "Real-time System - Speed Critical",
+        "repository": {
+          "url": "https://github.com/redis/redis",
+          "size": "medium",
+          "languages": [
+            "C",
+            "Tcl",
+            "Shell"
+          ],
+          "description": "In-memory data structure store"
+        },
+        "modelConfig": {
+          "weights": {
+            "quality": 0.3,
+            "speed": 0.6,
+            "cost": 0.1
+          },
+          "budget": 20
+        }
+      },
+      "modelSelection": {
+        "primary": {
+          "id": "openai/gpt-4-turbo",
+          "version": "4",
+          "context": 128000,
+          "costPerM": 1.5
+        },
+        "fallback": {
+          "id": "google/gemini-2.5-flash-lite",
+          "version": "2.5",
+          "context": 500000,
+          "costPerM": 0.1875
+        },
+        "reasoning": "Selected for deepwiki based on:\n- Quality weight: 30%\n- Speed weight: 60%\n- Cost weight: 10%\n\nPrimary (openai/gpt-4-turbo):\n- Quality score: 54/100\n- Speed score: 98/100\n- Cost score: 90/100\n- Total weighted score: 115/100\n\nFallback (google/gemini-2.5-flash-lite):\n- Provides redundancy with score: 113/100"
+      },
+      "performance": {
+        "selectionTimeMs": 0,
+        "qualityScore": 85,
+        "speedScore": 80,
+        "costEfficiency": 50,
+        "overallRating": 79
+      },
+      "costs": {
+        "perAnalysis": 0.22499999999999998,
+        "monthly": 22.499999999999996,
+        "annual": 269.99999999999994
+      },
+      "timestamp": "2025-08-10T02:53:16.720Z"
+    },
+    {
+      "configuration": {
+        "name": "Financial System - Maximum Quality",
+        "repository": {
+          "url": "https://github.com/apache/flink",
+          "size": "large",
+          "languages": [
+            "Java",
+            "Scala",
+            "Python"
+          ],
+          "description": "Stream processing framework"
+        },
+        "modelConfig": {
+          "weights": {
+            "quality": 0.8,
+            "speed": 0.05,
+            "cost": 0.15
+          },
+          "budget": 100
+        }
+      },
+      "modelSelection": {
+        "primary": {
+          "id": "google/gemini-2.5-pro",
+          "version": "2.5",
+          "context": 1000000,
+          "costPerM": 7
+        },
+        "fallback": {
+          "id": "openai/gpt-4-turbo",
+          "version": "4",
+          "context": 128000,
+          "costPerM": 1.5
+        },
+        "reasoning": "Selected for deepwiki based on:\n- Quality weight: 80%\n- Speed weight: 5%\n- Cost weight: 15%\n\nPrimary (google/gemini-2.5-pro):\n- Quality score: 81/100\n- Speed score: 61/100\n- Cost score: 85/100\n- Total weighted score: 137/100\n\nFallback (openai/gpt-4-turbo):\n- Provides redundancy with score: 113/100"
+      },
+      "performance": {
+        "selectionTimeMs": 0,
+        "qualityScore": 80,
+        "speedScore": 70,
+        "costEfficiency": 50,
+        "overallRating": 75
+      },
+      "costs": {
+        "perAnalysis": 3.5,
+        "monthly": 350,
+        "annual": 4200
+      },
+      "timestamp": "2025-08-10T02:53:16.721Z"
+    }
+  ],
+  "summary": {
+    "totalConfigurations": 5,
+    "averageCostPerAnalysis": 1.5868749999999998,
+    "modelDiversity": 4
+  }
+}
