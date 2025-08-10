@@ -55,7 +55,8 @@ export enum AgentRole {
   DEPENDENCY = 'dependency',
   EDUCATIONAL = 'educational',
   REPORT_GENERATION = 'reportGeneration',
-  RESEARCHER = 'researcher'
+  RESEARCHER = 'researcher',
+  LOCATION_FINDER = 'location_finder'
 }
 
 /**
@@ -71,6 +72,7 @@ export interface AgentSelection {
   [AgentRole.EDUCATIONAL]: AgentProvider;
   [AgentRole.REPORT_GENERATION]: AgentProvider;
   [AgentRole.RESEARCHER]?: AgentProvider;
+  [AgentRole.LOCATION_FINDER]?: AgentProvider;
 }
 
 /**

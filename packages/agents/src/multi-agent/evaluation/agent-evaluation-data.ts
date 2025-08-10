@@ -157,7 +157,8 @@ export const defaultTemperatures: Record<AgentRole, number> = {
   [AgentRole.ORCHESTRATOR]: 0.3,   // Balanced
   [AgentRole.DEPENDENCY]: 0.3,     // Balanced
   [AgentRole.REPORT_GENERATION]: 0.4, // Slightly creative
-  [AgentRole.RESEARCHER]: 0.35     // Balanced with slight creativity for discovery
+  [AgentRole.RESEARCHER]: 0.35,    // Balanced with slight creativity for discovery
+  [AgentRole.LOCATION_FINDER]: 0.1 // Very deterministic for exact location finding
 };
 
 /**
@@ -289,6 +290,19 @@ const createDefaultAgentData = (): Partial<AgentRoleEvaluationParameters> => ({
       },
       bestFileTypes: {},
       bestScenarios: {}
+    },
+    [AgentRole.LOCATION_FINDER]: {
+      overallScore: 95,
+      specialties: ['Exact Location Finding', 'Code Understanding', 'Pattern Matching'],
+      weaknesses: ['Large Files'],
+      bestPerformingLanguages: {
+        'JavaScript': 95,
+        'TypeScript': 95,
+        'Python': 90,
+        'Java': 85
+      },
+      bestFileTypes: {},
+      bestScenarios: {}
     }
   },
   languageSupport: {
@@ -394,6 +408,19 @@ export const mockAgentEvaluationData: Record<AgentProvider, Partial<AgentRoleEva
         },
         bestFileTypes: {},
         bestScenarios: {}
+      },
+      [AgentRole.LOCATION_FINDER]: {
+        overallScore: 95,
+        specialties: ['Exact Location Finding', 'Code Understanding', 'Pattern Matching'],
+        weaknesses: ['Large Files'],
+        bestPerformingLanguages: {
+          'JavaScript': 95,
+          'TypeScript': 95,
+          'Python': 90,
+          'Java': 85
+        },
+        bestFileTypes: {},
+        bestScenarios: {}
       }
     },
     languageSupport: {
@@ -486,6 +513,19 @@ export const mockAgentEvaluationData: Record<AgentProvider, Partial<AgentRoleEva
         bestPerformingLanguages: {
           'researcher': 90,
           'analysis': 85
+        },
+        bestFileTypes: {},
+        bestScenarios: {}
+      },
+      [AgentRole.LOCATION_FINDER]: {
+        overallScore: 95,
+        specialties: ['Exact Location Finding', 'Code Understanding', 'Pattern Matching'],
+        weaknesses: ['Large Files'],
+        bestPerformingLanguages: {
+          'JavaScript': 95,
+          'TypeScript': 95,
+          'Python': 90,
+          'Java': 85
         },
         bestFileTypes: {},
         bestScenarios: {}
@@ -584,6 +624,19 @@ export const mockAgentEvaluationData: Record<AgentProvider, Partial<AgentRoleEva
         },
         bestFileTypes: {},
         bestScenarios: {}
+      },
+      [AgentRole.LOCATION_FINDER]: {
+        overallScore: 90,
+        specialties: ['Code Location', 'Pattern Matching', 'Error Detection'],
+        weaknesses: ['Natural Language Understanding'],
+        bestPerformingLanguages: {
+          'C++': 92,
+          'C': 92,
+          'Python': 88,
+          'Java': 85
+        },
+        bestFileTypes: {},
+        bestScenarios: {}
       }
     },
     languageSupport: {
@@ -676,6 +729,19 @@ export const mockAgentEvaluationData: Record<AgentProvider, Partial<AgentRoleEva
         bestPerformingLanguages: {
           'researcher': 93,
           'analysis': 89
+        },
+        bestFileTypes: {},
+        bestScenarios: {}
+      },
+      [AgentRole.LOCATION_FINDER]: {
+        overallScore: 93,
+        specialties: ['Multi-Language Support', 'Pattern Understanding', 'Context Analysis'],
+        weaknesses: ['Precision in Large Files'],
+        bestPerformingLanguages: {
+          'JavaScript': 93,
+          'TypeScript': 93,
+          'Python': 92,
+          'Java': 90
         },
         bestFileTypes: {},
         bestScenarios: {}

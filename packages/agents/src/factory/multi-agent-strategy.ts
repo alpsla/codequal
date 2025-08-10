@@ -105,6 +105,12 @@ export class MultiAgentManager {
       primaryProvider: AgentProvider.GOOGLE,
       secondaryProviders: [AgentProvider.CLAUDE],
       role: AgentRole.RESEARCHER
+    },
+    [AgentRole.LOCATION_FINDER]: {
+      strategy: MultiAgentStrategy.SPECIALIZED,
+      primaryProvider: AgentProvider.OPENAI,
+      secondaryProviders: [AgentProvider.CLAUDE],
+      role: AgentRole.LOCATION_FINDER
     }
   };
 
@@ -544,7 +550,8 @@ export class SpecializedMultiAgent extends MultiAgent {
       [AgentRole.EDUCATIONAL]: 'educational_content',
       [AgentRole.ORCHESTRATOR]: 'orchestration',
       [AgentRole.REPORT_GENERATION]: 'report_generation',
-      [AgentRole.RESEARCHER]: 'research_analysis'
+      [AgentRole.RESEARCHER]: 'research_analysis',
+      [AgentRole.LOCATION_FINDER]: 'location_finding'
     };
     
     return focusAreas[role] || String(role);
