@@ -56,7 +56,8 @@ export enum AgentRole {
   EDUCATIONAL = 'educational',
   REPORT_GENERATION = 'reportGeneration',
   RESEARCHER = 'researcher',
-  LOCATION_FINDER = 'location_finder'
+  LOCATION_FINDER = 'location_finder',
+  DEEPWIKI = 'deepwiki'
 }
 
 /**
@@ -73,6 +74,7 @@ export interface AgentSelection {
   [AgentRole.REPORT_GENERATION]: AgentProvider;
   [AgentRole.RESEARCHER]?: AgentProvider;
   [AgentRole.LOCATION_FINDER]?: AgentProvider;
+  [AgentRole.DEEPWIKI]?: AgentProvider;
 }
 
 /**

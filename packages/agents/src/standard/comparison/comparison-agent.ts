@@ -52,8 +52,18 @@ export class ComparisonAgent implements IReportingComparisonAgent {
     
     this.config = { ...this.getDefaultConfig(), ...config };
     
-    // Select optimal model for comparison
-    if (this.modelService) {
+    // Use provided model config if available
+    if ((config as any).modelConfig) {
+      this.modelConfig = {
+        provider: (config as any).modelConfig.provider,
+        model: (config as any).modelConfig.model,
+        temperature: 0.1, // Low for consistency
+        maxTokens: 4000
+      };
+      this.log('info', 'Using provided model config', this.modelConfig);
+    }
+    // Otherwise select optimal model for comparison
+    else if (this.modelService) {
       try {
         const modelSelection = await this.modelService.selectModel({
           task: 'comparison',
@@ -112,17 +122,33 @@ export class ComparisonAgent implements IReportingComparisonAgent {
       // Generate report if requested
       let markdownReport;
       if (input.generateReport !== false) {
-        markdownReport = await this.generateReport({
+        // Properly merge model information with existing data
+        const reportData = {
           ...comparison,
+          aiAnalysis: {
+            ...(comparison as any).aiAnalysis,
+            // Handle case where model already includes provider prefix
+            modelUsed: this.modelConfig.model.includes('/') 
+              ? this.modelConfig.model 
+              : `${this.modelConfig.provider}/${this.modelConfig.model}`
+          },
           skillTracking,
           prMetadata: input.prMetadata,
           scanDuration: (input as any).scanDuration
-        } as any);
+        };
+        markdownReport = await this.generateReport(reportData as any);
       }
 
       // Generate PR comment
       const prComment = this.generatePRComment({
         ...comparison,
+        aiAnalysis: {
+          ...(comparison as any).aiAnalysis,
+          // Handle case where model already includes provider prefix
+          modelUsed: this.modelConfig.model.includes('/') 
+            ? this.modelConfig.model 
+            : `${this.modelConfig.provider}/${this.modelConfig.model}`
+        },
         skillTracking,
         prMetadata: input.prMetadata,
         scanDuration: (input as any).scanDuration

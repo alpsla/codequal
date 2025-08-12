@@ -56,6 +56,10 @@ export class ComparisonOrchestrator {
    */
   async executeComparison(request: ComparisonAnalysisRequest): Promise<ComparisonResult> {
     this.log('info', 'Starting orchestrated comparison analysis');
+    const startTime = Date.now();
+    
+    // Use provided DeepWiki scan duration if available
+    const deepWikiScanDuration = (request as any).deepWikiScanDuration;
 
     try {
       // Step 1: Analyze repository context for smart model selection
@@ -268,29 +272,47 @@ export class ComparisonOrchestrator {
         teamProfiles: skillData.teamProfiles?.map(tp => this.convertToSkillProfile(tp)) || [],
         historicalIssues: request.historicalIssues,
         generateReport: false,  // Don't generate report yet
-        scanDuration: (request as any).scanDuration
+        scanDuration: deepWikiScanDuration || ((Date.now() - startTime) / 1000)  // Use DeepWiki scan time if available
       } as any);
 
-      // Step 7: Generate final report with all enhancements
+      // Calculate scan duration - use DeepWiki scan time if provided, otherwise calculate from orchestrator start
+      const finalScanDuration = deepWikiScanDuration || ((Date.now() - startTime) / 1000);
+      
+      // Step 7: Enhance comparison data with metadata
       const comparisonData = comparisonResult.comparison || comparisonResult;
+      const enhancedComparisonData = {
+        ...comparisonData,
+        prMetadata: request.prMetadata,
+        scanDuration: finalScanDuration,
+        aiAnalysis: {
+          ...(comparisonData as any).aiAnalysis,
+          // Check if modelId already includes provider prefix
+          modelUsed: config.modelPreferences.primary.modelId.includes('/') 
+            ? config.modelPreferences.primary.modelId
+            : `${config.modelPreferences.primary.provider}/${config.modelPreferences.primary.modelId}`
+        }
+      };
+      
+      // Step 8: Generate final report with all enhancements
       const finalReport = await (this.comparisonAgent.generateFinalReport ? 
         this.comparisonAgent.generateFinalReport({
-          comparison: comparisonData as any,
+          comparison: enhancedComparisonData as any,
           educationalContent: educationalResearch,
           prMetadata: request.prMetadata,
           includeEducation: request.includeEducation !== false
         }) : 
         Promise.resolve({
-          report: await this.comparisonAgent.generateReport(comparisonData as any),
-          prComment: this.comparisonAgent.generatePRComment(comparisonData as any)
+          report: await this.comparisonAgent.generateReport(enhancedComparisonData as any),
+          prComment: this.comparisonAgent.generatePRComment(enhancedComparisonData as any)
         }));
-
-      // Step 8: Process results
+      
+      // Step 9: Process results
       const processedResult = {
         ...this.processAnalysisResult(comparisonResult),
         markdownReport: finalReport.report,
         prComment: finalReport.prComment,
-        educationalInsights: educationalResearch
+        educationalInsights: educationalResearch,
+        scanDuration: finalScanDuration
       };
 
       // Step 9: Update skill scores

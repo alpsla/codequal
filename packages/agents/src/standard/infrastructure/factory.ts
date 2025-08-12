@@ -25,14 +25,14 @@ class MockConfigProvider implements IConfigProvider {
       version: '1.0',
       modelPreferences: {
         primary: {
-          modelId: 'anthropic/claude-3-5-sonnet-20241022',
-          provider: 'anthropic',
+          modelId: 'MOCK-MODEL-NOT-FROM-SUPABASE',
+          provider: 'mock',
           temperature: 0.3,
           maxTokens: 4000
         },
         fallback: {
-          modelId: 'openai/gpt-4o-mini',
-          provider: 'openai',
+          modelId: 'MOCK-FALLBACK-MODEL',
+          provider: 'mock',
           temperature: 0.3,
           maxTokens: 4000
         }
@@ -274,9 +274,9 @@ class MockResearcherAgent extends ResearcherAgent {
   async findOptimalModel(context: any): Promise<any> {
     // Return a mock optimal model
     return {
-      modelId: 'anthropic/claude-3-5-sonnet-20241022',
-      provider: 'anthropic',
-      version: '2024-10-22',
+      modelId: 'MOCK-RESEARCHER-MODEL',
+      provider: 'mock',
+      version: 'mock-version',
       reasoning: ['Mock reasoning for test']
     };
   }
@@ -342,7 +342,15 @@ export class StandardAgentFactory {
     return new MockSkillProvider();
   }
   
-  static createConfigProvider(): MockConfigProvider {
+  static createConfigProvider(): IConfigProvider {
+    // Use Supabase provider if credentials are available
+    if (process.env.SUPABASE_URL && (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY)) {
+      const { SupabaseConfigProvider } = require('./supabase/supabase-config-provider');
+      return new SupabaseConfigProvider();
+    }
+    
+    // Fall back to mock for testing
+    console.warn('Supabase credentials not found, using mock configuration provider');
     return new MockConfigProvider();
   }
   

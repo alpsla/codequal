@@ -158,7 +158,8 @@ export const defaultTemperatures: Record<AgentRole, number> = {
   [AgentRole.DEPENDENCY]: 0.3,     // Balanced
   [AgentRole.REPORT_GENERATION]: 0.4, // Slightly creative
   [AgentRole.RESEARCHER]: 0.35,    // Balanced with slight creativity for discovery
-  [AgentRole.LOCATION_FINDER]: 0.1 // Very deterministic for exact location finding
+  [AgentRole.LOCATION_FINDER]: 0.1, // Very deterministic for exact location finding
+  [AgentRole.DEEPWIKI]: 0.3 // Moderate variance for comprehensive analysis
 };
 
 /**
@@ -303,6 +304,19 @@ const createDefaultAgentData = (): Partial<AgentRoleEvaluationParameters> => ({
       },
       bestFileTypes: {},
       bestScenarios: {}
+    },
+    [AgentRole.DEEPWIKI]: {
+      overallScore: 90,
+      specialties: ['Comprehensive Analysis', 'Deep Code Understanding', 'Security Issues'],
+      weaknesses: ['Speed'],
+      bestPerformingLanguages: {
+        'JavaScript': 90,
+        'TypeScript': 92,
+        'Python': 88,
+        'Java': 85
+      },
+      bestFileTypes: {},
+      bestScenarios: {}
     }
   },
   languageSupport: {
@@ -421,6 +435,19 @@ export const mockAgentEvaluationData: Record<AgentProvider, Partial<AgentRoleEva
         },
         bestFileTypes: {},
         bestScenarios: {}
+      },
+      [AgentRole.DEEPWIKI]: {
+        overallScore: 92,
+        specialties: ['Comprehensive Analysis', 'Deep Code Understanding', 'Security Issues'],
+        weaknesses: ['Speed'],
+        bestPerformingLanguages: {
+          'JavaScript': 92,
+          'TypeScript': 93,
+          'Python': 90,
+          'Java': 87
+        },
+        bestFileTypes: {},
+        bestScenarios: {}
       }
     },
     languageSupport: {
@@ -526,6 +553,19 @@ export const mockAgentEvaluationData: Record<AgentProvider, Partial<AgentRoleEva
           'TypeScript': 95,
           'Python': 90,
           'Java': 85
+        },
+        bestFileTypes: {},
+        bestScenarios: {}
+      },
+      [AgentRole.DEEPWIKI]: {
+        overallScore: 92,
+        specialties: ['Comprehensive Analysis', 'Deep Code Understanding', 'Security Issues'],
+        weaknesses: ['Speed'],
+        bestPerformingLanguages: {
+          'JavaScript': 92,
+          'TypeScript': 93,
+          'Python': 90,
+          'Java': 87
         },
         bestFileTypes: {},
         bestScenarios: {}
@@ -637,6 +677,19 @@ export const mockAgentEvaluationData: Record<AgentProvider, Partial<AgentRoleEva
         },
         bestFileTypes: {},
         bestScenarios: {}
+      },
+      [AgentRole.DEEPWIKI]: {
+        overallScore: 88,
+        specialties: ['Low-Level Analysis', 'Security Issues', 'Performance'],
+        weaknesses: ['Web Frameworks'],
+        bestPerformingLanguages: {
+          'C++': 90,
+          'C': 90,
+          'Python': 86,
+          'Java': 84
+        },
+        bestFileTypes: {},
+        bestScenarios: {}
       }
     },
     languageSupport: {
@@ -742,6 +795,19 @@ export const mockAgentEvaluationData: Record<AgentProvider, Partial<AgentRoleEva
           'TypeScript': 93,
           'Python': 92,
           'Java': 90
+        },
+        bestFileTypes: {},
+        bestScenarios: {}
+      },
+      [AgentRole.DEEPWIKI]: {
+        overallScore: 91,
+        specialties: ['Comprehensive Analysis', 'Multi-Language Support', 'Documentation'],
+        weaknesses: ['Real-time Performance'],
+        bestPerformingLanguages: {
+          'JavaScript': 91,
+          'TypeScript': 92,
+          'Python': 90,
+          'Java': 89
         },
         bestFileTypes: {},
         bestScenarios: {}

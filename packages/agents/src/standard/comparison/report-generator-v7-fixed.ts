@@ -27,6 +27,7 @@ export class ReportGeneratorV7Fixed {
     const prNumber = prMetadata.id || 'Unknown';
     const repoUrl = prMetadata.repository_url || 'Unknown';
     const scanDuration = (comparison as any).scanDuration || 0;
+    const modelUsed = (comparison as any).aiAnalysis?.modelUsed || 'Model Not Specified';
     
     let report = '';
     
@@ -36,7 +37,8 @@ export class ReportGeneratorV7Fixed {
     report += `**PR:** #${prNumber} - Code Changes\n`;
     report += `**Author:** ${this.formatAuthor(author)}\n`;
     report += `**Analysis Date:** ${new Date().toISOString()}\n`;
-    report += `**Scan Duration:** ${(scanDuration / 1000).toFixed(1)} seconds\n`;
+    report += `**Model Used:** ${modelUsed}\n`;
+    report += `**Scan Duration:** ${scanDuration < 1 ? scanDuration.toFixed(2) : scanDuration.toFixed(1)} seconds\n`;
     report += `---\n\n`;
     
     // Decision

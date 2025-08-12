@@ -223,7 +223,7 @@ export class ModelVersionSync {
    * Get optimal model for a specific language and size category
    * This matches the Supabase model_configurations table structure
    */
-  async getModelForLanguage(language: string, sizeCategory: string = 'medium'): Promise<ModelVersion | undefined> {
+  async getModelForLanguage(language: string, sizeCategory = 'medium'): Promise<ModelVersion | undefined> {
     // First try to find a model specifically configured for this language/size
     const languageSpecificModels = Array.from(this.models.values()).filter(m => {
       const caps = m.capabilities;

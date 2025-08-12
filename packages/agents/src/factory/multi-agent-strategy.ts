@@ -111,6 +111,12 @@ export class MultiAgentManager {
       primaryProvider: AgentProvider.OPENAI,
       secondaryProviders: [AgentProvider.CLAUDE],
       role: AgentRole.LOCATION_FINDER
+    },
+    [AgentRole.DEEPWIKI]: {
+      strategy: MultiAgentStrategy.SPECIALIZED,
+      primaryProvider: AgentProvider.OPENAI,
+      secondaryProviders: [AgentProvider.CLAUDE],
+      role: AgentRole.DEEPWIKI
     }
   };
 
@@ -551,7 +557,8 @@ export class SpecializedMultiAgent extends MultiAgent {
       [AgentRole.ORCHESTRATOR]: 'orchestration',
       [AgentRole.REPORT_GENERATION]: 'report_generation',
       [AgentRole.RESEARCHER]: 'research_analysis',
-      [AgentRole.LOCATION_FINDER]: 'location_finding'
+      [AgentRole.LOCATION_FINDER]: 'location_finding',
+      [AgentRole.DEEPWIKI]: 'deepwiki_analysis'
     };
     
     return focusAreas[role] || String(role);

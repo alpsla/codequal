@@ -25,6 +25,10 @@
       "types": "./dist/multi-agent/enhanced-executor.d.ts",
       "default": "./dist/multi-agent/enhanced-executor.js"
     },
+    "./model-selection/model-version-sync": {
+      "types": "./dist/model-selection/model-version-sync.d.ts",
+      "default": "./dist/model-selection/model-version-sync.js"
+    },
     "./multi-agent/types/auth": {
       "types": "./dist/multi-agent/types/auth.d.ts",
       "default": "./dist/multi-agent/types/auth.js"

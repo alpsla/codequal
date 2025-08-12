@@ -56,16 +56,22 @@ export class DynamicModelEvaluator {
   /**
    * Evaluate models dynamically based on their metadata
    */
-  evaluateModels(models: ModelMetrics[]): EvaluatedModel[] {
-    return models.map(model => this.evaluateModel(model));
+  evaluateModels(models: ModelMetrics[], latestModels?: string[]): EvaluatedModel[] {
+    return models.map(model => this.evaluateModel(model, latestModels));
   }
 
   /**
    * Evaluate a single model based on its metadata
    */
-  private evaluateModel(model: ModelMetrics): EvaluatedModel {
+  private evaluateModel(model: ModelMetrics, latestModels?: string[]): EvaluatedModel {
     const modelId = `${model.provider}/${model.model}`;
     const reasoning: string[] = [];
+    
+    // Check if this is one of the web-discovered latest models
+    const isLatestFromWeb = latestModels?.includes(modelId);
+    if (isLatestFromWeb) {
+      reasoning.push('🌟 WEB-VERIFIED LATEST MODEL - Priority selection');
+    }
     
     // Extract metadata
     const metadata = this.extractMetadata(model, reasoning);
@@ -75,10 +81,16 @@ export class DynamicModelEvaluator {
       quality: this.inferQualityScore(model, metadata, reasoning),
       speed: this.inferSpeedScore(model, metadata, reasoning),
       cost: this.calculateCostScore(model, reasoning),
-      freshness: this.calculateFreshnessScore(model, metadata, reasoning),
+      freshness: isLatestFromWeb ? 10 : this.calculateFreshnessScore(model, metadata, reasoning),
       contextWindow: this.calculateContextScore(model, reasoning),
       composite: 0 // Will be calculated after
     };
+    
+    // Boost quality score for web-verified latest models
+    if (isLatestFromWeb) {
+      scores.quality = Math.min(10, scores.quality + 2);
+      reasoning.push(`Quality boosted +2 for web-verified latest model`);
+    }
     
     return {
       id: modelId,
@@ -340,59 +352,75 @@ export class DynamicModelEvaluator {
     metadata: EvaluatedModel['metadata'],
     reasoning: string[]
   ): number {
+    const modelName = model.model.toLowerCase();
+    
     if (!metadata.releaseDate) {
-      // No release date, use name patterns
-      const modelName = model.model.toLowerCase();
-      
-      // Year patterns
-      if (modelName.includes('2025') || modelName.includes('25')) {
-        reasoning.push('2025 model indicated: 9/10 freshness');
-        return 9;
-      } else if (modelName.includes('2024') || modelName.includes('24')) {
-        reasoning.push('2024 model indicated: 8/10 freshness');
-        return 8;
-      } else if (modelName.includes('2023') || modelName.includes('23')) {
-        reasoning.push('2023 model indicated: 6/10 freshness');
-        return 6;
+      // Check for date patterns in model name
+      const dateMatch = modelName.match(/20(\d{2})(\d{2})(\d{2})/);
+      if (dateMatch) {
+        const year = parseInt('20' + dateMatch[1]);
+        const month = parseInt(dateMatch[2]);
+        const modelDate = new Date(year, month - 1, 1);
+        const monthsOld = (Date.now() - modelDate.getTime()) / (1000 * 60 * 60 * 24 * 30);
+        metadata.releaseDate = modelDate;
+        // Fall through to date-based calculation
+      } else {
+        // Year patterns
+        if (modelName.includes('2025') || modelName.includes('-25')) {
+          reasoning.push('2025 model: 9/10 freshness');
+          return 9;
+        } else if (modelName.includes('2024') || modelName.includes('-24')) {
+          // Check if it's late 2024
+          if (modelName.includes('1022') || modelName.includes('11') || modelName.includes('12')) {
+            reasoning.push('Late 2024 model: 8/10 freshness');
+            return 8;
+          }
+          reasoning.push('2024 model: 6/10 freshness');
+          return 6;
+        } else if (modelName.includes('2023') || modelName.includes('-23')) {
+          reasoning.push('⚠️ 2023 model (outdated): 3/10 freshness');
+          return 3;
+        }
+        
+        // Version patterns (higher = newer)
+        if (modelName.match(/\b(4\.5|4\.1|3\.7)\\b/)) {
+          reasoning.push('High version number: 8/10 freshness');
+          return 8;
+        } else if (modelName.match(/\b(3\.5|3\.0|2\.5)\\b/)) {
+          reasoning.push('Medium version number: 6/10 freshness');
+          return 6;
+        } else if (modelName.match(/\b(2\.0|1\.5|1\.0)\\b/)) {
+          reasoning.push('⚠️ Low version number: 4/10 freshness');
+          return 4;
+        }
+        
+        // Default - assume it's old if we can't identify it
+        reasoning.push('⚠️ Unknown release date (likely old): 4/10 freshness');
+        return 4;
       }
-      
-      // Version patterns (higher = newer)
-      if (modelName.match(/\b(4\.5|4\.1|3\.7|3\.5)\b/)) {
-        reasoning.push('Recent version number: 8/10 freshness');
-        return 8;
-      } else if (modelName.match(/\b(3\.0|2\.5|2\.0)\b/)) {
-        reasoning.push('Current version number: 7/10 freshness');
-        return 7;
-      } else if (modelName.match(/\b(1\.5|1\.0)\b/)) {
-        reasoning.push('Older version number: 5/10 freshness');
-        return 5;
-      }
-      
-      // Default
-      reasoning.push('Unknown release date: 6/10 freshness');
-      return 6;
     }
     
     const monthsOld = (Date.now() - metadata.releaseDate.getTime()) / (1000 * 60 * 60 * 24 * 30);
     
+    // ULTRA STRICT freshness requirements - only latest models
     if (monthsOld <= 1) {
-      reasoning.push(`Brand new (${monthsOld.toFixed(1)} months): 10/10 freshness`);
+      reasoning.push(`✅ Brand new (${monthsOld.toFixed(1)} months): 10/10 freshness`);
       return 10;
-    } else if (monthsOld <= 3) {
-      reasoning.push(`Very fresh (${monthsOld.toFixed(1)} months): 9/10 freshness`);
+    } else if (monthsOld <= 2) {
+      reasoning.push(`✅ Very fresh (${monthsOld.toFixed(1)} months): 9/10 freshness`);
       return 9;
-    } else if (monthsOld <= 6) {
-      reasoning.push(`Fresh (${monthsOld.toFixed(1)} months): 8/10 freshness`);
-      return 8;
-    } else if (monthsOld <= 9) {
-      reasoning.push(`Mature (${monthsOld.toFixed(1)} months): 7/10 freshness`);
+    } else if (monthsOld <= 3) {
+      reasoning.push(`Acceptable (${monthsOld.toFixed(1)} months): 7/10 freshness`);
       return 7;
-    } else if (monthsOld <= 12) {
-      reasoning.push(`Older (${monthsOld.toFixed(1)} months): 6/10 freshness`);
-      return 6;
-    } else {
-      reasoning.push(`Old (${monthsOld.toFixed(1)} months): 4/10 freshness`);
+    } else if (monthsOld <= 4) {
+      reasoning.push(`⚠️ Getting old (${monthsOld.toFixed(1)} months): 4/10 freshness`);
       return 4;
+    } else if (monthsOld <= 6) {
+      reasoning.push(`❌ OLD (${monthsOld.toFixed(1)} months): 2/10 freshness`);
+      return 2;
+    } else {
+      reasoning.push(`❌ UNACCEPTABLE (${monthsOld.toFixed(1)} months): 0/10 freshness`);
+      return 0;
     }
   }
 
@@ -441,8 +469,21 @@ export class DynamicModelEvaluator {
   ): number {
     const scores = model.scores;
     
-    // Apply freshness as a multiplier to quality
-    const effectiveQuality = scores.quality * (0.7 + 0.3 * (scores.freshness / 10));
+    // Apply freshness as an EXTREME multiplier to quality
+    // Models with low freshness get MASSIVELY penalized
+    let freshnessMultiplier: number;
+    if (scores.freshness === 0) {
+      freshnessMultiplier = 0; // Completely unusable if older than 6 months
+    } else if (scores.freshness < 3) {
+      freshnessMultiplier = 0.1; // 10% quality for very old models (4-6 months)
+    } else if (scores.freshness < 5) {
+      freshnessMultiplier = 0.3; // 30% quality for old models (3-4 months)  
+    } else if (scores.freshness < 7) {
+      freshnessMultiplier = 0.6; // 60% quality for borderline models (2-3 months)
+    } else {
+      freshnessMultiplier = 1.0; // Full quality only for models <2 months old
+    }
+    const effectiveQuality = scores.quality * freshnessMultiplier;
     
     const composite = 
       effectiveQuality * weights.quality +
@@ -468,80 +509,101 @@ export class DynamicModelEvaluator {
  */
 export const DYNAMIC_ROLE_WEIGHTS = {
   deepwiki: {
-    quality: 0.45,
-    speed: 0.20,
-    cost: 0.25,
-    freshness: 0.05,
-    contextWindow: 0.05
+    quality: 0.60,      // CRITICAL - Deep code understanding essential
+    speed: 0.05,        // Can be slow, runs in background
+    cost: 0.20,         // Some cost sensitivity for high volume
+    freshness: 0.15,    // Keep freshness consistent
+    contextWindow: 0.00
   },
   researcher: {
-    quality: 0.40,
-    speed: 0.15,
-    cost: 0.35,
-    freshness: 0.05,
-    contextWindow: 0.05
+    quality: 0.55,      // HIGH - Needs to find accurate information
+    speed: 0.10,        // Moderate speed needed
+    cost: 0.20,         // Cost matters for frequent queries
+    freshness: 0.15,    // Keep freshness consistent
+    contextWindow: 0.00
   },
   security: {
-    quality: 0.55,
-    speed: 0.15,
-    cost: 0.20,
-    freshness: 0.05,
-    contextWindow: 0.05
+    quality: 0.60,      // CRITICAL - Security accuracy paramount
+    speed: 0.05,        // Can take time for thorough analysis
+    cost: 0.20,         // Worth paying for security
+    freshness: 0.15,    // Keep freshness consistent
+    contextWindow: 0.00
   },
   architecture: {
-    quality: 0.50,
-    speed: 0.15,
-    cost: 0.20,
-    freshness: 0.05,
-    contextWindow: 0.10
+    quality: 0.55,      // HIGH - Architectural decisions critical
+    speed: 0.10,        // Can take time to analyze
+    cost: 0.20,         // Worth investment
+    freshness: 0.15,    // Keep freshness consistent
+    contextWindow: 0.00
   },
   performance: {
-    quality: 0.40,
-    speed: 0.30,
-    cost: 0.20,
-    freshness: 0.05,
-    contextWindow: 0.05
+    quality: 0.40,      // MODERATE - Balance with speed
+    speed: 0.25,        // Speed important for perf analysis
+    cost: 0.20,         // Cost conscious
+    freshness: 0.15,    // Keep freshness consistent
+    contextWindow: 0.00
   },
   code_quality: {
-    quality: 0.45,
-    speed: 0.20,
-    cost: 0.25,
-    freshness: 0.05,
-    contextWindow: 0.05
+    quality: 0.50,      // HIGH - Accuracy important
+    speed: 0.15,        // Moderate speed needed
+    cost: 0.20,         // Balanced cost
+    freshness: 0.15,    // Keep freshness consistent
+    contextWindow: 0.00
   },
   dependencies: {
-    quality: 0.35,
-    speed: 0.25,
-    cost: 0.30,
-    freshness: 0.05,
-    contextWindow: 0.05
+    quality: 0.35,      // MODERATE - Basic accuracy sufficient
+    speed: 0.20,        // Should be reasonably fast
+    cost: 0.30,         // Cost sensitive for frequent checks
+    freshness: 0.15,    // Keep freshness consistent
+    contextWindow: 0.00
   },
   documentation: {
-    quality: 0.35,
-    speed: 0.20,
-    cost: 0.35,
-    freshness: 0.05,
-    contextWindow: 0.05
+    quality: 0.30,      // LOW - Basic clarity sufficient
+    speed: 0.15,        // Moderate speed
+    cost: 0.40,         // Very cost sensitive
+    freshness: 0.15,    // Keep freshness consistent
+    contextWindow: 0.00
   },
   testing: {
-    quality: 0.35,
-    speed: 0.25,
-    cost: 0.30,
-    freshness: 0.05,
-    contextWindow: 0.05
+    quality: 0.50,      // HIGH - Test accuracy crucial
+    speed: 0.15,        // Can take time
+    cost: 0.20,         // Worth the investment
+    freshness: 0.15,    // Keep freshness consistent
+    contextWindow: 0.00
   },
   translator: {
-    quality: 0.40,
-    speed: 0.25,
-    cost: 0.25,
-    freshness: 0.05,
-    contextWindow: 0.05
+    quality: 0.35,      // MODERATE - Basic translation sufficient
+    speed: 0.25,        // Should be fast
+    cost: 0.25,         // Cost conscious
+    freshness: 0.15,    // Keep freshness consistent
+    contextWindow: 0.00
   },
   location_finder: {
-    quality: 0.55,  // Accuracy is crucial for finding exact locations
-    speed: 0.20,     // Reasonable response time
-    cost: 0.25,      // Moderate cost sensitivity for volume processing
-    freshness: 0.00, // Don't need latest models, stability is better
-    contextWindow: 0.00 // Modern models all have sufficient context
+    quality: 0.65,      // HIGHEST - Must find exact locations
+    speed: 0.05,        // Can take time for accuracy
+    cost: 0.15,         // Worth paying for precision
+    freshness: 0.15,    // Keep freshness consistent
+    contextWindow: 0.00
+  },
+  educational: {
+    quality: 0.25,      // LOW - Just needs to find resources
+    speed: 0.20,        // Should be reasonably quick
+    cost: 0.40,         // VERY cost sensitive - high volume
+    freshness: 0.15,    // Keep freshness consistent
+    contextWindow: 0.00
+  },
+  orchestrator: {
+    quality: 0.45,      // MODERATE - Routing decisions
+    speed: 0.20,        // Needs to be fast for routing
+    cost: 0.20,         // Balanced cost
+    freshness: 0.15,    // Keep freshness consistent
+    contextWindow: 0.00
+  },
+  report_generation: {
+    quality: 0.40,      // MODERATE - Clear reporting
+    speed: 0.15,        // Can take some time
+    cost: 0.30,         // Cost sensitive
+    freshness: 0.15,    // Keep freshness consistent
+    contextWindow: 0.00
   }
 };

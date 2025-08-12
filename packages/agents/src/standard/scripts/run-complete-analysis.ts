@@ -188,6 +188,9 @@ class CompleteAnalysisRunner {
         options.prNumber
       );
       
+      // Calculate DeepWiki scan duration
+      const deepWikiScanDuration = (Date.now() - startTime) / 1000;
+      
       // Step 3: Create analysis request
       const analysisRequest = {
         mainBranchAnalysis,
@@ -199,19 +202,17 @@ class CompleteAnalysisRunner {
           linesAdded: 100, // TODO: Get from GitHub API
           linesRemoved: 50 // TODO: Get from GitHub API
         },
-        userId: 'default-user',
-        teamId: 'default-team',
+        userId: '00000000-0000-0000-0000-000000000000',  // Default UUID
+        teamId: '00000000-0000-0000-0000-000000000000',  // Default UUID
         generateReport: true,
-        includeEducation: true
+        includeEducation: true,
+        deepWikiScanDuration // Pass the actual DeepWiki scan time
       };
 
       // Step 4: Execute comparison
       console.log('🔄 Comparing branches and generating report...');
       
-      // Add scan duration to the request before execution
-      (analysisRequest as any).scanDuration = ((Date.now() - startTime) / 1000).toFixed(1);
-      
-      const result = await this.orchestrator.executeComparison(analysisRequest);
+      const result = await this.orchestrator.executeComparison(analysisRequest as any);
 
       const duration = ((Date.now() - startTime) / 1000).toFixed(1);
       console.log(`✅ Analysis completed in ${duration}s\n`);

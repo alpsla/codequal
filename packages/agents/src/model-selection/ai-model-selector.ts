@@ -65,8 +65,8 @@ export class AIModelSelector {
       b.scores.composite - a.scores.composite
     );
     
-    // Take top 10 candidates
-    const candidates = sortedModels.slice(0, 10);
+    // Take top 15 candidates for more diversity
+    const candidates = sortedModels.slice(0, 15);
     
     // Find the best available AI model for selection
     await this.selectAIModel(sortedModels);
@@ -102,10 +102,36 @@ export class AIModelSelector {
   ): string {
     const roleDesc = this.getRoleDescription(context.role);
     
+    // CRITICAL: Add strong context-specific guidance
+    let contextGuidance = '';
+    if (context.language && context.repositorySize) {
+      if (context.language === 'python' && context.repositorySize === 'small') {
+        contextGuidance = '\n🎯 CONTEXT: Small Python repos need FAST, CHEAP models. Prefer flash/turbo variants.';
+      } else if (context.language === 'python' && context.repositorySize === 'large') {
+        contextGuidance = '\n🎯 CONTEXT: Large Python repos need DEEP ANALYSIS. Prefer larger, smarter models.';
+      } else if (context.language === 'typescript' && context.repositorySize === 'small') {
+        contextGuidance = '\n🎯 CONTEXT: Small TS repos need BALANCED models with good type understanding.';
+      } else if (context.language === 'typescript' && context.repositorySize === 'large') {
+        contextGuidance = '\n🎯 CONTEXT: Large TS repos need PREMIUM models for complex type analysis.';
+      } else if (['rust', 'c', 'cpp'].includes(context.language)) {
+        contextGuidance = '\n🎯 CONTEXT: Systems languages REQUIRE highest quality models for safety.';
+      }
+    }
+    
+    // Role-specific guidance
+    let roleGuidance = '';
+    if (context.role === 'deepwiki') {
+      roleGuidance = '\n⚡ DEEPWIKI: Needs HIGHEST quality model available, cost is secondary.';
+    } else if (context.role === 'security') {
+      roleGuidance = '\n⚡ SECURITY: CRITICAL accuracy needed. Choose most reliable model.';
+    } else if (context.role === 'educational') {
+      roleGuidance = '\n⚡ EDUCATIONAL: MUST be cost-effective. Choose cheapest reasonable option.';
+    }
+    
     let prompt = `You are an expert AI model selector. Select the best PRIMARY and FALLBACK models for the following use case:
 
 ROLE: ${context.role}
-DESCRIPTION: ${roleDesc}
+DESCRIPTION: ${roleDesc}${contextGuidance}${roleGuidance}
 ${context.language ? `LANGUAGE: ${context.language}` : ''}
 ${context.repositorySize ? `REPOSITORY SIZE: ${context.repositorySize}` : ''}
 ${context.complexity ? `COMPLEXITY: ${context.complexity}/10` : ''}
@@ -113,11 +139,20 @@ ${context.complexity ? `COMPLEXITY: ${context.complexity}/10` : ''}
 REQUIREMENTS:
 - Primary model should be the best overall choice
 - Fallback should be reliable but can prioritize cost savings
-- We work ONLY with the LATEST versions of models on the market
-- Prefer models with the newest version numbers and most recent release dates
-- Consider the 3-6 month freshness window for optimal models
-- Avoid models older than 9 months unless they offer exceptional value
-- Look for version indicators like higher numbers (e.g., 4.5 > 4.0, 2.5 > 2.0)
+- 🚨 CRITICAL: ONLY select models released in the LAST 3 MONTHS (90 days)
+- 🚨 AUTOMATIC REJECTION: Any model older than 6 months
+- 🚨 STRICT DATE CHECKING: Look for YYYYMMDD patterns (e.g., 20241022)
+- 🚨 VERSION PRIORITY: Always choose highest version (3.0 > 2.5 > 2.0)
+- 🚨 NEVER select models with old date patterns like:
+  - 20240229 (February 2024) - TOO OLD
+  - 20240718 (July 2024) - TOO OLD  
+  - 20240912 (September 2024) - BORDERLINE
+- 🚨 ONLY ACCEPT models with recent dates like:
+  - 202410XX (October 2024) - ACCEPTABLE
+  - 202411XX (November 2024) - GOOD
+  - 202412XX (December 2024) - EXCELLENT
+- If no model meets the 3-month requirement, EXPLICITLY STATE this problem
+- The system should be searching web for latest models BEFORE this selection
 
 CANDIDATE MODELS (sorted by composite score):
 `;
@@ -137,6 +172,15 @@ IMPORTANT: Models are already sorted by composite score, but you should consider
 2. Model compatibility and proven track record
 3. Cost-benefit trade-offs
 4. Freshness vs stability balance
+
+🚨 DIVERSITY REQUIREMENT:
+- DO NOT always pick the same models for different contexts
+- Small repos should use DIFFERENT (cheaper/faster) models than large repos
+- Python should use DIFFERENT models than TypeScript when appropriate
+- DeepWiki needs DIFFERENT (higher quality) models than Educational
+- If context suggests "fast/cheap", pick models with "flash", "turbo", "mini" in name
+- If context suggests "quality", pick models with "opus", "ultra", larger parameter counts
+- VARY your selections based on the specific context provided
 
 OUTPUT FORMAT (JSON only):
 {
@@ -193,7 +237,7 @@ OUTPUT FORMAT (JSON only):
           }
         ],
         max_tokens: 500,
-        temperature: 0.1 // Low temperature for consistency
+        temperature: 0.3 // Slightly higher for more diversity in selection
       },
       {
         headers: {
