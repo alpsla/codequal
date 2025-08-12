@@ -360,7 +360,7 @@ export class SearchStrategySelector {
     // If no patterns found, try generic extraction from title/description
     if (patterns.length === 0) {
       // Extract any code-like words from description
-      const codeWords = (description + ' ' + title).match(/[a-zA-Z_][a-zA-Z0-9_]*/g) || [];
+      const codeWords = (description + ' ' + title).match(/[a-zA-Z_][a-zA-Z0-9_]*/g) || [];
       const relevantWords = codeWords.filter(w => 
         w.length > 3 && 
         !['the', 'for', 'and', 'are', 'with', 'from', 'this', 'that', 'have', 'been'].includes(w.toLowerCase())

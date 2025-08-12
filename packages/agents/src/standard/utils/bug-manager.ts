@@ -36,7 +36,7 @@ export interface BugReport {
 
 export class BugManager {
   private bugsFilePath: string;
-  private nextBugId: number = 1;
+  private nextBugId = 1;
   
   constructor(
     bugsFilePath = path.join(__dirname, '../../data/bugs.json')
