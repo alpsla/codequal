@@ -173,8 +173,8 @@ export class ModelSelectionService implements IModelSelectionService {
     
     // Return default if all else fails
     return {
-      provider: 'openai',
-      modelId: 'gpt-4o',
+      provider: 'dynamic', // Will be selected by model selector
+      modelId: 'dynamic',   // Will be selected by model selector
       temperature: 0.3,
       maxTokens: 4000
     };
@@ -266,8 +266,8 @@ export class ModelSelectionService implements IModelSelectionService {
           maxTokens: 4000
         },
         fallback: {
-          provider: 'openai',
-          modelId: 'gpt-4-turbo',
+          provider: 'dynamic', // Will be selected by model selector
+          modelId: 'dynamic',   // Will be selected by model selector
           temperature: 0.3,
           maxTokens: 4000
         }

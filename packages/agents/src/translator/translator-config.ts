@@ -99,28 +99,28 @@ export const TRANSLATION_CONTEXTS: Record<string, TranslationContextConfig> = {
 export const TRANSLATION_MODEL_CRITERIA = {
   // Tier 1: Premium models for critical translations
   premium: {
-    models: ['gpt-4-turbo', 'claude-3-opus', 'gemini-pro'],
+    models: [], // Dynamically selected by model selector
     useFor: ['sdk', 'docs'],
     minQualityScore: 0.95
   },
 
   // Tier 2: Balanced models for general use
   balanced: {
-    models: ['gpt-3.5-turbo', 'claude-3-sonnet', 'mixtral-8x7b'],
+    models: [], // Dynamically selected by model selector
     useFor: ['api', 'error', 'ui'],
     minQualityScore: 0.85
   },
 
   // Tier 3: Fast models for simple translations
   fast: {
-    models: ['gpt-3.5-turbo-instruct', 'llama-2-70b', 'falcon-40b'],
+    models: [], // Dynamically selected by model selector
     useFor: ['ui', 'simple_text'],
     minQualityScore: 0.80
   },
 
   // Specialized translation models
   specialized: {
-    models: ['mbart-large-50', 'nllb-200', 'm2m-100'],
+    models: [], // Dynamically selected by model selector
     useFor: ['batch_translation', 'offline_processing'],
     minQualityScore: 0.88
   }
@@ -130,20 +130,20 @@ export const TRANSLATION_MODEL_CRITERIA = {
  * Language-specific model preferences
  */
 export const LANGUAGE_MODEL_PREFERENCES: Record<string, string[]> = {
-  // Asian languages may benefit from specific models
-  zh: ['qwen-72b', 'gpt-4-turbo', 'claude-3-opus'],
-  ja: ['gpt-4-turbo', 'claude-3-opus', 'command-r-plus'],
-  ko: ['gpt-4-turbo', 'claude-3-opus', 'solar-10.7b'],
-  
-  // Indic languages
-  hi: ['gpt-4-turbo', 'claude-3-opus', 'llama-2-70b'],
-  
-  // European languages (generally well-supported)
-  es: ['gpt-3.5-turbo', 'claude-3-sonnet', 'mixtral-8x7b'],
-  pt: ['gpt-3.5-turbo', 'claude-3-sonnet', 'mixtral-8x7b'],
-  de: ['gpt-3.5-turbo', 'claude-3-sonnet', 'mixtral-8x7b'],
-  fr: ['gpt-3.5-turbo', 'claude-3-sonnet', 'mixtral-8x7b'],
-  ru: ['gpt-4-turbo', 'claude-3-sonnet', 'gigachat'] // Russian-specific option
+  // Language-specific preferences are now dynamically determined
+  // The model selector will choose appropriate models based on:
+  // - Language complexity and characteristics
+  // - Available models with language support
+  // - Current best-performing models
+  zh: [], // Chinese - dynamically selected
+  ja: [], // Japanese - dynamically selected
+  ko: [], // Korean - dynamically selected
+  hi: [], // Hindi - dynamically selected
+  es: [], // Spanish - dynamically selected
+  pt: [], // Portuguese - dynamically selected
+  de: [], // German - dynamically selected
+  fr: [], // French - dynamically selected
+  ru: []  // Russian - dynamically selected
 };
 
 /**

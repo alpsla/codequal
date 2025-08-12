@@ -569,9 +569,11 @@ Provide confidence scores and reasoning for each finding.`;
    * Get default model configuration
    */
   private getDefaultModelConfig() {
+    // Model will be dynamically selected based on context
+    // This is a fallback configuration only
     return {
-      provider: 'openai',
-      model: 'gpt-4o',
+      provider: 'dynamic', // Will be replaced by model selector
+      model: 'dynamic',    // Will be replaced by model selector
       temperature: 0.1,
       maxTokens: 4000
     };

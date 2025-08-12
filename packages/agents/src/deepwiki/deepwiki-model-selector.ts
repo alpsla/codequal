@@ -245,29 +245,31 @@ export class DeepWikiModelSelector {
    * Infer quality score for DeepWiki analysis
    */
   inferDeepWikiQuality(modelId: string, contextWindow: number): number {
+    // Dynamic scoring based on model characteristics
+    // Quality inference from model name patterns
+    let score = 7.0; // Base score
+    
     const id = modelId.toLowerCase();
-    let score = 7.0; // default
     
-    // Latest high-capability models ideal for code analysis
-    if (id.includes('opus-4') || id.includes('claude-opus-4')) score = 9.8;
-    else if (id.includes('gpt-4.5')) score = 9.7;
-    else if (id.includes('sonnet-4') || id.includes('claude-sonnet-4')) score = 9.5;
-    else if (id.includes('gpt-4.1') && !id.includes('nano')) score = 9.3;
-    else if (id.includes('claude-3.7-sonnet')) score = 9.2;
-    else if (id.includes('opus') || id.includes('gpt-4-turbo')) score = 9.0;
+    // Size indicators (larger models generally = higher quality)
+    if (id.match(/\b(70b|65b|405b|175b)\b/)) score += 1.5;
+    else if (id.match(/\b(40b|45b|30b|34b)\b/)) score += 1.0;
+    else if (id.match(/\b(13b|20b|7b|8b)\b/)) score += 0.5;
+    else if (id.match(/\b(3b|1b|mini|nano|tiny)\b/)) score -= 0.5;
     
-    // Good mid-range models for standard analysis
-    else if (id.includes('gpt-4.1-nano')) score = 8.5;
-    else if (id.includes('claude-3.5-sonnet')) score = 8.7;
-    else if (id.includes('gpt-4o') && !id.includes('mini')) score = 8.6;
-    else if (id.includes('gemini') && id.includes('pro')) score = 8.4;
-    else if (id.includes('deepseek') && id.includes('r1')) score = 8.3;
+    // Generation indicators from version numbers
+    const versionMatch = id.match(/(?:v|-)(\d+(?:\.\d+)?)/);
+    if (versionMatch) {
+      const version = parseFloat(versionMatch[1]);
+      if (version >= 4.0) score += 1.2;
+      else if (version >= 3.0) score += 0.6;
+      else if (version >= 2.0) score += 0.3;
+    }
     
-    // Efficient models for simple repos
-    else if (id.includes('gpt-4o-mini')) score = 7.8;
-    else if (id.includes('claude') && id.includes('haiku')) score = 7.5;
-    else if (id.includes('gemini') && id.includes('flash')) score = 7.6;
-    else if (id.includes('mistral') && id.includes('large')) score = 7.4;
+    // Quality tier indicators
+    if (id.includes('opus') || id.includes('ultra')) score += 0.7;
+    else if (id.includes('pro') || id.includes('plus')) score += 0.5;
+    else if (id.includes('turbo') || id.includes('fast')) score += 0.3;
     
     // Code-specific model boost
     if (id.includes('code') || id.includes('coder')) score += 0.4;
@@ -284,22 +286,25 @@ export class DeepWikiModelSelector {
    */
   calculateSpeedScore(model: any): number {
     const id = model.id.toLowerCase();
+    let score = 7.0; // Base speed score
     
-    // Fast models
-    if (id.includes('haiku') || id.includes('flash')) return 9.5;
-    if (id.includes('gpt-4o-mini')) return 9.0;
-    if (id.includes('nano')) return 8.8;
-    if (id.includes('mini')) return 8.5;
+    // Speed optimized models
+    if (id.includes('turbo') || id.includes('flash') || id.includes('fast')) score = 9.0;
+    else if (id.includes('mini') || id.includes('nano') || id.includes('tiny')) score = 8.5;
+    else if (id.includes('haiku')) score = 9.5; // Known for speed
     
-    // Medium speed
-    if (id.includes('sonnet') || id.includes('gpt-4o')) return 7.5;
-    if (id.includes('mistral')) return 7.0;
+    // Size-based speed inference (smaller = faster)
+    if (id.match(/\b(1b|3b)\b/)) score += 1.0;
+    else if (id.match(/\b(7b|8b)\b/)) score += 0.5;
+    else if (id.match(/\b(70b|65b|405b)\b/)) score -= 2.0;
+    else if (id.match(/\b(30b|34b|40b)\b/)) score -= 1.0;
     
-    // Slower but powerful
-    if (id.includes('opus') || id.includes('gpt-4.5')) return 5.0;
-    if (id.includes('gpt-4-turbo')) return 6.0;
+    // Architecture indicators
+    if (id.includes('moe') || id.includes('mixture')) score += 0.5;
+    if (id.includes('sonnet')) score = 7.5; // Balanced speed
+    if (id.includes('opus')) score = 5.0; // Slower but powerful
     
-    return 7.0; // default
+    return Math.max(3.0, Math.min(10.0, score));
   }
 
   /**
