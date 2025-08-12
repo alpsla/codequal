@@ -36,39 +36,63 @@ export class SkillCalculator {
     const currentSkills = userProfile.skills || {};
     const previousScore = this.calculateOverallScore(currentSkills);
     
-    // Positive adjustments for resolved issues
+    // Positive adjustments for resolved issues (BUG-010: severity-based points)
     const resolved = comparison.resolvedIssues || comparison.comparison?.resolvedIssues || [];
     if (resolved && resolved.length > 0) {
-      const resolvedByCategory = this.groupByCategory(resolved.map((r: any) => r.issue || r));
+      const resolvedIssues = resolved.map((r: any) => r.issue || r);
+      const resolvedByCategory = this.groupByCategory(resolvedIssues);
       
       Object.entries(resolvedByCategory).forEach(([category, issues]) => {
-        const points = this.calculatePositivePoints(category, issues.length);
+        // Use severity-based calculation (BUG-010 fix)
+        const points = this.calculatePositivePointsBySeverity(issues);
+        
+        // Create detailed reason with severity breakdown
+        const severityCounts: Record<string, number> = {};
+        issues.forEach((issue: any) => {
+          const severity = issue.severity || 'medium';
+          severityCounts[severity] = (severityCounts[severity] || 0) + 1;
+        });
+        
+        const severityDetails = Object.entries(severityCounts)
+          .map(([sev, count]) => `${count} ${sev}`)
+          .join(', ');
+        
         adjustments.push({
           category,
           points,
-          reason: `Fixed ${issues.length} ${category} issue${issues.length > 1 ? 's' : ''}`
+          reason: `Fixed ${issues.length} ${category} issue${issues.length > 1 ? 's' : ''} (${severityDetails})`
         });
         categoryChanges[category] = (categoryChanges[category] || 0) + points;
       });
     }
     
-    // Negative adjustments for new issues
+    // Negative adjustments for new issues (BUG-013: severity-based penalties)
     const newIssues = comparison.newIssues || comparison.comparison?.newIssues || [];
     if (newIssues && newIssues.length > 0) {
       const newByCategory = this.groupByCategory(newIssues);
       
       Object.entries(newByCategory).forEach(([category, issues]) => {
-        const criticalCount = issues.filter((i: any) => i.severity === 'critical').length;
-        const highCount = issues.filter((i: any) => i.severity === 'high').length;
+        // Use severity-based calculation (BUG-013 fix)
+        const penalty = this.calculateNegativePointsBySeverity(issues);
         
-        if (criticalCount > 0 || highCount > 0) {
-          const points = -this.calculateNegativePoints(category, criticalCount, highCount);
+        if (penalty > 0) {
+          // Create detailed reason with severity breakdown
+          const severityCounts: Record<string, number> = {};
+          issues.forEach((issue: any) => {
+            const severity = issue.severity || 'medium';
+            severityCounts[severity] = (severityCounts[severity] || 0) + 1;
+          });
+          
+          const severityDetails = Object.entries(severityCounts)
+            .map(([sev, count]) => `${count} ${sev}`)
+            .join(', ');
+          
           adjustments.push({
             category,
-            points,
-            reason: `Introduced ${criticalCount} critical, ${highCount} high ${category} issues`
+            points: -penalty,  // Negative points
+            reason: `Introduced ${issues.length} ${category} issue${issues.length > 1 ? 's' : ''} (${severityDetails})`
           });
-          categoryChanges[category] = (categoryChanges[category] || 0) + points;
+          categoryChanges[category] = (categoryChanges[category] || 0) - penalty;
         }
       });
     }
@@ -128,47 +152,66 @@ export class SkillCalculator {
   
   /**
    * Calculate positive points for fixing issues
+   * BUG-010 FIX: Use severity-based scoring (+5/+3/+1/+0.5)
    */
   private calculatePositivePoints(category: string, count: number): number {
-    const basePoints: Record<string, number> = {
-      security: 5,
-      performance: 4,
-      codeQuality: 3,
-      architecture: 4,
-      testing: 3,
-      general: 2
+    // This method needs to be refactored to accept severity instead of just count
+    // For now, return a conservative estimate
+    // TODO: Refactor to pass issue severity information
+    return count * 2; // Temporary: average 2 points per resolved issue
+  }
+  
+  /**
+   * Calculate positive points based on severity (BUG-010 implementation)
+   */
+  private calculatePositivePointsBySeverity(issues: any[]): number {
+    const severityPoints: Record<string, number> = {
+      critical: 5,
+      high: 3,
+      medium: 1,
+      low: 0.5
     };
     
-    const base = basePoints[category] || 2;
-    return Math.min(base * count, 20); // Cap at 20 points per category
+    let totalPoints = 0;
+    issues.forEach(issue => {
+      const severity = issue.severity || 'medium';
+      totalPoints += severityPoints[severity] || 1;
+    });
+    
+    return totalPoints;
   }
   
   /**
    * Calculate negative points for introducing issues
+   * BUG-013 FIX: Use new scoring system (-5/-3/-1/-0.5)
    */
   private calculateNegativePoints(category: string, critical: number, high: number): number {
-    const criticalPenalty: Record<string, number> = {
-      security: 10,
-      performance: 8,
-      codeQuality: 5,
-      architecture: 7,
-      testing: 5,
-      general: 5
+    // Old system was category-based, new system is severity-based
+    // This method needs refactoring to accept all severities
+    const criticalPenalty = 5;  // BUG-013: New scoring
+    const highPenalty = 3;       // BUG-013: New scoring
+    
+    return (critical * criticalPenalty) + (high * highPenalty);
+  }
+  
+  /**
+   * Calculate negative points based on severity (BUG-013 implementation)
+   */
+  private calculateNegativePointsBySeverity(issues: any[]): number {
+    const severityPenalties: Record<string, number> = {
+      critical: 5,
+      high: 3,
+      medium: 1,
+      low: 0.5
     };
     
-    const highPenalty: Record<string, number> = {
-      security: 5,
-      performance: 4,
-      codeQuality: 3,
-      architecture: 4,
-      testing: 3,
-      general: 2
-    };
+    let totalPenalty = 0;
+    issues.forEach(issue => {
+      const severity = issue.severity || 'medium';
+      totalPenalty += severityPenalties[severity] || 1;
+    });
     
-    const critPenalty = criticalPenalty[category] || 5;
-    const highPen = highPenalty[category] || 2;
-    
-    return (critical * critPenalty) + (high * highPen);
+    return totalPenalty;
   }
   
   /**
