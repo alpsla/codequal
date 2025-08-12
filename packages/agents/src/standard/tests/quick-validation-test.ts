@@ -92,7 +92,8 @@ class QuickValidator {
       // Import the analysis runner
       const { CompleteAnalysisRunner } = require('../scripts/run-complete-analysis');
       
-      const runner = new CompleteAnalysisRunner();
+      const runner = new CompleteAnalysisRunner({ useMock: false });
+      await runner.init();
       const result = await runner.run({
         repository: 'https://github.com/sindresorhus/ky',
         prNumber: 500,

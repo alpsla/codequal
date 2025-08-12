@@ -342,10 +342,10 @@ export class StandardAgentFactory {
     return new MockSkillProvider();
   }
   
-  static createConfigProvider(): IConfigProvider {
+  static async createConfigProvider(): Promise<IConfigProvider> {
     // Use Supabase provider if credentials are available
     if (process.env.SUPABASE_URL && (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY)) {
-      const { SupabaseConfigProvider } = require('./supabase/supabase-config-provider');
+      const { SupabaseConfigProvider } = await import('./supabase/supabase-config-provider');
       return new SupabaseConfigProvider();
     }
     

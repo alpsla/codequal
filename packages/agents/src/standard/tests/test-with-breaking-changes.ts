@@ -263,7 +263,8 @@ class BreakingChangesValidator {
       }
       
       const { CompleteAnalysisRunner } = require('../scripts/run-complete-analysis');
-      const runner = new CompleteAnalysisRunner();
+      const runner = new CompleteAnalysisRunner({ useMock: true });
+      await runner.init();
       
       const result = await runner.run({
         repository: MOCK_BREAKING_CHANGES_DATA.repositoryUrl,

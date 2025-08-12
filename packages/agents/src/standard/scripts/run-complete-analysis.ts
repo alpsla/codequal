@@ -43,7 +43,7 @@ class CompleteAnalysisRunner {
     } else {
       // Register real DeepWiki API when not using mock
       process.env.USE_DEEPWIKI_MOCK = 'false';
-      this.registerRealDeepWiki();
+      // Note: registerRealDeepWiki will be called in init()
     }
 
     // Create output directory
@@ -53,10 +53,20 @@ class CompleteAnalysisRunner {
     // Initialize services
     const logger = StandardAgentFactory.createLogger();
     this.deepWikiService = createDeepWikiService(logger, options.useMock);
+    
+    // Orchestrator will be initialized in init() method
+  }
+
+  async init() {
+    // Handle async operations
+    if (process.env.USE_DEEPWIKI_MOCK !== 'true') {
+      await this.registerRealDeepWiki();
+    }
 
     // Initialize orchestrator using static methods
+    const logger = StandardAgentFactory.createLogger();
     this.orchestrator = new ComparisonOrchestrator(
-      StandardAgentFactory.createConfigProvider(),
+      await StandardAgentFactory.createConfigProvider(),
       StandardAgentFactory.createSkillProvider(),
       StandardAgentFactory.createDataStore(),
       new MockResearcherAgent(),
@@ -65,11 +75,11 @@ class CompleteAnalysisRunner {
     );
   }
 
-  private registerRealDeepWiki() {
+  private async registerRealDeepWiki() {
     try {
       // Try to import the real DeepWiki API from apps/api
       const apiPath = join(__dirname, '../../../../../apps/api/dist/services/deepwiki-api-manager.js');
-      const { deepWikiApiManager } = require(apiPath);
+      const { deepWikiApiManager } = await import(apiPath);
       
       // Create an adapter that converts the API response to the expected format
       const adapter = {
@@ -144,7 +154,7 @@ class CompleteAnalysisRunner {
       const [, owner, repo] = match;
       
       // Try to use gh CLI to get PR info
-      const { execSync } = require('child_process');
+      const { execSync } = await import('child_process');
       try {
         const result = execSync(`gh pr view ${prNumber} --repo ${owner}/${repo} --json author --jq '.author.login' 2>/dev/null`, 
           { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }
@@ -303,7 +313,8 @@ if (require.main === module) {
   const options = parseArgs();
   const runner = new CompleteAnalysisRunner(options);
   
-  runner.run(options)
+  runner.init()
+    .then(() => runner.run(options))
     .then(() => {
       console.log('\n✅ Analysis complete!');
       process.exit(0);

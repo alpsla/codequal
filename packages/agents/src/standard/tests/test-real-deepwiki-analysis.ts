@@ -29,7 +29,7 @@ async function testRealDeepWikiAnalysis() {
   
   // Initialize orchestrator
   const orchestrator = new ComparisonOrchestrator(
-    StandardAgentFactory.createConfigProvider(),
+    await StandardAgentFactory.createConfigProvider(),
     StandardAgentFactory.createSkillProvider(),
     StandardAgentFactory.createDataStore(),
     new MockResearcherAgent(),
