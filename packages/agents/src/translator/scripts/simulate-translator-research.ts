@@ -19,7 +19,7 @@ import { TranslatorFactory } from '../translator-factory';
 const SIMULATED_RESEARCH_RESULTS: Record<TranslatorRole, Partial<StoredTranslatorConfig>> = {
   [TranslatorRole.API_TRANSLATOR]: {
     provider: 'openai',
-    model: 'gpt-3.5-turbo',
+    model: 'dynamic', // Will be selected dynamically,
     versionId: 'gpt-3.5-turbo-1106',
     capabilities: {
       translationQuality: 8.5,
@@ -38,7 +38,7 @@ const SIMULATED_RESEARCH_RESULTS: Record<TranslatorRole, Partial<StoredTranslato
   
   [TranslatorRole.ERROR_TRANSLATOR]: {
     provider: 'anthropic',
-    model: 'claude-3-sonnet',
+    model: 'dynamic', // Will be selected dynamically,
     versionId: 'claude-3-sonnet-20240229',
     capabilities: {
       translationQuality: 9.2,
@@ -57,7 +57,7 @@ const SIMULATED_RESEARCH_RESULTS: Record<TranslatorRole, Partial<StoredTranslato
   
   [TranslatorRole.DOCS_TRANSLATOR]: {
     provider: 'anthropic',
-    model: 'claude-3-opus',
+    model: 'dynamic', // Will be selected dynamically,
     versionId: 'claude-3-opus-20240229',
     capabilities: {
       translationQuality: 9.8,
@@ -76,7 +76,7 @@ const SIMULATED_RESEARCH_RESULTS: Record<TranslatorRole, Partial<StoredTranslato
   
   [TranslatorRole.UI_TRANSLATOR]: {
     provider: 'anthropic',
-    model: 'claude-3-haiku',
+    model: 'dynamic', // Will be selected dynamically,
     versionId: 'claude-3-haiku-20240307',
     capabilities: {
       translationQuality: 8.2,
@@ -95,7 +95,7 @@ const SIMULATED_RESEARCH_RESULTS: Record<TranslatorRole, Partial<StoredTranslato
   
   [TranslatorRole.SDK_TRANSLATOR]: {
     provider: 'openai',
-    model: 'gpt-4-turbo',
+    model: 'dynamic', // Will be selected dynamically,
     versionId: 'gpt-4-1106-preview',
     capabilities: {
       translationQuality: 9.5,

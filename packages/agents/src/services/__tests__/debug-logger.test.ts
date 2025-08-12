@@ -82,7 +82,7 @@ describe('DebugLogger', () => {
   describe('Log Methods', () => {
     it('should log agent execution details', () => {
       debugLogger.logAgentExecution('test-agent', 'analysis-complete', {
-        config: { model: 'gpt-4', temperature: 0.7 },
+        config: { model: 'dynamic-test', temperature: 0.7 },
         result: { insights: [], suggestions: [] },
         duration: 2500
       });

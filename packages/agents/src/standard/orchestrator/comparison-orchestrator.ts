@@ -90,7 +90,7 @@ export class ComparisonOrchestrator {
             },
             fallback: {
               provider: 'openai',
-              modelId: 'gpt-4-turbo',
+              modelId: 'dynamic', // Will be selected dynamically by the unified model selector,
               temperature: 0.3,
               maxTokens: 4000
             }

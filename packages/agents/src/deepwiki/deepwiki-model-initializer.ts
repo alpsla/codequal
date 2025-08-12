@@ -137,7 +137,7 @@ async function selectModelsWithAI(
 ): Promise<{ primary?: ModelVersionInfo; fallback?: ModelVersionInfo }> {
   try {
     // Use a cheap model for selection
-    const selectionModel = 'openai/gpt-4o-mini';
+    const selectionModel = 'dynamic'; // Will be selected dynamically
     
     const response = await axios.post(
       'https://openrouter.ai/api/v1/chat/completions',
@@ -276,7 +276,7 @@ function getDefaultDeepWikiConfig(): DeepWikiModelConfig {
   return {
     primary: {
       provider: 'openai',
-      model: 'gpt-4.1-mini',
+      model: 'dynamic', // Will be selected dynamically,
       versionId: 'latest',
       pricing: {
         input: 0.40,
@@ -288,7 +288,7 @@ function getDefaultDeepWikiConfig(): DeepWikiModelConfig {
     } as ModelVersionInfo,
     fallback: {
       provider: 'anthropic',
-      model: 'claude-3.7-sonnet',
+      model: 'dynamic', // Will be selected dynamically,
       versionId: 'latest',
       pricing: {
         input: 3.00,

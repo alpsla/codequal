@@ -79,7 +79,7 @@ export const testConfig = {
       role: AgentRole.CODE_QUALITY,
       position: AgentPosition.PRIMARY,
       parameters: {
-        model: 'claude-3-sonnet-20240229'
+        model: 'dynamic-test' // Dynamic model for testing
       }
     },
     {
@@ -88,7 +88,7 @@ export const testConfig = {
       role: AgentRole.CODE_QUALITY,
       position: AgentPosition.SECONDARY,
       parameters: {
-        model: 'gpt-4o-2024-05-13'
+        model: 'dynamic-test' // Dynamic model for testing
       }
     },
     {
@@ -111,7 +111,7 @@ export const testConfig = {
       position: AgentPosition.FALLBACK,
       priority: 2,
       parameters: {
-        model: 'gemini-2.5-pro'
+        model: 'dynamic-test' // Dynamic model for testing
       }
     }
   ]

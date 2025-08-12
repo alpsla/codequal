@@ -38,9 +38,9 @@ export {
 export { ComparisonAgent } from './comparison/comparison-agent';
 export { ComparisonAgentComplete } from './comparison/comparison-agent-complete';
 export { ComparisonAgentStandalone } from './comparison/comparison-agent-standalone';
-export { ReportGeneratorV7Complete as ReportGenerator } from './comparison/report-generator-v7-complete';
+export { ReportGeneratorV7Fixed as ReportGenerator } from './comparison/report-generator-v7-fixed';
 // export { ReportGeneratorV7 } from './comparison/report-generator-v7'; // File doesn't exist
-export { ReportGeneratorV7Complete } from './comparison/report-generator-v7-complete';
+export { ReportGeneratorV7Fixed } from './comparison/report-generator-v7-fixed';
 export { SkillCalculator } from './comparison/skill-calculator';
 
 // Types

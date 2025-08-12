@@ -18,13 +18,13 @@ import {
 const DEFAULT_RESEARCHER_CONFIG: ResearcherSelectionResult = {
   primary: {
     provider: 'openai',
-    model: 'gpt-4o-mini',
+    model: 'dynamic', // Will be selected dynamically,
     versionId: 'latest',
     pricing: { input: 0.15, output: 0.60 }
   },
   fallback: {
     provider: 'anthropic', 
-    model: 'claude-3.5-sonnet',
+    model: 'dynamic', // Will be selected dynamically,
     versionId: 'latest',
     pricing: { input: 3.00, output: 15.00 }
   },

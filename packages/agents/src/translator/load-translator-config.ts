@@ -272,7 +272,7 @@ function getDefaultTranslatorConfigs(): Map<TranslatorRole, StoredTranslatorConf
   const defaults: Record<TranslatorRole, Partial<StoredTranslatorConfig>> = {
     [TranslatorRole.API_TRANSLATOR]: {
       provider: 'openai',
-      model: 'gpt-3.5-turbo',
+      model: 'dynamic', // Will be selected dynamically,
       versionId: 'gpt-3.5-turbo-1106',
       capabilities: {
         translationQuality: 8.5,
@@ -287,7 +287,7 @@ function getDefaultTranslatorConfigs(): Map<TranslatorRole, StoredTranslatorConf
     
     [TranslatorRole.ERROR_TRANSLATOR]: {
       provider: 'anthropic',
-      model: 'claude-3-sonnet',
+      model: 'dynamic', // Will be selected dynamically,
       versionId: 'claude-3-sonnet-20240229',
       capabilities: {
         translationQuality: 9.0,
@@ -302,7 +302,7 @@ function getDefaultTranslatorConfigs(): Map<TranslatorRole, StoredTranslatorConf
     
     [TranslatorRole.DOCS_TRANSLATOR]: {
       provider: 'anthropic',
-      model: 'claude-3-opus',
+      model: 'dynamic', // Will be selected dynamically,
       versionId: 'claude-3-opus-20240229',
       capabilities: {
         translationQuality: 9.8,
@@ -317,7 +317,7 @@ function getDefaultTranslatorConfigs(): Map<TranslatorRole, StoredTranslatorConf
     
     [TranslatorRole.UI_TRANSLATOR]: {
       provider: 'anthropic',
-      model: 'claude-3-haiku',
+      model: 'dynamic', // Will be selected dynamically,
       versionId: 'claude-3-haiku-20240307',
       capabilities: {
         translationQuality: 8.2,
@@ -332,7 +332,7 @@ function getDefaultTranslatorConfigs(): Map<TranslatorRole, StoredTranslatorConf
     
     [TranslatorRole.SDK_TRANSLATOR]: {
       provider: 'openai',
-      model: 'gpt-4-turbo',
+      model: 'dynamic', // Will be selected dynamically,
       versionId: 'gpt-4-1106-preview',
       capabilities: {
         translationQuality: 9.5,

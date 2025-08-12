@@ -71,7 +71,7 @@ Focus on finding:
     // This would use the ResearcherAgent's own model to search the web
     const response = await aiService.call(
       {
-        model: 'claude-3-sonnet-20240229',
+        model: 'dynamic', // Will be selected dynamically,
         provider: 'anthropic'
       },
       {
@@ -270,7 +270,7 @@ function parseDiscoveredModels(content: string): DiscoveredModel[] {
   return [
     {
       provider: 'anthropic',
-      model: 'claude-3.5-sonnet',
+      model: 'dynamic', // Will be selected dynamically,
       version: 'claude-3.5-sonnet-20241022',
       releaseDate: '2024-10-22',
       capabilities: ['code analysis', 'fast response', 'large context'],
@@ -279,7 +279,7 @@ function parseDiscoveredModels(content: string): DiscoveredModel[] {
     },
     {
       provider: 'google',
-      model: 'gemini-2.0-flash',
+      model: 'dynamic', // Will be selected dynamically,
       version: 'gemini-2.0-flash-exp',
       releaseDate: '2024-12',
       capabilities: ['ultra-fast', 'code comprehension', 'cost-effective'],
@@ -288,7 +288,7 @@ function parseDiscoveredModels(content: string): DiscoveredModel[] {
     },
     {
       provider: 'openai',
-      model: 'gpt-4o-mini',
+      model: 'dynamic', // Will be selected dynamically,
       version: 'gpt-4o-mini-2024-07-18',
       releaseDate: '2024-07-18',
       capabilities: ['fast', 'accurate', 'reliable'],
@@ -297,7 +297,7 @@ function parseDiscoveredModels(content: string): DiscoveredModel[] {
     },
     {
       provider: 'openai',
-      model: 'gpt-4o',
+      model: 'dynamic', // Will be selected dynamically,
       version: 'gpt-4o-2024-08-06',
       releaseDate: '2024-08-06',
       capabilities: ['high accuracy', 'code analysis'],

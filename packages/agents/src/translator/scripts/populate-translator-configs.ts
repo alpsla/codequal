@@ -12,31 +12,31 @@ import { TranslatorRole, TRANSLATOR_ROLE_CONFIGS } from '../translator-role-conf
 const TRANSLATOR_CONFIGS = {
   [TranslatorRole.API_TRANSLATOR]: {
     provider: 'openai',
-    model: 'gpt-3.5-turbo',
+    model: 'dynamic', // Will be selected dynamically,
     reason: 'Best balance of speed (45% weight) and JSON preservation for API responses'
   },
   
   [TranslatorRole.ERROR_TRANSLATOR]: {
     provider: 'anthropic',
-    model: 'claude-3-sonnet',
+    model: 'dynamic', // Will be selected dynamically,
     reason: 'Superior clarity (50% weight) and actionability for error messages'
   },
   
   [TranslatorRole.DOCS_TRANSLATOR]: {
     provider: 'anthropic',
-    model: 'claude-3-opus',
+    model: 'dynamic', // Will be selected dynamically,
     reason: 'Highest quality (80% weight) for technical documentation'
   },
   
   [TranslatorRole.UI_TRANSLATOR]: {
     provider: 'anthropic',
-    model: 'claude-3-haiku',
+    model: 'dynamic', // Will be selected dynamically,
     reason: 'Fast and cost-effective (30% cost weight) for UI text'
   },
   
   [TranslatorRole.SDK_TRANSLATOR]: {
     provider: 'openai',
-    model: 'gpt-4-turbo',
+    model: 'dynamic', // Will be selected dynamically,
     reason: 'Best code understanding (70% quality weight) for SDK comments'
   }
 };

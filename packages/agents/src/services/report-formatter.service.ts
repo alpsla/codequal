@@ -422,7 +422,7 @@ export class ReportFormatterService {
 
     try {
       // Use the Standard framework's ReportGeneratorV7Complete directly
-      const { ReportGeneratorV7Complete } = await import('../standard/comparison/report-generator-v7-complete.js');
+      const { ReportGeneratorV7Fixed: ReportGeneratorV7Complete } = await import('../standard/comparison/report-generator-v7-fixed.js');
       
       // Collect all findings from the analysis result
       const allFindings = [

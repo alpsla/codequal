@@ -129,7 +129,7 @@ async function triggerTranslatorResearch() {
       const translatorConfig: StoredTranslatorConfig = {
         role: role as TranslatorRole,
         provider: 'openai', // This would come from actual research results
-        model: 'gpt-3.5-turbo', // This would come from actual research results
+        model: 'dynamic', // Will be selected dynamically by unified selector
         versionId: 'gpt-3.5-turbo-1106',
         capabilities: {
           translationQuality: 8.5,

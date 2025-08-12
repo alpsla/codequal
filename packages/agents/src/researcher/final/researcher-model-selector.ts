@@ -236,7 +236,7 @@ export function parseResearcherSelection(response: string): {
 export const DEFAULT_RESEARCHER_CONFIG: ResearcherSelectionResult = {
   primary: {
     provider: 'openai',
-    model: 'gpt-4.1-nano',
+    model: 'dynamic', // Will be selected dynamically,
     versionId: 'latest',
     pricing: {
       input: 0.10,
@@ -248,7 +248,7 @@ export const DEFAULT_RESEARCHER_CONFIG: ResearcherSelectionResult = {
   },
   fallback: {
     provider: 'openai',
-    model: 'gpt-4.1-mini',
+    model: 'dynamic', // Will be selected dynamically,
     versionId: 'latest',
     pricing: {
       input: 0.40,
@@ -268,7 +268,7 @@ export const DEFAULT_RESEARCHER_CONFIG: ResearcherSelectionResult = {
     primary: {
       id: 'openai/gpt-4.1-nano',
       provider: 'openai',
-      model: 'gpt-4.1-nano',
+      model: 'dynamic', // Will be selected dynamically,
       inputCost: 0.10,
       outputCost: 0.40,
       avgCost: 0.25,
@@ -281,7 +281,7 @@ export const DEFAULT_RESEARCHER_CONFIG: ResearcherSelectionResult = {
     fallback: {
       id: 'openai/gpt-4.1-mini',
       provider: 'openai',
-      model: 'gpt-4.1-mini',
+      model: 'dynamic', // Will be selected dynamically,
       inputCost: 0.40,
       outputCost: 1.60,
       avgCost: 1.00,

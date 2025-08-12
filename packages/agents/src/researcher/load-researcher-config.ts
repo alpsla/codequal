@@ -58,7 +58,7 @@ export async function loadResearcherConfigFromVectorDB(
     
     const defaultConfig: StoredResearcherConfig = {
       provider: 'google',
-      model: 'gemini-2.5-flash',
+      model: 'dynamic', // Will be selected dynamically,
       versionId: 'gemini-2.5-flash-20250603',
       capabilities: {
         codeQuality: 8.5,

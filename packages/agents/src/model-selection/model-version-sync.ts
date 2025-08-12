@@ -55,14 +55,16 @@ export class ModelVersionSync {
   }
   
   private initializeDefaultModels() {
+    // These are fallback models only used when Supabase is unavailable
+    // In production, all models are selected dynamically through the unified model selector
     const defaultModels: ModelVersion[] = [
       {
-        id: 'gpt-4o',
-        provider: 'openai',
-        model: 'gpt-4o',
-        model_id: 'gpt-4o',
-        version: '2024-08-06',
-        versionId: '2024-08-06',
+        id: 'dynamic-quality',
+        provider: 'dynamic',
+        model: 'dynamic-quality',
+        model_id: 'dynamic-quality',
+        version: 'latest',
+        versionId: 'latest',
         capabilities: {
           codeQuality: 9.5,
           speed: 8.5,
@@ -72,8 +74,8 @@ export class ModelVersionSync {
           function_calling: true
         },
         pricing: {
-          input: 0.0025, // $2.50 per million
-          output: 0.010  // $10 per million
+          input: 0.0025,
+          output: 0.010
         },
         contextWindow: 128000,
         costPerMillion: 2.5,
@@ -82,12 +84,12 @@ export class ModelVersionSync {
         deprecated: false
       },
       {
-        id: 'gpt-4o-mini',
-        provider: 'openai',
-        model: 'gpt-4o-mini',
-        model_id: 'gpt-4o-mini',
-        version: '2024-07-18',
-        versionId: '2024-07-18',
+        id: 'dynamic-balanced',
+        provider: 'dynamic',
+        model: 'dynamic-balanced',
+        model_id: 'dynamic-balanced',
+        version: 'latest',
+        versionId: 'latest',
         capabilities: {
           codeQuality: 8.0,
           speed: 9.0,
@@ -97,8 +99,8 @@ export class ModelVersionSync {
           function_calling: true
         },
         pricing: {
-          input: 0.00015, // $0.15 per million
-          output: 0.0006   // $0.60 per million
+          input: 0.00015,
+          output: 0.0006
         },
         contextWindow: 128000,
         costPerMillion: 0.15,
@@ -107,12 +109,12 @@ export class ModelVersionSync {
         deprecated: false
       },
       {
-        id: 'claude-3-5-sonnet',
-        provider: 'anthropic',
-        model: 'claude-3-5-sonnet',
-        model_id: 'claude-3-5-sonnet',
-        version: '20241022',
-        versionId: '20241022',
+        id: 'dynamic-premium',
+        provider: 'dynamic',
+        model: 'dynamic-premium',
+        model_id: 'dynamic-premium',
+        version: 'latest',
+        versionId: 'latest',
         capabilities: {
           codeQuality: 9.8,
           speed: 8.0,
@@ -122,8 +124,8 @@ export class ModelVersionSync {
           function_calling: true
         },
         pricing: {
-          input: 0.003,  // $3 per million
-          output: 0.015  // $15 per million
+          input: 0.003,
+          output: 0.015
         },
         contextWindow: 200000,
         costPerMillion: 3.0,
@@ -235,14 +237,14 @@ export class ModelVersionSync {
       return languageSpecificModels.sort((a, b) => b.performanceScore - a.performanceScore)[0];
     }
     
-    // Fallback to default models based on size category
+    // Fallback to dynamic models based on size category
     const sizeToModel: Record<string, string> = {
-      'small': 'gpt-4o-mini',
-      'medium': 'gpt-4o',
-      'large': 'claude-3-5-sonnet'
+      'small': 'dynamic-balanced',
+      'medium': 'dynamic-quality',
+      'large': 'dynamic-premium'
     };
     
-    const fallbackModelId = sizeToModel[sizeCategory] || 'gpt-4o';
+    const fallbackModelId = sizeToModel[sizeCategory] || 'dynamic-quality';
     this.logger?.debug(`No specific model for ${language}/${sizeCategory}, using fallback: ${fallbackModelId}`);
     
     return this.models.get(fallbackModelId);

@@ -2,7 +2,7 @@
  * Test Basic Report Generation - Report Only
  */
 
-import { ReportGeneratorV7Complete as ReportGenerator } from '../../comparison/report-generator-v7-complete';
+import { ReportGeneratorV7Fixed as ReportGenerator } from '../../comparison/report-generator-v7-fixed';
 import { mkdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
 
@@ -604,7 +604,7 @@ export function validatePassword(password: string): {
     };
 
     const reportGen = new ReportGenerator();
-    const report = await reportGen.generateMarkdownReport(comparison as any);
+    const report = reportGen.generateReport(comparison as any);
     
     // Save report
     writeFileSync(join(this.reportsDir, 'critical-pr-report.md'), report);
@@ -718,7 +718,7 @@ const handleScroll = useInfiniteScroll({
     };
 
     const reportGen = new ReportGenerator();
-    const report = await reportGen.generateMarkdownReport(comparison as any);
+    const report = reportGen.generateReport(comparison as any);
     
     // Save report
     writeFileSync(join(this.reportsDir, 'good-pr-report.md'), report);

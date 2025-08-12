@@ -11,7 +11,7 @@ import {
   Issue,
   IssueComparison 
 } from '../types/analysis-types';
-import { ReportGeneratorV7Complete } from './report-generator-v7-complete';
+import { ReportGeneratorV7Fixed as ReportGeneratorV7Complete } from './report-generator-v7-fixed';
 import { ModelSelectionService } from '../services/model-selection-service';
 
 export class ComparisonAgentStandalone implements ComparisonAgentInterface {

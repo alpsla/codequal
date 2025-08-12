@@ -226,7 +226,7 @@ export class TranslatorDiscoveryService {
         },
         pricing: { input: 0.05, output: 0.15 },
         reason: `Gemini 2.5 Flash excels at JSON preservation (${weights.qualityWeight}% weight) with ultra-fast response times under 300ms (${weights.speedWeight}% weight) and very low cost (${weights.costWeight}% weight)`,
-        previousModel: { provider: 'google', model: 'gemini-1.5-flash' }
+        previousModel: { provider: 'dynamic', model: 'dynamic' } // Will be selected dynamically
       },
       
       [TranslatorRole.ERROR_TRANSLATOR]: {
@@ -242,7 +242,7 @@ export class TranslatorDiscoveryService {
         },
         pricing: { input: 3.0, output: 15.0 },
         reason: `Claude 4 Sonnet provides superior clarity and actionability (${weights.qualityWeight}% weight) with enhanced reasoning for solution generation in error messages`,
-        previousModel: { provider: 'anthropic', model: 'claude-3.5-sonnet' }
+        previousModel: { provider: 'dynamic', model: 'dynamic' } // Will be selected dynamically
       },
       
       [TranslatorRole.DOCS_TRANSLATOR]: {
@@ -258,7 +258,7 @@ export class TranslatorDiscoveryService {
         },
         pricing: { input: 1.0, output: 3.0 },
         reason: `Gemini 2.5 Pro offers highest quality (${weights.qualityWeight}% weight) with 2M token context window for comprehensive documentation translation`,
-        previousModel: { provider: 'google', model: 'gemini-1.5-pro' }
+        previousModel: { provider: 'dynamic', model: 'dynamic' } // Will be selected dynamically
       },
       
       [TranslatorRole.UI_TRANSLATOR]: {
@@ -274,7 +274,7 @@ export class TranslatorDiscoveryService {
         },
         pricing: { input: 0.25, output: 1.25 },
         reason: `Claude 4 Haiku delivers sub-200ms response times (${weights.speedWeight}% weight) with excellent conciseness for UI text and competitive pricing (${weights.costWeight}% weight)`,
-        previousModel: { provider: 'anthropic', model: 'claude-3-haiku' }
+        previousModel: { provider: 'dynamic', model: 'dynamic' } // Will be selected dynamically
       },
       
       [TranslatorRole.SDK_TRANSLATOR]: {
@@ -290,7 +290,7 @@ export class TranslatorDiscoveryService {
         },
         pricing: { input: 0.2, output: 0.4 },
         reason: `DeepSeek Coder V4 excels at code understanding (${weights.qualityWeight}% weight) with perfect syntax preservation and multi-file context awareness`,
-        previousModel: { provider: 'deepseek', model: 'deepseek-coder-v3' }
+        previousModel: { provider: 'dynamic', model: 'dynamic' } // Will be selected dynamically
       }
     };
     

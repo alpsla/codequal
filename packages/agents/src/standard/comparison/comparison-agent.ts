@@ -18,8 +18,8 @@ import {
   Issue,
   PRMetadata
 } from '../types/analysis-types';
-import { ReportGeneratorV7Complete } from './report-generator-v7-complete';
-import { ReportGeneratorV7Fixed } from './report-generator-v7-fixed';
+// Removed import for archived ReportGeneratorV7Complete
+import { ReportGeneratorV7EnhancedComplete } from './report-generator-v7-enhanced-complete';
 import { SkillCalculator } from './skill-calculator';
 import { ILogger } from '../services/interfaces/logger.interface';
 import { EnhancedIssueMatcher, IssueDuplicator } from '../services/issue-matcher-enhanced';
@@ -30,16 +30,16 @@ import { EnhancedIssueMatcher, IssueDuplicator } from '../services/issue-matcher
 export class ComparisonAgent implements IReportingComparisonAgent {
   private config: ComparisonConfig;
   private modelConfig: any;
-  private reportGenerator: ReportGeneratorV7Complete;
-  private reportGeneratorFixed: ReportGeneratorV7Fixed;
+  // Removed unused reportGenerator field
+  private reportGeneratorEnhanced: ReportGeneratorV7EnhancedComplete;
   private skillCalculator: SkillCalculator;
   
   constructor(
     private logger?: ILogger,
     private modelService?: any // TODO: Define IModelService interface
   ) {
-    this.reportGenerator = new ReportGeneratorV7Complete();
-    this.reportGeneratorFixed = new ReportGeneratorV7Fixed();
+    // Removed unused reportGenerator initialization
+    this.reportGeneratorEnhanced = new ReportGeneratorV7EnhancedComplete();
     this.skillCalculator = new SkillCalculator();
     this.config = this.getDefaultConfig();
   }
@@ -182,7 +182,7 @@ export class ComparisonAgent implements IReportingComparisonAgent {
     // Use the fixed report generator instead of the template-based one
     // It expects the comparison result directly
     
-    console.log('ComparisonAgent - Using fixed report generator with:', {
+    console.log('ComparisonAgent - Using V7 Fixed report generator with:', {
       hasPrMetadata: !!(comparison as any).prMetadata,
       prMetadata: (comparison as any).prMetadata,
       scanDuration: (comparison as any).scanDuration,
@@ -190,7 +190,7 @@ export class ComparisonAgent implements IReportingComparisonAgent {
       resolvedIssuesCount: comparison.resolvedIssues?.length || 0
     });
     
-    return this.reportGeneratorFixed.generateReport(comparison);
+    return this.reportGeneratorEnhanced.generateReport(comparison);
   }
 
   /**
@@ -198,7 +198,7 @@ export class ComparisonAgent implements IReportingComparisonAgent {
    */
   generatePRComment(comparison: ComparisonResult): string {
     // Use the fixed report generator for PR comments too
-    return this.reportGeneratorFixed.generatePRComment(comparison);
+    return this.reportGeneratorEnhanced.generatePRComment(comparison);
   }
 
   /**

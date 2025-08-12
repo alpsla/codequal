@@ -102,7 +102,7 @@ export class ResearcherAgent {
     const selection = {
       primary: {
         provider: 'openai',
-        model: 'gpt-4',
+        model: 'dynamic', // Will be selected dynamically by unified selector,
         pricing: {
           input: 0.03,
           output: 0.06

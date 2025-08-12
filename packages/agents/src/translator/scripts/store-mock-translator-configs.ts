@@ -49,7 +49,7 @@ const MOCK_TRANSLATOR_CONFIGS: Record<TranslatorRole, StoredTranslatorConfig> = 
   [TranslatorRole.API_TRANSLATOR]: {
     role: TranslatorRole.API_TRANSLATOR,
     provider: 'google',
-    model: 'gemini-2.0-flash-exp',
+    model: 'dynamic', // Will be selected dynamically,
     versionId: 'gemini-2.0-flash-exp-2025-01',
     capabilities: {
       translationQuality: 9.0,
@@ -78,7 +78,7 @@ const MOCK_TRANSLATOR_CONFIGS: Record<TranslatorRole, StoredTranslatorConfig> = 
   [TranslatorRole.ERROR_TRANSLATOR]: {
     role: TranslatorRole.ERROR_TRANSLATOR,
     provider: 'anthropic',
-    model: 'claude-3-5-sonnet',
+    model: 'dynamic', // Will be selected dynamically,
     versionId: 'claude-3-5-sonnet-20241022',
     capabilities: {
       translationQuality: 9.5,
@@ -107,7 +107,7 @@ const MOCK_TRANSLATOR_CONFIGS: Record<TranslatorRole, StoredTranslatorConfig> = 
   [TranslatorRole.DOCS_TRANSLATOR]: {
     role: TranslatorRole.DOCS_TRANSLATOR,
     provider: 'google',
-    model: 'gemini-1.5-pro',
+    model: 'dynamic', // Will be selected dynamically,
     versionId: 'gemini-1.5-pro-002',
     capabilities: {
       translationQuality: 9.8,
@@ -136,7 +136,7 @@ const MOCK_TRANSLATOR_CONFIGS: Record<TranslatorRole, StoredTranslatorConfig> = 
   [TranslatorRole.UI_TRANSLATOR]: {
     role: TranslatorRole.UI_TRANSLATOR,
     provider: 'openai',
-    model: 'gpt-4o-mini',
+    model: 'dynamic', // Will be selected dynamically,
     versionId: 'gpt-4o-mini-2024-07-18',
     capabilities: {
       translationQuality: 8.5,
