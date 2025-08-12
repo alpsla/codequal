@@ -1,16 +1,16 @@
-# Model Version Management System
+# Dynamic Model Selection System
 
-This document describes the centralized model version management system used in CodeQual to handle AI model versions, selection, and configuration.
+This document describes the fully dynamic model selection system used in CodeQual. The system has been completely redesigned to eliminate ALL hardcoded models and leverage OpenRouter for real-time model discovery and selection.
 
 ## Overview
 
-The Model Version Management System provides a centralized approach to managing AI models across the application. It ensures consistent model versions are used throughout the system, from PR reviews to repository analysis, while making it easy to:
+The Dynamic Model Selection System provides a fully automated approach to managing AI models across the application. It discovers available models from OpenRouter in real-time and intelligently selects optimal models based on context. The system:
 
-1. Add new models or update existing ones
-2. Configure optimal model selection based on repository context
-3. Manage model capabilities, pricing, and other metadata
-4. Handle model version deprecation and replacement
-5. Ensure consistent calibration across the system
+1. Dynamically discovers ALL models from OpenRouter (no hardcoded models)
+2. Performs context-aware model selection based on programming language and repository size
+3. Implements ultra-strict freshness scoring (models older than 6 months score 0/10)
+4. Stores discovered model configurations in Supabase for fast access
+5. Ensures consistent model selection across all agent systems
 
 ## Core Components
 
@@ -18,191 +18,192 @@ The system consists of the following key components:
 
 ### 1. ModelVersionSync
 
-The central registry for all model version information. It maintains the canonical list of models with their capabilities, pricing, and metadata. Key features:
+The OpenRouter discovery and synchronization engine. It dynamically fetches available models from OpenRouter and maintains fresh model data. Key features:
 
-- Centralized model registry with detailed metadata
-- Methods for registering, updating, and deprecating models
-- Model standardization to ensure consistent version usage
-- Optimal model selection based on repository context
+- Real-time model discovery from OpenRouter API
+- Context-aware model selection based on language and repository size
+- Ultra-strict freshness scoring (6-month cutoff)
+- Automatic model configuration generation for all language/size combinations
+- Supabase storage for fast model configuration retrieval
 
 ```typescript
-// Example: Getting canonical model information
-const modelInfo = modelVersionSync.getCanonicalVersion('anthropic', 'claude-3-7-sonnet');
+// Example: Dynamic model discovery and selection
+const modelVersionSync = new ModelVersionSync(logger, supabaseClient);
+await modelVersionSync.syncModels(); // Discover models from OpenRouter
 
-// Example: Finding optimal model for a repository context
-const optimalModel = modelVersionSync.findOptimalModel({
-  language: 'typescript',
-  sizeCategory: 'medium',
-  tags: ['web_app']
-});
+// Example: Get optimal model for specific context
+const optimalModel = await modelVersionSync.getModelForLanguage('typescript', 'medium');
+
+// Example: Generate all possible configurations
+const allConfigs = await modelVersionSync.generateAllConfigurations();
 ```
 
-### 2. Model Provider Plugins
+### 2. Dynamic Model Evaluator
 
-Provider-specific plugins that register models with the central registry. Each provider implements the `ModelProviderPlugin` interface:
+Real-time model scoring and ranking engine that evaluates models based on multiple criteria:
 
 ```typescript
-interface ModelProviderPlugin {
-  provider: string;
-  registerModels(): ModelVersionInfo[];
-  validateModelConfig?(config: ModelVersionInfo): boolean;
+interface ModelEvaluationCriteria {
+  language?: string;          // Programming language context
+  repositorySize?: string;    // Repository size category (small/medium/large)
+  taskType?: string;         // Type of task (analysis/generation/review)
+  requiresLatestModels?: boolean; // Whether to prioritize newest models
 }
 ```
 
-The system includes plugins for major providers:
-- OpenAI (GPT models)
-- Anthropic (Claude models)
-- Google (Gemini models)
-- DeepSeek (Coder models)
+The evaluator considers:
+- **Freshness**: Ultra-strict 6-month cutoff (0/10 for older models)
+- **Language optimization**: Better scores for language-specific models
+- **Cost efficiency**: Balances performance vs cost
+- **Context window**: Matches required context size
+- **Provider reputation**: Weights based on provider reliability
 
-### 3. ModelConfigurationFactory
+### 3. Context-Aware Model Retrieval
 
-Factory class that generates different types of model configurations from the canonical registry:
-
-- Repository model configurations
-- DeepWiki-compatible configurations
-- Agent-compatible configurations
-- Calibration model configurations
+Intelligent model selection system that adapts to specific use cases:
 
 ```typescript
-// Example: Creating configuration for a repository context
-const repoConfig = configFactory.createRepositoryModelConfig({
+// Example: Get model optimized for specific context
+const contextAwareModel = await getContextAwareModel({
   language: 'python',
-  sizeCategory: 'large',
-  tags: ['ml_project']
+  repositorySize: 'large',
+  task: 'code_analysis',
+  requiresLatestModels: true
 });
 
-// Example: Creating DeepWiki configuration
-const deepWikiConfig = configFactory.createDeepWikiModelConfig(modelInfo);
+// Example: DeepWiki model selection
+const deepWikiModel = await getDeepWikiOptimalModel({
+  queryComplexity: 'high',
+  responseLength: 'detailed'
+});
 ```
 
-## Using the System
+## Using the Dynamic System
 
-### Adding a New Model
+### Automatic Model Discovery
 
-To add a new model to the system:
-
-1. Create or update a provider plugin:
+The system automatically discovers new models from OpenRouter - no manual configuration required:
 
 ```typescript
-// In GoogleModelProvider.ts
-registerModels(): ModelVersionInfo[] {
-  return [
-    // Existing models...
-    
-    // New model
-    {
-      provider: 'google',
-      model: 'gemini-3.0-pro',
-      versionId: 'gemini-3.0-pro-20250701',
-      releaseDate: '2025-07-01',
-      description: 'Latest Google Gemini model with enhanced capabilities',
-      capabilities: {
-        codeQuality: 9.0,
-        speed: 8.5,
-        contextWindow: 150000,
-        reasoning: 9.2,
-        detailLevel: 8.9
-      },
-      pricing: {
-        input: 8.00,
-        output: 24.00
-      },
-      tier: ModelTier.PREMIUM,
-      preferredFor: ['python', 'java', 'large_repositories']
-    }
-  ];
-}
+// Run model discovery and sync
+const modelSync = new ModelVersionSync(logger, supabaseClient);
+await modelSync.syncModels();
+
+// Models are automatically evaluated and configured for all language/size combinations
+const allConfigs = await modelSync.generateAllConfigurations();
+console.log(`Generated ${allConfigs.length} model configurations`);
 ```
 
-2. Register the provider with the registry:
+### Triggering Research for New Models
+
+When new models become available on OpenRouter, trigger research to generate optimal configurations:
 
 ```typescript
-// In your initialization code
-const registry = new ModelProviderRegistry(logger, modelVersionSync);
-registry.registerProvider(new GoogleModelProvider());
+// Run comprehensive research for all language/size combinations
+await runContextualResearch({
+  languages: ['javascript', 'typescript', 'python', 'java', 'go', 'rust'],
+  sizes: ['small', 'medium', 'large'],
+  researchAllCombinations: true
+});
 ```
 
-### Updating Model Configurations
+### Real-Time Model Selection
 
-When model configurations need to be updated:
+The system automatically selects optimal models based on context:
 
 ```typescript
-// Update a model's version or capabilities
-modelVersionSync.updateModelVersion({
-  provider: 'anthropic',
-  model: 'claude-3-7-sonnet',
-  versionId: 'claude-3-7-sonnet-20250301', // Updated version
-  capabilities: {
-    // Updated capabilities
-    codeQuality: 9.3,
-    speed: 7.8,
-    contextWindow: 200000,
-    reasoning: 9.6,
-    detailLevel: 9.4
+// Get the best model for a specific language and repository size
+const bestModel = await modelSync.getModelForLanguage('typescript', 'medium');
+
+// Models are automatically evaluated based on:
+// - Freshness (6-month ultra-strict cutoff)
+// - Language optimization scores
+// - Cost-performance balance
+// - Context window requirements
+```
+
+### Monitoring Model Performance
+
+Track model performance and freshness:
+
+```typescript
+// Check model statistics
+const stats = await modelSync.getModelStats();
+console.log(`Total models: ${stats.totalModels}`);
+console.log(`Fresh models (< 6 months): ${stats.freshModels}`);
+console.log(`Configurations generated: ${stats.configurationsGenerated}`);
+
+// View model freshness scores
+const allModels = modelSync.getAllModels();
+allModels.forEach(model => {
+  console.log(`${model.id}: freshness ${model.getFreshnessScore()}/10`);
+});
+```
+
+### Integration with Agent Systems
+
+All agents automatically use the dynamic model selection:
+
+```typescript
+// Comparison Agent - automatically gets optimal model
+const comparisonAgent = new ComparisonAgent({
+  // No model configuration needed - uses dynamic selection
+  repositoryContext: { language: 'python', size: 'large' }
+});
+
+// Researcher Service - leverages context-aware selection
+const researcher = new ProductionResearcherService({
+  // Automatically selects best models for research tasks
+  enableDynamicModelSelection: true
+});
+```
+
+## Integration with Research System
+
+The dynamic system integrates seamlessly with the research pipeline:
+
+```typescript
+// Research system automatically discovers and evaluates new models
+const researchRunner = new ScheduledResearchRunner({
+  modelSync: modelVersionSync,
+  researchConfig: {
+    runOnNewModels: true,
+    evaluateAllLanguages: true,
+    updateConfigurations: true
   }
 });
+
+// Automatically generate configurations when new models are discovered
+await researchRunner.runComprehensiveResearch();
 ```
 
-### Deprecating Models
+## Key Benefits of Dynamic System
 
-When a model should be deprecated:
+This fully dynamic approach offers significant advantages:
 
-```typescript
-// Deprecate a model and optionally specify a replacement
-modelVersionSync.deprecateModel(
-  'openai', 
-  'gpt-4-turbo',
-  'openai/gpt-4o' // Replacement model key
-);
-```
+1. **Zero Hardcoding**: No hardcoded models anywhere in the system
+2. **Always Fresh**: Automatic discovery of new models from OpenRouter
+3. **Ultra-Strict Quality**: 6-month freshness cutoff ensures only current models
+4. **Context-Aware**: Intelligent selection based on programming language and repository size
+5. **Self-Maintaining**: Automatically updates as new models become available
+6. **Performance Optimized**: Configurations stored in Supabase for fast retrieval
+7. **Research-Driven**: Continuously evaluates and improves model selections
 
-### Generating Model Configurations
+## Architecture Highlights
 
-Generate comprehensive model configurations:
+- **~198 Configurations Generated**: Comprehensive coverage of all language/size combinations
+- **Real-Time Discovery**: OpenRouter integration for immediate model availability
+- **Freshness Scoring**: Ultra-strict 6-month cutoff (0/10 for older models)
+- **Cost-Performance Balance**: Intelligent scoring considering both quality and cost
+- **Supabase Storage**: Fast configuration retrieval for production workloads
 
-```typescript
-// Generate configurations for all language/size combinations
-const completeConfigs = configFactory.generateCompleteModelConfigs();
+## Migration from Hardcoded System
 
-// Update static configurations if needed
-configFactory.updateStaticModelConfigs();
-```
+The system has been completely migrated from hardcoded models:
 
-## Integration with Calibration
+- **Before**: Static model configurations scattered across files
+- **After**: Single dynamic system discovering models from OpenRouter
+- **Impact**: Zero hardcoded models remain in any agent or service
+- **Result**: Always using the latest, most optimal models for each context
 
-The system seamlessly integrates with the calibration process:
-
-1. Calibration models are derived from the central registry:
-```typescript
-const calibrationModels = configFactory.getCalibrationModels();
-```
-
-2. Calibration service uses the configuration factory:
-```typescript
-const calibrationService = new RepositoryCalibrationService(
-  logger,
-  deepWikiClient,
-  configStore,
-  configFactory
-);
-```
-
-## Benefits
-
-This centralized approach offers several benefits:
-
-1. **Single Source of Truth**: All model configurations derive from a central registry
-2. **Easy Updates**: Adding or updating models requires changes in just one place
-3. **Consistent Versioning**: Ensures the same model versions are used throughout the system
-4. **Optimized Selection**: Intelligent model selection based on repository context
-5. **Extensible**: New providers can be added through the plugin system
-6. **Future-Proof**: Model deprecation and replacement handling built in
-
-## Best Practices
-
-1. Always use the ModelVersionSync to get model configurations rather than hardcoding
-2. Use provider plugins to register new models
-3. Use the ModelConfigurationFactory to generate specific configurations
-4. Update model metadata (capabilities, pricing) when new information is available
-5. Deprecate models properly rather than removing them to maintain backward compatibility
+This represents a fundamental shift to a self-maintaining, intelligent model selection system that adapts to the rapidly evolving AI landscape.
