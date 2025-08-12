@@ -31,8 +31,8 @@ interface AnalysisOptions {
 }
 
 class CompleteAnalysisRunner {
-  private orchestrator: ComparisonOrchestrator;
-  private deepWikiService: IDeepWikiService;
+  private orchestrator!: ComparisonOrchestrator;
+  private deepWikiService!: IDeepWikiService;
   private outputDir: string;
 
   constructor(options: AnalysisOptions) {

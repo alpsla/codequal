@@ -3,7 +3,7 @@
  */
 
 export { ComparisonAgent } from './comparison-agent';
-export { ReportGeneratorV7Fixed as ReportGenerator } from './report-generator-v7-fixed';
+export { ReportGeneratorV7EnhancedComplete as ReportGenerator } from './report-generator-v7-enhanced-complete';
 export { SkillCalculator } from './skill-calculator';
 export type {
   IComparisonAgent,

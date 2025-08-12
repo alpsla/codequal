@@ -19,6 +19,7 @@ import { DeepWikiCacheIntegration } from './deepwiki-cache-integration';
 import { RedisCacheService, createCacheService } from '@codequal/core/services/cache/RedisCacheService';
 import { generateEnhancedMockAnalysis } from './deepwiki-mock-enhanced';
 import * as monitoringModule from './monitoring-enhancements';
+import { LocationEnhancer } from '@codequal/agents/standard/services/location-enhancer';
 
 const execAsync = promisify(exec);
 const logger = createLogger('deepwiki-api-manager');
@@ -128,10 +129,12 @@ export class DeepWikiApiManager {
   private modelSelector: UnifiedModelSelector | null = null;
   private prContextService: PRContextService;
   private cacheIntegration: DeepWikiCacheIntegration | null = null;
+  private locationEnhancer: LocationEnhancer;
   
   constructor() {
     this.modelVersionSync = new ModelVersionSync(logger);
     this.prContextService = new PRContextService();
+    this.locationEnhancer = new LocationEnhancer();
     // Model selector will be initialized on first use
     // Cache integration will be initialized on first use
   }
@@ -326,7 +329,7 @@ export class DeepWikiApiManager {
       const analysis = this.parseApiResponse(apiResponse);
       
       // Convert to our format
-      const result = this.convertToDeepWikiFormat(analysis, repositoryUrl, analysisId, startTime);
+      const result = await this.convertToDeepWikiFormat(analysis, repositoryUrl, analysisId, startTime);
       
       // Add model metadata
       result.metadata.model_used = selectedModel;
@@ -710,14 +713,14 @@ Focus on quality over quantity. Be concise.`;
   /**
    * Convert parsed analysis to our DeepWiki format
    */
-  private convertToDeepWikiFormat(
+  private async convertToDeepWikiFormat(
     analysis: ParsedAnalysis,
     repositoryUrl: string,
     analysisId: string,
     startTime: number
-  ): DeepWikiAnalysisResult {
-    // Convert vulnerabilities to issues
-    const issues: DeepWikiIssue[] = (analysis.vulnerabilities || []).map(vuln => {
+  ): Promise<DeepWikiAnalysisResult> {
+    // Convert vulnerabilities to issues first with basic location info
+    const rawIssues: DeepWikiIssue[] = (analysis.vulnerabilities || []).map(vuln => {
       // Get location information - handle both string and object formats
       let file = 'unknown';
       let line = 0;
@@ -753,9 +756,42 @@ Focus on quality over quantity. Be concise.`;
         cvss: vuln.cvss || (vuln as any).CVSS,
         impact: vuln.impact,
         evidence: vuln.evidence,
-        remediation: vuln.remediation
+        remediation: vuln.remediation,
+        // Add fields needed for location enhancement
+        title: vuln.title,
+        description: vuln.title // Use title as description if not provided
       };
     });
+
+    // Enhance issues with accurate line numbers using LocationEnhancer
+    let issues = rawIssues;
+    if (process.env.ENABLE_LOCATION_ENHANCEMENT !== 'false') {
+      try {
+        logger.info('Enhancing issue locations with LocationEnhancer...');
+        const enhancementResult = await this.locationEnhancer.enhanceIssuesWithLocations(
+          rawIssues,
+          repositoryUrl
+        );
+        
+        if (enhancementResult.enhanced > 0) {
+          logger.info(`Enhanced ${enhancementResult.enhanced} issue locations, ${enhancementResult.failed} failed`);
+          // Map enhanced issues back to DeepWikiIssue format
+          issues = enhancementResult.issues.map((enhancedIssue, idx) => {
+            const originalIssue = rawIssues[idx] || rawIssues.find(raw => raw.message === enhancedIssue.title);
+            return {
+              ...originalIssue,
+              file: enhancedIssue.location?.file || originalIssue?.file || 'unknown',
+              line: enhancedIssue.location?.line || originalIssue?.line || 0
+            } as DeepWikiIssue;
+          });
+        } else {
+          logger.warn('Location enhancement did not improve any issue locations');
+        }
+      } catch (error) {
+        logger.warn('Failed to enhance issue locations:', error as Error);
+        // Continue with original issues if enhancement fails
+      }
+    }
 
     // Convert recommendations
     const recommendations: DeepWikiRecommendation[] = (analysis.recommendations || []).map(rec => ({

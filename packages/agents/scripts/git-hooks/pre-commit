@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+
+# Pre-commit Git Hook for CodeQual Regression Testing
+# 
+# This hook runs comprehensive regression tests before allowing commits
+# to ensure critical functionality is not broken.
+#
+# To install:
+#   cp packages/agents/scripts/git-hooks/pre-commit .git/hooks/pre-commit
+#   chmod +x .git/hooks/pre-commit
+
+echo "🔍 CodeQual: Running pre-commit regression validation..."
+echo "=================================================="
+
+# Get current working directory  
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT"
+
+# Check if regression test suite exists
+REGRESSION_SCRIPT="$REPO_ROOT/packages/agents/scripts/run-pre-commit-regression.js"
+
+if [ ! -f "$REGRESSION_SCRIPT" ]; then
+    echo "⚠️  Regression test script not found at: $REGRESSION_SCRIPT"
+    echo "   Skipping regression tests (not recommended)"
+    echo "   Run: npm run setup:regression-tests to install"
+    exit 0
+fi
+
+# Run the regression test suite
+echo "🚀 Executing comprehensive regression tests..."
+node "$REGRESSION_SCRIPT"
+
+REGRESSION_EXIT_CODE=$?
+
+# Handle results
+if [ $REGRESSION_EXIT_CODE -eq 0 ]; then
+    echo ""
+    echo "✅ All regression tests passed!"
+    echo "   ✓ Core functionality preserved" 
+    echo "   ✓ Dynamic model selection working"
+    echo "   ✓ Scoring system (5/3/1/0.5) intact"
+    echo "   ✓ Report generator v7 functional"
+    echo "   ✓ Multi-language support verified"
+    echo ""
+    echo "🎉 Commit approved - proceeding..."
+    exit 0
+else
+    echo ""
+    echo "❌ REGRESSION TESTS FAILED!"
+    echo "=================================================="
+    echo ""
+    echo "🚨 CRITICAL: Your changes have broken existing functionality"
+    echo ""
+    echo "📋 Next steps:"
+    echo "   1. Review the test failures above"
+    echo "   2. Fix the broken functionality" 
+    echo "   3. Run tests locally: npm run test:regression"
+    echo "   4. Commit again once tests pass"
+    echo ""
+    echo "🔧 Quick fixes:"
+    echo "   • npm run test:regression:debug    (detailed analysis)"
+    echo "   • npm run test:regression:fix      (auto-fix if possible)"
+    echo "   • npm run test:regression:core     (run core tests only)"
+    echo ""
+    echo "⚠️  DO NOT use --no-verify to bypass these tests!"
+    echo "    Broken functionality affects the entire team."
+    echo ""
+    echo "💡 Need help? Check: packages/agents/BUG-017-REGRESSION-SUITE.md"
+    echo ""
+    exit 1
+fi

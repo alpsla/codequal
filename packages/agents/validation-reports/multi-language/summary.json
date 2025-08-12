@@ -1,0 +1,83 @@
+{
+  "timestamp": "2025-08-12T15:07:34.252Z",
+  "results": {
+    "total": 9,
+    "passed": 0,
+    "failed": 9,
+    "warnings": 0
+  },
+  "details": [
+    {
+      "repository": "gin-gonic/gin",
+      "language": "Go",
+      "size": "medium",
+      "passed": false,
+      "errors": 1,
+      "warnings": 0
+    },
+    {
+      "repository": "hashicorp/terraform",
+      "language": "Go",
+      "size": "large",
+      "passed": false,
+      "errors": 1,
+      "warnings": 0
+    },
+    {
+      "repository": "elixir-lang/elixir",
+      "language": "Elixir",
+      "size": "medium",
+      "passed": false,
+      "errors": 1,
+      "warnings": 0
+    },
+    {
+      "repository": "crystal-lang/crystal",
+      "language": "Crystal",
+      "size": "medium",
+      "passed": false,
+      "errors": 1,
+      "warnings": 0
+    },
+    {
+      "repository": "nim-lang/Nim",
+      "language": "Nim",
+      "size": "medium",
+      "passed": false,
+      "errors": 1,
+      "warnings": 0
+    },
+    {
+      "repository": "sindresorhus/is-odd",
+      "language": "JavaScript",
+      "size": "small",
+      "passed": false,
+      "errors": 1,
+      "warnings": 0
+    },
+    {
+      "repository": "sindresorhus/is-even",
+      "language": "JavaScript",
+      "size": "small",
+      "passed": false,
+      "errors": 1,
+      "warnings": 0
+    },
+    {
+      "repository": "kubernetes/kubernetes",
+      "language": "Go",
+      "size": "large",
+      "passed": false,
+      "errors": 1,
+      "warnings": 0
+    },
+    {
+      "repository": "rust-lang/rust",
+      "language": "Rust",
+      "size": "large",
+      "passed": false,
+      "errors": 1,
+      "warnings": 0
+    }
+  ]
+}

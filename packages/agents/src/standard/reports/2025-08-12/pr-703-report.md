@@ -3,9 +3,9 @@
 **Repository:** https://github.com/sindresorhus/ky  
 **PR:** #703 - Code Changes  
 **Author:** sindresorhus (@sindresorhus)  
-**Analysis Date:** 2025-08-12T02:22:36.773Z  
+**Analysis Date:** 2025-08-12T10:54:20.744Z  
 **Model Used:** mock/MOCK-MODEL-NOT-FROM-SUPABASE  
-**Scan Duration:** 0.0 seconds
+**Scan Duration:** 41.3 seconds
 
 ---
 
@@ -13,23 +13,23 @@
 
 **Confidence:** 94%
 
-This PR introduces 1 high severity issue(s) that must be resolved before merge. Pre-existing repository issues don't block this PR but impact skill scores.
+This PR introduces 1 high severity issue(s) that must be resolved before merge.
 
 ---
 
 ## Executive Summary
 
-**Overall Score: 78/100 (Grade: C)**
+**Overall Score: 52/100 (Grade: F)**
 
-This PR introduces critical/high severity issues that block approval. Additionally, 3 pre-existing issues remain unaddressed, resulting in skill score penalties.
+This PR introduces critical/high severity issues that block approval. Additionally, 1 pre-existing issues remain unaddressed, resulting in skill score penalties.
 
 ### Key Metrics
-- **Critical Issues Resolved:** 1 ✅
+- **Critical Issues Resolved:** 0 ✅
 - **New Critical/High Issues:** 1 🚨 **[BLOCKING]**
-- **Pre-existing Issues:** 3 (1 high, 1 medium, 1 low) ⚠️ **[Not blocking, but impacts scores]**
-- **Overall Score Impact:** +3 points (was 75, now 78)
+- **Pre-existing Issues:** 1 (1 low) ⚠️ **[Not blocking, but impacts scores]**
+- **Overall Score Impact:** -23 points (was 75, now 52)
 - **Risk Level:** MEDIUM
-- **Estimated Review Time:** 30 minutes
+- **Estimated Review Time:** 80 minutes
 - **Files Changed:** 5
 - **Lines Added/Removed:** +100 / -50
 
@@ -38,13 +38,13 @@ This PR introduces critical/high severity issues that block approval. Additional
 NEW PR ISSUES (BLOCKING):
 Critical: ░░░░░░░░░░ 0
 High:     █░░░░░░░░░ 1 - MUST FIX
-Medium:   ██░░░░░░░░ 2 (acceptable)
-Low:      █░░░░░░░░░ 1 (acceptable)
+Medium:   ████░░░░░░ 4 (acceptable)
+Low:      █████████░ 9 (acceptable)
 
 EXISTING REPOSITORY ISSUES (NOT BLOCKING):
 Critical: ░░░░░░░░░░ 0 unfixed
-High:     █░░░░░░░░░ 1 unfixed
-Medium:   █░░░░░░░░░ 1 unfixed
+High:     ░░░░░░░░░░ 0 unfixed
+Medium:   ░░░░░░░░░░ 0 unfixed
 Low:      █░░░░░░░░░ 1 unfixed
 ```
 
@@ -52,55 +52,93 @@ Low:      █░░░░░░░░░ 1 unfixed
 
 ## 1. Security Analysis
 
-### Score: 95/100 (Grade: A)
+### Score: 70/100 (Grade: C)
 
 **Score Breakdown:**
-- Vulnerability Prevention: 100/100
-- Authentication & Authorization: 100/100
-- Data Protection: 100/100
-- Input Validation: 100/100
-- Security Testing: 100/100
+- Vulnerability Prevention: 85/100
+- Authentication & Authorization: 70/100
+- Data Protection: 70/100
+- Input Validation: 70/100
+- Security Testing: 70/100
 
-### Found 1 Security Issues
+### Found 6 Security Issues
 
 #### HIGH (1)
-1. **Missing CSRF Protection**
-   **File:** src/api/endpoints.ts:78:6
+1. **Potential Prototype Pollution**
+   **File:** source/utils/options.ts:138:66
    **Impact:** Significant security vulnerability
-   **Fix:** Add CSRF middleware to protect state-changing endpoints
+   **Fix:** Validate and sanitize all user inputs before processing.
+
+#### MEDIUM (2)
+1. **Inadequate Error Handling**
+   **File:** test/hooks.ts:261:55
+   **Impact:** Potential security vulnerability
+   **Fix:** Implement comprehensive error handling for all network requests.
+2. **Lack of Input Validation**
+   **File:** test/browser.ts:365:52
+   **Impact:** Potential security vulnerability
+   **Fix:** Add input validation to prevent injection attacks.
+
+#### LOW (3)
+1. **Lack of HTTPS Enforcement**
+   **File:** test/fetch.ts:220:3
+   **Impact:** Minor security concern
+   **Fix:** Ensure all network requests are made over HTTPS.
+2. **Potential Open Redirect**
+   **File:** test/browser.ts:52:67
+   **Impact:** Minor security concern
+   **Fix:** Validate and sanitize URLs to prevent open redirects.
+3. **Insufficient Rate Limiting**
+   **File:** test/retry.ts:166:75
+   **Impact:** Minor security concern
+   **Fix:** Implement rate limiting to prevent abuse of network requests.
 
 ---
 
 ## 2. Performance Analysis
 
-### Score: 95/100 (Grade: A)
+### Score: 80/100 (Grade: B)
 
 **Score Breakdown:**
-- Response Time: 100/100
-- Throughput: 100/100
-- Resource Efficiency: 100/100
-- Scalability: 100/100
-- Reliability: 100/100
+- Response Time: 68/100
+- Throughput: 68/100
+- Resource Efficiency: 68/100
+- Scalability: 68/100
+- Reliability: 68/100
 
-### Found 1 Performance Issues
+### Found 4 Performance Issues
 
 #### MEDIUM (1)
-1. **N+1 Query Problem**
-   **File:** src/api/products.ts:156:8
+1. **Possible Memory Leak**
+   **File:** test/memory-leak.ts:156:61
    **Impact:** Moderate performance impact
-   **Fix:** Replace loop queries with batch loading
+   **Fix:** Ensure proper cleanup of all resources and event listeners.
+
+#### LOW (3)
+1. **Redundant Code in Tests**
+   **File:** test/retry.ts:437:57
+   **Impact:** Minor performance impact
+   **Fix:** Remove or refactor redundant test code to improve execution time.
+2. **Excessive Logging**
+   **File:** test/main.ts:290:45
+   **Impact:** Minor performance impact
+   **Fix:** Reduce logging levels in production to improve performance.
+3. **Unoptimized Asset Loading**
+   **File:** test/browser.ts:457:18
+   **Impact:** Minor performance impact
+   **Fix:** Implement lazy loading for non-critical assets.
 
 ---
 
 ## 3. Code Quality Analysis
 
-### Score: 97/100 (Grade: A)
+### Score: 88/100 (Grade: B)
 
 **Score Breakdown:**
-- Maintainability: 100/100
+- Maintainability: 80/100
 - Test Coverage: 71/100 (Decreased from 82%)
 - Documentation: 100/100
-- Code Complexity: 100/100
+- Code Complexity: 75/100
 - Standards Compliance: 100/100
 
 ### Major Code Changes
@@ -108,34 +146,45 @@ Low:      █░░░░░░░░░ 1 unfixed
 - 📏 **150 lines changed** (+100 / -50)
 - 🧪 **Test coverage dropped** 82% → 71% (-11%)
 
-### Found 1 Code Quality Issues
+### Found 4 Code Quality Issues
 
-#### LOW (1)
-1. **Console Log in Production Code**
-   - Location: src/api/auth.ts:234:4
-   - Fix: Replace with proper logging
+#### MEDIUM (1)
+1. **Complex Logic in Constants**
+   - Location: source/core/constants.ts:337:37
+   - Fix: Simplify logic and break down complex expressions into smaller functions.
+
+#### LOW (3)
+1. **Inconsistent Error Messages**
+   - Location: test/hooks.ts:152:23
+   - Fix: Standardize error messages for better debugging and maintenance.
+2. **Use of Deprecated APIs**
+   - Location: source/core/constants.ts:468:28
+   - Fix: Update code to use modern, supported APIs.
+3. **Hardcoded Configuration Values**
+   - Location: test/helpers/index.ts:309:15
+   - Fix: Externalize configuration values to improve flexibility.
 
 ---
 
 ## 4. Architecture Analysis
 
-### Score: 97/100 (Grade: A)
+### Score: 100/100 (Grade: A)
 
 **Score Breakdown:**
-- Design Patterns: 88/100
-- Modularity: 92/100
-- Scalability Design: 86/100
-- Resilience: 74/100
-- API Design: 82/100
+- Design Patterns: 94/100
+- Modularity: 96/100
+- Scalability Design: 93/100
+- Resilience: 87/100
+- API Design: 91/100
 
 ### Architecture Achievements
-- ⚠️ 1 architectural concerns identified
+- ✅ Clean architecture maintained
 
 ---
 
 ## 5. Dependencies Analysis
 
-### Score: 92/100 (Grade: A)
+### Score: 100/100 (Grade: A)
 
 **Score Breakdown:**
 - Security Vulnerabilities: 100/100
@@ -144,7 +193,7 @@ Low:      █░░░░░░░░░ 1 unfixed
 - Bundle Size: 100/100
 
 ### Dependency Issues
-- ⚠️ 1 dependency issues found
+- ✅ All dependencies are secure and up-to-date
 
 ---
 
@@ -152,35 +201,40 @@ Low:      █░░░░░░░░░ 1 unfixed
 
 ### ⚠️ High Issues (1)
 
-#### PR-HIGH-SECURITY-001: Missing CSRF Protection
-**File:** src/api/endpoints.ts:78:6  
+#### PR-HIGH-SECURITY-001: Potential Prototype Pollution
+**File:** source/utils/options.ts:389:25  
 **Impact:** Significant security or performance impact
 **Skill Impact:** SECURITY -3
 
 **Required Fix:**
 ```typescript
-// TODO: Add CSRF middleware to protect state-changing endpoints
+// TODO: Validate and sanitize all user inputs before processing.
 ```
 
 ---
 
-### 🟡 Medium Issues (2)
+### 🟡 Medium Issues (4)
 
-1. **N+1 Query Problem** - src/api/products.ts:156:8
-2. **Outdated Dependency** - package.json:24:5
+1. **Inadequate Error Handling** - test/hooks.ts:92:72
+2. **Possible Memory Leak** - test/memory-leak.ts:181:38
+3. **Complex Logic in Constants** - source/core/constants.ts:414:43
+4. **Lack of Input Validation** - test/browser.ts:176:12
 
-### 🟢 Low Issues (1)
+### 🟢 Low Issues (9)
 
-1. **Console Log in Production Code** - src/api/auth.ts:234:4
+1. **Redundant Code in Tests** - test/retry.ts:319:64
+2. **Inconsistent Error Messages** - test/hooks.ts:81:47
+3. **Use of Deprecated APIs** - source/core/constants.ts:467:19
+4. **Lack of HTTPS Enforcement** - test/fetch.ts:27:31
+5. **Excessive Logging** - test/main.ts:92:36
+6. **Hardcoded Configuration Values** - test/helpers/index.ts:274:55
+7. **Potential Open Redirect** - test/browser.ts:451:52
+8. **Unoptimized Asset Loading** - test/browser.ts:494:5
+9. **Insufficient Rate Limiting** - test/retry.ts:253:34
 
 ## Repository Issues (NOT BLOCKING)
 
 *These pre-existing issues don't block the PR but impact skill scores and should be addressed as technical debt.*
-
-### ⚠️ High Repository Issues (1)
-**Score Impact:** -3 points
-
-1. **SQL Injection Vulnerability** - src/api/users.ts:45:12 (5 months old)
 
 ## 8. Educational Insights & Recommendations
 
@@ -213,9 +267,9 @@ Based on the code quality issues found, focus on:
 
 ### Developer Performance: sindresorhus (@sindresorhus)
 
-**Current Skill Score: 66.0/100 (D)**
+**Current Skill Score: 61.3/100 (D)**
 - Previous Score: 75/100
-- Score Change: -9.0 points
+- Score Change: -13.8 points
 - Trend: ↓↓
 
 ### Skill Score Calculation Breakdown
@@ -225,23 +279,23 @@ Based on the code quality issues found, focus on:
 | **New Issues Introduced** | | | |
 | - Critical Issues | -5 pts each | 0 × 5 | -0 |
 | - High Issues | -3 pts each | 1 × 3 | -3 |
-| - Medium Issues | -1.5 pts each | 2 × 1.5 | -3 |
-| - Low Issues | -0.5 pts each | 1 × 0.5 | -0.5 |
+| - Medium Issues | -1.5 pts each | 4 × 1.5 | -6 |
+| - Low Issues | -0.5 pts each | 9 × 0.5 | -4.5 |
 | **Pre-existing Issues Not Fixed** | | | |
 | - Critical Repository Issues | -2.5 pts each | 0 × 2.5 | -0.0 |
-| - High Repository Issues | -1.5 pts each | 1 × 1.5 | -1.5 |
-| - Medium Repository Issues | -0.75 pts each | 1 × 0.75 | -0.8 |
+| - High Repository Issues | -1.5 pts each | 0 × 1.5 | -0.0 |
+| - Medium Repository Issues | -0.75 pts each | 0 × 0.75 | -0.0 |
 | - Low Repository Issues | -0.25 pts each | 1 × 0.25 | -0.3 |
-| **Total Impact** | | | **-9.0** |
+| **Total Impact** | | | **-13.8** |
 
 ### Skills by Category
 
 | Category | Score | Grade | Trend | Issues |
 |----------|-------|-------|-------|--------|
-| Security | 90/100 | A | ↓ | 1 |
-| Performance | 90/100 | A | ↓ | 1 |
-| Code Quality | 90/100 | A | ↓ | 1 |
-| Architecture | 90/100 | A | ↓ | 1 |
+| Security | 40/100 | F | ↓ | 6 |
+| Performance | 60/100 | D | ↓ | 4 |
+| Code Quality | 60/100 | D | ↓ | 4 |
+| Architecture | 100/100 | A | → | 0 |
 
 ---
 
@@ -249,15 +303,15 @@ Based on the code quality issues found, focus on:
 
 ### Risk Assessment
 - **Security Risk:** MEDIUM
-- **Performance Impact:** MEDIUM
+- **Performance Impact:** HIGH
 - **Stability Risk:** MEDIUM
 - **Compliance Risk:** MEDIUM
 
 ### Estimated Impact
 - **Deployment Readiness:** ❌ Not Ready
 - **Customer Impact:** Medium Risk
-- **Technical Debt Added:** 8 hours
-- **Required Fix Time:** 5 hours
+- **Technical Debt Added:** 28 hours
+- **Required Fix Time:** 11 hours
 
 ---
 
@@ -266,12 +320,9 @@ Based on the code quality issues found, focus on:
 ### 🚨 Immediate Actions Required
 
 #### High Issues (This Week - BLOCKING)
-1. **[PR-HIGH-1]** Missing CSRF Protection - src/api/endpoints.ts:78:6
+1. **[PR-HIGH-1]** Potential Prototype Pollution - source/utils/options.ts:88:24
 
 ### 📋 Technical Debt (Repository Issues - Not Blocking)
-
-#### High Repository Issues (Q3 Planning)
-1. SQL Injection Vulnerability (12 months old)
 
 ---
 
@@ -285,16 +336,15 @@ This PR cannot proceed with 0 new critical and 1 new high severity issues. Pre-e
 
 **NEW Blocking Issues (Must Fix):**
 - 🚨 0 Critical: None
-- 🚨 1 High: Missing CSRF Protection
+- 🚨 1 High: Potential Prototype Pollution
 
 **Pre-existing Repository Issues (Not blocking, but penalize scores):**
-- ⚠️ 3 total: 0 critical, 1 high, 1 medium, 1 low
+- ⚠️ 1 total: 0 critical, 0 high, 0 medium, 1 low
 - 📅 Ages range from 3-12 months
-- 💰 Skill penalty: -2.5 points total
+- 💰 Skill penalty: -0.3 points total
 
 **Positive Achievements:**
-- ✅ Fixed 1 critical issues
-- ✅ Resolved 1 total issues
+- ✅ Resolved 14 total issues
 
 **Required Actions:**
 1. Fix ALL new critical and high issues
@@ -303,7 +353,7 @@ This PR cannot proceed with 0 new critical and 1 new high severity issues. Pre-e
 4. Security review before resubmission
 
 **Developer Performance:** 
-sindresorhus (@sindresorhus)'s score dropped from 75 to 69.5 points. The penalty for leaving 3 pre-existing issues unfixed (-2.5 points) should motivate addressing technical debt.
+sindresorhus (@sindresorhus)'s score dropped from 75 to 71.8 points. The penalty for leaving 1 pre-existing issues unfixed (-0.3 points) should motivate addressing technical debt.
 
 **Next Steps:**
 1. Fix all NEW blocking issues
@@ -317,12 +367,12 @@ sindresorhus (@sindresorhus)'s score dropped from 75 to 69.5 points. The penalty
 
 | Category | Before | After | Change | Trend | Grade |
 |----------|--------|-------|--------|-------|-------|
-| Security | 75/100 | 71/100 | -4 | ↓ | C |
-| Performance | 80/100 | 65/100 | -15 | ↓↓ | D |
-| Code Quality | 78/100 | 76/100 | -2 | ↓ | C |
+| Security | 75/100 | 51/100 | -24 | ↓ | F |
+| Performance | 80/100 | 20/100 | -60 | ↓↓ | F |
+| Code Quality | 78/100 | 70/100 | -8 | ↓ | C |
 | Architecture | 72/100 | 92/100 | +20 | ↑↑ | A |
-| Dependencies | 82/100 | 70/100 | -12 | ↓↓ | C |
-| **Overall** | **74/100** | **75/100** | **1** | **↑** | **C** |
+| Dependencies | 82/100 | 82/100 | 0 | → | B |
+| **Overall** | **74/100** | **63/100** | **-11** | **↓** | **D** |
 
 
 ---

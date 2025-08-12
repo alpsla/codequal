@@ -1,0 +1,169 @@
+{
+  "repository_url": "https://github.com/sindresorhus/ky",
+  "analysis_id": "18cc541e-ed85-44d2-8173-c039e01c485f",
+  "issues": [
+    {
+      "type": "security",
+      "severity": "high",
+      "category": "Security",
+      "message": "Missing Input Validation",
+      "file": "source/utils/options.ts",
+      "line": 0,
+      "suggestion": "Ensure all inputs are validated to prevent injection attacks.",
+      "remediation": "Ensure all inputs are validated to prevent injection attacks."
+    },
+    {
+      "type": "security",
+      "severity": "high",
+      "category": "Security",
+      "message": "Inadequate Error Handling",
+      "file": "source/core/constants.ts",
+      "line": 0,
+      "suggestion": "Implement comprehensive error handling to prevent sensitive data exposure.",
+      "remediation": "Implement comprehensive error handling to prevent sensitive data exposure."
+    },
+    {
+      "type": "performance",
+      "severity": "medium",
+      "category": "Performance",
+      "message": "Potential Memory Leak",
+      "file": "test/memory-leak.ts",
+      "line": 0,
+      "suggestion": "Ensure proper resource cleanup after requests.",
+      "remediation": "Ensure proper resource cleanup after requests."
+    },
+    {
+      "type": "security",
+      "severity": "medium",
+      "category": "Security",
+      "message": "Hardcoded Sensitive Information",
+      "file": "package.json",
+      "line": 0,
+      "suggestion": "Avoid hardcoding sensitive information like emails in the source code.",
+      "remediation": "Avoid hardcoding sensitive information like emails in the source code."
+    },
+    {
+      "type": "maintainability",
+      "severity": "medium",
+      "category": "Code Quality",
+      "message": "Inconsistent Error Messaging",
+      "file": "test/hooks.ts",
+      "line": 0,
+      "suggestion": "Standardize error messages across the codebase for better debugging.",
+      "remediation": "Standardize error messages across the codebase for better debugging."
+    },
+    {
+      "type": "performance",
+      "severity": "medium",
+      "category": "Performance",
+      "message": "Excessive Use of Promises",
+      "file": "test/retry.ts",
+      "line": 0,
+      "suggestion": "Optimize promise usage to reduce overhead.",
+      "remediation": "Optimize promise usage to reduce overhead."
+    },
+    {
+      "type": "security",
+      "severity": "low",
+      "category": "Security",
+      "message": "Lack of Rate Limiting",
+      "file": "source/core/constants.ts",
+      "line": 0,
+      "suggestion": "Implement rate limiting to mitigate brute force attacks.",
+      "remediation": "Implement rate limiting to mitigate brute force attacks."
+    },
+    {
+      "type": "maintainability",
+      "severity": "low",
+      "category": "Code Quality",
+      "message": "Redundant Code",
+      "file": "test/helpers/index.ts",
+      "line": 0,
+      "suggestion": "Remove unused code to improve maintainability.",
+      "remediation": "Remove unused code to improve maintainability."
+    },
+    {
+      "type": "maintainability",
+      "severity": "low",
+      "category": "Code Quality",
+      "message": "Magic Numbers",
+      "file": "source/core/constants.ts",
+      "line": 0,
+      "suggestion": "Replace magic numbers with named constants for clarity.",
+      "remediation": "Replace magic numbers with named constants for clarity."
+    },
+    {
+      "type": "maintainability",
+      "severity": "low",
+      "category": "Code Quality",
+      "message": "Inconsistent Naming Conventions",
+      "file": "test/headers.ts",
+      "line": 0,
+      "suggestion": "Ensure consistent naming conventions throughout the code.",
+      "remediation": "Ensure consistent naming conventions throughout the code."
+    },
+    {
+      "type": "maintainability",
+      "severity": "low",
+      "category": "Code Quality",
+      "message": "Missing Documentation",
+      "file": "source/utils/options.ts",
+      "line": 0,
+      "suggestion": "Add comments and documentation for complex functions.",
+      "remediation": "Add comments and documentation for complex functions."
+    },
+    {
+      "type": "security",
+      "severity": "low",
+      "category": "Security",
+      "message": "Lack of HTTPS Enforcement",
+      "file": "source/utils/options.ts",
+      "line": 0,
+      "suggestion": "Ensure all requests enforce HTTPS.",
+      "remediation": "Ensure all requests enforce HTTPS."
+    },
+    {
+      "type": "maintainability",
+      "severity": "low",
+      "category": "Code Quality",
+      "message": "Use of Deprecated APIs",
+      "file": "test/browser.ts",
+      "line": 0,
+      "suggestion": "Update deprecated APIs to their latest versions.",
+      "remediation": "Update deprecated APIs to their latest versions."
+    },
+    {
+      "type": "performance",
+      "severity": "low",
+      "category": "Performance",
+      "message": "Inefficient Loop Constructs",
+      "file": "source/utils/options.ts",
+      "line": 0,
+      "suggestion": "Optimize loop constructs for better performance.",
+      "remediation": "Optimize loop constructs for better performance."
+    },
+    {
+      "type": "other",
+      "severity": "low",
+      "category": "Dependency",
+      "message": "Outdated Dependencies",
+      "file": "package.json",
+      "line": 0,
+      "suggestion": "Regularly update dependencies to their latest versions.",
+      "remediation": "Regularly update dependencies to their latest versions."
+    }
+  ],
+  "recommendations": [],
+  "scores": {
+    "overall": 70,
+    "security": 65,
+    "performance": 75,
+    "maintainability": 70
+  },
+  "metadata": {
+    "analyzed_at": "2025-08-12T12:24:20.568Z",
+    "duration_ms": 18122,
+    "files_analyzed": 0,
+    "model_used": "openai/gpt-4o"
+  }
+}

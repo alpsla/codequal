@@ -422,7 +422,7 @@ export class ReportFormatterService {
 
     try {
       // Use the Standard framework's ReportGeneratorV7Complete directly
-      const { ReportGeneratorV7Fixed: ReportGeneratorV7Complete } = await import('../standard/comparison/report-generator-v7-fixed.js');
+      const { ReportGeneratorV7EnhancedComplete: ReportGeneratorV7Complete } = await import('../standard/comparison/report-generator-v7-enhanced-complete.js');
       
       // Collect all findings from the analysis result
       const allFindings = [
@@ -490,7 +490,7 @@ export class ReportFormatterService {
 
       // Generate the report using the template
       const reportGenerator = new ReportGeneratorV7Complete();
-      const generatedReport = reportGenerator.generateReport(comparisonResult);
+      const generatedReport = await reportGenerator.generateReport(comparisonResult);
 
       // Parse the markdown report to extract the standard report structure
       const reportId = `report_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;

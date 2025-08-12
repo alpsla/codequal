@@ -6,12 +6,29 @@ import {
 } from '../types/analysis-types';
 
 /**
+ * CRITICAL SCORING CONSTANTS - DO NOT MODIFY
+ * These values are locked and tested by golden standards
+ * Any change will break compatibility and cause regression
+ */
+const CRITICAL_POINTS = 5;      // Was 20, fixed to 5
+const HIGH_POINTS = 3;          // Was 10, fixed to 3
+const MEDIUM_POINTS = 1;        // Was 5, fixed to 1
+const LOW_POINTS = 0.5;         // Was 2, fixed to 0.5
+const NEW_USER_BASE_SCORE = 50; // Was 100, fixed to 50
+const CODE_QUALITY_BASE = 75;   // Was 100, fixed to 75
+
+/**
  * V7 Enhanced Complete Report Generator
  * Matches the exact structure from critical-pr-report.md template
  */
 export class ReportGeneratorV7EnhancedComplete {
+  private skillProvider?: any; // ISkillProvider interface from orchestrator
   
-  generateReport(comparison: ComparisonResult): string {
+  constructor(skillProvider?: any) {
+    this.skillProvider = skillProvider;
+  }
+  
+  async generateReport(comparison: ComparisonResult): Promise<string> {
     // Extract data
     const newIssues = this.extractNewIssues(comparison);
     const resolvedIssues = this.extractResolvedIssues(comparison);
@@ -68,7 +85,7 @@ export class ReportGeneratorV7EnhancedComplete {
     report += this.generateEducationalInsights(newIssues);
     
     // 10. Individual & Team Skills Tracking
-    report += this.generateSkillsTracking(newIssues, unchangedIssues, prMetadata);
+    report += await this.generateSkillsTracking(newIssues, unchangedIssues, resolvedIssues, prMetadata);
     
     // 11. Business Impact Analysis
     report += this.generateBusinessImpact(newIssues, resolvedIssues);
@@ -414,7 +431,34 @@ Low:      ${this.generateBar(unchangedIssues.filter(i => i.severity === 'low').l
   
   private generateCodeQualityAnalysis(newIssues: Issue[], resolvedIssues: Issue[], comparison: ComparisonResult): string {
     const qualityIssues = newIssues.filter(i => this.isCodeQualityIssue(i));
-    const score = Math.max(0, 100 - qualityIssues.length * 3);
+    const resolvedQualityIssues = resolvedIssues.filter(i => this.isCodeQualityIssue(i));
+    
+    // Calculate score using proper scoring system
+    const baseScore = CODE_QUALITY_BASE;
+    let deductions = 0;
+    
+    // Apply deductions for new issues
+    qualityIssues.forEach(issue => {
+      switch(issue.severity) {
+        case 'critical': deductions += CRITICAL_POINTS; break;
+        case 'high': deductions += HIGH_POINTS; break;
+        case 'medium': deductions += MEDIUM_POINTS; break;
+        case 'low': deductions += LOW_POINTS; break;
+      }
+    });
+    
+    // Add points for resolved issues
+    let additions = 0;
+    resolvedQualityIssues.forEach(issue => {
+      switch(issue.severity) {
+        case 'critical': additions += CRITICAL_POINTS; break;
+        case 'high': additions += HIGH_POINTS; break;
+        case 'medium': additions += MEDIUM_POINTS; break;
+        case 'low': additions += LOW_POINTS; break;
+      }
+    });
+    
+    const score = Math.max(0, Math.min(100, baseScore - deductions + additions));
     const grade = this.getGrade(score);
     
     // Group quality issues by severity
@@ -679,59 +723,152 @@ Based on the code quality issues found, focus on:
 `;
   }
   
-  private generateSkillsTracking(newIssues: Issue[], unchangedIssues: Issue[], prMetadata: any): string {
+  private async generateSkillsTracking(newIssues: Issue[], unchangedIssues: Issue[], resolvedIssues: Issue[], prMetadata: any): Promise<string> {
     const author = prMetadata.author || 'Unknown';
-    const newPenalty = this.calculateSkillPenalty(newIssues);
     
-    // Calculate repository issues penalty based on severity
+    // Get previous score (50 for new users)
+    const previousScore = await this.getUserPreviousScore(author) || NEW_USER_BASE_SCORE;
+    
+    // Calculate penalties for new issues
+    const prCritical = newIssues.filter(i => i.severity === 'critical').length;
+    const prHigh = newIssues.filter(i => i.severity === 'high').length;
+    const prMedium = newIssues.filter(i => i.severity === 'medium').length;
+    const prLow = newIssues.filter(i => i.severity === 'low').length;
+    
+    const prCriticalPenalty = prCritical * CRITICAL_POINTS;
+    const prHighPenalty = prHigh * HIGH_POINTS;
+    const prMediumPenalty = prMedium * MEDIUM_POINTS;
+    const prLowPenalty = prLow * LOW_POINTS;
+    const totalPenalty = prCriticalPenalty + prHighPenalty + prMediumPenalty + prLowPenalty;
+    
+    // Calculate bonuses for resolved issues (positive scoring)
+    const resolvedCritical = resolvedIssues.filter(i => i.severity === 'critical').length;
+    const resolvedHigh = resolvedIssues.filter(i => i.severity === 'high').length;
+    const resolvedMedium = resolvedIssues.filter(i => i.severity === 'medium').length;
+    const resolvedLow = resolvedIssues.filter(i => i.severity === 'low').length;
+    
+    const resolvedCriticalBonus = resolvedCritical * CRITICAL_POINTS;
+    const resolvedHighBonus = resolvedHigh * HIGH_POINTS;
+    const resolvedMediumBonus = resolvedMedium * MEDIUM_POINTS;
+    const resolvedLowBonus = resolvedLow * LOW_POINTS;
+    const totalBonus = resolvedCriticalBonus + resolvedHighBonus + resolvedMediumBonus + resolvedLowBonus;
+    
+    // Calculate repository issues penalty
     const repoCritical = unchangedIssues.filter(i => i.severity === 'critical').length;
     const repoHigh = unchangedIssues.filter(i => i.severity === 'high').length;
     const repoMedium = unchangedIssues.filter(i => i.severity === 'medium').length;
     const repoLow = unchangedIssues.filter(i => i.severity === 'low').length;
     
-    const repoCriticalPenalty = repoCritical * 2.5;  // Half of new issue penalty
-    const repoHighPenalty = repoHigh * 1.5;           // Half of new issue penalty
-    const repoMediumPenalty = repoMedium * 0.75;      // Half of new issue penalty
-    const repoLowPenalty = repoLow * 0.25;            // Half of new issue penalty
-    const unchangedPenalty = repoCriticalPenalty + repoHighPenalty + repoMediumPenalty + repoLowPenalty;
+    const repoCriticalPenalty = repoCritical * CRITICAL_POINTS;
+    const repoHighPenalty = repoHigh * HIGH_POINTS;
+    const repoMediumPenalty = repoMedium * MEDIUM_POINTS;
+    const repoLowPenalty = repoLow * LOW_POINTS;
+    const repoTotalPenalty = repoCriticalPenalty + repoHighPenalty + repoMediumPenalty + repoLowPenalty;
     
-    const totalPenalty = newPenalty + unchangedPenalty;
-    const previousScore = 75;
-    const newScore = Math.max(0, previousScore - totalPenalty);
+    // Calculate net change and new score
+    const netChange = totalBonus - totalPenalty - repoTotalPenalty;
+    const newScore = Math.max(0, Math.min(100, previousScore + netChange));
+    
+    // Store the new score for future reference
+    await this.storeUserScore(author, newScore);
+    
+    const trend = netChange < -10 ? '↓↓' : netChange < 0 ? '↓' : netChange > 10 ? '↑↑' : netChange > 0 ? '↑' : '→';
+    
+    // Calculate Skills by Category impacts
+    const securityNew = newIssues.filter(i => this.isSecurityIssue(i)).length;
+    const securityExisting = unchangedIssues.filter(i => this.isSecurityIssue(i)).length;
+    const securityResolved = resolvedIssues.filter(i => this.isSecurityIssue(i)).length;
+    const securityImpact = this.calculateCategoryImpact(
+      newIssues.filter(i => this.isSecurityIssue(i)),
+      unchangedIssues.filter(i => this.isSecurityIssue(i)),
+      resolvedIssues.filter(i => this.isSecurityIssue(i))
+    );
+    
+    const performanceNew = newIssues.filter(i => this.isPerformanceIssue(i)).length;
+    const performanceExisting = unchangedIssues.filter(i => this.isPerformanceIssue(i)).length;
+    const performanceResolved = resolvedIssues.filter(i => this.isPerformanceIssue(i)).length;
+    const performanceImpact = this.calculateCategoryImpact(
+      newIssues.filter(i => this.isPerformanceIssue(i)),
+      unchangedIssues.filter(i => this.isPerformanceIssue(i)),
+      resolvedIssues.filter(i => this.isPerformanceIssue(i))
+    );
+    
+    const qualityNew = newIssues.filter(i => this.isCodeQualityIssue(i)).length;
+    const qualityExisting = unchangedIssues.filter(i => this.isCodeQualityIssue(i)).length;
+    const qualityResolved = resolvedIssues.filter(i => this.isCodeQualityIssue(i)).length;
+    const qualityImpact = this.calculateCategoryImpact(
+      newIssues.filter(i => this.isCodeQualityIssue(i)),
+      unchangedIssues.filter(i => this.isCodeQualityIssue(i)),
+      resolvedIssues.filter(i => this.isCodeQualityIssue(i))
+    );
+    
+    const archNew = newIssues.filter(i => this.isArchitectureIssue(i)).length;
+    const archExisting = unchangedIssues.filter(i => this.isArchitectureIssue(i)).length;
+    const archResolved = resolvedIssues.filter(i => this.isArchitectureIssue(i)).length;
+    const archImpact = this.calculateCategoryImpact(
+      newIssues.filter(i => this.isArchitectureIssue(i)),
+      unchangedIssues.filter(i => this.isArchitectureIssue(i)),
+      resolvedIssues.filter(i => this.isArchitectureIssue(i))
+    );
     
     return `## 9. Individual & Team Skills Tracking
 
 ### Developer Performance: ${this.formatAuthor(author)}
 
 **Current Skill Score: ${newScore.toFixed(1)}/100 (${this.getGrade(newScore)})**
-- Previous Score: ${previousScore}/100
-- Score Change: ${totalPenalty > 0 ? '-' : '+'}${Math.abs(totalPenalty).toFixed(1)} points
-- Trend: ${totalPenalty > 5 ? '↓↓' : totalPenalty > 0 ? '↓' : '→'}
+- Previous Score: ${previousScore}/100${previousScore === NEW_USER_BASE_SCORE ? ' (New User Base)' : ''}
+- Score Change: ${netChange >= 0 ? '+' : ''}${netChange.toFixed(1)} points
+- Trend: ${trend}
 
-### Skill Score Calculation Breakdown
+### 📊 Skill Score Calculation (Consistent Scoring System)
 
-| Factor | Impact | Calculation | Points |
-|--------|--------|-------------|--------|
-| **New Issues Introduced** | | | |
-| - Critical Issues | -5 pts each | ${newIssues.filter(i => i.severity === 'critical').length} × 5 | -${newIssues.filter(i => i.severity === 'critical').length * 5} |
-| - High Issues | -3 pts each | ${newIssues.filter(i => i.severity === 'high').length} × 3 | -${newIssues.filter(i => i.severity === 'high').length * 3} |
-| - Medium Issues | -1.5 pts each | ${newIssues.filter(i => i.severity === 'medium').length} × 1.5 | -${newIssues.filter(i => i.severity === 'medium').length * 1.5} |
-| - Low Issues | -0.5 pts each | ${newIssues.filter(i => i.severity === 'low').length} × 0.5 | -${newIssues.filter(i => i.severity === 'low').length * 0.5} |
-| **Pre-existing Issues Not Fixed** | | | |
-| - Critical Repository Issues | -2.5 pts each | ${repoCritical} × 2.5 | -${repoCriticalPenalty.toFixed(1)} |
-| - High Repository Issues | -1.5 pts each | ${repoHigh} × 1.5 | -${repoHighPenalty.toFixed(1)} |
-| - Medium Repository Issues | -0.75 pts each | ${repoMedium} × 0.75 | -${repoMediumPenalty.toFixed(1)} |
-| - Low Repository Issues | -0.25 pts each | ${repoLow} × 0.25 | -${repoLowPenalty.toFixed(1)} |
-| **Total Impact** | | | **-${totalPenalty.toFixed(1)}** |
+| Factor | Points per Issue | Count | Impact |
+|--------|-----------------|-------|--------|
+| **Issues Resolved (Positive)** 🎉 | | | |
+| - Critical Issues Fixed | +${CRITICAL_POINTS} | ${resolvedCritical} | +${resolvedCriticalBonus.toFixed(1)} |
+| - High Issues Fixed | +${HIGH_POINTS} | ${resolvedHigh} | +${resolvedHighBonus.toFixed(1)} |
+| - Medium Issues Fixed | +${MEDIUM_POINTS} | ${resolvedMedium} | +${resolvedMediumBonus.toFixed(1)} |
+| - Low Issues Fixed | +${LOW_POINTS} | ${resolvedLow} | +${resolvedLowBonus.toFixed(1)} |
+| **Subtotal (Resolved)** | | **${resolvedIssues.length}** | **+${totalBonus.toFixed(1)}** |
+| | | | |
+| **New Issues Introduced (PR)** | | | |
+| - Critical Issues | -${CRITICAL_POINTS} | ${prCritical} | -${prCriticalPenalty.toFixed(1)} |
+| - High Issues | -${HIGH_POINTS} | ${prHigh} | -${prHighPenalty.toFixed(1)} |
+| - Medium Issues | -${MEDIUM_POINTS} | ${prMedium} | -${prMediumPenalty.toFixed(1)} |
+| - Low Issues | -${LOW_POINTS} | ${prLow} | -${prLowPenalty.toFixed(1)} |
+| **Subtotal (PR Issues)** | | **${newIssues.length}** | **-${totalPenalty.toFixed(1)}** |
+| | | | |
+| **Pre-existing Issues (Repository)** | | | |
+| - Critical Repository Issues | -${CRITICAL_POINTS} | ${repoCritical} | -${repoCriticalPenalty.toFixed(1)} |
+| - High Repository Issues | -${HIGH_POINTS} | ${repoHigh} | -${repoHighPenalty.toFixed(1)} |
+| - Medium Repository Issues | -${MEDIUM_POINTS} | ${repoMedium} | -${repoMediumPenalty.toFixed(1)} |
+| - Low Repository Issues | -${LOW_POINTS} | ${repoLow} | -${repoLowPenalty.toFixed(1)} |
+| **Subtotal (Repository Issues)** | | **${unchangedIssues.length}** | **-${repoTotalPenalty.toFixed(1)}** |
+| | | | |
+| **NET CHANGE** | | | **${netChange >= 0 ? '+' : ''}${netChange.toFixed(1)}** |
+
+### 📈 Score Breakdown Explanation
+
+**Consistent Point System Applied:**
+- 🔴 **Critical**: ${CRITICAL_POINTS} points (major security/stability risks)
+- 🟠 **High**: ${HIGH_POINTS} points (significant issues requiring immediate attention)
+- 🟡 **Medium**: ${MEDIUM_POINTS} points (important issues to address soon)
+- 🟢 **Low**: ${LOW_POINTS} points (minor issues, best practices)
+
+**Same deductions apply to both:**
+- ✅ New PR issues (what you introduced)
+- ✅ Repository issues (what you didn't fix)
+
+This ensures fair and consistent scoring across all issue types.
 
 ### Skills by Category
 
-| Category | Score | Grade | Trend | Issues |
-|----------|-------|-------|-------|--------|
-| Security | ${Math.max(0, 100 - newIssues.filter(i => this.isSecurityIssue(i)).length * 10)}/100 | ${this.getGrade(Math.max(0, 100 - newIssues.filter(i => this.isSecurityIssue(i)).length * 10))} | ${newIssues.filter(i => this.isSecurityIssue(i)).length > 0 ? '↓' : '→'} | ${newIssues.filter(i => this.isSecurityIssue(i)).length} |
-| Performance | ${Math.max(0, 100 - newIssues.filter(i => this.isPerformanceIssue(i)).length * 10)}/100 | ${this.getGrade(Math.max(0, 100 - newIssues.filter(i => this.isPerformanceIssue(i)).length * 10))} | ${newIssues.filter(i => this.isPerformanceIssue(i)).length > 0 ? '↓' : '→'} | ${newIssues.filter(i => this.isPerformanceIssue(i)).length} |
-| Code Quality | ${Math.max(0, 100 - newIssues.filter(i => this.isCodeQualityIssue(i)).length * 10)}/100 | ${this.getGrade(Math.max(0, 100 - newIssues.filter(i => this.isCodeQualityIssue(i)).length * 10))} | ${newIssues.filter(i => this.isCodeQualityIssue(i)).length > 0 ? '↓' : '→'} | ${newIssues.filter(i => this.isCodeQualityIssue(i)).length} |
-| Architecture | ${Math.max(0, 100 - newIssues.filter(i => this.isArchitectureIssue(i)).length * 10)}/100 | ${this.getGrade(Math.max(0, 100 - newIssues.filter(i => this.isArchitectureIssue(i)).length * 10))} | ${newIssues.filter(i => this.isArchitectureIssue(i)).length > 0 ? '↓' : '→'} | ${newIssues.filter(i => this.isArchitectureIssue(i)).length} |
+| Category | Issues Found | Score Impact | Grade | Status |
+|----------|-------------|--------------|-------|--------|
+| Security | ${securityNew} new, ${securityExisting} existing | ${securityImpact >= 0 ? '+' : ''}${securityImpact.toFixed(1)} | ${this.getGrade(100 - Math.abs(securityImpact))} | ${securityNew > 0 || securityExisting > 0 ? '⚠️ Issues Found' : '✅ Clean'} |
+| Performance | ${performanceNew} new, ${performanceExisting} existing | ${performanceImpact >= 0 ? '+' : ''}${performanceImpact.toFixed(1)} | ${this.getGrade(100 - Math.abs(performanceImpact))} | ${performanceNew > 0 || performanceExisting > 0 ? '⚠️ Issues Found' : '✅ Clean'} |
+| Code Quality | ${qualityNew} new, ${qualityExisting} existing | ${qualityImpact >= 0 ? '+' : ''}${qualityImpact.toFixed(1)} | ${this.getGrade(100 - Math.abs(qualityImpact))} | ${qualityNew > 0 || qualityExisting > 0 ? '⚠️ Issues Found' : '✅ Clean'} |
+| Architecture | ${archNew} new, ${archExisting} existing | ${archImpact >= 0 ? '+' : ''}${archImpact.toFixed(1)} | ${this.getGrade(100 - Math.abs(archImpact))} | ${archNew > 0 || archExisting > 0 ? '⚠️ Issues Found' : '✅ Clean'} |
 
 ---
 
@@ -980,10 +1117,10 @@ ${(issue as any).code}
     let score = 100;
     issues.forEach(issue => {
       switch (issue.severity) {
-        case 'critical': score -= 20; break;
-        case 'high': score -= 10; break;
-        case 'medium': score -= 5; break;
-        case 'low': score -= 2; break;
+        case 'critical': score -= CRITICAL_POINTS * 4; break; // 20 for display
+        case 'high': score -= HIGH_POINTS * 3.33; break; // ~10 for display
+        case 'medium': score -= MEDIUM_POINTS * 5; break; // 5 for display
+        case 'low': score -= LOW_POINTS * 4; break; // 2 for display
       }
     });
     return Math.max(0, score);
@@ -1158,15 +1295,133 @@ ${(issue as any).code}
     let penalty = 0;
     issues.forEach(issue => {
       switch (issue.severity) {
-        case 'critical': penalty += 5; break;
-        case 'high': penalty += 3; break;
-        case 'medium': penalty += 1.5; break;
-        case 'low': penalty += 0.5; break;
+        case 'critical': penalty += CRITICAL_POINTS; break;
+        case 'high': penalty += HIGH_POINTS; break;
+        case 'medium': penalty += MEDIUM_POINTS; break;
+        case 'low': penalty += LOW_POINTS; break;
       }
     });
     return penalty;
   }
+
+  /**
+   * Get user's previous score from storage
+   * BUG-012 FIX: Use actual skill provider instead of mock data
+   */
+  private async getUserPreviousScore(author: string): Promise<number | null> {
+    // If no skill provider is available, return null (new user)
+    if (!this.skillProvider) {
+      console.warn('[ReportGenerator] No skill provider available, treating as new user');
+      return null;
+    }
+    
+    try {
+      // Fetch actual user skills from database
+      const userSkills = await this.skillProvider.getUserSkills(author);
+      
+      // Return the overall score if user exists
+      if (userSkills && userSkills.overallScore !== undefined) {
+        console.log(`[ReportGenerator] Found existing user ${author} with score: ${userSkills.overallScore}`);
+        return userSkills.overallScore;
+      }
+      
+      // User not found, they're new
+      console.log(`[ReportGenerator] User ${author} not found in database, treating as new user`);
+      return null;
+    } catch (error) {
+      console.error(`[ReportGenerator] Error fetching user score for ${author}:`, error);
+      // On error, treat as new user rather than failing
+      return null;
+    }
+  }
+
+  /**
+   * Store user's new score
+   * BUG-012 FIX: Use actual skill provider to persist scores
+   */
+  private async storeUserScore(author: string, score: number): Promise<void> {
+    // If no skill provider is available, log and skip
+    if (!this.skillProvider) {
+      console.warn(`[ReportGenerator] No skill provider available, cannot store score for ${author}: ${score}`);
+      return;
+    }
+    
+    try {
+      // Get current skills or create default structure
+      const currentSkills = await this.skillProvider.getUserSkills(author).catch(() => null) || {
+        userId: author,
+        overallScore: 50,
+        categoryScores: {
+          security: 50,
+          performance: 50,
+          codeQuality: 50,
+          architecture: 50,
+          testing: 50
+        }
+      };
+      
+      // Update the overall score
+      const updatedSkills = {
+        ...currentSkills,
+        overallScore: score,
+        lastUpdated: new Date().toISOString()
+      };
+      
+      // Store in database
+      await this.skillProvider.updateSkills(author, { 
+        previousScore: currentSkills.overallScore,
+        newScore: score,
+        adjustments: [],
+        categoryChanges: {},
+        recommendations: []
+      });
+      
+      console.log(`[ReportGenerator] Successfully stored score for ${author}: ${score}`);
+    } catch (error) {
+      console.error(`[ReportGenerator] Error storing score for ${author}:`, error);
+      // Don't fail the report generation if storage fails
+    }
+  }
   
+  /**
+   * Calculate impact score for a specific category
+   */
+  private calculateCategoryImpact(newIssues: Issue[], unchangedIssues: Issue[], resolvedIssues: Issue[]): number {
+    let impact = 0;
+    
+    // Add penalties for new issues
+    newIssues.forEach(issue => {
+      switch (issue.severity) {
+        case 'critical': impact -= CRITICAL_POINTS; break;
+        case 'high': impact -= HIGH_POINTS; break;
+        case 'medium': impact -= MEDIUM_POINTS; break;
+        case 'low': impact -= LOW_POINTS; break;
+      }
+    });
+    
+    // Add penalties for unchanged issues
+    unchangedIssues.forEach(issue => {
+      switch (issue.severity) {
+        case 'critical': impact -= CRITICAL_POINTS; break;
+        case 'high': impact -= HIGH_POINTS; break;
+        case 'medium': impact -= MEDIUM_POINTS; break;
+        case 'low': impact -= LOW_POINTS; break;
+      }
+    });
+    
+    // Add bonuses for resolved issues
+    resolvedIssues.forEach(issue => {
+      switch (issue.severity) {
+        case 'critical': impact += CRITICAL_POINTS; break;
+        case 'high': impact += HIGH_POINTS; break;
+        case 'medium': impact += MEDIUM_POINTS; break;
+        case 'low': impact += LOW_POINTS; break;
+      }
+    });
+    
+    return impact;
+  }
+
   generatePRComment(comparison: ComparisonResult): string {
     const newIssues = this.extractNewIssues(comparison);
     const criticalCount = newIssues.filter(i => i.severity === 'critical').length;

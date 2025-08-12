@@ -1,0 +1,79 @@
+{
+  "timestamp": "2025-08-12T15:37:22.971Z",
+  "totalScenarios": 5,
+  "passed": 5,
+  "failed": 0,
+  "successRate": "100.0",
+  "results": [
+    {
+      "scenario": "React TypeScript PR with Resolved Issues",
+      "language": "TypeScript",
+      "passed": true,
+      "score": 52.5,
+      "checks": {
+        "correct_scoring": true,
+        "positive_scoring": true,
+        "realistic_code_quality": true,
+        "correct_base_score": true,
+        "skills_tracking": true,
+        "no_triplication": true
+      }
+    },
+    {
+      "scenario": "Python Django Security Fix",
+      "language": "Python",
+      "passed": true,
+      "score": 57,
+      "checks": {
+        "correct_scoring": true,
+        "positive_scoring": true,
+        "realistic_code_quality": true,
+        "correct_base_score": true,
+        "skills_tracking": true,
+        "no_triplication": true
+      }
+    },
+    {
+      "scenario": "Go Kubernetes Performance PR",
+      "language": "Go",
+      "passed": true,
+      "score": 63,
+      "checks": {
+        "correct_scoring": true,
+        "positive_scoring": true,
+        "realistic_code_quality": true,
+        "correct_base_score": true,
+        "skills_tracking": true,
+        "no_triplication": true
+      }
+    },
+    {
+      "scenario": "Rust Small Library Update",
+      "language": "Rust",
+      "passed": true,
+      "score": 52.5,
+      "checks": {
+        "correct_scoring": true,
+        "positive_scoring": true,
+        "realistic_code_quality": true,
+        "correct_base_score": true,
+        "skills_tracking": true,
+        "no_triplication": true
+      }
+    },
+    {
+      "scenario": "Ruby Rails Breaking Change",
+      "language": "Ruby",
+      "passed": true,
+      "score": 33,
+      "checks": {
+        "correct_scoring": true,
+        "positive_scoring": true,
+        "realistic_code_quality": true,
+        "correct_base_score": true,
+        "skills_tracking": true,
+        "no_triplication": true
+      }
+    }
+  ]
+}

@@ -55,8 +55,12 @@ export async function createOrchestrator(
   // Create logger if needed
   const logger = createLogger(env);
   
-  // Create comparison agent
-  const comparisonAgent = new ComparisonAgent(logger);
+  // Create comparison agent with skill provider for score persistence (BUG-012 fix)
+  const comparisonAgent = new ComparisonAgent(
+    logger,
+    undefined,  // modelService - not used yet
+    skillProvider  // Pass skill provider for database persistence
+  );
   
   // Wire everything together
   return new ComparisonOrchestrator(

@@ -45,8 +45,12 @@ export class ComparisonOrchestrator {
     private logger?: any,
     private comparisonAgentInstance?: IReportingComparisonAgent
   ) {
-    // Use injected comparison agent or create default
-    this.comparisonAgent = comparisonAgentInstance || new ComparisonAgent(logger);
+    // Use injected comparison agent or create default with skill provider (BUG-012 fix)
+    this.comparisonAgent = comparisonAgentInstance || new ComparisonAgent(
+      logger,
+      undefined,  // modelService
+      this.skillProvider  // Pass skill provider for score persistence
+    );
     this.batchLocationEnhancer = new BatchLocationEnhancer();
     this.locationEnhancer = new LocationEnhancer();
   }

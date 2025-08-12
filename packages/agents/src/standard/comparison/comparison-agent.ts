@@ -36,10 +36,11 @@ export class ComparisonAgent implements IReportingComparisonAgent {
   
   constructor(
     private logger?: ILogger,
-    private modelService?: any // TODO: Define IModelService interface
+    private modelService?: any, // TODO: Define IModelService interface
+    private skillProvider?: any  // BUG-012 FIX: Accept skill provider for persistence
   ) {
-    // Removed unused reportGenerator initialization
-    this.reportGeneratorEnhanced = new ReportGeneratorV7EnhancedComplete();
+    // Pass skill provider to report generator for score persistence
+    this.reportGeneratorEnhanced = new ReportGeneratorV7EnhancedComplete(skillProvider);
     this.skillCalculator = new SkillCalculator();
     this.config = this.getDefaultConfig();
   }
