@@ -23,6 +23,7 @@ import { ReportGeneratorV7EnhancedComplete } from './report-generator-v7-enhance
 import { SkillCalculator } from './skill-calculator';
 import { ILogger } from '../services/interfaces/logger.interface';
 import { EnhancedIssueMatcher, IssueDuplicator } from '../services/issue-matcher-enhanced';
+import { DynamicModelSelector, RoleRequirements } from '../services/dynamic-model-selector';
 
 /**
  * Clean implementation of AI-powered comparison agent
@@ -33,16 +34,23 @@ export class ComparisonAgent implements IReportingComparisonAgent {
   // Removed unused reportGenerator field
   private reportGeneratorEnhanced: ReportGeneratorV7EnhancedComplete;
   private skillCalculator: SkillCalculator;
+  private modelSelector: DynamicModelSelector;
   
   constructor(
     private logger?: ILogger,
-    private modelService?: any, // TODO: Define IModelService interface
+    private modelService?: any, // Deprecated - using DynamicModelSelector
     private skillProvider?: any  // BUG-012 FIX: Accept skill provider for persistence
   ) {
-    // Pass skill provider to report generator for score persistence
-    this.reportGeneratorEnhanced = new ReportGeneratorV7EnhancedComplete(skillProvider);
+    // Pass skill provider and authorization flag to report generator
+    // BUG-019 FIX: Pass true to indicate authorized caller
+    this.reportGeneratorEnhanced = new ReportGeneratorV7EnhancedComplete(
+      skillProvider,
+      true  // Authorized caller flag
+    );
     this.skillCalculator = new SkillCalculator();
     this.config = this.getDefaultConfig();
+    // BUG-021 FIX: Initialize DynamicModelSelector for proper model selection
+    this.modelSelector = new DynamicModelSelector();
   }
 
   /**
@@ -63,28 +71,56 @@ export class ComparisonAgent implements IReportingComparisonAgent {
       };
       this.log('info', 'Using provided model config', this.modelConfig);
     }
-    // Otherwise select optimal model for comparison
-    else if (this.modelService) {
+    // BUG-021 FIX: Use DynamicModelSelector for proper model selection
+    else {
       try {
-        const modelSelection = await this.modelService.selectModel({
-          task: 'comparison',
-          language: config.language,
-          complexity: config.complexity,
-          performance: config.performance || 'balanced'
-        });
+        // Determine repository size based on complexity
+        const repoSizeMap: Record<string, 'small' | 'medium' | 'large' | 'enterprise'> = {
+          'low': 'small',
+          'medium': 'medium',
+          'high': 'large',
+          'very-high': 'enterprise'
+        };
+        
+        const requirements: RoleRequirements = {
+          role: 'comparison',
+          description: 'Compare code analysis results between branches, identify issues and improvements',
+          languages: config.language ? [config.language] : ['typescript'],
+          repositorySize: repoSizeMap[config.complexity || 'medium'] || 'medium',
+          weights: {
+            quality: 0.7,  // High quality for accurate comparison
+            speed: 0.2,    // Moderate speed requirement
+            cost: 0.1      // Lower priority on cost
+          },
+          minContextWindow: 16000,  // Need enough context for comparisons
+          requiresReasoning: true,
+          requiresCodeAnalysis: true
+        };
+        
+        const modelSelection = await this.modelSelector.selectModelsForRole(requirements);
         
         this.modelConfig = {
-          provider: modelSelection.provider,
-          model: modelSelection.model,
+          provider: modelSelection.primary.provider,
+          model: modelSelection.primary.model,
           temperature: 0.1, // Low for consistency
           maxTokens: 4000
         };
+        
+        this.log('info', 'Dynamic model selection completed', {
+          selected: `${modelSelection.primary.provider}/${modelSelection.primary.model}`,
+          fallback: `${modelSelection.fallback.provider}/${modelSelection.fallback.model}`,
+          reasoning: modelSelection.reasoning
+        });
       } catch (error) {
-        this.log('warn', 'Model selection failed, using default', error);
-        this.modelConfig = this.getDefaultModelConfig();
+        this.log('warn', 'Dynamic model selection failed, using fallback', error);
+        // Use a real fallback model instead of 'dynamic/dynamic'
+        this.modelConfig = {
+          provider: 'google',
+          model: 'gemini-2.0-flash-exp',  // Don't include provider prefix
+          temperature: 0.1,
+          maxTokens: 4000
+        };
       }
-    } else {
-      this.modelConfig = this.getDefaultModelConfig();
     }
   }
 
@@ -570,11 +606,10 @@ Provide confidence scores and reasoning for each finding.`;
    * Get default model configuration
    */
   private getDefaultModelConfig() {
-    // Model will be dynamically selected based on context
-    // This is a fallback configuration only
+    // BUG-021 FIX: Return actual fallback model instead of 'dynamic/dynamic'
     return {
-      provider: 'dynamic', // Will be replaced by model selector
-      model: 'dynamic',    // Will be replaced by model selector
+      provider: 'google',
+      model: 'gemini-2.0-flash-exp',  // Don't include provider prefix
       temperature: 0.1,
       maxTokens: 4000
     };

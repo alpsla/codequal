@@ -1,0 +1,220 @@
+{
+  "metadata": {
+    "url": "https://github.com/sindresorhus/is-odd/pull/1",
+    "owner": "sindresorhus",
+    "repo": "is-odd",
+    "prNumber": 1,
+    "timestamp": "2025-08-13T00:26:23.579Z",
+    "analysisTime": {
+      "main": "0.0s",
+      "pr": "0.0s",
+      "comparison": "0.0s",
+      "total": "0.0s"
+    },
+    "deepwikiUrl": "http://localhost:8001",
+    "modelUsed": "dynamic/dynamic"
+  },
+  "comparison": {
+    "resolvedIssues": [
+      {
+        "id": "existing-critical-1",
+        "severity": "critical",
+        "category": "security",
+        "title": "Hardcoded Database Credentials",
+        "description": "Database credentials are hardcoded in source code",
+        "location": {
+          "file": "src/config/database.ts",
+          "line": 15,
+          "column": 8
+        },
+        "codeSnippet": "// CRITICAL: Hardcoded credentials in source!\nconst dbConfig = {\n  host: 'prod-db.example.com',\n  user: 'admin',\n  password: 'hardcoded_password',  // NEVER DO THIS!\n  database: 'production'\n};",
+        "recommendation": "Move credentials to environment variables",
+        "suggestion": "Replace hardcoded values with process.env.DB_PASSWORD and process.env.DB_USER",
+        "remediation": "// Instead of:\nconst dbConfig = {\n  password: 'hardcoded_password',\n  user: 'admin'\n};\n\n// Use:\nconst dbConfig = {\n  password: process.env.DB_PASSWORD,\n  user: process.env.DB_USER\n};",
+        "rule": "hardcoded-secrets",
+        "message": "Database credentials are hardcoded in source code",
+        "confidence": 0.85,
+        "analysisReasoning": "Issue appears to be fixed in the feature branch"
+      }
+    ],
+    "newIssues": [
+      {
+        "id": "pr-high-1",
+        "severity": "high",
+        "category": "security",
+        "title": "Missing CSRF Protection",
+        "description": "State-changing endpoints lack CSRF token validation",
+        "location": {
+          "file": "src/api/endpoints.ts",
+          "line": 78,
+          "column": 6
+        },
+        "codeSnippet": "// Current problematic code:\napp.post('/api/endpoint', (req, res) => {\n  // No CSRF protection!\n  const data = req.body;\n  updateDatabase(data);\n  res.json({ success: true });\n});",
+        "recommendation": "Implement CSRF tokens for all POST/PUT/DELETE requests",
+        "suggestion": "Add CSRF middleware to protect state-changing endpoints",
+        "remediation": "// Add CSRF protection:\nimport csrf from 'csurf';\nconst csrfProtection = csrf({ cookie: true });\n\napp.post('/api/endpoint', csrfProtection, (req, res) => {\n  // Verify token automatically handled by middleware\n  // Process request...\n});",
+        "rule": "csrf-protection",
+        "message": "State-changing endpoints lack CSRF token validation",
+        "confidence": 0.85,
+        "analysisReasoning": "New issue detected in feature branch"
+      },
+      {
+        "id": "pr-medium-1",
+        "severity": "medium",
+        "category": "performance",
+        "title": "N+1 Query Problem",
+        "description": "Database queries executed in a loop",
+        "location": {
+          "file": "src/api/products.ts",
+          "line": 156,
+          "column": 8
+        },
+        "codeSnippet": "// Current N+1 query problem:\nconst products = await Product.findAll();\nfor (const product of products) {\n  // This executes a query for each product!\n  const details = await ProductDetails.findOne({ productId: product.id });\n  product.details = details;\n}",
+        "recommendation": "Use eager loading or batch queries",
+        "suggestion": "Replace loop queries with batch loading",
+        "remediation": "// Use eager loading:\nconst products = await Product.findAll({\n  include: [{\n    model: ProductDetails,\n    as: 'details'\n  }]\n});",
+        "rule": "n-plus-one",
+        "message": "Database queries executed in a loop",
+        "confidence": 0.85,
+        "analysisReasoning": "New issue detected in feature branch"
+      },
+      {
+        "id": "pr-medium-2",
+        "severity": "medium",
+        "category": "dependencies",
+        "title": "Outdated Dependency",
+        "description": "Package \"express\" is 3 major versions behind",
+        "location": {
+          "file": "package.json",
+          "line": 24,
+          "column": 5
+        },
+        "codeSnippet": "// Current outdated version:\n\"dependencies\": {\n  \"express\": \"^3.0.0\",  // 3 major versions behind!\n  \"body-parser\": \"^1.19.0\"\n}",
+        "recommendation": "Update to latest version after testing",
+        "suggestion": "npm update express@^4.19.2",
+        "remediation": "// Update package.json:\n\"dependencies\": {\n  \"express\": \"^4.19.2\",  // Latest stable version\n  \"body-parser\": \"^1.20.2\"\n}",
+        "rule": "outdated-dependency",
+        "message": "Package \"express\" is 3 major versions behind",
+        "confidence": 0.85,
+        "analysisReasoning": "New issue detected in feature branch"
+      },
+      {
+        "id": "pr-low-1",
+        "severity": "low",
+        "category": "code-quality",
+        "title": "Console Log in Production Code",
+        "description": "Debug console.log statement left in code",
+        "location": {
+          "file": "src/api/auth.ts",
+          "line": 234,
+          "column": 4
+        },
+        "codeSnippet": "// Debug statement left in production:\nconst user = await getUserById(userId);\nconsole.log('DEBUG: User data:', user);  // Should not be in production!\nreturn user;",
+        "recommendation": "Remove or use proper logging library",
+        "suggestion": "Replace with proper logging",
+        "remediation": "// Replace with proper logging:\nimport { logger } from './utils/logger';\n\nconst user = await getUserById(userId);\nlogger.debug('User authentication attempt', { userId: user.id });\nreturn user;",
+        "rule": "no-console",
+        "message": "Debug console.log statement left in code",
+        "confidence": 0.85,
+        "analysisReasoning": "New issue detected in feature branch"
+      }
+    ],
+    "modifiedIssues": [],
+    "unchangedIssues": [
+      {
+        "id": "existing-high-1",
+        "severity": "high",
+        "category": "security",
+        "title": "SQL Injection Vulnerability",
+        "description": "User input is not properly sanitized in query",
+        "location": {
+          "file": "src/api/users.ts",
+          "line": 45,
+          "column": 12
+        },
+        "codeSnippet": "// VULNERABLE: Direct string concatenation\nconst userId = req.params.id;\nconst query = \"SELECT * FROM users WHERE id = \" + userId;\nconst result = await db.query(query);  // SQL injection risk!",
+        "recommendation": "Use parameterized queries",
+        "suggestion": "Replace string concatenation with parameterized queries using prepared statements",
+        "remediation": "// Instead of:\nconst query = \"SELECT * FROM users WHERE id = \" + userId;\n\n// Use:\nconst query = \"SELECT * FROM users WHERE id = ?\";\ndb.query(query, [userId]);",
+        "rule": "sql-injection",
+        "message": "User input is not properly sanitized in query",
+        "_matchDetails": "Exact line match",
+        "_matchConfidence": 100,
+        "confidence": 0.85,
+        "analysisReasoning": "Issue exists in both branches"
+      },
+      {
+        "id": "existing-medium-1",
+        "severity": "medium",
+        "category": "performance",
+        "title": "Memory Leak in Cache Service",
+        "description": "Cache grows unbounded leading to memory issues",
+        "location": {
+          "file": "src/services/cache.ts",
+          "line": 89,
+          "column": 4
+        },
+        "codeSnippet": "// Memory leak: No cache eviction\nclass CacheService {\n  private cache = new Map();\n  \n  set(key: string, value: any) {\n    // Cache grows forever!\n    this.cache.set(key, value);\n  }\n}",
+        "recommendation": "Implement cache eviction policy",
+        "suggestion": "Add LRU cache with max size limit",
+        "remediation": "// Implement LRU cache:\nimport LRU from 'lru-cache';\n\nclass CacheService {\n  private cache = new LRU({\n    max: 500,  // Maximum items\n    ttl: 1000 * 60 * 60  // 1 hour TTL\n  });\n  \n  set(key: string, value: any) {\n    this.cache.set(key, value);\n  }\n}",
+        "rule": "memory-leak",
+        "message": "Cache grows unbounded leading to memory issues",
+        "_matchDetails": "Exact line match",
+        "_matchConfidence": 100,
+        "confidence": 0.85,
+        "analysisReasoning": "Issue exists in both branches"
+      },
+      {
+        "id": "existing-low-1",
+        "severity": "low",
+        "category": "code-quality",
+        "title": "Unused Import",
+        "description": "Imported module is never used",
+        "location": {
+          "file": "src/utils/helpers.ts",
+          "line": 3,
+          "column": 1
+        },
+        "codeSnippet": "// Unused imports:\nimport { someFunction } from './unused';  // Never used\nimport lodash from 'lodash';  // Never used\nimport { formatDate, parseDate } from './date-utils';\n\n// Only formatDate is used\nexport const format = (date) => formatDate(date);",
+        "recommendation": "Remove unused imports",
+        "suggestion": "Remove someFunction and lodash imports",
+        "remediation": "// Clean imports:\nimport { formatDate } from './date-utils';\n\nexport const format = (date) => formatDate(date);",
+        "rule": "unused-import",
+        "message": "Imported module is never used",
+        "_matchDetails": "Exact line match",
+        "_matchConfidence": 100,
+        "confidence": 0.85,
+        "analysisReasoning": "Issue exists in both branches"
+      }
+    ],
+    "summary": {
+      "totalResolved": 1,
+      "totalNew": 4,
+      "totalModified": 0,
+      "totalUnchanged": 3,
+      "overallAssessment": {
+        "securityPostureChange": "degraded",
+        "codeQualityTrend": "stable",
+        "technicalDebtImpact": 0.30000000000000004,
+        "prRecommendation": "approve",
+        "confidence": 0.85
+      }
+    },
+    "insights": [
+      "✅ Resolved 1 issues from main branch",
+      "💡 Demonstrated skills: issue-resolution, code-quality"
+    ],
+    "recommendations": [
+      "Focus on improving: security-awareness",
+      "Consider refactoring to reduce technical debt"
+    ]
+  },
+  "summary": {
+    "totalResolved": 1,
+    "totalNew": 4,
+    "totalModified": 0,
+    "totalUnchanged": 3,
+    "confidence": 0.85
+  }
+}

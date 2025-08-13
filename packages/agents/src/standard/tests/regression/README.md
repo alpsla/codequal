@@ -198,3 +198,197 @@ packages/agents/src/standard/tests/reports/regression/
 **This regression suite is CRITICAL infrastructure. Maintain it carefully and expand it as new critical functionality is added.**
 
 For questions or issues, refer to: `packages/agents/BUG-017-REGRESSION-SUITE.md`
+
+## 🌟 Real Integration Tests (No Mocking)
+
+The test suite includes real integration tests that use actual DeepWiki API without any mocking for manual validation:
+
+### Test Files
+
+#### 1. `real-pr-validation.test.ts`
+- Uses actual DeepWiki API for real analysis
+- Generates complete reports in multiple formats (MD, JSON, HTML)
+- Parametrized with PR URLs for flexible testing
+- Includes comprehensive validation of all report features
+
+#### 2. `manual-pr-validator.ts`
+- Standalone script for command-line usage
+- Beautiful terminal output with progress indicators
+- Generates styled HTML reports for browser viewing
+- Provides detailed analysis summaries
+
+### Running Real Integration Tests
+
+#### Using Jest Test Suite:
+```bash
+# Run with default PRs
+npm test -- real-pr-validation.test.ts
+
+# Run with custom PR URLs
+TEST_PR_URL_1="https://github.com/owner/repo/pull/123" npm test -- real-pr-validation.test.ts
+
+# Run with multiple custom PRs
+TEST_PR_URL_1="https://github.com/sindresorhus/ky/pull/700" \
+TEST_PR_URL_2="https://github.com/vercel/next.js/pull/31616" \
+npm test -- real-pr-validation.test.ts
+```
+
+#### Using Manual Validator Script:
+```bash
+# Basic usage
+npx ts-node manual-pr-validator.ts https://github.com/owner/repo/pull/123
+
+# With custom DeepWiki endpoint
+DEEPWIKI_API_URL=http://localhost:8001 \
+npx ts-node manual-pr-validator.ts https://github.com/sindresorhus/ky/pull/700
+
+# Specify output format (markdown, json, html, or all)
+OUTPUT_FORMAT=html \
+OUTPUT_DIR=./my-reports \
+npx ts-node manual-pr-validator.ts https://github.com/vercel/next.js/pull/31616
+```
+
+### Output Formats
+
+#### Markdown Report (`*.md`)
+- Complete analysis report in markdown format
+- All V7 report sections included
+- Ready for GitHub comments or documentation
+
+#### JSON Data (`*.json`)
+- Structured data with full analysis results
+- Includes metadata, timings, and confidence scores
+- Perfect for programmatic processing
+
+#### HTML Report (`*.html`)
+- Beautiful styled report for browser viewing
+- Gradient backgrounds and modern design
+- Interactive elements and syntax highlighting
+- Responsive layout for all devices
+
+### What Gets Validated
+
+Real integration tests validate:
+- ✅ Executive Summary with actual metrics
+- ✅ Architecture diagrams (ASCII art)
+- ✅ Business impact with financial estimates
+- ✅ Educational insights synced with real issues
+- ✅ Location data (file:line:column) for each issue
+- ✅ Custom impact analysis per issue type
+- ✅ All V7 report sections present
+- ✅ Dynamic model selection working
+- ✅ Skill tracking and scoring accuracy
+- ✅ PR recommendation logic
+
+### Example Output Structure
+```
+test-outputs/
+├── real-validation/
+│   ├── sindresorhus-ky-pr700-2025-08-12.md
+│   ├── sindresorhus-ky-pr700-2025-08-12.json
+│   ├── sindresorhus-ky-pr700-2025-08-12.html
+│   └── vercel-nextjs-pr31616-2025-08-12.md
+└── manual-validation/
+    ├── facebook-react-pr25000-2025-08-12.html
+    └── microsoft-vscode-pr180000-2025-08-12.json
+```
+
+### Difference Between the Two Real Tests
+
+#### 1. `real-pr-validation.test.ts` (Jest Test Suite)
+- **Purpose**: Automated testing within Jest framework
+- **Best For**: CI/CD pipelines, batch testing multiple PRs
+- **Features**:
+  - Runs as part of test suite with assertions
+  - Can test multiple PRs in sequence
+  - Generates test reports with pass/fail status
+  - Integrates with Jest coverage reports
+  - Suitable for regression testing
+
+#### 2. `manual-pr-validator.ts` (Standalone CLI Script)
+- **Purpose**: Interactive manual validation tool
+- **Best For**: Developer testing, debugging, demos
+- **Features**:
+  - Beautiful colored terminal output
+  - Real-time progress indicators
+  - Single PR focus for detailed analysis
+  - More verbose output for debugging
+  - Better for exploratory testing
+
+### Output Review Instructions
+
+#### Where to Find Outputs
+Full paths to output directories:
+```
+/Users/alpinro/Code Prjects/codequal/packages/agents/test-outputs/real-validation/
+/Users/alpinro/Code Prjects/codequal/packages/agents/test-outputs/manual-validation/
+```
+
+#### How to Review Generated Reports
+
+1. **Open HTML Reports in Browser**:
+   ```bash
+   # macOS
+   open /Users/alpinro/Code\ Prjects/codequal/packages/agents/test-outputs/real-validation/*.html
+   
+   # Or directly open a specific report
+   open /Users/alpinro/Code\ Prjects/codequal/packages/agents/test-outputs/manual-validation/sindresorhus-ky-pr700-*.html
+   ```
+
+2. **Review Markdown Reports**:
+   ```bash
+   # View in terminal with syntax highlighting
+   cat /Users/alpinro/Code\ Prjects/codequal/packages/agents/test-outputs/real-validation/*.md
+   
+   # Or open in VS Code
+   code /Users/alpinro/Code\ Prjects/codequal/packages/agents/test-outputs/real-validation/
+   ```
+
+3. **Analyze JSON Data**:
+   ```bash
+   # Pretty-print JSON for review
+   jq . /Users/alpinro/Code\ Prjects/codequal/packages/agents/test-outputs/real-validation/*.json
+   
+   # Extract specific metrics
+   jq '.summary' /Users/alpinro/Code\ Prjects/codequal/packages/agents/test-outputs/real-validation/*.json
+   ```
+
+#### What to Look For in Reports
+
+**Executive Summary Section**:
+- Clear metrics and scores
+- Accurate issue counts
+- Proper severity distribution
+
+**Architecture Analysis**:
+- ASCII diagrams present
+- Framework detection working
+- Performance insights included
+
+**Business Impact**:
+- Financial estimates (not just HIGH/MEDIUM/LOW)
+- Specific dollar amounts or percentages
+- ROI calculations
+
+**Educational Insights**:
+- References to actual issues found
+- Not generic boilerplate
+- Specific code examples from PR
+
+**Issue Details**:
+- Each issue has location (file:line:column)
+- Custom impact per issue type
+- Remediation suggestions present
+
+**Scoring Accuracy**:
+- Uses new scoring system (+5/+3/+1/+0.5)
+- Negative points properly calculated
+- Total scores make sense
+
+### Benefits of Real Integration Tests
+
+- **Manual Validation**: Generate real reports for human review
+- **End-to-End Testing**: Validates entire flow without mocks
+- **Performance Metrics**: Measures actual API response times
+- **Quality Assurance**: Ensures reports meet enterprise standards
+- **Regression Detection**: Catches issues mocks might miss
