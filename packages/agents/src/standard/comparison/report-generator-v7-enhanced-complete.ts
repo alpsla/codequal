@@ -96,6 +96,9 @@ export class ReportGeneratorV7EnhancedComplete {
     // 6. Breaking Changes (if any)
     report += this.generateBreakingChanges(newIssues);
     
+    // 6.5. Resolved Issues (fixed in this PR)
+    report += this.generateResolvedIssuesSection(resolvedIssues);
+    
     // 7. PR Issues (blocking)
     report += this.generatePRIssues(criticalIssues, highIssues, mediumIssues, lowIssues);
     
@@ -667,6 +670,79 @@ ${depIssues.length === 0 ? '- ✅ All dependencies are secure and up-to-date' : 
 `;
   }
   
+  private generateResolvedIssuesSection(resolvedIssues: Issue[]): string {
+    if (!resolvedIssues || resolvedIssues.length === 0) {
+      return '';
+    }
+    
+    let section = `## 6. Issues Resolved in This PR\n\n`;
+    section += `### ✅ Successfully Fixed ${resolvedIssues.length} Issues from Main Branch\n\n`;
+    
+    // Group by severity
+    const bySeverity = {
+      critical: resolvedIssues.filter(i => i.severity === 'critical'),
+      high: resolvedIssues.filter(i => i.severity === 'high'),
+      medium: resolvedIssues.filter(i => i.severity === 'medium'),
+      low: resolvedIssues.filter(i => i.severity === 'low')
+    };
+    
+    // Show resolved issues by severity
+    if (bySeverity.critical.length > 0) {
+      section += `#### 🔴 CRITICAL Issues Resolved (${bySeverity.critical.length})\n`;
+      bySeverity.critical.forEach((issue, idx) => {
+        section += `${idx + 1}. **${issue.title || issue.message || 'Critical Issue'}**\n`;
+        section += `   - **File:** ${this.getFileLocation(issue)}\n`;
+        section += `   - **Description:** ${issue.description || issue.message}\n`;
+        if (issue.category) {
+          section += `   - **Category:** ${issue.category}\n`;
+        }
+        section += '\n';
+      });
+    }
+    
+    if (bySeverity.high.length > 0) {
+      section += `#### 🟠 HIGH Issues Resolved (${bySeverity.high.length})\n`;
+      bySeverity.high.forEach((issue, idx) => {
+        section += `${idx + 1}. **${issue.title || issue.message || 'High Priority Issue'}**\n`;
+        section += `   - **File:** ${this.getFileLocation(issue)}\n`;
+        section += `   - **Description:** ${issue.description || issue.message}\n`;
+        if (issue.category) {
+          section += `   - **Category:** ${issue.category}\n`;
+        }
+        section += '\n';
+      });
+    }
+    
+    if (bySeverity.medium.length > 0) {
+      section += `#### 🟡 MEDIUM Issues Resolved (${bySeverity.medium.length})\n`;
+      bySeverity.medium.forEach((issue, idx) => {
+        section += `${idx + 1}. **${issue.title || issue.message || 'Medium Priority Issue'}**\n`;
+        section += `   - **File:** ${this.getFileLocation(issue)}\n`;
+        section += `   - **Description:** ${issue.description || issue.message}\n`;
+        if (issue.category) {
+          section += `   - **Category:** ${issue.category}\n`;
+        }
+        section += '\n';
+      });
+    }
+    
+    if (bySeverity.low.length > 0) {
+      section += `#### 🟢 LOW Issues Resolved (${bySeverity.low.length})\n`;
+      bySeverity.low.forEach((issue, idx) => {
+        section += `${idx + 1}. **${issue.title || issue.message || 'Low Priority Issue'}**\n`;
+        section += `   - **File:** ${this.getFileLocation(issue)}\n`;
+        section += `   - **Description:** ${issue.description || issue.message}\n`;
+        if (issue.category) {
+          section += `   - **Category:** ${issue.category}\n`;
+        }
+        section += '\n';
+      });
+    }
+    
+    section += '---\n\n';
+    return section;
+  }
+
   private generateBreakingChanges(newIssues: Issue[]): string {
     const breakingChanges = newIssues.filter(i => 
       i.message?.toLowerCase().includes('breaking') || 

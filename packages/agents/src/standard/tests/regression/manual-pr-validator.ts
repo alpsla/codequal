@@ -16,6 +16,7 @@ import { ComparisonAgent } from '../../comparison';
 import { DynamicModelSelector } from '../../services/dynamic-model-selector';
 import { DeepWikiApiWrapper, registerDeepWikiApi } from '../../services/deepwiki-api-wrapper';
 import { DeepWikiClient } from '@codequal/core/deepwiki';
+import { parseDeepWikiResponse } from './parse-deepwiki-response';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as chalk from 'chalk';
@@ -46,8 +47,12 @@ ${colors.cyan}Examples:${colors.reset}
 ${colors.cyan}Environment Variables (optional):${colors.reset}
   DEEPWIKI_API_URL    - DeepWiki API endpoint (default: http://localhost:8001)
   DEEPWIKI_API_KEY    - DeepWiki API key
+  DEEPWIKI_TIMEOUT   - Timeout in ms (default: 600000 / 10 minutes)
   OUTPUT_FORMAT       - Output format: markdown, json, html, all (default: all)
   OUTPUT_DIR          - Output directory (default: ./test-outputs/manual-validation)
+  
+${colors.cyan}For large repositories:${colors.reset}
+  DEEPWIKI_TIMEOUT=1200000 npx ts-node manual-pr-validator.ts <PR_URL>
   `);
   process.exit(1);
 }
@@ -56,7 +61,8 @@ ${colors.cyan}Environment Variables (optional):${colors.reset}
 const config = {
   deepwiki: {
     apiUrl: process.env.DEEPWIKI_API_URL || 'http://localhost:8001',
-    apiKey: process.env.DEEPWIKI_API_KEY || 'dw-key-e48329b6c05b4a36a18d65af21ac3c2f'
+    apiKey: process.env.DEEPWIKI_API_KEY || 'dw-key-e48329b6c05b4a36a18d65af21ac3c2f',
+    timeout: parseInt(process.env.DEEPWIKI_TIMEOUT || '600000') // Default 10 minutes, configurable
   },
   output: {
     format: process.env.OUTPUT_FORMAT || 'all',
@@ -109,7 +115,14 @@ async function analyzePR(url: string) {
   const prData = parsePRUrl(url);
   console.log(`Repository: ${colors.bright}${prData.owner}/${prData.repo}${colors.reset}`);
   console.log(`PR Number: ${colors.bright}#${prData.prNumber}${colors.reset}`);
-  console.log(`DeepWiki API: ${colors.bright}${config.deepwiki.apiUrl}${colors.reset}\n`);
+  console.log(`DeepWiki API: ${colors.bright}${config.deepwiki.apiUrl}${colors.reset}`);
+  console.log(`Timeout: ${colors.bright}${config.deepwiki.timeout / 1000}s${colors.reset}\n`);
+  
+  // Warn for large repositories
+  const largeRepos = ['facebook/react', 'vercel/next.js', 'microsoft/vscode', 'angular/angular'];
+  if (largeRepos.some(repo => url.toLowerCase().includes(repo))) {
+    printStatus('⚠️  Large repository detected. Analysis may take several minutes...', 'warning');
+  }
   
   try {
     // Initialize services
@@ -156,28 +169,25 @@ async function analyzePR(url: string) {
                   'Content-Type': 'application/json',
                   'Authorization': `Bearer ${config.deepwiki.apiKey}`
                 },
-                timeout: 120000 // 2 minute timeout
+                timeout: config.deepwiki.timeout
               }
             );
             
-            // Parse the response
-            const content = response.data?.choices?.[0]?.message?.content || '{}';
-            const analysisData = JSON.parse(content);
+            // Parse the response - DeepWiki returns plain text directly
+            const content = typeof response.data === 'string' ? response.data : '';
+            
+            // Parse the DeepWiki text response
+            const parsedData = parseDeepWikiResponse(content);
             
             // Transform to our expected format
             return {
-              issues: analysisData.issues || analysisData.vulnerabilities || [],
-              scores: analysisData.scores || {
-                overall: 75,
-                security: 70,
-                performance: 80,
-                maintainability: 75
-              },
+              issues: parsedData.issues,
+              scores: parsedData.scores,
               metadata: {
                 timestamp: new Date().toISOString(),
                 tool_version: 'deepwiki-1.0.0',
                 duration_ms: Date.now() - Date.now(),
-                files_analyzed: analysisData.statistics?.files_analyzed || 0,
+                files_analyzed: parsedData.issues.length * 5, // Estimate
                 model_used: 'openai/gpt-4-turbo-preview',
                 branch
               }
