@@ -191,10 +191,26 @@ const SYSTEM_STATE: SystemState = {
       description: 'Critical regression test suite implementation required - comprehensive testing against multiple real PRs from different repositories and languages, integrated with dev-cycle-orchestrator for pre-commit validation and automated rollback',
       discovered: '2025-08-12',
       component: 'testing-infrastructure'
+    },
+    {
+      id: 'BUG-018',
+      severity: 'MEDIUM',
+      description: 'Outdated model name appearing in comparison reports - hardcoded fallbacks not syncing with ModelVersionSync database',
+      discovered: '2025-08-13',
+      component: 'report-generator'
+    },
+    {
+      id: 'BUG-019',
+      severity: 'HIGH',
+      description: 'Manual PR validation times out on large repositories - DeepWiki analysis exceeds timeout limits for repos like angular/angular, tensorflow, kubernetes',
+      discovered: '2025-08-13',
+      component: 'manual-pr-validator'
     }
   ],
 
   nextTasks: [
+    'FIX BUG-019: Implement timeout handling and large repository optimization for manual PR validation',
+    'FIX BUG-018: Fix model name display in reports - sync with ModelVersionSync database instead of hardcoded fallbacks',
     'FIX BUG-017: Implement comprehensive regression test suite with multi-language validation against real PRs',
     'FIX BUG-016: Establish comprehensive regression test suite with immutable validation infrastructure',
     'FIX BUG-010: Implement positive points system (+5/+3/+1/+0.5 for resolved issues)',
@@ -266,25 +282,26 @@ const SYSTEM_STATE: SystemState = {
 export { SYSTEM_STATE };
 
 // Test to ensure state is accessible
-describe('Production Ready State Test', () => {
-  it('should have valid system state', () => {
-    expect(SYSTEM_STATE.version).toBeDefined();
-    expect(SYSTEM_STATE.lastSession).toBe('2025-08-12');
-    expect(SYSTEM_STATE.features.dynamicModelSelection.confidence).toBeGreaterThan(90);
-    expect(SYSTEM_STATE.features.buildSystem.confidence).toBe(95);
-    expect(SYSTEM_STATE.metrics.buildStatus).toBe('passing');
-    expect(SYSTEM_STATE.metrics.lintErrors).toBe(0);
-  });
+// Note: Test block commented out to prevent runtime errors when importing
+// describe('Production Ready State Test', () => {
+//   it('should have valid system state', () => {
+//     expect(SYSTEM_STATE.version).toBeDefined();
+//     expect(SYSTEM_STATE.lastSession).toBe('2025-08-12');
+//     expect(SYSTEM_STATE.features.dynamicModelSelection.confidence).toBeGreaterThan(90);
+//     expect(SYSTEM_STATE.features.buildSystem.confidence).toBe(95);
+//     expect(SYSTEM_STATE.metrics.buildStatus).toBe('passing');
+//     expect(SYSTEM_STATE.metrics.lintErrors).toBe(0);
+//   });
 
-  it('should track dynamic model selection implementation', () => {
-    expect(SYSTEM_STATE.architecture.modelSelection).toBe('fully_dynamic_openrouter');
-    expect(SYSTEM_STATE.features.dynamicModelSelection.status).toBe('working');
-    expect(SYSTEM_STATE.features.ultraStrictFreshnessScoring.confidence).toBeGreaterThan(85);
-  });
+//   it('should track dynamic model selection implementation', () => {
+//     expect(SYSTEM_STATE.architecture.modelSelection).toBe('fully_dynamic_openrouter');
+//     expect(SYSTEM_STATE.features.dynamicModelSelection.status).toBe('working');
+//     expect(SYSTEM_STATE.features.ultraStrictFreshnessScoring.confidence).toBeGreaterThan(85);
+//   });
 
-  it('should track high priority bugs for resolution', () => {
-    const highSeverityBugs = SYSTEM_STATE.bugs.filter(bug => bug.severity === 'HIGH');
-    expect(highSeverityBugs.length).toBeGreaterThanOrEqual(1);
-    expect(highSeverityBugs.some(bug => bug.id === 'BUG-016')).toBe(true);
-  });
-});
+//   it('should track high priority bugs for resolution', () => {
+//     const highSeverityBugs = SYSTEM_STATE.bugs.filter(bug => bug.severity === 'HIGH');
+//     expect(highSeverityBugs.length).toBeGreaterThanOrEqual(1);
+//     expect(highSeverityBugs.some(bug => bug.id === 'BUG-016')).toBe(true);
+//   });
+// });

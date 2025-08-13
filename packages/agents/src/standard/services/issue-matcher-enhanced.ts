@@ -3,7 +3,7 @@ import { Issue } from '../types/analysis-types';
 export interface MatchResult {
   isMatch: boolean;
   confidence: number;
-  matchType: 'exact' | 'line-shift' | 'content' | 'fuzzy' | 'none';
+  matchType: 'exact' | 'line-shift' | 'content' | 'fuzzy' | 'content-exact' | 'content-similar' | 'content-keywords' | 'none';
   details?: string;
 }
 
@@ -16,6 +16,15 @@ export class EnhancedIssueMatcher {
    * Multi-strategy matching with fallback hierarchy
    */
   matchIssues(issue1: Issue, issue2: Issue): MatchResult {
+    // Check if both issues have unknown locations (common with AI analysis)
+    const bothUnknownLocation = (!issue1.location?.file || issue1.location.file === 'unknown') &&
+                                (!issue2.location?.file || issue2.location.file === 'unknown');
+    
+    if (bothUnknownLocation) {
+      // Use content-only matching for AI-generated issues without locations
+      return this.contentOnlyMatch(issue1, issue2);
+    }
+    
     // Strategy 1: Exact location match (highest confidence)
     const exactMatch = this.exactLocationMatch(issue1, issue2);
     if (exactMatch.isMatch) return exactMatch;
@@ -35,6 +44,120 @@ export class EnhancedIssueMatcher {
     return { isMatch: false, confidence: 0, matchType: 'none' };
   }
   
+  /**
+   * Content-only matching for AI-generated issues without file locations
+   */
+  private contentOnlyMatch(issue1: Issue, issue2: Issue): MatchResult {
+    // For AI-generated issues, we need more flexible matching
+    // Don't require exact severity match - issues can change severity between analyses
+    
+    // Category should be similar but not necessarily exact
+    const categorySimilarity = this.calculateCategorySimilarity(issue1, issue2);
+    if (categorySimilarity < 0.5) {
+      // Categories are too different
+      return { isMatch: false, confidence: 0, matchType: 'none' };
+    }
+    
+    // Calculate text similarity between titles and descriptions
+    const title1 = (issue1.title || issue1.message || '').toLowerCase();
+    const title2 = (issue2.title || issue2.message || '').toLowerCase();
+    const desc1 = (issue1.description || issue1.message || '').toLowerCase();
+    const desc2 = (issue2.description || issue2.message || '').toLowerCase();
+    
+    // Check for exact or very similar titles
+    if (title1 === title2) {
+      return {
+        isMatch: true,
+        confidence: 90,
+        matchType: 'content-exact',
+        details: 'Exact title match (AI-generated issues)'
+      };
+    }
+    
+    // Calculate similarity score
+    const titleSimilarity = this.calculateStringSimilarity(title1, title2);
+    const descSimilarity = this.calculateStringSimilarity(desc1, desc2);
+    
+    // Weight title more heavily as it's usually more stable
+    const overallSimilarity = (titleSimilarity * 0.7 + descSimilarity * 0.3);
+    
+    if (overallSimilarity >= 0.7) {  // Lowered threshold from 0.8
+      return {
+        isMatch: true,
+        confidence: Math.round(overallSimilarity * 80),
+        matchType: 'content-similar',
+        details: `High content similarity (${Math.round(overallSimilarity * 100)}%)`
+      };
+    }
+    
+    // Check for keyword overlap (weaker match)
+    const keywords1 = this.extractKeywords(title1 + ' ' + desc1);
+    const keywords2 = this.extractKeywords(title2 + ' ' + desc2);
+    const keywordOverlap = this.calculateSetOverlap(keywords1, keywords2);
+    
+    if (keywordOverlap >= 0.5) {  // Lowered threshold from 0.6
+      return {
+        isMatch: true,
+        confidence: Math.round(keywordOverlap * 60),
+        matchType: 'content-keywords',
+        details: `Keyword overlap match (${Math.round(keywordOverlap * 100)}%)`
+      };
+    }
+    
+    // Last resort: if titles are somewhat similar and same severity, consider it a match
+    if (titleSimilarity >= 0.5 && issue1.severity === issue2.severity) {
+      return {
+        isMatch: true,
+        confidence: 40,
+        matchType: 'content-similar',
+        details: `Weak title match with same severity`
+      };
+    }
+    
+    return { isMatch: false, confidence: 0, matchType: 'none' };
+  }
+  
+  /**
+   * Calculate string similarity using Levenshtein-like approach
+   */
+  private calculateStringSimilarity(str1: string, str2: string): number {
+    if (str1 === str2) return 1;
+    if (!str1 || !str2) return 0;
+    
+    // Simple word-based similarity
+    const words1 = str1.split(/\s+/);
+    const words2 = str2.split(/\s+/);
+    
+    const commonWords = words1.filter(w => words2.includes(w)).length;
+    const totalWords = Math.max(words1.length, words2.length);
+    
+    return totalWords > 0 ? commonWords / totalWords : 0;
+  }
+  
+  /**
+   * Extract important keywords from text
+   */
+  private extractKeywords(text: string): Set<string> {
+    const stopWords = new Set(['the', 'is', 'at', 'which', 'on', 'a', 'an', 'as', 'are', 'was', 'were', 'to', 'in', 'for', 'of', 'with', 'by']);
+    const words = text.toLowerCase()
+      .replace(/[^a-z0-9\s]/g, '')
+      .split(/\s+/)
+      .filter(w => w.length > 2 && !stopWords.has(w));
+    return new Set(words);
+  }
+  
+  /**
+   * Calculate overlap between two sets
+   */
+  private calculateSetOverlap(set1: Set<string>, set2: Set<string>): number {
+    if (set1.size === 0 || set2.size === 0) return 0;
+    
+    const intersection = new Set([...set1].filter(x => set2.has(x)));
+    const union = new Set([...set1, ...set2]);
+    
+    return union.size > 0 ? intersection.size / union.size : 0;
+  }
+
   /**
    * Strategy 1: Exact or near-exact location match
    */

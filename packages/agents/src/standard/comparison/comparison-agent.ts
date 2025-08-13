@@ -116,7 +116,7 @@ export class ComparisonAgent implements IReportingComparisonAgent {
         // Use a real fallback model instead of 'dynamic/dynamic'
         this.modelConfig = {
           provider: 'google',
-          model: 'gemini-2.0-flash-exp',  // Don't include provider prefix
+          model: 'gemini-2.0-flash',  // Use latest stable Gemini model as fallback
           temperature: 0.1,
           maxTokens: 4000
         };
@@ -609,7 +609,7 @@ Provide confidence scores and reasoning for each finding.`;
     // BUG-021 FIX: Return actual fallback model instead of 'dynamic/dynamic'
     return {
       provider: 'google',
-      model: 'gemini-2.0-flash-exp',  // Don't include provider prefix
+      model: 'gemini-2.0-flash',  // Use latest stable Gemini model as fallback
       temperature: 0.1,
       maxTokens: 4000
     };
