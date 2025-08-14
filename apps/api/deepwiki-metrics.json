@@ -1,6 +1,6 @@
 [
   {
-    "timestamp": "2025-08-12T02:51:09.851Z",
+    "timestamp": "2025-08-13T23:28:01.848Z",
     "disk": {
       "totalGB": 100,
       "usedGB": 20,
@@ -15,7 +15,7 @@
     "cleanup": {
       "success_count": 1247,
       "failed_count": 23,
-      "last_cleanup": "2025-08-12T02:51:09.851Z"
+      "last_cleanup": "2025-08-13T23:28:01.848Z"
     },
     "analysis": {
       "avg_size_mb": 45.2,
