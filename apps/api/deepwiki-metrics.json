@@ -27,5 +27,63 @@
         "value": 20
       }
     }
+  },
+  {
+    "timestamp": "2025-08-14T15:25:01.837Z",
+    "disk": {
+      "totalGB": 100,
+      "usedGB": 20,
+      "availableGB": 80,
+      "percentUsed": 20
+    },
+    "repositories": {
+      "active": 0,
+      "analyzed_total": 3456,
+      "failed_total": 89
+    },
+    "cleanup": {
+      "success_count": 1247,
+      "failed_count": 23,
+      "last_cleanup": "2025-08-14T15:25:01.837Z"
+    },
+    "analysis": {
+      "avg_size_mb": 45.2,
+      "avg_duration_seconds": 52.3
+    },
+    "alerts": {
+      "disk_usage": {
+        "status": "ok",
+        "value": 20
+      }
+    }
+  },
+  {
+    "timestamp": "2025-08-14T15:27:30.255Z",
+    "disk": {
+      "totalGB": 100,
+      "usedGB": 20,
+      "availableGB": 80,
+      "percentUsed": 20
+    },
+    "repositories": {
+      "active": 0,
+      "analyzed_total": 3456,
+      "failed_total": 89
+    },
+    "cleanup": {
+      "success_count": 1247,
+      "failed_count": 23,
+      "last_cleanup": "2025-08-14T15:27:30.255Z"
+    },
+    "analysis": {
+      "avg_size_mb": 45.2,
+      "avg_duration_seconds": 52.3
+    },
+    "alerts": {
+      "disk_usage": {
+        "status": "ok",
+        "value": 20
+      }
+    }
   }
 ]
