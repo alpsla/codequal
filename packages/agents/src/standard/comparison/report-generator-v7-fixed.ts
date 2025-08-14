@@ -982,18 +982,62 @@ ${criticalNew > 0 || highNew > 0 ?
   }
   
   private calculateOverallScore(issues: Issue[]): number {
-    let score = 100;
+    // Calculate individual category scores
+    const categoryScores: number[] = [];
     
-    issues.forEach(issue => {
-      switch(issue.severity) {
-        case 'critical': score -= 20; break;
-        case 'high': score -= 10; break;
-        case 'medium': score -= 5; break;
-        case 'low': score -= 2; break;
-      }
-    });
+    // Security Score
+    const securityIssues = issues.filter(i => i.category === 'security');
+    const securityScore = securityIssues.length === 0 ? 100 : Math.max(40, 100 - (securityIssues.length * 15));
+    categoryScores.push(securityScore);
     
-    return Math.max(0, Math.round(score));
+    // Performance Score
+    const perfIssues = issues.filter(i => i.category === 'performance');
+    const perfScore = perfIssues.length === 0 ? 100 : Math.max(50, 100 - (perfIssues.length * 12));
+    categoryScores.push(perfScore);
+    
+    // Code Quality Score
+    const qualityIssues = issues.filter(i => i.category === 'code-quality');
+    const qualityScore = qualityIssues.length === 0 ? 100 : Math.max(60, 100 - (qualityIssues.length * 10));
+    categoryScores.push(qualityScore);
+    
+    // Architecture Score
+    const archIssues = issues.filter(i => i.category === 'architecture');
+    const archScore = archIssues.length === 0 ? 100 : Math.max(70, 100 - (archIssues.length * 10));
+    categoryScores.push(archScore);
+    
+    // Dependencies Score
+    const depIssues = issues.filter(i => i.category === 'dependencies');
+    const depScore = depIssues.length === 0 ? 100 : Math.max(70, 100 - (depIssues.length * 10));
+    categoryScores.push(depScore);
+    
+    // Testing Score (derived from code-quality issues related to testing)
+    // Since 'testing' is not a valid category, we estimate based on code-quality issues
+    const testingRelatedIssues = issues.filter(i => 
+      i.category === 'code-quality' && 
+      (i.message?.toLowerCase().includes('test') || i.message?.toLowerCase().includes('coverage'))
+    );
+    const testingScore = testingRelatedIssues.length === 0 ? 90 : Math.max(50, 90 - (testingRelatedIssues.length * 10));
+    categoryScores.push(testingScore);
+    
+    // Documentation Score (derived from code-quality issues related to docs)
+    // Since 'documentation' is not a valid category, we estimate based on code-quality issues
+    const docRelatedIssues = issues.filter(i => 
+      i.category === 'code-quality' && 
+      (i.message?.toLowerCase().includes('doc') || i.message?.toLowerCase().includes('comment'))
+    );
+    const docScore = docRelatedIssues.length === 0 ? 90 : Math.max(60, 90 - (docRelatedIssues.length * 8));
+    categoryScores.push(docScore);
+    
+    // Business Impact Score (based on severity)
+    const criticalCount = issues.filter(i => i.severity === 'critical').length;
+    const highCount = issues.filter(i => i.severity === 'high').length;
+    const businessScore = criticalCount > 0 ? 30 : (highCount > 0 ? 60 : 90);
+    categoryScores.push(businessScore);
+    
+    // Calculate average of all category scores
+    const averageScore = categoryScores.reduce((sum, score) => sum + score, 0) / categoryScores.length;
+    
+    return Math.round(averageScore);
   }
   
   private calculateSkillScore(newIssues: Issue[], resolvedIssues: Issue[]): number {
