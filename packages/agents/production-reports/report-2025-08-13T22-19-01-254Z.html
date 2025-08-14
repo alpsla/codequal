@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeQual Production Report</title>
+    <style>
+        :root {
+            --primary: #0066cc;
+            --danger: #dc3545;
+            --warning: #ffc107;
+            --success: #28a745;
+            --info: #17a2b8;
+            --dark: #2d3748;
+            --light: #f8f9fa;
+            --border: #e2e8f0;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: var(--dark);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 3rem;
+        }
+        
+        h1 { color: var(--primary); margin-bottom: 2rem; }
+        h2 { color: var(--dark); margin: 2rem 0 1rem; border-bottom: 2px solid var(--border); padding-bottom: 0.5rem; }
+        h3 { color: var(--dark); margin: 1.5rem 0 1rem; }
+        h4 { color: var(--dark); margin: 1rem 0 0.5rem; }
+        
+        pre {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+        
+        code {
+            background: var(--light);
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        
+        .critical { color: var(--danger); font-weight: bold; }
+        .high { color: var(--warning); font-weight: bold; }
+        .medium { color: var(--info); font-weight: bold; }
+        .low { color: var(--success); font-weight: bold; }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+        
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border: 1px solid var(--border);
+        }
+        
+        th {
+            background: var(--light);
+            font-weight: 600;
+        }
+        
+        .footer {
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border);
+            text-align: center;
+            color: #718096;
+        }
+    </style>
+</head>
+<body>
+    <div class="container"><h1>Pull Request Analysis Report</h1>
+
+<strong>Repository:</strong> techcorp/payment-processor  
+<strong>PR:</strong> #3842 - Major refactor: Microservices migration Phase 1  
+<strong>Author:</strong> sarah-chen  
+<strong>Analysis Date:</strong> 2025-08-13T22:19:01.251Z  
+<strong>Scan Duration:</strong> 127.8 seconds
+
+<hr>
+
+<h2>PR Decision: ❌ DECLINED - CRITICAL ISSUES MUST BE FIXED</h2>
+
+<strong>Confidence:</strong> 92%
+
+This PR introduces 4 critical and 4 high and 1 breaking changes that must be resolved before merge.
+
+<hr>
+
+<h2>Executive Summary</h2>
+
+<strong>Overall Score: 0/100 (Grade: F)</strong>
+
+<h3>Key Metrics</h3>
+<li><strong>Critical Issues:</strong> 4 <span class="critical">🔴</span></li>
+<li><strong>High Issues:</strong> 4 <span class="high">🟠</span></li>
+<li><strong>Medium Issues:</strong> 2 <span class="medium">🟡</span></li>
+<li><strong>Low Issues:</strong> 0 <span class="low">🟢</span></li>
+<li><strong>Breaking Changes:</strong> 1 ⚠️</li>
+<li><strong>Issues Resolved:</strong> 2 ✅</li>
+
+<h3>Issue Distribution</h3>
+<pre>Critical: ████░░░░░░ 4
+High:     ████████░░ 4
+Medium:   ████░░░░░░ 2
+Low:      ░░░░░░░░░░ 0
+</pre>
+
+<hr>
+
+<h2>1. Security Analysis</h2>
+
+<h3>Score: 40/100 (Grade: F)</h3>
+
+<strong>Score Breakdown:</strong>
+<li>Vulnerability Prevention: 40/100</li>
+<li>Authentication & Authorization: 40/100</li>
+<li>Data Protection: 45/100</li>
+<li>Input Validation: 35/100</li>
+
+<h3>Found 4 Security Issues</h3>
+
+<h4><span class="critical">🔴</span> CRITICAL: Hardcoded database credentials in configuration</h4>
+<strong>File:</strong> src/config/database.ts:12:25  
+<strong>Impact:</strong> Complete system compromise possible  
+<strong>Fix:</strong> Review and fix according to best practices
+
+<h4><span class="critical">🔴</span> CRITICAL: No rate limiting on authentication endpoints</h4>
+<strong>File:</strong> src/routes/auth.ts:34:89  
+<strong>Impact:</strong> Complete system compromise possible  
+<strong>Fix:</strong> Review and fix according to best practices
+
+<h4><span class="critical">🔴</span> CRITICAL: Unauthenticated internal API endpoints exposed</h4>
+<strong>File:</strong> services/user-service/src/routes/internal.ts:34:45  
+<strong>Impact:</strong> Complete system compromise possible  
+<strong>Fix:</strong> Review and fix according to best practices
+
+<h4><span class="high">🟠</span> HIGH: API keys logged in plain text</h4>
+<strong>File:</strong> services/payment-service/src/middleware/logging.ts:23  
+<strong>Impact:</strong> Sensitive data exposed to attackers  
+<strong>Fix:</strong> Review and fix according to best practices
+
+<hr>
+
+<h2>2. Performance Analysis</h2>
+
+<h3>Score: 76/100 (Grade: C)</h3>
+
+<strong>Score Breakdown:</strong>
+<li>Response Time: 76/100</li>
+<li>Resource Efficiency: 81/100</li>
+<li>Scalability: 76/100</li>
+
+<h3>Found 2 Performance Issues</h3>
+
+<li><strong>HIGH:</strong> Missing database indexes on core tables - src/database/schema.sql:234</li>
+<li><strong>CRITICAL:</strong> Catastrophic N+1 query amplification (10,000+ queries) - services/user-service/src/services/team.service.ts:89:125</li>
+
+<hr>
+
+<h2>3. Code Quality Analysis</h2>
+
+<h3>Score: 92/100 (Grade: A)</h3>
+
+<li>Maintainability: 95/100</li>
+<li>Test Coverage: 71%</li>
+<li>Documentation: 99/100</li>
+<li>Code Complexity: 92/100</li>
+
+<h3>Issues Found</h3>
+
+<li><strong>No integration tests exist</strong> - test/</li>
+
+<hr>
+
+<h2>4. Architecture Analysis</h2>
+
+<h3>Score: 90/100 (Grade: A)</h3>
+
+<strong>Score Breakdown:</strong>
+<li>Design Patterns: 95/100</li>
+<li>Modularity: 90/100</li>
+<li>Scalability: 92/100</li>
+
+<h3>Architecture Overview</h3>
+
+<pre>┌─────────────────────────────────────────┐
+│           Frontend Layer                 │
+│  ┌──────────┐  ┌──────────┐  ┌────────┐│
+│  │   UI     │  │  State   │  │  API   ││
+│  │Components│  │Management│  │ Client ││
+│  └──────────┘  └──────────┘  └────────┘│
+└─────────────────────────────────────────┘
+                    │
+┌─────────────────────────────────────────┐
+│           Backend Services              │
+│  ┌──────────┐  ┌──────────┐  ┌────────┐│
+│  │   API    │  │ Business │  │  Data  ││
+│  │ Gateway  │  │  Logic   │  │ Access ││
+│  └──────────┘  └──────────┘  └────────┘│
+└─────────────────────────────────────────┘
+                    │
+┌─────────────────────────────────────────┐
+│           Data Layer                    │
+│  ┌──────────┐  ┌──────────┐  ┌────────┐│
+│  │Database  │  │  Cache   │  │ Queue  ││
+│  │   SQL    │  │  Redis   │  │  MQ    ││
+│  └──────────┘  └──────────┘  └────────┘│
+└─────────────────────────────────────────┘
+</pre>
+
+<h3>Architectural Findings</h3>
+
+⚠️ 1 architectural concerns found:
+
+1. <strong>Service boundaries not clearly defined</strong>
+   📍 services/shared/utils.ts:123
+   Impact: MEDIUM architecture issue requires attention
+   Suggestion: Review and fix according to best practices
+
+
+<hr>
+
+<h2>5. Dependencies Analysis</h2>
+
+<h3>Score: 85/100 (Grade: B)</h3>
+
+<strong>Score Breakdown:</strong>
+<li>Security Vulnerabilities: 85/100</li>
+<li>Version Currency: 90/100</li>
+<li>License Compliance: 100/100</li>
+
+<h3>Dependency Issues</h3>
+
+⚠️ <strong>HIGH:</strong> axios@0.21.1 - SSRF vulnerability (package.json:23)
+<li><strong>Impact:</strong> HIGH dependencies issue requires attention</li>
+<li><strong>Fix:</strong> Update to latest version</li>
+
+<hr>
+
+<h2>PR Issues</h2>
+
+<h3>🚨 Critical Issues (4)</h3>
+<strong>Skill Impact:</strong> -20 points
+
+<h4>PR-CRIT-SECURITY-1: Hardcoded database credentials in configuration</h4>
+<strong>File:</strong> src/config/database.ts:12:25  
+<strong>Impact:</strong> Complete system compromise possible
+<strong>Skill Impact:</strong> security -5
+
+<strong>Current Implementation:</strong>
+<pre><code>// 🚨 CRITICAL: Hardcoded database credentials in configuration
+// Code showing the problem
+async function problematicCode() {
+  // This is where the issue occurs
+  // Security vulnerability detected
+}
+</code></pre>
+
+<strong>Required Fix:</strong>
+<pre><code>// SECURE: Fixed implementation
+async function fixedCode() {
+  // Proper implementation
+  // Vulnerability fixed with proper validation
+}
+</code></pre>
+
+<h4>PR-CRIT-SECURITY-2: No rate limiting on authentication endpoints</h4>
+<strong>File:</strong> src/routes/auth.ts:34:89  
+<strong>Impact:</strong> Complete system compromise possible
+<strong>Skill Impact:</strong> security -5
+
+<strong>Current Implementation:</strong>
+<pre><code>// 🚨 CRITICAL: No rate limiting on authentication endpoints
+// Code showing the problem
+async function problematicCode() {
+  // This is where the issue occurs
+  // Security vulnerability detected
+}
+</code></pre>
+
+<strong>Required Fix:</strong>
+<pre><code>// SECURE: Fixed implementation
+async function fixedCode() {
+  // Proper implementation
+  // Vulnerability fixed with proper validation
+}
+</code></pre>
+
+<h4>PR-CRIT-SECURITY-3: Unauthenticated internal API endpoints exposed</h4>
+<strong>File:</strong> services/user-service/src/routes/internal.ts:34:45  
+<strong>Impact:</strong> Complete system compromise possible
+<strong>Skill Impact:</strong> security -5
+
+<strong>Current Implementation:</strong>
+<pre><code>// 🚨 CRITICAL: Unauthenticated internal API endpoints exposed
+// Code showing the problem
+async function problematicCode() {
+  // This is where the issue occurs
+  // Security vulnerability detected
+}
+</code></pre>
+
+<strong>Required Fix:</strong>
+<pre><code>// SECURE: Fixed implementation
+async function fixedCode() {
+  // Proper implementation
+  // Vulnerability fixed with proper validation
+}
+</code></pre>
+
+<h4>PR-CRIT-PERFORMANCE-4: Catastrophic N+1 query amplification (10,000+ queries)</h4>
+<strong>File:</strong> services/user-service/src/services/team.service.ts:89:125  
+<strong>Impact:</strong> System becomes completely unusable
+<strong>Skill Impact:</strong> performance -5
+
+<strong>Current Implementation:</strong>
+<pre><code>// 🚨 CRITICAL: Catastrophic N+1 query amplification (10,000+ queries)
+// Code showing the problem
+async function problematicCode() {
+  // This is where the issue occurs
+  for (const item of items) {
+    const details = await fetchDetails(item.id); // N+1 query!
+  }
+}
+</code></pre>
+
+<strong>Required Fix:</strong>
+<pre><code>// SECURE: Fixed implementation
+async function fixedCode() {
+  // Proper implementation
+  const details = await fetchAllDetails(items.map(i => i.id)); // Batch query!
+}
+</code></pre>
+
+<h3>⚠️ High Issues (4)</h3>
+<strong>Skill Impact:</strong> -12 points
+
+<h4>PR-HIGH-PERFORMANCE-1: Missing database indexes on core tables</h4>
+<strong>File:</strong> src/database/schema.sql:234  
+<strong>Impact:</strong> Server crashes under moderate load
+
+<h4>PR-HIGH-SECURITY-2: API keys logged in plain text</h4>
+<strong>File:</strong> services/payment-service/src/middleware/logging.ts:23  
+<strong>Impact:</strong> Sensitive data exposed to attackers
+
+<h4>PR-HIGH-API-3: Breaking change: API response format modified</h4>
+<strong>File:</strong> services/api-gateway/src/routes/v2.ts:234  
+<strong>Impact:</strong> All API clients will fail without updates
+
+<h4>PR-HIGH-DEPENDENCIES-4: axios@0.21.1 - SSRF vulnerability</h4>
+<strong>File:</strong> package.json:23  
+<strong>Impact:</strong> HIGH dependencies issue requires attention
+
+<h3><span class="medium">🟡</span> Medium Issues (2)</h3>
+<li><strong>No integration tests exist</strong> - test/</li>
+<li><strong>Service boundaries not clearly defined</strong> - services/shared/utils.ts:123</li>
+
+
+<hr>
+
+<h3>📦 Vulnerable Dependencies (1)</h3>
+
+<strong>Skill Impact:</strong> Security -0.75, Dependencies -1
+
+1. <strong>axios@0.21.1 - SSRF vulnerability</strong>
+   - Location: package.json:23
+   - Severity: HIGH
+   
+<strong>Required Updates:</strong>
+``<code>bash
+npm update # Update all dependencies
+npm audit fix --force # Fix vulnerabilities
+</code>``
+
+<h2>8. Repository Issues (NOT BLOCKING)</h2>
+
+*These pre-existing issues don't block the PR but impact skill scores and should be addressed as technical debt.*
+
+<h3>⚠️ 4 Pre-existing Issues</h3>
+
+<strong>Distribution:</strong>
+<li>Critical: 2 issues (Skill Impact: -10 points)</li>
+<li>High: 1 issues (Skill Impact: -3 points)</li>
+<li>Medium: 1 issues (Skill Impact: -1 points)</li>
+<li>Low: 0 issues (Skill Impact: -0 points)</li>
+
+<h3>🚨 Critical Repository Issues (2)</h3>
+<strong>Skill Impact:</strong> -10 points for not fixing
+
+<h4>REPO-CRIT-SECURITY-1: Hardcoded database credentials in configuration</h4>
+<strong>File:</strong> src/config/database.ts:12:25  
+<strong>Age:</strong> Unknown (pre-existing)  
+<strong>Impact:</strong> Complete system compromise possible
+
+<strong>Current Implementation:</strong>
+<pre><code>// 🚨 CRITICAL: Hardcoded database credentials in configuration
+// This issue exists in the main branch
+// Problematic code causing: Hardcoded database credentials in configuration
+</code></pre>
+
+<strong>Required Fix:</strong>
+<pre><code>// SECURE: Recommended fix
+// Implement proper fix for: Hardcoded database credentials in configuration
+</code></pre>
+
+<h4>REPO-CRIT-SECURITY-2: No rate limiting on authentication endpoints</h4>
+<strong>File:</strong> src/routes/auth.ts:34:89  
+<strong>Age:</strong> Unknown (pre-existing)  
+<strong>Impact:</strong> Complete system compromise possible
+
+<strong>Current Implementation:</strong>
+<pre><code>// 🚨 CRITICAL: No rate limiting on authentication endpoints
+// This issue exists in the main branch
+// Problematic code causing: No rate limiting on authentication endpoints
+</code></pre>
+
+<strong>Required Fix:</strong>
+<pre><code>// SECURE: Recommended fix
+// Implement proper fix for: No rate limiting on authentication endpoints
+</code></pre>
+
+<h3>⚠️ High Repository Issues (1)</h3>
+<strong>Skill Impact:</strong> -3 points for not fixing
+
+<h4>REPO-HIGH-PERFORMANCE-1: Missing database indexes on core tables</h4>
+<strong>File:</strong> src/database/schema.sql:234  
+<strong>Impact:</strong> Server crashes under moderate load
+
+<h3><span class="medium">🟡</span> Medium Repository Issues (1)</h3>
+<strong>Skill Impact:</strong> -1 points for not fixing
+
+<li><strong>No integration tests exist</strong> - test/</li>
+
+
+<hr>
+
+<h2>6. Breaking Changes</h2>
+
+<h3>⚠️ 1 Breaking Change Detected</h3>
+
+
+<h4>1. Breaking change: API response format modified</h4>
+<strong>File:</strong> services/api-gateway/src/routes/v2.ts:234  
+<strong>Impact:</strong> All API clients will fail without updates  
+<strong>Migration Required:</strong> Update client code to handle new format
+
+
+<strong>Note:</strong> Security issues like SQL injection are NOT breaking changes - they are in the Security section.
+
+<hr>
+
+<h2>7. Issues Resolved</h2>
+
+<h3>✅ 2 Issues Resolved</h3>
+
+1. <strong>Fixed SQL injection vulnerability in user queries</strong> - src/services/user.service.ts:145
+2. <strong>Fixed memory leak in cache service</strong> - src/services/cache.service.ts:234
+
+<hr>
+
+<h2>9. Testing Coverage</h2>
+
+<h3>Score: 71/100 (Grade: C)</h3>
+
+<strong>Current Coverage:</strong> 71%
+
+<h3>Test Statistics</h3>
+<li>Line Coverage: 71%</li>
+<li>Branch Coverage: 61%</li>
+<li>Function Coverage: 66%</li>
+
+⚠️ Coverage below recommended 80% threshold
+
+<hr>
+
+<h2>10. Business Impact Analysis</h2>
+
+<h3>Risk Assessment: CRITICAL</h3>
+
+<strong>Financial Impact Estimate:</strong> $10K - $100K+
+<strong>Time to Resolution:</strong> 1-2 weeks
+
+<h3>Impact Categories</h3>
+
+| Risk Category | Level | Issues Found | Mitigation Cost | Business Impact |
+|--------------|-------|--------------|-----------------|-----------------|
+| Security | CRITICAL | 8 | $10K+ | Data breach risk |
+| Performance | MEDIUM | 2 | $500-2K | User experience impact |
+| Stability | HIGH | 1 | $5K+ | Service disruption |
+| Compliance | HIGH | 4 | $5K+ | Regulatory risk |
+
+<h3>Recommendations</h3>
+🚨 <strong>URGENT:</strong> Address critical issues before deployment
+
+<hr>
+
+<h2>11. Documentation Quality</h2>
+
+<h3>Score: 80/100 (Grade: B)</h3>
+
+<h3>Documentation Status</h3>
+✅ API documentation present
+✅ Code comments included
+⚠️ Consider adding:
+<li>Architecture diagrams</li>
+<li>Setup instructions</li>
+<li>Migration guides</li>
+
+<hr>
+
+<h2>13. Educational Insights</h2>
+
+<h3>📚 Training Recommendations Based on Issues Found</h3>
+
+<h4>🚨 URGENT TRAINING REQUIRED (Critical Issues Found)</h4>
+
+<strong>SECURITY Training Required:</strong>
+*Based on 3 critical issue(s) found*
+
+📍 Issue: "Hardcoded database credentials in configuration"
+   Location: src/config/database.ts:12
+   → Training Needed: Secrets Management & Environment Variables
+
+📍 Issue: "No rate limiting on authentication endpoints"
+   Location: src/routes/auth.ts:34
+   → Training Needed: Authentication Best Practices & OAuth2/JWT
+
+📍 Issue: "Unauthenticated internal API endpoints exposed"
+   Location: services/user-service/src/routes/internal.ts:34
+   → Training Needed: Authentication Best Practices & OAuth2/JWT
+
+<strong>Recommended Topics:</strong>
+<li>OWASP Top 10 Vulnerabilities</li>
+<li>Secure Coding Standards</li>
+<li>Authentication & Authorization</li>
+
+<strong>PERFORMANCE Training Required:</strong>
+*Based on 1 critical issue(s) found*
+
+📍 Issue: "Catastrophic N+1 query amplification (10,000+ queries)"
+   Location: services/user-service/src/services/team.service.ts:89
+   → Training Needed: Database Query Optimization & N+1 Prevention
+
+<strong>Recommended Topics:</strong>
+<li>Performance Profiling Tools</li>
+<li>Database Optimization</li>
+<li>Caching Strategies</li>
+
+<h4>⚠️ HIGH PRIORITY TRAINING (High Issues Found)</h4>
+
+<strong>PERFORMANCE Skills Enhancement:</strong>
+<li>Issue: "Missing database indexes on core tables"</li>
+  → Training: Database Indexing & Query Performance
+
+<strong>SECURITY Skills Enhancement:</strong>
+<li>Issue: "API keys logged in plain text"</li>
+  → Training: Secrets Management & Environment Variables
+
+<strong>API Skills Enhancement:</strong>
+<li>Issue: "Breaking change: API response format modified"</li>
+  → Training: api Best Practices
+
+<strong>DEPENDENCIES Skills Enhancement:</strong>
+<li>Issue: "axios@0.21.1 - SSRF vulnerability"</li>
+  → Training: Dependency Security Scanning & Management
+
+<h4>📖 RECOMMENDED TRAINING</h4>
+<li>Clean Code Principles</li>
+<li>Software Architecture Patterns</li>
+
+<h4>📊 Skill Impact Summary</h4>
+
+<li><strong>Security:</strong> 4 issues → Focus on secure coding practices</li>
+<li><strong>Performance:</strong> 2 issues → Study optimization techniques</li>
+<li><strong>Code Quality:</strong> 1 issues → Review clean code principles</li>
+<h2>14. Developer Performance</h2>
+
+<strong>Current Skill Score:</strong> 0.0/100 (Grade: F)
+
+<h3>Score Calculation</h3>
+| Factor | Points | Count | Impact |
+|--------|--------|-------|--------|
+| Issues Resolved | +varies | 2 | +8.0 |
+| Critical Issues | -5 | 4 | -20.0 |
+| High Issues | -3 | 4 | -12.0 |
+| Medium Issues | -1 | 2 | -2.0 |
+| Low Issues | -0.5 | 0 | 0.0 |
+| <strong>Net Score Change</strong> | | | <strong>-26.0</strong> |
+
+<hr>
+
+<h2>15. PR Comment Conclusion</h2>
+
+<h3>📋 Summary for PR Review</h3>
+
+<strong>Decision: ❌ DECLINED - CRITICAL/HIGH ISSUES MUST BE FIXED</strong>
+
+This PR cannot proceed with 4 new critical and 4 new high severity issues. Pre-existing repository issues don't block this PR but significantly impact skill scores.
+
+<strong>NEW Blocking Issues (Must Fix):</strong>
+<li>🚨 4 Critical: Hardcoded database credentials in configuration, No rate limiting on authentication endpoints, Unauthenticated internal API endpoints exposed, Catastrophic N+1 query amplification (10,000+ queries)</li>
+<li>🚨 4 High: Missing database indexes on core tables, API keys logged in plain text, Breaking change, axios@0.21.1 - SSRF vulnerability</li>
+<li>📦 1 Vulnerable dependencies</li>
+<li>⚠️ 1 Breaking changes</li>
+
+<strong>Pre-existing Repository Issues (Not blocking, but penalize scores):</strong>
+<li>⚠️ 4 total: 2 critical, 1 high, 1 medium, 0 low</li>
+<li>📅 Ages range from 3-12 months (estimated)</li>
+<li>💰 Skill penalty: -14.0 points total</li>
+
+<strong>Positive Achievements:</strong>
+<li>✅ Fixed 2 issues</li>
+<li>✅ Good code structure and patterns</li>
+<li>✅ Follows established conventions</li>
+
+
+<strong>Required Actions:</strong>
+1. Fix ALL new critical and high issues
+2. Update all vulnerable dependencies
+3. Restore test coverage to 80%+
+4. Security review before resubmission
+
+<strong>Developer Performance:</strong> 
+The developer's score reflects both new issues introduced (-32 points) and the penalty for leaving 4 pre-existing issues unfixed (-14.0 points). Critical security oversights and performance problems require immediate attention. The penalty for pre-existing issues should motivate addressing technical debt.
+
+<strong>Next Steps:</strong>
+1. Fix all NEW blocking issues
+2. Resubmit PR for review
+3. Create JIRA tickets for all 4 repository issues
+4. Schedule team security training
+
+<hr>
+
+
+        <div class="footer">
+            <p>Generated by CodeQual AI Analysis Platform - Production Version</p>
+            <p>Report: ReportGeneratorV7Fixed | Mode: 0 Mocks</p>
+            <p>2025-08-13T22:19:01.255Z</p>
+        </div>
+    </div>
+</body>
+</html>
