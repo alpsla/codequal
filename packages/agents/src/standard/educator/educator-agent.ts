@@ -189,6 +189,230 @@ export class EducatorAgent implements IEducatorAgent {
   /**
    * Extract educational suggestions from report
    */
+  /**
+   * Research educational content based on found issues
+   * This method is called by the Orchestrator to get training materials
+   */
+  async research(params: {
+    issues: any[];
+    developerLevel?: string;
+    teamProfile?: any;
+  }): Promise<any> {
+    this.log('info', 'Starting educational research', {
+      issueCount: params.issues.length,
+      developerLevel: params.developerLevel
+    });
+
+    try {
+      // Extract unique issue patterns and categories
+      const issuePatterns = this.extractIssuePatterns(params.issues);
+      
+      // Generate learning paths based on issues
+      const learningPaths = await this.generateLearningPaths(issuePatterns, params.developerLevel);
+      
+      // Search for relevant courses, articles, and videos
+      const educationalContent = await this.searchEducationalContent(issuePatterns);
+      
+      // Structure the response
+      const response = {
+        summary: this.generateEducationalSummary(params.issues),
+        learningPaths,
+        resources: educationalContent,
+        estimatedLearningTime: this.calculateTotalLearningTime(educationalContent),
+        priorityTopics: this.identifyPriorityTopics(params.issues),
+        teamRecommendations: this.generateTeamRecommendations(params.teamProfile)
+      };
+      
+      this.log('info', 'Educational research completed', {
+        pathsGenerated: learningPaths.length,
+        resourcesFound: educationalContent.courses.length + educationalContent.articles.length + educationalContent.videos.length
+      });
+      
+      return response;
+    } catch (error) {
+      this.log('error', 'Educational research failed', error);
+      // Return minimal fallback response
+      return {
+        summary: 'Educational content generation failed. Please review issues manually.',
+        learningPaths: [],
+        resources: { courses: [], articles: [], videos: [] },
+        estimatedLearningTime: 0,
+        priorityTopics: [],
+        teamRecommendations: []
+      };
+    }
+  }
+
+  private extractIssuePatterns(issues: any[]): Map<string, any[]> {
+    const patterns = new Map<string, any[]>();
+    
+    issues.forEach(issue => {
+      const category = this.categorizeIssue(issue);
+      if (!patterns.has(category)) {
+        patterns.set(category, []);
+      }
+      patterns.get(category)!.push(issue);
+    });
+    
+    return patterns;
+  }
+
+  private categorizeIssue(issue: any): string {
+    const title = (issue.title || issue.message || '').toLowerCase();
+    
+    if (title.includes('security') || title.includes('vulnerability') || title.includes('injection') || title.includes('xss') || title.includes('csrf')) {
+      return 'security';
+    }
+    if (title.includes('performance') || title.includes('optimization') || title.includes('n+1') || title.includes('cache')) {
+      return 'performance';
+    }
+    if (title.includes('test') || title.includes('coverage')) {
+      return 'testing';
+    }
+    if (title.includes('architecture') || title.includes('design') || title.includes('pattern')) {
+      return 'architecture';
+    }
+    if (title.includes('dependency') || title.includes('package') || title.includes('version')) {
+      return 'dependencies';
+    }
+    
+    return 'code-quality';
+  }
+
+  private async generateLearningPaths(patterns: Map<string, any[]>, level?: string): Promise<any[]> {
+    const paths = [];
+    
+    for (const [category, issues] of patterns) {
+      // Create a simple learning path for each category
+      paths.push({
+        topic: category,
+        issueCount: issues.length,
+        description: `Learning path for ${category} improvements based on ${issues.length} issues found`,
+        suggestedResources: []
+      });
+    }
+    
+    return paths;
+  }
+
+  private async searchEducationalContent(patterns: Map<string, any[]>): Promise<any> {
+    const courses = [];
+    const articles = [];
+    const videos = [];
+    
+    for (const [category, issues] of patterns) {
+      // Search for courses
+      const categoryCourses = await this.searchCourses({
+        query: category,
+        filters: { level: 'any', duration: 'any' }
+      });
+      courses.push(...categoryCourses);
+      
+      // Search for articles
+      const categoryArticles = await this.searchArticles({
+        query: category,
+        filters: {}
+      });
+      articles.push(...categoryArticles);
+      
+      // Search for videos
+      const categoryVideos = await this.searchVideos({
+        query: category,
+        filters: {}
+      });
+      videos.push(...categoryVideos);
+    }
+    
+    return {
+      courses: this.deduplicateResources(courses),
+      articles: this.deduplicateResources(articles),
+      videos: this.deduplicateResources(videos)
+    };
+  }
+
+  private deduplicateResources(resources: any[]): any[] {
+    const seen = new Set<string>();
+    return resources.filter(resource => {
+      const key = resource.url || resource.title;
+      if (seen.has(key)) {
+        return false;
+      }
+      seen.add(key);
+      return true;
+    });
+  }
+
+  private generateEducationalSummary(issues: any[]): string {
+    const categories = new Map<string, number>();
+    
+    issues.forEach(issue => {
+      const category = this.categorizeIssue(issue);
+      categories.set(category, (categories.get(category) || 0) + 1);
+    });
+    
+    const topCategories = Array.from(categories.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([cat, count]) => `${cat} (${count} issues)`);
+    
+    return `Based on the analysis, focus areas for improvement include: ${topCategories.join(', ')}.`;
+  }
+
+  private calculateTotalLearningTime(content: any): number {
+    let totalMinutes = 0;
+    
+    // Estimate time for courses (average 2 hours per course)
+    totalMinutes += (content.courses?.length || 0) * 120;
+    
+    // Estimate time for articles (average 15 minutes per article)
+    totalMinutes += (content.articles?.length || 0) * 15;
+    
+    // Estimate time for videos (average 30 minutes per video)
+    totalMinutes += (content.videos?.length || 0) * 30;
+    
+    return totalMinutes;
+  }
+
+  private identifyPriorityTopics(issues: any[]): string[] {
+    const severityScore = new Map<string, number>();
+    
+    issues.forEach(issue => {
+      const category = this.categorizeIssue(issue);
+      const score = this.getSeverityScore(issue.severity);
+      severityScore.set(category, (severityScore.get(category) || 0) + score);
+    });
+    
+    return Array.from(severityScore.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([category]) => category);
+  }
+
+  private getSeverityScore(severity: string): number {
+    switch (severity) {
+      case 'critical': return 4;
+      case 'high': return 3;
+      case 'medium': return 2;
+      case 'low': return 1;
+      default: return 1;
+    }
+  }
+
+  private generateTeamRecommendations(teamProfile: any): string[] {
+    const recommendations = [];
+    
+    // Add team-specific recommendations based on profile
+    if (teamProfile?.weakestSkills) {
+      recommendations.push(`Focus team training on: ${teamProfile.weakestSkills.join(', ')}`);
+    }
+    
+    recommendations.push('Consider pair programming for complex issues');
+    recommendations.push('Schedule regular code review sessions');
+    recommendations.push('Implement automated testing for critical paths');
+    
+    return recommendations;
+  }
+
   extractSuggestionsFromReport(markdownReport: string): EducationalSuggestion[] {
     const suggestions: EducationalSuggestion[] = [];
     

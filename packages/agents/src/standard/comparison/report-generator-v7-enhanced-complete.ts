@@ -42,6 +42,20 @@ export class ReportGeneratorV7EnhancedComplete {
       );
     }
   }
+  /**
+   * Utility function to properly round numbers to 2 decimal places
+   * Fixes floating point precision errors
+   */
+  private roundToTwo(num: number): number {
+    return Math.round((num + Number.EPSILON) * 100) / 100;
+  }
+
+  /**
+   * Format a number with exactly 2 decimal places
+   */
+  private formatScore(num: number): string {
+    return this.roundToTwo(num).toFixed(2);
+  }
   
   async generateReport(comparison: ComparisonResult): Promise<string> {
     // BUG-019: Log warning if called without proper authorization
@@ -60,6 +74,9 @@ export class ReportGeneratorV7EnhancedComplete {
     const modelUsed = (comparison as any).aiAnalysis?.modelUsed || 
       (comparison as any).modelConfig?.model || 
       'google/gemini-2.5-flash';
+    
+    // Extract educational content if available
+    const educationalContent = (comparison as any).educationalInsights || null;
     
     // Group issues by severity and type
     const criticalIssues = newIssues.filter(i => i.severity === 'critical');
@@ -105,8 +122,8 @@ export class ReportGeneratorV7EnhancedComplete {
     // 8. Repository Issues (NOT blocking)
     report += this.generateRepositoryIssues(unchangedIssues);
     
-    // 9. Educational Insights
-    report += this.generateEducationalInsights(newIssues);
+    // 9. Educational Insights - Now with actual educational content from Educator agent
+    report += this.generateEducationalInsights(newIssues, educationalContent);
     
     // 10. Individual & Team Skills Tracking
     report += await this.generateSkillsTracking(newIssues, unchangedIssues, resolvedIssues, prMetadata);
@@ -898,7 +915,13 @@ ${depIssues.length === 0 ? '- ✅ All dependencies are secure and up-to-date' : 
     return section;
   }
   
-  private generateEducationalInsights(newIssues: Issue[]): string {
+  private generateEducationalInsights(newIssues: Issue[], educationalContent?: any): string {
+    // If we have actual educational content from Educator agent, use it
+    if (educationalContent && educationalContent.resources) {
+      return this.generateEnhancedEducationalInsights(newIssues, educationalContent);
+    }
+    
+    // Fallback to original implementation if no educational content
     // BUG-024 FIX: Sync educational insights with actual found issues
     const securityIssues = newIssues.filter(i => this.isSecurityIssue(i));
     const performanceIssues = newIssues.filter(i => this.isPerformanceIssue(i));
@@ -994,6 +1017,159 @@ ${depIssues.length === 0 ? '- ✅ All dependencies are secure and up-to-date' : 
     insights += `---\n\n`;
     return insights;
   }
+
+  private generateEnhancedEducationalInsights(newIssues: Issue[], educationalContent: any): string {
+    let insights = `## 8. Educational Insights & Recommendations\n\n`;
+    
+    // Add summary from Educator agent
+    if (educationalContent.summary) {
+      insights += `### 📊 Analysis Summary\n${educationalContent.summary}\n\n`;
+    }
+    
+    // Add priority topics
+    if (educationalContent.priorityTopics && educationalContent.priorityTopics.length > 0) {
+      insights += `### 🎯 Priority Learning Topics\n`;
+      educationalContent.priorityTopics.forEach((topic: string, index: number) => {
+        insights += `${index + 1}. **${this.formatTopicName(topic)}**\n`;
+      });
+      insights += `\n`;
+    }
+    
+    // Add learning paths
+    if (educationalContent.learningPaths && educationalContent.learningPaths.length > 0) {
+      insights += `### 🛤️ Recommended Learning Paths\n\n`;
+      educationalContent.learningPaths.forEach((path: any) => {
+        insights += `#### ${this.formatTopicName(path.topic || path.category)}\n`;
+        if (path.description) {
+          insights += `${path.description}\n`;
+        }
+        if (path.suggestedResources && path.suggestedResources.length > 0) {
+          insights += `**Suggested Resources:**\n`;
+          path.suggestedResources.slice(0, 3).forEach((resource: any) => {
+            insights += `- ${resource.title || resource}\n`;
+          });
+        }
+        insights += `\n`;
+      });
+    }
+    
+    // Add educational resources
+    if (educationalContent.resources) {
+      insights += `### 📚 Educational Resources\n\n`;
+      
+      // Courses
+      if (educationalContent.resources.courses && educationalContent.resources.courses.length > 0) {
+        insights += `#### 🎓 Recommended Courses\n`;
+        educationalContent.resources.courses.slice(0, 5).forEach((course: any) => {
+          const duration = course.duration ? ` (${course.duration})` : '';
+          const provider = course.provider ? ` - ${course.provider}` : '';
+          const url = course.url ? ` [View Course](${course.url})` : '';
+          insights += `- **${course.title}**${provider}${duration}${url}\n`;
+          if (course.description) {
+            insights += `  ${course.description}\n`;
+          }
+        });
+        insights += `\n`;
+      }
+      
+      // Articles
+      if (educationalContent.resources.articles && educationalContent.resources.articles.length > 0) {
+        insights += `#### 📖 Recommended Articles\n`;
+        educationalContent.resources.articles.slice(0, 5).forEach((article: any) => {
+          const author = article.author ? ` by ${article.author}` : '';
+          const url = article.url ? ` [Read Article](${article.url})` : '';
+          insights += `- **${article.title}**${author}${url}\n`;
+        });
+        insights += `\n`;
+      }
+      
+      // Videos
+      if (educationalContent.resources.videos && educationalContent.resources.videos.length > 0) {
+        insights += `#### 🎥 Video Tutorials\n`;
+        educationalContent.resources.videos.slice(0, 5).forEach((video: any) => {
+          const duration = video.duration ? ` (${video.duration})` : '';
+          const channel = video.channel ? ` - ${video.channel}` : '';
+          const url = video.url ? ` [Watch Video](${video.url})` : '';
+          insights += `- **${video.title}**${channel}${duration}${url}\n`;
+        });
+        insights += `\n`;
+      }
+    }
+    
+    // Add estimated learning time
+    if (educationalContent.estimatedLearningTime) {
+      const hours = Math.floor(educationalContent.estimatedLearningTime / 60);
+      const minutes = educationalContent.estimatedLearningTime % 60;
+      const timeStr = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+      insights += `### ⏱️ Estimated Learning Time\n`;
+      insights += `Total time to complete recommended resources: **${timeStr}**\n\n`;
+    }
+    
+    // Add team recommendations
+    if (educationalContent.teamRecommendations && educationalContent.teamRecommendations.length > 0) {
+      insights += `### 👥 Team Recommendations\n`;
+      educationalContent.teamRecommendations.forEach((rec: string) => {
+        insights += `- ${rec}\n`;
+      });
+      insights += `\n`;
+    }
+    
+    // Add issue-specific context
+    const issuesByCategory = this.categorizeIssues(newIssues);
+    if (issuesByCategory.size > 0) {
+      insights += `### 🔍 Issues Context\n`;
+      insights += `Based on the ${newIssues.length} issues found in this PR:\n\n`;
+      
+      issuesByCategory.forEach((issues, category) => {
+        insights += `**${this.formatTopicName(category)}** (${issues.length} issue${issues.length > 1 ? 's' : ''}):\n`;
+        const examples = issues.slice(0, 2).map(i => i.title || i.message).filter(Boolean);
+        if (examples.length > 0) {
+          examples.forEach(ex => {
+            insights += `- ${ex}\n`;
+          });
+        }
+        insights += `\n`;
+      });
+    }
+    
+    insights += `---\n\n`;
+    return insights;
+  }
+
+  private categorizeIssues(issues: Issue[]): Map<string, Issue[]> {
+    const categories = new Map<string, Issue[]>();
+    
+    issues.forEach(issue => {
+      let category = 'code-quality';
+      const title = (issue.title || issue.message || '').toLowerCase();
+      
+      if (this.isSecurityIssue(issue)) {
+        category = 'security';
+      } else if (this.isPerformanceIssue(issue)) {
+        category = 'performance';
+      } else if (title.includes('test') || title.includes('coverage')) {
+        category = 'testing';
+      } else if (title.includes('architecture') || title.includes('design')) {
+        category = 'architecture';
+      } else if (title.includes('dependency') || title.includes('package')) {
+        category = 'dependencies';
+      }
+      
+      if (!categories.has(category)) {
+        categories.set(category, []);
+      }
+      categories.get(category)!.push(issue);
+    });
+    
+    return categories;
+  }
+
+  private formatTopicName(topic: string): string {
+    return topic
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  }
   
   private async generateSkillsTracking(newIssues: Issue[], unchangedIssues: Issue[], resolvedIssues: Issue[], prMetadata: any): Promise<string> {
     const author = prMetadata.author || 'Unknown';
@@ -1087,9 +1263,9 @@ ${depIssues.length === 0 ? '- ✅ All dependencies are secure and up-to-date' : 
 
 ### Developer Performance: ${this.formatAuthor(author)}
 
-**Current Skill Score: ${newScore.toFixed(1)}/100 (${this.getGrade(newScore)})**
-- Previous Score: ${previousScore}/100${previousScore === NEW_USER_BASE_SCORE ? ' (New User Base)' : ''}
-- Score Change: ${netChange >= 0 ? '+' : ''}${netChange.toFixed(1)} points
+**Current Skill Score: ${this.formatScore(newScore)}/100 (${this.getGrade(newScore)})**
+- Previous Score: ${this.formatScore(previousScore)}/100${previousScore === NEW_USER_BASE_SCORE ? ' (New User Base)' : ''}
+- Score Change: ${netChange >= 0 ? '+' : ''}${this.formatScore(netChange)} points
 - Trend: ${trend}
 
 ### 📊 Skill Score Calculation (Consistent Scoring System)
