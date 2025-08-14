@@ -187,3 +187,7 @@ data/
 # Time-series database data (generated during testing)
 data/
 apps/api/deepwiki-metrics.json
+# Session test outputs - exclude from commits
+packages/agents/src/standard/tests/reports/comparison-agent/pr-*-2025-*.md
+packages/agents/test-outputs/
+test-outputs/
