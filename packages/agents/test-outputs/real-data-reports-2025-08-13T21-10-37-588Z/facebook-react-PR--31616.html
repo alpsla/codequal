@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>facebook/react PR #31616 - CodeQual Analysis Report</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 2rem;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      padding: 3rem;
+    }
+    h1 {
+      color: #2c3e50;
+      border-bottom: 3px solid #667eea;
+      padding-bottom: 1rem;
+      margin-bottom: 2rem;
+    }
+    h2 {
+      color: #34495e;
+      margin-top: 2rem;
+      margin-bottom: 1rem;
+      padding: 0.5rem;
+      background: linear-gradient(90deg, #f8f9fa 0%, transparent 100%);
+      border-left: 4px solid #667eea;
+    }
+    h3 {
+      color: #7f8c8d;
+      margin-top: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    pre {
+      background: #2c3e50;
+      color: #ecf0f1;
+      padding: 1rem;
+      border-radius: 6px;
+      overflow-x: auto;
+      margin: 1rem 0;
+    }
+    code {
+      background: #f8f9fa;
+      padding: 0.2rem 0.4rem;
+      border-radius: 3px;
+      font-family: 'Courier New', monospace;
+    }
+    pre code {
+      background: transparent;
+      padding: 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+    }
+    th, td {
+      border: 1px solid #dee2e6;
+      padding: 0.75rem;
+      text-align: left;
+    }
+    th {
+      background: #f8f9fa;
+      font-weight: 600;
+    }
+    .emoji-check { color: #27ae60; }
+    .emoji-cross { color: #e74c3c; }
+    .emoji-warning { color: #f39c12; }
+    .emoji-critical { color: #c0392b; }
+    .emoji-high { color: #e67e22; }
+    .emoji-medium { color: #f1c40f; }
+    .emoji-low { color: #95a5a6; }
+    .metadata {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 1.5rem;
+      border-radius: 8px;
+      margin-bottom: 2rem;
+    }
+    .metadata h3 {
+      color: white;
+      margin-top: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="metadata">
+      <h3>📊 Analysis Metadata</h3>
+      <p><strong>PR:</strong> facebook/react PR #31616</p>
+      <p><strong>Description:</strong> React framework - Large architectural refactor</p>
+      <p><strong>Generated:</strong> 2025-08-13T21:10:37.593Z</p>
+      <p><strong>Data Source:</strong> 100% Real DeepWiki Analysis</p>
+    </div>
+    <h1>Pull Request Analysis Report</h1><br>
+<br>
+<strong>Repository:</strong> facebook/react  <br>
+<strong>PR:</strong> #31616 - Refactor fiber architecture for improved concurrent rendering  <br>
+<strong>Author:</strong> react-core-team  <br>
+<strong>Analysis Date:</strong> 2025-08-13T21:10:37.593Z  <br>
+<strong>Scan Duration:</strong> 145.0 seconds<br>
+<br>
+---<br>
+<br>
+<h2>PR Decision: <span class="emoji-cross">❌</span> DECLINED - CRITICAL ISSUES MUST BE FIXED</h2><br>
+<br>
+<strong>Confidence:</strong> 92%<br>
+<br>
+This PR introduces 1 critical and 2 high and 2 breaking changes that must be resolved before merge.<br>
+<br>
+---<br>
+<br>
+<h2>Executive Summary</h2><br>
+<br>
+<strong>Overall Score: 50/100 (Grade: F)</strong><br>
+<br>
+<h3>Key Metrics</h3><br>
+- <strong>Critical Issues:</strong> 1 <span class="emoji-critical">🔴</span><br>
+- <strong>High Issues:</strong> 2 <span class="emoji-high">🟠</span><br>
+- <strong>Medium Issues:</strong> 2 <span class="emoji-medium">🟡</span><br>
+- <strong>Low Issues:</strong> 0 <span class="emoji-low">🟢</span><br>
+- <strong>Breaking Changes:</strong> 2 <span class="emoji-warning">⚠️</span><br>
+- <strong>Issues Resolved:</strong> 2 <span class="emoji-check">✅</span><br>
+<br>
+<h3>Issue Distribution</h3><br>
+<pre><code><br>
+Critical: █░░░░░░░░░ 1<br>
+High:     ████░░░░░░ 2<br>
+Medium:   ████░░░░░░ 2<br>
+Low:      ░░░░░░░░░░ 0<br>
+</code></pre><br>
+<br>
+---<br>
+<br>
+<h2>1. Security Analysis</h2><br>
+<br>
+<h3>Score: 100/100 (Grade: A)</h3><br>
+<br>
+<strong>Score Breakdown:</strong><br>
+- Vulnerability Prevention: 100/100<br>
+- Authentication & Authorization: 95/100<br>
+- Data Protection: 100/100<br>
+- Input Validation: 90/100<br>
+<br>
+<h3>Found 0 Security Issues</h3><br>
+<br>
+<span class="emoji-check">✅</span> No new security vulnerabilities introduced<br>
+<br>
+---<br>
+<br>
+<h2>2. Performance Analysis</h2><br>
+<br>
+<h3>Score: 88/100 (Grade: B)</h3><br>
+<br>
+<strong>Score Breakdown:</strong><br>
+- Response Time: 88/100<br>
+- Resource Efficiency: 93/100<br>
+- Scalability: 88/100<br>
+<br>
+<h3>Found 1 Performance Issues</h3><br>
+<br>
+- <strong>HIGH:</strong> Performance regression in concurrent mode - packages/react-reconciler/src/ReactFiberWorkLoop.new.js:2345<br>
+<br>
+---<br>
+<br>
+<h2>3. Code Quality Analysis</h2><br>
+<br>
+<h3>Score: 92/100 (Grade: A)</h3><br>
+<br>
+- Maintainability: 95/100<br>
+- Test Coverage: 87%<br>
+- Documentation: 99/100<br>
+- Code Complexity: 92/100<br>
+<br>
+<h3>Issues Found</h3><br>
+<br>
+- <strong>Complex function exceeds cognitive complexity threshold</strong> - packages/react-reconciler/src/ReactFiberCommitWork.new.js:890<br>
+<br>
+---<br>
+<br>
+<h2>4. Architecture Analysis</h2><br>
+<br>
+<h3>Score: 90/100 (Grade: A)</h3><br>
+<br>
+<strong>Score Breakdown:</strong><br>
+- Design Patterns: 95/100<br>
+- Modularity: 90/100<br>
+- Scalability: 92/100<br>
+<br>
+<h3>Architecture Overview</h3><br>
+<br>
+<pre><code><br>
+┌─────────────────────────────────────────┐<br>
+│           Frontend Layer                 │<br>
+│  ┌──────────┐  ┌──────────┐  ┌────────┐│<br>
+│  │   UI     │  │  State   │  │  API   ││<br>
+│  │Components│  │Management│  │ Client ││<br>
+│  └──────────┘  └──────────┘  └────────┘│<br>
+└─────────────────────────────────────────┘<br>
+                    │<br>
+┌─────────────────────────────────────────┐<br>
+│           Backend Services              │<br>
+│  ┌──────────┐  ┌──────────┐  ┌────────┐│<br>
+│  │   API    │  │ Business │  │  Data  ││<br>
+│  │ Gateway  │  │  Logic   │  │ Access ││<br>
+│  └──────────┘  └──────────┘  └────────┘│<br>
+└─────────────────────────────────────────┘<br>
+                    │<br>
+┌─────────────────────────────────────────┐<br>
+│           Data Layer                    │<br>
+│  ┌──────────┐  ┌──────────┐  ┌────────┐│<br>
+│  │Database  │  │  Cache   │  │ Queue  ││<br>
+│  │   SQL    │  │  Redis   │  │  MQ    ││<br>
+│  └──────────┘  └──────────┘  └────────┘│<br>
+└─────────────────────────────────────────┘<br>
+</code></pre><br>
+<br>
+<h3>Architectural Findings</h3><br>
+<br>
+<span class="emoji-warning">⚠️</span> 1 architectural concerns found:<br>
+<br>
+1. <strong>Breaking change in fiber architecture</strong><br>
+   📍 packages/react-reconciler/src/ReactFiberRoot.new.js:234<br>
+   Impact: HIGH architecture issue requires attention<br>
+   Suggestion: Review and fix according to best practices<br>
+<br>
+<br>
+---<br>
+<br>
+<h2>5. Dependencies Analysis</h2><br>
+<br>
+<h3>Score: 90/100 (Grade: A)</h3><br>
+<br>
+<strong>Score Breakdown:</strong><br>
+- Security Vulnerabilities: 90/100<br>
+- Version Currency: 95/100<br>
+- License Compliance: 100/100<br>
+<br>
+<h3>Dependency Issues</h3><br>
+<br>
+<span class="emoji-warning">⚠️</span> <strong>MEDIUM:</strong> Using deprecated Node.js APIs (scripts/build.js:145)<br>
+- <strong>Impact:</strong> Potential security vulnerabilities<br>
+- <strong>Fix:</strong> Update to latest version<br>
+<br>
+---<br>
+<br>
+<h2>6. Breaking Changes</h2><br>
+<br>
+<h3><span class="emoji-warning">⚠️</span> 2 Breaking Changes Detected</h3><br>
+<br>
+<br>
+#### 1. Breaking change in fiber architecture<br>
+<strong>File:</strong> packages/react-reconciler/src/ReactFiberRoot.new.js:234  <br>
+<strong>Impact:</strong> HIGH architecture issue requires attention  <br>
+<strong>Migration Required:</strong> Update client code to handle new format<br>
+<br>
+<br>
+#### 2. Breaking change: Changed hook execution order<br>
+<strong>File:</strong> packages/react-reconciler/src/ReactFiberHooks.new.js:567  <br>
+<strong>Impact:</strong> CRITICAL api issue requires attention  <br>
+<strong>Migration Required:</strong> Update client code to handle new format<br>
+<br>
+<br>
+<strong>Note:</strong> Security issues like SQL injection are NOT breaking changes - they are in the Security section.<br>
+<br>
+---<br>
+<br>
+<h2>7. Issues Resolved</h2><br>
+<br>
+<h3><span class="emoji-check">✅</span> 2 Issues Resolved</h3><br>
+<br>
+1. <strong>Fixed: Inefficient reconciliation algorithm</strong> - packages/react-reconciler/src/ReactFiberWorkLoop.js:1234<br>
+2. <strong>Fixed: Decoupled scheduler from reconciler</strong> - packages/scheduler/src/Scheduler.js:789<br>
+<br>
+---<br>
+<br>
+<h2>8. Repository Unchanged Issues</h2><br>
+<br>
+<h3><span class="emoji-warning">⚠️</span> 5 Pre-existing Issues (Not from this PR)</h3><br>
+<br>
+These issues exist in the main branch and are not addressed by this PR:<br>
+<br>
+<strong>Distribution:</strong><br>
+- Critical: 1 issues<br>
+- High: 2 issues  <br>
+- Medium: 1 issues<br>
+- Low: 1 issues<br>
+<br>
+<h3>Sample Critical Issues:</h3><br>
+1. <strong>Inefficient reconciliation algorithm in large trees</strong><br>
+   📍 packages/react-reconciler/src/ReactFiberWorkLoop.js:1234<br>
+<br>
+---<br>
+<br>
+<h2>9. Testing Coverage</h2><br>
+<br>
+<h3>Score: 87/100 (Grade: B)</h3><br>
+<br>
+<strong>Current Coverage:</strong> 87%<br>
+<br>
+<h3>Test Statistics</h3><br>
+- Line Coverage: 87%<br>
+- Branch Coverage: 77%<br>
+- Function Coverage: 82%<br>
+<br>
+<span class="emoji-check">✅</span> Good test coverage<br>
+<br>
+---<br>
+<br>
+<h2>10. Business Impact Analysis</h2><br>
+<br>
+<h3>Risk Assessment: CRITICAL</h3><br>
+<br>
+<strong>Financial Impact Estimate:</strong> $10K - $100K+<br>
+<strong>Time to Resolution:</strong> 1-2 weeks<br>
+<br>
+<h3>Impact Categories</h3><br>
+<br>
+| Risk Category | Level | Issues Found | Mitigation Cost | Business Impact |<br>
+|--------------|-------|--------------|-----------------|-----------------|<br>
+| Security | CRITICAL | 3 | $10K+ | Data breach risk |<br>
+| Performance | MEDIUM | 1 | $500-2K | User experience impact |<br>
+| Stability | HIGH | 2 | $5K+ | Service disruption |<br>
+| Compliance | LOW | 0 | $5K+ | Regulatory risk |<br>
+<br>
+<h3>Recommendations</h3><br>
+🚨 <strong>URGENT:</strong> Address critical issues before deployment<br>
+<br>
+---<br>
+<br>
+<h2>11. Documentation Quality</h2><br>
+<br>
+<h3>Score: 80/100 (Grade: B)</h3><br>
+<br>
+<h3>Documentation Status</h3><br>
+<span class="emoji-check">✅</span> API documentation present<br>
+<span class="emoji-check">✅</span> Code comments included<br>
+<span class="emoji-warning">⚠️</span> Consider adding:<br>
+- Architecture diagrams<br>
+- Setup instructions<br>
+- Migration guides<br>
+<br>
+---<br>
+<br>
+<h2>13. Educational Insights</h2><br>
+<br>
+<h3>🚨 URGENT TRAINING REQUIRED</h3><br>
+- Performance Optimization & Resource Management<br>
+<br>
+<h3>📚 RECOMMENDED TRAINING</h3><br>
+- Clean Code Principles<br>
+<br>
+<h2>14. Developer Performance</h2><br>
+<br>
+<strong>Current Skill Score:</strong> 40.0/100 (Grade: F)<br>
+<br>
+<h3>Score Calculation</h3><br>
+| Factor | Points | Count | Impact |<br>
+|--------|--------|-------|--------|<br>
+| Issues Resolved | +varies | 2 | +8.0 |<br>
+| Critical Issues | -5 | 1 | -5.0 |<br>
+| High Issues | -3 | 2 | -6.0 |<br>
+| Medium Issues | -1 | 2 | -2.0 |<br>
+| Low Issues | -0.5 | 0 | 0.0 |<br>
+| <strong>Net Score Change</strong> | | | <strong>-5.0</strong> |<br>
+<br>
+---<br>
+<br>
+
+  </div>
+</body>
+</html>
