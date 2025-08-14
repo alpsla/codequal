@@ -26,7 +26,7 @@ const CODE_QUALITY_BASE = 75;   // Was 100, fixed to 75
  */
 export class ReportGeneratorV7EnhancedComplete {
   private skillProvider?: any; // ISkillProvider interface from orchestrator
-  private isAuthorizedCaller: boolean = false;
+  private isAuthorizedCaller = false;
   
   constructor(skillProvider?: any, authorizedCaller?: boolean) {
     this.skillProvider = skillProvider;

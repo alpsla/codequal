@@ -1,0 +1,15 @@
+{
+  "id": "BUG-2025-08-14-001",
+  "title": "Model Name Shows Mock Value in Production Reports",
+  "description": "When running with real DeepWiki API, the report still shows 'mock/MOCK-MODEL-NOT-FROM-SUPABASE' instead of the actual model used (e.g., 'gpt-4o').",
+  "severity": "medium",
+  "status": "open",
+  "component": "report-generator",
+  "file": "src/standard/comparison/report-generator-v7-fixed.ts",
+  "line": 145,
+  "createdAt": "2025-08-14T21:00:00.000Z",
+  "labels": ["production", "display-issue"],
+  "expectedBehavior": "Should display actual model name used (e.g., 'gpt-4o', 'gpt-4-turbo')",
+  "actualBehavior": "Displays 'mock/MOCK-MODEL-NOT-FROM-SUPABASE' even in production",
+  "suggestedFix": "// Ensure model name is properly passed from orchestrator\n// Check if modelUsed is being set correctly in ComparisonAgentProduction\n// May need to trace through the full data flow from DeepWiki response"
+}

@@ -147,8 +147,8 @@ export function parseDeepWikiResponse(content: string) {
       const patterns = [
         /`([^`]+\.(ts|js|tsx|jsx|json|md|py|go|rs|java|cpp|c|h))`/, // backtick wrapped
         /\b(src\/[^\s,;:]+\.(ts|js|tsx|jsx|json|md))/, // src/ paths
-        /\b([a-zA-Z0-9_\-]+\/[^\s,;:]+\.(ts|js|tsx|jsx|json|md))/, // folder/file paths
-        /\b([a-zA-Z0-9_\-]+\.(ts|js|tsx|jsx|json|md))\b/, // just filename
+        /\b([a-zA-Z0-9_-]+\/[^\s,;:]+\.(ts|js|tsx|jsx|json|md))/, // folder/file paths
+        /\b([a-zA-Z0-9_-]+\.(ts|js|tsx|jsx|json|md))\b/, // just filename
         /in\s+([^\s]+\.(ts|js|tsx|jsx|json|md))/, // "in filename"
         /file:\s*([^\s]+\.(ts|js|tsx|jsx|json|md))/, // "file: filename"
       ];
@@ -171,7 +171,7 @@ export function parseDeepWikiResponse(content: string) {
       currentIssue.description += ' ' + line.trim();
       
       // Check for file/line info in continuation
-      const fileMatch = line.match(/(?:`([^`]+\.(ts|js|tsx|jsx|json|md))`|(\w+\/[\w\-\.]+\.(ts|js|tsx|jsx|json|md)))/);
+      const fileMatch = line.match(/(?:`([^`]+\.(ts|js|tsx|jsx|json|md))`|(\w+\/[\w\-.]+\.(ts|js|tsx|jsx|json|md)))/);
       if (fileMatch && currentIssue.location.file === 'unknown') {
         currentIssue.location.file = (fileMatch[1] || fileMatch[3]).replace(/`/g, '');
       }

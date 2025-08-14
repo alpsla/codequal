@@ -118,11 +118,17 @@ export function generateEducationalInsights(issues: Issue[]): string {
       section += `**${category.toUpperCase()} Training Required:**\n`;
       section += `*Based on ${categoryIssues.length} critical issue(s) found*\n\n`;
       
-      // List specific issues and their training
+      // List specific issues and their training - include full description
       categoryIssues.slice(0, 3).forEach(issue => {
-        section += `📍 Issue: "${issue.message}"\n`;
+        const description = issue.message || (issue as any).title || 'Issue';
+        const details = (issue as any).description || (issue as any).suggestion || (issue as any).remediation || '';
+        section += `📍 Issue: "${description}"\n`;
         if (issue.location) {
-          section += `   Location: ${issue.location.file}:${issue.location.line || ''}\n`;
+          const loc = issue.location as any;
+          section += `   Location: ${loc.file}:${loc.line || ''}${loc.column ? ':' + loc.column : ''}\n`;
+        }
+        if (details) {
+          section += `   Description: ${details}\n`;
         }
         section += `   → Training Needed: ${getSpecificTraining(issue).join(', ')}\n\n`;
       });
@@ -145,10 +151,18 @@ export function generateEducationalInsights(issues: Issue[]): string {
     for (const [category, categoryIssues] of Object.entries(highByCategory)) {
       section += `**${category.toUpperCase()} Skills Enhancement:**\n`;
       
-      // Show examples with training
+      // Show examples with training - include full description for educator agent
       categoryIssues.slice(0, 2).forEach(issue => {
-        section += `- Issue: "${issue.message}"\n`;
-        section += `  → Training: ${getSpecificTraining(issue)[0]}\n`;
+        const description = issue.message || (issue as any).title || 'Issue';
+        const details = (issue as any).description || (issue as any).suggestion || (issue as any).remediation || '';
+        section += `- Issue: "${description}"\n`;
+        if (details) {
+          section += `  Description: ${details}\n`;
+        }
+        const training = getSpecificTraining(issue);
+        if (training.length > 0) {
+          section += `  → Training: ${training[0]}\n`;
+        }
       });
       section += '\n';
     }
@@ -210,7 +224,7 @@ function groupIssuesByCategory(issues: Issue[]): Record<string, Issue[]> {
 }
 
 function getSpecificTraining(issue: Issue): string[] {
-  const message = issue.message.toLowerCase();
+  const message = (issue.message || (issue as any).title || '').toLowerCase();
   const trainings: string[] = [];
   
   // Security training mapping

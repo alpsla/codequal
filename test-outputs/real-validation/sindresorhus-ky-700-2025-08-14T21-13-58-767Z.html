@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CodeQual Report - undefined</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      border-radius: 8px;
+      padding: 30px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; }
+    h2 { color: #34495e; margin-top: 30px; }
+    h3 { color: #7f8c8d; }
+    code {
+      background: #f8f9fa;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 0.9em;
+    }
+    pre {
+      background: #2c3e50;
+      color: #ecf0f1;
+      padding: 15px;
+      border-radius: 5px;
+      overflow-x: auto;
+    }
+    .metadata {
+      background: #ecf0f1;
+      padding: 15px;
+      border-radius: 5px;
+      margin-bottom: 30px;
+    }
+    .score-badge {
+      display: inline-block;
+      padding: 5px 10px;
+      border-radius: 20px;
+      font-weight: bold;
+      margin: 0 5px;
+    }
+    .score-high { background: #2ecc71; color: white; }
+    .score-medium { background: #f39c12; color: white; }
+    .score-low { background: #e74c3c; color: white; }
+    .issue-critical { border-left: 4px solid #e74c3c; padding-left: 10px; margin: 10px 0; }
+    .issue-high { border-left: 4px solid #f39c12; padding-left: 10px; margin: 10px 0; }
+    .issue-medium { border-left: 4px solid #3498db; padding-left: 10px; margin: 10px 0; }
+    .issue-low { border-left: 4px solid #95a5a6; padding-left: 10px; margin: 10px 0; }
+    .location { 
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 0.85em;
+      color: #7f8c8d;
+    }
+    .architecture-diagram {
+      background: #2c3e50;
+      color: #2ecc71;
+      padding: 20px;
+      border-radius: 5px;
+      font-family: 'Consolas', monospace;
+      white-space: pre;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="metadata">
+      <h3>Test Metadata</h3>
+      <p><strong>PR URL:</strong> https://github.com/sindresorhus/ky/pull/700</p>
+      <p><strong>Repository:</strong> sindresorhus/ky</p>
+      <p><strong>PR Number:</strong> #700</p>
+      <p><strong>Generated:</strong> 2025-08-14T21:13:58.768Z</p>
+      <p><strong>DeepWiki API:</strong> http://localhost:8001</p>
+      <p><strong>Model Used:</strong> gpt-4o</p>
+    </div>
+    <div class="report-content">
+      <h1>Pull Request Analysis Report</h1><br>
+<br>
+<strong>Repository:</strong> https://github.com/sindresorhus/ky  <br>
+<strong>PR:</strong> #700 - PR #700  <br>
+<strong>Author:</strong> sindresorhus (@sindresorhus)  <br>
+<strong>Analysis Date:</strong> 2025-08-14T21:13:58.763Z  <br>
+<strong>Model Used:</strong> gpt-4o  <br>
+<strong>Scan Duration:</strong> 24.0 seconds<br>
+<br>
+---<br>
+<br>
+<h2>PR Decision: ✅ APPROVED - Ready to merge</h2><br>
+<br>
+<strong>Confidence:</strong> 85%<br>
+<br>
+No blocking issues found.<br>
+<br>
+---<br>
+<br>
+<h2>Executive Summary</h2><br>
+<br>
+<strong>Overall Score: 73.75/100 (Grade: C)</strong><br>
+<br>
+This PR can be approved with minor improvements. <br>
+<br>
+<h3>Key Metrics</h3><br>
+- <strong>Critical Issues Resolved:</strong> 0 ✅<br>
+- <strong>New Critical/High Issues:</strong> 0 🚨<br>
+- <strong>Pre-existing Issues:</strong> 15 (0 critical, 2 high) ⚠️ <strong>[Not blocking, but impacts scores]</strong><br>
+- <strong>Overall Score Impact:</strong> +0.00 points (was 73.75, now 73.75)<br>
+- <strong>Risk Level:</strong> LOW<br>
+- <strong>Estimated Review Time:</strong> 15 minutes<br>
+- <strong>Files Changed:</strong> 2<br>
+- <strong>Lines Added/Removed:</strong> +332 / -93<br>
+<br>
+<h3>Issue Distribution</h3><br>
+<pre><code><br>
+NEW PR ISSUES (BLOCKING):<br>
+Critical: ░░░░░░░░░░ 0<br>
+High:     ░░░░░░░░░░ 0<br>
+Medium:   ░░░░░░░░░░ 0 (acceptable)<br>
+Low:      ░░░░░░░░░░ 0 (acceptable)<br>
+<br>
+EXISTING REPOSITORY ISSUES (NOT BLOCKING):<br>
+Critical: ░░░░░░░░░░ 0 unfixed<br>
+High:     ██░░░░░░░░ 2 unfixed<br>
+Medium:   ████████░░ 4 unfixed<br>
+Low:      █████████░ 9 unfixed<br>
+</code></pre><br>
+<br>
+---<br>
+<br>
+<h2>1. Security Analysis</h2><br>
+<br>
+<h3>Score: 100/100 (Grade: A)</h3><br>
+<br>
+<strong>Score Breakdown:</strong><br>
+- Vulnerability Prevention: 100/100<br>
+- Authentication & Authorization: 95/100<br>
+- Data Protection: 100/100<br>
+- Input Validation: 90/100<br>
+<br>
+<h3>Found 0 Security Issues</h3><br>
+<br>
+✅ No new security vulnerabilities introduced<br>
+<br>
+---<br>
+<br>
+<h2>2. Performance Analysis</h2><br>
+<br>
+<h3>Score: 100/100 (Grade: A)</h3><br>
+<br>
+<strong>Score Breakdown:</strong><br>
+- Response Time: 100/100<br>
+- Resource Efficiency: 107/100<br>
+- Scalability: 100/100<br>
+<br>
+<h3>Found 0 Performance Issues</h3><br>
+<br>
+✅ No performance degradations detected<br>
+<br>
+<br>
+---<br>
+<br>
+<h2>3. Code Quality Analysis</h2><br>
+<br>
+<h3>Score: 100/100 (Grade: A)</h3><br>
+<br>
+- Maintainability: 103/100<br>
+- Test Coverage: 0%<br>
+- Documentation: 107/100<br>
+- Code Complexity: 100/100<br>
+<br>
+<h3>✅ Good Code Quality</h3><br>
+<br>
+<br>
+---<br>
+<br>
+<h2>4. Architecture Analysis</h2><br>
+<br>
+<h3>Score: 100/100 (Grade: A)</h3><br>
+<br>
+<strong>Score Breakdown:</strong><br>
+- Design Patterns: 105/100<br>
+- Modularity: 100/100<br>
+- Scalability: 102/100<br>
+<br>
+<h3>Architecture Overview</h3><br>
+<br>
+<pre><code><br>
+┌─────────────────────────────────────────┐<br>
+│           Frontend Layer                 │<br>
+│  ┌──────────┐  ┌──────────┐  ┌────────┐│<br>
+│  │   UI     │  │  State   │  │  API   ││<br>
+│  │Components│  │Management│  │ Client ││<br>
+│  └──────────┘  └──────────┘  └────────┘│<br>
+└─────────────────────────────────────────┘<br>
+                    │<br>
+┌─────────────────────────────────────────┐<br>
+│           Backend Services              │<br>
+│  ┌──────────┐  ┌──────────┐  ┌────────┐│<br>
+│  │   API    │  │ Business │  │  Data  ││<br>
+│  │ Gateway  │  │  Logic   │  │ Access ││<br>
+│  └──────────┘  └──────────┘  └────────┘│<br>
+└─────────────────────────────────────────┘<br>
+                    │<br>
+┌─────────────────────────────────────────┐<br>
+│           Data Layer                    │<br>
+│  ┌──────────┐  ┌──────────┐  ┌────────┐│<br>
+│  │Database  │  │  Cache   │  │ Queue  ││<br>
+│  │   SQL    │  │  Redis   │  │  MQ    ││<br>
+│  └──────────┘  └──────────┘  └────────┘│<br>
+└─────────────────────────────────────────┘<br>
+</code></pre><br>
+<br>
+<h3>Architectural Findings</h3><br>
+<br>
+✅ Architecture maintains good separation of concerns<br>
+✅ No architectural anti-patterns detected<br>
+✅ Good modularity and scalability patterns<br>
+<br>
+---<br>
+<br>
+<h2>5. Dependencies Analysis</h2><br>
+<br>
+<h3>Score: 100/100 (Grade: A)</h3><br>
+<br>
+<strong>Score Breakdown:</strong><br>
+- Security Vulnerabilities: 100/100<br>
+- Version Currency: 105/100<br>
+- License Compliance: 100/100<br>
+<br>
+<h3>Dependency Issues</h3><br>
+<br>
+✅ All dependencies are secure and up-to-date<br>
+<br>
+---<br>
+<br>
+<h2>PR Issues</h2><br>
+<br>
+No new issues introduced! 🎉<br>
+<br>
+---<br>
+<br>
+<h2>8. Repository Issues (NOT BLOCKING)</h2><br>
+<br>
+<em>These pre-existing issues don't block the PR but impact skill scores and should be addressed as technical debt.</em><br>
+<br>
+<h3>⚠️ 15 Pre-existing Issues</h3><br>
+<br>
+<strong>Distribution:</strong><br>
+- Critical: 0 issues (Skill Impact: -0 points)<br>
+- High: 2 issues (Skill Impact: -6 points)<br>
+- Medium: 4 issues (Skill Impact: -4 points)<br>
+- Low: 9 issues (Skill Impact: -4.5 points)<br>
+<br>
+<h3>⚠️ High Repository Issues (2)</h3><br>
+<strong>Skill Impact:</strong> -6 points for not fixing<br>
+<br>
+#### REPO-HIGH-SECURITY-1: Potential Memory Leak in HTTP Requests<br>
+<strong>File:</strong> location unknown  <br>
+<strong>Impact:</strong> Application will consume increasing memory until crash<br>
+<br>
+#### REPO-HIGH-SECURITY-2: Lack of Input Validation<br>
+<strong>File:</strong> location unknown  <br>
+<strong>Impact:</strong> Sensitive data exposed to attackers<br>
+<br>
+<h3>🟡 Medium Repository Issues (4)</h3><br>
+<strong>Skill Impact:</strong> -4 points for not fixing<br>
+<br>
+- <strong>Inefficient Retry Mechanism</strong> - location unknown<br>
+- <strong>Complexity in Hook Management</strong> - location unknown<br>
+<br>
+<h3>🟢 Low Repository Issues (9)</h3><br>
+<strong>Skill Impact:</strong> -4.5 points for not fixing<br>
+<br>
+- Deprecated API Usage - location unknown<br>
+- Unoptimized Fetch Calls - location unknown<br>
+<br>
+---<br>
+<br>
+<h2>6. Breaking Changes</h2><br>
+<br>
+✅ No breaking changes detected<br>
+<br>
+---<br>
+<br>
+<h2>7. Issues Resolved</h2><br>
+<br>
+<h3>⚠️ 0 Issues Resolved</h3><br>
+<br>
+No issues were resolved in this PR<br>
+<br>
+---<br>
+<br>
+<h2>9. Testing Coverage</h2><br>
+<br>
+<h3>Score: 0/100 (Grade: F)</h3><br>
+<br>
+<strong>Current Coverage:</strong> 0%<br>
+<br>
+⚠️ No test coverage detected - tests are strongly recommended<br>
+<br>
+---<br>
+<br>
+<h2>10. Business Impact Analysis</h2><br>
+<br>
+<h3>Risk Assessment: LOW</h3><br>
+<br>
+<strong>Financial Impact Estimate:</strong> $0 - $1K<br>
+<strong>Time to Resolution:</strong> < 1 day<br>
+<br>
+<h3>Impact Categories</h3><br>
+<br>
+| Risk Category | Level | Issues Found | Mitigation Cost | Business Impact |<br>
+|--------------|-------|--------------|-----------------|-----------------|<br>
+| Security | LOW | 0 | $1-5K | Limited exposure |<br>
+| Performance | LOW | 0 | $500-2K | User experience impact |<br>
+| Stability | LOW | 0 | $0 | None |<br>
+| Compliance | LOW | 0 | $0-1K | Regulatory risk |<br>
+<br>
+<h3>Recommendations</h3><br>
+✅ <strong>LOW RISK:</strong> Safe to proceed with standard review process<br>
+<br>
+---<br>
+<br>
+<h2>11. Documentation Quality</h2><br>
+<br>
+<h3>Score: 40/100 (Grade: F)</h3><br>
+<br>
+<h3>Documentation Missing</h3><br>
+⚠️ No documentation detected<br>
+<br>
+<strong>Recommended additions:</strong><br>
+- API documentation<br>
+- Code comments for complex logic<br>
+- README updates<br>
+- Architecture diagrams<br>
+- Setup and deployment guides<br>
+<br>
+---<br>
+<br>
+<h2>13. Educational Insights</h2><br>
+<br>
+<h3>📚 Training Recommendations Based on Issues Found</h3><br>
+<br>
+#### 📊 Skill Impact Summary<br>
+<br>
+<h3>✅ Excellent Work!</h3><br>
+No immediate training needs identified. Keep up the good practices!<br>
+<h2>14. Individual & Team Skills Tracking</h2><br>
+<br>
+<h3>Developer Performance: sindresorhus</h3><br>
+<br>
+<strong>Final Score: 69/100</strong> (-6 from previous)<br>
+<br>
+| Skill | Previous | Current | Change | Detailed Calculation |<br>
+|-------|----------|---------|---------|---------------------|<br>
+| Security | 82/100 | 57/100 | -25 | Fixed critical: +0, New: -0, Unfixed: -0 |<br>
+| Performance | 78/100 | 66/100 | -12 | New critical: -0, New high: -0, Unfixed: -0, Improvements: +0 |<br>
+| Architecture | 85/100 | 75/100 | -10 | Excellent patterns: +0, New issues: -0, Unfixed: -0 |<br>
+| Code Quality | 88/100 | 75/100 | -13 | Coverage drop: -6, Complexity: -3, New issues: -0, Unfixed: -0 |<br>
+| Dependencies | 80/100 | 75/100 | -5 | 0 vulnerable added: -0, Unfixed vulns: -0 |<br>
+| Testing | 76/100 | 65/100 | -11 | Coverage 82% → 71% (-11%) |<br>
+<br>
+<h3>Skill Deductions Summary</h3><br>
+- <strong>For New Issues:</strong> -0.0 total<br>
+- <strong>For All Unfixed Issues:</strong> -24.5 total  <br>
+- <strong>For Dependencies:</strong> -0 total<br>
+- <strong>Total Deductions:</strong> -24.5 (offset by +0.0 for fixes)<br>
+<br>
+<h3>Team Performance Metrics</h3><br>
+<br>
+<strong>Team Average: 67/100 (D)</strong><br>
+<br>
+| Developer | Overall | Security | Perf | Quality | Deps | Status | Trend |<br>
+|-----------|---------|----------|------|---------|------|--------|-------|<br>
+| sindresorhus | 69/100 | 57/100 | 66/100 | 75/100 | 75/100 | Senior | ↓↓ |<br>
+| John Smith | 62/100 | 65/100 | 58/100 | 68/100 | 70/100 | Mid | → |<br>
+| Alex Kumar | 54/100 | 54/100 | 54/100 | 54/100 | 54/100 | Junior | 🆕 |<br>
+| Maria Rodriguez | 54/100 | 54/100 | 54/100 | 54/100 | 54/100 | Junior | 🆕 |<br>
+| David Park | 54/100 | 54/100 | 54/100 | 54/100 | 54/100 | Mid | 🆕 |<br>
+<br>
+*New team members start at 50/100 base score. They receive a first PR motivation boost (+4) based on this PR's quality, bringing them to 54/100<br>
+<br>
+---<br>
+<br>
+<h2>15. PR Comment Conclusion</h2><br>
+<br>
+<h3>📋 Summary for PR Review</h3><br>
+<br>
+<strong>Decision: ✅ APPROVED</strong><br>
+<br>
+This PR is ready for approval with only minor issues to address.<br>
+<br>
+<strong>Positive Achievements:</strong><br>
+<br>
+- ✅ Good code structure and patterns<br>
+- ✅ Follows established conventions<br>
+- ✅ No architectural issues introduced<br>
+<br>
+<strong>Required Actions:</strong><br>
+1. Consider addressing minor issues<br>
+2. Update documentation if needed<br>
+<br>
+<strong>Developer Performance:</strong> <br>
+The developer's score reflects both new issues introduced (-0 points) and the penalty for leaving 15 pre-existing issues unfixed (-14.5 points). Overall good work with room for improvement. The penalty for pre-existing issues should motivate addressing technical debt.<br>
+<br>
+<strong>Next Steps:</strong><br>
+1. Merge when ready<br>
+2. Monitor for any production issues<br>
+3. Consider addressing technical debt in next sprint<br>
+<br>
+---<br>
+<br>
+
+    </div>
+  </div>
+</body>
+</html>

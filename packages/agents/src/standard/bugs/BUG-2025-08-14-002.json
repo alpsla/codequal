@@ -1,0 +1,14 @@
+{
+  "id": "BUG-2025-08-14-002",
+  "title": "Decimal Precision Still Shows Floating Point Errors",
+  "description": "Some score values still show floating point precision errors (e.g., '55.010000000000005' instead of '55.01').",
+  "severity": "low",
+  "status": "open",
+  "component": "report-generator",
+  "file": "src/standard/comparison/report-generator-v7-fixed.ts",
+  "createdAt": "2025-08-14T21:00:00.000Z",
+  "labels": ["formatting", "display-issue"],
+  "expectedBehavior": "All scores should show exactly 2 decimal places",
+  "actualBehavior": "Some scores show excessive decimal places due to floating point arithmetic",
+  "suggestedFix": "const roundToTwo = (num: number) => {\n  return Math.round((num + Number.EPSILON) * 100) / 100;\n};"
+}

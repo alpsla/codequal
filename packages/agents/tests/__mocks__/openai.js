@@ -155,4 +155,4 @@ const openaiMock = jest.fn().mockImplementation(() => {
   };
 });
 
-export default openaiMock;
+module.exports = openaiMock;

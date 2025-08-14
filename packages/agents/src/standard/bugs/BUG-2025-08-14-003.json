@@ -1,0 +1,15 @@
+{
+  "id": "BUG-2025-08-14-003",
+  "title": "Skills Tracking Section Format Inconsistent",
+  "description": "The enhanced skills tracking section with team performance table doesn't always render in production reports.",
+  "severity": "low",
+  "status": "open",
+  "component": "report-generator",
+  "file": "src/standard/comparison/report-generator-v7-fixed.ts",
+  "line": 889,
+  "createdAt": "2025-08-14T21:00:00.000Z",
+  "labels": ["formatting", "inconsistency"],
+  "expectedBehavior": "Should always show enhanced format with individual skill breakdown by category, team performance table, and detailed calculation explanations",
+  "actualBehavior": "Sometimes shows old format without team table and detailed breakdown",
+  "suggestedFix": "May be related to caching or report generation timing. Consider cache invalidation strategy when report format changes."
+}

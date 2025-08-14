@@ -187,7 +187,7 @@ export class ReportGenerationTest {
     // 11. Educational Insights
     validations.push({
       section: 'Educational Insights',
-      passed: report.includes('## Educational Insights') &&
+      passed: report.includes('## 13. Educational Insights') &&
               (report.includes('URGENT TRAINING') || 
                report.includes('RECOMMENDED TRAINING')),
       message: 'Concise training recommendations'
@@ -196,7 +196,7 @@ export class ReportGenerationTest {
     // 12. Skills Tracking
     validations.push({
       section: 'Skills Tracking',
-      passed: report.includes('## 9. Developer Performance') && 
+      passed: report.includes('## 14. Developer Performance') && 
               report.includes('Score Calculation'),
       message: 'Developer performance tracking'
     });

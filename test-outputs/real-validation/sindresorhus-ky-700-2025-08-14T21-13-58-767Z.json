@@ -1,0 +1,356 @@
+{
+  "metadata": {
+    "url": "https://github.com/sindresorhus/ky/pull/700",
+    "owner": "sindresorhus",
+    "repo": "ky",
+    "prNumber": 700,
+    "timestamp": "2025-08-14T21:13:58.767Z",
+    "deepwikiUrl": "http://localhost:8001",
+    "modelUsed": "gpt-4o"
+  },
+  "comparison": {
+    "resolvedIssues": [],
+    "newIssues": [],
+    "modifiedIssues": [
+      {
+        "original": {
+          "id": "MEDIUM-CZI821",
+          "title": "Improper Error Handling",
+          "description": "Improper Error Handling",
+          "severity": "medium",
+          "category": "Security",
+          "location": {
+            "line": 2,
+            "column": 1
+          },
+          "codeSnippet": "import {type HttpMethod, type KyOptionsRegistry} from '../types/options.js';",
+          "contextLines": [
+            "import {type HttpMethod, type KyOptionsRegistry} from '../types/options.js';"
+          ],
+          "remediation": "Implement comprehensive error handling to prevent information leakage.",
+          "locationConfidence": 60
+        },
+        "modified": {
+          "id": "HIGH-JLA0N3",
+          "title": "Improper Handling of Abort Signals",
+          "description": "Improper Handling of Abort Signals",
+          "severity": "high",
+          "category": "Security",
+          "location": {
+            "line": 2,
+            "column": 1
+          },
+          "codeSnippet": "import {type HttpMethod, type KyOptionsRegistry} from '../types/options.js';",
+          "contextLines": [
+            "import {type HttpMethod, type KyOptionsRegistry} from '../types/options.js';"
+          ],
+          "remediation": "Ensure proper handling of abort signals to avoid potential Denial of Service (DoS) attacks.",
+          "locationConfidence": 60
+        },
+        "changeType": "upgraded"
+      },
+      {
+        "original": {
+          "id": "HIGH-8UHAFZ",
+          "title": "Potential Memory Leak in HTTP Requests",
+          "description": "Potential Memory Leak in HTTP Requests",
+          "severity": "high",
+          "category": "Security",
+          "remediation": "Ensure proper cleanup of resources after requests to prevent memory leaks."
+        },
+        "modified": {
+          "id": "MEDIUM-NW51UX",
+          "title": "Insecure Fetch Usage",
+          "description": "Insecure Fetch Usage",
+          "severity": "medium",
+          "category": "Security",
+          "remediation": "Ensure all fetch requests are made over HTTPS to prevent data interception."
+        },
+        "changeType": "downgraded"
+      },
+      {
+        "original": {
+          "id": "HIGH-8UHAFZ",
+          "title": "Potential Memory Leak in HTTP Requests",
+          "description": "Potential Memory Leak in HTTP Requests",
+          "severity": "high",
+          "category": "Security",
+          "remediation": "Ensure proper cleanup of resources after requests to prevent memory leaks."
+        },
+        "modified": {
+          "id": "MEDIUM-40H7V9",
+          "title": "Lack of Input Validation",
+          "description": "Lack of Input Validation",
+          "severity": "medium",
+          "category": "Security",
+          "remediation": "Implement input validation to prevent injection attacks."
+        },
+        "changeType": "downgraded"
+      },
+      {
+        "original": {
+          "id": "HIGH-8UHAFZ",
+          "title": "Potential Memory Leak in HTTP Requests",
+          "description": "Potential Memory Leak in HTTP Requests",
+          "severity": "high",
+          "category": "Security",
+          "remediation": "Ensure proper cleanup of resources after requests to prevent memory leaks."
+        },
+        "modified": {
+          "id": "MEDIUM-NSH8D1",
+          "title": "Potential Performance Bottleneck with Retry Logic",
+          "description": "Potential Performance Bottleneck with Retry Logic",
+          "severity": "medium",
+          "category": "Performance",
+          "remediation": "Optimize retry logic to avoid unnecessary delays and performance hits."
+        },
+        "changeType": "downgraded"
+      },
+      {
+        "original": {
+          "id": "HIGH-8UHAFZ",
+          "title": "Potential Memory Leak in HTTP Requests",
+          "description": "Potential Memory Leak in HTTP Requests",
+          "severity": "high",
+          "category": "Security",
+          "remediation": "Ensure proper cleanup of resources after requests to prevent memory leaks."
+        },
+        "modified": {
+          "id": "MEDIUM-NXAZD8",
+          "title": "Complex Conditional Logic",
+          "description": "Complex Conditional Logic",
+          "severity": "medium",
+          "category": "Code Quality",
+          "remediation": "Refactor complex conditional logic for better readability and maintainability."
+        },
+        "changeType": "downgraded"
+      },
+      {
+        "original": {
+          "id": "HIGH-8UHAFZ",
+          "title": "Potential Memory Leak in HTTP Requests",
+          "description": "Potential Memory Leak in HTTP Requests",
+          "severity": "high",
+          "category": "Security",
+          "remediation": "Ensure proper cleanup of resources after requests to prevent memory leaks."
+        },
+        "modified": {
+          "id": "MEDIUM-PWA9TA",
+          "title": "Hardcoded Strings",
+          "description": "Hardcoded Strings",
+          "severity": "medium",
+          "category": "Code Quality",
+          "remediation": "Replace hardcoded strings with constants for better maintainability."
+        },
+        "changeType": "downgraded"
+      },
+      {
+        "original": {
+          "id": "HIGH-8UHAFZ",
+          "title": "Potential Memory Leak in HTTP Requests",
+          "description": "Potential Memory Leak in HTTP Requests",
+          "severity": "high",
+          "category": "Security",
+          "remediation": "Ensure proper cleanup of resources after requests to prevent memory leaks."
+        },
+        "modified": {
+          "id": "MEDIUM-O0THTH",
+          "title": "Outdated TypeScript Version",
+          "description": "Outdated TypeScript Version",
+          "severity": "medium",
+          "category": "Dependency",
+          "remediation": "Upgrade TypeScript to the latest stable version to benefit from improvements and security patches."
+        },
+        "changeType": "downgraded"
+      },
+      {
+        "original": {
+          "id": "HIGH-8UHAFZ",
+          "title": "Potential Memory Leak in HTTP Requests",
+          "description": "Potential Memory Leak in HTTP Requests",
+          "severity": "high",
+          "category": "Security",
+          "remediation": "Ensure proper cleanup of resources after requests to prevent memory leaks."
+        },
+        "modified": {
+          "id": "LOW-Q3M3EO",
+          "title": "Missing Security Headers",
+          "description": "Missing Security Headers",
+          "severity": "low",
+          "category": "Security",
+          "remediation": "Add security headers like Content Security Policy (CSP) to enhance security."
+        },
+        "changeType": "downgraded"
+      },
+      {
+        "original": {
+          "id": "HIGH-8UHAFZ",
+          "title": "Potential Memory Leak in HTTP Requests",
+          "description": "Potential Memory Leak in HTTP Requests",
+          "severity": "high",
+          "category": "Security",
+          "remediation": "Ensure proper cleanup of resources after requests to prevent memory leaks."
+        },
+        "modified": {
+          "id": "LOW-QOO1NH",
+          "title": "Redundant Fetch Requests",
+          "description": "Redundant Fetch Requests",
+          "severity": "low",
+          "category": "Performance",
+          "remediation": "Review fetch requests for redundancy and optimize where possible."
+        },
+        "changeType": "downgraded"
+      },
+      {
+        "original": {
+          "id": "HIGH-8UHAFZ",
+          "title": "Potential Memory Leak in HTTP Requests",
+          "description": "Potential Memory Leak in HTTP Requests",
+          "severity": "high",
+          "category": "Security",
+          "remediation": "Ensure proper cleanup of resources after requests to prevent memory leaks."
+        },
+        "modified": {
+          "id": "LOW-7HNY1D",
+          "title": "Inconsistent Code Formatting",
+          "description": "Inconsistent Code Formatting",
+          "severity": "low",
+          "category": "Code Quality",
+          "remediation": "Apply consistent code formatting across the codebase."
+        },
+        "changeType": "downgraded"
+      },
+      {
+        "original": {
+          "id": "HIGH-8UHAFZ",
+          "title": "Potential Memory Leak in HTTP Requests",
+          "description": "Potential Memory Leak in HTTP Requests",
+          "severity": "high",
+          "category": "Security",
+          "remediation": "Ensure proper cleanup of resources after requests to prevent memory leaks."
+        },
+        "modified": {
+          "id": "LOW-SMNETP",
+          "title": "Unused Dependencies",
+          "description": "Unused Dependencies",
+          "severity": "low",
+          "category": "Dependency",
+          "remediation": "Remove unused dependencies to reduce package size and potential attack vectors."
+        },
+        "changeType": "downgraded"
+      },
+      {
+        "original": {
+          "id": "HIGH-8UHAFZ",
+          "title": "Potential Memory Leak in HTTP Requests",
+          "description": "Potential Memory Leak in HTTP Requests",
+          "severity": "high",
+          "category": "Security",
+          "remediation": "Ensure proper cleanup of resources after requests to prevent memory leaks."
+        },
+        "modified": {
+          "id": "LOW-CRU2FT",
+          "title": "Unrestricted CORS Policy",
+          "description": "Unrestricted CORS Policy",
+          "severity": "low",
+          "category": "Security",
+          "remediation": "Restrict CORS policy to trusted domains only."
+        },
+        "changeType": "downgraded"
+      },
+      {
+        "original": {
+          "id": "HIGH-8UHAFZ",
+          "title": "Potential Memory Leak in HTTP Requests",
+          "description": "Potential Memory Leak in HTTP Requests",
+          "severity": "high",
+          "category": "Security",
+          "remediation": "Ensure proper cleanup of resources after requests to prevent memory leaks."
+        },
+        "modified": {
+          "id": "LOW-WNKRFN",
+          "title": "Use of Deprecated API",
+          "description": "Use of Deprecated API",
+          "severity": "low",
+          "category": "Code Quality",
+          "remediation": "Replace deprecated API usage with modern alternatives."
+        },
+        "changeType": "downgraded"
+      },
+      {
+        "original": {
+          "id": "HIGH-8UHAFZ",
+          "title": "Potential Memory Leak in HTTP Requests",
+          "description": "Potential Memory Leak in HTTP Requests",
+          "severity": "high",
+          "category": "Security",
+          "remediation": "Ensure proper cleanup of resources after requests to prevent memory leaks."
+        },
+        "modified": {
+          "id": "LOW-H41R1N",
+          "title": "Unoptimized JSON Handling",
+          "description": "Unoptimized JSON Handling",
+          "severity": "low",
+          "category": "Performance",
+          "remediation": "Optimize JSON handling to reduce processing time and memory usage."
+        },
+        "changeType": "downgraded"
+      }
+    ],
+    "unchangedIssues": [
+      {
+        "id": "HIGH-7BKB2J",
+        "title": "Memory Leak in Abort Signal",
+        "description": "Memory Leak in Abort Signal",
+        "severity": "high",
+        "category": "Performance",
+        "remediation": "Investigate and fix the memory leak issue when using shared abort signals."
+      }
+    ],
+    "summary": "Found 0 new issues, resolved 0 issues, and modified 14 issues."
+  },
+  "skillTracking": {
+    "individual": {
+      "previousScore": 76,
+      "newScore": 76,
+      "adjustments": [
+        {
+          "category": "Performance",
+          "points": -0.5,
+          "reason": "1 pre-existing Performance issues not addressed"
+        }
+      ],
+      "categoryChanges": {
+        "Performance": -0.5
+      },
+      "recommendations": [
+        "Focus on improving Performance skills"
+      ]
+    },
+    "team": {
+      "previousScore": 70,
+      "newScore": 70,
+      "adjustments": [
+        {
+          "category": "Performance",
+          "points": -0.5,
+          "reason": "1 pre-existing Performance issues not addressed"
+        }
+      ],
+      "categoryChanges": {
+        "Performance": -0.5
+      },
+      "recommendations": [
+        "Focus on improving Performance skills"
+      ],
+      "averageScore": 70,
+      "trend": "stable"
+    }
+  },
+  "summary": {
+    "totalResolved": 0,
+    "totalNew": 0,
+    "totalModified": 14,
+    "confidence": 0.8
+  }
+}

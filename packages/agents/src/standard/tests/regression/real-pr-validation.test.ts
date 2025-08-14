@@ -13,9 +13,10 @@
  * TEST_PR_URL_2="https://github.com/vercel/next.js/pull/31616"
  */
 
-import { ComparisonAgent } from '../../comparison';
+import { ComparisonAgentProduction } from '../../comparison/comparison-agent-production';
 import { DeepWikiApiWrapper } from '../../services/deepwiki-api-wrapper';
 import { SupabaseClient } from '@supabase/supabase-js';
+import { setupDeepWikiIntegration } from './setup-deepwiki';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -49,7 +50,7 @@ const TEST_CONFIG = {
 
 // Helper to parse PR URL
 function parsePRUrl(url: string): { owner: string; repo: string; prNumber: number } {
-  const match = url.match(/github\.com\/([^\/]+)\/([^\/]+)\/pull\/(\d+)/);
+  const match = url.match(/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/);
   if (!match) {
     throw new Error(`Invalid PR URL: ${url}`);
   }
@@ -180,7 +181,7 @@ function convertMarkdownToHTML(markdown: string): string {
 }
 
 describe('Real PR Validation Tests (No Mocking)', () => {
-  let agent: ComparisonAgent;
+  let agent: ComparisonAgentProduction;
   let deepwikiClient: DeepWikiApiWrapper;
   
   // Get PR URLs from environment or use defaults
@@ -192,20 +193,23 @@ describe('Real PR Validation Tests (No Mocking)', () => {
     : TEST_CONFIG.defaultPRs;
   
   beforeAll(async () => {
+    // Setup DeepWiki integration with parser
+    await setupDeepWikiIntegration();
+    
     // Ensure output directory exists
     const outputDir = path.resolve(TEST_CONFIG.output.dir);
     if (!fs.existsSync(outputDir)) {
       fs.mkdirSync(outputDir, { recursive: true });
     }
     
-    // Initialize DeepWiki client (will use mock or real based on USE_DEEPWIKI_MOCK env var)
+    // Initialize DeepWiki client (will use the registered API with parser)
     deepwikiClient = new DeepWikiApiWrapper();
     
-    // Initialize comparison agent
-    agent = new ComparisonAgent(
+    // Initialize comparison agent - PRODUCTION VERSION with V7 Fixed
+    agent = new ComparisonAgentProduction(
       console as any, // Use console for logging
       null, // No model selector needed for testing
-      null  // No model provider needed for testing
+      null  // No skill provider for testing (can be added if needed)
     );
   });
   
@@ -214,6 +218,7 @@ describe('Real PR Validation Tests (No Mocking)', () => {
     const testName = `${prData.owner}-${prData.repo}-${prData.prNumber}`;
     
     it(`should generate complete report for ${url}`, async () => {
+      const testStartTime = Date.now(); // Track full test duration
       console.log(`\n${'='.repeat(80)}`);
       console.log(`Starting real analysis for: ${url}`);
       console.log(`Repository: ${prData.owner}/${prData.repo}`);
@@ -248,18 +253,32 @@ describe('Real PR Validation Tests (No Mocking)', () => {
         
         // Step 4: Generate comparison and report
         console.log('\n📝 Generating comparison report...');
+        
+        // Transform DeepWiki response to match expected format
+        const transformAnalysis = (analysis: any) => ({
+          ...analysis,
+          issues: analysis.issues.map((issue: any) => ({
+            ...issue,
+            message: issue.title || issue.description,
+            type: issue.category
+          }))
+        });
+        
+        const analysisStartTime = Date.now();
         const result = await agent.analyze({
-          mainBranchAnalysis: mainAnalysis,
-          featureBranchAnalysis: prAnalysis,
+          mainBranchAnalysis: transformAnalysis(mainAnalysis),
+          featureBranchAnalysis: transformAnalysis(prAnalysis),
           prMetadata: {
-            number: prData.prNumber,
+            prNumber: prData.prNumber.toString(),
             title: `PR #${prData.prNumber}`,
             author: prData.owner,
-            repository: `${prData.owner}/${prData.repo}`,
-            filesChanged: prAnalysis.metadata?.filesAnalyzed || 0,
+            repoOwner: prData.owner,
+            repoName: prData.repo,
+            filesChanged: prAnalysis.metadata?.files_analyzed || 0,
             additions: 0,
-            deletions: 0
-          },
+            deletions: 0,
+            scanDuration: Date.now() - testStartTime // Pass actual scan duration
+          } as any,
           generateReport: true
         });
         

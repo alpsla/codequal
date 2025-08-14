@@ -1,0 +1,38 @@
+
+Error analyzing PR: https://github.com/sindresorhus/ky/pull/500
+Timestamp: 2025-08-14T21:13:58.976Z
+
+Error Details:
+Error: DeepWiki analysis failed: All models failed to analyze repository. Please check DeepWiki service status and configuration.
+    at DeepWikiApiManager.analyzeRepository (/Users/alpinro/Code Prjects/codequal/apps/api/dist/services/deepwiki-api-manager.js:272:19)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at Object.analyzeRepository (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/setup-deepwiki.ts:30:24)
+    at Object.<anonymous> (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/real-pr-validation.test.ts:240:28)
+
+Configuration:
+{
+  "defaultPRs": [
+    {
+      "url": "https://github.com/sindresorhus/ky/pull/700",
+      "description": "Ky HTTP client - TypeScript improvements"
+    },
+    {
+      "url": "https://github.com/sindresorhus/ky/pull/500",
+      "description": "Ky HTTP client - Feature additions"
+    }
+  ],
+  "deepwiki": {
+    "apiUrl": "http://localhost:8001",
+    "apiKey": "dw-key-e48329b6c05b4a36a18d65af21ac3c2f",
+    "timeout": 300000
+  },
+  "output": {
+    "dir": "./test-outputs/real-validation",
+    "formats": [
+      "markdown",
+      "json",
+      "html"
+    ]
+  }
+}
+        

@@ -72,7 +72,7 @@ const config = {
 
 // Parse PR URL
 function parsePRUrl(url: string): { owner: string; repo: string; prNumber: number } {
-  const match = url.match(/github\.com\/([^\/]+)\/([^\/]+)\/pull\/(\d+)/);
+  const match = url.match(/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/);
   if (!match) {
     throw new Error(`Invalid PR URL: ${url}`);
   }
@@ -139,7 +139,7 @@ async function analyzePR(url: string) {
         analyzeRepository: async (repoUrl: string, options?: any) => {
           try {
             // Parse repo URL to get owner and repo
-            const match = repoUrl.match(/github\.com\/([^\/]+)\/([^\/]+)/);
+            const match = repoUrl.match(/github\.com\/([^/]+)\/([^/]+)/);
             if (!match) {
               throw new Error(`Invalid repository URL: ${repoUrl}`);
             }
