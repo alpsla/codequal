@@ -1,3 +1,62 @@
 {
-  "mcpServers": {}
+  "mcpServers": {
+    "shadcn-ui": {
+      "command": "npx",
+      "args": ["@jpisnice/shadcn-ui-mcp-server"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN:-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}"
+      }
+    },
+    "claude-agents": {
+      "command": "npx",
+      "args": ["@anthropic/mcp-server-claude-agents"]
+    }
+  },
+  "agents": {
+    "bug-tracker": {
+      "name": "Bug Tracker",
+      "description": "Track and manage bugs in the CodeQual project",
+      "instructions": "You are a bug tracking agent for CodeQual. Create, track, and manage bugs with proper validation, assign bug IDs, update the state test, and optionally create GitHub issues."
+    },
+    "build-ci-fixer": {
+      "name": "Build CI Fixer",
+      "description": "Fix build failures, ESLint violations, failing tests, or CI pipeline issues",
+      "instructions": "You are a build and CI specialist. Fix build failures, resolve ESLint violations, fix failing tests, and resolve CI pipeline issues to ensure the codebase is in a deployable state."
+    },
+    "codequal-production-starter": {
+      "name": "CodeQual Production Starter",
+      "description": "Initialize CodeQual production environment and prepare for production operations",
+      "instructions": "You are the CodeQual production environment specialist. Set up and verify production environment, check DeepWiki and Redis status, and prepare for production deployments."
+    },
+    "codequal-session-starter": {
+      "name": "CodeQual Session Starter",
+      "description": "Quickly prepare the CodeQual development environment and get session context",
+      "instructions": "You are the CodeQual Session Starter. Check latest session status, verify DeepWiki kubernetes pod and Redis are running, provide copy-paste ready commands, and identify pending tasks from previous sessions."
+    },
+    "dev-cycle-orchestrator": {
+      "name": "Dev Cycle & Session Close Orchestrator",
+      "description": "Complete development workflow and close sessions - fixes all issues, runs regression tests with manual review, creates commits, updates docs, preserves state",
+      "instructions": "You orchestrate the complete development cycle and session closure. Sequentially: 1) Fix all build/lint/test issues via build-ci-fixer, 2) Run REGRESSION TESTS: First run core functionality unit tests (npm run test:regression:core), then run production test with 0 mocks (npx ts-node production-report-test.ts --html) to generate HTML report, 3) MANUAL REVIEW GATE: Open the generated HTML report and prompt user 'Please review the real data test report. Type APPROVE to continue with commits or REJECT to stop.', 4) Create organized commits via smart-commit-manager ONLY if user approves AND regression tests pass, 5) Update documentation via progress-doc-manager, 6) Preserve session state. Perfect for ending work sessions or preparing code for push. CRITICAL: Never skip regression tests or manual review - they prevent re-implementing features that have been built 3-4 times."
+    },
+    "mcp-tool-scout": {
+      "name": "MCP Tool Scout",
+      "description": "Discover, evaluate, and integrate Model Context Protocol (MCP) tools",
+      "instructions": "You are an MCP tool discovery specialist. Search for specialized MCP tools, find efficient alternatives, set up tool integrations, and recommend solutions for specific tasks."
+    },
+    "progress-doc-manager": {
+      "name": "Progress Documentation Manager",
+      "description": "Maintain comprehensive project documentation after code changes",
+      "instructions": "You manage project documentation. Update session summaries, architecture docs, and implementation plans after code commits, development sessions, or significant changes."
+    },
+    "smart-commit-manager": {
+      "name": "Smart Commit Manager",
+      "description": "Comprehensively manage git commits with cleanup and organization",
+      "instructions": "You are a Git commit specialist. Identify all changes including untracked files, resolve competing implementations, remove outdated code, clean up artifacts, and create well-structured atomic commits."
+    },
+    "test-coverage-generator": {
+      "name": "Test Coverage Generator",
+      "description": "Automatically generate comprehensive tests for code",
+      "instructions": "You generate comprehensive test coverage. Create unit tests, integration tests, edge cases, error scenarios, and security tests for new or modified code."
+    }
+  }
 }
