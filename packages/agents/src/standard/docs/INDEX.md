@@ -1,27 +1,55 @@
-# Documentation Index
+# Standard Framework Documentation Index
 
-## 📚 Available Documentation
+Welcome to the CodeQual Standard Framework documentation. This directory contains comprehensive documentation organized by topic for easy navigation.
 
-### Getting Started
+## 📁 Directory Structure
+
+### 🚀 Getting Started
 - **[QUICK_START.md](./QUICK_START.md)** - Quick reference guide for common tasks
-- **[session_summary/SESSION_SUMMARY_2025_08_04.md](./session_summary/SESSION_SUMMARY_2025_08_04.md)** - Latest session changes (Report Generation)
-- **[session_summary/SESSION_SUMMARY_2025_08_03.md](./session_summary/SESSION_SUMMARY_2025_08_03.md)** - Previous session changes
 
-### Architecture & Design
-- **[ARCHITECTURE.md](./ARCHITECTURE.md)** - System architecture and component design
-- **[pr-decision-logic.md](./pr-decision-logic.md)** - How PR approval/decline decisions are made
-- **[skill-calculation-guide.md](./skill-calculation-guide.md)** - Developer skill scoring explained
-- **[REPORT_GENERATION_GUIDE.md](./REPORT_GENERATION_GUIDE.md)** - Comprehensive report generation system
+### 📐 Architecture & Design
+Located in [`architecture/`](./architecture/)
+- **[ARCHITECTURE.md](./architecture/ARCHITECTURE.md)** - System architecture and component design
+- **[pr-decision-logic.md](./architecture/pr-decision-logic.md)** - How PR approval/decline decisions are made
+- **[search-decision-flow.md](./architecture/search-decision-flow.md)** - Search strategy decisions
+- **[SCORE_PERSISTENCE.md](./architecture/SCORE_PERSISTENCE.md)** - Database schema and persistence strategy
 
-### Implementation
-- **[implementation-guide.md](./implementation-guide.md)** - Development and implementation guide
-- **[SCORE_PERSISTENCE.md](./SCORE_PERSISTENCE.md)** - Database schema and persistence strategy
-- **[API_INTEGRATION_GUIDE.md](./API_INTEGRATION_GUIDE.md)** - How to integrate with API services
+### 🔌 API Documentation
+Located in [`api/`](./api/)
+- **[API_INTEGRATION_GUIDE.md](./api/API_INTEGRATION_GUIDE.md)** - How to integrate with API services
 
-### DeepWiki Integration
-- **[deepwiki/README.md](./deepwiki/README.md)** - DeepWiki integration overview
-- **[deepwiki/DEEPWIKI_QUICK_START.md](./deepwiki/DEEPWIKI_QUICK_START.md)** - DeepWiki setup and usage
-- **[deepwiki/PRODUCTION_CONFIGURATION.md](./deepwiki/PRODUCTION_CONFIGURATION.md)** - Production deployment guide
+### 📚 Guides & Best Practices
+Located in [`guides/`](./guides/)
+- **[REPORT_GENERATION_GUIDE.md](./guides/REPORT_GENERATION_GUIDE.md)** - Comprehensive report generation system
+- **[V7_TEMPLATE_CONSISTENCY_GUIDE.md](./guides/V7_TEMPLATE_CONSISTENCY_GUIDE.md)** - V7 template standards
+
+### 🛠️ Implementation Details
+Located in [`implementation/`](./implementation/)
+- **[implementation-guide.md](./implementation/implementation-guide.md)** - Development and implementation guide
+- **[location-enhancement-implementation.md](./implementation/location-enhancement-implementation.md)** - Location tracking implementation
+- **[mcp-tool-chain-guide.md](./implementation/mcp-tool-chain-guide.md)** - MCP tool integration guide
+- **[skill-calculation-guide.md](./implementation/skill-calculation-guide.md)** - Developer skill scoring explained
+
+### 📅 Planning & Roadmap
+Located in [`planning/`](./planning/)
+- **[OPERATIONAL-PLAN.md](./planning/OPERATIONAL-PLAN.md)** - Current operational plan and 7-week roadmap
+- **[ENHANCEMENT-SUMMARY.md](./planning/ENHANCEMENT-SUMMARY.md)** - Enhancement tracking
+- **[CLEANUP_SUMMARY.md](./planning/CLEANUP_SUMMARY.md)** - Cleanup activities
+
+### 🧪 Testing Documentation
+Located in [`testing/`](./testing/)
+- **[HOW_TO_RUN_REAL_DEEPWIKI_TESTS.md](./testing/HOW_TO_RUN_REAL_DEEPWIKI_TESTS.md)** - DeepWiki testing guide
+
+### 🔍 DeepWiki Integration
+Located in [`deepwiki/`](./deepwiki/)
+- **[README.md](./deepwiki/README.md)** - DeepWiki integration overview
+- **[DEEPWIKI_QUICK_START.md](./deepwiki/DEEPWIKI_QUICK_START.md)** - DeepWiki setup and usage
+- **[PRODUCTION_CONFIGURATION.md](./deepwiki/PRODUCTION_CONFIGURATION.md)** - Production deployment guide
+
+### 📝 Session Summaries
+Located in [`session_summary/`](./session_summary/)
+- **[SESSION_SUMMARY_2025_08_04.md](./session_summary/SESSION_SUMMARY_2025_08_04.md)** - Latest session changes (Report Generation)
+- **[SESSION_SUMMARY_2025_08_03.md](./session_summary/SESSION_SUMMARY_2025_08_03.md)** - Previous session changes
 
 ## 📄 Example Reports
 

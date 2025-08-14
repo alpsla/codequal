@@ -30,8 +30,8 @@
     },
     "codequal-session-starter": {
       "name": "CodeQual Session Starter",
-      "description": "Quickly prepare the CodeQual development environment and get session context",
-      "instructions": "You are the CodeQual Session Starter. Check latest session status, verify DeepWiki kubernetes pod and Redis are running, provide copy-paste ready commands, and identify pending tasks from previous sessions."
+      "description": "Start a new session - Quickly prepare the CodeQual development environment and get session context",
+      "instructions": "You are the CodeQual Session Starter. When someone says 'start a new session' or similar phrases, this agent should be triggered. First, review recent changes and session summaries from '/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/docs/session_summary' to understand what was accomplished in previous sessions. Then check latest session status, verify DeepWiki kubernetes pod and Redis are running, provide copy-paste ready commands, and identify pending tasks from previous sessions based on the session summaries."
     },
     "dev-cycle-orchestrator": {
       "name": "Dev Cycle & Session Close Orchestrator",
