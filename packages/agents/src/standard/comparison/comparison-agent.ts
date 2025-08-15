@@ -19,7 +19,7 @@ import {
   PRMetadata
 } from '../types/analysis-types';
 // Removed import for archived ReportGeneratorV7Complete
-import { ReportGeneratorV7EnhancedComplete } from './report-generator-v7-enhanced-complete';
+import { ReportGeneratorV7Fixed } from './report-generator-v7-fixed';
 import { SkillCalculator } from './skill-calculator';
 import { ILogger } from '../services/interfaces/logger.interface';
 import { EnhancedIssueMatcher, IssueDuplicator } from '../services/issue-matcher-enhanced';
@@ -32,7 +32,7 @@ export class ComparisonAgent implements IReportingComparisonAgent {
   private config: ComparisonConfig;
   private modelConfig: any;
   // Removed unused reportGenerator field
-  private reportGeneratorEnhanced: ReportGeneratorV7EnhancedComplete;
+  private reportGeneratorFixed: ReportGeneratorV7Fixed;
   private skillCalculator: SkillCalculator;
   private modelSelector: DynamicModelSelector;
   
@@ -43,7 +43,7 @@ export class ComparisonAgent implements IReportingComparisonAgent {
   ) {
     // Pass skill provider and authorization flag to report generator
     // BUG-019 FIX: Pass true to indicate authorized caller
-    this.reportGeneratorEnhanced = new ReportGeneratorV7EnhancedComplete(
+    this.reportGeneratorFixed = new ReportGeneratorV7Fixed(
       skillProvider,
       true  // Authorized caller flag
     );
@@ -113,10 +113,10 @@ export class ComparisonAgent implements IReportingComparisonAgent {
         });
       } catch (error) {
         this.log('warn', 'Dynamic model selection failed, using fallback', error);
-        // Use a real fallback model instead of 'dynamic/dynamic'
+        // Use a better fallback model - should ideally come from stored configs
         this.modelConfig = {
-          provider: 'google',
-          model: 'gemini-2.0-flash',  // Use latest stable Gemini model as fallback
+          provider: 'openai',
+          model: 'gpt-4o',  // Use GPT-4o as fallback - more reliable than gemini
           temperature: 0.1,
           maxTokens: 4000
         };
@@ -227,7 +227,7 @@ export class ComparisonAgent implements IReportingComparisonAgent {
       resolvedIssuesCount: comparison.resolvedIssues?.length || 0
     });
     
-    return this.reportGeneratorEnhanced.generateReport(comparison);
+    return this.reportGeneratorFixed.generateReport(comparison);
   }
 
   /**
@@ -235,7 +235,7 @@ export class ComparisonAgent implements IReportingComparisonAgent {
    */
   generatePRComment(comparison: ComparisonResult): string {
     // Use the fixed report generator for PR comments too
-    return this.reportGeneratorEnhanced.generatePRComment(comparison);
+    return this.reportGeneratorFixed.generatePRComment(comparison);
   }
 
   /**
@@ -341,6 +341,19 @@ Provide confidence scores and reasoning for each finding.`;
 
   /**
    * Convert AI analysis to standard comparison format
+   * 
+   * CRITICAL DATA FLOW DOCUMENTATION
+   * =================================
+   * This method converts AI analysis results into the standard comparison format.
+   * 
+   * Issue Categories:
+   * - resolvedIssues: Issues that were in main branch but NOT in PR branch (fixed)
+   * - newIssues: Issues that are in PR branch but NOT in main branch (introduced)
+   * - unchangedIssues: Issues that exist in BOTH branches (pre-existing)
+   * - modifiedIssues: Issues that changed severity/details between branches
+   * 
+   * IMPORTANT: unchangedIssues represent pre-existing repository issues
+   * that should be displayed in reports but are NOT blocking for PR approval
    */
   private convertAIAnalysisToComparison(
     aiAnalysis: AIComparisonAnalysis
@@ -364,12 +377,12 @@ Provide confidence scores and reasoning for each finding.`;
       resolvedIssues: extractIssues(aiAnalysis.resolvedIssues.issues),
       newIssues: extractIssues(aiAnalysis.newIssues.issues),
       modifiedIssues: aiAnalysis.modifiedIssues.issues.map(mi => (mi as any).issue || mi),
-      unchangedIssues: extractIssues(aiAnalysis.unchangedIssues.issues),
+      unchangedIssues: extractIssues(aiAnalysis.unchangedIssues.issues), // Pre-existing issues
       summary: {
         totalResolved: aiAnalysis.resolvedIssues.total,
         totalNew: aiAnalysis.newIssues.total,
         totalModified: aiAnalysis.modifiedIssues.total,
-        totalUnchanged: aiAnalysis.unchangedIssues.total,
+        totalUnchanged: aiAnalysis.unchangedIssues.total, // Count of pre-existing issues
         overallAssessment: aiAnalysis.overallAssessment
       },
       insights: this.generateInsights(aiAnalysis),
@@ -608,8 +621,8 @@ Provide confidence scores and reasoning for each finding.`;
   private getDefaultModelConfig() {
     // BUG-021 FIX: Return actual fallback model instead of 'dynamic/dynamic'
     return {
-      provider: 'google',
-      model: 'gemini-2.0-flash',  // Use latest stable Gemini model as fallback
+      provider: 'openai',
+      model: 'gpt-4o',  // Use GPT-4o as fallback - more reliable
       temperature: 0.1,
       maxTokens: 4000
     };

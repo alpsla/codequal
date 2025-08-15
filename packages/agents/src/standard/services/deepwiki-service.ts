@@ -164,26 +164,48 @@ export class DeepWikiService implements IDeepWikiService {
     // Convert issues with proper error handling
     const issues: Issue[] = deepWikiResult.issues.map((issue, index) => {
       try {
-        // Handle location - it might be an object or missing
+        // Handle location - it might be an object, string, or missing
         let location: { file: string; line: number; column?: number } = { 
           file: 'unknown', 
           line: 0 
         };
         
+        // Try to extract file path from various possible locations
+        let extractedFile = 'unknown';
+        let extractedLine = 0;
+        let extractedColumn: number | undefined;
+        
         if (issue.location) {
           if (typeof issue.location === 'object') {
-            location = {
-              file: issue.location.file || 'unknown',
-              line: issue.location.line || 0,
-              ...(issue.location.column !== undefined && { column: issue.location.column })
-            };
+            extractedFile = issue.location.file || issue.location.path || 'unknown';
+            extractedLine = issue.location.line || issue.location.lineNumber || 0;
+            extractedColumn = issue.location.column || issue.location.col;
           } else if (typeof issue.location === 'string') {
-            location = {
-              file: issue.location,
-              line: 0
-            };
+            // Parse string location like "file.ts:10:5" or "file.ts"
+            const parts = issue.location.split(':');
+            if (parts.length > 0) {
+              extractedFile = parts[0] || 'unknown';
+              if (parts.length > 1) extractedLine = parseInt(parts[1]) || 0;
+              if (parts.length > 2) extractedColumn = parseInt(parts[2]) || undefined;
+            }
           }
         }
+        
+        // Also check for file in title or description (common pattern)
+        if (extractedFile === 'unknown' && issue.title) {
+          const fileMatch = issue.title.match(/([^/\s]+\.(ts|js|tsx|jsx|py|go|java|cpp|c|h|cs|rb|php|swift|kt|rs))(?::(\d+))?(?::(\d+))?/i);
+          if (fileMatch) {
+            extractedFile = fileMatch[1];
+            if (fileMatch[3]) extractedLine = parseInt(fileMatch[3]) || extractedLine;
+            if (fileMatch[4]) extractedColumn = parseInt(fileMatch[4]) || extractedColumn;
+          }
+        }
+        
+        location = {
+          file: extractedFile,
+          line: extractedLine,
+          ...(extractedColumn !== undefined && { column: extractedColumn })
+        };
 
         // Extract code snippet from evidence field if available
         let codeSnippet = (issue as any).codeSnippet;
@@ -203,14 +225,36 @@ export class DeepWikiService implements IDeepWikiService {
           }
         }
 
+        // Extract a proper title from the issue
+        let title = issue.title || (issue as any).message || issue.description || 'No title provided';
+        let description = issue.description || '';
+        
+        // If title is too long (likely contains full description), extract a shorter title
+        if (title.length > 100 && title === issue.description) {
+          // Try to extract first sentence or first 80 chars as title
+          const firstSentence = title.match(/^[^.!?]+[.!?]/);
+          if (firstSentence) {
+            title = firstSentence[0].trim();
+          } else {
+            // Take first 80 chars and add ellipsis
+            title = title.substring(0, 80).trim() + '...';
+          }
+        }
+        
+        // Ensure we have a clear title
+        if (!title || title === 'No title provided') {
+          // Generate title from category and severity
+          title = `${this.convertCategory(issue.category)} Issue - ${this.convertSeverity(issue.severity).toUpperCase()}`;
+        }
+        
         return {
           id: issue.id || `issue-${index}`,
           severity: this.convertSeverity(issue.severity),
           category: this.convertCategory(issue.category),
           type: this.determineIssueTypeFromCategory(issue.category, issue.severity),
           location,
-          message: issue.title || (issue as any).message || 'No title provided',
-          description: issue.description || issue.title || '',
+          message: title,
+          description: description || title,
           suggestedFix: issue.recommendation || (issue as any).suggestion || (issue as any).suggestedFix || '',
           references: [],
           // Preserve suggestion/remediation/codeSnippet fields from various sources

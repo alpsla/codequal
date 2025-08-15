@@ -13,6 +13,7 @@
  */
 
 import { ComparisonAgent } from '../../comparison';
+import { ComparisonOrchestrator } from '../../orchestrator/comparison-orchestrator';
 import { DynamicModelSelector } from '../../services/dynamic-model-selector';
 import { DeepWikiApiWrapper, registerDeepWikiApi } from '../../services/deepwiki-api-wrapper';
 import { DeepWikiClient } from '@codequal/core/deepwiki';
@@ -20,6 +21,7 @@ import { parseDeepWikiResponse } from './parse-deepwiki-response';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as chalk from 'chalk';
+import { createClient } from '@supabase/supabase-js';
 
 // ANSI color codes for terminal output (fallback if chalk not available)
 const colors = {
@@ -208,11 +210,60 @@ async function analyzePR(url: string) {
     // Initialize DeepWiki wrapper (will use registered API or mock)
     const deepwikiClient = new DeepWikiApiWrapper();
     
-    // Initialize comparison agent
-    const agent = new ComparisonAgent(
-      console as any,
-      null, // No model selector needed
-      null  // No model provider needed
+    // Create mock providers for orchestrator
+    class MockConfigProvider {
+      async getConfig() { return null; }
+      async saveConfig(config: any) { return 'mock-config-id'; }
+      async findSimilarConfigs() { return []; }
+    }
+    
+    class MockSkillProvider {
+      async getUserSkills() {
+        return {
+          userId: 'test-user',
+          overallScore: 75,
+          categoryScores: {
+            security: 80,
+            performance: 70,
+            codeQuality: 75
+          }
+        };
+      }
+      async getTeamSkills() { return null; }
+      async getBatchUserSkills() { return []; }
+      async updateSkills() { return true; }
+    }
+    
+    class MockDataStore {
+      cache = {
+        get: async () => null,
+        set: async () => true
+      };
+      async saveReport() { return true; }
+    }
+    
+    class MockResearcherAgent {
+      async research() {
+        return {
+          provider: 'openai',
+          model: 'gpt-4o',
+          temperature: 0.3
+        };
+      }
+    }
+    
+    // Create comparison agent instance to pass to orchestrator
+    const comparisonAgent = new ComparisonAgent();
+    
+    // Initialize comparison orchestrator for location enhancement
+    const orchestrator = new ComparisonOrchestrator(
+      new MockConfigProvider() as any,
+      new MockSkillProvider() as any,
+      new MockDataStore() as any,
+      new MockResearcherAgent() as any,
+      undefined, // No educator
+      console as any, // Logger
+      comparisonAgent // Pass the comparison agent instance
     );
     
     // Step 1: Analyze main branch
@@ -259,14 +310,9 @@ async function analyzePR(url: string) {
       console.log(`  ${icon} ${severity.toUpperCase()}: ${count}`);
     });
     
-    // Step 3: Initialize agent
+    // Step 3: Generate comparison using orchestrator
     printHeader('GENERATING COMPARISON REPORT');
     printStatus('Selecting optimal model...', 'info');
-    await agent.initialize({
-      language: detectLanguage(prData.repo),
-      complexity: 'high',
-      performance: 'quality'
-    });
     
     // Step 4: Generate comparison
     printStatus('Comparing branches and generating report...', 'info');
@@ -282,19 +328,30 @@ async function analyzePR(url: string) {
       metadata: deepwikiResponse.metadata
     });
     
-    const result = await agent.analyze({
+    const totalAnalysisTime = (Date.now() - startMain) / 1000; // Total time in seconds
+    
+    // Use orchestrator for comparison with location enhancement
+    const result = await orchestrator.executeComparison({
+      userId: 'test-user',
+      teamId: 'test-team',
       mainBranchAnalysis: convertToAnalysisResult(mainAnalysis),
       featureBranchAnalysis: convertToAnalysisResult(prAnalysis),
       prMetadata: {
+        id: `pr-${prData.prNumber}`,
         number: prData.prNumber,
         title: `PR #${prData.prNumber}`,
         author: prData.owner,
         repository_url: `https://github.com/${prData.owner}/${prData.repo}`,
+        created_at: new Date().toISOString(),
         linesAdded: 0,
         linesRemoved: 0
       },
-      generateReport: true
-    });
+      language: detectLanguage(prData.repo),
+      sizeCategory: 'medium',
+      includeEducation: false,
+      generateReport: true,
+      deepWikiScanDuration: totalAnalysisTime * 1000 // Pass scan duration in milliseconds with correct field name
+    } as any);
     const comparisonTime = ((Date.now() - startComparison) / 1000).toFixed(1);
     printStatus(`Report generated in ${comparisonTime}s`, 'success');
     
@@ -339,15 +396,15 @@ async function analyzePR(url: string) {
             total: `${((Date.now() - startMain) / 1000).toFixed(1)}s`
           },
           deepwikiUrl: config.deepwiki.apiUrl,
-          modelUsed: result.metadata?.modelUsed
+          modelUsed: result.metadata?.modelUsed?.modelId || result.metadata?.modelUsed || 'Dynamic Selection'
         },
-        comparison: result.comparison,
+        comparison: result.analysis || result.comparison,
         skillTracking: result.skillTracking,
         summary: {
-          totalResolved: result.comparison?.resolvedIssues?.length || 0,
-          totalNew: result.comparison?.newIssues?.length || 0,
-          totalModified: result.comparison?.modifiedIssues?.length || 0,
-          totalUnchanged: result.comparison?.unchangedIssues?.length || 0,
+          totalResolved: (result.analysis || result.comparison)?.resolvedIssues?.length || 0,
+          totalNew: (result.analysis || result.comparison)?.newIssues?.length || 0,
+          totalModified: (result.analysis || result.comparison)?.modifiedIssues?.length || 0,
+          totalUnchanged: (result.analysis || result.comparison)?.unchangedIssues?.length || 0,
           confidence: result.metadata?.confidence
         }
       };
@@ -363,7 +420,7 @@ async function analyzePR(url: string) {
         url,
         ...prData,
         timestamp: new Date().toISOString(),
-        modelUsed: result.metadata?.modelUsed
+        modelUsed: result.metadata?.modelUsed?.modelId || result.metadata?.modelUsed || 'Dynamic Selection'
       });
       fs.writeFileSync(htmlPath, htmlContent);
       savedFiles.push(htmlPath);
@@ -374,13 +431,14 @@ async function analyzePR(url: string) {
     printHeader('ANALYSIS COMPLETE');
     
     console.log(`${colors.bright}${colors.green}Summary:${colors.reset}`);
-    console.log(`  📈 Resolved Issues: ${colors.green}${result.comparison?.resolvedIssues?.length || 0}${colors.reset}`);
-    console.log(`  📉 New Issues: ${colors.red}${result.comparison?.newIssues?.length || 0}${colors.reset}`);
-    console.log(`  🔄 Modified Issues: ${colors.yellow}${result.comparison?.modifiedIssues?.length || 0}${colors.reset}`);
-    console.log(`  ↔️  Unchanged Issues: ${result.comparison?.unchangedIssues?.length || 0}`);
+    const comp = result.analysis || result.comparison;
+    console.log(`  📈 Resolved Issues: ${colors.green}${comp?.resolvedIssues?.length || 0}${colors.reset}`);
+    console.log(`  📉 New Issues: ${colors.red}${comp?.newIssues?.length || 0}${colors.reset}`);
+    console.log(`  🔄 Modified Issues: ${colors.yellow}${comp?.modifiedIssues?.length || 0}${colors.reset}`);
+    console.log(`  ↔️  Unchanged Issues: ${comp?.unchangedIssues?.length || 0}`);
     
     console.log(`\n${colors.bright}Assessment:${colors.reset}`);
-    const assessment = result.comparison?.summary?.overallAssessment;
+    const assessment = (result.analysis || result.comparison)?.summary?.overallAssessment;
     if (assessment) {
       const recColor = assessment.prRecommendation === 'approve' ? colors.green 
         : assessment.prRecommendation === 'review' ? colors.yellow 
@@ -392,8 +450,9 @@ async function analyzePR(url: string) {
     }
     
     console.log(`\n${colors.bright}Model Information:${colors.reset}`);
-    console.log(`  🤖 Model Used: ${result.metadata?.modelUsed || 'Dynamic Selection'}`);
-    console.log(`  🏢 Agent: ${result.metadata?.agentId} v${result.metadata?.agentVersion}`);
+    const modelUsed = result.metadata?.modelUsed?.modelId || result.metadata?.modelUsed || 'Dynamic Selection';
+    console.log(`  🤖 Model Used: ${modelUsed}`);
+    console.log(`  🏢 Orchestrator: v${result.metadata?.orchestratorVersion || '4.0'}`);
     
     console.log(`\n${colors.bright}Files Generated:${colors.reset}`);
     savedFiles.forEach(file => {
@@ -401,9 +460,10 @@ async function analyzePR(url: string) {
     });
     
     // Show key new issues if any
-    if (result.comparison?.newIssues && result.comparison.newIssues.length > 0) {
+    const newIssues = (result.analysis || result.comparison)?.newIssues;
+    if (newIssues && newIssues.length > 0) {
       console.log(`\n${colors.bright}${colors.red}Top New Issues to Address:${colors.reset}`);
-      result.comparison.newIssues
+      newIssues
         .filter((issue: any) => issue.severity === 'critical' || issue.severity === 'high')
         .slice(0, 5)
         .forEach((issue: any, index: number) => {

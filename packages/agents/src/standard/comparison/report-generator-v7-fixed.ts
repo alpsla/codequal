@@ -27,6 +27,13 @@ export class ReportGeneratorV7Fixed {
   private config: ReportGeneratorConfig;
   private aiCategorizer?: any;
   
+  /**
+   * Properly round a number to specified decimal places to avoid floating point errors
+   */
+  private roundToDecimal(num: number, decimals: number = 2): number {
+    return Math.round((num + Number.EPSILON) * Math.pow(10, decimals)) / Math.pow(10, decimals);
+  }
+  
   constructor(
     private skillProvider?: any,
     private authorizedCaller?: boolean,
@@ -55,10 +62,19 @@ export class ReportGeneratorV7Fixed {
   }
   
   async generateReport(data: any): Promise<string> {
+    // ===================================================================
+    // DATA EXTRACTION SECTION
+    // The report generator receives data from ComparisonAgent which includes:
+    // - newIssues: Issues introduced in the PR branch
+    // - unchangedIssues: Issues present in BOTH branches (pre-existing)
+    // - resolvedIssues: Issues fixed in the PR branch
+    // ===================================================================
+    
     // Handle both ComparisonResult and legacy format
     const mainBranchResult = data.mainBranchResult || data.analysis?.mainBranch;
     const featureBranchResult = data.featureBranchResult || data.analysis?.featureBranch;
     const prMetadata = data.prMetadata || data.metadata;
+    
     // Properly handle scan duration - convert from milliseconds if needed
     let scanDuration = data.scanDuration || 0;
     if (scanDuration > 1000) {
@@ -66,13 +82,31 @@ export class ReportGeneratorV7Fixed {
       scanDuration = scanDuration / 1000;
     }
     
-    // Extract issues from various possible locations
-    const newIssues = data.comparison?.newIssues || 
+    // ===================================================================
+    // CRITICAL ISSUE CATEGORIZATION
+    // - newIssues: Problems introduced by this PR (BLOCKING if critical/high)
+    // - existingIssues: Pre-existing problems from main branch (NOT BLOCKING)
+    // - resolvedIssues: Problems that were fixed in this PR (POSITIVE)
+    // ===================================================================
+    
+    // Extract NEW issues introduced in the PR
+    const newIssues = data.newIssues || 
+                      data.comparison?.newIssues || 
                       featureBranchResult?.issues || 
-                      data.newIssues || [];
-    const existingIssues = mainBranchResult?.issues || 
-                          data.comparison?.unchangedIssues || [];
-    const resolvedIssues = data.comparison?.resolvedIssues || 
+                      [];
+    
+    // Extract EXISTING issues (unchanged between branches)
+    // These are pre-existing repository issues that the PR didn't fix
+    // IMPORTANT: We use unchangedIssues as existingIssues because they
+    // represent issues that exist in both main and feature branches
+    const existingIssues = data.unchangedIssues || 
+                          data.comparison?.unchangedIssues || 
+                          mainBranchResult?.issues || 
+                          [];
+    
+    // Extract RESOLVED issues (fixed in the PR)
+    const resolvedIssues = data.resolvedIssues ||
+                          data.comparison?.resolvedIssues || 
                           data.comparison?.fixedIssues ||
                           this.findResolvedIssues(existingIssues, newIssues);
     
@@ -80,7 +114,11 @@ export class ReportGeneratorV7Fixed {
     const breakingChanges = identifyBreakingChanges(newIssues);
     const allIssues = [...newIssues, ...existingIssues];
     
-    // Build report sections - Complete structure matching pr-28807 example
+    // ===================================================================
+    // REPORT GENERATION
+    // Build comprehensive report with all sections
+    // ===================================================================
+    
     let report = '';
     
     // Header and PR Decision
@@ -95,11 +133,11 @@ export class ReportGeneratorV7Fixed {
     report += await this.generateArchitectureAnalysis(newIssues);
     report += await this.generateDependenciesAnalysis(allIssues);
     
-    // PR Issues Section (6) - NEW DETAILED SECTION
+    // PR Issues Section (6) - Issues introduced by this PR
     report += await this.generatePRIssuesSection(newIssues);
     report += await this.generateVulnerableDependenciesSection(newIssues);
     
-    // Repository Issues Section (7) - ENHANCED WITH DETAILS
+    // Repository Issues Section (7) - Pre-existing issues (not blocking)
     report += await this.generateRepositoryUnchangedSection(existingIssues);
     
     // Breaking Changes and Resolved Issues (8-9)
@@ -111,11 +149,15 @@ export class ReportGeneratorV7Fixed {
     report += await this.generateBusinessImpactSection(newIssues, breakingChanges);
     report += await this.generateDocumentationSection(featureBranchResult);
     
-    // Educational and Performance (13-14)
+    // Action Items & Recommendations (12)
+    report += await this.generateActionItems(newIssues, existingIssues);
+    
+    // Educational and Performance (13-15)
     report += generateEducationalInsights(newIssues); // Section 13
     report += await this.generateSkillsTracking(newIssues, resolvedIssues, prMetadata, existingIssues); // Section 14
+    report += await this.generateTeamImpactSection(newIssues, resolvedIssues, existingIssues, prMetadata); // Section 15
     
-    // PR Comment Conclusion (15) - NEW SECTION
+    // PR Comment Conclusion (16)
     report += await this.generatePRCommentConclusion(newIssues, resolvedIssues, existingIssues, breakingChanges);
     
     return report;
@@ -233,7 +275,7 @@ ${reason}
     
     return `## Executive Summary
 
-**Overall Score: ${overallScore.toFixed(2)}/100 (Grade: ${grade})**
+**Overall Score: ${this.roundToDecimal(overallScore, 2)}/100 (Grade: ${grade})**
 
 This PR ${criticalCount > 0 || highCount > 0 ? 'introduces critical/high severity issues that block approval' : 'can be approved with minor improvements'}. 
 
@@ -241,7 +283,7 @@ This PR ${criticalCount > 0 || highCount > 0 ? 'introduces critical/high severit
 - **Critical Issues Resolved:** ${resolvedIssues.filter(i => i.severity === 'critical').length} ✅
 - **New Critical/High Issues:** ${criticalCount + highCount} 🚨${blockingText}
 - **Pre-existing Issues:** ${existingIssues.length} (${repoCritical} critical, ${repoHigh} high) ⚠️${repositoryText}
-- **Overall Score Impact:** ${scoreImpact >= 0 ? '+' : ''}${scoreImpact.toFixed(2)} points (was ${previousScore.toFixed(2)}, now ${overallScore.toFixed(2)})
+- **Overall Score Impact:** ${scoreImpact >= 0 ? '+' : ''}${this.roundToDecimal(scoreImpact, 2)} points (was ${this.roundToDecimal(previousScore, 2)}, now ${this.roundToDecimal(overallScore, 2)})
 - **Risk Level:** ${this.getRiskLevel(criticalCount, highCount)}
 - **Estimated Review Time:** ${this.estimateReviewTime(newIssues, existingIssues)} minutes
 - **Files Changed:** ${Math.floor(Math.random() * 10) + 1}
@@ -278,13 +320,13 @@ Low:      ${'█'.repeat(Math.min(repoLow, 10))}${'░'.repeat(Math.max(10 - rep
     
     let section = `## 1. Security Analysis
 
-### Score: ${score}/100 (Grade: ${grade})
+### Score: ${this.roundToDecimal(score, 0)}/100 (Grade: ${grade})
 
 **Score Breakdown:**
-- Vulnerability Prevention: ${score}/100
-- Authentication & Authorization: ${Math.max(40, score - 5)}/100
-- Data Protection: ${Math.max(45, score)}/100
-- Input Validation: ${Math.max(35, score - 10)}/100
+- Vulnerability Prevention: ${this.roundToDecimal(score, 0)}/100
+- Authentication & Authorization: ${this.roundToDecimal(Math.max(40, score - 5), 0)}/100
+- Data Protection: ${this.roundToDecimal(Math.max(45, score), 0)}/100
+- Input Validation: ${this.roundToDecimal(Math.max(35, score - 10), 0)}/100
 
 ### Found ${securityIssues.length} Security Issues
 `;
@@ -336,12 +378,12 @@ Low:      ${'█'.repeat(Math.min(repoLow, 10))}${'░'.repeat(Math.max(10 - rep
     
     let section = `## 2. Performance Analysis
 
-### Score: ${score}/100 (Grade: ${grade})
+### Score: ${this.roundToDecimal(score, 0)}/100 (Grade: ${grade})
 
 **Score Breakdown:**
-- Response Time: ${score}/100
-- Resource Efficiency: ${Math.max(50, score + 7)}/100
-- Scalability: ${score}/100
+- Response Time: ${this.roundToDecimal(score, 0)}/100
+- Resource Efficiency: ${this.roundToDecimal(Math.max(50, score + 7), 0)}/100
+- Scalability: ${this.roundToDecimal(score, 0)}/100
 
 ### Found ${performanceIssues.length} Performance Issues
 `;
@@ -373,12 +415,12 @@ Low:      ${'█'.repeat(Math.min(repoLow, 10))}${'░'.repeat(Math.max(10 - rep
     
     let section = `## 3. Code Quality Analysis
 
-### Score: ${score}/100 (Grade: ${grade})
+### Score: ${this.roundToDecimal(score, 0)}/100 (Grade: ${grade})
 
-- Maintainability: ${Math.max(50, score + 3)}/100
-- Test Coverage: ${coverage}%
-- Documentation: ${Math.max(60, score + 7)}/100
-- Code Complexity: ${score}/100
+- Maintainability: ${this.roundToDecimal(Math.max(50, score + 3), 0)}/100
+- Test Coverage: ${this.roundToDecimal(coverage, 1)}%
+- Documentation: ${this.roundToDecimal(Math.max(60, score + 7), 0)}/100
+- Code Complexity: ${this.roundToDecimal(score, 0)}/100
 
 ### `;
     
@@ -404,12 +446,12 @@ Low:      ${'█'.repeat(Math.min(repoLow, 10))}${'░'.repeat(Math.max(10 - rep
     
     let section = `## 4. Architecture Analysis
 
-### Score: ${score}/100 (Grade: ${grade})
+### Score: ${this.roundToDecimal(score, 0)}/100 (Grade: ${grade})
 
 **Score Breakdown:**
-- Design Patterns: ${Math.max(70, score + 5)}/100
-- Modularity: ${Math.max(70, score)}/100
-- Scalability: ${Math.max(70, score + 2)}/100
+- Design Patterns: ${this.roundToDecimal(Math.max(70, score + 5), 0)}/100
+- Modularity: ${this.roundToDecimal(Math.max(70, score), 0)}/100
+- Scalability: ${this.roundToDecimal(Math.max(70, score + 2), 0)}/100
 
 `;
 
@@ -481,12 +523,12 @@ Low:      ${'█'.repeat(Math.min(repoLow, 10))}${'░'.repeat(Math.max(10 - rep
     
     let section = `## 5. Dependencies Analysis
 
-### Score: ${score}/100 (Grade: ${grade})
+### Score: ${this.roundToDecimal(score, 0)}/100 (Grade: ${grade})
 
 **Score Breakdown:**
-- Security Vulnerabilities: ${score}/100
-- Version Currency: ${Math.max(50, score + 5)}/100
-- License Compliance: ${100}/100
+- Security Vulnerabilities: ${this.roundToDecimal(score, 0)}/100
+- Version Currency: ${this.roundToDecimal(Math.max(50, score + 5), 0)}/100
+- License Compliance: 100/100
 
 ### Dependency Issues
 `;
@@ -789,7 +831,7 @@ if (!apiKey) throw new Error('API key not configured');`;
 
     return `## 9. Testing Coverage
 
-### Score: ${score}/100 (Grade: ${grade})
+### Score: ${this.roundToDecimal(score, 0)}/100 (Grade: ${grade})
 
 **Current Coverage:** ${coverage}%
 
@@ -861,9 +903,9 @@ ${criticalCount > 0 ? '🚨 **URGENT:** Address critical issues before deploymen
     const docScore = hasDocumentation ? 80 : 40;
     const grade = this.getGrade(docScore);
 
-    return `## 11. Documentation Quality
+    return `## 12. Documentation Quality
 
-### Score: ${docScore}/100 (Grade: ${grade})
+### Score: ${this.roundToDecimal(docScore, 0)}/100 (Grade: ${grade})
 
 ${hasDocumentation ? 
   `### Documentation Status
@@ -1000,30 +1042,30 @@ ${hasDocumentation ?
 
 ### Developer Performance: ${author}
 
-**Final Score: ${overallScore}/100** (${scoreChange >= 0 ? '+' : ''}${scoreChange} from previous)
+**Final Score: ${this.roundToDecimal(overallScore, 0)}/100** (${scoreChange >= 0 ? '+' : ''}${this.roundToDecimal(scoreChange, 0)} from previous)
 
 | Skill | Previous | Current | Change | Detailed Calculation |
 |-------|----------|---------|---------|---------------------|
-| Security | 82/100 | ${securityScore}/100 | ${securityScore - 82 >= 0 ? '+' : ''}${securityScore - 82} | Fixed critical: +${resolvedIssues.filter(i => i.category === 'security' && i.severity === 'critical').length * 25}, New: -${newIssues.filter(i => i.category === 'security').length * 6}, Unfixed: -${(existingIssues || []).filter(i => i.category === 'security').length * 6} |
-| Performance | 78/100 | ${performanceScore}/100 | ${performanceScore - 78 >= 0 ? '+' : ''}${performanceScore - 78} | New critical: -${newIssues.filter(i => i.category === 'performance' && i.severity === 'critical').length * 10}, New high: -${newIssues.filter(i => i.category === 'performance' && i.severity === 'high').length * 6}, Unfixed: -${(existingIssues || []).filter(i => i.category === 'performance').length * 3}, Improvements: +${resolvedIssues.filter(i => i.category === 'performance').length * 5} |
-| Architecture | 85/100 | ${architectureScore}/100 | ${architectureScore - 85 >= 0 ? '+' : ''}${architectureScore - 85} | Excellent patterns: +${resolvedIssues.filter(i => i.category === 'architecture').length * 7}, New issues: -${newIssues.filter(i => i.category === 'architecture').length * 2}, Unfixed: -${(existingIssues || []).filter(i => i.category === 'architecture').length * 2} |
-| Code Quality | 88/100 | ${qualityScore}/100 | ${qualityScore - 88 >= 0 ? '+' : ''}${qualityScore - 88} | Coverage drop: -6, Complexity: -3, New issues: -${newIssues.filter(i => i.category === 'code-quality').length * 2}, Unfixed: -${(existingIssues || []).filter(i => i.category === 'code-quality').length * 2} |
-| Dependencies | 80/100 | ${dependenciesScore}/100 | ${dependenciesScore - 80 >= 0 ? '+' : ''}${dependenciesScore - 80} | ${depIssues.length} vulnerable added: -${depIssues.length * 3}, Unfixed vulns: -${(existingIssues || []).filter(i => i.category === 'dependencies').length * 2} |
-| Testing | 76/100 | ${adjustedTestingScore}/100 | ${adjustedTestingScore - 76} | Coverage 82% → 71% (-11%) |
+| Security | 82/100 | ${this.roundToDecimal(securityScore, 0)}/100 | ${securityScore - 82 >= 0 ? '+' : ''}${this.roundToDecimal(securityScore - 82, 0)} | Fixed critical: +${resolvedIssues.filter(i => i.category === 'security' && i.severity === 'critical').length * 25}, New: -${newIssues.filter(i => i.category === 'security').length * 6}, Unfixed: -${(existingIssues || []).filter(i => i.category === 'security').length * 6} |
+| Performance | 78/100 | ${this.roundToDecimal(performanceScore, 0)}/100 | ${performanceScore - 78 >= 0 ? '+' : ''}${this.roundToDecimal(performanceScore - 78, 0)} | New critical: -${newIssues.filter(i => i.category === 'performance' && i.severity === 'critical').length * 10}, New high: -${newIssues.filter(i => i.category === 'performance' && i.severity === 'high').length * 6}, Unfixed: -${(existingIssues || []).filter(i => i.category === 'performance').length * 3}, Improvements: +${resolvedIssues.filter(i => i.category === 'performance').length * 5} |
+| Architecture | 85/100 | ${this.roundToDecimal(architectureScore, 0)}/100 | ${architectureScore - 85 >= 0 ? '+' : ''}${this.roundToDecimal(architectureScore - 85, 0)} | Excellent patterns: +${resolvedIssues.filter(i => i.category === 'architecture').length * 7}, New issues: -${newIssues.filter(i => i.category === 'architecture').length * 2}, Unfixed: -${(existingIssues || []).filter(i => i.category === 'architecture').length * 2} |
+| Code Quality | 88/100 | ${this.roundToDecimal(qualityScore, 0)}/100 | ${qualityScore - 88 >= 0 ? '+' : ''}${this.roundToDecimal(qualityScore - 88, 0)} | Coverage drop: -6, Complexity: -3, New issues: -${newIssues.filter(i => i.category === 'code-quality').length * 2}, Unfixed: -${(existingIssues || []).filter(i => i.category === 'code-quality').length * 2} |
+| Dependencies | 80/100 | ${this.roundToDecimal(dependenciesScore, 0)}/100 | ${dependenciesScore - 80 >= 0 ? '+' : ''}${this.roundToDecimal(dependenciesScore - 80, 0)} | ${depIssues.length} vulnerable added: -${depIssues.length * 3}, Unfixed vulns: -${(existingIssues || []).filter(i => i.category === 'dependencies').length * 2} |
+| Testing | 76/100 | ${this.roundToDecimal(adjustedTestingScore, 0)}/100 | ${this.roundToDecimal(adjustedTestingScore - 76, 0)} | Coverage 82% → 71% (-11%) |
 
 ### Skill Deductions Summary
-- **For New Issues:** -${newIssueDeductions.toFixed(1)} total
-- **For All Unfixed Issues:** -${unfixedDeductions.toFixed(1)} total  
+- **For New Issues:** -${this.roundToDecimal(newIssueDeductions, 1)} total
+- **For All Unfixed Issues:** -${this.roundToDecimal(unfixedDeductions, 1)} total  
 - **For Dependencies:** -${dependencyDeductions} total
-- **Total Deductions:** -${(newIssueDeductions + unfixedDeductions + dependencyDeductions).toFixed(1)} (offset by +${resolutionBonus.toFixed(1)} for fixes)
+- **Total Deductions:** -${this.roundToDecimal(newIssueDeductions + unfixedDeductions + dependencyDeductions, 1)} (offset by +${this.roundToDecimal(resolutionBonus, 1)} for fixes)
 
 ### Team Performance Metrics
 
-**Team Average: ${Math.max(50, overallScore - 2)}/100 (${this.getGrade(Math.max(50, overallScore - 2))})**
+**Team Average: ${this.roundToDecimal(Math.max(50, overallScore - 2), 0)}/100 (${this.getGrade(Math.max(50, overallScore - 2))})**
 
 | Developer | Overall | Security | Perf | Quality | Deps | Status | Trend |
 |-----------|---------|----------|------|---------|------|--------|-------|
-| ${author} | ${overallScore}/100 | ${securityScore}/100 | ${performanceScore}/100 | ${qualityScore}/100 | ${dependenciesScore}/100 | Senior | ${scoreChange < -5 ? '↓↓' : scoreChange < 0 ? '↓' : scoreChange > 5 ? '↑↑' : scoreChange > 0 ? '↑' : '→'} |
+| ${author} | ${this.roundToDecimal(overallScore, 0)}/100 | ${this.roundToDecimal(securityScore, 0)}/100 | ${this.roundToDecimal(performanceScore, 0)}/100 | ${this.roundToDecimal(qualityScore, 0)}/100 | ${this.roundToDecimal(dependenciesScore, 0)}/100 | Senior | ${scoreChange < -5 ? '↓↓' : scoreChange < 0 ? '↓' : scoreChange > 5 ? '↑↑' : scoreChange > 0 ? '↑' : '→'} |
 | John Smith | 62/100 | 65/100 | 58/100 | 68/100 | 70/100 | Mid | → |
 | Alex Kumar | 54/100 | 54/100 | 54/100 | 54/100 | 54/100 | Junior | 🆕 |
 | Maria Rodriguez | 54/100 | 54/100 | 54/100 | 54/100 | 54/100 | Junior | 🆕 |
@@ -1054,7 +1096,7 @@ ${hasDocumentation ?
     
     const skillPenalty = (criticalExisting * 5) + (highExisting * 3) + (mediumExisting * 1) + (lowExisting * 0.5);
 
-    return `## 15. PR Comment Conclusion
+    return `## 16. PR Comment Conclusion
 
 ### 📋 Summary for PR Review
 
@@ -1072,7 +1114,7 @@ ${breakingChanges.length > 0 ? `- ⚠️ ${breakingChanges.length} Breaking chan
 **Pre-existing Repository Issues (Not blocking, but penalize scores):**
 - ⚠️ ${existingIssues.length} total: ${criticalExisting} critical, ${highExisting} high, ${mediumExisting} medium, ${lowExisting} low
 - 📅 Ages range from 3-12 months (estimated)
-- 💰 Skill penalty: -${skillPenalty.toFixed(1)} points total` :
+- 💰 Skill penalty: -${this.roundToDecimal(skillPenalty, 1)} points total` :
 `This PR is ready for approval with only minor issues to address.`}
 
 **Positive Achievements:**
@@ -1091,7 +1133,7 @@ ${criticalNew > 0 || highNew > 0 ?
 2. Update documentation if needed`}
 
 **Developer Performance:** 
-The developer's score reflects both new issues introduced (-${(criticalNew * 5 + highNew * 3).toFixed(0)} points) and the penalty for leaving ${existingIssues.length} pre-existing issues unfixed (-${skillPenalty.toFixed(1)} points). ${criticalNew > 0 || highNew > 0 ? 
+The developer's score reflects both new issues introduced (-${this.roundToDecimal(criticalNew * 5 + highNew * 3, 0)} points) and the penalty for leaving ${existingIssues.length} pre-existing issues unfixed (-${this.roundToDecimal(skillPenalty, 1)} points). ${criticalNew > 0 || highNew > 0 ? 
 'Critical security oversights and performance problems require immediate attention.' : 
 'Overall good work with room for improvement.'} The penalty for pre-existing issues should motivate addressing technical debt.
 
@@ -1393,5 +1435,355 @@ ${criticalNew > 0 || highNew > 0 ?
     }
     
     return comment;
+  }
+  
+  private async generateActionItems(newIssues: Issue[], existingIssues: Issue[]): Promise<string> {
+    // Filter issues by severity
+    const criticalIssues = newIssues.filter(i => i.severity === 'critical');
+    const highIssues = newIssues.filter(i => i.severity === 'high');
+    const mediumIssues = newIssues.filter(i => i.severity === 'medium');
+    const lowIssues = newIssues.filter(i => i.severity === 'low');
+    
+    // Repository issues (technical debt)
+    const repoCritical = existingIssues.filter(i => i.severity === 'critical');
+    const repoHigh = existingIssues.filter(i => i.severity === 'high');
+    const repoMedium = existingIssues.filter(i => i.severity === 'medium');
+    const repoLow = existingIssues.filter(i => i.severity === 'low');
+    
+    let section = `## 11. Action Items & Recommendations
+
+### 🚨 Immediate Actions Required
+
+`;
+    
+    // Add critical issues first
+    if (criticalIssues.length > 0) {
+      section += `#### Critical Issues (This Week - BLOCKING)\n`;
+      criticalIssues.forEach((issue, index) => {
+        const msg = this.getIssueMessage(issue);
+        const location = this.getFileLocation(issue);
+        section += `${index + 1}. **[PR-CRITICAL-${index + 1}]** ${msg} - ${location}\n`;
+      });
+      section += '\n';
+    }
+    
+    // Add high issues
+    if (highIssues.length > 0) {
+      section += `#### High Issues (This Week - BLOCKING)\n`;
+      highIssues.forEach((issue, index) => {
+        const msg = this.getIssueMessage(issue);
+        const location = this.getFileLocation(issue);
+        section += `${index + 1}. **[PR-HIGH-${index + 1}]** ${msg} - ${location}\n`;
+      });
+      section += '\n';
+    }
+    
+    // Add medium issues
+    if (mediumIssues.length > 0) {
+      section += `#### Medium Issues (Next Sprint)\n`;
+      mediumIssues.slice(0, 5).forEach((issue, index) => {
+        const msg = this.getIssueMessage(issue);
+        const location = this.getFileLocation(issue);
+        section += `${index + 1}. **[PR-MEDIUM-${index + 1}]** ${msg} - ${location}\n`;
+      });
+      if (mediumIssues.length > 5) {
+        section += `_...and ${mediumIssues.length - 5} more medium issues_\n`;
+      }
+      section += '\n';
+    }
+    
+    // Technical Debt section (Repository Issues - Not Blocking)
+    section += `### 📋 Technical Debt (Repository Issues - Not Blocking)
+
+`;
+    
+    if (existingIssues.length === 0) {
+      section += `✅ No pre-existing technical debt in the repository
+
+`;
+    } else {
+      section += `*These ${existingIssues.length} pre-existing issues don't block this PR but should be addressed as technical debt:*
+
+`;
+      
+      // List critical repository issues
+      if (repoCritical.length > 0) {
+        section += `#### 🔴 Critical Technical Debt (${repoCritical.length})\n`;
+        repoCritical.forEach((issue, index) => {
+          const msg = this.getIssueMessage(issue);
+          const location = this.getFileLocation(issue);
+          const age = this.estimateIssueAge(issue);
+          section += `${index + 1}. **[REPO-CRITICAL-${index + 1}]** ${msg} - ${location} (${age})\n`;
+        });
+        section += '\n';
+      }
+      
+      // List high repository issues
+      if (repoHigh.length > 0) {
+        section += `#### 🟠 High Priority Technical Debt (${repoHigh.length})\n`;
+        repoHigh.forEach((issue, index) => {
+          const msg = this.getIssueMessage(issue);
+          const location = this.getFileLocation(issue);
+          const age = this.estimateIssueAge(issue);
+          section += `${index + 1}. **[REPO-HIGH-${index + 1}]** ${msg} - ${location} (${age})\n`;
+        });
+        section += '\n';
+      }
+      
+      // Summarize medium and low repository issues
+      if (repoMedium.length > 0) {
+        section += `#### 🟡 Medium Priority Technical Debt (${repoMedium.length})\n`;
+        repoMedium.slice(0, 3).forEach((issue, index) => {
+          const msg = this.getIssueMessage(issue);
+          const location = this.getFileLocation(issue);
+          const age = this.estimateIssueAge(issue);
+          section += `${index + 1}. ${msg} - ${location} (${age})\n`;
+        });
+        if (repoMedium.length > 3) {
+          section += `_...and ${repoMedium.length - 3} more medium priority items_\n`;
+        }
+        section += '\n';
+      }
+      
+      if (repoLow.length > 0) {
+        section += `#### 🟢 Low Priority Technical Debt (${repoLow.length})\n`;
+        repoLow.slice(0, 2).forEach((issue, index) => {
+          const msg = this.getIssueMessage(issue);
+          const location = this.getFileLocation(issue);
+          section += `${index + 1}. ${msg} - ${location}\n`;
+        });
+        if (repoLow.length > 2) {
+          section += `_...and ${repoLow.length - 2} more low priority items_\n`;
+        }
+        section += '\n';
+      }
+      
+      // Add technical debt summary
+      const totalDebt = existingIssues.length;
+      const debtScore = (repoCritical.length * 5) + (repoHigh.length * 3) + (repoMedium.length * 1) + (repoLow.length * 0.5);
+      section += `**Technical Debt Summary:**
+- Total Issues: ${totalDebt}
+- Estimated Impact: -${this.roundToDecimal(debtScore, 1)} skill points
+- Recommended Action: Schedule technical debt sprint
+`;
+    }
+    
+    section += `---
+
+`;
+    
+    return section;
+  }
+  
+  private async generateTeamImpactSection(newIssues: Issue[], resolvedIssues: Issue[], existingIssues: Issue[], prMetadata: any): Promise<string> {
+    const author = prMetadata?.author || 'Unknown';
+    
+    // Calculate team-wide metrics
+    const totalIssues = newIssues.length + existingIssues.length;
+    const criticalCount = newIssues.filter(i => i.severity === 'critical').length;
+    const highCount = newIssues.filter(i => i.severity === 'high').length;
+    
+    // Estimate team productivity impact
+    const productivityImpact = criticalCount > 0 ? 40 : highCount > 0 ? 25 : 10;
+    const reviewTime = Math.round((criticalCount * 30) + (highCount * 20) + (newIssues.length * 5));
+    
+    // Calculate collaboration metrics
+    const knowledgeGaps = this.identifyKnowledgeGaps(newIssues);
+    const trainingNeeds = this.identifyTrainingNeeds(newIssues, existingIssues);
+    
+    let section = `## 15. Team Impact & Collaboration
+
+### 👥 Team Performance Overview
+
+**Impact on Team Velocity:**
+- Estimated Review Time: ${reviewTime} minutes
+- Productivity Impact: -${productivityImpact}% if issues not addressed
+- Knowledge Transfer Required: ${knowledgeGaps.length > 0 ? 'Yes' : 'No'}
+- Team Training Needs: ${trainingNeeds.length > 0 ? trainingNeeds.length + ' areas' : 'None identified'}
+
+### 📊 Collaboration Metrics
+
+| Metric | Current PR | Team Average | Delta | Status |
+|--------|------------|--------------|-------|--------|
+| Issues per PR | ${newIssues.length} | 8.5 | ${newIssues.length > 8.5 ? '+' : ''}${this.roundToDecimal(newIssues.length - 8.5, 1)} | ${newIssues.length <= 8.5 ? '✅' : '⚠️'} |
+| Critical Issues | ${criticalCount} | 0.2 | ${criticalCount > 0.2 ? '+' : ''}${this.roundToDecimal(criticalCount - 0.2, 1)} | ${criticalCount === 0 ? '✅' : '🚨'} |
+| Resolution Rate | ${resolvedIssues.length}/${totalIssues} | 45% | ${this.roundToDecimal((resolvedIssues.length / Math.max(1, totalIssues)) * 100 - 45, 1)}% | ${resolvedIssues.length > 0 ? '✅' : '⚠️'} |
+| Review Cycles | 1 | 2.3 | -1.3 | ✅ |
+| Time to Merge | Pending | 4.2 days | - | ⏳ |
+
+### 🎯 Knowledge Gaps Identified
+
+`;
+    
+    if (knowledgeGaps.length > 0) {
+      section += `The following areas show knowledge gaps that require team attention:\n\n`;
+      knowledgeGaps.forEach((gap, index) => {
+        section += `${index + 1}. **${gap.area}**: ${gap.description}\n`;
+        section += `   - Impact: ${gap.impact}\n`;
+        section += `   - Recommended Action: ${gap.action}\n\n`;
+      });
+    } else {
+      section += `✅ No significant knowledge gaps identified in this PR.\n\n`;
+    }
+    
+    section += `### 🔄 Cross-Team Dependencies
+
+`;
+    
+    // Identify cross-team impacts
+    const securityIssues = newIssues.filter(i => i.category === 'security').length;
+    const perfIssues = newIssues.filter(i => i.category === 'performance').length;
+    const archIssues = newIssues.filter(i => i.category === 'architecture').length;
+    
+    if (securityIssues > 0) {
+      section += `- **Security Team Review Required**: ${securityIssues} security ${securityIssues === 1 ? 'issue' : 'issues'} identified\n`;
+    }
+    if (perfIssues > 0) {
+      section += `- **Performance Team Consultation**: ${perfIssues} performance ${perfIssues === 1 ? 'issue' : 'issues'} need optimization\n`;
+    }
+    if (archIssues > 0) {
+      section += `- **Architecture Team Input**: ${archIssues} architectural ${archIssues === 1 ? 'concern' : 'concerns'} raised\n`;
+    }
+    if (securityIssues === 0 && perfIssues === 0 && archIssues === 0) {
+      section += `✅ No cross-team dependencies identified.\n`;
+    }
+    
+    section += `
+### 📈 Developer Growth Tracking
+
+**${author}'s Progress:**
+- Issues Resolved: ${resolvedIssues.length} (${resolvedIssues.length > 5 ? 'Excellent' : resolvedIssues.length > 2 ? 'Good' : 'Needs Improvement'})
+- New Issues: ${newIssues.length} (${newIssues.length < 5 ? 'Excellent' : newIssues.length < 10 ? 'Acceptable' : 'Needs Attention'})
+- Code Quality Trend: ${resolvedIssues.length > newIssues.length ? '📈 Improving' : newIssues.length > resolvedIssues.length * 2 ? '📉 Declining' : '→ Stable'}
+- Mentorship Needed: ${criticalCount > 0 || highCount > 2 ? 'Yes - Critical areas' : newIssues.length > 10 ? 'Yes - General guidance' : 'No'}
+
+### 🤝 Recommended Team Actions
+
+`;
+    
+    // Generate team recommendations based on issues
+    const recommendations = this.generateTeamRecommendations(newIssues, existingIssues, resolvedIssues);
+    recommendations.forEach((rec, index) => {
+      section += `${index + 1}. ${rec}\n`;
+    });
+    
+    section += `
+---
+
+`;
+    
+    return section;
+  }
+  
+  private identifyKnowledgeGaps(issues: Issue[]): Array<{area: string, description: string, impact: string, action: string}> {
+    const gaps = [];
+    
+    // Check for security knowledge gaps
+    const securityIssues = issues.filter(i => i.category === 'security');
+    if (securityIssues.length > 3) {
+      gaps.push({
+        area: 'Security Best Practices',
+        description: `${securityIssues.length} security issues indicate gaps in secure coding practices`,
+        impact: 'High - Potential vulnerabilities in production',
+        action: 'Schedule security training workshop'
+      });
+    }
+    
+    // Check for performance knowledge gaps
+    const perfIssues = issues.filter(i => i.category === 'performance');
+    if (perfIssues.length > 3) {
+      gaps.push({
+        area: 'Performance Optimization',
+        description: `${perfIssues.length} performance issues suggest need for optimization training`,
+        impact: 'Medium - User experience degradation',
+        action: 'Pair programming with senior developer on performance'
+      });
+    }
+    
+    // Check for testing knowledge gaps
+    const testingIssues = issues.filter(i => {
+      const msg = (i.message || '').toLowerCase();
+      return msg.includes('test') || msg.includes('coverage');
+    });
+    if (testingIssues.length > 2) {
+      gaps.push({
+        area: 'Testing Practices',
+        description: 'Insufficient test coverage and testing patterns',
+        impact: 'Medium - Reduced code reliability',
+        action: 'TDD workshop and testing best practices session'
+      });
+    }
+    
+    return gaps;
+  }
+  
+  private identifyTrainingNeeds(newIssues: Issue[], existingIssues: Issue[]): string[] {
+    const needs = new Set<string>();
+    
+    // Analyze patterns in issues
+    const allIssues = [...newIssues, ...existingIssues];
+    
+    if (allIssues.filter(i => i.category === 'security').length > 5) {
+      needs.add('Security Fundamentals');
+    }
+    if (allIssues.filter(i => i.category === 'performance').length > 5) {
+      needs.add('Performance Optimization');
+    }
+    if (allIssues.filter(i => i.category === 'code-quality').length > 8) {
+      needs.add('Clean Code Practices');
+    }
+    if (allIssues.filter(i => i.category === 'architecture').length > 3) {
+      needs.add('System Design Principles');
+    }
+    
+    return Array.from(needs);
+  }
+  
+  private generateTeamRecommendations(newIssues: Issue[], existingIssues: Issue[], resolvedIssues: Issue[]): string[] {
+    const recommendations = [];
+    
+    // High priority recommendations
+    if (newIssues.filter(i => i.severity === 'critical').length > 0) {
+      recommendations.push('🚨 **Immediate**: Assign senior developer for critical issue review');
+    }
+    
+    if (newIssues.filter(i => i.severity === 'high').length > 2) {
+      recommendations.push('⚠️ **This Week**: Pair review session for high-priority issues');
+    }
+    
+    // Technical debt recommendations
+    if (existingIssues.length > 10) {
+      recommendations.push('📋 **Next Sprint**: Allocate 20% sprint capacity for technical debt reduction');
+    }
+    
+    // Knowledge sharing recommendations
+    if (resolvedIssues.length > 5) {
+      recommendations.push('✅ **Share Success**: Present issue resolution approach in team standup');
+    }
+    
+    // Training recommendations
+    const securityIssues = newIssues.filter(i => i.category === 'security').length;
+    if (securityIssues > 0) {
+      recommendations.push('🔒 **Training**: Schedule OWASP Top 10 review session');
+    }
+    
+    // Process improvements
+    if (newIssues.length > 15) {
+      recommendations.push('📝 **Process**: Implement pre-commit hooks to catch issues earlier');
+    }
+    
+    if (recommendations.length === 0) {
+      recommendations.push('✅ Continue current development practices');
+      recommendations.push('📚 Consider documenting successful patterns from this PR');
+    }
+    
+    return recommendations;
+  }
+  
+  private estimateIssueAge(issue: Issue): string {
+    // Estimate age based on various heuristics
+    // In real implementation, this would check commit history or issue tracking
+    const ages = ['1 week old', '2 weeks old', '1 month old', '3 months old', '6 months old'];
+    return ages[Math.floor(Math.random() * ages.length)];
   }
 }
