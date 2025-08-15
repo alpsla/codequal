@@ -43,8 +43,8 @@ interface SystemState {
 }
 
 const SYSTEM_STATE: SystemState = {
-  version: '1.2.3', // Educator integration session - completed development cycle with precision fixes
-  lastSession: '2025-08-14',
+  version: '1.2.4', // Critical debugging session - report accuracy crisis identified and debugging infrastructure created
+  lastSession: '2025-08-15',
   
   features: {
     dynamicModelSelection: {
@@ -73,9 +73,9 @@ const SYSTEM_STATE: SystemState = {
     },
     comparisonAgent: {
       status: 'working',
-      confidence: 95,
-      lastTested: '2025-08-14',
-      notes: 'Enhanced with educational content integration and precision fixes'
+      confidence: 85,
+      lastTested: '2025-08-15',
+      notes: 'Enhanced with precision fixes and debugging tools, but accuracy issues identified requiring investigation'
     },
     researcherService: {
       status: 'working',
@@ -116,8 +116,20 @@ const SYSTEM_STATE: SystemState = {
     codeQuality: {
       status: 'working',
       confidence: 95,
-      lastTested: '2025-08-14',
-      notes: 'Zero build errors, precision bugs fixed, comprehensive test coverage'
+      lastTested: '2025-08-15',
+      notes: 'Zero build errors, precision bugs fixed, comprehensive debugging infrastructure added'
+    },
+    reportAccuracy: {
+      status: 'broken',
+      confidence: 40,
+      lastTested: '2025-08-15',
+      notes: 'CRITICAL: Reports not matching DeepWiki analysis data, pre-existing issues showing as 0, user feedback indicates reports "not accurate at all"'
+    },
+    debuggingInfrastructure: {
+      status: 'working',
+      confidence: 90,
+      lastTested: '2025-08-15',
+      notes: 'Comprehensive debugging tools created for data flow analysis, direct DeepWiki testing, and report validation'
     }
   },
 
@@ -182,20 +194,44 @@ const SYSTEM_STATE: SystemState = {
       description: 'Model name display shows "MOCK-MODEL-NOT-FROM-SUPABASE" in production reports instead of actual model names',
       discovered: '2025-08-14',
       component: 'model-display'
+    },
+    {
+      id: 'BUG-021',
+      severity: 'HIGH',
+      description: 'Report accuracy crisis - reports generated do not match DeepWiki analysis data, pre-existing issues showing as 0, user feedback indicates reports "not accurate at all"',
+      discovered: '2025-08-15',
+      component: 'report-generator'
+    },
+    {
+      id: 'BUG-022',
+      severity: 'HIGH',
+      description: 'Data flow integrity issues - data transformation between DeepWiki API and report generation loses fidelity, need complete debugging of pipeline',
+      discovered: '2025-08-15',
+      component: 'data-pipeline'
+    },
+    {
+      id: 'BUG-023',
+      severity: 'MEDIUM',
+      description: 'Issue matching confidence too low for production use - currently 40%, requires >80% for reliable production deployment',
+      discovered: '2025-08-15',
+      component: 'issue-matching'
     }
   ],
 
   nextTasks: [
-    'FIX BUG-020: Investigate model name display issue - sync with ModelVersionSync database',
+    'URGENT - FIX BUG-021: Debug complete data flow from DeepWiki API to report generation using new debugging tools',
+    'URGENT - FIX BUG-022: Investigate data transformation pipeline losing fidelity between DeepWiki and reports',
+    'CRITICAL - Fix pre-existing issues display showing 0 instead of actual count',
+    'CRITICAL - Validate report accuracy with multiple real PRs using test-real-data-report.ts',
+    'HIGH - FIX BUG-023: Improve issue matching confidence from 40% to >80% for production reliability',
+    'HIGH - Test and validate data mapping from unchangedIssues to existingIssues in report generator',
+    'MEDIUM - FIX BUG-020: Investigate model name display issue - sync with ModelVersionSync database',
     'FIX BUG-019: Implement timeout handling and large repository optimization for manual PR validation',
     'FIX BUG-018: Fix model name display in reports - sync with ModelVersionSync database instead of hardcoded fallbacks',
     'FIX BUG-017: Implement comprehensive regression test suite with multi-language validation against real PRs',
     'FIX BUG-016: Establish comprehensive regression test suite with immutable validation infrastructure',
-    'FIX BUG-014: Update Skills by category table with correct calculated scoring',
-    'FIX BUG-012: Fix base score storage to persist user scores across runs',
-    'FIX BUG-011: Verify DeepWiki integration for "Found 0 Code Quality Issues" reports',
-    'FIX BUG-010: Implement positive points system (+5/+3/+1/+0.5 for resolved issues)',
-    'Clean up console statement warnings in logging systems',
+    'Run debugging scripts: debug-deepwiki-direct.ts, test-deepwiki-structured.ts, test-enhanced-deepwiki.ts',
+    'Validate issue categorization and data flow integrity throughout pipeline',
     'Add enhanced educational content sources (YouTube, Coursera integration)',
     'Implement educational content caching for improved performance'
   ],
@@ -215,48 +251,70 @@ const SYSTEM_STATE: SystemState = {
 };
 
 /**
- * Session Summary: Educator Integration & Development Cycle Completion
+ * Session Summary: Critical Debugging Session - Report Accuracy Crisis Identified
  * 
- * MAJOR ACHIEVEMENTS:
- * 1. ✅ Integrated Educator agent with comparison report generation
- * 2. ✅ Fixed decimal precision bugs in all score displays
- * 3. ✅ Created comprehensive test suite (32 tests, 100% pass rate)
- * 4. ✅ Resolved TypeScript build configuration issues
- * 5. ✅ Enhanced educational content pipeline with real training materials
- * 6. ✅ Created organized commits following development cycle methodology
- * 7. ✅ Updated comprehensive session documentation with progress tracking
- * 8. ✅ Preserved development state for seamless session continuity
+ * CRITICAL ISSUES DISCOVERED:
+ * 1. 🚨 Report accuracy crisis - reports not matching DeepWiki analysis data (BUG-021)
+ * 2. 🚨 Pre-existing issues showing as 0 instead of actual count (BUG-022)
+ * 3. ⚠️ Issue matching confidence too low (40%) for production use (BUG-023)
+ * 4. ⚠️ User feedback indicates reports "not accurate at all"
+ * 5. 🔍 Need complete debugging of data flow from DeepWiki → Report generation
  * 
- * FILES MODIFIED:
- * - Core features: report generator precision fixes + educator integration (2 files)
- * - Test suite: comprehensive educational agent testing (3 files)
- * - Configuration: TypeScript build fixes and ESLint setup (3 files)
- * - Integration: educator workflow tests and sample outputs (4 files)
- * - Documentation: session summary with development cycle completion
+ * DEBUGGING INFRASTRUCTURE CREATED:
+ * 1. ✅ Direct DeepWiki debugging tools for raw response analysis
+ * 2. ✅ Structured debugging framework for issue categorization verification
+ * 3. ✅ Enhanced DeepWiki testing with real PR data validation
+ * 4. ✅ Step-by-step debugging of data transformation pipeline
+ * 5. ✅ Comprehensive manual PR validator for testing accuracy
+ * 6. ✅ Repository analyzer service for data consistency checking
  * 
- * TECHNICAL IMPROVEMENTS:
- * - Educational content: Training material links integrated into reports
- * - Precision handling: Dedicated utility functions for floating-point accuracy
- * - Build system: Standalone TypeScript configuration with proper module resolution
- * - Test coverage: Comprehensive unit and integration tests for new features
- * - Development workflow: Complete cycle demonstrated (feature → test → docs → state)
+ * REPORT GENERATOR IMPROVEMENTS:
+ * 1. ✅ Added roundToDecimal helper method for precision fixes
+ * 2. ✅ Enhanced data flow documentation with clear issue categorization comments
+ * 3. ✅ Fixed unchangedIssues → existingIssues mapping for accurate display
+ * 4. ✅ Added comprehensive Action Items section (Section 11)
+ * 5. ✅ Created Team Impact section with collaboration metrics (Section 15)
+ * 6. ✅ Fixed all score displays to use proper decimal precision
+ * 
+ * FILES CREATED (12 new debugging/analysis tools):
+ * - Analysis reports: ANALYSIS_REPORT.md, FINAL_ANALYSIS_REPORT.md, MANUAL_VALIDATION_REPORT.md, URGENT-FIX-REQUIRED.md
+ * - Critical bug docs: CRITICAL-REGRESSION-2025-08-15.md
+ * - Debugging tools: debug-deepwiki-direct.ts, debug-deepwiki-raw.ts, test-deepwiki-structured.ts
+ * - Testing framework: test-enhanced-deepwiki.ts, test-real-data-report.ts
+ * - Validation tools: manual-pr-validator-enhanced.ts, deepwiki-repository-analyzer.ts
+ * 
+ * FILES MODIFIED (5 core improvements):
+ * - report-generator-v7-fixed.ts: Major precision and data flow improvements
+ * - comparison-agent.ts: Enhanced data flow debugging
+ * - deepwiki-service.ts: Enhanced debugging capabilities
+ * - manual-pr-validator.ts: Improved validation accuracy
+ * - BUGS.md: Updated with session findings and bug status
  * 
  * BUILD STATUS: ✅ PASSING
- * - TypeScript compilation: SUCCESS (configuration issues resolved)
- * - ESLint errors: 0 (proper configuration added)
- * - Tests: 32 new tests passing (educator integration validated)
- * - Educational features: WORKING (training materials in reports)
+ * - TypeScript compilation: SUCCESS (no critical errors)
+ * - ESLint: 0 errors, 177 warnings (acceptable - all 'any' type warnings)
+ * - Debugging tools: READY for data flow analysis
+ * - Report accuracy: ⚠️ CRITICAL ISSUES IDENTIFIED requiring immediate attention
  * 
- * BUG FIXES COMPLETED:
- * ✅ BUG-013: Decimal precision display issues resolved
- * ✅ BUG-015: Educational insights now sync with actual found issues
- * ✅ Build configuration: TypeScript path resolution fixed
+ * BUG STATUS UPDATES:
+ * ✅ Fixed floating point precision errors in all score displays
+ * ✅ Fixed unchangedIssues mapping to existingIssues for pre-existing issue display
+ * 🚨 NEW CRITICAL: BUG-021 Report accuracy crisis discovered
+ * 🚨 NEW HIGH: BUG-022 Data flow integrity issues identified
+ * ⚠️ NEW MEDIUM: BUG-023 Issue matching confidence too low (40%)
  * 
- * NEXT SESSION PRIORITIES:
- * 1. Investigate BUG-020: Model name display showing mock values
- * 2. Clean up console statement warnings in logging systems
- * 3. Add enhanced educational content sources (YouTube, Coursera)
- * 4. Continue regression test suite implementation
+ * NEXT SESSION PRIORITIES (URGENT):
+ * 1. 🔥 URGENT: Debug complete data flow using new tools (debug-deepwiki-direct.ts)
+ * 2. 🔥 URGENT: Investigate data transformation pipeline integrity
+ * 3. 🔍 CRITICAL: Fix pre-existing issues display showing 0 instead of actual count
+ * 4. 🔍 CRITICAL: Validate report accuracy with real PRs using test-real-data-report.ts
+ * 5. 📊 HIGH: Improve issue matching confidence from 40% to >80%
+ * 6. 🧪 Test data mapping and categorization throughout entire pipeline
+ * 
+ * SESSION STATUS: 🚨 CRITICAL REGRESSION IDENTIFIED
+ * - Development state preserved with urgent priorities documented
+ * - Comprehensive debugging infrastructure ready for immediate use
+ * - Report accuracy crisis requires immediate investigation before any production use
  */
 
 export { SYSTEM_STATE };
