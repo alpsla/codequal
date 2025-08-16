@@ -13,6 +13,7 @@ import { createClient } from 'redis';
 import { parseDeepWikiResponse } from './deepwiki-response-parser';
 import { STRUCTURED_ANALYSIS_PROMPT, getCombinedAnalysisPrompt } from '../config/prompt-templates';
 import { TwoPassAnalyzer } from './two-pass-analyzer';
+import { LocationClarifier } from './location-clarifier';
 
 const execAsync = promisify(exec);
 
@@ -322,6 +323,37 @@ export class DeepWikiRepositoryAnalyzer {
               deepwikiResult.issues,
               repoPath
             );
+            
+            // Third pass: Clarify locations for issues still marked as unknown
+            const unknownLocationIssues = enhancedIssues.filter(issue => 
+              !issue.location?.file || issue.location.file === 'unknown'
+            );
+            
+            if (unknownLocationIssues.length > 0) {
+              console.log(`🔍 Found ${unknownLocationIssues.length} issues with unknown locations. Starting clarification pass...`);
+              
+              const clarifier = new LocationClarifier();
+              const clarifications = await clarifier.clarifyLocations(
+                repositoryUrl,
+                branch,
+                unknownLocationIssues.map(issue => ({
+                  id: issue.id,
+                  title: issue.title,
+                  description: issue.description,
+                  severity: issue.severity,
+                  category: issue.category
+                }))
+              );
+              
+              // Apply clarified locations back to issues
+              clarifier.applyLocations(enhancedIssues, clarifications);
+              
+              const remainingUnknown = enhancedIssues.filter(issue => 
+                !issue.location?.file || issue.location.file === 'unknown'
+              ).length;
+              
+              console.log(`📍 Location clarification complete. Remaining unknown: ${remainingUnknown}/${enhancedIssues.length}`);
+            }
             
             console.log(`✅ DeepWiki analysis successful with ${currentModel.modelId} (attempt ${attempt}/${maxRetries})`);
             return { issues: enhancedIssues, scores: deepwikiResult.scores };

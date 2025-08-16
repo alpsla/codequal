@@ -16,6 +16,9 @@ export function parseDeepWikiResponse(content: string) {
   let dependencies: any = { vulnerable: [], outdated: [], deprecated: [] };
   let detectedComponents: ArchitectureComponent[] = [];
   let detectedRelationships: ComponentRelationship[] = [];
+  let inEducationalSection = false;
+  let currentEducationType: 'best-practice' | 'anti-pattern' | 'learning' | null = null;
+  let currentEducationalItem: any = null;
   
   // Pattern to match issue descriptions with severity
   const severityKeywords: Record<string, string> = {
@@ -47,6 +50,85 @@ export function parseDeepWikiResponse(content: string) {
   
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
+    
+    // Check for educational sections
+    if (line.match(/^#{1,4}\s*(Educational Insights|Best Practices|Anti-Patterns|Learning|Key Takeaways)/i)) {
+      inEducationalSection = true;
+      if (line.match(/Best Practice/i)) {
+        currentEducationType = 'best-practice';
+      } else if (line.match(/Anti-Pattern/i)) {
+        currentEducationType = 'anti-pattern';
+      } else if (line.match(/Learning|Takeaway/i)) {
+        currentEducationType = 'learning';
+      }
+      continue;
+    }
+    
+    // Parse educational content
+    if (inEducationalSection) {
+      // Check if we're starting a new educational item
+      const educationalItemMatch = line.match(/^(\d+\.|\*|-)\s*\*\*([^*]+)\*\*:\s*(.+)/);
+      if (educationalItemMatch) {
+        // Save previous educational item if exists
+        if (currentEducationalItem) {
+          educationalInsights.push(currentEducationalItem);
+        }
+        
+        currentEducationalItem = {
+          type: currentEducationType || 'learning',
+          title: educationalItemMatch[2].trim(),
+          description: educationalItemMatch[3].trim(),
+          example: '',
+          betterApproach: ''
+        };
+        continue;
+      }
+      
+      // Check for example code blocks
+      if (currentEducationalItem) {
+        if (line.match(/^\s*Example:/i) || line.match(/^\s*```/)) {
+          // Start capturing example
+          let exampleLines = [];
+          i++; // Move to next line
+          while (i < lines.length && !lines[i].match(/^\s*```/)) {
+            exampleLines.push(lines[i]);
+            i++;
+          }
+          currentEducationalItem.example = exampleLines.join('\n').trim();
+          continue;
+        }
+        
+        if (line.match(/^\s*Better Approach:/i)) {
+          // Start capturing better approach
+          let betterLines = [];
+          i++; // Move to next line
+          while (i < lines.length && !lines[i].match(/^\s*```/) && !lines[i].match(/^(\d+\.|\*|-)/)) {
+            if (lines[i].trim()) {
+              betterLines.push(lines[i]);
+            }
+            i++;
+          }
+          currentEducationalItem.betterApproach = betterLines.join('\n').trim();
+          i--; // Back up one line
+          continue;
+        }
+        
+        // Continue description
+        if (line.trim() && !line.match(/^#{1,4}/) && !line.match(/^(\d+\.|\*|-)/)) {
+          currentEducationalItem.description += ' ' + line.trim();
+        }
+      }
+      
+      // Check if we're leaving educational section
+      if (line.match(/^#{1,4}\s*(?!Best Practice|Anti-Pattern|Learning|Educational|Key Takeaway)/i)) {
+        if (currentEducationalItem) {
+          educationalInsights.push(currentEducationalItem);
+          currentEducationalItem = null;
+        }
+        inEducationalSection = false;
+        currentEducationType = null;
+      }
+    }
     
     // Detect components mentioned in the text
     const componentPatterns = [
@@ -147,6 +229,9 @@ export function parseDeepWikiResponse(content: string) {
     if (itemMatch) {
       // Save previous issue if exists
       if (currentIssue) {
+        // Clean up temporary capture fields
+        delete currentIssue._captureMode;
+        delete currentIssue._captureBuffer;
         issues.push(currentIssue);
       }
       
@@ -230,54 +315,150 @@ export function parseDeepWikiResponse(content: string) {
         location: {
           file: 'unknown',
           line: 0
-        }
+        },
+        codeSnippet: undefined,
+        recommendation: undefined,
+        fixedCode: undefined
       };
       
       // Look for file references in the title or description
       const fullText = title + ' ' + description;
       
-      // Try multiple patterns to find file references
-      const patterns = [
-        /`([^`]+\.(ts|js|tsx|jsx|json|md|py|go|rs|java|cpp|c|h))`/, // backtick wrapped
-        /\b(src\/[^\s,;:]+\.(ts|js|tsx|jsx|json|md))/, // src/ paths
-        /\b([a-zA-Z0-9_-]+\/[^\s,;:]+\.(ts|js|tsx|jsx|json|md))/, // folder/file paths
-        /\b([a-zA-Z0-9_-]+\.(ts|js|tsx|jsx|json|md))\b/, // just filename
-        /in\s+([^\s]+\.(ts|js|tsx|jsx|json|md))/, // "in filename"
-        /file:\s*([^\s]+\.(ts|js|tsx|jsx|json|md))/, // "file: filename"
-      ];
-      
-      for (const pattern of patterns) {
-        const fileMatch = fullText.match(pattern);
-        if (fileMatch) {
-          currentIssue.location.file = fileMatch[1];
-          break;
+      // First check for explicit "File: path, Line: number" format
+      const explicitFileLineMatch = fullText.match(/File:\s*([^\s,]+(?:\.[a-zA-Z]+)?),?\s*Line:\s*(\d+)/i);
+      if (explicitFileLineMatch) {
+        currentIssue.location.file = explicitFileLineMatch[1];
+        currentIssue.location.line = parseInt(explicitFileLineMatch[2]);
+        // Remove the file/line info from description to clean it up
+        currentIssue.description = currentIssue.description.replace(/File:\s*[^\s,]+,?\s*Line:\s*\d+/i, '').trim();
+      } else {
+        // Try multiple patterns to find file references
+        const patterns = [
+          /`([^`]+\.(ts|js|tsx|jsx|json|md|py|go|rs|java|cpp|c|h))`/, // backtick wrapped
+          /\b((?:source|src)\/[^\s,;:]+\.(ts|js|tsx|jsx|json|md))/, // source/ or src/ paths
+          /\b([a-zA-Z0-9_-]+\/[^\s,;:]+\.(ts|js|tsx|jsx|json|md))/, // folder/file paths
+          /\b([a-zA-Z0-9_-]+\.(ts|js|tsx|jsx|json|md))\b/, // just filename
+          /in\s+([^\s]+\.(ts|js|tsx|jsx|json|md))/, // "in filename"
+          /file:\s*([^\s,]+\.(ts|js|tsx|jsx|json|md))/, // "file: filename"
+        ];
+        
+        for (const pattern of patterns) {
+          const fileMatch = fullText.match(pattern);
+          if (fileMatch) {
+            currentIssue.location.file = fileMatch[1];
+            break;
+          }
+        }
+        
+        // Look for line numbers separately if not found in explicit format
+        const lineMatch = fullText.match(/(?:line|Line|L):\s*(\d+)/);
+        if (lineMatch) {
+          currentIssue.location.line = parseInt(lineMatch[1]);
         }
       }
-      
-      // Look for line numbers
-      const lineMatch = description.match(/(?:line|Line)\s+(\d+)/);
-      if (lineMatch) {
-        currentIssue.location.line = parseInt(lineMatch[1]);
+    } else if (currentIssue) {
+      // Handle special content markers
+      if (line.match(/^\s*Code Snippet:/i)) {
+        // Start capturing code snippet
+        currentIssue._captureMode = 'codeSnippet';
+        currentIssue._captureBuffer = [];
+        continue;
+      } else if (line.match(/^\s*Recommendation:/i)) {
+        // Capture recommendation
+        currentIssue._captureMode = 'recommendation';
+        const recommendationText = line.replace(/^\s*Recommendation:\s*/i, '').trim();
+        if (recommendationText) {
+          currentIssue.recommendation = recommendationText;
+        }
+        continue;
+      } else if (line.match(/^\s*Fixed Code:/i)) {
+        // Start capturing fixed code
+        currentIssue._captureMode = 'fixedCode';
+        currentIssue._captureBuffer = [];
+        continue;
+      } else if (line.match(/^\s*Suggestion:/i)) {
+        // Capture suggestion (alternative to recommendation)
+        const suggestionText = line.replace(/^\s*Suggestion:\s*/i, '').trim();
+        if (suggestionText) {
+          currentIssue.suggestion = suggestionText;
+        }
+        continue;
+      } else if (line.match(/^\s*Severity:/i)) {
+        // Capture explicit severity
+        const severityText = line.replace(/^\s*Severity:\s*/i, '').trim().toLowerCase();
+        if (severityText && ['critical', 'high', 'medium', 'low'].includes(severityText)) {
+          currentIssue.severity = severityText;
+        }
+        continue;
       }
-    } else if (currentIssue && line.trim() && !line.match(/^\s*$/)) {
-      // Continue description for current issue
-      currentIssue.description += ' ' + line.trim();
       
-      // Check for file/line info in continuation
-      const fileMatch = line.match(/(?:`([^`]+\.(ts|js|tsx|jsx|json|md))`|(\w+\/[\w\-.]+\.(ts|js|tsx|jsx|json|md)))/);
-      if (fileMatch && currentIssue.location.file === 'unknown') {
-        currentIssue.location.file = (fileMatch[1] || fileMatch[3]).replace(/`/g, '');
+      // Handle code block markers
+      if (line.includes('```')) {
+        if (currentIssue._captureMode && currentIssue._captureBuffer) {
+          // End of code block - save captured content
+          if (currentIssue._captureMode === 'codeSnippet') {
+            currentIssue.codeSnippet = currentIssue._captureBuffer.join('\n').trim();
+          } else if (currentIssue._captureMode === 'fixedCode') {
+            currentIssue.fixedCode = currentIssue._captureBuffer.join('\n').trim();
+          }
+          currentIssue._captureMode = null;
+          currentIssue._captureBuffer = null;
+        } else if (currentIssue._captureMode) {
+          // Start of code block - just skip the ``` line
+        }
+        continue;
       }
-      const lineMatch = line.match(/\(line (\d+)\)/);
-      if (lineMatch) {
-        currentIssue.location.line = parseInt(lineMatch[1]);
+      
+      // Capture content based on mode
+      if (currentIssue._captureMode === 'codeSnippet' && currentIssue._captureBuffer) {
+        currentIssue._captureBuffer.push(line);
+      } else if (currentIssue._captureMode === 'fixedCode' && currentIssue._captureBuffer) {
+        currentIssue._captureBuffer.push(line);
+      } else if (currentIssue._captureMode === 'recommendation') {
+        // Continue capturing multi-line recommendation
+        if (line.trim()) {
+          currentIssue.recommendation = (currentIssue.recommendation || '') + ' ' + line.trim();
+        }
+      } else if (line.trim() && !line.match(/^\s*$/)) {
+        // Regular description continuation
+        currentIssue.description += ' ' + line.trim();
+        
+        // Check for file/line info in continuation
+        const explicitMatch = line.match(/File:\s*([^\s,]+(?:\.[a-zA-Z]+)?),?\s*Line:\s*(\d+)/i);
+        if (explicitMatch) {
+          if (currentIssue.location.file === 'unknown') {
+            currentIssue.location.file = explicitMatch[1];
+          }
+          if (currentIssue.location.line === 0) {
+            currentIssue.location.line = parseInt(explicitMatch[2]);
+          }
+          // Remove the file/line info from description
+          currentIssue.description = currentIssue.description.replace(/File:\s*[^\s,]+,?\s*Line:\s*\d+/i, '').trim();
+        } else {
+          const fileMatch = line.match(/(?:`([^`]+\.(ts|js|tsx|jsx|json|md))`|(\w+\/[\w\-.]+\.(ts|js|tsx|jsx|json|md)))/);
+          if (fileMatch && currentIssue.location.file === 'unknown') {
+            currentIssue.location.file = (fileMatch[1] || fileMatch[3]).replace(/`/g, '');
+          }
+          const lineMatch = line.match(/(?:line|Line|L):\s*(\d+)/);
+          if (lineMatch && currentIssue.location.line === 0) {
+            currentIssue.location.line = parseInt(lineMatch[1]);
+          }
+        }
       }
     }
   }
   
   // Add the last issue
   if (currentIssue) {
+    // Clean up temporary capture fields
+    delete currentIssue._captureMode;
+    delete currentIssue._captureBuffer;
     issues.push(currentIssue);
+  }
+  
+  // Add the last educational item if exists
+  if (currentEducationalItem) {
+    educationalInsights.push(currentEducationalItem);
   }
   
   // Calculate scores based on issues found
