@@ -71,8 +71,8 @@ export class ComparisonAgent implements IReportingComparisonAgent {
       };
       this.log('info', 'Using provided model config', this.modelConfig);
     }
-    // BUG-021 FIX: Use DynamicModelSelector for proper model selection
-    else {
+    // Only use DynamicModelSelector if no model config provided
+    else if (process.env.OPENROUTER_API_KEY) {
       try {
         // Determine repository size based on complexity
         const repoSizeMap: Record<string, 'small' | 'medium' | 'large' | 'enterprise'> = {
@@ -121,6 +121,15 @@ export class ComparisonAgent implements IReportingComparisonAgent {
           maxTokens: 4000
         };
       }
+    } else {
+      // No OpenRouter key and no model config provided - use default
+      this.log('info', 'No OpenRouter API key, using default model config');
+      this.modelConfig = {
+        provider: 'openai',
+        model: 'gpt-4o',
+        temperature: 0.1,
+        maxTokens: 4000
+      };
     }
   }
 

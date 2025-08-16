@@ -165,8 +165,12 @@ export class ComparisonOrchestrator {
         language: request.language,
         sizeCategory: request.sizeCategory,
         role: 'comparison',
-        prompt: rolePrompt
-      });
+        prompt: rolePrompt,
+        modelConfig: {
+          provider: config.modelPreferences.primary.provider,
+          model: config.modelPreferences.primary.modelId
+        }
+      } as any);
 
       // Step 5.5: Parallel enhancement - Location Finding + Initial Educational Research
       let enhancedMainAnalysis = request.mainBranchAnalysis;
@@ -618,12 +622,12 @@ export class ComparisonOrchestrator {
     return {
       userId: developerSkills.userId || 'unknown',
       skills: {
-        security: { level: developerSkills.categoryScores?.security || 50 },
-        performance: { level: developerSkills.categoryScores?.performance || 50 },
-        codeQuality: { level: developerSkills.categoryScores?.codeQuality || 50 },
-        architecture: { level: developerSkills.categoryScores?.architecture || 50 },
-        testing: { level: developerSkills.categoryScores?.testing || 50 },
-        debugging: { level: 50 }
+        security: developerSkills.categoryScores?.security || 50,
+        performance: developerSkills.categoryScores?.performance || 50,
+        codeQuality: developerSkills.categoryScores?.codeQuality || 50,
+        architecture: developerSkills.categoryScores?.architecture || 50,
+        testing: developerSkills.categoryScores?.testing || 50,
+        debugging: 50
       },
       history: [],
       achievements: [],
