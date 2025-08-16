@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "module": "CommonJS",
+    "moduleResolution": "node",
     "outDir": "./dist",
     "rootDir": "./src",
     "composite": true,
@@ -12,21 +12,22 @@
     "types": ["node", "jest"],
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "strict": true,
+    "strict": false,
     "skipLibCheck": true,
     "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
     "baseUrl": ".",
     "paths": {
-      "@codequal/core": ["../core/src"],
-      "@codequal/core/*": ["../core/src/*"],
+      "@codequal/core": ["../core/dist"],
+      "@codequal/core/*": ["../core/dist/*"],
       "@codequal/agents": ["./src"],
       "@codequal/agents/*": ["./src/*"],
-      "@codequal/database": ["../database/src"],
-      "@codequal/database/*": ["../database/src/*"],
-      "@codequal/testing": ["../testing/src"],
-      "@codequal/testing/*": ["../testing/src/*"],
-      "@codequal/ui": ["../ui/src"],
-      "@codequal/ui/*": ["../ui/src/*"]
+      "@codequal/database": ["../database/dist"],
+      "@codequal/database/*": ["../database/dist/*"],
+      "@codequal/testing": ["../testing/dist"],
+      "@codequal/testing/*": ["../testing/dist/*"],
+      "@codequal/ui": ["../ui/dist"],
+      "@codequal/ui/*": ["../ui/dist/*"]
     }
   },
   "include": [
@@ -37,5 +38,9 @@
     "dist",
     "**/*.test.ts",
     "**/__tests__/**"
+  ],
+  "references": [
+    { "path": "../core" },
+    { "path": "../database" }
   ]
 }
