@@ -14,10 +14,12 @@
 
 import { ComparisonAgent } from '../../comparison';
 import { ComparisonOrchestrator } from '../../orchestrator/comparison-orchestrator';
+import { EducatorAgent } from '../../educator/educator-agent';
 import { DynamicModelSelector } from '../../services/dynamic-model-selector';
 import { DeepWikiApiWrapper, registerDeepWikiApi } from '../../services/deepwiki-api-wrapper';
 import { DeepWikiClient } from '@codequal/core/deepwiki';
 import { parseDeepWikiResponse } from './parse-deepwiki-response';
+import { LocationClarifier } from '../../deepwiki/services/location-clarifier';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as chalk from 'chalk';
@@ -158,7 +160,25 @@ async function analyzePR(url: string) {
                 repo_url: repoUrl,
                 messages: [{
                   role: 'user',
-                  content: `Analyze the repository ${repoUrl} (branch: ${branch}) for code quality issues, security vulnerabilities, performance problems, and architectural concerns. Return a structured analysis with issues categorized by severity (critical, high, medium, low).`
+                  content: `Analyze the repository ${repoUrl} (branch: ${branch}) for code quality issues.
+
+For EACH issue found, provide:
+1. **Title**: Brief description
+2. File: exact/path/to/file.ts, Line: number
+3. Code Snippet: The problematic code (2-3 lines)
+4. Recommendation: How to fix this issue
+5. Severity: critical/high/medium/low
+
+Example format:
+1. **SQL Injection**: User input not sanitized
+   File: src/api/users.ts, Line: 45
+   Code Snippet: \`\`\`
+   const query = "SELECT * FROM users WHERE id = " + userId;
+   \`\`\`
+   Recommendation: Use parameterized queries instead of string concatenation
+   Severity: critical
+
+Find issues with code snippets and recommendations.`
                 }],
                 stream: false,
                 provider: 'openrouter',
@@ -180,6 +200,39 @@ async function analyzePR(url: string) {
             
             // Parse the DeepWiki text response
             const parsedData = parseDeepWikiResponse(content);
+            
+            // Third pass: Clarify locations for issues with unknown locations
+            const unknownLocationIssues = parsedData.issues.filter((issue: any) => 
+              !issue.location?.file || issue.location.file === 'unknown'
+            );
+            
+            if (unknownLocationIssues.length > 0) {
+              printStatus(`Found ${unknownLocationIssues.length} issues with unknown locations. Clarifying...`, 'info');
+              
+              const clarifier = new LocationClarifier();
+              const clarifications = await clarifier.clarifyLocations(
+                repoUrl,
+                branch,
+                unknownLocationIssues.map((issue: any) => ({
+                  id: issue.id,
+                  title: issue.title,
+                  description: issue.description,
+                  severity: issue.severity,
+                  category: issue.category
+                }))
+              );
+              
+              // Apply clarified locations back to issues
+              clarifier.applyLocations(parsedData.issues, clarifications);
+              
+              const remainingUnknown = parsedData.issues.filter((issue: any) => 
+                !issue.location?.file || issue.location.file === 'unknown'
+              ).length;
+              
+              if (remainingUnknown < unknownLocationIssues.length) {
+                printStatus(`Clarified ${unknownLocationIssues.length - remainingUnknown} locations`, 'success');
+              }
+            }
             
             // Transform to our expected format
             return {
@@ -210,44 +263,130 @@ async function analyzePR(url: string) {
     // Initialize DeepWiki wrapper (will use registered API or mock)
     const deepwikiClient = new DeepWikiApiWrapper();
     
-    // Create mock providers for orchestrator
-    class MockConfigProvider {
-      async getConfig() { return null; }
-      async saveConfig(config: any) { return 'mock-config-id'; }
-      async findSimilarConfigs() { return []; }
-    }
+    // Create providers - use real Supabase if credentials are available
+    let configProvider: any;
+    let skillProvider: any;
+    let dataStore: any;
     
-    class MockSkillProvider {
-      async getUserSkills() {
-        return {
-          userId: 'test-user',
-          overallScore: 75,
-          categoryScores: {
-            security: 80,
-            performance: 70,
-            codeQuality: 75
+    // Check if we have Supabase credentials
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    
+    if (supabaseUrl && supabaseKey && process.env.USE_REAL_SUPABASE !== 'false') {
+      printStatus('Using real Supabase for configuration', 'info');
+      const supabase = createClient(supabaseUrl, supabaseKey);
+      
+      // Real config provider that uses Supabase
+      configProvider = {
+        async getConfig(repoUrl: string) {
+          try {
+            const { data } = await supabase
+              .from('model_configurations')
+              .select('*')
+              .eq('repository_url', repoUrl)
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .single();
+            return data;
+          } catch {
+            return null;
           }
-        };
-      }
-      async getTeamSkills() { return null; }
-      async getBatchUserSkills() { return []; }
-      async updateSkills() { return true; }
-    }
-    
-    class MockDataStore {
-      cache = {
-        get: async () => null,
-        set: async () => true
+        },
+        async saveConfig(config: any) {
+          const { data } = await supabase
+            .from('model_configurations')
+            .insert(config)
+            .select()
+            .single();
+          return data?.id || 'config-' + Date.now();
+        },
+        async findSimilarConfigs(lang: string, size: string) {
+          const { data } = await supabase
+            .from('model_configurations')
+            .select('*')
+            .eq('language', lang)
+            .eq('size_category', size)
+            .order('performance_score', { ascending: false })
+            .limit(5);
+          return data || [];
+        }
       };
-      async saveReport() { return true; }
+      
+      skillProvider = {
+        async getUserSkills() {
+          return {
+            userId: 'test-user',
+            overallScore: 75,
+            categoryScores: {
+              security: 80,
+              performance: 70,
+              codeQuality: 75
+            }
+          };
+        },
+        async getTeamSkills() { return null; },
+        async getBatchUserSkills() { return []; },
+        async updateSkills() { return true; }
+      };
+      
+      dataStore = {
+        cache: {
+          get: async () => null,
+          set: async () => true
+        },
+        async saveReport(report: any) {
+          const { data } = await supabase
+            .from('analysis_reports')
+            .insert(report)
+            .select()
+            .single();
+          return data?.id || true;
+        }
+      };
+    } else {
+      printStatus('Using mock providers (no Supabase credentials)', 'warning');
+      
+      // Mock providers
+      configProvider = {
+        async getConfig() { return null; },
+        async saveConfig(config: any) { return 'mock-config-id'; },
+        async findSimilarConfigs() { return []; }
+      };
+      
+      skillProvider = {
+        async getUserSkills() {
+          return {
+            userId: 'test-user',
+            overallScore: 75,
+            categoryScores: {
+              security: 80,
+              performance: 70,
+              codeQuality: 75
+            }
+          };
+        },
+        async getTeamSkills() { return null; },
+        async getBatchUserSkills() { return []; },
+        async updateSkills() { return true; }
+      };
+      
+      dataStore = {
+        cache: {
+          get: async () => null,
+          set: async () => true
+        },
+        async saveReport() { return true; }
+      };
     }
     
     class MockResearcherAgent {
       async research() {
+        // Return realistic model configuration
         return {
           provider: 'openai',
           model: 'gpt-4o',
-          temperature: 0.3
+          temperature: 0.3,
+          maxTokens: 4000
         };
       }
     }
@@ -255,13 +394,16 @@ async function analyzePR(url: string) {
     // Create comparison agent instance to pass to orchestrator
     const comparisonAgent = new ComparisonAgent();
     
+    // Create educator agent for educational insights
+    const educatorAgent = new EducatorAgent();
+    
     // Initialize comparison orchestrator for location enhancement
     const orchestrator = new ComparisonOrchestrator(
-      new MockConfigProvider() as any,
-      new MockSkillProvider() as any,
-      new MockDataStore() as any,
+      configProvider as any,
+      skillProvider as any,
+      dataStore as any,
       new MockResearcherAgent() as any,
-      undefined, // No educator
+      educatorAgent, // Include educator for training materials
       console as any, // Logger
       comparisonAgent // Pass the comparison agent instance
     );
@@ -348,7 +490,7 @@ async function analyzePR(url: string) {
       },
       language: detectLanguage(prData.repo),
       sizeCategory: 'medium',
-      includeEducation: false,
+      includeEducation: true,
       generateReport: true,
       deepWikiScanDuration: totalAnalysisTime * 1000 // Pass scan duration in milliseconds with correct field name
     } as any);

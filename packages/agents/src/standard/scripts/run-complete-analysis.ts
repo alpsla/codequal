@@ -17,10 +17,10 @@
 
 import { ComparisonOrchestrator } from '../orchestrator/comparison-orchestrator';
 import { StandardAgentFactory, MockResearcherAgent } from '../infrastructure/factory';
-import { createDeepWikiService, IDeepWikiService } from '../services/deepwiki-service';
+import { createDeepWikiService, IDeepWikiService } from '../deepwiki/services/deepwiki-client';
 import { writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
-import { registerDeepWikiApi } from '../services/deepwiki-api-wrapper';
+import { registerDeepWikiApi } from '../deepwiki/services/deepwiki-api-wrapper';
 
 interface AnalysisOptions {
   repository: string;
