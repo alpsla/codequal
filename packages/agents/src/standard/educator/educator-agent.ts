@@ -577,38 +577,182 @@ export class EducatorAgent implements IEducatorAgent {
     return 'intermediate';
   }
 
-  // Mock methods for testing without search model
+  // Mock methods for testing without search model - returns real useful URLs
   private getMockCourses(query: SearchQuery): Course[] {
+    const queryLower = query.query.toLowerCase();
+    
+    // Return relevant courses based on query
+    if (queryLower.includes('security')) {
+      return [{
+        title: 'Web Security Fundamentals',
+        provider: 'Pluralsight',
+        url: 'https://www.pluralsight.com/courses/web-security-fundamentals',
+        price: 'Free Trial',
+        duration: '4 hours',
+        rating: 4.7,
+        relevance: 0.95,
+        level: 'intermediate'
+      }, {
+        title: 'OWASP Top 10 Security Risks',
+        provider: 'Udemy',
+        url: 'https://www.udemy.com/course/owasp-top-10-web-application-security/',
+        price: '$19.99',
+        duration: '6 hours',
+        rating: 4.6,
+        relevance: 0.90,
+        level: 'beginner'
+      }];
+    } else if (queryLower.includes('typescript') || queryLower.includes('type')) {
+      return [{
+        title: 'TypeScript: The Complete Developer\'s Guide',
+        provider: 'Udemy',
+        url: 'https://www.udemy.com/course/typescript-the-complete-developers-guide/',
+        price: '$24.99',
+        duration: '27 hours',
+        rating: 4.6,
+        relevance: 0.95,
+        level: 'beginner'
+      }, {
+        title: 'Advanced TypeScript',
+        provider: 'Frontend Masters',
+        url: 'https://frontendmasters.com/courses/advanced-typescript/',
+        price: 'Subscription',
+        duration: '5 hours',
+        rating: 4.8,
+        relevance: 0.90,
+        level: 'advanced'
+      }];
+    } else if (queryLower.includes('error') || queryLower.includes('exception')) {
+      return [{
+        title: 'JavaScript Error Handling Best Practices',
+        provider: 'Pluralsight',
+        url: 'https://www.pluralsight.com/courses/javascript-error-handling',
+        price: 'Free Trial',
+        duration: '3 hours',
+        rating: 4.5,
+        relevance: 0.90,
+        level: 'intermediate'
+      }];
+    } else if (queryLower.includes('performance')) {
+      return [{
+        title: 'Web Performance Optimization',
+        provider: 'Udemy',
+        url: 'https://www.udemy.com/course/web-performance/',
+        price: '$19.99',
+        duration: '8 hours',
+        rating: 4.7,
+        relevance: 0.95,
+        level: 'intermediate'
+      }];
+    }
+    
+    // Default courses for general queries
     return [{
-      title: 'Advanced TypeScript Security Patterns',
-      provider: 'Udemy',
-      url: 'https://udemy.com/course/example',
-      price: '$19.99',
-      duration: '8 hours',
+      title: 'Clean Code: Writing Code for Humans',
+      provider: 'Pluralsight',
+      url: 'https://www.pluralsight.com/courses/writing-clean-code-humans',
+      price: 'Free Trial',
+      duration: '3.5 hours',
       rating: 4.8,
-      relevance: 0.95,
-      level: 'advanced'
+      relevance: 0.85,
+      level: 'intermediate'
     }];
   }
 
   private getMockArticles(query: SearchQuery): Article[] {
+    const queryLower = query.query.toLowerCase();
+    
+    if (queryLower.includes('security')) {
+      return [{
+        title: 'Web Application Security Best Practices',
+        author: 'OWASP Foundation',
+        url: 'https://owasp.org/www-project-top-ten/',
+        readTime: '30 minutes',
+        source: 'OWASP',
+        relevance: 0.95
+      }, {
+        title: 'Security Headers Quick Reference',
+        author: 'MDN Web Docs',
+        url: 'https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers#security',
+        readTime: '15 minutes',
+        source: 'MDN',
+        relevance: 0.90
+      }];
+    } else if (queryLower.includes('typescript') || queryLower.includes('type')) {
+      return [{
+        title: 'TypeScript Best Practices',
+        author: 'Microsoft',
+        url: 'https://www.typescriptlang.org/docs/handbook/declaration-files/do-s-and-don-ts.html',
+        readTime: '20 minutes',
+        source: 'TypeScript Docs',
+        relevance: 0.95
+      }, {
+        title: 'Advanced TypeScript Patterns',
+        author: 'Basarat Ali Syed',
+        url: 'https://basarat.gitbook.io/typescript/main-1/typed-event',
+        readTime: '25 minutes',
+        source: 'TypeScript Deep Dive',
+        relevance: 0.90
+      }];
+    } else if (queryLower.includes('error')) {
+      return [{
+        title: 'Error Handling Best Practices',
+        author: 'MDN Contributors',
+        url: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Control_flow_and_error_handling',
+        readTime: '15 minutes',
+        source: 'MDN',
+        relevance: 0.90
+      }];
+    }
+    
     return [{
-      title: 'Security Best Practices in TypeScript',
-      author: 'John Doe',
-      url: 'https://medium.com/example',
-      readTime: '15 minutes',
-      source: 'Medium',
-      relevance: 0.9
+      title: 'JavaScript Best Practices',
+      author: 'MDN Contributors',
+      url: 'https://developer.mozilla.org/en-US/docs/Learn/JavaScript/Building_blocks',
+      readTime: '20 minutes',
+      source: 'MDN',
+      relevance: 0.85
     }];
   }
 
   private getMockVideos(query: SearchQuery): Video[] {
+    const queryLower = query.query.toLowerCase();
+    
+    if (queryLower.includes('security')) {
+      return [{
+        title: 'Web Security Essentials',
+        channel: 'Traversy Media',
+        url: 'https://www.youtube.com/watch?v=jDF8Gb_YJCE',
+        duration: '32 minutes',
+        views: 150000,
+        relevance: 0.90
+      }];
+    } else if (queryLower.includes('typescript')) {
+      return [{
+        title: 'TypeScript Tutorial for Beginners',
+        channel: 'Programming with Mosh',
+        url: 'https://www.youtube.com/watch?v=d56mG7DezGs',
+        duration: '52 minutes',
+        views: 2500000,
+        relevance: 0.95
+      }];
+    } else if (queryLower.includes('performance')) {
+      return [{
+        title: 'JavaScript Performance Optimization Tips',
+        channel: 'Google Chrome Developers',
+        url: 'https://www.youtube.com/watch?v=xjj5aWUtnP0',
+        duration: '28 minutes',
+        views: 85000,
+        relevance: 0.90
+      }];
+    }
+    
     return [{
-      title: 'TypeScript Security Fundamentals',
-      channel: 'Tech Academy',
-      url: 'https://youtube.com/watch?v=example',
-      duration: '45 minutes',
-      views: 50000,
+      title: 'Clean Code - Uncle Bob',
+      channel: 'IntelliJ IDEA',
+      url: 'https://www.youtube.com/watch?v=7EmboKQH8lM',
+      duration: '1 hour 48 minutes',
+      views: 1200000,
       relevance: 0.85
     }];
   }

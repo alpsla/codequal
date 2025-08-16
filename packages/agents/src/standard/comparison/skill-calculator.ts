@@ -235,7 +235,19 @@ export class SkillCalculator {
       totalWeight += weight;
     });
     
-    return Math.round(weightedSum / totalWeight);
+    // Prevent NaN if totalWeight is 0 (shouldn't happen but safety check)
+    if (totalWeight === 0) {
+      return 50; // Default middle score
+    }
+    
+    const score = weightedSum / totalWeight;
+    // Additional safety check for NaN
+    if (isNaN(score)) {
+      console.warn('Warning: Skill score calculation resulted in NaN, using default', { skills, weightedSum, totalWeight });
+      return 50;
+    }
+    
+    return Math.round(score);
   }
   
   /**
