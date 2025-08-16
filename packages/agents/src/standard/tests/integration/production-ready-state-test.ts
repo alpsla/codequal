@@ -43,8 +43,8 @@ interface SystemState {
 }
 
 const SYSTEM_STATE: SystemState = {
-  version: '1.2.4', // Critical debugging session - report accuracy crisis identified and debugging infrastructure created
-  lastSession: '2025-08-15',
+  version: '1.2.5', // DeepWiki Enhancement Session - Multiple critical issues identified including location parsing and model selection failures
+  lastSession: '2025-08-16',
   
   features: {
     dynamicModelSelection: {
@@ -215,16 +215,64 @@ const SYSTEM_STATE: SystemState = {
       description: 'Issue matching confidence too low for production use - currently 40%, requires >80% for reliable production deployment',
       discovered: '2025-08-15',
       component: 'issue-matching'
+    },
+    {
+      id: 'BUG-024',
+      severity: 'HIGH',
+      description: 'File Location Parser Failure - all issues show file: "unknown" and line: 0, location enhancement failing with "All strategies failed, using base finder"',
+      discovered: '2025-08-16',
+      component: 'ai-location-finder'
+    },
+    {
+      id: 'BUG-025',
+      severity: 'HIGH',
+      description: 'Mock Model Selection Instead of Dynamic - system shows "MOCK-MODEL-NOT-FROM-SUPABASE" instead of actual model names, ModelVersionSync not working',
+      discovered: '2025-08-16',
+      component: 'model-selection'
+    },
+    {
+      id: 'BUG-026',
+      severity: 'MEDIUM',
+      description: 'Test Coverage Detection Failure - shows 0% coverage for repositories with comprehensive test suites, detection logic broken',
+      discovered: '2025-08-16',
+      component: 'test-coverage-detector'
+    },
+    {
+      id: 'BUG-027',
+      severity: 'MEDIUM',
+      description: 'Irrelevant Developer Performance Metrics - shows arbitrary collaboration metrics not relevant to PR analysis, hardcoded placeholder content',
+      discovered: '2025-08-16',
+      component: 'report-generator'
+    },
+    {
+      id: 'BUG-028',
+      severity: 'MEDIUM',
+      description: 'Missing Education URLs from Educator Agent - not providing specific training URLs, educational content is generic rather than issue-specific',
+      discovered: '2025-08-16',
+      component: 'educator-agent'
+    },
+    {
+      id: 'BUG-029',
+      severity: 'MEDIUM',
+      description: 'Architecture V7 Template Not Displaying Enhanced Content - architectural diagrams, patterns, and enhanced metrics not integrated into final report',
+      discovered: '2025-08-16',
+      component: 'report-generator-v7'
     }
   ],
 
   nextTasks: [
+    'URGENT - FIX BUG-024: Fix File Location Parser Failure - 18+ issues showing unknown:0 instead of actual locations',
+    'URGENT - FIX BUG-025: Fix Mock Model Selection - ModelVersionSync not working, showing placeholder text',
     'URGENT - FIX BUG-021: Debug complete data flow from DeepWiki API to report generation using new debugging tools',
     'URGENT - FIX BUG-022: Investigate data transformation pipeline losing fidelity between DeepWiki and reports',
     'CRITICAL - Fix pre-existing issues display showing 0 instead of actual count',
     'CRITICAL - Validate report accuracy with multiple real PRs using test-real-data-report.ts',
+    'HIGH - FIX BUG-026: Fix Test Coverage Detection - 0% coverage for well-tested repositories',
     'HIGH - FIX BUG-023: Improve issue matching confidence from 40% to >80% for production reliability',
     'HIGH - Test and validate data mapping from unchangedIssues to existingIssues in report generator',
+    'MEDIUM - FIX BUG-027: Remove irrelevant Developer Performance Metrics - hardcoded placeholder content',
+    'MEDIUM - FIX BUG-028: Add specific Education URLs from Educator Agent - issue-specific learning resources',
+    'MEDIUM - FIX BUG-029: Integrate Architecture V7 Enhanced Content - architectural diagrams and patterns',
     'MEDIUM - FIX BUG-020: Investigate model name display issue - sync with ModelVersionSync database',
     'FIX BUG-019: Implement timeout handling and large repository optimization for manual PR validation',
     'FIX BUG-018: Fix model name display in reports - sync with ModelVersionSync database instead of hardcoded fallbacks',
@@ -251,14 +299,19 @@ const SYSTEM_STATE: SystemState = {
 };
 
 /**
- * Session Summary: Critical Debugging Session - Report Accuracy Crisis Identified
+ * Session Summary: DeepWiki Enhancement Session - Multiple Critical Issues Identified
  * 
  * CRITICAL ISSUES DISCOVERED:
- * 1. 🚨 Report accuracy crisis - reports not matching DeepWiki analysis data (BUG-021)
- * 2. 🚨 Pre-existing issues showing as 0 instead of actual count (BUG-022)
- * 3. ⚠️ Issue matching confidence too low (40%) for production use (BUG-023)
- * 4. ⚠️ User feedback indicates reports "not accurate at all"
- * 5. 🔍 Need complete debugging of data flow from DeepWiki → Report generation
+ * 1. 🚨 File Location Parser Failure - all issues show unknown:0 instead of actual locations (BUG-024)
+ * 2. 🚨 Mock Model Selection - shows placeholder text instead of actual model names (BUG-025)
+ * 3. 🚨 Report accuracy crisis - reports not matching DeepWiki analysis data (BUG-021)
+ * 4. 🚨 Pre-existing issues showing as 0 instead of actual count (BUG-022)
+ * 5. ⚠️ Test Coverage Detection Failure - 0% for well-tested repositories (BUG-026)
+ * 6. ⚠️ Issue matching confidence too low (40%) for production use (BUG-023)
+ * 7. ⚠️ Developer Performance Metrics irrelevant - hardcoded placeholder content (BUG-027)
+ * 8. ⚠️ Missing Education URLs - generic content instead of issue-specific resources (BUG-028)
+ * 9. ⚠️ Architecture V7 Template missing enhanced content - diagrams and patterns not integrated (BUG-029)
+ * 10. 🔍 Need complete debugging of data flow from DeepWiki → Report generation
  * 
  * DEBUGGING INFRASTRUCTURE CREATED:
  * 1. ✅ Direct DeepWiki debugging tools for raw response analysis
