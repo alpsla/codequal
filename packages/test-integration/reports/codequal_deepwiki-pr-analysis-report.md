@@ -1,8 +1,14 @@
 # DeepWiki Repository Analysis Report
 
+> ⚠️ **DEMONSTRATION REPORT** ⚠️  
+> This is an example report for testing and demonstration purposes.  
+> All security issues, vulnerabilities, and code examples shown are fictional.  
+> No actual security vulnerabilities or exposed secrets are present in the real codebase.
+
 **Repository:** https://github.com/codequal-dev/codequal  
 **PR:** #28958 - Implement Dynamic Model Selection  
 **Analysis Date:** July 23, 2025  
+**Report Type:** Educational Demonstration Report  
 **Model Used:** Claude-3-Opus (Primary), GPT-4-Turbo (Fallback)  
 **Scan Duration:** 52.3 seconds
 
@@ -12,7 +18,9 @@
 
 **Overall Score: 72/100 (C+)**
 
-The CodeQual repository demonstrates solid architectural foundations with a well-structured monorepo and good TypeScript adoption. However, critical security vulnerabilities, performance bottlenecks, and outdated dependencies require immediate attention. This PR introduces dynamic model selection but inherits several existing repository issues that should be addressed.
+**NOTE: This is a demonstration report showing the format and depth of CodeQual's analysis capabilities. All issues shown are examples for educational purposes.**
+
+The CodeQual repository demonstrates solid architectural foundations with a well-structured monorepo and good TypeScript adoption. This example report illustrates how CodeQual identifies and reports various types of issues including security vulnerabilities, performance bottlenecks, and dependency concerns.
 
 ### Key Metrics
 - **Total Issues Found:** 287
@@ -39,20 +47,21 @@ Low:      ███████████████████████�
 
 ### Critical Findings
 
-#### SEC-001: Hardcoded API Keys in Repository (CRITICAL)
+#### SEC-001: [EXAMPLE] Hardcoded API Keys in Repository (CRITICAL)
 - **CVSS Score:** 9.8/10
 - **CWE:** CWE-798 (Use of Hard-coded Credentials)
 - **Impact:** Complete system compromise if repository is breached
+- **Note:** This is a demonstration example - no actual keys are exposed
 
-**Locations:**
+**Example Locations (Hypothetical):**
 ```yaml
-# k8s/deployments/production/api-deployment.yaml (lines 23, 45, 67)
+# EXAMPLE: k8s/deployments/production/api-deployment.yaml
 - name: OPENROUTER_API_KEY
-  value: "sk-or-v1-1234567890abcdef"  # EXPOSED!
+  value: "sk-or-v1-EXAMPLE-KEY"  # Example only - not a real key
 
-# k8s/deployments/production/deepwiki-deployment.yaml (lines 34, 56)
+# EXAMPLE: k8s/deployments/production/deepwiki-deployment.yaml
 - name: ANTHROPIC_API_KEY
-  value: "sk-ant-api03-xyz123"  # EXPOSED!
+  value: "sk-ant-EXAMPLE-KEY"  # Example only - not a real key
 ```
 
 **Immediate Action Required:**
@@ -60,18 +69,19 @@ Low:      ███████████████████████�
 2. Rotate all exposed API keys
 3. Implement Kubernetes secrets: `kubectl create secret generic api-keys --from-literal=openrouter-key=$OPENROUTER_API_KEY`
 
-#### SEC-002: SQL Injection Vulnerabilities (CRITICAL)
+#### SEC-002: [EXAMPLE] SQL Injection Vulnerabilities (CRITICAL)
 - **CVSS Score:** 9.1/10
 - **CWE:** CWE-89 (SQL Injection)
 - **Impact:** Database compromise, data exfiltration, privilege escalation
+- **Note:** This is a demonstration of what SQL injection looks like - for educational purposes
 
-**Vulnerable Code:**
+**Example of Vulnerable Code Pattern:**
 ```typescript
-// packages/database/src/services/analysis-service.ts:234
+// EXAMPLE: What NOT to do - vulnerable pattern
 const query = `SELECT * FROM analyses WHERE user_id = ${userId} AND status = '${status}'`;
-// INJECTABLE! Attack: userId = "1 OR 1=1; DROP TABLE users;--"
+// This pattern is vulnerable to SQL injection attacks
 
-// packages/database/src/services/user-service.ts:156
+// EXAMPLE: Another vulnerable pattern to avoid
 db.query(`UPDATE users SET last_login = NOW() WHERE email = '${email}'`);
 ```
 
@@ -242,13 +252,15 @@ packages/core → packages/database → packages/agents → packages/core
 
 **Summary:** 23 known vulnerabilities in dependencies require immediate attention.
 
-### Critical Vulnerabilities
+### Example Vulnerabilities (For Demonstration)
 
 | Package | Current | Patched | CVE | Severity |
 |---------|---------|---------|-----|----------|
-| jsonwebtoken | 8.5.1 | 9.0.0 | CVE-2022-23541 | CRITICAL |
-| ws | 7.4.6 | 8.11.0 | CVE-2024-37890 | HIGH |
-| lodash | 4.17.20 | 4.17.21 | CVE-2021-23337 | HIGH |
+| jsonwebtoken | 8.5.1 | 9.0.0 | CVE-2022-EXAMPLE | CRITICAL |
+| ws | 7.4.6 | 8.11.0 | CVE-2024-EXAMPLE | HIGH |
+| lodash | 4.17.20 | 4.17.21 | CVE-2021-EXAMPLE | HIGH |
+
+*Note: These are example vulnerability patterns - actual dependencies should be checked separately*
 
 ### Dependency Statistics
 - **Total Dependencies:** 1,247
