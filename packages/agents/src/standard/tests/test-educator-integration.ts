@@ -5,7 +5,7 @@
  * TODO: Update imports and restore functionality
  */
 
-// @ts-nocheck
+// TypeScript test file - currently disabled
 /* eslint-disable */
 
 import { ComparisonOrchestrator } from '../orchestrator/comparison-orchestrator';

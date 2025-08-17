@@ -203,6 +203,13 @@ Find issues with code snippets and recommendations.`
             // Parse the response - DeepWiki returns plain text directly
             const content = typeof response.data === 'string' ? response.data : '';
             
+            // Debug: Log the raw response
+            console.log('\n🔍 DEBUG - Raw DeepWiki Response:');
+            console.log('Response type:', typeof response.data);
+            console.log('Response length:', content.length);
+            console.log('First 500 chars:', content.substring(0, 500));
+            console.log('=' .repeat(80));
+            
             // Parse the DeepWiki text response
             const parsedData = await parseDeepWikiResponse(content);
             
@@ -477,12 +484,22 @@ Find issues with code snippets and recommendations.`
     
     const totalAnalysisTime = (Date.now() - startMain) / 1000; // Total time in seconds
     
+    // Debug: Log what we're passing
+    const mainBranchData = convertToAnalysisResult(mainAnalysis);
+    const featureBranchData = convertToAnalysisResult(prAnalysis);
+    
+    // Save debug data
+    fs.writeFileSync('debug-main-issues.json', JSON.stringify(mainBranchData.issues, null, 2));
+    fs.writeFileSync('debug-pr-issues.json', JSON.stringify(featureBranchData.issues, null, 2));
+    
+    printStatus(`DEBUG: Main=${mainBranchData.issues.length} issues, PR=${featureBranchData.issues.length} issues`, 'info');
+    
     // Use orchestrator for comparison with location enhancement
     const result = await orchestrator.executeComparison({
       userId: 'test-user',
       teamId: 'test-team',
-      mainBranchAnalysis: convertToAnalysisResult(mainAnalysis),
-      featureBranchAnalysis: convertToAnalysisResult(prAnalysis),
+      mainBranchAnalysis: mainBranchData,
+      featureBranchAnalysis: featureBranchData,
       prMetadata: {
         id: `pr-${prData.prNumber}`,
         number: prData.prNumber,
@@ -500,6 +517,14 @@ Find issues with code snippets and recommendations.`
       deepWikiScanDuration: totalAnalysisTime * 1000 // Pass scan duration in milliseconds with correct field name
     } as any);
     const comparisonTime = ((Date.now() - startComparison) / 1000).toFixed(1);
+    
+    // Debug: Check what the orchestrator returned
+    console.log('\n🔍 DEBUG - Orchestrator result:');
+    console.log('Resolved issues:', result.comparison?.resolvedIssues?.length || 0);
+    console.log('New issues:', result.comparison?.newIssues?.length || 0);
+    console.log('Modified issues:', result.comparison?.modifiedIssues?.length || 0);
+    console.log('Unchanged issues:', result.comparison?.unchangedIssues?.length || 0);
+    
     printStatus(`Report generated in ${comparisonTime}s`, 'success');
     
     // Step 5: Save outputs

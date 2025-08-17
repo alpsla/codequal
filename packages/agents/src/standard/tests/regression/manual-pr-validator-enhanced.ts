@@ -12,7 +12,7 @@
  * npx ts-node manual-pr-validator-enhanced.ts https://github.com/owner/repo/pull/123
  */
 
-// @ts-nocheck
+// TypeScript file - enhanced manual PR validator
 /* eslint-disable */
 
 import { ComparisonAgent } from '../../comparison';
