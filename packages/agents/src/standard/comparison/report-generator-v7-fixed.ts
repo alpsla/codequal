@@ -1251,12 +1251,6 @@ ${hasDocumentation ?
 | Developer | Overall | Security | Perf | Quality | Deps | Status | Trend |
 |-----------|---------|----------|------|---------|------|--------|-------|
 | ${author} | ${this.roundToDecimal(overallScore, 0)}/100 | ${this.roundToDecimal(securityScore, 0)}/100 | ${this.roundToDecimal(performanceScore, 0)}/100 | ${this.roundToDecimal(qualityScore, 0)}/100 | ${this.roundToDecimal(dependenciesScore, 0)}/100 | Senior | ${scoreChange < -5 ? '↓↓' : scoreChange < 0 ? '↓' : scoreChange > 5 ? '↑↑' : scoreChange > 0 ? '↑' : '→'} |
-| John Smith | 62/100 | 65/100 | 58/100 | 68/100 | 70/100 | Mid | → |
-| Alex Kumar | 54/100 | 54/100 | 54/100 | 54/100 | 54/100 | Junior | 🆕 |
-| Maria Rodriguez | 54/100 | 54/100 | 54/100 | 54/100 | 54/100 | Junior | 🆕 |
-| David Park | 54/100 | 54/100 | 54/100 | 54/100 | 54/100 | Mid | 🆕 |
-
-*New team members start at 50/100 base score. They receive a first PR motivation boost (+4) based on this PR's quality, bringing them to 54/100
 
 ---
 

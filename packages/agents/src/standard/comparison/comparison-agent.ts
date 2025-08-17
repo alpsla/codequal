@@ -382,11 +382,78 @@ Provide confidence scores and reasoning for each finding.`;
       }));
     };
     
+    // Deduplicate issues based on similar descriptions and locations
+    const deduplicateIssues = (issues: any[]) => {
+      const seen = new Map<string, any>();
+      
+      for (const issue of issues) {
+        // Create a key based on the issue's essential properties
+        const locationKey = issue.location ? 
+          `${issue.location.file || 'unknown'}:${issue.location.line || 0}` : 
+          'no-location';
+        
+        // Normalize the description for comparison
+        const normalizedDesc = (issue.description || issue.message || issue.title || '')
+          .toLowerCase()
+          .replace(/\s+/g, ' ')
+          .trim();
+        
+        // Check for similar issues
+        let isDuplicate = false;
+        for (const [key, existing] of seen.entries()) {
+          const existingDesc = (existing.description || existing.message || existing.title || '')
+            .toLowerCase()
+            .replace(/\s+/g, ' ')
+            .trim();
+          
+          // Consider it a duplicate if same location and line
+          if (key === locationKey && locationKey !== 'no-location') {
+            // Prefer the issue with more details
+            if ((issue.description?.length || 0) > (existing.description?.length || 0)) {
+              seen.set(key, issue);
+            }
+            isDuplicate = true;
+            break;
+          }
+          
+          // Check for semantic duplicates
+          const commonPatterns = [
+            'prototype pollution',
+            'type safety',
+            'error handling',
+            'input validation',
+            'missing validation',
+            'code smell',
+            'magic number',
+            'object mutation',
+            'type assertion'
+          ];
+          
+          for (const pattern of commonPatterns) {
+            if (normalizedDesc.includes(pattern) && existingDesc.includes(pattern)) {
+              // Keep the more detailed issue
+              if ((issue.description?.length || 0) > (existing.description?.length || 0)) {
+                seen.set(`${pattern}-${seen.size}`, issue);
+              }
+              isDuplicate = true;
+              break;
+            }
+          }
+        }
+        
+        if (!isDuplicate) {
+          seen.set(`${locationKey}-${seen.size}`, issue);
+        }
+      }
+      
+      return Array.from(seen.values());
+    };
+    
     return {
-      resolvedIssues: extractIssues(aiAnalysis.resolvedIssues.issues),
-      newIssues: extractIssues(aiAnalysis.newIssues.issues),
+      resolvedIssues: deduplicateIssues(extractIssues(aiAnalysis.resolvedIssues.issues)),
+      newIssues: deduplicateIssues(extractIssues(aiAnalysis.newIssues.issues)),
       modifiedIssues: aiAnalysis.modifiedIssues.issues.map(mi => (mi as any).issue || mi),
-      unchangedIssues: extractIssues(aiAnalysis.unchangedIssues.issues), // Pre-existing issues
+      unchangedIssues: deduplicateIssues(extractIssues(aiAnalysis.unchangedIssues.issues)), // Pre-existing issues
       summary: {
         totalResolved: aiAnalysis.resolvedIssues.total,
         totalNew: aiAnalysis.newIssues.total,
