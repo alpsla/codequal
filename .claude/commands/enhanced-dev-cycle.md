@@ -6,7 +6,7 @@ Complete development cycle with integrated progress tracking and estimation upda
 
 ### Phase 1: Fix & Build
 ```bash
-# Standard dev-cycle-orchestrator tasks
+# Standard session-wrapper tasks
 claude --agent build-ci-fixer
 ```
 

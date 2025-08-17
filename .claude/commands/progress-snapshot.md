@@ -134,6 +134,6 @@ claude --agent progress-tracker
 
 ## Auto-Integration:
 This snapshot runs automatically:
-- After each commit (via dev-cycle-orchestrator)
+- After each commit (via session-wrapper)
 - Before daily standups
 - When estimation updates are needed

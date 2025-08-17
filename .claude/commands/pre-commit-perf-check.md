@@ -112,7 +112,7 @@ fi
 
 ## Integration with Dev Cycle:
 ```bash
-# Modified dev-cycle-orchestrator flow:
+# Modified session-wrapper flow:
 # 1. Fix issues (build-ci-fixer)
 # 2. Run tests
 # 3. 👉 Performance validation (this command)
