@@ -39,7 +39,9 @@
     "**/*.test.ts",
     "**/__tests__/**",
     "**/_archive_*/**",
-    "**/examples/**"
+    "**/examples/**",
+    "src/standard/tests/test-educator-integration.ts",
+    "src/standard/tests/regression/manual-pr-validator-enhanced.ts"
   ],
   "references": [
     { "path": "../core" },

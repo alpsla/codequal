@@ -16,13 +16,22 @@
     "lint": "eslint src --ext .ts,.js",
     "lint:fix": "eslint src --ext .ts,.js --fix",
     "test": "jest --passWithNoTests",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:pr:small": "USE_DEEPWIKI_MOCK=false npx ts-node src/standard/tests/regression/manual-pr-validator.ts https://github.com/sindresorhus/ky/pull/700",
+    "test:pr:large": "USE_DEEPWIKI_MOCK=false DEEPWIKI_TIMEOUT=1200000 npx ts-node src/standard/tests/regression/manual-pr-validator.ts https://github.com/vercel/next.js/pull/31616",
+    "test:pr": "USE_DEEPWIKI_MOCK=false npx ts-node src/standard/tests/regression/manual-pr-validator.ts",
+    "setup": "bash ../../.claude/quick-setup.sh",
+    "session": "npx ts-node src/standard/scripts/codequal-session-starter.ts",
+    "session:start": "npm run session",
+    "setup:port-forward": "pkill -f 'port-forward.*8001' && kubectl port-forward -n codequal-dev svc/deepwiki-api 8001:8001 &",
+    "analyze": "npx ts-node src/standard/scripts/run-complete-analysis.ts"
   },
   "dependencies": {
     "@codequal/core": "0.1.0",
     "@codequal/database": "0.1.0",
     "@supabase/supabase-js": "^2.50.0",
     "axios": "^1.10.0",
+    "chalk": "^4.1.2",
     "dotenv": "^16.5.0",
     "ioredis": "^5.6.1",
     "node-fetch": "^2.7.0",
