@@ -7,7 +7,13 @@
  * 3. Find alternatives if needed
  * 
  * NO HARDCODED MODEL LISTS - everything is discovered dynamically
+ * 
+ * Note: This archived file is currently disabled due to missing dependencies
+ * TODO: Update imports and restore functionality if needed
  */
+
+// @ts-nocheck
+/* eslint-disable */
 
 import { ProductionResearcherService, ModelConfiguration, ResearchResult } from './production-researcher-service';
 import { DynamicFreshnessValidator, dynamicFreshnessValidator } from './dynamic-freshness-validator';
