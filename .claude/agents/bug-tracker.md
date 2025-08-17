@@ -267,7 +267,7 @@ const openBugs = SYSTEM_STATE.bugs.filter(b => b.status !== 'resolved');
 - Displays active bugs at session start
 - Shows bug fixes needed
 
-### With dev-cycle-orchestrator
+### With session-wrapper
 - Orchestrator marks bugs as resolved
 - Removes fixed bugs from state
 - Updates bug resolution data

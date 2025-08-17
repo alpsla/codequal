@@ -288,14 +288,38 @@ const SYSTEM_STATE: SystemState = {
       description: 'Architecture V7 Template Not Displaying Enhanced Content - architectural diagrams, patterns, and enhanced metrics not integrated into final report',
       discovered: '2025-08-16',
       component: 'report-generator-v7'
+    },
+    {
+      id: 'BUG-030',
+      severity: 'HIGH',
+      description: 'Model Selection System Should Handle Broken/Unavailable Models Gracefully - model selector chooses models from OpenRouter list without verifying availability, causing AI parser failures when models return "No endpoints found" errors',
+      discovered: '2025-08-17',
+      component: 'model-selection'
+    },
+    {
+      id: 'BUG-031',
+      severity: 'HIGH',
+      description: 'AI Parser Extracts Fewer Issues Than Rule-Based Parser (15 vs 44) - AI prompts need tuning to better extract and identify issues from DeepWiki responses, currently missing 66% of issues found by rule-based parser',
+      discovered: '2025-08-17',
+      component: 'ai-driven-parser'
+    },
+    {
+      id: 'BUG-032',
+      severity: 'HIGH',
+      description: 'V7 Template Not Properly Generating All Required Sections in Real Analysis - report structure missing key V7 template sections including PR/Repository issue separation, educational insights, business impact, complete skills tracking, and team performance metrics',
+      discovered: '2025-08-17',
+      component: 'report-generator-v7'
     }
   ],
 
   nextTasks: [
-    'PRODUCTION READY - Begin gradual rollout of AI parser system with monitoring and feedback collection',
+    'CRITICAL - FIX BUG-032: V7 Template section generation incomplete - ensure all 16 sections generate properly with PR/Repository separation, educational insights, business impact analysis, complete skills tracking, and team performance metrics',
+    'CRITICAL - FIX BUG-031: AI parser extraction rate too low (15 vs 44 issues) - enhance prompts with few-shot examples, specific patterns, and validation steps to achieve parity or better than rule-based parser',
+    'URGENT - FIX BUG-030: Implement model health check system to handle broken/unavailable models gracefully - prevent AI parser failures from models returning "No endpoints found"',
+    'PRODUCTION READY - Begin gradual rollout of AI parser system with monitoring and feedback collection (blocked by BUG-031)',
     'PERFORMANCE - Implement caching and batching for AI model calls to optimize performance',
     'MONITORING - Add comprehensive monitoring for AI parser success rates vs. fallback usage',
-    'VALIDATION - Run A/B testing between AI and rule-based parsers to validate accuracy improvements',
+    'VALIDATION - Run A/B testing between AI and rule-based parsers to validate accuracy improvements (blocked by BUG-031)',
     'URGENT - FIX BUG-024: Fix File Location Parser Failure - 18+ issues showing unknown:0 instead of actual locations',
     'URGENT - FIX BUG-025: Fix Mock Model Selection - ModelVersionSync not working, showing placeholder text',
     'URGENT - FIX BUG-021: Debug complete data flow from DeepWiki API to report generation using new debugging tools',

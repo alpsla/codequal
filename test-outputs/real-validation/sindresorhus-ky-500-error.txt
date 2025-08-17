@@ -1,13 +1,13 @@
 
 Error analyzing PR: https://github.com/sindresorhus/ky/pull/500
-Timestamp: 2025-08-14T21:13:58.976Z
+Timestamp: 2025-08-17T04:28:41.511Z
 
 Error Details:
 Error: DeepWiki analysis failed: All models failed to analyze repository. Please check DeepWiki service status and configuration.
     at DeepWikiApiManager.analyzeRepository (/Users/alpinro/Code Prjects/codequal/apps/api/dist/services/deepwiki-api-manager.js:272:19)
     at processTicksAndRejections (node:internal/process/task_queues:105:5)
     at Object.analyzeRepository (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/setup-deepwiki.ts:30:24)
-    at Object.<anonymous> (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/real-pr-validation.test.ts:240:28)
+    at Object.<anonymous> (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/real-pr-validation.test.ts:231:30)
 
 Configuration:
 {
