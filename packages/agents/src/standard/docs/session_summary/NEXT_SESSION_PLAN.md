@@ -1,7 +1,8 @@
 # DeepWiki Enhancement - Next Session Plan
 
-## ✅ Completed in This Session
+## ✅ Completed in Previous Sessions
 
+### Session 2025-08-15: Module Reorganization
 1. **Module Reorganization**
    - Created `/packages/agents/src/standard/deepwiki/` structure
    - Moved all DeepWiki code to dedicated module
@@ -18,40 +19,60 @@
    - Created structured prompt templates
    - Increased max_tokens to 8000
 
+### Session 2025-08-17: DeepWiki Fix & AI Parser Integration
+1. **Fixed DeepWiki Returning 0 Issues**
+   - Enhanced rule-based parser to correctly extract severity, files, and line numbers
+   - Now successfully returns 10 issues on main branch, 5 on PR branch
+   - Fixed continuation line parsing and file path extraction
+
+2. **AI Parser Integration (Partial)**
+   - Integrated UnifiedAIParser from comprehensive implementation
+   - Enhanced fallback chain without hardcoded models
+   - Fixed JSON parsing to handle markdown code blocks
+   - AI parser working but returning 0 issues (identified as BUG-032)
+
+3. **Improved Error Handling**
+   - Better model selection fallback mechanisms
+   - Proper environment variable loading
+   - Enhanced debugging and validation tools
+
 ## 🔴 Critical Issues to Fix Next
 
-### Priority 1: Test Real DeepWiki Response Format
+### Priority 1: Fix AI Parser Returning 0 Issues (BUG-032)
+**Problem**: UnifiedAIParser successfully calls AI models but returns 0 issues
+**Working**: Rule-based parser extracts 10+ issues correctly
+
+**Debug Plan**:
 ```bash
-# 1. Start port forward
-kubectl port-forward -n codequal-dev deployment/deepwiki 8001:8001
-
-# 2. Run structured test
+# 1. Test AI parser in isolation
 cd /Users/alpinro/Code\ Prjects/codequal/packages/agents
-npx ts-node test-deepwiki-structured.ts
+npx ts-node -e "
+const { UnifiedAIParser } = require('./src/standard/deepwiki/services/unified-ai-parser');
+const parser = new UnifiedAIParser();
+// Test with sample DeepWiki response
+"
 
-# 3. Analyze response format
+# 2. Debug parseCategory method
+# Check if individual category parsing works
+
+# 3. Debug response aggregation
+# Verify how 8 categories are combined
 ```
 
-### Priority 2: Debug Missing Issues
-**Problem**: Only 1-3 issues showing instead of 13+
+**Hypothesis**: Issue in `parseCategory` method or response aggregation logic
 
-**Test Script**: Create `test-deepwiki-issue-count.ts`
-```typescript
-// Compare raw DeepWiki response vs parsed issues
-const rawResponse = await callDeepWikiDirectly(repoUrl);
-console.log('Raw issues count:', countIssuesInText(rawResponse));
+### Priority 2: Model Selection Improvements
+**Problem**: DynamicModelSelector returns invalid models (google/gemini-2.5-pro-exp-03-25)
+**Working**: Fallback models work but may have parsing issues
 
-const parsed = parseDeepWikiResponse(rawResponse);
-console.log('Parsed issues:', parsed.issues.length);
-```
+**Solutions**:
+1. Implement model validation before selection
+2. Update model availability check
+3. Filter out known problematic models
 
-### Priority 3: Fix File Location Detection
-**Problem**: Most issues show location as "unknown"
-
-**Solutions to Test**:
-1. Use structured prompt with explicit location request
-2. Implement two-pass analysis (first for issues, second for locations)
-3. Test with response_format parameter
+### Priority 3: Complete System Integration Testing
+**Achievement**: DeepWiki analysis now working with rule-based parser
+**Next**: Ensure AI parser becomes primary solution with rule-based fallback
 
 ## 📝 Quick Test Commands
 
