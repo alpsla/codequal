@@ -176,19 +176,9 @@ export class DeepWikiService implements IDeepWikiService {
         let extractedColumn: number | undefined;
         
         if (issue.location) {
-          if (typeof issue.location === 'object') {
-            extractedFile = issue.location.file || issue.location.path || 'unknown';
-            extractedLine = issue.location.line || issue.location.lineNumber || 0;
-            extractedColumn = issue.location.column || issue.location.col;
-          } else if (typeof issue.location === 'string') {
-            // Parse string location like "file.ts:10:5" or "file.ts"
-            const parts = issue.location.split(':');
-            if (parts.length > 0) {
-              extractedFile = parts[0] || 'unknown';
-              if (parts.length > 1) extractedLine = parseInt(parts[1]) || 0;
-              if (parts.length > 2) extractedColumn = parseInt(parts[2]) || undefined;
-            }
-          }
+          extractedFile = issue.location.file || 'unknown';
+          extractedLine = issue.location.line || 0;
+          extractedColumn = issue.location.column;
         }
         
         // Also check for file in title or description (common pattern)
@@ -227,7 +217,7 @@ export class DeepWikiService implements IDeepWikiService {
 
         // Extract a proper title from the issue
         let title = issue.title || (issue as any).message || issue.description || 'No title provided';
-        let description = issue.description || '';
+        const description = issue.description || '';
         
         // If title is too long (likely contains full description), extract a shorter title
         if (title.length > 100 && title === issue.description) {

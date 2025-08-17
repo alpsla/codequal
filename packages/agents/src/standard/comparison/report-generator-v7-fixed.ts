@@ -30,7 +30,7 @@ export class ReportGeneratorV7Fixed {
   /**
    * Properly round a number to specified decimal places to avoid floating point errors
    */
-  private roundToDecimal(num: number, decimals: number = 2): number {
+  private roundToDecimal(num: number, decimals = 2): number {
     return Math.round((num + Number.EPSILON) * Math.pow(10, decimals)) / Math.pow(10, decimals);
   }
   
@@ -401,35 +401,144 @@ Low:      ${'█'.repeat(Math.min(repoLow, 10))}${'░'.repeat(Math.max(10 - rep
   }
   
   private async generateCodeQualityAnalysis(newIssues: Issue[], featureBranchResult: any): Promise<string> {
-    // Case-insensitive category matching
+    // Enhanced category matching with metadata support
     const qualityIssues = newIssues.filter(i => 
       i.category?.toLowerCase() === 'code quality' ||
       i.category?.toLowerCase() === 'code-quality' ||
       i.category?.toLowerCase() === 'codequality' ||
-      i.type?.toLowerCase()?.includes('quality')
+      i.type?.toLowerCase()?.includes('quality') ||
+      i.metadata?.metricType
     );
     
-    const score = qualityIssues.length === 0 ? 100 : Math.max(50, 100 - (qualityIssues.length * 8));
+    // Get metrics from result if available
+    const metrics = featureBranchResult?.codeQualityMetrics || {};
+    const hasMetrics = Object.keys(metrics).length > 0;
+    
+    // Calculate score based on metrics or issues
+    let score = qualityIssues.length === 0 ? 100 : Math.max(50, 100 - (qualityIssues.length * 8));
+    if (hasMetrics && featureBranchResult?.scores?.codeQuality) {
+      score = featureBranchResult.scores.codeQuality;
+    }
+    
     const grade = this.getGrade(score);
-    const coverage = featureBranchResult?.testCoverage || 0;
+    const coverage = metrics.testCoverage?.overall || featureBranchResult?.testCoverage || 0;
+    
+    // Extract specific metrics
+    const complexity = metrics.complexity?.cyclomatic?.average || 0;
+    const duplication = metrics.duplication?.percentage || 0;
+    const maintainabilityIndex = metrics.maintainability?.index || Math.max(50, score);
+    const documentationCoverage = metrics.documentation?.coverage || Math.max(60, score + 7);
     
     let section = `## 3. Code Quality Analysis
 
 ### Score: ${this.roundToDecimal(score, 0)}/100 (Grade: ${grade})
 
-- Maintainability: ${this.roundToDecimal(Math.max(50, score + 3), 0)}/100
+**Metrics Overview:**
+- Maintainability Index: ${this.roundToDecimal(maintainabilityIndex, 0)}/100
 - Test Coverage: ${this.roundToDecimal(coverage, 1)}%
-- Documentation: ${this.roundToDecimal(Math.max(60, score + 7), 0)}/100
-- Code Complexity: ${this.roundToDecimal(score, 0)}/100
+- Code Duplication: ${this.roundToDecimal(duplication, 1)}%
+- Avg Complexity: ${this.roundToDecimal(complexity, 1)}
+- Documentation: ${this.roundToDecimal(documentationCoverage, 0)}%
 
 ### `;
     
     if (qualityIssues.length === 0) {
       section += '✅ Good Code Quality\n\n';
     } else {
-      section += `Issues Found\n\n`;
-      for (const issue of qualityIssues) {
-        section += `- **${this.getIssueMessage(issue)}** - ${this.getFileLocation(issue)}\n`;
+      // Separate issues by type using metadata
+      const complexityIssues = qualityIssues.filter(i => i.metadata?.metricType === 'complexity');
+      const duplicationIssues = qualityIssues.filter(i => i.metadata?.metricType === 'duplication');
+      const coverageIssues = qualityIssues.filter(i => i.metadata?.metricType === 'coverage' || i.metadata?.metricType === 'testing');
+      const smellIssues = qualityIssues.filter(i => i.metadata?.metricType === 'smell');
+      const debtIssues = qualityIssues.filter(i => i.metadata?.metricType === 'debt');
+      const otherIssues = qualityIssues.filter(i => 
+        !complexityIssues.includes(i) && 
+        !duplicationIssues.includes(i) && 
+        !coverageIssues.includes(i) &&
+        !smellIssues.includes(i) &&
+        !debtIssues.includes(i)
+      );
+      
+      section += `Quality Issues\n\n`;
+      
+      if (complexityIssues.length > 0) {
+        section += `#### 🔴 High Complexity (${complexityIssues.length})\n`;
+        for (const issue of complexityIssues) {
+          const value = issue.metadata?.value || '';
+          const threshold = issue.metadata?.threshold || '';
+          section += `- **${this.getIssueMessage(issue)}**${value ? ` (${value}${threshold ? `/${threshold}` : ''})` : ''}\n`;
+          if (issue.location) {
+            section += `  - ${this.getFileLocation(issue)}\n`;
+          }
+        }
+        section += '\n';
+      }
+      
+      if (duplicationIssues.length > 0) {
+        section += `#### 🟠 Code Duplication (${duplicationIssues.length})\n`;
+        for (const issue of duplicationIssues) {
+          const percentage = issue.metadata?.percentage;
+          const lines = issue.metadata?.lines;
+          const instances = issue.metadata?.instances;
+          section += `- **${this.getIssueMessage(issue)}**\n`;
+          if (percentage) {
+            section += `  - ${percentage.toFixed(1)}% duplication${lines ? ` (${lines} lines)` : ''}\n`;
+          }
+          if (instances && instances.length > 0) {
+            section += `  - Duplicated between:\n`;
+            instances.forEach((inst: any, idx: number) => {
+              section += `    ${idx + 1}. ${inst.files.join(' ↔ ')}${inst.lines ? ` (${inst.lines} lines)` : ''}\n`;
+            });
+          }
+        }
+        section += '\n';
+      }
+      
+      if (coverageIssues.length > 0) {
+        section += `#### 🟡 Test Coverage (${coverageIssues.length})\n`;
+        for (const issue of coverageIssues) {
+          const coverage = issue.metadata?.overall;
+          section += `- **${this.getIssueMessage(issue)}**\n`;
+          if (coverage !== undefined) {
+            section += `  - Current: ${coverage.toFixed(1)}%, Target: 80%\n`;
+          }
+        }
+        section += '\n';
+      }
+      
+      if (smellIssues.length > 0) {
+        section += `#### 💨 Code Smells (${smellIssues.length})\n`;
+        for (const issue of smellIssues) {
+          section += `- **${issue.metadata?.smellType || this.getIssueMessage(issue)}**\n`;
+          if (issue.description) {
+            section += `  - ${issue.description}\n`;
+          }
+          if (issue.location) {
+            section += `  - ${this.getFileLocation(issue)}\n`;
+          }
+        }
+        section += '\n';
+      }
+      
+      if (debtIssues.length > 0) {
+        section += `#### ⏱️ Technical Debt (${debtIssues.length})\n`;
+        for (const issue of debtIssues) {
+          const minutes = issue.metadata?.totalMinutes;
+          const hours = minutes ? (minutes / 60).toFixed(1) : '';
+          section += `- **${this.getIssueMessage(issue)}**${hours ? ` (${hours} hours)` : ''}\n`;
+          if (issue.metadata?.breakdown) {
+            const breakdown = issue.metadata.breakdown;
+            section += `  - Complexity: ${breakdown.complexity}min, Duplication: ${breakdown.duplication}min, Coverage: ${breakdown.coverage}min\n`;
+          }
+        }
+        section += '\n';
+      }
+      
+      if (otherIssues.length > 0) {
+        section += `#### ℹ️ Other Quality Issues (${otherIssues.length})\n`;
+        for (const issue of otherIssues) {
+          section += `- **${this.getIssueMessage(issue)}** - ${this.getFileLocation(issue)}\n`;
+        }
       }
     }
     
@@ -510,15 +619,40 @@ Low:      ${'█'.repeat(Math.min(repoLow, 10))}${'░'.repeat(Math.max(10 - rep
   }
   
   private async generateDependenciesAnalysis(allIssues: Issue[]): Promise<string> {
-    // Case-insensitive category matching for dependency issues
+    // Enhanced category matching with metadata support
     const depIssues = allIssues.filter(i => 
       i.category?.toLowerCase()?.includes('dependency') || 
       i.category?.toLowerCase()?.includes('dependencies') ||
       i.type?.toLowerCase()?.includes('dependency') ||
-      i.type?.toLowerCase()?.includes('vulnerable')
+      i.type?.toLowerCase()?.includes('vulnerable') ||
+      i.metadata?.dependencyType
     );
     
-    const score = depIssues.length === 0 ? 100 : Math.max(60, 100 - (depIssues.length * 10));
+    // Separate by type using metadata or title/message content
+    const vulnerableIssues = depIssues.filter(i => 
+      i.metadata?.dependencyType === 'vulnerable' ||
+      i.title?.toLowerCase().includes('vulnerable') ||
+      i.message?.toLowerCase().includes('cve') ||
+      i.metadata?.cve
+    );
+    
+    const outdatedIssues = depIssues.filter(i => 
+      i.metadata?.dependencyType === 'outdated' ||
+      i.title?.toLowerCase().includes('outdated') ||
+      i.title?.toLowerCase().includes('behind')
+    );
+    
+    const deprecatedIssues = depIssues.filter(i => 
+      i.metadata?.dependencyType === 'deprecated' ||
+      i.title?.toLowerCase().includes('deprecated')
+    );
+    
+    // Calculate score based on issue types
+    const vulnerableScore = vulnerableIssues.length === 0 ? 100 : Math.max(40, 100 - vulnerableIssues.length * 20);
+    const outdatedScore = outdatedIssues.length === 0 ? 100 : Math.max(60, 100 - outdatedIssues.length * 10);
+    const deprecatedScore = deprecatedIssues.length === 0 ? 100 : Math.max(70, 100 - deprecatedIssues.length * 10);
+    
+    const score = Math.round((vulnerableScore * 0.5 + outdatedScore * 0.3 + deprecatedScore * 0.2));
     const grade = this.getGrade(score);
     
     let section = `## 5. Dependencies Analysis
@@ -526,9 +660,15 @@ Low:      ${'█'.repeat(Math.min(repoLow, 10))}${'░'.repeat(Math.max(10 - rep
 ### Score: ${this.roundToDecimal(score, 0)}/100 (Grade: ${grade})
 
 **Score Breakdown:**
-- Security Vulnerabilities: ${this.roundToDecimal(score, 0)}/100
-- Version Currency: ${this.roundToDecimal(Math.max(50, score + 5), 0)}/100
+- Security Vulnerabilities: ${this.roundToDecimal(vulnerableScore, 0)}/100
+- Version Currency: ${this.roundToDecimal(outdatedScore, 0)}/100
+- Deprecated Packages: ${this.roundToDecimal(deprecatedScore, 0)}/100
 - License Compliance: 100/100
+
+### Dependency Issues Summary
+- 🔴 **Vulnerable Dependencies:** ${vulnerableIssues.length}
+- 🟠 **Outdated Dependencies:** ${outdatedIssues.length}
+- 🟡 **Deprecated Dependencies:** ${deprecatedIssues.length}
 
 ### Dependency Issues
 `;
@@ -536,19 +676,64 @@ Low:      ${'█'.repeat(Math.min(repoLow, 10))}${'░'.repeat(Math.max(10 - rep
     if (depIssues.length === 0) {
       section += '\n✅ All dependencies are secure and up-to-date\n';
     } else {
-      const critical = depIssues.filter(i => i.severity === 'critical');
-      const high = depIssues.filter(i => i.severity === 'high');
-      
-      if (critical.length > 0) {
-        section += `\n#### 🚨 Critical Vulnerabilities (${critical.length})\n`;
-        for (const issue of critical) {
-          section += `- **${this.getIssueMessage(issue)}** - ${this.getFileLocation(issue)}\n`;
+      // Display vulnerable dependencies
+      if (vulnerableIssues.length > 0) {
+        section += `\n#### 🚨 Vulnerable Dependencies (${vulnerableIssues.length})\n`;
+        for (const issue of vulnerableIssues) {
+          const cve = issue.metadata?.cve || '';
+          const packageInfo = issue.metadata?.packageName && issue.metadata?.currentVersion ? 
+            `${issue.metadata.packageName}@${issue.metadata.currentVersion}` : 
+            this.getIssueMessage(issue);
+          section += `- **${packageInfo}**${cve ? ` - ${cve}` : ''}\n`;
+          if (issue.description) {
+            section += `  - ${issue.description}\n`;
+          }
+          if (issue.remediation) {
+            section += `  - **Fix:** ${issue.remediation}\n`;
+          }
         }
       }
       
-      if (high.length > 0) {
-        section += `\n#### ⚠️ High Risk Dependencies (${high.length})\n`;
-        for (const issue of high) {
+      // Display outdated dependencies
+      if (outdatedIssues.length > 0) {
+        section += `\n#### ⚠️ Outdated Dependencies (${outdatedIssues.length})\n`;
+        for (const issue of outdatedIssues) {
+          const packageInfo = issue.metadata?.packageName ? 
+            `${issue.metadata.packageName}@${issue.metadata.currentVersion || 'unknown'}` : 
+            this.getIssueMessage(issue);
+          const latestVersion = issue.metadata?.latestVersion;
+          section += `- **${packageInfo}**${latestVersion ? ` → ${latestVersion}` : ''}\n`;
+          if (issue.description && !issue.description.includes('Current:')) {
+            section += `  - ${issue.description}\n`;
+          }
+        }
+      }
+      
+      // Display deprecated dependencies
+      if (deprecatedIssues.length > 0) {
+        section += `\n#### 🟡 Deprecated Dependencies (${deprecatedIssues.length})\n`;
+        for (const issue of deprecatedIssues) {
+          const packageInfo = issue.metadata?.packageName || this.getIssueMessage(issue);
+          section += `- **${packageInfo}**\n`;
+          if (issue.description) {
+            section += `  - ${issue.description}\n`;
+          }
+          if (issue.remediation) {
+            section += `  - **Alternative:** ${issue.remediation}\n`;
+          }
+        }
+      }
+      
+      // Display other dependency issues not categorized above
+      const otherDepIssues = depIssues.filter(i => 
+        !vulnerableIssues.includes(i) && 
+        !outdatedIssues.includes(i) && 
+        !deprecatedIssues.includes(i)
+      );
+      
+      if (otherDepIssues.length > 0) {
+        section += `\n#### ℹ️ Other Dependency Issues (${otherDepIssues.length})\n`;
+        for (const issue of otherDepIssues) {
           section += `- **${this.getIssueMessage(issue)}** - ${this.getFileLocation(issue)}\n`;
         }
       }

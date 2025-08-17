@@ -276,7 +276,7 @@ export class DeepWikiContextManager {
       const key = `deepwiki:context:${repositoryUrl}`;
       const cached = await this.redisClient.get(key);
       
-      if (cached) {
+      if (cached && typeof cached === 'string') {
         return JSON.parse(cached);
       }
     } catch (error) {
