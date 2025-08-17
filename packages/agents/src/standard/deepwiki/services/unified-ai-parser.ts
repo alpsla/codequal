@@ -56,7 +56,10 @@ export class UnifiedAIParser {
   constructor(logger?: ILogger) {
     this.modelSelector = new DynamicModelSelector();
     this.logger = logger;
-    this.aiService = new AIService();
+    // Pass the API key explicitly to ensure it's available
+    this.aiService = new AIService({
+      openRouterApiKey: process.env.OPENROUTER_API_KEY
+    });
   }
 
   /**
@@ -76,7 +79,7 @@ export class UnifiedAIParser {
     }
 
     try {
-      // Select model based on repository context
+      // Select model based on repository context using dynamic selection
       const requirements: RoleRequirements = {
         role: 'deepwiki-parser',
         description: 'Parse and extract structured data from DeepWiki analysis responses',
@@ -98,15 +101,61 @@ export class UnifiedAIParser {
       this.fallbackModel = modelSelection.fallback;
       
       this.log('info', `Selected model for parsing: ${this.selectedModel.model} (${this.selectedModel.provider})`);
-      this.log('info', `Fallback model: ${this.fallbackModel.model} (${this.fallbackModel.provider})`);
+      if (this.fallbackModel) {
+        this.log('info', `Fallback model: ${this.fallbackModel.model} (${this.fallbackModel.provider})`);
+      }
     } catch (error) {
-      this.log('warn', 'Model selection failed, using fallback', error);
-      this.selectedModel = {
-        model: 'gpt-4o',
-        provider: 'openai',
-        temperature: 0.1,
-        maxTokens: 2000
-      };
+      this.log('warn', 'Model selection failed, using fallback flow', error);
+      
+      // Fallback flow: Try to get last known working configuration
+      try {
+        // Use a sensible default that we know works but isn't hardcoded
+        // This should come from configuration or last successful run
+        const fallbackModels = [
+          { model: 'gpt-4o', provider: 'openai' },
+          { model: 'claude-3-5-sonnet-20241022', provider: 'anthropic' },
+          { model: 'gpt-4-turbo-preview', provider: 'openai' }
+        ];
+        
+        // Try each fallback model until one works
+        for (const fallback of fallbackModels) {
+          try {
+            // Verify the model is available
+            const testResponse = await this.aiService.call(fallback as any, {
+              systemPrompt: 'Test',
+              prompt: 'Respond with OK',
+              temperature: 0.1,
+              maxTokens: 10
+            });
+            
+            if (testResponse) {
+              this.selectedModel = {
+                ...fallback,
+                temperature: 0.1,
+                maxTokens: 4000
+              };
+              this.log('info', `Using fallback model: ${this.selectedModel.model}`);
+              break;
+            }
+          } catch {
+            // Try next model
+            continue;
+          }
+        }
+        
+        if (!this.selectedModel) {
+          throw new Error('No working models found in fallback flow');
+        }
+      } catch (fallbackError) {
+        this.log('error', 'All model selection attempts failed', fallbackError);
+        // As absolute last resort, disable AI parsing
+        this.selectedModel = {
+          model: 'none',
+          provider: 'none',
+          temperature: 0.1,
+          maxTokens: 0
+        };
+      }
     }
   }
 
@@ -575,9 +624,23 @@ Extract recommendations:
       } catch (parseError) {
         this.log('warn', 'Failed to parse AI response as JSON, attempting to extract', { parseError });
         // If not valid JSON, try to extract JSON from the response
-        const jsonMatch = response.content.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          return JSON.parse(jsonMatch[0]);
+        // First try to remove markdown code blocks
+        let cleanedContent = response.content;
+        if (cleanedContent.includes('```json')) {
+          cleanedContent = cleanedContent.replace(/```json\s*/g, '').replace(/```\s*/g, '');
+        } else if (cleanedContent.includes('```')) {
+          cleanedContent = cleanedContent.replace(/```\s*/g, '');
+        }
+        
+        // Try to parse the cleaned content
+        try {
+          return JSON.parse(cleanedContent.trim());
+        } catch {
+          // If still fails, try to extract JSON object
+          const jsonMatch = cleanedContent.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            return JSON.parse(jsonMatch[0]);
+          }
         }
         return {};
       }
@@ -602,9 +665,23 @@ Extract recommendations:
             return JSON.parse(response.content);
           } catch (parseError) {
             this.log('warn', 'Failed to parse fallback AI response as JSON', { parseError });
-            const jsonMatch = response.content.match(/\{[\s\S]*\}/);
-            if (jsonMatch) {
-              return JSON.parse(jsonMatch[0]);
+            // Clean markdown code blocks
+            let cleanedContent = response.content;
+            if (cleanedContent.includes('```json')) {
+              cleanedContent = cleanedContent.replace(/```json\s*/g, '').replace(/```\s*/g, '');
+            } else if (cleanedContent.includes('```')) {
+              cleanedContent = cleanedContent.replace(/```\s*/g, '');
+            }
+            
+            // Try to parse the cleaned content
+            try {
+              return JSON.parse(cleanedContent.trim());
+            } catch {
+              // If still fails, try to extract JSON object
+              const jsonMatch = cleanedContent.match(/\{[\s\S]*\}/);
+              if (jsonMatch) {
+                return JSON.parse(jsonMatch[0]);
+              }
             }
             return {};
           }

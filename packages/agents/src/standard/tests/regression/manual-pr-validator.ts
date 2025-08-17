@@ -1,4 +1,10 @@
 #!/usr/bin/env npx ts-node
+import * as dotenv from 'dotenv';
+import * as path from 'path';
+
+// Load environment variables from root .env file
+dotenv.config({ path: path.resolve(__dirname, '../../../../../.env') });
+
 /**
  * Manual PR Validator - Standalone Script for Real PR Analysis
  * 
@@ -21,7 +27,6 @@ import { DeepWikiClient } from '@codequal/core/deepwiki';
 import { parseDeepWikiResponse } from './parse-deepwiki-response';
 import { LocationClarifier } from '../../deepwiki/services/location-clarifier';
 import * as fs from 'fs';
-import * as path from 'path';
 import * as chalk from 'chalk';
 import { createClient } from '@supabase/supabase-js';
 
@@ -199,7 +204,7 @@ Find issues with code snippets and recommendations.`
             const content = typeof response.data === 'string' ? response.data : '';
             
             // Parse the DeepWiki text response
-            const parsedData = parseDeepWikiResponse(content);
+            const parsedData = await parseDeepWikiResponse(content);
             
             // Third pass: Clarify locations for issues with unknown locations
             const unknownLocationIssues = parsedData.issues.filter((issue: any) => 

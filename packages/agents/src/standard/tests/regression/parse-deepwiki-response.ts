@@ -1,7 +1,41 @@
 /**
  * Parse DeepWiki text response into structured issues
  */
-export function parseDeepWikiResponse(content: string) {
+export async function parseDeepWikiResponse(content: string) {
+  // Import the UnifiedAIParser from the deepwiki services
+  const { UnifiedAIParser } = require('../../deepwiki/services/unified-ai-parser');
+  
+  // Check if we should use AI parser
+  const useAIParser = process.env.USE_AI_PARSER !== 'false';
+  
+  if (useAIParser) {
+    try {
+      console.log('Using UnifiedAIParser for DeepWiki response parsing...');
+      const parser = new UnifiedAIParser();
+      
+      // Parse using the AI parser
+      const result = await parser.parseDeepWikiResponse(content, {
+        useAI: true,
+        attemptStructuredParsing: true,
+        maxRetries: 2
+      });
+      
+      // Log parsing results
+      console.log(`Parsed ${result.issues.length} issues from DeepWiki response:`, {
+        critical: result.issues.filter((i: any) => i.severity === 'critical').length,
+        high: result.issues.filter((i: any) => i.severity === 'high').length,
+        medium: result.issues.filter((i: any) => i.severity === 'medium').length,
+        low: result.issues.filter((i: any) => i.severity === 'low').length
+      });
+      
+      return result;
+    } catch (error) {
+      console.warn('AI Parser failed, falling back to rule-based parser:', error);
+      // Fall back to rule-based parsing
+    }
+  }
+  
+  // Original rule-based parsing logic as fallback
   const issues = [];
   const lines = content.split('\n');
   
@@ -170,12 +204,20 @@ export function parseDeepWikiResponse(content: string) {
       // Continue description for current issue
       currentIssue.description += ' ' + line.trim();
       
-      // Check for file/line info in continuation
-      const fileMatch = line.match(/(?:`([^`]+\.(ts|js|tsx|jsx|json|md))`|(\w+\/[\w\-.]+\.(ts|js|tsx|jsx|json|md)))/);
-      if (fileMatch && currentIssue.location.file === 'unknown') {
-        currentIssue.location.file = (fileMatch[1] || fileMatch[3]).replace(/`/g, '');
+      // Check for explicit severity in continuation lines
+      const severityMatch = line.match(/(?:Severity|severity):\s*(critical|high|medium|low)/i);
+      if (severityMatch) {
+        currentIssue.severity = severityMatch[1].toLowerCase();
       }
-      const lineMatch = line.match(/\(line (\d+)\)/);
+      
+      // Check for file/line info in continuation
+      const fileMatch = line.match(/(?:File|file):\s*([^\s,]+(?:\.(ts|js|tsx|jsx|json|md|py|go|rs|java|cpp|c|h))?)/) ||
+                       line.match(/(?:`([^`]+\.(ts|js|tsx|jsx|json|md))`|(\w+\/[\w\-.]+\.(ts|js|tsx|jsx|json|md)))/);
+      if (fileMatch && currentIssue.location.file === 'unknown') {
+        currentIssue.location.file = (fileMatch[1] || fileMatch[2] || fileMatch[4]).replace(/`/g, '');
+      }
+      
+      const lineMatch = line.match(/(?:Line|line):\s*(\d+)/) || line.match(/\(line (\d+)\)/);
       if (lineMatch) {
         currentIssue.location.line = parseInt(lineMatch[1]);
       }
@@ -198,7 +240,7 @@ export function parseDeepWikiResponse(content: string) {
     (issues.filter(i => i.category === 'security' && i.severity === 'critical').length * 25) -
     (issues.filter(i => i.category === 'security' && i.severity === 'high').length * 15));
   
-  console.log(`Parsed ${issues.length} issues from DeepWiki response:`, {
+  console.log(`Parsed ${issues.length} issues from DeepWiki response (rule-based):`, {
     critical: criticalCount,
     high: highCount,
     medium: mediumCount,
