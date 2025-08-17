@@ -37,7 +37,9 @@
     "node_modules",
     "dist",
     "**/*.test.ts",
-    "**/__tests__/**"
+    "**/__tests__/**",
+    "**/_archive_*/**",
+    "**/examples/**"
   ],
   "references": [
     { "path": "../core" },

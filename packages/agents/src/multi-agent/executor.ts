@@ -10,6 +10,7 @@ import {
   MultiAgentResult, 
   RepositoryData 
 } from './types';
+import { AgentProvider } from '@codequal/core/config/agent-registry';
 import { MultiAgentValidator } from './validator';
 
 /**
@@ -1252,7 +1253,7 @@ export class MultiAgentExecutor {
           };
           
           // Create agent
-          const provider = fallbackConfig.provider || fallbackConfig.agentType || 'GEMINI';
+          const provider = fallbackConfig.provider || (fallbackConfig.agentType as AgentProvider) || AgentProvider.GOOGLE;
           
           fallbackAgent = AgentFactory.createAgent(
             fallbackConfig.role, 
