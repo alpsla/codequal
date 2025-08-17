@@ -1,0 +1,134 @@
+⚠️ Could not load real DeepWiki API, will use mock: Package subpath './standard/services/location-enhancer' is not defined by "exports" in /Users/alpinro/Code Prjects/codequal/node_modules/@codequal/agents/package.json
+Supabase credentials not found, using mock configuration provider
+Using AI-enhanced location finder
+Using pattern-based location finder (AI not enabled)
+Using AI-enhanced location finder
+Using pattern-based location finder (AI not enabled)
+🚀 Starting Complete PR Analysis
+================================
+
+Repository: ky
+PR Number: 700
+Mode: Real DeepWiki
+Save to Supabase: No
+Output Directory: /Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/reports/2025-08-17
+
+📊 Running analysis...
+🔍 Analyzing main branch...
+Starting DeepWiki analysis for ky { branch: 'main', prId: undefined }
+DeepWiki analysis failed Error: DeepWiki API not registered. Please ensure the DeepWiki service is properly initialized.
+    at DeepWikiApiWrapper.analyzeRepository (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/deepwiki-api-wrapper.ts:100:13)
+    at DeepWikiService.analyzeRepository (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/deepwiki-client.ts:51:52)
+    at DeepWikiService.analyzeRepositoryForComparison (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/deepwiki-client.ts:107:31)
+    at CompleteAnalysisRunner.run (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/scripts/run-complete-analysis.ts:188:61)
+    at /Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/scripts/run-complete-analysis.ts:317:24
+🔍 Analyzing PR #700 branch...
+Starting DeepWiki analysis for ky { branch: undefined, prId: '700' }
+DeepWiki analysis failed Error: DeepWiki API not registered. Please ensure the DeepWiki service is properly initialized.
+    at DeepWikiApiWrapper.analyzeRepository (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/deepwiki-api-wrapper.ts:100:13)
+    at DeepWikiService.analyzeRepository (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/deepwiki-client.ts:51:52)
+    at DeepWikiService.analyzeRepositoryForComparison (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/deepwiki-client.ts:107:31)
+    at CompleteAnalysisRunner.run (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/scripts/run-complete-analysis.ts:195:64)
+🔄 Comparing branches and generating report...
+Starting orchestrated comparison analysis undefined
+Using model configuration {
+  model: 'MOCK-MODEL-NOT-FROM-SUPABASE',
+  provider: 'mock',
+  version: '1.0',
+  cost: 0,
+  configAge: 'today'
+}
+Initializing comparison agent {
+  config: {
+    language: undefined,
+    sizeCategory: undefined,
+    role: 'comparison',
+    prompt: 'You are an expert AI comparison analyst specializing in code quality assessment.\n' +
+      '\n' +
+      'REPOSITORY CONTEXT:\n' +
+      '- Language: typescript\n' +
+      '- Size: medium (0 files)\n' +
+      '- Complexity: low\n' +
+      '- Total Issues: 0\n' +
+      '\n' +
+      'This is a straightforward repository. Focus on clarity.\n' +
+      '\n' +
+      'Focus areas:\n' +
+      '- General code quality\n' +
+      '\n' +
+      'Ensure 100% accuracy, professional language, and actionable recommendations.',
+    modelConfig: { provider: 'mock', model: 'MOCK-MODEL-NOT-FROM-SUPABASE' }
+  }
+}
+Using provided model config {
+  provider: 'mock',
+  model: 'MOCK-MODEL-NOT-FROM-SUPABASE',
+  temperature: 0.1,
+  maxTokens: 4000
+}
+Ensuring compatible analysis result {
+  hasIssues: true,
+  issueCount: 0,
+  hasRecommendations: false,
+  hasScores: false,
+  analysisKeys: [ 'issues', 'metadata', 'score', 'summary' ]
+}
+Ensuring compatible analysis result {
+  hasIssues: true,
+  issueCount: 0,
+  hasRecommendations: false,
+  hasScores: false,
+  analysisKeys: [ 'issues', 'metadata', 'score', 'summary' ]
+}
+Starting comparison analysis undefined
+Performing mock AI analysis {
+  mainIssues: 0,
+  featureIssues: 0,
+  mainScores: {
+    overall: 75,
+    security: 70,
+    performance: 80,
+    maintainability: 75,
+    testing: 90
+  },
+  featureScores: {
+    overall: 75,
+    security: 70,
+    performance: 80,
+    maintainability: 75,
+    testing: 90
+  }
+}
+Using actual issue lists without deduplication {
+  main: { count: 0 },
+  feature: { count: 0 },
+  note: 'Preserving all issue occurrences for complete visibility'
+}
+Mock analysis results { resolved: 0, new: 0, unchanged: 0 }
+Generating final report with enhancements { hasEducation: false, includeEducation: true }
+ComparisonAgent - Using V7 Fixed report generator with: {
+  hasPrMetadata: true,
+  prMetadata: {
+    id: '700',
+    repository_url: 'ky',
+    author: 'Unknown',
+    linesAdded: 100,
+    linesRemoved: 50
+  },
+  scanDuration: 0.004,
+  newIssuesCount: 0,
+  resolvedIssuesCount: 0
+}
+Skills updated successfully { userId: 'Unknown', previousScore: 75, newScore: 74, change: -1 }
+✅ Analysis completed in 0.0s
+
+📄 Report saved to: /Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/reports/2025-08-17/pr-700-report.md
+💬 Comment saved to: /Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/reports/2025-08-17/pr-700-comment.md
+
+📋 Analysis Summary:
+===================
+Success: true
+
+🎯 Skill Tracking Available
+
+✅ Analysis complete!

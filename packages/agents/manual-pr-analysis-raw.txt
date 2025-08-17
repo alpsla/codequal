@@ -1,0 +1,264 @@
+
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+[1m[34mCODEQUAL MANUAL PR VALIDATOR[0m
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+
+Repository: [1msindresorhus/ky[0m
+PR Number: [1m#700[0m
+DeepWiki API: [1mhttp://localhost:8001[0m
+Timeout: [1m600s[0m
+
+📊 [34mInitializing services...[0m
+📊 [34mConnecting to real DeepWiki API...[0m
+✅ [32mReal DeepWiki API registered[0m
+⚠️ [33mUsing mock providers (no Supabase credentials)[0m
+Using AI-enhanced location finder
+Using pattern-based location finder (AI not enabled)
+Using AI-enhanced location finder
+Using pattern-based location finder (AI not enabled)
+
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+[1m[34mANALYZING MAIN BRANCH[0m
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+
+Parsed 7 issues from DeepWiki response: { critical: 0, high: 0, medium: 7, low: 0 }
+✅ [32mMain branch analyzed in 23.1s - Found 7 issues[0m
+
+[36mMain Branch Issues by Severity:[0m
+  🟡 MEDIUM: 7
+
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+[1m[34mANALYZING PR BRANCH[0m
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+
+Parsed 6 issues from DeepWiki response: { critical: 0, high: 0, medium: 6, low: 0 }
+✅ [32mPR branch analyzed in 19.7s - Found 6 issues[0m
+
+[36mPR Branch Issues by Severity:[0m
+  🟡 MEDIUM: 6
+
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+[1m[34mGENERATING COMPARISON REPORT[0m
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+
+📊 [34mSelecting optimal model...[0m
+📊 [34mComparing branches and generating report...[0m
+Starting orchestrated comparison analysis undefined
+No configuration found, researching optimal model undefined
+Saved new configuration from researcher { configId: 'mock-config-id', model: 'gpt-4o', provider: 'openai' }
+Using model configuration {
+  model: 'gpt-4o',
+  provider: 'openai',
+  version: '2.0',
+  cost: 0.001525,
+  configAge: '33 months'
+}
+[ComparisonAgent] Initializing comparison agent {
+  config: {
+    language: 'typescript',
+    sizeCategory: 'medium',
+    role: 'comparison',
+    prompt: 'You are an expert AI comparison analyst specializing in code quality assessment.\n' +
+      '\n' +
+      'REPOSITORY CONTEXT:\n' +
+      '- Language: typescript\n' +
+      '- Size: medium (35 files)\n' +
+      '- Complexity: low\n' +
+      '- Total Issues: 13\n' +
+      '\n' +
+      'This is a straightforward repository. Focus on clarity.\n' +
+      '\n' +
+      'Focus areas:\n' +
+      '- General code quality\n' +
+      '\n' +
+      'Ensure 100% accuracy, professional language, and actionable recommendations.',
+    modelConfig: { provider: 'openai', model: 'gpt-4o' }
+  }
+}
+[ComparisonAgent] Using provided model config {
+  provider: 'openai',
+  model: 'gpt-4o',
+  temperature: 0.1,
+  maxTokens: 4000
+}
+Starting location enhancement for both branches undefined
+  ✗ Repository not found in any of: /tmp/codequal-repos/sindresorhus/ky/main, /tmp/codequal-repos/sindresorhus-ky
+Repository path not found, returning issues without location enhancement
+  ✓ Found repository at: /tmp/codequal-repos/sindresorhus-ky-pr-700
+First issue structure: {
+  "id": "deepwiki-1",
+  "severity": "medium",
+  "category": "type-safety",
+  "title": "Use of `any` type reduces type safety",
+  "description": "Use of `any` type reduces type safety File: test/hooks.ts, Line: 23 Code Snippet: ```typescript const error = (await t.throwsAsync(response))!; ``` Recommendation: Avoid using `any` type. Define a more specific type for the `error` variable to improve type safety and code maintainability. Severity: medium",
+  "location": {
+    "file": "test/hooks.ts",
+    "line": 0
+  },
+  "message": "Use of `any` type reduces type safety File: test/hooks.ts, Line: 23 Code Snippet: ```typescript const error = (await t.throwsAsync(response))!; ``` Recommendation: Avoid using `any` type. Define a more specific type for the `error` variable to improve type safety and code maintainability. Severity: medium"
+}
+Using pattern-based location finder
+Generating patterns for: {
+  strategy: 'semantic-analysis',
+  hasDescription: true,
+  description: 'Use of `any` type reduces type safety File: test/h',
+  title: 'Use of `any` type reduces type safety'
+}
+Pattern strategy: semantic-analysis (100% confidence)
+Using pattern-based location finder
+Generating patterns for: {
+  strategy: 'code-search',
+  hasDescription: true,
+  description: 'Implicit `any` type in catch clause File: test/hoo',
+  title: 'Implicit `any` type in catch clause'
+}
+Pattern strategy: code-search (95% confidence)
+Using pattern-based location finder
+Generating patterns for: {
+  strategy: 'semantic-analysis',
+  hasDescription: true,
+  description: 'Missing `await` in an async function call File: te',
+  title: 'Missing `await` in an async function call'
+}
+Pattern strategy: semantic-analysis (100% confidence)
+Using pattern-based location finder
+Generating patterns for: {
+  strategy: 'semantic-analysis',
+  hasDescription: true,
+  description: 'Potential memory leak with global state modificati',
+  title: 'Potential memory leak with global state modificati'
+}
+Pattern strategy: semantic-analysis (100% confidence)
+Using pattern-based location finder
+Generating patterns for: {
+  strategy: 'code-search',
+  hasDescription: true,
+  description: 'Use of deprecated or unsafe methods File: source/i',
+  title: 'Use of deprecated or unsafe methods'
+}
+Pattern strategy: code-search (95% confidence)
+Using pattern-based location finder
+Generating patterns for: {
+  strategy: 'semantic-analysis',
+  hasDescription: true,
+  description: 'Inconsistent error handling File: test/memory-leak',
+  title: 'Inconsistent error handling'
+}
+Pattern strategy: semantic-analysis (100% confidence)
+Starting educational research on unique issues undefined
+[EducatorAgent] Starting educational research { issueCount: 11, developerLevel: 'beginner' }
+[EducatorAgent] Educational research completed { pathsGenerated: 1, resourcesFound: 3 }
+Educational research completed for 11 unique issue patterns (from 13 total) undefined
+All strategies failed, using base finder
+Found 7 matches using pattern search
+All strategies failed, using base finder
+All strategies failed, using base finder
+Found 2 matches using pattern search
+Found 10 matches using pattern search
+Enhanced main: 0/7 undefined
+Enhanced PR: 4/6 undefined
+All enhancements completed undefined
+Ensuring compatible analysis result {
+  hasIssues: true,
+  issueCount: 7,
+  hasRecommendations: false,
+  hasScores: true,
+  analysisKeys: [ 'issues', 'scores', 'metadata' ]
+}
+Ensuring compatible analysis result {
+  hasIssues: true,
+  issueCount: 6,
+  hasRecommendations: false,
+  hasScores: true,
+  analysisKeys: [ 'issues', 'scores', 'metadata' ]
+}
+[ComparisonAgent] Starting comparison analysis 
+[ComparisonAgent] Performing mock AI analysis {
+  mainIssues: 7,
+  featureIssues: 6,
+  mainScores: {
+    overall: 65,
+    security: 100,
+    performance: 90,
+    maintainability: 65,
+    testing: 90
+  },
+  featureScores: {
+    overall: 70,
+    security: 100,
+    performance: 90,
+    maintainability: 70,
+    testing: 90
+  }
+}
+[ComparisonAgent] Using actual issue lists without deduplication {
+  main: { count: 7 },
+  feature: { count: 6 },
+  note: 'Preserving all issue occurrences for complete visibility'
+}
+[ComparisonAgent] Matched issue: Potential memory leak with global event listeners {
+  isMatch: true,
+  confidence: 38,
+  matchType: 'fuzzy',
+  details: 'Fuzzy match based on similarity'
+}
+[ComparisonAgent] Mock analysis results { resolved: 6, new: 5, unchanged: 1 }
+[ComparisonAgent] Generating final report with enhancements { hasEducation: true, includeEducation: true }
+ComparisonAgent - Using V7 Fixed report generator with: {
+  hasPrMetadata: true,
+  prMetadata: {
+    id: 'pr-700',
+    number: 700,
+    title: 'PR #700',
+    author: 'sindresorhus',
+    repository_url: 'https://github.com/sindresorhus/ky',
+    created_at: '2025-08-17T04:07:33.154Z',
+    linesAdded: 0,
+    linesRemoved: 0
+  },
+  scanDuration: 42749,
+  newIssuesCount: 5,
+  resolvedIssuesCount: 6
+}
+Skills updated successfully { userId: 'sindresorhus', previousScore: 75, newScore: 68, change: -7 }
+✅ [32mReport generated in 0.2s[0m
+
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+[1m[34mSAVING OUTPUTS[0m
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+
+✅ [32mMarkdown saved: /Users/alpinro/Code Prjects/codequal/packages/agents/test-outputs/manual-validation/sindresorhus-ky-pr700-2025-08-17T04-07-33.md[0m
+✅ [32mJSON saved: /Users/alpinro/Code Prjects/codequal/packages/agents/test-outputs/manual-validation/sindresorhus-ky-pr700-2025-08-17T04-07-33.json[0m
+✅ [32mHTML saved: /Users/alpinro/Code Prjects/codequal/packages/agents/test-outputs/manual-validation/sindresorhus-ky-pr700-2025-08-17T04-07-33.html[0m
+
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+[1m[34mANALYSIS COMPLETE[0m
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+
+[1m[32mSummary:[0m
+  📈 Resolved Issues: [32m6[0m
+  📉 New Issues: [31m5[0m
+  🔄 Modified Issues: [33m0[0m
+  ↔️  Unchanged Issues: 1
+
+[1mAssessment:[0m
+  🎯 PR Recommendation: [32mAPPROVE[0m
+  🔒 Security Posture: improved
+  📊 Code Quality: improving
+  💯 Confidence: 85%
+
+[1mModel Information:[0m
+  🤖 Model Used: gpt-4o
+  🏢 Orchestrator: v4.0
+
+[1mFiles Generated:[0m
+  📄 /Users/alpinro/Code Prjects/codequal/packages/agents/test-outputs/manual-validation/sindresorhus-ky-pr700-2025-08-17T04-07-33.md
+  📄 /Users/alpinro/Code Prjects/codequal/packages/agents/test-outputs/manual-validation/sindresorhus-ky-pr700-2025-08-17T04-07-33.json
+  📄 /Users/alpinro/Code Prjects/codequal/packages/agents/test-outputs/manual-validation/sindresorhus-ky-pr700-2025-08-17T04-07-33.html
+
+[1m[31mTop New Issues to Address:[0m
+
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+[32m✨ Analysis completed successfully![0m
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+
