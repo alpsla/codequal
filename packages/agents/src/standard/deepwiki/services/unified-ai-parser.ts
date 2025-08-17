@@ -7,6 +7,7 @@
 
 import { DynamicModelSelector, RoleRequirements } from '../../services/dynamic-model-selector';
 import { ILogger } from '../../services/interfaces/logger.interface';
+import { AIService } from '../../services/ai-service';
 
 export interface ParseConfig {
   language: string;
@@ -48,11 +49,14 @@ export interface ParsedDeepWikiResponse {
 export class UnifiedAIParser {
   private modelSelector: DynamicModelSelector;
   private selectedModel: any;
+  private fallbackModel: any;
   private logger?: ILogger;
+  private aiService: AIService;
 
   constructor(logger?: ILogger) {
     this.modelSelector = new DynamicModelSelector();
     this.logger = logger;
+    this.aiService = new AIService();
   }
 
   /**
@@ -91,8 +95,10 @@ export class UnifiedAIParser {
       // Use existing model selection infrastructure
       const modelSelection = await this.modelSelector.selectModelsForRole(requirements);
       this.selectedModel = modelSelection.primary;
+      this.fallbackModel = modelSelection.fallback;
       
       this.log('info', `Selected model for parsing: ${this.selectedModel.model} (${this.selectedModel.provider})`);
+      this.log('info', `Fallback model: ${this.fallbackModel.model} (${this.fallbackModel.provider})`);
     } catch (error) {
       this.log('warn', 'Model selection failed, using fallback', error);
       this.selectedModel = {
@@ -222,55 +228,112 @@ export class UnifiedAIParser {
 You are an expert code analyzer for ${config.language}${config.framework ? ` with ${config.framework}` : ''}.
 Repository: ${config.repositorySize} size, ${config.complexity} complexity.
 
-Analyze the DeepWiki response and extract structured data for the ${category} category.
-Return ONLY valid JSON. No markdown, no explanations.
+IMPORTANT: Extract ALL issues mentioned in the text, including:
+- Numbered lists (1., 2., 3.)
+- Bullet points (-, *, •)
+- Issues mentioned in paragraphs
+- Problems described in any format
+- Both explicit issues AND implied problems
+
+Look for keywords like: vulnerability, issue, problem, bug, error, concern, risk, threat, weakness, flaw, defect, missing, lacks, should, must, need, required, violation, breach, leak, exposure, inefficient, slow, deprecated, outdated, insecure, unsafe
+
+Return ONLY valid JSON. Extract as much information as possible.
 `;
 
     const categoryPrompts: Record<string, string> = {
       security: `${baseContext}
-Extract security issues:
+Extract ALL security issues from the text. Look for:
+- SQL injection, XSS, CSRF, authentication issues, authorization problems
+- Missing security headers, exposed sensitive data, weak encryption
+- Any mention of CVE, CWE, or security vulnerabilities
+- Issues marked as "Critical", "High", "Security Issue", etc.
+
+EXAMPLE INPUT:
+"1. **SQL Injection Vulnerability**: Direct string concatenation in database query
+   - File: src/api/users.ts, Line: 45
+   - The user input is directly concatenated into the SQL query
+   - Code Snippet:
+   \`\`\`typescript
+   const query = "SELECT * FROM users WHERE id = " + userId;
+   \`\`\`
+2. **Missing Authentication**: API endpoint lacks authentication checks
+   - File: src/api/admin.ts, Line: 12"
+
+IMPORTANT: Extract code snippets and fixed code whenever available!
+
+EXAMPLE OUTPUT:
 {
   "vulnerabilities": [
     {
-      "type": "string (SQL Injection, XSS, CSRF, etc)",
-      "severity": "critical|high|medium|low",
-      "cwe": "CWE-XXX",
-      "cvss": number,
-      "file": "path/to/file",
-      "line": number,
-      "description": "string",
-      "impact": "string",
-      "remediation": "string",
-      "codeSnippet": "string",
-      "fixedCode": "string"
+      "type": "SQL Injection",
+      "severity": "critical",
+      "cwe": "CWE-89",
+      "cvss": 9.0,
+      "file": "src/api/users.ts",
+      "line": 45,
+      "description": "Direct string concatenation in database query",
+      "impact": "User input is directly concatenated into SQL query without parameterization",
+      "remediation": "Use parameterized queries or prepared statements",
+      "codeSnippet": "const query = \"SELECT * FROM users WHERE id = \" + userId;",
+      "fixedCode": "const query = \"SELECT * FROM users WHERE id = ?\"; db.query(query, [userId]);"
+    },
+    {
+      "type": "Missing Authentication",
+      "severity": "high",
+      "cwe": "CWE-306",
+      "cvss": 7.5,
+      "file": "src/api/admin.ts",
+      "line": 12,
+      "description": "API endpoint lacks authentication checks",
+      "impact": "Unauthorized access to admin endpoints",
+      "remediation": "Add authentication middleware",
+      "codeSnippet": "",
+      "fixedCode": ""
     }
   ],
   "securityMetrics": {
-    "totalVulnerabilities": number,
-    "criticalCount": number,
-    "highCount": number
+    "totalVulnerabilities": 2,
+    "criticalCount": 1,
+    "highCount": 1
   }
 }`,
 
       performance: `${baseContext}
-Extract performance issues:
+Extract ALL performance issues. Look for:
+- N+1 queries, slow queries, inefficient algorithms, memory leaks
+- High response times, excessive memory/CPU usage
+- Unoptimized database queries, missing indexes
+- Synchronous operations that should be async
+- Any mention of "slow", "inefficient", "bottleneck", "performance"
+
+EXAMPLE: "N+1 Query Problem: Each product fetch triggers individual queries
+Code Snippet:
+\`\`\`javascript
+products.forEach(product => {
+  product.reviews = db.query('SELECT * FROM reviews WHERE product_id = ?', product.id);
+});
+\`\`\`"
+
+IMPORTANT: Extract code snippets showing the performance issue and the solution!
+
+OUTPUT FORMAT:
 {
   "issues": [
     {
-      "type": "N+1 Query|Slow Query|Memory Leak|etc",
-      "severity": "high|medium|low",
-      "location": {"file": "path", "line": number},
-      "currentPerformance": "string",
-      "expectedPerformance": "string",
-      "impact": "string",
-      "solution": "string"
+      "type": "N+1 Query",
+      "severity": "high",
+      "location": {"file": "src/services/product.ts", "line": 78},
+      "currentPerformance": "500ms per request",
+      "expectedPerformance": "50ms per request",
+      "impact": "Each product fetch triggers individual queries for related data",
+      "solution": "Use eager loading or batch queries"
     }
   ],
   "metrics": {
-    "responseTime": "string",
-    "memoryUsage": "string",
-    "cpuUsage": "string",
-    "queryCount": number
+    "responseTime": "500ms",
+    "memoryUsage": "",
+    "cpuUsage": "",
+    "queryCount": 0
   }
 }`,
 
@@ -306,40 +369,55 @@ Extract dependency issues:
 }`,
 
       codeQuality: `${baseContext}
-Extract code quality metrics:
+Extract ALL code quality issues. Look for:
+- Code smells, complexity issues, duplication, technical debt
+- Missing tests, low coverage, untested code paths
+- Maintainability problems, hard-to-read code
+- Type safety issues, missing TypeScript types, any errors
+- Linting violations, formatting issues
+- Any mention of "bug", "issue", "problem", "error", "warning"
+- Testing concerns, missing documentation
+
+IMPORTANT: Include ANY issue that doesn't fit other categories!
+
+EXAMPLE: "Missing TypeScript types in API handlers
+Code Snippet:
+\`\`\`typescript
+export function handleRequest(req, res) {  // Missing types
+  const data = req.body;  // 'any' type
+  processData(data);
+}
+\`\`\`"
+
+IMPORTANT: Include code snippets for any code quality issues found!
+
+OUTPUT FORMAT:
 {
   "complexity": {
-    "cyclomatic": {"max": number, "average": number},
-    "violations": [
-      {"function": "name", "file": "path", "complexity": number}
-    ]
+    "cyclomatic": {"max": 0, "average": 0},
+    "violations": []
   },
   "duplication": {
-    "percentage": number,
-    "instances": [
-      {"files": ["file1", "file2"], "lines": number}
-    ]
+    "percentage": 0,
+    "instances": []
   },
   "coverage": {
-    "overall": number,
-    "line": number,
-    "branch": number,
-    "untested": [
-      {"file": "path", "coverage": number}
-    ]
+    "overall": 0,
+    "line": 0,
+    "branch": 0,
+    "untested": []
   },
   "maintainability": {
-    "index": number,
-    "grade": "A|B|C|D|F",
+    "index": 0,
+    "grade": "C",
     "issues": [
-      {"type": "string", "file": "path", "description": "string"}
+      {"type": "Missing Types", "file": "src/api/handlers.ts", "description": "API handlers lack TypeScript type definitions"},
+      {"type": "Code Smell", "file": "", "description": "Any other issue found"}
     ]
   },
   "technicalDebt": {
-    "totalHours": number,
-    "hotspots": [
-      {"file": "path", "debtHours": number}
-    ]
+    "totalHours": 0,
+    "hotspots": []
   }
 }`,
 
@@ -477,28 +555,89 @@ Extract recommendations:
    * Call AI model with prompt
    */
   private async callAIModel(prompt: string, content: string): Promise<any> {
-    // In production, this would call the actual AI service
-    // For now, return mock data or use the model service
-    
     if (!this.selectedModel) {
       throw new Error('Model not initialized');
     }
 
-    // This would be the actual call:
-    // const response = await this.modelService.query({
-    //   provider: this.selectedModel.provider,
-    //   model: this.selectedModel.model,
-    //   messages: [
-    //     { role: 'system', content: prompt },
-    //     { role: 'user', content: content }
-    //   ],
-    //   temperature: 0.1,
-    //   maxTokens: 2000
-    // });
-    // return JSON.parse(response.content);
+    // Try primary model first
+    try {
+      const response = await this.aiService.call(this.selectedModel, {
+        systemPrompt: prompt,
+        prompt: content,
+        temperature: 0.1,
+        maxTokens: 4000,  // Increased from 2000 for more complete extraction
+        jsonMode: true
+      });
 
-    // For now, return empty structure
-    return {};
+      // Parse the AI response
+      try {
+        return JSON.parse(response.content);
+      } catch (parseError) {
+        this.log('warn', 'Failed to parse AI response as JSON, attempting to extract', { parseError });
+        // If not valid JSON, try to extract JSON from the response
+        const jsonMatch = response.content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          return JSON.parse(jsonMatch[0]);
+        }
+        return {};
+      }
+    } catch (primaryError) {
+      this.log('warn', 'Primary model failed, trying fallback', { 
+        primaryModel: this.selectedModel.model,
+        error: primaryError 
+      });
+      
+      // Try fallback model if available
+      if (this.fallbackModel) {
+        try {
+          const response = await this.aiService.call(this.fallbackModel, {
+            systemPrompt: prompt,
+            prompt: content,
+            temperature: 0.1,
+            maxTokens: 4000,  // Increased from 2000 for more complete extraction
+            jsonMode: true
+          });
+
+          try {
+            return JSON.parse(response.content);
+          } catch (parseError) {
+            this.log('warn', 'Failed to parse fallback AI response as JSON', { parseError });
+            const jsonMatch = response.content.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+              return JSON.parse(jsonMatch[0]);
+            }
+            return {};
+          }
+        } catch (fallbackError) {
+          this.log('error', 'Both primary and fallback models failed', { 
+            primaryError,
+            fallbackError 
+          });
+          return {};
+        }
+      } else {
+        this.log('error', 'Primary model failed and no fallback available', { primaryError });
+        return {};
+      }
+    }
+  }
+
+  /**
+   * Infer severity from issue type and description
+   */
+  private inferSeverity(type: string, description: string): string {
+    const text = `${type} ${description}`.toLowerCase();
+    
+    if (text.includes('critical') || text.includes('security') || text.includes('vulnerability')) {
+      return 'critical';
+    }
+    if (text.includes('high') || text.includes('error') || text.includes('fail') || text.includes('broken')) {
+      return 'high';
+    }
+    if (text.includes('low') || text.includes('minor') || text.includes('suggestion')) {
+      return 'low';
+    }
+    return 'medium';
   }
 
   /**
@@ -630,6 +769,24 @@ Extract recommendations:
         break;
 
       case 'codeQuality':
+        // MOST IMPORTANT: Process maintainability issues (this is where most issues are!)
+        if (data.maintainability?.issues) {
+          data.maintainability.issues.forEach((issue: any) => {
+            issues.push({
+              id: `quality-${id++}`,
+              category: 'code-quality',
+              severity: this.inferSeverity(issue.type, issue.description),
+              type: issue.type || 'code-quality',
+              title: issue.type || 'Code Quality Issue',
+              description: issue.description,
+              location: issue.file ? { file: issue.file, line: 0 } : undefined,
+              metadata: {
+                aiExtracted: true
+              }
+            });
+          });
+        }
+
         // Process complexity violations
         if (data.complexity?.violations) {
           data.complexity.violations.forEach((violation: any) => {
@@ -670,7 +827,7 @@ Extract recommendations:
         }
 
         // Process test coverage
-        if (data.coverage?.overall < 80) {
+        if (data.coverage?.overall > 0 && data.coverage.overall < 80) {
           issues.push({
             id: `quality-coverage-${id++}`,
             category: 'code-quality',
@@ -744,33 +901,98 @@ Extract recommendations:
   private calculateConfidence(data: any, category: string): number {
     if (!data || Object.keys(data).length === 0) return 0.3;
     
-    let confidence = 0.5; // Base confidence
+    // Higher base confidence for AI extraction (we're using advanced models)
+    let confidence = 0.65; // Base confidence increased from 0.5
+    
+    // Generic quality checks that apply to all categories
+    const hasData = Object.keys(data).some(key => {
+      const value = data[key];
+      return value && (
+        (Array.isArray(value) && value.length > 0) ||
+        (typeof value === 'object' && Object.keys(value).length > 0) ||
+        (typeof value === 'string' && value.length > 0) ||
+        (typeof value === 'number' && value > 0)
+      );
+    });
+    
+    if (hasData) confidence += 0.1;
     
     // Check for completeness based on category
     switch (category) {
       case 'security':
-        if (data.vulnerabilities?.length > 0) confidence += 0.2;
-        if (data.securityMetrics) confidence += 0.1;
-        if (data.vulnerabilities?.some((v: any) => v.cwe)) confidence += 0.2;
+        if (data.vulnerabilities?.length > 0) {
+          confidence += 0.15;
+          // Extra confidence for detailed vulnerability data
+          if (data.vulnerabilities.some((v: any) => v.file && v.line)) confidence += 0.05;
+          if (data.vulnerabilities.some((v: any) => v.cwe)) confidence += 0.05;
+          if (data.vulnerabilities.some((v: any) => v.remediation)) confidence += 0.05;
+          // HIGH confidence boost for code snippets and fixes
+          if (data.vulnerabilities.some((v: any) => v.codeSnippet && v.codeSnippet.length > 0)) confidence += 0.1;
+          if (data.vulnerabilities.some((v: any) => v.fixedCode && v.fixedCode.length > 0)) confidence += 0.05;
+        }
+        if (data.securityMetrics) confidence += 0.05;
         break;
       
       case 'performance':
-        if (data.issues?.length > 0) confidence += 0.2;
-        if (data.metrics) confidence += 0.2;
-        if (data.issues?.some((i: any) => i.location)) confidence += 0.1;
+        if (data.issues?.length > 0) {
+          confidence += 0.15;
+          // Extra confidence for location data
+          if (data.issues.some((i: any) => i.location?.file)) confidence += 0.05;
+          if (data.issues.some((i: any) => i.solution)) confidence += 0.05;
+          // Code snippets boost confidence significantly
+          if (data.issues.some((i: any) => i.codeSnippet && i.codeSnippet.length > 0)) confidence += 0.1;
+          if (data.issues.some((i: any) => i.fixedCode && i.fixedCode.length > 0)) confidence += 0.05;
+        }
+        if (data.metrics && Object.keys(data.metrics).length > 0) confidence += 0.05;
         break;
       
       case 'dependencies':
-        if (data.vulnerable || data.outdated || data.deprecated) confidence += 0.3;
-        if (data.vulnerable?.some((v: any) => v.cve)) confidence += 0.2;
+        const hasDepData = data.vulnerable?.length > 0 || 
+                          data.outdated?.length > 0 || 
+                          data.deprecated?.length > 0;
+        if (hasDepData) {
+          confidence += 0.2;
+          if (data.vulnerable?.some((v: any) => v.cve)) confidence += 0.1;
+          if (data.outdated?.some((o: any) => o.latestVersion)) confidence += 0.05;
+        }
         break;
       
       case 'codeQuality':
-        if (data.complexity) confidence += 0.1;
-        if (data.duplication) confidence += 0.1;
-        if (data.coverage) confidence += 0.1;
-        if (data.maintainability) confidence += 0.1;
-        if (data.technicalDebt) confidence += 0.1;
+        // Much better confidence calculation for code quality
+        if (data.maintainability?.issues?.length > 0) {
+          confidence += 0.2; // Main source of code quality issues
+          if (data.maintainability.issues.some((i: any) => i.file)) confidence += 0.05;
+          // Code snippets for quality issues increase confidence
+          if (data.maintainability.issues.some((i: any) => i.codeSnippet && i.codeSnippet.length > 0)) confidence += 0.1;
+        }
+        if (data.complexity?.violations?.length > 0) confidence += 0.05;
+        if (data.duplication?.percentage > 0) confidence += 0.05;
+        if (data.coverage?.overall > 0) confidence += 0.05;
+        if (data.technicalDebt?.totalHours > 0) confidence += 0.05;
+        break;
+        
+      case 'architecture':
+        if (data.patterns?.length > 0) confidence += 0.15;
+        if (data.components?.length > 0) confidence += 0.1;
+        if (data.recommendations?.length > 0) confidence += 0.1;
+        break;
+        
+      case 'breakingChanges':
+        if (data.apiChanges?.length > 0) confidence += 0.2;
+        if (data.schemaChanges?.length > 0) confidence += 0.1;
+        if (data.behaviorChanges?.length > 0) confidence += 0.05;
+        break;
+        
+      case 'educational':
+        if (data.concepts?.length > 0) confidence += 0.15;
+        if (data.bestPractices?.length > 0) confidence += 0.1;
+        if (data.learningResources?.length > 0) confidence += 0.1;
+        break;
+        
+      case 'recommendations':
+        if (data.immediate?.length > 0) confidence += 0.15;
+        if (data.shortTerm?.length > 0) confidence += 0.1;
+        if (data.longTerm?.length > 0) confidence += 0.1;
         break;
     }
     

@@ -12,7 +12,14 @@
  */
 
 import { ModelVersionInfo } from '@codequal/core';
-import { createLogger } from '@codequal/core/utils';
+
+// Create a simple logger for now
+const createLogger = (name: string) => ({
+  debug: (...args: any[]) => console.log(`[${name}] [DEBUG]`, ...args),
+  info: (...args: any[]) => console.log(`[${name}] [INFO]`, ...args),
+  warn: (...args: any[]) => console.warn(`[${name}] [WARN]`, ...args),
+  error: (...args: any[]) => console.error(`[${name}] [ERROR]`, ...args)
+});
 
 const logger = createLogger('AIService');
 
