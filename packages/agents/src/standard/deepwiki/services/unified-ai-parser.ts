@@ -41,6 +41,10 @@ export interface ParsedDeepWikiResponse {
   recommendations: CategoryParseResult;
   allIssues: any[];
   scores: Record<string, number>;
+  testCoverage?: number;
+  metadata?: {
+    testCoverage?: number;
+  };
 }
 
 /**
@@ -198,7 +202,7 @@ export class UnifiedAIParser {
     ]);
 
     // Combine all issues
-    const allIssues = [
+    let allIssues = [
       ...security.issues,
       ...performance.issues,
       ...dependencies.issues,
@@ -206,6 +210,61 @@ export class UnifiedAIParser {
       ...architecture.issues,
       ...breakingChanges.issues
     ];
+
+    // Enhance location information for issues missing it
+    if (process.env.ENABLE_AI_LOCATION !== 'false') {
+      try {
+        // Use the existing AILocationFinder service instead of AILocationEnhancer
+        const { createAILocationFinder } = require('../../services/ai-location-finder');
+        const { ModelVersionSync } = require('@codequal/core');
+        
+        // Create location finder with model version sync
+        const modelVersionSync = new ModelVersionSync();
+        const locationFinder = createAILocationFinder(modelVersionSync, undefined, {
+          includeAlternatives: false,
+          maxTokens: 2000,
+          temperature: 0.1
+        });
+        
+        // Get repository path from environment or default
+        const repoPath = process.env.REPO_PATH || '/tmp/codequal-repos';
+        
+        // Enhance each issue with missing location
+        allIssues = await Promise.all(
+          allIssues.map(async (issue) => {
+            // Skip if location is already complete
+            if (issue.location?.file && issue.location?.line && 
+                issue.location.file !== 'unknown' && issue.location.line > 0) {
+              return issue;
+            }
+            
+            // Try to find location using AI
+            const locationResult = await locationFinder.findLocation(issue, repoPath);
+            
+            if (locationResult && locationResult.confidence > 50) {
+              return {
+                ...issue,
+                location: {
+                  file: issue.location?.file || 'unknown',
+                  line: locationResult.line,
+                  column: locationResult.column,
+                  endLine: locationResult.endLine
+                },
+                codeSnippet: locationResult.codeSnippet,
+                locationConfidence: locationResult.confidence,
+                locationExplanation: locationResult.explanation
+              };
+            }
+            
+            return issue;
+          })
+        );
+        
+        this.log('info', `Enhanced locations for ${allIssues.length} issues`);
+      } catch (error) {
+        this.log('warn', 'Failed to enhance locations with AI', { error });
+      }
+    }
 
     // Calculate scores based on extracted data
     const scores = this.calculateScores({
@@ -216,6 +275,14 @@ export class UnifiedAIParser {
       architecture
     });
 
+    // Extract test coverage from codeQuality data if available
+    let testCoverage = 0;
+    if (codeQuality.data?.coverage?.overall) {
+      testCoverage = codeQuality.data.coverage.overall;
+    } else if (codeQuality.data?.testCoverage) {
+      testCoverage = codeQuality.data.testCoverage;
+    }
+    
     return {
       security,
       performance,
@@ -226,7 +293,11 @@ export class UnifiedAIParser {
       educational,
       recommendations,
       allIssues,
-      scores
+      scores,
+      testCoverage,
+      metadata: {
+        testCoverage
+      }
     };
   }
 
