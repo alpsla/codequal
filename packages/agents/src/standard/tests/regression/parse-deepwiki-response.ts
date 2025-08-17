@@ -20,15 +20,28 @@ export async function parseDeepWikiResponse(content: string) {
         maxRetries: 2
       });
       
+      // The UnifiedAIParser returns allIssues, not issues
+      const issues = result.allIssues || [];
+      
       // Log parsing results
-      console.log(`Parsed ${result.issues.length} issues from DeepWiki response:`, {
-        critical: result.issues.filter((i: any) => i.severity === 'critical').length,
-        high: result.issues.filter((i: any) => i.severity === 'high').length,
-        medium: result.issues.filter((i: any) => i.severity === 'medium').length,
-        low: result.issues.filter((i: any) => i.severity === 'low').length
+      console.log(`Parsed ${issues.length} issues from DeepWiki response (AI):`, {
+        critical: issues.filter((i: any) => i.severity === 'critical').length,
+        high: issues.filter((i: any) => i.severity === 'high').length,
+        medium: issues.filter((i: any) => i.severity === 'medium').length,
+        low: issues.filter((i: any) => i.severity === 'low').length
       });
       
-      return result;
+      // Return in the expected format
+      return {
+        issues,
+        scores: result.scores || {
+          overall: 50,
+          security: 50,
+          performance: 50,
+          maintainability: 50,
+          testing: 50
+        }
+      };
     } catch (error) {
       console.warn('AI Parser failed, falling back to rule-based parser:', error);
       // Fall back to rule-based parsing
@@ -68,6 +81,14 @@ export async function parseDeepWikiResponse(content: string) {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     
+    // Check for separator between issues (for Title: format)
+    if (line.trim() === '---' && currentIssue) {
+      // Save current issue and prepare for next
+      issues.push(currentIssue);
+      currentIssue = null;
+      continue;
+    }
+    
     // Check for severity headers like "#### Critical Issues", "#### High Issues"
     // This sets the default severity for issues in that section
     if (line.match(/^#{1,4}\s+(Critical|High|Medium|Low)\s+Issues?/i)) {
@@ -84,142 +105,168 @@ export async function parseDeepWikiResponse(content: string) {
     }
     
     // Match numbered items (e.g., "1. **Title**: Description") OR bullet points (e.g., "- **Title**: Description")
-    const itemMatch = line.match(/^(\d+\.|-|\*)\s+(.+)/);
+    // OR direct title format (e.g., "Title: Issue description")
+    const itemMatch = line.match(/^(\d+\.|-|\*)\s+(.+)/) || 
+                      (line.match(/^(Title|Issue Title):\s+(.+)/i) ? ['', 'Title:', line.replace(/^(Title|Issue Title):\s*/i, '')] : null);
     if (itemMatch) {
-      // Save previous issue if exists
-      if (currentIssue) {
-        issues.push(currentIssue);
+      const isNumberedItem = /^\d+\./.test(itemMatch[1]);
+      const isBulletItem = /^[-*]/.test(itemMatch[1]);
+      const isTitleItem = itemMatch[1] === 'Title:';
+      
+      // If it's a numbered item or Title: format (main issue), save previous and start new
+      if (isNumberedItem || isTitleItem) {
+        // Save previous issue if exists
+        if (currentIssue) {
+          issues.push(currentIssue);
+        }
+        
+        // Parse the issue line
+        const issueText = itemMatch[2];
+        
+        // Skip items that indicate no issues found
+        if (issueText.toLowerCase().includes('no direct') || 
+            issueText.toLowerCase().includes('no critical') ||
+            issueText.toLowerCase().includes('not found') ||
+            issueText.toLowerCase().includes('no issues')) {
+          currentIssue = null; // Reset to prevent adding
+          continue;
+        }
+        
+        let title = issueText;
+        let description = '';
+        
+        // Extract title from bold text if present
+        const boldMatch = issueText.match(/\*\*([^*]+)\*\*/);
+        if (boldMatch) {
+          title = boldMatch[1];
+          description = issueText.replace(/\*\*[^*]+\*\*:?\s*/, '').trim();
+        } else {
+          // Split on colon if present
+          const colonIndex = issueText.indexOf(':');
+          if (colonIndex > 0 && colonIndex < 100) {
+            title = issueText.substring(0, colonIndex).trim();
+            description = issueText.substring(colonIndex + 1).trim();
+          }
+        }
+        
+        // Initialize new issue with default values
+        currentIssue = {
+          id: `deepwiki-${issues.length + 1}`,
+          severity: currentSectionSeverity,
+          category: 'code-quality',
+          title: title.replace(/\*\*/g, '').replace(/Issue Title/i, '').replace(/:/g, '').trim(),
+          description: description || title,
+          location: {
+            file: 'unknown',
+            line: 0
+          }
+        };
+      } else if (isBulletItem && currentIssue) {
+        // This is a sub-item of the current issue - parse it for metadata
+        const subItemText = itemMatch[2];
+        
+        // Check for severity
+        if (subItemText.match(/\*?\*?Severity\*?\*?:\s*/i)) {
+          const severityMatch = subItemText.match(/\*?\*?Severity\*?\*?:\s*(\w+)/i);
+          if (severityMatch) {
+            currentIssue.severity = severityMatch[1].toLowerCase();
+          }
+        }
+        
+        // Check for file path and line number
+        if (subItemText.match(/\*?\*?File Path and Line Number\*?\*?:/i)) {
+          const fileLineMatch = subItemText.match(/\*?\*?File Path and Line Number\*?\*?:\s*([^,\n]+?)(?:,\s*(?:line\s*)?(\d+|multiple lines))?/i);
+          if (fileLineMatch) {
+            currentIssue.location.file = fileLineMatch[1].trim();
+            if (fileLineMatch[2] && fileLineMatch[2] !== 'multiple lines') {
+              currentIssue.location.line = parseInt(fileLineMatch[2]);
+            }
+          }
+        }
+        
+        // Check for specific code problem
+        if (subItemText.match(/\*?\*?Specific Code Problem\*?\*?:/i)) {
+          const problemMatch = subItemText.match(/\*?\*?Specific Code Problem\*?\*?:\s*(.+)/i);
+          if (problemMatch && !currentIssue.description.includes(problemMatch[1])) {
+            currentIssue.description += ' ' + problemMatch[1];
+          }
+        }
+        
+        // Check for recommendation
+        if (subItemText.match(/\*?\*?Recommendation for Fixing\*?\*?:/i)) {
+          const recMatch = subItemText.match(/\*?\*?Recommendation for Fixing\*?\*?:\s*(.+)/i);
+          if (recMatch) {
+            currentIssue.recommendation = recMatch[1];
+          }
+        }
+        
+        continue; // Don't create a new issue for sub-items
       }
       
-      // Parse the issue line
-      const issueText = itemMatch[2];
-      
-      // Skip items that indicate no issues found
-      if (issueText.toLowerCase().includes('no direct') || 
-          issueText.toLowerCase().includes('no critical') ||
-          issueText.toLowerCase().includes('not found') ||
-          issueText.toLowerCase().includes('no issues')) {
-        currentIssue = null; // Reset to prevent adding
+      // Skip creating a new issue if this was a sub-item
+      if (!isNumberedItem) {
         continue;
       }
       
-      let title = issueText;
-      let description = '';
-      
-      // Extract title from bold text if present
-      const boldMatch = issueText.match(/\*\*([^*]+)\*\*/);
-      if (boldMatch) {
-        title = boldMatch[1];
-        description = issueText.replace(/\*\*[^*]+\*\*:?\s*/, '').trim();
-      } else {
-        // Split on colon if present
-        const colonIndex = issueText.indexOf(':');
-        if (colonIndex > 0 && colonIndex < 100) {
-          title = issueText.substring(0, colonIndex).trim();
-          description = issueText.substring(colonIndex + 1).trim();
-        }
-      }
-      
-      // Start with section severity as default
-      let severity = currentSectionSeverity;
-      
-      // Look for explicit severity keywords in the issue text itself
-      const lowerText = (title + ' ' + description).toLowerCase();
-      
-      // Check for explicit severity mentions first
-      if (lowerText.includes('critical issue') || lowerText.includes('critical vulnerability')) {
-        severity = 'critical';
-      } else if (lowerText.includes('high severity') || lowerText.includes('high priority')) {
-        severity = 'high';
-      } else if (lowerText.includes('medium severity') || lowerText.includes('medium priority')) {
-        severity = 'medium';
-      } else if (lowerText.includes('low severity') || lowerText.includes('low priority') || lowerText.includes('minor')) {
-        severity = 'low';
-      } else {
-        // Use keyword-based detection only if no explicit severity found
-        // and only for specific strong indicators
-        if (lowerText.includes('vulnerability') || lowerText.includes('security breach')) {
-          severity = 'high';
-        } else if (lowerText.includes('bug') && !lowerText.includes('minor')) {
-          severity = 'medium';
-        } else if (lowerText.includes('improvement') || lowerText.includes('enhancement')) {
-          severity = 'low';
-        }
-        // Otherwise keep the section severity
-      }
-      
-      // Determine category
-      let category = 'code-quality';
-      if (lowerText.includes('security') || lowerText.includes('vulnerability')) {
-        category = 'security';
-      } else if (lowerText.includes('performance') || lowerText.includes('slow')) {
-        category = 'performance';
-      } else if (lowerText.includes('test') || lowerText.includes('testing')) {
-        category = 'testing';
-      } else if (lowerText.includes('typescript') || lowerText.includes('type')) {
-        category = 'type-safety';
-      } else if (lowerText.includes('dependency') || lowerText.includes('external')) {
-        category = 'dependencies';
-      }
-      
-      currentIssue = {
-        id: `deepwiki-${issues.length + 1}`,
-        severity,
-        category,
-        title: title.replace(/\*\*/g, '').trim(),
-        description: description || title,
-        location: {
-          file: 'unknown',
-          line: 0
-        }
-      };
-      
-      // Look for file references in the title or description
-      const fullText = title + ' ' + description;
-      
-      // Try multiple patterns to find file references
-      const patterns = [
-        /`([^`]+\.(ts|js|tsx|jsx|json|md|py|go|rs|java|cpp|c|h))`/, // backtick wrapped
-        /\b(src\/[^\s,;:]+\.(ts|js|tsx|jsx|json|md))/, // src/ paths
-        /\b([a-zA-Z0-9_-]+\/[^\s,;:]+\.(ts|js|tsx|jsx|json|md))/, // folder/file paths
-        /\b([a-zA-Z0-9_-]+\.(ts|js|tsx|jsx|json|md))\b/, // just filename
-        /in\s+([^\s]+\.(ts|js|tsx|jsx|json|md))/, // "in filename"
-        /file:\s*([^\s]+\.(ts|js|tsx|jsx|json|md))/, // "file: filename"
-      ];
-      
-      for (const pattern of patterns) {
-        const fileMatch = fullText.match(pattern);
-        if (fileMatch) {
-          currentIssue.location.file = fileMatch[1];
-          break;
-        }
-      }
-      
-      // Look for line numbers
-      const lineMatch = description.match(/(?:line|Line)\s+(\d+)/);
-      if (lineMatch) {
-        currentIssue.location.line = parseInt(lineMatch[1]);
-      }
+      // Category and severity detection will happen from sub-items or content
     } else if (currentIssue && line.trim() && !line.match(/^\s*$/)) {
-      // Continue description for current issue
-      currentIssue.description += ' ' + line.trim();
+      // Check if this is a metadata line for the Title: format
+      const metadataMatch = line.match(/^(File|Severity|Description|Recommendation|Code snippet):\s*(.+)/i);
+      if (metadataMatch) {
+        const [, field, value] = metadataMatch;
+        const fieldLower = field.toLowerCase();
+        
+        if (fieldLower === 'file') {
+          // Parse file and line from "File: path/to/file.ts, Line: 123"
+          // The value already has everything after "File: "
+          const parts = value.split(/,\s*Line:\s*/i);
+          if (parts.length === 2) {
+            currentIssue.location.file = parts[0].trim();
+            currentIssue.location.line = parseInt(parts[1]);
+          } else {
+            // Just file path, no line number
+            currentIssue.location.file = value.trim();
+          }
+        } else if (fieldLower === 'severity') {
+          currentIssue.severity = value.toLowerCase().trim();
+        } else if (fieldLower === 'description') {
+          currentIssue.description = value.trim();
+        } else if (fieldLower === 'recommendation') {
+          currentIssue.recommendation = value.trim();
+        }
+        // Skip code snippet lines
+      } else if (!line.startsWith('```') && !line.trim().startsWith('---')) {
+        // Continue description for current issue
+        currentIssue.description += ' ' + line.trim();
+      }
       
-      // Check for explicit severity in continuation lines
+      // Check for explicit severity in continuation lines (old format)
       const severityMatch = line.match(/(?:Severity|severity):\s*(critical|high|medium|low)/i);
       if (severityMatch) {
         currentIssue.severity = severityMatch[1].toLowerCase();
       }
       
-      // Check for file/line info in continuation
-      const fileMatch = line.match(/(?:File|file):\s*([^\s,]+(?:\.(ts|js|tsx|jsx|json|md|py|go|rs|java|cpp|c|h))?)/) ||
-                       line.match(/(?:`([^`]+\.(ts|js|tsx|jsx|json|md))`|(\w+\/[\w\-.]+\.(ts|js|tsx|jsx|json|md)))/);
-      if (fileMatch && currentIssue.location.file === 'unknown') {
-        currentIssue.location.file = (fileMatch[1] || fileMatch[2] || fileMatch[4]).replace(/`/g, '');
-      }
-      
-      const lineMatch = line.match(/(?:Line|line):\s*(\d+)/) || line.match(/\(line (\d+)\)/);
-      if (lineMatch) {
-        currentIssue.location.line = parseInt(lineMatch[1]);
+      // Check for file/line info in continuation - handle various formats
+      // Format 1: "File: path/to/file.ts, Line: 123"
+      // Format 2: "File Path and Line Number: path/to/file.ts, line 45"
+      // Format 3: "**File Path and Line Number**: test/main.ts, multiple lines"
+      const fileLineMatch = line.match(/(?:File Path and Line Number|File|file):\s*\*?\*?([^,\n]+?)(?:,\s*(?:Line|line)s?\s*(\d+|multiple lines)?)?/i);
+      if (fileLineMatch && currentIssue.location.file === 'unknown') {
+        currentIssue.location.file = fileLineMatch[1].replace(/\*\*/g, '').trim();
+        if (fileLineMatch[2] && fileLineMatch[2] !== 'multiple lines') {
+          currentIssue.location.line = parseInt(fileLineMatch[2]);
+        }
+      } else {
+        // Fallback to other patterns
+        const fileMatch = line.match(/(?:`([^`]+\.(ts|js|tsx|jsx|json|md))`|(\w+\/[\w\-.]+\.(ts|js|tsx|jsx|json|md)))/);
+        if (fileMatch && currentIssue.location.file === 'unknown') {
+          currentIssue.location.file = (fileMatch[1] || fileMatch[3]).replace(/`/g, '');
+        }
+        
+        const lineMatch = line.match(/(?:Line|line):\s*(\d+)/) || line.match(/\(line (\d+)\)/);
+        if (lineMatch) {
+          currentIssue.location.line = parseInt(lineMatch[1]);
+        }
       }
     }
   }
