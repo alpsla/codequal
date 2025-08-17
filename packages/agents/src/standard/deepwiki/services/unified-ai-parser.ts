@@ -5,6 +5,8 @@
  * sub-agents for each category, replacing all rule-based parsers.
  */
 
+// PERMANENT FIX: Use centralized environment loader
+import { getEnvConfig } from '../../utils/env-loader';
 import { DynamicModelSelector, RoleRequirements } from '../../services/dynamic-model-selector';
 import { ILogger } from '../../services/interfaces/logger.interface';
 import { AIService } from '../../services/ai-service';
@@ -60,9 +62,10 @@ export class UnifiedAIParser {
   constructor(logger?: ILogger) {
     this.modelSelector = new DynamicModelSelector();
     this.logger = logger;
-    // Pass the API key explicitly to ensure it's available
+    // PERMANENT FIX: Use centralized env config to ensure API key is always loaded
+    const envConfig = getEnvConfig();
     this.aiService = new AIService({
-      openRouterApiKey: process.env.OPENROUTER_API_KEY
+      openRouterApiKey: envConfig.openRouterApiKey
     });
   }
 
@@ -675,99 +678,199 @@ Extract recommendations:
    * Call AI model with prompt
    */
   private async callAIModel(prompt: string, content: string): Promise<any> {
-    if (!this.selectedModel) {
-      throw new Error('Model not initialized');
-    }
-
-    // Try primary model first
-    try {
-      const response = await this.aiService.call(this.selectedModel, {
-        systemPrompt: prompt,
-        prompt: content,
-        temperature: 0.1,
-        maxTokens: 4000,  // Increased from 2000 for more complete extraction
-        jsonMode: true
-      });
-
-      // Parse the AI response
+    const maxRetries = 2;
+    let lastError: any;
+    
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
-        return JSON.parse(response.content);
-      } catch (parseError) {
-        this.log('warn', 'Failed to parse AI response as JSON, attempting to extract', { parseError });
-        // If not valid JSON, try to extract JSON from the response
-        // First try to remove markdown code blocks
-        let cleanedContent = response.content;
-        if (cleanedContent.includes('```json')) {
-          cleanedContent = cleanedContent.replace(/```json\s*/g, '').replace(/```\s*/g, '');
-        } else if (cleanedContent.includes('```')) {
-          cleanedContent = cleanedContent.replace(/```\s*/g, '');
-        }
+        this.log('debug', `Calling model: ${this.selectedModel.provider}/${this.selectedModel.model}`, {
+          temperature: 0.1,
+          maxTokens: 4000
+        });
         
-        // Try to parse the cleaned content
-        try {
-          return JSON.parse(cleanedContent.trim());
-        } catch {
-          // If still fails, try to extract JSON object
-          const jsonMatch = cleanedContent.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            return JSON.parse(jsonMatch[0]);
-          }
-        }
-        return {};
-      }
-    } catch (primaryError) {
-      this.log('warn', 'Primary model failed, trying fallback', { 
-        primaryModel: this.selectedModel.model,
-        error: primaryError 
-      });
-      
-      // Try fallback model if available
-      if (this.fallbackModel) {
-        try {
-          const response = await this.aiService.call(this.fallbackModel, {
+        const response = await this.aiService.call(
+          {
+            model: this.selectedModel.id || this.selectedModel.model,
+            provider: this.selectedModel.provider
+          } as any,
+          {
             systemPrompt: prompt,
-            prompt: content,
+            prompt: `Analyze the following DeepWiki output and extract issues according to the instructions:\n\n${content}`,
             temperature: 0.1,
-            maxTokens: 4000,  // Increased from 2000 for more complete extraction
+            maxTokens: 4000,
             jsonMode: true
-          });
-
-          try {
-            return JSON.parse(response.content);
-          } catch (parseError) {
-            this.log('warn', 'Failed to parse fallback AI response as JSON', { parseError });
-            // Clean markdown code blocks
-            let cleanedContent = response.content;
-            if (cleanedContent.includes('```json')) {
-              cleanedContent = cleanedContent.replace(/```json\s*/g, '').replace(/```\s*/g, '');
-            } else if (cleanedContent.includes('```')) {
-              cleanedContent = cleanedContent.replace(/```\s*/g, '');
-            }
-            
-            // Try to parse the cleaned content
-            try {
-              return JSON.parse(cleanedContent.trim());
-            } catch {
-              // If still fails, try to extract JSON object
-              const jsonMatch = cleanedContent.match(/\{[\s\S]*\}/);
-              if (jsonMatch) {
-                return JSON.parse(jsonMatch[0]);
-              }
-            }
-            return {};
           }
-        } catch (fallbackError) {
-          this.log('error', 'Both primary and fallback models failed', { 
-            primaryError,
-            fallbackError 
-          });
+        );
+        
+        try {
+          return JSON.parse(response.content);
+        } catch (parseError) {
+          this.log('warn', 'Failed to parse AI response as JSON', { parseError });
+          // Clean markdown code blocks
+          let cleanedContent = response.content;
+          if (cleanedContent.includes('```json')) {
+            cleanedContent = cleanedContent.replace(/```json\s*/g, '').replace(/```\s*/g, '');
+          } else if (cleanedContent.includes('```')) {
+            cleanedContent = cleanedContent.replace(/```\s*/g, '');
+          }
+          
+          // Try to parse the cleaned content
+          try {
+            return JSON.parse(cleanedContent.trim());
+          } catch {
+            // If still fails, try to extract JSON object
+            const jsonMatch = cleanedContent.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+              return JSON.parse(jsonMatch[0]);
+            }
+          }
           return {};
         }
-      } else {
-        this.log('error', 'Primary model failed and no fallback available', { primaryError });
-        return {};
+      } catch (primaryError: any) {
+        lastError = primaryError;
+        
+        // If primary model fails, try fallback
+        if (this.fallbackModel && attempt === 0) {
+          this.log('warn', 'Primary model failed, trying fallback', {
+            primaryModel: this.selectedModel.model,
+            error: primaryError
+          });
+          
+          try {
+            this.log('debug', `Calling model: ${this.fallbackModel.provider}/${this.fallbackModel.model}`, {
+              temperature: 0.1,
+              maxTokens: 4000
+            });
+            
+            const response = await this.aiService.call(
+              {
+                model: this.fallbackModel.id || this.fallbackModel.model,
+                provider: this.fallbackModel.provider
+              } as any,
+              {
+                systemPrompt: prompt,
+                prompt: `Analyze the following DeepWiki output and extract issues according to the instructions:\n\n${content}`,
+                temperature: 0.1,
+                maxTokens: 4000,
+                jsonMode: true
+              }
+            );
+
+            // Try multiple parsing strategies for fallback response
+            try {
+              return JSON.parse(response.content);
+            } catch (parseError) {
+              this.log('warn', 'Failed to parse fallback AI response as JSON, attempting text extraction', { parseError });
+              
+              // Strategy 1: Clean markdown code blocks
+              let cleanedContent = response.content;
+              if (cleanedContent.includes('```json')) {
+                cleanedContent = cleanedContent.replace(/```json\s*/g, '').replace(/```\s*/g, '');
+              } else if (cleanedContent.includes('```')) {
+                cleanedContent = cleanedContent.replace(/```\s*/g, '');
+              }
+              
+              // Strategy 2: Try to parse cleaned content
+              try {
+                return JSON.parse(cleanedContent.trim());
+              } catch {
+                // Strategy 3: Extract JSON object from text
+                const jsonMatch = cleanedContent.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                  try {
+                    return JSON.parse(jsonMatch[0]);
+                  } catch {}
+                }
+                
+                // Strategy 4: If fallback returns text analysis, parse it manually
+                this.log('warn', 'Fallback model returned text, attempting manual extraction');
+                return this.extractIssuesFromText(response.content);
+              }
+            }
+          } catch (fallbackError) {
+            this.log('error', 'Both primary and fallback models failed', { 
+              primaryError,
+              fallbackError 
+            });
+            // Try to extract issues from the original content directly
+            return this.extractIssuesFromText(content);
+          }
+        } else {
+          this.log('error', 'Primary model failed and no fallback available', { primaryError });
+          // Try to extract issues from the original content directly
+          return this.extractIssuesFromText(content);
+        }
       }
     }
+    
+    throw lastError;
+  }
+  
+  /**
+   * Extract issues from text when AI models fail to return JSON
+   */
+  private extractIssuesFromText(text: string): any {
+    const result: any = {
+      vulnerabilities: [],
+      issues: [],
+      complexity: { violations: [] },
+      maintainability: { issues: [] }
+    };
+    
+    // Pattern to match numbered issues like "1. **Title**: Description"
+    const issuePattern = /(\d+)\.\s+\*\*([^*]+)\*\*:?\s*([^\n]+)(?:\n\s+(?:File|Location):\s*([^,\n]+)(?:,\s*Line:\s*(\d+))?)?/gi;
+    let match;
+    
+    while ((match = issuePattern.exec(text)) !== null) {
+      const issue = {
+        type: match[2].trim(),
+        description: match[3].trim(),
+        file: match[4] ? match[4].trim() : 'unknown',
+        line: match[5] ? parseInt(match[5]) : undefined,
+        severity: this.extractSeverity(text, match.index)
+      };
+      
+      // Categorize based on keywords
+      if (issue.type.toLowerCase().includes('security') || 
+          issue.type.toLowerCase().includes('injection') ||
+          issue.type.toLowerCase().includes('authentication')) {
+        result.vulnerabilities.push({
+          ...issue,
+          cwe: '',
+          impact: issue.description,
+          remediation: 'Review and fix the security issue'
+        });
+      } else if (issue.type.toLowerCase().includes('performance') ||
+                 issue.type.toLowerCase().includes('slow') ||
+                 issue.type.toLowerCase().includes('n+1')) {
+        result.issues.push({
+          ...issue,
+          location: { file: issue.file, line: issue.line }
+        });
+      } else {
+        result.maintainability.issues.push(issue);
+      }
+    }
+    
+    return result;
+  }
+  
+  private extractSeverity(text: string, position: number): string {
+    // Look for severity mentioned near the issue (within 200 chars)
+    const contextStart = Math.max(0, position - 100);
+    const contextEnd = Math.min(text.length, position + 200);
+    const context = text.substring(contextStart, contextEnd).toLowerCase();
+    
+    if (context.includes('critical')) return 'critical';
+    if (context.includes('high')) return 'high';
+    if (context.includes('medium')) return 'medium';
+    if (context.includes('low')) return 'low';
+    
+    // Default based on issue type keywords
+    if (context.includes('security') || context.includes('injection')) return 'high';
+    if (context.includes('performance')) return 'medium';
+    
+    return 'medium'; // default
   }
 
   /**
@@ -1304,7 +1407,7 @@ Extract recommendations:
     };
   }
 
-  private log(level: 'info' | 'error' | 'warn', message: string, data?: any): void {
+  private log(level: 'info' | 'error' | 'warn' | 'debug', message: string, data?: any): void {
     if (this.logger) {
       const logMessage = `[UnifiedAIParser] ${message}`;
       switch (level) {
@@ -1316,6 +1419,13 @@ Extract recommendations:
           break;
         case 'warn':
           this.logger.warn(logMessage, data);
+          break;
+        case 'debug':
+          if ('debug' in this.logger && typeof this.logger.debug === 'function') {
+            (this.logger as any).debug(logMessage, data);
+          } else {
+            this.logger.info(logMessage, data);
+          }
           break;
       }
     } else {

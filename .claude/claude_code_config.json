@@ -1,4 +1,18 @@
 {
+  "sessionManagement": {
+    "operationalSummaries": "packages/agents/src/standard/docs/session_summary",
+    "strategicSummaries": "docs/session-summaries",
+    "nextSessionPlan": "packages/agents/src/standard/docs/session_summary/NEXT_SESSION_PLAN.md",
+    "rules": {
+      "sessionStart": "Use npm run session to start",
+      "sessionEnd": "Use session-wrapper agent to close",
+      "contextPriority": ["NEXT_SESSION_PLAN.md", "operational", "strategic"],
+      "updateFrequency": {
+        "operational": "every session",
+        "strategic": "major milestones only"
+      }
+    }
+  },
   "mcpServers": {
     "ref": {
       "command": "npx",

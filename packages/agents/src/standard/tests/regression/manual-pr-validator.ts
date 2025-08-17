@@ -1,9 +1,8 @@
 #!/usr/bin/env npx ts-node
-import * as dotenv from 'dotenv';
-import * as path from 'path';
 
-// Load environment variables from root .env file
-dotenv.config({ path: path.resolve(__dirname, '../../../../../.env') });
+// PERMANENT FIX: Use centralized environment loader
+import { loadEnvironment, getEnvConfig } from '../../utils/env-loader';
+const envConfig = getEnvConfig();
 
 /**
  * Manual PR Validator - Standalone Script for Real PR Analysis
@@ -27,6 +26,7 @@ import { DeepWikiClient } from '@codequal/core/deepwiki';
 import { parseDeepWikiResponse } from './parse-deepwiki-response';
 import { LocationClarifier } from '../../deepwiki/services/location-clarifier';
 import * as fs from 'fs';
+import * as path from 'path';
 import * as chalk from 'chalk';
 import { createClient } from '@supabase/supabase-js';
 
@@ -66,11 +66,11 @@ ${colors.cyan}For large repositories:${colors.reset}
   process.exit(1);
 }
 
-// Configuration
+// Configuration - using centralized env loader for consistency
 const config = {
   deepwiki: {
-    apiUrl: process.env.DEEPWIKI_API_URL || 'http://localhost:8001',
-    apiKey: process.env.DEEPWIKI_API_KEY || 'dw-key-e48329b6c05b4a36a18d65af21ac3c2f',
+    apiUrl: envConfig.deepWikiApiUrl,
+    apiKey: envConfig.deepWikiApiKey,
     timeout: parseInt(process.env.DEEPWIKI_TIMEOUT || '600000') // Default 10 minutes, configurable
   },
   output: {

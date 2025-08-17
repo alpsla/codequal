@@ -5,6 +5,8 @@
  * Selects models purely based on role requirements and actual capabilities
  */
 
+// PERMANENT FIX: Use centralized environment loader
+import { getEnvConfig } from '../utils/env-loader';
 import { createLogger } from '@codequal/core';
 import axios from 'axios';
 
@@ -46,7 +48,9 @@ export class DynamicModelSelector {
   private openRouterApiKey: string;
   
   constructor(apiKey?: string) {
-    this.openRouterApiKey = apiKey || process.env.OPENROUTER_API_KEY || '';
+    // PERMANENT FIX: Use centralized env config as fallback
+    const envConfig = getEnvConfig();
+    this.openRouterApiKey = apiKey || envConfig.openRouterApiKey || '';
   }
   
   /**
