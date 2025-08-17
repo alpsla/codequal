@@ -1,0 +1,29 @@
+1. **Issue Title**: Improper Handling of Non-JSON Responses
+   - **Severity**: High
+   - **File Path and Line Number**: test/main.ts, multiple lines
+   - **Specific Code Problem**: The code does not handle cases where the response is not JSON, leading to potential runtime errors when parsing.
+   - **Recommendation for Fixing**: Implement error handling to check the content type of the response before attempting to parse it as JSON.
+
+2. **Issue Title**: Lack of Timeout Handling in Tests
+   - **Severity**: Medium
+   - **File Path and Line Number**: test/retry.ts, multiple lines
+   - **Specific Code Problem**: Some tests do not account for potential timeouts, which could cause tests to hang indefinitely.
+   - **Recommendation for Fixing**: Ensure that all test cases specify a timeout value to avoid hanging tests and improve reliability.
+
+3. **Issue Title**: Redundant Use of `await` with Non-Promise Functions
+   - **Severity**: Low
+   - **File Path and Line Number**: test/hooks.ts, multiple lines
+   - **Specific Code Problem**: Some instances of `await` are used with functions that do not return a Promise, which is unnecessary and can confuse readers.
+   - **Recommendation for Fixing**: Remove the `await` keyword from non-Promise-returning function calls to enhance code clarity.
+
+4. **Issue Title**: Inconsistent Error Handling in Retry Logic
+   - **Severity**: Medium
+   - **File Path and Line Number**: test/retry.ts, multiple lines
+   - **Specific Code Problem**: The retry logic does not consistently handle different error types, which can lead to unexpected behavior.
+   - **Recommendation for Fixing**: Standardize error handling across all retry cases to ensure consistent behavior and logging.
+
+5. **Issue Title**: Missing Type Annotations for Some Variables
+   - **Severity**: Medium
+   - **File Path and Line Number**: source/core/constants.ts, multiple lines
+   - **Specific Code Problem**: Several variables lack explicit type annotations, making the code harder to understand and maintain.
+   - **Recommendation for Fixing**: Add explicit type annotations for variables to improve code readability and maintainability, especially in TypeScript files.

@@ -1,6 +1,6 @@
 
 Error analyzing PR: https://github.com/sindresorhus/ky/pull/500
-Timestamp: 2025-08-17T20:57:16.831Z
+Timestamp: 2025-08-17T21:48:32.386Z
 
 Error Details:
 Error: DeepWiki analysis failed: All models failed to analyze repository. Please check DeepWiki service status and configuration.

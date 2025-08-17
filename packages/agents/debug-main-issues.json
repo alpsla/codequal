@@ -1,0 +1,125 @@
+[
+  {
+    "id": "performance-1",
+    "category": "performance",
+    "severity": "low",
+    "type": "Potential performance impact due to lack of cancellation for ongoing requests on retry",
+    "title": "Potential performance impact due to lack of cancellation for ongoing requests on retry",
+    "description": "Current: undefined, Expected: undefined",
+    "location": {
+      "file": "unknown"
+    },
+    "metadata": {
+      "aiExtracted": true
+    },
+    "message": "Current: undefined, Expected: undefined"
+  },
+  {
+    "id": "quality-1",
+    "category": "code-quality",
+    "severity": "high",
+    "type": "Inconsistent error handling for non-OK responses",
+    "title": "Inconsistent error handling for non-OK responses",
+    "description": "File: source/core/Ky.ts, Line: 45",
+    "location": {
+      "file": "source/core/Ky.ts",
+      "line": 45
+    },
+    "metadata": {
+      "aiExtracted": true,
+      "locationConfidence": 100,
+      "locationContext": "`throw new HTTPError(response, ky.request, ky._options as NormalizedOptions);`"
+    },
+    "message": "File: source/core/Ky.ts, Line: 45"
+  },
+  {
+    "id": "quality-2",
+    "category": "code-quality",
+    "severity": "medium",
+    "type": "Potential for memory leak with ReadableStream",
+    "title": "Potential for memory leak with ReadableStream",
+    "description": "File: source/core/Ky.ts, Line: 55",
+    "location": {
+      "file": "source/core/Ky.ts",
+      "line": 55
+    },
+    "metadata": {
+      "aiExtracted": true,
+      "locationConfidence": 100,
+      "locationContext": "`if (!response.ok && ky._options.throwHttpErrors) {`"
+    },
+    "message": "File: source/core/Ky.ts, Line: 55"
+  },
+  {
+    "id": "quality-3",
+    "category": "code-quality",
+    "severity": "medium",
+    "type": "Lack of input validation for `retry` option",
+    "title": "Lack of input validation for `retry` option",
+    "description": "File: source/utils/normalize.js, Line: 10",
+    "location": {
+      "file": "source/utils/normalize.js",
+      "line": 10
+    },
+    "metadata": {
+      "aiExtracted": true,
+      "locationConfidence": 100,
+      "locationContext": "`if (typeof retry !== 'object' || retry === null) {`"
+    },
+    "message": "File: source/utils/normalize.js, Line: 10"
+  },
+  {
+    "id": "quality-4",
+    "category": "code-quality",
+    "severity": "medium",
+    "type": "Missing validation for `prefixUrl` and `input` combination",
+    "title": "Missing validation for `prefixUrl` and `input` combination",
+    "description": "File: source/core/Ky.ts, Line: 19",
+    "location": {
+      "file": "source/core/Ky.ts",
+      "line": 19
+    },
+    "metadata": {
+      "aiExtracted": true,
+      "locationConfidence": 100,
+      "locationContext": "`this._options = { ...options, headers: mergeHeaders((this._input as Request).headers, options.headers),`"
+    },
+    "message": "File: source/core/Ky.ts, Line: 19"
+  },
+  {
+    "id": "quality-5",
+    "category": "code-quality",
+    "severity": "medium",
+    "type": "Use of `any` type in TypeScript definitions may bypass type checking",
+    "title": "Use of `any` type in TypeScript definitions may bypass type checking",
+    "description": "File: source/types/options.ts, Line: 3",
+    "location": {
+      "file": "source/types/options.ts",
+      "line": 3
+    },
+    "metadata": {
+      "aiExtracted": true,
+      "locationConfidence": 100,
+      "locationContext": "`export type Options = {`"
+    },
+    "message": "File: source/types/options.ts, Line: 3"
+  },
+  {
+    "id": "quality-6",
+    "category": "code-quality",
+    "severity": "medium",
+    "type": "Absence of explicit character set definition in `Accept` header",
+    "title": "Absence of explicit character set definition in `Accept` header",
+    "description": "File: source/core/Ky.ts, Line: 88",
+    "location": {
+      "file": "source/core/Ky.ts",
+      "line": 88
+    },
+    "metadata": {
+      "aiExtracted": true,
+      "locationConfidence": 100,
+      "locationContext": "`ky.request.headers.set('accept', ky.request.headers.get('accept') || mimeType);`"
+    },
+    "message": "File: source/core/Ky.ts, Line: 88"
+  }
+]

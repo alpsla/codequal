@@ -310,6 +310,13 @@ const SYSTEM_STATE: SystemState = {
       description: 'V7 Template Not Properly Generating All Required Sections in Real Analysis - report structure missing key V7 template sections including PR/Repository issue separation, educational insights, business impact, complete skills tracking, and team performance metrics',
       discovered: '2025-08-17',
       component: 'report-generator-v7'
+    },
+    {
+      id: 'BUG-034',
+      severity: 'HIGH',
+      description: 'Primary model google/gemini-2.5-pro-exp-03-25 not available on OpenRouter - Dynamic model selector chooses models without verifying availability, causing 404 API errors and forcing fallback to secondary models with delays',
+      discovered: '2025-08-17',
+      component: 'dynamic-model-selector'
     }
   ],
 
@@ -317,6 +324,7 @@ const SYSTEM_STATE: SystemState = {
     'CRITICAL - COMPLETE BUG-032: Fix orchestrator/comparison agent to preserve parsed issues in final reports - parser extracts 5 issues correctly but reports show 0',
     'CRITICAL - DEBUG orchestrator pipeline: trace issue flow from parser → orchestrator → final report to identify where issues are lost',
     'CRITICAL - FIX BUG-033: V7 Template section generation incomplete - ensure all 16 sections generate properly with PR/Repository separation, educational insights, business impact analysis, complete skills tracking, and team performance metrics',
+    'URGENT - FIX BUG-034: Implement model availability validation for OpenRouter - prevent selection of unavailable models like google/gemini-2.5-pro-exp-03-25 that return 404 errors',
     'HIGH - DeepWiki Analysis Performance Optimization - Rule-based parser working well, now optimize for speed and accuracy',
     'URGENT - FIX BUG-030: Implement model health check system to handle broken/unavailable models gracefully - prevent AI parser failures from models returning "No endpoints found"',
     'PERFORMANCE - Implement caching and batching for AI model calls to optimize performance',
