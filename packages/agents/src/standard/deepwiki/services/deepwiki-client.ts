@@ -227,7 +227,7 @@ export class DeepWikiService implements IDeepWikiService {
 
         // Extract a proper title from the issue
         let title = issue.title || (issue as any).message || issue.description || 'No title provided';
-        let description = issue.description || '';
+        const description = issue.description || '';
         
         // If title is too long (likely contains full description), extract a shorter title
         if (title.length > 100 && title === issue.description) {

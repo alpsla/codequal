@@ -166,7 +166,7 @@ export class DeepWikiRepositoryAnalyzer {
     repositoryUrl: string,
     branch: string,
     prNumber?: number,
-    depth: number = 10
+    depth = 10
   ): Promise<string> {
     // Ensure cache directory exists
     await fs.mkdir(this.cacheDir, { recursive: true });
@@ -317,7 +317,7 @@ export class DeepWikiRepositoryAnalyzer {
     const enhancedIssues: CodeIssue[] = [];
     
     for (const issue of issues) {
-      let enhancedIssue: CodeIssue = {
+      const enhancedIssue: CodeIssue = {
         id: issue.id || `issue-${Date.now()}-${Math.random()}`,
         severity: issue.severity || 'medium',
         category: issue.category || 'code-quality',

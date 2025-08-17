@@ -4,6 +4,8 @@ import {
   ComponentRelationship,
   ArchitectureDiagram 
 } from './architecture-visualizer';
+import { parseEnhancedDependencies, dependenciesToIssues } from './enhanced-dependency-parser';
+import { parseEnhancedCodeQuality, codeQualityToIssues } from './enhanced-code-quality-parser';
 
 /**
  * Parse DeepWiki text response into structured issues with priority categories
@@ -12,10 +14,16 @@ export function parseDeepWikiResponse(content: string) {
   const issues = [];
   const lines = content.split('\n');
   let architectureDiagram = '';
-  let educationalInsights: any[] = [];
-  let dependencies: any = { vulnerable: [], outdated: [], deprecated: [] };
-  let detectedComponents: ArchitectureComponent[] = [];
-  let detectedRelationships: ComponentRelationship[] = [];
+  const educationalInsights: any[] = [];
+  
+  // Use enhanced parsers
+  const enhancedDependencies = parseEnhancedDependencies(content);
+  const dependencies: any = enhancedDependencies;
+  
+  const codeQualityMetrics = parseEnhancedCodeQuality(content);
+  
+  const detectedComponents: ArchitectureComponent[] = [];
+  const detectedRelationships: ComponentRelationship[] = [];
   let inEducationalSection = false;
   let currentEducationType: 'best-practice' | 'anti-pattern' | 'learning' | null = null;
   let currentEducationalItem: any = null;
@@ -88,7 +96,7 @@ export function parseDeepWikiResponse(content: string) {
       if (currentEducationalItem) {
         if (line.match(/^\s*Example:/i) || line.match(/^\s*```/)) {
           // Start capturing example
-          let exampleLines = [];
+          const exampleLines = [];
           i++; // Move to next line
           while (i < lines.length && !lines[i].match(/^\s*```/)) {
             exampleLines.push(lines[i]);
@@ -100,7 +108,7 @@ export function parseDeepWikiResponse(content: string) {
         
         if (line.match(/^\s*Better Approach:/i)) {
           // Start capturing better approach
-          let betterLines = [];
+          const betterLines = [];
           i++; // Move to next line
           while (i < lines.length && !lines[i].match(/^\s*```/) && !lines[i].match(/^(\d+\.|\*|-)/)) {
             if (lines[i].trim()) {
@@ -195,19 +203,7 @@ export function parseDeepWikiResponse(content: string) {
       continue;
     }
     
-    // Parse dependency issues
-    if (line.includes('CVE-') || line.includes('vulnerable')) {
-      const cveMatch = line.match(/CVE-\d{4}-\d+/);
-      const packageMatch = line.match(/(\S+)@(\S+)/);
-      if (cveMatch && packageMatch) {
-        dependencies.vulnerable.push({
-          name: packageMatch[1],
-          version: packageMatch[2],
-          cve: cveMatch[0],
-          severity: currentSectionSeverity
-        });
-      }
-    }
+    // Skip old dependency parsing as we're using enhanced parser
     
     // Check for severity headers like "#### Critical Issues", "#### High Issues"
     // This sets the default severity for issues in that section
@@ -479,6 +475,22 @@ export function parseDeepWikiResponse(content: string) {
     low: lowCount
   });
   
+  // Add dependency issues to main issues array
+  const dependencyIssues = dependenciesToIssues(dependencies);
+  issues.push(...dependencyIssues);
+  
+  // Add code quality issues to main issues array
+  const codeQualityIssues = codeQualityToIssues(codeQualityMetrics);
+  issues.push(...codeQualityIssues);
+  
+  // Recalculate counts after adding all enhanced issues
+  const finalCriticalCount = issues.filter(i => i.severity === 'critical').length;
+  const finalHighCount = issues.filter(i => i.severity === 'high').length;
+  const finalMediumCount = issues.filter(i => i.severity === 'medium').length;
+  const finalLowCount = issues.filter(i => i.severity === 'low').length;
+  
+  console.log(`Parsed ${issues.length} issues from DeepWiki response (including ${dependencyIssues.length} dependency + ${codeQualityIssues.length} quality issues): { critical: ${finalCriticalCount}, high: ${finalHighCount}, medium: ${finalMediumCount}, low: ${finalLowCount} }`);
+  
   // Calculate comprehensive scores
   const dependencyScore = Math.max(0, 100 - 
     (dependencies.vulnerable.length * 20) - 
@@ -564,6 +576,9 @@ export function parseDeepWikiResponse(content: string) {
   const architectureScore = enhancedDiagram ? 
     (architectureMetrics.testability || 75) : 60;
   
+  // Calculate code quality score based on metrics
+  const codeQualityScore = calculateCodeQualityScore(codeQualityMetrics, codeQualityIssues);
+  
   return {
     issues,
     scores: {
@@ -572,10 +587,11 @@ export function parseDeepWikiResponse(content: string) {
       performance: Math.max(50, 90 - issues.filter(i => i.category === 'performance').length * 10),
       dependencies: dependencyScore,
       architecture: architectureScore,
-      codeQuality: Math.max(50, 90 - issues.filter(i => i.category === 'code-quality').length * 5),
-      testCoverage: Math.max(50, 90 - issues.filter(i => i.category === 'testing').length * 10)
+      codeQuality: codeQualityScore,
+      testCoverage: codeQualityMetrics.testCoverage.overall || Math.max(50, 90 - issues.filter(i => i.category === 'testing').length * 10)
     },
     dependencies,
+    codeQualityMetrics,
     architecture: {
       diagram: enhancedDiagram,
       patterns: architecturePatterns,
@@ -590,6 +606,38 @@ export function parseDeepWikiResponse(content: string) {
       antiPatterns: educationalInsights.filter(i => i.type === 'anti-pattern')
     }
   };
+}
+
+function calculateCodeQualityScore(metrics: any, issues: any[]): number {
+  let score = 100;
+  
+  // Deduct for complexity
+  if (metrics.complexity.cyclomatic.average > 10) {
+    score -= Math.min(20, (metrics.complexity.cyclomatic.average - 10) * 2);
+  }
+  
+  // Deduct for duplication
+  if (metrics.duplication.percentage > 5) {
+    score -= Math.min(15, metrics.duplication.percentage);
+  }
+  
+  // Deduct for low test coverage
+  if (metrics.testCoverage.overall > 0 && metrics.testCoverage.overall < 80) {
+    score -= Math.min(20, (80 - metrics.testCoverage.overall) / 2);
+  }
+  
+  // Deduct for code smells
+  score -= Math.min(15, metrics.codeSmells.length * 3);
+  
+  // Deduct for technical debt
+  if (metrics.technicalDebt.totalMinutes > 60) {
+    score -= Math.min(10, metrics.technicalDebt.totalMinutes / 60);
+  }
+  
+  // Also consider the number of quality issues
+  score -= Math.min(20, issues.length * 2);
+  
+  return Math.max(0, Math.round(score));
 }
 // Export as a class for consistency with index.ts expectations
 export class DeepWikiResponseParser {

@@ -332,7 +332,7 @@ export class DeepWikiChatService {
   /**
    * Clean up expired sessions
    */
-  cleanupExpiredSessions(maxAge: number = 3600000): void {
+  cleanupExpiredSessions(maxAge = 3600000): void {
     const now = Date.now();
     const expired: string[] = [];
     
