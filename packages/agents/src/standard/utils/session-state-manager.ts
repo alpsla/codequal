@@ -47,7 +47,7 @@ export class SessionStateManager {
   constructor(
     stateFilePath = path.join(
       __dirname,
-      '../../tests/integration/production-ready-state-test.ts'
+      '../tests/integration/production-ready-state-test.ts'
     )
   ) {
     this.stateFilePath = stateFilePath;
