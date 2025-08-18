@@ -402,24 +402,27 @@ export class DynamicModelEvaluator {
     
     const monthsOld = (Date.now() - metadata.releaseDate.getTime()) / (1000 * 60 * 60 * 24 * 30);
     
-    // ULTRA STRICT freshness requirements - only latest models
+    // ULTRA STRICT freshness requirements - ONLY models from last 3-6 months
     if (monthsOld <= 1) {
-      reasoning.push(`✅ Brand new (${monthsOld.toFixed(1)} months): 10/10 freshness`);
+      reasoning.push(`✅ PERFECT - Brand new (${monthsOld.toFixed(1)} months): 10/10 freshness`);
       return 10;
     } else if (monthsOld <= 2) {
-      reasoning.push(`✅ Very fresh (${monthsOld.toFixed(1)} months): 9/10 freshness`);
+      reasoning.push(`✅ EXCELLENT - Very fresh (${monthsOld.toFixed(1)} months): 9/10 freshness`);
       return 9;
     } else if (monthsOld <= 3) {
-      reasoning.push(`Acceptable (${monthsOld.toFixed(1)} months): 7/10 freshness`);
-      return 7;
+      reasoning.push(`✅ GOOD - Within 3 months (${monthsOld.toFixed(1)} months): 8/10 freshness`);
+      return 8;
     } else if (monthsOld <= 4) {
-      reasoning.push(`⚠️ Getting old (${monthsOld.toFixed(1)} months): 4/10 freshness`);
-      return 4;
+      reasoning.push(`⚠️ BORDERLINE - 4 months old (${monthsOld.toFixed(1)} months): 5/10 freshness`);
+      return 5;
+    } else if (monthsOld <= 5) {
+      reasoning.push(`⚠️ MARGINAL - 5 months old (${monthsOld.toFixed(1)} months): 3/10 freshness`);
+      return 3;
     } else if (monthsOld <= 6) {
-      reasoning.push(`❌ OLD (${monthsOld.toFixed(1)} months): 2/10 freshness`);
-      return 2;
+      reasoning.push(`❌ LIMIT - 6 months old (${monthsOld.toFixed(1)} months): 1/10 freshness`);
+      return 1;
     } else {
-      reasoning.push(`❌ UNACCEPTABLE (${monthsOld.toFixed(1)} months): 0/10 freshness`);
+      reasoning.push(`❌ REJECTED - Older than 6 months (${monthsOld.toFixed(1)} months): 0/10 freshness`);
       return 0;
     }
   }
@@ -470,18 +473,21 @@ export class DynamicModelEvaluator {
     const scores = model.scores;
     
     // Apply freshness as an EXTREME multiplier to quality
-    // Models with low freshness get MASSIVELY penalized
+    // Models older than 6 months are COMPLETELY REJECTED
     let freshnessMultiplier: number;
     if (scores.freshness === 0) {
-      freshnessMultiplier = 0; // Completely unusable if older than 6 months
-    } else if (scores.freshness < 3) {
-      freshnessMultiplier = 0.1; // 10% quality for very old models (4-6 months)
-    } else if (scores.freshness < 5) {
-      freshnessMultiplier = 0.3; // 30% quality for old models (3-4 months)  
-    } else if (scores.freshness < 7) {
-      freshnessMultiplier = 0.6; // 60% quality for borderline models (2-3 months)
+      freshnessMultiplier = 0; // REJECTED - older than 6 months
+      model.reasoning.push('🚫 MODEL REJECTED: Older than 6 months cutoff');
+    } else if (scores.freshness === 1) {
+      freshnessMultiplier = 0.05; // 5% quality for 6-month-old models
+    } else if (scores.freshness <= 3) {
+      freshnessMultiplier = 0.2; // 20% quality for 5-month-old models
+    } else if (scores.freshness <= 5) {
+      freshnessMultiplier = 0.4; // 40% quality for 4-month-old models  
+    } else if (scores.freshness <= 8) {
+      freshnessMultiplier = 0.8; // 80% quality for 3-month-old models
     } else {
-      freshnessMultiplier = 1.0; // Full quality only for models <2 months old
+      freshnessMultiplier = 1.0; // Full quality only for models <3 months old
     }
     const effectiveQuality = scores.quality * freshnessMultiplier;
     
@@ -514,6 +520,13 @@ export const DYNAMIC_ROLE_WEIGHTS = {
     cost: 0.20,         // Some cost sensitivity for high volume
     freshness: 0.15,    // Keep freshness consistent
     contextWindow: 0.00
+  },
+  'text-parser': {
+    quality: 0.20,      // LOW - Just pattern extraction from text
+    speed: 0.50,        // CRITICAL - Must be fast to avoid timeouts
+    cost: 0.20,         // Moderate - want cheap but reliable
+    freshness: 0.05,    // Very low - model version doesn't matter
+    contextWindow: 0.05 // Small - parsing text responses not code
   },
   researcher: {
     quality: 0.55,      // HIGH - Needs to find accurate information

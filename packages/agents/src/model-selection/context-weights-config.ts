@@ -60,6 +60,7 @@ export const MODEL_ROLES = [
   'deepwiki',        // Requires language & size
   'comparator',      // Requires language & size
   'location_finder', // Requires language & size
+  'text-parser',     // No language/size params - fast text extraction
   'orchestrator',    // No language/size params
   'researcher',      // No language/size params
   'educator',        // No language/size params
@@ -129,6 +130,17 @@ function getRoleBaseWeights(role: string): ContextWeights {
         cost: 0.20,
         freshness: 0.15,
         contextWindow: 0.05
+      };
+    
+    case 'text-parser':
+      // Fast text extraction from analysis outputs
+      // Prioritize speed over quality since it's just pattern matching
+      return {
+        quality: 0.20,  // Low - just pattern extraction
+        speed: 0.50,    // High - avoid timeouts
+        cost: 0.20,     // Moderate - want cheap but reliable
+        freshness: 0.05, // Low - model version doesn't matter much
+        contextWindow: 0.05 // Low - parsing text not code
       };
       
     default:

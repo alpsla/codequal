@@ -86,20 +86,21 @@ export class UnifiedAIParser {
     }
 
     try {
-      // Select model based on repository context using dynamic selection
+      // Select model optimized for text parsing, not code analysis
+      // Parser needs speed over deep understanding since it's just extracting patterns
       const requirements: RoleRequirements = {
-        role: 'deepwiki-parser',
-        description: 'Parse and extract structured data from DeepWiki analysis responses',
-        languages: [config.language],
-        repositorySize: config.repositorySize,
+        role: 'text-parser',
+        description: 'Fast extraction of JSON and patterns from analysis text output',
+        languages: [], // Not analyzing code, just parsing text
+        repositorySize: 'small', // Always treat as small since we're parsing text not code
         weights: {
-          quality: 0.8,  // High quality for accurate parsing
-          speed: 0.15,   // Moderate speed
-          cost: 0.05     // Low priority on cost for parsing
+          quality: 0.35,  // Moderate quality - just needs pattern matching
+          speed: 0.55,    // High priority on speed to avoid timeouts
+          cost: 0.10      // Low priority on cost
         },
-        minContextWindow: 32000,  // Need large context for full DeepWiki responses
-        requiresReasoning: true,
-        requiresCodeAnalysis: true
+        minContextWindow: 8000,  // Small context sufficient for response text
+        requiresReasoning: false,  // Just pattern extraction
+        requiresCodeAnalysis: false  // Not analyzing code, just parsing text
       };
 
       // Use existing model selection infrastructure
@@ -107,9 +108,10 @@ export class UnifiedAIParser {
       this.selectedModel = modelSelection.primary;
       this.fallbackModel = modelSelection.fallback;
       
-      this.log('info', `Selected model for parsing: ${this.selectedModel.model} (${this.selectedModel.provider})`);
+      this.log('info', `[Parser] Selected fast model: ${this.selectedModel.model} (${this.selectedModel.provider})`);
+      this.log('info', `[Parser] Model scores - Quality: ${modelSelection.primary.qualityScore?.toFixed(2)}, Speed: ${modelSelection.primary.speedScore?.toFixed(2)}`);
       if (this.fallbackModel) {
-        this.log('info', `Fallback model: ${this.fallbackModel.model} (${this.fallbackModel.provider})`);
+        this.log('info', `[Parser] Fallback: ${this.fallbackModel.model} (${this.fallbackModel.provider})`);
       }
     } catch (error) {
       this.log('warn', 'Model selection failed, using fallback flow', error);
@@ -708,10 +710,18 @@ Extract recommendations:
           this.log('warn', 'Failed to parse AI response as JSON', { parseError });
           // Clean markdown code blocks
           let cleanedContent = response.content;
+          
+          // Extract JSON from markdown code blocks if present
           if (cleanedContent.includes('```json')) {
-            cleanedContent = cleanedContent.replace(/```json\s*/g, '').replace(/```\s*/g, '');
+            const jsonBlockMatch = cleanedContent.match(/```json\s*([\s\S]*?)```/);
+            if (jsonBlockMatch && jsonBlockMatch[1]) {
+              cleanedContent = jsonBlockMatch[1];
+            }
           } else if (cleanedContent.includes('```')) {
-            cleanedContent = cleanedContent.replace(/```\s*/g, '');
+            const codeBlockMatch = cleanedContent.match(/```\s*([\s\S]*?)```/);
+            if (codeBlockMatch && codeBlockMatch[1]) {
+              cleanedContent = codeBlockMatch[1];
+            }
           }
           
           // Try to parse the cleaned content
@@ -721,10 +731,14 @@ Extract recommendations:
             // If still fails, try to extract JSON object
             const jsonMatch = cleanedContent.match(/\{[\s\S]*\}/);
             if (jsonMatch) {
-              return JSON.parse(jsonMatch[0]);
+              try {
+                return JSON.parse(jsonMatch[0]);
+              } catch {}
             }
+            // As last resort, try to extract issues from text
+            this.log('warn', 'Primary model returned unparseable content, attempting text extraction');
+            return this.extractIssuesFromText(response.content);
           }
-          return {};
         }
       } catch (primaryError: any) {
         lastError = primaryError;
@@ -764,10 +778,18 @@ Extract recommendations:
               
               // Strategy 1: Clean markdown code blocks
               let cleanedContent = response.content;
+              
+              // Extract JSON from markdown code blocks if present
               if (cleanedContent.includes('```json')) {
-                cleanedContent = cleanedContent.replace(/```json\s*/g, '').replace(/```\s*/g, '');
+                const jsonBlockMatch = cleanedContent.match(/```json\s*([\s\S]*?)```/);
+                if (jsonBlockMatch && jsonBlockMatch[1]) {
+                  cleanedContent = jsonBlockMatch[1];
+                }
               } else if (cleanedContent.includes('```')) {
-                cleanedContent = cleanedContent.replace(/```\s*/g, '');
+                const codeBlockMatch = cleanedContent.match(/```\s*([\s\S]*?)```/);
+                if (codeBlockMatch && codeBlockMatch[1]) {
+                  cleanedContent = codeBlockMatch[1];
+                }
               }
               
               // Strategy 2: Try to parse cleaned content
@@ -817,38 +839,87 @@ Extract recommendations:
       maintainability: { issues: [] }
     };
     
-    // Pattern to match numbered issues like "1. **Title**: Description"
-    const issuePattern = /(\d+)\.\s+\*\*([^*]+)\*\*:?\s*([^\n]+)(?:\n\s+(?:File|Location):\s*([^,\n]+)(?:,\s*Line:\s*(\d+))?)?/gi;
-    let match;
+    // Improved patterns to match various issue formats from DeepWiki
+    // Format 1: "1. **Title**\n   File: path/to/file.ts, Line: 123"
+    // Format 2: "1. **Title**: Description\n   File: path/to/file.ts, Line: 123"
+    // Format 3: "1. **Title**\n   File: path/to/file.ts, Line: 123\n   Description..."
+    const patterns = [
+      // Pattern for issues with file and line on next line
+      /(\d+)\.\s+\*\*([^*]+)\*\*(?::?\s*([^\n]*))?\n\s+File:\s*([^,\n]+)(?:,\s*Line:\s*(\d+))?/gi,
+      // Pattern for issues with inline description
+      /(\d+)\.\s+\*\*([^*]+)\*\*:?\s*([^\n]+)/gi,
+      // Pattern for simpler format without markdown
+      /(\d+)\.\s+([^:\n]+):\s*([^\n]+)/gi
+    ];
     
-    while ((match = issuePattern.exec(text)) !== null) {
-      const issue = {
-        type: match[2].trim(),
-        description: match[3].trim(),
-        file: match[4] ? match[4].trim() : 'unknown',
-        line: match[5] ? parseInt(match[5]) : undefined,
-        severity: this.extractSeverity(text, match.index)
-      };
+    const foundIssues = new Set(); // To avoid duplicates
+    
+    for (const pattern of patterns) {
+      let match;
+      pattern.lastIndex = 0; // Reset regex state
       
-      // Categorize based on keywords
-      if (issue.type.toLowerCase().includes('security') || 
-          issue.type.toLowerCase().includes('injection') ||
-          issue.type.toLowerCase().includes('authentication')) {
-        result.vulnerabilities.push({
-          ...issue,
-          cwe: '',
-          impact: issue.description,
-          remediation: 'Review and fix the security issue'
-        });
-      } else if (issue.type.toLowerCase().includes('performance') ||
-                 issue.type.toLowerCase().includes('slow') ||
-                 issue.type.toLowerCase().includes('n+1')) {
-        result.issues.push({
-          ...issue,
-          location: { file: issue.file, line: issue.line }
-        });
-      } else {
-        result.maintainability.issues.push(issue);
+      while ((match = pattern.exec(text)) !== null) {
+        // Extract file and line from the match or look ahead in text
+        let file = match[4] || 'unknown';
+        let line = match[5] ? parseInt(match[5]) : undefined;
+        const description = match[3] || '';
+        
+        // If file not found in match, look for it in the next few lines
+        if (file === 'unknown' && match.index < text.length - 200) {
+          const lookAhead = text.substring(match.index, match.index + 200);
+          const fileMatch = lookAhead.match(/File:\s*([^,\n]+)(?:,\s*Line:\s*(\d+))?/i);
+          if (fileMatch) {
+            file = fileMatch[1].trim();
+            line = fileMatch[2] ? parseInt(fileMatch[2]) : undefined;
+          }
+        }
+        
+        // Extract additional context like code snippets
+        let codeSnippet = '';
+        const codeMatch = text.substring(match.index, Math.min(match.index + 500, text.length))
+          .match(/Code Snippet:?\s*```[\w]*\n([\s\S]*?)```/i);
+        if (codeMatch) {
+          codeSnippet = codeMatch[1].trim();
+        }
+        
+        const issueKey = `${match[2].trim()}-${file}-${line}`;
+        if (foundIssues.has(issueKey)) continue;
+        foundIssues.add(issueKey);
+        
+        const issue = {
+          type: match[2].trim(),
+          description: description.trim() || match[2].trim(),
+          file: file,
+          line: line,
+          severity: this.extractSeverity(text, match.index),
+          codeSnippet: codeSnippet
+        };
+        
+        // Categorize based on keywords
+        const typeAndDesc = `${issue.type} ${issue.description}`.toLowerCase();
+        
+        if (typeAndDesc.includes('security') || 
+            typeAndDesc.includes('injection') ||
+            typeAndDesc.includes('authentication') ||
+            typeAndDesc.includes('vulnerability')) {
+          result.vulnerabilities.push({
+            ...issue,
+            cwe: '',
+            impact: issue.description,
+            remediation: this.extractRecommendation(text, match.index)
+          });
+        } else if (typeAndDesc.includes('performance') ||
+                   typeAndDesc.includes('slow') ||
+                   typeAndDesc.includes('n+1') ||
+                   typeAndDesc.includes('optimization')) {
+          result.issues.push({
+            ...issue,
+            location: { file: issue.file, line: issue.line }
+          });
+        } else {
+          // Everything else goes to maintainability
+          result.maintainability.issues.push(issue);
+        }
       }
     }
     
@@ -871,6 +942,20 @@ Extract recommendations:
     if (context.includes('performance')) return 'medium';
     
     return 'medium'; // default
+  }
+
+  private extractRecommendation(text: string, position: number): string {
+    // Look for recommendation near the issue
+    const contextStart = Math.max(0, position);
+    const contextEnd = Math.min(text.length, position + 500);
+    const context = text.substring(contextStart, contextEnd);
+    
+    const recMatch = context.match(/Recommendation:?\s*([^\n]+)/i);
+    if (recMatch) {
+      return recMatch[1].trim();
+    }
+    
+    return 'Review and fix the identified issue';
   }
 
   /**
