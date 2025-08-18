@@ -1,13 +1,26 @@
 
 Error analyzing PR: https://github.com/sindresorhus/ky/pull/500
-Timestamp: 2025-08-17T21:48:32.386Z
+Timestamp: 2025-08-18T03:18:47.395Z
 
 Error Details:
-Error: DeepWiki analysis failed: All models failed to analyze repository. Please check DeepWiki service status and configuration.
-    at DeepWikiApiManager.analyzeRepository (/Users/alpinro/Code Prjects/codequal/apps/api/dist/services/deepwiki-api-manager.js:272:19)
+Error: DeepWiki API not registered. Please ensure the DeepWiki service is properly initialized.
+    at DeepWikiApiWrapper.analyzeRepository (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/deepwiki-api-wrapper.ts:100:13)
+    at Object.<anonymous> (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/real-pr-validation.test.ts:231:51)
+    at Promise.then.completed (/Users/alpinro/Code Prjects/codequal/node_modules/jest-circus/build/utils.js:298:28)
+    at new Promise (<anonymous>)
+    at callAsyncCircusFn (/Users/alpinro/Code Prjects/codequal/node_modules/jest-circus/build/utils.js:231:10)
+    at _callCircusTest (/Users/alpinro/Code Prjects/codequal/node_modules/jest-circus/build/run.js:316:40)
     at processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at Object.analyzeRepository (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/setup-deepwiki.ts:30:24)
-    at Object.<anonymous> (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/real-pr-validation.test.ts:231:30)
+    at _runTest (/Users/alpinro/Code Prjects/codequal/node_modules/jest-circus/build/run.js:252:3)
+    at _runTestsForDescribeBlock (/Users/alpinro/Code Prjects/codequal/node_modules/jest-circus/build/run.js:126:9)
+    at _runTestsForDescribeBlock (/Users/alpinro/Code Prjects/codequal/node_modules/jest-circus/build/run.js:121:9)
+    at _runTestsForDescribeBlock (/Users/alpinro/Code Prjects/codequal/node_modules/jest-circus/build/run.js:121:9)
+    at run (/Users/alpinro/Code Prjects/codequal/node_modules/jest-circus/build/run.js:71:3)
+    at runAndTransformResultsToJestFormat (/Users/alpinro/Code Prjects/codequal/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
+    at jestAdapter (/Users/alpinro/Code Prjects/codequal/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
+    at runTestInternal (/Users/alpinro/Code Prjects/codequal/node_modules/jest-runner/build/runTest.js:367:16)
+    at runTest (/Users/alpinro/Code Prjects/codequal/node_modules/jest-runner/build/runTest.js:444:34)
+    at Object.worker (/Users/alpinro/Code Prjects/codequal/node_modules/jest-runner/build/testWorker.js:106:12)
 
 Configuration:
 {

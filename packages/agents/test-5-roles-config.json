@@ -1,0 +1,127 @@
+[
+  {
+    "role": "ai-parser",
+    "context": {
+      "language": "typescript",
+      "size": "large"
+    },
+    "primary": {
+      "model": "google/gemini-2.5-flash-lite",
+      "provider": "google",
+      "reasoning": [
+        "SPEED is top priority - must respond in <5 seconds",
+        "Fast model selected (flash/turbo/haiku)",
+        "NO slow models like Claude Opus",
+        "Optimized for high-volume parsing"
+      ]
+    },
+    "fallback": {
+      "model": "google/gemini-2.5-flash-lite-preview-06-17",
+      "provider": "google",
+      "reasoning": [
+        "Reliable fallback",
+        "Good alternative performance"
+      ]
+    }
+  },
+  {
+    "role": "deepwiki",
+    "context": {
+      "language": "typescript",
+      "size": "large"
+    },
+    "primary": {
+      "model": "anthropic/claude-3.5-sonnet-20240620",
+      "provider": "anthropic",
+      "reasoning": [
+        "Quality and deep understanding prioritized",
+        "Latest powerful model selected",
+        "Speed less critical (background process)",
+        "Maximum capability for complex analysis"
+      ]
+    },
+    "fallback": {
+      "model": "openai/gpt-4-turbo-preview",
+      "provider": "openai",
+      "reasoning": [
+        "Reliable fallback",
+        "Good alternative performance"
+      ]
+    }
+  },
+  {
+    "role": "comparison",
+    "context": {
+      "language": "python",
+      "size": "medium"
+    },
+    "primary": {
+      "model": "openai/gpt-4-turbo-preview",
+      "provider": "openai",
+      "reasoning": [
+        "Balanced speed and quality",
+        "Good reasoning capabilities",
+        "Cost-effective for comparison tasks",
+        "Reliable performance"
+      ]
+    },
+    "fallback": {
+      "model": "anthropic/claude-3.5-sonnet-20240620",
+      "provider": "anthropic",
+      "reasoning": [
+        "Reliable fallback",
+        "Good alternative performance"
+      ]
+    }
+  },
+  {
+    "role": "researcher",
+    "context": {
+      "language": "javascript",
+      "size": "small"
+    },
+    "primary": {
+      "model": "anthropic/claude-3.5-haiku",
+      "provider": "anthropic",
+      "reasoning": [
+        "Cost-optimized for 3000+ queries/day",
+        "Fast and economical model",
+        "Good enough quality for research",
+        "Low per-token cost"
+      ]
+    },
+    "fallback": {
+      "model": "anthropic/claude-3.5-haiku-20241022",
+      "provider": "anthropic",
+      "reasoning": [
+        "Reliable fallback",
+        "Good alternative performance"
+      ]
+    }
+  },
+  {
+    "role": "educator",
+    "context": {
+      "language": "go",
+      "size": "large"
+    },
+    "primary": {
+      "model": "anthropic/claude-3.5-sonnet-20240620",
+      "provider": "anthropic",
+      "reasoning": [
+        "Clear explanations prioritized",
+        "Good educational capabilities",
+        "Patient and thorough responses",
+        "Strong language understanding"
+      ]
+    },
+    "fallback": {
+      "model": "openai/gpt-4-turbo-preview",
+      "provider": "openai",
+      "reasoning": [
+        "Reliable fallback",
+        "Good alternative performance"
+      ]
+    }
+  }
+]

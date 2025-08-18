@@ -335,29 +335,21 @@ const SYSTEM_STATE: SystemState = {
       discovered: '2025-08-17',
       component: 'report-generator-v7'
     },
-    {
-      id: 'BUG-034',
-      severity: 'HIGH',
-      description: 'Primary model google/gemini-2.5-pro-exp-03-25 not available on OpenRouter - Dynamic model selector chooses models without verifying availability, causing 404 API errors and forcing fallback to secondary models with delays',
-      discovered: '2025-08-17',
-      component: 'dynamic-model-selector'
-    },
-    {
-      id: 'BUG-035',
-      severity: 'MEDIUM',
-      description: 'Web search not implemented in researcher for latest models - only using OpenRouter catalog. searchWebForLatestModels() returns empty array, system misses models released in last 3-6 months. Well documented with implementation TODO.',
-      discovered: '2025-08-18',
-      component: 'web-search-researcher'
-    }
+    // BUG-034 RESOLVED (2025-08-18): Model availability validation implemented in UnifiedModelSelector
+    // Resolution: Implemented ModelAvailabilityValidator class that pre-filters known unavailable models
+    // (like google/gemini-2.5-pro-exp-03-25), filters experimental models with date codes, and can optionally
+    // perform deep API validation. This prevents 404 errors and "No endpoints found" issues when selecting models.
+    // BUG-035 RESOLVED (2025-08-18): Web search functionality implemented in ProductionResearcherService
+    // Resolution: Added WebSearch tool integration for model discovery, enabling system to find latest AI models 
+    // like Claude Opus 4.1, GPT-5, Gemini 2.0, and other models released in the last 3-6 months instead of 
+    // relying only on OpenRouter catalog. searchWebForLatestModels() now returns discovered models from web search.
   ],
 
   nextTasks: [
     'IMMEDIATE - Validate permanent environment loading fix across multiple sessions - test npm run session workflow',
-    'MEDIUM - FIX BUG-035: Implement web search functionality in WebSearchResearcher - integrate WebSearch tool to discover latest models released in 3-6 months instead of relying only on OpenRouter catalog',
     'CRITICAL - COMPLETE BUG-032: Fix orchestrator/comparison agent to preserve parsed issues in final reports - parser extracts 5 issues correctly but reports show 0',
     'CRITICAL - DEBUG orchestrator pipeline: trace issue flow from parser → orchestrator → final report to identify where issues are lost',
     'CRITICAL - FIX BUG-033: V7 Template section generation incomplete - ensure all 16 sections generate properly with PR/Repository separation, educational insights, business impact analysis, complete skills tracking, and team performance metrics',
-    'URGENT - FIX BUG-034: Implement model availability validation for OpenRouter - prevent selection of unavailable models like google/gemini-2.5-pro-exp-03-25 that return 404 errors',
     'HIGH - DeepWiki Analysis Performance Optimization - Rule-based parser working well, now optimize for speed and accuracy',
     'URGENT - FIX BUG-030: Implement model health check system to handle broken/unavailable models gracefully - prevent AI parser failures from models returning "No endpoints found"',
     'PERFORMANCE - Implement caching and batching for AI model calls to optimize performance',

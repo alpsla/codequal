@@ -24,6 +24,7 @@ import {
   ModelSelectionContext,
   ModelEvaluation
 } from '../researcher/enhanced-model-selection-rules';
+import { ModelAvailabilityValidator } from './model-availability-validator';
 
 const logger = createLogger('UnifiedModelSelector');
 
@@ -38,6 +39,19 @@ export const ROLE_SCORING_PROFILES = {
     cost: 0.30,     // Manage high-volume costs
     speed: 0.20,    // Background process
     description: 'Optimized for deep repository analysis'
+  },
+  
+  // AI Parser - SPEED IS CRITICAL
+  'ai-parser': {
+    quality: 0.30,  // Good enough parsing
+    cost: 0.20,     // Secondary consideration
+    speed: 0.50,    // PRIORITY - Fast response crucial for parsing
+    description: 'Speed-optimized for rapid parsing tasks',
+    metadata: {
+      preferredProviders: ['google', 'openai'],  // Known for fast models
+      maxResponseTime: 5000,  // 5 seconds max
+      requiresFastModel: true
+    }
   },
   
   // From ResearcherModelSelector
@@ -187,12 +201,14 @@ export class UnifiedModelSelector {
   private selectionEngine: ModelSelectionEngine;
   private modelCache = new Map<string, ModelVersionInfo[]>();
   private providedModels?: ModelVersionInfo[];
+  private availabilityValidator: ModelAvailabilityValidator;
   
   constructor(
     private modelVersionSync: ModelVersionSync,
     private vectorStorage?: VectorStorageService
   ) {
     this.selectionEngine = new ModelSelectionEngine();
+    this.availabilityValidator = new ModelAvailabilityValidator();
   }
   
   /**
@@ -313,7 +329,18 @@ export class UnifiedModelSelector {
   private async getAvailableModels(): Promise<ModelVersionInfo[]> {
     // Use provided models if available (for production researcher)
     if (this.providedModels && this.providedModels.length > 0) {
-      return this.providedModels;
+      // BUG-034 FIX: Validate provided models are actually available
+      const preFiltered = this.availabilityValidator.preFilterModels(this.providedModels);
+      logger.info(`Pre-filtered ${this.providedModels.length} models to ${preFiltered.length} (removed known unavailable)`);
+      
+      // For performance, only deep validate if enabled
+      if (process.env.ENABLE_MODEL_AVAILABILITY_CHECK === 'true') {
+        const validated = await this.availabilityValidator.filterAvailableModels(preFiltered);
+        logger.info(`Validated ${preFiltered.length} models to ${validated.length} available`);
+        return validated;
+      }
+      
+      return preFiltered;
     }
     
     // Check cache first
@@ -334,10 +361,21 @@ export class UnifiedModelSelector {
       models.push(...providerModels);
     }
     
-    // Cache for 5 minutes
-    this.modelCache.set(cacheKey, models);
+    // BUG-034 FIX: Pre-filter and validate models
+    const preFiltered = this.availabilityValidator.preFilterModels(models);
+    logger.info(`Pre-filtered ${models.length} models to ${preFiltered.length} (removed known unavailable)`);
     
-    return models;
+    // For performance, only deep validate if enabled
+    let validatedModels = preFiltered;
+    if (process.env.ENABLE_MODEL_AVAILABILITY_CHECK === 'true') {
+      validatedModels = await this.availabilityValidator.filterAvailableModels(preFiltered);
+      logger.info(`Validated ${preFiltered.length} models to ${validatedModels.length} available`);
+    }
+    
+    // Cache for 5 minutes
+    this.modelCache.set(cacheKey, validatedModels);
+    
+    return validatedModels;
   }
 
   /**
