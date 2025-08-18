@@ -58,11 +58,13 @@ Additional Context for Location Finder Role:
 - Cost-effective for high-volume processing
 - Context window should handle files up to 10,000 lines
 
-Focus on finding:
-- Latest Claude models (Claude 4, Claude 4.5, etc.)
-- Latest Gemini models (Gemini 2.5, Gemini 2.0, etc.)
-- Latest GPT models (GPT-4.5, GPT-4o, etc.)
-- Any new specialized code analysis models
+🚨 CRITICAL: ONLY search for models released in the LAST 3-6 MONTHS 🚨
+Focus on finding ANY models that:
+- Were released within the last 3-6 months from today
+- Have good text understanding and pattern matching capabilities
+- Can process text quickly and accurately
+- DO NOT assume specific model names or versions
+- DO NOT include ANY models older than 6 months, regardless of quality
 `;
 
   const fullPrompt = searchPrompt + '\n\n' + locationFinderContext;

@@ -335,11 +335,19 @@ const SYSTEM_STATE: SystemState = {
       description: 'Primary model google/gemini-2.5-pro-exp-03-25 not available on OpenRouter - Dynamic model selector chooses models without verifying availability, causing 404 API errors and forcing fallback to secondary models with delays',
       discovered: '2025-08-17',
       component: 'dynamic-model-selector'
+    },
+    {
+      id: 'BUG-035',
+      severity: 'HIGH',
+      description: 'Researcher not implementing web search for latest models - only using OpenRouter catalog. searchWebForLatestModels() returns empty array, system misses models released in last 3-6 months',
+      discovered: '2025-08-18',
+      component: 'production-researcher-service'
     }
   ],
 
   nextTasks: [
     'IMMEDIATE - Validate permanent environment loading fix across multiple sessions - test npm run session workflow',
+    'HIGH - FIX BUG-035: Implement web search functionality in ProductionResearcherService - integrate WebSearch tool to discover latest models released in 3-6 months instead of relying only on OpenRouter catalog',
     'CRITICAL - COMPLETE BUG-032: Fix orchestrator/comparison agent to preserve parsed issues in final reports - parser extracts 5 issues correctly but reports show 0',
     'CRITICAL - DEBUG orchestrator pipeline: trace issue flow from parser → orchestrator → final report to identify where issues are lost',
     'CRITICAL - FIX BUG-033: V7 Template section generation incomplete - ensure all 16 sections generate properly with PR/Repository separation, educational insights, business impact analysis, complete skills tracking, and team performance metrics',
