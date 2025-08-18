@@ -13,14 +13,21 @@ const RESEARCH_PROMPTS = {
   AGENT_REQUIREMENT_RESEARCH: `
 You are tasked with finding the SINGLE BEST AI model across ALL providers for a specific agent role requirement. 
 
+**🚨 CRITICAL TIME REQUIREMENT 🚨**
+STRICTLY search for and consider ONLY models released within the LAST 3-6 MONTHS.
+- Models older than 6 months: DO NOT INCLUDE - COMPLETELY IGNORE
+- Models 3-6 months old: ACCEPTABLE for consideration
+- Models within last 3 months: PRIORITIZE THESE
+- This is a HARD requirement - no exceptions for "good but old" models
+
 **OBJECTIVE:** Find the optimal model (not per provider, but across the entire market) for:
 {AGENT_ROLE}: {ROLE_DESCRIPTION}
 {REPOSITORY_CONTEXT}: {CONTEXT_DETAILS}
 
 **RESEARCH APPROACH:**
-1. **Cross-Market Analysis**: Compare ALL available models from ALL providers
+1. **Cross-Market Analysis**: Compare models from ALL providers released in last 3-6 months ONLY
 2. **Specific Requirements**: Focus on capabilities needed for this exact role
-3. **Primary + Fallback**: Identify best model AND a reliable fallback option
+3. **Primary + Fallback**: Identify best model AND a reliable fallback option (both from last 3-6 months)
 4. **Cost-Effectiveness**: Balance quality with pricing for this specific use case
 
 **EVALUATION CRITERIA FOR {AGENT_ROLE}:**
@@ -29,23 +36,24 @@ You are tasked with finding the SINGLE BEST AI model across ALL providers for a 
 - **Cost Efficiency** (15% weight): Value for this specific use case
 - **Reliability & Speed** (10% weight): Consistent performance
 
-**MARKET RESEARCH:**
-Search across ALL providers for their LATEST available models:
-- OpenAI: Discover ALL currently available models (don't assume names)
-- Anthropic: Discover ALL currently available models (don't assume names) 
-- Google: Discover ALL currently available models (don't assume names)
-- DeepSeek: Discover ALL currently available models (don't assume names)
-- Meta: Discover ALL currently available models (don't assume names)
-- Mistral: Discover ALL currently available models (don't assume names)
-- Cohere: Discover ALL currently available models (don't assume names)
-- Others: Research ANY new providers that have emerged
-- Emerging: Search for completely new providers and model families
+**MARKET RESEARCH - LAST 3-6 MONTHS ONLY:**
+Search across ALL providers for models released in the LAST 3-6 MONTHS:
+- OpenAI: Whatever their latest models are from last 3-6 months
+- Anthropic: Whatever their latest models are from last 3-6 months
+- Google: Whatever their latest models are from last 3-6 months
+- DeepSeek: Whatever their latest models are from last 3-6 months
+- Meta: Whatever their latest models are from last 3-6 months
+- Mistral: Whatever their latest models are from last 3-6 months
+- Cohere: Whatever their latest models are from last 3-6 months
+- Others: Any new providers with models from last 3-6 months
+- Emerging: New providers and models from last 3-6 months ONLY
+- DO NOT assume any specific model names or versions
 
-**DISCOVERY METHOD:**
-- Query each provider's current API documentation
-- Search for recent model announcements and releases  
-- Look for models released in the last 6 months (adjust timeframe based on current year)
-- Don't limit to known model names - discover what's actually available NOW
+**STRICT DISCOVERY METHOD:**
+- Query for models released in "last 3 months", "last 6 months" specifically
+- Search for "AI models released {CURRENT_MONTH-3} to {CURRENT_MONTH} {CURRENT_YEAR}"
+- Look ONLY for models with release dates within the 3-6 month window
+- REJECT any model suggestions older than 6 months, regardless of quality
 
 **OUTPUT FORMAT:**
 {
@@ -246,6 +254,48 @@ Search for the newest models from ALL providers released in ${currentYear}:
 Cross-market research to find the absolute best LATEST model for educational content generation available in ${currentMonth} ${currentYear}.`;
   })(),
 
+  TEXT_PARSER_AGENT_RESEARCH: `
+Find the SINGLE BEST AI model across ALL providers for TEXT PARSING and JSON extraction tasks.
+
+**🚨 CRITICAL TIME REQUIREMENT 🚨**
+STRICTLY search for ONLY models released within the LAST 3-6 MONTHS from today.
+- Models older than 6 months: COMPLETELY REJECT
+- Models within last 3-6 months: ACCEPTABLE
+- Models within last 3 months: PREFERRED
+- NO EXCEPTIONS for "good but old" models
+
+**TEXT PARSER AGENT REQUIREMENTS:**
+- Extract structured data from unstructured text responses
+- Convert text patterns into valid JSON format
+- Handle various text formats (markdown, plain text, mixed)
+- Parse quickly to avoid timeouts (speed is critical)
+- Cost-effective for high-volume text processing
+- NOT language-specific - works with any text format
+- NOT for code analysis - just text parsing and pattern extraction
+
+**ROLE-SPECIFIC EVALUATION:**
+- **Speed** (50%): CRITICAL - Must be very fast to avoid timeouts
+- **Pattern Recognition** (20%): Basic pattern matching in text
+- **Cost Efficiency** (20%): Cheap but reliable for high volume
+- **JSON Conversion** (5%): Ability to structure data as JSON
+- **Quality** (5%): Basic accuracy is sufficient
+
+**TEXT PARSING SPECIALIZATIONS:**
+- Extracting JSON from markdown code blocks
+- Finding patterns in unstructured text
+- Converting lists and items to arrays
+- Parsing key-value pairs from text
+- Handling mixed format responses
+- Quick text-to-JSON transformation
+
+**IMPORTANT NOTES:**
+- This is NOT for code analysis or programming languages
+- This is for parsing text responses and converting to JSON
+- Speed is more important than deep understanding
+- Should work with ANY text format, not language-specific
+
+Search for the absolute best model for fast text parsing available in the last 3-6 months.`,
+
   REPORTING_AGENT_RESEARCH: (() => {
     const currentDate = new Date();
     const currentYear = currentDate.getFullYear();
@@ -304,26 +354,34 @@ Cross-market analysis to find the absolute best LATEST model for comprehensive r
   DYNAMIC_MODEL_DISCOVERY: `
 You are a cutting-edge AI model researcher. Your task is to discover and research the NEWEST AI models available RIGHT NOW, without being limited to any predefined list.
 
+**🚨 CRITICAL REQUIREMENT - STRICT TIME WINDOW 🚨**
+YOU MUST ONLY search for and consider models released within the LAST 3-6 MONTHS from today's date.
+- Models older than 6 months: COMPLETELY IGNORE - DO NOT INCLUDE
+- Models older than 3 months: ACCEPTABLE but not preferred
+- Models within last 3 months: PREFERRED - PRIORITIZE THESE
+- DO NOT include ANY models from before the 6-month cutoff, regardless of how good they were
+
 **DISCOVERY MISSION:**
 Find the most recent and capable AI models from ANY provider, including:
 - Major providers (OpenAI, Anthropic, Google, Meta, etc.)
 - Emerging providers and startups
 - Open-source model releases
 - Specialized coding/development models
-- Models released in the last 6 months
+- ONLY models released in the last 3-6 months MAX
 
 **RESEARCH METHODOLOGY:**
-1. **Web Search**: Search for "latest AI models {CURRENT_YEAR}", "newest LLM releases {CURRENT_YEAR}", "AI model announcements"
-2. **Provider APIs**: Check official documentation for current model listings
-3. **Tech News**: Look for recent AI model launches and updates  
-4. **GitHub**: Search for new open-source model releases
-5. **Research Papers**: Find cutting-edge models from academic institutions
+1. **Web Search**: Search for "AI models released {LAST_3_MONTHS}", "newest LLM {CURRENT_MONTH} {CURRENT_YEAR}", "latest AI model releases last 3 months"
+2. **Provider APIs**: Check official documentation for models released in the last 3-6 months ONLY
+3. **Tech News**: Look for AI model launches from the last 3-6 months ONLY  
+4. **GitHub**: Search for model releases with dates within last 3-6 months
+5. **Research Papers**: Find models published in the last 3-6 months ONLY
 
-**DISCOVERY CRITERIA:**
-- Models released in the last 3-6 months (adjust based on current date)
-- Models with demonstrated coding/analysis capabilities
-- Models with competitive performance benchmarks
-- Models with available API access or deployment options
+**STRICT DISCOVERY CRITERIA:**
+- ✅ MANDATORY: Models released within the last 3-6 months from today
+- ❌ REJECTED: Any model older than 6 months, no exceptions
+- ✅ Models with good text parsing and JSON conversion capabilities
+- ✅ Models with competitive performance benchmarks
+- ✅ Models with available API access or deployment options
 
 **FOR EACH DISCOVERED MODEL:**
 - Provider and exact model name
@@ -477,6 +535,7 @@ export const RESEARCH_CONFIGS = {
 // Export individual prompts for easier importing
 export const EDUCATIONAL_AGENT_RESEARCH = RESEARCH_PROMPTS.EDUCATIONAL_AGENT_RESEARCH;
 export const REPORTING_AGENT_RESEARCH = RESEARCH_PROMPTS.REPORTING_AGENT_RESEARCH;
+export const TEXT_PARSER_AGENT_RESEARCH = RESEARCH_PROMPTS.TEXT_PARSER_AGENT_RESEARCH;
 
 export { RESEARCH_PROMPTS };
 export default RESEARCH_PROMPTS;
