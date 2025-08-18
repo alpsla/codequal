@@ -1,0 +1,81 @@
+1. **Unnecessary Complexity in Constructor**
+   File: source/core/Ky.ts, Line: 33
+   Code Snippet: ```
+   this._options = {
+   ...options,
+   headers: mergeHeaders((this._input as Request).headers, options.headers),
+   ```
+   Recommendation: Simplify the merging of headers by creating a dedicated function to handle default values and overrides. This will improve readability and maintainability.
+   Severity: medium
+
+2. **Potential for Retry Logic to Ignore AbortSignal**
+   File: source/core/Ky.ts, Line: 34
+   Code Snippet: ```
+   retry: normalizeRetryOptions(options.retry),
+   ```
+   Recommendation: Ensure that the `AbortSignal` from `options.signal` or a new `AbortController` is respected in the retry logic to prevent requests from continuing after a cancelation signal has been issued.
+   Severity: high
+
+3. **Implicit Any Type for Timeout**
+   File: source/utils/timeout.js, Line: 3
+   Code Snippet: ```
+   export default function timeout(request, abortController, options) {
+   ```
+   Recommendation: Specify explicit types for parameters to improve TypeScript's type safety and code maintainability.
+   Severity: medium
+
+4. **Lack of Input Validation**
+   File: source/index.ts, Line: 7
+   Code Snippet: ```
+   const ky: Partial<Mutable<KyInstance>> = (input: Input, options?: Options) => Ky.create(input, validateAndMerge(defaults, options));
+   ```
+   Recommendation: Add input validation for `input` and `options` to ensure they meet expected formats and types before proceeding with request creation. This helps catch errors early and improves security.
+   Severity: medium
+
+5. **Direct Object Mutation**
+   File: source/utils/merge.js, Line: 5
+   Code Snippet: ```
+   export function mergeHeaders(...sources) {
+   ```
+   Recommendation: Instead of mutating header objects directly, use a more functional approach that returns a new headers object. This prevents side effects and makes the function's behavior more predictable.
+   Severity: low
+
+6. **Using `any` Type in Utility Functions**
+   File: source/utils/normalize.js, Line: 4
+   Code Snippet: ```
+   export function normalizeRequestMethod(method) {
+   ```
+   Recommendation: Avoid using `any` type for function parameters. Instead, define a type or interface that accurately describes the expected input.
+   Severity: medium
+
+7. **Missing Error Handling in Async Operations**
+   File: source/core/Ky.ts, Line: 82
+   Code Snippet: ```
+   const modifiedResponse = await hook(
+   ```
+   Recommendation: Wrap async operations within `try-catch` blocks or ensure that promise rejections are handled appropriately to avoid unhandled promise rejections.
+   Severity: high
+
+8. **Inefficient Handling of Response Types**
+   File: source/core/Ky.ts, Line: 129
+   Code Snippet: ```
+   result[type] = async () => {
+   ```
+   Recommendation: Streamline the handling of different response types by using a mapping strategy or a switch statement to avoid repetitive code and improve performance.
+   Severity: low
+
+9. **Potential Memory Leak with Global Fetch Override**
+   File: test/fetch.ts, Line: 6
+   Code Snippet: ```
+   const customFetch: typeof fetch = async input => {
+   ```
+   Recommendation: Ensure that overrides to global functions like `fetch` are restored after tests to prevent side effects or memory leaks in other tests.
+   Severity: medium
+
+10. **Hardcoded Timeout Value**
+    File: source/core/Ky.ts, Line: 35
+    Code Snippet: ```
+    timeout: options.timeout ?? 10_000,
+    ```
+    Recommendation: Define timeout values as constants or configuration options to make them easily configurable and avoid magic numbers in the codebase.
+    Severity: low

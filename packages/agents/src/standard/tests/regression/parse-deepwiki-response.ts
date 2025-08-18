@@ -2,11 +2,45 @@
  * Parse DeepWiki text response into structured issues
  */
 export async function parseDeepWikiResponse(content: string) {
+  // Early validation for empty or invalid content
+  if (!content || content.trim().length === 0) {
+    console.warn('DeepWiki returned empty content');
+    return {
+      issues: [],
+      scores: {
+        overall: 100,
+        security: 100,
+        performance: 100,
+        maintainability: 100,
+        testing: 100
+      }
+    };
+  }
+  
+  // Check for error responses
+  if (content.includes('error') && content.length < 100) {
+    console.error('DeepWiki returned an error:', content);
+    return {
+      issues: [],
+      scores: {
+        overall: 0,
+        security: 0,
+        performance: 0,
+        maintainability: 0,
+        testing: 0
+      }
+    };
+  }
+  
   // Import the UnifiedAIParser from the deepwiki services
   const { UnifiedAIParser } = require('../../deepwiki/services/unified-ai-parser');
   
   // Check if we should use AI parser
-  const useAIParser = process.env.USE_AI_PARSER !== 'false';
+  // Disable AI parser if content is large (PR branches often have many issues)
+  const contentLength = content.length;
+  const useAIParser = process.env.USE_AI_PARSER !== 'false' && 
+                      process.env.FORCE_RULE_BASED !== 'true' &&
+                      contentLength < 10000; // Use rule-based for large responses to avoid timeout
   
   if (useAIParser) {
     try {

@@ -205,10 +205,15 @@ Find issues with code snippets and recommendations.`
             
             // Debug: Log the raw response
             console.log('\n🔍 DEBUG - Raw DeepWiki Response:');
+            console.log('Branch analyzed:', branch);
             console.log('Response type:', typeof response.data);
             console.log('Response length:', content.length);
             console.log('First 500 chars:', content.substring(0, 500));
             console.log('=' .repeat(80));
+            
+            // Save raw response for debugging
+            const debugFilename = branch.includes('pull') ? 'debug-pr-raw-response.txt' : 'debug-main-raw-response.txt';
+            fs.writeFileSync(debugFilename, content);
             
             // Parse the DeepWiki text response
             const parsedData = await parseDeepWikiResponse(content);

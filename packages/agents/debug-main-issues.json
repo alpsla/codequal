@@ -1,125 +1,524 @@
 [
   {
-    "id": "performance-1",
-    "category": "performance",
-    "severity": "low",
-    "type": "Potential performance impact due to lack of cancellation for ongoing requests on retry",
-    "title": "Potential performance impact due to lack of cancellation for ongoing requests on retry",
-    "description": "Current: undefined, Expected: undefined",
+    "id": "security-1",
+    "category": "security",
+    "severity": "medium",
+    "type": "Type Safety Issue",
+    "title": "Type Safety Issue vulnerability",
+    "description": "Use of `any` type reduces type safety",
     "location": {
-      "file": "unknown"
+      "file": "source/types/hooks.js",
+      "line": 4
     },
+    "impact": "Reduced type safety can lead to runtime errors and makes code harder to maintain",
+    "remediation": "Avoid using `any` type for the return value of hooks. Use a specific type or generics to ensure type safety",
+    "codeSnippet": "beforeRequest?: ((request: Request) => Request | Response | void | Promise<Request | Response | void>)[];",
+    "fixedCode": "",
     "metadata": {
+      "cwe": "CWE-843",
+      "cvss": 4,
       "aiExtracted": true
     },
-    "message": "Current: undefined, Expected: undefined"
+    "message": "Use of `any` type reduces type safety"
+  },
+  {
+    "id": "security-2",
+    "category": "security",
+    "severity": "medium",
+    "type": "Type Safety Issue",
+    "title": "Type Safety Issue vulnerability",
+    "description": "Implicit `any` type in catch clause",
+    "location": {
+      "file": "source/core/Ky.ts",
+      "line": 192
+    },
+    "impact": "Implicit any types reduce type safety and can lead to unhandled error conditions",
+    "remediation": "Specify an explicit type for error objects in catch clauses to enhance type safety and readability",
+    "codeSnippet": "for (const hook of ky._options.hooks.beforeError) {",
+    "fixedCode": "",
+    "metadata": {
+      "cwe": "CWE-843",
+      "cvss": 4,
+      "aiExtracted": true
+    },
+    "message": "Implicit `any` type in catch clause"
+  },
+  {
+    "id": "security-3",
+    "category": "security",
+    "severity": "high",
+    "type": "Async Operation Error",
+    "title": "Async Operation Error vulnerability",
+    "description": "Missing `await` in async function call",
+    "location": {
+      "file": "test/hooks.ts",
+      "line": 14
+    },
+    "impact": "Missing await can cause unexpected behavior, race conditions, and unhandled promise rejections",
+    "remediation": "Ensure that all asynchronous operations are properly awaited or returned to avoid unexpected behavior",
+    "codeSnippet": "const modifiedResponse = await hook(",
+    "fixedCode": "",
+    "metadata": {
+      "cwe": "CWE-252",
+      "cvss": 6.5,
+      "aiExtracted": true
+    },
+    "message": "Missing `await` in async function call"
+  },
+  {
+    "id": "security-4",
+    "category": "security",
+    "severity": "low",
+    "type": "Code Quality Issue",
+    "title": "Code Quality Issue vulnerability",
+    "description": "Variable is not used",
+    "location": {
+      "file": "source/utils/timeout.js",
+      "line": 5
+    },
+    "impact": "Unused variables can cause confusion and reduce code readability",
+    "remediation": "Remove the unused variable or use it as intended to avoid confusion and improve code readability",
+    "codeSnippet": "const globalThis = getGlobal();",
+    "fixedCode": "",
+    "metadata": {
+      "cwe": "CWE-561",
+      "cvss": 2,
+      "aiExtracted": true
+    },
+    "message": "Variable is not used"
+  },
+  {
+    "id": "security-5",
+    "category": "security",
+    "severity": "medium",
+    "type": "Memory Leak",
+    "title": "Memory Leak vulnerability",
+    "description": "Potential memory leak with event listeners",
+    "location": {
+      "file": "source/index.ts",
+      "line": 33
+    },
+    "impact": "Event listeners not properly removed can cause memory leaks and performance degradation",
+    "remediation": "Ensure to remove event listeners when no longer needed or when the component unmounts to prevent memory leaks",
+    "codeSnippet": "window.addEventListener('online', onOnline);",
+    "fixedCode": "window.removeEventListener('online', onOnline);",
+    "metadata": {
+      "cwe": "CWE-401",
+      "cvss": 5,
+      "aiExtracted": true
+    },
+    "message": "Potential memory leak with event listeners"
+  },
+  {
+    "id": "security-6",
+    "category": "security",
+    "severity": "medium",
+    "type": "Type Safety Issue",
+    "title": "Type Safety Issue vulnerability",
+    "description": "Inconsistent return type",
+    "location": {
+      "file": "source/utils/body.js",
+      "line": 15
+    },
+    "impact": "Inconsistent return types can lead to type errors and unpredictable behavior",
+    "remediation": "Ensure consistent return types across all branches of a function to improve type safety and predictability",
+    "codeSnippet": "if (!supportsFormData && isFormData(body)) {",
+    "fixedCode": "",
+    "metadata": {
+      "cwe": "CWE-843",
+      "cvss": 4,
+      "aiExtracted": true
+    },
+    "message": "Inconsistent return type"
+  },
+  {
+    "id": "security-7",
+    "category": "security",
+    "severity": "low",
+    "type": "Code Quality Issue",
+    "title": "Code Quality Issue vulnerability",
+    "description": "Use of `let` for a variable that is never reassigned",
+    "location": {
+      "file": "test/memory-leak.ts",
+      "line": 9
+    },
+    "impact": "Using let for constants reduces code clarity",
+    "remediation": "Use `const` for variables that are never reassigned to signal their intent clearly and improve code readability",
+    "codeSnippet": "let url: URL | undefined = new URL(",
+    "fixedCode": "const url: URL | undefined = new URL(",
+    "metadata": {
+      "cwe": "CWE-561",
+      "cvss": 2,
+      "aiExtracted": true
+    },
+    "message": "Use of `let` for a variable that is never reassigned"
+  },
+  {
+    "id": "security-8",
+    "category": "security",
+    "severity": "medium",
+    "type": "Side Effect Issue",
+    "title": "Side Effect Issue vulnerability",
+    "description": "Direct mutation of function parameter",
+    "location": {
+      "file": "source/utils/normalize.js",
+      "line": 22
+    },
+    "impact": "Direct mutation of parameters can cause unexpected side effects and make code harder to debug",
+    "remediation": "Avoid direct mutation of function parameters. Consider using a local variable or a new object to prevent side effects",
+    "codeSnippet": "options.retry = {...defaultRetryOptions, ...options.retry};",
+    "fixedCode": "const normalizedOptions = {...options, retry: {...defaultRetryOptions, ...options.retry}};",
+    "metadata": {
+      "cwe": "CWE-374",
+      "cvss": 4.5,
+      "aiExtracted": true
+    },
+    "message": "Direct mutation of function parameter"
+  },
+  {
+    "id": "security-9",
+    "category": "security",
+    "severity": "low",
+    "type": "Null Reference Issue",
+    "title": "Null Reference Issue vulnerability",
+    "description": "Unnecessary non-null assertion",
+    "location": {
+      "file": "source/core/Ky.ts",
+      "line": 250
+    },
+    "impact": "Non-null assertions can cause runtime errors if the value is actually null or undefined",
+    "remediation": "Remove unnecessary non-null assertions and handle potential null or undefined values gracefully to avoid runtime errors",
+    "codeSnippet": "await ky.request.body!.cancel();",
+    "fixedCode": "if (ky.request.body) { await ky.request.body.cancel(); }",
+    "metadata": {
+      "cwe": "CWE-476",
+      "cvss": 3,
+      "aiExtracted": true
+    },
+    "message": "Unnecessary non-null assertion"
+  },
+  {
+    "id": "performance-1",
+    "category": "performance",
+    "severity": "medium",
+    "type": "Type Safety",
+    "title": "Type Safety",
+    "description": "Current: , Expected: ",
+    "location": {
+      "file": "source/types/hooks.js",
+      "line": 4
+    },
+    "impact": "Use of `any` type reduces type safety",
+    "recommendation": "Avoid using `any` type for the return value of hooks. Use a specific type or generics to ensure type safety",
+    "metadata": {
+      "currentPerformance": "",
+      "expectedPerformance": "",
+      "aiExtracted": true
+    },
+    "message": "Current: , Expected: "
+  },
+  {
+    "id": "performance-2",
+    "category": "performance",
+    "severity": "medium",
+    "type": "Type Safety",
+    "title": "Type Safety",
+    "description": "Current: , Expected: ",
+    "location": {
+      "file": "source/core/Ky.ts",
+      "line": 192
+    },
+    "impact": "Implicit `any` type in catch clause",
+    "recommendation": "Specify an explicit type for error objects in catch clauses to enhance type safety and readability",
+    "metadata": {
+      "currentPerformance": "",
+      "expectedPerformance": "",
+      "aiExtracted": true
+    },
+    "message": "Current: , Expected: "
+  },
+  {
+    "id": "performance-3",
+    "category": "performance",
+    "severity": "high",
+    "type": "Async Operation",
+    "title": "Async Operation",
+    "description": "Current: , Expected: ",
+    "location": {
+      "file": "test/hooks.ts",
+      "line": 14
+    },
+    "impact": "Missing `await` in async function call",
+    "recommendation": "Ensure that all asynchronous operations are properly awaited or returned to avoid unexpected behavior",
+    "metadata": {
+      "currentPerformance": "",
+      "expectedPerformance": "",
+      "aiExtracted": true
+    },
+    "message": "Current: , Expected: "
+  },
+  {
+    "id": "performance-4",
+    "category": "performance",
+    "severity": "low",
+    "type": "Code Quality",
+    "title": "Code Quality",
+    "description": "Current: , Expected: ",
+    "location": {
+      "file": "source/utils/timeout.js",
+      "line": 5
+    },
+    "impact": "Variable is not used",
+    "recommendation": "Remove the unused variable or use it as intended to avoid confusion and improve code readability",
+    "metadata": {
+      "currentPerformance": "",
+      "expectedPerformance": "",
+      "aiExtracted": true
+    },
+    "message": "Current: , Expected: "
+  },
+  {
+    "id": "performance-5",
+    "category": "performance",
+    "severity": "medium",
+    "type": "Memory Leak",
+    "title": "Memory Leak",
+    "description": "Current: , Expected: ",
+    "location": {
+      "file": "source/index.ts",
+      "line": 33
+    },
+    "impact": "Potential memory leak with event listeners",
+    "recommendation": "Ensure to remove event listeners when no longer needed or when the component unmounts to prevent memory leaks",
+    "metadata": {
+      "currentPerformance": "",
+      "expectedPerformance": "",
+      "aiExtracted": true
+    },
+    "message": "Current: , Expected: "
+  },
+  {
+    "id": "performance-6",
+    "category": "performance",
+    "severity": "medium",
+    "type": "Type Safety",
+    "title": "Type Safety",
+    "description": "Current: , Expected: ",
+    "location": {
+      "file": "source/utils/body.js",
+      "line": 15
+    },
+    "impact": "Inconsistent return type",
+    "recommendation": "Ensure consistent return types across all branches of a function to improve type safety and predictability",
+    "metadata": {
+      "currentPerformance": "",
+      "expectedPerformance": "",
+      "aiExtracted": true
+    },
+    "message": "Current: , Expected: "
+  },
+  {
+    "id": "performance-7",
+    "category": "performance",
+    "severity": "low",
+    "type": "Code Quality",
+    "title": "Code Quality",
+    "description": "Current: , Expected: ",
+    "location": {
+      "file": "test/memory-leak.ts",
+      "line": 9
+    },
+    "impact": "Use of `let` for a variable that is never reassigned",
+    "recommendation": "Use `const` for variables that are never reassigned to signal their intent clearly and improve code readability",
+    "metadata": {
+      "currentPerformance": "",
+      "expectedPerformance": "",
+      "aiExtracted": true
+    },
+    "message": "Current: , Expected: "
+  },
+  {
+    "id": "performance-8",
+    "category": "performance",
+    "severity": "medium",
+    "type": "Side Effect",
+    "title": "Side Effect",
+    "description": "Current: , Expected: ",
+    "location": {
+      "file": "source/utils/normalize.js",
+      "line": 22
+    },
+    "impact": "Direct mutation of function parameter",
+    "recommendation": "Avoid direct mutation of function parameters. Consider using a local variable or a new object to prevent side effects",
+    "metadata": {
+      "currentPerformance": "",
+      "expectedPerformance": "",
+      "aiExtracted": true
+    },
+    "message": "Current: , Expected: "
+  },
+  {
+    "id": "performance-9",
+    "category": "performance",
+    "severity": "low",
+    "type": "Code Quality",
+    "title": "Code Quality",
+    "description": "Current: , Expected: ",
+    "location": {
+      "file": "source/core/Ky.ts",
+      "line": 250
+    },
+    "impact": "Unnecessary non-null assertion",
+    "recommendation": "Remove unnecessary non-null assertions and handle potential null or undefined values gracefully to avoid runtime errors",
+    "metadata": {
+      "currentPerformance": "",
+      "expectedPerformance": "",
+      "aiExtracted": true
+    },
+    "message": "Current: , Expected: "
   },
   {
     "id": "quality-1",
     "category": "code-quality",
-    "severity": "high",
-    "type": "Inconsistent error handling for non-OK responses",
-    "title": "Inconsistent error handling for non-OK responses",
-    "description": "File: source/core/Ky.ts, Line: 45",
+    "severity": "medium",
+    "type": "Type Safety",
+    "title": "Type Safety",
+    "description": "Use of `any` type reduces type safety - Avoid using `any` type for the return value of hooks",
     "location": {
-      "file": "source/core/Ky.ts",
-      "line": 45
+      "file": "source/types/hooks.js",
+      "line": 0
     },
     "metadata": {
-      "aiExtracted": true,
-      "locationConfidence": 100,
-      "locationContext": "`throw new HTTPError(response, ky.request, ky._options as NormalizedOptions);`"
+      "aiExtracted": true
     },
-    "message": "File: source/core/Ky.ts, Line: 45"
+    "message": "Use of `any` type reduces type safety - Avoid using `any` type for the return value of hooks"
   },
   {
     "id": "quality-2",
     "category": "code-quality",
-    "severity": "medium",
-    "type": "Potential for memory leak with ReadableStream",
-    "title": "Potential for memory leak with ReadableStream",
-    "description": "File: source/core/Ky.ts, Line: 55",
+    "severity": "high",
+    "type": "Type Safety",
+    "title": "Type Safety",
+    "description": "Implicit `any` type in catch clause - Specify an explicit type for error objects",
     "location": {
       "file": "source/core/Ky.ts",
-      "line": 55
+      "line": 0
     },
     "metadata": {
-      "aiExtracted": true,
-      "locationConfidence": 100,
-      "locationContext": "`if (!response.ok && ky._options.throwHttpErrors) {`"
+      "aiExtracted": true
     },
-    "message": "File: source/core/Ky.ts, Line: 55"
+    "message": "Implicit `any` type in catch clause - Specify an explicit type for error objects"
   },
   {
     "id": "quality-3",
     "category": "code-quality",
-    "severity": "medium",
-    "type": "Lack of input validation for `retry` option",
-    "title": "Lack of input validation for `retry` option",
-    "description": "File: source/utils/normalize.js, Line: 10",
+    "severity": "high",
+    "type": "Async Error",
+    "title": "Async Error",
+    "description": "Missing `await` in async function call - Ensure all asynchronous operations are properly awaited",
     "location": {
-      "file": "source/utils/normalize.js",
-      "line": 10
+      "file": "test/hooks.ts",
+      "line": 0
     },
     "metadata": {
-      "aiExtracted": true,
-      "locationConfidence": 100,
-      "locationContext": "`if (typeof retry !== 'object' || retry === null) {`"
+      "aiExtracted": true
     },
-    "message": "File: source/utils/normalize.js, Line: 10"
+    "message": "Missing `await` in async function call - Ensure all asynchronous operations are properly awaited"
   },
   {
     "id": "quality-4",
     "category": "code-quality",
     "severity": "medium",
-    "type": "Missing validation for `prefixUrl` and `input` combination",
-    "title": "Missing validation for `prefixUrl` and `input` combination",
-    "description": "File: source/core/Ky.ts, Line: 19",
+    "type": "Unused Variable",
+    "title": "Unused Variable",
+    "description": "Variable 'globalThis' is not used - Remove unused variable or use as intended",
     "location": {
-      "file": "source/core/Ky.ts",
-      "line": 19
+      "file": "source/utils/timeout.js",
+      "line": 0
     },
     "metadata": {
-      "aiExtracted": true,
-      "locationConfidence": 100,
-      "locationContext": "`this._options = { ...options, headers: mergeHeaders((this._input as Request).headers, options.headers),`"
+      "aiExtracted": true
     },
-    "message": "File: source/core/Ky.ts, Line: 19"
+    "message": "Variable 'globalThis' is not used - Remove unused variable or use as intended"
   },
   {
     "id": "quality-5",
     "category": "code-quality",
     "severity": "medium",
-    "type": "Use of `any` type in TypeScript definitions may bypass type checking",
-    "title": "Use of `any` type in TypeScript definitions may bypass type checking",
-    "description": "File: source/types/options.ts, Line: 3",
+    "type": "Memory Leak",
+    "title": "Memory Leak",
+    "description": "Potential memory leak with event listeners - Remove event listeners when no longer needed",
     "location": {
-      "file": "source/types/options.ts",
-      "line": 3
+      "file": "source/index.ts",
+      "line": 0
     },
     "metadata": {
-      "aiExtracted": true,
-      "locationConfidence": 100,
-      "locationContext": "`export type Options = {`"
+      "aiExtracted": true
     },
-    "message": "File: source/types/options.ts, Line: 3"
+    "message": "Potential memory leak with event listeners - Remove event listeners when no longer needed"
   },
   {
     "id": "quality-6",
     "category": "code-quality",
     "severity": "medium",
-    "type": "Absence of explicit character set definition in `Accept` header",
-    "title": "Absence of explicit character set definition in `Accept` header",
-    "description": "File: source/core/Ky.ts, Line: 88",
+    "type": "Type Inconsistency",
+    "title": "Type Inconsistency",
+    "description": "Inconsistent return type - Ensure consistent return types across all branches",
     "location": {
-      "file": "source/core/Ky.ts",
-      "line": 88
+      "file": "source/utils/body.js",
+      "line": 0
     },
     "metadata": {
-      "aiExtracted": true,
-      "locationConfidence": 100,
-      "locationContext": "`ky.request.headers.set('accept', ky.request.headers.get('accept') || mimeType);`"
+      "aiExtracted": true
     },
-    "message": "File: source/core/Ky.ts, Line: 88"
+    "message": "Inconsistent return type - Ensure consistent return types across all branches"
+  },
+  {
+    "id": "quality-7",
+    "category": "code-quality",
+    "severity": "medium",
+    "type": "Code Style",
+    "title": "Code Style",
+    "description": "Use of `let` for variable never reassigned - Use `const` for variables that are never reassigned",
+    "location": {
+      "file": "test/memory-leak.ts",
+      "line": 0
+    },
+    "metadata": {
+      "aiExtracted": true
+    },
+    "message": "Use of `let` for variable never reassigned - Use `const` for variables that are never reassigned"
+  },
+  {
+    "id": "quality-8",
+    "category": "code-quality",
+    "severity": "medium",
+    "type": "Side Effect",
+    "title": "Side Effect",
+    "description": "Direct mutation of function parameter - Avoid direct mutation to prevent side effects",
+    "location": {
+      "file": "source/utils/normalize.js",
+      "line": 0
+    },
+    "metadata": {
+      "aiExtracted": true
+    },
+    "message": "Direct mutation of function parameter - Avoid direct mutation to prevent side effects"
+  },
+  {
+    "id": "quality-9",
+    "category": "code-quality",
+    "severity": "medium",
+    "type": "Null Safety",
+    "title": "Null Safety",
+    "description": "Unnecessary non-null assertion - Handle potential null/undefined values gracefully",
+    "location": {
+      "file": "source/core/Ky.ts",
+      "line": 0
+    },
+    "metadata": {
+      "aiExtracted": true
+    },
+    "message": "Unnecessary non-null assertion - Handle potential null/undefined values gracefully"
   }
 ]
