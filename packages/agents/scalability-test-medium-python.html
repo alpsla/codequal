@@ -1,0 +1,2551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeQual V7 Analysis Report - PR #25</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+        
+        .header-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .header-item {
+            background: rgba(255,255,255,0.1);
+            padding: 10px 15px;
+            border-radius: 5px;
+        }
+        
+        .decision-banner {
+            background: #dc3545;
+            color: white;
+            padding: 20px 40px;
+            font-size: 1.3em;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .section {
+            margin-bottom: 50px;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .section-header {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 20px 30px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .section-title {
+            font-size: 1.8em;
+            color: #667eea;
+            margin: 0;
+        }
+        
+        .section-content {
+            padding: 30px;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .metric-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .metric-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .metric-label {
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .issue-card {
+            background: #f8f9fa;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            border-left: 4px solid;
+            transition: all 0.3s ease;
+        }
+        
+        .issue-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .issue-critical {
+            border-left-color: #dc3545;
+            background: #fff5f5;
+        }
+        
+        .issue-high {
+            border-left-color: #fd7e14;
+            background: #fff8f3;
+        }
+        
+        .issue-medium {
+            border-left-color: #ffc107;
+            background: #fffdf5;
+        }
+        
+        .issue-low {
+            border-left-color: #28a745;
+            background: #f3fff5;
+        }
+        
+        .issue-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+        
+        .issue-title {
+            font-weight: bold;
+            color: #333;
+            font-size: 1.1em;
+            flex: 1;
+            margin-right: 10px;
+        }
+        
+        .issue-severity {
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: white;
+            white-space: nowrap;
+        }
+        
+        .severity-critical {
+            background: #dc3545;
+        }
+        
+        .severity-high {
+            background: #fd7e14;
+        }
+        
+        .severity-medium {
+            background: #ffc107;
+            color: #333;
+        }
+        
+        .severity-low {
+            background: #28a745;
+        }
+        
+        .issue-location {
+            color: #666;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            margin: 10px 0;
+            padding: 5px 10px;
+            background: rgba(0,0,0,0.05);
+            border-radius: 3px;
+            display: inline-block;
+        }
+        
+        .issue-description {
+            color: #555;
+            margin-top: 10px;
+            line-height: 1.5;
+        }
+        
+        .issue-impact {
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(255,193,7,0.1);
+            border-left: 3px solid #ffc107;
+            color: #856404;
+        }
+        
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        
+        .fix-suggestion {
+            background: rgba(40,167,69,0.1);
+            border-left: 3px solid #28a745;
+            padding: 10px;
+            margin-top: 10px;
+            color: #155724;
+        }
+        
+        .score-display {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+            padding: 30px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+        
+        .score-circle {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: conic-gradient(
+                from 0deg,
+                #28a745 0deg,
+                #28a745 calc(var(--score) * 3.6deg),
+                #e0e0e0 calc(var(--score) * 3.6deg),
+                #e0e0e0 360deg
+            );
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .score-inner {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .score-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .score-grade {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 10px;
+            color: white;
+            font-weight: bold;
+            transition: width 0.3s ease;
+        }
+        
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        .table th,
+        .table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .table th {
+            background: #f5f7fa;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+        
+        .badge-new {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .badge-fixed {
+            background: #28a745;
+            color: white;
+        }
+        
+        .badge-unchanged {
+            background: #ffc107;
+            color: #333;
+        }
+        
+        .alert {
+            padding: 15px 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        
+        .alert-danger {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .pr-comment-box {
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .pr-comment-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .pr-comment-content {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .copy-button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin-left: auto;
+        }
+        
+        .copy-button:hover {
+            background: #764ba2;
+        }
+        
+        .architecture-diagram {
+            margin: 20px 0;
+        }
+        
+        .business-impact-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .impact-item {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .impact-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .impact-label {
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .footer {
+            background: #f8f9fa;
+            padding: 30px 40px;
+            text-align: center;
+            color: #666;
+            border-top: 1px solid #e0e0e0;
+        }
+        
+        @media (max-width: 768px) {
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .score-display {
+                flex-direction: column;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .business-impact-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        
+        <div class="header">
+            <h1>🔍 CodeQual V7 Pull Request Analysis Report</h1>
+            <div class="header-info">
+                <div class="header-item">
+                    <strong>Repository:</strong><br>https://github.com/test/python-project
+                </div>
+                <div class="header-item">
+                    <strong>PR:</strong><br>#25 - Medium Python PR - Performance Test PR
+                </div>
+                <div class="header-item">
+                    <strong>Author:</strong><br>performance-tester
+                </div>
+                <div class="header-item">
+                    <strong>Analysis Date:</strong><br>8/19/2025, 11:52:20 AM
+                </div>
+                <div class="header-item">
+                    <strong>Model Used:</strong><br>google/gemini-2.5-pro-exp-03-25
+                </div>
+                <div class="header-item">
+                    <strong>Scan Duration:</strong><br>15.0 seconds
+                </div>
+            </div>
+        </div>
+        
+        <div class="decision-banner">
+            <span style="font-size: 1.5em;">❌</span>
+            <div>
+                <div>PR DECLINED - CRITICAL/HIGH ISSUES MUST BE FIXED</div>
+                <div style="font-size: 0.9em; font-weight: normal; margin-top: 5px;">This PR introduces 5 critical and 3 high severity issues that must be resolved before merge. 10 pre-existing repository issues don't block this PR but impact skill scores.</div>
+            </div>
+        </div>
+        
+        <div class="content">
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">📊 Executive Summary</h2>
+                </div>
+                <div class="section-content">
+                    <div class="score-display">
+                        <div class="score-circle" style="--score: 35;">
+                            <div class="score-inner">
+                                <div class="score-number">35</div>
+                                <div class="score-grade" style="color: #dc3545;">Grade: F</div>
+                            </div>
+                        </div>
+                        <div>
+                            <h3>Overall Quality Score</h3>
+                            <p>Score changed by <strong>-40</strong> points</p>
+                            <p>Previous score: 75 → Current score: 35</p>
+                        </div>
+                    </div>
+                    
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-value">15</div>
+                            <div class="metric-label">New Issues</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">0</div>
+                            <div class="metric-label">Fixed Issues</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">10</div>
+                            <div class="metric-label">Pre-existing</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">47</div>
+                            <div class="metric-label">Files Changed</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">+1250</div>
+                            <div class="metric-label">Lines Added</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">-250</div>
+                            <div class="metric-label">Lines Removed</div>
+                        </div>
+                    </div>
+                    
+                    <h3 style="margin-top: 30px;">Issue Distribution</h3>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th>Critical</th>
+                                <th>High</th>
+                                <th>Medium</th>
+                                <th>Low</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>New Issues (PR)</strong></td>
+                                <td><span style="color: #dc3545; font-weight: bold;">5</span></td>
+                                <td><span style="color: #fd7e14; font-weight: bold;">3</span></td>
+                                <td>5</td>
+                                <td>2</td>
+                                <td><strong>15</strong></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Resolved</strong></td>
+                                <td>0</td>
+                                <td>0</td>
+                                <td>0</td>
+                                <td>0</td>
+                                <td><strong>0</strong></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Pre-existing</strong></td>
+                                <td>4</td>
+                                <td>1</td>
+                                <td>3</td>
+                                <td>2</td>
+                                <td><strong>10</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        
+        <!-- All 12 Required Sections -->
+        
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">🔒 1. Security Analysis</h2>
+                </div>
+                <div class="section-content">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 25%;">25/100</div>
+                    </div>
+                    
+                    <div class="alert alert-danger">⚠️ 5 security issue(s) found</div>
+                    
+                    
+        <h3>Security Issues</h3>
+        <div style="margin-top: 15px;">
+            
+        <div class="issue-card issue-critical">
+            <div class="issue-header">
+                <span class="issue-title">ISSUE-1: SQL Injection in Raw Query #1</span>
+                <span class="issue-severity severity-critical">critical</span>
+            </div>
+            <div class="issue-location">📁 app/database/queries.py:71</div>
+            <div class="issue-description">Using string formatting in SQL queries instead of parameterized queries in Python code</div>
+            
+            <div class="issue-impact">
+                <strong>💥 Impact:</strong> Critical security vulnerability
+            </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <strong>Problematic Code:</strong>
+                    <div class="code-block">query = f&quot;SELECT * FROM users WHERE id = {user_id}&quot;</div>
+                </div>
+            
+            
+                <div class="fix-suggestion">
+                    <strong>💡 Suggested Fix:</strong> Use parameterized queries: cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+                    
+                </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em;">
+                        🏷️ security
+                    </span>
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em; margin-left: 5px;">
+                        ⏱️ Est. 2-4 hours to fix
+                    </span>
+                </div>
+        </div>
+        <div class="issue-card issue-critical">
+            <div class="issue-header">
+                <span class="issue-title">ISSUE-2: Hardcoded Secret Key #2</span>
+                <span class="issue-severity severity-critical">critical</span>
+            </div>
+            <div class="issue-location">📁 config/settings.py:413</div>
+            <div class="issue-description">Secret key hardcoded in source code in Python code</div>
+            
+            <div class="issue-impact">
+                <strong>💥 Impact:</strong> Critical security vulnerability
+            </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <strong>Problematic Code:</strong>
+                    <div class="code-block">query = f&quot;SELECT * FROM users WHERE id = {user_id}&quot;</div>
+                </div>
+            
+            
+                <div class="fix-suggestion">
+                    <strong>💡 Suggested Fix:</strong> Use parameterized queries: cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+                    
+                </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em;">
+                        🏷️ security
+                    </span>
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em; margin-left: 5px;">
+                        ⏱️ Est. 2-4 hours to fix
+                    </span>
+                </div>
+        </div>
+        <div class="issue-card issue-critical">
+            <div class="issue-header">
+                <span class="issue-title">ISSUE-3: SQL Injection in Raw Query #13</span>
+                <span class="issue-severity severity-critical">critical</span>
+            </div>
+            <div class="issue-location">📁 app/database/queries.py:213</div>
+            <div class="issue-description">Using string formatting in SQL queries instead of parameterized queries in Python code</div>
+            
+            <div class="issue-impact">
+                <strong>💥 Impact:</strong> Critical security vulnerability
+            </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <strong>Problematic Code:</strong>
+                    <div class="code-block">query = f&quot;SELECT * FROM users WHERE id = {user_id}&quot;</div>
+                </div>
+            
+            
+                <div class="fix-suggestion">
+                    <strong>💡 Suggested Fix:</strong> Use parameterized queries: cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+                    
+                </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em;">
+                        🏷️ security
+                    </span>
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em; margin-left: 5px;">
+                        ⏱️ Est. 2-4 hours to fix
+                    </span>
+                </div>
+        </div>
+        <div class="issue-card issue-critical">
+            <div class="issue-header">
+                <span class="issue-title">ISSUE-4: Hardcoded Secret Key #20</span>
+                <span class="issue-severity severity-critical">critical</span>
+            </div>
+            <div class="issue-location">📁 config/settings.py:523</div>
+            <div class="issue-description">Secret key hardcoded in source code in Python code</div>
+            
+            <div class="issue-impact">
+                <strong>💥 Impact:</strong> Critical security vulnerability
+            </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <strong>Problematic Code:</strong>
+                    <div class="code-block">query = f&quot;SELECT * FROM users WHERE id = {user_id}&quot;</div>
+                </div>
+            
+            
+                <div class="fix-suggestion">
+                    <strong>💡 Suggested Fix:</strong> Use parameterized queries: cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+                    
+                </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em;">
+                        🏷️ security
+                    </span>
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em; margin-left: 5px;">
+                        ⏱️ Est. 2-4 hours to fix
+                    </span>
+                </div>
+        </div>
+        <div class="issue-card issue-critical">
+            <div class="issue-header">
+                <span class="issue-title">ISSUE-5: SQL Injection in Raw Query #25</span>
+                <span class="issue-severity severity-critical">critical</span>
+            </div>
+            <div class="issue-location">📁 app/database/queries.py:564</div>
+            <div class="issue-description">Using string formatting in SQL queries instead of parameterized queries in Python code</div>
+            
+            <div class="issue-impact">
+                <strong>💥 Impact:</strong> Critical security vulnerability
+            </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <strong>Problematic Code:</strong>
+                    <div class="code-block">query = f&quot;SELECT * FROM users WHERE id = {user_id}&quot;</div>
+                </div>
+            
+            
+                <div class="fix-suggestion">
+                    <strong>💡 Suggested Fix:</strong> Use parameterized queries: cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+                    
+                </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em;">
+                        🏷️ security
+                    </span>
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em; margin-left: 5px;">
+                        ⏱️ Est. 2-4 hours to fix
+                    </span>
+                </div>
+        </div>
+        </div>
+                </div>
+            </div>
+        
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">⚡ 2. Performance Analysis</h2>
+                </div>
+                <div class="section-content">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 50%;">50/100</div>
+                    </div>
+                    
+                    <div class="alert alert-warning">⚠️ 5 performance issue(s) found</div>
+                    
+                    
+        <h3>Performance Issues</h3>
+        <div style="margin-top: 15px;">
+            
+        <div class="issue-card issue-high">
+            <div class="issue-header">
+                <span class="issue-title">ISSUE-1: Resource Not Closed #12</span>
+                <span class="issue-severity severity-high">high</span>
+            </div>
+            <div class="issue-location">📁 app/io/file_manager.py:702</div>
+            <div class="issue-description">File handle not properly closed after use in Python code</div>
+            
+            <div class="issue-impact">
+                <strong>💥 Impact:</strong> Code quality issue
+            </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <strong>Problematic Code:</strong>
+                    <div class="code-block">result = [x for x in range(1000) for y in range(1000) if x*y &gt; 500]</div>
+                </div>
+            
+            
+                <div class="fix-suggestion">
+                    <strong>💡 Suggested Fix:</strong> Optimize with generator expression or numpy operations
+                    
+                </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em;">
+                        🏷️ performance
+                    </span>
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em; margin-left: 5px;">
+                        ⏱️ Est. 1-2 hours to fix
+                    </span>
+                </div>
+        </div>
+        <div class="issue-card issue-medium">
+            <div class="issue-header">
+                <span class="issue-title">ISSUE-2: Inefficient List Comprehension #16</span>
+                <span class="issue-severity severity-medium">medium</span>
+            </div>
+            <div class="issue-location">📁 app/processors/data.py:382</div>
+            <div class="issue-description">Nested list comprehension causing O(n²) complexity in Python code</div>
+            
+            <div class="issue-impact">
+                <strong>💥 Impact:</strong> Code quality issue
+            </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <strong>Problematic Code:</strong>
+                    <div class="code-block">result = [x for x in range(1000) for y in range(1000) if x*y &gt; 500]</div>
+                </div>
+            
+            
+                <div class="fix-suggestion">
+                    <strong>💡 Suggested Fix:</strong> Optimize with generator expression or numpy operations
+                    
+                </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em;">
+                        🏷️ performance
+                    </span>
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em; margin-left: 5px;">
+                        ⏱️ Est. 30-60 min to fix
+                    </span>
+                </div>
+        </div>
+        <div class="issue-card issue-high">
+            <div class="issue-header">
+                <span class="issue-title">ISSUE-3: Resource Not Closed #18</span>
+                <span class="issue-severity severity-high">high</span>
+            </div>
+            <div class="issue-location">📁 app/io/file_manager.py:998</div>
+            <div class="issue-description">File handle not properly closed after use in Python code</div>
+            
+            <div class="issue-impact">
+                <strong>💥 Impact:</strong> Code quality issue
+            </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <strong>Problematic Code:</strong>
+                    <div class="code-block">result = [x for x in range(1000) for y in range(1000) if x*y &gt; 500]</div>
+                </div>
+            
+            
+                <div class="fix-suggestion">
+                    <strong>💡 Suggested Fix:</strong> Optimize with generator expression or numpy operations
+                    
+                </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em;">
+                        🏷️ performance
+                    </span>
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em; margin-left: 5px;">
+                        ⏱️ Est. 1-2 hours to fix
+                    </span>
+                </div>
+        </div>
+        <div class="issue-card issue-medium">
+            <div class="issue-header">
+                <span class="issue-title">ISSUE-4: Inefficient List Comprehension #22</span>
+                <span class="issue-severity severity-medium">medium</span>
+            </div>
+            <div class="issue-location">📁 app/processors/data.py:877</div>
+            <div class="issue-description">Nested list comprehension causing O(n²) complexity in Python code</div>
+            
+            <div class="issue-impact">
+                <strong>💥 Impact:</strong> Code quality issue
+            </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <strong>Problematic Code:</strong>
+                    <div class="code-block">result = [x for x in range(1000) for y in range(1000) if x*y &gt; 500]</div>
+                </div>
+            
+            
+                <div class="fix-suggestion">
+                    <strong>💡 Suggested Fix:</strong> Optimize with generator expression or numpy operations
+                    
+                </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em;">
+                        🏷️ performance
+                    </span>
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em; margin-left: 5px;">
+                        ⏱️ Est. 30-60 min to fix
+                    </span>
+                </div>
+        </div>
+        <div class="issue-card issue-high">
+            <div class="issue-header">
+                <span class="issue-title">ISSUE-5: Resource Not Closed #24</span>
+                <span class="issue-severity severity-high">high</span>
+            </div>
+            <div class="issue-location">📁 app/io/file_manager.py:708</div>
+            <div class="issue-description">File handle not properly closed after use in Python code</div>
+            
+            <div class="issue-impact">
+                <strong>💥 Impact:</strong> Code quality issue
+            </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <strong>Problematic Code:</strong>
+                    <div class="code-block">result = [x for x in range(1000) for y in range(1000) if x*y &gt; 500]</div>
+                </div>
+            
+            
+                <div class="fix-suggestion">
+                    <strong>💡 Suggested Fix:</strong> Optimize with generator expression or numpy operations
+                    
+                </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em;">
+                        🏷️ performance
+                    </span>
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em; margin-left: 5px;">
+                        ⏱️ Est. 1-2 hours to fix
+                    </span>
+                </div>
+        </div>
+        </div>
+                </div>
+            </div>
+        
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">📝 3. Code Quality Analysis</h2>
+                </div>
+                <div class="section-content">
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-value">75</div>
+                            <div class="metric-label">Quality Score</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">71%</div>
+                            <div class="metric-label">Test Coverage</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">5</div>
+                            <div class="metric-label">Quality Issues</div>
+                        </div>
+                    </div>
+                    
+                    
+        <h3>Code Quality Issues</h3>
+        <div style="margin-top: 15px;">
+            
+        <div class="issue-card issue-low">
+            <div class="issue-header">
+                <span class="issue-title">ISSUE-1: Missing Type Hints #9</span>
+                <span class="issue-severity severity-low">low</span>
+            </div>
+            <div class="issue-location">📁 app/utils/helpers.py:303</div>
+            <div class="issue-description">Function lacks type hints for parameters and return value in Python code</div>
+            
+            <div class="issue-impact">
+                <strong>💥 Impact:</strong> Code quality issue
+            </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <strong>Problematic Code:</strong>
+                    <div class="code-block">try:
+    process_data()
+except:
+    pass</div>
+                </div>
+            
+            
+                <div class="fix-suggestion">
+                    <strong>💡 Suggested Fix:</strong> Catch specific exceptions and handle appropriately
+                    
+                </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em;">
+                        🏷️ code-quality
+                    </span>
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em; margin-left: 5px;">
+                        ⏱️ Est. 15-30 min to fix
+                    </span>
+                </div>
+        </div>
+        <div class="issue-card issue-medium">
+            <div class="issue-header">
+                <span class="issue-title">ISSUE-2: Broad Exception Handling #11</span>
+                <span class="issue-severity severity-medium">medium</span>
+            </div>
+            <div class="issue-location">📁 app/handlers/error.py:301</div>
+            <div class="issue-description">Catching all exceptions with bare except clause in Python code</div>
+            
+            <div class="issue-impact">
+                <strong>💥 Impact:</strong> Code quality issue
+            </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <strong>Problematic Code:</strong>
+                    <div class="code-block">try:
+    process_data()
+except:
+    pass</div>
+                </div>
+            
+            
+                <div class="fix-suggestion">
+                    <strong>💡 Suggested Fix:</strong> Catch specific exceptions and handle appropriately
+                    
+                </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em;">
+                        🏷️ code-quality
+                    </span>
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em; margin-left: 5px;">
+                        ⏱️ Est. 30-60 min to fix
+                    </span>
+                </div>
+        </div>
+        <div class="issue-card issue-medium">
+            <div class="issue-header">
+                <span class="issue-title">ISSUE-3: Broad Exception Handling #17</span>
+                <span class="issue-severity severity-medium">medium</span>
+            </div>
+            <div class="issue-location">📁 app/handlers/error.py:909</div>
+            <div class="issue-description">Catching all exceptions with bare except clause in Python code</div>
+            
+            <div class="issue-impact">
+                <strong>💥 Impact:</strong> Code quality issue
+            </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <strong>Problematic Code:</strong>
+                    <div class="code-block">try:
+    process_data()
+except:
+    pass</div>
+                </div>
+            
+            
+                <div class="fix-suggestion">
+                    <strong>💡 Suggested Fix:</strong> Catch specific exceptions and handle appropriately
+                    
+                </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em;">
+                        🏷️ code-quality
+                    </span>
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em; margin-left: 5px;">
+                        ⏱️ Est. 30-60 min to fix
+                    </span>
+                </div>
+        </div>
+        <div class="issue-card issue-low">
+            <div class="issue-header">
+                <span class="issue-title">ISSUE-4: Missing Type Hints #21</span>
+                <span class="issue-severity severity-low">low</span>
+            </div>
+            <div class="issue-location">📁 app/utils/helpers.py:784</div>
+            <div class="issue-description">Function lacks type hints for parameters and return value in Python code</div>
+            
+            <div class="issue-impact">
+                <strong>💥 Impact:</strong> Code quality issue
+            </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <strong>Problematic Code:</strong>
+                    <div class="code-block">try:
+    process_data()
+except:
+    pass</div>
+                </div>
+            
+            
+                <div class="fix-suggestion">
+                    <strong>💡 Suggested Fix:</strong> Catch specific exceptions and handle appropriately
+                    
+                </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em;">
+                        🏷️ code-quality
+                    </span>
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em; margin-left: 5px;">
+                        ⏱️ Est. 15-30 min to fix
+                    </span>
+                </div>
+        </div>
+        <div class="issue-card issue-medium">
+            <div class="issue-header">
+                <span class="issue-title">ISSUE-5: Broad Exception Handling #23</span>
+                <span class="issue-severity severity-medium">medium</span>
+            </div>
+            <div class="issue-location">📁 app/handlers/error.py:504</div>
+            <div class="issue-description">Catching all exceptions with bare except clause in Python code</div>
+            
+            <div class="issue-impact">
+                <strong>💥 Impact:</strong> Code quality issue
+            </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <strong>Problematic Code:</strong>
+                    <div class="code-block">try:
+    process_data()
+except:
+    pass</div>
+                </div>
+            
+            
+                <div class="fix-suggestion">
+                    <strong>💡 Suggested Fix:</strong> Catch specific exceptions and handle appropriately
+                    
+                </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em;">
+                        🏷️ code-quality
+                    </span>
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em; margin-left: 5px;">
+                        ⏱️ Est. 30-60 min to fix
+                    </span>
+                </div>
+        </div>
+        </div>
+                </div>
+            </div>
+        
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">🏗️ 4. Architecture Analysis</h2>
+                </div>
+                <div class="section-content">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 100%;">100/100</div>
+                    </div>
+                    
+                    <h3>System Architecture Overview</h3>
+                    
+    <div class="architecture-diagram">
+        <pre style="background: #2d3748; color: #e2e8f0; padding: 20px; border-radius: 8px; overflow-x: auto;">
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│   Frontend  │────▶│     API     │────▶│   Backend   │
+│  ✅ Clean  │     │  ✅ Clean  │     │  ✅ Clean  │
+└─────────────┘     └─────────────┘     └─────────────┘
+       │                   │                    │
+       │                   ▼                    ▼
+       │            ┌─────────────┐     ┌─────────────┐
+       │            │    Cache    │     │  Database   │
+       │            │  ✅ Clean  │     │  ✅ Clean  │
+       │            └─────────────┘     └─────────────┘
+       │                                        │
+       └────────────────┬───────────────────────┘
+                        ▼
+                ┌─────────────┐
+                │  Security   │
+                │  ✅ Secure  │
+                └─────────────┘
+        </pre>
+    </div>
+                    
+                    <div class="alert alert-success">✅ Architecture standards maintained</div>
+                    
+                    
+                </div>
+            </div>
+        
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">📦 5. Dependencies Analysis</h2>
+                </div>
+                <div class="section-content">
+                    <div class="alert alert-success">✅ No dependency issues detected</div>
+                    
+                    
+                </div>
+            </div>
+        
+        
+        
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">🆕 8. PR Issues <span class="badge badge-new">15</span></h2>
+                </div>
+                <div class="section-content">
+                    <div class="alert alert-danger">🚨 Critical/High issues must be fixed before merge</div>
+                    
+                    
+        <h3>🚨 Critical Issues (MUST FIX)</h3>
+        <div style="margin-top: 15px;">
+            
+        <div class="issue-card issue-critical">
+            <div class="issue-header">
+                <span class="issue-title">PR-CRITICAL-SECURITY-001: SQL Injection in Raw Query #1</span>
+                <span class="issue-severity severity-critical">critical</span>
+            </div>
+            <div class="issue-location">📁 app/database/queries.py:71</div>
+            <div class="issue-description">Using string formatting in SQL queries instead of parameterized queries in Python code</div>
+            
+            <div class="issue-impact">
+                <strong>💥 Impact:</strong> Critical security vulnerability
+            </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <strong>Problematic Code:</strong>
+                    <div class="code-block">query = f&quot;SELECT * FROM users WHERE id = {user_id}&quot;</div>
+                </div>
+            
+            
+                <div class="fix-suggestion">
+                    <strong>💡 Suggested Fix:</strong> Use parameterized queries: cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+                    
+                </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em;">
+                        🏷️ security
+                    </span>
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em; margin-left: 5px;">
+                        ⏱️ Est. 2-4 hours to fix
+                    </span>
+                </div>
+        </div>
+        <div class="issue-card issue-critical">
+            <div class="issue-header">
+                <span class="issue-title">PR-CRITICAL-SECURITY-002: Hardcoded Secret Key #2</span>
+                <span class="issue-severity severity-critical">critical</span>
+            </div>
+            <div class="issue-location">📁 config/settings.py:413</div>
+            <div class="issue-description">Secret key hardcoded in source code in Python code</div>
+            
+            <div class="issue-impact">
+                <strong>💥 Impact:</strong> Critical security vulnerability
+            </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <strong>Problematic Code:</strong>
+                    <div class="code-block">query = f&quot;SELECT * FROM users WHERE id = {user_id}&quot;</div>
+                </div>
+            
+            
+                <div class="fix-suggestion">
+                    <strong>💡 Suggested Fix:</strong> Use parameterized queries: cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+                    
+                </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em;">
+                        🏷️ security
+                    </span>
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em; margin-left: 5px;">
+                        ⏱️ Est. 2-4 hours to fix
+                    </span>
+                </div>
+        </div>
+        <div class="issue-card issue-critical">
+            <div class="issue-header">
+                <span class="issue-title">PR-CRITICAL-SECURITY-003: SQL Injection in Raw Query #13</span>
+                <span class="issue-severity severity-critical">critical</span>
+            </div>
+            <div class="issue-location">📁 app/database/queries.py:213</div>
+            <div class="issue-description">Using string formatting in SQL queries instead of parameterized queries in Python code</div>
+            
+            <div class="issue-impact">
+                <strong>💥 Impact:</strong> Critical security vulnerability
+            </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <strong>Problematic Code:</strong>
+                    <div class="code-block">query = f&quot;SELECT * FROM users WHERE id = {user_id}&quot;</div>
+                </div>
+            
+            
+                <div class="fix-suggestion">
+                    <strong>💡 Suggested Fix:</strong> Use parameterized queries: cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+                    
+                </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em;">
+                        🏷️ security
+                    </span>
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em; margin-left: 5px;">
+                        ⏱️ Est. 2-4 hours to fix
+                    </span>
+                </div>
+        </div>
+        <div class="issue-card issue-critical">
+            <div class="issue-header">
+                <span class="issue-title">PR-CRITICAL-SECURITY-004: Hardcoded Secret Key #20</span>
+                <span class="issue-severity severity-critical">critical</span>
+            </div>
+            <div class="issue-location">📁 config/settings.py:523</div>
+            <div class="issue-description">Secret key hardcoded in source code in Python code</div>
+            
+            <div class="issue-impact">
+                <strong>💥 Impact:</strong> Critical security vulnerability
+            </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <strong>Problematic Code:</strong>
+                    <div class="code-block">query = f&quot;SELECT * FROM users WHERE id = {user_id}&quot;</div>
+                </div>
+            
+            
+                <div class="fix-suggestion">
+                    <strong>💡 Suggested Fix:</strong> Use parameterized queries: cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+                    
+                </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em;">
+                        🏷️ security
+                    </span>
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em; margin-left: 5px;">
+                        ⏱️ Est. 2-4 hours to fix
+                    </span>
+                </div>
+        </div>
+        <div class="issue-card issue-critical">
+            <div class="issue-header">
+                <span class="issue-title">PR-CRITICAL-SECURITY-005: SQL Injection in Raw Query #25</span>
+                <span class="issue-severity severity-critical">critical</span>
+            </div>
+            <div class="issue-location">📁 app/database/queries.py:564</div>
+            <div class="issue-description">Using string formatting in SQL queries instead of parameterized queries in Python code</div>
+            
+            <div class="issue-impact">
+                <strong>💥 Impact:</strong> Critical security vulnerability
+            </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <strong>Problematic Code:</strong>
+                    <div class="code-block">query = f&quot;SELECT * FROM users WHERE id = {user_id}&quot;</div>
+                </div>
+            
+            
+                <div class="fix-suggestion">
+                    <strong>💡 Suggested Fix:</strong> Use parameterized queries: cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+                    
+                </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em;">
+                        🏷️ security
+                    </span>
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em; margin-left: 5px;">
+                        ⏱️ Est. 2-4 hours to fix
+                    </span>
+                </div>
+        </div>
+        </div>
+                    
+        <h3>⚠️ High Issues (MUST FIX)</h3>
+        <div style="margin-top: 15px;">
+            
+        <div class="issue-card issue-high">
+            <div class="issue-header">
+                <span class="issue-title">PR-HIGH-PERFORMANCE-001: Resource Not Closed #12</span>
+                <span class="issue-severity severity-high">high</span>
+            </div>
+            <div class="issue-location">📁 app/io/file_manager.py:702</div>
+            <div class="issue-description">File handle not properly closed after use in Python code</div>
+            
+            <div class="issue-impact">
+                <strong>💥 Impact:</strong> Code quality issue
+            </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <strong>Problematic Code:</strong>
+                    <div class="code-block">result = [x for x in range(1000) for y in range(1000) if x*y &gt; 500]</div>
+                </div>
+            
+            
+                <div class="fix-suggestion">
+                    <strong>💡 Suggested Fix:</strong> Optimize with generator expression or numpy operations
+                    
+                </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em;">
+                        🏷️ performance
+                    </span>
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em; margin-left: 5px;">
+                        ⏱️ Est. 1-2 hours to fix
+                    </span>
+                </div>
+        </div>
+        <div class="issue-card issue-high">
+            <div class="issue-header">
+                <span class="issue-title">PR-HIGH-PERFORMANCE-002: Resource Not Closed #18</span>
+                <span class="issue-severity severity-high">high</span>
+            </div>
+            <div class="issue-location">📁 app/io/file_manager.py:998</div>
+            <div class="issue-description">File handle not properly closed after use in Python code</div>
+            
+            <div class="issue-impact">
+                <strong>💥 Impact:</strong> Code quality issue
+            </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <strong>Problematic Code:</strong>
+                    <div class="code-block">result = [x for x in range(1000) for y in range(1000) if x*y &gt; 500]</div>
+                </div>
+            
+            
+                <div class="fix-suggestion">
+                    <strong>💡 Suggested Fix:</strong> Optimize with generator expression or numpy operations
+                    
+                </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em;">
+                        🏷️ performance
+                    </span>
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em; margin-left: 5px;">
+                        ⏱️ Est. 1-2 hours to fix
+                    </span>
+                </div>
+        </div>
+        <div class="issue-card issue-high">
+            <div class="issue-header">
+                <span class="issue-title">PR-HIGH-PERFORMANCE-003: Resource Not Closed #24</span>
+                <span class="issue-severity severity-high">high</span>
+            </div>
+            <div class="issue-location">📁 app/io/file_manager.py:708</div>
+            <div class="issue-description">File handle not properly closed after use in Python code</div>
+            
+            <div class="issue-impact">
+                <strong>💥 Impact:</strong> Code quality issue
+            </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <strong>Problematic Code:</strong>
+                    <div class="code-block">result = [x for x in range(1000) for y in range(1000) if x*y &gt; 500]</div>
+                </div>
+            
+            
+                <div class="fix-suggestion">
+                    <strong>💡 Suggested Fix:</strong> Optimize with generator expression or numpy operations
+                    
+                </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em;">
+                        🏷️ performance
+                    </span>
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em; margin-left: 5px;">
+                        ⏱️ Est. 1-2 hours to fix
+                    </span>
+                </div>
+        </div>
+        </div>
+                    
+        <h3>🟡 Medium Issues (Acceptable)</h3>
+        <div style="margin-top: 15px;">
+            
+        <div class="issue-card issue-medium">
+            <div class="issue-header">
+                <span class="issue-title">PR-MEDIUM-CODE-QUALITY-001: Broad Exception Handling #11</span>
+                <span class="issue-severity severity-medium">medium</span>
+            </div>
+            <div class="issue-location">📁 app/handlers/error.py:301</div>
+            <div class="issue-description">Catching all exceptions with bare except clause in Python code</div>
+            
+            <div class="issue-impact">
+                <strong>💥 Impact:</strong> Code quality issue
+            </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <strong>Problematic Code:</strong>
+                    <div class="code-block">try:
+    process_data()
+except:
+    pass</div>
+                </div>
+            
+            
+                <div class="fix-suggestion">
+                    <strong>💡 Suggested Fix:</strong> Catch specific exceptions and handle appropriately
+                    
+                </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em;">
+                        🏷️ code-quality
+                    </span>
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em; margin-left: 5px;">
+                        ⏱️ Est. 30-60 min to fix
+                    </span>
+                </div>
+        </div>
+        <div class="issue-card issue-medium">
+            <div class="issue-header">
+                <span class="issue-title">PR-MEDIUM-PERFORMANCE-002: Inefficient List Comprehension #16</span>
+                <span class="issue-severity severity-medium">medium</span>
+            </div>
+            <div class="issue-location">📁 app/processors/data.py:382</div>
+            <div class="issue-description">Nested list comprehension causing O(n²) complexity in Python code</div>
+            
+            <div class="issue-impact">
+                <strong>💥 Impact:</strong> Code quality issue
+            </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <strong>Problematic Code:</strong>
+                    <div class="code-block">result = [x for x in range(1000) for y in range(1000) if x*y &gt; 500]</div>
+                </div>
+            
+            
+                <div class="fix-suggestion">
+                    <strong>💡 Suggested Fix:</strong> Optimize with generator expression or numpy operations
+                    
+                </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em;">
+                        🏷️ performance
+                    </span>
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em; margin-left: 5px;">
+                        ⏱️ Est. 30-60 min to fix
+                    </span>
+                </div>
+        </div>
+        <div class="issue-card issue-medium">
+            <div class="issue-header">
+                <span class="issue-title">PR-MEDIUM-CODE-QUALITY-003: Broad Exception Handling #17</span>
+                <span class="issue-severity severity-medium">medium</span>
+            </div>
+            <div class="issue-location">📁 app/handlers/error.py:909</div>
+            <div class="issue-description">Catching all exceptions with bare except clause in Python code</div>
+            
+            <div class="issue-impact">
+                <strong>💥 Impact:</strong> Code quality issue
+            </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <strong>Problematic Code:</strong>
+                    <div class="code-block">try:
+    process_data()
+except:
+    pass</div>
+                </div>
+            
+            
+                <div class="fix-suggestion">
+                    <strong>💡 Suggested Fix:</strong> Catch specific exceptions and handle appropriately
+                    
+                </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em;">
+                        🏷️ code-quality
+                    </span>
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em; margin-left: 5px;">
+                        ⏱️ Est. 30-60 min to fix
+                    </span>
+                </div>
+        </div>
+        <div class="issue-card issue-medium">
+            <div class="issue-header">
+                <span class="issue-title">PR-MEDIUM-PERFORMANCE-004: Inefficient List Comprehension #22</span>
+                <span class="issue-severity severity-medium">medium</span>
+            </div>
+            <div class="issue-location">📁 app/processors/data.py:877</div>
+            <div class="issue-description">Nested list comprehension causing O(n²) complexity in Python code</div>
+            
+            <div class="issue-impact">
+                <strong>💥 Impact:</strong> Code quality issue
+            </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <strong>Problematic Code:</strong>
+                    <div class="code-block">result = [x for x in range(1000) for y in range(1000) if x*y &gt; 500]</div>
+                </div>
+            
+            
+                <div class="fix-suggestion">
+                    <strong>💡 Suggested Fix:</strong> Optimize with generator expression or numpy operations
+                    
+                </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em;">
+                        🏷️ performance
+                    </span>
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em; margin-left: 5px;">
+                        ⏱️ Est. 30-60 min to fix
+                    </span>
+                </div>
+        </div>
+        <div class="issue-card issue-medium">
+            <div class="issue-header">
+                <span class="issue-title">PR-MEDIUM-CODE-QUALITY-005: Broad Exception Handling #23</span>
+                <span class="issue-severity severity-medium">medium</span>
+            </div>
+            <div class="issue-location">📁 app/handlers/error.py:504</div>
+            <div class="issue-description">Catching all exceptions with bare except clause in Python code</div>
+            
+            <div class="issue-impact">
+                <strong>💥 Impact:</strong> Code quality issue
+            </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <strong>Problematic Code:</strong>
+                    <div class="code-block">try:
+    process_data()
+except:
+    pass</div>
+                </div>
+            
+            
+                <div class="fix-suggestion">
+                    <strong>💡 Suggested Fix:</strong> Catch specific exceptions and handle appropriately
+                    
+                </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em;">
+                        🏷️ code-quality
+                    </span>
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em; margin-left: 5px;">
+                        ⏱️ Est. 30-60 min to fix
+                    </span>
+                </div>
+        </div>
+        </div>
+                    
+        <h3>🟢 Low Issues (Acceptable)</h3>
+        <div style="margin-top: 15px;">
+            
+        <div class="issue-card issue-low">
+            <div class="issue-header">
+                <span class="issue-title">PR-LOW-CODE-QUALITY-001: Missing Type Hints #9</span>
+                <span class="issue-severity severity-low">low</span>
+            </div>
+            <div class="issue-location">📁 app/utils/helpers.py:303</div>
+            <div class="issue-description">Function lacks type hints for parameters and return value in Python code</div>
+            
+            <div class="issue-impact">
+                <strong>💥 Impact:</strong> Code quality issue
+            </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <strong>Problematic Code:</strong>
+                    <div class="code-block">try:
+    process_data()
+except:
+    pass</div>
+                </div>
+            
+            
+                <div class="fix-suggestion">
+                    <strong>💡 Suggested Fix:</strong> Catch specific exceptions and handle appropriately
+                    
+                </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em;">
+                        🏷️ code-quality
+                    </span>
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em; margin-left: 5px;">
+                        ⏱️ Est. 15-30 min to fix
+                    </span>
+                </div>
+        </div>
+        <div class="issue-card issue-low">
+            <div class="issue-header">
+                <span class="issue-title">PR-LOW-CODE-QUALITY-002: Missing Type Hints #21</span>
+                <span class="issue-severity severity-low">low</span>
+            </div>
+            <div class="issue-location">📁 app/utils/helpers.py:784</div>
+            <div class="issue-description">Function lacks type hints for parameters and return value in Python code</div>
+            
+            <div class="issue-impact">
+                <strong>💥 Impact:</strong> Code quality issue
+            </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <strong>Problematic Code:</strong>
+                    <div class="code-block">try:
+    process_data()
+except:
+    pass</div>
+                </div>
+            
+            
+                <div class="fix-suggestion">
+                    <strong>💡 Suggested Fix:</strong> Catch specific exceptions and handle appropriately
+                    
+                </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em;">
+                        🏷️ code-quality
+                    </span>
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em; margin-left: 5px;">
+                        ⏱️ Est. 15-30 min to fix
+                    </span>
+                </div>
+        </div>
+        </div>
+                </div>
+            </div>
+        
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">📌 9. Repository Issues (NOT BLOCKING) <span class="badge badge-unchanged">10</span></h2>
+                </div>
+                <div class="section-content">
+                    <div class="alert alert-warning">
+                        ⚠️ 10 pre-existing issue(s) in the repository. These don't block the PR but impact skill scores.
+                    </div>
+                    
+        <h3>Pre-existing Issues (showing first 5)</h3>
+        <div style="margin-top: 15px;">
+            
+        <div class="issue-card issue-critical">
+            <div class="issue-header">
+                <span class="issue-title">REPO-SECURITY-001: SQL Injection in Raw Query #7</span>
+                <span class="issue-severity severity-critical">critical</span>
+            </div>
+            <div class="issue-location">📁 app/database/queries.py:518</div>
+            <div class="issue-description">Using string formatting in SQL queries instead of parameterized queries in Python code</div>
+            
+            <div class="issue-impact">
+                <strong>💥 Impact:</strong> Critical security vulnerability
+            </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <strong>Problematic Code:</strong>
+                    <div class="code-block">query = f&quot;SELECT * FROM users WHERE id = {user_id}&quot;</div>
+                </div>
+            
+            
+                <div class="fix-suggestion">
+                    <strong>💡 Suggested Fix:</strong> Use parameterized queries: cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+                    
+                </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em;">
+                        🏷️ security
+                    </span>
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em; margin-left: 5px;">
+                        ⏱️ Est. 2-4 hours to fix
+                    </span>
+                </div>
+        </div>
+        <div class="issue-card issue-critical">
+            <div class="issue-header">
+                <span class="issue-title">REPO-SECURITY-002: Hardcoded Secret Key #14</span>
+                <span class="issue-severity severity-critical">critical</span>
+            </div>
+            <div class="issue-location">📁 config/settings.py:971</div>
+            <div class="issue-description">Secret key hardcoded in source code in Python code</div>
+            
+            <div class="issue-impact">
+                <strong>💥 Impact:</strong> Critical security vulnerability
+            </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <strong>Problematic Code:</strong>
+                    <div class="code-block">query = f&quot;SELECT * FROM users WHERE id = {user_id}&quot;</div>
+                </div>
+            
+            
+                <div class="fix-suggestion">
+                    <strong>💡 Suggested Fix:</strong> Use parameterized queries: cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+                    
+                </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em;">
+                        🏷️ security
+                    </span>
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em; margin-left: 5px;">
+                        ⏱️ Est. 2-4 hours to fix
+                    </span>
+                </div>
+        </div>
+        <div class="issue-card issue-low">
+            <div class="issue-header">
+                <span class="issue-title">REPO-CODE-QUALITY-003: Missing Type Hints #15</span>
+                <span class="issue-severity severity-low">low</span>
+            </div>
+            <div class="issue-location">📁 app/utils/helpers.py:631</div>
+            <div class="issue-description">Function lacks type hints for parameters and return value in Python code</div>
+            
+            <div class="issue-impact">
+                <strong>💥 Impact:</strong> Code quality issue
+            </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <strong>Problematic Code:</strong>
+                    <div class="code-block">try:
+    process_data()
+except:
+    pass</div>
+                </div>
+            
+            
+                <div class="fix-suggestion">
+                    <strong>💡 Suggested Fix:</strong> Catch specific exceptions and handle appropriately
+                    
+                </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em;">
+                        🏷️ code-quality
+                    </span>
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em; margin-left: 5px;">
+                        ⏱️ Est. 15-30 min to fix
+                    </span>
+                </div>
+        </div>
+        <div class="issue-card issue-medium">
+            <div class="issue-header">
+                <span class="issue-title">REPO-PERFORMANCE-004: Inefficient List Comprehension #4</span>
+                <span class="issue-severity severity-medium">medium</span>
+            </div>
+            <div class="issue-location">📁 app/processors/data.py:394</div>
+            <div class="issue-description">Nested list comprehension causing O(n²) complexity in Python code</div>
+            
+            <div class="issue-impact">
+                <strong>💥 Impact:</strong> Code quality issue
+            </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <strong>Problematic Code:</strong>
+                    <div class="code-block">result = [x for x in range(1000) for y in range(1000) if x*y &gt; 500]</div>
+                </div>
+            
+            
+                <div class="fix-suggestion">
+                    <strong>💡 Suggested Fix:</strong> Optimize with generator expression or numpy operations
+                    
+                </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em;">
+                        🏷️ performance
+                    </span>
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em; margin-left: 5px;">
+                        ⏱️ Est. 30-60 min to fix
+                    </span>
+                </div>
+        </div>
+        <div class="issue-card issue-medium">
+            <div class="issue-header">
+                <span class="issue-title">REPO-CODE-QUALITY-005: Broad Exception Handling #5</span>
+                <span class="issue-severity severity-medium">medium</span>
+            </div>
+            <div class="issue-location">📁 app/handlers/error.py:95</div>
+            <div class="issue-description">Catching all exceptions with bare except clause in Python code</div>
+            
+            <div class="issue-impact">
+                <strong>💥 Impact:</strong> Code quality issue
+            </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <strong>Problematic Code:</strong>
+                    <div class="code-block">try:
+    process_data()
+except:
+    pass</div>
+                </div>
+            
+            
+                <div class="fix-suggestion">
+                    <strong>💡 Suggested Fix:</strong> Catch specific exceptions and handle appropriately
+                    
+                </div>
+            
+            
+                <div style="margin-top: 10px;">
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em;">
+                        🏷️ code-quality
+                    </span>
+                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em; margin-left: 5px;">
+                        ⏱️ Est. 30-60 min to fix
+                    </span>
+                </div>
+        </div>
+        </div>
+                </div>
+            </div>
+        
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">💡 10. Educational Insights - Personalized Learning Plan</h2>
+                </div>
+                <div class="section-content">
+                    <!-- Skill Score Section (BUG-8) -->
+                    <div class="skill-score-summary" style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+                        <h3>📊 Your Code Quality Score</h3>
+                        <div class="score-display" style="font-size: 2.5em; font-weight: bold; color: #dc3545; margin: 20px 0;">
+                            <span class="current-score">0</span>
+                            <span class="max-score" style="font-size: 0.6em; color: #666;">/100</span>
+                        </div>
+                        <div class="score-breakdown" style="background: white; padding: 15px; border-radius: 5px;">
+                            <p><strong>Score Calculation:</strong></p>
+                            <ul style="list-style: none; padding: 10px 0;">
+                                <li>✅ Base Score (new user): 50/100</li>
+                                <li style="color: #dc3545;">➖ Critical Issues (-5 each): -45 points (9 issues)</li>
+                                <li style="color: #fd7e14;">➖ High Issues (-3 each): -12 points (4 issues)</li>
+                                <li style="color: #ffc107;">➖ Medium Issues (-1 each): -8 points (8 issues)</li>
+                                <li style="color: #28a745;">➖ Low Issues (-0.5 each): -2 points (4 issues)</li>
+                                <li style="border-top: 1px solid #dee2e6; margin-top: 10px; padding-top: 10px;">
+                                    <strong>Final Score: 0/100</strong>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- Issue-Specific Education (BUG-7) -->
+                    <div class="issue-based-learning">
+                        <h3>📚 Learning Opportunities Based on Found Issues</h3>
+                        <div class="critical-learning urgent" style="background: #ffebee; border-left: 4px solid #dc3545; padding: 20px; margin: 20px 0;">
+                            <h4 style="color: #dc3545;">🚨 CRITICAL - Immediate Action Required</h4>
+                            <p class="motivation-strict" style="font-weight: bold; margin: 10px 0;">
+                                These critical issues pose immediate security/stability risks. 
+                                <strong style="color: #dc3545;">You MUST address these before deployment!</strong>
+                            </p>
+                            <ul style="list-style: none; padding: 0;">
+                                <li class="issue-education critical" style="background: white; padding: 15px; margin: 10px 0; border-radius: 5px;">
+                                    <div class="issue-title" style="font-weight: bold; color: #dc3545;">
+                                        🔴 SQL Injection in Raw Query #1
+                                    </div>
+                                    <div class="education-link" style="margin: 10px 0;">
+                                        📖 <strong>Required Learning</strong>: 
+                                        <a href="https://owasp.org/www-community/attacks/SQL_Injection" target="_blank" style="color: #007bff;">OWASP Guide: Preventing SQL Injection Attacks</a>
+                                    </div>
+                                    <div class="why-important" style="background: #fff5f5; padding: 10px; border-radius: 3px;">
+                                        ⚠️ <strong>Why this matters:</strong> Critical security vulnerability
+                                    </div>
+                                </li>
+                                <li class="issue-education critical" style="background: white; padding: 15px; margin: 10px 0; border-radius: 5px;">
+                                    <div class="issue-title" style="font-weight: bold; color: #dc3545;">
+                                        🔴 Hardcoded Secret Key #2
+                                    </div>
+                                    <div class="education-link" style="margin: 10px 0;">
+                                        📖 <strong>Required Learning</strong>: 
+                                        <a href="https://owasp.org/www-project-top-ten/" target="_blank" style="color: #007bff;">OWASP Top 10 Security Vulnerabilities</a>
+                                    </div>
+                                    <div class="why-important" style="background: #fff5f5; padding: 10px; border-radius: 3px;">
+                                        ⚠️ <strong>Why this matters:</strong> Critical security vulnerability
+                                    </div>
+                                </li>
+                                <li class="issue-education critical" style="background: white; padding: 15px; margin: 10px 0; border-radius: 5px;">
+                                    <div class="issue-title" style="font-weight: bold; color: #dc3545;">
+                                        🔴 SQL Injection in Raw Query #13
+                                    </div>
+                                    <div class="education-link" style="margin: 10px 0;">
+                                        📖 <strong>Required Learning</strong>: 
+                                        <a href="https://owasp.org/www-community/attacks/SQL_Injection" target="_blank" style="color: #007bff;">OWASP Guide: Preventing SQL Injection Attacks</a>
+                                    </div>
+                                    <div class="why-important" style="background: #fff5f5; padding: 10px; border-radius: 3px;">
+                                        ⚠️ <strong>Why this matters:</strong> Critical security vulnerability
+                                    </div>
+                                </li>
+                                <li class="issue-education critical" style="background: white; padding: 15px; margin: 10px 0; border-radius: 5px;">
+                                    <div class="issue-title" style="font-weight: bold; color: #dc3545;">
+                                        🔴 Hardcoded Secret Key #20
+                                    </div>
+                                    <div class="education-link" style="margin: 10px 0;">
+                                        📖 <strong>Required Learning</strong>: 
+                                        <a href="https://owasp.org/www-project-top-ten/" target="_blank" style="color: #007bff;">OWASP Top 10 Security Vulnerabilities</a>
+                                    </div>
+                                    <div class="why-important" style="background: #fff5f5; padding: 10px; border-radius: 3px;">
+                                        ⚠️ <strong>Why this matters:</strong> Critical security vulnerability
+                                    </div>
+                                </li>
+                                <li class="issue-education critical" style="background: white; padding: 15px; margin: 10px 0; border-radius: 5px;">
+                                    <div class="issue-title" style="font-weight: bold; color: #dc3545;">
+                                        🔴 SQL Injection in Raw Query #25
+                                    </div>
+                                    <div class="education-link" style="margin: 10px 0;">
+                                        📖 <strong>Required Learning</strong>: 
+                                        <a href="https://owasp.org/www-community/attacks/SQL_Injection" target="_blank" style="color: #007bff;">OWASP Guide: Preventing SQL Injection Attacks</a>
+                                    </div>
+                                    <div class="why-important" style="background: #fff5f5; padding: 10px; border-radius: 3px;">
+                                        ⚠️ <strong>Why this matters:</strong> Critical security vulnerability
+                                    </div>
+                                </li>
+                                <li class="issue-education critical" style="background: white; padding: 15px; margin: 10px 0; border-radius: 5px;">
+                                    <div class="issue-title" style="font-weight: bold; color: #dc3545;">
+                                        🔴 SQL Injection in Raw Query #7
+                                    </div>
+                                    <div class="education-link" style="margin: 10px 0;">
+                                        📖 <strong>Required Learning</strong>: 
+                                        <a href="https://owasp.org/www-community/attacks/SQL_Injection" target="_blank" style="color: #007bff;">OWASP Guide: Preventing SQL Injection Attacks</a>
+                                    </div>
+                                    <div class="why-important" style="background: #fff5f5; padding: 10px; border-radius: 3px;">
+                                        ⚠️ <strong>Why this matters:</strong> Critical security vulnerability
+                                    </div>
+                                </li>
+                                <li class="issue-education critical" style="background: white; padding: 15px; margin: 10px 0; border-radius: 5px;">
+                                    <div class="issue-title" style="font-weight: bold; color: #dc3545;">
+                                        🔴 Hardcoded Secret Key #14
+                                    </div>
+                                    <div class="education-link" style="margin: 10px 0;">
+                                        📖 <strong>Required Learning</strong>: 
+                                        <a href="https://owasp.org/www-project-top-ten/" target="_blank" style="color: #007bff;">OWASP Top 10 Security Vulnerabilities</a>
+                                    </div>
+                                    <div class="why-important" style="background: #fff5f5; padding: 10px; border-radius: 3px;">
+                                        ⚠️ <strong>Why this matters:</strong> Critical security vulnerability
+                                    </div>
+                                </li>
+                                <li class="issue-education critical" style="background: white; padding: 15px; margin: 10px 0; border-radius: 5px;">
+                                    <div class="issue-title" style="font-weight: bold; color: #dc3545;">
+                                        🔴 SQL Injection in Raw Query #19
+                                    </div>
+                                    <div class="education-link" style="margin: 10px 0;">
+                                        📖 <strong>Required Learning</strong>: 
+                                        <a href="https://owasp.org/www-community/attacks/SQL_Injection" target="_blank" style="color: #007bff;">OWASP Guide: Preventing SQL Injection Attacks</a>
+                                    </div>
+                                    <div class="why-important" style="background: #fff5f5; padding: 10px; border-radius: 3px;">
+                                        ⚠️ <strong>Why this matters:</strong> Critical security vulnerability
+                                    </div>
+                                </li>
+                                <li class="issue-education critical" style="background: white; padding: 15px; margin: 10px 0; border-radius: 5px;">
+                                    <div class="issue-title" style="font-weight: bold; color: #dc3545;">
+                                        🔴 Hardcoded Secret Key #8
+                                    </div>
+                                    <div class="education-link" style="margin: 10px 0;">
+                                        📖 <strong>Required Learning</strong>: 
+                                        <a href="https://owasp.org/www-project-top-ten/" target="_blank" style="color: #007bff;">OWASP Top 10 Security Vulnerabilities</a>
+                                    </div>
+                                    <div class="why-important" style="background: #fff5f5; padding: 10px; border-radius: 3px;">
+                                        ⚠️ <strong>Why this matters:</strong> Critical security vulnerability
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="high-learning important" style="background: #fff3e0; border-left: 4px solid #fd7e14; padding: 20px; margin: 20px 0;">
+                            <h4 style="color: #fd7e14;">⚠️ HIGH Priority Learning</h4>
+                            <p class="motivation-strong" style="margin: 10px 0;">
+                                These issues significantly impact code quality and should be addressed soon.
+                            </p>
+                            <ul style="list-style: none; padding: 0;">
+                                <li class="issue-education high" style="background: white; padding: 15px; margin: 10px 0; border-radius: 5px;">
+                                    <div class="issue-title" style="font-weight: bold; color: #fd7e14;">
+                                        🟠 Resource Not Closed #12
+                                    </div>
+                                    <div class="education-link" style="margin: 10px 0;">
+                                        📚 <strong>Recommended</strong>: 
+                                        <a href="https://web.dev/performance/" target="_blank" style="color: #007bff;">Web Performance Optimization Fundamentals</a>
+                                    </div>
+                                </li>
+                                <li class="issue-education high" style="background: white; padding: 15px; margin: 10px 0; border-radius: 5px;">
+                                    <div class="issue-title" style="font-weight: bold; color: #fd7e14;">
+                                        🟠 Resource Not Closed #18
+                                    </div>
+                                    <div class="education-link" style="margin: 10px 0;">
+                                        📚 <strong>Recommended</strong>: 
+                                        <a href="https://web.dev/performance/" target="_blank" style="color: #007bff;">Web Performance Optimization Fundamentals</a>
+                                    </div>
+                                </li>
+                                <li class="issue-education high" style="background: white; padding: 15px; margin: 10px 0; border-radius: 5px;">
+                                    <div class="issue-title" style="font-weight: bold; color: #fd7e14;">
+                                        🟠 Resource Not Closed #24
+                                    </div>
+                                    <div class="education-link" style="margin: 10px 0;">
+                                        📚 <strong>Recommended</strong>: 
+                                        <a href="https://web.dev/performance/" target="_blank" style="color: #007bff;">Web Performance Optimization Fundamentals</a>
+                                    </div>
+                                </li>
+                                <li class="issue-education high" style="background: white; padding: 15px; margin: 10px 0; border-radius: 5px;">
+                                    <div class="issue-title" style="font-weight: bold; color: #fd7e14;">
+                                        🟠 Resource Not Closed #6
+                                    </div>
+                                    <div class="education-link" style="margin: 10px 0;">
+                                        📚 <strong>Recommended</strong>: 
+                                        <a href="https://web.dev/performance/" target="_blank" style="color: #007bff;">Web Performance Optimization Fundamentals</a>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="suggested-learning" style="background: #e8f5e9; border-left: 4px solid #28a745; padding: 20px; margin: 20px 0;">
+                            <h4 style="color: #28a745;">💡 Suggested Learning for Improvement</h4>
+                            <p class="motivation-encouraging" style="margin: 10px 0;">
+                                Great job overall! These improvements will enhance your code quality even further.
+                            </p>
+                            <ul style="list-style: none; padding: 0;">
+                                <li class="issue-education medium" style="background: white; padding: 15px; margin: 10px 0; border-radius: 5px;">
+                                    <div class="issue-title" style="font-weight: bold; color: #ffc107;">
+                                        🟡 Broad Exception Handling #11
+                                    </div>
+                                    <div class="education-link" style="margin: 10px 0;">
+                                        💭 Consider learning: 
+                                        <a href="https://refactoring.guru/refactoring" target="_blank" style="color: #007bff;">Code Refactoring Techniques</a>
+                                    </div>
+                                </li>
+                                <li class="issue-education medium" style="background: white; padding: 15px; margin: 10px 0; border-radius: 5px;">
+                                    <div class="issue-title" style="font-weight: bold; color: #ffc107;">
+                                        🟡 Inefficient List Comprehension #16
+                                    </div>
+                                    <div class="education-link" style="margin: 10px 0;">
+                                        💭 Consider learning: 
+                                        <a href="https://web.dev/performance/" target="_blank" style="color: #007bff;">Web Performance Optimization Fundamentals</a>
+                                    </div>
+                                </li>
+                                <li class="issue-education medium" style="background: white; padding: 15px; margin: 10px 0; border-radius: 5px;">
+                                    <div class="issue-title" style="font-weight: bold; color: #ffc107;">
+                                        🟡 Broad Exception Handling #17
+                                    </div>
+                                    <div class="education-link" style="margin: 10px 0;">
+                                        💭 Consider learning: 
+                                        <a href="https://refactoring.guru/refactoring" target="_blank" style="color: #007bff;">Code Refactoring Techniques</a>
+                                    </div>
+                                </li>
+                                <li class="issue-education medium" style="background: white; padding: 15px; margin: 10px 0; border-radius: 5px;">
+                                    <div class="issue-title" style="font-weight: bold; color: #ffc107;">
+                                        🟡 Inefficient List Comprehension #22
+                                    </div>
+                                    <div class="education-link" style="margin: 10px 0;">
+                                        💭 Consider learning: 
+                                        <a href="https://web.dev/performance/" target="_blank" style="color: #007bff;">Web Performance Optimization Fundamentals</a>
+                                    </div>
+                                </li>
+                                <li class="issue-education medium" style="background: white; padding: 15px; margin: 10px 0; border-radius: 5px;">
+                                    <div class="issue-title" style="font-weight: bold; color: #ffc107;">
+                                        🟡 Broad Exception Handling #23
+                                    </div>
+                                    <div class="education-link" style="margin: 10px 0;">
+                                        💭 Consider learning: 
+                                        <a href="https://refactoring.guru/refactoring" target="_blank" style="color: #007bff;">Code Refactoring Techniques</a>
+                                    </div>
+                                </li>
+                                <li class="issue-education medium" style="background: white; padding: 15px; margin: 10px 0; border-radius: 5px;">
+                                    <div class="issue-title" style="font-weight: bold; color: #ffc107;">
+                                        🟡 Inefficient List Comprehension #4
+                                    </div>
+                                    <div class="education-link" style="margin: 10px 0;">
+                                        💭 Consider learning: 
+                                        <a href="https://web.dev/performance/" target="_blank" style="color: #007bff;">Web Performance Optimization Fundamentals</a>
+                                    </div>
+                                </li>
+                                <li class="issue-education medium" style="background: white; padding: 15px; margin: 10px 0; border-radius: 5px;">
+                                    <div class="issue-title" style="font-weight: bold; color: #ffc107;">
+                                        🟡 Broad Exception Handling #5
+                                    </div>
+                                    <div class="education-link" style="margin: 10px 0;">
+                                        💭 Consider learning: 
+                                        <a href="https://refactoring.guru/refactoring" target="_blank" style="color: #007bff;">Code Refactoring Techniques</a>
+                                    </div>
+                                </li>
+                                <li class="issue-education medium" style="background: white; padding: 15px; margin: 10px 0; border-radius: 5px;">
+                                    <div class="issue-title" style="font-weight: bold; color: #ffc107;">
+                                        🟡 Inefficient List Comprehension #10
+                                    </div>
+                                    <div class="education-link" style="margin: 10px 0;">
+                                        💭 Consider learning: 
+                                        <a href="https://web.dev/performance/" target="_blank" style="color: #007bff;">Web Performance Optimization Fundamentals</a>
+                                    </div>
+                                </li>
+                                <li class="issue-education low" style="background: white; padding: 15px; margin: 10px 0; border-radius: 5px;">
+                                    <div class="issue-title" style="font-weight: bold; color: #28a745;">
+                                        🟢 Missing Type Hints #9
+                                    </div>
+                                    <div class="education-link" style="margin: 10px 0;">
+                                        💭 Consider learning: 
+                                        <a href="https://refactoring.guru/refactoring" target="_blank" style="color: #007bff;">Code Refactoring Techniques</a>
+                                    </div>
+                                </li>
+                                <li class="issue-education low" style="background: white; padding: 15px; margin: 10px 0; border-radius: 5px;">
+                                    <div class="issue-title" style="font-weight: bold; color: #28a745;">
+                                        🟢 Missing Type Hints #21
+                                    </div>
+                                    <div class="education-link" style="margin: 10px 0;">
+                                        💭 Consider learning: 
+                                        <a href="https://refactoring.guru/refactoring" target="_blank" style="color: #007bff;">Code Refactoring Techniques</a>
+                                    </div>
+                                </li>
+                                <li class="issue-education low" style="background: white; padding: 15px; margin: 10px 0; border-radius: 5px;">
+                                    <div class="issue-title" style="font-weight: bold; color: #28a745;">
+                                        🟢 Missing Type Hints #15
+                                    </div>
+                                    <div class="education-link" style="margin: 10px 0;">
+                                        💭 Consider learning: 
+                                        <a href="https://refactoring.guru/refactoring" target="_blank" style="color: #007bff;">Code Refactoring Techniques</a>
+                                    </div>
+                                </li>
+                                <li class="issue-education low" style="background: white; padding: 15px; margin: 10px 0; border-radius: 5px;">
+                                    <div class="issue-title" style="font-weight: bold; color: #28a745;">
+                                        🟢 Missing Type Hints #3
+                                    </div>
+                                    <div class="education-link" style="margin: 10px 0;">
+                                        💭 Consider learning: 
+                                        <a href="https://refactoring.guru/refactoring" target="_blank" style="color: #007bff;">Code Refactoring Techniques</a>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- Footnotes (BUG-8) -->
+                    <div class="educational-footnotes" style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-top: 30px;">
+                        <hr style="margin-bottom: 20px;">
+                        <small style="color: #6c757d;">
+                            <p><strong>📊 Scoring System Explained:</strong></p>
+                            <ul style="padding-left: 20px; margin: 10px 0;">
+                                <li>New users start with a base score of 50/100</li>
+                                <li>Critical issues: -5 points each (must fix immediately for security/stability)</li>
+                                <li>High issues: -3 points each (fix soon for code quality)</li>
+                                <li>Medium issues: -1 point each (plan to fix in next iteration)</li>
+                                <li>Low issues: -0.5 points each (nice to fix when time permits)</li>
+                            </ul>
+                            <p style="margin-top: 10px;">
+                                <strong>Your recent validation score: 0/100</strong> 
+                                🎯 Time to level up! Start with the critical issues first.
+                            </p>
+                            <p style="margin-top: 10px;">
+                                <em>💡 Educational links are powered by DeepWiki analysis and tailored to your specific issues.</em>
+                            </p>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">📈 11. Individual & Team Skills Tracking</h2>
+                </div>
+                <div class="section-content">
+                    <h3>Skill Impact Summary</h3>
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-value" style="color: #dc3545;">
+                                -119
+                            </div>
+                            <div class="metric-label">Overall Impact</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">-40</div>
+                            <div class="metric-label">Security Skills</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">-25</div>
+                            <div class="metric-label">Code Quality</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">0</div>
+                            <div class="metric-label">Architecture</div>
+                        </div>
+                    </div>
+                    
+                    <h3>Demonstrated Skills</h3>
+                    <ul>
+                        
+                        
+                        
+                        
+                    </ul>
+                    
+                    <h3>Areas for Improvement</h3>
+                    <ul>
+                        <li>⚠️ Prevent critical issues</li>
+                        <li>⚠️ Address technical debt</li>
+                        <li>⚠️ Security awareness</li>
+                    </ul>
+                </div>
+            </div>
+        
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">💼 12. Business Impact Analysis</h2>
+                </div>
+                <div class="section-content">
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-value" style="color: #dc3545;">High</div>
+                            <div class="metric-label">Risk Level</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">16h</div>
+                            <div class="metric-label">Est. Fix Time</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">$2,400</div>
+                            <div class="metric-label">Development Cost</div>
+                        </div>
+                    </div>
+                    
+                    <h3>Detailed Business Impact Estimates</h3>
+                    <div class="business-impact-grid">
+                        <div class="impact-item">
+                            <div class="impact-label">💰 Potential Revenue Loss</div>
+                            <div class="impact-value">$260,000</div>
+                            <small>Based on 26h potential downtime</small>
+                        </div>
+                        <div class="impact-item">
+                            <div class="impact-label">👥 User Impact</div>
+                            <div class="impact-value">6,500 users</div>
+                            <small>Potentially affected by critical/high issues</small>
+                        </div>
+                        <div class="impact-item">
+                            <div class="impact-label">⏱️ Time to Market Delay</div>
+                            <div class="impact-value">2 days</div>
+                            <small>Additional development time needed</small>
+                        </div>
+                        <div class="impact-item">
+                            <div class="impact-label">📉 Brand Reputation Risk</div>
+                            <div class="impact-value">High</div>
+                            <small>Security issues could damage trust</small>
+                        </div>
+                    </div>
+                    
+                    <h3 style="margin-top: 30px;">Risk Mitigation Strategy</h3>
+                    <ul>
+                        <li>🚨 <strong>Immediate Action:</strong> Fix 5 critical issue(s) before any deployment</li>
+                        <li>⚠️ <strong>High Priority:</strong> Address 3 high severity issue(s) within 24 hours</li>
+                        
+                        
+                        <li>📊 <strong>Monitoring:</strong> Implement error tracking for production deployment</li>
+                        <li>🔄 <strong>Process:</strong> Add security review to PR checklist</li>
+                    </ul>
+                    
+                    <div class="alert alert-info" style="margin-top: 20px;">
+                        <strong>📈 Overall Business Impact:</strong> Significant risk to production stability and user experience. Immediate action required to prevent potential revenue loss and customer churn.
+                    </div>
+                </div>
+            </div>
+        
+        
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">📋 Action Items & Recommendations</h2>
+                </div>
+                <div class="section-content">
+                    
+                        <h3>🚨 Required Actions (Blocking)</h3>
+                        <ol>
+                            <li><strong>Fix Critical:</strong> SQL Injection in Raw Query #1</li><li><strong>Fix Critical:</strong> Hardcoded Secret Key #2</li><li><strong>Fix Critical:</strong> SQL Injection in Raw Query #13</li><li><strong>Fix Critical:</strong> Hardcoded Secret Key #20</li><li><strong>Fix Critical:</strong> SQL Injection in Raw Query #25</li>
+                            <li><strong>Fix High:</strong> Resource Not Closed #12</li><li><strong>Fix High:</strong> Resource Not Closed #18</li><li><strong>Fix High:</strong> Resource Not Closed #24</li>
+                        </ol>
+                    
+                    
+                    <h3>💡 Recommendations (Non-blocking)</h3>
+                    <ul>
+                        <li>Review and address medium/low severity issues when possible</li>
+                        <li>Consider addressing pre-existing repository issues as technical debt</li>
+                        <li>Ensure all tests are passing and coverage is maintained</li>
+                        <li>Update documentation if APIs or behaviors have changed</li>
+                    </ul>
+                </div>
+            </div>
+        
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">💬 PR Comment for GitHub</h2>
+                </div>
+                <div class="section-content">
+                    <div class="pr-comment-box">
+                        <div class="pr-comment-header">
+                            <span>📋 Copy this comment to post on the PR:</span>
+                            <button class="copy-button" onclick="navigator.clipboard.writeText(document.querySelector('.pr-comment-content').textContent)">📋 Copy to Clipboard</button>
+                        </div>
+                        <div class="pr-comment-content">## CodeQual Analysis Results
+
+### ❌ DECLINED
+
+⚠️ **8 blocking issue(s) must be fixed before merge**
+
+#### 🚨 Blocking Issues:
+1. **CRITICAL:** SQL Injection in Raw Query #1
+   - 📁 Location: app/database/queries.py:71
+   - 💥 Impact: Critical security vulnerability
+   - 💡 Fix: Use parameterized queries: cursor.execute(&quot;SELECT * FROM users WHERE id = ?&quot;, (user_id,))
+
+2. **CRITICAL:** Hardcoded Secret Key #2
+   - 📁 Location: config/settings.py:413
+   - 💥 Impact: Critical security vulnerability
+   - 💡 Fix: Use parameterized queries: cursor.execute(&quot;SELECT * FROM users WHERE id = ?&quot;, (user_id,))
+
+3. **CRITICAL:** SQL Injection in Raw Query #13
+   - 📁 Location: app/database/queries.py:213
+   - 💥 Impact: Critical security vulnerability
+   - 💡 Fix: Use parameterized queries: cursor.execute(&quot;SELECT * FROM users WHERE id = ?&quot;, (user_id,))
+
+4. **CRITICAL:** Hardcoded Secret Key #20
+   - 📁 Location: config/settings.py:523
+   - 💥 Impact: Critical security vulnerability
+   - 💡 Fix: Use parameterized queries: cursor.execute(&quot;SELECT * FROM users WHERE id = ?&quot;, (user_id,))
+
+5. **CRITICAL:** SQL Injection in Raw Query #25
+   - 📁 Location: app/database/queries.py:564
+   - 💥 Impact: Critical security vulnerability
+   - 💡 Fix: Use parameterized queries: cursor.execute(&quot;SELECT * FROM users WHERE id = ?&quot;, (user_id,))
+
+6. **HIGH:** Resource Not Closed #12
+   - 📁 Location: app/io/file_manager.py:702
+   - 💥 Impact: Code quality issue
+   - 💡 Fix: Optimize with generator expression or numpy operations
+
+7. **HIGH:** Resource Not Closed #18
+   - 📁 Location: app/io/file_manager.py:998
+   - 💥 Impact: Code quality issue
+   - 💡 Fix: Optimize with generator expression or numpy operations
+
+8. **HIGH:** Resource Not Closed #24
+   - 📁 Location: app/io/file_manager.py:708
+   - 💥 Impact: Code quality issue
+   - 💡 Fix: Optimize with generator expression or numpy operations
+
+### 📊 Summary
+| Category | Count | Details |
+|----------|-------|----------|
+| 🆕 New Issues | 15 | Critical: 5, High: 3, Medium: 5, Low: 2 |
+| ✅ Fixed Issues | 0 | Successfully resolved from main branch |
+| 📌 Pre-existing | 10 | Not blocking but impacts skill scores |
+
+### 📈 Quality Metrics
+- **Overall Score:** 35/100 (Grade: F)
+- **Risk Level:** HIGH
+- **Estimated Fix Time:** 16 hours
+
+### 🎯 Next Steps
+1. Fix all critical/high severity issues listed above
+2. Re-run analysis after fixes
+3. Consider addressing medium/low issues for better code quality
+
+---
+*Generated by [CodeQual](https://codequal.com) • View [full report](https://codequal.com/report) for detailed analysis*
+</div>
+                    </div>
+                </div>
+            </div>
+        
+        </div>
+        <div class="footer">
+            <p><strong>Generated by CodeQual AI Analysis Platform v7.0</strong></p>
+            <p style="margin-top: 10px;">
+                Analysis Date: 8/19/2025, 11:52:20 AM | 
+                Confidence: 94% | 
+                Support: support@codequal.com
+            </p>
+        </div>
+    </div>
+</body>
+</html>
