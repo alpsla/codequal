@@ -5,6 +5,12 @@
 import { GapAnalyzer, GapAnalysis } from './gap-analyzer';
 import { UnifiedAIParser } from './unified-ai-parser';
 import { ITERATION_1_COMPREHENSIVE_PROMPT } from '../prompts/iteration-1-comprehensive';
+import { 
+  validateAnalysisResult, 
+  validateConfig,
+  type AnalysisResult,
+  type AnalyzerConfig 
+} from '../schemas/analysis-schema';
 import axios from 'axios';
 
 export interface IterationResult {
@@ -28,22 +34,48 @@ export class AdaptiveDeepWikiAnalyzer {
   private deepwikiUrl: string;
   private deepwikiKey: string;
   private maxIterations = 3;
+  private timeout = 300000;
+  private retryAttempts = 3;
+  private minCompleteness = 80;
   private logger: any;
 
   constructor(
     deepwikiUrl: string,
     deepwikiKey?: string,
-    logger?: any
+    logger?: any,
+    config?: Partial<AnalyzerConfig>
   ) {
-    this.deepwikiUrl = deepwikiUrl;
-    this.deepwikiKey = deepwikiKey || '';
+    // BUG-050: Validate configuration
+    const validatedConfig = config ? validateConfig({
+      deepwikiUrl,
+      deepwikiKey,
+      ...config,
+      logger
+    }) : {
+      deepwikiUrl,
+      deepwikiKey,
+      maxIterations: 3,
+      timeout: 300000,
+      retryAttempts: 3,
+      minCompleteness: 80,
+      logger
+    };
+    
+    this.deepwikiUrl = validatedConfig.deepwikiUrl;
+    this.deepwikiKey = validatedConfig.deepwikiKey || '';
+    this.maxIterations = validatedConfig.maxIterations;
+    this.timeout = validatedConfig.timeout;
+    this.retryAttempts = validatedConfig.retryAttempts;
+    this.minCompleteness = validatedConfig.minCompleteness;
     this.gapAnalyzer = new GapAnalyzer();
     this.aiParser = new UnifiedAIParser(logger);
-    this.logger = logger || console;
+    this.logger = validatedConfig.logger || console;
   }
 
   /**
    * Perform adaptive analysis with gap filling
+   * BUG-043 FIX: Added comprehensive error handling
+   * BUG-047 FIX: Added infinite loop prevention
    */
   async analyzeWithGapFilling(
     repoUrl: string,
@@ -52,59 +84,117 @@ export class AdaptiveDeepWikiAnalyzer {
     const startTime = Date.now();
     const iterations: IterationResult[] = [];
     let result: any = {};
+    let previousGapCount = Number.MAX_SAFE_INTEGER;
+    let noProgressCount = 0;
+    const MAX_NO_PROGRESS = 2; // BUG-047: Stop after 2 iterations with no progress
 
-    this.logger.info(`Starting adaptive DeepWiki analysis for ${repoUrl} (${branch || 'main'})`);
+    try {
+      this.logger.info(`Starting adaptive DeepWiki analysis for ${repoUrl} (${branch || 'main'})`);
 
-    for (let i = 0; i < this.maxIterations; i++) {
-      const iterationStart = Date.now();
-      
-      // Analyze gaps in current result
-      const gaps = this.gapAnalyzer.analyzeGaps(result);
-      
-      this.logger.info(`Iteration ${i + 1}: Completeness ${gaps.completeness}%, Gaps: ${gaps.totalGaps} (${gaps.criticalGaps} critical)`);
+      for (let i = 0; i < this.maxIterations; i++) {
+        const iterationStart = Date.now();
+        
+        try {
+          // Analyze gaps in current result
+          const gaps = this.gapAnalyzer.analyzeGaps(result);
+          
+          this.logger.info(`Iteration ${i + 1}: Completeness ${gaps.completeness}%, Gaps: ${gaps.totalGaps} (${gaps.criticalGaps} critical)`);
 
-      // Check if we're complete enough
-      if (this.gapAnalyzer.isComplete(gaps)) {
-        this.logger.info(`Analysis complete at iteration ${i + 1} with ${gaps.completeness}% completeness`);
-        break;
+          // Check if we're complete enough
+          if (this.gapAnalyzer.isComplete(gaps)) {
+            this.logger.info(`Analysis complete at iteration ${i + 1} with ${gaps.completeness}% completeness`);
+            break;
+          }
+
+          // BUG-047: Check for progress to prevent infinite loops
+          if (gaps.totalGaps >= previousGapCount) {
+            noProgressCount++;
+            this.logger.warn(`No progress in iteration ${i + 1}. No progress count: ${noProgressCount}`);
+            
+            if (noProgressCount >= MAX_NO_PROGRESS) {
+              this.logger.warn(`Stopping analysis: No progress for ${MAX_NO_PROGRESS} iterations`);
+              break;
+            }
+          } else {
+            noProgressCount = 0; // Reset counter on progress
+            previousGapCount = gaps.totalGaps;
+          }
+
+          // Generate prompt for this iteration
+          const prompt = this.generateIterationPrompt(gaps, i);
+          
+          // Call DeepWiki with timeout and error handling
+          let response: string;
+          try {
+            response = await this.callDeepWiki(repoUrl, branch, prompt);
+          } catch (error) {
+            // BUG-043: Proper error handling for API failures
+            this.logger.error(`DeepWiki call failed in iteration ${i + 1}:`, error);
+            if (i === 0) {
+              throw new Error(`Initial DeepWiki analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            }
+            // Continue with partial results for non-first iterations
+            break;
+          }
+          
+          // Parse response with error handling
+          let parsed: any;
+          try {
+            parsed = await this.parseResponse(response, i);
+          } catch (parseError) {
+            this.logger.error(`Failed to parse response in iteration ${i + 1}:`, parseError);
+            // Continue with what we have so far
+            if (i === 0) {
+              throw new Error(`Failed to parse initial response: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`);
+            }
+            break;
+          }
+          
+          // Merge with existing result
+          result = this.mergeResults(result, parsed);
+          
+          // Store iteration data
+          iterations.push({
+            iteration: i + 1,
+            response,
+            parsed,
+            gaps,
+            duration: Date.now() - iterationStart
+          });
+
+          // Log progress
+          const newGaps = this.gapAnalyzer.analyzeGaps(result);
+          const gapsFilled = gaps.totalGaps - newGaps.totalGaps;
+          this.logger.info(`Iteration ${i + 1} complete: Filled ${gapsFilled} gaps, ${newGaps.totalGaps} remaining`);
+          
+        } catch (iterationError) {
+          // BUG-043: Handle iteration-specific errors
+          this.logger.error(`Error in iteration ${i + 1}:`, iterationError);
+          if (i === 0) {
+            throw iterationError; // Re-throw if first iteration fails
+          }
+          // Otherwise continue with partial results
+          break;
+        }
       }
 
-      // Generate prompt for this iteration
-      const prompt = this.generateIterationPrompt(gaps, i);
-      
-      // Call DeepWiki
-      const response = await this.callDeepWiki(repoUrl, branch, prompt);
-      
-      // Parse response
-      const parsed = await this.parseResponse(response, i);
-      
-      // Merge with existing result
-      result = this.mergeResults(result, parsed);
-      
-      // Store iteration data
-      iterations.push({
-        iteration: i + 1,
-        response,
-        parsed,
-        gaps,
-        duration: Date.now() - iterationStart
-      });
+      // Final gap analysis
+      const finalGaps = this.gapAnalyzer.analyzeGaps(result);
 
-      // Log progress
-      const newGaps = this.gapAnalyzer.analyzeGaps(result);
-      const gapsFilled = gaps.totalGaps - newGaps.totalGaps;
-      this.logger.info(`Iteration ${i + 1} complete: Filled ${gapsFilled} gaps, ${newGaps.totalGaps} remaining`);
+      return {
+        finalResult: result,
+        iterations,
+        totalDuration: Date.now() - startTime,
+        completeness: finalGaps.completeness
+      };
+      
+    } catch (error) {
+      // BUG-043: Comprehensive error handling
+      this.logger.error('Analysis failed:', error);
+      throw new Error(
+        `DeepWiki analysis failed for ${repoUrl}: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
-
-    // Final gap analysis
-    const finalGaps = this.gapAnalyzer.analyzeGaps(result);
-
-    return {
-      finalResult: result,
-      iterations,
-      totalDuration: Date.now() - startTime,
-      completeness: finalGaps.completeness
-    };
   }
 
   /**
@@ -122,8 +212,13 @@ export class AdaptiveDeepWikiAnalyzer {
 
   /**
    * Call DeepWiki API
+   * BUG-051 FIX: Added resource cleanup and timeout handling
    */
   private async callDeepWiki(repoUrl: string, branch: string | undefined, prompt: string): Promise<string> {
+    // BUG-051: Set up abort controller for cleanup
+    const abortController = new AbortController();
+    const timeout = setTimeout(() => abortController.abort(), 300000); // 5 minute timeout
+    
     try {
       // Add JSON format request to prompt for better structure
       const enhancedPrompt = `${prompt}
@@ -161,27 +256,57 @@ IMPORTANT: Return your response in valid JSON format with these keys:
             'Content-Type': 'application/json',
             ...(this.deepwikiKey && { 'Authorization': `Bearer ${this.deepwikiKey}` })
           },
-          timeout: 300000 // 5 minutes for comprehensive analysis
+          timeout: 300000, // 5 minutes for comprehensive analysis
+          signal: abortController.signal // BUG-051: Add abort signal for cleanup
         }
       );
 
+      // BUG-051: Clear timeout on success
+      clearTimeout(timeout);
+      
       return typeof response.data === 'string' 
         ? response.data 
         : JSON.stringify(response.data, null, 2);
     } catch (error) {
-      this.logger.error('DeepWiki API call failed:', error);
-      throw error;
+      // BUG-051: Ensure cleanup on error
+      clearTimeout(timeout);
+      
+      // BUG-049: Improved error messages
+      if (axios.isAxiosError(error)) {
+        const status = error.response?.status;
+        const message = error.response?.data?.detail || error.response?.data?.message || error.message;
+        
+        if (status === 404) {
+          throw new Error(`Repository not found: ${repoUrl}`);
+        } else if (status === 401) {
+          throw new Error('DeepWiki authentication failed. Please check your API key.');
+        } else if (status === 429) {
+          throw new Error('DeepWiki rate limit exceeded. Please try again later.');
+        } else if (status === 500) {
+          throw new Error(`DeepWiki server error: ${message}`);
+        } else if (error.code === 'ECONNABORTED') {
+          throw new Error('DeepWiki request timed out after 5 minutes');
+        }
+        
+        throw new Error(`DeepWiki API error (${status || 'network'}): ${message}`);
+      }
+      
+      throw new Error(`DeepWiki request failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      // BUG-051: Always cleanup resources
+      abortController.abort();
     }
   }
 
   /**
    * Parse DeepWiki response
+   * BUG-048 FIX: Added JSON schema validation
    */
-  private async parseResponse(response: string, iteration: number): Promise<any> {
+  private async parseResponse(response: string, iteration: number): Promise<AnalysisResult> {
     // Check for error responses
     if (response.includes('unable to assist') || response.includes('I cannot') || response.length < 50) {
       this.logger.warn('DeepWiki returned an error or refusal');
-      return {};
+      return validateAnalysisResult({}); // Return validated empty result
     }
 
     // First, try to parse as JSON (since we're requesting JSON format)
@@ -190,21 +315,20 @@ IMPORTANT: Return your response in valid JSON format with these keys:
       if (trimmed.startsWith('{')) {
         const jsonData = JSON.parse(trimmed);
         
-        // If it's valid JSON with expected structure, return it directly
+        // BUG-048: Validate JSON against schema
         if (jsonData.issues !== undefined || jsonData.testCoverage !== undefined) {
           this.logger.info('Successfully parsed JSON response from DeepWiki');
           
-          // Ensure all expected fields exist
-          return {
-            issues: jsonData.issues || [],
-            testCoverage: jsonData.testCoverage || {},
-            dependencies: jsonData.dependencies || {},
-            architecture: jsonData.architecture || {},
-            teamMetrics: jsonData.teamMetrics || {},
-            documentation: jsonData.documentation || {},
-            breakingChanges: jsonData.breakingChanges || [],
-            scores: jsonData.scores || {}
-          };
+          try {
+            // Validate and return structured data
+            const validated = validateAnalysisResult(jsonData);
+            this.logger.info('JSON response validated against schema');
+            return validated;
+          } catch (validationError) {
+            // BUG-049: Better error messages
+            this.logger.warn(`JSON validation failed: ${validationError instanceof Error ? validationError.message : 'Unknown error'}`);
+            this.logger.info('Falling back to AI parser due to schema validation failure');
+          }
         }
       }
     } catch (e) {
@@ -410,69 +534,194 @@ IMPORTANT: Return your response in valid JSON format with these keys:
 
   /**
    * Merge results from multiple iterations
+   * BUG-041 FIX: Improved merging for complex PRs with better deduplication
    */
   private mergeResults(existing: any, newData: any): any {
     const merged = { ...existing };
 
-    // Merge issues (avoid duplicates)
+    // BUG-041: Enhanced issue merging for complex PRs
     if (newData.issues && newData.issues.length > 0) {
-      const existingTitles = new Set((merged.issues || []).map((i: any) => i.title));
-      const newIssues = newData.issues.filter((i: any) => !existingTitles.has(i.title));
-      merged.issues = [...(merged.issues || []), ...newIssues];
-
-      // Update existing issues with more data
-      merged.issues = merged.issues.map((issue: any) => {
-        const update = newData.issues.find((i: any) => i.title === issue.title);
-        if (update) {
-          return {
-            ...issue,
-            ...update,
-            // Preserve existing data if new data is empty
-            file: update.file || issue.file,
-            line: update.line || issue.line,
-            codeSnippet: update.codeSnippet || issue.codeSnippet
-          };
-        }
-        return issue;
+      // Create composite keys for better deduplication
+      const existingIssueMap = new Map();
+      (merged.issues || []).forEach((issue: any) => {
+        // Use multiple keys for matching: title, file+line, or description
+        const keys = [
+          issue.title,
+          issue.file && issue.line ? `${issue.file}:${issue.line}` : null,
+          issue.description?.substring(0, 50)
+        ].filter(Boolean);
+        
+        keys.forEach(key => {
+          if (key) existingIssueMap.set(key, issue);
+        });
       });
+
+      // Process new issues
+      const uniqueNewIssues: any[] = [];
+      newData.issues.forEach((newIssue: any) => {
+        // Check if issue already exists using multiple criteria
+        const keys = [
+          newIssue.title,
+          newIssue.file && newIssue.line ? `${newIssue.file}:${newIssue.line}` : null,
+          newIssue.description?.substring(0, 50)
+        ].filter(Boolean);
+        
+        let existingIssue = null;
+        for (const key of keys) {
+          if (existingIssueMap.has(key)) {
+            existingIssue = existingIssueMap.get(key);
+            break;
+          }
+        }
+        
+        if (existingIssue) {
+          // Merge data into existing issue
+          Object.assign(existingIssue, {
+            ...existingIssue,
+            ...newIssue,
+            // Preserve non-empty fields
+            file: newIssue.file || existingIssue.file,
+            line: newIssue.line || existingIssue.line,
+            column: newIssue.column || existingIssue.column,
+            severity: newIssue.severity || existingIssue.severity,
+            category: newIssue.category || existingIssue.category,
+            codeSnippet: newIssue.codeSnippet || existingIssue.codeSnippet,
+            description: newIssue.description || existingIssue.description,
+            // Merge location object if present
+            location: {
+              ...(existingIssue.location || {}),
+              ...(newIssue.location || {}),
+              file: newIssue.location?.file || existingIssue.location?.file || newIssue.file || existingIssue.file,
+              line: newIssue.location?.line || existingIssue.location?.line || newIssue.line || existingIssue.line
+            }
+          });
+        } else {
+          // Add as new issue
+          uniqueNewIssues.push(newIssue);
+          // Register in map for future deduplication
+          keys.forEach(key => {
+            if (key) existingIssueMap.set(key, newIssue);
+          });
+        }
+      });
+      
+      // Combine existing and new issues
+      merged.issues = [...(merged.issues || []), ...uniqueNewIssues];
     }
 
-    // Merge test coverage (prefer higher values)
+    // BUG-041: Enhanced test coverage merging
     if (newData.testCoverage) {
       merged.testCoverage = {
         ...merged.testCoverage,
         ...newData.testCoverage,
+        // Keep all coverage metrics, preferring higher values
         overall: Math.max(
           merged.testCoverage?.overall || 0,
           newData.testCoverage.overall || 0
+        ),
+        unit: Math.max(
+          merged.testCoverage?.unit || 0,
+          newData.testCoverage.unit || 0
+        ),
+        integration: Math.max(
+          merged.testCoverage?.integration || 0,
+          newData.testCoverage.integration || 0
+        ),
+        e2e: Math.max(
+          merged.testCoverage?.e2e || 0,
+          newData.testCoverage.e2e || 0
         )
       };
     }
 
-    // Merge dependencies
+    // BUG-041: Enhanced dependency merging
     if (newData.dependencies) {
       merged.dependencies = {
         ...merged.dependencies,
         ...newData.dependencies,
-        outdated: [
-          ...(merged.dependencies?.outdated || []),
-          ...(newData.dependencies.outdated || [])
-        ].filter((dep, index, self) => 
-          index === self.findIndex(d => d.name === dep.name)
+        total: Math.max(
+          merged.dependencies?.total || 0,
+          newData.dependencies.total || 0
+        ),
+        outdated: this.mergeArrayUnique(
+          merged.dependencies?.outdated || [],
+          newData.dependencies.outdated || [],
+          'name'
+        ),
+        vulnerable: this.mergeArrayUnique(
+          merged.dependencies?.vulnerable || [],
+          newData.dependencies.vulnerable || [],
+          'name'
         )
       };
     }
 
-    // Merge other fields
-    ['architecture', 'teamMetrics', 'documentation', 'breakingChanges'].forEach(field => {
+    // BUG-041: Enhanced breaking changes merging
+    if (newData.breakingChanges && newData.breakingChanges.length > 0) {
+      merged.breakingChanges = this.mergeArrayUnique(
+        merged.breakingChanges || [],
+        newData.breakingChanges,
+        'title'
+      );
+    }
+
+    // Merge other fields with deep merge
+    ['architecture', 'teamMetrics', 'documentation', 'scores'].forEach(field => {
       if (newData[field]) {
-        merged[field] = {
-          ...merged[field],
-          ...newData[field]
-        };
+        merged[field] = this.deepMerge(
+          merged[field] || {},
+          newData[field]
+        );
       }
     });
 
     return merged;
+  }
+
+  /**
+   * Helper: Merge arrays with unique constraint
+   * BUG-041: Better deduplication for complex data
+   */
+  private mergeArrayUnique(existing: any[], newItems: any[], uniqueKey: string): any[] {
+    const map = new Map();
+    
+    // Add existing items
+    existing.forEach(item => {
+      const key = item[uniqueKey] || JSON.stringify(item);
+      map.set(key, item);
+    });
+    
+    // Add or merge new items
+    newItems.forEach(item => {
+      const key = item[uniqueKey] || JSON.stringify(item);
+      if (map.has(key)) {
+        // Merge with existing
+        map.set(key, { ...map.get(key), ...item });
+      } else {
+        map.set(key, item);
+      }
+    });
+    
+    return Array.from(map.values());
+  }
+
+  /**
+   * Helper: Deep merge objects
+   * BUG-041: Properly merge nested structures
+   */
+  private deepMerge(target: any, source: any): any {
+    const result = { ...target };
+    
+    for (const key in source) {
+      if (source[key] !== null && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+        result[key] = this.deepMerge(result[key] || {}, source[key]);
+      } else if (Array.isArray(source[key])) {
+        result[key] = [...(result[key] || []), ...source[key]];
+      } else {
+        result[key] = source[key];
+      }
+    }
+    
+    return result;
   }
 }
