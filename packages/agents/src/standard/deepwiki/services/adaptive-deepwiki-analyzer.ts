@@ -260,39 +260,23 @@ IMPORTANT: Return your response in valid JSON format with these keys:
       result.teamMetrics.contributors = parseInt(contributorMatch[1]);
     }
 
-    // Extract issues with file locations
-    // Pattern 1: "**File Path: path/to/file.ts**" with line numbers
-    const filePathMatches = response.matchAll(/\*?\*?File Path:\s*([^\*\n]+)\*?\*?\s*[\n-]*\s*\*?\*?Line\s*(\d+)\*?\*?:\s*(.+?)(?=\n|$)/g);
-    for (const match of filePathMatches) {
-      const file = match[1].trim();
-      const line = parseInt(match[2]);
-      const description = match[3].trim();
-      
-      result.issues.push({
-        title: description.substring(0, 100), // First 100 chars as title
-        description,
-        severity: 'medium',
-        category: 'code-quality',
-        file,
-        line,
-        codeSnippet: description
-      });
-    }
+    // Extract issues with file locations - IMPROVED PATTERNS
+    const foundIssues = new Map<string, any>(); // Use map to avoid duplicates
     
-    // Pattern 2: Alternate format "File Path: file.ts\nLine X:"
-    const altFileMatches = response.matchAll(/File Path:\s*([^\n]+)\s*\n\s*Line\s*(\d+):\s*([^\n]+)/g);
-    for (const match of altFileMatches) {
+    // Pattern 1: "File: path/to/file.ts, Line: 42" or "File: path/to/file.ts Line: 42"
+    const pattern1 = /File:?\s*([a-zA-Z0-9\/_.-]+\.[tj]sx?)[,\s]+Line:?\s*(\d+)[,:\s]*(.+?)(?=\n|File:|$)/gi;
+    for (const match of response.matchAll(pattern1)) {
       const file = match[1].trim();
       const line = parseInt(match[2]);
       const description = match[3].trim();
+      const key = `${file}:${line}`;
       
-      // Check if we already have this issue
-      if (!result.issues.some((i: any) => i.file === file && i.line === line)) {
-        result.issues.push({
+      if (!foundIssues.has(key)) {
+        foundIssues.set(key, {
           title: description.substring(0, 100),
           description,
-          severity: 'medium',
-          category: 'code-quality',
+          severity: this.detectSeverity(description),
+          category: this.detectCategory(description),
           file,
           line,
           codeSnippet: description
@@ -300,21 +284,128 @@ IMPORTANT: Return your response in valid JSON format with these keys:
       }
     }
     
-    // Pattern 2: Standard issue format (fallback)
-    const issueMatches = response.matchAll(/\d+\.\s+\*\*(.+?)\*\*.*?(?:Severity|severity):\s*(\w+)/g);
-    for (const match of issueMatches) {
-      // Check if we already have this issue from file path extraction
-      const title = match[1];
-      if (!result.issues.some((i: any) => i.title === title || i.codeSnippet?.includes(title))) {
+    // Pattern 2: "**File Path: path/to/file.ts**" with line numbers
+    const pattern2 = /\*?\*?File\s*(?:Path)?:?\s*([^\*\n]+?)\*?\*?[\s\n-]*\*?\*?Line\s*(\d+)\*?\*?:?\s*(.+?)(?=\n\n|\*\*File|$)/gi;
+    for (const match of response.matchAll(pattern2)) {
+      const file = match[1].trim();
+      const line = parseInt(match[2]);
+      const description = match[3].trim();
+      const key = `${file}:${line}`;
+      
+      if (!foundIssues.has(key)) {
+        foundIssues.set(key, {
+          title: description.substring(0, 100),
+          description,
+          severity: this.detectSeverity(description),
+          category: this.detectCategory(description),
+          file,
+          line,
+          codeSnippet: description
+        });
+      }
+    }
+    
+    // Pattern 3: "path/to/file.ts:42 - Description" or "path/to/file.ts:42: Description"
+    const pattern3 = /([a-zA-Z0-9\/_.-]+\.[tj]sx?):(\d+)\s*[-:]\s*(.+?)(?=\n|$)/g;
+    for (const match of response.matchAll(pattern3)) {
+      const file = match[1].trim();
+      const line = parseInt(match[2]);
+      const description = match[3].trim();
+      const key = `${file}:${line}`;
+      
+      if (!foundIssues.has(key)) {
+        foundIssues.set(key, {
+          title: description.substring(0, 100),
+          description,
+          severity: this.detectSeverity(description),
+          category: this.detectCategory(description),
+          file,
+          line,
+          codeSnippet: description
+        });
+      }
+    }
+    
+    // Pattern 4: Issues in code blocks with file references
+    const pattern4 = /`([^`]+\.[tj]sx?)`[^\n]*\n[^\n]*line\s*(\d+)[^\n]*\n[^\n]*(.+?)(?=\n\n|$)/gi;
+    for (const match of response.matchAll(pattern4)) {
+      const file = match[1].trim();
+      const line = parseInt(match[2]);
+      const description = match[3].trim();
+      const key = `${file}:${line}`;
+      
+      if (!foundIssues.has(key)) {
+        foundIssues.set(key, {
+          title: description.substring(0, 100),
+          description,
+          severity: this.detectSeverity(description),
+          category: this.detectCategory(description),
+          file,
+          line,
+          codeSnippet: description
+        });
+      }
+    }
+    
+    // Convert map to array
+    result.issues = Array.from(foundIssues.values());
+    
+    // If no issues found with file locations, try generic issue extraction
+    if (result.issues.length === 0) {
+      // Pattern for numbered issues without file locations
+      const issueMatches = response.matchAll(/\d+\.\s+\*?\*?(.+?)\*?\*?[:\s-]+(.+?)(?=\n\d+\.|\n\n|$)/gs);
+      for (const match of issueMatches) {
+        const title = match[1].trim();
+        const description = match[2].trim();
+        
         result.issues.push({
-          title,
-          severity: match[2].toLowerCase(),
-          category: 'code-quality'
+          title: title.substring(0, 100),
+          description,
+          severity: this.detectSeverity(description),
+          category: this.detectCategory(description),
+          codeSnippet: description
         });
       }
     }
 
     return result;
+  }
+  
+  /**
+   * Detect severity from issue description
+   */
+  private detectSeverity(description: string): string {
+    const desc = description.toLowerCase();
+    if (desc.includes('critical') || desc.includes('security') || desc.includes('vulnerability')) {
+      return 'critical';
+    }
+    if (desc.includes('high') || desc.includes('error') || desc.includes('fail')) {
+      return 'high';
+    }
+    if (desc.includes('medium') || desc.includes('warning') || desc.includes('deprecated')) {
+      return 'medium';
+    }
+    return 'low';
+  }
+  
+  /**
+   * Detect category from issue description
+   */
+  private detectCategory(description: string): string {
+    const desc = description.toLowerCase();
+    if (desc.includes('security') || desc.includes('vulnerability') || desc.includes('injection')) {
+      return 'security';
+    }
+    if (desc.includes('performance') || desc.includes('memory') || desc.includes('slow')) {
+      return 'performance';
+    }
+    if (desc.includes('test') || desc.includes('coverage')) {
+      return 'testing';
+    }
+    if (desc.includes('depend')) {
+      return 'dependencies';
+    }
+    return 'code-quality';
   }
 
   /**
