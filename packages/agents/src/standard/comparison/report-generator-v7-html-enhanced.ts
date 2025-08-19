@@ -1042,11 +1042,27 @@ export class ReportGeneratorV7HTMLEnhanced {
 
   // Section 6: Breaking Changes
   private generateSection6_BreakingChanges(newIssues: Issue[]): string {
-    const breakingChanges = newIssues.filter(i => 
-      i.severity === 'critical' ||
-      this.getIssueTitle(i).toLowerCase().includes('breaking') ||
-      this.getIssueDescription(i).toLowerCase().includes('breaking')
-    );
+    // Only include issues that are specifically about breaking changes,
+    // not just all critical issues (to avoid duplication)
+    const breakingChanges = newIssues.filter(i => {
+      const title = this.getIssueTitle(i).toLowerCase();
+      const description = this.getIssueDescription(i).toLowerCase();
+      const message = (i.message || '').toLowerCase();
+      
+      // Check if this is specifically a breaking change
+      // (not just critical severity)
+      return (
+        title.includes('breaking') ||
+        description.includes('breaking') ||
+        message.includes('breaking') ||
+        title.includes('incompatible') ||
+        description.includes('incompatible') ||
+        message.includes('incompatible') ||
+        title.includes('migration') ||
+        description.includes('migration') ||
+        message.includes('migration')
+      );
+    });
     
     if (breakingChanges.length === 0) {
       return ''; // No breaking changes section if none exist
@@ -1059,7 +1075,7 @@ export class ReportGeneratorV7HTMLEnhanced {
                 </div>
                 <div class="section-content">
                     <div class="alert alert-danger">
-                        🚨 ${breakingChanges.length} breaking change(s) detected that must be addressed
+                        🚨 ${breakingChanges.length} breaking change(s) detected that require migration
                     </div>
                     ${this.renderDetailedIssuesList(breakingChanges, 'Breaking Changes')}
                 </div>
@@ -1136,8 +1152,483 @@ export class ReportGeneratorV7HTMLEnhanced {
             </div>`;
   }
 
-  // Section 10: Educational Insights Connected to Issues
+  // Section 10: Educational Insights Connected to Issues (BUG-7, BUG-8, BUG-9 Enhanced)
   private generateSection10_EducationalInsights(newIssues: Issue[], unchangedIssues: Issue[], educationalContent: any): string {
+    // Group issues by severity for ordered display (BUG-7)
+    const allIssues = [...newIssues, ...unchangedIssues];
+    const issuesBySeverity = {
+      critical: allIssues.filter(i => i.severity === 'critical'),
+      high: allIssues.filter(i => i.severity === 'high'),
+      medium: allIssues.filter(i => i.severity === 'medium'),
+      low: allIssues.filter(i => i.severity === 'low')
+    };
+    
+    // Calculate skill scores (BUG-8)
+    const baseScore = 50; // New users start at 50/100
+    const deductions = {
+      critical: issuesBySeverity.critical.length * 5,
+      high: issuesBySeverity.high.length * 3,
+      medium: issuesBySeverity.medium.length * 1,
+      low: issuesBySeverity.low.length * 0.5
+    };
+    const totalDeduction = Object.values(deductions).reduce((a, b) => a + b, 0);
+    const currentScore = Math.max(0, Math.round(baseScore - totalDeduction));
+    
+    // Build enhanced educational HTML with issue-specific recommendations
+    return this.buildEnhancedEducationalHTML(
+      issuesBySeverity,
+      educationalContent,
+      currentScore,
+      deductions,
+      baseScore
+    );
+  }
+  
+  // New method for enhanced educational HTML (BUG-7, BUG-8, BUG-9)
+  private buildEnhancedEducationalHTML(
+    issuesBySeverity: any,
+    educationalContent: any,
+    currentScore: number,
+    deductions: any,
+    baseScore: number
+  ): string {
+    let html = `
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">💡 10. Educational Insights - Personalized Learning Plan</h2>
+                </div>
+                <div class="section-content">
+                    <!-- Skill Score Section (BUG-8) -->
+                    <div class="skill-score-summary" style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+                        <h3>📊 Your Code Quality Score</h3>
+                        <div class="score-display" style="font-size: 2.5em; font-weight: bold; color: ${this.getScoreColor(currentScore)}; margin: 20px 0;">
+                            <span class="current-score">${currentScore}</span>
+                            <span class="max-score" style="font-size: 0.6em; color: #666;">/100</span>
+                        </div>
+                        <div class="score-breakdown" style="background: white; padding: 15px; border-radius: 5px;">
+                            <p><strong>Score Calculation:</strong></p>
+                            <ul style="list-style: none; padding: 10px 0;">
+                                <li>✅ Base Score (new user): ${baseScore}/100</li>
+                                <li style="color: #dc3545;">➖ Critical Issues (-5 each): -${deductions.critical} points (${issuesBySeverity.critical.length} issues)</li>
+                                <li style="color: #fd7e14;">➖ High Issues (-3 each): -${deductions.high} points (${issuesBySeverity.high.length} issues)</li>
+                                <li style="color: #ffc107;">➖ Medium Issues (-1 each): -${deductions.medium} points (${issuesBySeverity.medium.length} issues)</li>
+                                <li style="color: #28a745;">➖ Low Issues (-0.5 each): -${deductions.low} points (${issuesBySeverity.low.length} issues)</li>
+                                <li style="border-top: 1px solid #dee2e6; margin-top: 10px; padding-top: 10px;">
+                                    <strong>Final Score: ${currentScore}/100</strong>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- Issue-Specific Education (BUG-7) -->
+                    <div class="issue-based-learning">
+                        <h3>📚 Learning Opportunities Based on Found Issues</h3>`;
+    
+    // Critical issues with strict motivation (BUG-7)
+    if (issuesBySeverity.critical.length > 0) {
+      html += `
+                        <div class="critical-learning urgent" style="background: #ffebee; border-left: 4px solid #dc3545; padding: 20px; margin: 20px 0;">
+                            <h4 style="color: #dc3545;">🚨 CRITICAL - Immediate Action Required</h4>
+                            <p class="motivation-strict" style="font-weight: bold; margin: 10px 0;">
+                                These critical issues pose immediate security/stability risks. 
+                                <strong style="color: #dc3545;">You MUST address these before deployment!</strong>
+                            </p>
+                            <ul style="list-style: none; padding: 0;">`;
+      
+      for (const issue of issuesBySeverity.critical) {
+        const educLink = this.getEducationalLink(issue, educationalContent);
+        html += `
+                                <li class="issue-education critical" style="background: white; padding: 15px; margin: 10px 0; border-radius: 5px;">
+                                    <div class="issue-title" style="font-weight: bold; color: #dc3545;">
+                                        🔴 ${this.getIssueTitle(issue)}
+                                    </div>
+                                    <div class="education-link" style="margin: 10px 0;">
+                                        📖 <strong>Required Learning</strong>: 
+                                        <a href="${educLink.url}" target="_blank" style="color: #007bff;">${educLink.title}</a>
+                                    </div>
+                                    <div class="why-important" style="background: #fff5f5; padding: 10px; border-radius: 3px;">
+                                        ⚠️ <strong>Why this matters:</strong> ${issue.impact || 'Can compromise entire system security and stability'}
+                                    </div>
+                                </li>`;
+      }
+      html += `
+                            </ul>
+                        </div>`;
+    }
+    
+    // High severity with strong recommendation (BUG-7)
+    if (issuesBySeverity.high.length > 0) {
+      html += `
+                        <div class="high-learning important" style="background: #fff3e0; border-left: 4px solid #fd7e14; padding: 20px; margin: 20px 0;">
+                            <h4 style="color: #fd7e14;">⚠️ HIGH Priority Learning</h4>
+                            <p class="motivation-strong" style="margin: 10px 0;">
+                                These issues significantly impact code quality and should be addressed soon.
+                            </p>
+                            <ul style="list-style: none; padding: 0;">`;
+      
+      for (const issue of issuesBySeverity.high) {
+        const educLink = this.getEducationalLink(issue, educationalContent);
+        html += `
+                                <li class="issue-education high" style="background: white; padding: 15px; margin: 10px 0; border-radius: 5px;">
+                                    <div class="issue-title" style="font-weight: bold; color: #fd7e14;">
+                                        🟠 ${this.getIssueTitle(issue)}
+                                    </div>
+                                    <div class="education-link" style="margin: 10px 0;">
+                                        📚 <strong>Recommended</strong>: 
+                                        <a href="${educLink.url}" target="_blank" style="color: #007bff;">${educLink.title}</a>
+                                    </div>
+                                </li>`;
+      }
+      html += `
+                            </ul>
+                        </div>`;
+    }
+    
+    // Medium/Low with encouraging tone (BUG-7)
+    const otherIssues = [...issuesBySeverity.medium, ...issuesBySeverity.low];
+    if (otherIssues.length > 0) {
+      html += `
+                        <div class="suggested-learning" style="background: #e8f5e9; border-left: 4px solid #28a745; padding: 20px; margin: 20px 0;">
+                            <h4 style="color: #28a745;">💡 Suggested Learning for Improvement</h4>
+                            <p class="motivation-encouraging" style="margin: 10px 0;">
+                                Great job overall! These improvements will enhance your code quality even further.
+                            </p>
+                            <ul style="list-style: none; padding: 0;">`;
+      
+      for (const issue of otherIssues) {
+        const educLink = this.getEducationalLink(issue, educationalContent);
+        const severityColor = issue.severity === 'medium' ? '#ffc107' : '#28a745';
+        const severityIcon = issue.severity === 'medium' ? '🟡' : '🟢';
+        
+        html += `
+                                <li class="issue-education ${issue.severity}" style="background: white; padding: 15px; margin: 10px 0; border-radius: 5px;">
+                                    <div class="issue-title" style="font-weight: bold; color: ${severityColor};">
+                                        ${severityIcon} ${this.getIssueTitle(issue)}
+                                    </div>
+                                    <div class="education-link" style="margin: 10px 0;">
+                                        💭 Consider learning: 
+                                        <a href="${educLink.url}" target="_blank" style="color: #007bff;">${educLink.title}</a>
+                                    </div>
+                                </li>`;
+      }
+      html += `
+                            </ul>
+                        </div>`;
+    }
+    
+    // Add footnotes explaining the scoring system (BUG-8)
+    html += `
+                    </div>
+                    
+                    <!-- Footnotes (BUG-8) -->
+                    <div class="educational-footnotes" style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-top: 30px;">
+                        <hr style="margin-bottom: 20px;">
+                        <small style="color: #6c757d;">
+                            <p><strong>📊 Scoring System Explained:</strong></p>
+                            <ul style="padding-left: 20px; margin: 10px 0;">
+                                <li>New users start with a base score of 50/100</li>
+                                <li>Critical issues: -5 points each (must fix immediately for security/stability)</li>
+                                <li>High issues: -3 points each (fix soon for code quality)</li>
+                                <li>Medium issues: -1 point each (plan to fix in next iteration)</li>
+                                <li>Low issues: -0.5 points each (nice to fix when time permits)</li>
+                            </ul>
+                            <p style="margin-top: 10px;">
+                                <strong>Your recent validation score: ${currentScore}/100</strong> 
+                                ${this.getScoreMessage(currentScore)}
+                            </p>
+                            <p style="margin-top: 10px;">
+                                <em>💡 Educational links are powered by DeepWiki analysis and tailored to your specific issues.</em>
+                            </p>
+                        </small>
+                    </div>
+                </div>
+            </div>`;
+    
+    return html;
+  }
+  
+  // Helper method to get educational link for an issue (BUG-9)
+  private getEducationalLink(issue: Issue, educationalContent: any): {url: string, title: string} {
+    // Try to get specific link from educator content if available
+    if (educationalContent?.resources) {
+      const specificLink = educationalContent.resources.find(
+        (r: any) => r.relatedTo?.includes(issue.id) || 
+                    r.category === issue.category ||
+                    r.severity === issue.severity
+      );
+      
+      if (specificLink) {
+        return {
+          url: specificLink.url,
+          title: specificLink.title
+        };
+      }
+    }
+    
+    // Get more specific educational links based on issue details
+    const title = this.getIssueTitle(issue).toLowerCase();
+    const description = this.getIssueDescription(issue).toLowerCase();
+    const message = (issue.message || '').toLowerCase();
+    const fullText = `${title} ${description} ${message}`;
+    
+    // Specific security issue links
+    if (issue.category === 'security') {
+      if (fullText.includes('sql injection')) {
+        return {
+          url: 'https://owasp.org/www-community/attacks/SQL_Injection',
+          title: 'OWASP Guide: Preventing SQL Injection Attacks'
+        };
+      }
+      if (fullText.includes('api key') || fullText.includes('exposed') || fullText.includes('credential')) {
+        return {
+          url: 'https://owasp.org/www-project-web-security-testing-guide/v42/4-Web_Application_Security_Testing/09-Testing_for_Weak_Cryptography/README',
+          title: 'Secure Credential Storage and Management'
+        };
+      }
+      if (fullText.includes('xss') || fullText.includes('cross-site scripting')) {
+        return {
+          url: 'https://owasp.org/www-community/attacks/xss/',
+          title: 'OWASP Guide: Cross-Site Scripting Prevention'
+        };
+      }
+      if (fullText.includes('rate limit')) {
+        return {
+          url: 'https://cheatsheetseries.owasp.org/cheatsheets/Denial_of_Service_Cheat_Sheet.html',
+          title: 'Rate Limiting and DDoS Prevention Guide'
+        };
+      }
+      if (fullText.includes('authentication') || fullText.includes('auth')) {
+        return {
+          url: 'https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html',
+          title: 'OWASP Authentication Best Practices'
+        };
+      }
+      if (fullText.includes('password')) {
+        return {
+          url: 'https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html',
+          title: 'OWASP Password Storage Guidelines'
+        };
+      }
+      if (fullText.includes('input validation') || fullText.includes('sanitiz')) {
+        return {
+          url: 'https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html',
+          title: 'Input Validation and Sanitization Guide'
+        };
+      }
+      if (fullText.includes('file upload')) {
+        return {
+          url: 'https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html',
+          title: 'Secure File Upload Best Practices'
+        };
+      }
+      // Default security link
+      return {
+        url: 'https://owasp.org/www-project-top-ten/',
+        title: 'OWASP Top 10 Security Vulnerabilities'
+      };
+    }
+    
+    // Specific performance issue links
+    if (issue.category === 'performance') {
+      if (fullText.includes('memory leak')) {
+        return {
+          url: 'https://developer.chrome.com/docs/devtools/memory-problems/',
+          title: 'Finding and Fixing Memory Leaks in JavaScript'
+        };
+      }
+      if (fullText.includes('n+1') || fullText.includes('query')) {
+        return {
+          url: 'https://stackoverflow.blog/2022/12/27/picture-perfect-images-with-the-modern-img-element/',
+          title: 'Database Query Optimization and N+1 Prevention'
+        };
+      }
+      if (fullText.includes('async') || fullText.includes('synchronous') || fullText.includes('blocking')) {
+        return {
+          url: 'https://developer.mozilla.org/en-US/docs/Learn/JavaScript/Asynchronous',
+          title: 'Asynchronous Programming and Non-Blocking I/O'
+        };
+      }
+      if (fullText.includes('cache') || fullText.includes('caching')) {
+        return {
+          url: 'https://web.dev/http-cache/',
+          title: 'HTTP Caching Strategies for Performance'
+        };
+      }
+      // Default performance link
+      return {
+        url: 'https://web.dev/performance/',
+        title: 'Web Performance Optimization Fundamentals'
+      };
+    }
+    
+    // Specific architecture issue links
+    if (issue.category === 'architecture') {
+      if (fullText.includes('race condition') || fullText.includes('concurrent')) {
+        return {
+          url: 'https://www.educative.io/blog/multithreading-and-concurrency-fundamentals',
+          title: 'Concurrency Control and Race Condition Prevention'
+        };
+      }
+      if (fullText.includes('coupling') || fullText.includes('dependency')) {
+        return {
+          url: 'https://martinfowler.com/articles/microservices.html',
+          title: 'Loose Coupling and Dependency Management'
+        };
+      }
+      if (fullText.includes('pattern') || fullText.includes('design')) {
+        return {
+          url: 'https://refactoring.guru/design-patterns',
+          title: 'Design Patterns for Better Architecture'
+        };
+      }
+      // Default architecture link
+      return {
+        url: 'https://martinfowler.com/architecture/',
+        title: 'Software Architecture Best Practices'
+      };
+    }
+    
+    // Specific code quality issue links
+    const category = issue.category as string;
+    if (category === 'code-quality' || category === 'maintainability' || !category) {
+      if (fullText.includes('complexity') || fullText.includes('cyclomatic')) {
+        return {
+          url: 'https://refactoring.guru/refactoring/smells',
+          title: 'Reducing Code Complexity and Code Smells'
+        };
+      }
+      if (fullText.includes('duplicate') || fullText.includes('dry')) {
+        return {
+          url: 'https://refactoring.guru/refactoring/techniques/dealing-with-generalization',
+          title: 'DRY Principle and Code Deduplication'
+        };
+      }
+      if (fullText.includes('naming') || fullText.includes('readability')) {
+        return {
+          url: 'https://github.com/kettanaito/naming-cheatsheet',
+          title: 'Naming Conventions and Code Readability'
+        };
+      }
+      // Default code quality link
+      return {
+        url: 'https://refactoring.guru/refactoring',
+        title: 'Code Refactoring Techniques'
+      };
+    }
+    
+    // Specific testing issue links
+    if (category === 'testing' || (fullText.includes('test') && !category) || (fullText.includes('coverage') && !category)) {
+      if (fullText.includes('unit test')) {
+        return {
+          url: 'https://martinfowler.com/articles/practical-test-pyramid.html',
+          title: 'Unit Testing Best Practices'
+        };
+      }
+      if (fullText.includes('integration')) {
+        return {
+          url: 'https://martinfowler.com/bliki/IntegrationTest.html',
+          title: 'Integration Testing Strategies'
+        };
+      }
+      if (fullText.includes('coverage')) {
+        return {
+          url: 'https://kentcdodds.com/blog/write-tests',
+          title: 'Effective Test Coverage Strategies'
+        };
+      }
+      // Default testing link
+      return {
+        url: 'https://testingjavascript.com/',
+        title: 'JavaScript Testing Fundamentals'
+      };
+    }
+    
+    // Dependency-specific links
+    if (issue.category === 'dependencies') {
+      if (fullText.includes('vulnerability') || fullText.includes('cve')) {
+        return {
+          url: 'https://docs.npmjs.com/auditing-package-dependencies-for-security-vulnerabilities',
+          title: 'Managing Security Vulnerabilities in Dependencies'
+        };
+      }
+      if (fullText.includes('outdated') || fullText.includes('update')) {
+        return {
+          url: 'https://docs.npmjs.com/updating-packages-downloaded-from-the-registry',
+          title: 'Keeping Dependencies Up to Date'
+        };
+      }
+      // Default dependency link
+      return {
+        url: 'https://docs.npmjs.com/cli/v8/commands/npm-audit',
+        title: 'NPM Dependency Management'
+      };
+    }
+    
+    // Accessibility-specific links
+    if (category === 'accessibility') {
+      return {
+        url: 'https://www.w3.org/WAI/WCAG21/quickref/',
+        title: 'WCAG Accessibility Guidelines'
+      };
+    }
+    
+    // General fallback based on category
+    const categoryLinks: { [key: string]: {url: string, title: string} } = {
+      security: {
+        url: 'https://owasp.org/www-project-top-ten/',
+        title: 'OWASP Security Fundamentals'
+      },
+      performance: {
+        url: 'https://web.dev/performance/',
+        title: 'Performance Optimization Guide'
+      },
+      architecture: {
+        url: 'https://martinfowler.com/architecture/',
+        title: 'Architecture Patterns'
+      },
+      'code-quality': {
+        url: 'https://refactoring.guru/refactoring',
+        title: 'Code Quality Guide'
+      },
+      dependencies: {
+        url: 'https://docs.npmjs.com/cli/v8/commands/npm-audit',
+        title: 'Dependency Management'
+      },
+      testing: {
+        url: 'https://testingjavascript.com/',
+        title: 'Testing Best Practices'
+      },
+      accessibility: {
+        url: 'https://www.w3.org/WAI/WCAG21/quickref/',
+        title: 'Accessibility Standards'
+      }
+    };
+    
+    // Return category-specific link or general fallback
+    return categoryLinks[issue.category || 'code-quality'] || {
+      url: 'https://developer.mozilla.org/en-US/docs/Learn',
+      title: 'MDN Web Development Resources'
+    };
+  }
+  
+  // Helper to get color based on score
+  private getScoreColor(score: number): string {
+    if (score >= 80) return '#28a745'; // Green
+    if (score >= 60) return '#ffc107'; // Yellow
+    if (score >= 40) return '#fd7e14'; // Orange
+    return '#dc3545'; // Red
+  }
+  
+  // Helper to get encouraging message based on score
+  private getScoreMessage(score: number): string {
+    if (score >= 80) return '🌟 Excellent work! You\'re writing high-quality code.';
+    if (score >= 60) return '👍 Good job! Keep improving to reach excellence.';
+    if (score >= 40) return '📈 You\'re on the right track. Focus on the high-priority issues.';
+    return '🎯 Time to level up! Start with the critical issues first.';
+  }
+
+  // Keep the original method signature for backward compatibility
+  private generateSection10_EducationalInsights_OLD(newIssues: Issue[], unchangedIssues: Issue[], educationalContent: any): string {
     // Generate educational content based on actual issues found
     const issueCategories = new Set([...newIssues, ...unchangedIssues].map(i => i.category));
     const severityTypes = new Set([...newIssues, ...unchangedIssues].map(i => i.severity));
@@ -1411,7 +1902,7 @@ export class ReportGeneratorV7HTMLEnhanced {
   }
 
   // Enhanced helper to render detailed issues with code snippets and fixes
-  private renderDetailedIssuesList(issues: Issue[], title: string, isFixed: boolean = false, prefix: string = ''): string {
+  private renderDetailedIssuesList(issues: Issue[], title: string, isFixed = false, prefix = ''): string {
     if (issues.length === 0) return '';
     
     return `
@@ -1422,7 +1913,7 @@ export class ReportGeneratorV7HTMLEnhanced {
   }
 
   // Render a single issue with full details
-  private renderDetailedIssue(issue: Issue, index: number, isFixed: boolean = false, prefix: string = ''): string {
+  private renderDetailedIssue(issue: Issue, index: number, isFixed = false, prefix = ''): string {
     const severityClass = `issue-${issue.severity || 'medium'}`;
     const severityBadgeClass = `severity-${issue.severity || 'medium'}`;
     const title = this.getIssueTitle(issue);
@@ -1474,7 +1965,7 @@ export class ReportGeneratorV7HTMLEnhanced {
   }
 
   // Helper method to render a simple list of issues (fallback)
-  private renderIssuesList(issues: Issue[], title: string, isFixed: boolean = false): string {
+  private renderIssuesList(issues: Issue[], title: string, isFixed = false): string {
     if (issues.length === 0) return '';
     
     return `
@@ -1485,7 +1976,7 @@ export class ReportGeneratorV7HTMLEnhanced {
   }
 
   // Simple issue render (fallback)
-  private renderIssue(issue: Issue, isFixed: boolean = false): string {
+  private renderIssue(issue: Issue, isFixed = false): string {
     const severityClass = `issue-${issue.severity || 'medium'}`;
     const severityBadgeClass = `severity-${issue.severity || 'medium'}`;
     const title = this.getIssueTitle(issue);
@@ -1556,7 +2047,7 @@ export class ReportGeneratorV7HTMLEnhanced {
   }
 
   private calculateScore(issues: Issue[]): number {
-    let baseScore = CODE_QUALITY_BASE;
+    const baseScore = CODE_QUALITY_BASE;
     let deductions = 0;
     
     issues.forEach(issue => {
