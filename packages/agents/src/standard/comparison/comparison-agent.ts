@@ -18,8 +18,8 @@ import {
   Issue,
   PRMetadata
 } from '../types/analysis-types';
-// Use enhanced report generator for better JSON format support
-import { ReportGeneratorV7EnhancedComplete } from './report-generator-v7-enhanced-complete';
+// Use V7 Enhanced HTML report generator with all missing features restored
+import { ReportGeneratorV7HTMLEnhanced } from './report-generator-v7-html-enhanced';
 import { SkillCalculator } from './skill-calculator';
 import { ILogger } from '../services/interfaces/logger.interface';
 import { EnhancedIssueMatcher, IssueDuplicator } from '../services/issue-matcher-enhanced';
@@ -31,8 +31,8 @@ import { DynamicModelSelector, RoleRequirements } from '../services/dynamic-mode
 export class ComparisonAgent implements IReportingComparisonAgent {
   private config: ComparisonConfig;
   private modelConfig: any;
-  // Using enhanced report generator for JSON format support
-  private reportGenerator: ReportGeneratorV7EnhancedComplete;
+  // Using V7 Enhanced HTML report generator with all features restored
+  private reportGenerator: ReportGeneratorV7HTMLEnhanced;
   private skillCalculator: SkillCalculator;
   private modelSelector: DynamicModelSelector;
   
@@ -42,8 +42,8 @@ export class ComparisonAgent implements IReportingComparisonAgent {
     private skillProvider?: any  // BUG-012 FIX: Accept skill provider for persistence
   ) {
     // Pass skill provider and authorization flag to report generator
-    // Using enhanced generator for better JSON format and location support
-    this.reportGenerator = new ReportGeneratorV7EnhancedComplete(
+    // Using V7 Enhanced HTML generator with all features restored
+    this.reportGenerator = new ReportGeneratorV7HTMLEnhanced(
       skillProvider,
       true  // Authorized caller flag
     );
@@ -649,6 +649,10 @@ Provide confidence scores and reasoning for each finding.`;
       // Ensure location data is preserved from JSON format
       const preservedIssue = {
         ...issue,
+        // FIX: Ensure message field is always present (fixes undefined issue)
+        message: issue.message || (issue as any).title || (issue as any).description || 'Unknown Issue',
+        title: (issue as any).title || issue.message,
+        description: (issue as any).description || issue.message,
         // If issue has direct file/line properties (JSON format), ensure they're preserved
         file: (issue as any).file || issue.location?.file,
         line: (issue as any).line || issue.location?.line,

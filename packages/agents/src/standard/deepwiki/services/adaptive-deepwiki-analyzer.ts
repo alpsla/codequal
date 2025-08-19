@@ -31,13 +31,13 @@ export interface AdaptiveAnalysisResult {
 export class AdaptiveDeepWikiAnalyzer {
   private gapAnalyzer: GapAnalyzer;
   private aiParser: UnifiedAIParser;
-  private deepwikiUrl: string;
-  private deepwikiKey: string;
-  private maxIterations = 3;
-  private timeout = 300000;
+  protected deepwikiUrl: string;
+  protected deepwikiKey: string;
+  protected maxIterations = 3;
+  protected timeout = 300000;
   private retryAttempts = 3;
   private minCompleteness = 80;
-  private logger: any;
+  protected logger: any;
 
   constructor(
     deepwikiUrl: string,
@@ -363,7 +363,7 @@ IMPORTANT: Return your response in valid JSON format with these keys:
   /**
    * Fallback parsing for when AI parser fails
    */
-  private fallbackParse(response: string): any {
+  protected fallbackParse(response: string): any {
     const result: any = {
       issues: [],
       testCoverage: {},

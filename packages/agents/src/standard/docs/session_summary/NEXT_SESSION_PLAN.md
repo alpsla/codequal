@@ -1,217 +1,385 @@
-# Next Session Plan - Real DeepWiki Data Investigation
-**Updated:** August 17, 2025  
-**Previous Session Status:** ENVIRONMENT LOADING PERMANENT FIX - Session Management System Complete
+# Next Session Plan - Complete V7 Report Enhancement
+**Last Updated**: 2025-08-19  
+**Previous Session**: V7 Report Enhancement - Missing Features Restoration
+**Priority**: HIGH - Complete remaining bugs for full feature parity
 
-## ✅ Major Achievements (August 17, 2025)
+## ✅ Previous Session Achievements
 
-### 🎯 ENVIRONMENT LOADING PERMANENT FIX
-1. **Critical Infrastructure Improvement**
-   - ✅ Created centralized env-loader.ts for automatic .env discovery
-   - ✅ Updated all components (UnifiedAIParser, DynamicModelSelector, manual-pr-validator)
-   - ✅ Eliminated recurring OpenRouter API key loading issue
-   - ✅ One-command session startup: `npm run session`
+### Completed Features (5 of 6 original bugs)
+1. **BUG-1**: ✅ Architecture visual schema/ASCII chart restored
+2. **BUG-2**: ✅ Issue descriptions and impact details added
+3. **BUG-4**: ✅ Educational module connected to actual issues
+4. **BUG-5**: ✅ Business Impact with detailed estimates (time, money, user risks)
+5. **BUG-6**: ✅ PR Comment section for GitHub posting
 
-2. **Session Management System Complete**
-   - ✅ Unified session startup script (codequal-session-starter.ts)
-   - ✅ SESSION_MANAGEMENT.md clarifies different session directories
-   - ✅ Integrated with npm scripts for seamless workflow
-   - ✅ Clear roles for operational vs strategic documentation
+### Key Implementation
+- Created `report-generator-v7-html-enhanced.ts` (1691 lines)
+- Fixed undefined values with getIssueTitle() and getIssueDescription() helpers
+- All tests passing with no undefined values
 
-3. **Developer Experience Improvements**
-   - ✅ Setup time reduced from ~2 minutes to <10 seconds
-   - ✅ Eliminated manual environment configuration steps
-   - ✅ Consistent environment loading across all components
-   - ✅ Comprehensive session management documentation
+## 🎯 IMMEDIATE PRIORITIES FOR NEXT SESSION
 
-### 📋 Previous Sessions Summary
-- **2025-08-15:** Module reorganization and DeepWiki structure creation
-- **2025-08-17 (Early):** Critical BUG-032 resolution and complete system integration
-  - Fixed JSON parsing to handle markdown code blocks
-  - Complete mock data pipeline working end-to-end
-  - AI parser working perfectly with mock data
-- **2025-08-17 (Late):** Environment loading permanent fix and session management system
-  - Centralized environment loading solution
-  - Unified session management with `npm run session`
-  - Session roles and documentation clarification
-
-## 🎯 Next Session Priority: Real DeepWiki Data Investigation
-
-### 🔍 PRIMARY FOCUS: Real Data Returns 0 Issues
-**Current Status**: Mock data pipeline works perfectly, real data returns 0 issues
-**Test Case**: `sindresorhus/ky/pull/700` returns 0 issues despite successful API calls
-
-**NEW SESSION STARTUP** (Simplified):
+### 1. VERIFY BUG-3 Status (Code Snippets) - 5 minutes
 ```bash
-# Start new session - ONE COMMAND (NEW!)
-npm run session
+# Quick verification - may already be fixed!
+cd /Users/alpinro/Code\ Prjects/codequal/packages/agents
+npm run build
+node test-enhanced-report.ts
 
-# This automatically:
-# - Loads environment variables
-# - Sets up all required services
-# - Provides session context
-# - Ready to work immediately
+# Check HTML for these sections:
+grep -A 2 "Problematic Code:" enhanced-report-test.html
+grep -A 2 "Suggested Fix:" enhanced-report-test.html
 ```
 
-**Investigation Plan**:
-```bash
-# 1. Quick Start (NEW - one command)
-npm run session
+**Expected**: Code snippets ARE present (renderDetailedIssue includes them at lines 850-870)
+**Action if missing**: Check mock data has codeSnippet and suggestedFix fields
 
-# 2. Verify environment is loaded automatically (should work now)
-echo $OPENROUTER_API_KEY  # Should be set automatically
+### 2. ENHANCE EDUCATIONAL INSIGHTS (BUG-7, BUG-8, BUG-9) - Main Focus
 
-# 3. Test Current State (should work)
-USE_DEEPWIKI_MOCK=true npx ts-node src/standard/tests/regression/manual-pr-validator.ts
+#### Location to Edit:
+`/packages/agents/src/standard/comparison/report-generator-v7-html-enhanced.ts`
+**Line ~1400**: `generateSection10_EducationalInsights()` method
 
-# 4. Test Real Data (returns 0 issues - investigate)
-USE_DEEPWIKI_MOCK=false npx ts-node src/standard/tests/regression/manual-pr-validator.ts \
-  https://github.com/sindresorhus/ky/pull/700
+#### Implementation Plan:
 
-# 5. Try Alternative PRs with Known Issues
-USE_DEEPWIKI_MOCK=false npx ts-node src/standard/tests/regression/manual-pr-validator.ts \
-  https://github.com/vercel/next.js/pull/31616
+##### Step 1: Add Educator Agent Integration
+```typescript
+import { EducatorAgent } from '../../educator/educator-agent';
+
+private async generateSection10_EducationalInsights(comparison: ComparisonResult): Promise<string> {
+  const educator = new EducatorAgent();
+  
+  // Group issues by severity for ordered display
+  const issuesBySeverity = {
+    critical: comparison.newIssues.filter(i => i.severity === 'critical'),
+    high: comparison.newIssues.filter(i => i.severity === 'high'),
+    medium: comparison.newIssues.filter(i => i.severity === 'medium'),
+    low: comparison.newIssues.filter(i => i.severity === 'low')
+  };
+  
+  // Calculate skill scores (BUG-8)
+  const baseScore = 50; // New users start at 50/100
+  const deductions = {
+    critical: issuesBySeverity.critical.length * 5,
+    high: issuesBySeverity.high.length * 3,
+    medium: issuesBySeverity.medium.length * 1,
+    low: issuesBySeverity.low.length * 0.5
+  };
+  const totalDeduction = Object.values(deductions).reduce((a, b) => a + b, 0);
+  const currentScore = Math.max(0, baseScore - totalDeduction);
+  
+  // Get educational content from Educator agent (BUG-9)
+  const educationalContent = await educator.research({
+    issues: comparison.newIssues,
+    developerLevel: this.getDeveloperLevel(currentScore)
+  });
+  
+  // Build HTML with issue-specific recommendations
+  return this.buildEnhancedEducationalHTML(
+    issuesBySeverity,
+    educationalContent,
+    currentScore,
+    deductions
+  );
+}
 ```
 
-### 🔧 Debug Tools Ready
-**Raw Response Inspection**:
-```bash
-# Debug DeepWiki response directly
-curl -X POST http://localhost:8001/chat/completions/stream \
-  -H "Content-Type: application/json" \
-  -d '{
-    "repo_url": "https://github.com/sindresorhus/ky",
-    "messages": [{"role": "user", "content": "Analyze PR #700 for issues"}],
-    "stream": false,
-    "provider": "openrouter",
-    "model": "openai/gpt-4o-mini"
-  }'
-
-# Check DeepWiki logs during analysis
-kubectl logs -n codequal-dev -l app=deepwiki -f
+##### Step 2: Create Issue-Specific Educational HTML
+```typescript
+private buildEnhancedEducationalHTML(
+  issuesBySeverity: any,
+  educationalContent: any,
+  currentScore: number,
+  deductions: any
+): string {
+  let html = `
+    <div class="educational-insights enhanced">
+      <h3>📚 Educational Insights - Personalized Learning Plan</h3>
+      
+      <!-- Skill Score Section -->
+      <div class="skill-score-summary">
+        <h4>Your Code Quality Score</h4>
+        <div class="score-display">
+          <span class="current-score">${currentScore}</span>
+          <span class="max-score">/100</span>
+        </div>
+        <div class="score-breakdown">
+          <p>Score Calculation:</p>
+          <ul>
+            <li>Base Score (new user): 50/100</li>
+            <li>Critical Issues (-5 each): -${deductions.critical} points</li>
+            <li>High Issues (-3 each): -${deductions.high} points</li>
+            <li>Medium Issues (-1 each): -${deductions.medium} points</li>
+            <li>Low Issues (-0.5 each): -${deductions.low} points</li>
+          </ul>
+        </div>
+      </div>
+      
+      <!-- Issue-Specific Education -->
+      <div class="issue-based-learning">
+        <h4>Learning Opportunities Based on Found Issues</h4>
+  `;
+  
+  // Critical issues with strict motivation
+  if (issuesBySeverity.critical.length > 0) {
+    html += `
+      <div class="critical-learning urgent">
+        <h5>🚨 CRITICAL - Immediate Action Required</h5>
+        <p class="motivation-strict">
+          These critical issues pose immediate security/stability risks. 
+          <strong>You MUST address these before deployment!</strong>
+        </p>
+        <ul>
+    `;
+    for (const issue of issuesBySeverity.critical) {
+      const educLink = await this.getEducationalLink(issue, educationalContent);
+      html += `
+        <li class="issue-education critical">
+          <div class="issue-title">${this.getIssueTitle(issue)}</div>
+          <div class="education-link">
+            📖 <strong>Required Learning</strong>: 
+            <a href="${educLink.url}" target="_blank">${educLink.title}</a>
+          </div>
+          <div class="why-important">
+            ⚠️ Why this matters: ${issue.impact || 'Can compromise entire system'}
+          </div>
+        </li>
+      `;
+    }
+    html += '</ul></div>';
+  }
+  
+  // High severity with strong recommendation
+  if (issuesBySeverity.high.length > 0) {
+    html += `
+      <div class="high-learning important">
+        <h5>⚠️ HIGH Priority Learning</h5>
+        <p class="motivation-strong">
+          These issues significantly impact code quality and should be addressed soon.
+        </p>
+        <ul>
+    `;
+    for (const issue of issuesBySeverity.high) {
+      const educLink = await this.getEducationalLink(issue, educationalContent);
+      html += `
+        <li class="issue-education high">
+          <div class="issue-title">${this.getIssueTitle(issue)}</div>
+          <div class="education-link">
+            📚 <strong>Recommended</strong>: 
+            <a href="${educLink.url}" target="_blank">${educLink.title}</a>
+          </div>
+        </li>
+      `;
+    }
+    html += '</ul></div>';
+  }
+  
+  // Medium/Low with suggested learning
+  const otherIssues = [...issuesBySeverity.medium, ...issuesBySeverity.low];
+  if (otherIssues.length > 0) {
+    html += `
+      <div class="suggested-learning">
+        <h5>💡 Suggested Learning for Improvement</h5>
+        <p class="motivation-encouraging">
+          These improvements will enhance your code quality over time.
+        </p>
+        <ul>
+    `;
+    for (const issue of otherIssues) {
+      const educLink = await this.getEducationalLink(issue, educationalContent);
+      html += `
+        <li class="issue-education ${issue.severity}">
+          <div class="issue-title">${this.getIssueTitle(issue)}</div>
+          <div class="education-link">
+            💭 Consider learning: 
+            <a href="${educLink.url}" target="_blank">${educLink.title}</a>
+          </div>
+        </li>
+      `;
+    }
+    html += '</ul></div>';
+  }
+  
+  html += `
+      </div>
+      
+      <!-- Footnotes -->
+      <div class="educational-footnotes">
+        <hr>
+        <small>
+          <p><strong>Scoring System:</strong></p>
+          <ul>
+            <li>New users start with a base score of 50/100</li>
+            <li>Critical issues: -5 points (must fix immediately)</li>
+            <li>High issues: -3 points (fix soon)</li>
+            <li>Medium issues: -1 point (plan to fix)</li>
+            <li>Low issues: -0.5 points (nice to fix)</li>
+          </ul>
+          <p>Your recent validation score: <strong>${currentScore}/100</strong></p>
+          <p>Educational links are powered by DeepWiki analysis and tailored to your specific issues.</p>
+        </small>
+      </div>
+    </div>
+  `;
+  
+  return html;
+}
 ```
 
-### 🤔 Investigation Hypotheses
-1. **PR Selection**: PR #700 may genuinely have no issues
-2. **DeepWiki Configuration**: May be analyzing repository vs PR diff
-3. **Response Format**: Text vs JSON handling inconsistencies
-4. **API Parameters**: Missing PR-specific analysis parameters
-5. **Cache Interference**: Stale cached responses
-6. **Orchestrator Issue**: May be losing issues between parsing and final report
+##### Step 3: Add Helper Methods
+```typescript
+private async getEducationalLink(issue: Issue, educationalContent: any): Promise<{url: string, title: string}> {
+  // Try to get specific link from educator content
+  const specificLink = educationalContent?.resources?.find(
+    r => r.relatedTo?.includes(issue.id)
+  );
+  
+  if (specificLink) {
+    return {
+      url: specificLink.url,
+      title: specificLink.title
+    };
+  }
+  
+  // Fallback to category-based links
+  const categoryLinks = {
+    security: {
+      url: 'https://owasp.org/www-project-top-ten/',
+      title: 'OWASP Security Best Practices'
+    },
+    performance: {
+      url: 'https://web.dev/performance/',
+      title: 'Web Performance Optimization Guide'
+    },
+    architecture: {
+      url: 'https://martinfowler.com/architecture/',
+      title: 'Software Architecture Patterns'
+    },
+    // Add more categories...
+  };
+  
+  return categoryLinks[issue.category] || {
+    url: 'https://developer.mozilla.org/en-US/docs/Learn',
+    title: 'General Development Best Practices'
+  };
+}
 
-### 🧪 Test Strategy
-1. **Diverse PR Testing**: Test with PRs known to have security/quality issues
-2. **API Parameter Validation**: Confirm correct endpoint usage for PR analysis
-3. **Response Format Analysis**: Debug text vs JSON response handling
-4. **Cache Validation**: Check Redis for stale responses affecting tests
-5. **Orchestrator Debugging**: Track issues through the entire pipeline
-
-## 📝 UPDATED Quick Session Startup Commands
-
-```bash
-# NEW: Start CodeQual session (ONE COMMAND!)
-npm run session
-
-# OLD WAY (no longer needed):
-# export OPENROUTER_API_KEY=sk-or-v1-...
-# export DEEPWIKI_API_URL=http://localhost:8001
-# cd /Users/alpinro/Code\ Prjects/codequal/packages/agents
-# kubectl port-forward -n codequal-dev svc/deepwiki-api 8001:8001 &
-
-# Now just: npm run session
-# Everything else is automatic!
+private getDeveloperLevel(score: number): string {
+  if (score >= 80) return 'senior';
+  if (score >= 60) return 'intermediate';
+  if (score >= 40) return 'junior';
+  return 'beginner';
+}
 ```
 
-## 🎯 Success Criteria for Next Session
-
-1. **Real Data Working**: Real DeepWiki returns actual issues (not 0)
-2. **Issue Quality**: Issues have proper location information
-3. **Report Generation**: Complete HTML/JSON/Markdown reports with real data
-4. **System Reliability**: Consistent behavior across different PRs
-5. **Environment Loading**: Verify permanent fix works across sessions
-
-## 📊 Data to Investigate
-
-1. **Raw DeepWiki Response**: What exactly does the API return for real PRs?
-2. **API Parameters**: Are we sending the correct parameters for PR analysis?
-3. **Response Format**: Text vs JSON variations and parsing
-4. **Alternative PRs**: Test with PRs known to have issues
-5. **Cache Behavior**: Check if Redis cache interferes with testing
-6. **Orchestrator Flow**: Track issues from DeepWiki → Parser → Final Report
-
-## 🚀 Next Session Preparation
-
-### Environment Setup (NOW AUTOMATIC!)
-```bash
-# NEW: Just run the session starter
-npm run session
-
-# Verify everything works (should be automatic now)
-echo "Environment: $OPENROUTER_API_KEY"
-echo "DeepWiki: $DEEPWIKI_API_URL"
-
-# Check DeepWiki status (only if needed)
-kubectl get pods -n codequal-dev -l app=deepwiki
+### 3. UPDATE TEST FILE
+```typescript
+// In test-enhanced-report.ts, add validation for new features
+const educationalFeatures = {
+  'Skill Score Calculation': report.includes('Score Calculation:'),
+  'Base Score Mention': report.includes('Base Score (new user): 50/100'),
+  'Issue-Specific Education': report.includes('Learning Opportunities Based on Found Issues'),
+  'Severity Ordering': report.includes('CRITICAL - Immediate Action Required'),
+  'Educational Links': report.includes('Required Learning') || report.includes('Recommended'),
+  'Footnotes': report.includes('Scoring System:')
+};
 ```
 
-### Available Debug Tools
-- ✅ Mock data pipeline (working perfectly)
-- ✅ Raw response inspection tools
-- ✅ Multi-format report generation
-- ✅ Comprehensive error logging
-- ✅ DeepWiki logs monitoring
-- ✅ **NEW**: Automatic environment loading
-- ✅ **NEW**: One-command session startup
+## 📋 Testing Commands
 
-## 💡 Current Understanding
+```bash
+# Build and test
+cd /Users/alpinro/Code\ Prjects/codequal/packages/agents
+npm run build
 
-1. **Architecture**: Complete and working with mock data
-2. **Parser Integration**: UnifiedAIParser + AILocationFinder working perfectly
-3. **Report Generation**: Multi-format outputs with proper styling
-4. **Environment**: Permanent loading solution in place
-5. **Session Management**: Unified startup process
-6. **Remaining Challenge**: Real DeepWiki API behavior investigation
+# Test enhanced report
+node test-enhanced-report.ts
 
-## 🔗 Important Files to Reference
+# Verify educational enhancements
+grep -i "score calculation" enhanced-report-test.html
+grep -i "critical.*immediate" enhanced-report-test.html
+grep -i "base score" enhanced-report-test.html
 
-1. **Session Summary**: `/packages/agents/src/standard/docs/session_summary/SESSION_SUMMARY_2025_08_17_ENVIRONMENT_LOADING_FIX.md`
-2. **Environment Loader**: `/packages/agents/src/standard/utils/env-loader.ts`
-3. **Session Starter**: `/packages/agents/src/standard/scripts/codequal-session-starter.ts`
-4. **Session Management**: `/SESSION_MANAGEMENT.md`
-5. **Test Outputs**: `/packages/agents/test-outputs/manual-validation/`
+# Test with real PR
+USE_DEEPWIKI_MOCK=true node test-real-pr700-correct.ts
+```
 
-## 📁 Important Files for DeepWiki Investigation
+## ✅ Definition of Done
 
-- `/packages/agents/src/standard/deepwiki/services/deepwiki-repository-analyzer.ts` - Main analysis logic
-- `/packages/agents/src/standard/deepwiki/config/prompt-templates.ts` - Prompts to test
-- `/packages/agents/test-deepwiki-structured.ts` - Test different response formats
-- `/packages/agents/src/standard/deepwiki/services/deepwiki-response-parser.ts` - Parser to debug
-- `/packages/agents/src/standard/deepwiki/services/unified-ai-parser.ts` - **Updated with env loader**
+### BUG-3 (Code Snippets)
+- [ ] Verify code snippets present in report
+- [ ] Verify fix suggestions present in report
+- [ ] If missing, add to renderDetailedIssue()
 
-## ⚡ Key Improvements for Next Session
+### BUG-7 (Issue-Specific Education)
+- [ ] Issues grouped and displayed by severity
+- [ ] Each issue has educational link
+- [ ] Critical issues have strict motivation
+- [ ] Medium/Low have encouraging tone
 
-1. **Instant Startup**: `npm run session` does everything
-2. **No Manual Environment**: Automatic .env discovery and loading
-3. **Better Context**: Clear session documentation and roles
-4. **Focus on Core Issue**: Can immediately focus on BUG-032 without setup friction
+### BUG-8 (Skill Scores)
+- [ ] Score calculation explained in footnotes
+- [ ] Base score 50/100 mentioned
+- [ ] Point deductions shown (5/3/1/0.5)
+- [ ] Current score displayed
 
-## 🎯 Session Goals Hierarchy
+### BUG-9 (Educator Integration)
+- [ ] Educator agent research() method called
+- [ ] Educational links retrieved for issues
+- [ ] Fallback links for missing content
+- [ ] DeepWiki integration mentioned
 
-### Primary Goal
-- Resolve BUG-032: Real DeepWiki returns 0 issues
+## 🚀 Quick Start for Next Session
 
-### Secondary Goals
-- Validate permanent environment loading across multiple sessions
-- Test orchestrator issue preservation in final reports
-- Document successful real data flow
+```bash
+# 1. Navigate to project
+cd /Users/alpinro/Code\ Prjects/codequal/packages/agents
 
-### Stretch Goals
-- Performance optimization of real data pipeline
-- Enhanced error handling for edge cases
-- Alternative PR testing for validation
+# 2. Load environment (if needed)
+source ../../.env
+
+# 3. Build project
+npm run build
+
+# 4. Open main file to edit
+code src/standard/comparison/report-generator-v7-html-enhanced.ts
+
+# 5. Go to line ~1400 for generateSection10_EducationalInsights()
+
+# 6. Run tests after changes
+node test-enhanced-report.ts
+```
+
+## 📝 Files to Edit
+
+1. **Main File**: `/packages/agents/src/standard/comparison/report-generator-v7-html-enhanced.ts`
+   - Line ~1400: generateSection10_EducationalInsights()
+   - Add methods: buildEnhancedEducationalHTML(), getEducationalLink(), getDeveloperLevel()
+
+2. **Test File**: `/packages/agents/test-enhanced-report.ts`
+   - Add validation for educational features
+   - Check for skill scores and footnotes
+
+## 🎯 Time Estimate
+
+- BUG-3 Verification: 5 minutes
+- BUG-7 Implementation: 30 minutes
+- BUG-8 Score Calculation: 15 minutes
+- BUG-9 Educator Integration: 20 minutes
+- Testing & Validation: 10 minutes
+- **Total**: ~80 minutes
+
+## 💡 Pro Tips
+
+1. **BUG-3 is likely already fixed** - just needs verification
+2. **Use existing Educator agent** - don't rebuild from scratch
+3. **Test with mock data first** - faster iteration
+4. **Copy CSS styles** from existing sections for consistency
+5. **Add try-catch** for Educator agent calls (may timeout)
 
 ---
 
-**Session saved**: 2025-08-17  
-**Context used**: ~98% (wrapping up)  
-**Ready for next session**: YES - Use `npm run session` to start  
-**Environment loading**: PERMANENT FIX IN PLACE ✅
+**Session Priority**: HIGH  
+**Estimated Completion**: 1-2 hours  
+**Dependencies**: Educator agent already exists  
+**Risk**: Low - enhancing existing working code

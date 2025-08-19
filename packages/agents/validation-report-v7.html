@@ -1,0 +1,405 @@
+# Pull Request Analysis Report
+
+**Repository:** https://github.com/sindresorhus/ky  
+**PR:** #Unknown - Add support for custom retry strategies  
+**Author:** contributor (@contributor)  
+**Analysis Date:** 2025-08-19T12:32:28.076Z  
+**Model Used:** google/gemini-2.5-pro-exp-03-25  
+**Scan Duration:** 15.0 seconds
+
+---
+
+## PR Decision: ❌ DECLINED - CRITICAL/HIGH ISSUES OR BREAKING CHANGES MUST BE FIXED
+
+**Confidence:** 94%
+
+This PR introduces 1 high severity issue(s) that must be resolved before merge.
+
+---
+
+## Executive Summary
+
+**Overall Score: 83.01/100 (Grade: B)**
+
+This PR introduces critical/high severity issues that block approval. Additionally, 1 pre-existing issues remain unaddressed, resulting in skill score penalties.
+
+### Key Metrics
+- **Critical Issues Resolved:** 0 ✅
+- **New Critical/High Issues:** 1 🚨 **[BLOCKING]**
+- **Pre-existing Issues:** 1 (1 medium) ⚠️ **[Not blocking, but impacts scores]**
+- **Overall Score Impact:** +8.010000000000005 points (was 75, now 83.01)
+- **Risk Level:** MEDIUM
+- **Estimated Review Time:** 37 minutes
+- **Files Changed:** 11
+- **Lines Added/Removed:** +245 / -89
+
+### Issue Distribution
+```
+NEW PR ISSUES (BLOCKING):
+Critical: ░░░░░░░░░░ 0
+High:     █░░░░░░░░░ 1 - MUST FIX
+Medium:   █░░░░░░░░░ 1 (acceptable)
+Low:      █░░░░░░░░░ 1 (acceptable)
+
+EXISTING REPOSITORY ISSUES (NOT BLOCKING):
+Critical: ░░░░░░░░░░ 0 unfixed
+High:     ░░░░░░░░░░ 0 unfixed
+Medium:   █░░░░░░░░░ 1 unfixed
+Low:      ░░░░░░░░░░ 0 unfixed
+```
+
+---
+
+## 1. Security Analysis
+
+### Score: 100/100 (Grade: A)
+
+**Score Breakdown:**
+- Vulnerability Prevention: 100/100
+- Authentication & Authorization: 100/100
+- Data Protection: 100/100
+- Input Validation: 100/100
+- Security Testing: 100/100
+
+### Found 0 Security Issues
+
+✅ No new security vulnerabilities introduced
+
+---
+
+## 2. Performance Analysis
+
+### Score: 95/100 (Grade: A)
+
+**Score Breakdown:**
+- Response Time: 92/100
+- Throughput: 92/100
+- Resource Efficiency: 92/100
+- Scalability: 92/100
+- Reliability: 92/100
+
+### Found 1 Performance Issues
+
+#### MEDIUM (1)
+1. **Performance Concern**
+   **File:** src/api.ts:78:1
+   **Impact:** Moderate performance impact
+   **Fix:** Consider optimizing
+
+---
+
+## 3. Code Quality Analysis
+
+### Score: 75/100 (Grade: C)
+
+**Score Breakdown:**
+- Maintainability: 100/100
+- Test Coverage: 71/100 (Decreased from 82%)
+- Documentation: 100/100
+- Code Complexity: 100/100
+- Standards Compliance: 100/100
+
+### Major Code Changes
+- 📁 **15 files changed** (7 new, 5 modified, 2 deleted)
+- 📏 **150 lines changed** (+100 / -50)
+- 🧪 **Test coverage dropped** 82% → 71% (-11%)
+
+### Found 0 Code Quality Issues
+
+✅ Code quality standards maintained
+
+---
+
+## 4. Architecture Analysis
+
+### Score: 100/100 (Grade: A)
+
+**Score Breakdown:**
+- Design Patterns: 94/100
+- Modularity: 96/100
+- Scalability Design: 93/100
+- Resilience: 87/100
+- API Design: 91/100
+
+### System Architecture Overview
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│   Frontend  │────▶│     API     │────▶│   Backend   │
+│  ✅ Clean  │     │  ✅ Clean  │     │  ✅ Clean  │
+└─────────────┘     └─────────────┘     └─────────────┘
+                           │                    │
+                           ▼                    ▼
+                    ┌─────────────┐     ┌─────────────┐
+                    │    Cache    │     │  Database   │
+                    │  ✅ Clean  │     │  ✅ Clean  │
+                    └─────────────┘     └─────────────┘
+```
+
+### Performance Impact Analysis
+| Metric | Current | Target | Status |
+|--------|---------|--------|--------|
+| Response Time | 120ms | <200ms | ✅ |
+| Throughput | 1200 req/s | >1000 req/s | ✅ |
+| Memory Usage | 280MB | <400MB | ✅ |
+| CPU Utilization | 45% | <60% | ✅ |
+
+### Architecture Achievements
+- ✅ Clean architecture maintained
+
+
+---
+
+## 5. Dependencies Analysis
+
+### Score: 100/100 (Grade: A)
+
+**Score Breakdown:**
+- Security Vulnerabilities: 100/100
+- Version Currency: 100/100
+- License Compliance: 100/100
+- Bundle Size: 100/100
+
+### Dependency Issues
+- ✅ All dependencies are secure and up-to-date
+
+---
+
+## 6. Issues Resolved in This PR
+
+### ✅ Successfully Fixed 2 Issues from Main Branch
+
+#### 🟠 HIGH Issues Resolved (1)
+1. **Legacy issue 3**
+   - **File:** src/auth.ts:23:1
+   - **Description:** undefined
+   - **Category:** security
+
+#### 🟢 LOW Issues Resolved (1)
+1. **Legacy issue 2**
+   - **File:** src/utils.ts:100:1
+   - **Description:** undefined
+
+---
+
+## PR Issues
+
+### ⚠️ High Issues (1)
+
+#### PR-HIGH-GENERAL-001: undefined
+**File:** src/types.ts:15:1  
+**Impact:** Significant security or performance impact
+**Skill Impact:** GENERAL -3
+
+---
+
+### 🟡 Medium Issues (1)
+
+1. **undefined** - src/api.ts:78:1
+
+### 🟢 Low Issues (1)
+
+1. **undefined** - src/handlers.ts:134:1
+
+## Repository Issues (NOT BLOCKING)
+
+*These pre-existing issues don't block the PR but impact skill scores and should be addressed as technical debt.*
+
+**Total Existing Issues: 1**
+
+### 🟡 Medium Repository Issues (1)
+**Score Impact:** -1 points
+
+1. **undefined** - src/index.ts:42:1 (6 months old)
+
+## 8. Educational Insights & Recommendations
+
+### Learning Opportunities Based on This PR
+
+#### 🔒 Security Best Practices
+✅ No security issues found in this PR. Keep maintaining secure coding practices!
+
+#### ⚡ Performance Optimization
+Based on the 1 performance issue found in this PR:
+- Consider batch operations for the identified loop queries
+- Profile the affected code paths for optimization opportunities
+
+#### 📝 Code Quality Improvements
+Based on the 2 code quality issues found:
+- Required improvements: Improve test coverage
+- Apply Clean Code principles to the affected areas
+- Consider refactoring to improve maintainability
+
+#### 📁 Files Requiring Attention
+The following files contain issues that need to be addressed:
+- **src/types.ts**: 1 issue
+- **src/api.ts**: 1 issue
+- **src/handlers.ts**: 1 issue
+
+---
+
+## 9. Individual & Team Skills Tracking
+
+### Developer Performance: contributor (@contributor)
+
+**Current Skill Score: 48.00/100 (F)**
+- Previous Score: 50.00/100 (New User Base)
+- Score Change: -2.00 points
+- Trend: ↓
+
+### 📊 Skill Score Calculation (Consistent Scoring System)
+
+| Factor | Points per Issue | Count | Impact |
+|--------|-----------------|-------|--------|
+| **Issues Resolved (Positive)** 🎉 | | | |
+| - Critical Issues Fixed | +5 | 0 | +0.0 |
+| - High Issues Fixed | +3 | 1 | +3.0 |
+| - Medium Issues Fixed | +1 | 0 | +0.0 |
+| - Low Issues Fixed | +0.5 | 1 | +0.5 |
+| **Subtotal (Resolved)** | | **2** | **+3.5** |
+| | | | |
+| **New Issues Introduced (PR)** | | | |
+| - Critical Issues | -5 | 0 | -0.0 |
+| - High Issues | -3 | 1 | -3.0 |
+| - Medium Issues | -1 | 1 | -1.0 |
+| - Low Issues | -0.5 | 1 | -0.5 |
+| **Subtotal (PR Issues)** | | **3** | **-4.5** |
+| | | | |
+| **Pre-existing Issues (Repository)** | | | |
+| - Critical Repository Issues | -5 | 0 | -0.0 |
+| - High Repository Issues | -3 | 0 | -0.0 |
+| - Medium Repository Issues | -1 | 1 | -1.0 |
+| - Low Repository Issues | -0.5 | 0 | -0.0 |
+| **Subtotal (Repository Issues)** | | **1** | **-1.0** |
+| | | | |
+| **NET CHANGE** | | | **-2.0** |
+
+### 📈 Score Breakdown Explanation
+
+**Consistent Point System Applied:**
+- 🔴 **Critical**: 5 points (major security/stability risks)
+- 🟠 **High**: 3 points (significant issues requiring immediate attention)
+- 🟡 **Medium**: 1 points (important issues to address soon)
+- 🟢 **Low**: 0.5 points (minor issues, best practices)
+
+**Same deductions apply to both:**
+- ✅ New PR issues (what you introduced)
+- ✅ Repository issues (what you didn't fix)
+
+This ensures fair and consistent scoring across all issue types.
+
+### Skills by Category
+
+| Category | Issues Found | Score Impact | Grade | Status |
+|----------|-------------|--------------|-------|--------|
+| Security | 0 new, 0 existing | +3.0 | A | ✅ Clean |
+| Performance | 1 new, 0 existing | -1.0 | A | ⚠️ Issues Found |
+| Code Quality | 0 new, 0 existing | +0.0 | A | ✅ Clean |
+| Architecture | 0 new, 0 existing | +0.0 | A | ✅ Clean |
+
+---
+
+## 10. Business Impact Analysis
+
+### 💰 Financial Impact Estimates
+- **Potential Security Breach Cost:** $0 (0.0% risk)
+- **Estimated Downtime Cost:** $100,000 (2 hours)
+- **Customer Churn Risk:** $50,000 - $100,000
+- **Total Financial Risk:** **$100,000**
+
+### 📊 Operational Metrics
+- **Throughput Reduction:** 15% (850 req/s)
+- **Response Time Increase:** +20ms
+- **Infrastructure Cost Increase:** +10%
+- **Team Efficiency Loss:** 15% productivity impact
+
+### 👥 Customer Impact Assessment
+- **Impact Level:** MODERATE - High priority issues affect user workflows
+- **NPS Score Impact:** -5 points
+- **Customer Satisfaction:** -3% expected drop
+- **Support Ticket Volume:** +20% increase expected
+- **User Experience Rating:** ⭐⭐⭐ (3/5) - Degraded experience
+
+### Risk Assessment Matrix (Based on 3 Issues Found)
+| Risk Category | Level | Issues Found | Mitigation Cost | Business Impact |
+|--------------|-------|--------------|-----------------|-----------------|
+| Security Risk | ✅ NONE | 0 security issues | $0 | None |
+| Performance | 🟢 LOW | 1 performance issues | $20,000 | User frustration |
+| Stability | 🟢 LOW | 0 critical, 1 high | $25,000 | Occasional outages |
+| Compliance | 🟢 LOW | No compliance issues | $0 | Compliant |
+
+### Issue Severity Distribution
+- **Critical Issues:** 0 ✅
+- **High Issues:** 1 ⚠️ Must Fix
+- **Medium Issues:** 1 🟡 Should Fix
+- **Low Issues:** 1 🟢 Nice to Fix
+
+### Deployment Decision
+- **Readiness Status:** ❌ **NOT READY** - Critical/High issues must be resolved
+- **Blocking Issues:** 1 must be fixed before deployment
+- **Estimated Revenue Impact:** -$20,000 to -$50,000 per month
+- **Technical Debt Added:** 6 hours ($900)
+- **Total Remediation Cost:** $11,500
+
+---
+
+## 11. Action Items & Recommendations
+
+### 🚨 Immediate Actions Required
+
+#### High Issues (This Week - BLOCKING)
+1. **[PR-HIGH-1]** undefined - src/types.ts:15:1
+
+### 📋 Technical Debt (Repository Issues - Not Blocking)
+
+---
+
+## 12. PR Comment Conclusion
+
+### 📋 Summary for PR Review
+
+**Decision: ❌ DECLINED - NEW CRITICAL AND HIGH ISSUES MUST BE FIXED**
+
+This PR cannot proceed with 0 new critical and 1 new high severity issues. Pre-existing repository issues don't block this PR but significantly impact skill scores.
+
+**NEW Blocking Issues (Must Fix):**
+- 🚨 0 Critical: None
+- 🚨 1 High: 
+
+**Pre-existing Repository Issues (Not blocking, but penalize scores):**
+- ⚠️ 1 total: 0 critical, 0 high, 1 medium, 0 low
+- 📅 Ages range from 3-12 months
+- 💰 Skill penalty: -0.8 points total
+
+**Required Actions:**
+1. Fix ALL new critical and high issues
+2. Update all vulnerable dependencies
+3. Restore test coverage to 80%+
+4. Security review before resubmission
+
+**Developer Performance:** 
+contributor (@contributor)'s score dropped from 75 to 71.3 points. The penalty for leaving 1 pre-existing issues unfixed (-0.8 points) should motivate addressing technical debt.
+
+**Next Steps:**
+1. Fix all NEW blocking issues
+2. Resubmit PR for review
+3. Create JIRA tickets for all repository issues
+4. Schedule team security training
+
+---
+
+## Score Impact Summary
+
+| Category | Before | After | Change | Trend | Grade |
+|----------|--------|-------|--------|-------|-------|
+| Security | 75/100 | 75/100 | 0 | → | C |
+| Performance | 80/100 | 65/100 | -15 | ↓↓ | D |
+| Code Quality | 78/100 | 78/100 | 0 | → | C |
+| Architecture | 72/100 | 92/100 | +20 | ↑↑ | A |
+| Dependencies | 82/100 | 82/100 | 0 | → | B |
+| **Overall** | **74/100** | **78/100** | **4** | **↑** | **C** |
+
+
+---
+
+*Generated by CodeQual AI Analysis Platform v4.0*  
+*For questions or support: support@codequal.com*
