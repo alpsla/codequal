@@ -104,7 +104,14 @@ function createSampleAnalysis(): AnalysisResult {
       category: 'Security',
       file: 'src/legacy/db.js',
       line: 12,
-      message: 'Legacy SQL injection',
+      message: 'Legacy SQL injection vulnerability',
+      description: 'Direct string concatenation in SQL query',
+      code: 'db.execute("SELECT * FROM users WHERE name = \'" + userName + "\'")',
+      suggestedFix: 'Use prepared statements or parameterized queries',
+      fixedCode: 'db.execute("SELECT * FROM users WHERE name = ?", [userName])',
+      impact: 'Critical security vulnerability allowing database access',
+      educationalUrl: 'https://owasp.org/www-community/attacks/SQL_Injection',
+      estimatedFixTime: 10,
       status: 'pre-existing'
     },
     {
@@ -115,6 +122,12 @@ function createSampleAnalysis(): AnalysisResult {
       file: 'src/legacy/cache.js',
       line: 45,
       message: 'Inefficient caching strategy',
+      description: 'Cache never expires, leading to memory bloat',
+      code: 'cache.set(key, value); // No TTL',
+      suggestedFix: 'Add TTL (time-to-live) to cache entries',
+      fixedCode: 'cache.set(key, value, { ttl: 3600 }); // 1 hour TTL',
+      impact: 'Memory usage grows unbounded over time',
+      estimatedFixTime: 5,
       status: 'pre-existing'
     }
   ];
@@ -159,7 +172,9 @@ async function testV8Generator() {
     format: 'markdown',
     includeEducation: false, // Skip for speed
     includeCodeSnippets: true,
-    verbosity: 'standard'
+    verbosity: 'standard',
+    includePreExistingDetails: true, // Include full details for AI IDE support
+    includeAIIDESection: true // Add AI IDE integration section
   });
 
   // Analyze report size and structure

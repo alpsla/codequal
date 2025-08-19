@@ -25,6 +25,8 @@ interface V8ReportOptions {
   includeEducation?: boolean;
   includeCodeSnippets?: boolean;
   verbosity?: 'minimal' | 'standard' | 'detailed';
+  includePreExistingDetails?: boolean; // Default true for AI IDE support
+  includeAIIDESection?: boolean; // Add special section for AI IDE integration
 }
 
 interface IssueGroup {
@@ -56,6 +58,10 @@ export class ReportGeneratorV8 {
     analysisResult: AnalysisResult,
     options: V8ReportOptions = { format: 'markdown' }
   ): Promise<string> {
+    // Set defaults for AI IDE support
+    options.includePreExistingDetails = options.includePreExistingDetails ?? true;
+    options.includeAIIDESection = options.includeAIIDESection ?? true;
+    
     // Group issues by status to avoid duplication
     const issueGroups = this.groupIssuesByStatus(analysisResult);
     
@@ -73,7 +79,8 @@ export class ReportGeneratorV8 {
       this.generateConsolidatedIssuesSection(issueGroups, options),
       this.generateImpactAnalysis(impactSummaries),
       educationalInsights ? this.generateEducationalSection(educationalInsights) : '',
-      this.generateActionItems(issueGroups.new),
+      this.generateActionItems(issueGroups.new, issueGroups.preExisting),
+      options.includeAIIDESection ? this.generateAIIDESection(issueGroups) : '',
       this.generatePRComment(analysisResult, issueGroups)
     ];
 
@@ -149,23 +156,23 @@ export class ReportGeneratorV8 {
     // New issues with full details
     if (issueGroups.new.length > 0) {
       content += '### 📍 New Issues (Introduced in this PR)\n\n';
+      content += '*These issues were introduced by changes in this PR and should be fixed before merging:*\n\n';
       content += this.formatIssuesByCategory(issueGroups.new, options, true);
     }
 
-    // Resolved issues - brief listing
-    if (issueGroups.resolved.length > 0) {
-      content += '\n### ✅ Resolved Issues (Fixed in this PR)\n\n';
-      issueGroups.resolved.forEach(issue => {
-        content += `- **${issue.id || 'FIXED'}:** ${issue.message} (${issue.file}:${issue.line})\n`;
-      });
+    // Pre-existing issues with full details (for AI IDE integration)
+    if (issueGroups.preExisting.length > 0) {
+      content += '\n### 📌 Pre-existing Issues (Not addressed yet)\n\n';
+      content += '*These issues existed before this PR. While not blocking, they should be addressed for code quality. Full details provided for AI IDE integration (Cursor, Copilot, etc.):*\n\n';
+      content += this.formatIssuesByCategory(issueGroups.preExisting, options, true);
     }
 
-    // Pre-existing issues - reference only
-    if (issueGroups.preExisting.length > 0) {
-      content += '\n### 📌 Pre-existing Issues (Not addressed)\n\n';
-      content += '*These issues existed before this PR and remain unaddressed:*\n\n';
-      issueGroups.preExisting.forEach(issue => {
-        content += `- **${issue.id || 'OLD'}:** ${issue.message} (${issue.file}:${issue.line})\n`;
+    // Resolved issues - brief listing only
+    if (issueGroups.resolved.length > 0) {
+      content += '\n### ✅ Resolved Issues (Fixed in this PR)\n\n';
+      content += '*Great work! These issues have been successfully resolved:*\n\n';
+      issueGroups.resolved.forEach(issue => {
+        content += `- **${issue.id || 'FIXED'}:** ${issue.message} (${issue.file}:${issue.line})\n`;
       });
     }
 
@@ -342,17 +349,76 @@ export class ReportGeneratorV8 {
   /**
    * Generate prioritized action items
    */
-  private generateActionItems(issues: CodeIssue[]): string {
+  private generateActionItems(newIssues: CodeIssue[], preExistingIssues: CodeIssue[]): string {
     let content = '## 4. Action Items & Next Steps\n\n';
 
-    const prioritized = this.prioritizeIssues(issues);
+    const prioritizedNew = this.prioritizeIssues(newIssues);
+    const prioritizedPreExisting = this.prioritizeIssues(preExistingIssues);
     
-    content += '### Priority Actions\n\n';
-    prioritized.slice(0, 5).forEach((issue, i) => {
-      content += `${i + 1}. **${issue.message}** (${issue.file}:${issue.line})\n`;
-      content += `   - Severity: ${issue.severity}\n`;
-      content += `   - Fix: ${issue.suggestedFix || 'See details above'}\n\n`;
+    if (prioritizedNew.length > 0) {
+      content += '### 🚨 Must Fix (Blocking PR)\n\n';
+      prioritizedNew.slice(0, 5).forEach((issue, i) => {
+        content += `${i + 1}. **${issue.message}** (${issue.file}:${issue.line})\n`;
+        content += `   - Severity: ${issue.severity}\n`;
+        content += `   - Fix: ${issue.suggestedFix || 'See details above'}\n\n`;
+      });
+    }
+
+    if (prioritizedPreExisting.length > 0) {
+      content += '### 💡 Recommended Fixes (Technical Debt)\n\n';
+      prioritizedPreExisting.slice(0, 3).forEach((issue, i) => {
+        content += `${i + 1}. **${issue.message}** (${issue.file}:${issue.line})\n`;
+        content += `   - Severity: ${issue.severity}\n`;
+        content += `   - Fix: ${issue.suggestedFix || 'See details above'}\n\n`;
+      });
+    }
+
+    return content;
+  }
+
+  /**
+   * Generate AI IDE Integration Section
+   */
+  private generateAIIDESection(issueGroups: IssueGroup): string {
+    let content = '## 5. AI IDE Integration (Cursor, Copilot, etc.)\n\n';
+    
+    content += '### 🤖 Quick Fix Commands for AI IDEs\n\n';
+    content += '*Copy these commands to your AI IDE for automatic fixes:*\n\n';
+    
+    // Generate fix commands for critical and high severity issues
+    const allIssues = [...issueGroups.new, ...issueGroups.preExisting];
+    const criticalAndHigh = allIssues.filter(i => 
+      i.severity === 'critical' || i.severity === 'high'
+    );
+
+    if (criticalAndHigh.length > 0) {
+      content += '```\n';
+      content += '// Paste this to Cursor or similar AI IDE:\n';
+      content += '// Fix the following security and performance issues:\n\n';
+      
+      criticalAndHigh.forEach(issue => {
+        content += `// File: ${issue.file}:${issue.line}\n`;
+        content += `// Issue: ${issue.message}\n`;
+        if (issue.suggestedFix) {
+          content += `// Fix: ${issue.suggestedFix}\n`;
+        }
+        if (issue.fixedCode) {
+          content += `// Suggested code:\n// ${issue.fixedCode.split('\n').join('\n// ')}\n`;
+        }
+        content += '\n';
+      });
+      
+      content += '```\n\n';
+    }
+
+    content += '### 📋 Batch Fix Script\n\n';
+    content += '*For fixing multiple issues at once:*\n\n';
+    content += '```bash\n';
+    content += '# Run this with your AI IDE\'s batch fix feature\n';
+    allIssues.slice(0, 10).forEach(issue => {
+      content += `# Fix: ${issue.file}:${issue.line} - ${issue.message}\n`;
     });
+    content += '```\n';
 
     return content;
   }
@@ -366,7 +432,7 @@ export class ReportGeneratorV8 {
   ): string {
     const decision = analysisResult.score >= 70 ? '✅ Approved' : '⚠️ Needs Work';
     
-    let content = '## 5. PR Comment\n\n';
+    let content = '## 6. PR Comment\n\n';
     content += '```markdown\n';
     content += `## CodeQual Analysis: ${decision}\n\n`;
     content += `**Score:** ${analysisResult.score}/100\n`;
