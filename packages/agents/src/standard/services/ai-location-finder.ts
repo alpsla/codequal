@@ -136,14 +136,30 @@ export class AILocationFinder {
    * Normalize DeepWiki issue to standard format
    */
   private normalizeIssue(issue: any): DeepWikiIssue {
+    // Handle file path - issue.location might be an object
+    let file = issue.file;
+    if (!file && issue.location) {
+      if (typeof issue.location === 'string') {
+        file = issue.location;
+      } else if (issue.location && typeof issue.location === 'object') {
+        file = issue.location.file;
+      }
+    }
+    
+    // Handle line number - might be in issue.line or issue.location.line
+    let line = issue.line;
+    if (!line && issue.location && typeof issue.location === 'object') {
+      line = issue.location.line;
+    }
+    
     return {
       type: issue.type || issue.category,
       severity: issue.severity,
       category: issue.category,
       message: issue.message || issue.title,
       title: issue.title || issue.message,
-      file: issue.file || issue.location,
-      line: issue.line,
+      file: file,
+      line: line,
       suggestion: issue.suggestion || issue.remediation,
       remediation: issue.remediation || issue.suggestion,
       description: issue.description || issue.message
