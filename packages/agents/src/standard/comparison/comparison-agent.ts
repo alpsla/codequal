@@ -18,8 +18,9 @@ import {
   Issue,
   PRMetadata
 } from '../types/analysis-types';
-// Use V7 Enhanced HTML report generator with all missing features restored
+// Report generators - V7 and new V8
 import { ReportGeneratorV7HTMLEnhanced } from './report-generator-v7-html-enhanced';
+import { ReportGeneratorV8 } from './report-generator-v8';
 import { SkillCalculator } from './skill-calculator';
 import { ILogger } from '../services/interfaces/logger.interface';
 import { EnhancedIssueMatcher, IssueDuplicator } from '../services/issue-matcher-enhanced';
@@ -31,22 +32,32 @@ import { DynamicModelSelector, RoleRequirements } from '../services/dynamic-mode
 export class ComparisonAgent implements IReportingComparisonAgent {
   private config: ComparisonConfig;
   private modelConfig: any;
-  // Using V7 Enhanced HTML report generator with all features restored
-  private reportGenerator: ReportGeneratorV7HTMLEnhanced;
+  // Support both V7 and V8 report generators
+  private reportGeneratorV7: ReportGeneratorV7HTMLEnhanced;
+  private reportGeneratorV8: ReportGeneratorV8;
+  private useV8Generator: boolean = false;
   private skillCalculator: SkillCalculator;
   private modelSelector: DynamicModelSelector;
   
   constructor(
     private logger?: ILogger,
     private modelService?: any, // Deprecated - using DynamicModelSelector
-    private skillProvider?: any  // BUG-012 FIX: Accept skill provider for persistence
+    private skillProvider?: any,  // BUG-012 FIX: Accept skill provider for persistence
+    private options?: { useV8Generator?: boolean; reportFormat?: 'html' | 'markdown' }
   ) {
-    // Pass skill provider and authorization flag to report generator
-    // Using V7 Enhanced HTML generator with all features restored
-    this.reportGenerator = new ReportGeneratorV7HTMLEnhanced(
+    // Initialize both generators
+    this.reportGeneratorV7 = new ReportGeneratorV7HTMLEnhanced(
       skillProvider,
       true  // Authorized caller flag
     );
+    
+    // V8 for consolidated structure without duplication
+    this.reportGeneratorV8 = new ReportGeneratorV8();
+    
+    // Use V8 if explicitly requested or if env var is set
+    this.useV8Generator = options?.useV8Generator || 
+                          process.env.USE_V8_REPORT_GENERATOR === 'true';
+    
     this.skillCalculator = new SkillCalculator();
     this.config = this.getDefaultConfig();
     // BUG-021 FIX: Initialize DynamicModelSelector for proper model selection
@@ -240,18 +251,35 @@ export class ComparisonAgent implements IReportingComparisonAgent {
    * Generate markdown report from comparison
    */
   async generateReport(comparison: ComparisonResult): Promise<string> {
-    // Use the fixed report generator instead of the template-based one
-    // It expects the comparison result directly
-    
-    console.log('ComparisonAgent - Using V7 Fixed report generator with:', {
-      hasPrMetadata: !!(comparison as any).prMetadata,
-      prMetadata: (comparison as any).prMetadata,
-      scanDuration: (comparison as any).scanDuration,
-      newIssuesCount: comparison.newIssues?.length || 0,
-      resolvedIssuesCount: comparison.resolvedIssues?.length || 0
-    });
-    
-    return this.reportGenerator.generateReport(comparison);
+    if (this.useV8Generator) {
+      console.log('ComparisonAgent - Using V8 report generator (consolidated, no duplication):', {
+        newIssuesCount: comparison.newIssues?.length || 0,
+        resolvedIssuesCount: comparison.resolvedIssues?.length || 0,
+        format: this.options?.reportFormat || 'markdown'
+      });
+      
+      // V8 expects a slightly different structure, so adapt it
+      const v8AnalysisResult = this.adaptComparisonToV8Format(comparison);
+      
+      return this.reportGeneratorV8.generateReport(v8AnalysisResult, {
+        format: this.options?.reportFormat || 'markdown',
+        includeEducation: true,
+        includeCodeSnippets: true,
+        verbosity: 'standard',
+        includePreExistingDetails: true,
+        includeAIIDESection: true
+      });
+    } else {
+      console.log('ComparisonAgent - Using V7 Fixed report generator with:', {
+        hasPrMetadata: !!(comparison as any).prMetadata,
+        prMetadata: (comparison as any).prMetadata,
+        scanDuration: (comparison as any).scanDuration,
+        newIssuesCount: comparison.newIssues?.length || 0,
+        resolvedIssuesCount: comparison.resolvedIssues?.length || 0
+      });
+      
+      return this.reportGeneratorV7.generateReport(comparison);
+    }
   }
 
   /**
@@ -748,6 +776,69 @@ Provide confidence scores and reasoning for each finding.`;
       temperature: 0.1,
       maxTokens: 4000
     };
+  }
+
+  /**
+   * Adapt ComparisonResult to V8 AnalysisResult format
+   */
+  private adaptComparisonToV8Format(comparison: ComparisonResult): any {
+    // Combine all issues and mark their status
+    const allIssues = [
+      ...(comparison.newIssues || []).map(i => ({ ...i, status: 'new' })),
+      ...(comparison.resolvedIssues || []).map(i => ({ ...i, status: 'resolved' })),
+      ...(comparison.fixedIssues || []).map(i => ({ ...i, status: 'resolved' })),
+      ...(comparison.unchangedIssues || []).map(i => ({ ...i, status: 'pre-existing' }))
+    ];
+    
+    // Extract PR metadata if available
+    const prMetadata = (comparison as any).prMetadata || {};
+    
+    return {
+      prNumber: prMetadata.prNumber || 0,
+      prTitle: prMetadata.prTitle || 'Code Analysis',
+      repository: prMetadata.repository || '',
+      branch: prMetadata.branch || '',
+      score: (comparison as any).score || this.calculateScore(comparison),
+      scoreChange: (comparison as any).scoreChange,
+      prIssues: allIssues.filter(i => i.status === 'new'),
+      repositoryIssues: allIssues.filter(i => i.status === 'pre-existing' || i.status === 'resolved'),
+      breakingChanges: [],
+      dependencies: [],
+      timestamp: new Date().toISOString(),
+      analysisId: (comparison as any).analysisId || 'v8-report'
+    };
+  }
+  
+  /**
+   * Calculate score based on issues
+   */
+  private calculateScore(comparison: ComparisonResult): number {
+    const newIssuesCount = comparison.newIssues?.length || 0;
+    const resolvedIssuesCount = comparison.resolvedIssues?.length || 0;
+    const unchangedIssuesCount = comparison.unchangedIssues?.length || 0;
+    
+    // Start with base score
+    let score = 100;
+    
+    // Deduct points for new issues (severity-based)
+    comparison.newIssues?.forEach(issue => {
+      const severityPoints: Record<string, number> = {
+        critical: 15,
+        high: 10,
+        medium: 5,
+        low: 2
+      };
+      score -= severityPoints[issue.severity || 'medium'] || 5;
+    });
+    
+    // Deduct points for unchanged issues (technical debt)
+    score -= Math.min(unchangedIssuesCount * 2, 20); // Cap at 20 points
+    
+    // Add points for resolved issues
+    score += Math.min(resolvedIssuesCount * 3, 15); // Cap bonus at 15 points
+    
+    // Ensure score is between 0 and 100
+    return Math.max(0, Math.min(100, score));
   }
 
   /**
