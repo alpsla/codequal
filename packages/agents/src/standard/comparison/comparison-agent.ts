@@ -18,8 +18,8 @@ import {
   Issue,
   PRMetadata
 } from '../types/analysis-types';
-// Removed import for archived ReportGeneratorV7Complete
-import { ReportGeneratorV7Fixed } from './report-generator-v7-fixed';
+// Use enhanced report generator for better JSON format support
+import { ReportGeneratorV7EnhancedComplete } from './report-generator-v7-enhanced-complete';
 import { SkillCalculator } from './skill-calculator';
 import { ILogger } from '../services/interfaces/logger.interface';
 import { EnhancedIssueMatcher, IssueDuplicator } from '../services/issue-matcher-enhanced';
@@ -31,8 +31,8 @@ import { DynamicModelSelector, RoleRequirements } from '../services/dynamic-mode
 export class ComparisonAgent implements IReportingComparisonAgent {
   private config: ComparisonConfig;
   private modelConfig: any;
-  // Removed unused reportGenerator field
-  private reportGeneratorFixed: ReportGeneratorV7Fixed;
+  // Using enhanced report generator for JSON format support
+  private reportGenerator: ReportGeneratorV7EnhancedComplete;
   private skillCalculator: SkillCalculator;
   private modelSelector: DynamicModelSelector;
   
@@ -42,8 +42,8 @@ export class ComparisonAgent implements IReportingComparisonAgent {
     private skillProvider?: any  // BUG-012 FIX: Accept skill provider for persistence
   ) {
     // Pass skill provider and authorization flag to report generator
-    // BUG-019 FIX: Pass true to indicate authorized caller
-    this.reportGeneratorFixed = new ReportGeneratorV7Fixed(
+    // Using enhanced generator for better JSON format and location support
+    this.reportGenerator = new ReportGeneratorV7EnhancedComplete(
       skillProvider,
       true  // Authorized caller flag
     );
@@ -251,7 +251,7 @@ export class ComparisonAgent implements IReportingComparisonAgent {
       resolvedIssuesCount: comparison.resolvedIssues?.length || 0
     });
     
-    return this.reportGeneratorFixed.generateReport(comparison);
+    return this.reportGenerator.generateReport(comparison);
   }
 
   /**
@@ -259,7 +259,7 @@ export class ComparisonAgent implements IReportingComparisonAgent {
    */
   generatePRComment(comparison: ComparisonResult): string {
     // Use the fixed report generator for PR comments too
-    return this.reportGeneratorFixed.generatePRComment(comparison);
+    return this.reportGenerator.generatePRComment(comparison);
   }
 
   /**
@@ -393,7 +393,16 @@ Provide confidence scores and reasoning for each finding.`;
         codeSnippet: (ci.issue as any).codeSnippet,
         suggestion: (ci.issue as any).suggestion,
         remediation: (ci.issue as any).remediation,
-        recommendation: (ci.issue as any).recommendation || (ci.issue as any).suggestion || (ci.issue as any).remediation
+        recommendation: (ci.issue as any).recommendation || (ci.issue as any).suggestion || (ci.issue as any).remediation,
+        // Preserve location data from JSON format
+        file: (ci.issue as any).file,
+        line: (ci.issue as any).line,
+        column: (ci.issue as any).column,
+        location: ci.issue.location || ((ci.issue as any).file ? {
+          file: (ci.issue as any).file,
+          line: (ci.issue as any).line,
+          column: (ci.issue as any).column
+        } : undefined)
       }));
     };
     
@@ -635,10 +644,28 @@ Provide confidence scores and reasoning for each finding.`;
       unchanged: unchanged.length
     });
     
+    // Helper to preserve all issue properties including location data
+    const preserveIssueData = (issue: Issue) => {
+      // Ensure location data is preserved from JSON format
+      const preservedIssue = {
+        ...issue,
+        // If issue has direct file/line properties (JSON format), ensure they're preserved
+        file: (issue as any).file || issue.location?.file,
+        line: (issue as any).line || issue.location?.line,
+        // Also preserve location object for compatibility
+        location: issue.location || ((issue as any).file ? {
+          file: (issue as any).file,
+          line: (issue as any).line,
+          column: (issue as any).column
+        } : undefined)
+      };
+      return preservedIssue;
+    };
+
     return {
       resolvedIssues: {
         issues: resolved.map(issue => ({
-          issue,
+          issue: preserveIssueData(issue),
           severity: issue.severity || 'medium',
           confidence: 0.85,
           reasoning: 'Issue appears to be fixed in the feature branch'
@@ -647,7 +674,7 @@ Provide confidence scores and reasoning for each finding.`;
       },
       newIssues: {
         issues: newIssues.map(issue => ({
-          issue,
+          issue: preserveIssueData(issue),
           severity: issue.severity || 'medium',
           confidence: 0.85,
           reasoning: 'New issue detected in feature branch'
@@ -666,7 +693,7 @@ Provide confidence scores and reasoning for each finding.`;
       },
       unchangedIssues: {
         issues: unchanged.map(issue => ({
-          issue,
+          issue: preserveIssueData(issue),
           severity: issue.severity || 'medium',
           confidence: 0.85,
           reasoning: 'Issue exists in both branches'

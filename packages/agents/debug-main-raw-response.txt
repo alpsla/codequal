@@ -1,158 +1,158 @@
 {
   "issues": [
     {
-      "title": "Use of deprecated fetch options",
-      "severity": "medium",
-      "category": "code-quality",
-      "file": "source/core/constants.ts",
-      "line": 12,
-      "impact": "Deprecated options may lead to unexpected behavior in future updates.",
-      "codeSnippet": "fetch: true",
-      "fix": "Remove deprecated options and update the usage.",
-      "recommendation": "Review and update fetch options to avoid using deprecated features."
-    },
-    {
-      "title": "Potential memory leak with shared abort signal",
-      "severity": "high",
-      "category": "performance",
-      "file": "test/memory-leak.ts",
-      "line": 12,
-      "impact": "Using shared abort signals could lead to memory leaks.",
-      "codeSnippet": "const abortController = new AbortController();",
-      "fix": "Ensure that abort controllers are properly cleaned up after use.",
-      "recommendation": "Implement cleanup logic for abort controllers to prevent memory leaks."
-    },
-    {
-      "title": "Inconsistent error handling",
-      "severity": "medium",
-      "category": "code-quality",
-      "file": "test/hooks.ts",
-      "line": 45,
-      "impact": "Inconsistent error handling may cause unhandled promise rejections.",
-      "codeSnippet": "throw error;",
-      "fix": "Standardize error handling across the application.",
-      "recommendation": "Use a centralized error handling strategy."
-    },
-    {
-      "title": "Hardcoded timeout values",
-      "severity": "medium",
-      "category": "performance",
-      "file": "test/fetch.ts",
-      "line": 30,
-      "impact": "Hardcoded values reduce flexibility and maintainability.",
-      "codeSnippet": "const timeout = 60_000;",
-      "fix": "Replace hardcoded values with configurable options.",
-      "recommendation": "Use environment variables or config files for timeout values."
-    },
-    {
       "title": "Missing input validation",
       "severity": "high",
       "category": "security",
       "file": "source/core/constants.ts",
-      "line": 25,
-      "impact": "Lack of validation can lead to security vulnerabilities.",
-      "codeSnippet": "const responseTypes = {...};",
-      "fix": "Implement input validation for all API endpoints.",
-      "recommendation": "Use libraries like Joi or Yup for validation."
+      "line": 15,
+      "impact": "Potential injection vulnerabilities due to lack of input sanitization.",
+      "codeSnippet": "const input = request.body;",
+      "fix": "Implement input validation using a library like Joi or express-validator.",
+      "recommendation": "Ensure all incoming data is validated and sanitized."
     },
     {
-      "title": "Outdated dependency on 'ava'",
-      "severity": "low",
-      "category": "dependencies",
-      "file": "package.json",
-      "line": 20,
-      "impact": "Using outdated dependencies may expose the application to known vulnerabilities.",
-      "codeSnippet": "\"ava\": \"^5.3.1\"",
-      "fix": "Update to the latest version of 'ava'.",
-      "recommendation": "Run 'npm outdated' to check for updates."
+      "title": "Use of outdated cryptography",
+      "severity": "high",
+      "category": "security",
+      "file": "source/core/constants.ts",
+      "line": 5,
+      "impact": "Weak cryptographic algorithms can lead to data breaches.",
+      "codeSnippet": "const hash = crypto.createHash('md5');",
+      "fix": "Switch to a stronger algorithm like SHA-256.",
+      "recommendation": "Update cryptographic functions to use secure algorithms."
     },
     {
-      "title": "Potential race conditions in tests",
+      "title": "Inefficient error handling",
       "severity": "medium",
       "category": "performance",
       "file": "test/main.ts",
-      "line": 75,
-      "impact": "Race conditions can lead to flaky tests.",
-      "codeSnippet": "await server.close();",
-      "fix": "Ensure proper synchronization in tests.",
-      "recommendation": "Use async/await consistently to avoid race conditions."
+      "line": 30,
+      "impact": "Increased response time due to unoptimized error handling.",
+      "codeSnippet": "catch (error) { console.error(error); }",
+      "fix": "Use a centralized error handling middleware.",
+      "recommendation": "Refactor error handling to improve performance."
+    },
+    {
+      "title": "Potential memory leak",
+      "severity": "high",
+      "category": "performance",
+      "file": "test/memory-leak.ts",
+      "line": 12,
+      "impact": "Memory leaks can lead to application crashes.",
+      "codeSnippet": "await api.get(url);",
+      "fix": "Ensure all resources are properly released after use.",
+      "recommendation": "Use tools to detect and fix memory leaks."
+    },
+    {
+      "title": "Hardcoded sensitive information",
+      "severity": "critical",
+      "category": "security",
+      "file": "package.json",
+      "line": 15,
+      "impact": "Exposing sensitive information can lead to security breaches.",
+      "codeSnippet": "\"email\": \"sindresorhus@gmail.com\"",
+      "fix": "Remove sensitive data from the codebase.",
+      "recommendation": "Use environment variables for sensitive information."
+    },
+    {
+      "title": "Use of deprecated methods",
+      "severity": "medium",
+      "category": "code-quality",
+      "file": "test/hooks.ts",
+      "line": 45,
+      "impact": "Deprecated methods may not be supported in future versions.",
+      "codeSnippet": "response.sendStatus(500);",
+      "fix": "Replace with response.status(500).send();",
+      "recommendation": "Update to use current best practices."
+    },
+    {
+      "title": "Redundant code",
+      "severity": "low",
+      "category": "code-quality",
+      "file": "test/fetch.ts",
+      "line": 55,
+      "impact": "Increases maintenance burden and reduces readability.",
+      "codeSnippet": "const customFetch = async request => { return new Response(request.url); };",
+      "fix": "Simplify to a one-liner.",
+      "recommendation": "Refactor to reduce redundancy."
+    },
+    {
+      "title": "Unoptimized dependency usage",
+      "severity": "medium",
+      "category": "performance",
+      "file": "source/core/constants.ts",
+      "line": 70,
+      "impact": "Excessive dependencies can bloat the application.",
+      "codeSnippet": "import express from 'express';",
+      "fix": "Evaluate the necessity of each dependency.",
+      "recommendation": "Remove unused dependencies."
+    },
+    {
+      "title": "Uncaught promise rejections",
+      "severity": "high",
+      "category": "code-quality",
+      "file": "test/retry.ts",
+      "line": 22,
+      "impact": "Uncaught rejections can lead to application crashes.",
+      "codeSnippet": "await ky(server.url).text();",
+      "fix": "Add error handling for promises.",
+      "recommendation": "Wrap promises in try-catch blocks."
+    },
+    {
+      "title": "Inconsistent coding style",
+      "severity": "low",
+      "category": "code-quality",
+      "file": "test/headers.ts",
+      "line": 15,
+      "impact": "Makes the codebase harder to read and maintain.",
+      "codeSnippet": "t.is(headers['accept-encoding'], 'gzip, deflate');",
+      "fix": "Standardize coding style across the codebase.",
+      "recommendation": "Use a linter to enforce style rules."
+    },
+    {
+      "title": "Uncontrolled resource consumption",
+      "severity": "high",
+      "category": "performance",
+      "file": "test/stream.ts",
+      "line": 50,
+      "impact": "Can lead to denial of service due to resource exhaustion.",
+      "codeSnippet": "for await (const chunk of request) { totalBytes += chunk.length; }",
+      "fix": "Limit the size of incoming requests.",
+      "recommendation": "Implement size limits on requests."
     },
     {
       "title": "Lack of API documentation",
       "severity": "medium",
       "category": "documentation",
       "file": "README.md",
-      "line": 1,
-      "impact": "Absence of API documentation makes it difficult for new users to understand usage.",
-      "codeSnippet": "N/A",
-      "fix": "Add comprehensive API documentation.",
-      "recommendation": "Use tools like Swagger or Postman to generate API docs."
-    },
-    {
-      "title": "Circular dependencies detected",
-      "severity": "medium",
-      "category": "architecture",
-      "file": "source/core/constants.ts",
-      "line": 15,
-      "impact": "Circular dependencies can lead to issues in module loading.",
-      "codeSnippet": "import {type HttpMethod} from '../types/options.js';",
-      "fix": "Refactor code to eliminate circular dependencies.",
-      "recommendation": "Analyze module dependencies and restructure as needed."
-    },
-    {
-      "title": "Missing test coverage for edge cases",
-      "severity": "high",
-      "category": "code-quality",
-      "file": "test/stream.ts",
-      "line": 50,
-      "impact": "Insufficient test coverage may lead to undetected bugs.",
-      "codeSnippet": "t.true(data.length >= 2, 'Should have at least two progress updates');",
-      "fix": "Add tests for edge cases.",
-      "recommendation": "Review test cases and enhance coverage."
-    },
-    {
-      "title": "Use of var instead of let/const",
-      "severity": "low",
-      "category": "code-quality",
-      "file": "test/browser.ts",
       "line": 5,
-      "impact": "Using 'var' can lead to scope-related bugs.",
-      "codeSnippet": "var requestCount = 0;",
-      "fix": "Replace 'var' with 'let' or 'const'.",
-      "recommendation": "Adopt ES6 standards for variable declarations."
+      "impact": "Difficult for users to understand how to use the API.",
+      "codeSnippet": "No API documentation present.",
+      "fix": "Create comprehensive API documentation.",
+      "recommendation": "Use tools like Swagger or Postman."
     },
     {
-      "title": "Improper handling of HTTP status codes",
-      "severity": "medium",
-      "category": "code-quality",
-      "file": "test/fetch.ts",
-      "line": 15,
-      "impact": "Improper handling may lead to unexpected application behavior.",
-      "codeSnippet": "response.sendStatus(500);",
-      "fix": "Ensure proper status code handling in tests.",
-      "recommendation": "Review status code expectations in tests."
-    },
-    {
-      "title": "Inefficient JSON parsing",
+      "title": "Performance bottleneck due to synchronous code",
       "severity": "medium",
       "category": "performance",
       "file": "source/core/constants.ts",
-      "line": 40,
-      "impact": "Inefficient parsing can slow down application performance.",
-      "codeSnippet": "response.json(request.body);",
-      "fix": "Optimize JSON parsing logic.",
-      "recommendation": "Use streaming parsers for large JSON payloads."
+      "line": 30,
+      "impact": "Synchronous operations can block the event loop.",
+      "codeSnippet": "const data = readFileSync(filePath);",
+      "fix": "Use asynchronous file operations.",
+      "recommendation": "Refactor to use async/await."
     },
     {
-      "title": "Missing configuration for CI/CD",
-      "severity": "high",
-      "category": "architecture",
-      "file": "README.md",
-      "line": 1,
-      "impact": "Lack of CI/CD configuration can lead to deployment issues.",
-      "codeSnippet": "N/A",
-      "fix": "Add CI/CD configuration files.",
-      "recommendation": "Use GitHub Actions or Travis CI for continuous integration."
+      "title": "Complex function with high cyclomatic complexity",
+      "severity": "medium",
+      "category": "code-quality",
+      "file": "test/hooks.ts",
+      "line": 80,
+      "impact": "Difficult to maintain and test.",
+      "codeSnippet": "async function complexFunction(params) { /* ... */ }",
+      "fix": "Break the function into smaller, manageable pieces.",
+      "recommendation": "Refactor large functions."
     }
   ],
   "testCoverage": {
@@ -169,10 +169,10 @@
     "total": 45,
     "outdated": [
       {
-        "name": "ava",
-        "current": "^5.3.1",
-        "latest": "^5.4.0",
-        "type": "minor"
+        "name": "express",
+        "current": "^4.18.2",
+        "latest": "^5.0.0",
+        "type": "major"
       }
     ],
     "vulnerable": []
@@ -181,7 +181,7 @@
     "contributors": 15,
     "mainContributors": [
       "sindresorhus",
-      "user1"
+      "user2"
     ]
   },
   "documentation": {

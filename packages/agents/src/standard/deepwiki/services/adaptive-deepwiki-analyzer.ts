@@ -260,14 +260,58 @@ IMPORTANT: Return your response in valid JSON format with these keys:
       result.teamMetrics.contributors = parseInt(contributorMatch[1]);
     }
 
-    // Extract issues (basic pattern)
+    // Extract issues with file locations
+    // Pattern 1: "**File Path: path/to/file.ts**" with line numbers
+    const filePathMatches = response.matchAll(/\*?\*?File Path:\s*([^\*\n]+)\*?\*?\s*[\n-]*\s*\*?\*?Line\s*(\d+)\*?\*?:\s*(.+?)(?=\n|$)/g);
+    for (const match of filePathMatches) {
+      const file = match[1].trim();
+      const line = parseInt(match[2]);
+      const description = match[3].trim();
+      
+      result.issues.push({
+        title: description.substring(0, 100), // First 100 chars as title
+        description,
+        severity: 'medium',
+        category: 'code-quality',
+        file,
+        line,
+        codeSnippet: description
+      });
+    }
+    
+    // Pattern 2: Alternate format "File Path: file.ts\nLine X:"
+    const altFileMatches = response.matchAll(/File Path:\s*([^\n]+)\s*\n\s*Line\s*(\d+):\s*([^\n]+)/g);
+    for (const match of altFileMatches) {
+      const file = match[1].trim();
+      const line = parseInt(match[2]);
+      const description = match[3].trim();
+      
+      // Check if we already have this issue
+      if (!result.issues.some((i: any) => i.file === file && i.line === line)) {
+        result.issues.push({
+          title: description.substring(0, 100),
+          description,
+          severity: 'medium',
+          category: 'code-quality',
+          file,
+          line,
+          codeSnippet: description
+        });
+      }
+    }
+    
+    // Pattern 2: Standard issue format (fallback)
     const issueMatches = response.matchAll(/\d+\.\s+\*\*(.+?)\*\*.*?(?:Severity|severity):\s*(\w+)/g);
     for (const match of issueMatches) {
-      result.issues.push({
-        title: match[1],
-        severity: match[2].toLowerCase(),
-        category: 'code-quality'
-      });
+      // Check if we already have this issue from file path extraction
+      const title = match[1];
+      if (!result.issues.some((i: any) => i.title === title || i.codeSnippet?.includes(title))) {
+        result.issues.push({
+          title,
+          severity: match[2].toLowerCase(),
+          category: 'code-quality'
+        });
+      }
     }
 
     return result;
