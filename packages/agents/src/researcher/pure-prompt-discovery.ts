@@ -92,7 +92,7 @@ export function extractModelsFromSearchResults(searchText: string): string[] {
   // Generic patterns to find model mentions (no specific names!)
   const patterns = [
     // Provider/Model format
-    /([a-z]+)\/([a-z0-9\-\.]+(?:opus|sonnet|haiku|turbo|flash|mini|pro|small|large|xl)?[a-z0-9\-\.]*)/gi,
+    /([a-z]+)\/([a-z0-9\-.]+(?:opus|sonnet|haiku|turbo|flash|mini|pro|small|large|xl)?[a-z0-9\-.]*)/gi,
     
     // Version patterns (X.Y format)
     /(?:version|v|model)\s*(\d+\.?\d*)/gi,

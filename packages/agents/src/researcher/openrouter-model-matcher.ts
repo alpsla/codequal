@@ -80,7 +80,7 @@ export class OpenRouterModelMatcher {
     // Clean up the discovered name
     const cleaned = discoveredName.toLowerCase()
       .replace(/\s+/g, '-')
-      .replace(/[^\w\-\/\.]/g, '');
+      .replace(/[^\w\-/.]/g, '');
     
     // Direct match
     const directMatch = models.find(m => m.id.toLowerCase() === cleaned);

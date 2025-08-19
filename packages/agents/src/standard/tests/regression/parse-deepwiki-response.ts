@@ -36,11 +36,13 @@ export async function parseDeepWikiResponse(content: string) {
   const { UnifiedAIParser } = require('../../deepwiki/services/unified-ai-parser');
   
   // Check if we should use AI parser
-  // Disable AI parser if content is large (PR branches often have many issues)
+  // Disable AI parser if content is large or looks like structured text response
   const contentLength = content.length;
+  const looksLikeStructuredText = content.includes('**Title:**') || content.includes('**Severity:**');
   const useAIParser = process.env.USE_AI_PARSER !== 'false' && 
                       process.env.FORCE_RULE_BASED !== 'true' &&
-                      contentLength < 10000; // Use rule-based for large responses to avoid timeout
+                      contentLength < 10000 && // Use rule-based for large responses to avoid timeout
+                      !looksLikeStructuredText; // Use rule-based for structured text
   
   if (useAIParser) {
     try {
@@ -112,8 +114,45 @@ export async function parseDeepWikiResponse(content: string) {
   let currentIssue: any = null;
   let currentSectionSeverity = 'medium'; // Default severity for current section
   
+  // Initialize extracted metrics
+  let testCoveragePercentage = 0;
+  const dependencies: any = { outdated: [] };
+  const codeQuality: any = {};
+  const teamImpact: any = { contributors: 0, knowledgeSilos: [] };
+  const education: any = {};
+  
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
+    
+    // Extract test coverage percentage from various formats
+    const coverageMatch = line.match(/(?:test coverage|coverage)(?:\s*is)?(?:\s*:)?\s*(\d+)%/i) ||
+                         line.match(/Overall test coverage:\s*(\d+)%/i) ||
+                         line.match(/(\d+)%\s*(?:test\s*)?coverage/i);
+    if (coverageMatch) {
+      const coverage = parseInt(coverageMatch[1]);
+      // Always use the highest coverage value found (avoid 0% if we have better data)
+      if (coverage > testCoveragePercentage) {
+        testCoveragePercentage = coverage;
+      }
+    }
+    
+    // Extract dependency info
+    if (line.includes('outdated') && (line.includes('package') || line.includes('dependency'))) {
+      const depMatch = line.match(/(\w+(?:[-@/]\w+)*)\s*(?:from|:)?\s*([\d.]+)\s*(?:to|->)?\s*([\d.]+)/);
+      if (depMatch) {
+        dependencies.outdated.push({
+          name: depMatch[1],
+          current: depMatch[2],
+          latest: depMatch[3]
+        });
+      }
+    }
+    
+    // Extract team metrics
+    const contributorMatch = line.match(/(\d+)\s*contributors?/i);
+    if (contributorMatch) {
+      teamImpact.contributors = parseInt(contributorMatch[1]);
+    }
     
     // Check for separator between issues (for Title: format)
     if (line.trim() === '---' && currentIssue) {
@@ -140,22 +179,27 @@ export async function parseDeepWikiResponse(content: string) {
     
     // Match numbered items (e.g., "1. **Title**: Description") OR bullet points (e.g., "- **Title**: Description")
     // OR direct title format (e.g., "Title: Issue description")
-    const itemMatch = line.match(/^(\d+\.|-|\*)\s+(.+)/) || 
-                      (line.match(/^(Title|Issue Title):\s+(.+)/i) ? ['', 'Title:', line.replace(/^(Title|Issue Title):\s*/i, '')] : null);
+    // OR new format with severity-category-id (e.g., "**[HIGH-DEPENDENCY-001] Title**")
+    // Also match numbered items with **Title:** pattern
+    const itemMatch = line.match(/^(\d+)\.\s+\*\*Title:\*\*\s+(.+)/) ||
+                      line.match(/^(\d+\.|-|\*)\s+(.+)/) || 
+                      (line.match(/^(Title|Issue Title):\s+(.+)/i) ? ['', 'Title:', line.replace(/^(Title|Issue Title):\s*/i, '')] : null) ||
+                      (line.match(/^\*\*\[(\w+)-(\w+)-\d+\]\s+(.+)\*\*/) ? ['', 'Issue:', line] : null);
     if (itemMatch) {
       const isNumberedItem = /^\d+\./.test(itemMatch[1]);
       const isBulletItem = /^[-*]/.test(itemMatch[1]);
       const isTitleItem = itemMatch[1] === 'Title:';
+      const isIssueItem = itemMatch[1] === 'Issue:';
       
       // If it's a numbered item or Title: format (main issue), save previous and start new
-      if (isNumberedItem || isTitleItem) {
+      if (isNumberedItem || isTitleItem || isIssueItem) {
         // Save previous issue if exists
         if (currentIssue) {
           issues.push(currentIssue);
         }
         
         // Parse the issue line
-        const issueText = itemMatch[2];
+        const issueText = itemMatch[2] || itemMatch[0]; // Use full match if no group
         
         // Skip items that indicate no issues found
         if (issueText.toLowerCase().includes('no direct') || 
@@ -168,26 +212,42 @@ export async function parseDeepWikiResponse(content: string) {
         
         let title = issueText;
         let description = '';
+        let extractedSeverity = currentSectionSeverity;
+        let extractedCategory = 'code-quality';
         
-        // Extract title from bold text if present
-        const boldMatch = issueText.match(/\*\*([^*]+)\*\*/);
-        if (boldMatch) {
-          title = boldMatch[1];
-          description = issueText.replace(/\*\*[^*]+\*\*:?\s*/, '').trim();
+        // Extract title from the **Title:** format if present
+        const titleMatch = issueText.match(/\*\*Title:\*\*\s+(.+)/);
+        if (titleMatch) {
+          title = titleMatch[1];
+        }
+        
+        // Check for new format: **[SEVERITY-CATEGORY-ID] Title**
+        const enhancedFormatMatch = issueText.match(/\*\*\[(\w+)-(\w+)-\d+\]\s+(.+)\*\*/);
+        if (enhancedFormatMatch) {
+          extractedSeverity = enhancedFormatMatch[1].toLowerCase();
+          extractedCategory = enhancedFormatMatch[2].toLowerCase().replace('_', '-');
+          title = enhancedFormatMatch[3];
         } else {
-          // Split on colon if present
-          const colonIndex = issueText.indexOf(':');
-          if (colonIndex > 0 && colonIndex < 100) {
-            title = issueText.substring(0, colonIndex).trim();
-            description = issueText.substring(colonIndex + 1).trim();
+          // Extract title from bold text if present
+          const boldMatch = issueText.match(/\*\*([^*]+)\*\*/);
+          if (boldMatch) {
+            title = boldMatch[1];
+            description = issueText.replace(/\*\*[^*]+\*\*:?\s*/, '').trim();
+          } else {
+            // Split on colon if present
+            const colonIndex = issueText.indexOf(':');
+            if (colonIndex > 0 && colonIndex < 100) {
+              title = issueText.substring(0, colonIndex).trim();
+              description = issueText.substring(colonIndex + 1).trim();
+            }
           }
         }
         
         // Initialize new issue with default values
         currentIssue = {
           id: `deepwiki-${issues.length + 1}`,
-          severity: currentSectionSeverity,
-          category: 'code-quality',
+          severity: extractedSeverity,
+          category: extractedCategory,
           title: title.replace(/\*\*/g, '').replace(/Issue Title/i, '').replace(/:/g, '').trim(),
           description: description || title,
           location: {
@@ -198,6 +258,43 @@ export async function parseDeepWikiResponse(content: string) {
       } else if (isBulletItem && currentIssue) {
         // This is a sub-item of the current issue - parse it for metadata
         const subItemText = itemMatch[2];
+        
+        // Check for Impact field
+        if (subItemText.match(/^Impact:/i)) {
+          const impactMatch = subItemText.match(/^Impact:\s*(.+)/i);
+          if (impactMatch) {
+            currentIssue.impact = impactMatch[1];
+          }
+        }
+        
+        // Check for Location field (new format: "Location: path/to/file.ts:123")
+        if (subItemText.match(/^Location:/i)) {
+          const locationMatch = subItemText.match(/^Location:\s*([^:]+?)(?::(\d+))?$/i);
+          if (locationMatch) {
+            currentIssue.location.file = locationMatch[1].trim();
+            if (locationMatch[2]) {
+              currentIssue.location.line = parseInt(locationMatch[2]);
+            }
+          }
+        }
+        
+        // Check for Code field
+        if (subItemText.match(/^Code:/i)) {
+          currentIssue.hasCodeSnippet = true;
+        }
+        
+        // Check for Fix field
+        if (subItemText.match(/^Fix:/i)) {
+          currentIssue.hasFixSuggestion = true;
+        }
+        
+        // Check for Test Coverage field
+        if (subItemText.match(/^Test Coverage:/i)) {
+          const tcMatch = subItemText.match(/^Test Coverage:\s*(.+)/i);
+          if (tcMatch) {
+            currentIssue.testCoverage = tcMatch[1].toLowerCase();
+          }
+        }
         
         // Check for severity
         if (subItemText.match(/\*?\*?Severity\*?\*?:\s*/i)) {
@@ -336,6 +433,13 @@ export async function parseDeepWikiResponse(content: string) {
       performance: Math.max(50, 90 - issues.filter(i => i.category === 'performance').length * 10),
       maintainability: Math.max(50, 90 - issues.filter(i => i.category === 'code-quality').length * 5),
       testing: Math.max(50, 90 - issues.filter(i => i.category === 'testing').length * 10)
-    }
+    },
+    dependencies,
+    codeQuality: {
+      testCoverage: testCoveragePercentage,
+      ...codeQuality
+    },
+    teamImpact,
+    education
   };
 }

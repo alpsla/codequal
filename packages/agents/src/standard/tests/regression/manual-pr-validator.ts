@@ -25,6 +25,7 @@ import { DeepWikiApiWrapper, registerDeepWikiApi } from '../../services/deepwiki
 import { DeepWikiClient } from '@codequal/core/deepwiki';
 import { parseDeepWikiResponse } from './parse-deepwiki-response';
 import { LocationClarifier } from '../../deepwiki/services/location-clarifier';
+import { AdaptiveDeepWikiAnalyzer } from '../../deepwiki/services/adaptive-deepwiki-analyzer';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as chalk from 'chalk';
@@ -137,8 +138,72 @@ async function analyzePR(url: string) {
     // Initialize services
     printStatus('Initializing services...', 'info');
     
-    // Initialize DeepWiki based on environment
-    if (process.env.USE_DEEPWIKI_MOCK === 'false' && config.deepwiki.apiUrl) {
+    // Check if we should use adaptive analyzer
+    const useAdaptive = process.env.USE_ADAPTIVE_ANALYZER === 'true';
+    
+    if (useAdaptive) {
+      printStatus('Using Adaptive DeepWiki Analyzer (3-iteration mode)', 'info');
+      
+      // Use adaptive analyzer for both branches
+      const adaptiveAnalyzer = new AdaptiveDeepWikiAnalyzer(
+        config.deepwiki.apiUrl,
+        config.deepwiki.apiKey,
+        console
+      );
+      
+      // Analyze main branch
+      printHeader('ANALYZING MAIN BRANCH (ADAPTIVE)');
+      const startMain = Date.now();
+      const mainResult = await adaptiveAnalyzer.analyzeWithGapFilling(
+        `https://github.com/${prData.owner}/${prData.repo}`,
+        'main'
+      );
+      const mainTime = ((Date.now() - startMain) / 1000).toFixed(1);
+      
+      printStatus(`Main branch analyzed in ${mainTime}s`, 'success');
+      printStatus(`Completeness: ${mainResult.completeness}%`, 'info');
+      printStatus(`Iterations used: ${mainResult.iterations.length}`, 'info');
+      printStatus(`Issues found: ${mainResult.finalResult.issues?.length || 0}`, 'info');
+      
+      // Analyze PR branch
+      printHeader('ANALYZING PR BRANCH (ADAPTIVE)');
+      const startPR = Date.now();
+      const prResult = await adaptiveAnalyzer.analyzeWithGapFilling(
+        `https://github.com/${prData.owner}/${prData.repo}`,
+        `pull/${prData.prNumber}/head`
+      );
+      const prTime = ((Date.now() - startPR) / 1000).toFixed(1);
+      
+      printStatus(`PR branch analyzed in ${prTime}s`, 'success');
+      printStatus(`Completeness: ${prResult.completeness}%`, 'info');
+      printStatus(`Iterations used: ${prResult.iterations.length}`, 'info');
+      printStatus(`Issues found: ${prResult.finalResult.issues?.length || 0}`, 'info');
+      
+      // Transform to expected format for comparison
+      const mainAnalysis = {
+        issues: mainResult.finalResult.issues || [],
+        scores: mainResult.finalResult.scores || {},
+        metadata: {
+          timestamp: new Date().toISOString(),
+          tool_version: 'adaptive-1.0.0',
+          completeness: mainResult.completeness
+        }
+      };
+      
+      const prAnalysis = {
+        issues: prResult.finalResult.issues || [],
+        scores: prResult.finalResult.scores || {},
+        metadata: {
+          timestamp: new Date().toISOString(),
+          tool_version: 'adaptive-1.0.0',
+          completeness: prResult.completeness
+        }
+      };
+      
+      // Continue with comparison...
+      // (The rest of the flow continues as before)
+      
+    } else if (process.env.USE_DEEPWIKI_MOCK === 'false' && config.deepwiki.apiUrl) {
       // Register real DeepWiki client for non-mock mode
       printStatus('Connecting to real DeepWiki API...', 'info');
       
@@ -157,7 +222,7 @@ async function analyzePR(url: string) {
             const repo = match[2];
             const branch = options?.branch || (options?.prId ? `pull/${options.prId}/head` : 'main');
             
-            // Make direct HTTP call to DeepWiki API
+            // Make direct HTTP call to DeepWiki API with JSON format
             const axios = require('axios');
             const response = await axios.post(
               `${config.deepwiki.apiUrl}/chat/completions/stream`,
@@ -165,31 +230,14 @@ async function analyzePR(url: string) {
                 repo_url: repoUrl,
                 messages: [{
                   role: 'user',
-                  content: `Analyze the repository ${repoUrl} (branch: ${branch}) for code quality issues.
-
-For EACH issue found, provide:
-1. **Title**: Brief description
-2. File: exact/path/to/file.ts, Line: number
-3. Code Snippet: The problematic code (2-3 lines)
-4. Recommendation: How to fix this issue
-5. Severity: critical/high/medium/low
-
-Example format:
-1. **SQL Injection**: User input not sanitized
-   File: src/api/users.ts, Line: 45
-   Code Snippet: \`\`\`
-   const query = "SELECT * FROM users WHERE id = " + userId;
-   \`\`\`
-   Recommendation: Use parameterized queries instead of string concatenation
-   Severity: critical
-
-Find issues with code snippets and recommendations.`
+                  content: require('../../deepwiki/config/robust-comprehensive-prompt').ROBUST_COMPREHENSIVE_PROMPT
                 }],
                 stream: false,
                 provider: 'openrouter',
-                model: 'openai/gpt-4-turbo-preview',
+                model: 'openai/gpt-4o-mini',
                 temperature: 0.1,
-                max_tokens: 4000
+                max_tokens: 4000,
+                response_format: { type: 'json' } // Request JSON format explicitly
               },
               {
                 headers: {
@@ -200,23 +248,92 @@ Find issues with code snippets and recommendations.`
               }
             );
             
-            // Parse the response - DeepWiki returns plain text directly
-            const content = typeof response.data === 'string' ? response.data : '';
+            // Parse the response - DeepWiki may return JSON or string
+            let content = '';
+            let jsonData = null;
+            
+            if (typeof response.data === 'string') {
+              content = response.data;
+              
+              // Check for error responses
+              if (content.includes("unable to assist") || content.includes("I cannot") || content.length < 50) {
+                console.warn('DeepWiki returned an error or refusal. Retrying with simpler prompt...');
+                
+                // Retry with simpler prompt but still request JSON
+                const retryResponse = await axios.post(
+                  `${config.deepwiki.apiUrl}/chat/completions/stream`,
+                  {
+                    repo_url: repoUrl,
+                    messages: [{
+                      role: 'user',
+                      content: require('../../deepwiki/config/robust-comprehensive-prompt').FALLBACK_SIMPLE_PROMPT
+                    }],
+                    stream: false,
+                    provider: 'openrouter',
+                    model: 'openai/gpt-4o-mini',
+                    temperature: 0.3,
+                    max_tokens: 4000,
+                    response_format: { type: 'json' } // Request JSON format even in retry
+                  },
+                  {
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': `Bearer ${config.deepwiki.apiKey}`
+                    },
+                    timeout: config.deepwiki.timeout
+                  }
+                );
+                
+                content = typeof retryResponse.data === 'string' ? retryResponse.data : JSON.stringify(retryResponse.data, null, 2);
+              }
+              
+              // Try to parse as JSON if it looks like JSON
+              if (content.trim().startsWith('{')) {
+                try {
+                  jsonData = JSON.parse(content);
+                } catch (e) {
+                  // Not valid JSON, treat as text
+                }
+              }
+            } else if (typeof response.data === 'object') {
+              jsonData = response.data;
+              content = JSON.stringify(response.data, null, 2);
+            }
             
             // Debug: Log the raw response
             console.log('\n🔍 DEBUG - Raw DeepWiki Response:');
             console.log('Branch analyzed:', branch);
             console.log('Response type:', typeof response.data);
-            console.log('Response length:', content.length);
-            console.log('First 500 chars:', content.substring(0, 500));
+            console.log('Is JSON:', !!jsonData);
+            if (jsonData) {
+              console.log('JSON keys:', Object.keys(jsonData));
+              console.log('Issues count:', jsonData.issues?.length || 0);
+            } else {
+              console.log('Response length:', content.length);
+              console.log('First 500 chars:', content.substring(0, 500));
+            }
             console.log('=' .repeat(80));
             
             // Save raw response for debugging
             const debugFilename = branch.includes('pull') ? 'debug-pr-raw-response.txt' : 'debug-main-raw-response.txt';
             fs.writeFileSync(debugFilename, content);
             
-            // Parse the DeepWiki text response
-            const parsedData = await parseDeepWikiResponse(content);
+            // Parse the DeepWiki response
+            let parsedData;
+            if (jsonData && jsonData.issues) {
+              // Direct JSON response from DeepWiki
+              parsedData = {
+                issues: jsonData.issues,
+                scores: jsonData.scores || {},
+                dependencies: jsonData.dependencies || {},
+                codeQuality: jsonData.codeQuality || {},
+                teamImpact: jsonData.teamImpact || {},
+                education: jsonData.education || {}
+              };
+            } else {
+              // Parse text response
+              parsedData = await parseDeepWikiResponse(content);
+            }
             
             // Third pass: Clarify locations for issues with unknown locations
             const unknownLocationIssues = parsedData.issues.filter((issue: any) => 
