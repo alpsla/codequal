@@ -43,8 +43,8 @@ interface SystemState {
 }
 
 const SYSTEM_STATE: SystemState = {
-  version: '1.4.2', // Session: Cleanup of outdated research files and BUG-034/BUG-035 completion
-  lastSession: '2025-08-18',
+  version: '1.5.0', // Session: DeepWiki JSON format implementation and data extraction improvements
+  lastSession: '2025-08-19',
   
   features: {
     dynamicModelSelection: {
@@ -85,9 +85,15 @@ const SYSTEM_STATE: SystemState = {
     },
     deepWikiIntegration: {
       status: 'working',
-      confidence: 97,
-      lastTested: '2025-08-17',
-      notes: 'Enhanced parser handles 3 DeepWiki output formats: numbered sub-bullets, numbered inline, and title-metadata. Extracts 5+ issues from all repository types.'
+      confidence: 90,
+      lastTested: '2025-08-19',
+      notes: 'Enhanced with JSON format support via AdaptiveDeepWikiAnalyzer. Improved data extraction from 0% to structured parseable results. Supports both JSON and text formats with adaptive retry logic.'
+    },
+    deepWikiJsonFormat: {
+      status: 'working',
+      confidence: 85,
+      lastTested: '2025-08-19',
+      notes: 'NEW: AdaptiveDeepWikiAnalyzer with JSON format support implemented. Uses response_format parameter for structured responses, GapAnalyzer for iterative improvement, dramatically improves data extraction quality.'
     },
     translatorService: {
       status: 'working',
@@ -120,10 +126,10 @@ const SYSTEM_STATE: SystemState = {
       notes: 'Zero TypeScript errors, enhanced type safety, proper error handling, comprehensive AI parser implementation, cleaned up outdated research files and removed inconsistent implementations'
     },
     reportAccuracy: {
-      status: 'broken',
-      confidence: 40,
-      lastTested: '2025-08-15',
-      notes: 'CRITICAL: Reports not matching DeepWiki analysis data, pre-existing issues showing as 0, user feedback indicates reports "not accurate at all"'
+      status: 'in_development',
+      confidence: 55,
+      lastTested: '2025-08-19',
+      notes: 'IMPROVED: JSON format implementation provides structured data foundation. However, 12 new bugs discovered in report generation (BUG-040 to BUG-051) require attention. Data extraction quality significantly improved but issues remain in final report assembly.'
     },
     debuggingInfrastructure: {
       status: 'working',
@@ -343,10 +349,99 @@ const SYSTEM_STATE: SystemState = {
     // Resolution: Added WebSearch tool integration for model discovery, enabling system to find latest AI models 
     // like Claude Opus 4.1, GPT-5, Gemini 2.0, and other models released in the last 3-6 months instead of 
     // relying only on OpenRouter catalog. searchWebForLatestModels() now returns discovered models from web search.
+    
+    // NEW CRITICAL REPORT GENERATION BUGS IDENTIFIED (2025-08-19)
+    {
+      id: 'BUG-040',
+      severity: 'HIGH',
+      description: 'Issue count inconsistency - Previously found 15 issues, now only 7. Critical data loss in issue detection pipeline.',
+      discovered: '2025-08-19',
+      component: 'report-generator'
+    },
+    {
+      id: 'BUG-041',
+      severity: 'MEDIUM',
+      description: 'Missing code snippets and fix suggestions in reports - reports lack actionable content for developers',
+      discovered: '2025-08-19',
+      component: 'report-generator'
+    },
+    {
+      id: 'BUG-042',
+      severity: 'HIGH',
+      description: 'All issues show "File: location unknown" - complete failure of AI Location Finder system',
+      discovered: '2025-08-19',
+      component: 'ai-location-finder'
+    },
+    {
+      id: 'BUG-043',
+      severity: 'MEDIUM',
+      description: 'Resource Efficiency showing impossible 107/100 score - scoring system allows values >100%',
+      discovered: '2025-08-19',
+      component: 'scoring-system'
+    },
+    {
+      id: 'BUG-044',
+      severity: 'HIGH',
+      description: 'Performance issues disappeared - previously found issues now showing 0, critical regression in detection',
+      discovered: '2025-08-19',
+      component: 'performance-detection'
+    },
+    {
+      id: 'BUG-045',
+      severity: 'MEDIUM',
+      description: 'Test Coverage showing 0% when repository actually has ~70% coverage - detection system failing',
+      discovered: '2025-08-19',
+      component: 'test-coverage-detector'
+    },
+    {
+      id: 'BUG-046',
+      severity: 'HIGH',
+      description: 'Breaking changes disappeared - previously found breaking changes now showing 0, critical regression',
+      discovered: '2025-08-19',
+      component: 'breaking-changes-detection'
+    },
+    {
+      id: 'BUG-047',
+      severity: 'MEDIUM',
+      description: 'Repository announced 4 medium issues but only listed 2 - counting vs display inconsistency',
+      discovered: '2025-08-19',
+      component: 'issue-aggregation'
+    },
+    {
+      id: 'BUG-048',
+      severity: 'MEDIUM',
+      description: 'Documentation detection failing - showing "No documentation detected" when docs exist',
+      discovered: '2025-08-19',
+      component: 'documentation-detector'
+    },
+    {
+      id: 'BUG-049',
+      severity: 'MEDIUM',
+      description: 'Educational recommendations not properly linked to high priority issues - generic vs targeted guidance',
+      discovered: '2025-08-19',
+      component: 'educator-agent'
+    },
+    {
+      id: 'BUG-050',
+      severity: 'MEDIUM',
+      description: 'Checkmarks appearing for unfixed issues - misleading UI elements showing false positive status',
+      discovered: '2025-08-19',
+      component: 'report-ui'
+    },
+    {
+      id: 'BUG-051',
+      severity: 'LOW',
+      description: 'Missing skill calculation footnotes - should show scoring methodology (critical 5, high 3, medium 1, low 0.5)',
+      discovered: '2025-08-19',
+      component: 'skills-tracking'
+    }
   ],
 
   nextTasks: [
+    'COMPLETED ✅ - JSON Format Implementation (2025-08-19): Implemented AdaptiveDeepWikiAnalyzer with JSON format support, dramatically improving data extraction quality from 0% to structured parseable results',
     'COMPLETED ✅ - Research file cleanup and BUG-034/BUG-035 resolution: Removed outdated research implementations, fixed model availability validation, and implemented web search functionality',
+    'IMMEDIATE - Address 12 new report generation bugs (BUG-040 to BUG-051): Focus on issue count inconsistency, missing file locations, and scoring system issues',
+    'IMMEDIATE - Test JSON format implementation with real PRs to validate performance improvements and data extraction quality',
     'IMMEDIATE - Validate permanent environment loading fix across multiple sessions - test npm run session workflow',
     'CRITICAL - COMPLETE BUG-032: Fix orchestrator/comparison agent to preserve parsed issues in final reports - parser extracts 5 issues correctly but reports show 0',
     'CRITICAL - DEBUG orchestrator pipeline: trace issue flow from parser → orchestrator → final report to identify where issues are lost',
