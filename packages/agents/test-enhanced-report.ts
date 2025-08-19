@@ -205,13 +205,23 @@ async function testEnhancedReport() {
   
   const report = comparisonResult.report || '';
   const features = {
-    'Architecture Diagram': report.includes('architecture-diagram') && report.includes('Frontend') && report.includes('Backend'),
-    'Issue Impacts': report.includes('issue-impact') || report.includes('Impact:'),
-    'Code Snippets': report.includes('code-block') || report.includes('Problematic Code:'),
-    'Fix Suggestions': report.includes('fix-suggestion') || report.includes('Suggested Fix:'),
-    'Educational Insights (Connected)': report.includes('Learning Opportunities Based on Found Issues'),
-    'Business Impact Details': report.includes('Potential Revenue Loss') && report.includes('User Impact'),
-    'PR Comment Section': report.includes('PR Comment for GitHub') || report.includes('Copy this comment')
+    // Original features (BUG-1 through BUG-6)
+    'BUG-1: Architecture Diagram': report.includes('architecture-diagram') && report.includes('Frontend') && report.includes('Backend'),
+    'BUG-2: Issue Impacts': report.includes('issue-impact') || report.includes('Impact:'),
+    'BUG-3: Code Snippets': report.includes('code-block') || report.includes('Problematic Code:'),
+    'BUG-3: Fix Suggestions': report.includes('fix-suggestion') || report.includes('Suggested Fix:'),
+    'BUG-4: Educational Insights': report.includes('Learning Opportunities Based on Found Issues'),
+    'BUG-5: Business Impact': report.includes('Potential Revenue Loss') && report.includes('User Impact'),
+    'BUG-6: PR Comment Section': report.includes('PR Comment for GitHub') || report.includes('Copy this comment'),
+    // New enhanced features (BUG-7, BUG-8, BUG-9)
+    'BUG-7: Severity Ordering': report.includes('CRITICAL - Immediate Action Required') || report.includes('HIGH Priority Learning') || report.includes('Suggested Learning'),
+    'BUG-7: Strict/Encouraging Tone': report.includes('You MUST address these before deployment') || report.includes('Great job overall'),
+    'BUG-8: Skill Score Display': report.includes('Your Code Quality Score') && report.includes('/100'),
+    'BUG-8: Score Calculation': report.includes('Base Score (new user):') && report.includes('50/100'),
+    'BUG-8: Point Deductions': report.includes('Critical Issues (-5 each)') && report.includes('High Issues (-3 each)'),
+    'BUG-8: Scoring Footnotes': report.includes('Scoring System Explained:'),
+    'BUG-9: Educational Links': report.includes('Required Learning') || report.includes('Recommended') || report.includes('Consider learning'),
+    'BUG-9: DeepWiki Powered': report.includes('Educational links are powered by DeepWiki')
   };
   
   console.log('\nFeature Validation Results:');

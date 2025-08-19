@@ -495,7 +495,7 @@
                     <strong>Author:</strong><br>john.developer
                 </div>
                 <div class="header-item">
-                    <strong>Analysis Date:</strong><br>8/19/2025, 10:43:32 AM
+                    <strong>Analysis Date:</strong><br>8/19/2025, 11:39:53 AM
                 </div>
                 <div class="header-item">
                     <strong>Model Used:</strong><br>google/gemini-2.5-pro-exp-03-25
@@ -891,55 +891,6 @@
                 </div>
             </div>
         
-            <div class="section">
-                <div class="section-header">
-                    <h2 class="section-title">⚠️ 6. Breaking Changes</h2>
-                </div>
-                <div class="section-content">
-                    <div class="alert alert-danger">
-                        🚨 1 breaking change(s) detected that must be addressed
-                    </div>
-                    
-        <h3>Breaking Changes</h3>
-        <div style="margin-top: 15px;">
-            
-        <div class="issue-card issue-critical">
-            <div class="issue-header">
-                <span class="issue-title">ISSUE-1: Exposed API Keys</span>
-                <span class="issue-severity severity-critical">critical</span>
-            </div>
-            <div class="issue-location">📁 src/config/api.js:12</div>
-            <div class="issue-description">API keys should never be hardcoded in source files</div>
-            
-            <div class="issue-impact">
-                <strong>💥 Impact:</strong> Critical - Exposed credentials can lead to unauthorized API usage and financial loss
-            </div>
-            
-            
-                <div style="margin-top: 10px;">
-                    <strong>Problematic Code:</strong>
-                    <div class="code-block">const API_KEY = &quot;sk-1234567890abcdef&quot;;</div>
-                </div>
-            
-            
-                <div class="fix-suggestion">
-                    <strong>💡 Suggested Fix:</strong> Use environment variables for sensitive configuration
-                    
-                </div>
-            
-            
-                <div style="margin-top: 10px;">
-                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em;">
-                        🏷️ security
-                    </span>
-                    <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-size: 0.85em; margin-left: 5px;">
-                        ⏱️ Est. 2-4 hours to fix
-                    </span>
-                </div>
-        </div>
-        </div>
-                </div>
-            </div>
         
             <div class="section">
                 <div class="section-header">
@@ -1325,51 +1276,160 @@
         
             <div class="section">
                 <div class="section-header">
-                    <h2 class="section-title">💡 10. Educational Insights</h2>
+                    <h2 class="section-title">💡 10. Educational Insights - Personalized Learning Plan</h2>
                 </div>
                 <div class="section-content">
-                    <h3>Learning Opportunities Based on Found Issues</h3>
-                    
-                    
-                        <div style="margin-top: 20px;">
-                            <h4>📚 Security Skills Development</h4>
-                            <ul>
-                                <li>Review OWASP Top 10 security principles</li><li>Implement input validation and sanitization</li><li>Use parameterized queries to prevent SQL injection</li><li>Implement proper authentication and authorization</li>
+                    <!-- Skill Score Section (BUG-8) -->
+                    <div class="skill-score-summary" style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+                        <h3>📊 Your Code Quality Score</h3>
+                        <div class="score-display" style="font-size: 2.5em; font-weight: bold; color: #dc3545; margin: 20px 0;">
+                            <span class="current-score">26</span>
+                            <span class="max-score" style="font-size: 0.6em; color: #666;">/100</span>
+                        </div>
+                        <div class="score-breakdown" style="background: white; padding: 15px; border-radius: 5px;">
+                            <p><strong>Score Calculation:</strong></p>
+                            <ul style="list-style: none; padding: 10px 0;">
+                                <li>✅ Base Score (new user): 50/100</li>
+                                <li style="color: #dc3545;">➖ Critical Issues (-5 each): -10 points (2 issues)</li>
+                                <li style="color: #fd7e14;">➖ High Issues (-3 each): -12 points (4 issues)</li>
+                                <li style="color: #ffc107;">➖ Medium Issues (-1 each): -2 points (2 issues)</li>
+                                <li style="color: #28a745;">➖ Low Issues (-0.5 each): -0 points (0 issues)</li>
+                                <li style="border-top: 1px solid #dee2e6; margin-top: 10px; padding-top: 10px;">
+                                    <strong>Final Score: 26/100</strong>
+                                </li>
                             </ul>
                         </div>
+                    </div>
                     
-                        <div style="margin-top: 20px;">
-                            <h4>📚 Architecture Skills Development</h4>
-                            <ul>
-                                <li>Study design patterns (Factory, Observer, Strategy)</li><li>Implement dependency injection</li><li>Use microservices architecture principles</li><li>Follow Domain-Driven Design practices</li>
+                    <!-- Issue-Specific Education (BUG-7) -->
+                    <div class="issue-based-learning">
+                        <h3>📚 Learning Opportunities Based on Found Issues</h3>
+                        <div class="critical-learning urgent" style="background: #ffebee; border-left: 4px solid #dc3545; padding: 20px; margin: 20px 0;">
+                            <h4 style="color: #dc3545;">🚨 CRITICAL - Immediate Action Required</h4>
+                            <p class="motivation-strict" style="font-weight: bold; margin: 10px 0;">
+                                These critical issues pose immediate security/stability risks. 
+                                <strong style="color: #dc3545;">You MUST address these before deployment!</strong>
+                            </p>
+                            <ul style="list-style: none; padding: 0;">
+                                <li class="issue-education critical" style="background: white; padding: 15px; margin: 10px 0; border-radius: 5px;">
+                                    <div class="issue-title" style="font-weight: bold; color: #dc3545;">
+                                        🔴 Exposed API Keys
+                                    </div>
+                                    <div class="education-link" style="margin: 10px 0;">
+                                        📖 <strong>Required Learning</strong>: 
+                                        <a href="https://owasp.org/www-project-web-security-testing-guide/v42/4-Web_Application_Security_Testing/09-Testing_for_Weak_Cryptography/README" target="_blank" style="color: #007bff;">Secure Credential Storage and Management</a>
+                                    </div>
+                                    <div class="why-important" style="background: #fff5f5; padding: 10px; border-radius: 3px;">
+                                        ⚠️ <strong>Why this matters:</strong> Critical - Exposed credentials can lead to unauthorized API usage and financial loss
+                                    </div>
+                                </li>
+                                <li class="issue-education critical" style="background: white; padding: 15px; margin: 10px 0; border-radius: 5px;">
+                                    <div class="issue-title" style="font-weight: bold; color: #dc3545;">
+                                        🔴 SQL Injection Risk
+                                    </div>
+                                    <div class="education-link" style="margin: 10px 0;">
+                                        📖 <strong>Required Learning</strong>: 
+                                        <a href="https://owasp.org/www-community/attacks/SQL_Injection" target="_blank" style="color: #007bff;">OWASP Guide: Preventing SQL Injection Attacks</a>
+                                    </div>
+                                    <div class="why-important" style="background: #fff5f5; padding: 10px; border-radius: 3px;">
+                                        ⚠️ <strong>Why this matters:</strong> Critical - Can lead to complete database compromise and data theft
+                                    </div>
+                                </li>
                             </ul>
                         </div>
-                    
-                        <div style="margin-top: 20px;">
-                            <h4>📚 Performance Skills Development</h4>
-                            <ul>
-                                <li>Study Big O notation and algorithm complexity</li><li>Implement caching strategies</li><li>Use profiling tools to identify bottlenecks</li><li>Consider async/await patterns for I/O operations</li>
+                        <div class="high-learning important" style="background: #fff3e0; border-left: 4px solid #fd7e14; padding: 20px; margin: 20px 0;">
+                            <h4 style="color: #fd7e14;">⚠️ HIGH Priority Learning</h4>
+                            <p class="motivation-strong" style="margin: 10px 0;">
+                                These issues significantly impact code quality and should be addressed soon.
+                            </p>
+                            <ul style="list-style: none; padding: 0;">
+                                <li class="issue-education high" style="background: white; padding: 15px; margin: 10px 0; border-radius: 5px;">
+                                    <div class="issue-title" style="font-weight: bold; color: #fd7e14;">
+                                        🟠 Race condition in concurrent database updates
+                                    </div>
+                                    <div class="education-link" style="margin: 10px 0;">
+                                        📚 <strong>Recommended</strong>: 
+                                        <a href="https://www.educative.io/blog/multithreading-and-concurrency-fundamentals" target="_blank" style="color: #007bff;">Concurrency Control and Race Condition Prevention</a>
+                                    </div>
+                                </li>
+                                <li class="issue-education high" style="background: white; padding: 15px; margin: 10px 0; border-radius: 5px;">
+                                    <div class="issue-title" style="font-weight: bold; color: #fd7e14;">
+                                        🟠 Missing input validation on file uploads
+                                    </div>
+                                    <div class="education-link" style="margin: 10px 0;">
+                                        📚 <strong>Recommended</strong>: 
+                                        <a href="https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html" target="_blank" style="color: #007bff;">Input Validation and Sanitization Guide</a>
+                                    </div>
+                                </li>
+                                <li class="issue-education high" style="background: white; padding: 15px; margin: 10px 0; border-radius: 5px;">
+                                    <div class="issue-title" style="font-weight: bold; color: #fd7e14;">
+                                        🟠 Missing rate limiting on API endpoints
+                                    </div>
+                                    <div class="education-link" style="margin: 10px 0;">
+                                        📚 <strong>Recommended</strong>: 
+                                        <a href="https://cheatsheetseries.owasp.org/cheatsheets/Denial_of_Service_Cheat_Sheet.html" target="_blank" style="color: #007bff;">Rate Limiting and DDoS Prevention Guide</a>
+                                    </div>
+                                </li>
+                                <li class="issue-education high" style="background: white; padding: 15px; margin: 10px 0; border-radius: 5px;">
+                                    <div class="issue-title" style="font-weight: bold; color: #fd7e14;">
+                                        🟠 Memory leak in event listener registration
+                                    </div>
+                                    <div class="education-link" style="margin: 10px 0;">
+                                        📚 <strong>Recommended</strong>: 
+                                        <a href="https://developer.chrome.com/docs/devtools/memory-problems/" target="_blank" style="color: #007bff;">Finding and Fixing Memory Leaks in JavaScript</a>
+                                    </div>
+                                </li>
                             </ul>
                         </div>
-                    
-                    
-                    
-                        <div class="alert alert-warning" style="margin-top: 20px;">
-                            <h4>⚠️ Priority Learning Areas</h4>
-                            <p>Based on the critical/high severity issues found, prioritize learning about:</p>
-                            <ul>
-                                <li><strong>Exposed API Keys</strong> - Study security best practices</li><li><strong>Race condition in concurrent database updates</strong> - Study architecture best practices</li><li><strong>Missing input validation on file uploads</strong> - Study security best practices</li>
+                        <div class="suggested-learning" style="background: #e8f5e9; border-left: 4px solid #28a745; padding: 20px; margin: 20px 0;">
+                            <h4 style="color: #28a745;">💡 Suggested Learning for Improvement</h4>
+                            <p class="motivation-encouraging" style="margin: 10px 0;">
+                                Great job overall! These improvements will enhance your code quality even further.
+                            </p>
+                            <ul style="list-style: none; padding: 0;">
+                                <li class="issue-education medium" style="background: white; padding: 15px; margin: 10px 0; border-radius: 5px;">
+                                    <div class="issue-title" style="font-weight: bold; color: #ffc107;">
+                                        🟡 N+1 query problem in ORM usage
+                                    </div>
+                                    <div class="education-link" style="margin: 10px 0;">
+                                        💭 Consider learning: 
+                                        <a href="https://stackoverflow.blog/2022/12/27/picture-perfect-images-with-the-modern-img-element/" target="_blank" style="color: #007bff;">Database Query Optimization and N+1 Prevention</a>
+                                    </div>
+                                </li>
+                                <li class="issue-education medium" style="background: white; padding: 15px; margin: 10px 0; border-radius: 5px;">
+                                    <div class="issue-title" style="font-weight: bold; color: #ffc107;">
+                                        🟡 Weak password requirements
+                                    </div>
+                                    <div class="education-link" style="margin: 10px 0;">
+                                        💭 Consider learning: 
+                                        <a href="https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html" target="_blank" style="color: #007bff;">OWASP Password Storage Guidelines</a>
+                                    </div>
+                                </li>
                             </ul>
                         </div>
+                    </div>
                     
-                    
-                    <h3 style="margin-top: 30px;">Recommended Resources</h3>
-                    <ul>
-                        <li>📖 <a href="https://owasp.org/www-project-top-ten/">OWASP Top 10 Security Risks</a></li>
-                        <li>📖 <a href="https://refactoring.guru/design-patterns">Design Patterns Catalog</a></li>
-                        <li>📖 <a href="https://martinfowler.com/articles/microservices.html">Microservices Architecture</a></li>
-                        <li>📖 <a href="https://www.typescriptlang.org/docs/handbook/intro.html">TypeScript Best Practices</a></li>
-                    </ul>
+                    <!-- Footnotes (BUG-8) -->
+                    <div class="educational-footnotes" style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-top: 30px;">
+                        <hr style="margin-bottom: 20px;">
+                        <small style="color: #6c757d;">
+                            <p><strong>📊 Scoring System Explained:</strong></p>
+                            <ul style="padding-left: 20px; margin: 10px 0;">
+                                <li>New users start with a base score of 50/100</li>
+                                <li>Critical issues: -5 points each (must fix immediately for security/stability)</li>
+                                <li>High issues: -3 points each (fix soon for code quality)</li>
+                                <li>Medium issues: -1 point each (plan to fix in next iteration)</li>
+                                <li>Low issues: -0.5 points each (nice to fix when time permits)</li>
+                            </ul>
+                            <p style="margin-top: 10px;">
+                                <strong>Your recent validation score: 26/100</strong> 
+                                🎯 Time to level up! Start with the critical issues first.
+                            </p>
+                            <p style="margin-top: 10px;">
+                                <em>💡 Educational links are powered by DeepWiki analysis and tailored to your specific issues.</em>
+                            </p>
+                        </small>
+                    </div>
                 </div>
             </div>
         
@@ -1561,7 +1621,7 @@
         <div class="footer">
             <p><strong>Generated by CodeQual AI Analysis Platform v7.0</strong></p>
             <p style="margin-top: 10px;">
-                Analysis Date: 8/19/2025, 10:43:32 AM | 
+                Analysis Date: 8/19/2025, 11:39:53 AM | 
                 Confidence: 94% | 
                 Support: support@codequal.com
             </p>
