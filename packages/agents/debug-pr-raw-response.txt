@@ -1,0 +1,205 @@
+{
+  "issues": [
+    {
+      "title": "Use of deprecated `request` method",
+      "severity": "high",
+      "category": "code-quality",
+      "file": "source/core/constants.ts",
+      "line": 10,
+      "impact": "Using deprecated methods can lead to unexpected behavior and compatibility issues.",
+      "codeSnippet": "const supportsRequest = typeof globalThis.Request === 'function';",
+      "fix": "Update to use modern HTTP client methods.",
+      "recommendation": "Refactor to ensure compatibility with the latest standards."
+    },
+    {
+      "title": "Missing error handling for network requests",
+      "severity": "high",
+      "category": "security",
+      "file": "source/index.ts",
+      "line": 56,
+      "impact": "Lack of error handling can lead to unhandled promise rejections and security risks.",
+      "codeSnippet": "return fetch(url);",
+      "fix": "Implement try-catch blocks around network requests.",
+      "recommendation": "Ensure all network calls handle errors appropriately."
+    },
+    {
+      "title": "Potential memory leak with shared abort signal",
+      "severity": "medium",
+      "category": "performance",
+      "file": "test/memory-leak.ts",
+      "line": 15,
+      "impact": "Using shared abort signals may cause memory leaks in long-running applications.",
+      "codeSnippet": "const abortController = new AbortController();",
+      "fix": "Ensure abort controllers are properly disposed of after use.",
+      "recommendation": "Monitor memory usage and refactor to manage abort controllers effectively."
+    },
+    {
+      "title": "Hardcoded URLs in tests",
+      "severity": "low",
+      "category": "code-quality",
+      "file": "test/fetch.ts",
+      "line": 8,
+      "impact": "Hardcoded values can lead to maintenance challenges and reduced flexibility.",
+      "codeSnippet": "const fixture = 'https://example.com/unicorn';",
+      "fix": "Use configuration files or environment variables for URLs.",
+      "recommendation": "Refactor tests to use dynamic URL generation."
+    },
+    {
+      "title": "Use of `any` type in TypeScript",
+      "severity": "medium",
+      "category": "code-quality",
+      "file": "source/index.ts",
+      "line": 23,
+      "impact": "Using `any` undermines TypeScript's type safety features.",
+      "codeSnippet": "function exampleFunction(input: any) {}",
+      "fix": "Replace `any` with a more specific type.",
+      "recommendation": "Review and update type definitions throughout the codebase."
+    },
+    {
+      "title": "Excessive use of global variables",
+      "severity": "medium",
+      "category": "architecture",
+      "file": "source/index.ts",
+      "line": 5,
+      "impact": "Global variables can lead to naming collisions and harder-to-maintain code.",
+      "codeSnippet": "globalThis.ky = ky;",
+      "fix": "Encapsulate variables within modules or classes.",
+      "recommendation": "Refactor to reduce reliance on global scope."
+    },
+    {
+      "title": "Lack of input validation",
+      "severity": "high",
+      "category": "security",
+      "file": "source/index.ts",
+      "line": 40,
+      "impact": "Unvalidated inputs can lead to injection attacks.",
+      "codeSnippet": "const response = await ky(url);",
+      "fix": "Implement input validation before processing.",
+      "recommendation": "Add validation logic to sanitize inputs."
+    },
+    {
+      "title": "Outdated dependency: `ava`",
+      "severity": "medium",
+      "category": "dependencies",
+      "file": "package.json",
+      "line": 35,
+      "impact": "Using outdated dependencies can expose the application to security vulnerabilities.",
+      "codeSnippet": "\"ava\": \"^5.3.1\"",
+      "fix": "Update `ava` to the latest version.",
+      "recommendation": "Run `npm update` to keep dependencies current."
+    },
+    {
+      "title": "Lack of unit tests for critical components",
+      "severity": "high",
+      "category": "code-quality",
+      "file": "test/main.ts",
+      "line": 1,
+      "impact": "Insufficient test coverage increases the risk of bugs.",
+      "codeSnippet": "// Missing tests for core functionality",
+      "fix": "Add unit tests for all critical functions.",
+      "recommendation": "Aim for at least 80% test coverage across all modules."
+    },
+    {
+      "title": "Inconsistent error messages",
+      "severity": "medium",
+      "category": "code-quality",
+      "file": "source/index.ts",
+      "line": 80,
+      "impact": "Inconsistent messages can confuse users and developers.",
+      "codeSnippet": "throw new Error('Request failed');",
+      "fix": "Standardize error message formats.",
+      "recommendation": "Define a common error handling strategy."
+    },
+    {
+      "title": "Redundant code in error handling",
+      "severity": "medium",
+      "category": "code-quality",
+      "file": "source/index.ts",
+      "line": 92,
+      "impact": "Redundant checks can lead to performance overhead.",
+      "codeSnippet": "if (response.ok) { return response; } else { throw new Error('Error'); }",
+      "fix": "Simplify the error handling logic.",
+      "recommendation": "Refactor to remove unnecessary checks."
+    },
+    {
+      "title": "Missing tests for edge cases",
+      "severity": "high",
+      "category": "code-quality",
+      "file": "test/retry.ts",
+      "line": 1,
+      "impact": "Not testing edge cases may lead to undetected bugs.",
+      "codeSnippet": "// No edge case tests",
+      "fix": "Add tests for edge cases.",
+      "recommendation": "Identify and cover edge cases in unit tests."
+    },
+    {
+      "title": "Circular dependency detected",
+      "severity": "medium",
+      "category": "architecture",
+      "file": "source/index.ts",
+      "line": 1,
+      "impact": "Circular dependencies can lead to runtime errors.",
+      "codeSnippet": "import { A } from './A'; import { B } from './B';",
+      "fix": "Refactor to eliminate circular references.",
+      "recommendation": "Review module dependencies for circular references."
+    },
+    {
+      "title": "Uncaught promise rejection",
+      "severity": "high",
+      "category": "security",
+      "file": "source/index.ts",
+      "line": 100,
+      "impact": "Uncaught rejections can crash the application.",
+      "codeSnippet": "fetch(url).then(...);",
+      "fix": "Add `.catch()` to handle rejections.",
+      "recommendation": "Ensure all promises are handled correctly."
+    }
+  ],
+  "testCoverage": {
+    "overall": 75,
+    "testFileCount": 25,
+    "sourceFileCount": 50,
+    "byCategory": {
+      "unit": 80,
+      "integration": 60,
+      "e2e": 40
+    }
+  },
+  "dependencies": {
+    "total": 45,
+    "outdated": [
+      {
+        "name": "ava",
+        "current": "^5.3.1",
+        "latest": "^5.4.0",
+        "type": "minor"
+      }
+    ],
+    "vulnerable": []
+  },
+  "teamMetrics": {
+    "contributors": 15,
+    "mainContributors": [
+      "sindresorhus",
+      "user2"
+    ]
+  },
+  "documentation": {
+    "score": 70,
+    "missing": [
+      "API docs",
+      "Contributing guide"
+    ]
+  },
+  "architecture": {
+    "score": 65,
+    "antiPatterns": [
+      "God objects",
+      "Circular dependencies"
+    ],
+    "recommendations": [
+      "Split large files",
+      "Extract interfaces"
+    ]
+  }
+}

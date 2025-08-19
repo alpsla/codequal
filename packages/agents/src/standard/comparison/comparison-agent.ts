@@ -168,6 +168,15 @@ export class ComparisonAgent implements IReportingComparisonAgent {
       // Generate report if requested
       let markdownReport;
       if (input.generateReport !== false) {
+        // BUG-045 FIX: Include test coverage from analysis results
+        // Extract test coverage from the analysis results (DeepWiki JSON format)
+        const featureTestCoverage = (input.featureBranchAnalysis as any).testCoverage?.overall || 
+                                   (input.featureBranchAnalysis.metadata as any)?.testCoverage?.overall || 
+                                   0;
+        const mainTestCoverage = (input.mainBranchAnalysis as any).testCoverage?.overall || 
+                                (input.mainBranchAnalysis.metadata as any)?.testCoverage?.overall || 
+                                0;
+        
         // Properly merge model information with existing data
         const reportData = {
           ...comparison,
@@ -179,7 +188,13 @@ export class ComparisonAgent implements IReportingComparisonAgent {
               : `${this.modelConfig.provider}/${this.modelConfig.model}`
           },
           skillTracking,
-          prMetadata: input.prMetadata,
+          prMetadata: {
+            ...input.prMetadata,
+            testCoverage: featureTestCoverage // Add test coverage from feature branch
+          },
+          mainMetadata: {
+            testCoverage: mainTestCoverage // Add test coverage from main branch
+          },
           scanDuration: (input as any).scanDuration
         };
         markdownReport = await this.generateReport(reportData as any);

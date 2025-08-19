@@ -1,81 +1,205 @@
-1. **Unnecessary Complexity in Constructor**
-   File: source/core/Ky.ts, Line: 33
-   Code Snippet: ```
-   this._options = {
-   ...options,
-   headers: mergeHeaders((this._input as Request).headers, options.headers),
-   ```
-   Recommendation: Simplify the merging of headers by creating a dedicated function to handle default values and overrides. This will improve readability and maintainability.
-   Severity: medium
-
-2. **Potential for Retry Logic to Ignore AbortSignal**
-   File: source/core/Ky.ts, Line: 34
-   Code Snippet: ```
-   retry: normalizeRetryOptions(options.retry),
-   ```
-   Recommendation: Ensure that the `AbortSignal` from `options.signal` or a new `AbortController` is respected in the retry logic to prevent requests from continuing after a cancelation signal has been issued.
-   Severity: high
-
-3. **Implicit Any Type for Timeout**
-   File: source/utils/timeout.js, Line: 3
-   Code Snippet: ```
-   export default function timeout(request, abortController, options) {
-   ```
-   Recommendation: Specify explicit types for parameters to improve TypeScript's type safety and code maintainability.
-   Severity: medium
-
-4. **Lack of Input Validation**
-   File: source/index.ts, Line: 7
-   Code Snippet: ```
-   const ky: Partial<Mutable<KyInstance>> = (input: Input, options?: Options) => Ky.create(input, validateAndMerge(defaults, options));
-   ```
-   Recommendation: Add input validation for `input` and `options` to ensure they meet expected formats and types before proceeding with request creation. This helps catch errors early and improves security.
-   Severity: medium
-
-5. **Direct Object Mutation**
-   File: source/utils/merge.js, Line: 5
-   Code Snippet: ```
-   export function mergeHeaders(...sources) {
-   ```
-   Recommendation: Instead of mutating header objects directly, use a more functional approach that returns a new headers object. This prevents side effects and makes the function's behavior more predictable.
-   Severity: low
-
-6. **Using `any` Type in Utility Functions**
-   File: source/utils/normalize.js, Line: 4
-   Code Snippet: ```
-   export function normalizeRequestMethod(method) {
-   ```
-   Recommendation: Avoid using `any` type for function parameters. Instead, define a type or interface that accurately describes the expected input.
-   Severity: medium
-
-7. **Missing Error Handling in Async Operations**
-   File: source/core/Ky.ts, Line: 82
-   Code Snippet: ```
-   const modifiedResponse = await hook(
-   ```
-   Recommendation: Wrap async operations within `try-catch` blocks or ensure that promise rejections are handled appropriately to avoid unhandled promise rejections.
-   Severity: high
-
-8. **Inefficient Handling of Response Types**
-   File: source/core/Ky.ts, Line: 129
-   Code Snippet: ```
-   result[type] = async () => {
-   ```
-   Recommendation: Streamline the handling of different response types by using a mapping strategy or a switch statement to avoid repetitive code and improve performance.
-   Severity: low
-
-9. **Potential Memory Leak with Global Fetch Override**
-   File: test/fetch.ts, Line: 6
-   Code Snippet: ```
-   const customFetch: typeof fetch = async input => {
-   ```
-   Recommendation: Ensure that overrides to global functions like `fetch` are restored after tests to prevent side effects or memory leaks in other tests.
-   Severity: medium
-
-10. **Hardcoded Timeout Value**
-    File: source/core/Ky.ts, Line: 35
-    Code Snippet: ```
-    timeout: options.timeout ?? 10_000,
-    ```
-    Recommendation: Define timeout values as constants or configuration options to make them easily configurable and avoid magic numbers in the codebase.
-    Severity: low
+{
+  "issues": [
+    {
+      "title": "Use of deprecated fetch options",
+      "severity": "medium",
+      "category": "code-quality",
+      "file": "source/core/constants.ts",
+      "line": 12,
+      "impact": "Deprecated options may lead to unexpected behavior in future updates.",
+      "codeSnippet": "fetch: true",
+      "fix": "Remove deprecated options and update the usage.",
+      "recommendation": "Review and update fetch options to avoid using deprecated features."
+    },
+    {
+      "title": "Potential memory leak with shared abort signal",
+      "severity": "high",
+      "category": "performance",
+      "file": "test/memory-leak.ts",
+      "line": 12,
+      "impact": "Using shared abort signals could lead to memory leaks.",
+      "codeSnippet": "const abortController = new AbortController();",
+      "fix": "Ensure that abort controllers are properly cleaned up after use.",
+      "recommendation": "Implement cleanup logic for abort controllers to prevent memory leaks."
+    },
+    {
+      "title": "Inconsistent error handling",
+      "severity": "medium",
+      "category": "code-quality",
+      "file": "test/hooks.ts",
+      "line": 45,
+      "impact": "Inconsistent error handling may cause unhandled promise rejections.",
+      "codeSnippet": "throw error;",
+      "fix": "Standardize error handling across the application.",
+      "recommendation": "Use a centralized error handling strategy."
+    },
+    {
+      "title": "Hardcoded timeout values",
+      "severity": "medium",
+      "category": "performance",
+      "file": "test/fetch.ts",
+      "line": 30,
+      "impact": "Hardcoded values reduce flexibility and maintainability.",
+      "codeSnippet": "const timeout = 60_000;",
+      "fix": "Replace hardcoded values with configurable options.",
+      "recommendation": "Use environment variables or config files for timeout values."
+    },
+    {
+      "title": "Missing input validation",
+      "severity": "high",
+      "category": "security",
+      "file": "source/core/constants.ts",
+      "line": 25,
+      "impact": "Lack of validation can lead to security vulnerabilities.",
+      "codeSnippet": "const responseTypes = {...};",
+      "fix": "Implement input validation for all API endpoints.",
+      "recommendation": "Use libraries like Joi or Yup for validation."
+    },
+    {
+      "title": "Outdated dependency on 'ava'",
+      "severity": "low",
+      "category": "dependencies",
+      "file": "package.json",
+      "line": 20,
+      "impact": "Using outdated dependencies may expose the application to known vulnerabilities.",
+      "codeSnippet": "\"ava\": \"^5.3.1\"",
+      "fix": "Update to the latest version of 'ava'.",
+      "recommendation": "Run 'npm outdated' to check for updates."
+    },
+    {
+      "title": "Potential race conditions in tests",
+      "severity": "medium",
+      "category": "performance",
+      "file": "test/main.ts",
+      "line": 75,
+      "impact": "Race conditions can lead to flaky tests.",
+      "codeSnippet": "await server.close();",
+      "fix": "Ensure proper synchronization in tests.",
+      "recommendation": "Use async/await consistently to avoid race conditions."
+    },
+    {
+      "title": "Lack of API documentation",
+      "severity": "medium",
+      "category": "documentation",
+      "file": "README.md",
+      "line": 1,
+      "impact": "Absence of API documentation makes it difficult for new users to understand usage.",
+      "codeSnippet": "N/A",
+      "fix": "Add comprehensive API documentation.",
+      "recommendation": "Use tools like Swagger or Postman to generate API docs."
+    },
+    {
+      "title": "Circular dependencies detected",
+      "severity": "medium",
+      "category": "architecture",
+      "file": "source/core/constants.ts",
+      "line": 15,
+      "impact": "Circular dependencies can lead to issues in module loading.",
+      "codeSnippet": "import {type HttpMethod} from '../types/options.js';",
+      "fix": "Refactor code to eliminate circular dependencies.",
+      "recommendation": "Analyze module dependencies and restructure as needed."
+    },
+    {
+      "title": "Missing test coverage for edge cases",
+      "severity": "high",
+      "category": "code-quality",
+      "file": "test/stream.ts",
+      "line": 50,
+      "impact": "Insufficient test coverage may lead to undetected bugs.",
+      "codeSnippet": "t.true(data.length >= 2, 'Should have at least two progress updates');",
+      "fix": "Add tests for edge cases.",
+      "recommendation": "Review test cases and enhance coverage."
+    },
+    {
+      "title": "Use of var instead of let/const",
+      "severity": "low",
+      "category": "code-quality",
+      "file": "test/browser.ts",
+      "line": 5,
+      "impact": "Using 'var' can lead to scope-related bugs.",
+      "codeSnippet": "var requestCount = 0;",
+      "fix": "Replace 'var' with 'let' or 'const'.",
+      "recommendation": "Adopt ES6 standards for variable declarations."
+    },
+    {
+      "title": "Improper handling of HTTP status codes",
+      "severity": "medium",
+      "category": "code-quality",
+      "file": "test/fetch.ts",
+      "line": 15,
+      "impact": "Improper handling may lead to unexpected application behavior.",
+      "codeSnippet": "response.sendStatus(500);",
+      "fix": "Ensure proper status code handling in tests.",
+      "recommendation": "Review status code expectations in tests."
+    },
+    {
+      "title": "Inefficient JSON parsing",
+      "severity": "medium",
+      "category": "performance",
+      "file": "source/core/constants.ts",
+      "line": 40,
+      "impact": "Inefficient parsing can slow down application performance.",
+      "codeSnippet": "response.json(request.body);",
+      "fix": "Optimize JSON parsing logic.",
+      "recommendation": "Use streaming parsers for large JSON payloads."
+    },
+    {
+      "title": "Missing configuration for CI/CD",
+      "severity": "high",
+      "category": "architecture",
+      "file": "README.md",
+      "line": 1,
+      "impact": "Lack of CI/CD configuration can lead to deployment issues.",
+      "codeSnippet": "N/A",
+      "fix": "Add CI/CD configuration files.",
+      "recommendation": "Use GitHub Actions or Travis CI for continuous integration."
+    }
+  ],
+  "testCoverage": {
+    "overall": 75,
+    "testFileCount": 25,
+    "sourceFileCount": 50,
+    "byCategory": {
+      "unit": 80,
+      "integration": 60,
+      "e2e": 40
+    }
+  },
+  "dependencies": {
+    "total": 45,
+    "outdated": [
+      {
+        "name": "ava",
+        "current": "^5.3.1",
+        "latest": "^5.4.0",
+        "type": "minor"
+      }
+    ],
+    "vulnerable": []
+  },
+  "teamMetrics": {
+    "contributors": 15,
+    "mainContributors": [
+      "sindresorhus",
+      "user1"
+    ]
+  },
+  "documentation": {
+    "score": 70,
+    "missing": [
+      "API docs",
+      "Contributing guide"
+    ]
+  },
+  "architecture": {
+    "score": 65,
+    "antiPatterns": [
+      "God objects",
+      "Circular dependencies"
+    ],
+    "recommendations": [
+      "Split large files",
+      "Extract interfaces"
+    ]
+  }
+}

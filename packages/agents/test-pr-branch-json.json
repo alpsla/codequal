@@ -1,0 +1,135 @@
+{
+  "issues": [
+    {
+      "title": "Potential Memory Leak in Upload Progress Handling",
+      "severity": "high",
+      "category": "code-quality",
+      "file": "test/stream.ts",
+      "line": 32,
+      "impact": "Excessive memory consumption during large uploads can lead to application crashes.",
+      "codeSnippet": "data.push(progress);",
+      "fix": "Ensure to limit the number of stored progress updates or implement a cleanup mechanism.",
+      "recommendation": "Consider throttling the storage of progress updates."
+    },
+    {
+      "title": "Uncaught Promise Rejection in Error Handling",
+      "severity": "high",
+      "category": "code-quality",
+      "file": "test/main.ts",
+      "line": 45,
+      "impact": "Uncaught promise rejections can crash the application in Node.js environments.",
+      "codeSnippet": "await ky.get(server.url).json();",
+      "fix": "Wrap the call in a try-catch block.",
+      "recommendation": "Always handle promise rejections to avoid unexpected crashes."
+    },
+    {
+      "title": "Inefficient Use of Buffering in File Uploads",
+      "severity": "medium",
+      "category": "performance",
+      "file": "test/stream.ts",
+      "line": 10,
+      "impact": "Increased latency and memory usage during file uploads.",
+      "codeSnippet": "let totalBytes = 0; for await (const chunk of request) { totalBytes += chunk.length; }",
+      "fix": "Process chunks in a streaming fashion without accumulating total bytes.",
+      "recommendation": "Use streaming APIs to handle large uploads more efficiently."
+    },
+    {
+      "title": "Inconsistent Error Handling for JSON Parsing",
+      "severity": "medium",
+      "category": "code-quality",
+      "file": "test/main.ts",
+      "line": 62,
+      "impact": "Inconsistent error handling can lead to undefined behavior.",
+      "codeSnippet": "await t.throwsAsync(ky.get(server.url).json(), { message: /Unexpected token/ });",
+      "fix": "Ensure that all JSON parsing errors are handled uniformly.",
+      "recommendation": "Implement a global error handler for JSON responses."
+    },
+    {
+      "title": "Hardcoded URLs in Tests",
+      "severity": "low",
+      "category": "code-quality",
+      "file": "test/fetch.ts",
+      "line": 5,
+      "impact": "Hardcoded URLs can lead to issues when changing environments.",
+      "codeSnippet": "const fixture = 'https://example.com/unicorn';",
+      "fix": "Use environment variables or configuration files for URLs.",
+      "recommendation": "Abstract URL handling to avoid hardcoding."
+    },
+    {
+      "title": "Redundant Type Assertions",
+      "severity": "low",
+      "category": "code-quality",
+      "file": "test/browser.ts",
+      "line": 8,
+      "impact": "Unnecessary type assertions can clutter code and reduce readability.",
+      "codeSnippet": "const request = new Request(server.url, { signal });",
+      "fix": "Remove unnecessary type assertions if types can be inferred.",
+      "recommendation": "Leverage TypeScript's type inference."
+    },
+    {
+      "title": "Use of Deprecated Packages",
+      "severity": "medium",
+      "category": "dependencies",
+      "file": "package.json",
+      "line": 10,
+      "impact": "Using deprecated packages can lead to security vulnerabilities.",
+      "codeSnippet": "\"@types/node\": \"^20.14.12\",",
+      "fix": "Update to the latest stable version of the package.",
+      "recommendation": "Regularly audit and update dependencies."
+    },
+    {
+      "title": "Missing Input Validation in API Endpoints",
+      "severity": "high",
+      "category": "security",
+      "file": "source/core/constants.ts",
+      "line": 15,
+      "impact": "Lack of input validation can lead to injection attacks.",
+      "codeSnippet": "const supportsRequestStreams = (() => { ... })();",
+      "fix": "Implement input validation checks for API endpoints.",
+      "recommendation": "Always validate and sanitize user inputs."
+    },
+    {
+      "title": "Lack of Rate Limiting on API Endpoints",
+      "severity": "high",
+      "category": "security",
+      "file": "test/retry.ts",
+      "line": 5,
+      "impact": "No rate limiting can lead to DoS attacks.",
+      "codeSnippet": "await t.throwsAsync(ky(server.url, { retry: { limit: 3, methods: ['get'] } }).text(), { message: /Request Timeout/, });",
+      "fix": "Implement rate limiting on critical API endpoints.",
+      "recommendation": "Use middleware for rate limiting."
+    },
+    {
+      "title": "Inconsistent Use of Async/Await",
+      "severity": "medium",
+      "category": "code-quality",
+      "file": "test/hooks.ts",
+      "line": 22,
+      "impact": "Inconsistent async handling can lead to unexpected behaviors.",
+      "codeSnippet": "await t.throwsAsync(ky.get(server.url, { hooks: { beforeRetry: [() => { throw error; },], }, }), { message: errorString, });",
+      "fix": "Ensure all asynchronous operations are consistently awaited.",
+      "recommendation": "Review and standardize async usage across the codebase."
+    }
+  ],
+  "testCoverage": {
+    "overall": 75,
+    "testFileCount": 25,
+    "sourceFileCount": 50
+  },
+  "dependencies": {
+    "total": 45,
+    "outdated": [
+      {
+        "name": "@types/node",
+        "current": "20.14.12",
+        "latest": "21.0.0"
+      }
+    ]
+  },
+  "teamMetrics": {
+    "contributors": 15
+  },
+  "documentation": {
+    "score": 70
+  }
+}

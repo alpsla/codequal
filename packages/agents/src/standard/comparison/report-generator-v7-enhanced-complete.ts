@@ -761,10 +761,28 @@ ${depIssues.length === 0 ? '- ✅ All dependencies are secure and up-to-date' : 
   }
 
   private generateBreakingChanges(newIssues: Issue[]): string {
-    const breakingChanges = newIssues.filter(i => 
-      i.message?.toLowerCase().includes('breaking') || 
-      i.severity === 'critical'
-    );
+    // BUG-046 FIX: Check multiple fields for breaking changes (JSON format support)
+    const breakingChanges = newIssues.filter(i => {
+      const message = (i.message || '').toLowerCase();
+      const title = ((i as any).title || '').toLowerCase();
+      const category = (i.category || (i as any).category || '').toLowerCase();
+      
+      // Breaking changes are ONLY actual breaking changes, not all critical issues
+      // Security issues like SQL injection are NOT breaking changes
+      const isBreaking = message.includes('breaking') || 
+                        title.includes('breaking') ||
+                        category === 'breaking-change' ||
+                        category === 'breaking' ||
+                        message.includes('api change') ||
+                        title.includes('api change') ||
+                        message.includes('incompatible') ||
+                        title.includes('incompatible');
+      
+      // Exclude security issues - they are NOT breaking changes
+      const isSecurityIssue = this.isSecurityIssue(i);
+      
+      return isBreaking && !isSecurityIssue;
+    });
     
     if (breakingChanges.length === 0) {
       return ''; // Skip section if no breaking changes
@@ -1842,82 +1860,104 @@ ${(issue as any).code}
   }
   
   private getFileLocation(issue: Issue): string {
+    // BUG-042 FIX: Check for file directly on issue (from JSON format)
+    // DeepWiki JSON format provides file and line directly, not nested in location
+    if ((issue as any).file) {
+      const line = (issue as any).line || 1;
+      const column = (issue as any).column || 1;
+      return `${(issue as any).file}:${line}:${column}`;
+    }
+    
+    // Check for nested location structure (older format)
     if (issue.location?.file) {
-      const line = issue.location.line || (issue.location as any).startLine || Math.floor(Math.random() * 500) + 1;
-      const column = issue.location.column || (issue.location as any).startColumn || Math.floor(Math.random() * 80) + 1;
+      const line = issue.location.line || (issue.location as any).startLine || 1;
+      const column = issue.location.column || (issue.location as any).startColumn || 1;
       return `${issue.location.file}:${line}:${column}`;
     }
     
-    // Generate realistic file location
-    const files = [
-      'services/user-service/src/routes/internal.ts',
-      'services/payment-service/src/middleware/logging.ts',
-      'services/api-gateway/src/config/cors.ts',
-      'src/services/cache.service.ts',
-      'src/config/database.ts',
-      'src/routes/auth.ts',
-      'migrations/20240731-create-services-tables.js'
-    ];
-    const file = files[Math.floor(Math.random() * files.length)];
-    const line = Math.floor(Math.random() * 500) + 1;
-    return `${file}:${line}`;
+    // Return 'location unknown' instead of generating fake locations
+    return 'location unknown';
   }
   
   private isSecurityIssue(issue: Issue): boolean {
     const msg = (issue.message || '').toLowerCase();
-    const category = ((issue as any).category || '').toLowerCase();
+    // BUG-044 FIX: Handle both issue.category and direct category property from JSON
+    const category = (issue.category || (issue as any).category || '').toString().toLowerCase();
+    const title = ((issue as any).title || '').toLowerCase();
     return category.includes('security') || 
            msg.includes('security') || 
+           title.includes('security') ||
            msg.includes('vulnerability') ||
+           title.includes('vulnerability') ||
            msg.includes('injection') ||
+           title.includes('injection') ||
            msg.includes('auth') ||
            msg.includes('csrf') ||
            msg.includes('xss') ||
+           title.includes('xss') ||
            issue.type === 'vulnerability';
   }
   
   private isPerformanceIssue(issue: Issue): boolean {
     const msg = (issue.message || '').toLowerCase();
-    const category = ((issue as any).category || '').toLowerCase();
+    // BUG-044 FIX: Handle both issue.category and direct category property from JSON
+    const category = (issue.category || (issue as any).category || '').toString().toLowerCase();
+    const title = ((issue as any).title || '').toLowerCase();
     return category.includes('performance') || 
            msg.includes('performance') ||
+           title.includes('performance') ||
            msg.includes('slow') ||
            msg.includes('memory') ||
            msg.includes('leak') ||
+           title.includes('memory') ||
+           title.includes('leak') ||
            msg.includes('n+1') ||
            msg.includes('query');
   }
   
   private isCodeQualityIssue(issue: Issue): boolean {
     const msg = (issue.message || '').toLowerCase();
-    const category = ((issue as any).category || '').toLowerCase();
+    // BUG-044 FIX: Handle both issue.category and direct category property from JSON
+    const category = (issue.category || (issue as any).category || '').toString().toLowerCase();
+    const title = ((issue as any).title || '').toLowerCase();
     return category.includes('quality') || 
+           category.includes('code-quality') ||
            category.includes('code') ||
            msg.includes('duplicate') ||
            msg.includes('complexity') ||
            msg.includes('standard') ||
-           msg.includes('style');
+           msg.includes('style') ||
+           title.includes('unused') ||
+           title.includes('code quality');
   }
   
   private isArchitectureIssue(issue: Issue): boolean {
     const msg = (issue.message || '').toLowerCase();
-    const category = ((issue as any).category || '').toLowerCase();
+    // BUG-044 FIX: Handle both issue.category and direct category property from JSON
+    const category = (issue.category || (issue as any).category || '').toString().toLowerCase();
+    const title = ((issue as any).title || '').toLowerCase();
     return category.includes('architecture') || 
            category.includes('design') ||
            msg.includes('pattern') ||
            msg.includes('coupling') ||
-           msg.includes('dependency');
+           msg.includes('dependency') ||
+           title.includes('architecture') ||
+           title.includes('design');
   }
   
   private isDependencyIssue(issue: Issue): boolean {
     const msg = (issue.message || '').toLowerCase();
-    const category = ((issue as any).category || '').toLowerCase();
+    // BUG-044 FIX: Handle both issue.category and direct category property from JSON
+    const category = (issue.category || (issue as any).category || '').toString().toLowerCase();
+    const title = ((issue as any).title || '').toLowerCase();
     return category.includes('dependency') || 
            category.includes('package') ||
            msg.includes('vulnerable') ||
            msg.includes('outdated') ||
            msg.includes('npm') ||
-           msg.includes('yarn');
+           msg.includes('yarn') ||
+           title.includes('deprecat') ||
+           title.includes('dependency');
   }
   
   private getIssueCategory(issue: Issue): string {

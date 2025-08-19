@@ -1,0 +1,467 @@
+✅ Environment loaded from: /Users/alpinro/Code Prjects/codequal/.env
+
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+[1m[34mCODEQUAL MANUAL PR VALIDATOR[0m
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+
+Repository: [1msindresorhus/ky[0m
+PR Number: [1m#700[0m
+DeepWiki API: [1mhttp://localhost:8001[0m
+Timeout: [1m120s[0m
+
+📊 [34mInitializing services...[0m
+📊 [34mConnecting to real DeepWiki API...[0m
+✅ [32mReal DeepWiki API registered[0m
+📊 [34mUsing real Supabase for configuration[0m
+Using AI-enhanced location finder
+Using pattern-based location finder (AI not enabled)
+Using AI-enhanced location finder
+Using pattern-based location finder (AI not enabled)
+
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+[1m[34mANALYZING MAIN BRANCH[0m
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+
+
+🔍 DEBUG - Raw DeepWiki Response:
+Branch analyzed: main
+Response type: string
+Response length: 3295
+First 500 chars: 1. **Usage of `any` type in TypeScript can lead to runtime errors**
+   File: source/types/options.ts, Line: 14
+   Code Snippet: ```
+   export type KyHeadersInit = NonNullable<RequestInit['headers']> | Record<string, string | undefined>;
+   ```
+   Recommendation: Avoid using `any` and instead use more specific types or generics to ensure type safety.
+   Severity: medium
+
+2. **Implicit `any` type for error handling**
+   File: source/core/Ky.ts, Line: 58
+   Code Snippet: ```
+   let error = new HTTP
+================================================================================
+Using UnifiedAIParser for DeepWiki response parsing...
+[INFO] [TrulyDynamicSelector] Selecting models for role: text-parser 
+[INFO] [TrulyDynamicSelector] Found 315 total models in OpenRouter 
+[INFO] [TrulyDynamicSelector] 303 models meet basic requirements 
+[INFO] [TrulyDynamicSelector] Selected primary: openai/gpt-4-turbo (score: 0.81) 
+[INFO] [TrulyDynamicSelector] Selected fallback: google/gemini-2.5-flash-lite (score: 0.78) 
+[UnifiedAIParser] [INFO] [Parser] Selected fast model: gpt-4-turbo (openai) 
+[UnifiedAIParser] [INFO] [Parser] Model scores - Quality: 0.64, Speed: 0.74 
+[UnifiedAIParser] [INFO] [Parser] Fallback: gemini-2.5-flash-lite (google) 
+[UnifiedAIParser] [DEBUG] Calling model: openai/gpt-4-turbo { temperature: 0.1, maxTokens: 4000 }
+[AIService] [DEBUG] Calling model: openai/gpt-4-turbo { temperature: 0.1, maxTokens: 4000 }
+[UnifiedAIParser] [DEBUG] Calling model: openai/gpt-4-turbo { temperature: 0.1, maxTokens: 4000 }
+[AIService] [DEBUG] Calling model: openai/gpt-4-turbo { temperature: 0.1, maxTokens: 4000 }
+[UnifiedAIParser] [DEBUG] Calling model: openai/gpt-4-turbo { temperature: 0.1, maxTokens: 4000 }
+[AIService] [DEBUG] Calling model: openai/gpt-4-turbo { temperature: 0.1, maxTokens: 4000 }
+[UnifiedAIParser] [DEBUG] Calling model: openai/gpt-4-turbo { temperature: 0.1, maxTokens: 4000 }
+[AIService] [DEBUG] Calling model: openai/gpt-4-turbo { temperature: 0.1, maxTokens: 4000 }
+[UnifiedAIParser] [DEBUG] Calling model: openai/gpt-4-turbo { temperature: 0.1, maxTokens: 4000 }
+[AIService] [DEBUG] Calling model: openai/gpt-4-turbo { temperature: 0.1, maxTokens: 4000 }
+[UnifiedAIParser] [DEBUG] Calling model: openai/gpt-4-turbo { temperature: 0.1, maxTokens: 4000 }
+[AIService] [DEBUG] Calling model: openai/gpt-4-turbo { temperature: 0.1, maxTokens: 4000 }
+[UnifiedAIParser] [DEBUG] Calling model: openai/gpt-4-turbo { temperature: 0.1, maxTokens: 4000 }
+[AIService] [DEBUG] Calling model: openai/gpt-4-turbo { temperature: 0.1, maxTokens: 4000 }
+[UnifiedAIParser] [DEBUG] Calling model: openai/gpt-4-turbo { temperature: 0.1, maxTokens: 4000 }
+[AIService] [DEBUG] Calling model: openai/gpt-4-turbo { temperature: 0.1, maxTokens: 4000 }
+[AIService] [INFO] AI call successful { model: 'openai/gpt-4-turbo', tokens: 1520, cost: 0, latency: 13303 }
+[AIService] [INFO] AI call successful { model: 'openai/gpt-4-turbo', tokens: 1802, cost: 0, latency: 16783 }
+[AIService] [INFO] AI call successful { model: 'openai/gpt-4-turbo', tokens: 1497, cost: 0, latency: 18877 }
+[AIService] [INFO] AI call successful { model: 'openai/gpt-4-turbo', tokens: 1631, cost: 0, latency: 23356 }
+[AIService] [INFO] AI call successful { model: 'openai/gpt-4-turbo', tokens: 2011, cost: 0, latency: 25361 }
+[AIService] [INFO] AI call successful { model: 'openai/gpt-4-turbo', tokens: 1753, cost: 0, latency: 28046 }
+[AIService] [INFO] AI call successful { model: 'openai/gpt-4-turbo', tokens: 1865, cost: 0, latency: 30413 }
+[AIService] [INFO] AI call successful { model: 'openai/gpt-4-turbo', tokens: 2300, cost: 0, latency: 34281 }
+ModelVersionSync initialized
+[ERROR] [AILocationFinder] Error finding location with AI: TypeError: The "path" argument must be of type string. Received an instance of Object
+    at Object.join (node:path:1263:7)
+    at AILocationFinder.findLocation (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/ai-location-finder.ts:95:29)
+    at /Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/unified-ai-parser.ts:248:57
+    at Array.map (<anonymous>)
+    at UnifiedAIParser.parseDeepWikiResponse (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/unified-ai-parser.ts:240:21)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async parseDeepWikiResponse (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/parse-deepwiki-response.ts:51:22)
+    at async Object.analyzeRepository (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/manual-pr-validator.ts:219:32)
+    at async analyzePR (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/manual-pr-validator.ts:431:26) {
+  code: 'ERR_INVALID_ARG_TYPE'
+}
+[ERROR] [AILocationFinder] Error finding location with AI: TypeError: The "path" argument must be of type string. Received an instance of Object
+    at Object.join (node:path:1263:7)
+    at AILocationFinder.findLocation (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/ai-location-finder.ts:95:29)
+    at /Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/unified-ai-parser.ts:248:57
+    at Array.map (<anonymous>)
+    at UnifiedAIParser.parseDeepWikiResponse (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/unified-ai-parser.ts:240:21)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async parseDeepWikiResponse (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/parse-deepwiki-response.ts:51:22)
+    at async Object.analyzeRepository (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/manual-pr-validator.ts:219:32)
+    at async analyzePR (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/manual-pr-validator.ts:431:26) {
+  code: 'ERR_INVALID_ARG_TYPE'
+}
+[ERROR] [AILocationFinder] Error finding location with AI: TypeError: The "path" argument must be of type string. Received an instance of Object
+    at Object.join (node:path:1263:7)
+    at AILocationFinder.findLocation (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/ai-location-finder.ts:95:29)
+    at /Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/unified-ai-parser.ts:248:57
+    at Array.map (<anonymous>)
+    at UnifiedAIParser.parseDeepWikiResponse (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/unified-ai-parser.ts:240:21)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async parseDeepWikiResponse (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/parse-deepwiki-response.ts:51:22)
+    at async Object.analyzeRepository (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/manual-pr-validator.ts:219:32)
+    at async analyzePR (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/manual-pr-validator.ts:431:26) {
+  code: 'ERR_INVALID_ARG_TYPE'
+}
+[ERROR] [AILocationFinder] Error finding location with AI: TypeError: The "path" argument must be of type string. Received an instance of Object
+    at Object.join (node:path:1263:7)
+    at AILocationFinder.findLocation (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/ai-location-finder.ts:95:29)
+    at /Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/unified-ai-parser.ts:248:57
+    at Array.map (<anonymous>)
+    at UnifiedAIParser.parseDeepWikiResponse (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/unified-ai-parser.ts:240:21)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async parseDeepWikiResponse (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/parse-deepwiki-response.ts:51:22)
+    at async Object.analyzeRepository (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/manual-pr-validator.ts:219:32)
+    at async analyzePR (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/manual-pr-validator.ts:431:26) {
+  code: 'ERR_INVALID_ARG_TYPE'
+}
+[ERROR] [AILocationFinder] Error finding location with AI: TypeError: The "path" argument must be of type string. Received an instance of Object
+    at Object.join (node:path:1263:7)
+    at AILocationFinder.findLocation (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/ai-location-finder.ts:95:29)
+    at /Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/unified-ai-parser.ts:248:57
+    at Array.map (<anonymous>)
+    at UnifiedAIParser.parseDeepWikiResponse (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/unified-ai-parser.ts:240:21)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async parseDeepWikiResponse (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/parse-deepwiki-response.ts:51:22)
+    at async Object.analyzeRepository (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/manual-pr-validator.ts:219:32)
+    at async analyzePR (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/manual-pr-validator.ts:431:26) {
+  code: 'ERR_INVALID_ARG_TYPE'
+}
+[ERROR] [AILocationFinder] Error finding location with AI: TypeError: The "path" argument must be of type string. Received an instance of Object
+    at Object.join (node:path:1263:7)
+    at AILocationFinder.findLocation (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/ai-location-finder.ts:95:29)
+    at /Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/unified-ai-parser.ts:248:57
+    at Array.map (<anonymous>)
+    at UnifiedAIParser.parseDeepWikiResponse (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/unified-ai-parser.ts:240:21)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async parseDeepWikiResponse (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/parse-deepwiki-response.ts:51:22)
+    at async Object.analyzeRepository (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/manual-pr-validator.ts:219:32)
+    at async analyzePR (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/manual-pr-validator.ts:431:26) {
+  code: 'ERR_INVALID_ARG_TYPE'
+}
+[ERROR] [AILocationFinder] Error finding location with AI: TypeError: The "path" argument must be of type string. Received an instance of Object
+    at Object.join (node:path:1263:7)
+    at AILocationFinder.findLocation (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/ai-location-finder.ts:95:29)
+    at /Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/unified-ai-parser.ts:248:57
+    at Array.map (<anonymous>)
+    at UnifiedAIParser.parseDeepWikiResponse (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/unified-ai-parser.ts:240:21)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async parseDeepWikiResponse (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/parse-deepwiki-response.ts:51:22)
+    at async Object.analyzeRepository (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/manual-pr-validator.ts:219:32)
+    at async analyzePR (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/manual-pr-validator.ts:431:26) {
+  code: 'ERR_INVALID_ARG_TYPE'
+}
+[ERROR] [AILocationFinder] Error finding location with AI: TypeError: The "path" argument must be of type string. Received an instance of Object
+    at Object.join (node:path:1263:7)
+    at AILocationFinder.findLocation (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/ai-location-finder.ts:95:29)
+    at /Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/unified-ai-parser.ts:248:57
+    at Array.map (<anonymous>)
+    at UnifiedAIParser.parseDeepWikiResponse (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/unified-ai-parser.ts:240:21)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async parseDeepWikiResponse (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/parse-deepwiki-response.ts:51:22)
+    at async Object.analyzeRepository (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/manual-pr-validator.ts:219:32)
+    at async analyzePR (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/manual-pr-validator.ts:431:26) {
+  code: 'ERR_INVALID_ARG_TYPE'
+}
+[ERROR] [AILocationFinder] Error finding location with AI: TypeError: The "path" argument must be of type string. Received an instance of Object
+    at Object.join (node:path:1263:7)
+    at AILocationFinder.findLocation (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/ai-location-finder.ts:95:29)
+    at /Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/unified-ai-parser.ts:248:57
+    at Array.map (<anonymous>)
+    at UnifiedAIParser.parseDeepWikiResponse (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/unified-ai-parser.ts:240:21)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async parseDeepWikiResponse (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/parse-deepwiki-response.ts:51:22)
+    at async Object.analyzeRepository (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/manual-pr-validator.ts:219:32)
+    at async analyzePR (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/manual-pr-validator.ts:431:26) {
+  code: 'ERR_INVALID_ARG_TYPE'
+}
+[ERROR] [AILocationFinder] Error finding location with AI: TypeError: The "path" argument must be of type string. Received an instance of Object
+    at Object.join (node:path:1263:7)
+    at AILocationFinder.findLocation (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/ai-location-finder.ts:95:29)
+    at /Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/unified-ai-parser.ts:248:57
+    at Array.map (<anonymous>)
+    at UnifiedAIParser.parseDeepWikiResponse (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/unified-ai-parser.ts:240:21)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async parseDeepWikiResponse (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/parse-deepwiki-response.ts:51:22)
+    at async Object.analyzeRepository (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/manual-pr-validator.ts:219:32)
+    at async analyzePR (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/manual-pr-validator.ts:431:26) {
+  code: 'ERR_INVALID_ARG_TYPE'
+}
+[UnifiedAIParser] [INFO] Enhanced locations for 20 issues 
+Parsed 20 issues from DeepWiki response (AI): { critical: 0, high: 6, medium: 10, low: 4 }
+✅ [32mMain branch analyzed in 66.2s - Found 20 issues[0m
+
+[36mMain Branch Issues by Severity:[0m
+  🟡 MEDIUM: 10
+  🟠 HIGH: 6
+  🟢 LOW: 4
+
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+[1m[34mANALYZING PR BRANCH[0m
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+
+
+🔍 DEBUG - Raw DeepWiki Response:
+Branch analyzed: pull/700/head
+Response type: string
+Response length: 577
+First 500 chars: I'm unable to analyze the latest changes or specific branches of repositories in real-time or access external databases, including GitHub, to retrieve or analyze code from a specific branch (`pull/700/head`) as requested. My responses are based on the information available up to my last update in September 2023. To assist with code quality issues, I would need the code content to be directly provided in the query. If you have specific code snippets or details about the code you're concerned with
+================================================================================
+Using UnifiedAIParser for DeepWiki response parsing...
+[INFO] [TrulyDynamicSelector] Selecting models for role: text-parser 
+[INFO] [TrulyDynamicSelector] Found 315 total models in OpenRouter 
+[INFO] [TrulyDynamicSelector] 303 models meet basic requirements 
+[INFO] [TrulyDynamicSelector] Selected primary: openai/gpt-4-turbo (score: 0.81) 
+[INFO] [TrulyDynamicSelector] Selected fallback: google/gemini-2.5-flash-lite (score: 0.78) 
+[UnifiedAIParser] [INFO] [Parser] Selected fast model: gpt-4-turbo (openai) 
+[UnifiedAIParser] [INFO] [Parser] Model scores - Quality: 0.64, Speed: 0.74 
+[UnifiedAIParser] [INFO] [Parser] Fallback: gemini-2.5-flash-lite (google) 
+[UnifiedAIParser] [DEBUG] Calling model: openai/gpt-4-turbo { temperature: 0.1, maxTokens: 4000 }
+[AIService] [DEBUG] Calling model: openai/gpt-4-turbo { temperature: 0.1, maxTokens: 4000 }
+[UnifiedAIParser] [DEBUG] Calling model: openai/gpt-4-turbo { temperature: 0.1, maxTokens: 4000 }
+[AIService] [DEBUG] Calling model: openai/gpt-4-turbo { temperature: 0.1, maxTokens: 4000 }
+[UnifiedAIParser] [DEBUG] Calling model: openai/gpt-4-turbo { temperature: 0.1, maxTokens: 4000 }
+[AIService] [DEBUG] Calling model: openai/gpt-4-turbo { temperature: 0.1, maxTokens: 4000 }
+[UnifiedAIParser] [DEBUG] Calling model: openai/gpt-4-turbo { temperature: 0.1, maxTokens: 4000 }
+[AIService] [DEBUG] Calling model: openai/gpt-4-turbo { temperature: 0.1, maxTokens: 4000 }
+[UnifiedAIParser] [DEBUG] Calling model: openai/gpt-4-turbo { temperature: 0.1, maxTokens: 4000 }
+[AIService] [DEBUG] Calling model: openai/gpt-4-turbo { temperature: 0.1, maxTokens: 4000 }
+[UnifiedAIParser] [DEBUG] Calling model: openai/gpt-4-turbo { temperature: 0.1, maxTokens: 4000 }
+[AIService] [DEBUG] Calling model: openai/gpt-4-turbo { temperature: 0.1, maxTokens: 4000 }
+[UnifiedAIParser] [DEBUG] Calling model: openai/gpt-4-turbo { temperature: 0.1, maxTokens: 4000 }
+[AIService] [DEBUG] Calling model: openai/gpt-4-turbo { temperature: 0.1, maxTokens: 4000 }
+[UnifiedAIParser] [DEBUG] Calling model: openai/gpt-4-turbo { temperature: 0.1, maxTokens: 4000 }
+[AIService] [DEBUG] Calling model: openai/gpt-4-turbo { temperature: 0.1, maxTokens: 4000 }
+[AIService] [INFO] AI call successful { model: 'openai/gpt-4-turbo', tokens: 449, cost: 0, latency: 1037 }
+[AIService] [INFO] AI call successful { model: 'openai/gpt-4-turbo', tokens: 542, cost: 0, latency: 3914 }
+[AIService] [INFO] AI call successful { model: 'openai/gpt-4-turbo', tokens: 548, cost: 0, latency: 4438 }
+[AIService] [INFO] AI call successful { model: 'openai/gpt-4-turbo', tokens: 556, cost: 0, latency: 5041 }
+[AIService] [INFO] AI call successful { model: 'openai/gpt-4-turbo', tokens: 691, cost: 0, latency: 5115 }
+[AIService] [INFO] AI call successful { model: 'openai/gpt-4-turbo', tokens: 786, cost: 0, latency: 5411 }
+[AIService] [INFO] AI call successful { model: 'openai/gpt-4-turbo', tokens: 692, cost: 0, latency: 7619 }
+[AIService] [INFO] AI call successful { model: 'openai/gpt-4-turbo', tokens: 952, cost: 0, latency: 9755 }
+ModelVersionSync initialized
+[ERROR] [AILocationFinder] Error finding location with AI: TypeError: The "path" argument must be of type string. Received an instance of Object
+    at Object.join (node:path:1263:7)
+    at AILocationFinder.findLocation (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/ai-location-finder.ts:95:29)
+    at /Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/unified-ai-parser.ts:248:57
+    at Array.map (<anonymous>)
+    at UnifiedAIParser.parseDeepWikiResponse (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/unified-ai-parser.ts:240:21)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async parseDeepWikiResponse (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/parse-deepwiki-response.ts:51:22)
+    at async Object.analyzeRepository (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/manual-pr-validator.ts:219:32)
+    at async analyzePR (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/manual-pr-validator.ts:453:24) {
+  code: 'ERR_INVALID_ARG_TYPE'
+}
+[UnifiedAIParser] [INFO] Enhanced locations for 1 issues 
+Parsed 1 issues from DeepWiki response (AI): { critical: 0, high: 1, medium: 0, low: 0 }
+✅ [32mPR branch analyzed in 16.9s - Found 1 issues[0m
+
+[36mPR Branch Issues by Severity:[0m
+  🟠 HIGH: 1
+
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+[1m[34mGENERATING COMPARISON REPORT[0m
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+
+📊 [34mSelecting optimal model...[0m
+📊 [34mComparing branches and generating report...[0m
+📊 [34mDEBUG: Main=20 issues, PR=1 issues[0m
+Starting orchestrated comparison analysis undefined
+No configuration found, researching optimal model undefined
+Saved new configuration from researcher {
+  configId: 'config-1755528220608',
+  model: 'gpt-4o',
+  provider: 'openai'
+}
+Using model configuration {
+  model: 'gpt-4o',
+  provider: 'openai',
+  version: '2.0',
+  cost: 0.00355,
+  configAge: '33 months'
+}
+[ComparisonAgent] Initializing comparison agent {
+  config: {
+    language: 'typescript',
+    sizeCategory: 'medium',
+    role: 'comparison',
+    prompt: 'You are an expert AI comparison analyst specializing in code quality assessment.\n' +
+      '\n' +
+      'REPOSITORY CONTEXT:\n' +
+      '- Language: typescript\n' +
+      '- Size: medium (100 files)\n' +
+      '- Complexity: medium\n' +
+      '- Total Issues: 21\n' +
+      '\n' +
+      'This repository has moderate complexity.\n' +
+      '\n' +
+      'Focus areas:\n' +
+      '- Performance optimizations and bottlenecks\n' +
+      '\n' +
+      'Ensure 100% accuracy, professional language, and actionable recommendations.',
+    modelConfig: { provider: 'openai', model: 'gpt-4o' }
+  }
+}
+[ComparisonAgent] Using provided model config {
+  provider: 'openai',
+  model: 'gpt-4o',
+  temperature: 0.1,
+  maxTokens: 4000
+}
+Starting location enhancement for both branches undefined
+  ✗ Repository not found in any of: /tmp/codequal-repos/sindresorhus/ky/main, /tmp/codequal-repos/sindresorhus-ky
+Repository path not found, returning issues without location enhancement
+  ✓ Found repository at: /tmp/codequal-repos/sindresorhus-ky-pr-700
+First issue structure: {
+  "id": "performance-1",
+  "category": "performance",
+  "severity": "high",
+  "type": "Real-time Analysis Capability",
+  "title": "Real-time Analysis Capability",
+  "description": "Current: Unable to analyze in real-time, Expected: Real-time analysis capability",
+  "location": {
+    "file": "N/A",
+    "line": 0
+  },
+  "impact": "Cannot analyze latest changes or specific branches in real-time",
+  "recommendation": "Implement real-time analysis features or integrate with external databases",
+  "metadata": {
+    "currentPerformance": "Unable to analyze in real-time",
+    "expectedPerformance": "Real-time analysis capability",
+    "aiExtracted": true
+  },
+  "message": "Current: Unable to analyze in real-time, Expected: Real-time analysis capability"
+}
+Using pattern-based location finder
+Generating patterns for: {
+  strategy: 'pattern-match',
+  hasDescription: true,
+  description: 'Current: Unable to analyze in real-time, Expected:',
+  title: 'Real-time Analysis Capability'
+}
+Pattern strategy: pattern-match (65% confidence)
+Starting educational research on unique issues undefined
+[EducatorAgent] Starting educational research { issueCount: 16, developerLevel: 'beginner' }
+[EducatorAgent] Educational research completed { pathsGenerated: 2, resourcesFound: 8 }
+Educational research completed for 16 unique issue patterns (from 21 total) undefined
+All strategies failed, using base finder
+Enhanced main: 0/20 undefined
+Enhanced PR: 0/1 undefined
+All enhancements completed undefined
+Ensuring compatible analysis result {
+  hasIssues: true,
+  issueCount: 20,
+  hasRecommendations: false,
+  hasScores: true,
+  analysisKeys: [ 'issues', 'scores', 'metadata' ]
+}
+Ensuring compatible analysis result {
+  hasIssues: true,
+  issueCount: 1,
+  hasRecommendations: false,
+  hasScores: true,
+  analysisKeys: [ 'issues', 'scores', 'metadata' ]
+}
+[ComparisonAgent] Starting comparison analysis 
+[ComparisonAgent] Performing mock AI analysis {
+  mainIssues: 20,
+  featureIssues: 1,
+  mainScores: {
+    security: 100,
+    performance: 10,
+    dependencies: 100,
+    codeQuality: 80,
+    architecture: 75,
+    overall: 73
+  },
+  featureScores: {
+    security: 100,
+    performance: 80,
+    dependencies: 100,
+    codeQuality: 80,
+    architecture: 75,
+    overall: 87
+  }
+}
+[ComparisonAgent] Using actual issue lists without deduplication {
+  main: { count: 20 },
+  feature: { count: 1 },
+  note: 'Preserving all issue occurrences for complete visibility'
+}
+[ComparisonAgent] Mock analysis results { resolved: 20, new: 1, unchanged: 0 }
+[ComparisonAgent] Generating final report with enhancements { hasEducation: true, includeEducation: true }
+ComparisonAgent - Using V7 Fixed report generator with: {
+  hasPrMetadata: true,
+  prMetadata: {
+    id: 'pr-700',
+    number: 700,
+    title: 'PR #700',
+    author: 'sindresorhus',
+    repository_url: 'https://github.com/sindresorhus/ky',
+    created_at: '2025-08-18T14:43:39.748Z',
+    linesAdded: 0,
+    linesRemoved: 0
+  },
+  scanDuration: 83044,
+  newIssuesCount: 1,
+  resolvedIssuesCount: 19
+}
+Skills updated successfully { userId: 'sindresorhus', previousScore: 75, newScore: 70, change: -5 }
+
+🔍 DEBUG - Orchestrator result:
+Resolved issues: 0
+New issues: 0
+Modified issues: 0
+Unchanged issues: 0
+✅ [32mReport generated in 1.2s[0m
+
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+[1m[34mSAVING OUTPUTS[0m
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+
+✅ [32mMarkdown saved: /Users/alpinro/Code Prjects/codequal/packages/agents/test-outputs/manual-validation/sindresorhus-ky-pr700-2025-08-18T14-43-40.md[0m
+✅ [32mJSON saved: /Users/alpinro/Code Prjects/codequal/packages/agents/test-outputs/manual-validation/sindresorhus-ky-pr700-2025-08-18T14-43-40.json[0m
+✅ [32mHTML saved: /Users/alpinro/Code Prjects/codequal/packages/agents/test-outputs/manual-validation/sindresorhus-ky-pr700-2025-08-18T14-43-40.html[0m
+
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+[1m[34mANALYSIS COMPLETE[0m
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+
+[1m[32mSummary:[0m
+  📈 Resolved Issues: [32m19[0m
+  📉 New Issues: [31m1[0m
+  🔄 Modified Issues: [33m0[0m
+  ↔️  Unchanged Issues: 0
+
+[1mAssessment:[0m
+  🎯 PR Recommendation: [32mAPPROVE[0m
+  🔒 Security Posture: improved
+  📊 Code Quality: improving
+  💯 Confidence: 85%
+
+[1mModel Information:[0m
+  🤖 Model Used: gpt-4o
+  🏢 Orchestrator: v4.0
+
+[1mFiles Generated:[0m
+  📄 /Users/alpinro/Code Prjects/codequal/packages/agents/test-outputs/manual-validation/sindresorhus-ky-pr700-2025-08-18T14-43-40.md
+  📄 /Users/alpinro/Code Prjects/codequal/packages/agents/test-outputs/manual-validation/sindresorhus-ky-pr700-2025-08-18T14-43-40.json
+  📄 /Users/alpinro/Code Prjects/codequal/packages/agents/test-outputs/manual-validation/sindresorhus-ky-pr700-2025-08-18T14-43-40.html
+
+[1m[31mTop New Issues to Address:[0m
+
+  1. 🟠 [HIGH] Real-time Analysis Capability
+     📍 N/A
+
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+[32m✨ Analysis completed successfully![0m
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+
