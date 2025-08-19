@@ -27,11 +27,13 @@ export const JSON_OPTIMIZED_STRATEGY: PromptStrategy = {
       "category": "security|performance|dependency|architecture|code-quality|type-safety|testing|breaking-change",
       "title": "Brief issue title",
       "description": "Detailed description of the issue",
+      "impact": "Business and technical impact of this issue - performance degradation, security risk, user experience impact, etc.",
       "file": "exact/path/to/file.ts",
       "line": 123,
       "column": 45,
-      "codeSnippet": "problematic code here",
+      "codeSnippet": "problematic code here (5-10 lines with context)",
       "recommendation": "How to fix this issue",
+      "fixExample": "// Example of corrected code:\ndb.query('SELECT * FROM users WHERE id = ?', [userId]);",
       "cve": "CVE-2024-XXXX (if applicable for security/dependency issues)",
       "breakingChangeInfo": {
         "isBreaking": false,
@@ -66,6 +68,32 @@ export const JSON_OPTIMIZED_STRATEGY: PromptStrategy = {
     "architecture": 70,
     "codeQuality": 85,
     "testCoverage": 65
+  },
+  "codeQuality": {
+    "testCoverage": {
+      "overall": 65,
+      "byModule": {"api": 80, "ui": 50, "utils": 90},
+      "uncoveredCriticalPaths": ["auth flow", "payment processing"],
+      "testFileCount": 45,
+      "totalFileCount": 120
+    },
+    "complexity": {
+      "cyclomatic": {"average": 5, "highest": 25, "files": ["src/complex.ts"]},
+      "duplicateCode": 15,
+      "deadCode": ["src/unused.ts", "src/legacy/*"]
+    },
+    "documentation": {
+      "coverage": 40,
+      "missingAPIDocs": ["POST /api/users", "DELETE /api/orders"],
+      "outdatedDocs": ["README.md last updated 2 years ago"]
+    }
+  },
+  "teamImpact": {
+    "contributors": 12,
+    "primaryMaintainers": ["user1", "user2"],
+    "commitFrequency": "daily",
+    "prReviewTime": "2 hours average",
+    "knowledgeSilos": ["payment module only understood by 1 dev"]
   },
   "education": {
     "bestPractices": [

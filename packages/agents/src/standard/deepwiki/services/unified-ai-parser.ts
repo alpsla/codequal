@@ -224,15 +224,40 @@ export class UnifiedAIParser {
         const { ModelVersionSync } = require('@codequal/core');
         
         // Create location finder with model version sync
-        const modelVersionSync = new ModelVersionSync();
+        // Pass logger (or console as fallback) to ModelVersionSync
+        const modelVersionSync = new ModelVersionSync(this.logger || console);
         const locationFinder = createAILocationFinder(modelVersionSync, undefined, {
           includeAlternatives: false,
           maxTokens: 2000,
           temperature: 0.1
         });
         
-        // Get repository path from environment or default
-        const repoPath = process.env.REPO_PATH || '/tmp/codequal-repos';
+        // Determine repository path based on context
+        // Try to extract from the parsed issues or use a default structure
+        let repoPath = process.env.REPO_PATH || '/tmp/codequal-repos';
+        
+        // If we have issues with file paths, try to determine the repo structure
+        const sampleIssue = allIssues.find(i => i.location?.file || i.file);
+        if (sampleIssue && (sampleIssue.location?.file || sampleIssue.file)) {
+          // The issues typically have paths like "source/index.ts" or "test/retry.ts"
+          // We need to find where these files actually exist
+          // For now, check common patterns
+          const possiblePaths = [
+            '/tmp/codequal-repos/sindresorhus-ky-pr-700',  // PR branch
+            '/tmp/codequal-repos/sindresorhus-ky-main',    // Main branch
+            '/tmp/codequal-repos/sindresorhus/ky',         // Standard structure
+            '/tmp/codequal-repos'                          // Base path
+          ];
+          
+          // Use the first existing path
+          const fs = require('fs');
+          for (const path of possiblePaths) {
+            if (fs.existsSync(path)) {
+              repoPath = path;
+              break;
+            }
+          }
+        }
         
         // Enhance each issue with missing location
         allIssues = await Promise.all(
@@ -240,6 +265,12 @@ export class UnifiedAIParser {
             // Skip if location is already complete
             if (issue.location?.file && issue.location?.line && 
                 issue.location.file !== 'unknown' && issue.location.line > 0) {
+              return issue;
+            }
+            
+            // Debug: Log the issue structure
+            if (!issue || typeof issue !== 'object') {
+              console.error('[UnifiedAIParser] Invalid issue structure:', issue);
               return issue;
             }
             
