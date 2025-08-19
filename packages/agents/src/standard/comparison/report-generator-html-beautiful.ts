@@ -535,7 +535,7 @@ export class BeautifulHTMLReportGenerator {
 </html>`;
   }
   
-  private renderIssue(issue: any, isFixed: boolean = false): string {
+  private renderIssue(issue: any, isFixed = false): string {
     const severityClass = `issue-${issue.severity || 'medium'}`;
     const severityBadgeClass = `severity-${issue.severity || 'medium'}`;
     

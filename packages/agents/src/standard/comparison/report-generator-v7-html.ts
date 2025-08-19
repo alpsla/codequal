@@ -1108,7 +1108,7 @@ export class ReportGeneratorV7HTML {
   }
 
   // Helper method to render a list of issues
-  private renderIssuesList(issues: Issue[], title: string, isFixed: boolean = false): string {
+  private renderIssuesList(issues: Issue[], title: string, isFixed = false): string {
     if (issues.length === 0) return '';
     
     return `
@@ -1119,7 +1119,7 @@ export class ReportGeneratorV7HTML {
   }
 
   // Helper method to render a single issue
-  private renderIssue(issue: Issue, isFixed: boolean = false): string {
+  private renderIssue(issue: Issue, isFixed = false): string {
     const severityClass = `issue-${issue.severity || 'medium'}`;
     const severityBadgeClass = `severity-${issue.severity || 'medium'}`;
     const title = this.getIssueTitle(issue);
@@ -1196,7 +1196,7 @@ export class ReportGeneratorV7HTML {
   }
 
   private calculateScore(issues: Issue[]): number {
-    let baseScore = CODE_QUALITY_BASE;
+    const baseScore = CODE_QUALITY_BASE;
     let deductions = 0;
     
     issues.forEach(issue => {

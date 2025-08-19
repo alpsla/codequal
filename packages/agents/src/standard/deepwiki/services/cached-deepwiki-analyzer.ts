@@ -158,7 +158,7 @@ export class CachedDeepWikiAnalyzer extends AdaptiveDeepWikiAnalyzer {
    */
   async analyzeWithGapFilling(
     repoUrl: string,
-    branch: string = 'main'
+    branch = 'main'
   ): Promise<any> {
     const startTime = Date.now();
     const cacheKey = this.getCacheKey(repoUrl, branch);
@@ -253,7 +253,7 @@ export class CachedDeepWikiAnalyzer extends AdaptiveDeepWikiAnalyzer {
    */
   async analyzeParallel(
     repoUrl: string,
-    mainBranch: string = 'main',
+    mainBranch = 'main',
     prBranch: string
   ): Promise<{ main: any; pr: any }> {
     const startTime = Date.now();
