@@ -441,6 +441,13 @@ const SYSTEM_STATE: SystemState = {
       description: 'Missing skill calculation footnotes - should show scoring methodology (critical 5, high 3, medium 1, low 0.5)',
       discovered: '2025-08-19',
       component: 'skills-tracking'
+    },
+    {
+      id: 'BUG-052',
+      severity: 'MEDIUM',
+      description: 'Educational Insights section only provides web links, missing video learning options (YouTube, Udemy, Pluralsight) for diverse learning styles',
+      discovered: '2025-08-19',
+      component: 'educational-insights'
     }
     
     // V7 ENHANCED REPORT GENERATOR FIXES IMPLEMENTED (2025-08-19):
@@ -488,6 +495,7 @@ const SYSTEM_STATE: SystemState = {
     'FIX BUG-016: Establish comprehensive regression test suite with immutable validation infrastructure',
     'Run debugging scripts: debug-deepwiki-direct.ts, test-deepwiki-structured.ts, test-enhanced-deepwiki.ts',
     'Validate issue categorization and data flow integrity throughout pipeline',
+    'MEDIUM - FIX BUG-052: Enhance Educational Insights with video learning options - YouTube, Udemy, Pluralsight integration for diverse learning styles',
     'Add enhanced educational content sources (YouTube, Coursera integration)',
     'Implement educational content caching for improved performance'
   ],
