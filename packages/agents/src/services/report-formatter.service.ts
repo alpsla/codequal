@@ -421,8 +421,8 @@ export class ReportFormatterService {
     });
 
     try {
-      // Use the Standard framework's ReportGeneratorV7Complete directly
-      const { ReportGeneratorV7EnhancedComplete: ReportGeneratorV7Complete } = await import('../standard/comparison/report-generator-v7-enhanced-complete.js');
+      // Use the V8 Report Generator (V7 is deprecated)
+      const { ReportGeneratorV8Final } = await import('../standard/comparison/report-generator-v8-final.js');
       
       // Collect all findings from the analysis result
       const allFindings = [
@@ -488,8 +488,8 @@ export class ReportFormatterService {
         overallScore: comparisonResult.overallScore
       });
 
-      // Generate the report using the template
-      const reportGenerator = new ReportGeneratorV7Complete();
+      // Generate the report using the V8 template
+      const reportGenerator = new ReportGeneratorV8Final();
       const generatedReport = await reportGenerator.generateReport(comparisonResult);
 
       // Parse the markdown report to extract the standard report structure

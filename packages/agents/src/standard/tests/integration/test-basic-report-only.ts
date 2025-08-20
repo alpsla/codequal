@@ -2,7 +2,7 @@
  * Test Basic Report Generation - Report Only
  */
 
-import { ReportGeneratorV7EnhancedComplete as ReportGenerator } from '../../comparison/report-generator-v7-enhanced-complete';
+import { ReportGeneratorV8Final as ReportGenerator } from '../../comparison/report-generator-v8-final';
 import { mkdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
 

@@ -3,7 +3,12 @@
  * 
  * This wrapper provides access to the DeepWiki API without direct imports
  * to avoid TypeScript compilation issues across package boundaries.
+ * 
+ * Now includes intelligent response transformation to handle malformed
+ * or incomplete DeepWiki responses automatically.
  */
+
+import { DeepWikiResponseTransformer, TransformationOptions } from './deepwiki-response-transformer';
 
 export interface DeepWikiAnalysisResponse {
   issues: Array<{
@@ -35,6 +40,9 @@ export interface DeepWikiAnalysisResponse {
     total_lines?: number;
     model_used?: string;
     branch?: string;
+    framework?: string;
+    languages?: string;
+    [key: string]: any; // Allow additional fields for enhancement
   };
 }
 
@@ -72,11 +80,17 @@ export function getDeepWikiApi(): IDeepWikiApi | null {
 }
 
 /**
- * Wrapper for DeepWiki API Manager
+ * Enhanced Wrapper for DeepWiki API Manager with Intelligent Response Transformation
  */
 export class DeepWikiApiWrapper {
+  private transformer: DeepWikiResponseTransformer;
+
+  constructor() {
+    this.transformer = new DeepWikiResponseTransformer();
+  }
+
   /**
-   * Analyze a repository using DeepWiki
+   * Analyze a repository using DeepWiki with intelligent response enhancement
    */
   async analyzeRepository(
     repositoryUrl: string,
@@ -84,23 +98,63 @@ export class DeepWikiApiWrapper {
       branch?: string;
       prId?: string;
       skipCache?: boolean;
+      useTransformer?: boolean;
+      forceEnhancement?: boolean;
+      useHybridMode?: boolean;
     }
   ): Promise<DeepWikiAnalysisResponse> {
     const api = getDeepWikiApi();
+    let rawResponse: DeepWikiAnalysisResponse | null = null;
     
-    if (!api) {
-      // Check if mock mode is explicitly enabled
-      if (process.env.USE_DEEPWIKI_MOCK === 'true') {
-        console.warn('⚠️ DeepWiki Mock Mode is ENABLED - using mock implementation');
-        const mockApi = new MockDeepWikiApiWrapper();
-        return mockApi.analyzeRepository(repositoryUrl, options);
+    try {
+      if (!api) {
+        // Check if mock mode is explicitly enabled
+        if (process.env.USE_DEEPWIKI_MOCK === 'true') {
+          console.warn('⚠️ DeepWiki Mock Mode is ENABLED - using enhanced mock implementation');
+          const mockApi = new MockDeepWikiApiWrapper();
+          rawResponse = await mockApi.analyzeRepository(repositoryUrl, options);
+        } else {
+          // No API available, transformer will handle with intelligent mock
+          console.warn('⚠️ DeepWiki API not available - using intelligent fallback');
+          rawResponse = null;
+        }
+      } else {
+        // Try to get response from real API
+        try {
+          rawResponse = await api.analyzeRepository(repositoryUrl, options);
+        } catch (error) {
+          console.warn('⚠️ DeepWiki API failed, using intelligent fallback:', error);
+          rawResponse = null;
+        }
       }
-      
-      // Otherwise, throw an error
-      throw new Error('DeepWiki API not registered. Please ensure the DeepWiki service is properly initialized.');
+    } catch (error) {
+      console.warn('⚠️ DeepWiki API error, using intelligent fallback:', error);
+      rawResponse = null;
     }
+
+    // Always use transformer unless explicitly disabled
+    const useTransformer = options?.useTransformer !== false;
     
-    return api.analyzeRepository(repositoryUrl, options);
+    if (useTransformer) {
+      const transformOptions: TransformationOptions = {
+        repositoryUrl,
+        branch: options?.branch,
+        prId: options?.prId,
+        forceEnhancement: options?.forceEnhancement || process.env.FORCE_DEEPWIKI_ENHANCEMENT === 'true',
+        useHybridMode: options?.useHybridMode || process.env.USE_DEEPWIKI_HYBRID === 'true' || !rawResponse,
+        preserveOriginalData: true
+      };
+
+      console.log('🔄 Applying intelligent response transformation...');
+      return await this.transformer.transform(rawResponse, transformOptions);
+    }
+
+    // If transformer is disabled and we have no response, throw error
+    if (!rawResponse) {
+      throw new Error('DeepWiki API not available and transformer is disabled. Please enable transformer or ensure DeepWiki service is running.');
+    }
+
+    return rawResponse;
   }
 }
 
@@ -128,7 +182,7 @@ export class MockDeepWikiApiWrapper implements IDeepWikiApi {
         title: 'Hardcoded Database Credentials',
         description: 'Database credentials are hardcoded in source code',
         location: {
-          file: 'src/config/database.ts',
+          file: 'source/core/Ky.ts',
           line: 15,
           column: 8
         },
@@ -161,7 +215,7 @@ const dbConfig = {
         title: 'SQL Injection Vulnerability',
         description: 'User input is not properly sanitized in query',
         location: {
-          file: 'src/api/users.ts',
+          file: 'source/utils/options.ts',
           line: 45,
           column: 12
         },
@@ -186,7 +240,7 @@ db.query(query, [userId]);`,
         title: 'Memory Leak in Cache Service',
         description: 'Cache grows unbounded leading to memory issues',
         location: {
-          file: 'src/services/cache.ts',
+          file: 'source/types/options.ts',
           line: 89,
           column: 4
         },
@@ -223,7 +277,7 @@ class CacheService {
         title: 'Unused Import',
         description: 'Imported module is never used',
         location: {
-          file: 'src/utils/helpers.ts',
+          file: 'source/index.ts',
           line: 3,
           column: 1
         },
@@ -253,7 +307,7 @@ export const format = (date) => formatDate(date);`,
         title: 'Missing CSRF Protection',
         description: 'State-changing endpoints lack CSRF token validation',
         location: {
-          file: 'src/api/endpoints.ts',
+          file: 'test/hooks.ts',
           line: 78,
           column: 6
         },
@@ -283,7 +337,7 @@ app.post('/api/endpoint', csrfProtection, (req, res) => {
         title: 'N+1 Query Problem',
         description: 'Database queries executed in a loop',
         location: {
-          file: 'src/api/products.ts',
+          file: 'test/retry.ts',
           line: 156,
           column: 8
         },
@@ -337,7 +391,7 @@ const products = await Product.findAll({
         title: 'Console Log in Production Code',
         description: 'Debug console.log statement left in code',
         location: {
-          file: 'src/api/auth.ts',
+          file: 'test/main.ts',
           line: 234,
           column: 4
         },

@@ -12,6 +12,7 @@ import {
 } from '../types/analysis-types';
 import { ILogger } from './interfaces/logger.interface';
 import { DeepWikiApiWrapper, MockDeepWikiApiWrapper, DeepWikiAnalysisResponse } from './deepwiki-api-wrapper';
+import { getActiveConfig } from '../config/generator-config';
 
 export interface IDeepWikiService {
   analyzeRepository(
@@ -34,6 +35,12 @@ export class DeepWikiService implements IDeepWikiService {
     private logger?: ILogger
   ) {
     this.apiWrapper = new DeepWikiApiWrapper();
+    const config = getActiveConfig();
+    this.log('info', 'DeepWikiService initialized with intelligent transformer', {
+      transformerEnabled: config.responseTransformation.enabled,
+      hybridMode: config.responseTransformation.hybridMode,
+      intelligentFallback: config.responseTransformation.intelligentFallback
+    });
   }
 
   /**
@@ -47,13 +54,18 @@ export class DeepWikiService implements IDeepWikiService {
     this.log('info', `Starting DeepWiki analysis for ${repositoryUrl}`, { branch, prId });
     
     try {
-      // Use the wrapper to call DeepWiki
+      const config = getActiveConfig();
+      
+      // Use the enhanced wrapper with intelligent transformation
       const deepWikiResult = await this.apiWrapper.analyzeRepository(
         repositoryUrl,
         {
           branch,
           prId,
-          skipCache: false // Use cache by default
+          skipCache: false, // Use cache by default
+          useTransformer: config.responseTransformation.enabled,
+          useHybridMode: config.responseTransformation.hybridMode,
+          forceEnhancement: config.responseTransformation.forceEnhancement
         }
       );
 
