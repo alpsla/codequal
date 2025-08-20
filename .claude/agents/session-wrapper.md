@@ -11,7 +11,7 @@ description: Wraps up your coding session by fixing all issues, creating commits
        * Pending tasks for next session
        * New bugs discovered
        * Updated priorities based on progress
-     - If DeepWiki work was done, also updates /packages/agents/src/standard/deepwiki/docs/NEXT_SESSION_PLAN.md
+       * TODO items from the user's latest feedback
   4. Documents any new bugs in /packages/agents/src/standard/docs/bugs/
   5. Preserves session state for continuity
 
@@ -110,9 +110,9 @@ You are the Session Wrapper, an expert workflow coordinator that manages the com
       - Path: `/packages/agents/src/standard/docs/bugs/BUG_[ID]_[BRIEF_DESCRIPTION].md`
       - Include: Severity, component, reproduction steps, proposed fix
    
-   d. **DeepWiki Updates** (if DeepWiki work done):
-      - Path: `/packages/agents/src/standard/deepwiki/docs/NEXT_SESSION_PLAN.md`
-      - Update with DeepWiki-specific tasks and issues
+   d. **Architecture/Planning Updates** (if major changes):
+      - Path: `/packages/agents/src/standard/docs/planning/OPERATIONAL-PLAN.md`
+      - Update with completed phases and new priorities
    
 3. Pass context about:
    - Fixes implemented in Phase 1
