@@ -418,22 +418,72 @@ export class DeepWikiApiManager {
     const isPRBranch = options?.branch?.includes('pr/');
     const maxIssues = isPRBranch ? 10 : 15; // Limit issues for faster response
     
-    return `Provide a focused security and code quality analysis of this repository${isPRBranch ? ' PR branch' : ''}.
+    return `Analyze this repository for security vulnerabilities and code quality issues.
 
-Please analyze and find the TOP ${maxIssues} most critical issues:
-1. Security vulnerabilities (SQL injection, XSS, auth issues)
-2. Performance bottlenecks (N+1 queries, memory leaks)
-3. Critical code quality issues
-4. Major dependency vulnerabilities
+CRITICAL REQUIREMENTS:
+1. For EVERY issue found, you MUST provide the EXACT file path and line number from the actual codebase
+2. DO NOT use placeholder locations like "unknown", "src/example.ts", or random file names
+3. SEARCH the repository to find the actual location of each issue before reporting it
+4. Only report issues where you can identify the EXACT location in the codebase
 
-${isPRBranch ? 'For PR branches, include some new issues (PR-NEW-001, PR-NEW-002) and remove some existing ones to show differences.' : ''}
+Find the TOP ${maxIssues} most critical issues in these categories:
+- Security vulnerabilities (SQL injection, XSS, authentication flaws, etc.)
+- Performance bottlenecks (N+1 queries, memory leaks, inefficient algorithms)
+- Critical code quality issues (circular dependencies, dead code, etc.)
+- Dependency vulnerabilities (outdated or vulnerable packages)
 
-Format as JSON with:
-- vulnerabilities: Array of top ${maxIssues} issues with severity, category, title, location, and brief remediation
-- scores: Overall score and category scores (0-100)
-- summary: Brief summary
+${isPRBranch ? 'For PR branches, identify which issues are new vs existing.' : ''}
 
-Focus on quality over quantity. Be concise.`;
+Return ONLY valid JSON in this EXACT format:
+{
+  "vulnerabilities": [
+    {
+      "id": "SEC-001",
+      "severity": "critical|high|medium|low",
+      "category": "security|performance|quality|dependencies",
+      "title": "Clear description of the issue",
+      "location": {
+        "file": "exact/path/to/file.ts",
+        "line": <exact line number as integer>,
+        "column": <optional column number>
+      },
+      "evidence": {
+        "snippet": "The actual code from that location"
+      },
+      "impact": "Description of the security/performance impact",
+      "remediation": {
+        "immediate": "Quick fix description",
+        "steps": ["Step 1", "Step 2"]
+      }
+    }
+  ],
+  "scores": {
+    "overall": <0-100>,
+    "security": <0-100>,
+    "performance": <0-100>,
+    "maintainability": <0-100>,
+    "testing": <0-100>
+  },
+  "statistics": {
+    "files_analyzed": <number>,
+    "total_issues": <number>,
+    "issues_by_severity": {
+      "critical": <number>,
+      "high": <number>,
+      "medium": <number>,
+      "low": <number>
+    }
+  },
+  "summary": "Brief overall assessment"
+}
+
+IMPORTANT VALIDATION RULES:
+- Each issue MUST have a real file path that exists in the repository
+- Each line number MUST be a valid integer pointing to actual code
+- The code snippet MUST be from the actual file at that line
+- If you cannot find the exact location, DO NOT include that issue
+
+Remember: Users will click on these locations in their IDE, so they MUST be accurate!`;
   }
 
   /**

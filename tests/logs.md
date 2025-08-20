@@ -1,81 +1,66 @@
 
-⏺ Based on the test files and documentation, here are the specific tests I executed to produce the V8 reports during our session:
+  ❌ CRITICAL PROBLEM: Real DeepWiki Integration is Broken
 
-  Tests Executed for V8 Report Generation
+  1. DeepWiki Returns Malformed Data
 
-  1. Initial V8 Test with Mock Data
+  - Issue: DeepWiki API returns empty/undefined fields
+  - Impact: All issues show "unknown" location, no titles, no severity
+  - Evidence: 100% of issues have undefined fields in real API calls
 
-  # This was the primary test file used to validate V8 format
-  cd /Users/alpinro/Code\ Prjects/codequal/packages/agents
-  USE_DEEPWIKI_MOCK=true npx ts-node test-v8-final.ts
-  This test generated comprehensive mock reports showing all 13 sections of the V8 format.
+  2. Location Enhancement Completely Fails
 
-  2. Real PR Validation Tests
+  - Issue: "Clarified 0 locations out of 14 unknown issues"
+  - Impact: Every issue shows generic locations like package.json:1
+  - Root Cause: DeepWiki doesn't provide real file paths or line numbers
 
-  # Test with sindresorhus/ky PR 700 (small JavaScript library)
-  USE_DEEPWIKI_MOCK=false npx ts-node src/standard/tests/regression/manual-pr-validator.ts https://github.com/sindresorhus/ky/pull/700
+  3. Educational Content Crashes
 
-  # Test with vercel/swr PR 2950 (medium React library)
-  USE_DEEPWIKI_MOCK=false npx ts-node src/standard/tests/regression/manual-pr-validator.ts https://github.com/vercel/swr/pull/2950
+  - Issue: educationalContent.resources.find is not a function
+  - Impact: Report generation crashes when educational section is included
+  - File: report-generator-v7-html-enhanced.ts:1354
 
-  # Test with vercel/next.js PR 31616 (large framework)
-  USE_DEEPWIKI_MOCK=false DEEPWIKI_TIMEOUT=1200000 npx ts-node src/standard/tests/regression/manual-pr-validator.ts https://github.com/vercel/next.js/pull/31616
+  4. V7 Generator Still Being Used
 
-  3. V8 Generator Specific Tests
+  - Issue: System defaults to deprecated V7 generator
+  - Impact: Using broken code instead of fixed V8 generator
+  - Evidence: Error stack shows V7 files, not V8
 
-  # Force V8 generator usage
-  USE_V8_GENERATOR=true USE_DEEPWIKI_MOCK=true npx ts-node test-v8-final.ts
+  5. Repository Cloning Fails
 
-  # Test with V8 and real DeepWiki
-  USE_V8_GENERATOR=true USE_DEEPWIKI_MOCK=false npx ts-node src/standard/tests/regression/manual-pr-validator.ts https://github.com/sindresorhus/ky/pull/700
+  - Issue: "fatal: could not read Username for 'https://github.com'"
+  - Impact: Some repos cannot be analyzed at all
+  - Root Cause: DeepWiki authentication misconfigured
 
-  4. Bug Reproduction Tests
+  📋 Summary of Issue Categories
 
-  # Test for BUG-058 (unknown location issue)
-  npx ts-node src/standard/tests/test-v8-unknown-location.ts
+  | Category              | Count | Status   |
+  |-----------------------|-------|----------|
+  | V8 Generator Logic    | 0     | ✅ Fixed  |
+  | DeepWiki API Response | 5     | ❌ Broken |
+  | Location Enhancement  | 3     | ❌ Broken |
+  | Educational Content   | 1     | ❌ Broken |
+  | Repository Access     | 1     | ❌ Broken |
 
-  # Test for BUG-059 (0 issues display bug)
-  npx ts-node src/standard/tests/test-v8-issue-count.ts
+  🎯 Recommended Actions
 
-  # Test for location parsing
-  npx ts-node src/standard/tests/test-v8-location-bug.ts
+  1. IMMEDIATE: Always use USE_DEEPWIKI_MOCK=true until DeepWiki is fixed
+  2. HIGH PRIORITY: Fix DeepWiki API to return properly structured data
+  3. MEDIUM: Fix educational content resources structure
+  4. MEDIUM: Force V8 generator usage by default
+  5. LOW: Fix repository cloning authentication
 
-  5. Output Format Tests
+  ✅ What's Working
 
-  # Generate HTML report only
-  OUTPUT_FORMAT=html USE_DEEPWIKI_MOCK=true npx ts-node test-v8-final.ts
+  - V8 generator with mock data (100% functional)
+  - Report HTML/Markdown generation
+  - PR metadata display
+  - Score calculations (when data is provided)
+  - All UI elements and sections
 
-  # Generate all formats (HTML, Markdown, JSON)
-  OUTPUT_FORMAT=all USE_DEEPWIKI_MOCK=true npx ts-node test-v8-final.ts
+  ❌ What's NOT Working
 
-  Key Environment Variables Used
-
-  # For real DeepWiki testing
-  export USE_DEEPWIKI_MOCK=false
-  export DEEPWIKI_API_URL=http://localhost:8001
-  export DEEPWIKI_API_KEY=dw-key-e48329b6c05b4a36a18d65af21ac3c2f
-
-  # For V8 generator
-  export USE_V8_GENERATOR=true
-
-  # For output control
-  export OUTPUT_FORMAT=all
-  export OUTPUT_DIR=./test-outputs/manual-validation
-
-  Reports Generated
-
-  The tests produced reports in these locations:
-  - test-outputs/v8-final-*.html - HTML formatted reports
-  - test-outputs/v8-final-*.md - Markdown reports
-  - test-outputs/manual-validation/*.html - Real PR analysis reports
-
-  The Main Test Command for V8
-
-  The most comprehensive test that produces a full V8 report with all sections is:
-  # With mock data (quick, no dependencies)
-  USE_DEEPWIKI_MOCK=true npx ts-node test-v8-final.ts
-
-  # With real PR (requires DeepWiki)
-  USE_V8_GENERATOR=true npx ts-node src/standard/tests/regression/manual-pr-validator.ts <PR_URL>
-
-  These tests validated all 13 sections of the V8 report including Executive Summary, Security Analysis, Performance Issues, Code Quality, Educational Insights, and AI IDE Integration suggestions.
+  - Real DeepWiki API integration
+  - Location extraction from code
+  - Educational resource links
+  - Repository cloning for some repos
+  - Automatic V8 generator selection

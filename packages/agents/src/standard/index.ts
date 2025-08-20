@@ -44,8 +44,7 @@ export { ComparisonAgent } from './comparison/comparison-agent';
 export { ReportGeneratorV8Final as ReportGenerator } from './comparison/report-generator-v8-final';
 export { ReportGeneratorV8Final } from './comparison/report-generator-v8-final';
 
-// DEPRECATED: V7 - maintained for backward compatibility only
-export { ReportGeneratorV7EnhancedComplete } from './comparison/report-generator-v7-enhanced-complete'; // @deprecated
+// V7 generators have been removed - use V8 only
 
 export { SkillCalculator } from './comparison/skill-calculator';
 
