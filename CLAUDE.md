@@ -664,6 +664,9 @@ npm run lint:fix
 - **Use DeepWiki mock mode** for all tests except specific integration tests
 - **Check Redis connection** before running cache-dependent features
 - **Validate environment variables** on application startup
+- **USE V8 REPORT GENERATOR ONLY** - V7 is deprecated, see `docs/DEPRECATED_V7_WARNING.md`
+- **Reference test-v8-final.ts** as the working implementation for reports
+- **Check docs/CODE_HEALTH_STATUS.md** before using any code to verify it's not deprecated
 
 ## 🔍 Search Command Requirements
 
@@ -683,7 +686,34 @@ find . -name "*.ts"
 rg --files -g "*.ts"
 ```
 
+## 📊 Report Generation Testing
+
+### Verified Working Test
+The ONLY verified working implementation for V8 reports:
+```bash
+cd /Users/alpinro/Code\ Prjects/codequal/packages/agents
+USE_DEEPWIKI_MOCK=true npx ts-node test-v8-final.ts
+```
+
+### Testing with Real PRs
+```bash
+# Always use mock mode until DeepWiki parser is fixed
+USE_DEEPWIKI_MOCK=true npx ts-node src/standard/tests/regression/manual-pr-validator.ts <PR_URL>
+```
+
+### Important Testing Notes
+- **Always use USE_DEEPWIKI_MOCK=true** - Real DeepWiki integration is broken (returns "Unknown location")
+- **Reference test-v8-final.ts** for correct data structures
+- **Check generated reports** for "Unknown location" - if present, data pipeline is broken
+- **V7 generators are deprecated** - Do not use or fix them
+
 ## 🐛 Known Issues and Debugging
+
+### Critical Bugs (As of 2025-08-20)
+1. **BUG-068:** DeepWiki parser doesn't extract location data (all show as "unknown")
+2. **BUG-069:** PR metadata lost in pipeline
+3. **BUG-070:** Issue types showing as "undefined"
+4. **BUG-071:** Score calculation incorrect (24/100 for minor issues)
 
 ### Common Issues
 

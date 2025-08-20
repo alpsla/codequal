@@ -110,9 +110,9 @@ export class DynamicModelSelectorV8 {
    */
   private scoreModels(models: ModelInfo[], requirements: any): ModelScore[] {
     return models.map(model => {
-      let qualityScore = this.calculateQualityScore(model, requirements);
-      let speedScore = this.calculateSpeedScore(model);
-      let priceScore = this.calculatePriceScore(model);
+      const qualityScore = this.calculateQualityScore(model, requirements);
+      const speedScore = this.calculateSpeedScore(model);
+      const priceScore = this.calculatePriceScore(model);
       
       // Apply weights
       const totalScore = 

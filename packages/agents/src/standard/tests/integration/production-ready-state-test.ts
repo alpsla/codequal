@@ -529,6 +529,51 @@ const SYSTEM_STATE: SystemState = {
       component: 'user-experience'
     },
     
+    // V8 REPORT REGRESSION BUGS - Identified 2025-08-20
+    // Critical issues found when comparing today's V8 report with yesterday's working version
+    {
+      id: 'BUG-068',
+      severity: 'HIGH',
+      description: 'Location information parsing failure - ALL issues show "Unknown location" despite DeepWiki returning location data, critical regression from working version',
+      discovered: '2025-08-20',
+      component: 'report-generator-v8'
+    },
+    {
+      id: 'BUG-069',
+      severity: 'MEDIUM',
+      description: 'Issue type displays as "undefined" in resolved issues section - type classification not being preserved through data pipeline',
+      discovered: '2025-08-20',
+      component: 'report-generator-v8'
+    },
+    {
+      id: 'BUG-070',
+      severity: 'HIGH',
+      description: 'PR metadata missing - shows "Unknown" repository, "#0 - Untitled" PR instead of actual PR information, critical data loss',
+      discovered: '2025-08-20',
+      component: 'report-generator-v8'
+    },
+    {
+      id: 'BUG-071',
+      severity: 'MEDIUM',
+      description: 'Score calculation appears incorrect - 24/100 seems too low for actual issues found, scoring algorithm regression',
+      discovered: '2025-08-20',
+      component: 'scoring-system'
+    },
+    {
+      id: 'BUG-072',
+      severity: 'HIGH',
+      description: 'File paths and line numbers missing from ALL issues despite DeepWiki providing them - location enhancement pipeline broken',
+      discovered: '2025-08-20',
+      component: 'ai-location-finder'
+    },
+    {
+      id: 'BUG-073',
+      severity: 'MEDIUM',
+      description: 'Report structure regression - differs from yesterday\'s working v8-report-python-large.html version, structural inconsistencies introduced',
+      discovered: '2025-08-20',
+      component: 'report-generator-v8'
+    },
+    
     // NEW ENHANCEMENT BUGS - Educational and Skill Tracking System (2025-08-20)
     // Five new bugs identified for enhanced user experience and learning systems
     {
@@ -565,6 +610,86 @@ const SYSTEM_STATE: SystemState = {
       description: 'Architecture Details Enhancement: When architectural considerations are found, provide detailed explanations and remediation steps, not just count. Include specific examples and best practices',
       discovered: '2025-08-20',
       component: 'report-generator'
+    },
+    
+    // V8 REPORT GENERATOR CRITICAL BUGS - Identified 2025-08-20
+    // 11 new critical bugs found in V8 report generator requiring immediate attention
+    {
+      id: 'BUG-074',
+      severity: 'MEDIUM',
+      description: 'Wrong icon for DECLINED status - shows warning icon (⚠️) instead of red X (❌), creating visual confusion about PR rejection status',
+      discovered: '2025-08-20',
+      component: 'report-generator-v8-final'
+    },
+    {
+      id: 'BUG-075',
+      severity: 'HIGH',
+      description: 'Architecture Schema ASCII art is completely broken and unreadable in both markdown and HTML formats, failing to provide meaningful architectural visualization',
+      discovered: '2025-08-20',
+      component: 'report-generator-v8-final'
+    },
+    {
+      id: 'BUG-076',
+      severity: 'HIGH',
+      description: 'Dependencies Analysis shows 0 findings which is suspicious - even repositories with known dependency issues show no results, indicating broken dependency detection pipeline',
+      discovered: '2025-08-20',
+      component: 'report-generator-v8-final'
+    },
+    {
+      id: 'BUG-077',
+      severity: 'HIGH',
+      description: 'Breaking Changes shows 0 findings which is suspicious - even PRs with API changes show no breaking changes, indicating broken detection logic',
+      discovered: '2025-08-20',
+      component: 'report-generator-v8-final'
+    },
+    {
+      id: 'BUG-078',
+      severity: 'MEDIUM',
+      description: 'Educational Insights provides too general links, not specific to issues found - shows generic OWASP links instead of targeted educational content for detected problems',
+      discovered: '2025-08-20',
+      component: 'report-generator-v8-final'
+    },
+    {
+      id: 'BUG-079',
+      severity: 'MEDIUM',
+      description: 'Individual Skills by Category not updated based on Score Calculation - displays hardcoded values instead of dynamic calculation based on actual issues found/resolved',
+      discovered: '2025-08-20',
+      component: 'report-generator-v8-final'
+    },
+    {
+      id: 'BUG-080',
+      severity: 'MEDIUM',
+      description: 'Achievements Unlocked shows rewards incorrectly - awards "5 PRs without critical issues" even when current PR has critical issues, indicating broken achievement validation',
+      discovered: '2025-08-20',
+      component: 'report-generator-v8-final'
+    },
+    {
+      id: 'BUG-081',
+      severity: 'MEDIUM',
+      description: 'Business Impact section is very poor quality - provides generic business impact analysis with no specific correlation to detected issues or meaningful business context',
+      discovered: '2025-08-20',
+      component: 'report-generator-v8-final'
+    },
+    {
+      id: 'BUG-082',
+      severity: 'HIGH',
+      description: 'AI IDE Integration Quick Fix Commands missing location information - provides generic fixes without file paths and line numbers, making IDE integration non-functional',
+      discovered: '2025-08-20',
+      component: 'report-generator-v8-final'
+    },
+    {
+      id: 'BUG-083',
+      severity: 'MEDIUM',
+      description: 'Automated Fix Script quality is poor compared to reference - lacks framework detection, error handling, and comprehensive disclaimers found in reference implementation',
+      discovered: '2025-08-20',
+      component: 'report-generator-v8-final'
+    },
+    {
+      id: 'BUG-084',
+      severity: 'HIGH',
+      description: 'GitHub PR Comment format is wrong - DECLINED status not properly formatted with issue details, lacks actionable feedback and GitHub-compatible markdown formatting',
+      discovered: '2025-08-20',
+      component: 'report-generator-v8-final'
     }
     
     // V7 ENHANCED REPORT GENERATOR FIXES IMPLEMENTED (2025-08-19):
@@ -584,8 +709,14 @@ const SYSTEM_STATE: SystemState = {
     'COMPLETED ✅ - Session wrap-up (2025-08-19): Created 5 new bug reports for V8 report issues (BUG-053 to BUG-057), updated production state, and prepared next session priorities',
     'COMPLETED ✅ - V8 Bug Fixes Partial (2025-08-19): BUG-053, BUG-054, BUG-056 FIXED. BUG-055 partially fixed. BUG-057 requires major redesign.',
     'COMPLETED ✅ - Session Wrap-up Documentation (2025-08-20): Created comprehensive architecture documentation, V8 testing guide, cleaned up 511+ outdated files, fixed all TypeScript errors',
+    'CRITICAL - Fix BUG-068: Location information parsing failure - ALL issues show "Unknown location" despite DeepWiki returning location data',
+    'HIGH - Fix BUG-070: PR metadata missing - shows "Unknown" repository, "#0 - Untitled" PR instead of actual PR information',
+    'HIGH - Fix BUG-072: File paths and line numbers missing from ALL issues despite DeepWiki providing them',
     'CRITICAL - Fix BUG-059: HTML rendering of ASCII architecture diagrams - implement proper <pre> tag handling and CSS styling',
     'CRITICAL - Fix BUG-062: Comprehensive UI/UX redesign needed - V8 still not user-friendly, major regression in user experience',
+    'MEDIUM - Fix BUG-069: Issue type shows as "undefined" in resolved issues section - type classification preservation',
+    'MEDIUM - Fix BUG-071: Score calculation appears incorrect - 24/100 seems too low, scoring algorithm regression',
+    'MEDIUM - Fix BUG-073: Report structure regression - differs from yesterday\'s working version, structural inconsistencies',
     'HIGH - Fix BUG-058: Test validation alignment - update tests to match ASCII format or change generator to mermaid format',
     'MEDIUM - Fix BUG-060: TypeScript compilation errors in V8 non-final version preventing development workflow',
     'LOW - Fix BUG-061: Clean up 22 uncommitted test files - decision needed on file management strategy',
@@ -628,7 +759,21 @@ const SYSTEM_STATE: SystemState = {
     'HIGH - FIX BUG-064: Skill Tracking System - Score Persistence with +/- scoring based on severity and Supabase storage',
     'HIGH - FIX BUG-065: Trend Analysis Implementation - Last 6 PRs skill trends with individual/team/app level tracking',
     'MEDIUM - FIX BUG-066: Achievement System - Achievement matrix with badges, milestones, and team recognition',
-    'LOW - FIX BUG-067: Architecture Details Enhancement - Detailed explanations and remediation steps for architectural findings'
+    'LOW - FIX BUG-067: Architecture Details Enhancement - Detailed explanations and remediation steps for architectural findings',
+    
+    // V8 REPORT GENERATOR CRITICAL FIXES (2025-08-20)
+    // 11 new critical bugs requiring immediate attention in V8 Final Report Generator
+    'MEDIUM - FIX BUG-074: Wrong DECLINED status icon - update to use ❌ instead of ⚠️ for clear visual rejection indicator',
+    'HIGH - FIX BUG-075: Broken Architecture ASCII art - fix generation logic and implement proper HTML <pre> tag formatting with monospace styling',
+    'HIGH - FIX BUG-076: Dependencies Analysis 0 findings - debug pipeline from DeepWiki to report generator, fix dependency detection logic',
+    'HIGH - FIX BUG-077: Breaking Changes 0 findings - fix detection logic for API changes, interface modifications, and breaking code changes',
+    'MEDIUM - FIX BUG-078: Generic Educational Insights - implement issue-specific training links with targeted courses and diverse learning formats',
+    'MEDIUM - FIX BUG-079: Static Individual Skills display - implement dynamic skill calculation based on actual issues found/resolved with severity scoring',
+    'MEDIUM - FIX BUG-080: Incorrect Achievements - fix achievement validation logic to prevent false positive awards when issues exist',
+    'MEDIUM - FIX BUG-081: Poor Business Impact quality - implement specific business impact analysis correlated to detected technical issues',
+    'HIGH - FIX BUG-082: Missing IDE Integration locations - fix AI Location Finder integration to provide file paths and line numbers for actionable quick fixes',
+    'MEDIUM - FIX BUG-083: Poor Automated Fix Scripts - add framework detection, error handling, and comprehensive disclaimers to match reference quality',
+    'HIGH - FIX BUG-084: Wrong GitHub PR Comment format - fix DECLINED status formatting with detailed issue breakdown and GitHub-compatible markdown'
   ],
 
   architecture: {
@@ -745,7 +890,8 @@ const SYSTEM_STATE: SystemState = {
  * ✅ FIXED (3/5): BUG-053, BUG-054, BUG-056 - Business impact, disclaimers, OWASP mapping
  * ⚠️ PARTIAL (1/5): BUG-055 - ASCII diagram works in markdown but HTML broken
  * ❌ NOT FIXED (1/5): BUG-057 - Major UI regression confirmed by user
- * 🆕 NEW ISSUES: 5 additional bugs discovered (BUG-058 to BUG-062)
+ * 🆕 NEW ISSUES: 11 additional bugs discovered (BUG-058 to BUG-073)
+ * 🚨 V8 REGRESSION BUGS: 6 critical report generation issues (BUG-068 to BUG-073)
  * 
  * NEXT SESSION PRIORITIES (CRITICAL FIXES NEEDED):
  * 1. 🚨 CRITICAL: Fix BUG-059 - HTML rendering of ASCII architecture diagrams

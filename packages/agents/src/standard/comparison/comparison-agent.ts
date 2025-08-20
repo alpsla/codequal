@@ -18,8 +18,9 @@ import {
   Issue,
   PRMetadata
 } from '../types/analysis-types';
-// Report generators - V7 and new V8
-import { ReportGeneratorV7HTMLEnhanced } from './report-generator-v7-html-enhanced';
+// Report generators
+// DEPRECATED: V7 is deprecated, use V8 only - see DEPRECATED_V7_WARNING.md
+import { ReportGeneratorV7HTMLEnhanced } from './report-generator-v7-html-enhanced'; // @deprecated - DO NOT USE
 import { ReportGeneratorV8Final } from './report-generator-v8-final';
 import { SkillCalculator } from './skill-calculator';
 import { ILogger } from '../services/interfaces/logger.interface';
@@ -32,10 +33,10 @@ import { DynamicModelSelector, RoleRequirements } from '../services/dynamic-mode
 export class ComparisonAgent implements IReportingComparisonAgent {
   private config: ComparisonConfig;
   private modelConfig: any;
-  // Support both V7 and V8 report generators
-  private reportGeneratorV7: ReportGeneratorV7HTMLEnhanced;
+  // Report generators
+  private reportGeneratorV7: ReportGeneratorV7HTMLEnhanced; // @deprecated - will be removed
   private reportGeneratorV8: ReportGeneratorV8Final;
-  private useV8Generator: boolean = false;
+  private useV8Generator = true; // Default to V8 - V7 is deprecated
   private skillCalculator: SkillCalculator;
   private modelSelector: DynamicModelSelector;
   
@@ -258,10 +259,8 @@ export class ComparisonAgent implements IReportingComparisonAgent {
         format: this.options?.reportFormat || 'markdown'
       });
       
-      // V8 expects a slightly different structure, so adapt it
-      const v8AnalysisResult = this.adaptComparisonToV8Format(comparison);
-      
-      return this.reportGeneratorV8.generateReport(v8AnalysisResult, {
+      // V8 generator now accepts ComparisonResult directly
+      return this.reportGeneratorV8.generateReport(comparison, {
         format: this.options?.reportFormat || 'markdown',
         includeEducation: true,
         verbosity: 'standard',
@@ -286,9 +285,8 @@ export class ComparisonAgent implements IReportingComparisonAgent {
    */
   generatePRComment(comparison: ComparisonResult): string {
     if (this.useV8Generator) {
-      // For V8, extract PR comment from the report or generate a concise version
-      const v8AnalysisResult = this.adaptComparisonToV8Format(comparison);
-      return this.extractPRCommentFromV8(v8AnalysisResult);
+      // For V8, generate PR comment directly from comparison
+      return this.extractPRCommentFromV8(comparison);
     } else {
       // Use the V7 generator for PR comments
       return this.reportGeneratorV7.generatePRComment(comparison);
@@ -298,19 +296,22 @@ export class ComparisonAgent implements IReportingComparisonAgent {
   /**
    * Extract PR comment from V8 format
    */
-  private extractPRCommentFromV8(analysisResult: any): string {
-    const decision = analysisResult.score >= 70 ? '✅ Approved' : '⚠️ Needs Work';
-    const newIssuesCount = analysisResult.prIssues?.length || 0;
-    const resolvedCount = analysisResult.repositoryIssues?.filter((i: any) => i.status === 'resolved').length || 0;
+  private extractPRCommentFromV8(comparison: ComparisonResult): string {
+    const score = this.calculateScore(comparison);
+    const decision = score >= 70 ? '✅ Approved' : '⚠️ Needs Work';
+    const newIssuesCount = comparison.newIssues?.length || 0;
+    const resolvedCount = comparison.resolvedIssues?.length || 0;
     
     let comment = `## CodeQual Analysis: ${decision}\n\n`;
-    comment += `**Score:** ${analysisResult.score}/100\n`;
+    comment += `**Score:** ${score}/100\n`;
     comment += `**New Issues:** ${newIssuesCount} | **Resolved:** ${resolvedCount}\n\n`;
     
     if (newIssuesCount > 0) {
       comment += '### Top Issues to Address:\n';
-      analysisResult.prIssues.slice(0, 3).forEach((issue: any) => {
-        comment += `- ${issue.message} (${issue.file}:${issue.line})\n`;
+      (comparison.newIssues || []).slice(0, 3).forEach((issue: any) => {
+        const location = issue.location?.file && issue.location?.line ? 
+          `${issue.location.file}:${issue.location.line}` : 'Unknown location';
+        comment += `- ${issue.message} (${location})\n`;
       });
     }
     

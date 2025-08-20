@@ -526,7 +526,14 @@ async function analyzePR(url: string) {
     }
     
     // Create comparison agent instance to pass to orchestrator
-    const comparisonAgent = new ComparisonAgent();
+    // Check for V8 generator option from environment
+    const useV8Generator = process.env.USE_V8_GENERATOR === 'true';
+    const comparisonAgent = new ComparisonAgent(
+      undefined, // logger
+      undefined, // modelService
+      undefined, // skillProvider
+      { useV8Generator, reportFormat: 'markdown' }
+    );
     
     // Create educator agent for educational insights
     const educatorAgent = new EducatorAgent();
