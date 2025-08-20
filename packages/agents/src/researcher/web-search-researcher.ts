@@ -197,16 +197,24 @@ function selectBestModelsForLocationFinder(
   const scoredModels = validatedModels.map(model => {
     let score = 0;
     
-    // Prefer latest models (Claude 4+, Gemini 2.5+, GPT-4.5+)
-    if (model.model.includes('claude-4') || model.model.includes('claude-3.5')) score += 30;
-    if (model.model.includes('gemini-2.5') || model.model.includes('gemini-2.0')) score += 28;
-    if (model.model.includes('gpt-4.5') || model.model.includes('gpt-4o')) score += 26;
+    // Score based on release date (prefer newer models)
+    if (model.releaseDate) {
+      const releaseDate = new Date(model.releaseDate);
+      const monthsOld = (Date.now() - releaseDate.getTime()) / (1000 * 60 * 60 * 24 * 30);
+      
+      if (monthsOld <= 1) score += 35;  // Released within last month
+      else if (monthsOld <= 2) score += 30;  // Released within 2 months
+      else if (monthsOld <= 3) score += 25;  // Released within 3 months
+      else if (monthsOld <= 6) score += 15;  // Released within 6 months
+      else score += 5;  // Older than 6 months
+    }
     
     // Context window score
     const contextWindow = model.contextWindow || 0;
     if (contextWindow >= 200000) score += 20;
     else if (contextWindow >= 128000) score += 15;
     else if (contextWindow >= 32000) score += 10;
+    else score += 5;
     
     // Cost efficiency
     const avgCost = ((model.pricing?.input || 0) + (model.pricing?.output || 0)) / 2;
@@ -215,9 +223,21 @@ function selectBestModelsForLocationFinder(
     else if (avgCost <= 0.01) score += 10;  // Moderate
     else if (avgCost <= 0.02) score += 5;   // Expensive
     
-    // Speed indicators
-    if (model.model.includes('flash') || model.model.includes('mini') || model.model.includes('haiku')) {
-      score += 15;  // Fast models
+    // Speed indicators from capabilities or notes
+    if (model.capabilities) {
+      if (model.capabilities.includes('fast response')) score += 15;
+      if (model.capabilities.includes('ultra-fast')) score += 20;
+      if (model.capabilities.includes('code analysis')) score += 10;
+      if (model.capabilities.includes('large context')) score += 10;
+    }
+    
+    // Generic speed indicators in model name (without hardcoding specific models)
+    const modelLower = model.model.toLowerCase();
+    if (modelLower.includes('flash') || modelLower.includes('mini') || modelLower.includes('fast')) {
+      score += 15;  // Fast models indicator
+    }
+    if (modelLower.includes('turbo') || modelLower.includes('speed')) {
+      score += 10;  // Speed optimized indicator
     }
     
     return { ...model, score };
@@ -256,57 +276,140 @@ function parseDiscoveredModels(content: string): DiscoveredModel[] {
     // Continue with text parsing
   }
   
-  // Parse text response for model mentions
-  // This is a simplified parser - in production would be more sophisticated
+  // Parse text response for model mentions using GENERIC patterns
+  // NO hardcoded model names - dynamically extract from search results
   const lines = content.split('\n');
+  
+  // Generic patterns to find model information - NO specific model names
   const modelPatterns = [
-    /claude[- ]?4\.?\d*/gi,
-    /gemini[- ]?2\.?\d*/gi,
-    /gpt[- ]?4\.?\d*/gi,
-    /llama[- ]?3\.?\d*/gi,
-    /mistral[- ]?\w+/gi
+    // Pattern: "Provider released ModelName on Date"
+    /(\w+)\s+released\s+([A-Z][a-zA-Z0-9\-\s\.]+)\s+on\s+(\w+\s+\d{1,2},?\s+\d{4})/gi,
+    // Pattern: "ModelName from Provider"
+    /([A-Z][a-zA-Z0-9\-\s\.]+)\s+from\s+(\w+)/gi,
+    // Pattern: "Provider's ModelName"
+    /(\w+)'s\s+([A-Z][a-zA-Z0-9\-\s\.]+)\s+model/gi,
+    // Pattern: "new ModelName model"
+    /new\s+([A-Z][a-zA-Z0-9\-\s\.]+)\s+model/gi,
+    // Pattern: "ModelName achieved X% on benchmark"
+    /([A-Z][a-zA-Z0-9\-\s\.]+)\s+achieved\s+\d+\.?\d*%/gi,
+    // Pattern: "latest ModelName version"
+    /latest\s+([A-Z][a-zA-Z0-9\-\s\.]+)\s+version/gi,
+    // Pattern: "ModelName LLM"
+    /([A-Z][a-zA-Z0-9\-\s\.]+)\s+LLM/gi
   ];
   
-  // Mock discovered models (in reality, the AI would provide these)
-  // These represent what the AI might discover from web search
-  return [
-    {
-      provider: 'anthropic',
-      model: 'dynamic', // Will be selected dynamically,
-      version: 'claude-3.5-sonnet-20241022',
-      releaseDate: '2024-10-22',
-      capabilities: ['code analysis', 'fast response', 'large context'],
-      contextWindow: 200000,
-      notes: 'Latest Claude model with improved code understanding'
-    },
-    {
-      provider: 'google',
-      model: 'dynamic', // Will be selected dynamically,
-      version: 'gemini-2.0-flash-exp',
-      releaseDate: '2024-12',
-      capabilities: ['ultra-fast', 'code comprehension', 'cost-effective'],
-      contextWindow: 1000000,
-      notes: 'Newest Gemini with exceptional speed'
-    },
-    {
-      provider: 'openai',
-      model: 'dynamic', // Will be selected dynamically,
-      version: 'gpt-4o-mini-2024-07-18',
-      releaseDate: '2024-07-18',
-      capabilities: ['fast', 'accurate', 'reliable'],
-      contextWindow: 128000,
-      notes: 'Optimized GPT-4 for speed and cost'
-    },
-    {
-      provider: 'openai',
-      model: 'dynamic', // Will be selected dynamically,
-      version: 'gpt-4o-2024-08-06',
-      releaseDate: '2024-08-06',
-      capabilities: ['high accuracy', 'code analysis'],
-      contextWindow: 128000,
-      notes: 'Latest GPT-4 optimized version'
-    }
+  const datePatterns = [
+    /released?\s+on\s+(\w+\s+\d{1,2},?\s+\d{4})/gi,
+    /launched?\s+(\w+\s+\d{1,2},?\s+\d{4})/gi,
+    /available\s+since\s+(\w+\s+\d{4})/gi,
+    /(\w+\s+\d{4})\s+release/gi,
+    /as\s+of\s+(\w+\s+\d{4})/gi
   ];
+  
+  // Extract all potential model mentions
+  const foundModels = new Set<string>();
+  const discoveredModels: DiscoveredModel[] = [];
+  
+  for (const pattern of modelPatterns) {
+    let match;
+    while ((match = pattern.exec(content)) !== null) {
+      // Extract model name and provider dynamically
+      let modelName = '';
+      let provider = '';
+      let releaseDate = '';
+      
+      if (match[3]) {
+        // Pattern had provider, model, and date
+        provider = match[1].toLowerCase();
+        modelName = match[2].trim();
+        releaseDate = match[3];
+      } else if (match[2]) {
+        // Pattern had provider and model
+        if (pattern.source.includes('from')) {
+          modelName = match[1].trim();
+          provider = match[2].toLowerCase();
+        } else {
+          provider = match[1].toLowerCase();
+          modelName = match[2].trim();
+        }
+      } else if (match[1]) {
+        // Pattern had just model
+        modelName = match[1].trim();
+      }
+      
+      if (modelName && !foundModels.has(modelName)) {
+        foundModels.add(modelName);
+        
+        // Try to find associated date if not already found
+        if (!releaseDate) {
+          for (const datePattern of datePatterns) {
+            const dateMatch = content.match(datePattern);
+            if (dateMatch && dateMatch[1]) {
+              releaseDate = dateMatch[1];
+              break;
+            }
+          }
+        }
+        
+        // Try to determine provider if not found
+        if (!provider) {
+          const providerPatterns = [
+            /anthropic/i,
+            /openai/i,
+            /google/i,
+            /meta/i,
+            /mistral/i,
+            /deepseek/i,
+            /cohere/i,
+            /ai21/i,
+            /amazon/i,
+            /microsoft/i
+          ];
+          
+          for (const providerPattern of providerPatterns) {
+            if (content.match(providerPattern)) {
+              provider = providerPattern.source.replace(/\\/g, '').replace(/i/g, '');
+              break;
+            }
+          }
+        }
+        
+        // Try to extract version numbers from model name
+        const versionMatch = modelName.match(/(\d+\.?\d*)/);
+        const version = versionMatch ? versionMatch[1] : '';
+        
+        // Try to extract capabilities from surrounding context
+        const capabilities: string[] = [];
+        if (content.includes('code') && content.includes(modelName)) {
+          capabilities.push('code analysis');
+        }
+        if (content.includes('fast') && content.includes(modelName)) {
+          capabilities.push('fast response');
+        }
+        if (content.includes('context') && content.includes(modelName)) {
+          capabilities.push('large context');
+        }
+        
+        discoveredModels.push({
+          provider: provider || 'unknown',
+          model: modelName.replace(/\s+/g, '-').toLowerCase(),
+          version: version || modelName,
+          releaseDate: releaseDate || new Date().toISOString().split('T')[0],
+          capabilities: capabilities.length > 0 ? capabilities : ['general'],
+          notes: 'Discovered via web search'
+        });
+      }
+    }
+  }
+  
+  // If AI response provided structured data, return it
+  if (discoveredModels.length > 0) {
+    return discoveredModels;
+  }
+  
+  // Return empty array if no models found (let web search handle discovery)
+  // NO HARDCODED FALLBACK MODELS
+  return [];
 }
 
 /**

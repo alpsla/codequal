@@ -2746,28 +2746,46 @@ export class ResultOrchestrator {
       // Get role-specific cost weights and capability priorities
       const roleWeights = this.getRoleSpecificWeights(agentType);
       
-      // TODO: Implement actual Researcher agent request
-      // The Researcher agent should:
-      // 1. Load existing template for the agent role
-      // 2. Apply role-specific cost weights and capability priorities
-      // 3. Test various models based on:
-      //    - Language compatibility
-      //    - Repository size requirements
-      //    - Role-specific capabilities (e.g., security needs high reasoning)
-      //    - Cost constraints based on role weights
-      // 4. Select primary model (best overall score)
-      // 5. Select fallback model (second best, preferably different provider)
-      // 6. Store both configurations in model_configurations table
-      // 7. Return both configurations
+      // Import and use the existing ModelResearcherService from @codequal/agents
+      const { ModelResearcherService } = await import('@codequal/agents/standard/services/model-researcher-service');
+      const modelResearcher = new ModelResearcherService();
       
-      // Example of what Researcher should do:
-      // const researcherPrompt = await loadPromptTemplate(`researcher_${agentType}_template`);
-      // const models = await testModelsForContext(context, roleWeights);
-      // const [primary, fallback] = selectOptimalModels(models);
-      // await storeInVectorDB(agentType, context, primary, fallback);
+      // Get optimal model using the existing research infrastructure
+      const optimalModel = await modelResearcher.getOptimalModelForContext({
+        language: context.language,
+        repo_size: context.sizeCategory === RepositorySizeCategory.SMALL ? 'small' :
+                  context.sizeCategory === RepositorySizeCategory.MEDIUM ? 'medium' :
+                  context.sizeCategory === RepositorySizeCategory.LARGE ? 'large' : 'enterprise',
+        task_type: agentType,
+        specific_requirements: [
+          `role:${agentType}`,
+          `cost_weight:${roleWeights.costWeight}`,
+          `capability_priority:${roleWeights.capabilityPriority}`
+        ]
+      });
       
-      this.logger.warn('Researcher agent not yet implemented, using fallback');
-      return null;
+      // For now, use the same model as primary and fallback
+      // In future, could request top 2 models for diversity
+      const modelConfig: ModelConfig = {
+        provider: optimalModel.split('/')[0] || 'dynamic',
+        model: optimalModel,
+        // These will be populated by the actual model metadata
+        contextWindow: 128000,
+        capabilities: ['code-analysis', 'reasoning', 'large-context']
+      };
+      
+      this.logger.info('Researcher agent provided model configuration', {
+        agentType,
+        selectedModel: optimalModel
+      });
+      
+      // Store the configuration for future reference
+      await this.storeModelConfiguration(agentType, context, modelConfig);
+      
+      return {
+        primary: modelConfig,
+        fallback: modelConfig // TODO: Get second-best model for fallback
+      };
     } catch (error) {
       this.logger.error('Error requesting Researcher agent', {
         agentType,

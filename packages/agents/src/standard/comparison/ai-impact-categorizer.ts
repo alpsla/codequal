@@ -86,8 +86,8 @@ export class AIImpactCategorizer {
       console.warn('Model selection failed, using default fallback', error);
       // Use a default fallback configuration
       modelSelection = {
-        primary: { provider: 'openai', model: 'gpt-4-turbo-preview' },
-        fallback: { provider: 'anthropic', model: 'claude-3-sonnet-20240229' },
+        primary: { provider: 'openai', model: 'gpt-4o-mini' },
+        fallback: { provider: 'anthropic', model: 'claude-3.7-sonnet' },
         reasoning: 'Default fallback due to model selection error'
       };
     }

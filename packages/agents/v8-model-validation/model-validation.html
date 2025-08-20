@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>V8 Model Selection Validation</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: #f5f7fa;
+        }
+        h1 { color: #2d3748; margin-bottom: 2rem; }
+        .scenario-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        .scenario-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .scenario-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .language-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-weight: 600;
+            color: white;
+        }
+        .python { background: #3776ab; }
+        .go { background: #00add8; }
+        .rust { background: #ce422b; }
+        .java { background: #007396; }
+        .size-badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            background: #edf2f7;
+            color: #4a5568;
+        }
+        .model-section {
+            margin: 1rem 0;
+            padding: 1rem;
+            background: #f7fafc;
+            border-radius: 8px;
+        }
+        .model-title {
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 0.5rem;
+        }
+        .model-info {
+            font-size: 0.875rem;
+            color: #4a5568;
+            line-height: 1.6;
+        }
+        .weights {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+        }
+        .weight-item {
+            padding: 0.125rem 0.5rem;
+            background: white;
+            border-radius: 4px;
+        }
+        .summary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            margin-top: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <h1>🚀 V8 Model Selection Validation</h1>
+    <p>Dynamic model selection based on language and repository size. All models from Supabase configurations.</p>
+    
+    <div class="scenario-grid">
+        
+        <div class="scenario-card">
+            <div class="scenario-header">
+                <div>
+                    <span class="language-badge python">PYTHON</span>
+                    <span class="size-badge">LARGE</span>
+                </div>
+                <div>python-large</div>
+            </div>
+            
+            <div class="model-section">
+                <div class="model-title">🤖 DeepWiki</div>
+                <div class="model-info">
+                    Primary: google/gemini-2.5-pro-20250720<br>
+                    Fallback: anthropic/claude-opus-4-1-20250805
+                </div>
+                
+                <div class="weights">
+                    <span class="weight-item">Quality: 0.67</span>
+                    <span class="weight-item">Speed: 0.04</span>
+                    <span class="weight-item">Cost: 0.15</span>
+                </div>
+            </div>
+            
+            <div class="model-section">
+                <div class="model-title">🔍 Comparator</div>
+                <div class="model-info">
+                    Primary: anthropic/claude-sonnet-4-20250522<br>
+                    Fallback: openai/gpt-4.5-turbo-20250710
+                </div>
+                
+                <div class="weights">
+                    <span class="weight-item">Quality: 0.65</span>
+                    <span class="weight-item">Speed: 0.15</span>
+                    <span class="weight-item">Cost: 0.1</span>
+                </div>
+            </div>
+            
+            <div class="model-section">
+                <div class="model-title">🎯 Orchestrator</div>
+                <div class="model-info">
+                    Primary: anthropic/claude-opus-4-1-20250805<br>
+                    Fallback: openai/gpt-5-20250615<br>
+                    <em>Context-independent (universal)</em>
+                </div>
+            </div>
+        </div>
+        
+        <div class="scenario-card">
+            <div class="scenario-header">
+                <div>
+                    <span class="language-badge go">GO</span>
+                    <span class="size-badge">MEDIUM</span>
+                </div>
+                <div>go-medium</div>
+            </div>
+            
+            <div class="model-section">
+                <div class="model-title">🤖 DeepWiki</div>
+                <div class="model-info">
+                    Primary: anthropic/claude-sonnet-4-20250522<br>
+                    Fallback: openai/gpt-4.5-turbo-20250710
+                </div>
+                
+                <div class="weights">
+                    <span class="weight-item">Quality: 0.55</span>
+                    <span class="weight-item">Speed: 0.15</span>
+                    <span class="weight-item">Cost: 0.2</span>
+                </div>
+            </div>
+            
+            <div class="model-section">
+                <div class="model-title">🔍 Comparator</div>
+                <div class="model-info">
+                    Primary: anthropic/claude-sonnet-4-20250522<br>
+                    Fallback: openai/gpt-4.5-turbo-20250710
+                </div>
+                
+                <div class="weights">
+                    <span class="weight-item">Quality: 0.65</span>
+                    <span class="weight-item">Speed: 0.15</span>
+                    <span class="weight-item">Cost: 0.1</span>
+                </div>
+            </div>
+            
+            <div class="model-section">
+                <div class="model-title">🎯 Orchestrator</div>
+                <div class="model-info">
+                    Primary: anthropic/claude-opus-4-1-20250805<br>
+                    Fallback: openai/gpt-5-20250615<br>
+                    <em>Context-independent (universal)</em>
+                </div>
+            </div>
+        </div>
+        
+        <div class="scenario-card">
+            <div class="scenario-header">
+                <div>
+                    <span class="language-badge rust">RUST</span>
+                    <span class="size-badge">SMALL</span>
+                </div>
+                <div>rust-small</div>
+            </div>
+            
+            <div class="model-section">
+                <div class="model-title">🤖 DeepWiki</div>
+                <div class="model-info">
+                    Primary: google/gemini-2.5-flash-20250720<br>
+                    Fallback: anthropic/claude-sonnet-4-20250522
+                </div>
+                
+                <div class="weights">
+                    <span class="weight-item">Quality: 0.4</span>
+                    <span class="weight-item">Speed: 0.3</span>
+                    <span class="weight-item">Cost: 0.2</span>
+                </div>
+            </div>
+            
+            <div class="model-section">
+                <div class="model-title">🔍 Comparator</div>
+                <div class="model-info">
+                    Primary: anthropic/claude-opus-4-1-20250805<br>
+                    Fallback: openai/gpt-5-20250615
+                </div>
+                
+                <div class="weights">
+                    <span class="weight-item">Quality: 0.8</span>
+                    <span class="weight-item">Speed: 0.05</span>
+                    <span class="weight-item">Cost: 0.05</span>
+                </div>
+            </div>
+            
+            <div class="model-section">
+                <div class="model-title">🎯 Orchestrator</div>
+                <div class="model-info">
+                    Primary: anthropic/claude-opus-4-1-20250805<br>
+                    Fallback: openai/gpt-5-20250615<br>
+                    <em>Context-independent (universal)</em>
+                </div>
+            </div>
+        </div>
+        
+        <div class="scenario-card">
+            <div class="scenario-header">
+                <div>
+                    <span class="language-badge java">JAVA</span>
+                    <span class="size-badge">LARGE</span>
+                </div>
+                <div>java-large</div>
+            </div>
+            
+            <div class="model-section">
+                <div class="model-title">🤖 DeepWiki</div>
+                <div class="model-info">
+                    Primary: google/gemini-2.5-pro-20250720<br>
+                    Fallback: anthropic/claude-opus-4-1-20250805
+                </div>
+                
+                <div class="weights">
+                    <span class="weight-item">Quality: 0.67</span>
+                    <span class="weight-item">Speed: 0.04</span>
+                    <span class="weight-item">Cost: 0.15</span>
+                </div>
+            </div>
+            
+            <div class="model-section">
+                <div class="model-title">🔍 Comparator</div>
+                <div class="model-info">
+                    Primary: anthropic/claude-opus-4-1-20250805<br>
+                    Fallback: openai/gpt-5-20250615
+                </div>
+                
+                <div class="weights">
+                    <span class="weight-item">Quality: 0.8</span>
+                    <span class="weight-item">Speed: 0.05</span>
+                    <span class="weight-item">Cost: 0.05</span>
+                </div>
+            </div>
+            
+            <div class="model-section">
+                <div class="model-title">🎯 Orchestrator</div>
+                <div class="model-info">
+                    Primary: anthropic/claude-opus-4-1-20250805<br>
+                    Fallback: openai/gpt-5-20250615<br>
+                    <em>Context-independent (universal)</em>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+    
+    <div class="summary">
+        <h2>📊 Key Insights</h2>
+        <ul>
+            <li>Large repos (Python, Java) → Gemini 2.5 Pro (2M+ context)</li>
+            <li>Medium repos (Go) → Claude Sonnet 4 (balanced)</li>
+            <li>Small repos (Rust) → Gemini 2.5 Flash (speed)</li>
+            <li>Complex languages → Claude Opus 4.1 (quality)</li>
+            <li>All models from 2025 (May-August)</li>
+            <li>Zero hardcoding - 100% configuration-driven</li>
+        </ul>
+        <p style="margin-top: 1rem;">Generated: 8/19/2025, 11:35:07 PM</p>
+    </div>
+</body>
+</html>

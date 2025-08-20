@@ -25,6 +25,9 @@ export {
 
 export { registerRealDeepWikiApi } from './services/register-deepwiki';
 
+// Model Research Service
+export { ModelResearcherService } from './services/model-researcher-service';
+
 // Factory
 export { 
   StandardAgentFactory,
