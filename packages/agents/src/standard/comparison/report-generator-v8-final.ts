@@ -17,6 +17,8 @@ import {
   DeveloperSkills
 } from '../types/analysis-types';
 import { OWASPMapper } from '../utils/owasp-mapper';
+import { ModelConfigResolver } from '../orchestrator/model-config-resolver';
+import { ModelResearcherService } from '../services/model-researcher-service';
 
 interface V8EnhancedOptions {
   format?: 'markdown' | 'html';
@@ -30,6 +32,23 @@ interface V8EnhancedOptions {
 }
 
 export class ReportGeneratorV8Final {
+  private modelConfigResolver?: ModelConfigResolver;
+  private logger?: any;
+
+  constructor(logger?: any, modelConfigResolver?: ModelConfigResolver) {
+    this.logger = logger;
+    this.modelConfigResolver = modelConfigResolver;
+    
+    // Create ModelConfigResolver if not provided
+    if (!this.modelConfigResolver) {
+      try {
+        this.modelConfigResolver = new ModelConfigResolver(logger);
+        this.log('info', 'Created ModelConfigResolver instance for report generator');
+      } catch (error: any) {
+        this.log('warn', 'Failed to create ModelConfigResolver, will use fallback models', { error: error.message });
+      }
+    }
+  }
   
   generateReport(comparison: ComparisonResult, options: V8EnhancedOptions = {}): string {
     const opts: V8EnhancedOptions = {
@@ -87,7 +106,7 @@ export class ReportGeneratorV8Final {
     };
     
     // Convert to ComparisonResult format
-    const comparison = this.convertToComparisonResult(analysisResult, enhancedOptions);
+    const comparison = await this.convertToComparisonResult(analysisResult, enhancedOptions);
     
     const markdown = this.generateReport(comparison, enhancedOptions);
     const html = this.generateHTMLFromMarkdown(markdown);
@@ -234,13 +253,13 @@ export class ReportGeneratorV8Final {
   /**
    * Convert analysis result to ComparisonResult format
    */
-  private convertToComparisonResult(analysisResult: any, options: any): ComparisonResult {
+  private async convertToComparisonResult(analysisResult: any, options: any): Promise<ComparisonResult> {
     return {
       newIssues: analysisResult.issues || [],
       resolvedIssues: analysisResult.resolvedIssues || [],
       unchangedIssues: [],
       prMetadata: {
-        repository: analysisResult.repository,
+        repository: analysisResult.metadata?.repository || analysisResult.repository || options.repositoryUrl || 'Unknown Repository',
         prNumber: analysisResult.prNumber,
         prTitle: `PR ${analysisResult.prNumber}`,
         author: analysisResult.author,
@@ -248,11 +267,12 @@ export class ReportGeneratorV8Final {
         targetBranch: analysisResult.targetBranch || 'main',
         filesChanged: analysisResult.filesChanged,
         additions: analysisResult.additions,
-        deletions: analysisResult.deletions
+        deletions: analysisResult.deletions,
+        testCoverage: analysisResult.testCoverage || analysisResult.metadata?.testCoverage || undefined
       },
       scanDuration: (analysisResult as any).duration || (analysisResult as any).scanDuration || `${Math.round((Date.now() - ((analysisResult as any).startTime || Date.now() - 15000)) / 1000)}s`,
       aiAnalysis: {
-        modelUsed: (analysisResult as any).modelUsed || (analysisResult as any).aiModel || options.aiModel || 'claude-3-opus-20240229',
+        modelUsed: await this.getCurrentAIModel(analysisResult, options),
         language: options.language,
         framework: options.framework,
         repoSize: options.repoSize
@@ -260,6 +280,114 @@ export class ReportGeneratorV8Final {
       metrics: analysisResult.metrics || {},
       timestamp: analysisResult.timestamp || Date.now()
     } as any;
+  }
+
+  /**
+   * Gets current AI model based on Supabase configuration with fallbacks
+   */
+  private async getCurrentAIModel(analysisResult: any, options: any): Promise<string> {
+    try {
+      // Check explicit model settings first
+      const explicitModel = (analysisResult as any).modelUsed || 
+                           (analysisResult as any).aiModel || 
+                           options.aiModel;
+      
+      if (explicitModel && !explicitModel.includes('claude-3-opus')) {
+        this.log('debug', 'Using explicit model from analysis result', { model: explicitModel });
+        return explicitModel;
+      }
+
+      // Try to get model from Supabase configuration
+      if (this.modelConfigResolver) {
+        try {
+          const language = options.language || 'TypeScript';
+          const size = options.repoSize || 'medium';
+          const role = 'comparator';
+          
+          this.log('info', 'Requesting model configuration from Supabase', { language, size, role });
+          
+          const config = await this.modelConfigResolver.getModelConfiguration(role, language, size);
+          if (config && config.primary_model) {
+            const modelId = config.primary_model.includes('/') ? 
+              config.primary_model : 
+              `${config.primary_provider}/${config.primary_model}`;
+            
+            this.log('info', 'Using Supabase model configuration', { 
+              modelId, 
+              provider: config.primary_provider,
+              role 
+            });
+            return modelId;
+          }
+        } catch (configError: any) {
+          this.log('warn', 'Failed to get model from Supabase configuration, falling back', { 
+            error: configError.message 
+          });
+        }
+      }
+
+      // Fallback to environment variables
+      if (process.env.OPENROUTER_DEFAULT_MODEL) {
+        this.log('info', 'Using OPENROUTER_DEFAULT_MODEL environment variable');
+        return process.env.OPENROUTER_DEFAULT_MODEL;
+      }
+      
+      if (process.env.OPENROUTER_MODEL) {
+        this.log('info', 'Using OPENROUTER_MODEL environment variable');
+        return process.env.OPENROUTER_MODEL;
+      }
+      
+      if (process.env.ANTHROPIC_MODEL) {
+        this.log('info', 'Using ANTHROPIC_MODEL environment variable');
+        return process.env.ANTHROPIC_MODEL;
+      }
+
+      // Final fallback to sensible defaults based on context
+      const contextBasedModel = this.getContextBasedModel(options);
+      this.log('info', 'Using context-based model fallback', { model: contextBasedModel });
+      return contextBasedModel;
+      
+    } catch (error: any) {
+      this.log('error', 'Error in getCurrentAIModel, using ultimate fallback', { error: error.message });
+      return 'gpt-4o'; // Ultimate fallback
+    }
+  }
+
+  /**
+   * Gets context-based model for fallback scenarios
+   */
+  private getContextBasedModel(options: any): string {
+    // Use modern, stable models as defaults
+    if (options.framework?.includes('React') || options.language?.includes('TypeScript')) {
+      return 'gpt-4o'; // GPT-4o is excellent for frontend work
+    }
+    
+    if (options.framework?.includes('Python') || options.language?.includes('Python')) {
+      return 'gpt-4o'; // GPT-4o handles Python well
+    }
+    
+    if (options.framework?.includes('Java') || options.language?.includes('Java')) {
+      return 'gpt-4-turbo'; // Good for enterprise Java
+    }
+
+    // Default to GPT-4o as it's the most capable current model
+    return 'gpt-4o';
+  }
+
+  /**
+   * Logging helper
+   */
+  private log(level: 'info' | 'warn' | 'error' | 'debug', message: string, data?: any): void {
+    if (this.logger) {
+      this.logger[level]?.(message, data);
+    } else {
+      const prefix = `[ReportGeneratorV8Final] [${level.toUpperCase()}]`;
+      if (data) {
+        console.log(`${prefix} ${message}`, data);
+      } else {
+        console.log(`${prefix} ${message}`);
+      }
+    }
   }
   
   /**
@@ -327,17 +455,17 @@ export class ReportGeneratorV8Final {
   private generateHeader(comparison: ComparisonResult): string {
     const prMetadata = (comparison as any).prMetadata || {};
     const scanDuration = (comparison as any).scanDuration || 'N/A';
-    const modelUsed = (comparison as any).aiAnalysis?.modelUsed || 'CodeQual AI';
+    const modelUsed = (comparison as any).aiAnalysis?.modelUsed || 'CodeQual AI Dynamic Selection';
     
     return `# CodeQual Analysis Report V8
 
-**Repository:** ${prMetadata.repository || 'Unknown'}
+**Repository:** ${prMetadata.repository || 'Unknown Repository'}
 **PR:** #${prMetadata.prNumber || 0} - ${prMetadata.prTitle || 'Untitled'}
 **Author:** ${prMetadata.author || 'Unknown'}
 **Branch:** ${prMetadata.branch || 'feature'} → ${prMetadata.targetBranch || 'main'}
 **Files Changed:** ${prMetadata.filesChanged || 0} | **Lines:** +${prMetadata.additions || 0}/-${prMetadata.deletions || 0}
 **Generated:** ${new Date().toLocaleString()} | **Duration:** ${scanDuration || 'N/A'}
-**AI Model:** ${modelUsed || 'CodeQual AI Dynamic Selection'}`;
+**AI Model:** ${modelUsed}`;
   }
 
   private generateExecutiveSummary(comparison: ComparisonResult): string {
@@ -368,7 +496,7 @@ export class ReportGeneratorV8Final {
 - **Security Score:** ${this.calculateCategoryScore(comparison, 'security')}/100
 - **Performance Score:** ${this.calculateCategoryScore(comparison, 'performance')}/100
 - **Maintainability:** ${this.calculateCategoryScore(comparison, 'architecture')}/100
-- **Test Coverage:** ${(comparison as any).prMetadata?.testCoverage || 'N/A'}%`;
+- **Test Coverage:** ${(comparison as any).prMetadata?.testCoverage !== undefined ? `${(comparison as any).prMetadata.testCoverage}%` : 'Not measured'}`;
   }
 
   private generatePRDecision(comparison: ComparisonResult): string {
@@ -466,7 +594,8 @@ ${actions.length > 0 ? '**Required Actions:**\n' + actions.map(a => `- ${a}`).jo
   }
 
   private formatSingleIssue(issue: Issue, id: string, showCode: boolean): string {
-    let content = `##### [${id}] ${issue.message}\n\n`;
+    const message = issue.message || issue.title || 'Issue';
+    let content = `##### [${id}] ${message}\n\n`;
     
     // Support both issue.location.file and issue.file formats
     const file = issue.location?.file || (issue as any).file;
@@ -474,7 +603,7 @@ ${actions.length > 0 ? '**Required Actions:**\n' + actions.map(a => `- ${a}`).jo
     const location = file && line ? `${file}:${line}` : 'Unknown location';
     
     content += `📁 **Location:** \`${location}\`\n`;
-    content += `📝 **Description:** ${issue.description || issue.message}\n`;
+    content += `📝 **Description:** ${issue.description || message}\n`;
     content += `🏷️ **Category:** ${this.capitalize(issue.category || 'general')} | **Type:** ${issue.type || 'issue'}\n`;
     
     if (showCode && (issue.codeSnippet || issue.category)) {
@@ -592,7 +721,8 @@ All security checks passed. No vulnerabilities found in the OWASP Top 10 categor
   }
 
   private generateCodeQualityAnalysis(comparison: ComparisonResult): string {
-    const testCoverage = (comparison as any).prMetadata?.testCoverage || 0;
+    const testCoverage = (comparison as any).prMetadata?.testCoverage;
+    const hasCoverage = testCoverage !== undefined && testCoverage !== null;
     const testIssues = (comparison.newIssues || []).filter(i => 
       i.message?.toLowerCase().includes('test')
     );
@@ -601,15 +731,15 @@ All security checks passed. No vulnerabilities found in the OWASP Top 10 categor
 
 ### Quality Metrics
 - **Code Quality Score:** ${this.calculateCategoryScore(comparison, 'code-quality')}/100
-- **Test Coverage:** ${testCoverage}%
+- **Test Coverage:** ${hasCoverage ? `${testCoverage}%` : 'Not measured'}
 - **Complexity:** ${this.calculateComplexity(comparison)}
 - **Technical Debt:** ${this.formatTechnicalDebt(comparison)}
-
+${hasCoverage ? `
 ### Test Coverage Analysis
 - **Current Coverage:** ${testCoverage}%
 - **Target Coverage:** 80%
 - **Gap:** ${Math.max(0, 80 - testCoverage)}%
-- **Status:** ${testCoverage < 60 ? '🔴 Critical' : testCoverage < 80 ? '🟡 Warning' : '🟢 Good'}
+- **Status:** ${testCoverage < 60 ? '🔴 Critical' : testCoverage < 80 ? '🟡 Warning' : '🟢 Good'}` : ''}
 
 ${testIssues.length > 0 ? '**Test-related Issues:**\n' + testIssues.map(i => `- ${i.message}`).join('\n') : ''}`;
   }
@@ -640,10 +770,8 @@ ${testIssues.length > 0 ? '**Test-related Issues:**\n' + testIssues.map(i => `- 
     }
     
     if (options.includeArchitectureDiagram) {
-      content += '\n\n### System Architecture Overview\n';
-      content += '```\n';
+      content += '\n\n';
       content += this.generateProperArchitectureDiagram(comparison);
-      content += '\n```';
     }
     
     return content;
@@ -1127,32 +1255,68 @@ ${testIssues.length > 0 ? '**Test-related Issues:**\n' + testIssues.map(i => `- 
     const highCount = issues.filter(i => i.severity === 'high').length;
     const securityCount = issues.filter(i => i.category === 'security').length;
     const performanceCount = issues.filter(i => i.category === 'performance').length;
+    const architectureCount = issues.filter(i => i.category === 'architecture').length;
+    const bestPracticeCount = issues.filter(i => (i.category as string) === 'best-practice' || (i.category as string) === 'style').length;
     
     let path = '\n\nBased on your PR analysis, here\'s your recommended learning path:\n\n';
     
     let priority = 1;
+    let totalTime = 0;
     
-    // Priority 1: Critical security issues
+    // Priority 1: Critical security issues with specific training
     if (criticalCount > 0 && securityCount > 0) {
-      path += `**${priority++}. Immediate Focus: Security Fundamentals**\n`;
-      path += `   - Time: 2-3 hours\n`;
-      path += `   - Why: You have ${criticalCount} critical security issue(s) that need immediate attention\n`;
-      path += `   - Start with: OWASP Top 10 and secure coding practices\n\n`;
+      const timeNeeded = Math.ceil(securityCount * 0.5); // 30 min per security issue
+      totalTime += timeNeeded;
+      path += `**${priority++}. 🔴 Immediate Focus: Security Fundamentals**\n`;
+      path += `   - ⏱️ **Estimated Time:** ${timeNeeded} hour${timeNeeded > 1 ? 's' : ''}\n`;
+      path += `   - 🎯 **Why:** You have ${criticalCount} critical security issue(s) that need immediate attention\n`;
+      path += `   - 📚 **Specific Training:**\n`;
+      path += `     • OWASP Top 10 Security Risks (30 min)\n`;
+      path += `     • Secure Coding in ${this.detectPrimaryLanguage(issues)} (45 min)\n`;
+      path += `     • Input Validation & Sanitization (30 min)\n`;
+      path += `   - 🔗 **Start here:** [OWASP Security Fundamentals](https://owasp.org/www-project-top-ten/)\n\n`;
     }
     
-    // Priority 2: Performance issues
+    // Priority 2: Performance issues with targeted courses
     if (performanceCount > 0) {
-      path += `**${priority++}. Performance Optimization**\n`;
-      path += `   - Time: 1-2 hours\n`;
-      path += `   - Why: ${performanceCount} performance issue(s) affecting user experience\n`;
-      path += `   - Focus on: Query optimization and caching strategies\n\n`;
+      const timeNeeded = Math.ceil(performanceCount * 0.25); // 15 min per performance issue
+      totalTime += timeNeeded;
+      path += `**${priority++}. ⚡ Performance Optimization**\n`;
+      path += `   - ⏱️ **Estimated Time:** ${timeNeeded} hour${timeNeeded > 1 ? 's' : ''}\n`;
+      path += `   - 🎯 **Why:** ${performanceCount} performance issue(s) affecting user experience\n`;
+      path += `   - 📚 **Specific Training:**\n`;
+      path += `     • Database Query Optimization (30 min)\n`;
+      path += `     • Caching Strategies & Implementation (45 min)\n`;
+      path += `     • Profiling & Performance Monitoring (30 min)\n`;
+      path += `   - 🔗 **Start here:** [Web Performance Fundamentals](https://web.dev/learn/performance/)\n\n`;
     }
     
-    // Priority 3: Code quality
-    if (highCount > 0) {
-      path += `**${priority++}. Code Quality & Best Practices**\n`;
-      path += `   - Time: 1 hour\n`;
-      path += `   - Why: ${highCount} high-priority issue(s) need addressing\n`;
+    // Priority 3: Architecture & Design
+    if (architectureCount > 0) {
+      const timeNeeded = Math.ceil(architectureCount * 0.5); // 30 min per architecture issue
+      totalTime += timeNeeded;
+      path += `**${priority++}. 🏗️ Architecture & Design Patterns**\n`;
+      path += `   - ⏱️ **Estimated Time:** ${timeNeeded} hour${timeNeeded > 1 ? 's' : ''}\n`;
+      path += `   - 🎯 **Why:** ${architectureCount} architectural issue(s) found\n`;
+      path += `   - 📚 **Specific Training:**\n`;
+      path += `     • SOLID Principles (45 min)\n`;
+      path += `     • Design Patterns in Practice (60 min)\n`;
+      path += `     • Refactoring Techniques (30 min)\n`;
+      path += `   - 🔗 **Start here:** [Software Design Patterns](https://refactoring.guru/design-patterns)\n\n`;
+    }
+    
+    // Priority 4: Code quality and best practices
+    if (highCount > 0 || bestPracticeCount > 0) {
+      const timeNeeded = 1;
+      totalTime += timeNeeded;
+      path += `**${priority++}. 📝 Code Quality & Best Practices**\n`;
+      path += `   - ⏱️ **Estimated Time:** ${timeNeeded} hour\n`;
+      path += `   - 🎯 **Why:** ${highCount + bestPracticeCount} quality issue(s) need addressing\n`;
+      path += `   - 📚 **Specific Training:**\n`;
+      path += `     • Clean Code Principles (30 min)\n`;
+      path += `     • Code Review Best Practices (15 min)\n`;
+      path += `     • Testing Strategies (15 min)\n`;
+      path += `   - 🔗 **Start here:** [Clean Code Summary](https://github.com/ryanmcdermott/clean-code-javascript)\n\n`;
       path += `   - Topics: Design patterns, SOLID principles, clean code\n\n`;
     }
     
@@ -1165,14 +1329,65 @@ ${testIssues.length > 0 ? '**Test-related Issues:**\n' + testIssues.map(i => `- 
       path += `   - Learn: Unit testing, integration testing, TDD\n\n`;
     }
     
+    // Add total time estimate
+    if (totalTime > 0) {
+      path += `\n⏱️ **Total Learning Time Required:** ${totalTime} hour${totalTime > 1 ? 's' : ''}\n`;
+      path += `📈 **Expected Improvement:** ${Math.min(95, 70 + (totalTime * 5))}% reduction in similar issues\n\n`;
+    }
+    
     if (priority === 1) {
-      path += `Great job! Your code has minor issues. Focus on:\n`;
-      path += `- Continuous learning and staying updated with best practices\n`;
-      path += `- Code review participation to learn from others\n`;
-      path += `- Contributing to team coding standards\n`;
+      path += `✅ **Great job!** Your code has minor issues. Focus on:\n`;
+      path += `   • Continuous learning and staying updated with best practices\n`;
+      path += `   • Code review participation to learn from others\n`;
+      path += `   • Contributing to team coding standards\n`;
     }
     
     return path;
+  }
+  
+  private detectPrimaryLanguage(issues: Issue[]): string {
+    // Detect primary language from file extensions in issues
+    const extensions: Record<string, number> = {};
+    
+    issues.forEach(issue => {
+      const file = issue.location?.file || '';
+      const ext = file.split('.').pop()?.toLowerCase();
+      if (ext) {
+        extensions[ext] = (extensions[ext] || 0) + 1;
+      }
+    });
+    
+    // Map extensions to languages
+    const langMap: Record<string, string> = {
+      'ts': 'TypeScript',
+      'tsx': 'TypeScript',
+      'js': 'JavaScript',
+      'jsx': 'JavaScript',
+      'py': 'Python',
+      'java': 'Java',
+      'cs': 'C#',
+      'go': 'Go',
+      'rs': 'Rust',
+      'cpp': 'C++',
+      'c': 'C',
+      'rb': 'Ruby',
+      'php': 'PHP',
+      'swift': 'Swift',
+      'kt': 'Kotlin'
+    };
+    
+    // Find most common language
+    let maxCount = 0;
+    let primaryLang = 'your language';
+    
+    for (const [ext, count] of Object.entries(extensions)) {
+      if (count > maxCount && langMap[ext]) {
+        maxCount = count;
+        primaryLang = langMap[ext];
+      }
+    }
+    
+    return primaryLang;
   }
 
   private generateSkillTracking(comparison: ComparisonResult): string {
@@ -2365,6 +2580,7 @@ Analysis Date: ${new Date().toISOString().split('T')[0]}, ${new Date().toISOStri
   private generateReportMetadata(comparison: ComparisonResult): string {
     const prMetadata = (comparison as any).prMetadata || {};
     const scanMetadata = (comparison as any).scanMetadata || {};
+    const aiAnalysis = (comparison as any).aiAnalysis || {};
     
     return `## Report Metadata
 
@@ -2372,14 +2588,14 @@ Analysis Date: ${new Date().toISOString().split('T')[0]}, ${new Date().toISOStri
 - **Generated:** ${new Date().toISOString()}
 - **Version:** V8 Final
 - **Analysis ID:** ${scanMetadata.analysisId || 'CQ-' + Date.now()}
-- **Repository:** ${prMetadata.repository || 'Unknown'}
+- **Repository:** ${prMetadata.repository || 'Unknown Repository'}
 - **PR Number:** #${prMetadata.prNumber || 0}
 - **Base Commit:** ${scanMetadata.baseCommit || prMetadata.baseCommit || 'main'}
 - **Head Commit:** ${scanMetadata.headCommit || prMetadata.headCommit || 'HEAD'}
 - **Files Analyzed:** ${prMetadata.filesChanged || 0}
 - **Lines Changed:** +${prMetadata.additions || 0}/-${prMetadata.deletions || 0}
 - **Scan Duration:** ${(comparison as any).scanDuration || (comparison as any).duration || 'N/A'}
-- **AI Model:** ${(comparison as any).aiAnalysis?.modelUsed || (comparison as any).modelUsed || (comparison as any).aiModel || 'Dynamic Model Selection'}
+- **AI Model:** ${aiAnalysis.modelUsed || 'CodeQual AI Dynamic Selection'}
 - **Report Format:** Markdown v8
 - **Timestamp:** ${Date.now()}
 
@@ -2429,22 +2645,23 @@ Analysis Date: ${new Date().toISOString().split('T')[0]}, ${new Date().toISOStri
     
     issues.forEach(issue => {
       let type = 'General Issues';
+      const message = issue.message || issue.title || '';
       
       // Use lowercase values to match the Issue interface
-      if (issue.category === 'security' || issue.message.toLowerCase().includes('security') || 
-          issue.message.toLowerCase().includes('sql') || issue.message.toLowerCase().includes('jwt')) {
+      if (issue.category === 'security' || message.toLowerCase().includes('security') || 
+          message.toLowerCase().includes('sql') || message.toLowerCase().includes('jwt')) {
         type = 'Security Vulnerabilities';
-      } else if (issue.category === 'performance' || issue.message.toLowerCase().includes('performance') || 
-                 issue.message.toLowerCase().includes('n+1') || issue.message.toLowerCase().includes('query')) {
+      } else if (issue.category === 'performance' || message.toLowerCase().includes('performance') || 
+                 message.toLowerCase().includes('n+1') || message.toLowerCase().includes('query')) {
         type = 'Performance Optimization';
-      } else if (issue.message.toLowerCase().includes('test') || 
-                 issue.message.toLowerCase().includes('coverage')) {
+      } else if (message.toLowerCase().includes('test') || 
+                 message.toLowerCase().includes('coverage')) {
         type = 'Testing and Coverage';
-      } else if (issue.category === 'architecture' || issue.message.toLowerCase().includes('coupling') || 
-                 issue.message.toLowerCase().includes('pattern')) {
+      } else if (issue.category === 'architecture' || message.toLowerCase().includes('coupling') || 
+                 message.toLowerCase().includes('pattern')) {
         type = 'Architecture and Design';
-      } else if (issue.category === 'dependencies' || issue.message.toLowerCase().includes('dependency') || 
-                 issue.message.toLowerCase().includes('vulnerable')) {
+      } else if (issue.category === 'dependencies' || message.toLowerCase().includes('dependency') || 
+                 message.toLowerCase().includes('vulnerable')) {
         type = 'Dependency Management';
       }
       
@@ -2458,34 +2675,35 @@ Analysis Date: ${new Date().toISOString().split('T')[0]}, ${new Date().toISOStri
   private generateMockCodeSnippet(issue: Issue): string {
     const file = issue.location?.file || (issue as any).file || 'unknown';
     const line = issue.location?.line || (issue as any).line || 1;
+    const message = issue.message || issue.title || '';
     
     // Generate contextual code snippets based on issue
-    if (issue.message.toLowerCase().includes('sql') || issue.message.toLowerCase().includes('injection')) {
+    if (message.toLowerCase().includes('sql') || message.toLowerCase().includes('injection')) {
       return `// Code at ${file}:${line}
-// ${issue.message}
+// ${message}
 const query = "SELECT * FROM users WHERE id = " + req.params.id;
 db.execute(query); // SQL injection vulnerability`;
-    } else if (issue.message.toLowerCase().includes('jwt') || issue.message.toLowerCase().includes('token')) {
+    } else if (message.toLowerCase().includes('jwt') || message.toLowerCase().includes('token')) {
       return `// Code at ${file}:${line}
-// ${issue.message}
+// ${message}
 const token = jwt.sign(payload, 'hardcoded-secret');
 // Missing signature verification`;
-    } else if (issue.message.toLowerCase().includes('api') || issue.message.toLowerCase().includes('breaking')) {
+    } else if (message.toLowerCase().includes('api') || message.toLowerCase().includes('breaking')) {
       return `// Code at ${file}:${line}
-// ${issue.message}
+// ${message}
 export function getUserData(): Promise<UserDTO> { // Changed from Promise<User>
   return fetchUserDTO(id);
 }`;
-    } else if (issue.message.toLowerCase().includes('n+1') || issue.message.toLowerCase().includes('query')) {
+    } else if (message.toLowerCase().includes('n+1') || message.toLowerCase().includes('query')) {
       return `// Code at ${file}:${line}
-// ${issue.message}
+// ${message}
 for (const user of users) {
   const posts = await db.query('SELECT * FROM posts WHERE user_id = ?', user.id);
   user.posts = posts; // N+1 query problem
 }`;
-    } else if (issue.message.toLowerCase().includes('complexity') || issue.message.toLowerCase().includes('cyclomatic')) {
+    } else if (message.toLowerCase().includes('complexity') || message.toLowerCase().includes('cyclomatic')) {
       return `// Code at ${file}:${line}
-// ${issue.message}
+// ${message}
 function processData(data) {
   if (condition1) {
     if (condition2) {
@@ -2496,7 +2714,7 @@ function processData(data) {
   }
   // Cyclomatic complexity: 18
 }`;
-    } else if (issue.message.includes('God object')) {
+    } else if (message.includes('God object')) {
       return `// Code at ${file}:${line}
 class EmailService {
   sendEmail() { /* ... */ }
@@ -2506,8 +2724,8 @@ class EmailService {
   archiveEmail() { /* ... */ }
   // ... 20 more methods
 }`;
-    } else if (issue.message.toLowerCase().includes('dependency') || issue.message.toLowerCase().includes('vulnerable')) {
-      const pkg = issue.message.match(/[a-z-]+@[0-9.]+/i) || ['lodash@4.17.19'];
+    } else if (message.toLowerCase().includes('dependency') || message.toLowerCase().includes('vulnerable')) {
+      const pkg = message.match(/[a-z-]+@[0-9.]+/i) || ['lodash@4.17.19'];
       return `"dependencies": {
   "${pkg[0] || 'lodash'}": "4.17.19", // Known vulnerability
   "express": "4.17.1"
@@ -2515,52 +2733,53 @@ class EmailService {
     }
     // Default with location info
     return `// Code at ${file}:${line}
-// ${issue.message}`;
+// ${message}`;
   }
 
   private generateMockFixedCode(issue: Issue): string {
     const file = issue.location?.file || (issue as any).file || 'unknown';
+    const message = issue.message || issue.title || '';
     
-    if (issue.message.toLowerCase().includes('sql') || issue.message.toLowerCase().includes('injection')) {
+    if (message.toLowerCase().includes('sql') || message.toLowerCase().includes('injection')) {
       return `// Fixed: Use parameterized queries
 const query = "SELECT * FROM users WHERE id = ?";
 db.execute(query, [req.params.id]); // Safe from SQL injection`;
-    } else if (issue.message.toLowerCase().includes('jwt') || issue.message.toLowerCase().includes('token')) {
+    } else if (message.toLowerCase().includes('jwt') || message.toLowerCase().includes('token')) {
       return `// Fixed: Use environment variable and verify signature
 const token = jwt.sign(payload, process.env.JWT_SECRET);
 jwt.verify(token, process.env.JWT_SECRET); // Proper verification`;
-    } else if (issue.message.toLowerCase().includes('api') || issue.message.toLowerCase().includes('breaking')) {
+    } else if (message.toLowerCase().includes('api') || message.toLowerCase().includes('breaking')) {
       return `// Fixed: Add backward compatibility
 export function getUserData(): Promise<User | UserDTO> {
   // Support both old and new return types
   return this.useNewFormat ? getUserDTO(id) : getUser(id);
 }`;
-    } else if (issue.message.toLowerCase().includes('n+1') || issue.message.toLowerCase().includes('query')) {
+    } else if (message.toLowerCase().includes('n+1') || message.toLowerCase().includes('query')) {
       return `// Fixed: Use eager loading
 const usersWithPosts = await db.query(
   'SELECT u.*, p.* FROM users u LEFT JOIN posts p ON u.id = p.user_id'
 ); // Single query for all data`;
-    } else if (issue.message.toLowerCase().includes('complexity') || issue.message.toLowerCase().includes('cyclomatic')) {
+    } else if (message.toLowerCase().includes('complexity') || message.toLowerCase().includes('cyclomatic')) {
       return `// Fixed: Refactored into smaller functions
 function processData(data) {
   const validated = validateData(data);
   const transformed = transformData(validated);
   return saveResults(transformed);
 } // Reduced complexity`;
-    } else if (issue.message.toLowerCase().includes('dependency') || issue.message.toLowerCase().includes('vulnerable')) {
-      const pkg = issue.message.match(/[a-z-]+/i) || ['lodash'];
+    } else if (message.toLowerCase().includes('dependency') || message.toLowerCase().includes('vulnerable')) {
+      const pkg = message.match(/[a-z-]+/i) || ['lodash'];
       return `"dependencies": {
   "${pkg[0]}": "^latest", // Updated to secure version
   "express": "^4.18.2"
 }`;
-    } else if (issue.message.includes('MySQL') || issue.message.includes('mysql')) {
+    } else if (message.includes('MySQL') || message.includes('mysql')) {
       return `const mysql = require('mysql2/promise');
 const connection = await mysql.createConnection({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD
 });`;
-    } else if (issue.message.includes('God object')) {
+    } else if (message.includes('God object')) {
       return `// Refactored into smaller, focused services
 class EmailSender {
   sendEmail() { /* ... */ }

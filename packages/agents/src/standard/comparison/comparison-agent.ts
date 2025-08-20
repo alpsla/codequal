@@ -18,9 +18,7 @@ import {
   Issue,
   PRMetadata
 } from '../types/analysis-types';
-// Report generators
-// DEPRECATED: V7 is deprecated, use V8 only - see DEPRECATED_V7_WARNING.md
-import { ReportGeneratorV7HTMLEnhanced } from './report-generator-v7-html-enhanced'; // @deprecated - DO NOT USE
+// Report generator - V8 only (V7 has been removed)
 import { ReportGeneratorV8Final } from './report-generator-v8-final';
 import { SkillCalculator } from './skill-calculator';
 import { ILogger } from '../services/interfaces/logger.interface';
@@ -33,10 +31,9 @@ import { DynamicModelSelector, RoleRequirements } from '../services/dynamic-mode
 export class ComparisonAgent implements IReportingComparisonAgent {
   private config: ComparisonConfig;
   private modelConfig: any;
-  // Report generators
-  private reportGeneratorV7: ReportGeneratorV7HTMLEnhanced; // @deprecated - will be removed
+  // Report generator - V8 only
   private reportGeneratorV8: ReportGeneratorV8Final;
-  private useV8Generator = true; // Default to V8 - V7 is deprecated
+  private useV8Generator = true; // Always use V8
   private skillCalculator: SkillCalculator;
   private modelSelector: DynamicModelSelector;
   
@@ -46,13 +43,8 @@ export class ComparisonAgent implements IReportingComparisonAgent {
     private skillProvider?: any,  // BUG-012 FIX: Accept skill provider for persistence
     private options?: { useV8Generator?: boolean; reportFormat?: 'html' | 'markdown' }
   ) {
-    // Initialize both generators
-    this.reportGeneratorV7 = new ReportGeneratorV7HTMLEnhanced(
-      skillProvider,
-      true  // Authorized caller flag
-    );
-    
-    // V8 for consolidated structure without duplication
+    // Initialize V8 generator only
+    // V7 has been removed - always use V8
     this.reportGeneratorV8 = new ReportGeneratorV8Final();
     
     // Use V8 if explicitly requested or if env var is set
@@ -268,15 +260,15 @@ export class ComparisonAgent implements IReportingComparisonAgent {
         includeAIIDESection: true
       });
     } else {
-      console.log('ComparisonAgent - Using V7 Fixed report generator with:', {
-        hasPrMetadata: !!(comparison as any).prMetadata,
-        prMetadata: (comparison as any).prMetadata,
-        scanDuration: (comparison as any).scanDuration,
-        newIssuesCount: comparison.newIssues?.length || 0,
-        resolvedIssuesCount: comparison.resolvedIssues?.length || 0
+      // V7 has been removed - always use V8
+      console.warn('V7 generator requested but has been removed. Using V8 instead.');
+      return this.reportGeneratorV8.generateReport(comparison, {
+        format: this.options?.reportFormat || 'markdown',
+        includeEducation: true,
+        verbosity: 'standard',
+        includePreExistingDetails: true,
+        includeAIIDESection: true
       });
-      
-      return this.reportGeneratorV7.generateReport(comparison);
     }
   }
 
@@ -284,13 +276,8 @@ export class ComparisonAgent implements IReportingComparisonAgent {
    * Generate PR comment from comparison
    */
   generatePRComment(comparison: ComparisonResult): string {
-    if (this.useV8Generator) {
-      // For V8, generate PR comment directly from comparison
-      return this.extractPRCommentFromV8(comparison);
-    } else {
-      // Use the V7 generator for PR comments
-      return this.reportGeneratorV7.generatePRComment(comparison);
-    }
+    // Always use V8 (V7 has been removed)
+    return this.extractPRCommentFromV8(comparison);
   }
   
   /**

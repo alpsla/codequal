@@ -1,5 +1,5 @@
 /**
- * Production Comparison Agent - Uses ReportGeneratorV7Fixed
+ * Production Comparison Agent - Uses ReportGeneratorV8Final
  * 
  * This is the PRODUCTION VERSION that uses the fixed report generator
  * with all enhancements including:
@@ -23,7 +23,7 @@ import {
   Issue,
   PRMetadata
 } from '../types/analysis-types';
-import { ReportGeneratorV7Fixed } from './report-generator-v7-fixed';
+import { ReportGeneratorV8Final } from './report-generator-v8-final';
 import { SkillCalculator } from './skill-calculator';
 import { ILogger } from '../services/interfaces/logger.interface';
 import { EnhancedIssueMatcher, IssueDuplicator } from '../services/issue-matcher-enhanced';
@@ -37,7 +37,7 @@ import { AILocationFinder, createAILocationFinder } from '../services/ai-locatio
 export class ComparisonAgentProduction implements IReportingComparisonAgent {
   private config: ComparisonConfig;
   private modelConfig: any;
-  private reportGenerator: ReportGeneratorV7Fixed;
+  private reportGenerator: ReportGeneratorV8Final;
   private skillCalculator: SkillCalculator;
   private modelSelector: DynamicModelSelector;
   private locationEnhancer: LocationEnhancer;
@@ -48,12 +48,10 @@ export class ComparisonAgentProduction implements IReportingComparisonAgent {
     private modelService?: any,
     private skillProvider?: any
   ) {
-    // Use the production V7 Fixed generator
-    this.reportGenerator = new ReportGeneratorV7Fixed(
-      skillProvider,
-      true,  // Authorized caller
-      modelService?.modelVersionSync,
-      modelService?.vectorStorage
+    // Use the production V8 Final generator
+    this.reportGenerator = new ReportGeneratorV8Final(
+      modelService, // logger/modelService
+      modelService?.modelConfigResolver // modelConfigResolver
     );
     this.skillCalculator = new SkillCalculator();
     this.config = this.getDefaultConfig();
@@ -376,41 +374,16 @@ export class ComparisonAgentProduction implements IReportingComparisonAgent {
     duration?: number,
     modelUsed?: string
   ): Promise<string> {
-    // Prepare data for V7 Fixed generator
-    const reportData = {
-      comparison,
-      mainBranchResult: mainBranch,
-      featureBranchResult: featureBranch,
-      prMetadata: prMetadata || {} as PRMetadata,
-      prDecision: this.determinePRDecision(comparison),
-      confidence: this.calculateConfidence(comparison),
-      modelUsed: modelUsed || 'gpt-4o',
-      scanDuration: duration || 0,
-      generateReport: true
-    };
-    
-    // Generate report with V7 Fixed
-    return await this.reportGenerator.generateReport(reportData);
+    // Generate report with V8 Final - directly pass ComparisonResult
+    return this.reportGenerator.generateReport(comparison);
   }
   
   /**
    * Generate report - Interface implementation
    */
   async generateReport(comparison: ComparisonResult): Promise<string> {
-    // Use comparison data to generate report
-    const reportData = {
-      comparison,
-      mainBranchResult: { issues: comparison.resolvedIssues || [] } as any,
-      featureBranchResult: { issues: comparison.newIssues || [] } as any,
-      prMetadata: {} as PRMetadata,
-      prDecision: this.determinePRDecision(comparison),
-      confidence: this.calculateConfidence(comparison),
-      modelUsed: 'gpt-4-turbo',
-      scanDuration: 0,
-      generateReport: true
-    };
-    
-    return await this.reportGenerator.generateReport(reportData);
+    // Generate report with V8 Final - directly pass ComparisonResult
+    return this.reportGenerator.generateReport(comparison);
   }
 
   /**
