@@ -23,7 +23,7 @@ import {
   ModelCapabilities as EnhancedModelCapabilities,
   ModelSelectionContext,
   ModelEvaluation
-} from '../researcher/enhanced-model-selection-rules';
+} from './enhanced-model-selection-rules';
 import { ModelAvailabilityValidator } from './model-availability-validator';
 
 const logger = createLogger('UnifiedModelSelector');

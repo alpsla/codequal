@@ -43,7 +43,7 @@ export * from './prompts/prompt-loader';
 // Researcher
 export { ResearcherAgent } from './researcher/researcher-agent';
 export * from './researcher/researcher-service';
-export * from './researcher/enhanced-model-selection-rules';
+// export * from './researcher/enhanced-model-selection-rules'; // Archived
 
 // Services
 export * from './services/skill-tracking-service';

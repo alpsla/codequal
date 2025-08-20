@@ -20,7 +20,7 @@ import {
 } from '../types/analysis-types';
 // Report generators - V7 and new V8
 import { ReportGeneratorV7HTMLEnhanced } from './report-generator-v7-html-enhanced';
-import { ReportGeneratorV8 } from './report-generator-v8';
+import { ReportGeneratorV8Final } from './report-generator-v8-final';
 import { SkillCalculator } from './skill-calculator';
 import { ILogger } from '../services/interfaces/logger.interface';
 import { EnhancedIssueMatcher, IssueDuplicator } from '../services/issue-matcher-enhanced';
@@ -34,7 +34,7 @@ export class ComparisonAgent implements IReportingComparisonAgent {
   private modelConfig: any;
   // Support both V7 and V8 report generators
   private reportGeneratorV7: ReportGeneratorV7HTMLEnhanced;
-  private reportGeneratorV8: ReportGeneratorV8;
+  private reportGeneratorV8: ReportGeneratorV8Final;
   private useV8Generator: boolean = false;
   private skillCalculator: SkillCalculator;
   private modelSelector: DynamicModelSelector;
@@ -52,7 +52,7 @@ export class ComparisonAgent implements IReportingComparisonAgent {
     );
     
     // V8 for consolidated structure without duplication
-    this.reportGeneratorV8 = new ReportGeneratorV8();
+    this.reportGeneratorV8 = new ReportGeneratorV8Final();
     
     // Use V8 if explicitly requested or if env var is set
     this.useV8Generator = options?.useV8Generator || 
@@ -264,7 +264,6 @@ export class ComparisonAgent implements IReportingComparisonAgent {
       return this.reportGeneratorV8.generateReport(v8AnalysisResult, {
         format: this.options?.reportFormat || 'markdown',
         includeEducation: true,
-        includeCodeSnippets: true,
         verbosity: 'standard',
         includePreExistingDetails: true,
         includeAIIDESection: true
@@ -286,8 +285,36 @@ export class ComparisonAgent implements IReportingComparisonAgent {
    * Generate PR comment from comparison
    */
   generatePRComment(comparison: ComparisonResult): string {
-    // Use the fixed report generator for PR comments too
-    return this.reportGenerator.generatePRComment(comparison);
+    if (this.useV8Generator) {
+      // For V8, extract PR comment from the report or generate a concise version
+      const v8AnalysisResult = this.adaptComparisonToV8Format(comparison);
+      return this.extractPRCommentFromV8(v8AnalysisResult);
+    } else {
+      // Use the V7 generator for PR comments
+      return this.reportGeneratorV7.generatePRComment(comparison);
+    }
+  }
+  
+  /**
+   * Extract PR comment from V8 format
+   */
+  private extractPRCommentFromV8(analysisResult: any): string {
+    const decision = analysisResult.score >= 70 ? '✅ Approved' : '⚠️ Needs Work';
+    const newIssuesCount = analysisResult.prIssues?.length || 0;
+    const resolvedCount = analysisResult.repositoryIssues?.filter((i: any) => i.status === 'resolved').length || 0;
+    
+    let comment = `## CodeQual Analysis: ${decision}\n\n`;
+    comment += `**Score:** ${analysisResult.score}/100\n`;
+    comment += `**New Issues:** ${newIssuesCount} | **Resolved:** ${resolvedCount}\n\n`;
+    
+    if (newIssuesCount > 0) {
+      comment += '### Top Issues to Address:\n';
+      analysisResult.prIssues.slice(0, 3).forEach((issue: any) => {
+        comment += `- ${issue.message} (${issue.file}:${issue.line})\n`;
+      });
+    }
+    
+    return comment;
   }
 
   /**
@@ -786,7 +813,6 @@ Provide confidence scores and reasoning for each finding.`;
     const allIssues = [
       ...(comparison.newIssues || []).map(i => ({ ...i, status: 'new' })),
       ...(comparison.resolvedIssues || []).map(i => ({ ...i, status: 'resolved' })),
-      ...(comparison.fixedIssues || []).map(i => ({ ...i, status: 'resolved' })),
       ...(comparison.unchangedIssues || []).map(i => ({ ...i, status: 'pre-existing' }))
     ];
     
