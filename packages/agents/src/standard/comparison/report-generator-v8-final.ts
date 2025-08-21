@@ -292,7 +292,7 @@ export class ReportGeneratorV8Final {
                            (analysisResult as any).aiModel || 
                            options.aiModel;
       
-      if (explicitModel && !explicitModel.includes('claude-3-opus')) {
+      if (explicitModel) {
         this.log('debug', 'Using explicit model from analysis result', { model: explicitModel });
         return explicitModel;
       }
@@ -357,21 +357,10 @@ export class ReportGeneratorV8Final {
    * Gets context-based model for fallback scenarios
    */
   private getContextBasedModel(options: any): string {
-    // Use modern, stable models as defaults
-    if (options.framework?.includes('React') || options.language?.includes('TypeScript')) {
-      return 'gpt-4o'; // GPT-4o is excellent for frontend work
-    }
-    
-    if (options.framework?.includes('Python') || options.language?.includes('Python')) {
-      return 'gpt-4o'; // GPT-4o handles Python well
-    }
-    
-    if (options.framework?.includes('Java') || options.language?.includes('Java')) {
-      return 'gpt-4-turbo'; // Good for enterprise Java
-    }
-
-    // Default to GPT-4o as it's the most capable current model
-    return 'gpt-4o';
+    // This method should not be used - dynamic selection should come from ModelConfigResolver
+    // Return a placeholder to indicate dynamic selection is active
+    this.log('warn', 'getContextBasedModel called but should use ModelConfigResolver instead');
+    return 'Dynamic Model Selection Active';
   }
 
   /**
@@ -394,12 +383,12 @@ export class ReportGeneratorV8Final {
    * Generate HTML from markdown
    */
   private generateHTMLFromMarkdown(markdown: string): string {
-    // Simple HTML wrapper with enhanced styling
     return `<!DOCTYPE html>
 <html>
 <head>
   <title>CodeQual V8 Analysis Report</title>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
   <style>
     body { 
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -440,13 +429,66 @@ export class ReportGeneratorV8Final {
     table { border-collapse: collapse; width: 100%; margin: 20px 0; }
     th, td { border: 1px solid #e2e8f0; padding: 12px; text-align: left; }
     th { background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); color: white; }
+    /* Mermaid diagram styling */
+    .mermaid {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px 0;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
   <div class="container" id="content"></div>
   <script>
+    // Initialize Mermaid
+    mermaid.initialize({ 
+      startOnLoad: false,
+      theme: 'default',
+      themeVariables: {
+        primaryColor: '#667eea',
+        primaryTextColor: '#fff',
+        primaryBorderColor: '#764ba2',
+        lineColor: '#5a67d8',
+        secondaryColor: '#f7fafc',
+        tertiaryColor: '#fff3cd'
+      }
+    });
+    
     const markdownContent = ${JSON.stringify(markdown)};
+    
+    // Custom renderer for Mermaid blocks
+    const renderer = new marked.Renderer();
+    const originalCodeRenderer = renderer.code.bind(renderer);
+    
+    renderer.code = function(code, language) {
+      if (language === 'mermaid') {
+        return '<div class="mermaid">' + code + '</div>';
+      }
+      return originalCodeRenderer(code, language);
+    };
+    
+    marked.setOptions({ renderer: renderer });
+    
+    // Parse markdown and render
     document.getElementById('content').innerHTML = marked.parse(markdownContent);
+    
+    // Render Mermaid diagrams
+    mermaid.init();
+    
+    // Hide Alternative ASCII View section
+    const headers = document.querySelectorAll('h3, strong');
+    headers.forEach(h => {
+      if (h.textContent && h.textContent.includes('Alternative ASCII View')) {
+        h.style.display = 'none';
+        let nextElement = h.nextElementSibling;
+        while (nextElement && nextElement.tagName === 'PRE') {
+          nextElement.style.display = 'none';
+          nextElement = nextElement.nextElementSibling;
+        }
+      }
+    });
   </script>
 </body>
 </html>`;
@@ -454,17 +496,30 @@ export class ReportGeneratorV8Final {
 
   private generateHeader(comparison: ComparisonResult): string {
     const prMetadata = (comparison as any).prMetadata || {};
-    const scanDuration = (comparison as any).scanDuration || 'N/A';
-    const modelUsed = (comparison as any).aiAnalysis?.modelUsed || 'CodeQual AI Dynamic Selection';
+    const scanDuration = (comparison as any).scanDuration || (comparison as any).duration || 'N/A';
+    
+    // Extract repo name from URL if provided
+    const repoUrl = prMetadata.repository_url || prMetadata.repository || 'Unknown Repository';
+    let repoName = repoUrl;
+    if (repoUrl.includes('github.com')) {
+      const match = repoUrl.match(/github.com\/([^/]+\/[^/]+)/);
+      if (match) repoName = match[1];
+    }
+    
+    // Get the dynamically selected model - NO HARDCODED DEFAULTS
+    const modelUsed = (comparison as any).modelUsed || 
+                     (comparison as any).aiModel ||
+                     process.env.OPENROUTER_MODEL || 
+                     'Dynamic Model Selection Active';
     
     return `# CodeQual Analysis Report V8
 
-**Repository:** ${prMetadata.repository || 'Unknown Repository'}
-**PR:** #${prMetadata.prNumber || 0} - ${prMetadata.prTitle || 'Untitled'}
+**Repository:** ${repoName}
+**PR:** #${prMetadata.number || prMetadata.prNumber || 0} - ${prMetadata.title || prMetadata.prTitle || 'Untitled'}
 **Author:** ${prMetadata.author || 'Unknown'}
 **Branch:** ${prMetadata.branch || 'feature'} → ${prMetadata.targetBranch || 'main'}
 **Files Changed:** ${prMetadata.filesChanged || 0} | **Lines:** +${prMetadata.additions || 0}/-${prMetadata.deletions || 0}
-**Generated:** ${new Date().toLocaleString()} | **Duration:** ${scanDuration || 'N/A'}
+**Generated:** ${new Date().toLocaleString()} | **Duration:** ${scanDuration}
 **AI Model:** ${modelUsed}`;
   }
 
@@ -479,9 +534,12 @@ export class ReportGeneratorV8Final {
     
     const severityCounts = this.countBySeverity(comparison.newIssues || []);
     
-    // BUG-074 FIX: Use correct icons for APPROVED/DECLINED status
-    const decision = score >= 70 ? 'APPROVED ✅' : 'DECLINED ❌';
-    const decisionIcon = score >= 70 ? '✅' : '❌';
+    // Consistent decision logic across report
+    const criticals = severityCounts.critical;
+    const highs = severityCounts.high;
+    const isDeclined = criticals > 0 || highs > 0 || score < 70;
+    const decision = isDeclined ? 'DECLINED ❌' : 'APPROVED ✅';
+    const decisionIcon = isDeclined ? '❌' : '✅';
     
     return `## Executive Summary
 
@@ -510,21 +568,28 @@ export class ReportGeneratorV8Final {
     const hasHighRiskBreaking = breakingRisk === 'high' || breakingRisk === 'critical';
     const breakingChanges = detectedBreakingChanges.length;
     
-    let decision = 'APPROVED ✅';
+    // Get score for consistency check
+    const score = this.calculateScore(comparison);
+    
+    // Consistent decision logic across report
+    const isDeclined = criticals > 0 || highs > 0 || hasHighRiskBreaking || score < 70;
+    
+    const decision = isDeclined ? 'DECLINED ❌' : 'APPROVED ✅';
     let reason = 'Code meets quality standards';
     const actions: string[] = [];
     
-    if (criticals > 0 || highs > 0 || hasHighRiskBreaking) {
-      decision = 'DECLINED 🚫';
+    if (isDeclined) {
       const reasons = [];
-      if (criticals > 0) reasons.push(`${criticals} critical issue(s)`);
-      if (highs > 0) reasons.push(`${highs} high severity issue(s)`);
-      if (hasHighRiskBreaking) reasons.push(`${breakingChanges} ${breakingRisk}-risk breaking change(s)`);
-      reason = `${reasons.join(', ')} must be addressed`;
+      if (criticals > 0) reasons.push(`${criticals} critical issue(s) must be addressed`);
+      if (highs > 0) reasons.push(`${highs} high severity issue(s) must be addressed`);
+      if (hasHighRiskBreaking) reasons.push(`${breakingChanges} ${breakingRisk}-risk breaking change(s) detected`);
+      if (score < 70 && reasons.length === 0) reasons.push(`Quality score ${score}/100 is below threshold`);
+      reason = reasons.join(', ');
       
       if (criticals > 0) actions.push('Fix all critical issues before merging');
       if (highs > 0) actions.push('Address high priority issues');
       if (hasHighRiskBreaking) actions.push('Resolve breaking changes or provide migration path');
+      if (score < 70 && actions.length === 0) actions.push('Improve code quality');
     }
     
     return `## PR Decision
@@ -787,34 +852,45 @@ ${testIssues.length > 0 ? '**Test-related Issues:**\n' + testIssues.map(i => `- 
     const archIssues = issues.filter(i => i.category === 'architecture');
     const archScore = Math.max(0, 100 - (archIssues.length * 8));
     
-    // Generate a clean, simple ASCII diagram that won't break in markdown/HTML
+    // Try a simpler, more compact diagram
     let diagram = `### System Architecture Overview
 
 **Score: ${archScore}/100**
 
 \`\`\`
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│   Frontend  │────▶│     API     │────▶│   Backend   │
-│  ${hasBackendIssues ? '⚠️ Issues' : '✅ Clean'}  │     │  ✅ Clean  │     │  ${hasBackendIssues ? '⚠️ Issues' : '✅ Clean'}  │
-└─────────────┘     └─────────────┘     └─────────────┘
-       │                   │                    │
-       │                   ▼                    ▼
-       │            ┌─────────────┐     ┌─────────────┐
-       │            │    Cache    │     │  Database   │
-       │            │  ${hasCacheIssues ? '⚠️ Issues' : '✅ Clean'}  │     │  ${hasDatabaseIssues ? '⚠️ Issues' : '✅ Clean'}  │
-       │            └─────────────┘     └─────────────┘
-       │                                        │
-       └────────────────┬───────────────────────┘
-                        ▼
-                ┌─────────────┐
-                │  Security   │
-                │  ${hasSecurityIssues ? '⚠️ Issues' : '✅ Secure'} │
-                └─────────────┘
+     ┌──────────┐      ┌──────────┐      ┌──────────┐
+     │ Frontend │─────▶│   API    │─────▶│ Backend  │
+     │ ✅ Clean │      │ ✅ Clean │      │ ${hasBackendIssues ? '⚠️ Issue' : '✅ Clean'} │
+     └────┬─────┘      └────┬─────┘      └────┬─────┘
+          │                 │                  │
+          │           ┌─────▼─────┐     ┌─────▼─────┐
+          │           │   Cache   │     │ Database  │
+          │           │ ${hasCacheIssues ? '⚠️ Issue' : '✅ Clean'} │     │ ${hasDatabaseIssues ? '⚠️ Issue' : '✅ Clean'} │
+          │           └───────────┘     └───────────┘
+          │                     │              │
+          └─────────────────────┼──────────────┘
+                                │
+                          ┌─────▼─────┐
+                          │ Security  │
+                          │ ${hasSecurityIssues ? '⚠️ Issue' : '✅ Clean'} │
+                          └───────────┘
 \`\`\`
+
+**Component Health Status:**
+- Frontend: ${hasBackendIssues ? '⚠️ Clean (no issues)' : '✅ Clean'}
+- API Gateway: ✅ Clean
+- Backend Services: ${hasBackendIssues ? '⚠️ Issues detected' : '✅ Clean'}
+- Cache Layer: ${hasCacheIssues ? '⚠️ Issues detected' : '✅ Clean'}
+- Database: ${hasDatabaseIssues ? '⚠️ Issues detected' : '✅ Clean'}
+- Security: ${hasSecurityIssues ? '⚠️ Issues detected' : '✅ Secure'}
 `;
     
     if (archIssues.length > 0) {
-      diagram += `\n**ℹ️ ${archIssues.length} architectural consideration(s) found:**\n\n`;
+      diagram += `
+
+**ℹ️ ${archIssues.length} architectural consideration(s) found:**
+
+`;
       archIssues.forEach((issue, index) => {
         diagram += `${index + 1}. **${issue.message || 'Architectural issue'}**\n`;
         if (issue.location?.file) {
@@ -1471,7 +1547,7 @@ Architecture: 76 → 77 → 77 → 78 → 79 → 79 📈 (+3.9%)
 \`\`\`
 
 ### Areas of Improvement
-1. **Testing Coverage** - Currently at 72%, needs +13% to reach target
+1. **Testing Coverage** - Currently at 72%, needs +8% to reach 80% target
 2. **Security Best Practices** - Focus on JWT handling and SQL injection prevention
 3. **Performance Optimization** - Learn about query optimization and caching
 
@@ -1584,19 +1660,19 @@ Example Calculation:
   }
   
   private calculateCategoryImpact(newIssues: Issue[], resolvedIssues: Issue[], category: string): string {
-    // BUG-079 FIX: Properly calculate impact based on new vs resolved issues
+    // Properly calculate impact based on new vs resolved issues
     const newCategoryIssues = newIssues.filter(i => i.category === category);
     const resolvedCategoryIssues = resolvedIssues.filter(i => i.category === category);
     
     let impact = 0;
     
-    // Resolved issues give positive points
+    // Resolved issues give positive points (exact points, no multiplication)
     resolvedCategoryIssues.forEach(issue => {
       const points = this.getIssuePoints(issue.severity);
       impact += points;
     });
     
-    // New issues give negative points
+    // New issues give negative points (exact points, no multiplication)
     newCategoryIssues.forEach(issue => {
       const points = this.getIssuePoints(issue.severity);
       impact -= points;
@@ -1606,22 +1682,22 @@ Example Calculation:
   }
   
   private calculateUpdatedCategoryScore(baseScore: number, newIssues: Issue[], resolvedIssues: Issue[], category: string): number {
-    // BUG-079 FIX: Actually update the category score based on issues
+    // Actually update the category score based on issues (proper calculation)
     const newCategoryIssues = newIssues.filter(i => i.category === category);
     const resolvedCategoryIssues = resolvedIssues.filter(i => i.category === category);
     
     let scoreChange = 0;
     
-    // Resolved issues improve the score
+    // Resolved issues improve the score (exact points)
     resolvedCategoryIssues.forEach(issue => {
       const points = this.getIssuePoints(issue.severity);
-      scoreChange += points * 2; // Double points for fixing issues
+      scoreChange += points;
     });
     
-    // New issues decrease the score
+    // New issues decrease the score (exact negative points)
     newCategoryIssues.forEach(issue => {
       const points = this.getIssuePoints(issue.severity);
-      scoreChange -= points * 3; // Triple penalty for new issues
+      scoreChange -= points;
     });
     
     // Calculate new score with bounds
@@ -1630,21 +1706,23 @@ Example Calculation:
   }
   
   private getCategoryCalculation(issues: Issue[], category: string): string {
+    // This should actually receive resolved and new issues separately
+    // For now, return a clear message
     const categoryIssues = issues.filter(i => i.category === category);
     if (categoryIssues.length === 0) return 'No changes';
     
-    const resolved = categoryIssues.filter((i: any) => i.resolved === true);
-    const newIssues = categoryIssues.filter((i: any) => !i.resolved);
+    // Count by severity for clarity
+    const severityCounts: { [key: string]: number } = {};
+    categoryIssues.forEach(issue => {
+      const sev = issue.severity || 'medium';
+      severityCounts[sev] = (severityCounts[sev] || 0) + 1;
+    });
     
     const parts: string[] = [];
-    if (resolved.length > 0) {
-      const points = resolved.reduce((sum, i) => sum + this.getIssuePoints(i.severity), 0);
-      parts.push(`+${points}`);
-    }
-    if (newIssues.length > 0) {
-      const points = newIssues.reduce((sum, i) => sum + this.getIssuePoints(i.severity), 0);
-      parts.push(`-${points}`);
-    }
+    if (severityCounts.critical) parts.push(`${severityCounts.critical} critical`);
+    if (severityCounts.high) parts.push(`${severityCounts.high} high`);
+    if (severityCounts.medium) parts.push(`${severityCounts.medium} medium`);
+    if (severityCounts.low) parts.push(`${severityCounts.low} low`);
     
     return parts.join(', ') || 'No changes';
   }
@@ -1919,163 +1997,63 @@ Example Calculation:
     const criticalAndHigh = (comparison.newIssues || [])
       .filter(i => i.severity === 'critical' || i.severity === 'high')
       .sort((a, b) => {
-        const severityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
-        return severityOrder[a.severity as keyof typeof severityOrder] - severityOrder[b.severity as keyof typeof severityOrder];
+        const severityOrder = { critical: 0, high: 1 };
+        return (severityOrder[a.severity as keyof typeof severityOrder] || 2) - 
+               (severityOrder[b.severity as keyof typeof severityOrder] || 2);
       });
 
+    if (criticalAndHigh.length === 0) {
+      return `## 12. AI IDE Integration
+
+### 🤖 AI Assistant Quick Fix
+
+✅ **No critical or high severity issues to fix!**
+
+Your code meets quality standards. Consider these optional improvements:
+- Add more test coverage if below 80%
+- Update outdated dependencies
+- Add documentation for public APIs`;
+    }
+
+    // Show only the highest priority issue for AI IDE focus
+    const topIssue = criticalAndHigh[0];
+    const file = topIssue.location?.file || (topIssue as any).file || 'unknown';
+    const line = topIssue.location?.line || (topIssue as any).line || 0;
+    const location = line > 0 ? `${file}:${line}` : file;
+    const severity = topIssue.severity === 'critical' ? '🔴 CRITICAL' : '🟠 HIGH';
+    
     let content = `## 12. AI IDE Integration
 
-### 🤖 Cursor/Copilot Quick Fix Commands
+### 🤖 AI Assistant Quick Fix
 
-Copy and paste these commands into your AI IDE:
+**${severity} Priority Issue Requires Immediate Attention:**
 
-\`\`\`javascript
-// Fix all critical and high severity issues
-// Total issues to fix: ${criticalAndHigh.length}
-`;
+📍 **Location:** \`${location}\`
+📝 **Issue:** ${topIssue.message || (topIssue as any).title}
+⚠️ **Impact:** ${topIssue.description || 'May cause production issues'}
 
-    // BUG-082 FIX: Include proper file:line locations for each issue
-    criticalAndHigh.forEach((issue, index) => {
-      // Support multiple location formats
-      const file = issue.location?.file || (issue as any).file || 'unknown';
-      const line = issue.location?.line || (issue as any).line || 0;
-      const location = file !== 'unknown' && line > 0 ? `${file}:${line}` : 
-                       file !== 'unknown' ? file : 'Unknown location';
-      
-      content += `
-// ═══════════════════════════════════════════════════════════════
-// Issue ${index + 1} of ${criticalAndHigh.length} [${issue.severity?.toUpperCase()}]
-// ═══════════════════════════════════════════════════════════════
+### 💡 Quick Fix Command
 
-// 📁 File: ${location}
-// 🔴 Issue: ${issue.message}
-// 🏷️ Category: ${issue.category}
-// 💡 Fix: ${issue.suggestedFix || (issue as any).suggestion || 'Review and fix manually'}
+Copy this to your AI IDE (Cursor/Copilot):
 
-// Navigate to: ${location}
-// Search for: ${issue.codeSnippet ? issue.codeSnippet.split('\n')[0].trim() : issue.message}`;
-      
-      if (issue.codeSnippet) {
-        content += `
-
-// Current problematic code:
-/*
-${issue.codeSnippet}
-*/`;
-      }
-      
-      if ((issue as any).fixedCode) {
-        content += `
-
-// Suggested fix:
-/*
-${(issue as any).fixedCode}
-*/`;
-      }
-      
-      content += `
-
-// Quick fix command for Cursor/Copilot:
-// @${location} Fix ${issue.category} issue: ${issue.message}
-`;
-    });
-
-    content += `
+\`\`\`
+Fix ${topIssue.severity} ${topIssue.category || 'issue'} in ${location}
+${topIssue.suggestedFix ? `Suggestion: ${topIssue.suggestedFix}` : 'Apply best practices to resolve this issue'}
 \`\`\`
 
-### 📋 Automated Fix Script
+### ✅ Validation
 
-> **⚠️ IMPORTANT DISCLAIMER**
-> CodeQual focuses on **identifying what needs to be fixed**, not prescribing exact solutions.
-> The suggestions below are common patterns that may help, but you should:
-> 1. **Review each suggestion carefully** before implementing
-> 2. **Test all changes** in a development environment first
-> 3. **Adapt solutions** to your specific codebase and requirements
-> 4. **Never run automated fixes** without understanding their impact
+After fixing:
+1. Run tests: \`npm test\`
+2. Verify fix: \`npm run lint\`
+3. Check types: \`npm run typecheck\``;
 
-**Purpose:** This script provides suggestions for addressing common issues found in your PR
-**Usage:** Review suggestions, adapt to your needs, test thoroughly before applying
-
-\`\`\`bash
-#!/bin/bash
-# Automated fix suggestions for PR #${(comparison as any).prMetadata?.prNumber || 'N/A'}
-# Generated: ${new Date().toISOString()}
-
-echo "🔧 Reviewing ${criticalAndHigh.length} critical/high issues..."
-echo ""
-echo "⚠️  DISCLAIMER: These are suggestions only. Review and test before applying."
-echo ""
-
-# List all file locations that need attention
-echo "📁 Files requiring fixes:"`;
-    
-    // Collect unique files with issues
-    const filesWithIssues = new Set<string>();
-    criticalAndHigh.forEach(issue => {
-      const file = issue.location?.file || (issue as any).file;
-      if (file && file !== 'unknown') {
-        filesWithIssues.add(file);
-      }
-    });
-    
-    filesWithIssues.forEach(file => {
-      const issuesInFile = criticalAndHigh.filter(i => 
-        (i.location?.file || (i as any).file) === file
-      );
+    // Add note about other issues if they exist
+    if (criticalAndHigh.length > 1) {
       content += `
-echo "  - ${file} (${issuesInFile.length} issue${issuesInFile.length > 1 ? 's' : ''})"`;
-    });
-    
-    content += `
-echo ""
 
-# Security Fix Suggestions
-${this.generateEnhancedSecurityFixSuggestions(comparison)}
-
-# Performance Fix Suggestions  
-${this.generateEnhancedPerformanceFixSuggestions(comparison)}
-
-# Dependency Update Suggestions
-${this.generateDependencyFixSuggestions(comparison)}
-
-# Code Quality Suggestions
-${this.generateCodeQualityFixSuggestions(comparison)}
-
-# Validation
-echo "✅ Running validation..."
-npm test -- --coverage
-npm run lint
-npm run typecheck
-
-# Summary
-echo "
-════════════════════════════════════════════
-   Review complete!
-   
-   Suggestions provided for: ${criticalAndHigh.length} critical/high issues
-   
-   Files to review:`;
-   
-    filesWithIssues.forEach(file => {
-      content += `
-   - ${file}`;
-    });
-    
-    content += `
-   
-   Next steps:
-   1. Review each suggestion carefully
-   2. Adapt to your specific needs
-   3. Test changes in development
-   4. Run tests locally
-   5. Commit with descriptive message
-════════════════════════════════════════════
-"
-\`\`\`
-
-> **Legal Notice:** CodeQual provides analysis and identification of potential issues.
-> Implementation decisions and fixes are the sole responsibility of the development team.
-> Always follow your organization's coding standards and security policies.`;
+📊 **Note:** ${criticalAndHigh.length - 1} additional ${criticalAndHigh.length === 2 ? 'issue' : 'issues'} found. Fix this priority issue first, then re-run analysis.`;
+    }
 
     return content;
   }
@@ -2490,7 +2468,8 @@ echo "Remember: Clean code is easier to maintain and debug!"`;
     const highs = (comparison.newIssues || []).filter(i => i.severity === 'high');
     const blockingIssues = [...criticals, ...highs];
     
-    const isDeclined = score < 70 || criticals.length > 0;
+    // Use consistent decision logic as the rest of report
+    const isDeclined = criticals.length > 0 || highs.length > 0 || score < 70;
     const decision = isDeclined ? 'DECLINED' : 'APPROVED';
     const decisionEmoji = isDeclined ? '❌' : '✅';
     
@@ -2582,20 +2561,35 @@ Analysis Date: ${new Date().toISOString().split('T')[0]}, ${new Date().toISOStri
     const scanMetadata = (comparison as any).scanMetadata || {};
     const aiAnalysis = (comparison as any).aiAnalysis || {};
     
+    // Get the dynamically selected model - NO HARDCODED DEFAULTS
+    const modelUsed = aiAnalysis.modelUsed || 
+                     (comparison as any).modelUsed ||
+                     (comparison as any).aiModel ||
+                     process.env.OPENROUTER_MODEL || 
+                     'Dynamic Model Selection Active';
+    
+    // Extract repo name from URL if provided
+    const repoUrl = prMetadata.repository_url || prMetadata.repository || 'Unknown Repository';
+    let repoName = repoUrl;
+    if (repoUrl.includes('github.com')) {
+      const match = repoUrl.match(/github.com\/([^/]+\/[^/]+)/);
+      if (match) repoName = match[1];
+    }
+    
     return `## Report Metadata
 
 ### Analysis Details
 - **Generated:** ${new Date().toISOString()}
 - **Version:** V8 Final
 - **Analysis ID:** ${scanMetadata.analysisId || 'CQ-' + Date.now()}
-- **Repository:** ${prMetadata.repository || 'Unknown Repository'}
-- **PR Number:** #${prMetadata.prNumber || 0}
+- **Repository:** ${repoName}
+- **PR Number:** #${prMetadata.number || prMetadata.prNumber || 0}
 - **Base Commit:** ${scanMetadata.baseCommit || prMetadata.baseCommit || 'main'}
 - **Head Commit:** ${scanMetadata.headCommit || prMetadata.headCommit || 'HEAD'}
 - **Files Analyzed:** ${prMetadata.filesChanged || 0}
 - **Lines Changed:** +${prMetadata.additions || 0}/-${prMetadata.deletions || 0}
 - **Scan Duration:** ${(comparison as any).scanDuration || (comparison as any).duration || 'N/A'}
-- **AI Model:** ${aiAnalysis.modelUsed || 'CodeQual AI Dynamic Selection'}
+- **AI Model:** ${modelUsed}
 - **Report Format:** Markdown v8
 - **Timestamp:** ${Date.now()}
 

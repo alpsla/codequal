@@ -70,6 +70,7 @@ export class ReportGeneratorFactory {
   private static createV8Generator(): ReportGenerator {
     try {
       // Dynamic import to avoid circular dependencies
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const { ReportGeneratorV8Final } = require('../comparison/report-generator-v8-final');
       return new ReportGeneratorV8Final();
     } catch (error) {
