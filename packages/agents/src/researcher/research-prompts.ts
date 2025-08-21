@@ -203,6 +203,135 @@ Find the SINGLE BEST AI model across ALL providers for CODE QUALITY analysis tas
 
 Find the single best model across all providers for comprehensive code quality analysis.`,
 
+  COMPARISON_AGENT_RESEARCH: (language = 'typescript') => {
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.toLocaleString('default', { month: 'long' });
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(currentDate.getMonth() - 3);
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(currentDate.getMonth() - 6);
+    
+    return `Find the SINGLE BEST AI model for COMPARISON/DIFF ANALYSIS specialized in ${language.toUpperCase()} code.
+
+**🚨 ABSOLUTE CRITICAL REQUIREMENT 🚨**
+TODAY'S DATE: ${currentDate.toISOString().split('T')[0]}
+YOU MUST ONLY consider models released AFTER ${sixMonthsAgo.toISOString().split('T')[0]}
+
+**TWO-STEP RESEARCH PROCESS (MANDATORY):**
+STEP 1 - WEB SEARCH: Search the internet for latest AI models
+STEP 2 - OPENROUTER VALIDATION: Get exact syntax for billing
+
+**COMPARISON AGENT SPECIALIZATION:**
+This agent is specialized in comparing code differences between git branches, specifically:
+- **Primary Task**: Analyze pull requests to identify what changed
+- **Language Expertise**: Must excel at ${language.toUpperCase()} syntax, patterns, and idioms
+- **Codebase Size**: ALWAYS handles LARGE codebases (100k+ lines) - this is constant
+- **Core Skills**:
+  - Detect newly introduced bugs in ${language} code
+  - Identify resolved issues in ${language} code
+  - Understand ${language}-specific patterns (e.g., ${
+    language === 'typescript' ? 'type safety, async/await, decorators' :
+    language === 'python' ? 'indentation, decorators, type hints' :
+    language === 'java' ? 'OOP patterns, annotations, generics' :
+    'language-specific features'
+  })
+  - Calculate impact scores for changes
+  - Generate detailed comparison reports
+
+**STEP 1: WEB SEARCH FOR LATEST MODELS**
+Search the web using these queries:
+- "best AI models for ${language} code analysis ${currentMonth} ${currentYear}"
+- "latest LLM models ${currentYear} programming ${language}"
+- "AI models released last 3 months code review ${language}"
+- "${currentYear} newest models for pull request analysis"
+- "benchmark results AI models ${language} code ${currentYear}"
+
+Expected findings from web search (examples):
+- Model names and versions (e.g., "Claude 3.5 Sonnet", "GPT-4 Turbo", "Gemini 2.0 Pro")
+- Release dates to verify they're within 6 months
+- Benchmark scores for ${language} code tasks
+- Context window sizes
+- Pricing information if available
+
+**STEP 2: OPENROUTER API VALIDATION**
+After identifying the best 2 models from web search:
+1. Query OpenRouter API for exact model syntax
+2. Verify the models are available
+3. Get exact pricing for input/output tokens
+4. Confirm context window size
+5. Map web names to OpenRouter IDs (e.g., "Claude 3.5 Sonnet" → "anthropic/claude-3.5-sonnet-20241022")
+
+**EVALUATION WEIGHTS FOR COMPARISON ROLE:**
+- **Quality** (50%): Must accurately analyze ${language} code differences
+- **Speed** (30%): Fast enough for CI/CD pipelines and PR reviews
+- **Cost** (20%): Reasonable for frequent PR analysis operations
+
+**${language.toUpperCase()}-SPECIFIC REQUIREMENTS:**
+${
+  language === 'typescript' ? 
+  `- Understand TypeScript type system and generics
+  - Detect type safety issues in changes
+  - Analyze JSX/TSX components
+  - Understand async/await patterns
+  - Recognize Node.js and browser API differences` :
+  
+  language === 'python' ?
+  `- Understand Python indentation and syntax
+  - Detect Pythonic vs non-Pythonic patterns
+  - Analyze type hints and decorators
+  - Understand async/await and generators
+  - Recognize common frameworks (Django, Flask, FastAPI)` :
+  
+  language === 'java' ?
+  `- Understand Java OOP patterns
+  - Detect thread safety issues
+  - Analyze Spring/Jakarta annotations
+  - Understand generics and lambdas
+  - Recognize design pattern implementations` :
+  
+  `- Understand ${language} syntax and idioms
+  - Detect ${language}-specific anti-patterns
+  - Analyze framework-specific code
+  - Understand language-specific features
+  - Recognize common libraries and patterns`
+}
+
+**VERIFICATION REQUIREMENTS:**
+1. Model MUST be released after ${sixMonthsAgo.toISOString().split('T')[0]}
+2. Model MUST have 100k+ token context window (for large PRs)
+3. Model MUST be available via OpenRouter API
+4. Model MUST show strong ${language} code understanding in benchmarks
+
+**OUTPUT FORMAT:**
+{
+  "web_search_results": {
+    "models_found": ["model1_name", "model2_name", ...],
+    "release_dates": {"model1": "date", "model2": "date"},
+    "benchmark_scores": {"model1": score, "model2": score}
+  },
+  "openrouter_validation": {
+    "primary_model": {
+      "web_name": "Human readable name from web",
+      "openrouter_id": "provider/exact-model-id",
+      "release_date": "YYYY-MM-DD",
+      "context_window": 150000,
+      "pricing": {"input": 0.003, "output": 0.015}
+    },
+    "fallback_model": {
+      "web_name": "Human readable name from web",
+      "openrouter_id": "provider/exact-model-id",
+      "release_date": "YYYY-MM-DD",
+      "context_window": 100000,
+      "pricing": {"input": 0.001, "output": 0.005}
+    }
+  },
+  "reasoning": "Why these models are best for ${language} comparison tasks"
+}
+
+Research the absolute best models for ${language.toUpperCase()} code comparison available as of ${currentMonth} ${currentYear}.`;
+  },
+
   EDUCATIONAL_AGENT_RESEARCH: (() => {
     const currentDate = new Date();
     const currentYear = currentDate.getFullYear();
@@ -533,6 +662,7 @@ export const RESEARCH_CONFIGS = {
 };
 
 // Export individual prompts for easier importing
+export const COMPARISON_AGENT_RESEARCH = RESEARCH_PROMPTS.COMPARISON_AGENT_RESEARCH; // This is now a function
 export const EDUCATIONAL_AGENT_RESEARCH = RESEARCH_PROMPTS.EDUCATIONAL_AGENT_RESEARCH;
 export const REPORTING_AGENT_RESEARCH = RESEARCH_PROMPTS.REPORTING_AGENT_RESEARCH;
 export const TEXT_PARSER_AGENT_RESEARCH = RESEARCH_PROMPTS.TEXT_PARSER_AGENT_RESEARCH;

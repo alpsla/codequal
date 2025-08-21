@@ -130,8 +130,15 @@ export class ModelConfigResolver {
     } catch (researchError: any) {
       this.log('error', `Failed to research models for ${cacheKey}`, researchError);
       
-      // Ultimate fallback - return sensible defaults
-      return this.getDefaultConfiguration(role, language, size);
+      // Instead of using defaults, trigger a proper research request
+      this.log('warn', `Triggering emergency research for ${role}/${language}/${size}`);
+      
+      // Notify the orchestrator that we need urgent model research
+      await this.triggerUrgentModelResearch(role, language, size);
+      
+      // For now, return a temporary config that indicates research is pending
+      // The orchestrator should retry after research completes
+      throw new Error(`Model configuration not available for ${role}/${language}/${size}. Research has been triggered. Please retry in a moment.`);
     }
   }
   
@@ -232,24 +239,106 @@ export class ModelConfigResolver {
   }
   
   /**
-   * Get default configuration as ultimate fallback
+   * Trigger urgent model research for a specific context
    */
-  private getDefaultConfiguration(role: string, language: string, size: string): ModelConfiguration {
-    this.log('warn', `Using default configuration for ${role}/${language}/${size}`);
+  private async triggerUrgentModelResearch(role: string, language: string, size: string): Promise<void> {
+    this.log('info', `Triggering urgent research for ${role}/${language}/${size}`);
+    
+    try {
+      // Create a research task in Supabase
+      const { error } = await this.supabase
+        .from('model_research_tasks')
+        .insert({
+          role,
+          language,
+          size_category: size,
+          status: 'pending',
+          priority: 'urgent',
+          requested_at: new Date().toISOString(),
+          requested_by: 'model-config-resolver'
+        });
+      
+      if (error) {
+        this.log('error', 'Failed to create research task', error);
+      }
+      
+      // Also try to trigger immediate research via ModelResearcherService
+      if (this.researcher) {
+        this.log('info', 'Attempting immediate research via ModelResearcherService');
+        
+        // The researcher should conduct the 2-step search:
+        // 1. Web search for latest models (< 6 months old)
+        // 2. OpenRouter validation for exact syntax
+        await this.researcher.requestSpecificContextResearch({
+          language,
+          repo_size: size,
+          task_type: role
+        });
+      }
+    } catch (error) {
+      this.log('error', 'Failed to trigger urgent research', error);
+    }
+  }
+
+  /**
+   * Get default configuration as ultimate fallback
+   * Uses actual API call to get available models dynamically
+   */
+  private async getDefaultConfiguration(role: string, language: string, size: string): Promise<ModelConfiguration> {
+    this.log('warn', `Using fallback configuration for ${role}/${language}/${size}`);
+    
+    // Try to fetch actual available models from OpenRouter
+    let primaryModel = 'openai/gpt-4o';  // Safe fallback that's always available
+    let fallbackModel = 'openai/gpt-4o-mini';
+    
+    try {
+      const axios = require('axios');
+      const apiKey = process.env.OPENROUTER_API_KEY;
+      
+      if (apiKey) {
+        const response = await axios.get('https://openrouter.ai/api/v1/models', {
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+          },
+          timeout: 5000
+        });
+        
+        const models = response.data.data || [];
+        
+        // Filter for suitable models based on role
+        const suitableModels = models.filter((m: any) => {
+          const isCodeCapable = m.context_length >= 50000;
+          const isQualityModel = m.id.includes('claude') || m.id.includes('gpt') || m.id.includes('gemini');
+          const notDeprecated = !m.id.includes('instruct');
+          return isCodeCapable && isQualityModel && notDeprecated;
+        });
+        
+        if (suitableModels.length > 0) {
+          // Sort by context length and select the best
+          suitableModels.sort((a: any, b: any) => b.context_length - a.context_length);
+          primaryModel = suitableModels[0].id;
+          fallbackModel = suitableModels[1]?.id || 'openai/gpt-4o-mini';
+          this.log('info', `Dynamically selected models: primary=${primaryModel}, fallback=${fallbackModel}`);
+        }
+      }
+    } catch (error) {
+      this.log('warn', 'Could not fetch available models, using safe defaults');
+    }
     
     return {
       role,
       language,
       size_category: size,
-      primary_provider: 'anthropic',
-      primary_model: 'claude-opus-4-1-20250805',
-      fallback_provider: 'openai',
-      fallback_model: 'gpt-5-20250615',
+      primary_provider: this.extractProvider(primaryModel),
+      primary_model: primaryModel,
+      fallback_provider: this.extractProvider(fallbackModel),
+      fallback_model: fallbackModel,
       weights: this.calculateWeightsForRole(role, size),
       min_requirements: this.getMinRequirements(role, size),
       reasoning: [
-        'Default configuration used due to research failure',
-        'Using latest high-quality models as safe defaults'
+        'Configuration dynamically selected from available models',
+        `Selected ${primaryModel} based on availability and capabilities`
       ]
     };
   }

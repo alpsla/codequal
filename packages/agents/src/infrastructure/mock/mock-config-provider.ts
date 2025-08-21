@@ -60,9 +60,11 @@ export class MockConfigProvider implements IConfigProvider {
     taskType: string,
     constraints?: any
   ): Promise<ModelSelection> {
+    // Return dynamic model based on task type
+    // In real tests, this should connect to ModelConfigResolver
     return {
-      provider: 'openai',
-      modelId: 'gpt-4o',
+      provider: 'dynamic',
+      modelId: 'mock-dynamic-model',
       temperature: 0.3,
       maxTokens: 4000
     };
@@ -94,14 +96,14 @@ export class MockConfigProvider implements IConfigProvider {
       language: 'typescript',
       modelPreferences: {
         primary: {
-          provider: 'openai',
-          modelId: 'gpt-4o',
+          provider: 'dynamic',
+          modelId: 'mock-primary-model',
           temperature: 0.3,
           maxTokens: 4000
         },
         fallback: {
-          provider: 'anthropic',
-          modelId: 'claude-3-opus',
+          provider: 'dynamic',
+          modelId: 'mock-fallback-model',
           temperature: 0.3,
           maxTokens: 4000
         }
