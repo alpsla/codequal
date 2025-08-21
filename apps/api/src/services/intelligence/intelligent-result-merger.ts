@@ -1,5 +1,24 @@
 import { createLogger } from '@codequal/core/utils';
-import { BasicDeduplicator, Finding, SimilarityGroup } from '@codequal/agents/services/basic-deduplicator';
+// import { BasicDeduplicator, Finding, SimilarityGroup } from '@codequal/agents/services/basic-deduplicator';
+
+// Temporary types until module is available
+export interface Finding {
+  id: string;
+  type: string;
+  severity: string;
+  message: string;
+  location?: {
+    file: string;
+    line?: number;
+    column?: number;
+  };
+}
+
+export interface SimilarityGroup {
+  representative: Finding;
+  similar: Finding[];
+  confidence: number;
+}
 
 export interface AgentResult {
   agentId: string;
@@ -58,7 +77,7 @@ export interface MergeStrategy {
  */
 export class IntelligentResultMerger {
   private readonly logger = createLogger('IntelligentResultMerger');
-  private readonly deduplicator = new BasicDeduplicator();
+  // private readonly deduplicator = new BasicDeduplicator();
   
   /**
    * Merge results from multiple agents with intelligent deduplication

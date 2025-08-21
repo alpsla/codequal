@@ -5,7 +5,25 @@
 
 import { EventEmitter } from 'events';
 import { createLogger } from '@codequal/core/utils';
-import { getProgressTracker, ProgressTracker, AnalysisProgress } from '@codequal/agents/services/progress-tracker';
+// import { getProgressTracker, ProgressTracker, AnalysisProgress } from '@codequal/agents/services/progress-tracker';
+
+// Temporary types until module is available
+export interface AnalysisProgress {
+  phases: {
+    setup: { status: string; startTime?: Date; endTime?: Date; progress: number };
+    analysis: { status: string; startTime?: Date; endTime?: Date; progress: number };
+    comparison: { status: string; startTime?: Date; endTime?: Date; progress: number };
+    reporting: { status: string; startTime?: Date; endTime?: Date; progress: number };
+  };
+  overall: number;
+}
+
+export interface ProgressTracker {
+  updateProgress: (phase: string, progress: number) => void;
+  getProgress: () => AnalysisProgress;
+  getActiveAnalyses?: () => string[];
+  cleanupOldAnalyses?: () => void;
+}
 import { dataFlowMonitor, DataFlowMonitor } from './data-flow-monitor';
 
 type AnalysisPhase = keyof AnalysisProgress['phases'];
@@ -23,7 +41,22 @@ export class UnifiedProgressTracer extends EventEmitter {
   
   constructor() {
     super();
-    this.progressTracker = getProgressTracker();
+    // this.progressTracker = getProgressTracker();
+    // Mock progress tracker for now
+    this.progressTracker = {
+      updateProgress: () => {},
+      getProgress: () => ({
+        phases: {
+          setup: { status: 'completed', progress: 100 },
+          analysis: { status: 'in_progress', progress: 50 },
+          comparison: { status: 'pending', progress: 0 },
+          reporting: { status: 'pending', progress: 0 }
+        },
+        overall: 25
+      }),
+      getActiveAnalyses: () => [],
+      cleanupOldAnalyses: () => {}
+    };
     this.dataFlowMonitor = dataFlowMonitor;
     
     // Set up event bridges

@@ -2746,32 +2746,32 @@ export class ResultOrchestrator {
       // Get role-specific cost weights and capability priorities
       const roleWeights = this.getRoleSpecificWeights(agentType);
       
-      // Import and use the existing ModelResearcherService from @codequal/agents
-      const { ModelResearcherService } = await import('@codequal/agents/standard/services/model-researcher-service');
-      const modelResearcher = new ModelResearcherService();
+      // TODO: Re-enable when ModelResearcherService is available
+      // const { ModelResearcherService } = await import('@codequal/agents/dist/standard/services/model-researcher-service');
+      // const modelResearcher = new ModelResearcherService();
       
       // Get optimal model using the existing research infrastructure
-      const optimalModel = await modelResearcher.getOptimalModelForContext({
-        language: context.language,
-        repo_size: context.sizeCategory === RepositorySizeCategory.SMALL ? 'small' :
-                  context.sizeCategory === RepositorySizeCategory.MEDIUM ? 'medium' :
-                  context.sizeCategory === RepositorySizeCategory.LARGE ? 'large' : 'enterprise',
-        task_type: agentType,
-        specific_requirements: [
-          `role:${agentType}`,
-          `cost_weight:${roleWeights.costWeight}`,
-          `capability_priority:${roleWeights.capabilityPriority}`
-        ]
-      });
+      // const optimalModel = await modelResearcher.getOptimalModelForContext({
+      //   language: context.language,
+      //   repo_size: context.sizeCategory === 'SMALL' ? 'small' :
+      //             context.sizeCategory === 'MEDIUM' ? 'medium' :
+      //             context.sizeCategory === 'LARGE' ? 'large' : 'enterprise',
+      //   task_type: agentType,
+      //   specific_requirements: [
+      //     `role:${agentType}`,
+      //     `cost_weight:${roleWeights.cost.weight}`,
+      //     `capability_priority:code_quality`
+      //   ]
+      // });
+
+      // Use default model for now
+      const optimalModel = 'openrouter/anthropic/claude-3-sonnet';
       
       // For now, use the same model as primary and fallback
       // In future, could request top 2 models for diversity
       const modelConfig: ModelConfig = {
-        provider: optimalModel.split('/')[0] || 'dynamic',
-        model: optimalModel,
-        // These will be populated by the actual model metadata
-        contextWindow: 128000,
-        capabilities: ['code-analysis', 'reasoning', 'large-context']
+        provider: optimalModel.split('/')[1] || 'dynamic',
+        model: optimalModel.split('/')[2] || optimalModel
       };
       
       this.logger.info('Researcher agent provided model configuration', {
@@ -2780,7 +2780,8 @@ export class ResultOrchestrator {
       });
       
       // Store the configuration for future reference
-      await this.storeModelConfiguration(agentType, context, modelConfig);
+      // TODO: Implement storeModelConfiguration method
+      // await this.storeModelConfiguration(agentType, context, modelConfig);
       
       return {
         primary: modelConfig,

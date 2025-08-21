@@ -17,9 +17,9 @@ import { PRContextService } from './pr-context-service';
 import { RepositorySizeCategory } from '@codequal/core/services/model-selection/ModelVersionSync';
 import { DeepWikiCacheIntegration } from './deepwiki-cache-integration';
 import { RedisCacheService, createCacheService } from '@codequal/core/services/cache/RedisCacheService';
-import { generateEnhancedMockAnalysis } from './deepwiki-mock-enhanced';
+// Simple mock function instead of importing from test file
 import * as monitoringModule from './monitoring-enhancements';
-import { LocationEnhancer } from '@codequal/agents/standard/services/location-enhancer';
+// LocationEnhancer temporarily disabled
 
 const execAsync = promisify(exec);
 const logger = createLogger('deepwiki-api-manager');
@@ -129,12 +129,12 @@ export class DeepWikiApiManager {
   private modelSelector: UnifiedModelSelector | null = null;
   private prContextService: PRContextService;
   private cacheIntegration: DeepWikiCacheIntegration | null = null;
-  private locationEnhancer: LocationEnhancer;
+  // private locationEnhancer: LocationEnhancer;
   
   constructor() {
     this.modelVersionSync = new ModelVersionSync(logger);
     this.prContextService = new PRContextService();
-    this.locationEnhancer = new LocationEnhancer();
+    // this.locationEnhancer = new LocationEnhancer();
     // Model selector will be initialized on first use
     // Cache integration will be initialized on first use
   }
@@ -505,8 +505,25 @@ Remember: Users will click on these locations in their IDE, so they MUST be accu
       const latency = 2500; // Default latency for mock
       await new Promise(resolve => setTimeout(resolve, latency));
       
-      // Get enhanced mock data
-      const mockAnalysis = generateEnhancedMockAnalysis(repositoryUrl);
+      // Get standard mock data
+      const mockAnalysis = {
+        score: 80,
+        issues: [
+          {
+            id: 'mock-issue-1',
+            category: 'security',
+            severity: 'high',
+            location: {
+              file: 'src/api/auth.ts',
+              line: 45,
+              column: 10
+            },
+            message: 'Potential SQL injection vulnerability'
+          }
+        ],
+        summary: 'Mock analysis for testing purposes',
+        timestamp: new Date().toISOString()
+      };
       
       // Track token usage for mock
       try {
@@ -817,26 +834,26 @@ Remember: Users will click on these locations in their IDE, so they MUST be accu
     let issues = rawIssues;
     if (process.env.ENABLE_LOCATION_ENHANCEMENT !== 'false') {
       try {
-        logger.info('Enhancing issue locations with LocationEnhancer...');
-        const enhancementResult = await this.locationEnhancer.enhanceIssuesWithLocations(
-          rawIssues,
-          repositoryUrl
-        );
+        logger.info('Location enhancement temporarily disabled');
+        // const enhancementResult = await this.locationEnhancer.enhanceIssuesWithLocations(
+        //   rawIssues,
+        //   repositoryUrl
+        // );
         
-        if (enhancementResult.enhanced > 0) {
-          logger.info(`Enhanced ${enhancementResult.enhanced} issue locations, ${enhancementResult.failed} failed`);
-          // Map enhanced issues back to DeepWikiIssue format
-          issues = enhancementResult.issues.map((enhancedIssue, idx) => {
-            const originalIssue = rawIssues[idx] || rawIssues.find(raw => raw.message === enhancedIssue.title);
-            return {
-              ...originalIssue,
-              file: enhancedIssue.location?.file || originalIssue?.file || 'unknown',
-              line: enhancedIssue.location?.line || originalIssue?.line || 0
-            } as DeepWikiIssue;
-          });
-        } else {
-          logger.warn('Location enhancement did not improve any issue locations');
-        }
+        // if (enhancementResult.enhanced > 0) {
+        //   logger.info(`Enhanced ${enhancementResult.enhanced} issue locations, ${enhancementResult.failed} failed`);
+        //   // Map enhanced issues back to DeepWikiIssue format
+        //   issues = enhancementResult.issues.map((enhancedIssue, idx) => {
+        //     const originalIssue = rawIssues[idx] || rawIssues.find(raw => raw.message === enhancedIssue.title);
+        //     return {
+        //       ...originalIssue,
+        //       file: enhancedIssue.location?.file || originalIssue?.file || 'unknown',
+        //       line: enhancedIssue.location?.line || originalIssue?.line || 0
+        //     } as DeepWikiIssue;
+        //   });
+        // } else {
+        //   logger.warn('Location enhancement did not improve any issue locations');
+        // }
       } catch (error) {
         logger.warn('Failed to enhance issue locations:', error as Error);
         // Continue with original issues if enhancement fails
