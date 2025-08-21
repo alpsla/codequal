@@ -1,8 +1,8 @@
-# Next Session Plan: Performance Optimization & ESLint Cleanup
+# Next Session Plan: Fix DeepWiki Response Parser
 
-**Last Updated**: 2025-08-20 (Post UnifiedAnalysisWrapper & V8 Final Session)  
-**Previous Session**: UnifiedAnalysisWrapper & V8 Report Generator Finalization (COMPLETE SUCCESS ✅)
-**Priority**: HIGH - Performance optimization and code quality improvements
+**Last Updated**: 2025-08-20 (Critical Issue Found in Validation Testing)  
+**Previous Session**: UnifiedAnalysisWrapper Validation Testing (ISSUE DISCOVERED 🔴)
+**Priority**: CRITICAL - DeepWiki integration is broken
 
 ## 🎉 MAJOR ACCOMPLISHMENTS - UnifiedAnalysisWrapper & V8 Final Session
 **COMPLETE V8 ARCHITECTURE IMPLEMENTED ✅**
@@ -26,44 +26,71 @@
 - **Data Pipeline**: Raw DeepWiki responses processed correctly
 - **End-to-End**: Complete analysis workflow validated
 
+## 🚨 CRITICAL ISSUE DISCOVERED
+
+### Root Cause Identified
+**Problem**: DeepWiki API returns responses as strings containing markdown-wrapped JSON, but our code expects parsed objects.
+
+**DeepWiki Returns**:
+```
+"```json\n[{\"file\": \"package.json\", \"severity\": \"low\", ...}]\n```"
+```
+
+**Our Code Expects**:
+```json
+{ "issues": [...], "analysis": {...} }
+```
+
+**Impact**: 
+- UnifiedAnalysisWrapper cannot process real DeepWiki responses
+- Falls back to mock data even when USE_DEEPWIKI_MOCK=false
+- 0% success rate in validation testing with real API
+
 ## 🎯 NEXT SESSION PRIORITIES
 
-### Session Wrap-Up Context
-**Status**: UnifiedAnalysisWrapper architecture is complete and fully functional. The V8 system is now production-ready with comprehensive testing validation.
-
-**Next Focus**: Code quality improvements and performance optimization based on the remaining technical debt identified.
+### PRIORITY 1: Fix DeepWiki Response Parser (CRITICAL)
+**Status**: DeepWiki API is working but response format is incompatible
+**Next Focus**: Fix the response parser to handle markdown-wrapped JSON strings
 
 ## 🧪 REMAINING TASKS - PRIORITY ORDER
 
-### 1. IMMEDIATE: ESLint Warning Cleanup (296 warnings)
+### 1. CRITICAL: Fix DeepWiki Response Parser
+**Action**: Update DeepWiki service to parse markdown-wrapped JSON responses
+**Files**: 
+- `src/standard/deepwiki/services/deepwiki-service.ts`
+- `src/standard/deepwiki/services/response-transformer.ts`
+- `src/standard/services/unified-analysis-wrapper.ts`
+**Priority**: CRITICAL - System is non-functional without this
+**Tasks**:
+- Add markdown code block extraction logic
+- Parse JSON from extracted string
+- Update response transformer to handle string responses
+- Test with real DeepWiki API responses
+- Validate all PR analysis flows work end-to-end
+
+**Code Fix Required**:
+```typescript
+// Extract JSON from markdown if response is string
+if (typeof response === 'string') {
+  const match = response.match(/```json\n([\s\S]*?)\n```/);
+  if (match) {
+    response = JSON.parse(match[1]);
+  }
+}
+```
+
+### 2. HIGH: Validate Real API Integration
+**Action**: Test UnifiedAnalysisWrapper with real DeepWiki after parser fix
+**Priority**: HIGH - Must verify system works with production API
+**Tasks**:
+- Run validation suite with USE_DEEPWIKI_MOCK=false
+- Test all 6 language scenarios
+- Achieve >80% location accuracy with real data
+- Document actual API response formats
+
+### 3. MEDIUM: ESLint Warning Cleanup (296 warnings)
 **Action**: Reduce ESLint warnings from 296 to <50
-**Files**: Primary issues in DeepWiki services, unified wrappers, and test files
-**Priority**: HIGH - Code quality improvement
-**Tasks**:
-- Replace 296 console.log statements with proper logger calls
-- Fix 47 unnecessary escape character warnings in regex patterns
-- Resolve case declaration and constant condition warnings
-- Address no-var-requires issues in legacy code
-
-### 2. HIGH: Test Suite Performance Optimization
-**Action**: Fix timeout issues in test suite (38 tests failing due to timeouts)
-**Files**: `src/multi-agent/__tests__/enhanced-executor.test.ts` and related
-**Priority**: HIGH - CI/CD reliability
-**Tasks**:
-- Increase timeout for long-running tests or optimize test execution
-- Mock expensive operations in unit tests
-- Separate integration tests from unit tests
-- Optimize test setup and teardown
-
-### 3. HIGH: Educational Agent Integration
-**Action**: Connect educational agent to UnifiedAnalysisWrapper
-**Files**: UnifiedAnalysisWrapper, educational agent modules
-**Priority**: HIGH - Feature completion
-**Tasks**:
-- Integrate educational content generation into analysis pipeline
-- Add skill progression tracking to analysis results
-- Connect to existing skill provider infrastructure
-- Validate educational content quality
+**Priority**: MEDIUM - Can wait until core functionality is fixed
 
 ### 4. MEDIUM: Performance Optimization
 **Action**: Profile and optimize V8 generator and wrapper performance
@@ -127,55 +154,48 @@ npx ts-node test-end-to-end-wrapper.ts
 ## 📁 Quick Start Commands for Next Session
 
 ```bash
-# Start development session
-npm run codequal:session
+# 1. First, test that DeepWiki is actually working
+curl -X POST http://localhost:8001/chat/completions/stream \
+  -H "Content-Type: application/json" \
+  -d '{"repo_url": "https://github.com/sindresorhus/ky", "messages": [{"role": "user", "content": "Find issues"}], "stream": false, "provider": "openrouter", "model": "openai/gpt-4o-mini"}'
 
-# Check current state and architecture
-git status
-npm run typecheck
+# 2. Find where DeepWiki response is parsed
+grep -r "DeepWiki.*response" src/standard/deepwiki/
 
-# ESLint cleanup analysis
-npm run lint | head -50
+# 3. Fix the parser to handle markdown-wrapped JSON
+# Update the file that processes DeepWiki responses
 
-# Test performance analysis
-npm test 2>&1 | grep -E "(timeout|TIMEOUT)"
+# 4. Test the fix with real API
+USE_DEEPWIKI_MOCK=false npx ts-node test-real-unified-simple.ts
 
-# Validate UnifiedAnalysisWrapper
-npx ts-node test-unified-wrapper-complete.ts
+# 5. Run full validation suite
+USE_DEEPWIKI_MOCK=false npx ts-node test-unified-validation.ts
 ```
 
 ## 🔄 SESSION CONTINUITY
 
 This plan provides clear direction for the next session based on:
-- **Completed Work**: UnifiedAnalysisWrapper architecture complete with V8 Final integration
-- **Technical Debt**: 296 ESLint warnings and 38 test timeouts to address
-- **Feature Roadmap**: Educational agent integration and performance optimization
-- **Production Readiness**: Code quality improvements for deployment
+- **Critical Issue Found**: DeepWiki returns markdown-wrapped JSON strings, not parsed objects
+- **Root Cause**: Response parser expects object but receives string
+- **Simple Fix**: Extract JSON from markdown code blocks before parsing
+- **Impact**: System currently non-functional with real API
+- **Time Estimate**: 30 minutes to fix and test
 
-**Ready for Next Session**: The codebase has a complete working architecture with clear optimization targets.
+**Ready for Next Session**: Clear problem identified with straightforward solution.
 
-☐ Test V8 on different contexts - Python (small), Go (large), Rust (medium), Java (small), TypeScript, JavaScript
-     ☐ Create comprehensive V8 report validation suite
-     ☐ Performance test V8 with large PRs (1000+ files)
-     ☐ Enhance skill storage and retrieval in Supabase - Store individual category scores
-     ☐ Create achievement/awards matrix table in Supabase for user badges
-     ☐ Implement team combined skill score tracking and leaderboard
-     ☐ Design skill progression system with levels and milestones
-     ☐ Create historical skill tracking for trend analysis
-     ☐ Migrate monitoring services to standard directory
-     ☐ Migrate logging services to standard directory
-     ☐ Migrate security services to standard directory
-     ☐ Consolidate all authentication logic to standard/auth
-     ☐ Move all utility functions to standard/utils
-     ☐ PHASE 0: Move monitoring to standard framework (3 days)
-     ☐ Add caching for model configurations to reduce Supabase calls
-     ☐ Create gamification system with XP points and levels
-     ☐ Implement skill decay mechanism for inactive periods
-     ☐ Create skill comparison API for team analytics
-     ☐ Build achievement notification system
-     ☐ Design skill-based PR auto-assignment system
-     ☐ Create skill export/import for developer portfolios
-     ☐ Implement skill-based code review recommendations
-     ☐ Create team skill heatmap visualization data
-     ☐ Build skill improvement suggestion engine
-     ☐ Create cross-team skill benchmarking
+## 📊 Evidence of Issue
+
+```typescript
+// What DeepWiki Actually Returns:
+"```json\n[{\"file\": \"package.json\", \"line\": 0, \"severity\": \"low\"}]\n```"
+
+// What Our Code Expects:
+{ issues: [...], analysis: {...} }
+
+// Test Result:
+hasResponse: false  // Because string !== object
+```
+
+**Next Session Focus**: Fix this ONE issue first, then everything else will work.
+
+☐ 
