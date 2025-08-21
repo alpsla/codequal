@@ -90,6 +90,57 @@ export class DeepWikiApiWrapper {
   }
 
   /**
+   * Parse DeepWiki response handling markdown-wrapped JSON
+   */
+  private parseDeepWikiResponse(content: string): any {
+    // First, try to extract JSON from markdown blocks
+    const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
+    if (jsonMatch) {
+      console.log('🔍 Found JSON block in markdown, extracting...');
+      try {
+        return JSON.parse(jsonMatch[1]);
+      } catch (e) {
+        console.warn('Failed to parse extracted JSON from markdown:', e);
+      }
+    }
+
+    // Check if the response starts with text followed by JSON
+    const lines = content.split('\n');
+    let jsonStartIndex = -1;
+    
+    // Find where JSON starts (look for opening brace or bracket)
+    for (let i = 0; i < lines.length; i++) {
+      const trimmed = lines[i].trim();
+      if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+        jsonStartIndex = i;
+        break;
+      }
+    }
+    
+    if (jsonStartIndex >= 0) {
+      // Extract JSON portion
+      const jsonContent = lines.slice(jsonStartIndex).join('\n');
+      try {
+        const parsed = JSON.parse(jsonContent);
+        console.log('✅ Successfully extracted and parsed JSON from text response');
+        return parsed;
+      } catch (e) {
+        console.warn('Failed to parse extracted JSON:', e);
+      }
+    }
+
+    // Try to parse the entire content as JSON
+    try {
+      const parsed = JSON.parse(content);
+      console.log('✅ Successfully parsed content as direct JSON');
+      return parsed;
+    } catch (e) {
+      console.warn('Content is not valid JSON:', e);
+      throw new Error('Failed to parse DeepWiki response as JSON');
+    }
+  }
+
+  /**
    * Analyze a repository using DeepWiki with intelligent response enhancement
    */
   async analyzeRepository(
@@ -121,7 +172,25 @@ export class DeepWikiApiWrapper {
       } else {
         // Try to get response from real API
         try {
-          rawResponse = await api.analyzeRepository(repositoryUrl, options);
+          const response = await api.analyzeRepository(repositoryUrl, options);
+          
+          // Check if response might be a string that needs parsing
+          if (typeof response === 'string') {
+            console.log('🔄 DeepWiki returned string response, attempting to parse...');
+            const parsed = this.parseDeepWikiResponse(response);
+            rawResponse = parsed as DeepWikiAnalysisResponse;
+          } else if (response && typeof response === 'object') {
+            // Check if the response has a string content that needs parsing
+            if ((response as any).content && typeof (response as any).content === 'string') {
+              console.log('🔄 DeepWiki response has string content, parsing...');
+              const parsed = this.parseDeepWikiResponse((response as any).content);
+              rawResponse = parsed as DeepWikiAnalysisResponse;
+            } else {
+              rawResponse = response;
+            }
+          } else {
+            rawResponse = response;
+          }
         } catch (error) {
           console.warn('⚠️ DeepWiki API failed, using intelligent fallback:', error);
           rawResponse = null;
