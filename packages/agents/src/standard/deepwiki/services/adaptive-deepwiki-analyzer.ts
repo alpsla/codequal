@@ -388,7 +388,7 @@ IMPORTANT: Return your response in valid JSON format with these keys:
     const foundIssues = new Map<string, any>(); // Use map to avoid duplicates
     
     // Pattern 1: "File: path/to/file.ts, Line: 42" or "File: path/to/file.ts Line: 42"
-    const pattern1 = /File:?\s*([a-zA-Z0-9\/_.-]+\.[tj]sx?)[,\s]+Line:?\s*(\d+)[,:\s]*(.+?)(?=\n|File:|$)/gi;
+    const pattern1 = /File:?\s*([a-zA-Z0-9/_.-]+\.[tj]sx?)[,\s]+Line:?\s*(\d+)[,:\s]*(.+?)(?=\n|File:|$)/gi;
     for (const match of response.matchAll(pattern1)) {
       const file = match[1].trim();
       const line = parseInt(match[2]);
@@ -409,7 +409,7 @@ IMPORTANT: Return your response in valid JSON format with these keys:
     }
     
     // Pattern 2: "**File Path: path/to/file.ts**" with line numbers
-    const pattern2 = /\*?\*?File\s*(?:Path)?:?\s*([^\*\n]+?)\*?\*?[\s\n-]*\*?\*?Line\s*(\d+)\*?\*?:?\s*(.+?)(?=\n\n|\*\*File|$)/gi;
+    const pattern2 = /\*?\*?File\s*(?:Path)?:?\s*([^*\n]+?)\*?\*?[\s\n-]*\*?\*?Line\s*(\d+)\*?\*?:?\s*(.+?)(?=\n\n|\*\*File|$)/gi;
     for (const match of response.matchAll(pattern2)) {
       const file = match[1].trim();
       const line = parseInt(match[2]);
@@ -430,7 +430,7 @@ IMPORTANT: Return your response in valid JSON format with these keys:
     }
     
     // Pattern 3: "path/to/file.ts:42 - Description" or "path/to/file.ts:42: Description"
-    const pattern3 = /([a-zA-Z0-9\/_.-]+\.[tj]sx?):(\d+)\s*[-:]\s*(.+?)(?=\n|$)/g;
+    const pattern3 = /([a-zA-Z0-9/_.-]+\.[tj]sx?):(\d+)\s*[-:]\s*(.+?)(?=\n|$)/g;
     for (const match of response.matchAll(pattern3)) {
       const file = match[1].trim();
       const line = parseInt(match[2]);

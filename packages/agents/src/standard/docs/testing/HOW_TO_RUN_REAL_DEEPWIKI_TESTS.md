@@ -1,168 +1,183 @@
-⏺ 📁 Complete V8 Testing Suite - Files & Commands
+# Complete V8 Testing Suite - Files & Commands
 
-  🔍 Test Files Location
+## 🔍 Test Files Location
 
-  All test files are in: /Users/alpinro/Code Prjects/codequal/packages/agents/
+All test files are in: `/Users/alpinro/Code Prjects/codequal/packages/agents/`
 
-  📋 Three Main Test Files
+## 📋 Main V8 Test Files
 
-  1️⃣ Bug Fix Validation Test
+### 1️⃣ V8 Validation Test
 
-  # Full Path
-  /Users/alpinro/Code Prjects/codequal/packages/agents/test-v8-bug-fixes-validation.ts
+**Full Path:**
+`/Users/alpinro/Code Prjects/codequal/packages/agents/test-v8-validation.ts`
 
-  # How to Run
-  cd /Users/alpinro/Code\ Prjects/codequal/packages/agents
-  npm run build
-  npx ts-node test-v8-bug-fixes-validation.ts
+**How to Run:**
+```bash
+cd /Users/alpinro/Code\ Prjects/codequal/packages/agents
+npm run build
+npx ts-node test-v8-validation.ts
+```
 
-  # What It Tests
-  - All 11 original bug fixes (BUG-074 through BUG-084)
-  - 4 enhancement fixes (Duration, Code Snippets, AI Model, Breaking Changes)
-  - Total: 15 validations
+**What It Tests:**
+- V8 report generator functionality
+- Issue reporting and formatting
+- HTML report generation with proper styling
 
-  # Expected Result
-  ✅ ALL VALIDATIONS PASSED!
-  Original Bug Fixes: 11/11 (100%)
-  Enhanced Fixes: 4/4 (100%)
-  Total: 15/15 (100%)
+### 2️⃣ V8 with Real Analysis Test
 
-  2️⃣ Real DeepWiki Data Test
+**Full Path:**
+`/Users/alpinro/Code Prjects/codequal/packages/agents/test-v8-with-real-analysis.ts`
 
-  # Full Path
-  /Users/alpinro/Code Prjects/codequal/packages/agents/test-v8-with-real-deepwiki-data.ts
+**How to Run:**
+```bash
+cd /Users/alpinro/Code\ Prjects/codequal/packages/agents
+npm run build
+npx ts-node test-v8-with-real-analysis.ts
+```
 
-  # How to Run
-  cd /Users/alpinro/Code\ Prjects/codequal/packages/agents
-  npm run build
-  npx ts-node test-v8-with-real-deepwiki-data.ts
+**What It Tests:**
+- Integration with real DeepWiki data
+- Full analysis pipeline
+- Report generation with actual analysis results
 
-  # What It Tests
-  - Uses actual DeepWiki response data (14 PR issues, 14 main issues)
-  - Validates all issues are displayed with correct file:line format
-  - Checks dependencies, test coverage, PR metadata
+### 3️⃣ V8 HTML Report Test
 
-  # Expected Result
-  ✅ All PR issues displayed
-  ✅ Issue locations shown
-  ✅ Code snippets included
-  ✅ Dependencies analysis
-  ✅ Test coverage shown
-  ✅ PR metadata complete
+**Full Path:**
+`/Users/alpinro/Code Prjects/codequal/packages/agents/test-v8-html-report.ts`
 
-  3️⃣ Comprehensive Final Validation Test
+**How to Run:**
+```bash
+cd /Users/alpinro/Code\ Prjects/codequal/packages/agents
+npm run build
+npx ts-node test-v8-html-report.ts
+```
 
-  # Full Path
-  /Users/alpinro/Code Prjects/codequal/packages/agents/test-real-pr-final-validation.ts
+**What It Tests:**
+- HTML report generation
+- Proper formatting and styling
+- Visual elements rendering
 
-  # How to Run
-  cd /Users/alpinro/Code\ Prjects/codequal/packages/agents
-  npm run build
-  npx ts-node test-real-pr-final-validation.ts
+## 🚀 Quick Test Commands
 
-  # What It Tests
-  - Creates mock data with 6 new issues, 2 resolved, 1 unchanged
-  - Tests all 11 bug fixes with detailed validation
-  - Generates HTML report for visual inspection
+### Run Most Important V8 Test
 
-  # Expected Result
-  ✅ BUG-074: DECLINED shows red X (not warning)
-  ✅ BUG-075: Architecture diagram renders properly
-  ✅ BUG-076: Dependencies section shows actual data
-  ✅ BUG-077: Breaking changes detected from issues
-  ✅ BUG-078: Educational insights specific to issues
-  ✅ BUG-079: Skills show calculated scores
-  ✅ BUG-080: No achievements when critical issues exist
-  ✅ BUG-081: Business impact has comprehensive metrics
-  ✅ BUG-082: AI IDE commands include file:line locations
-  ✅ BUG-083: Fix scripts have detailed suggestions
-  ✅ BUG-084: PR comment shows DECLINED with issues
+```bash
+# Navigate and run the V8 validation test
+cd /Users/alpinro/Code\ Prjects/codequal/packages/agents && \
+npm run build && \
+USE_DEEPWIKI_MOCK=true npx ts-node test-v8-validation.ts
+```
 
-  🚀 Quick Test Commands
+### Run Real PR Enhanced Tests
 
-  Run All Tests (Copy & Paste)
+```bash
+# Simple enhanced test
+cd /Users/alpinro/Code\ Prjects/codequal/packages/agents && \
+npm run build && \
+USE_DEEPWIKI_MOCK=true npx ts-node test-real-pr-v8-enhanced-simple.ts
 
-  # Navigate and build
-  cd /Users/alpinro/Code\ Prjects/codequal/packages/agents && npm run build
+# Full enhanced test
+cd /Users/alpinro/Code\ Prjects/codequal/packages/agents && \
+npm run build && \
+USE_DEEPWIKI_MOCK=true npx ts-node test-real-pr-v8-enhanced.ts
+```
 
-  # Run all three tests
-  echo "🔍 Running Bug Fix Validation..." && \
-  npx ts-node test-v8-bug-fixes-validation.ts && \
-  echo -e "\n🔍 Running Real Data Test..." && \
-  npx ts-node test-v8-with-real-deepwiki-data.ts && \
-  echo -e "\n🔍 Running Final Validation..." && \
-  npx ts-node test-real-pr-final-validation.ts
+## 📊 Generated Report Locations
 
-  Run Single Most Important Test
+After running tests, HTML reports are saved in the current directory:
 
-  # This is the main test that validates all fixes
-  cd /Users/alpinro/Code\ Prjects/codequal/packages/agents && \
-  npm run build && \
-  npx ts-node test-v8-bug-fixes-validation.ts
+```bash
+# View generated HTML reports
+ls -la /Users/alpinro/Code\ Prjects/codequal/packages/agents/*.html
 
-  📊 Generated Report Locations
+# Open latest report in browser (macOS)
+open /Users/alpinro/Code\ Prjects/codequal/packages/agents/v8-enhanced-test-*.html
+```
 
-  After running tests, HTML reports are saved in:
+## 🔧 Regression Test Suite
 
-  # Bug fix validation reports
-  /Users/alpinro/Code Prjects/codequal/packages/agents/v8-validation/*.html
+The main regression test suite is located in:
 
-  # Real data test reports  
-  /Users/alpinro/Code Prjects/codequal/packages/agents/v8-real-data-reports/*.html
+```bash
+# Run regression tests
+cd /Users/alpinro/Code\ Prjects/codequal/packages/agents
+npm test src/standard/tests/regression/unified-regression-suite.test.ts
+```
 
-  # Final validation reports
-  /Users/alpinro/Code Prjects/codequal/packages/agents/v8-final-validation/*.html
+## 🔧 If Tests Fail
 
-  # Open latest report in browser (macOS)
-  open /Users/alpinro/Code\ Prjects/codequal/packages/agents/v8-validation/bug-fix-validation-*.html
+1. Check which test failed - It will show specific error messages
+2. Review the main V8 generator file:
+   `/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/comparison/report-generator-v8-final.ts`
+3. Check if DeepWiki is running:
+   ```bash
+   kubectl get pods -n codequal-dev -l app=deepwiki
+   ```
+4. Verify port forwarding is active:
+   ```bash
+   lsof -i :8001
+   ```
 
-  🔧 If Tests Fail
+## ✅ Success Criteria
 
-  1. Check which test failed - It will show specific bug number
-  2. Review the main file:
-  /Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/comparison/report-generator-v8-final.ts
-  3. Key lines to check:
-    - Line 253: Duration calculation
-    - Line 255: AI model selection
-    - Line 339: Duration display
-    - generatePRDecision() method
-    - assessBreakingChangeRisk() method
+- Tests should complete without errors
+- HTML reports should be generated
+- Mock mode tests should run quickly (< 30 seconds)
+- Real DeepWiki tests may take longer (1-3 minutes)
 
-  ✅ Success Criteria
+## 📝 Important Notes
 
-  - Test 1: Shows 15/15 (100%) - All bug fixes intact
-  - Test 2: Shows all 6 validation checks passing
-  - Test 3: Shows 11/11 bugs fixed
+- **Always use `USE_DEEPWIKI_MOCK=true`** for testing unless specifically testing DeepWiki integration
+- DeepWiki analyzes entire repositories, NOT PR diffs (critical limitation discovered)
+- V7 generators are deprecated - only use V8
+- Check `packages/agents/src/standard/docs/session_summary/NEXT_SESSION_PLAN.md` for current issues
 
-  📝 Documentation
+## Quick Start Guide
 
-  Full testing guide available at:
-  /Users/alpinro/Code Prjects/codequal/packages/agents/V8_TESTING_GUIDE.md
+### First Time Each Day (or New Session):
 
-  This guide contains all the details about what each test validates and how to troubleshoot issues.
+```bash
+# 1. Setup environment (keeps port forwarding active)
+cd /Users/alpinro/Code\ Prjects/codequal
+./scripts/test-environment-setup.sh 2>/dev/null || echo "Setup script not found - manual setup required"
 
+# 2. Check DeepWiki pod status
+kubectl get pods -n codequal-dev -l app=deepwiki
 
+# 3. Start port forwarding if needed
+kubectl port-forward -n codequal-dev deployment/deepwiki 8001:8001 &
 
-First Time Each Day (or New Session):
+# 4. Navigate to agents directory
+cd packages/agents
 
-  # 1. Setup environment (keeps port forwarding active)
-  ./scripts/test-environment-setup.sh
+# 5. Run a quick test with mock data
+USE_DEEPWIKI_MOCK=true npx ts-node test-v8-validation.ts
+```
 
-  # 2. Quick health check
-  ./check-health.sh
+### Subsequent Runs (Same Session):
 
-  # 3. Now run your regression suite
-  npm test src/standard/tests/regression/unified-regression-suite.test.ts
+```bash
+# Just run the tests directly - no need to setup again
+cd /Users/alpinro/Code\ Prjects/codequal/packages/agents
+USE_DEEPWIKI_MOCK=true npx ts-node test-v8-validation.ts
+```
 
-  Subsequent Runs (Same Session):
+### If Tests Fail Unexpectedly:
 
-  # Just run the tests directly - no need to setup again
-  npm test src/standard/tests/regression/unified-regression-suite.test.ts
+```bash
+# Check DeepWiki pod
+kubectl get pods -n codequal-dev -l app=deepwiki
 
-  If Tests Fail Unexpectedly:
+# Check port forwarding
+lsof -i :8001
 
-  # Check health first
-  ./check-health.sh
+# Restart port forwarding if needed
+pkill -f "port-forward.*8001"
+kubectl port-forward -n codequal-dev deployment/deepwiki 8001:8001 &
 
-  # If something is down, re-run setup
-  ./scripts/test-environment-setup.sh
+# Try test again with mock mode
+USE_DEEPWIKI_MOCK=true npx ts-node test-v8-validation.ts
+```
+
+---
+*Last Updated: August 22, 2025*

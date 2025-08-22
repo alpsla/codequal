@@ -277,7 +277,7 @@ export class LocationValidator {
    */
   private getLocalRepoPath(repositoryUrl: string): string {
     // Extract repo info from URL
-    const match = repositoryUrl.match(/github\.com\/([^\/]+)\/([^\/\?]+)/);
+    const match = repositoryUrl.match(/github\.com\/([^/]+)\/([^/?]+)/);
     if (!match) {
       throw new Error(`Invalid GitHub URL: ${repositoryUrl}`);
     }

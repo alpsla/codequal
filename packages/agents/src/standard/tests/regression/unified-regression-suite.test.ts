@@ -10,6 +10,8 @@
 import { describe, it, expect, beforeAll, afterAll, jest } from '@jest/globals';
 import { UnifiedAnalysisWrapper, UnifiedAnalysisResult } from '../../services/unified-analysis-wrapper';
 import { EndToEndAnalysisWrapper } from '../../services/end-to-end-analysis-wrapper';
+import { DirectDeepWikiApi } from '../../services/direct-deepwiki-api';
+import { registerDeepWikiApi } from '../../services/deepwiki-api-wrapper';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -30,7 +32,7 @@ const REGRESSION_SCENARIOS = {
   LOCATION_ACCURACY: {
     name: 'Location Validation',
     repo: 'https://github.com/sindresorhus/ky',
-    prId: '700',
+    prId: '720',
     minLocationAccuracy: 80, // 80% minimum
     requiresClarification: true
   },
@@ -38,7 +40,7 @@ const REGRESSION_SCENARIOS = {
   // BUG-069: PR metadata preservation
   PR_METADATA: {
     name: 'PR Context Preservation',
-    prUrl: 'https://github.com/sindresorhus/ky/pull/700',
+    prUrl: 'https://github.com/sindresorhus/ky/pull/720',
     requiredFields: ['owner', 'repo', 'prNumber', 'title', 'author', 'filesChanged']
   },
   
@@ -65,6 +67,14 @@ describe('Unified Regression Test Suite', () => {
   const testResults: Map<string, any> = new Map();
   
   beforeAll(async () => {
+    // Register DeepWiki API if using real mode
+    if (process.env.USE_DEEPWIKI_MOCK !== 'true') {
+      console.warn('⚠️ Running regression tests with real DeepWiki - this may take longer');
+      const directApi = new DirectDeepWikiApi();
+      registerDeepWikiApi(directApi);
+      console.log('✅ DirectDeepWikiApi registered for tests');
+    }
+    
     // Initialize wrappers with test configuration
     wrapper = new UnifiedAnalysisWrapper();
     e2eWrapper = new EndToEndAnalysisWrapper({
@@ -72,11 +82,6 @@ describe('Unified Regression Test Suite', () => {
       keepClone: false,
       useCache: true
     });
-    
-    // Ensure test environment is ready
-    if (process.env.USE_DEEPWIKI_MOCK !== 'true') {
-      console.warn('⚠️ Running regression tests with real DeepWiki - this may take longer');
-    }
   });
   
   afterAll(async () => {
@@ -118,7 +123,7 @@ describe('Unified Regression Test Suite', () => {
     
     it('should handle different repository sizes', async () => {
       const repos = [
-        { url: 'https://github.com/sindresorhus/is-odd', size: 'tiny' },
+        { url: 'https://github.com/sindresorhus/ky', size: 'small' },
         { url: 'https://github.com/sindresorhus/ky', size: 'small' },
         { url: 'https://github.com/vercel/swr', size: 'medium' }
       ];

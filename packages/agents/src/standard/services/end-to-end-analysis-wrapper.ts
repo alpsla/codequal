@@ -218,7 +218,7 @@ export class EndToEndAnalysisWrapper {
       this.log('info', 'Step 1: Extracting PR context from URL');
       
       // Parse GitHub PR URL
-      const match = prUrl.match(/github\.com\/([^\/]+)\/([^\/]+)\/pull\/(\d+)/);
+      const match = prUrl.match(/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/);
       if (!match) {
         throw new Error(`Invalid GitHub PR URL: ${prUrl}`);
       }
@@ -775,7 +775,7 @@ export class EndToEndAnalysisWrapper {
    * Parse basic PR info from URL
    */
   private parseBasicPRInfo(prUrl: string): PRContext {
-    const match = prUrl.match(/github\.com\/([^\/]+)\/([^\/]+)\/pull\/(\d+)/);
+    const match = prUrl.match(/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/);
     
     if (match) {
       const [, owner, repo, prNumber] = match;

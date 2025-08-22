@@ -572,6 +572,7 @@ Extract actionable recommendations with this EXACT structure:
     switch (config.category) {
       case 'dependencies': {
         // Use existing enhanced-dependency-parser
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
         const { parseEnhancedDependencies } = require('./enhanced-dependency-parser');
         extractedData = parseEnhancedDependencies(response);
         break;
@@ -579,6 +580,7 @@ Extract actionable recommendations with this EXACT structure:
         
       case 'code-quality': {
         // Use existing enhanced-code-quality-parser
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
         const { parseEnhancedCodeQuality } = require('./enhanced-code-quality-parser');
         extractedData = parseEnhancedCodeQuality(response);
         break;

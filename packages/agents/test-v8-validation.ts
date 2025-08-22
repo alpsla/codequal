@@ -27,7 +27,7 @@ async function validateV8Report() {
   // Test with sindresorhus/ky which should have issues in both branches
   const testRepo = {
     url: 'https://github.com/sindresorhus/ky',
-    prId: '700',
+    prId: '720',
     name: 'ky'
   };
   
@@ -48,7 +48,7 @@ async function validateV8Report() {
       validateLocations: false,  // Skip validation to see all issues
       requireMinConfidence: 0,   // Accept all issues
       maxClarificationAttempts: 0, // Skip clarification for speed
-      useDeepWikiMock: false
+      useDeepWikiMock: process.env.USE_DEEPWIKI_MOCK === 'true'
     });
     
     // Analyze PR branch
@@ -58,7 +58,7 @@ async function validateV8Report() {
       validateLocations: false,  // Skip validation to see all issues
       requireMinConfidence: 0,   // Accept all issues
       maxClarificationAttempts: 0, // Skip clarification for speed
-      useDeepWikiMock: false
+      useDeepWikiMock: process.env.USE_DEEPWIKI_MOCK === 'true'
     });
     
     if (!baseAnalysisResult.success || !baseAnalysisResult.analysis || !prAnalysisResult.success || !prAnalysisResult.analysis) {
@@ -119,7 +119,31 @@ async function validateV8Report() {
         modifiedIssues: [],
         unchangedIssues: unchangedIssues,
         fixedIssues: resolvedIssues.map(i => i.id || i.title)
-      }
+      },
+      // Add proper metadata for report generation
+      prMetadata: {
+        repository_url: testRepo.url,
+        repository: testRepo.url,
+        number: parseInt(testRepo.prId),
+        prNumber: parseInt(testRepo.prId),
+        title: 'Add `.bytes()` shortcut',
+        prTitle: 'Add `.bytes()` shortcut',
+        author: 'sindresorhus',
+        branch: `pr-${testRepo.prId}`,
+        targetBranch: 'main',
+        filesChanged: baseAnalysisResult.analysis.metadata?.files_analyzed || 100,
+        additions: 150,
+        deletions: 50
+      },
+      scanMetadata: {
+        analysisId: `CQ-${Date.now()}`,
+        baseCommit: 'abc123',
+        headCommit: 'def456'
+      },
+      scanDuration: `${baseAnalysisResult.analysis.metadata?.duration_ms || 5000}ms`,
+      duration: `${baseAnalysisResult.analysis.metadata?.duration_ms || 5000}ms`,
+      modelUsed: 'openai/gpt-4o-mini',
+      aiModel: 'openai/gpt-4o-mini'
     };
     
     // Generate the reports in different formats

@@ -45,12 +45,23 @@
 
 ### 6. Component Library (shadcn-ui based)
 - [ ] Button variants (primary, secondary, ghost, destructive)
-- [ ] Card components (score cards, feature cards)
-- [ ] Badge components (severity, status, priority)
+- [ ] Card components (score cards, feature cards, issue cards)
+- [ ] Badge components (severity, status, priority, achievements)
 - [ ] Form elements (inputs, selects, checkboxes)
 - [ ] Navigation components (tabs, breadcrumbs, sidebar)
 - [ ] Data display (tables, charts, progress bars)
 - [ ] Feedback components (alerts, toasts, loading states)
+- [ ] **NEW: Achievement components**
+  - [ ] Belt indicator widget
+  - [ ] Achievement badge card
+  - [ ] Progress tracking bars
+  - [ ] Achievement notification toast
+- [ ] **NEW: Data visualization components**
+  - [ ] Skill radar chart
+  - [ ] Trend line charts
+  - [ ] Score gauge/circular progress
+  - [ ] Comparison bar charts
+  - [ ] Mini sparklines
 
 ### 7. High-Fidelity Mockups
 - [ ] Homepage design with hero section
@@ -85,19 +96,33 @@
 ## Phase 5: Special Features
 
 ### 11. Report Navigation System
-- [ ] Collapsed view with summary scores
-- [ ] Drill-down interaction design
-- [ ] Category switching mechanism
-- [ ] Mobile gesture support
-- [ ] Keyboard navigation
+- [ ] Fixed sidebar navigation design
+- [ ] Section expand/collapse interactions
+- [ ] Progress indicator for long reports
+- [ ] Mobile accordion pattern
+- [ ] Keyboard navigation support
+- [ ] Breadcrumb design for deep navigation
 
 ### 12. Skill Tracking Visualization
-- [ ] Progress charts design
-- [ ] Badge/achievement system
-- [ ] Skill level indicators
-- [ ] Growth timeline
+- [ ] **Skill Radar Chart** (5-6 categories spider chart)
+- [ ] **Trend Line Chart** (6 PR history per skill)
+- [ ] **Overall Score Gauge** (circular progress with belt indicator)
+- [ ] **Team Comparison Bar Chart** (you vs team avg vs top performer)
+- [ ] **Achievement Progress Grid** (visual achievement tracker)
+- [ ] **Skill Heatmap** (shows strengths/weaknesses at a glance)
+- [ ] Badge/achievement display system
+- [ ] Progress timeline visualization
 
-### 13. Multi-Platform Consistency
+### 13. Achievement & Gamification System
+- [ ] Belt progression visual design (7 levels)
+- [ ] Achievement badge designs (20+ achievements)
+- [ ] Progress tracking components
+- [ ] Notification system for unlocks
+- [ ] Profile achievement showcase
+- [ ] Leaderboard design (optional)
+- [ ] Milestone celebration animations
+
+### 14. Multi-Platform Consistency
 - [ ] API response format design
 - [ ] PDF export template
 - [ ] Markdown report format

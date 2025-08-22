@@ -131,7 +131,7 @@ export class UnifiedAnalysisWrapper {
       const stats = this.calculateStatistics(deepWikiResult, validationResults);
       
       // Step 6: Apply confidence filtering
-      const minConfidence = options.requireMinConfidence || 70;
+      const minConfidence = options.requireMinConfidence !== undefined ? options.requireMinConfidence : 70;
       if (stats.averageConfidence < minConfidence) {
         this.log('warn', `Average confidence ${stats.averageConfidence}% is below threshold ${minConfidence}%`);
         
@@ -584,7 +584,7 @@ export class UnifiedAnalysisWrapper {
   } {
     try {
       // Handle GitHub URLs: https://github.com/owner/repo
-      const githubMatch = repositoryUrl.match(/github\.com[/:]([^/]+)\/([^/\.]+)/);
+      const githubMatch = repositoryUrl.match(/github\.com[/:]([^/]+)\/([^/.]+)/);
       if (githubMatch) {
         const owner = githubMatch[1];
         const repo = githubMatch[2].replace(/\.git$/, '');
@@ -594,7 +594,7 @@ export class UnifiedAnalysisWrapper {
       }
       
       // Handle GitLab URLs
-      const gitlabMatch = repositoryUrl.match(/gitlab\.com[/:]([^/]+)\/([^/\.]+)/);
+      const gitlabMatch = repositoryUrl.match(/gitlab\.com[/:]([^/]+)\/([^/.]+)/);
       if (gitlabMatch) {
         const owner = gitlabMatch[1];
         const repo = gitlabMatch[2].replace(/\.git$/, '');

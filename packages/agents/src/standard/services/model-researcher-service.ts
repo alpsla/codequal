@@ -279,15 +279,15 @@ export class ModelResearcherService {
     // Generic patterns to find model information - NO specific model names
     const modelPatterns = [
       // Pattern: "Provider released ModelName on Date"
-      /(\w+)\s+released\s+([A-Z][a-zA-Z0-9\-\s\.]+)\s+on\s+(\w+\s+\d{1,2},?\s+\d{4})/gi,
+      /(\w+)\s+released\s+([A-Z][a-zA-Z0-9\-\s.]+)\s+on\s+(\w+\s+\d{1,2},?\s+\d{4})/gi,
       // Pattern: "ModelName from Provider"
-      /([A-Z][a-zA-Z0-9\-\s\.]+)\s+from\s+(\w+)/gi,
+      /([A-Z][a-zA-Z0-9\-\s.]+)\s+from\s+(\w+)/gi,
       // Pattern: "Provider's ModelName"
-      /(\w+)'s\s+([A-Z][a-zA-Z0-9\-\s\.]+)\s+model/gi,
+      /(\w+)'s\s+([A-Z][a-zA-Z0-9\-\s.]+)\s+model/gi,
       // Pattern: "new ModelName model"
-      /new\s+([A-Z][a-zA-Z0-9\-\s\.]+)\s+model/gi,
+      /new\s+([A-Z][a-zA-Z0-9\-\s.]+)\s+model/gi,
       // Pattern: "ModelName achieved X% on benchmark"
-      /([A-Z][a-zA-Z0-9\-\s\.]+)\s+achieved\s+\d+\.?\d*%/gi
+      /([A-Z][a-zA-Z0-9\-\s.]+)\s+achieved\s+\d+\.?\d*%/gi
     ];
     
     const datePatterns = [

@@ -25,16 +25,16 @@ Before starting any testing session, run the environment setup:
 ./scripts/test-environment-setup.sh
 ```
 
-### Step 1.5: CRITICAL - Register DeepWiki API (MUST RUN EVERY SESSION!)
+### Step 1.5: Register DeepWiki API (For Real DeepWiki Tests)
 
-**⚠️ IMPORTANT: This step is REQUIRED for DeepWiki to work correctly!**
+**Note:** This step is only needed if running tests with real DeepWiki (USE_DEEPWIKI_MOCK=false).
 
 ```bash
 cd packages/agents
 npx ts-node setup-deepwiki-for-session.ts
 ```
 
-This registers the DirectDeepWikiApi which is lost between sessions. Without this, you'll get 0 issues!
+This registers the DirectDeepWikiApi for the session.
 
 This script will:
 - ✅ Verify all prerequisites (kubectl, Node.js, npm)
@@ -53,19 +53,20 @@ This script will:
 After setup, verify everything is working:
 
 ```bash
-./check-health.sh
+# Check DeepWiki pod status
+kubectl get pods -n codequal-dev -l app=deepwiki
+
+# Check if port forwarding is active
+lsof -i :8001
+
+# Check Redis (if using)
+redis-cli ping
 ```
 
-Expected output:
-```
-🏥 CodeQual Health Check
-========================
-DeepWiki API: ✅ Running
-Redis: ✅ Running
-Kubernetes: ✅ Connected
-DeepWiki Pod: ✅ Running
-GitHub Auth: ✅ Valid
-```
+Expected outputs:
+- DeepWiki pod should show STATUS: Running
+- Port 8001 should show kubectl port-forward process
+- Redis should respond with PONG
 
 ### Step 3: Run Your Tests
 
@@ -73,6 +74,7 @@ Now you can run any test suite:
 
 #### Option A: Quick Test (Fastest)
 ```bash
+# From project root
 ./quick-test.sh
 ```
 - Runs basic validation
@@ -80,14 +82,14 @@ Now you can run any test suite:
 - Falls back to mocks if needed
 - Good for quick validation
 
-#### Option B: Comprehensive Test Suite
+#### Option B: V8 Validation Tests
 ```bash
 cd packages/agents
-npx ts-node test-suite/comprehensive-test.ts
+USE_DEEPWIKI_MOCK=true npx ts-node test-v8-validation.ts
 ```
-- Runs all component tests
-- Generates detailed JSON report
-- Best for thorough validation
+- Tests V8 report generator
+- Validates issue formatting
+- Best for report generation testing
 
 #### Option C: Unified Regression Suite
 ```bash
@@ -100,12 +102,19 @@ npm test src/standard/tests/regression/unified-regression-suite.test.ts
 
 #### Option D: Specific Test Categories
 ```bash
-./run-tests.sh deepwiki    # DeepWiki integration tests
-./run-tests.sh api         # API endpoint tests
-./run-tests.sh unit        # Unit tests only
-./run-tests.sh integration # Integration tests
-./run-tests.sh regression  # Regression tests
-./run-tests.sh all         # Everything
+cd packages/agents
+
+# Unit tests
+npm test -- --testPathPattern="__tests__"
+
+# Integration tests
+npm test -- --testPathPattern="integration"
+
+# Regression tests
+npm test -- --testPathPattern="regression"
+
+# All tests
+npm test
 ```
 
 ## Recommended Testing Order
@@ -122,10 +131,10 @@ For comprehensive testing before commits or PRs:
    ./quick-test.sh
    ```
 
-3. **Comprehensive Tests**
+3. **V8 Validation Tests**
    ```bash
    cd packages/agents
-   npx ts-node test-suite/comprehensive-test.ts
+   USE_DEEPWIKI_MOCK=true npx ts-node test-v8-validation.ts
    ```
 
 4. **Regression Tests** (critical before merge)
@@ -374,12 +383,13 @@ npm run build
 ./scripts/test-environment-setup.sh
 
 # Daily workflow
-./check-health.sh                    # Verify environment
-./quick-test.sh                       # Quick validation
-./run-tests.sh all                    # Run everything
+kubectl get pods -n codequal-dev     # Check DeepWiki pod
+lsof -i :8001                        # Verify port forwarding
+./quick-test.sh                       # Quick validation (from root)
 
-# Specific needs
-USE_DEEPWIKI_MOCK=true npm test      # Fast testing with mocks
+# Test execution (from packages/agents)
+cd packages/agents
+USE_DEEPWIKI_MOCK=true npx ts-node test-v8-validation.ts
 npm test -- --watch                  # Watch mode for development
 npm test -- --coverage               # Generate coverage report
 ```
@@ -396,31 +406,46 @@ Following this workflow ensures:
 Remember: **Always run regression tests before merging!**
 
 
-Recommended Workflow:
+## Recommended Workflow
 
-  First Time Each Day (or New Session):
+### First Time Each Day (or New Session):
 
-  # 1. Setup environment (keeps port forwarding active)
-  ./scripts/test-environment-setup.sh
+```bash
+# 1. Setup environment (keeps port forwarding active)
+./scripts/test-environment-setup.sh
 
-  # 2. Quick health check
-  ./check-health.sh
+# 2. Check DeepWiki pod status
+kubectl get pods -n codequal-dev -l app=deepwiki
 
-  # 3. Now run your regression suite
-  npm test src/standard/tests/regression/unified-regression-suite.test.ts
+# 3. Start port forwarding if needed
+kubectl port-forward -n codequal-dev deployment/deepwiki 8001:8001 &
 
-  Subsequent Runs (Same Session):
+# 4. Now run your tests
+cd packages/agents
+USE_DEEPWIKI_MOCK=true npx ts-node test-v8-validation.ts
+```
 
-  # Just run the tests directly - no need to setup again
-  npm test src/standard/tests/regression/unified-regression-suite.test.ts
+### Subsequent Runs (Same Session):
 
-  If Tests Fail Unexpectedly:
+```bash
+# Just run the tests directly - no need to setup again
+cd packages/agents
+USE_DEEPWIKI_MOCK=true npx ts-node test-v8-validation.ts
+```
 
-  # Check health first
-  ./check-health.sh
+### If Tests Fail Unexpectedly:
 
-  # If something is down, re-run setup
-  ./scripts/test-environment-setup.sh
+```bash
+# Check DeepWiki pod
+kubectl get pods -n codequal-dev -l app=deepwiki
+
+# Check port forwarding
+lsof -i :8001
+
+# If something is down, restart port forwarding
+pkill -f "port-forward.*8001"
+kubectl port-forward -n codequal-dev deployment/deepwiki 8001:8001 &
+```
 
   -----
 

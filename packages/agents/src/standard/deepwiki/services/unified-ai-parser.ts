@@ -220,7 +220,9 @@ export class UnifiedAIParser {
     if (process.env.ENABLE_AI_LOCATION !== 'false') {
       try {
         // Use the existing AILocationFinder service instead of AILocationEnhancer
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
         const { createAILocationFinder } = require('../../services/ai-location-finder');
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
         const { ModelVersionSync } = require('@codequal/core');
         
         // Create location finder with model version sync
@@ -250,6 +252,7 @@ export class UnifiedAIParser {
           ];
           
           // Use the first existing path
+          // eslint-disable-next-line @typescript-eslint/no-var-requires
           const fs = require('fs');
           for (const path of possiblePaths) {
             if (fs.existsSync(path)) {
@@ -430,8 +433,8 @@ EXAMPLE OUTPUT:
       "description": "Direct string concatenation in database query",
       "impact": "User input is directly concatenated into SQL query without parameterization",
       "remediation": "Use parameterized queries or prepared statements",
-      "codeSnippet": "const query = \"SELECT * FROM users WHERE id = \" + userId;",
-      "fixedCode": "const query = \"SELECT * FROM users WHERE id = ?\"; db.query(query, [userId]);"
+      "codeSnippet": "const query = 'SELECT * FROM users WHERE id = ' + userId;",
+      "fixedCode": "const query = 'SELECT * FROM users WHERE id = ?'; db.query(query, [userId]);"
     },
     {
       "type": "Missing Authentication",
@@ -764,7 +767,9 @@ Extract recommendations:
             if (jsonMatch) {
               try {
                 return JSON.parse(jsonMatch[0]);
-              } catch {}
+              } catch {
+                // Ignore parse errors and continue
+              }
             }
             // As last resort, try to extract issues from text
             this.log('warn', 'Primary model returned unparseable content, attempting text extraction');
@@ -832,7 +837,9 @@ Extract recommendations:
                 if (jsonMatch) {
                   try {
                     return JSON.parse(jsonMatch[0]);
-                  } catch {}
+                  } catch {
+                    // Ignore parse errors and continue
+                  }
                 }
                 
                 // Strategy 4: If fallback returns text analysis, parse it manually
@@ -1313,7 +1320,7 @@ Extract recommendations:
         if (data.metrics && Object.keys(data.metrics).length > 0) confidence += 0.05;
         break;
       
-      case 'dependencies':
+      case 'dependencies': {
         const hasDepData = data.vulnerable?.length > 0 || 
                           data.outdated?.length > 0 || 
                           data.deprecated?.length > 0;
@@ -1323,6 +1330,7 @@ Extract recommendations:
           if (data.outdated?.some((o: any) => o.latestVersion)) confidence += 0.05;
         }
         break;
+      }
       
       case 'codeQuality':
         // Much better confidence calculation for code quality
@@ -1421,7 +1429,9 @@ Extract recommendations:
    */
   private fallbackParsing(content: string, config: ParseConfig): ParsedDeepWikiResponse {
     // Use existing parsers as fallback
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { parseEnhancedDependencies } = require('./enhanced-dependency-parser');
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { parseEnhancedCodeQuality } = require('./enhanced-code-quality-parser');
     
     const startTime = Date.now();

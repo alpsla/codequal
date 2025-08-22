@@ -628,15 +628,17 @@ Remember: Users will click on these locations in their IDE, so they MUST be accu
       }
     } else {
       // Use kubectl exec approach (default)
-      // Properly escape the JSON for bash
-      const escapedPayload = JSON.stringify(payload).replace(/"/g, '\\"').replace(/\$/g, '\\$');
-      const curlCommand = `curl -s -X POST http://localhost:${this.API_PORT}/chat/completions/stream \
+      // Use base64 encoding to avoid escaping issues with complex JSON
+      const payloadBase64 = Buffer.from(JSON.stringify(payload)).toString('base64');
+      
+      // Create a command that decodes base64 and pipes to curl
+      const curlCommand = `echo '${payloadBase64}' | base64 -d | curl -s -X POST http://localhost:${this.API_PORT}/chat/completions/stream \
         -H "Content-Type: application/json" \
-        -d "${escapedPayload}"`;
+        --data-binary @-`;
 
       try {
         const { stdout, stderr } = await execAsync(
-          `kubectl exec -n ${this.NAMESPACE} ${podName} -- bash -c '${curlCommand}'`
+          `kubectl exec -n ${this.NAMESPACE} ${podName} -- bash -c "${curlCommand}"`
         );
 
         if (stderr && !stderr.includes('warning')) {

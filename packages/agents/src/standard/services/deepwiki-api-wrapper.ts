@@ -25,6 +25,9 @@ export interface DeepWikiAnalysisResponse {
     };
     recommendation?: string;
     rule?: string;
+    codeSnippet?: string;
+    suggestion?: string;
+    remediation?: string;
   }>;
   scores: {
     overall: number;

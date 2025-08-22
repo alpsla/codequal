@@ -632,7 +632,8 @@ ${actions.length > 0 ? '**Required Actions:**\n' + actions.map(a => `- ${a}`).jo
         const location = issue.location?.file && issue.location?.line ? 
           `${issue.location.file}:${issue.location.line}` : 'Unknown location';
         const issueType = issue.type || issue.category || 'issue';
-        content += `- **${issueType}:** ${issue.message} (${location})\n`;
+        const title = issue.title || issue.message || 'Issue';
+        content += `- **${issueType}:** ${title} (${location})\n`;
       });
     }
     
@@ -659,8 +660,8 @@ ${actions.length > 0 ? '**Required Actions:**\n' + actions.map(a => `- ${a}`).jo
   }
 
   private formatSingleIssue(issue: Issue, id: string, showCode: boolean): string {
-    const message = issue.message || issue.title || 'Issue';
-    let content = `##### [${id}] ${message}\n\n`;
+    const title = issue.title || issue.message || 'Issue';
+    let content = `##### [${id}] ${title}\n\n`;
     
     // Support both issue.location.file and issue.file formats
     const file = issue.location?.file || (issue as any).file;
@@ -668,23 +669,26 @@ ${actions.length > 0 ? '**Required Actions:**\n' + actions.map(a => `- ${a}`).jo
     const location = file && line ? `${file}:${line}` : 'Unknown location';
     
     content += `📁 **Location:** \`${location}\`\n`;
-    content += `📝 **Description:** ${issue.description || message}\n`;
+    content += `📝 **Description:** ${issue.description || title}\n`;
     content += `🏷️ **Category:** ${this.capitalize(issue.category || 'general')} | **Type:** ${issue.type || 'issue'}\n`;
     
-    if (showCode && (issue.codeSnippet || issue.category)) {
+    // Always show code snippets
+    if (showCode) {
       content += `\n🔍 **Problematic Code:**\n`;
       content += '```' + this.getLanguageFromFile(file) + '\n';
-      content += issue.codeSnippet || this.generateMockCodeSnippet(issue) + '\n';
+      const snippet = issue.codeSnippet || (issue as any).code || this.generateMockCodeSnippet(issue);
+      content += snippet + '\n';
       content += '```\n';
     }
     
     // Support both suggestedFix and suggestion properties
-    const suggestion = issue.suggestedFix || (issue as any).suggestion;
+    const suggestion = (issue as any).suggestion || issue.suggestedFix || (issue as any).suggestedFix;
     if (suggestion) {
       content += `\n✅ **Recommended Fix:** ${suggestion}\n`;
-      if (showCode && ((issue as any).fixedCode || suggestion)) {
+      if (showCode) {
         content += '```' + this.getLanguageFromFile(file) + '\n';
-        content += (issue as any).fixedCode || this.generateMockFixedCode(issue) + '\n';
+        const fixedCode = (issue as any).fixedCode || `// Fixed: ${suggestion}`;
+        content += fixedCode + '\n';
         content += '```\n';
       }
     }
@@ -2669,7 +2673,7 @@ Analysis Date: ${new Date().toISOString().split('T')[0]}, ${new Date().toISOStri
   private generateMockCodeSnippet(issue: Issue): string {
     const file = issue.location?.file || (issue as any).file || 'unknown';
     const line = issue.location?.line || (issue as any).line || 1;
-    const message = issue.message || issue.title || '';
+    const message = issue.title || issue.message || '';
     
     // Generate contextual code snippets based on issue
     if (message.toLowerCase().includes('sql') || message.toLowerCase().includes('injection')) {
@@ -2732,7 +2736,7 @@ class EmailService {
 
   private generateMockFixedCode(issue: Issue): string {
     const file = issue.location?.file || (issue as any).file || 'unknown';
-    const message = issue.message || issue.title || '';
+    const message = issue.title || issue.message || '';
     
     if (message.toLowerCase().includes('sql') || message.toLowerCase().includes('injection')) {
       return `// Fixed: Use parameterized queries
@@ -2788,7 +2792,7 @@ const apiKey = process.env.API_KEY;
 const dbPassword = process.env.DB_PASSWORD;
 // Never hardcode secrets`;
     }
-    return `// Fixed: ${issue.message}`;
+    return `// Fixed: ${issue.title || issue.message || 'Issue resolved'}`;
   }
 
   // Utility methods

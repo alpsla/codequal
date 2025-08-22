@@ -296,7 +296,7 @@ export class CiAnalysisService {
     const branch = prNumber ? `pr/${prNumber}` : 'main';
     
     // Extract owner and repo from URL for metadata
-    const match = repoUrl.match(/github\.com[/:]([^/]+)\/([^/\.]+)/);  
+    const match = repoUrl.match(/github\.com[/:]([^/]+)\/([^/.]+)/);  
     const owner = match?.[1] || 'unknown';
     const repo = match?.[2]?.replace(/\.git$/, '') || 'unknown';
     

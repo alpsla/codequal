@@ -848,7 +848,9 @@ Extract recommendations:
    */
   private fallbackParsing(content: string, config: ParseConfig): ParsedDeepWikiResponse {
     // Use existing parsers as fallback
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { parseEnhancedDependencies } = require('./enhanced-dependency-parser');
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { parseEnhancedCodeQuality } = require('./enhanced-code-quality-parser');
     
     const startTime = Date.now();

@@ -292,6 +292,7 @@ export class ModelConfigResolver {
     let fallbackModel = 'openai/gpt-4o-mini';
     
     try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const axios = require('axios');
       const apiKey = process.env.OPENROUTER_API_KEY;
       

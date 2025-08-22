@@ -1,13 +1,23 @@
-# Next Session Plan: Continue Model System Integration
+# Next Session Plan: DeepWiki Integration Critical Issues
 
-**Last Updated**: 2025-08-21 (V8 Report Generator Enhanced & Model Configurations Retrieved)  
-**Previous Session**: V8 Report Generator Enhancements & Model Configuration Discovery
-**Priority**: HIGH - Complete DeepWiki parser fix and model integration
+**Last Updated**: 2025-08-22 (DeepWiki Integration Debugging Session)  
+**Previous Session**: V8 Report Generator Testing & DeepWiki Integration Debugging
+**Priority**: CRITICAL - DeepWiki doesn't analyze PR diffs, only entire repositories
 
-## 🎉 LATEST ACCOMPLISHMENTS - V8 Report Enhancement Session
-**V8 REPORT GENERATOR ENHANCED & MODEL CONFIGS RETRIEVED ✅**
+## 🚨 CRITICAL FINDINGS - DeepWiki Integration Session
+**DEEPWIKI PR ANALYSIS LIMITATION DISCOVERED ❌**
 
-### Today's Session Achievements (August 21, 2025 - Afternoon)
+### Today's Session Discoveries (August 22, 2025)
+1. **❌ DEEPWIKI PR LIMITATION**: DeepWiki analyzes entire repositories, NOT PR diffs
+2. **❌ NON-DETERMINISTIC RESULTS**: Same repository returns different issues each run
+3. **❌ SESSION STATE LOSS**: DirectDeepWikiApi registration doesn't persist
+4. **✅ SESSION MANAGEMENT**: Created automation tools for consistent testing
+5. **✅ LOCATION VALIDATION**: Identified 70% threshold too aggressive
+6. **✅ ESLINT FIXES**: Resolved critical build-blocking errors
+7. **✅ TEST INFRASTRUCTURE**: Enhanced testing guides and validation tools
+8. **✅ DOCUMENTATION**: Comprehensive debugging findings documented
+
+### Previous Session Achievements (August 21, 2025 - Afternoon)
 1. **✅ V8 REPORT GENERATOR ENHANCED**: Created ReportGeneratorV8Enhanced with test file detection
 2. **✅ AI MODEL DETECTION**: Dynamic AI model detection from environment and metadata
 3. **✅ TEST FILE LOGIC**: Issues in test files no longer block PR approval (downgraded severity)
@@ -62,25 +72,41 @@
 - Size categories (small, medium, large projects)
 - Weighted optimization (quality, speed, cost, freshness, context window)
 
-## 🚨 CRITICAL ISSUE REMAINS
+## 🚨 CRITICAL ISSUES IDENTIFIED
 
-### Root Cause Identified
-**Problem**: DeepWiki API returns responses as strings containing markdown-wrapped JSON, but our code expects parsed objects.
+### Issue #1: DeepWiki PR Analysis Limitation (MOST CRITICAL)
+**Problem**: DeepWiki doesn't analyze PR diffs - it analyzes entire repositories regardless of PR number/branch parameters.
 
-**DeepWiki Returns**:
-```
-"```json\n[{\"file\": \"package.json\", \"severity\": \"low\", ...}]\n```"
-```
-
-**Our Code Expects**:
-```json
-{ "issues": [...], "analysis": {...} }
-```
+**Evidence**:
+- Same issues found regardless of PR number specified
+- Different PRs from same repo return identical results
+- Branch parameters appear to be ignored
 
 **Impact**: 
-- UnifiedAnalysisWrapper cannot process real DeepWiki responses
-- Falls back to mock data even when USE_DEEPWIKI_MOCK=false
-- 0% success rate in validation testing with real API
+- Reports show repository-wide issues, not PR-specific changes
+- Cannot provide targeted feedback for specific changes
+- Makes CodeQual ineffective for PR-based code review
+
+### Issue #2: Non-Deterministic Results
+**Problem**: DeepWiki returns different issues on each call to the same repository.
+
+**Evidence**:
+- Run 1: 52 issues found
+- Run 2: 47 issues found  
+- Run 3: 51 issues found
+
+**Impact**:
+- Unreliable for testing and validation
+- Users would see inconsistent results
+- Cannot create deterministic test suites
+
+### Issue #3: Session State Loss
+**Problem**: DirectDeepWikiApi registration doesn't persist between test runs.
+
+**Impact**:
+- Manual setup required each session
+- Testing becomes unreliable
+- Development workflow interrupted
 
 ## 📁 FILES CREATED TODAY (TO CLEAN UP)
 
@@ -98,18 +124,32 @@
 
 ## 🎯 NEXT SESSION PRIORITIES
 
-### PRIORITY 1: Fix DeepWiki Parser (CRITICAL)
-**Status**: Parser expects object but receives markdown-wrapped JSON string
-**Next Focus**: Update parser to extract JSON from markdown code blocks
-**Solution**: Add markdown extraction logic before JSON parsing
+### PRIORITY 1: Investigate DeepWiki PR Analysis Capabilities (CRITICAL)
+**Status**: DeepWiki ignores PR parameters and analyzes entire repositories
+**Next Focus**: Research if DeepWiki supports PR diff analysis or find alternatives
+**Actions**:
+- Contact DeepWiki team about PR-specific analysis capabilities
+- Explore alternative APIs (GitHub CodeQL, Semgrep, SonarQube)
+- Test with different repository structures and API parameters
+- Consider implementing PR diff extraction before DeepWiki analysis
 
-### PRIORITY 2: Re-enable Model Researcher Services (HIGH)
-**Status**: Services temporarily disabled for compatibility during refactoring
-**Next Focus**: Restore ProductionResearcherService and ModelResearcherService functionality
+### PRIORITY 2: Implement Deterministic Testing Strategy (HIGH) 
+**Status**: DeepWiki returns different results each run, making testing unreliable
+**Next Focus**: Create caching/mocking layer for consistent test results
+**Actions**:
+- Implement response caching with request fingerprinting
+- Create deterministic test datasets for validation
+- Add retry logic with exponential backoff for flaky results
+- Build circuit breaker pattern for API reliability
 
-### PRIORITY 3: Complete API Integration (MEDIUM)
-**Status**: API services updated with temporary mock implementations
-**Next Focus**: Replace mock implementations with actual service integrations
+### PRIORITY 3: Enhance Location Validation System (HIGH)
+**Status**: 70% confidence threshold too aggressive, filtering out valid issues
+**Next Focus**: Implement smarter confidence scoring and validation
+**Actions**:
+- Develop fuzzy matching for file paths (relative vs absolute)
+- Add line number proximity validation
+- Implement domain-specific confidence scoring logic
+- Test with various repository structures and PR sizes
 
 ## 🧪 REMAINING TASKS - PRIORITY ORDER
 
@@ -180,28 +220,41 @@ if (typeof response === 'string') {
 
 ## 🧪 Testing Strategy for Next Session
 
-### Code Quality Testing
+### Session Setup (CRITICAL - Run First)
 ```bash
-# ESLint warning analysis
-npm run lint 2>&1 | grep -E "(warning|error)" | wc -l
+# 1. Start session with automation
+npx ts-node setup-deepwiki-for-session.ts
 
-# Test performance optimization
-npm test -- --verbose --detectOpenHandles
+# 2. Verify DeepWiki is responsive
+curl -X POST http://localhost:8001/chat/completions/stream \
+  -H "Content-Type: application/json" \
+  -d '{"repo_url": "https://github.com/sindresorhus/ky", "messages": [{"role": "user", "content": "Find issues"}], "stream": false, "provider": "openrouter", "model": "openai/gpt-4o-mini"}'
 
-# UnifiedAnalysisWrapper validation
-npx ts-node test-unified-wrapper-complete.ts
+# 3. Test DirectDeepWikiApi registration
+npx ts-node test-v8-validation.ts
 ```
 
-### Regression Validation
+### DeepWiki Investigation
 ```bash
-# Ensure V8 functionality remains intact
-npx ts-node test-v8-complete-final.ts
+# Test different PR parameters to confirm limitation
+USE_DEEPWIKI_MOCK=false npx ts-node test-deepwiki-direct.ts
 
-# Validate location validation system
-npx ts-node test-location-validation.ts
+# Test consistency across multiple runs
+for i in {1..5}; do
+  echo "Run $i:"
+  USE_DEEPWIKI_MOCK=false npx ts-node test-single-real-deepwiki.ts | grep "Found.*issues"
+done
 
-# End-to-end pipeline testing
-npx ts-node test-end-to-end-wrapper.ts
+# Test with different repositories
+USE_DEEPWIKI_MOCK=false npx ts-node test-model-scenarios.ts
+```
+
+### Location Validation Testing
+```bash
+# Test with different confidence thresholds
+npx ts-node test-v8-validation.ts --confidence 50
+npx ts-node test-v8-validation.ts --confidence 60
+npx ts-node test-v8-validation.ts --confidence 70
 ```
 
 ## ✅ Success Criteria for Next Session
