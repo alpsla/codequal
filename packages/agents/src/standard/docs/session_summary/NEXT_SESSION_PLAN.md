@@ -1,13 +1,25 @@
 # Next Session Plan: Continue Model System Integration
 
-**Last Updated**: 2025-08-21 (Dynamic Model Selection Complete)  
-**Previous Session**: Dynamic Model Selection & Clean Architecture (MAJOR PROGRESS ✅)
-**Priority**: HIGH - Model researcher services and API integration
+**Last Updated**: 2025-08-21 (V8 Report Generator Enhanced & Model Configurations Retrieved)  
+**Previous Session**: V8 Report Generator Enhancements & Model Configuration Discovery
+**Priority**: HIGH - Complete DeepWiki parser fix and model integration
 
-## 🎉 LATEST ACCOMPLISHMENTS - Dynamic Model Selection Session
-**DYNAMIC MODEL CONFIGURATION SYSTEM COMPLETE ✅**
+## 🎉 LATEST ACCOMPLISHMENTS - V8 Report Enhancement Session
+**V8 REPORT GENERATOR ENHANCED & MODEL CONFIGS RETRIEVED ✅**
 
-### Session Achievements (August 21, 2025)
+### Today's Session Achievements (August 21, 2025 - Afternoon)
+1. **✅ V8 REPORT GENERATOR ENHANCED**: Created ReportGeneratorV8Enhanced with test file detection
+2. **✅ AI MODEL DETECTION**: Dynamic AI model detection from environment and metadata
+3. **✅ TEST FILE LOGIC**: Issues in test files no longer block PR approval (downgraded severity)
+4. **✅ CODE SNIPPETS ADDED**: Security issues now include actionable code examples
+5. **✅ MODEL CONFIGURATIONS RETRIEVED**: Found 30 comparator configs in model_configurations table
+6. **✅ MODERN MODELS DISCOVERED**: Claude Opus 4.1, Claude Sonnet 4, GPT-5, GPT-4.5 Turbo
+7. **✅ HTML TEMPLATE FIX**: V8 HTML template properly applied with format: 'html' parameter
+8. **✅ USER-FRIENDLY MODEL NAMES**: Models displayed with descriptive names (e.g., "Claude 3 Opus (High Accuracy)")
+9. **✅ DOCUMENTATION CREATED**: MODEL_CONFIGURATIONS_REVIEW.md with retrieval guidelines
+10. **✅ SUPABASE STRUCTURE UNDERSTOOD**: model_configurations table structure documented
+
+### Morning Session Achievements (August 21, 2025)
 1. **✅ DYNAMIC MODEL RESOLUTION**: Complete ModelConfigResolver with intelligent provider/model parsing
 2. **✅ COMPARISON AGENT RESEARCH**: Dynamic date-aware research prompts (COMPARISON_AGENT_RESEARCH)
 3. **✅ HARDCODED MODEL REMOVAL**: Eliminated static model dependencies across entire codebase
@@ -33,7 +45,24 @@
 - **Data Pipeline**: Raw DeepWiki responses processed correctly
 - **End-to-End**: Complete analysis workflow validated
 
-## 🚨 CRITICAL ISSUE DISCOVERED
+## 🔍 KEY DISCOVERIES FROM TODAY'S SESSION
+
+### Model Configuration System
+**Finding**: Model configurations are stored in `model_configurations` table in Supabase with 30 comparator agent configs.
+
+**Current Generation Models (2025)**:
+- **Claude Opus 4.1** (anthropic/claude-opus-4-1-20250805) - 74.5% SWE-bench score
+- **Claude Sonnet 4** (anthropic/claude-sonnet-4-20250522) - Balanced performance
+- **GPT-5** (openai/gpt-5-20250615) - Latest OpenAI model
+- **GPT-4.5 Turbo** (openai/gpt-4.5-turbo-20250710) - Fast and efficient
+
+**Configuration Structure**:
+- Role-based (comparator, orchestrator, researcher, etc.)
+- Language-specific (python, javascript, typescript, cpp, rust, etc.)
+- Size categories (small, medium, large projects)
+- Weighted optimization (quality, speed, cost, freshness, context window)
+
+## 🚨 CRITICAL ISSUE REMAINS
 
 ### Root Cause Identified
 **Problem**: DeepWiki API returns responses as strings containing markdown-wrapped JSON, but our code expects parsed objects.
@@ -53,13 +82,32 @@
 - Falls back to mock data even when USE_DEEPWIKI_MOCK=false
 - 0% success rate in validation testing with real API
 
+## 📁 FILES CREATED TODAY (TO CLEAN UP)
+
+### Test Files (Can be deleted after validation)
+- `test-v8-html-report.ts` - V8 HTML report generation test
+- `test-model-scenarios.ts` - AI model detection scenarios
+- `test-enhanced-error-handling.ts` - Error handling improvements
+- `test-generate-formatted-report.ts` - Report formatting test
+- `test-real-deepwiki-integration.ts` - DeepWiki integration test
+- Multiple HTML reports: `v8-html-report-*.html` (10+ files)
+
+### Documentation (Keep)
+- `MODEL_CONFIGURATIONS_REVIEW.md` - Model configuration analysis
+- `src/standard/comparison/report-generator-v8-enhanced.ts` - Enhanced V8 generator
+
 ## 🎯 NEXT SESSION PRIORITIES
 
-### PRIORITY 1: Re-enable Model Researcher Services (HIGH)
+### PRIORITY 1: Fix DeepWiki Parser (CRITICAL)
+**Status**: Parser expects object but receives markdown-wrapped JSON string
+**Next Focus**: Update parser to extract JSON from markdown code blocks
+**Solution**: Add markdown extraction logic before JSON parsing
+
+### PRIORITY 2: Re-enable Model Researcher Services (HIGH)
 **Status**: Services temporarily disabled for compatibility during refactoring
 **Next Focus**: Restore ProductionResearcherService and ModelResearcherService functionality
 
-### PRIORITY 2: Complete API Integration (MEDIUM)
+### PRIORITY 3: Complete API Integration (MEDIUM)
 **Status**: API services updated with temporary mock implementations
 **Next Focus**: Replace mock implementations with actual service integrations
 
