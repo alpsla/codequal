@@ -200,7 +200,9 @@ export class CachedDeepWikiAnalyzer extends AdaptiveDeepWikiAnalyzer {
               this.logger.info(`JSON parse succeeded in ${Date.now() - startTime}ms`);
               return parsed;
             }
-          } catch {}
+          } catch {
+            // Ignore JSON parsing errors and continue with pattern matching
+          }
         }
       }
       

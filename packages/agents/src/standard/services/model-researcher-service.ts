@@ -192,7 +192,8 @@ export class ModelResearcherService {
       
       // Use the actual WebSearch tool if available
       // Note: WebSearch would be injected from the MCP environment
-      if (false) { // Disabled for now - would need proper WebSearch tool injection
+      const webSearchAvailable = false; // Disabled for now - would need proper WebSearch tool injection
+      if (webSearchAvailable) {
         console.log('Using WebSearch tool for real web search...');
         
         for (const query of searchQueries) {

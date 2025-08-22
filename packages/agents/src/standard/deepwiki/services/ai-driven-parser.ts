@@ -570,17 +570,19 @@ Extract actionable recommendations with this EXACT structure:
     let extractedData = {};
     
     switch (config.category) {
-      case 'dependencies':
+      case 'dependencies': {
         // Use existing enhanced-dependency-parser
         const { parseEnhancedDependencies } = require('./enhanced-dependency-parser');
         extractedData = parseEnhancedDependencies(response);
         break;
+      }
         
-      case 'code-quality':
+      case 'code-quality': {
         // Use existing enhanced-code-quality-parser
         const { parseEnhancedCodeQuality } = require('./enhanced-code-quality-parser');
         extractedData = parseEnhancedCodeQuality(response);
         break;
+      }
         
       default:
         // Basic pattern extraction for other categories

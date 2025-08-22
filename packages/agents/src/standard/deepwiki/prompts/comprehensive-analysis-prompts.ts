@@ -91,7 +91,7 @@ Example format:
    async function getUser(req: Request) {
      const userId = req.params.id;
      // Validate input
-     if (!userId || !/^\d+$/.test(userId)) {
+     if (!userId || !/^\\d+$/.test(userId)) {
        throw new ValidationError('Invalid user ID');
      }
      // Use parameterized query
