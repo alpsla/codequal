@@ -43,8 +43,8 @@ interface SystemState {
 }
 
 const SYSTEM_STATE: SystemState = {
-  version: '1.9.0', // Session: Dynamic Model Selection & Clean Architecture Complete
-  lastSession: '2025-08-21',
+  version: '1.9.1', // Session: DeepWiki Integration Debugging & Critical Issues Discovery
+  lastSession: '2025-08-22',
   
   features: {
     dynamicModelSelection: {
@@ -84,10 +84,10 @@ const SYSTEM_STATE: SystemState = {
       notes: 'Cleaned up outdated research files, removed hardcoded model implementations, enhanced research prompts with strict 3-6 month model requirements, text parser research implemented successfully'
     },
     deepWikiIntegration: {
-      status: 'working',
-      confidence: 90,
-      lastTested: '2025-08-19',
-      notes: 'Enhanced with JSON format support via AdaptiveDeepWikiAnalyzer. Improved data extraction from 0% to structured parseable results. Supports both JSON and text formats with adaptive retry logic.'
+      status: 'broken',
+      confidence: 45,
+      lastTested: '2025-08-22',
+      notes: 'CRITICAL ISSUES DISCOVERED: DeepWiki analyzes entire repositories instead of PR diffs, returns non-deterministic results (different issues each run), and session state doesn\'t persist. Created session management tools but core PR analysis limitation remains.'
     },
     deepWikiJsonFormat: {
       status: 'working',
@@ -250,15 +250,55 @@ const SYSTEM_STATE: SystemState = {
       confidence: 85,
       lastTested: '2025-08-20',
       notes: 'NEW: Dynamic report generator selection using factory pattern. Enables flexible report generation based on requirements.'
+    },
+    sessionManagementTools: {
+      status: 'working',
+      confidence: 90,
+      lastTested: '2025-08-22',
+      notes: 'NEW: Created setup-deepwiki-for-session.ts automation, SESSION_STARTUP_CHECKLIST.md, and DirectDeepWikiApi service. Solves session state loss and provides consistent testing environment.'
+    },
+    testingInfrastructureV2: {
+      status: 'working',
+      confidence: 88,
+      lastTested: '2025-08-22',
+      notes: 'NEW: Enhanced TESTING_WORKFLOW_GUIDE.md with critical session startup steps, validation tests with confidence threshold tuning, and comprehensive debugging documentation.'
     }
   },
 
   bugs: [
     // Most major issues resolved in Dynamic Model Selection session
     {
+      id: 'BUG-092',
+      severity: 'HIGH',
+      description: 'DeepWiki PR Analysis Limitation: DeepWiki analyzes entire repositories instead of PR diffs, ignoring PR number and branch parameters. Same issues returned regardless of specific PR being analyzed.',
+      discovered: '2025-08-22',
+      component: 'deepwiki-integration'
+    },
+    {
+      id: 'BUG-093',
+      severity: 'HIGH',
+      description: 'Non-Deterministic DeepWiki Results: Same repository returns different issues on each API call (Run 1: 52 issues, Run 2: 47 issues, Run 3: 51 issues). Makes testing and validation unreliable.',
+      discovered: '2025-08-22',
+      component: 'deepwiki-integration'
+    },
+    {
+      id: 'BUG-094',
+      severity: 'MEDIUM',
+      description: 'Location Validation Too Aggressive: 70% confidence threshold filters out most legitimate issues, reducing 52 valid issues to 0 findings. Needs smarter confidence scoring.',
+      discovered: '2025-08-22',
+      component: 'location-validation'
+    },
+    {
+      id: 'BUG-095',
+      severity: 'MEDIUM',
+      description: 'Session State Loss: DirectDeepWikiApi registration doesn\'t persist between test runs, requiring manual setup each session. Solved with automation tools.',
+      discovered: '2025-08-22',
+      component: 'session-management'
+    },
+    {
       id: 'BUG-003',
       severity: 'LOW',
-      description: 'ESLint warnings reduced to ~300 console.log statements (down from critical regex/syntax errors). Critical errors resolved: regex escapes, const declarations, var-requires',
+      description: 'ESLint warnings reduced to ~350 console.log statements and ~40 critical errors (down from severe syntax errors). Critical errors: regex escapes, case declarations, var-requires partially fixed.',
       discovered: '2025-08-12',
       component: 'code-quality'
     },
@@ -788,12 +828,15 @@ const SYSTEM_STATE: SystemState = {
     'COMPLETED ✅ - Documentation and Testing (2025-08-20): Created V8_TESTING_GUIDE.md, architectural documentation, validation reports with HTML output, comprehensive test coverage including real PR analysis',
     'COMPLETED ✅ - Git Organization (2025-08-20): 5 logical commits created - V7 deprecation, service enhancements, documentation updates, test coverage, API improvements. Net codebase reduction of 4,114 lines (32% smaller)',
     'COMPLETED ✅ - Dynamic Model Selection Complete (2025-08-21): Implemented intelligent ModelConfigResolver, dynamic date-aware research prompts, eliminated all hardcoded models, massive cleanup (1900+ files), ESLint fixes, API compatibility updates. 6 atomic commits with production-ready state.',
+    'COMPLETED ✅ - DeepWiki Integration Debugging (2025-08-22): Discovered critical limitation - DeepWiki doesn\'t analyze PR diffs. Created session management tools, fixed ESLint errors, enhanced testing infrastructure. 5 organized commits with comprehensive documentation.',
     
-    // IMMEDIATE PRIORITIES FOR NEXT SESSION (Post Dynamic Model Selection)
-    'HIGH - Restore Model Researcher Services: Re-enable ProductionResearcherService and ModelResearcherService (BUG-090) - currently using mock implementations in API',
-    'MEDIUM - Complete API Service Integration: Replace temporary mock implementations with actual services - BasicDeduplicator, ProgressTracker, LocationEnhancer (BUG-091)',
-    'LOW - ESLint Console Cleanup: Reduce remaining ~300 console.log statements (down from critical syntax errors). Most critical ESLint issues resolved.',
-    'HIGH - Test Suite Performance Optimization: Fix 38 timeout failures in test suite, particularly in multi-agent enhanced executor tests. Optimize test execution or increase timeouts appropriately',
+    // IMMEDIATE PRIORITIES FOR NEXT SESSION (Post DeepWiki Debugging)
+    'CRITICAL - Investigate DeepWiki PR Analysis Capabilities (BUG-092): Research if DeepWiki supports PR diff analysis or explore alternatives (GitHub CodeQL, Semgrep, SonarQube). Current limitation makes CodeQual ineffective for PR-based review.',
+    'HIGH - Implement Deterministic Testing Strategy (BUG-093): Create caching/mocking layer for consistent test results. DeepWiki returns different results each run making validation unreliable.',
+    'HIGH - Enhance Location Validation System (BUG-094): Implement smarter confidence scoring, fuzzy file path matching, and line number proximity validation. 70% threshold too aggressive.',
+    'MEDIUM - Restore Model Researcher Services (BUG-090): Re-enable ProductionResearcherService and ModelResearcherService - currently using mock implementations in API',
+    'MEDIUM - Complete API Service Integration (BUG-091): Replace temporary mock implementations with actual services - BasicDeduplicator, ProgressTracker, LocationEnhancer',
+    'LOW - ESLint Console Cleanup (BUG-003): Reduce remaining ~350 console.log statements and ~40 critical errors. Most critical syntax issues resolved.',
     'HIGH - Educational Agent Integration: Connect educational agent to UnifiedAnalysisWrapper pipeline for enhanced educational content generation and skill progression tracking',
     'MEDIUM - Performance Optimization: Profile and optimize V8 generator and wrapper performance. Monitor memory usage during large PR analysis and implement caching for repeated operations',
     'MEDIUM - Production Deployment Preparation: Validate V8 system with UnifiedAnalysisWrapper under production workloads and stress test with large PRs',
