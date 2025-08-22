@@ -140,3 +140,29 @@
   /Users/alpinro/Code Prjects/codequal/packages/agents/V8_TESTING_GUIDE.md
 
   This guide contains all the details about what each test validates and how to troubleshoot issues.
+
+
+
+First Time Each Day (or New Session):
+
+  # 1. Setup environment (keeps port forwarding active)
+  ./scripts/test-environment-setup.sh
+
+  # 2. Quick health check
+  ./check-health.sh
+
+  # 3. Now run your regression suite
+  npm test src/standard/tests/regression/unified-regression-suite.test.ts
+
+  Subsequent Runs (Same Session):
+
+  # Just run the tests directly - no need to setup again
+  npm test src/standard/tests/regression/unified-regression-suite.test.ts
+
+  If Tests Fail Unexpectedly:
+
+  # Check health first
+  ./check-health.sh
+
+  # If something is down, re-run setup
+  ./scripts/test-environment-setup.sh
