@@ -345,7 +345,7 @@ export class StandardAgentFactory {
   static async createConfigProvider(): Promise<IConfigProvider> {
     // Use Supabase provider if credentials are available
     if (process.env.SUPABASE_URL && (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY)) {
-      const { SupabaseConfigProvider } = await import('./supabase/supabase-config-provider.js');
+      const { SupabaseConfigProvider } = await import('./supabase/supabase-config-provider');
       return new SupabaseConfigProvider();
     }
     

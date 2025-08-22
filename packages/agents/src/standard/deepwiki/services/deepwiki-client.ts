@@ -12,6 +12,7 @@ import {
 } from '../../types/analysis-types';
 import { ILogger } from '../../services/interfaces/logger.interface';
 import { DeepWikiApiWrapper, MockDeepWikiApiWrapper, DeepWikiAnalysisResponse } from './deepwiki-api-wrapper';
+import { DeepWikiErrorHandler } from '../../services/deepwiki-error-handler';
 
 export interface IDeepWikiService {
   analyzeRepository(
@@ -75,24 +76,21 @@ export class DeepWikiService implements IDeepWikiService {
       return convertedResult;
       
     } catch (error) {
-      this.log('error', 'DeepWiki analysis failed', error as Error);
+      // Check if it's already a DeepWikiError
+      if ((error as any).name === 'DeepWikiError') {
+        // Already handled and logged, just re-throw
+        throw error;
+      }
       
-      // Return empty result on error
-      return {
-        issues: [],
-        scores: {
-          overall: 0,
-          security: 0,
-          performance: 0,
-          maintainability: 0,
-          testing: 0
-        },
-        metadata: {
-          analysisDate: new Date(),
-          toolVersion: 'deepwiki-1.0.0',
-          error: (error as Error).message
-        }
-      };
+      // Handle as new error
+      const deepWikiError = DeepWikiErrorHandler.handleError(error, {
+        repository: repositoryUrl,
+        branch,
+        prId
+      });
+      
+      DeepWikiErrorHandler.logError(deepWikiError, this.logger as any);
+      throw deepWikiError;
     }
   }
 

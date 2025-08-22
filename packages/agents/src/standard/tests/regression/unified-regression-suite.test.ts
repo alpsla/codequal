@@ -229,14 +229,14 @@ describe('Unified Regression Test Suite', () => {
       });
       
       const invalidTypes = result.analysis.issues.filter(issue =>
-        !scenario.validTypes.includes(issue.type)
+        !scenario.validTypes.includes(issue.category)
       );
       
       expect(invalidTypes).toHaveLength(0);
       
       // Check type distribution
       const typeDistribution = scenario.validTypes.reduce((acc, type) => {
-        acc[type] = result.analysis.issues.filter(i => i.type === type).length;
+        acc[type] = result.analysis.issues.filter(i => i.category === type).length;
         return acc;
       }, {} as Record<string, number>);
       
@@ -319,10 +319,10 @@ describe('Unified Regression Test Suite', () => {
       
       // Compare using fingerprints
       const mainFingerprints = new Set(
-        mainResult.analysis.issues.map(i => `${i.location.file}:${i.location.line}:${i.type}`)
+        mainResult.analysis.issues.map(i => `${i.location.file}:${i.location.line}:${i.category}`)
       );
       const prFingerprints = new Set(
-        prResult.analysis.issues.map(i => `${i.location.file}:${i.location.line}:${i.type}`)
+        prResult.analysis.issues.map(i => `${i.location.file}:${i.location.line}:${i.category}`)
       );
       
       const unchanged = [...mainFingerprints].filter(f => prFingerprints.has(f)).length;
@@ -358,12 +358,13 @@ describe('Unified Regression Test Suite', () => {
         unchangedIssues: result.analysis.issues,
         score: result.analysis.scores.overall,
         decision: result.analysis.scores.overall >= 70 ? 'approved' as const : 'needs_work' as const,
-        confidence: result.validationStats.averageConfidence
+        confidence: result.validationStats.averageConfidence,
+        success: true
       };
       
       // Import V8 generator
-      const { V8ReportGenerator } = await import('../../comparison/report-generator-v8');
-      const generator = new V8ReportGenerator();
+      const { ReportGeneratorV8Final } = await import('../../comparison/report-generator-v8-final');
+      const generator = new ReportGeneratorV8Final();
       const report = generator.generateReport(comparisonResult);
       
       // Verify report structure

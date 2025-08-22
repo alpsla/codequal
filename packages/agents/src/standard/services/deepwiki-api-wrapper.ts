@@ -9,6 +9,7 @@
  */
 
 import { DeepWikiResponseTransformer, TransformationOptions } from './deepwiki-response-transformer';
+import { DeepWikiErrorHandler, DeepWikiError, DeepWikiErrorType } from './deepwiki-error-handler';
 
 export interface DeepWikiAnalysisResponse {
   issues: Array<{
@@ -165,9 +166,17 @@ export class DeepWikiApiWrapper {
           const mockApi = new MockDeepWikiApiWrapper();
           rawResponse = await mockApi.analyzeRepository(repositoryUrl, options);
         } else {
-          // No API available, transformer will handle with intelligent mock
-          console.warn('⚠️ DeepWiki API not available - using intelligent fallback');
-          rawResponse = null;
+          // No API available - throw proper error
+          const error = DeepWikiErrorHandler.handleError(
+            new Error('DeepWiki API is not available'),
+            {
+              repository: repositoryUrl,
+              branch: options?.branch,
+              prId: options?.prId
+            }
+          );
+          DeepWikiErrorHandler.logError(error);
+          throw error;
         }
       } else {
         // Try to get response from real API
@@ -191,17 +200,48 @@ export class DeepWikiApiWrapper {
           } else {
             rawResponse = response;
           }
-        } catch (error) {
-          console.warn('⚠️ DeepWiki API failed, using intelligent fallback:', error);
-          rawResponse = null;
+        } catch (apiError) {
+          // Handle API error with detailed context
+          const error = DeepWikiErrorHandler.handleError(apiError, {
+            repository: repositoryUrl,
+            branch: options?.branch,
+            prId: options?.prId,
+            apiUrl: process.env.DEEPWIKI_API_URL
+          });
+          DeepWikiErrorHandler.logError(error);
+          throw error;
         }
       }
     } catch (error) {
-      console.warn('⚠️ DeepWiki API error, using intelligent fallback:', error);
-      rawResponse = null;
+      // If it's already a DeepWikiError, re-throw it
+      if ((error as any).name === 'DeepWikiError') {
+        throw error;
+      }
+      // Otherwise handle as unknown error
+      const deepWikiError = DeepWikiErrorHandler.handleError(error, {
+        repository: repositoryUrl,
+        branch: options?.branch,
+        prId: options?.prId
+      });
+      DeepWikiErrorHandler.logError(deepWikiError);
+      throw deepWikiError;
     }
 
-    // Always use transformer unless explicitly disabled
+    // Check if we have a valid response
+    if (!rawResponse) {
+      const error = DeepWikiErrorHandler.handleError(
+        new Error('No response received from DeepWiki'),
+        {
+          repository: repositoryUrl,
+          branch: options?.branch,
+          prId: options?.prId
+        }
+      );
+      DeepWikiErrorHandler.logError(error);
+      throw error;
+    }
+
+    // Apply transformer if enabled
     const useTransformer = options?.useTransformer !== false;
     
     if (useTransformer) {
@@ -210,17 +250,12 @@ export class DeepWikiApiWrapper {
         branch: options?.branch,
         prId: options?.prId,
         forceEnhancement: options?.forceEnhancement || process.env.FORCE_DEEPWIKI_ENHANCEMENT === 'true',
-        useHybridMode: options?.useHybridMode || process.env.USE_DEEPWIKI_HYBRID === 'true' || !rawResponse,
+        useHybridMode: options?.useHybridMode || process.env.USE_DEEPWIKI_HYBRID === 'true',
         preserveOriginalData: true
       };
 
       console.log('🔄 Applying intelligent response transformation...');
       return await this.transformer.transform(rawResponse, transformOptions);
-    }
-
-    // If transformer is disabled and we have no response, throw error
-    if (!rawResponse) {
-      throw new Error('DeepWiki API not available and transformer is disabled. Please enable transformer or ensure DeepWiki service is running.');
     }
 
     return rawResponse;
