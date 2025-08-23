@@ -43,8 +43,8 @@ interface SystemState {
 }
 
 const SYSTEM_STATE: SystemState = {
-  version: '1.9.1', // Session: DeepWiki Integration Debugging & Critical Issues Discovery
-  lastSession: '2025-08-22',
+  version: '1.9.2', // Session: Mock Removal & System Cleanup
+  lastSession: '2025-08-23',
   
   features: {
     dynamicModelSelection: {
@@ -84,10 +84,10 @@ const SYSTEM_STATE: SystemState = {
       notes: 'Cleaned up outdated research files, removed hardcoded model implementations, enhanced research prompts with strict 3-6 month model requirements, text parser research implemented successfully'
     },
     deepWikiIntegration: {
-      status: 'broken',
-      confidence: 45,
-      lastTested: '2025-08-22',
-      notes: 'CRITICAL ISSUES DISCOVERED: DeepWiki analyzes entire repositories instead of PR diffs, returns non-deterministic results (different issues each run), and session state doesn\'t persist. Created session management tools but core PR analysis limitation remains.'
+      status: 'in_development',
+      confidence: 55,
+      lastTested: '2025-08-23',
+      notes: 'Mock functionality completely removed, system now forces real API usage. Location parsing pipeline issues exposed and documented. 5 new services added for better integration. Critical issues discovered: location data becomes "unknown" in final reports.'
     },
     deepWikiJsonFormat: {
       status: 'working',
@@ -266,7 +266,21 @@ const SYSTEM_STATE: SystemState = {
   },
 
   bugs: [
-    // Most major issues resolved in Dynamic Model Selection session
+    // Mock removal session exposed critical pipeline issues
+    {
+      id: 'BUG-096',
+      severity: 'HIGH',
+      description: 'Location Service Duplication: 7 duplicate location services identified causing conflicts - LocationFinder, LocationEnhancer, EnhancedLocationFinder, LocationFinderEnhanced, LocationValidator, LocationClarifier, CodeSnippetLocator. Major cause of location parsing failures.',
+      discovered: '2025-08-23',
+      component: 'location-services'
+    },
+    {
+      id: 'BUG-097',
+      severity: 'HIGH',
+      description: 'Location Parsing Pipeline Broken: Real DeepWiki testing reveals locations become "unknown" in final reports. Transformation pipeline from DeepWiki → ReportGenerator has critical bugs.',
+      discovered: '2025-08-23',
+      component: 'deepwiki-transformation'
+    },
     {
       id: 'BUG-092',
       severity: 'HIGH',
@@ -287,13 +301,6 @@ const SYSTEM_STATE: SystemState = {
       description: 'Location Validation Too Aggressive: 70% confidence threshold filters out most legitimate issues, reducing 52 valid issues to 0 findings. Needs smarter confidence scoring.',
       discovered: '2025-08-22',
       component: 'location-validation'
-    },
-    {
-      id: 'BUG-095',
-      severity: 'MEDIUM',
-      description: 'Session State Loss: DirectDeepWikiApi registration doesn\'t persist between test runs, requiring manual setup each session. Solved with automation tools.',
-      discovered: '2025-08-22',
-      component: 'session-management'
     },
     {
       id: 'BUG-003',
@@ -836,11 +843,12 @@ const SYSTEM_STATE: SystemState = {
     'COMPLETED ✅ - Git Organization (2025-08-20): 5 logical commits created - V7 deprecation, service enhancements, documentation updates, test coverage, API improvements. Net codebase reduction of 4,114 lines (32% smaller)',
     'COMPLETED ✅ - Dynamic Model Selection Complete (2025-08-21): Implemented intelligent ModelConfigResolver, dynamic date-aware research prompts, eliminated all hardcoded models, massive cleanup (1900+ files), ESLint fixes, API compatibility updates. 6 atomic commits with production-ready state.',
     'COMPLETED ✅ - DeepWiki Integration Debugging (2025-08-22): Discovered critical limitation - DeepWiki doesn\'t analyze PR diffs. Created session management tools, fixed ESLint errors, enhanced testing infrastructure. 5 organized commits with comprehensive documentation.',
+    'COMPLETED ✅ - Mock Removal & System Cleanup (2025-08-23): Completely removed all mock functionality, archived 21 obsolete files, added 5 enhanced services, exposed critical location parsing pipeline issues. BUG-096 & BUG-097 discovered. 5 atomic commits with comprehensive documentation.',
     
-    // IMMEDIATE PRIORITIES FOR NEXT SESSION (Post DeepWiki Debugging)
-    'CRITICAL - Investigate DeepWiki PR Analysis Capabilities (BUG-092): Research if DeepWiki supports PR diff analysis or explore alternatives (GitHub CodeQL, Semgrep, SonarQube). Current limitation makes CodeQual ineffective for PR-based review.',
-    'HIGH - Implement Deterministic Testing Strategy (BUG-093): Create caching/mocking layer for consistent test results. DeepWiki returns different results each run making validation unreliable.',
-    'HIGH - Enhance Location Validation System (BUG-094): Implement smarter confidence scoring, fuzzy file path matching, and line number proximity validation. 70% threshold too aggressive.',
+    // IMMEDIATE PRIORITIES FOR NEXT SESSION (Post Mock Removal)
+    'CRITICAL - Fix Location Parsing Pipeline (BUG-097): Debug transformation pipeline from DeepWiki → ReportGenerator. Locations become "unknown" in final reports. Test with real PRs in different languages.',
+    'HIGH - Clean Up Duplicate Location Services (BUG-096): Consolidate 7 duplicate location services into single implementation. Major cause of location parsing failures. Estimated 50% reduction in location bugs.',
+    'HIGH - Test with Different PR Types: Test system with large PRs, different languages (Python, Rust, Go), and various PR complexity levels. Document which PR types work best.',
     'MEDIUM - Restore Model Researcher Services (BUG-090): Re-enable ProductionResearcherService and ModelResearcherService - currently using mock implementations in API',
     'MEDIUM - Complete API Service Integration (BUG-091): Replace temporary mock implementations with actual services - BasicDeduplicator, ProgressTracker, LocationEnhancer',
     'LOW - ESLint Console Cleanup (BUG-003): Reduce remaining ~350 console.log statements and ~40 critical errors. Most critical syntax issues resolved.',

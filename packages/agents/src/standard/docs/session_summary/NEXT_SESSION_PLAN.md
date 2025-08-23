@@ -1,13 +1,23 @@
 # Next Session Plan: DeepWiki Integration Critical Issues
 
-**Last Updated**: 2025-08-22 (DeepWiki Integration Debugging Session)  
-**Previous Session**: V8 Report Generator Testing & DeepWiki Integration Debugging
-**Priority**: CRITICAL - DeepWiki doesn't analyze PR diffs, only entire repositories
+**Last Updated**: 2025-08-23 (Mock Removal & System Cleanup Session)  
+**Previous Session**: Complete removal of mock functionality and comprehensive cleanup
+**Priority**: CRITICAL - Location parsing pipeline issues discovered, 7 duplicate services found
 
 ## 🚨 CRITICAL FINDINGS - DeepWiki Integration Session
 **DEEPWIKI PR ANALYSIS LIMITATION DISCOVERED ❌**
 
-### Today's Session Discoveries (August 22, 2025)
+### Today's Session Accomplishments (August 23, 2025)
+1. **✅ MOCK REMOVAL COMPLETE**: Completely removed all mock functionality from DeepWiki service
+2. **✅ CLEANUP COMPLETED**: Archived 21 obsolete test files, removed duplicates
+3. **✅ BUG IDENTIFICATION**: Documented BUG-096 - 7 duplicate location services discovered
+4. **✅ NEW SERVICES ADDED**: 5 enhanced services for better DeepWiki integration
+5. **✅ REAL-WORLD TESTING**: System now forces real API usage, revealing pipeline issues
+6. **✅ COMPREHENSIVE DOCUMENTATION**: Next session TODO lists and bug documentation
+7. **✅ BUILD QUALITY**: All lint errors fixed, TypeScript compiling, tests passing
+8. **✅ SESSION ORGANIZATION**: 5 atomic commits with clear separation of concerns
+
+### Previous Session Discoveries (August 22, 2025)
 1. **❌ DEEPWIKI PR LIMITATION**: DeepWiki analyzes entire repositories, NOT PR diffs
 2. **❌ NON-DETERMINISTIC RESULTS**: Same repository returns different issues each run
 3. **❌ SESSION STATE LOSS**: DirectDeepWikiApi registration doesn't persist
@@ -124,32 +134,35 @@
 
 ## 🎯 NEXT SESSION PRIORITIES
 
-### PRIORITY 1: Investigate DeepWiki PR Analysis Capabilities (CRITICAL)
-**Status**: DeepWiki ignores PR parameters and analyzes entire repositories
-**Next Focus**: Research if DeepWiki supports PR diff analysis or find alternatives
+### PRIORITY 1: Fix Location Parsing Pipeline (CRITICAL)
+**Status**: Real DeepWiki testing reveals location pipeline completely broken
+**Next Focus**: Debug and fix the location parsing and transformation pipeline
 **Actions**:
-- Contact DeepWiki team about PR-specific analysis capabilities
-- Explore alternative APIs (GitHub CodeQL, Semgrep, SonarQube)
-- Test with different repository structures and API parameters
-- Consider implementing PR diff extraction before DeepWiki analysis
+- Investigate why DeepWiki locations become "unknown" in final reports  
+- Fix the transformation pipeline from DeepWiki → ReportGenerator
+- Test with real PRs in different languages (TypeScript, Python, Rust)
+- Validate issue types and severity mappings
+- **Files to check**: `deepwiki-response-transformer.ts`, `location-clarifier.ts`, `report-generator-v8-final.ts`
 
-### PRIORITY 2: Implement Deterministic Testing Strategy (HIGH) 
-**Status**: DeepWiki returns different results each run, making testing unreliable
-**Next Focus**: Create caching/mocking layer for consistent test results
+### PRIORITY 2: Clean Up Duplicate Location Services (HIGH - BUG-096)
+**Status**: 7 duplicate location services identified causing conflicts  
+**Next Focus**: Consolidate location services into a single, reliable implementation
 **Actions**:
-- Implement response caching with request fingerprinting
-- Create deterministic test datasets for validation
-- Add retry logic with exponential backoff for flaky results
-- Build circuit breaker pattern for API reliability
+- Merge functionality from 7 location services: LocationFinder, LocationEnhancer, EnhancedLocationFinder, LocationFinderEnhanced, LocationValidator, LocationClarifier, CodeSnippetLocator
+- Choose the most robust implementation as the base
+- Update all imports and references to use single service
+- Remove duplicate files and update documentation
+- **Estimated impact**: 50% reduction in location-related bugs
 
-### PRIORITY 3: Enhance Location Validation System (HIGH)
-**Status**: 70% confidence threshold too aggressive, filtering out valid issues
-**Next Focus**: Implement smarter confidence scoring and validation
+### PRIORITY 3: Test with Different PR Types (HIGH)
+**Status**: Current testing only uses simple TypeScript PRs
+**Next Focus**: Test system robustness with various PR types and languages
 **Actions**:
-- Develop fuzzy matching for file paths (relative vs absolute)
-- Add line number proximity validation
-- Implement domain-specific confidence scoring logic
-- Test with various repository structures and PR sizes
+- Test large PRs (100+ files changed)
+- Test different languages: Python, Rust, Go, Java
+- Test PRs with binary files, deletions, renames
+- Test security-focused PRs vs performance PRs
+- Document which PR types work best with current pipeline
 
 ## 🧪 REMAINING TASKS - PRIORITY ORDER
 
