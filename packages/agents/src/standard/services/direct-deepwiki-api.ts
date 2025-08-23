@@ -56,6 +56,8 @@ export class DirectDeepWikiApi implements IDeepWikiApi {
           4. Best practice violations
           5. Potential bugs
           
+          IMPORTANT: For each issue, include the ACTUAL CODE from the repository showing the problem.
+          
           Return as a JSON object with:
           {
             "issues": [
@@ -70,6 +72,7 @@ export class DirectDeepWikiApi implements IDeepWikiApi {
                   "line": 42,
                   "column": 10
                 },
+                "codeSnippet": "// Copy the actual code from the file (3-5 lines with context)",
                 "suggestion": "How to fix this issue"
               }
             ],

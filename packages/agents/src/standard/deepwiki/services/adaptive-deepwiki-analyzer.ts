@@ -12,6 +12,7 @@ import {
   type AnalyzerConfig 
 } from '../schemas/analysis-schema';
 import axios from 'axios';
+import { AnalysisMonitor, MemoryOptimizer } from './analysis-monitor';
 
 export interface IterationResult {
   iteration: number;
@@ -38,6 +39,7 @@ export class AdaptiveDeepWikiAnalyzer {
   private retryAttempts = 3;
   private minCompleteness = 80;
   protected logger: any;
+  private monitor: AnalysisMonitor;
 
   constructor(
     deepwikiUrl: string,
@@ -70,6 +72,9 @@ export class AdaptiveDeepWikiAnalyzer {
     this.gapAnalyzer = new GapAnalyzer();
     this.aiParser = new UnifiedAIParser(logger);
     this.logger = validatedConfig.logger || console;
+    
+    // Initialize monitor for tracking iterations and memory
+    this.monitor = AnalysisMonitor.getInstance(this.logger);
   }
 
   /**
@@ -82,26 +87,52 @@ export class AdaptiveDeepWikiAnalyzer {
     branch?: string
   ): Promise<AdaptiveAnalysisResult> {
     const startTime = Date.now();
+    const startMemory = this.monitor.getMemoryUsage();
     const iterations: IterationResult[] = [];
     let result: any = {};
     let previousGapCount = Number.MAX_SAFE_INTEGER;
     let noProgressCount = 0;
     const MAX_NO_PROGRESS = 2; // BUG-047: Stop after 2 iterations with no progress
+    let previousIssueCount = 0;
+    let noNewIssuesCount = 0;
+    const cacheHit = false;
 
     try {
       this.logger.info(`Starting adaptive DeepWiki analysis for ${repoUrl} (${branch || 'main'})`);
+      
+      // Check memory before starting
+      if (MemoryOptimizer.isMemoryHigh()) {
+        this.logger.warn('Memory usage is high, forcing garbage collection');
+        MemoryOptimizer.forceGC();
+      }
 
       for (let i = 0; i < this.maxIterations; i++) {
         const iterationStart = Date.now();
         
         try {
+          // Monitor memory usage per iteration
+          if (i > 0 && MemoryOptimizer.isMemoryHigh()) {
+            this.logger.warn(`High memory usage at iteration ${i + 1}, cleaning up previous iteration data`);
+            // Clear large response strings from previous iterations
+            if (iterations.length > 0) {
+              iterations.forEach(iter => {
+                if (iter.response && iter.response.length > 10000) {
+                  iter.response = '[Response cleared for memory optimization]';
+                }
+                MemoryOptimizer.clearLargeObjects(iter.parsed);
+              });
+            }
+            MemoryOptimizer.forceGC();
+          }
+          
           // Analyze gaps in current result
           const gaps = this.gapAnalyzer.analyzeGaps(result);
           
           this.logger.info(`Iteration ${i + 1}: Completeness ${gaps.completeness}%, Gaps: ${gaps.totalGaps} (${gaps.criticalGaps} critical)`);
 
           // Check if we're complete enough
-          if (this.gapAnalyzer.isComplete(gaps)) {
+          // IMPORTANT: Minimum 3 iterations required to ensure stability and avoid random matches
+          if (i >= 2 && this.gapAnalyzer.isComplete(gaps)) {
             this.logger.info(`Analysis complete at iteration ${i + 1} with ${gaps.completeness}% completeness`);
             break;
           }
@@ -153,10 +184,29 @@ export class AdaptiveDeepWikiAnalyzer {
           // Merge with existing result
           result = this.mergeResults(result, parsed);
           
-          // Store iteration data
+          // Check for new unique issues
+          const currentIssueCount = (result.issues || []).length;
+          const newIssuesFound = currentIssueCount - previousIssueCount;
+          
+          if (newIssuesFound === 0 && i >= 2) {
+            noNewIssuesCount++;
+            this.logger.info(`Iteration ${i + 1}: No new unique issues found (count: ${noNewIssuesCount})`);
+            
+            // After minimum 3 iterations, if we find no new issues for 2 consecutive iterations, we're done
+            if (noNewIssuesCount >= 2) {
+              this.logger.info(`Analysis stabilized: No new unique issues for ${noNewIssuesCount} consecutive iterations after minimum 3 iterations`);
+              break;
+            }
+          } else {
+            noNewIssuesCount = 0; // Reset counter when new issues are found
+            previousIssueCount = currentIssueCount;
+            this.logger.info(`Iteration ${i + 1}: Found ${newIssuesFound} new unique issues (total: ${currentIssueCount})`);
+          }
+          
+          // Store iteration data with memory optimization
           iterations.push({
             iteration: i + 1,
-            response,
+            response: response.length > 50000 ? '[Large response truncated]' : response, // Truncate very large responses
             parsed,
             gaps,
             duration: Date.now() - iterationStart
@@ -180,20 +230,64 @@ export class AdaptiveDeepWikiAnalyzer {
 
       // Final gap analysis
       const finalGaps = this.gapAnalyzer.analyzeGaps(result);
+      const totalDuration = Date.now() - startTime;
+      const memoryUsed = this.monitor.getMemoryUsage() - startMemory;
+      const issuesFound = (result.issues || []).length;
+      const actualIterations = iterations.length;
+
+      // Record metrics for monitoring
+      await this.monitor.recordAnalysis({
+        repositoryUrl: repoUrl,
+        prNumber: branch ? branch.replace(/\D/g, '') : undefined, // Extract PR number from branch if available
+        iterations: actualIterations,
+        duration: totalDuration,
+        memoryUsed,
+        cacheHit,
+        issuesFound,
+        timestamp: new Date(),
+        success: true
+      });
+      
+      // Log aggregated metrics periodically
+      const metrics = this.monitor.getAggregatedMetrics();
+      this.logger.info(`Analysis complete - Average iterations across all analyses: ${metrics.averageIterations.toFixed(2)}`);
 
       return {
         finalResult: result,
         iterations,
-        totalDuration: Date.now() - startTime,
+        totalDuration,
         completeness: finalGaps.completeness
       };
       
     } catch (error) {
+      // Record failed analysis
+      await this.monitor.recordAnalysis({
+        repositoryUrl: repoUrl,
+        prNumber: branch ? branch.replace(/\D/g, '') : undefined,
+        iterations: iterations.length,
+        duration: Date.now() - startTime,
+        memoryUsed: this.monitor.getMemoryUsage() - startMemory,
+        cacheHit: false,
+        issuesFound: 0,
+        timestamp: new Date(),
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+      
       // BUG-043: Comprehensive error handling
       this.logger.error('Analysis failed:', error);
       throw new Error(
         `DeepWiki analysis failed for ${repoUrl}: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
+    } finally {
+      // Memory cleanup after analysis
+      if (MemoryOptimizer.isMemoryHigh()) {
+        this.logger.info('Performing post-analysis memory cleanup');
+        iterations.forEach(iter => {
+          MemoryOptimizer.clearLargeObjects(iter);
+        });
+        MemoryOptimizer.forceGC();
+      }
     }
   }
 

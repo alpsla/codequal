@@ -298,8 +298,13 @@ export class DeepWikiResponseTransformer {
    * Generates intelligent mock data based on repository analysis
    */
   private async generateIntelligentMock(options: TransformationOptions): Promise<DeepWikiAnalysisResponse> {
-    this.log('info', 'Generating intelligent mock data for repository', { url: options.repositoryUrl });
-
+    // COMMENTED OUT - ENTIRE MOCK GENERATION FUNCTION
+    // This was generating completely fake data that masked real issues
+    // As requested: "better to have an error message instead of fake results"
+    
+    this.log('error', 'Mock generation disabled - no DeepWiki response available', { url: options.repositoryUrl });
+    
+    /* Original mock generation commented out:
     const repoStructure = await this.analyzeRepositoryStructure(options.repositoryUrl);
     const isPR = !!options.prId;
 
@@ -321,6 +326,10 @@ export class DeepWikiResponseTransformer {
         repository: options.repositoryUrl
       }
     } as any;
+    */
+    
+    // Throw error instead of returning fake data
+    throw new Error('DeepWiki response unavailable - mock generation disabled');
   }
 
   /**
@@ -699,6 +708,11 @@ export class DeepWikiResponseTransformer {
    * Generates realistic issues based on repository structure
    */
   private generateRealisticIssues(repoStructure: RepositoryStructure, isPR: boolean): any[] {
+    // COMMENTED OUT - ALL MOCK ISSUE GENERATION
+    // This was generating completely fake issues that masked real problems
+    // As requested: "better to have an error message instead of fake results"
+    
+    /* Original mock issue generation commented out:
     const issueTemplates = [
       {
         category: 'security',
@@ -786,9 +800,13 @@ export class DeepWikiResponseTransformer {
         },
         codeSnippet: this.generateCodeSnippetForTemplate(template, matchingFile),
         recommendation: this.generateRecommendationForTemplate(template),
-        rule: template.title.toLowerCase().replace(/\s+/g, '-')
+        rule: template.title.toLowerCase().replace(/\\s+/g, '-')
       };
     });
+    */
+    
+    // Return empty array - no mock issues
+    return [];
   }
 
   /**
@@ -1006,6 +1024,11 @@ export class DeepWikiResponseTransformer {
    * Generates code snippet for an issue
    */
   private generateCodeSnippet(issue: any, repoStructure: RepositoryStructure): string {
+    // COMMENTED OUT - ALL MOCK CODE GENERATION
+    // This was generating fake code snippets that masked real issues
+    // As requested: "better to have an error message instead of fake results"
+    
+    /* Original mock code generation commented out:
     const snippets: Record<string, string[]> = {
       security: [
         `// SECURITY ISSUE: Hardcoded credentials
@@ -1055,12 +1078,20 @@ setTimeout(() => {
 
     const categorySnippets = snippets[issue.category] || snippets['code-quality'];
     return categorySnippets[Math.floor(Math.random() * categorySnippets.length)];
+    */
+    
+    // Return empty string - let the actual code extraction handle this
+    return '';
   }
 
   /**
    * Generates recommendation for an issue
    */
   private generateRecommendation(issue: any): string {
+    // COMMENTED OUT - Mock recommendation generation
+    // As requested: "better to have an error message instead of fake results"
+    
+    /* Original mock recommendations commented out:
     const recommendations: Record<string, string[]> = {
       security: [
         'Use environment variables for sensitive data',
@@ -1096,12 +1127,20 @@ setTimeout(() => {
 
     const categoryRecs = recommendations[issue.category] || recommendations['code-quality'];
     return categoryRecs[Math.floor(Math.random() * categoryRecs.length)];
+    */
+    
+    // Return empty string - let real data flow through
+    return '';
   }
 
   /**
    * Generates realistic issue for repository
    */
   private generateRealisticIssue(repoStructure: RepositoryStructure, index: number): any {
+    // COMMENTED OUT - Mock issue generation
+    // As requested: "better to have an error message instead of fake results"
+    
+    /* Original mock issue generation commented out:
     const categories = ['security', 'performance', 'code-quality', 'dependencies', 'architecture'];
     const severities = ['critical', 'high', 'medium', 'low'];
     
@@ -1119,20 +1158,28 @@ setTimeout(() => {
       recommendation: this.generateRecommendation({ category }),
       rule: `${category}-${severity}-rule`
     };
+    */
+    
+    // Return null - this should trigger error handling upstream
+    return null;
   }
 
   /**
    * Generates code snippet for issue template
    */
   private generateCodeSnippetForTemplate(template: any, file: string): string {
-    return this.generateCodeSnippet(template, { files: [file] } as RepositoryStructure);
+    // COMMENTED OUT - Wrapper for mock code generation
+    // return this.generateCodeSnippet(template, { files: [file] } as RepositoryStructure);
+    return ''; // Return empty - no mock code snippets
   }
 
   /**
    * Generates recommendation for issue template
    */
   private generateRecommendationForTemplate(template: any): string {
-    return this.generateRecommendation(template);
+    // COMMENTED OUT - Wrapper for mock recommendation generation
+    // return this.generateRecommendation(template);
+    return ''; // Return empty - no mock recommendations
   }
 
   /**

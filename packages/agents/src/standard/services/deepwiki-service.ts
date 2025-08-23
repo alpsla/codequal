@@ -11,7 +11,7 @@ import {
   DeepWikiAnalysisResult 
 } from '../types/analysis-types';
 import { ILogger } from './interfaces/logger.interface';
-import { DeepWikiApiWrapper, MockDeepWikiApiWrapper, DeepWikiAnalysisResponse } from './deepwiki-api-wrapper';
+import { DeepWikiApiWrapper, DeepWikiAnalysisResponse } from './deepwiki-api-wrapper';
 import { getActiveConfig } from '../config/generator-config';
 
 export interface IDeepWikiService {
@@ -387,88 +387,8 @@ export class DeepWikiService implements IDeepWikiService {
 }
 
 /**
- * Mock implementation for testing
- */
-export class MockDeepWikiService implements IDeepWikiService {
-  private mockApiWrapper: MockDeepWikiApiWrapper;
-  
-  constructor(
-    private mockData?: Partial<AnalysisResult>
-  ) {
-    this.mockApiWrapper = new MockDeepWikiApiWrapper();
-  }
-
-  async analyzeRepository(
-    repositoryUrl: string,
-    branch?: string,
-    prId?: string
-  ): Promise<AnalysisResult> {
-    if (this.mockData) {
-      return {
-        issues: this.mockData.issues || [],
-        scores: this.mockData.scores || {
-          overall: 75,
-          security: 70,
-          performance: 80,
-          maintainability: 75,
-          testing: 72
-        },
-        metadata: {
-          analysisDate: new Date(),
-          toolVersion: 'deepwiki-mock-1.0.0',
-          ...this.mockData.metadata
-        }
-      };
-    }
-    
-    // Use mock wrapper
-    const mockResult = await this.mockApiWrapper.analyzeRepository(repositoryUrl, { branch, prId });
-    const service = new DeepWikiService();
-    return service['convertDeepWikiToStandardFormat'](mockResult);
-  }
-
-  async analyzeRepositoryForComparison(
-    repositoryUrl: string,
-    branch?: string,
-    prId?: string
-  ): Promise<DeepWikiAnalysisResult> {
-    const result = await this.analyzeRepository(repositoryUrl, branch, prId);
-    
-    // Convert to DeepWikiAnalysisResult format - preserve all fields
-    return {
-      issues: result.issues.map(issue => ({
-        id: issue.id,
-        severity: issue.severity,
-        category: issue.category,
-        type: issue.type || 'code-smell',
-        location: issue.location,
-        message: issue.message,
-        description: issue.description,
-        suggestedFix: issue.suggestedFix,
-        references: issue.references || [],
-        // Preserve suggestion/remediation/codeSnippet fields from mock
-        codeSnippet: (issue as any).codeSnippet,
-        suggestion: (issue as any).suggestion,
-        remediation: (issue as any).remediation,
-        recommendation: (issue as any).recommendation
-      })),
-      metadata: {
-        files_analyzed: result.metadata?.filesAnalyzed || 100,
-        total_lines: result.metadata?.totalLines || 1000,
-        scan_duration: result.metadata?.duration || 5000
-      },
-      score: result.scores?.overall || 75,
-      summary: `Mock analysis found ${result.issues.length} issues`
-    };
-  }
-}
-
-/**
  * Factory function to create DeepWiki service
  */
-export function createDeepWikiService(logger?: ILogger, useMock?: boolean): IDeepWikiService {
-  if (useMock || process.env.USE_DEEPWIKI_MOCK === 'true') {
-    return new MockDeepWikiService();
-  }
+export function createDeepWikiService(logger?: ILogger): IDeepWikiService {
   return new DeepWikiService(logger);
 }

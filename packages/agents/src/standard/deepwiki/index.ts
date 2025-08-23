@@ -28,7 +28,7 @@ export {
   ArchitectureMetrics
 } from './services/architecture-visualizer';
 export { DeepWikiCacheManager } from './services/deepwiki-cache-manager';
-export { DeepWikiApiWrapper, MockDeepWikiApiWrapper } from './services/deepwiki-api-wrapper';
+export { DeepWikiApiWrapper } from './services/deepwiki-api-wrapper';
 
 // Interfaces
 export * from './interfaces/deepwiki.interface';

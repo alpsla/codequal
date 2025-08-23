@@ -103,7 +103,7 @@ export const AnalysisResultSchema = z.object({
 export const AnalyzerConfigSchema = z.object({
   deepwikiUrl: z.string().url(),
   deepwikiKey: z.string().optional(),
-  maxIterations: z.number().min(1).max(10).default(3),
+  maxIterations: z.number().min(3).max(10).default(3), // Min 3 iterations for stability
   timeout: z.number().min(10000).max(600000).default(300000),
   retryAttempts: z.number().min(0).max(5).default(3),
   minCompleteness: z.number().min(50).max(100).default(80),

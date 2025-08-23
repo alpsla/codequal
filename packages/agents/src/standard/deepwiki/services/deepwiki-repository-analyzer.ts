@@ -341,7 +341,8 @@ export class DeepWikiRepositoryAnalyzer {
                   title: issue.title,
                   description: issue.description,
                   severity: issue.severity,
-                  category: issue.category
+                  category: issue.category,
+                  codeSnippet: issue.codeSnippet // Pass the code snippet!
                 }))
               );
               
