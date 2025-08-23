@@ -779,6 +779,13 @@ const SYSTEM_STATE: SystemState = {
       description: 'GitHub PR Comment format is wrong - DECLINED status not properly formatted with issue details, lacks actionable feedback and GitHub-compatible markdown formatting',
       discovered: '2025-08-20',
       component: 'report-generator-v8-final'
+    },
+    {
+      id: 'BUG-096',
+      severity: 'HIGH',
+      description: 'Location Service Code Duplication - 7 Competing Implementations: The codebase has 7 different location service implementations creating confusion and maintenance burden. Files to ARCHIVE: location-finder.ts, location-finder-enhanced.ts, location-enhancer.ts, ai-location-finder.ts, location-validator.ts, location-clarifier.ts. KEEP: enhanced-location-finder.ts (most recent with multiple strategies). Impact: Developer confusion, inconsistent results, maintenance nightmare, import path chaos. Solution: Archive 6 services, standardize on enhanced-location-finder.ts, update imports, comprehensive testing.',
+      discovered: '2025-08-23',
+      component: 'location-services'
     }
     
     // 🎉 ALL V8 REPORT GENERATOR BUGS FIXED (2025-08-20):
@@ -893,7 +900,10 @@ const SYSTEM_STATE: SystemState = {
     'MEDIUM - FIX BUG-081: Poor Business Impact quality - implement specific business impact analysis correlated to detected technical issues',
     'HIGH - FIX BUG-082: Missing IDE Integration locations - fix AI Location Finder integration to provide file paths and line numbers for actionable quick fixes',
     'MEDIUM - FIX BUG-083: Poor Automated Fix Scripts - add framework detection, error handling, and comprehensive disclaimers to match reference quality',
-    'HIGH - FIX BUG-084: Wrong GitHub PR Comment format - fix DECLINED status formatting with detailed issue breakdown and GitHub-compatible markdown'
+    'HIGH - FIX BUG-084: Wrong GitHub PR Comment format - fix DECLINED status formatting with detailed issue breakdown and GitHub-compatible markdown',
+    
+    // LOCATION SERVICE CLEANUP - CRITICAL CODE QUALITY ISSUE (2025-08-23)
+    'CRITICAL - FIX BUG-096: Location Service Code Duplication Cleanup - Archive 6 duplicate location service implementations, standardize on enhanced-location-finder.ts, update all import paths, add comprehensive tests. Files to archive: location-finder.ts, location-finder-enhanced.ts, location-enhancer.ts, ai-location-finder.ts, location-validator.ts, location-clarifier.ts. Keep only enhanced-location-finder.ts with multiple strategies (grep/ripgrep search, AI fallback, code snippet matching).'
   ],
 
   architecture: {

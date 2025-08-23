@@ -36,32 +36,20 @@ class CompleteAnalysisRunner {
   private outputDir: string;
 
   constructor(options: AnalysisOptions) {
-    // Set environment variables
-    if (options.useMock || process.env.USE_DEEPWIKI_MOCK === 'true') {
-      process.env.USE_DEEPWIKI_MOCK = 'true';
-      console.log('⚠️ DeepWiki Mock Mode is ENABLED');
-    } else {
-      // Register real DeepWiki API when not using mock
-      process.env.USE_DEEPWIKI_MOCK = 'false';
-      // Note: registerRealDeepWiki will be called in init()
-    }
-
     // Create output directory
     this.outputDir = options.outputDir || join(__dirname, '../reports', new Date().toISOString().split('T')[0]);
     mkdirSync(this.outputDir, { recursive: true });
 
     // Initialize services
     const logger = StandardAgentFactory.createLogger();
-    this.deepWikiService = createDeepWikiService(logger, options.useMock);
+    this.deepWikiService = createDeepWikiService(logger);
     
     // Orchestrator will be initialized in init() method
   }
 
   async init() {
-    // Handle async operations
-    if (process.env.USE_DEEPWIKI_MOCK !== 'true') {
-      await this.registerRealDeepWiki();
-    }
+    // Always register real DeepWiki API
+    await this.registerRealDeepWiki();
 
     // Initialize orchestrator using static methods
     const logger = StandardAgentFactory.createLogger();
@@ -174,7 +162,7 @@ class CompleteAnalysisRunner {
     console.log('================================\n');
     console.log(`Repository: ${options.repository}`);
     console.log(`PR Number: ${options.prNumber}`);
-    console.log(`Mode: ${options.useMock || process.env.USE_DEEPWIKI_MOCK === 'true' ? 'Mock' : 'Real DeepWiki'}`);
+    console.log(`Mode: Real DeepWiki`);
     console.log(`Save to Supabase: ${options.saveToSupabase ? 'Yes' : 'No'}`);
     console.log(`Output Directory: ${this.outputDir}\n`);
 

@@ -10,7 +10,6 @@ export { ComparisonOrchestrator } from './orchestrator/comparison-orchestrator';
 // Services
 export { 
   DeepWikiService, 
-  MockDeepWikiService, 
   createDeepWikiService,
   IDeepWikiService 
 } from './services/deepwiki-service';
@@ -19,8 +18,7 @@ export {
   registerDeepWikiApi,
   getDeepWikiApi,
   IDeepWikiApi,
-  DeepWikiApiWrapper,
-  MockDeepWikiApiWrapper
+  DeepWikiApiWrapper
 } from './services/deepwiki-api-wrapper';
 
 export { registerRealDeepWikiApi } from './services/register-deepwiki';

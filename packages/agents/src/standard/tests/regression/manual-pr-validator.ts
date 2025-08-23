@@ -203,7 +203,7 @@ async function analyzePR(url: string) {
       // Continue with comparison...
       // (The rest of the flow continues as before)
       
-    } else if (process.env.USE_DEEPWIKI_MOCK === 'false' && config.deepwiki.apiUrl) {
+    } else if (config.deepwiki.apiUrl) {
       // Register real DeepWiki client for non-mock mode
       printStatus('Connecting to real DeepWiki API...', 'info');
       
@@ -316,14 +316,30 @@ async function analyzePR(url: string) {
             
             // Save raw response for debugging
             const debugFilename = branch.includes('pull') ? 'debug-pr-raw-response.txt' : 'debug-main-raw-response.txt';
-            fs.writeFileSync(debugFilename, content);
+            require('fs').writeFileSync(debugFilename, content);
             
             // Parse the DeepWiki response
             let parsedData;
             if (jsonData && jsonData.issues) {
               // Direct JSON response from DeepWiki
+              // Transform the format - DeepWiki returns file/line directly, we need location.file/location.line
+              const transformedIssues = jsonData.issues.map((issue: any) => ({
+                ...issue,
+                // Ensure location object exists with file and line
+                location: issue.location || {
+                  file: issue.file || 'unknown',
+                  line: issue.line || 0,
+                  column: issue.column || 0
+                },
+                // Preserve codeSnippet if it exists
+                codeSnippet: issue.codeSnippet || issue.code || issue.snippet,
+                // Map other fields
+                description: issue.description || issue.impact || issue.message,
+                suggestion: issue.suggestion || issue.fix || issue.recommendation
+              }));
+              
               parsedData = {
-                issues: jsonData.issues,
+                issues: transformedIssues,
                 scores: jsonData.scores || {},
                 dependencies: jsonData.dependencies || {},
                 codeQuality: jsonData.codeQuality || {},
@@ -335,7 +351,61 @@ async function analyzePR(url: string) {
               parsedData = await parseDeepWikiResponse(content);
             }
             
-            // Third pass: Clarify locations for issues with unknown locations
+            // Ensure all issues have IDs
+            parsedData.issues.forEach((issue: any, index: number) => {
+              if (!issue.id) {
+                issue.id = `issue-${branch.replace(/\//g, '-')}-${Date.now()}-${index}`;
+              }
+            });
+            
+            // Third pass: Enhanced location finding for ALL issues (even those with file hints)
+            // DeepWiki often returns wrong or generic file names, so we verify all locations
+            const allIssues = parsedData.issues;
+            
+            // Get repo path for code extraction (we'll need it for both location clarification and snippet extraction)
+            const prMatch = repoUrl.match(/pull\/(\d+)/);
+            const prNum = prMatch ? parseInt(prMatch[1], 10) : undefined;
+            
+            const { CodeSnippetLocator } = require('../../services/code-snippet-locator');
+            const repoPaths = CodeSnippetLocator.getRepoPaths(repoUrl, prNum);
+            const repoPath = prNum && repoPaths.pr ? repoPaths.pr : repoPaths.main;
+            
+            // Use enhanced location finder for ALL issues
+            printStatus(`Using enhanced location finder for ${allIssues.length} issues...`, 'info');
+            const { EnhancedLocationFinder } = require('../../services/enhanced-location-finder');
+            const locationFinder = new EnhancedLocationFinder();
+            
+            const issuesToLocate = allIssues.map((issue: any) => ({
+              id: issue.id,
+              title: issue.title || issue.message || '',
+              description: issue.description || issue.message || '',
+              category: issue.category || 'code-quality',
+              severity: issue.severity || 'medium',
+              codeSnippet: issue.codeSnippet,
+              file: issue.location?.file
+            }));
+            
+            const foundLocations = await locationFinder.findLocations(repoPath, issuesToLocate);
+            
+            // Apply found locations
+            for (const location of foundLocations) {
+              const issue = allIssues.find((i: any) => i.id === location.issueId);
+              if (issue) {
+                issue.location = {
+                  file: location.file,
+                  line: location.line,
+                  column: 0
+                };
+                // Also update or add the code snippet if we found one
+                if (location.snippet && !issue.codeSnippet) {
+                  issue.codeSnippet = location.snippet;
+                }
+              }
+            }
+            
+            printStatus(`Enhanced location finder resolved ${foundLocations.length}/${allIssues.length} locations`, 'success');
+            
+            // Now check for remaining unknown locations
             const unknownLocationIssues = parsedData.issues.filter((issue: any) => 
               !issue.location?.file || issue.location.file === 'unknown'
             );
@@ -352,12 +422,13 @@ async function analyzePR(url: string) {
                   title: issue.title,
                   description: issue.description,
                   severity: issue.severity,
-                  category: issue.category
+                  category: issue.category,
+                  codeSnippet: issue.codeSnippet // Pass the code snippet!
                 }))
               );
               
-              // Apply clarified locations back to issues
-              clarifier.applyLocations(parsedData.issues, clarifications);
+              // Apply clarified locations back to issues (with code extraction)
+              await clarifier.applyLocations(parsedData.issues, clarifications, repoPath);
               
               const remainingUnknown = parsedData.issues.filter((issue: any) => 
                 !issue.location?.file || issue.location.file === 'unknown'
@@ -365,6 +436,50 @@ async function analyzePR(url: string) {
               
               if (remainingUnknown < unknownLocationIssues.length) {
                 printStatus(`Clarified ${unknownLocationIssues.length - remainingUnknown} locations`, 'success');
+              }
+            }
+            
+            // Fourth pass: Extract code snippets for ALL issues that don't have them
+            const issuesWithoutSnippets = parsedData.issues.filter((issue: any) => 
+              !issue.codeSnippet && 
+              issue.location?.file && 
+              issue.location.file !== 'unknown'
+            );
+            
+            if (issuesWithoutSnippets.length > 0 && repoPath) {
+              printStatus(`Extracting code snippets for ${issuesWithoutSnippets.length} issues...`, 'info');
+              
+              const fs = require('fs');
+              const path = require('path');
+              
+              for (const issue of issuesWithoutSnippets) {
+                try {
+                  const filePath = path.join(repoPath, issue.location.file);
+                  
+                  if (fs.existsSync(filePath)) {
+                    const fileContent = fs.readFileSync(filePath, 'utf-8');
+                    const lines = fileContent.split('\n');
+                    
+                    // Extract lines with context (5 lines before and after)
+                    const line = issue.location.line || 1;
+                    const startLine = Math.max(0, line - 6); // 5 lines before (0-indexed)
+                    const endLine = Math.min(lines.length, line + 5); // 5 lines after
+                    
+                    const snippet = lines.slice(startLine, endLine).join('\n');
+                    
+                    if (snippet.trim()) {
+                      issue.codeSnippet = snippet;
+                      console.log(`✅ Extracted snippet for ${issue.title} from ${issue.location.file}:${line}`);
+                    }
+                  }
+                } catch (error) {
+                  console.warn(`Failed to extract snippet for ${issue.title}:`, error);
+                }
+              }
+              
+              const extractedCount = issuesWithoutSnippets.filter(i => i.codeSnippet).length;
+              if (extractedCount > 0) {
+                printStatus(`Extracted ${extractedCount} code snippets from repository`, 'success');
               }
             }
             
@@ -593,6 +708,79 @@ async function analyzePR(url: string) {
       console.log(`  ${icon} ${severity.toUpperCase()}: ${count}`);
     });
     
+    // Step 2.5: Extract code snippets for issues that don't have them
+    printHeader('EXTRACTING CODE SNIPPETS');
+    
+    // Get repo paths - use the base repo URL, not the PR URL
+    const repoUrl = `https://github.com/${prData.owner}/${prData.repo}`;
+    const { CodeSnippetLocator } = require('../../services/code-snippet-locator');
+    const repoPaths = CodeSnippetLocator.getRepoPaths(repoUrl, prData.prNumber);
+    console.log('Repo paths:', repoPaths);
+    const fs = require('fs');
+    const path = require('path');
+    
+    // Helper function to extract code snippets
+    const extractCodeSnippets = (issues: any[], repoPath: string, branchName: string) => {
+      console.log(`  Checking ${issues.length} ${branchName} issues for missing snippets...`);
+      
+      const issuesWithoutSnippets = issues.filter((issue: any) => 
+        !issue.codeSnippet && 
+        issue.location?.file && 
+        issue.location.file !== 'unknown'
+      );
+      
+      console.log(`  Found ${issuesWithoutSnippets.length} issues without snippets`);
+      console.log(`  Repo path: ${repoPath}, exists: ${fs.existsSync(repoPath)}`);
+      
+      if (issuesWithoutSnippets.length > 0 && repoPath && fs.existsSync(repoPath)) {
+        console.log(`  📝 Extracting snippets for ${issuesWithoutSnippets.length} ${branchName} issues...`);
+        
+        let extractedCount = 0;
+        for (const issue of issuesWithoutSnippets) {
+          try {
+            const filePath = path.join(repoPath, issue.location.file);
+            
+            if (fs.existsSync(filePath)) {
+              const fileContent = fs.readFileSync(filePath, 'utf-8');
+              const lines = fileContent.split('\n');
+              
+              // Extract lines with context (5 lines before and after)
+              const line = issue.location.line || 1;
+              const startLine = Math.max(0, line - 6); // 5 lines before (0-indexed)
+              const endLine = Math.min(lines.length, line + 5); // 5 lines after
+              
+              const snippet = lines.slice(startLine, endLine).join('\n');
+              
+              if (snippet.trim()) {
+                issue.codeSnippet = snippet;
+                extractedCount++;
+                console.log(`    ✅ ${issue.title} - ${issue.location.file}:${line}`);
+              }
+            }
+          } catch (error) {
+            // Silent fail for individual files
+          }
+        }
+        
+        if (extractedCount > 0) {
+          printStatus(`Extracted ${extractedCount} code snippets for ${branchName}`, 'success');
+        }
+      }
+    };
+    
+    // Extract snippets for main branch issues
+    if (repoPaths.main) {
+      extractCodeSnippets(mainAnalysis.issues, repoPaths.main, 'main branch');
+    }
+    
+    // Extract snippets for PR branch issues
+    if (repoPaths.pr) {
+      extractCodeSnippets(prAnalysis.issues, repoPaths.pr, 'PR branch');
+    } else if (repoPaths.main) {
+      // Fallback to main if PR branch not cloned
+      extractCodeSnippets(prAnalysis.issues, repoPaths.main, 'PR branch (using main)');
+    }
+    
     // Step 3: Generate comparison using orchestrator
     printHeader('GENERATING COMPARISON REPORT');
     printStatus('Selecting optimal model...', 'info');
@@ -602,14 +790,22 @@ async function analyzePR(url: string) {
     const startComparison = Date.now();
     
     // Convert DeepWiki response to AnalysisResult format
-    const convertToAnalysisResult = (deepwikiResponse: any) => ({
-      issues: deepwikiResponse.issues.map((issue: any) => ({
-        ...issue,
-        message: issue.description // Map description to message
-      })),
-      scores: deepwikiResponse.scores || {},
-      metadata: deepwikiResponse.metadata
-    });
+    const convertToAnalysisResult = (deepwikiResponse: any) => {
+      const result = {
+        issues: deepwikiResponse.issues.map((issue: any) => ({
+          ...issue,
+          message: issue.description // Map description to message
+        })),
+        scores: deepwikiResponse.scores || {},
+        metadata: deepwikiResponse.metadata
+      };
+      
+      // Debug: Check if code snippets are preserved
+      const snippetCount = result.issues.filter((i: any) => i.codeSnippet).length;
+      console.log(`  📊 Issues with code snippets: ${snippetCount}/${result.issues.length}`);
+      
+      return result;
+    };
     
     const totalAnalysisTime = (Date.now() - startMain) / 1000; // Total time in seconds
     

@@ -38,10 +38,10 @@
     "dist",
     "**/*.test.ts",
     "**/__tests__/**",
+    "**/_archive/**",
     "**/_archive_*/**",
     "**/examples/**",
-    "src/standard/tests/test-educator-integration.ts",
-    "src/standard/tests/regression/manual-pr-validator-enhanced.ts"
+    "src/standard/tests/test-educator-integration.ts"
   ],
   "references": [
     { "path": "../core" },

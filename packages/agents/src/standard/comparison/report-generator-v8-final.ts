@@ -613,14 +613,27 @@ ${actions.length > 0 ? '**Required Actions:**\n' + actions.map(a => `- ${a}`).jo
       content += '*Full details for AI IDE integration and future cleanup:*\n\n';
       
       const enhancedIssues = comparison.unchangedIssues.map(issue => {
-        if (!issue.codeSnippet) {
+        // Check for codeSnippet in various possible locations
+        const existingSnippet = issue.codeSnippet || (issue as any).code || (issue as any).snippet;
+        if (!existingSnippet) {
+          // COMMENTED OUT MOCKING - Better to show error than fake data
+          // return {
+          //   ...issue,
+          //   codeSnippet: this.generateMockCodeSnippet(issue),
+          //   fixedCode: this.generateMockFixedCode(issue)
+          // };
+          console.warn(`[WARNING] No code snippet found for issue: ${issue.title || issue.message} at ${issue.location?.file || 'unknown'}:${issue.location?.line || 'unknown'}`);
           return {
             ...issue,
-            codeSnippet: this.generateMockCodeSnippet(issue),
-            fixedCode: this.generateMockFixedCode(issue)
+            codeSnippet: '// No code snippet available - DeepWiki did not provide code context',
+            fixedCode: '// No fix suggestion available'
           };
         }
-        return issue;
+        return {
+          ...issue,
+          codeSnippet: existingSnippet,
+          fixedCode: issue.fixedCode || '// No fix suggestion available' // this.generateMockFixedCode(issue)
+        };
       });
       
       content += this.formatDetailedIssues(enhancedIssues, options, true);
@@ -676,7 +689,10 @@ ${actions.length > 0 ? '**Required Actions:**\n' + actions.map(a => `- ${a}`).jo
     if (showCode) {
       content += `\n🔍 **Problematic Code:**\n`;
       content += '```' + this.getLanguageFromFile(file) + '\n';
-      const snippet = issue.codeSnippet || (issue as any).code || this.generateMockCodeSnippet(issue);
+      // COMMENTED OUT MOCKING - Better to show error than fake data
+      // const snippet = issue.codeSnippet || (issue as any).code || this.generateMockCodeSnippet(issue);
+      const snippet = issue.codeSnippet || (issue as any).code || (issue as any).snippet || 
+                     `// No code snippet available - DeepWiki did not provide code context\n// Issue: ${issue.title || issue.message}\n// Location: ${file}:${line}`;
       content += snippet + '\n';
       content += '```\n';
     }
@@ -903,6 +919,13 @@ ${testIssues.length > 0 ? '**Test-related Issues:**\n' + testIssues.map(i => `- 
         if (issue.severity) {
           diagram += `   - Severity: ${issue.severity}\n`;
         }
+        
+        // Add code snippet for architectural issues
+        const codeSnippet = issue.codeSnippet || (issue as any).code || (issue as any).snippet;
+        if (codeSnippet) {
+          diagram += `   - Code:\n\`\`\`${this.getLanguageFromFile(issue.location?.file || '')}\n${codeSnippet}\n\`\`\`\n`;
+        }
+        
         if (issue.suggestedFix) {
           diagram += `   - Suggestion: ${issue.suggestedFix}\n`;
         }
@@ -1110,24 +1133,8 @@ ${testIssues.length > 0 ? '**Test-related Issues:**\n' + testIssues.map(i => `- 
       });
     });
     
-    // If no specific breaking changes detected, check for high severity issues that could be breaking
-    if (breakingChanges.length === 0) {
-      const criticalIssues = issues.filter(i => i.severity === 'critical' || i.severity === 'high');
-      criticalIssues.slice(0, 2).forEach(issue => {
-        const file = issue.location?.file || (issue as any).file || 'unknown';
-        const line = issue.location?.line || (issue as any).line || 0;
-        
-        breakingChanges.push({
-          type: 'Potential Breaking Change',
-          description: issue.message,
-          file: `${file}${line ? ':' + line : ''}`,
-          severity: issue.severity,
-          impact: 'May affect functionality',
-          migrationGuide: issue.suggestedFix || 'Review and test thoroughly',
-          affectedConsumers: 'Systems dependent on this component'
-        });
-      });
-    }
+    // If no specific breaking changes detected, DO NOT add unrelated high severity issues
+    // Breaking changes are specifically about API/interface/schema changes, not security/performance issues
     
     return breakingChanges;
   }
@@ -2042,7 +2049,10 @@ Copy this to your AI IDE (Cursor/Copilot):
 
 \`\`\`
 Fix ${topIssue.severity} ${topIssue.category || 'issue'} in ${location}
+Issue: ${topIssue.message || topIssue.title || 'Code quality issue'}
+Description: ${topIssue.description || 'This issue needs to be resolved'}
 ${topIssue.suggestedFix ? `Suggestion: ${topIssue.suggestedFix}` : 'Apply best practices to resolve this issue'}
+${topIssue.remediation ? `Remediation: ${topIssue.remediation}` : ''}
 \`\`\`
 
 ### ✅ Validation
@@ -2564,6 +2574,7 @@ Analysis Date: ${new Date().toISOString().split('T')[0]}, ${new Date().toISOStri
     const prMetadata = (comparison as any).prMetadata || {};
     const scanMetadata = (comparison as any).scanMetadata || {};
     const aiAnalysis = (comparison as any).aiAnalysis || {};
+    const analysisMetrics = (comparison as any).analysisMetrics || {};
     
     // Get the dynamically selected model - NO HARDCODED DEFAULTS
     const modelUsed = aiAnalysis.modelUsed || 
@@ -2578,6 +2589,17 @@ Analysis Date: ${new Date().toISOString().split('T')[0]}, ${new Date().toISOStri
     if (repoUrl.includes('github.com')) {
       const match = repoUrl.match(/github.com\/([^/]+\/[^/]+)/);
       if (match) repoName = match[1];
+    }
+    
+    // Format iteration metrics if available
+    let iterationInfo = '';
+    if (analysisMetrics.iterations) {
+      iterationInfo = `
+### Analysis Iterations
+- **Total Iterations:** ${analysisMetrics.iterations}
+- **Completeness:** ${analysisMetrics.completeness || 0}%
+- **Memory Used:** ${analysisMetrics.memoryUsed ? (analysisMetrics.memoryUsed / 1024 / 1024).toFixed(2) + 'MB' : 'N/A'}
+- **Cache Hit:** ${analysisMetrics.cacheHit ? 'Yes' : 'No'}`;
     }
     
     return `## Report Metadata
@@ -2595,7 +2617,7 @@ Analysis Date: ${new Date().toISOString().split('T')[0]}, ${new Date().toISOStri
 - **Scan Duration:** ${(comparison as any).scanDuration || (comparison as any).duration || 'N/A'}
 - **AI Model:** ${modelUsed}
 - **Report Format:** Markdown v8
-- **Timestamp:** ${Date.now()}
+- **Timestamp:** ${Date.now()}${iterationInfo}
 
 ---
 
@@ -2798,10 +2820,31 @@ const dbPassword = process.env.DB_PASSWORD;
   // Utility methods
   private calculateScore(comparison: ComparisonResult): number {
     let score = 100;
-    (comparison.newIssues || []).forEach(issue => {
-      const points = { critical: 15, high: 10, medium: 5, low: 2 }[issue.severity || 'medium'] || 5;
-      score -= points;
-    });
+    const newIssues = comparison.newIssues || [];
+    
+    // Balanced scoring per user specification:
+    // - Critical: 5 points each
+    // - High: 3 points each
+    // - Medium: 1 point each
+    // - Low: 0.5 points each
+    
+    const criticalCount = newIssues.filter(i => i.severity === 'critical').length;
+    const highCount = newIssues.filter(i => i.severity === 'high').length;
+    const mediumCount = newIssues.filter(i => i.severity === 'medium').length;
+    const lowCount = newIssues.filter(i => i.severity === 'low').length;
+    
+    // Apply deductions
+    score -= criticalCount * 5;
+    score -= highCount * 3;
+    score -= mediumCount * 1;
+    score -= lowCount * 0.5;
+    
+    // Bonus points for resolved issues (0.5 points each, max 10 points)
+    const resolvedCount = comparison.resolvedIssues?.length || 0;
+    if (resolvedCount > 0) {
+      score += Math.min(10, resolvedCount * 0.5);
+    }
+    
     return Math.max(0, Math.min(100, score));
   }
 

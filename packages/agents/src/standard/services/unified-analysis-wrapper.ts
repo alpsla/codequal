@@ -107,6 +107,9 @@ export class UnifiedAnalysisWrapper {
       // Step 1: DeepWiki Analysis
       const deepWikiResult = await this.performDeepWikiAnalysis(repositoryUrl, options);
       
+      // Step 1.5: Validate and normalize issue types/categories
+      this.validateIssueTypes(deepWikiResult.issues);
+      
       // Step 2: Location Validation (if enabled)
       let validationResults: Map<string, LocationValidationResult> | undefined;
       if (options.validateLocations !== false) {
@@ -220,10 +223,7 @@ export class UnifiedAnalysisWrapper {
     try {
       this.log('info', 'Step 1: Performing DeepWiki analysis');
       
-      // Force mock mode if requested
-      if (options.useDeepWikiMock) {
-        process.env.USE_DEEPWIKI_MOCK = 'true';
-      }
+      // Mock mode has been removed - always use real DeepWiki API
       
       const result = await this.deepWikiWrapper.analyzeRepository(repositoryUrl, {
         branch: options.branch,
@@ -354,7 +354,8 @@ export class UnifiedAnalysisWrapper {
           title: issue.title,
           description: issue.description,
           severity: issue.severity,
-          category: issue.category
+          category: issue.category,
+          codeSnippet: issue.codeSnippet // Pass the code snippet!
         }));
         
         const clarifications = await this.locationClarifier.clarifyLocations(
@@ -445,6 +446,57 @@ export class UnifiedAnalysisWrapper {
       invalidLocations: totalIssues - validCount,
       averageConfidence: validCount > 0 ? totalConfidence / validCount : 0
     };
+  }
+  
+  /**
+   * Validate and normalize issue types and categories
+   */
+  private validateIssueTypes(issues: DeepWikiAnalysisResponse['issues']): void {
+    issues.forEach((issue: any) => {
+      // Ensure category is set
+      if (!issue.category || issue.category === 'undefined' || issue.category === 'null') {
+        // Try to infer category from severity or description
+        if (issue.severity === 'critical' || (issue.description && issue.description.toLowerCase().includes('security'))) {
+          issue.category = 'security';
+        } else if (issue.description && issue.description.toLowerCase().includes('performance')) {
+          issue.category = 'performance';
+        } else if (issue.description && (issue.description.toLowerCase().includes('maintain') || issue.description.toLowerCase().includes('code quality'))) {
+          issue.category = 'maintainability';
+        } else if (issue.description && issue.description.toLowerCase().includes('bug')) {
+          issue.category = 'bug';
+        } else {
+          issue.category = 'general';
+        }
+      }
+      
+      // Ensure type is set
+      if (!issue.type || issue.type === 'undefined' || issue.type === 'null') {
+        // Map category to type if not set
+        const categoryToType: Record<string, string> = {
+          'security': 'vulnerability',
+          'performance': 'optimization',
+          'maintainability': 'code-smell',
+          'bug': 'defect',
+          'style': 'style',
+          'best-practice': 'improvement',
+          'general': 'issue'
+        };
+        issue.type = categoryToType[issue.category] || 'issue';
+      }
+      
+      // Validate severity
+      const validSeverities = ['critical', 'high', 'medium', 'low'];
+      if (!issue.severity || !validSeverities.includes(issue.severity)) {
+        // Default based on category
+        if (issue.category === 'security') {
+          issue.severity = 'high';
+        } else if (issue.category === 'bug') {
+          issue.severity = 'medium';
+        } else {
+          issue.severity = 'low';
+        }
+      }
+    });
   }
   
   /**

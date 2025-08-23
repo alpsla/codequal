@@ -25,7 +25,7 @@ async function testRealDeepWikiAnalysis() {
 
   // Initialize services
   const logger = StandardAgentFactory.createLogger();
-  const deepWikiService = createDeepWikiService(logger, false);
+  const deepWikiService = createDeepWikiService(logger);
   
   // Initialize orchestrator
   const orchestrator = new ComparisonOrchestrator(

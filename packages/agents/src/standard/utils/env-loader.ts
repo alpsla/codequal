@@ -96,7 +96,6 @@ export function getEnvConfig() {
     supabaseServiceRoleKey: getEnv('SUPABASE_SERVICE_ROLE_KEY'),
     supabaseAnonKey: getEnv('SUPABASE_ANON_KEY'),
     redisUrl: getEnv('REDIS_URL'),
-    useDeepWikiMock: getEnv('USE_DEEPWIKI_MOCK', 'false') === 'true',
     nodeEnv: getEnv('NODE_ENV', 'development'),
     logLevel: getEnv('LOG_LEVEL', 'info')
   };

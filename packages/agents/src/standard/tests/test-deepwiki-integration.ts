@@ -12,42 +12,11 @@ async function testDeepWikiIntegration() {
   console.log('🧪 Testing DeepWiki Integration');
   console.log('================================\n');
 
-  // Test with mock mode
-  console.log('1️⃣ Testing with Mock Mode');
+  // Test with real mode
+  console.log('1️⃣ Testing with Real Mode');
   console.log('-------------------------');
   
-  const mockService = createDeepWikiService(undefined, true);
-  
-  try {
-    const mockResult = await mockService.analyzeRepository(
-      'https://github.com/vercel/swr',
-      'main'
-    );
-    
-    console.log('✅ Mock analysis successful');
-    console.log(`   Issues found: ${mockResult.issues.length}`);
-    console.log(`   Overall score: ${mockResult.scores?.overall}`);
-    console.log(`   Files analyzed: ${mockResult.metadata?.filesAnalyzed}\n`);
-    
-    // Test comparison format
-    const comparisonResult = await mockService.analyzeRepositoryForComparison(
-      'https://github.com/vercel/swr',
-      'main'
-    );
-    
-    console.log('✅ Mock comparison format successful');
-    console.log(`   Score: ${comparisonResult.score}`);
-    console.log(`   Summary: ${comparisonResult.summary}\n`);
-    
-  } catch (error) {
-    console.error('❌ Mock test failed:', error);
-  }
-
-  // Test with real mode (will use mock if no API is registered)
-  console.log('2️⃣ Testing with Real Mode');
-  console.log('-------------------------');
-  
-  const realService = createDeepWikiService(undefined, false);
+  const realService = createDeepWikiService(undefined);
   
   try {
     const realResult = await realService.analyzeRepository(

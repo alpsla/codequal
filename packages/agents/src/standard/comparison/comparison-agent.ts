@@ -157,7 +157,7 @@ export class ComparisonAgent implements IReportingComparisonAgent {
       );
 
       // Convert to standard comparison format
-      const comparison = this.convertAIAnalysisToComparison(aiAnalysis);
+      const comparison = this.convertAIAnalysisToComparison(aiAnalysis, input.prMetadata);
 
       // Calculate skill impacts if profile provided
       let skillTracking;
@@ -423,7 +423,8 @@ Provide confidence scores and reasoning for each finding.`;
    * that should be displayed in reports but are NOT blocking for PR approval
    */
   private convertAIAnalysisToComparison(
-    aiAnalysis: AIComparisonAnalysis
+    aiAnalysis: AIComparisonAnalysis,
+    prMetadata?: PRMetadata
   ): ComparisonResult {
     // Extract the actual issues from ComparisonIssue wrappers
     const extractIssues = (comparisonIssues: ComparisonIssue[]) => {
@@ -529,7 +530,8 @@ Provide confidence scores and reasoning for each finding.`;
         overallAssessment: aiAnalysis.overallAssessment
       },
       insights: this.generateInsights(aiAnalysis),
-      recommendations: this.generateRecommendations(aiAnalysis)
+      recommendations: this.generateRecommendations(aiAnalysis),
+      prMetadata: prMetadata // Include PR metadata in the result
     } as any; // TODO: Update ComparisonResult type
   }
 
@@ -695,7 +697,12 @@ Provide confidence scores and reasoning for each finding.`;
         // FIX: Ensure message field is always present (fixes undefined issue)
         message: issue.message || (issue as any).title || (issue as any).description || 'Unknown Issue',
         title: (issue as any).title || issue.message,
-        description: (issue as any).description || issue.message,
+        // FIX: Don't just copy title as description - check if description is different
+        description: ((issue as any).description && (issue as any).description !== (issue as any).title) 
+          ? (issue as any).description 
+          : issue.message || (issue as any).title,
+        // Preserve code snippet from DeepWiki
+        codeSnippet: (issue as any).codeSnippet || (issue as any).code,
         // If issue has direct file/line properties (JSON format), ensure they're preserved
         file: (issue as any).file || issue.location?.file,
         line: (issue as any).line || issue.location?.line,
@@ -827,29 +834,35 @@ Provide confidence scores and reasoning for each finding.`;
    * Calculate score based on issues
    */
   private calculateScore(comparison: ComparisonResult): number {
-    const newIssuesCount = comparison.newIssues?.length || 0;
+    const newIssues = comparison.newIssues || [];
     const resolvedIssuesCount = comparison.resolvedIssues?.length || 0;
     const unchangedIssuesCount = comparison.unchangedIssues?.length || 0;
     
     // Start with base score
     let score = 100;
     
-    // Deduct points for new issues (severity-based)
-    comparison.newIssues?.forEach(issue => {
-      const severityPoints: Record<string, number> = {
-        critical: 15,
-        high: 10,
-        medium: 5,
-        low: 2
-      };
-      score -= severityPoints[issue.severity || 'medium'] || 5;
-    });
+    // Balanced scoring per user specification:
+    // - Critical: 5 points each
+    // - High: 3 points each
+    // - Medium: 1 point each
+    // - Low: 0.5 points each
     
-    // Deduct points for unchanged issues (technical debt)
-    score -= Math.min(unchangedIssuesCount * 2, 20); // Cap at 20 points
+    const criticalCount = newIssues.filter(i => i.severity === 'critical').length;
+    const highCount = newIssues.filter(i => i.severity === 'high').length;
+    const mediumCount = newIssues.filter(i => i.severity === 'medium').length;
+    const lowCount = newIssues.filter(i => i.severity === 'low').length;
     
-    // Add points for resolved issues
-    score += Math.min(resolvedIssuesCount * 3, 15); // Cap bonus at 15 points
+    // Apply deductions
+    score -= criticalCount * 5;
+    score -= highCount * 3;
+    score -= mediumCount * 1;
+    score -= lowCount * 0.5;
+    
+    // Deduct small penalty for unchanged issues (technical debt)
+    score -= Math.min(unchangedIssuesCount * 0.2, 5); // Small penalty, cap at 5 points
+    
+    // Add bonus for resolved issues (0.5 points each, max 10 points)
+    score += Math.min(resolvedIssuesCount * 0.5, 10);
     
     // Ensure score is between 0 and 100
     return Math.max(0, Math.min(100, score));
