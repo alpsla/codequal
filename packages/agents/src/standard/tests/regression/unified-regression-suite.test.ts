@@ -67,13 +67,11 @@ describe('Unified Regression Test Suite', () => {
   const testResults: Map<string, any> = new Map();
   
   beforeAll(async () => {
-    // Register DeepWiki API if using real mode
-    if (process.env.USE_DEEPWIKI_MOCK !== 'true') {
-      console.warn('⚠️ Running regression tests with real DeepWiki - this may take longer');
-      const directApi = new DirectDeepWikiApi();
-      registerDeepWikiApi(directApi);
-      console.log('✅ DirectDeepWikiApi registered for tests');
-    }
+    // Always use real DeepWiki API
+    console.log('🚀 Running regression tests with real DeepWiki API');
+    const directApi = new DirectDeepWikiApi();
+    registerDeepWikiApi(directApi);
+    console.log('✅ DirectDeepWikiApi registered for tests');
     
     // Initialize wrappers with test configuration
     wrapper = new UnifiedAnalysisWrapper();
@@ -130,8 +128,7 @@ describe('Unified Regression Test Suite', () => {
       
       for (const repo of repos) {
         const result = await wrapper.analyzeRepository(repo.url, {
-          validateLocations: true,
-          useDeepWikiMock: true // Use mock for size testing
+          validateLocations: true
         });
         
         expect(result.success).toBe(true);
@@ -177,8 +174,7 @@ describe('Unified Regression Test Suite', () => {
     
     it('should not generate fake file paths', async () => {
       const result = await wrapper.analyzeRepository('https://github.com/sindresorhus/ky', {
-        validateLocations: true,
-        useDeepWikiMock: true
+        validateLocations: true
       });
       
       // Check for common fake path patterns
@@ -285,22 +281,22 @@ describe('Unified Regression Test Suite', () => {
       
       // Run analysis twice with same input
       const result1 = await wrapper.analyzeRepository(repo, {
-        useDeepWikiMock: true,
         validateLocations: true
       });
       
       const result2 = await wrapper.analyzeRepository(repo, {
-        useDeepWikiMock: true,
         validateLocations: true
       });
       
-      // Scores should be identical with mock data
-      expect(result1.analysis.scores.overall).toBe(result2.analysis.scores.overall);
+      // Scores should be relatively consistent (within 5 points for real API)
+      const scoreDiff = Math.abs(result1.analysis.scores.overall - result2.analysis.scores.overall);
+      expect(scoreDiff).toBeLessThanOrEqual(5);
       
       testResults.set('score-consistency', {
         passed: true,
         score1: result1.analysis.scores.overall,
-        score2: result2.analysis.scores.overall
+        score2: result2.analysis.scores.overall,
+        difference: scoreDiff
       });
     });
   });
@@ -310,16 +306,14 @@ describe('Unified Regression Test Suite', () => {
       // Analyze main branch
       const mainResult = await wrapper.analyzeRepository('https://github.com/sindresorhus/ky', {
         branch: 'main',
-        validateLocations: true,
-        useDeepWikiMock: true
+        validateLocations: true
       });
       
       // Simulate PR branch with some changes
       const prResult = await wrapper.analyzeRepository('https://github.com/sindresorhus/ky', {
         branch: 'pr/700',
         prId: '700',
-        validateLocations: true,
-        useDeepWikiMock: true
+        validateLocations: true
       });
       
       // Compare using fingerprints

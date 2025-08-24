@@ -7,7 +7,11 @@ export type AgentRole =
   | 'performance'
   | 'dependency'
   | 'educational'
-  | 'reporting';
+  | 'reporting'
+  | 'deepwiki'
+  | 'comparator'
+  | 'educator'
+  | 'researcher';
 
 // Standardized Agent Response Interface
 export interface AgentAnalysisResult {

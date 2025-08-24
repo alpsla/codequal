@@ -14,6 +14,8 @@ import {
   LearningStep
 } from '../types/analysis-types';
 import { DeveloperSkills } from '../orchestrator/interfaces/skill-provider.interface';
+import { getDynamicModelConfig, trackDynamicAgentCall } from '../monitoring';
+import type { AgentRole } from '../monitoring/services/dynamic-agent-cost-tracker.service';
 
 /**
  * Simple Educator Agent Implementation
@@ -22,10 +24,55 @@ import { DeveloperSkills } from '../orchestrator/interfaces/skill-provider.inter
  * without external MCP tools (for now)
  */
 export class EducatorAgent implements IEducatorAgent {
+  private modelConfigId = '';
+  private primaryModel = '';
+  private fallbackModel = '';
+  private language = 'typescript';
+  private repositorySize: 'small' | 'medium' | 'large' | 'enterprise' = 'medium';
+  
   constructor(
     private searchModel?: any,  // AI model like Perplexity, Tavily, etc.
     private logger?: any
   ) {}
+  
+  /**
+   * Initialize with model configuration from Supabase
+   */
+  async initialize(language?: string, repoSize?: 'small' | 'medium' | 'large' | 'enterprise'): Promise<void> {
+    this.language = language || 'typescript';
+    this.repositorySize = repoSize || 'medium';
+    
+    try {
+      const config = await getDynamicModelConfig(
+        'educator' as AgentRole,
+        this.language,
+        this.repositorySize
+      );
+      
+      if (config) {
+        this.modelConfigId = config.id;
+        this.primaryModel = config.primary_model;
+        this.fallbackModel = config.fallback_model || '';
+        
+        // Update searchModel if using OpenRouter
+        if (process.env.OPENROUTER_API_KEY) {
+          this.searchModel = {
+            provider: 'openrouter',
+            model: config.primary_model,
+            apiKey: process.env.OPENROUTER_API_KEY
+          };
+        }
+        
+        this.log('info', 'Educator initialized with Supabase config', {
+          primary: this.primaryModel,
+          fallback: this.fallbackModel,
+          configId: this.modelConfigId
+        });
+      }
+    } catch (error) {
+      this.log('warn', 'Failed to get Supabase config for Educator', error);
+    }
+  }
 
   /**
    * Find matching courses based on educational suggestions
@@ -35,6 +82,12 @@ export class EducatorAgent implements IEducatorAgent {
       suggestionCount: params.suggestions.length,
       developerLevel: params.developerLevel
     });
+
+    const startTime = Date.now();
+    let inputTokens = 0;
+    let outputTokens = 0;
+    let isFallback = false;
+    let retryCount = 0;
 
     try {
       // Group suggestions by priority
@@ -71,24 +124,159 @@ export class EducatorAgent implements IEducatorAgent {
       // Calculate total learning time
       const estimatedLearningTime = this.calculateTotalTime(courses, articles, videos);
 
-      return {
+      const result = {
         courses,
         articles,
         videos,
         estimatedLearningTime,
         personalizedPath
       };
+      
+      // Estimate token usage
+      inputTokens = Math.round(JSON.stringify(params).length / 4);
+      outputTokens = Math.round(JSON.stringify(result).length / 4);
+      
+      // Track successful search
+      if (this.modelConfigId) {
+        await trackDynamicAgentCall({
+          agent: 'educator' as AgentRole,
+          operation: 'find-resources',
+          repository: params.repository || 'unknown',
+          prNumber: params.prNumber,
+          language: this.language,
+          repositorySize: this.repositorySize,
+          modelConfigId: this.modelConfigId,
+          model: this.primaryModel || 'unknown',
+          modelVersion: 'latest',
+          isFallback,
+          inputTokens,
+          outputTokens,
+          duration: Date.now() - startTime,
+          success: true,
+          retryCount
+        });
+      }
 
-    } catch (error) {
-      this.log('error', 'Failed to find educational resources', error);
-      // Return empty results on error
-      return {
-        courses: [],
-        articles: [],
-        videos: [],
-        estimatedLearningTime: 0,
-        personalizedPath: { totalDuration: '0 hours', steps: [] }
-      };
+      return result;
+
+    } catch (primaryError: any) {
+      retryCount++;
+      
+      // Try fallback model if available
+      if (this.fallbackModel && this.searchModel) {
+        try {
+          this.log('warn', 'Primary model failed, trying fallback');
+          
+          // Switch to fallback model
+          const originalModel = this.searchModel.model;
+          this.searchModel.model = this.fallbackModel;
+          isFallback = true;
+          
+          // Retry resource search
+          const [courses, articles, videos] = await Promise.all([
+            this.findCourses(params.suggestions.filter(s => s.priority === 'immediate'), params),
+            this.findArticles(params.suggestions, params),
+            this.findVideos(params.suggestions, params)
+          ]);
+          
+          const result = {
+            courses,
+            articles,
+            videos,
+            estimatedLearningTime: this.calculateTotalTime(courses, articles, videos),
+            personalizedPath: { totalDuration: '0 hours', steps: [] }
+          };
+          
+          // Track successful fallback
+          inputTokens = Math.round(JSON.stringify(params).length / 4);
+          outputTokens = Math.round(JSON.stringify(result).length / 4);
+          
+          if (this.modelConfigId) {
+            await trackDynamicAgentCall({
+              agent: 'educator' as AgentRole,
+              operation: 'find-resources',
+              repository: params.repository || 'unknown',
+              prNumber: params.prNumber,
+              language: this.language,
+              repositorySize: this.repositorySize,
+              modelConfigId: this.modelConfigId,
+              model: this.fallbackModel,
+              modelVersion: 'latest',
+              isFallback: true,
+              inputTokens,
+              outputTokens,
+              duration: Date.now() - startTime,
+              success: true,
+              retryCount
+            });
+          }
+          
+          // Restore original model
+          this.searchModel.model = originalModel;
+          
+          return result;
+        } catch (fallbackError: any) {
+          // Track failure
+          if (this.modelConfigId) {
+            await trackDynamicAgentCall({
+              agent: 'educator' as AgentRole,
+              operation: 'find-resources',
+              repository: params.repository || 'unknown',
+              prNumber: params.prNumber,
+              language: this.language,
+              repositorySize: this.repositorySize,
+              modelConfigId: this.modelConfigId,
+              model: this.fallbackModel,
+              modelVersion: 'latest',
+              isFallback: true,
+              inputTokens,
+              outputTokens: 0,
+              duration: Date.now() - startTime,
+              success: false,
+              error: fallbackError.message,
+              retryCount
+            });
+          }
+          
+          this.log('error', 'Both primary and fallback models failed', {
+            primary: primaryError,
+            fallback: fallbackError
+          });
+          throw fallbackError;
+        }
+      } else {
+        // No fallback, track failure
+        if (this.modelConfigId) {
+          await trackDynamicAgentCall({
+            agent: 'educator' as AgentRole,
+            operation: 'find-resources',
+            repository: params.repository || 'unknown',
+            prNumber: params.prNumber,
+            language: this.language,
+            repositorySize: this.repositorySize,
+            modelConfigId: this.modelConfigId,
+            model: this.primaryModel || 'unknown',
+            modelVersion: 'latest',
+            isFallback: false,
+            inputTokens,
+            outputTokens: 0,
+            duration: Date.now() - startTime,
+            success: false,
+            error: primaryError.message,
+            retryCount: 0
+          });
+        }
+        
+        this.log('error', 'Failed to find educational resources', primaryError);
+        // Return empty results on error
+        return {
+          courses: [],
+          articles: [],
+          videos: [],
+          estimatedLearningTime: 0,
+          personalizedPath: { totalDuration: '0 hours', steps: [] }
+        };
+      }
     }
   }
 

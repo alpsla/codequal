@@ -20,7 +20,8 @@ import {
   UserStatus
 } from '../types';
 import { AgentProvider, AgentRole } from '@codequal/core/config/agent-registry';
-import { createMockAuthenticationService } from '../mock-auth-service';
+// Mock auth service removed - tests need to be updated to use real auth or test doubles
+// import { createMockAuthenticationService } from '../mock-auth-service';
 
 // Mock data for testing
 const mockRepositoryData: RepositoryData = {

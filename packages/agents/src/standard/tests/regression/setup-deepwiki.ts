@@ -7,11 +7,8 @@ import { registerDeepWikiApi } from '../../services/deepwiki-api-wrapper';
 import { join } from 'path';
 
 export async function setupDeepWikiIntegration() {
-  // Only setup if not using mock
-  if (process.env.USE_DEEPWIKI_MOCK === 'true') {
-    console.log('⚠️ DeepWiki Mock Mode is ENABLED - skipping real API setup');
-    return;
-  }
+  // Always setup real DeepWiki API
+  console.log('🚀 Setting up real DeepWiki API integration');
 
   try {
     // Load the deepWikiApiManager from apps/api

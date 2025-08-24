@@ -1,0 +1,282 @@
+[
+  {
+    "title": "Use of deprecated API",
+    "severity": "high",
+    "category": "code-quality",
+    "file": "source/core/constants.ts",
+    "line": 15,
+    "impact": "Using deprecated APIs can lead to compatibility issues in the future.",
+    "codeSnippet": "const supportsReadableStream = typeof globalThis.ReadableStream === 'function';",
+    "fix": "Check for alternative APIs or update to the latest standards.",
+    "recommendation": "Refactor code to use updated APIs.",
+    "location": {
+      "file": "test/helpers/index.ts",
+      "line": 1,
+      "column": 0
+    },
+    "description": "Using deprecated APIs can lead to compatibility issues in the future.",
+    "suggestion": "Check for alternative APIs or update to the latest standards.",
+    "id": "issue-pull-700-head-1756053971468-0",
+    "message": "Using deprecated APIs can lead to compatibility issues in the future."
+  },
+  {
+    "title": "Potential denial of service vulnerability",
+    "severity": "high",
+    "category": "security",
+    "file": "test/retry.ts",
+    "line": 25,
+    "impact": "Excessive retries can lead to server overload.",
+    "codeSnippet": "retry: { limit: 3, methods: ['get'] }",
+    "fix": "Limit the number of retries based on response time.",
+    "recommendation": "Implement exponential backoff for retries.",
+    "location": {
+      "file": "test/retry.ts",
+      "line": 25,
+      "column": 0
+    },
+    "description": "Excessive retries can lead to server overload.",
+    "suggestion": "Limit the number of retries based on response time.",
+    "id": "issue-pull-700-head-1756053971468-1",
+    "message": "Excessive retries can lead to server overload."
+  },
+  {
+    "title": "Hardcoded URLs",
+    "severity": "medium",
+    "category": "architecture",
+    "file": "test/fetch.ts",
+    "line": 5,
+    "impact": "Hardcoded values can lead to issues when changing environments.",
+    "codeSnippet": "const fixture = 'https://example.com/unicorn';",
+    "fix": "Use environment variables for URLs.",
+    "recommendation": "Refactor to use configuration files.",
+    "location": {
+      "file": "test/fetch.ts",
+      "line": 42,
+      "column": 0
+    },
+    "description": "Hardcoded values can lead to issues when changing environments.",
+    "suggestion": "Use environment variables for URLs.",
+    "id": "issue-pull-700-head-1756053971468-2",
+    "message": "Hardcoded values can lead to issues when changing environments."
+  },
+  {
+    "title": "Missing error handling for network requests",
+    "severity": "high",
+    "category": "code-quality",
+    "file": "source/core/constants.ts",
+    "line": 30,
+    "impact": "Uncaught errors can crash the application.",
+    "codeSnippet": "return new Response(input.url);",
+    "fix": "Add try-catch blocks around network requests.",
+    "recommendation": "Implement comprehensive error handling.",
+    "location": {
+      "file": "source/core/constants.ts",
+      "line": 16,
+      "column": 0
+    },
+    "description": "Uncaught errors can crash the application.",
+    "suggestion": "Add try-catch blocks around network requests.",
+    "id": "issue-pull-700-head-1756053971468-3",
+    "message": "Uncaught errors can crash the application."
+  },
+  {
+    "title": "Use of unvalidated user input",
+    "severity": "high",
+    "category": "security",
+    "file": "test/hooks.ts",
+    "line": 50,
+    "impact": "Can lead to injection vulnerabilities.",
+    "codeSnippet": "await ky.get(server.url, {hooks: { beforeRequest: [() => new Response(expectedResponse)] }});",
+    "fix": "Validate and sanitize user input.",
+    "recommendation": "Implement input validation libraries.",
+    "location": {
+      "file": "test/hooks.ts",
+      "line": 99,
+      "column": 0
+    },
+    "description": "Can lead to injection vulnerabilities.",
+    "suggestion": "Validate and sanitize user input.",
+    "id": "issue-pull-700-head-1756053971468-4",
+    "message": "Can lead to injection vulnerabilities."
+  },
+  {
+    "title": "Outdated dependency on AVA",
+    "severity": "medium",
+    "category": "dependencies",
+    "file": "package.json",
+    "line": 18,
+    "impact": "Using outdated testing libraries can lead to missing features and security vulnerabilities.",
+    "codeSnippet": "\"ava\": \"^5.3.1\",",
+    "fix": "Update AVA to the latest version.",
+    "recommendation": "Regularly check and update dependencies.",
+    "location": {
+      "file": "package.json",
+      "line": 18,
+      "column": 0
+    },
+    "description": "Using outdated testing libraries can lead to missing features and security vulnerabilities.",
+    "suggestion": "Update AVA to the latest version.",
+    "id": "issue-pull-700-head-1756053971468-5",
+    "message": "Using outdated testing libraries can lead to missing features and security vulnerabilities."
+  },
+  {
+    "title": "Inefficient use of Promises",
+    "severity": "medium",
+    "category": "performance",
+    "file": "test/stream.ts",
+    "line": 60,
+    "impact": "Inefficient promise handling can lead to performance bottlenecks.",
+    "codeSnippet": "await Promise.all([...])",
+    "fix": "Use async/await effectively to reduce promise overhead.",
+    "recommendation": "Refactor promise chains for better performance.",
+    "location": {
+      "file": "test/stream.ts",
+      "line": 7,
+      "column": 0
+    },
+    "description": "Inefficient promise handling can lead to performance bottlenecks.",
+    "suggestion": "Use async/await effectively to reduce promise overhead.",
+    "id": "issue-pull-700-head-1756053971468-6",
+    "message": "Inefficient promise handling can lead to performance bottlenecks."
+  },
+  {
+    "title": "Inconsistent error messages",
+    "severity": "low",
+    "category": "code-quality",
+    "file": "test/hooks.ts",
+    "line": 90,
+    "impact": "Inconsistent error messages can make debugging difficult.",
+    "codeSnippet": "throw new Error('Unexpected error occurred');",
+    "fix": "Standardize error messages across the application.",
+    "recommendation": "Create a centralized error handling module.",
+    "location": {
+      "file": "test/hooks.ts",
+      "line": 3,
+      "column": 0
+    },
+    "description": "Inconsistent error messages can make debugging difficult.",
+    "suggestion": "Standardize error messages across the application.",
+    "id": "issue-pull-700-head-1756053971468-7",
+    "message": "Inconsistent error messages can make debugging difficult."
+  },
+  {
+    "title": "Lack of input validation in API",
+    "severity": "high",
+    "category": "security",
+    "file": "test/main.ts",
+    "line": 120,
+    "impact": "Can lead to unexpected behavior or security vulnerabilities.",
+    "codeSnippet": "const json = {foo: true};",
+    "fix": "Implement input validation for API endpoints.",
+    "recommendation": "Use libraries like Joi or Yup for validation.",
+    "location": {
+      "file": "test/main.ts",
+      "line": 753,
+      "column": 0
+    },
+    "description": "Can lead to unexpected behavior or security vulnerabilities.",
+    "suggestion": "Implement input validation for API endpoints.",
+    "id": "issue-pull-700-head-1756053971468-8",
+    "message": "Can lead to unexpected behavior or security vulnerabilities."
+  },
+  {
+    "title": "Memory leak potential in event listeners",
+    "severity": "high",
+    "category": "performance",
+    "file": "test/memory-leak.ts",
+    "line": 30,
+    "impact": "Unreleased event listeners can lead to memory leaks.",
+    "codeSnippet": "server.get('/', () => {});",
+    "fix": "Ensure to remove event listeners when not needed.",
+    "recommendation": "Use proper cleanup methods for event listeners.",
+    "location": {
+      "file": "test/memory-leak.ts",
+      "line": 8,
+      "column": 0
+    },
+    "description": "Unreleased event listeners can lead to memory leaks.",
+    "suggestion": "Ensure to remove event listeners when not needed.",
+    "id": "issue-pull-700-head-1756053971468-9",
+    "message": "Unreleased event listeners can lead to memory leaks."
+  },
+  {
+    "title": "Circular dependency detected",
+    "severity": "medium",
+    "category": "architecture",
+    "file": "source/core/constants.ts",
+    "line": 15,
+    "impact": "Circular dependencies can lead to unpredictable behavior.",
+    "codeSnippet": "import {type HttpMethod, type KyOptionsRegistry} from '../types/options.js';",
+    "fix": "Refactor the imports to eliminate circular dependencies.",
+    "recommendation": "Analyze the module structure and adjust as necessary.",
+    "location": {
+      "file": "test/helpers/index.ts",
+      "line": 1,
+      "column": 0
+    },
+    "description": "Circular dependencies can lead to unpredictable behavior.",
+    "suggestion": "Refactor the imports to eliminate circular dependencies.",
+    "id": "issue-pull-700-head-1756053971468-10",
+    "message": "Circular dependencies can lead to unpredictable behavior."
+  },
+  {
+    "title": "Uncaught exceptions in async functions",
+    "severity": "high",
+    "category": "code-quality",
+    "file": "test/retry.ts",
+    "line": 45,
+    "impact": "Uncaught exceptions can crash the application.",
+    "codeSnippet": "await ky(server.url, {retry: { limit: 3 }});",
+    "fix": "Wrap async calls in try-catch blocks.",
+    "recommendation": "Implement global error handling for uncaught exceptions.",
+    "location": {
+      "file": "test/retry.ts",
+      "line": 11,
+      "column": 0
+    },
+    "description": "Uncaught exceptions can crash the application.",
+    "suggestion": "Wrap async calls in try-catch blocks.",
+    "id": "issue-pull-700-head-1756053971468-11",
+    "message": "Uncaught exceptions can crash the application."
+  },
+  {
+    "title": "Unoptimized data fetching",
+    "severity": "medium",
+    "category": "performance",
+    "file": "test/browser.ts",
+    "line": 10,
+    "impact": "Inefficient data fetching can slow down the application.",
+    "codeSnippet": "await ky(url, { method: 'post', body: formData });",
+    "fix": "Optimize data fetching strategies.",
+    "recommendation": "Consider using batch requests or caching.",
+    "location": {
+      "file": "test/browser.ts",
+      "line": 118,
+      "column": 0
+    },
+    "description": "Inefficient data fetching can slow down the application.",
+    "suggestion": "Optimize data fetching strategies.",
+    "id": "issue-pull-700-head-1756053971468-12",
+    "message": "Inefficient data fetching can slow down the application."
+  },
+  {
+    "title": "Unused variables in tests",
+    "severity": "low",
+    "category": "code-quality",
+    "file": "test/headers.ts",
+    "line": 20,
+    "impact": "Unused variables can clutter code and reduce readability.",
+    "codeSnippet": "const unusedVar = 'This is not used';",
+    "fix": "Remove unused variables.",
+    "recommendation": "Regularly review code for unused variables.",
+    "location": {
+      "file": "test/headers.ts",
+      "line": 7,
+      "column": 0
+    },
+    "description": "Unused variables can clutter code and reduce readability.",
+    "suggestion": "Remove unused variables.",
+    "id": "issue-pull-700-head-1756053971468-13",
+    "message": "Unused variables can clutter code and reduce readability."
+  }
+]

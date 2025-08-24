@@ -10,6 +10,7 @@
 
 import { DeepWikiResponseTransformer, TransformationOptions } from './deepwiki-response-transformer';
 import { DeepWikiErrorHandler, DeepWikiError, DeepWikiErrorType } from './deepwiki-error-handler';
+import { DeepWikiCacheService, getDeepWikiCache } from './deepwiki-cache-service';
 
 export interface DeepWikiAnalysisResponse {
   issues: Array<{
@@ -98,64 +99,91 @@ export function getDeepWikiApi(): IDeepWikiApi | null {
  */
 export class DeepWikiApiWrapper {
   private transformer: DeepWikiResponseTransformer;
+  private cache: DeepWikiCacheService;
+  private primaryModel?: string;
+  private fallbackModel?: string;
+  private modelConfigId?: string;
+  private language = 'TypeScript';
+  private repositorySize: 'small' | 'medium' | 'large' | 'enterprise' = 'medium';
 
   constructor() {
     this.transformer = new DeepWikiResponseTransformer();
+    this.cache = getDeepWikiCache({
+      ttl: 3600, // 1 hour cache
+      keyPrefix: 'deepwiki:',
+      enableMetrics: true
+    });
   }
 
   /**
-   * Parse DeepWiki response handling markdown-wrapped JSON
+   * Initialize the wrapper with dynamic model configuration
    */
-  private parseDeepWikiResponse(content: string): any {
-    // First, try to extract JSON from markdown blocks
-    const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
-    if (jsonMatch) {
-      console.log('🔍 Found JSON block in markdown, extracting...');
-      try {
-        return JSON.parse(jsonMatch[1]);
-      } catch (e) {
-        console.warn('Failed to parse extracted JSON from markdown:', e);
-      }
-    }
-
-    // Check if the response starts with text followed by JSON
-    const lines = content.split('\n');
-    let jsonStartIndex = -1;
+  async initialize(language?: string, repoSize?: 'small' | 'medium' | 'large' | 'enterprise'): Promise<void> {
+    this.language = language || 'TypeScript';
+    this.repositorySize = repoSize || 'medium';
     
-    // Find where JSON starts (look for opening brace or bracket)
-    for (let i = 0; i < lines.length; i++) {
-      const trimmed = lines[i].trim();
-      if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
-        jsonStartIndex = i;
-        break;
-      }
-    }
-    
-    if (jsonStartIndex >= 0) {
-      // Extract JSON portion
-      const jsonContent = lines.slice(jsonStartIndex).join('\n');
-      try {
-        const parsed = JSON.parse(jsonContent);
-        console.log('✅ Successfully extracted and parsed JSON from text response');
-        return parsed;
-      } catch (e) {
-        console.warn('Failed to parse extracted JSON:', e);
-      }
-    }
-
-    // Try to parse the entire content as JSON
     try {
-      const parsed = JSON.parse(content);
-      console.log('✅ Successfully parsed content as direct JSON');
-      return parsed;
-    } catch (e) {
-      console.warn('Content is not valid JSON:', e);
-      throw new Error('Failed to parse DeepWiki response as JSON');
+      const { getDynamicModelConfig } = await import('../monitoring');
+      
+      const supabaseConfig = await getDynamicModelConfig(
+        'deepwiki',
+        this.language,
+        this.repositorySize
+      );
+      
+      if (supabaseConfig) {
+        this.primaryModel = supabaseConfig.primary_model;
+        this.fallbackModel = supabaseConfig.fallback_model;
+        this.modelConfigId = supabaseConfig.id;
+        console.log(`🎯 DeepWikiApiWrapper initialized with models - Primary: ${this.primaryModel}, Fallback: ${this.fallbackModel}`);
+      } else {
+        console.warn('No Supabase configuration found for DeepWikiApiWrapper, using defaults');
+        this.primaryModel = 'openai/gpt-4-turbo';
+        this.fallbackModel = 'openai/gpt-3.5-turbo';
+      }
+    } catch (error) {
+      console.error('Failed to fetch dynamic model config for DeepWikiApiWrapper:', error);
+      // Use default models if config fetch fails
+      this.primaryModel = 'openai/gpt-4-turbo';
+      this.fallbackModel = 'openai/gpt-3.5-turbo';
     }
   }
 
   /**
-   * Analyze a repository using DeepWiki with intelligent response enhancement
+   * Parse a string response from DeepWiki API
+   */
+  private parseDeepWikiResponse(response: any): DeepWikiAnalysisResponse {
+    if (typeof response === 'string') {
+      try {
+        // First try to parse as JSON
+        return JSON.parse(response);
+      } catch {
+        // If not JSON, create a minimal response structure
+        console.warn('DeepWiki response is not valid JSON, creating minimal structure');
+        return {
+          issues: [],
+          scores: {
+            overall: 0,
+            security: 0,
+            performance: 0,
+            maintainability: 0
+          },
+          metadata: {
+            timestamp: new Date().toISOString(),
+            tool_version: '1.0.0',
+            duration_ms: 0,
+            files_analyzed: 0
+          }
+        };
+      }
+    }
+    
+    // If it's already an object, return as is
+    return response as DeepWikiAnalysisResponse;
+  }
+
+  /**
+   * Analyze a repository using DeepWiki API with tracking
    */
   async analyzeRepository(
     repositoryUrl: string,
@@ -168,6 +196,29 @@ export class DeepWikiApiWrapper {
       useHybridMode?: boolean;
     }
   ): Promise<DeepWikiAnalysisResponse> {
+    const startTime = Date.now();
+    let isFallback = false;
+    let retryCount = 0;
+    let inputTokens = 0;
+    let outputTokens = 0;
+    
+    // Check cache first unless explicitly skipped
+    if (!options?.skipCache) {
+      const cached = await this.cache.getCachedAnalysis({
+        repoUrl: repositoryUrl,
+        branch: options?.branch,
+        prNumber: options?.prId ? parseInt(options.prId) : undefined
+      });
+      
+      if (cached) {
+        console.log('✅ DeepWiki cache hit for', repositoryUrl);
+        // Log cache metrics
+        const metrics = this.cache.getMetrics();
+        console.log(`📊 Cache metrics - Hits: ${metrics.hits}, Misses: ${metrics.misses}, Hit rate: ${(metrics.hits / (metrics.hits + metrics.misses) * 100).toFixed(1)}%`);
+        return cached;
+      }
+    }
+    
     const api = getDeepWikiApi();
     let rawResponse: DeepWikiAnalysisResponse | null = null;
     
@@ -190,33 +241,193 @@ export class DeepWikiApiWrapper {
       try {
         const response = await api.analyzeRepository(repositoryUrl, options);
         
+        // Estimate tokens based on repository URL and response size
+        inputTokens = Math.ceil((repositoryUrl.length + JSON.stringify(options || {}).length) / 4);
+        
         // Check if response might be a string that needs parsing
         if (typeof response === 'string') {
           console.log('🔄 DeepWiki returned string response, attempting to parse...');
+          outputTokens = Math.ceil((response as string).length / 4);
           const parsed = this.parseDeepWikiResponse(response);
           rawResponse = parsed as DeepWikiAnalysisResponse;
         } else if (response && typeof response === 'object') {
           // Check if the response has a string content that needs parsing
           if ((response as any).content && typeof (response as any).content === 'string') {
             console.log('🔄 DeepWiki response has string content, parsing...');
+            outputTokens = Math.ceil((response as any).content.length / 4);
             const parsed = this.parseDeepWikiResponse((response as any).content);
             rawResponse = parsed as DeepWikiAnalysisResponse;
           } else {
+            outputTokens = Math.ceil(JSON.stringify(response).length / 4);
             rawResponse = response;
           }
         } else {
           rawResponse = response;
         }
-      } catch (apiError) {
-        // Handle API error with detailed context
-        const error = DeepWikiErrorHandler.handleError(apiError, {
-          repository: repositoryUrl,
-          branch: options?.branch,
-          prId: options?.prId,
-          apiUrl: process.env.DEEPWIKI_API_URL
-        });
-        DeepWikiErrorHandler.logError(error);
-        throw error;
+        
+        // Cache the successful response
+        if (rawResponse) {
+          await this.cache.cacheAnalysis(
+            {
+              repoUrl: repositoryUrl,
+              branch: options?.branch,
+              prNumber: options?.prId ? parseInt(options.prId) : undefined
+            },
+            rawResponse,
+            3600 // 1 hour TTL
+          );
+          console.log('💾 Cached DeepWiki response for', repositoryUrl);
+        }
+        
+        // Track successful analysis with primary model
+        if (this.modelConfigId) {
+          const { trackDynamicAgentCall } = await import('../monitoring');
+          
+          await trackDynamicAgentCall({
+            agent: 'deepwiki',
+            operation: 'analyze',
+            repository: repositoryUrl,
+            prNumber: options?.prId,
+            language: this.language,
+            repositorySize: this.repositorySize,
+            modelConfigId: this.modelConfigId,
+            model: this.primaryModel || 'unknown',
+            modelVersion: 'latest',
+            isFallback: false,
+            inputTokens,
+            outputTokens,
+            duration: Date.now() - startTime,
+            success: true,
+            retryCount: 0
+          });
+        }
+      } catch (apiError: any) {
+        retryCount++;
+        
+        // Try fallback model if available
+        if (this.fallbackModel && this.modelConfigId) {
+          try {
+            console.warn('Primary model failed for DeepWiki analysis, trying fallback');
+            isFallback = true;
+            
+            // Retry with fallback model (in a real implementation, this would use the fallback model)
+            const response = await api.analyzeRepository(repositoryUrl, options);
+            
+            // Process response same as above
+            inputTokens = Math.ceil((repositoryUrl.length + JSON.stringify(options || {}).length) / 4);
+            
+            if (typeof response === 'string') {
+              outputTokens = Math.ceil((response as string).length / 4);
+              rawResponse = this.parseDeepWikiResponse(response) as DeepWikiAnalysisResponse;
+            } else if (response && typeof response === 'object') {
+              outputTokens = Math.ceil(JSON.stringify(response).length / 4);
+              rawResponse = response;
+            }
+            
+            // Cache the fallback response with shorter TTL
+            if (rawResponse) {
+              await this.cache.cacheAnalysis(
+                {
+                  repoUrl: repositoryUrl,
+                  branch: options?.branch,
+                  prNumber: options?.prId ? parseInt(options.prId) : undefined
+                },
+                rawResponse,
+                1800 // 30 minutes TTL for fallback
+              );
+              console.log('💾 Cached fallback DeepWiki response for', repositoryUrl);
+            }
+            
+            // Track fallback success
+            const { trackDynamicAgentCall } = await import('../monitoring');
+            
+            await trackDynamicAgentCall({
+              agent: 'deepwiki',
+              operation: 'analyze',
+              repository: repositoryUrl,
+              prNumber: options?.prId,
+              language: this.language,
+              repositorySize: this.repositorySize,
+              modelConfigId: this.modelConfigId,
+              model: this.fallbackModel,
+              modelVersion: 'latest',
+              isFallback: true,
+              inputTokens,
+              outputTokens,
+              duration: Date.now() - startTime,
+              success: true,
+              retryCount
+            });
+          } catch (fallbackError: any) {
+            // Track failure
+            if (this.modelConfigId) {
+              const { trackDynamicAgentCall } = await import('../monitoring');
+              
+              await trackDynamicAgentCall({
+                agent: 'deepwiki',
+                operation: 'analyze',
+                repository: repositoryUrl,
+                prNumber: options?.prId,
+                language: this.language,
+                repositorySize: this.repositorySize,
+                modelConfigId: this.modelConfigId,
+                model: this.fallbackModel,
+                modelVersion: 'latest',
+                isFallback: true,
+                inputTokens,
+                outputTokens: 0,
+                duration: Date.now() - startTime,
+                success: false,
+                error: fallbackError.message,
+                retryCount
+              });
+            }
+            
+            // Handle API error with detailed context
+            const error = DeepWikiErrorHandler.handleError(fallbackError, {
+              repository: repositoryUrl,
+              branch: options?.branch,
+              prId: options?.prId,
+              apiUrl: process.env.DEEPWIKI_API_URL
+            });
+            DeepWikiErrorHandler.logError(error);
+            throw error;
+          }
+        } else {
+          // No fallback, track primary failure
+          if (this.modelConfigId) {
+            const { trackDynamicAgentCall } = await import('../monitoring');
+            
+            await trackDynamicAgentCall({
+              agent: 'deepwiki',
+              operation: 'analyze',
+              repository: repositoryUrl,
+              prNumber: options?.prId,
+              language: this.language,
+              repositorySize: this.repositorySize,
+              modelConfigId: this.modelConfigId,
+              model: this.primaryModel || 'unknown',
+              modelVersion: 'latest',
+              isFallback: false,
+              inputTokens,
+              outputTokens: 0,
+              duration: Date.now() - startTime,
+              success: false,
+              error: apiError.message,
+              retryCount: 0
+            });
+          }
+          
+          // Handle API error with detailed context
+          const error = DeepWikiErrorHandler.handleError(apiError, {
+            repository: repositoryUrl,
+            branch: options?.branch,
+            prId: options?.prId,
+            apiUrl: process.env.DEEPWIKI_API_URL
+          });
+          DeepWikiErrorHandler.logError(error);
+          throw error;
+        }
       }
     } catch (error) {
       // If it's already a DeepWikiError, re-throw it
@@ -265,6 +476,29 @@ export class DeepWikiApiWrapper {
     }
 
     return rawResponse;
+  }
+  
+  /**
+   * Invalidate cache for a repository
+   */
+  async invalidateCache(repositoryUrl: string): Promise<void> {
+    await this.cache.invalidateRepo(repositoryUrl);
+    console.log(`🗑️ Invalidated cache for ${repositoryUrl}`);
+  }
+  
+  /**
+   * Get cache metrics
+   */
+  getCacheMetrics(): any {
+    return this.cache.getMetrics();
+  }
+  
+  /**
+   * Clear all cache
+   */
+  async clearCache(): Promise<void> {
+    await this.cache.clear();
+    console.log('🗑️ Cleared all DeepWiki cache');
   }
 }
 

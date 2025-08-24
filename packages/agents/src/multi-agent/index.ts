@@ -20,10 +20,7 @@ export {
   createMultiAgentAuthMiddleware,
   createExpressAuthMiddleware 
 } from './auth-middleware';
-export { 
-  MockAuthenticationServiceImpl,
-  createMockAuthenticationService 
-} from './mock-auth-service';
+// Mock authentication service has been removed - use real implementations
 export {
   SupabaseAuthenticationService,
   createSupabaseAuthenticationService,

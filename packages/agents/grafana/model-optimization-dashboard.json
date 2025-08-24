@@ -1,0 +1,344 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "model-optimization",
+    "title": "CodeQual Model Usage & Optimization",
+    "tags": ["codequal", "models", "optimization", "costs"],
+    "timezone": "browser",
+    "schemaVersion": 38,
+    "version": 1,
+    "refresh": "30s",
+    "panels": [
+      {
+        "id": 1,
+        "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+        "type": "stat",
+        "title": "Total Models in Use",
+        "targets": [
+          {
+            "datasource": {
+              "type": "postgres",
+              "uid": "${datasource}"
+            },
+            "rawSql": "SELECT COUNT(DISTINCT model_used) as value FROM agent_activity WHERE timestamp > EXTRACT(EPOCH FROM NOW() - INTERVAL '24 hours') * 1000",
+            "format": "table"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "steps": [
+                { "value": 0, "color": "green" },
+                { "value": 5, "color": "yellow" },
+                { "value": 10, "color": "red" }
+              ]
+            },
+            "unit": "none"
+          }
+        }
+      },
+      {
+        "id": 2,
+        "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+        "type": "stat",
+        "title": "Most Expensive Model",
+        "targets": [
+          {
+            "datasource": {
+              "type": "postgres",
+              "uid": "${datasource}"
+            },
+            "rawSql": "SELECT model_used as value, SUM(cost) as cost FROM agent_activity WHERE timestamp > EXTRACT(EPOCH FROM NOW() - INTERVAL '24 hours') * 1000 GROUP BY model_used ORDER BY cost DESC LIMIT 1",
+            "format": "table"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": { "mode": "fixed", "fixedColor": "red" },
+            "unit": "none"
+          }
+        }
+      },
+      {
+        "id": 3,
+        "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+        "type": "stat",
+        "title": "Potential Monthly Savings",
+        "description": "Based on optimization recommendations",
+        "targets": [
+          {
+            "datasource": {
+              "type": "postgres",
+              "uid": "${datasource}"
+            },
+            "rawSql": "WITH monthly_costs AS (SELECT model_used, SUM(cost) * 30 as monthly_cost FROM agent_activity WHERE timestamp > EXTRACT(EPOCH FROM NOW() - INTERVAL '1 day') * 1000 GROUP BY model_used) SELECT SUM(CASE WHEN model_used LIKE '%gpt-4%' THEN monthly_cost * 0.3 WHEN model_used LIKE '%opus%' THEN monthly_cost * 0.4 ELSE 0 END) as value FROM monthly_costs",
+            "format": "table"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": { "mode": "fixed", "fixedColor": "green" },
+            "unit": "currencyUSD",
+            "decimals": 2
+          }
+        }
+      },
+      {
+        "id": 4,
+        "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+        "type": "stat",
+        "title": "Model Diversity Score",
+        "description": "Higher is better for redundancy",
+        "targets": [
+          {
+            "datasource": {
+              "type": "postgres",
+              "uid": "${datasource}"
+            },
+            "rawSql": "WITH model_counts AS (SELECT COUNT(DISTINCT model_used) as models, COUNT(DISTINCT agent_role) as agents FROM agent_activity WHERE timestamp > EXTRACT(EPOCH FROM NOW() - INTERVAL '24 hours') * 1000) SELECT (models::float / GREATEST(agents, 1)) * 100 as value FROM model_counts",
+            "format": "table"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "steps": [
+                { "value": 0, "color": "red" },
+                { "value": 50, "color": "yellow" },
+                { "value": 80, "color": "green" }
+              ]
+            },
+            "unit": "percent"
+          }
+        }
+      },
+      {
+        "id": 5,
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+        "type": "piechart",
+        "title": "Model Usage by Agent",
+        "targets": [
+          {
+            "datasource": {
+              "type": "postgres",
+              "uid": "${datasource}"
+            },
+            "rawSql": "SELECT agent_role || ' - ' || model_used as metric, COUNT(*) as value FROM agent_activity WHERE timestamp > EXTRACT(EPOCH FROM NOW() - INTERVAL '24 hours') * 1000 GROUP BY agent_role, model_used ORDER BY value DESC",
+            "format": "table"
+          }
+        ],
+        "options": {
+          "pieType": "donut",
+          "displayLabels": ["name", "percent"],
+          "legendDisplayMode": "table",
+          "legendPlacement": "right"
+        }
+      },
+      {
+        "id": 6,
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+        "type": "bargauge",
+        "title": "Cost per Agent-Model Combination",
+        "targets": [
+          {
+            "datasource": {
+              "type": "postgres",
+              "uid": "${datasource}"
+            },
+            "rawSql": "SELECT agent_role || ' (' || model_used || ')' as metric, SUM(cost) as value FROM agent_activity WHERE timestamp > EXTRACT(EPOCH FROM NOW() - INTERVAL '24 hours') * 1000 GROUP BY agent_role, model_used ORDER BY value DESC LIMIT 10",
+            "format": "table"
+          }
+        ],
+        "options": {
+          "orientation": "horizontal",
+          "displayMode": "gradient",
+          "showUnfilled": true
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "currencyUSD",
+            "decimals": 2,
+            "color": {
+              "mode": "continuous-GrYlRd"
+            }
+          }
+        }
+      },
+      {
+        "id": 7,
+        "gridPos": { "h": 8, "w": 24, "x": 0, "y": 12 },
+        "type": "timeseries",
+        "title": "Model Usage Trends by Agent",
+        "targets": [
+          {
+            "datasource": {
+              "type": "postgres",
+              "uid": "${datasource}"
+            },
+            "rawSql": "SELECT to_timestamp(timestamp/1000) as time, agent_role || ' - ' || model_used as metric, COUNT(*) as value FROM agent_activity WHERE timestamp > EXTRACT(EPOCH FROM NOW() - INTERVAL '7 days') * 1000 GROUP BY time, agent_role, model_used ORDER BY time",
+            "format": "time_series"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth",
+              "lineWidth": 2,
+              "fillOpacity": 10,
+              "gradientMode": "opacity",
+              "spanNulls": true,
+              "showPoints": "never",
+              "pointSize": 5,
+              "stacking": {
+                "mode": "none"
+              },
+              "axisPlacement": "auto",
+              "axisLabel": "",
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            },
+            "unit": "short"
+          }
+        },
+        "options": {
+          "tooltip": {
+            "mode": "multi"
+          },
+          "legend": {
+            "displayMode": "table",
+            "placement": "bottom"
+          }
+        }
+      },
+      {
+        "id": 8,
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+        "type": "table",
+        "title": "Top Operation-Model Combinations",
+        "targets": [
+          {
+            "datasource": {
+              "type": "postgres",
+              "uid": "${datasource}"
+            },
+            "rawSql": "SELECT operation, model_used, agent_role, COUNT(*) as calls, AVG(duration_ms)/1000 as avg_duration_sec, SUM(cost) as total_cost, AVG(cost) as avg_cost FROM agent_activity WHERE timestamp > EXTRACT(EPOCH FROM NOW() - INTERVAL '24 hours') * 1000 GROUP BY operation, model_used, agent_role ORDER BY calls DESC LIMIT 20",
+            "format": "table"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "align": "auto",
+              "displayMode": "auto"
+            }
+          },
+          "overrides": [
+            {
+              "matcher": { "id": "byName", "options": "total_cost" },
+              "properties": [
+                { "id": "unit", "value": "currencyUSD" },
+                { "id": "decimals", "value": 2 }
+              ]
+            },
+            {
+              "matcher": { "id": "byName", "options": "avg_cost" },
+              "properties": [
+                { "id": "unit", "value": "currencyUSD" },
+                { "id": "decimals", "value": 4 }
+              ]
+            },
+            {
+              "matcher": { "id": "byName", "options": "avg_duration_sec" },
+              "properties": [
+                { "id": "unit", "value": "s" },
+                { "id": "decimals", "value": 1 }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": 9,
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+        "type": "heatmap",
+        "title": "Model Performance Heatmap",
+        "description": "Success rate by model and hour",
+        "targets": [
+          {
+            "datasource": {
+              "type": "postgres",
+              "uid": "${datasource}"
+            },
+            "rawSql": "SELECT EXTRACT(HOUR FROM to_timestamp(timestamp/1000)) as hour, model_used, AVG(CASE WHEN success THEN 100 ELSE 0 END) as success_rate FROM agent_activity WHERE timestamp > EXTRACT(EPOCH FROM NOW() - INTERVAL '7 days') * 1000 GROUP BY hour, model_used ORDER BY hour, model_used",
+            "format": "table"
+          }
+        ],
+        "options": {
+          "calculate": false,
+          "cellGap": 1,
+          "color": {
+            "scheme": "RdYlGn"
+          }
+        }
+      },
+      {
+        "id": 10,
+        "gridPos": { "h": 8, "w": 24, "x": 0, "y": 28 },
+        "type": "table",
+        "title": "Model Optimization Recommendations",
+        "description": "Potential cost savings by switching models",
+        "targets": [
+          {
+            "datasource": {
+              "type": "postgres",
+              "uid": "${datasource}"
+            },
+            "rawSql": "WITH model_stats AS (SELECT agent_role, operation, model_used, COUNT(*) as call_count, AVG(input_tokens) as avg_input, AVG(output_tokens) as avg_output, SUM(cost) as total_cost FROM agent_activity WHERE timestamp > EXTRACT(EPOCH FROM NOW() - INTERVAL '7 days') * 1000 GROUP BY agent_role, operation, model_used) SELECT agent_role, operation, model_used as current_model, CASE WHEN model_used LIKE '%gpt-4%' THEN 'gpt-4o-mini' WHEN model_used LIKE '%opus%' THEN 'claude-3-haiku' ELSE model_used END as recommended_model, call_count, total_cost as current_cost, CASE WHEN model_used LIKE '%gpt-4%' THEN total_cost * 0.3 WHEN model_used LIKE '%opus%' THEN total_cost * 0.2 ELSE total_cost END as projected_cost, CASE WHEN model_used LIKE '%gpt-4%' THEN total_cost * 0.7 WHEN model_used LIKE '%opus%' THEN total_cost * 0.8 ELSE 0 END as potential_savings FROM model_stats WHERE call_count > 10 ORDER BY potential_savings DESC LIMIT 15",
+            "format": "table"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "align": "auto",
+              "displayMode": "auto"
+            }
+          },
+          "overrides": [
+            {
+              "matcher": { "id": "byName", "options": "current_cost" },
+              "properties": [
+                { "id": "unit", "value": "currencyUSD" },
+                { "id": "decimals", "value": 2 },
+                { "id": "custom.displayMode", "value": "color-background" },
+                { "id": "color", "value": { "mode": "continuous-RdYlGr" } }
+              ]
+            },
+            {
+              "matcher": { "id": "byName", "options": "potential_savings" },
+              "properties": [
+                { "id": "unit", "value": "currencyUSD" },
+                { "id": "decimals", "value": 2 },
+                { "id": "custom.displayMode", "value": "gradient-gauge" },
+                { "id": "color", "value": { "mode": "continuous-GrYlRd" } }
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "time": {
+      "from": "now-24h",
+      "to": "now"
+    },
+    "timepicker": {
+      "refresh_intervals": ["10s", "30s", "1m", "5m", "15m", "30m", "1h"],
+      "time_options": ["5m", "15m", "1h", "6h", "12h", "24h", "2d", "7d", "30d"]
+    }
+  },
+  "overwrite": true
+}

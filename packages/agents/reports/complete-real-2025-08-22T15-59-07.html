@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeQual Report - PR #700 - sindresorhus/ky</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 { font-size: 2.5em; margin-bottom: 10px; }
+        .header .subtitle { font-size: 1.1em; opacity: 0.9; }
+        
+        .key-metrics {
+            background: #f8f9fa;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .metric-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            text-align: center;
+        }
+        
+        .metric-value {
+            font-size: 2.2em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+        
+        .metric-label {
+            font-size: 0.85em;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .content { padding: 40px; }
+        
+        h1, h2 { 
+            color: #667eea; 
+            border-bottom: 2px solid #e0e0e0; 
+            padding-bottom: 8px; 
+            margin: 25px 0 15px; 
+        }
+        h3 { color: #555; margin: 20px 0 10px; }
+        
+        /* Special highlighting for Analysis Iterations */
+        .analysis-iterations-section {
+            background: linear-gradient(135deg, #667eea10, #764ba210);
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        
+        .analysis-iterations-section h3 {
+            color: #667eea;
+            margin-top: 0;
+            font-size: 1.3em;
+        }
+        
+        .analysis-iterations-section ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .analysis-iterations-section li {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(102, 126, 234, 0.1);
+        }
+        
+        .analysis-iterations-section li:last-child {
+            border-bottom: none;
+        }
+        
+        .analysis-iterations-section strong {
+            color: #764ba2;
+            min-width: 150px;
+            display: inline-block;
+        }
+        
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Consolas', monospace;
+            font-size: 0.9em;
+        }
+        
+        .timestamp {
+            text-align: center;
+            color: #999;
+            font-size: 0.9em;
+            margin: 20px 0;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 CodeQual Analysis Report</h1>
+            <div class="subtitle">
+                sindresorhus/ky - Pull Request #700
+            </div>
+        </div>
+        
+        <div class="key-metrics">
+            <div class="metric-card">
+                <div class="metric-value">75/100</div>
+                <div class="metric-label">Quality Score</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">4</div>
+                <div class="metric-label">Iterations</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">92%</div>
+                <div class="metric-label">Completeness</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">12</div>
+                <div class="metric-label">Files Changed</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">+345/-89</div>
+                <div class="metric-label">Lines Changed</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">78%</div>
+                <div class="metric-label">Test Coverage</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">7</div>
+                <div class="metric-label">New Issues</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">0</div>
+                <div class="metric-label">Repo Issues</div>
+            </div>
+        </div>
+        
+        <div class="content" id="content">
+            <!-- Markdown content will be rendered here -->
+        </div>
+        
+        <div class="timestamp">
+            Generated: 8/22/2025, 11:59:07 AM | 
+            Model: openai/gpt-4o-mini |
+            Duration: 0.03s
+        </div>
+    </div>
+    
+    <script>
+        // Convert markdown to HTML
+        const markdownContent = "# CodeQual Analysis Report V8\n\n**Repository:** sindresorhus/ky\n**PR:** #700 - Add retry mechanism for failed requests\n**Author:** sindresorhus\n**Branch:** feature/retry-mechanism → main\n**Files Changed:** 12 | **Lines:** +345/-89\n**Generated:** 8/22/2025, 11:59:07 AM | **Duration:** 0.0s\n**AI Model:** openai/gpt-4o-mini\n\n---\n\n## Executive Summary\n\n**Quality Score:** 86/100 (B) → 0\n**Decision:** DECLINED ❌\n\n### Issue Summary\n- 🔴 **Critical:** 2 | 🟠 **High:** 1 | 🟡 **Medium:** 2 | 🟢 **Low:** 2\n- **New Issues:** 7 | **Resolved:** 4 | **Unchanged (from repo):** 0\n\n### Key Metrics\n- **Security Score:** 80/100\n- **Performance Score:** 80/100\n- **Maintainability:** 90/100\n- **Test Coverage:** 78%\n\n---\n\n## PR Decision\n\n### DECLINED ❌\n**Reason:** 2 critical issue(s) must be addressed, 1 high severity issue(s) must be addressed\n\n**Required Actions:**\n- Fix all critical issues before merging\n- Address high priority issues\n\n---\n\n## 1. Consolidated Issues (Single Source of Truth)\n\n### 📍 New Issues (Introduced in this PR)\n\n#### 🔴 Critical Severity (2)\n\n##### [CRITICAL-1] Sample pr-700 Issue 3\n\n📁 **Location:** `src/file3.ts:182`\n📝 **Description:** This is a sample issue found in pr-700 branch\n🏷️ **Category:** Maintainability | **Type:** issue\n\n🔍 **Problematic Code:**\n```typescript\n// Code at src/file3.ts:182\n// Sample pr-700 Issue 3\n```\n\n##### [CRITICAL-2] Sample pr-700 Issue 7\n\n📁 **Location:** `src/file7.ts:96`\n📝 **Description:** This is a sample issue found in pr-700 branch\n🏷️ **Category:** Security | **Type:** issue\n\n🔍 **Problematic Code:**\n```typescript\n// Code at src/file7.ts:96\n// Sample pr-700 Issue 7\n```\n\n#### 🟠 High Severity (1)\n\n##### [HIGH-1] Sample pr-700 Issue 2\n\n📁 **Location:** `src/file2.ts:17`\n📝 **Description:** This is a sample issue found in pr-700 branch\n🏷️ **Category:** Security | **Type:** issue\n\n🔍 **Problematic Code:**\n```typescript\n// Code at src/file2.ts:17\n// Sample pr-700 Issue 2\n```\n\n#### 🟡 Medium Severity (2)\n\n##### [MEDIUM-1] Sample pr-700 Issue 4\n\n📁 **Location:** `src/file4.ts:119`\n📝 **Description:** This is a sample issue found in pr-700 branch\n🏷️ **Category:** Performance | **Type:** issue\n\n🔍 **Problematic Code:**\n```typescript\n// Code at src/file4.ts:119\n// Sample pr-700 Issue 4\n```\n\n##### [MEDIUM-2] Sample pr-700 Issue 5\n\n📁 **Location:** `src/file5.ts:58`\n📝 **Description:** This is a sample issue found in pr-700 branch\n🏷️ **Category:** Maintainability | **Type:** issue\n\n🔍 **Problematic Code:**\n```typescript\n// Code at src/file5.ts:58\n// Sample pr-700 Issue 5\n```\n\n#### 🟢 Low Severity (2)\n\n##### [LOW-1] Sample pr-700 Issue 1\n\n📁 **Location:** `src/file1.ts:98`\n📝 **Description:** This is a sample issue found in pr-700 branch\n🏷️ **Category:** Performance | **Type:** issue\n\n🔍 **Problematic Code:**\n```typescript\n// Code at src/file1.ts:98\n// Sample pr-700 Issue 1\n```\n\n##### [LOW-2] Sample pr-700 Issue 6\n\n📁 **Location:** `src/file6.ts:197`\n📝 **Description:** This is a sample issue found in pr-700 branch\n🏷️ **Category:** Architecture | **Type:** issue\n\n🔍 **Problematic Code:**\n```typescript\n// Code at src/file6.ts:197\n// Sample pr-700 Issue 6\n```\n\n\n### ✅ Resolved Issues\n\n- **issue:** Sample main Issue 1 (src/file1.ts:91)\n- **issue:** Sample main Issue 2 (src/file2.ts:147)\n- **issue:** Sample main Issue 3 (src/file3.ts:189)\n- **issue:** Sample main Issue 4 (src/file4.ts:133)\n\n\n---\n\n## 2. Security Analysis\n\n⚠️ **2 security issues require attention**\n\n### Security Issues by Severity\n- **Critical:** 1 issue(s)\n- **High:** 1 issue(s)\n\n### OWASP Top 10 Mapping\n- **A02:2021 – Cryptographic Failures:** 2 issue(s)\n\n### Top Security Issues\n- **Issue detected in pr-700 branch** (src/file2.ts:17)\n  - Impact: high severity\n- **Issue detected in pr-700 branch** (src/file7.ts:96)\n  - Impact: critical severity\n\n---\n\n## 3. Performance Analysis\n\n### Performance Metrics\n- **Issues Found:** 2\n- **Estimated Impact:** Low (< 100ms)\n- **Affected Operations:** None\n\n### Top Performance Issues\n- **Issue detected in pr-700 branch** (src/file1.ts:98)\n  - Impact: This is a sample issue found in pr-700 branch\n- **Issue detected in pr-700 branch** (src/file4.ts:119)\n  - Impact: This is a sample issue found in pr-700 branch\n\n---\n\n## 4. Code Quality Analysis\n\n### Quality Metrics\n- **Code Quality Score:** 100/100\n- **Test Coverage:** 78%\n- **Complexity:** Medium\n- **Technical Debt:** 1.8 hours\n\n### Test Coverage Analysis\n- **Current Coverage:** 78%\n- **Target Coverage:** 80%\n- **Gap:** 2%\n- **Status:** 🟡 Warning\n\n\n\n---\n\n## 5. Architecture Analysis\n\n### Architectural Health\n- **Issues Found:** 1\n- **Design Patterns:** MVC, Repository, Observer\n- **Anti-patterns:** God Object (0), Spaghetti Code (0)\n\n### Architectural Considerations\n1. **Issue detected in pr-700 branch**\n   - Location: src/file6.ts:197\n   - Impact: low severity\n\n### System Architecture Overview\n\n**Score: 92/100**\n\n```\n     ┌──────────┐      ┌──────────┐      ┌──────────┐\n     │ Frontend │─────▶│   API    │─────▶│ Backend  │\n     │ ✅ Clean │      │ ✅ Clean │      │ ✅ Clean │\n     └────┬─────┘      └────┬─────┘      └────┬─────┘\n          │                 │                  │\n          │           ┌─────▼─────┐     ┌─────▼─────┐\n          │           │   Cache   │     │ Database  │\n          │           │ ✅ Clean │     │ ✅ Clean │\n          │           └───────────┘     └───────────┘\n          │                     │              │\n          └─────────────────────┼──────────────┘\n                                │\n                          ┌─────▼─────┐\n                          │ Security  │\n                          │ ⚠️ Issue │\n                          └───────────┘\n```\n\n**Component Health Status:**\n- Frontend: ✅ Clean\n- API Gateway: ✅ Clean\n- Backend Services: ✅ Clean\n- Cache Layer: ✅ Clean\n- Database: ✅ Clean\n- Security: ⚠️ Issues detected\n\n\n**ℹ️ 1 architectural consideration(s) found:**\n\n1. **Issue detected in pr-700 branch**\n   - File: `src/file6.ts` (Line 197)\n   - Severity: low\n\n\n\n---\n\n## 6. Dependencies Analysis\n\n### Dependency Health\n- **Total Dependencies:** 142\n- **Vulnerable:** 0\n- **Outdated:** 3\n- **License Issues:** 0\n\n### Dependency Risk Score\n- **Security Risk:** 🟢 Low\n- **Maintenance Risk:** 🟡 Medium\n- **License Risk:** 🟢 Low\n\n### 📦 Outdated Dependencies\n- **react**: 17.0.2 → 18.2.0 (major version behind)\n- **typescript**: 4.5.5 → 5.3.3 (major version behind)\n- **jest**: 27.5.1 → 29.7.0 (major version behind)\n\n---\n\n## 7. Breaking Changes\n\n⚠️ **2 potential breaking change(s) detected**\n\n### Changes Requiring Migration\n\n1. **Potential Breaking Change:** Issue detected in pr-700 branch\n   - **File:** `src/file2.ts:17`\n   - **Impact:** May affect functionality\n   - **Migration:** Review and test thoroughly\n   - **Affected:** Systems dependent on this component\n\n2. **Potential Breaking Change:** Issue detected in pr-700 branch\n   - **File:** `src/file3.ts:182`\n   - **Impact:** May affect functionality\n   - **Migration:** Review and test thoroughly\n   - **Affected:** Systems dependent on this component\n\n### Risk Assessment\n- **Breaking Change Risk:** 🟡 Medium\n- **Migration Complexity:** 🟡 Moderate\n- **Consumer Impact:** 🟢 Minimal\n\n### Recommended Actions\n1. Review all breaking changes carefully\n2. Update documentation with migration guides\n3. Consider backward compatibility layer\n4. Communicate changes to consumers\n5. Version bump: Minor version (0.x.0)\n\n---\n\n## 8. Educational Insights & Learning Resources\n\n### Issue-Specific Learning Resources\n\n#### Performance Optimization (2 found)\n**Specific Issues:**\n- Issue detected in pr-700 branch (`src/file1.ts:98`)\n- Issue detected in pr-700 branch (`src/file4.ts:119`)\n\n**Targeted Learning Resources:**\n- [Clean Code Principles](https://github.com/ryanmcdermott/clean-code-javascript) - GitHub Guide (General code quality improvement)\n\n#### Security Vulnerabilities (2 found)\n**Specific Issues:**\n- Issue detected in pr-700 branch (`src/file2.ts:17`)\n- Issue detected in pr-700 branch (`src/file7.ts:96`)\n\n**Targeted Learning Resources:**\n- [Clean Code Principles](https://github.com/ryanmcdermott/clean-code-javascript) - GitHub Guide (General code quality improvement)\n\n#### General Issues (2 found)\n**Specific Issues:**\n- Issue detected in pr-700 branch (`src/file3.ts:182`)\n- Issue detected in pr-700 branch (`src/file5.ts:58`)\n\n**Targeted Learning Resources:**\n- [Clean Code Principles](https://github.com/ryanmcdermott/clean-code-javascript) - GitHub Guide (General code quality improvement)\n\n#### Architecture and Design (1 found)\n**Specific Issues:**\n- Issue detected in pr-700 branch (`src/file6.ts:197`)\n\n**Targeted Learning Resources:**\n- [Clean Code Principles](https://github.com/ryanmcdermott/clean-code-javascript) - GitHub Guide (General code quality improvement)\n\n### Personalized Learning Path\n\nBased on your PR analysis, here's your recommended learning path:\n\n**1. 🔴 Immediate Focus: Security Fundamentals**\n   - ⏱️ **Estimated Time:** 1 hour\n   - 🎯 **Why:** You have 2 critical security issue(s) that need immediate attention\n   - 📚 **Specific Training:**\n     • OWASP Top 10 Security Risks (30 min)\n     • Secure Coding in TypeScript (45 min)\n     • Input Validation & Sanitization (30 min)\n   - 🔗 **Start here:** [OWASP Security Fundamentals](https://owasp.org/www-project-top-ten/)\n\n**2. ⚡ Performance Optimization**\n   - ⏱️ **Estimated Time:** 1 hour\n   - 🎯 **Why:** 2 performance issue(s) affecting user experience\n   - 📚 **Specific Training:**\n     • Database Query Optimization (30 min)\n     • Caching Strategies & Implementation (45 min)\n     • Profiling & Performance Monitoring (30 min)\n   - 🔗 **Start here:** [Web Performance Fundamentals](https://web.dev/learn/performance/)\n\n**3. 🏗️ Architecture & Design Patterns**\n   - ⏱️ **Estimated Time:** 1 hour\n   - 🎯 **Why:** 1 architectural issue(s) found\n   - 📚 **Specific Training:**\n     • SOLID Principles (45 min)\n     • Design Patterns in Practice (60 min)\n     • Refactoring Techniques (30 min)\n   - 🔗 **Start here:** [Software Design Patterns](https://refactoring.guru/design-patterns)\n\n**4. 📝 Code Quality & Best Practices**\n   - ⏱️ **Estimated Time:** 1 hour\n   - 🎯 **Why:** 1 quality issue(s) need addressing\n   - 📚 **Specific Training:**\n     • Clean Code Principles (30 min)\n     • Code Review Best Practices (15 min)\n     • Testing Strategies (15 min)\n   - 🔗 **Start here:** [Clean Code Summary](https://github.com/ryanmcdermott/clean-code-javascript)\n\n   - Topics: Design patterns, SOLID principles, clean code\n\n\n⏱️ **Total Learning Time Required:** 4 hours\n📈 **Expected Improvement:** 90% reduction in similar issues\n\n\n\n---\n\n## 9. Skill Tracking & Progress\n\n### Score Calculation for This PR\n\n#### Base Score: 50/100 (New User Starting Score)\n\n#### Score Changes:\n✅ **Resolved Issues (+9 points)**\n  • 2 low issues: +1 points (2 × 0.5)\n  • 1 high issue: +3 points (1 × 3)\n  • 1 critical issue: +5 points (1 × 5)\n\n❌ **New Issues (-16 points)**\n  • 2 low issues: -1 points (2 × 0.5)\n  • 1 high issue: -3 points (1 × 3)\n  • 2 critical issues: -10 points (2 × 5)\n  • 2 medium issues: -2 points (2 × 1)\n\n\n\n#### **Total Score Change: -7 points**\n#### **New Score: 43/100** 📉\n\n---\n\n### Individual Skills by Category\n| Skill Category | Current Score | Impact | Calculation | Target |\n|---------------|--------------|--------|-------------|--------|\n| **Security** | 70/100 | -5 | 1 critical, 2 high | 90/100 |\n| **Performance** | 81/100 | -1.5 | 1 medium, 1 low | 90/100 |\n| **Code Quality** | 88/100 | +0 | No changes | 95/100 |\n| **Testing** | 72/100 | +0 | No changes | 85/100 |\n| **Architecture** | 84/100 | +5 | 1 critical, 2 low | 90/100 |\n\n### Team Skills Comparison\n| Developer | Overall Score | Rank | Improvement Rate | Strengths |\n|-----------|--------------|------|-----------------|-----------| \n| **You** | 43/100 | 3/10 | -7pts | Code Quality, Performance |\n| Team Average | 76/100 | - | +3.1pts | - |\n| Top Performer | 92/100 | 1/10 | +8.4pts | All areas |\n\n### Skill Trends (Last 6 PRs)\n```\nSecurity:     70 → 72 → 71 → 73 → 74 → 75 📈 (+7.1%)\nPerformance:  78 → 77 → 79 → 80 → 81 → 82 📈 (+5.1%)\nCode Quality: 85 → 84 → 86 → 87 → 88 → 88 📊 (+3.5%)\nTesting:      68 → 69 → 70 → 71 → 70 → 72 📈 (+5.9%)\nArchitecture: 76 → 77 → 77 → 78 → 79 → 79 📈 (+3.9%)\n```\n\n### Areas of Improvement\n1. **Testing Coverage** - Currently at 72%, needs +8% to reach 80% target\n2. **Security Best Practices** - Focus on JWT handling and SQL injection prevention\n3. **Performance Optimization** - Learn about query optimization and caching\n\n### Achievements Unlocked 🏆\n- ⚠️ **No achievements this PR** - Critical issues must be resolved first\n- 💡 Fix the 2 critical issue(s) to unlock achievements\n\n---\n\n#### 📊 **Scoring System Explained**\n```\nPoints are calculated based on issue severity:\n• Critical Issue = 5 points\n• High Issue = 3 points  \n• Medium Issue = 1 point\n• Low Issue = 0.5 points\n\nExample Calculation:\n• Resolved: 1 critical (+5), 2 high (+6) = +11 points\n• New Issues: 2 high (-6), 1 medium (-1) = -7 points\n• Existing: 1 medium (-1), 2 low (-1) = -2 points\n• Total Change: +11 -7 -2 = +2 points\n• New Score: 75 (base) + 2 = 77/100\n\n💡 TIP: Fix existing backlog issues to boost your score!\n```\n\n---\n\n## 10. Business Impact Analysis\n\n### Executive Summary\n⚠️ **CRITICAL RISK**: 2 critical issue(s) pose immediate threat to production\n- **Potential Downtime Risk**: HIGH - System failure possible\n- **Security Exposure**: 1 critical security vulnerabilities\n- **Customer Impact**: Service disruption affecting all users\n- **Compliance Risk**: Potential violation of security standards\n\n### Financial Impact\n- **Immediate Fix Cost**: $263 (1.8 hours @ $150/hr)\n- **Technical Debt Cost**: $394.5 if deferred 6 months\n- **Potential Incident Cost**: $31,000\n- **ROI of Fixing Now**: 11687%\n\n### Risk Assessment Matrix\n| Risk Category | Score | Impact | Likelihood | Mitigation Priority |\n|--------------|-------|--------|------------|-------------------|\n| **Security** | 65/100 | CRITICAL | Likely | P0 - Immediate |\n| **Performance** | 15/100 | MEDIUM | Likely | P2 - Next Sprint |\n| **Availability** | 5/100 | MEDIUM | Possible | P2 - Next Sprint |\n| **Compliance** | 30/100 | MEDIUM | Very Likely | P2 - Next Sprint |\n\n### Time to Resolution\n- **Critical Issues**: 4.0 hours\n- **High Priority**: 1.5 hours\n- **Total Sprint Impact**: 1.8 hours\n- **Recommended Timeline**: Fix immediately before deployment\n\n### Customer Impact Assessment\n- **Affected Users**: 100% - All users at risk\n- **Service Degradation**: Minor - Response time <2s increase\n- **Data Risk**: MEDIUM - Security vulnerabilities\n- **Brand Impact**: Severe - Potential PR crisis\n\n---\n\n## 11. Action Items & Next Steps\n\n### 🚨 Immediate Priority (Critical Issues)\n1. **Issue detected in pr-700 branch**\n   - Location: src/file3.ts:182\n   - Fix: See details above\n   - Time: ~30 minutes\n2. **Issue detected in pr-700 branch**\n   - Location: src/file7.ts:96\n   - Fix: See details above\n   - Time: ~30 minutes\n\n### ⚠️ This Sprint (High Priority)\n1. **Issue detected in pr-700 branch**\n   - Location: src/file2.ts:17\n\n### 📋 Backlog (Medium & Low Priority)\n1. Issue detected in pr-700 branch (medium)\n2. Issue detected in pr-700 branch (medium)\n3. Issue detected in pr-700 branch (low)\n4. Issue detected in pr-700 branch (low)\n\n### 📈 Improvement Path\n1. **Today:** Fix 2 critical security issues\n2. **This Week:** Address 1 high priority issues\n3. **This Sprint:** Improve test coverage to 80%\n4. **Next Sprint:** Refactor architectural issues\n\n---\n\n## 12. AI IDE Integration\n\n### 🤖 AI Assistant Quick Fix\n\n**🟠 HIGH Priority Issue Requires Immediate Attention:**\n\n📍 **Location:** `src/file2.ts:17`\n📝 **Issue:** Issue detected in pr-700 branch\n⚠️ **Impact:** This is a sample issue found in pr-700 branch\n\n### 💡 Quick Fix Command\n\nCopy this to your AI IDE (Cursor/Copilot):\n\n```\nFix high security in src/file2.ts:17\nApply best practices to resolve this issue\n```\n\n### ✅ Validation\n\nAfter fixing:\n1. Run tests: `npm test`\n2. Verify fix: `npm run lint`\n3. Check types: `npm run typecheck`\n\n📊 **Note:** 2 additional issues found. Fix this priority issue first, then re-run analysis.\n\n---\n\n## 13. GitHub PR Comment\n\n```markdown\n📋 Copy this comment to post on the PR:\n\n## CodeQual Analysis Results\n\n### ❌ DECLINED\n\n⚠️ **3 blocking issue(s) must be fixed before merge**\n\n#### 🚨 Blocking Issues:\n1. ****CRITICAL**:** Issue detected in pr-700 branch\n   - 📁 Location: `src/file3.ts:182`\n   - ❌ Impact: This is a sample issue found in pr-700 branch\n   - 💡 Fix: Use parameterized queries or prepared statements\n2. ****CRITICAL**:** Issue detected in pr-700 branch\n   - 📁 Location: `src/file7.ts:96`\n   - ❌ Impact: This is a sample issue found in pr-700 branch\n   - 💡 Fix: Use parameterized queries or prepared statements\n3. ****HIGH**:** Issue detected in pr-700 branch\n   - 📁 Location: `src/file2.ts:17`\n   - ⚠️ Impact: This is a sample issue found in pr-700 branch\n   - 💡 Fix: Use parameterized queries or prepared statements\n\n#### ℹ️ Additional Issues:\n- **MEDIUM:** 2 issue(s)\n- **LOW:** 2 issue(s)\n\n---\n\n**Generated by CodeQual AI Analysis Platform v7.0**\nAnalysis Date: 2025-08-22, 15:59:07 | Confidence: 94% | Support: support@codequal.com\n```\n\n---\n\n## Report Metadata\n\n### Analysis Details\n- **Generated:** 2025-08-22T15:59:07.899Z\n- **Version:** V8 Final\n- **Analysis ID:** CQ-1755878347899\n- **Repository:** sindresorhus/ky\n- **PR Number:** #700\n- **Base Commit:** abc123\n- **Head Commit:** def456\n- **Files Analyzed:** 12\n- **Lines Changed:** +345/-89\n- **Scan Duration:** 0.0s\n- **AI Model:** openai/gpt-4o-mini\n- **Report Format:** Markdown v8\n- **Timestamp:** 1755878347899\n### Analysis Iterations\n- **Total Iterations:** 4\n- **Completeness:** 92%\n- **Memory Used:** 256.00MB\n- **Cache Hit:** No\n\n---\n\n*Powered by CodeQual V8 - AI-Driven Code Quality Analysis*";
+        document.getElementById('content').innerHTML = marked.parse(markdownContent);
+        
+        // Find and enhance the Analysis Iterations section
+        const headings = document.querySelectorAll('h3');
+        headings.forEach(h => {
+            if (h.textContent.includes('Analysis Iterations')) {
+                // Create special section
+                const section = document.createElement('div');
+                section.className = 'analysis-iterations-section';
+                h.parentNode.insertBefore(section, h);
+                
+                // Move content into special section
+                let nextElement = h;
+                while (nextElement && !nextElement.tagName.match(/^H[123]$/)) {
+                    const temp = nextElement.nextSibling;
+                    section.appendChild(nextElement);
+                    nextElement = temp;
+                }
+            }
+        });
+    </script>
+</body>
+</html>

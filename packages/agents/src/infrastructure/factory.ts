@@ -34,7 +34,6 @@ export interface Environment {
  */
 export interface ProviderOptions {
   useCache?: boolean;
-  useMock?: boolean;
   cacheProvider?: 'redis' | 'memory';
 }
 
@@ -81,12 +80,6 @@ async function createConfigProvider(
   env: Environment,
   options: ProviderOptions
 ): Promise<IConfigProvider> {
-  if (options.useMock) {
-    // Import dynamically to avoid production dependencies
-    const { MockConfigProvider } = await import('./mock/mock-config-provider.js');
-    return new MockConfigProvider();
-  }
-  
   return new SupabaseConfigProvider(
     env.SUPABASE_URL,
     env.SUPABASE_ANON_KEY
@@ -100,11 +93,6 @@ async function createSkillProvider(
   env: Environment,
   options: ProviderOptions
 ): Promise<ISkillProvider> {
-  if (options.useMock) {
-    const { MockSkillProvider } = await import('./mock/mock-skill-provider.js');
-    return new MockSkillProvider();
-  }
-  
   return new SupabaseSkillProvider(
     env.SUPABASE_URL,
     env.SUPABASE_ANON_KEY
@@ -118,11 +106,6 @@ async function createDataStore(
   env: Environment,
   options: ProviderOptions
 ): Promise<IDataStore> {
-  if (options.useMock) {
-    const { MockDataStore } = await import('./mock/mock-data-store.js');
-    return new MockDataStore();
-  }
-  
   // Create base Supabase store
   const baseStore = new SupabaseDataStore(
     env.SUPABASE_URL,
@@ -144,8 +127,8 @@ async function createDataStore(
  * Create researcher agent
  */
 function createResearcherAgent(env: Environment): ResearcherAgent {
-  // Create a mock authenticated user for the researcher
-  const mockUser: AuthenticatedUser = {
+  // Create a system authenticated user for the researcher
+  const systemUser: AuthenticatedUser = {
     id: 'system',
     email: 'system@example.com',
     name: 'System User',
@@ -177,7 +160,7 @@ function createResearcherAgent(env: Environment): ResearcherAgent {
     }
   };
   
-  return new ResearcherAgent(mockUser);
+  return new ResearcherAgent(systemUser);
 }
 
 /**
@@ -187,11 +170,6 @@ async function createEducatorAgent(
   env: Environment,
   options: ProviderOptions
 ): Promise<IEducatorAgent | undefined> {
-  if (options.useMock) {
-    const { MockEducatorAgent } = await import('./mock/mock-educator-agent.js');
-    return new MockEducatorAgent();
-  }
-  
   // Only create educator if search model is available
   if (!env.SEARCH_MODEL_API_KEY) {
     return undefined;
@@ -250,7 +228,7 @@ export class OrchestratorFactory {
    * Get or create orchestrator instance (singleton per environment)
    */
   static async getInstance(env: Environment, options?: ProviderOptions): Promise<ComparisonOrchestrator> {
-    const key = `${env.NODE_ENV}-${options?.useMock ? 'mock' : 'real'}`;
+    const key = `${env.NODE_ENV}-${options?.useCache ? 'cached' : 'direct'}`;
     
     if (!this.instances.has(key)) {
       this.instances.set(key, await createOrchestrator(env, options));
@@ -298,12 +276,12 @@ export async function createProductionOrchestrator(): Promise<ComparisonOrchestr
  */
 export async function createTestOrchestrator(): Promise<ComparisonOrchestrator> {
   const env: Environment = {
-    SUPABASE_URL: 'mock',
-    SUPABASE_ANON_KEY: 'mock',
+    SUPABASE_URL: process.env.SUPABASE_URL || 'https://test.supabase.co',
+    SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || 'test-key',
     NODE_ENV: 'test'
   };
   
   return createOrchestrator(env, {
-    useMock: true
+    useCache: false
   });
 }

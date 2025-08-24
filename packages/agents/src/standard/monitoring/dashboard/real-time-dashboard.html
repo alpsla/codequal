@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CodeQual Real-Time Performance Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/index.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .dashboard {
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+    
+    header {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    }
+    
+    h1 {
+      color: #1a202c;
+      font-size: 32px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .subtitle {
+      color: #718096;
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    
+    .status-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      background: #10b981;
+      color: white;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    
+    .status-indicator.live::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      background: white;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+    
+    .metric-card {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .metric-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    }
+    
+    .metric-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    
+    .metric-title {
+      color: #4a5568;
+      font-size: 14px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .metric-icon {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      font-size: 18px;
+    }
+    
+    .metric-value {
+      font-size: 36px;
+      font-weight: 700;
+      color: #1a202c;
+      margin-bottom: 8px;
+    }
+    
+    .metric-change {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+    }
+    
+    .metric-change.positive {
+      color: #10b981;
+    }
+    
+    .metric-change.negative {
+      color: #ef4444;
+    }
+    
+    .chart-container {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+    
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    
+    .chart-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #1a202c;
+    }
+    
+    .time-selector {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .time-btn {
+      padding: 6px 12px;
+      border: 1px solid #e2e8f0;
+      background: white;
+      border-radius: 6px;
+      color: #4a5568;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .time-btn:hover {
+      background: #f7fafc;
+    }
+    
+    .time-btn.active {
+      background: #667eea;
+      color: white;
+      border-color: #667eea;
+    }
+    
+    .agents-table {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    th {
+      text-align: left;
+      padding: 12px;
+      color: #4a5568;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+    
+    td {
+      padding: 16px 12px;
+      border-bottom: 1px solid #f7fafc;
+    }
+    
+    tr:hover {
+      background: #f7fafc;
+    }
+    
+    .agent-name {
+      font-weight: 600;
+      color: #1a202c;
+    }
+    
+    .model-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    
+    .model-badge.primary {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+    
+    .model-badge.fallback {
+      background: #fef3c7;
+      color: #92400e;
+    }
+    
+    .success-rate {
+      font-weight: 600;
+    }
+    
+    .success-rate.high { color: #10b981; }
+    .success-rate.medium { color: #f59e0b; }
+    .success-rate.low { color: #ef4444; }
+    
+    .refresh-info {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 12px 16px;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      font-size: 12px;
+      color: #4a5568;
+    }
+    
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      display: none;
+    }
+    
+    .loading-overlay.active {
+      display: flex;
+    }
+    
+    .loader {
+      width: 48px;
+      height: 48px;
+      border: 4px solid #f3f4f6;
+      border-top-color: #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loader"></div>
+  </div>
+  
+  <div class="dashboard">
+    <header>
+      <h1>
+        🚀 CodeQual Real-Time Performance Dashboard
+      </h1>
+      <div class="subtitle">
+        <span id="lastUpdate">Last updated: Never</span>
+        <span class="status-indicator live">LIVE</span>
+      </div>
+    </header>
+    
+    <!-- Key Metrics -->
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-header">
+          <span class="metric-title">Total Analyses</span>
+          <div class="metric-icon" style="background: #dbeafe;">📊</div>
+        </div>
+        <div class="metric-value" id="totalAnalyses">0</div>
+        <div class="metric-change positive">
+          <span>↑</span>
+          <span id="analysesChange">+0% from last hour</span>
+        </div>
+      </div>
+      
+      <div class="metric-card">
+        <div class="metric-header">
+          <span class="metric-title">Success Rate</span>
+          <div class="metric-icon" style="background: #d1fae5;">✓</div>
+        </div>
+        <div class="metric-value" id="successRate">0%</div>
+        <div class="metric-change" id="successChange">
+          <span>→</span>
+          <span>Stable</span>
+        </div>
+      </div>
+      
+      <div class="metric-card">
+        <div class="metric-header">
+          <span class="metric-title">Avg Response Time</span>
+          <div class="metric-icon" style="background: #fef3c7;">⚡</div>
+        </div>
+        <div class="metric-value" id="avgResponseTime">0ms</div>
+        <div class="metric-change negative">
+          <span>↓</span>
+          <span id="responseTimeChange">-5% faster</span>
+        </div>
+      </div>
+      
+      <div class="metric-card">
+        <div class="metric-header">
+          <span class="metric-title">Total Cost Today</span>
+          <div class="metric-icon" style="background: #fce7f3;">💰</div>
+        </div>
+        <div class="metric-value" id="totalCost">$0.00</div>
+        <div class="metric-change" id="costChange">
+          <span>↑</span>
+          <span>+$0.00 from yesterday</span>
+        </div>
+      </div>
+      
+      <div class="metric-card">
+        <div class="metric-header">
+          <span class="metric-title">Active Models</span>
+          <div class="metric-icon" style="background: #e9d5ff;">🤖</div>
+        </div>
+        <div class="metric-value" id="activeModels">0</div>
+        <div class="metric-change">
+          <span id="fallbackRate">0% fallback rate</span>
+        </div>
+      </div>
+      
+      <div class="metric-card">
+        <div class="metric-header">
+          <span class="metric-title">Cache Hit Rate</span>
+          <div class="metric-icon" style="background: #ccfbf1;">💾</div>
+        </div>
+        <div class="metric-value" id="cacheHitRate">0%</div>
+        <div class="metric-change positive">
+          <span>↑</span>
+          <span id="cacheChange">+5% improvement</span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Performance Chart -->
+    <div class="chart-container">
+      <div class="chart-header">
+        <h2 class="chart-title">Performance Over Time</h2>
+        <div class="time-selector">
+          <button class="time-btn active" data-range="1h">1H</button>
+          <button class="time-btn" data-range="6h">6H</button>
+          <button class="time-btn" data-range="24h">24H</button>
+          <button class="time-btn" data-range="7d">7D</button>
+        </div>
+      </div>
+      <canvas id="performanceChart" height="80"></canvas>
+    </div>
+    
+    <!-- Cost by Agent Chart -->
+    <div class="chart-container">
+      <div class="chart-header">
+        <h2 class="chart-title">Cost Distribution by Agent</h2>
+      </div>
+      <canvas id="costChart" height="80"></canvas>
+    </div>
+    
+    <!-- Agent Performance Table -->
+    <div class="agents-table">
+      <div class="chart-header">
+        <h2 class="chart-title">Agent Performance Details</h2>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Agent</th>
+            <th>Model</th>
+            <th>Operations</th>
+            <th>Success Rate</th>
+            <th>Avg Duration</th>
+            <th>Total Tokens</th>
+            <th>Cost</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="agentTableBody">
+          <!-- Dynamically populated -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+  
+  <div class="refresh-info">
+    Auto-refresh: <span id="refreshCountdown">30</span>s
+  </div>
+  
+  <script>
+    // Configuration
+    const API_ENDPOINT = '/api/monitoring/metrics';
+    const REFRESH_INTERVAL = 30000; // 30 seconds
+    
+    // State
+    let performanceChart = null;
+    let costChart = null;
+    let currentTimeRange = '1h';
+    let refreshTimer = 30;
+    
+    // Initialize charts
+    function initCharts() {
+      // Performance Chart
+      const perfCtx = document.getElementById('performanceChart').getContext('2d');
+      performanceChart = new Chart(perfCtx, {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [
+            {
+              label: 'Response Time (ms)',
+              data: [],
+              borderColor: '#667eea',
+              backgroundColor: 'rgba(102, 126, 234, 0.1)',
+              tension: 0.4,
+              yAxisID: 'y'
+            },
+            {
+              label: 'Success Rate (%)',
+              data: [],
+              borderColor: '#10b981',
+              backgroundColor: 'rgba(16, 185, 129, 0.1)',
+              tension: 0.4,
+              yAxisID: 'y1'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            mode: 'index',
+            intersect: false
+          },
+          plugins: {
+            legend: {
+              display: true,
+              position: 'top'
+            }
+          },
+          scales: {
+            x: {
+              display: true,
+              grid: {
+                display: false
+              }
+            },
+            y: {
+              type: 'linear',
+              display: true,
+              position: 'left',
+              title: {
+                display: true,
+                text: 'Response Time (ms)'
+              }
+            },
+            y1: {
+              type: 'linear',
+              display: true,
+              position: 'right',
+              title: {
+                display: true,
+                text: 'Success Rate (%)'
+              },
+              grid: {
+                drawOnChartArea: false
+              },
+              min: 0,
+              max: 100
+            }
+          }
+        }
+      });
+      
+      // Cost Chart
+      const costCtx = document.getElementById('costChart').getContext('2d');
+      costChart = new Chart(costCtx, {
+        type: 'bar',
+        data: {
+          labels: [],
+          datasets: [{
+            label: 'Cost by Agent ($)',
+            data: [],
+            backgroundColor: [
+              '#667eea',
+              '#764ba2',
+              '#10b981',
+              '#f59e0b',
+              '#ef4444',
+              '#8b5cf6',
+              '#ec4899'
+            ]
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'Cost ($)'
+              }
+            }
+          }
+        }
+      });
+    }
+    
+    // Fetch metrics from API
+    async function fetchMetrics() {
+      document.getElementById('loadingOverlay').classList.add('active');
+      
+      try {
+        // For demo, using mock data - replace with actual API call
+        const data = await generateMockData();
+        updateDashboard(data);
+      } catch (error) {
+        console.error('Failed to fetch metrics:', error);
+      } finally {
+        document.getElementById('loadingOverlay').classList.remove('active');
+      }
+    }
+    
+    // Generate mock data (replace with actual API call)
+    function generateMockData() {
+      const now = Date.now();
+      const agents = ['orchestrator', 'comparator', 'deepwiki', 'educator', 'researcher', 'location-validator'];
+      
+      return {
+        summary: {
+          totalAnalyses: 1247,
+          successRate: 94.3,
+          avgResponseTime: 342,
+          totalCost: 48.73,
+          activeModels: 6,
+          fallbackRate: 8.2,
+          cacheHitRate: 76.5
+        },
+        trends: {
+          analysesChange: 12.5,
+          successChange: -2.1,
+          responseTimeChange: -8.3,
+          costChange: 5.20,
+          cacheChange: 4.2
+        },
+        timeSeries: {
+          labels: Array.from({length: 12}, (_, i) => {
+            const time = new Date(now - (11 - i) * 5 * 60 * 1000);
+            return time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+          }),
+          responseTime: Array.from({length: 12}, () => 300 + Math.random() * 100),
+          successRate: Array.from({length: 12}, () => 90 + Math.random() * 10)
+        },
+        agentMetrics: agents.map(agent => ({
+          name: agent,
+          model: Math.random() > 0.9 ? 'gpt-3.5-turbo (fallback)' : 'gpt-4-turbo',
+          operations: Math.floor(Math.random() * 500),
+          successRate: 85 + Math.random() * 15,
+          avgDuration: 200 + Math.random() * 300,
+          totalTokens: Math.floor(Math.random() * 100000),
+          cost: Math.random() * 20,
+          status: Math.random() > 0.1 ? 'healthy' : 'degraded'
+        })),
+        costByAgent: agents.map(agent => ({
+          agent,
+          cost: Math.random() * 15
+        }))
+      };
+    }
+    
+    // Update dashboard with new data
+    function updateDashboard(data) {
+      // Update metrics
+      document.getElementById('totalAnalyses').textContent = data.summary.totalAnalyses.toLocaleString();
+      document.getElementById('successRate').textContent = data.summary.successRate.toFixed(1) + '%';
+      document.getElementById('avgResponseTime').textContent = data.summary.avgResponseTime + 'ms';
+      document.getElementById('totalCost').textContent = '$' + data.summary.totalCost.toFixed(2);
+      document.getElementById('activeModels').textContent = data.summary.activeModels;
+      document.getElementById('cacheHitRate').textContent = data.summary.cacheHitRate.toFixed(1) + '%';
+      document.getElementById('fallbackRate').textContent = data.summary.fallbackRate.toFixed(1) + '% fallback rate';
+      
+      // Update trends
+      updateTrend('analysesChange', data.trends.analysesChange, '%', 'from last hour');
+      updateTrend('responseTimeChange', data.trends.responseTimeChange, '%', 'faster');
+      updateTrend('costChange', data.trends.costChange, '$', 'from yesterday');
+      updateTrend('cacheChange', data.trends.cacheChange, '%', 'improvement');
+      
+      // Update success rate trend
+      const successChangeEl = document.getElementById('successChange');
+      if (data.trends.successChange > 0) {
+        successChangeEl.className = 'metric-change positive';
+        successChangeEl.innerHTML = `<span>↑</span><span>+${data.trends.successChange.toFixed(1)}%</span>`;
+      } else if (data.trends.successChange < 0) {
+        successChangeEl.className = 'metric-change negative';
+        successChangeEl.innerHTML = `<span>↓</span><span>${data.trends.successChange.toFixed(1)}%</span>`;
+      } else {
+        successChangeEl.className = 'metric-change';
+        successChangeEl.innerHTML = `<span>→</span><span>Stable</span>`;
+      }
+      
+      // Update charts
+      performanceChart.data.labels = data.timeSeries.labels;
+      performanceChart.data.datasets[0].data = data.timeSeries.responseTime;
+      performanceChart.data.datasets[1].data = data.timeSeries.successRate;
+      performanceChart.update();
+      
+      costChart.data.labels = data.costByAgent.map(item => item.agent);
+      costChart.data.datasets[0].data = data.costByAgent.map(item => item.cost);
+      costChart.update();
+      
+      // Update agent table
+      const tableBody = document.getElementById('agentTableBody');
+      tableBody.innerHTML = data.agentMetrics.map(agent => `
+        <tr>
+          <td class="agent-name">${agent.name}</td>
+          <td>
+            <span class="model-badge ${agent.model.includes('fallback') ? 'fallback' : 'primary'}">
+              ${agent.model}
+            </span>
+          </td>
+          <td>${agent.operations.toLocaleString()}</td>
+          <td>
+            <span class="success-rate ${agent.successRate > 95 ? 'high' : agent.successRate > 85 ? 'medium' : 'low'}">
+              ${agent.successRate.toFixed(1)}%
+            </span>
+          </td>
+          <td>${agent.avgDuration.toFixed(0)}ms</td>
+          <td>${agent.totalTokens.toLocaleString()}</td>
+          <td>$${agent.cost.toFixed(2)}</td>
+          <td>
+            <span style="color: ${agent.status === 'healthy' ? '#10b981' : '#f59e0b'}">
+              ${agent.status === 'healthy' ? '🟢' : '🟡'} ${agent.status}
+            </span>
+          </td>
+        </tr>
+      `).join('');
+      
+      // Update last refresh time
+      document.getElementById('lastUpdate').textContent = 'Last updated: ' + new Date().toLocaleTimeString();
+    }
+    
+    // Update trend display
+    function updateTrend(elementId, value, unit, suffix) {
+      const element = document.getElementById(elementId);
+      const prefix = value > 0 ? '+' : '';
+      if (unit === '$') {
+        element.textContent = `${prefix}${unit}${Math.abs(value).toFixed(2)} ${suffix}`;
+      } else {
+        element.textContent = `${prefix}${Math.abs(value).toFixed(1)}${unit} ${suffix}`;
+      }
+    }
+    
+    // Time range selector
+    document.querySelectorAll('.time-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        currentTimeRange = e.target.dataset.range;
+        fetchMetrics();
+      });
+    });
+    
+    // Auto-refresh countdown
+    setInterval(() => {
+      refreshTimer--;
+      if (refreshTimer <= 0) {
+        refreshTimer = 30;
+        fetchMetrics();
+      }
+      document.getElementById('refreshCountdown').textContent = refreshTimer;
+    }, 1000);
+    
+    // Initialize
+    initCharts();
+    fetchMetrics();
+  </script>
+</body>
+</html>

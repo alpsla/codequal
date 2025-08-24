@@ -49,8 +49,8 @@ export class AIDrivenParser {
     // Generate specialized prompt for the category
     const prompt = this.generateCategoryPrompt(config.category, config);
     
-    // If we're in mock mode or no AI available, use enhanced rule-based parsing
-    if (process.env.USE_DEEPWIKI_MOCK === 'true' || !model) {
+    // If no AI available, use enhanced rule-based parsing
+    if (!model) {
       return this.fallbackToPatternsWithAIStructure(deepWikiResponse, config);
     }
     

@@ -81,8 +81,8 @@ export class UnifiedAIParserEnhanced {
    * Initialize with repository context and select both primary and fallback models
    */
   async initialize(config: ParseConfig): Promise<void> {
-    // Skip model selection in mock mode
-    if (process.env.USE_DEEPWIKI_MOCK === 'true' || config.useAI === false) {
+    // Skip model selection when AI is disabled
+    if (config.useAI === false) {
       this.modelSelection = {
         primary: {
           model: 'mock-model',
@@ -97,7 +97,7 @@ export class UnifiedAIParserEnhanced {
           maxTokens: 2000
         }
       };
-      this.log('info', 'Using mock models for parsing (mock mode or AI disabled)');
+      this.log('info', 'Using mock models for parsing (AI disabled)');
       return;
     }
 
@@ -173,8 +173,8 @@ export class UnifiedAIParserEnhanced {
       await this.initialize(config);
     }
 
-    // If AI is disabled or in mock mode, use pattern-based parsing
-    if (process.env.USE_DEEPWIKI_MOCK === 'true' || config.useAI === false) {
+    // If AI is disabled, use pattern-based parsing
+    if (config.useAI === false) {
       return this.fallbackParsing(content, config);
     }
 

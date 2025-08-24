@@ -1,0 +1,282 @@
+[
+  {
+    "title": "Improper Input Validation",
+    "severity": "high",
+    "category": "security",
+    "file": "source/core/constants.ts",
+    "line": 15,
+    "impact": "Potential for unexpected behavior or security vulnerabilities if inputs are not properly validated.",
+    "codeSnippet": "const supportsRequestStreams = (() => { ... })();",
+    "fix": "Implement input validation checks before processing.",
+    "recommendation": "Ensure all user inputs are validated against expected formats.",
+    "location": {
+      "file": "source/core/constants.ts",
+      "line": 15,
+      "column": 0
+    },
+    "description": "Potential for unexpected behavior or security vulnerabilities if inputs are not properly validated.",
+    "suggestion": "Implement input validation checks before processing.",
+    "id": "issue-main-1756053940690-0",
+    "message": "Potential for unexpected behavior or security vulnerabilities if inputs are not properly validated."
+  },
+  {
+    "title": "Potential Denial of Service (DoS)",
+    "severity": "high",
+    "category": "performance",
+    "file": "test/retry.ts",
+    "line": 42,
+    "impact": "Excessive retries could lead to server overload.",
+    "codeSnippet": "await t.throwsAsync(ky(server.url, { retry: { limit: 3 } }).text(), { message: /Request Timeout/ });",
+    "fix": "Limit the number of retries and add backoff strategies.",
+    "recommendation": "Implement exponential backoff for retries.",
+    "location": {
+      "file": "test/retry.ts",
+      "line": 11,
+      "column": 0
+    },
+    "description": "Excessive retries could lead to server overload.",
+    "suggestion": "Limit the number of retries and add backoff strategies.",
+    "id": "issue-main-1756053940690-1",
+    "message": "Excessive retries could lead to server overload."
+  },
+  {
+    "title": "Uncaught Promise Rejections",
+    "severity": "medium",
+    "category": "code-quality",
+    "file": "test/hooks.ts",
+    "line": 35,
+    "impact": "Uncaught errors may crash the application.",
+    "codeSnippet": "await t.throwsAsync(ky.get(server.url, { hooks: { beforeRetry: [() => { throw error; }] } }));",
+    "fix": "Use try-catch to handle promise rejections.",
+    "recommendation": "Wrap async calls in try-catch blocks to handle exceptions gracefully.",
+    "location": {
+      "file": "test/hooks.ts",
+      "line": 180,
+      "column": 0
+    },
+    "description": "Uncaught errors may crash the application.",
+    "suggestion": "Use try-catch to handle promise rejections.",
+    "id": "issue-main-1756053940690-2",
+    "message": "Uncaught errors may crash the application."
+  },
+  {
+    "title": "Hardcoded URLs",
+    "severity": "medium",
+    "category": "architecture",
+    "file": "test/fetch.ts",
+    "line": 5,
+    "impact": "Hardcoding URLs can lead to maintenance issues and reduced flexibility.",
+    "codeSnippet": "const fixture = 'https://example.com/unicorn';",
+    "fix": "Use environment variables or configuration files for URLs.",
+    "recommendation": "Externalize configuration to improve maintainability.",
+    "location": {
+      "file": "test/fetch.ts",
+      "line": 42,
+      "column": 0
+    },
+    "description": "Hardcoding URLs can lead to maintenance issues and reduced flexibility.",
+    "suggestion": "Use environment variables or configuration files for URLs.",
+    "id": "issue-main-1756053940690-3",
+    "message": "Hardcoding URLs can lead to maintenance issues and reduced flexibility."
+  },
+  {
+    "title": "Lack of Rate Limiting",
+    "severity": "high",
+    "category": "security",
+    "file": "test/retry.ts",
+    "line": 12,
+    "impact": "Potential for abuse through excessive requests.",
+    "codeSnippet": "await t.throwsAsync(ky(server.url, { retry: { limit: 0 } }).text(), { message: /Request Timeout/ });",
+    "fix": "Implement rate limiting on API endpoints.",
+    "recommendation": "Use middleware to enforce rate limits.",
+    "location": {
+      "file": "test/retry.ts",
+      "line": 127,
+      "column": 0
+    },
+    "description": "Potential for abuse through excessive requests.",
+    "suggestion": "Implement rate limiting on API endpoints.",
+    "id": "issue-main-1756053940690-4",
+    "message": "Potential for abuse through excessive requests."
+  },
+  {
+    "title": "Missing Type Annotations",
+    "severity": "medium",
+    "category": "code-quality",
+    "file": "source/core/constants.ts",
+    "line": 8,
+    "impact": "Lack of type annotations can lead to runtime errors.",
+    "codeSnippet": "const supportsAbortController = typeof globalThis.AbortController === 'function';",
+    "fix": "Add TypeScript type annotations to variables and function parameters.",
+    "recommendation": "Ensure all variables and function parameters have explicit type annotations.",
+    "location": {
+      "file": "source/core/constants.ts",
+      "line": 1,
+      "column": 0
+    },
+    "description": "Lack of type annotations can lead to runtime errors.",
+    "suggestion": "Add TypeScript type annotations to variables and function parameters.",
+    "id": "issue-main-1756053940690-5",
+    "message": "Lack of type annotations can lead to runtime errors."
+  },
+  {
+    "title": "Outdated Dependency: @types/node",
+    "severity": "medium",
+    "category": "dependencies",
+    "file": "package.json",
+    "line": 20,
+    "impact": "Using outdated types can lead to compatibility issues.",
+    "codeSnippet": "@types/node: '^20.14.12'",
+    "fix": "Update to the latest version of @types/node.",
+    "recommendation": "Run `npm update @types/node` to get the latest version.",
+    "location": {
+      "file": "package.json",
+      "line": 62,
+      "column": 0
+    },
+    "description": "Using outdated types can lead to compatibility issues.",
+    "suggestion": "Update to the latest version of @types/node.",
+    "id": "issue-main-1756053940690-6",
+    "message": "Using outdated types can lead to compatibility issues."
+  },
+  {
+    "title": "No Error Handling for HTTP Requests",
+    "severity": "high",
+    "category": "code-quality",
+    "file": "test/main.ts",
+    "line": 25,
+    "impact": "Uncaught errors from HTTP requests can crash the application.",
+    "codeSnippet": "const {ok} = await ky(server.url);",
+    "fix": "Implement error handling for HTTP requests.",
+    "recommendation": "Use try-catch around HTTP requests to handle potential errors.",
+    "location": {
+      "file": "test/main.ts",
+      "line": 5,
+      "column": 0
+    },
+    "description": "Uncaught errors from HTTP requests can crash the application.",
+    "suggestion": "Implement error handling for HTTP requests.",
+    "id": "issue-main-1756053940690-7",
+    "message": "Uncaught errors from HTTP requests can crash the application."
+  },
+  {
+    "title": "Inefficient Memory Usage",
+    "severity": "medium",
+    "category": "performance",
+    "file": "test/memory-leak.ts",
+    "line": 10,
+    "impact": "Potential memory leaks due to improper handling of resources.",
+    "codeSnippet": "const detector = new LeakDetector(url);",
+    "fix": "Ensure that resources are released after use.",
+    "recommendation": "Implement cleanup logic to free memory after tests.",
+    "location": {
+      "file": "test/memory-leak.ts",
+      "line": 8,
+      "column": 0
+    },
+    "description": "Potential memory leaks due to improper handling of resources.",
+    "suggestion": "Ensure that resources are released after use.",
+    "id": "issue-main-1756053940690-8",
+    "message": "Potential memory leaks due to improper handling of resources."
+  },
+  {
+    "title": "Circular Dependency Detected",
+    "severity": "high",
+    "category": "architecture",
+    "file": "source/core/constants.ts",
+    "line": 1,
+    "impact": "Circular dependencies can lead to unpredictable behavior.",
+    "codeSnippet": "import type {HttpMethod, KyOptionsRegistry} from '../types/options.js';",
+    "fix": "Refactor the code to eliminate circular dependencies.",
+    "recommendation": "Reorganize modules to avoid circular imports.",
+    "location": {
+      "file": "test/helpers/index.ts",
+      "line": 1,
+      "column": 0
+    },
+    "description": "Circular dependencies can lead to unpredictable behavior.",
+    "suggestion": "Refactor the code to eliminate circular dependencies.",
+    "id": "issue-main-1756053940690-9",
+    "message": "Circular dependencies can lead to unpredictable behavior."
+  },
+  {
+    "title": "Unclear Function Naming",
+    "severity": "low",
+    "category": "code-quality",
+    "file": "source/core/constants.ts",
+    "line": 30,
+    "impact": "Unclear naming can lead to confusion and maintenance challenges.",
+    "codeSnippet": "const validate = <T extends Array<true>>() => undefined as unknown as T;",
+    "fix": "Rename functions to be more descriptive.",
+    "recommendation": "Use meaningful names for functions to enhance readability.",
+    "location": {
+      "file": "source/core/constants.ts",
+      "line": 8,
+      "column": 0
+    },
+    "description": "Unclear naming can lead to confusion and maintenance challenges.",
+    "suggestion": "Rename functions to be more descriptive.",
+    "id": "issue-main-1756053940690-10",
+    "message": "Unclear naming can lead to confusion and maintenance challenges."
+  },
+  {
+    "title": "Missing Tests for Edge Cases",
+    "severity": "medium",
+    "category": "code-quality",
+    "file": "test/main.ts",
+    "line": 50,
+    "impact": "Lack of tests for edge cases may lead to unhandled scenarios.",
+    "codeSnippet": "t.is(await ky(server.url).text(), 'GET');",
+    "fix": "Add unit tests for edge cases.",
+    "recommendation": "Ensure comprehensive test coverage, especially for edge cases.",
+    "location": {
+      "file": "test/main.ts",
+      "line": 6,
+      "column": 0
+    },
+    "description": "Lack of tests for edge cases may lead to unhandled scenarios.",
+    "suggestion": "Add unit tests for edge cases.",
+    "id": "issue-main-1756053940690-11",
+    "message": "Lack of tests for edge cases may lead to unhandled scenarios."
+  },
+  {
+    "title": "Redundant Code Detected",
+    "severity": "low",
+    "category": "code-quality",
+    "file": "test/hooks.ts",
+    "line": 12,
+    "impact": "Redundant code can clutter the codebase and reduce readability.",
+    "codeSnippet": "const error = new Error(errorString);",
+    "fix": "Remove redundant error variable.",
+    "recommendation": "Refactor code to eliminate redundancy.",
+    "location": {
+      "file": "test/hooks.ts",
+      "line": 485,
+      "column": 0
+    },
+    "description": "Redundant code can clutter the codebase and reduce readability.",
+    "suggestion": "Remove redundant error variable.",
+    "id": "issue-main-1756053940690-12",
+    "message": "Redundant code can clutter the codebase and reduce readability."
+  },
+  {
+    "title": "Poor Test Coverage",
+    "severity": "medium",
+    "category": "test-coverage",
+    "file": "test/main.ts",
+    "line": 1,
+    "impact": "Inadequate test coverage may lead to untested code paths.",
+    "codeSnippet": "import test from 'ava';",
+    "fix": "Increase the number of tests and ensure diverse scenarios are covered.",
+    "recommendation": "Aim for at least 90% test coverage.",
+    "location": {
+      "file": "test/main.ts",
+      "line": 2,
+      "column": 0
+    },
+    "description": "Inadequate test coverage may lead to untested code paths.",
+    "suggestion": "Increase the number of tests and ensure diverse scenarios are covered.",
+    "id": "issue-main-1756053940690-13",
+    "message": "Inadequate test coverage may lead to untested code paths."
+  }
+]

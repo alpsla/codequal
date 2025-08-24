@@ -108,10 +108,6 @@ export class IntegratedDeepWikiParser {
       return options.useAI;
     }
     
-    // Check if we're in mock mode
-    if (process.env.USE_DEEPWIKI_MOCK === 'true') {
-      return false; // Use rule-based in mock mode
-    }
     
     // Check if we have necessary configuration for AI
     const hasOpenRouterKey = !!(process.env.OPENROUTER_API_KEY || process.env.OPENAI_API_KEY);

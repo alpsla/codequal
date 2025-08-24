@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepWiki Analysis Metrics Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .metric-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+        
+        .metric-title {
+            font-size: 0.9em;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+        
+        .metric-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .metric-subtitle {
+            font-size: 0.85em;
+            color: #999;
+        }
+        
+        .chart-container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .chart-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .iteration-bar {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .iteration-label {
+            width: 100px;
+            font-size: 0.9em;
+            color: #666;
+        }
+        
+        .iteration-progress {
+            flex: 1;
+            height: 30px;
+            background: #f0f0f0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 0 10px;
+        }
+        
+        .iteration-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 10px;
+            color: white;
+            font-size: 0.85em;
+            font-weight: 600;
+            transition: width 0.5s ease;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-success {
+            background: #10b981;
+        }
+        
+        .status-warning {
+            background: #f59e0b;
+        }
+        
+        .status-error {
+            background: #ef4444;
+        }
+        
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+            }
+        }
+        
+        .recent-analyses {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .analysis-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background 0.2s ease;
+        }
+        
+        .analysis-item:hover {
+            background: #f9f9f9;
+        }
+        
+        .analysis-item:last-child {
+            border-bottom: none;
+        }
+        
+        .analysis-repo {
+            font-weight: 600;
+            color: #333;
+            flex: 1;
+        }
+        
+        .analysis-stats {
+            display: flex;
+            gap: 20px;
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .stat-badge {
+            background: #f0f0f0;
+            padding: 5px 10px;
+            border-radius: 12px;
+        }
+        
+        .load-button {
+            display: block;
+            margin: 30px auto;
+            padding: 12px 30px;
+            background: white;
+            color: #667eea;
+            border: none;
+            border-radius: 25px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .load-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+        
+        #metrics-data {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 DeepWiki Analysis Metrics Dashboard</h1>
+        
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-title">Average Iterations</div>
+                <div class="metric-value" id="avg-iterations">-</div>
+                <div class="metric-subtitle">Per PR Analysis</div>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-title">Total Analyses</div>
+                <div class="metric-value" id="total-analyses">-</div>
+                <div class="metric-subtitle">All Time</div>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-title">Success Rate</div>
+                <div class="metric-value" id="success-rate">-</div>
+                <div class="metric-subtitle">Analysis Completion</div>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-title">Avg Duration</div>
+                <div class="metric-value" id="avg-duration">-</div>
+                <div class="metric-subtitle">Per Analysis</div>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-title">Memory Usage</div>
+                <div class="metric-value" id="avg-memory">-</div>
+                <div class="metric-subtitle">Average per Analysis</div>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-title">Issues Found</div>
+                <div class="metric-value" id="avg-issues">-</div>
+                <div class="metric-subtitle">Average per PR</div>
+            </div>
+        </div>
+        
+        <div class="chart-container">
+            <h2 class="chart-title">Iteration Distribution</h2>
+            <div id="iteration-chart"></div>
+        </div>
+        
+        <div class="recent-analyses">
+            <h2 class="chart-title">Recent Analyses</h2>
+            <div id="recent-list"></div>
+        </div>
+        
+        <button class="load-button" onclick="loadMetrics()">Load Metrics File</button>
+        
+        <textarea id="metrics-data" placeholder="Paste metrics.jsonl content here"></textarea>
+    </div>
+    
+    <script>
+        // Sample data - replace with actual metrics
+        const sampleData = {
+            avgIterations: 3.67,
+            totalAnalyses: 45,
+            successRate: 89.5,
+            avgDuration: 45.3,
+            avgMemory: 234.5,
+            avgIssues: 12.3,
+            iterationDist: {
+                3: 60,
+                4: 25,
+                5: 10,
+                6: 3,
+                7: 2
+            },
+            recentAnalyses: [
+                { repo: 'sindresorhus/ky', pr: '700', iterations: 3, duration: 42, issues: 15, success: true },
+                { repo: 'vercel/swr', pr: '2950', iterations: 5, duration: 78, issues: 23, success: true },
+                { repo: 'express/express', pr: '4567', iterations: 4, duration: 56, issues: 8, success: true },
+                { repo: 'facebook/react', pr: '25000', iterations: 7, duration: 145, issues: 31, success: false },
+                { repo: 'vercel/next.js', pr: '31616', iterations: 6, duration: 98, issues: 19, success: true }
+            ]
+        };
+        
+        function updateDashboard(data) {
+            // Update metric cards
+            document.getElementById('avg-iterations').textContent = data.avgIterations.toFixed(2);
+            document.getElementById('total-analyses').textContent = data.totalAnalyses;
+            document.getElementById('success-rate').textContent = data.successRate.toFixed(1) + '%';
+            document.getElementById('avg-duration').textContent = data.avgDuration.toFixed(1) + 's';
+            document.getElementById('avg-memory').textContent = data.avgMemory.toFixed(0) + 'MB';
+            document.getElementById('avg-issues').textContent = data.avgIssues.toFixed(1);
+            
+            // Update iteration distribution chart
+            const chartContainer = document.getElementById('iteration-chart');
+            chartContainer.innerHTML = '';
+            
+            const maxValue = Math.max(...Object.values(data.iterationDist));
+            
+            for (const [iterations, percentage] of Object.entries(data.iterationDist)) {
+                const bar = document.createElement('div');
+                bar.className = 'iteration-bar';
+                bar.innerHTML = `
+                    <div class="iteration-label">${iterations} iterations</div>
+                    <div class="iteration-progress">
+                        <div class="iteration-fill" style="width: ${percentage}%">
+                            ${percentage}%
+                        </div>
+                    </div>
+                `;
+                chartContainer.appendChild(bar);
+            }
+            
+            // Update recent analyses
+            const recentList = document.getElementById('recent-list');
+            recentList.innerHTML = '';
+            
+            data.recentAnalyses.forEach(analysis => {
+                const item = document.createElement('div');
+                item.className = 'analysis-item';
+                
+                const statusClass = analysis.success ? 'status-success' : 'status-error';
+                
+                item.innerHTML = `
+                    <div class="analysis-repo">
+                        <span class="status-indicator ${statusClass}"></span>
+                        ${analysis.repo} ${analysis.pr ? `#${analysis.pr}` : ''}
+                    </div>
+                    <div class="analysis-stats">
+                        <span class="stat-badge">${analysis.iterations} iter</span>
+                        <span class="stat-badge">${analysis.duration}s</span>
+                        <span class="stat-badge">${analysis.issues} issues</span>
+                    </div>
+                `;
+                recentList.appendChild(item);
+            });
+        }
+        
+        function loadMetrics() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.jsonl';
+            
+            input.onchange = e => {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                
+                reader.onload = event => {
+                    try {
+                        const lines = event.target.result.split('\n').filter(line => line.trim());
+                        const metrics = lines.map(line => JSON.parse(line));
+                        
+                        // Process metrics
+                        const processed = processMetrics(metrics);
+                        updateDashboard(processed);
+                        
+                        alert(`Loaded ${metrics.length} metrics successfully!`);
+                    } catch (error) {
+                        alert('Error loading metrics: ' + error.message);
+                    }
+                };
+                
+                reader.readAsText(file);
+            };
+            
+            input.click();
+        }
+        
+        function processMetrics(metrics) {
+            const successful = metrics.filter(m => m.success);
+            
+            // Calculate averages
+            const avgIterations = successful.reduce((sum, m) => sum + m.iterations, 0) / successful.length || 0;
+            const avgDuration = successful.reduce((sum, m) => sum + m.duration, 0) / successful.length / 1000 || 0;
+            const avgMemory = successful.reduce((sum, m) => sum + m.memoryUsed, 0) / successful.length / 1024 / 1024 || 0;
+            const avgIssues = successful.reduce((sum, m) => sum + m.issuesFound, 0) / successful.length || 0;
+            
+            // Calculate iteration distribution
+            const iterCounts = {};
+            successful.forEach(m => {
+                iterCounts[m.iterations] = (iterCounts[m.iterations] || 0) + 1;
+            });
+            
+            const iterationDist = {};
+            Object.entries(iterCounts).forEach(([iter, count]) => {
+                iterationDist[iter] = Math.round((count / successful.length) * 100);
+            });
+            
+            // Get recent analyses
+            const recentAnalyses = metrics.slice(-5).reverse().map(m => ({
+                repo: m.repositoryUrl.split('/').slice(-2).join('/'),
+                pr: m.prNumber,
+                iterations: m.iterations,
+                duration: Math.round(m.duration / 1000),
+                issues: m.issuesFound,
+                success: m.success
+            }));
+            
+            return {
+                avgIterations,
+                totalAnalyses: metrics.length,
+                successRate: (successful.length / metrics.length) * 100,
+                avgDuration,
+                avgMemory,
+                avgIssues,
+                iterationDist,
+                recentAnalyses
+            };
+        }
+        
+        // Load sample data on page load
+        updateDashboard(sampleData);
+    </script>
+</body>
+</html>

@@ -19,6 +19,7 @@ import { DeepWikiCacheIntegration } from './deepwiki-cache-integration';
 import { RedisCacheService, createCacheService } from '@codequal/core/services/cache/RedisCacheService';
 // Simple mock function instead of importing from test file
 import * as monitoringModule from './monitoring-enhancements';
+import { trackDeepWikiCall } from './tracking-integration';
 // LocationEnhancer temporarily disabled
 
 const execAsync = promisify(exec);
@@ -350,6 +351,21 @@ export class DeepWikiApiManager {
         true // success
       );
       
+      // Track the analysis for Grafana dashboard
+      await trackDeepWikiCall({
+        agent: 'deepwiki',
+        operation: 'analyze',
+        repository: repositoryUrl,
+        prNumber: options?.prId,
+        language: language,
+        repositorySize: repositorySize as 'small' | 'medium' | 'large',
+        model: selectedModel,
+        duration: duration,
+        success: true,
+        inputTokens: Math.ceil(prompt.length / 4),
+        outputTokens: Math.ceil(JSON.stringify(result).length / 4)
+      });
+      
       // NOTE: We do NOT clean up the repository here anymore
       // The repository needs to stay available for MCP tools and agents
       // Cleanup should be called by the orchestrator after ALL analysis is complete
@@ -374,6 +390,19 @@ export class DeepWikiApiManager {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       logger.error(`DeepWiki API analysis failed for ${repositoryUrl}:`, errorMessage);
+      
+      // Track the failed analysis
+      const duration = Date.now() - startTime;
+      await trackDeepWikiCall({
+        agent: 'deepwiki',
+        operation: 'analyze',
+        repository: repositoryUrl,
+        prNumber: options?.prId,
+        model: 'unknown',
+        duration: duration,
+        success: false,
+        error: errorMessage
+      });
       
       // Only return degraded result if explicitly in development/test mode
       if (process.env.NODE_ENV === 'development' && process.env.ALLOW_DEGRADED_RESULTS === 'true') {
@@ -755,20 +784,23 @@ Remember: Users will click on these locations in their IDE, so they MUST be accu
         // If not JSON, try to extract structured data from text
         logger.debug('Content is not JSON, attempting to extract structure from text');
         
-        // For now, return a basic structure
-        // In a real implementation, we would parse the text response
+        // Use prose parser to extract issues
+        const { extractIssuesFromProse } = require('./deepwiki-prose-parser');
+        const extracted = extractIssuesFromProse(content);
+        
         return {
-          vulnerabilities: [],
+          vulnerabilities: extracted.vulnerabilities,
           recommendations: [],
-          scores: {
-            overall: 70,
-            security: 65,
-            performance: 75,
-            maintainability: 70
-          },
+          scores: extracted.scores,
           statistics: {
             files_analyzed: 100,
-            total_issues: 10
+            total_issues: extracted.vulnerabilities.length,
+            issues_by_severity: {
+              critical: extracted.vulnerabilities.filter(v => v.severity === 'critical').length,
+              high: extracted.vulnerabilities.filter(v => v.severity === 'high').length,
+              medium: extracted.vulnerabilities.filter(v => v.severity === 'medium').length,
+              low: extracted.vulnerabilities.filter(v => v.severity === 'low').length
+            }
           }
         };
       }

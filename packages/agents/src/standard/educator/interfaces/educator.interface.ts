@@ -35,6 +35,8 @@ export interface CourseSearchParams {
   maxResults?: number;
   preferredProviders?: string[];
   budgetConstraint?: 'free' | 'paid' | 'any';
+  repository?: string;
+  prNumber?: string;
 }
 
 /**

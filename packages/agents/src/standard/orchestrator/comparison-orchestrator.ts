@@ -27,6 +27,8 @@ import {
 } from '../types/analysis-types';
 import { CategoryWeights } from './interfaces/config-provider.interface';
 import { BatchLocationEnhancer, LocationEnhancer } from '../services/location-enhancer';
+import { getDynamicModelConfig, trackDynamicAgentCall } from '../monitoring';
+import type { AgentRole } from '../monitoring/services/dynamic-agent-cost-tracker.service';
 
 /**
  * Comparison Orchestrator Service with Interface-Based Dependencies
@@ -35,6 +37,11 @@ export class ComparisonOrchestrator {
   private comparisonAgent: IReportingComparisonAgent;
   private batchLocationEnhancer: BatchLocationEnhancer;
   private locationEnhancer: LocationEnhancer;
+  private modelConfigId = '';
+  private primaryModel = '';
+  private fallbackModel = '';
+  private language = 'typescript';
+  private repositorySize: 'small' | 'medium' | 'large' | 'enterprise' = 'medium';
   
   constructor(
     private configProvider: IConfigProvider,
@@ -58,14 +65,53 @@ export class ComparisonOrchestrator {
   /**
    * Execute comparison analysis with full orchestration
    */
+  /**
+   * Initialize orchestrator with model configuration from Supabase
+   */
+  async initialize(language?: string, repoSize?: 'small' | 'medium' | 'large' | 'enterprise'): Promise<void> {
+    this.language = language || 'typescript';
+    this.repositorySize = repoSize || 'medium';
+    
+    try {
+      const supabaseConfig = await getDynamicModelConfig(
+        'orchestrator' as AgentRole,
+        this.language,
+        this.repositorySize
+      );
+      
+      if (supabaseConfig) {
+        this.modelConfigId = supabaseConfig.id;
+        this.primaryModel = supabaseConfig.primary_model;
+        this.fallbackModel = supabaseConfig.fallback_model || '';
+        
+        this.log('info', 'Orchestrator initialized with Supabase config', {
+          primary: this.primaryModel,
+          fallback: this.fallbackModel,
+          configId: this.modelConfigId
+        });
+      }
+    } catch (error) {
+      this.log('warn', 'Failed to get Supabase config for Orchestrator', error);
+    }
+  }
+
   async executeComparison(request: ComparisonAnalysisRequest): Promise<ComparisonResult> {
     this.log('info', 'Starting orchestrated comparison analysis');
     const startTime = Date.now();
+    const inputTokens = 0;
+    const outputTokens = 0;
+    const isFallback = false;
+    const retryCount = 0;
     
     // Use provided DeepWiki scan duration if available
     const deepWikiScanDuration = (request as any).deepWikiScanDuration;
 
     try {
+      // Ensure initialization
+      if (!this.modelConfigId) {
+        const repoContext = this.analyzeRepositoryContext(request);
+        await this.initialize(repoContext.language, this.mapSizeToCategory(repoContext.sizeCategory));
+      }
       // Step 1: Analyze repository context for smart model selection
       const repoContext = this.analyzeRepositoryContext(request);
       
@@ -927,6 +973,20 @@ Ensure 100% accuracy, professional language, and actionable recommendations.`;
     const date = lastUpdated instanceof Date ? lastUpdated : new Date(lastUpdated);
     const ageMs = Date.now() - date.getTime();
     return Math.floor(ageMs / (1000 * 60 * 60 * 24));
+  }
+  
+  /**
+   * Map size category to repository size
+   */
+  private mapSizeToCategory(size: string): 'small' | 'medium' | 'large' | 'enterprise' {
+    const mapping: Record<string, 'small' | 'medium' | 'large' | 'enterprise'> = {
+      'small': 'small',
+      'medium': 'medium',
+      'large': 'large',
+      'very-large': 'enterprise',
+      'enterprise': 'enterprise'
+    };
+    return mapping[size] || 'medium';
   }
   
   /**

@@ -20,7 +20,7 @@ import {
   UserStatus
 } from './types';
 import { VectorContextService } from './vector-context-service';
-import { createMockAuthenticationService } from './mock-auth-service';
+// Mock auth service removed - using inline implementation for legacy support
 
 /**
  * Legacy execution options (without authentication)
@@ -44,7 +44,67 @@ export interface LegacyExecutionOptions extends Omit<EnhancedExecutionOptions, '
 export class LegacyMultiAgentExecutor {
   private readonly logger = createLogger('LegacyMultiAgentExecutor');
   private readonly enhancedExecutor: EnhancedMultiAgentExecutor;
-  private readonly mockAuthService = createMockAuthenticationService();
+  private readonly mockAuthService = this.createInlineMockAuth();
+
+  private createInlineMockAuth() {
+    // Simple inline mock for legacy support only
+    return {
+      async authenticate(token: string): Promise<AuthenticatedUser> {
+        return {
+          id: 'legacy-user',
+          email: 'legacy@example.com',
+          name: 'Legacy User',
+          organizationId: 'default',
+          permissions: {
+            repositories: {},
+            organizations: ['default'],
+            globalPermissions: ['read', 'write'],
+            quotas: {
+              requestsPerHour: 1000,
+              maxConcurrentExecutions: 5,
+              storageQuotaMB: 1000
+            }
+          },
+          session: {
+            token,
+            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+            fingerprint: 'legacy',
+            ipAddress: '127.0.0.1',
+            userAgent: 'legacy'
+          },
+          role: 'user' as UserRole,
+          status: 'active' as UserStatus,
+          metadata: {
+            createdAt: new Date(),
+            lastLogin: new Date(),
+            isActive: true,
+            preferences: {}
+          }
+        };
+      },
+      async validateSession(user: AuthenticatedUser): Promise<boolean> {
+        return true;
+      },
+      async refreshSession(user: AuthenticatedUser): Promise<AuthenticatedUser> {
+        return user;
+      },
+      async invalidateSession(user: AuthenticatedUser): Promise<void> {
+        // No-op for legacy
+      },
+      async checkPermission(user: AuthenticatedUser, resource: string, action: string): Promise<boolean> {
+        return true;
+      },
+      async hasRepositoryAccess(user: AuthenticatedUser, repo: string): Promise<boolean> {
+        return true;
+      },
+      async getSessionMetadata(user: AuthenticatedUser): Promise<any> {
+        return {};
+      },
+      async handleSecurityIncident(user: AuthenticatedUser, incident: string): Promise<void> {
+        // No-op for legacy
+      }
+    };
+  }
 
   constructor(
     config: MultiAgentConfig,
