@@ -86,24 +86,85 @@ export class DeepWikiResponseTransformer {
     const validation = this.validateResponse(response);
     this.log('info', 'Response validation completed', validation);
 
-    // Determine transformation strategy
+    // If we have no response or very low confidence, return minimal structure
+    // Don't throw error - let adaptive analyzer handle retries
     if (!response || !validation.isValid || validation.confidence < 0.3) {
-      this.log('warn', 'Response is invalid or has very low confidence, using intelligent mock fallback');
-      return this.generateIntelligentMock(options);
+      this.log('warn', 'Response is invalid or has very low confidence, returning minimal structure');
+      return {
+        issues: response?.issues || [],
+        scores: response?.scores || {
+          overall: 0,
+          security: 0,
+          performance: 0,
+          maintainability: 0
+        },
+        metadata: {
+          timestamp: new Date().toISOString(),
+          tool_version: 'deepwiki-1.0.0',
+          duration_ms: 0,
+          files_analyzed: 0,
+          repository: options.repositoryUrl,
+          confidence: validation.confidence
+        }
+      } as DeepWikiAnalysisResponse;
     }
 
-    if (options.useHybridMode || validation.confidence < 0.7) {
-      this.log('info', 'Using hybrid mode - enhancing partial data');
+    // If response has partial data, enhance structure only (no fake issues)
+    if (validation.confidence < 0.7) {
+      this.log('info', 'Using minimal enhancement for partial data');
       return this.enhancePartialResponse(response, options, validation);
     }
 
-    if (options.forceEnhancement || validation.hasUnknownLocations) {
-      this.log('info', 'Enhancing response with additional context');
-      return this.enhanceCompleteResponse(response, options);
+    // If response has unknown locations, mark them for clarifier
+    if (validation.hasUnknownLocations && response) {
+      this.log('info', 'Enhancing location information only');
+      return this.enhanceLocationsOnly(response, options);
     }
 
     this.log('info', 'Response is valid, returning with minimal processing');
     return response;
+  }
+
+  /**
+   * Enhance only location information without generating fake data
+   */
+  private async enhanceLocationsOnly(
+    response: DeepWikiAnalysisResponse,
+    options: TransformationOptions
+  ): Promise<DeepWikiAnalysisResponse> {
+    const enhanced = { ...response };
+    
+    // Only fix location data for existing issues
+    if (enhanced.issues && enhanced.issues.length > 0) {
+      enhanced.issues = enhanced.issues.map(issue => {
+        if (!issue.location?.file || 
+            issue.location.file === 'unknown' || 
+            issue.location.file === '' ||
+            !issue.location.line ||
+            issue.location.line === 0) {
+          
+          // Log that we have an issue with unknown location
+          this.log('warn', 'Issue with unknown location - needs LocationClarifier', {
+            issueTitle: issue.title,
+            issueCategory: issue.category,
+            currentLocation: issue.location
+          });
+          
+          // Mark as unknown for LocationClarifier to handle
+          return {
+            ...issue,
+            location: {
+              file: 'unknown',
+              line: 0,
+              column: 0
+            }
+          };
+        }
+        return issue;
+      });
+    }
+    
+    return enhanced;
   }
 
   /**
@@ -345,66 +406,103 @@ export class DeepWikiResponseTransformer {
       malformedIssues: validation.malformedIssues
     });
 
-    const repoStructure = await this.analyzeRepositoryStructure(options.repositoryUrl);
+    // CRITICAL FIX: Never generate fake issues or data
+    // Only fix existing data structure issues
     const enhanced = { ...response };
 
-    // Fill missing top-level fields
-    if (!enhanced.scores) {
-      enhanced.scores = this.generateRealisticScores(enhanced.issues || []);
-    } else {
-      // Adjust scores if they seem unrealistic
-      const issues = enhanced.issues || [];
-      const criticalCount = issues.filter(i => i && i.severity === 'critical').length;
-      const highCount = issues.filter(i => i && i.severity === 'high').length;
-      
-      // If score seems too low for the number of issues, adjust it
-      if (enhanced.scores.overall < 40 && criticalCount + highCount < 3) {
-        const adjustedScores = this.generateRealisticScores(issues);
-        enhanced.scores.overall = Math.max(enhanced.scores.overall, adjustedScores.overall);
-        enhanced.scores.security = Math.max(enhanced.scores.security, adjustedScores.security);
-        enhanced.scores.performance = Math.max(enhanced.scores.performance, adjustedScores.performance);
-        enhanced.scores.maintainability = Math.max(enhanced.scores.maintainability, adjustedScores.maintainability);
-      }
+    // Fix missing scores if we have issues to calculate from
+    if (!enhanced.scores && enhanced.issues && enhanced.issues.length > 0) {
+      enhanced.scores = this.calculateScoresFromIssues(enhanced.issues);
     }
 
+    // Fix missing metadata with minimal real data
     if (!enhanced.metadata) {
       enhanced.metadata = {
         timestamp: new Date().toISOString(),
-        tool_version: 'deepwiki-hybrid-1.0.0',
-        duration_ms: 5000,
-        files_analyzed: repoStructure.files.length,
-        total_lines: this.estimateCodeLines(repoStructure),
-        model_used: await this.getConfiguredModel(options),
+        tool_version: 'deepwiki-1.0.0',
+        duration_ms: 0,
+        files_analyzed: 0,
         repository: options.repositoryUrl
       };
     }
 
-    // Add test coverage if missing
-    if (!(enhanced as any).testCoverage) {
-      (enhanced as any).testCoverage = this.generateRealisticTestCoverage(repoStructure, !!options.prId);
-    }
-
-    // Enhance or replace malformed issues
+    // Fix malformed issues but DON'T add new fake ones
     if (enhanced.issues) {
       enhanced.issues = enhanced.issues
-        .map((issue, index) => {
-          if (!issue) {
-            return this.generateRealisticIssue(repoStructure, index);
+        .filter(issue => issue !== null && issue !== undefined)
+        .map(issue => {
+          // Only fix missing fields, don't create fake data
+          if (!issue.id) {
+            issue.id = `issue-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
           }
-          return this.enhanceIssue(issue, repoStructure);
-        })
-        .filter(issue => issue !== null); // Remove any null issues
-
-      // Add additional issues if we have too few
-      if (enhanced.issues.length < 3) {
-        const additionalIssues = this.generateRealisticIssues(repoStructure, !!options.prId);
-        enhanced.issues.push(...additionalIssues.slice(0, 5 - enhanced.issues.length));
-      }
-    } else {
-      enhanced.issues = this.generateRealisticIssues(repoStructure, !!options.prId);
+          if (!issue.title && issue.description) {
+            issue.title = issue.description.split('.')[0].substring(0, 80);
+          }
+          if (!issue.category && (issue as any).type) {
+            issue.category = (issue as any).type;
+          }
+          if (!issue.severity) {
+            issue.severity = 'medium'; // Default severity
+          }
+          // Mark unknown locations for LocationClarifier
+          if (!issue.location?.file || issue.location.file === '') {
+            issue.location = { file: 'unknown', line: 0 };
+          }
+          return issue;
+        });
     }
 
+    // NEVER add additional fake issues
+    // If we have too few issues, that's the real result
+    
     return enhanced;
+  }
+
+  /**
+   * Calculate scores based on actual issues found
+   */
+  private calculateScoresFromIssues(issues: any[]): any {
+    let overall = 100;
+    let security = 100;
+    let performance = 100;
+    let maintainability = 100;
+    let testing = 100;
+
+    // Calculate real scores based on actual issues
+    issues.filter(issue => issue !== null && issue !== undefined).forEach(issue => {
+      const impact = this.getSeverityImpact(issue.severity);
+      overall -= impact;
+
+      switch (issue.category) {
+        case 'security':
+          security -= impact * 1.5;
+          break;
+        case 'performance':
+          performance -= impact * 1.3;
+          break;
+        case 'code-quality':
+        case 'architecture':
+          maintainability -= impact * 1.2;
+          break;
+        case 'testing':
+          testing -= impact * 1.4;
+          break;
+        default:
+          // Distribute impact across categories
+          security -= impact * 0.3;
+          performance -= impact * 0.3;
+          maintainability -= impact * 0.4;
+          break;
+      }
+    });
+
+    return {
+      overall: Math.max(0, Math.round(overall)),
+      security: Math.max(0, Math.round(security)),
+      performance: Math.max(0, Math.round(performance)),
+      maintainability: Math.max(0, Math.round(maintainability)),
+      testing: Math.max(0, Math.round(testing))
+    };
   }
 
   /**

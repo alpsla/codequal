@@ -354,7 +354,16 @@ describe('Unified Regression Test Suite', () => {
         featureAnalysis: result.analysis,
         newIssues: [],
         resolvedIssues: [],
-        unchangedIssues: result.analysis.issues,
+        unchangedIssues: result.analysis.issues
+          .filter(issue => issue.severity !== 'info') // Filter out invalid severity levels
+          .map(issue => ({
+            ...issue,
+            message: issue.description || issue.title || 'Issue found',
+            severity: issue.severity as 'critical' | 'high' | 'medium' | 'low',
+            category: (['security', 'performance', 'code-quality', 'architecture', 'dependencies', 'testing', 'maintainability', 'formatting', 'style'].includes(issue.category) 
+              ? issue.category 
+              : 'code-quality') as 'security' | 'performance' | 'code-quality' | 'architecture' | 'dependencies' | 'testing' | 'maintainability' | 'formatting' | 'style'
+          })),
         score: result.analysis.scores.overall,
         decision: result.analysis.scores.overall >= 70 ? 'approved' as const : 'needs_work' as const,
         confidence: result.validationStats.averageConfidence,
@@ -364,7 +373,7 @@ describe('Unified Regression Test Suite', () => {
       // Import V8 generator
       const { ReportGeneratorV8Final } = await import('../../comparison/report-generator-v8-final');
       const generator = new ReportGeneratorV8Final();
-      const report = generator.generateReport(comparisonResult);
+      const report = await generator.generateReport(comparisonResult);
       
       // Verify report structure
       expect(report).toContain('# CodeQual Analysis Report');
@@ -375,7 +384,7 @@ describe('Unified Regression Test Suite', () => {
       
       testResults.set('report-generation', {
         passed: true,
-        reportLength: report.length,
+        reportLength: typeof report === 'string' ? report.length : 0,
         hasValidStructure: true
       });
     });
