@@ -13,55 +13,62 @@ async function testIssueCount() {
     success: true,
     newIssues: [
       {
-        type: 'security',
+        id: 'issue-001',
+        type: 'vulnerability',
         severity: 'critical',
         category: 'security',
         message: 'SQL Injection vulnerability',
         location: { file: 'api/db.ts', line: 42 }
       },
       {
-        type: 'security',
+        id: 'issue-002',
+        type: 'vulnerability',
         severity: 'high',
         category: 'security',
         message: 'Hardcoded API key',
         location: { file: 'config.ts', line: 10 }
       },
       {
-        type: 'performance',
+        id: 'issue-003',
+        type: 'optimization',
         severity: 'medium',
         category: 'performance',
         message: 'N+1 query detected',
         location: { file: 'services/user.ts', line: 156 }
       },
       {
+        id: 'issue-004',
         type: 'bug',
         severity: 'low',
-        category: 'bug',
+        category: 'code-quality',
         message: 'Missing null check',
         location: { file: 'utils/parser.ts', line: 89 }
       }
     ],
     unchangedIssues: [
       {
-        type: 'style',
+        id: 'issue-005',
+        type: 'code-smell',
         severity: 'low',
-        category: 'style',
+        category: 'code-quality',
         message: 'Inconsistent naming convention',
         location: { file: 'old-code.ts', line: 5 }
       }
     ],
     resolvedIssues: [
       {
-        type: 'security',
+        id: 'issue-006',
+        type: 'vulnerability',
         severity: 'high',
         category: 'security',
         message: 'XSS vulnerability fixed',
         location: { file: 'views/template.ts', line: 23 }
       },
       {
+        id: 'issue-007',
         type: 'bug',
         severity: 'medium',
-        category: 'bug',
+        category: 'code-quality',
         message: 'Race condition fixed',
         location: { file: 'async/handler.ts', line: 45 }
       }
@@ -89,11 +96,7 @@ async function testIssueCount() {
   console.log(`- Total: 7\n`);
   
   // Generate the report
-  const report = generator.generateReport(testAnalysisResult, {
-    format: 'markdown',
-    includeEducation: false,
-    verbosity: 'minimal'
-  });
+  const report = await generator.generateReport(testAnalysisResult);
   
   // Extract issue counts from the report
   const newIssuesMatch = report.match(/\*\*New Issues:\*\*\s*(\d+)/);

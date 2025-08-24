@@ -13,7 +13,8 @@ async function testUnknownLocation() {
     success: true,
     newIssues: [
       {
-        type: 'security',
+        id: 'issue-001',
+        type: 'vulnerability',
         severity: 'critical',
         category: 'security',
         message: 'Hardcoded API key detected',
@@ -22,7 +23,8 @@ async function testUnknownLocation() {
         suggestedFix: 'Move to .env file'
       },
       {
-        type: 'performance',
+        id: 'issue-002',
+        type: 'optimization',
         severity: 'high',
         category: 'performance',
         message: 'N+1 query detected',
@@ -34,9 +36,10 @@ async function testUnknownLocation() {
         suggestedFix: 'Use eager loading'
       },
       {
+        id: 'issue-003',
         type: 'bug',
         severity: 'medium',
-        category: 'bug',
+        category: 'code-quality',
         message: 'Potential null reference',
         description: 'Object may be null',
         location: {
@@ -72,11 +75,7 @@ async function testUnknownLocation() {
   console.log(`- Issue 3: Has line but no file name\n`);
   
   // Generate the report
-  const report = generator.generateReport(testAnalysisResult, {
-    format: 'markdown',
-    includeEducation: false,
-    verbosity: 'minimal'
-  });
+  const report = await generator.generateReport(testAnalysisResult);
   
   // Check for proper handling of missing locations
   const unknownLocationCount = (report.match(/Unknown location/gi) || []).length;

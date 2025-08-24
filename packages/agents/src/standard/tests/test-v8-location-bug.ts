@@ -13,7 +13,8 @@ async function testLocationBug() {
     success: true,
     newIssues: [
       {
-        type: 'security',
+        id: 'issue-001',
+        type: 'vulnerability',
         severity: 'high',
         category: 'security',
         message: 'Hardcoded API key detected',
@@ -25,7 +26,8 @@ async function testLocationBug() {
         suggestedFix: 'Move to .env file'
       },
       {
-        type: 'performance',
+        id: 'issue-002',
+        type: 'optimization',
         severity: 'medium',
         category: 'performance',
         message: 'N+1 query detected',
@@ -39,9 +41,10 @@ async function testLocationBug() {
     ],
     unchangedIssues: [
       {
+        id: 'issue-003',
         type: 'bug',
         severity: 'critical',
-        category: 'bug',
+        category: 'code-quality',
         message: 'Null pointer exception possible',
         description: 'Object may be null when accessed',
         location: {
@@ -52,7 +55,8 @@ async function testLocationBug() {
     ],
     resolvedIssues: [
       {
-        type: 'security',
+        id: 'issue-004',
+        type: 'vulnerability',
         severity: 'high',
         category: 'security',
         message: 'SQL injection vulnerability',
@@ -93,11 +97,7 @@ async function testLocationBug() {
   console.log('');
   
   // Generate the report
-  const report = generator.generateReport(testAnalysisResult, {
-    format: 'markdown',
-    includeEducation: false,
-    verbosity: 'minimal'
-  });
+  const report = await generator.generateReport(testAnalysisResult);
   
   // Check for "Unknown location" in the report
   const unknownLocationCount = (report.match(/Unknown location/gi) || []).length;
