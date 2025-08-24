@@ -24,6 +24,8 @@ import { SkillCalculator } from './skill-calculator';
 import { ILogger } from '../services/interfaces/logger.interface';
 import { EnhancedIssueMatcher, IssueDuplicator } from '../services/issue-matcher-enhanced';
 import { DynamicModelSelector, RoleRequirements } from '../services/dynamic-model-selector';
+import { getDynamicModelConfig, trackDynamicAgentCall } from '../monitoring';
+import type { AgentRole } from '../monitoring/services/dynamic-agent-cost-tracker.service';
 
 /**
  * Clean implementation of AI-powered comparison agent
@@ -31,6 +33,9 @@ import { DynamicModelSelector, RoleRequirements } from '../services/dynamic-mode
 export class ComparisonAgent implements IReportingComparisonAgent {
   private config: ComparisonConfig;
   private modelConfig: any;
+  private modelConfigId = '';
+  private primaryModel = '';
+  private fallbackModel = '';
   // Report generator - V8 only
   private reportGeneratorV8: ReportGeneratorV8Final;
   private useV8Generator = true; // Always use V8
@@ -65,18 +70,49 @@ export class ComparisonAgent implements IReportingComparisonAgent {
     
     this.config = { ...this.getDefaultConfig(), ...config };
     
-    // Use provided model config if available
-    if ((config as any).modelConfig) {
+    // First try to get config from Supabase for dynamic model selection
+    try {
+      const supabaseConfig = await getDynamicModelConfig(
+        'comparator' as AgentRole,
+        config.language,
+        this.mapComplexityToSize(config.complexity)
+      );
+      
+      if (supabaseConfig) {
+        this.modelConfigId = supabaseConfig.id;
+        this.primaryModel = supabaseConfig.primary_model;
+        this.fallbackModel = supabaseConfig.fallback_model || '';
+        
+        this.modelConfig = {
+          provider: 'openrouter',
+          model: supabaseConfig.primary_model,
+          temperature: 0.1,
+          maxTokens: 4000
+        };
+        
+        this.log('info', 'Using Supabase model config', {
+          primary: this.primaryModel,
+          fallback: this.fallbackModel,
+          configId: this.modelConfigId
+        });
+      }
+    } catch (error) {
+      this.log('warn', 'Failed to get Supabase config', error);
+    }
+    
+    // Use provided model config if available and no Supabase config
+    if (!this.modelConfig && (config as any).modelConfig) {
       this.modelConfig = {
         provider: (config as any).modelConfig.provider,
         model: (config as any).modelConfig.model,
         temperature: 0.1, // Low for consistency
         maxTokens: 4000
       };
+      this.primaryModel = this.modelConfig.model;
       this.log('info', 'Using provided model config', this.modelConfig);
     }
     // Only use DynamicModelSelector if no model config provided
-    else if (process.env.OPENROUTER_API_KEY) {
+    else if (!this.modelConfig && process.env.OPENROUTER_API_KEY) {
       try {
         // Determine repository size based on complexity
         const repoSizeMap: Record<string, 'small' | 'medium' | 'large' | 'enterprise'> = {
@@ -138,10 +174,30 @@ export class ComparisonAgent implements IReportingComparisonAgent {
   }
 
   /**
+   * Map complexity to repository size
+   */
+  private mapComplexityToSize(complexity?: string): 'small' | 'medium' | 'large' | 'enterprise' {
+    const repoSizeMap: Record<string, 'small' | 'medium' | 'large' | 'enterprise'> = {
+      'low': 'small',
+      'medium': 'medium',
+      'high': 'large',
+      'very-high': 'enterprise'
+    };
+    return repoSizeMap[complexity || 'medium'] || 'medium';
+  }
+
+  /**
    * Perform comparison analysis
    */
   async analyze(input: ComparisonInput): Promise<ComparisonResult> {
     this.log('info', 'Starting comparison analysis');
+    const startTime = Date.now();
+    const success = true;
+    let error: string | undefined;
+    let inputTokens = 0;
+    let outputTokens = 0;
+    let isFallback = false;
+    let retryCount = 0;
     
     try {
       // Ensure initialization
@@ -219,6 +275,33 @@ export class ComparisonAgent implements IReportingComparisonAgent {
         scanDuration: (input as any).scanDuration
       } as any);
 
+      // Estimate token usage
+      const inputSize = JSON.stringify(input).length;
+      const outputSize = JSON.stringify({ comparison, report: markdownReport }).length;
+      inputTokens = Math.round(inputSize / 4);
+      outputTokens = Math.round(outputSize / 4);
+      
+      // Track successful analysis
+      if (this.modelConfigId) {
+        await trackDynamicAgentCall({
+          agent: 'comparator' as AgentRole,
+          operation: 'analyze',
+          repository: input.prMetadata?.repository_url || 'unknown',
+          prNumber: input.prMetadata?.number?.toString(),
+          language: this.config.language,
+          repositorySize: this.mapComplexityToSize(this.config.complexity),
+          modelConfigId: this.modelConfigId,
+          model: this.modelConfig.model,
+          modelVersion: 'latest',
+          isFallback,
+          inputTokens,
+          outputTokens,
+          duration: Date.now() - startTime,
+          success: true,
+          retryCount
+        });
+      }
+      
       return {
         success: true,
         comparison,
@@ -234,9 +317,133 @@ export class ComparisonAgent implements IReportingComparisonAgent {
         }
       };
       
-    } catch (error) {
-      this.log('error', 'Comparison analysis failed', error);
-      throw error;
+    } catch (primaryError: any) {
+      error = primaryError.message;
+      retryCount++;
+      
+      // Try fallback model if available
+      if (this.fallbackModel && this.modelConfig) {
+        try {
+          this.log('warn', 'Primary model failed, trying fallback', { 
+            primary: this.primaryModel, 
+            fallback: this.fallbackModel 
+          });
+          
+          // Switch to fallback model
+          const originalModel = this.modelConfig.model;
+          this.modelConfig.model = this.fallbackModel;
+          isFallback = true;
+          
+          // Retry analysis with fallback
+          const aiAnalysis = await this.performAIComparison(
+            input.mainBranchAnalysis,
+            input.featureBranchAnalysis,
+            input.prMetadata
+          );
+          
+          const comparison = this.convertAIAnalysisToComparison(aiAnalysis, input.prMetadata);
+          
+          // Track successful fallback
+          const inputSize = JSON.stringify(input).length;
+          const outputSize = JSON.stringify(comparison).length;
+          inputTokens = Math.round(inputSize / 4);
+          outputTokens = Math.round(outputSize / 4);
+          
+          if (this.modelConfigId) {
+            await trackDynamicAgentCall({
+              agent: 'comparator' as AgentRole,
+              operation: 'analyze',
+              repository: input.prMetadata?.repository_url || 'unknown',
+              prNumber: input.prMetadata?.number?.toString(),
+              language: this.config.language,
+              repositorySize: this.mapComplexityToSize(this.config.complexity),
+              modelConfigId: this.modelConfigId,
+              model: this.fallbackModel,
+              modelVersion: 'latest',
+              isFallback: true,
+              inputTokens,
+              outputTokens,
+              duration: Date.now() - startTime,
+              success: true,
+              retryCount
+            });
+          }
+          
+          // Restore original model
+          this.modelConfig.model = originalModel;
+          
+          // Continue with report generation
+          let markdownReport;
+          if (input.generateReport !== false) {
+            markdownReport = await this.generateReport(comparison as any);
+          }
+          
+          return {
+            success: true,
+            comparison,
+            report: markdownReport,
+            metadata: {
+              agentId: this.getMetadata().id,
+              agentVersion: this.getMetadata().version,
+              modelUsed: `${this.modelConfig.provider}/${this.fallbackModel}`,
+              timestamp: new Date()
+            }
+          };
+        } catch (fallbackError: any) {
+          // Track failure
+          if (this.modelConfigId) {
+            await trackDynamicAgentCall({
+              agent: 'comparator' as AgentRole,
+              operation: 'analyze',
+              repository: input.prMetadata?.repository_url || 'unknown',
+              prNumber: input.prMetadata?.number?.toString(),
+              language: this.config.language,
+              repositorySize: this.mapComplexityToSize(this.config.complexity),
+              modelConfigId: this.modelConfigId,
+              model: this.fallbackModel,
+              modelVersion: 'latest',
+              isFallback: true,
+              inputTokens,
+              outputTokens: 0,
+              duration: Date.now() - startTime,
+              success: false,
+              error: fallbackError.message,
+              retryCount
+            });
+          }
+          
+          this.log('error', 'Both primary and fallback models failed', {
+            primary: primaryError,
+            fallback: fallbackError
+          });
+          throw fallbackError;
+        }
+      } else {
+        // No fallback available, track failure
+        if (this.modelConfigId) {
+          await trackDynamicAgentCall({
+            agent: 'comparator' as AgentRole,
+            operation: 'analyze',
+            repository: input.prMetadata?.repository_url || 'unknown',
+            prNumber: input.prMetadata?.number?.toString(),
+            language: this.config.language,
+            repositorySize: this.mapComplexityToSize(this.config.complexity),
+            modelConfigId: this.modelConfigId,
+            model: this.primaryModel || this.modelConfig?.model || 'unknown',
+            modelVersion: 'latest',
+            isFallback: false,
+            inputTokens,
+            outputTokens: 0,
+            duration: Date.now() - startTime,
+            success: false,
+            error,
+            retryCount: 0
+          });
+        }
+        
+        this.log('error', 'Comparison analysis failed', primaryError);
+        throw primaryError;
+      }
     }
   }
 
@@ -252,23 +459,11 @@ export class ComparisonAgent implements IReportingComparisonAgent {
       });
       
       // V8 generator now accepts ComparisonResult directly
-      return this.reportGeneratorV8.generateReport(comparison, {
-        format: this.options?.reportFormat || 'markdown',
-        includeEducation: true,
-        verbosity: 'standard',
-        includePreExistingDetails: true,
-        includeAIIDESection: true
-      });
+      return this.reportGeneratorV8.generateReport(comparison);
     } else {
       // V7 has been removed - always use V8
       console.warn('V7 generator requested but has been removed. Using V8 instead.');
-      return this.reportGeneratorV8.generateReport(comparison, {
-        format: this.options?.reportFormat || 'markdown',
-        includeEducation: true,
-        verbosity: 'standard',
-        includePreExistingDetails: true,
-        includeAIIDESection: true
-      });
+      return this.reportGeneratorV8.generateReport(comparison);
     }
   }
 

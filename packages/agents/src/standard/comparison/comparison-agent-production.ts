@@ -28,8 +28,7 @@ import { SkillCalculator } from './skill-calculator';
 import { ILogger } from '../services/interfaces/logger.interface';
 import { EnhancedIssueMatcher, IssueDuplicator } from '../services/issue-matcher-enhanced';
 import { DynamicModelSelector, RoleRequirements } from '../services/dynamic-model-selector';
-import { LocationEnhancer } from '../services/location-enhancer';
-import { AILocationFinder, createAILocationFinder } from '../services/ai-location-finder';
+import { UnifiedLocationService, createUnifiedLocationService } from '../services/unified-location-service';
 
 /**
  * Production implementation of comparison agent with V7 Fixed report generator
@@ -40,8 +39,7 @@ export class ComparisonAgentProduction implements IReportingComparisonAgent {
   private reportGenerator: ReportGeneratorV8Final;
   private skillCalculator: SkillCalculator;
   private modelSelector: DynamicModelSelector;
-  private locationEnhancer: LocationEnhancer;
-  private aiLocationFinder?: AILocationFinder;
+  private locationService: UnifiedLocationService;
   
   constructor(
     private logger?: ILogger,
@@ -49,34 +47,35 @@ export class ComparisonAgentProduction implements IReportingComparisonAgent {
     private skillProvider?: any
   ) {
     // Use the production V8 Final generator
-    this.reportGenerator = new ReportGeneratorV8Final(
-      modelService, // logger/modelService
-      modelService?.modelConfigResolver // modelConfigResolver
-    );
+    this.reportGenerator = new ReportGeneratorV8Final();
     this.skillCalculator = new SkillCalculator();
     this.config = this.getDefaultConfig();
     this.modelSelector = new DynamicModelSelector();
     
-    // Initialize AI location finder if model service is available
-    if (modelService?.modelVersionSync) {
-      this.aiLocationFinder = createAILocationFinder(
-        modelService.modelVersionSync,
-        modelService?.vectorStorage,
-        {
-          maxTokens: 3000,
-          temperature: 0.1,
-          includeAlternatives: true,
-          maxAlternatives: 3
-        }
-      );
-    }
+    // Initialize unified location service
+    this.locationService = createUnifiedLocationService({
+      enableAI: Boolean(modelService?.modelVersionSync),
+      aiModel: 'gpt-4',
+      cacheSize: 2000,
+      contextLines: 5,
+      enableMetrics: true,
+      excludePatterns: [
+        'node_modules',
+        'dist',
+        'build',
+        '.git',
+        'coverage',
+        '__tests__',
+        '*.test.ts',
+        '*.spec.ts'
+      ],
+      preferredStrategies: ['exact', 'fuzzy', 'ai']
+    });
     
-    // Initialize location enhancer with AI finder
-    this.locationEnhancer = new LocationEnhancer(
-      undefined, // Will use AI finder when available
-      modelService?.modelVersionSync,
-      modelService?.vectorStorage
-    );
+    // Set AI service if available
+    if (modelService?.modelVersionSync) {
+      this.locationService.setAIService(modelService.modelVersionSync);
+    }
   }
 
   /**
@@ -127,44 +126,86 @@ export class ComparisonAgentProduction implements IReportingComparisonAgent {
       const featureBranchAnalysis = input.featureBranchAnalysis;
       const prMetadata = input.prMetadata;
       
-      // Enhance issues with AI location finding if enabled
-      if (process.env.ENABLE_AI_LOCATION !== 'false' && this.locationEnhancer) {
-        this.logInfo('Enhancing issue locations with AI...');
-        
-        // Get repository URL from metadata - handle both old and new field names
-        const prMeta = prMetadata as any;
-        let repoUrl = prMeta?.repository_url || '';
-        if (!repoUrl && prMeta?.repoOwner && prMeta?.repoName) {
-          repoUrl = `https://github.com/${prMeta.repoOwner}/${prMeta.repoName}`;
-        }
+      // Enhance issues with unified location service
+      if (process.env.ENABLE_AI_LOCATION !== 'false') {
+        this.logInfo('Enhancing issue locations with unified service...');
         
         // Enhance main branch issues
-        if (mainBranchAnalysis?.issues) {
-          const mainEnhancement = await this.locationEnhancer.enhanceIssuesWithLocations(
-            mainBranchAnalysis.issues,
-            repoUrl,
-            undefined // main branch
+        if (mainBranchAnalysis?.issues && mainBranchAnalysis.issues.length > 0) {
+          const enhancedIssues = await Promise.all(
+            mainBranchAnalysis.issues.map(async (issue) => {
+              // Skip if already has good location
+              if (issue.location?.file && issue.location?.line) {
+                return issue;
+              }
+              
+              const locationResult = await this.locationService.findLocation({
+                message: issue.message || issue.title || '',
+                description: issue.description,
+                type: issue.type,
+                category: issue.category,
+                file: issue.location?.file,
+                line: issue.location?.line
+              });
+              
+              if (locationResult.confidence > 0.5) {
+                issue.location = {
+                  file: locationResult.file,
+                  line: locationResult.line,
+                  column: locationResult.column
+                };
+                // Add code snippet if available
+                if (locationResult.codeSnippet) {
+                  (issue as any).codeSnippet = locationResult.codeSnippet;
+                }
+              }
+              
+              return issue;
+            })
           );
           
-          if (mainEnhancement.enhanced > 0) {
-            this.logInfo(`Enhanced ${mainEnhancement.enhanced} main branch issue locations`);
-            mainBranchAnalysis.issues = mainEnhancement.issues as Issue[];
-          }
+          const enhancedCount = enhancedIssues.filter(i => i.location?.line).length;
+          this.logInfo(`Enhanced ${enhancedCount} main branch issue locations`);
+          mainBranchAnalysis.issues = enhancedIssues;
         }
         
         // Enhance feature branch issues
-        if (featureBranchAnalysis?.issues) {
-          const prNumber = prMeta?.prNumber || prMeta?.number;
-          const featureEnhancement = await this.locationEnhancer.enhanceIssuesWithLocations(
-            featureBranchAnalysis.issues,
-            repoUrl,
-            prNumber?.toString()
+        if (featureBranchAnalysis?.issues && featureBranchAnalysis.issues.length > 0) {
+          const enhancedIssues = await Promise.all(
+            featureBranchAnalysis.issues.map(async (issue) => {
+              // Skip if already has good location
+              if (issue.location?.file && issue.location?.line) {
+                return issue;
+              }
+              
+              const locationResult = await this.locationService.findLocation({
+                message: issue.message || issue.title || '',
+                description: issue.description,
+                type: issue.type,
+                category: issue.category,
+                file: issue.location?.file,
+                line: issue.location?.line
+              });
+              
+              if (locationResult.confidence > 0.5) {
+                issue.location = {
+                  file: locationResult.file,
+                  line: locationResult.line,
+                  column: locationResult.column
+                };
+                // Add code snippet if available
+                if (locationResult.codeSnippet) {
+                  (issue as any).codeSnippet = locationResult.codeSnippet;
+                }
+              }
+              
+              return issue;
+            })
           );
           
-          if (featureEnhancement.enhanced > 0) {
-            this.logInfo(`Enhanced ${featureEnhancement.enhanced} feature branch issue locations`);
-            featureBranchAnalysis.issues = featureEnhancement.issues as Issue[];
-          }
+          const enhancedCount = enhancedIssues.filter(i => i.location?.line).length;
+          this.logInfo(`Enhanced ${enhancedCount} feature branch issue locations`);
+          featureBranchAnalysis.issues = enhancedIssues;
         }
       }
       
@@ -194,48 +235,58 @@ export class ComparisonAgentProduction implements IReportingComparisonAgent {
         featureBranchAnalysis
       );
       
-      // Additional location enhancement for comparison results if needed
-      if (process.env.ENABLE_AI_LOCATION !== 'false' && this.aiLocationFinder) {
-        // Enhance any issues that still don't have locations
-        const prMeta = prMetadata as any;
-        let repoUrl = prMeta?.repository_url || '';
-        if (!repoUrl && prMeta?.repoOwner && prMeta?.repoName) {
-          repoUrl = `https://github.com/${prMeta.repoOwner}/${prMeta.repoName}`;
-        }
-        
-        const enhanceIssueList = async (issues: Issue[] | undefined) => {
-          if (!issues || issues.length === 0) return;
+      // Enhance comparison result issues if they still don't have locations
+      if (process.env.ENABLE_AI_LOCATION !== 'false') {
+        const enhanceComparisonIssues = async (issues: Issue[] | undefined) => {
+          if (!issues || issues.length === 0) return issues;
           
-          for (const issue of issues) {
-            // Skip if already has detailed location
-            if (issue.location?.line && issue.location?.column) continue;
-            
-            try {
-              const aiLocation = await this.aiLocationFinder!.findLocation(
-                issue as any,
-                '/tmp/repo' // Temporary path - will be improved
-              );
-              
-              if (aiLocation) {
-                issue.location = {
-                  file: issue.location?.file || '',
-                  line: aiLocation.line,
-                  column: aiLocation.column
-                };
-                this.logInfo(`AI enhanced location for: ${issue.message}`);
+          return Promise.all(
+            issues.map(async (issue) => {
+              // Skip if already has location
+              if (issue.location?.file && issue.location?.line) {
+                return issue;
               }
-            } catch (error) {
-              // Continue with next issue on error
-            }
-          }
+              
+              const locationResult = await this.locationService.findLocation({
+                message: issue.message || issue.title || '',
+                description: issue.description,
+                type: issue.type,
+                category: issue.category,
+                file: issue.location?.file,
+                line: issue.location?.line
+              });
+              
+              if (locationResult.confidence > 0.3) { // Lower threshold for comparison results
+                issue.location = {
+                  file: locationResult.file,
+                  line: locationResult.line,
+                  column: locationResult.column
+                };
+                // Add code snippet if available
+                if (locationResult.codeSnippet) {
+                  (issue as any).codeSnippet = locationResult.codeSnippet;
+                }
+              }
+              
+              return issue;
+            })
+          );
         };
         
         // Enhance all issue lists in parallel
-        await Promise.all([
-          enhanceIssueList(comparison.newIssues),
-          enhanceIssueList(comparison.resolvedIssues),
-          enhanceIssueList(comparison.unchangedIssues)
+        const [newIssues, resolvedIssues, unchangedIssues] = await Promise.all([
+          enhanceComparisonIssues(comparison.newIssues),
+          enhanceComparisonIssues(comparison.resolvedIssues),
+          enhanceComparisonIssues(comparison.unchangedIssues)
         ]);
+        
+        comparison.newIssues = newIssues;
+        comparison.resolvedIssues = resolvedIssues;
+        comparison.unchangedIssues = unchangedIssues;
+        
+        // Log location service metrics
+        const metrics = this.locationService.getMetrics();
+        this.logInfo(`Location service metrics: ${JSON.stringify(metrics)}`);
       }
       
       // Calculate duration before report generation
@@ -355,7 +406,13 @@ export class ComparisonAgentProduction implements IReportingComparisonAgent {
       resolvedIssues,
       modifiedIssues,
       unchangedIssues,
-      summary: this.generateComparisonSummary(newIssues, resolvedIssues, modifiedIssues)
+      summary: {
+        totalResolved: resolvedIssues.length,
+        totalNew: newIssues.length,
+        totalModified: modifiedIssues.length,
+        totalUnchanged: unchangedIssues.length,
+        overallAssessment: this.generateComparisonSummary(newIssues, resolvedIssues, modifiedIssues)
+      }
     };
   }
 
