@@ -16,7 +16,7 @@ export interface DeepWikiAnalysisResult {
 export interface Issue {
   id: string;
   severity: 'critical' | 'high' | 'medium' | 'low';
-  category: 'security' | 'performance' | 'code-quality' | 'architecture' | 'dependencies';
+  category: 'security' | 'performance' | 'code-quality' | 'architecture' | 'dependencies' | 'testing' | 'maintainability' | 'formatting' | 'style';
   type?: 'vulnerability' | 'bug' | 'code-smell' | 'optimization' | 'design-issue';
   location?: {
     file: string;
@@ -173,6 +173,29 @@ export interface ComparisonResult {
   success: boolean;
   report?: string;                    // Full markdown report
   prComment?: string;                 // Concise PR comment
+  
+  // V8 Report Generator Expected Structure
+  mainBranch?: {
+    name?: string;
+    issues: Issue[];
+    metrics?: any;
+  };
+  prBranch?: {
+    name?: string;
+    issues: Issue[];
+    metrics?: any;
+  };
+  
+  // Direct issue arrays (alternative structure)
+  resolvedIssues?: Issue[];
+  newIssues?: Issue[];
+  modifiedIssues?: Issue[];
+  unchangedIssues?: Issue[];
+  persistentIssues?: Issue[];
+  addedIssues?: Issue[];
+  fixedIssues?: Issue[];
+  
+  // Legacy comparison structure
   comparison?: {                      // Detailed comparison data
     resolvedIssues?: any[];
     newIssues?: any[];
@@ -183,6 +206,18 @@ export interface ComparisonResult {
     insights?: string[];
     recommendations?: string[];
   };
+  
+  summary?: {
+    totalResolved?: number;
+    totalNew?: number;
+    totalModified?: number;
+    totalUnchanged?: number;
+    overallAssessment?: any;
+  };
+  
+  insights?: string[];
+  recommendations?: string[];
+  
   analysis?: any;                     // Raw analysis data
   aiAnalysis?: any;                   // AI analysis data
   education?: EducationalEnhancements; // Optional course recommendations
@@ -202,8 +237,6 @@ export interface ComparisonResult {
   // Additional fields for enhanced reporting
   repository?: string;
   prNumber?: string;
-  mainBranch?: string;
-  prBranch?: string;
   overallScore?: number;
   categoryScores?: Record<string, number>;
   timestamp?: string;
@@ -220,14 +253,6 @@ export interface ComparisonResult {
     filesAnalyzed: number;
     confidence: number;
   };
-  // Legacy fields for backward compatibility
-  resolvedIssues?: any[];
-  newIssues?: any[];
-  modifiedIssues?: any[];
-  unchangedIssues?: any[];
-  summary?: any;
-  insights?: string[];
-  recommendations?: string[];
 }
 
 export interface ModelSelectionWeights {
