@@ -7,6 +7,7 @@ export interface RecommendationPriority {
   level: 'critical' | 'high' | 'medium' | 'low';
   score: number; // 0-100
   urgency: 'immediate' | 'next_sprint' | 'backlog';
+  justification?: string;
 }
 
 export interface ActionableRecommendation {
@@ -58,6 +59,7 @@ export interface RecommendationModule {
     };
     estimatedTotalEffort: string;
     focusAreas: string[];
+    description: string;
   };
   
   recommendations: ActionableRecommendation[];

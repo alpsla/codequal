@@ -192,6 +192,16 @@ export interface EducationalResult {
   bestPractices: EducationalContent['bestPractices'];
   additionalResources: EducationalContent['resources'];
   
+  // Additional properties for test compatibility
+  metadata?: {
+    costOptimization?: any;
+    [key: string]: any;
+  };
+  content?: {
+    resources?: any;
+    [key: string]: any;
+  };
+  
   // Personalization data for future enhancement
   skillGaps: string[];
   recommendedNextSteps: string[];
