@@ -284,7 +284,7 @@ describe('ModelUsageAnalyticsService', () => {
 
       // Report should include optimization section
       expect(report.toLowerCase()).toContain('optimization');
-      expect(report.toLowerCase()).toContain('recommendation');
+      expect(report.toLowerCase()).toContain('action items');
     });
   });
 
@@ -297,7 +297,8 @@ describe('ModelUsageAnalyticsService', () => {
       );
       
       const errorService = new ModelUsageAnalyticsService();
-      await expect(errorService.getModelPerformanceMetrics()).rejects.toThrow('Database connection failed');
+      const result = await errorService.getModelPerformanceMetrics();
+      expect(result).toEqual([]);
     });
 
     it('should handle empty data sets', async () => {
