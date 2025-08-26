@@ -1,0 +1,559 @@
+✅ Environment loaded from: /Users/alpinro/Code Prjects/codequal/.env
+✅ Environment loaded from: /Users/alpinro/Code Prjects/codequal/.env
+
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+[1m[34mCODEQUAL MANUAL PR VALIDATOR[0m
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+
+Repository: [1msindresorhus/ky[0m
+PR Number: [1m#700[0m
+DeepWiki API: [1mhttp://localhost:8001[0m
+Timeout: [1m600s[0m
+
+📊 [34mInitializing services...[0m
+📊 [34mConnecting to real DeepWiki API...[0m
+✅ [32mReal DeepWiki API registered[0m
+[DeepWikiResponseTransformer] Created ModelConfigResolver instance for deepwiki transformer 
+📊 [34mUsing real Supabase for configuration[0m
+Using AI-enhanced location finder
+Using pattern-based location finder (AI not enabled)
+Using AI-enhanced location finder
+Using pattern-based location finder (AI not enabled)
+
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+[1m[34mANALYZING MAIN BRANCH[0m
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+
+Redis error, using memory cache: connect ECONNREFUSED 10.116.0.7:6379
+Redis error, using memory cache: connect ECONNREFUSED 10.116.0.7:6379
+Failed to connect to Redis, using memory cache: MaxRetriesPerRequestError: Reached the max retries per request limit (which is 1). Refer to "maxRetriesPerRequest" option for details.
+    at Socket.<anonymous> (/Users/alpinro/Code Prjects/codequal/node_modules/ioredis/built/redis/event_handler.js:182:37)
+    at Object.onceWrapper (node:events:622:26)
+    at Socket.emit (node:events:507:28)
+    at Socket.emit (node:domain:489:12)
+    at TCP.<anonymous> (node:net:351:12)
+Redis error, using memory cache: connect ECONNREFUSED 10.116.0.7:6379
+Redis error, using memory cache: connect ETIMEDOUT
+Redis connection failed, falling back to memory cache
+
+🔍 DEBUG - Raw DeepWiki Response:
+Branch analyzed: main
+Response type: string
+Is JSON: false
+Response length: 7464
+First 500 chars: {
+  "issues": [
+    {
+      "title": "Use of outdated TypeScript version",
+      "severity": "medium",
+      "category": "dependencies",
+      "file": "package.json",
+      "line": 1,
+      "impact": "Potential issues with type definitions and compatibility with newer features.",
+      "codeSnippet": "\"typescript\": \"^5.5.4\"",
+      "fix": "Upgrade TypeScript to the latest version.",
+      "recommendation": "Run `npm update typescript` to get the latest version."
+    },
+    {
+      "title": "
+================================================================================
+Using UnifiedAIParser for DeepWiki response parsing...
+[INFO] [TrulyDynamicSelector] Selecting models for role: text-parser 
+[INFO] [TrulyDynamicSelector] Found 316 total models in OpenRouter 
+[INFO] [TrulyDynamicSelector] 303 models meet basic requirements 
+[INFO] [TrulyDynamicSelector] Selected primary: openai/gpt-4-turbo (score: 0.81) 
+[INFO] [TrulyDynamicSelector] Selected fallback: google/gemini-2.5-flash-lite (score: 0.78) 
+[UnifiedAIParser] [INFO] [Parser] Selected fast model: gpt-4-turbo (openai) 
+[UnifiedAIParser] [INFO] [Parser] Model scores - Quality: 0.64, Speed: 0.74 
+[UnifiedAIParser] [INFO] [Parser] Fallback: gemini-2.5-flash-lite (google) 
+[UnifiedAIParser] [DEBUG] Calling model: openai/gpt-4-turbo { temperature: 0.1, maxTokens: 4000 }
+[AIService] [DEBUG] Calling model: openai/gpt-4-turbo { temperature: 0.1, maxTokens: 4000 }
+[UnifiedAIParser] [DEBUG] Calling model: openai/gpt-4-turbo { temperature: 0.1, maxTokens: 4000 }
+[AIService] [DEBUG] Calling model: openai/gpt-4-turbo { temperature: 0.1, maxTokens: 4000 }
+[UnifiedAIParser] [DEBUG] Calling model: openai/gpt-4-turbo { temperature: 0.1, maxTokens: 4000 }
+[AIService] [DEBUG] Calling model: openai/gpt-4-turbo { temperature: 0.1, maxTokens: 4000 }
+[UnifiedAIParser] [DEBUG] Calling model: openai/gpt-4-turbo { temperature: 0.1, maxTokens: 4000 }
+[AIService] [DEBUG] Calling model: openai/gpt-4-turbo { temperature: 0.1, maxTokens: 4000 }
+[UnifiedAIParser] [DEBUG] Calling model: openai/gpt-4-turbo { temperature: 0.1, maxTokens: 4000 }
+[AIService] [DEBUG] Calling model: openai/gpt-4-turbo { temperature: 0.1, maxTokens: 4000 }
+[UnifiedAIParser] [DEBUG] Calling model: openai/gpt-4-turbo { temperature: 0.1, maxTokens: 4000 }
+[AIService] [DEBUG] Calling model: openai/gpt-4-turbo { temperature: 0.1, maxTokens: 4000 }
+[UnifiedAIParser] [DEBUG] Calling model: openai/gpt-4-turbo { temperature: 0.1, maxTokens: 4000 }
+[AIService] [DEBUG] Calling model: openai/gpt-4-turbo { temperature: 0.1, maxTokens: 4000 }
+[UnifiedAIParser] [DEBUG] Calling model: openai/gpt-4-turbo { temperature: 0.1, maxTokens: 4000 }
+[AIService] [DEBUG] Calling model: openai/gpt-4-turbo { temperature: 0.1, maxTokens: 4000 }
+[AIService] [INFO] AI call successful { model: 'openai/gpt-4-turbo', tokens: 2231, cost: 0, latency: 3220 }
+[AIService] [INFO] AI call successful { model: 'openai/gpt-4-turbo', tokens: 2740, cost: 0, latency: 9066 }
+[AIService] [INFO] AI call successful { model: 'openai/gpt-4-turbo', tokens: 3044, cost: 0, latency: 19308 }
+[AIService] [INFO] AI call successful { model: 'openai/gpt-4-turbo', tokens: 2802, cost: 0, latency: 21001 }
+[AIService] [INFO] AI call successful { model: 'openai/gpt-4-turbo', tokens: 2969, cost: 0, latency: 22928 }
+[AIService] [INFO] AI call successful { model: 'openai/gpt-4-turbo', tokens: 3086, cost: 0, latency: 28930 }
+[AIService] [INFO] AI call successful { model: 'openai/gpt-4-turbo', tokens: 3199, cost: 0, latency: 31227 }
+[AIService] [INFO] AI call successful { model: 'openai/gpt-4-turbo', tokens: 3373, cost: 0, latency: 31978 }
+ModelVersionSync initialized
+[WARN] [AILocationFinder] No file specified in issue 
+[WARN] [AILocationFinder] No file specified in issue 
+[WARN] [AILocationFinder] File not found: /tmp/codequal-repos/sindresorhus-ky-pr-700/architecture 
+[WARN] [AILocationFinder] File not found: /tmp/codequal-repos/sindresorhus-ky-pr-700/architecture 
+[INFO] [UnifiedModelSelector] Selecting model for role: location_finder {
+  context: {
+    primaryLanguage: 'typescript',
+    size: 'medium',
+    complexity: 5,
+    fileLanguage: 'typescript',
+    fileSize: 'medium',
+    fileComplexity: 5,
+    issueType: 'other',
+    issueSeverity: 'medium'
+  }
+}
+[INFO] [UnifiedModelSelector] Pre-filtered 0 models to 0 (removed known unavailable) 
+[ERROR] [AILocationFinder] Error finding location with AI: Error: No models available for selection
+    at UnifiedModelSelector.selectModel (/Users/alpinro/Code Prjects/codequal/packages/agents/src/model-selection/unified-model-selector.ts:237:13)
+    at async AILocationFinder.selectModels (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/ai-location-finder.ts:267:23)
+    at async AILocationFinder.findLocation (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/ai-location-finder.ts:108:22)
+    at async /Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/unified-ai-parser.ts:281:36
+    at async Promise.all (index 18)
+    at async UnifiedAIParser.parseDeepWikiResponse (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/unified-ai-parser.ts:266:21)
+    at async parseDeepWikiResponse (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/parse-deepwiki-response.ts:53:22)
+    at async Object.analyzeRepository (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/manual-pr-validator.ts:351:28)
+    at async DeepWikiApiWrapper.analyzeRepository (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/deepwiki-api-wrapper.ts:242:26)
+    at async analyzePR (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/manual-pr-validator.ts:670:26)
+[INFO] [UnifiedModelSelector] Selecting model for role: location_finder {
+  context: {
+    primaryLanguage: 'typescript',
+    size: 'medium',
+    complexity: 5,
+    fileLanguage: 'typescript',
+    fileSize: 'medium',
+    fileComplexity: 5,
+    issueType: 'quality',
+    issueSeverity: 'medium'
+  }
+}
+[ERROR] [AILocationFinder] Error finding location with AI: Error: No models available for selection
+    at UnifiedModelSelector.selectModel (/Users/alpinro/Code Prjects/codequal/packages/agents/src/model-selection/unified-model-selector.ts:237:13)
+    at async AILocationFinder.selectModels (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/ai-location-finder.ts:267:23)
+    at async AILocationFinder.findLocation (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/ai-location-finder.ts:108:22)
+    at async /Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/unified-ai-parser.ts:281:36
+    at async Promise.all (index 22)
+    at async UnifiedAIParser.parseDeepWikiResponse (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/unified-ai-parser.ts:266:21)
+    at async parseDeepWikiResponse (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/parse-deepwiki-response.ts:53:22)
+    at async Object.analyzeRepository (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/manual-pr-validator.ts:351:28)
+    at async DeepWikiApiWrapper.analyzeRepository (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/deepwiki-api-wrapper.ts:242:26)
+    at async analyzePR (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/manual-pr-validator.ts:670:26)
+[INFO] [UnifiedModelSelector] Selecting model for role: location_finder {
+  context: {
+    primaryLanguage: 'typescript',
+    size: 'large',
+    complexity: 7,
+    fileLanguage: 'typescript',
+    fileSize: 'large',
+    fileComplexity: 7,
+    issueType: 'quality',
+    issueSeverity: 'medium'
+  }
+}
+[ERROR] [AILocationFinder] Error finding location with AI: Error: No models available for selection
+    at UnifiedModelSelector.selectModel (/Users/alpinro/Code Prjects/codequal/packages/agents/src/model-selection/unified-model-selector.ts:237:13)
+    at async AILocationFinder.selectModels (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/ai-location-finder.ts:267:23)
+    at async AILocationFinder.findLocation (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/ai-location-finder.ts:108:22)
+    at async /Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/unified-ai-parser.ts:281:36
+    at async Promise.all (index 19)
+    at async UnifiedAIParser.parseDeepWikiResponse (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/unified-ai-parser.ts:266:21)
+    at async parseDeepWikiResponse (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/parse-deepwiki-response.ts:53:22)
+    at async Object.analyzeRepository (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/manual-pr-validator.ts:351:28)
+    at async DeepWikiApiWrapper.analyzeRepository (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/deepwiki-api-wrapper.ts:242:26)
+    at async analyzePR (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/manual-pr-validator.ts:670:26)
+[INFO] [UnifiedModelSelector] Selecting model for role: location_finder {
+  context: {
+    primaryLanguage: 'typescript',
+    size: 'large',
+    complexity: 7,
+    fileLanguage: 'typescript',
+    fileSize: 'large',
+    fileComplexity: 7,
+    issueType: 'quality',
+    issueSeverity: 'medium'
+  }
+}
+[ERROR] [AILocationFinder] Error finding location with AI: Error: No models available for selection
+    at UnifiedModelSelector.selectModel (/Users/alpinro/Code Prjects/codequal/packages/agents/src/model-selection/unified-model-selector.ts:237:13)
+    at async AILocationFinder.selectModels (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/ai-location-finder.ts:267:23)
+    at async AILocationFinder.findLocation (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/ai-location-finder.ts:108:22)
+    at async /Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/unified-ai-parser.ts:281:36
+    at async Promise.all (index 20)
+    at async UnifiedAIParser.parseDeepWikiResponse (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/unified-ai-parser.ts:266:21)
+    at async parseDeepWikiResponse (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/parse-deepwiki-response.ts:53:22)
+    at async Object.analyzeRepository (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/manual-pr-validator.ts:351:28)
+    at async DeepWikiApiWrapper.analyzeRepository (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/deepwiki-api-wrapper.ts:242:26)
+    at async analyzePR (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/manual-pr-validator.ts:670:26)
+[INFO] [UnifiedModelSelector] Selecting model for role: location_finder {
+  context: {
+    primaryLanguage: 'typescript',
+    size: 'large',
+    complexity: 7,
+    fileLanguage: 'typescript',
+    fileSize: 'large',
+    fileComplexity: 7,
+    issueType: 'quality',
+    issueSeverity: 'medium'
+  }
+}
+[ERROR] [AILocationFinder] Error finding location with AI: Error: No models available for selection
+    at UnifiedModelSelector.selectModel (/Users/alpinro/Code Prjects/codequal/packages/agents/src/model-selection/unified-model-selector.ts:237:13)
+    at async AILocationFinder.selectModels (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/ai-location-finder.ts:267:23)
+    at async AILocationFinder.findLocation (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/ai-location-finder.ts:108:22)
+    at async /Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/unified-ai-parser.ts:281:36
+    at async Promise.all (index 25)
+    at async UnifiedAIParser.parseDeepWikiResponse (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/unified-ai-parser.ts:266:21)
+    at async parseDeepWikiResponse (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/parse-deepwiki-response.ts:53:22)
+    at async Object.analyzeRepository (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/manual-pr-validator.ts:351:28)
+    at async DeepWikiApiWrapper.analyzeRepository (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/deepwiki-api-wrapper.ts:242:26)
+    at async analyzePR (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/manual-pr-validator.ts:670:26)
+[INFO] [UnifiedModelSelector] Selecting model for role: location_finder {
+  context: {
+    primaryLanguage: 'typescript',
+    size: 'medium',
+    complexity: 5,
+    fileLanguage: 'typescript',
+    fileSize: 'medium',
+    fileComplexity: 5,
+    issueType: 'quality',
+    issueSeverity: 'high'
+  }
+}
+[ERROR] [AILocationFinder] Error finding location with AI: Error: No models available for selection
+    at UnifiedModelSelector.selectModel (/Users/alpinro/Code Prjects/codequal/packages/agents/src/model-selection/unified-model-selector.ts:237:13)
+    at async AILocationFinder.selectModels (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/ai-location-finder.ts:267:23)
+    at async AILocationFinder.findLocation (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/ai-location-finder.ts:108:22)
+    at async /Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/unified-ai-parser.ts:281:36
+    at async Promise.all (index 28)
+    at async UnifiedAIParser.parseDeepWikiResponse (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/unified-ai-parser.ts:266:21)
+    at async parseDeepWikiResponse (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/parse-deepwiki-response.ts:53:22)
+    at async Object.analyzeRepository (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/manual-pr-validator.ts:351:28)
+    at async DeepWikiApiWrapper.analyzeRepository (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/deepwiki-api-wrapper.ts:242:26)
+    at async analyzePR (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/manual-pr-validator.ts:670:26)
+[INFO] [UnifiedModelSelector] Selecting model for role: location_finder {
+  context: {
+    primaryLanguage: 'typescript',
+    size: 'large',
+    complexity: 7,
+    fileLanguage: 'typescript',
+    fileSize: 'large',
+    fileComplexity: 7,
+    issueType: 'quality',
+    issueSeverity: 'medium'
+  }
+}
+[ERROR] [AILocationFinder] Error finding location with AI: Error: No models available for selection
+    at UnifiedModelSelector.selectModel (/Users/alpinro/Code Prjects/codequal/packages/agents/src/model-selection/unified-model-selector.ts:237:13)
+    at async AILocationFinder.selectModels (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/ai-location-finder.ts:267:23)
+    at async AILocationFinder.findLocation (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/ai-location-finder.ts:108:22)
+    at async /Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/unified-ai-parser.ts:281:36
+    at async Promise.all (index 24)
+    at async UnifiedAIParser.parseDeepWikiResponse (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/unified-ai-parser.ts:266:21)
+    at async parseDeepWikiResponse (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/parse-deepwiki-response.ts:53:22)
+    at async Object.analyzeRepository (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/manual-pr-validator.ts:351:28)
+    at async DeepWikiApiWrapper.analyzeRepository (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/deepwiki-api-wrapper.ts:242:26)
+    at async analyzePR (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/manual-pr-validator.ts:670:26)
+[INFO] [UnifiedModelSelector] Selecting model for role: location_finder {
+  context: {
+    primaryLanguage: 'typescript',
+    size: 'medium',
+    complexity: 5,
+    fileLanguage: 'typescript',
+    fileSize: 'medium',
+    fileComplexity: 5,
+    issueType: 'quality',
+    issueSeverity: 'medium'
+  }
+}
+[ERROR] [AILocationFinder] Error finding location with AI: Error: No models available for selection
+    at UnifiedModelSelector.selectModel (/Users/alpinro/Code Prjects/codequal/packages/agents/src/model-selection/unified-model-selector.ts:237:13)
+    at async AILocationFinder.selectModels (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/ai-location-finder.ts:267:23)
+    at async AILocationFinder.findLocation (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/ai-location-finder.ts:108:22)
+    at async /Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/unified-ai-parser.ts:281:36
+    at async Promise.all (index 21)
+    at async UnifiedAIParser.parseDeepWikiResponse (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/unified-ai-parser.ts:266:21)
+    at async parseDeepWikiResponse (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/parse-deepwiki-response.ts:53:22)
+    at async Object.analyzeRepository (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/manual-pr-validator.ts:351:28)
+    at async DeepWikiApiWrapper.analyzeRepository (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/deepwiki-api-wrapper.ts:242:26)
+    at async analyzePR (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/manual-pr-validator.ts:670:26)
+[INFO] [UnifiedModelSelector] Selecting model for role: location_finder {
+  context: {
+    primaryLanguage: 'typescript',
+    size: 'medium',
+    complexity: 4,
+    fileLanguage: 'typescript',
+    fileSize: 'medium',
+    fileComplexity: 4,
+    issueType: 'quality',
+    issueSeverity: 'medium'
+  }
+}
+[ERROR] [AILocationFinder] Error finding location with AI: Error: No models available for selection
+    at UnifiedModelSelector.selectModel (/Users/alpinro/Code Prjects/codequal/packages/agents/src/model-selection/unified-model-selector.ts:237:13)
+    at async AILocationFinder.selectModels (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/ai-location-finder.ts:267:23)
+    at async AILocationFinder.findLocation (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/ai-location-finder.ts:108:22)
+    at async /Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/unified-ai-parser.ts:281:36
+    at async Promise.all (index 23)
+    at async UnifiedAIParser.parseDeepWikiResponse (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/unified-ai-parser.ts:266:21)
+    at async parseDeepWikiResponse (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/parse-deepwiki-response.ts:53:22)
+    at async Object.analyzeRepository (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/manual-pr-validator.ts:351:28)
+    at async DeepWikiApiWrapper.analyzeRepository (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/deepwiki-api-wrapper.ts:242:26)
+    at async analyzePR (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/manual-pr-validator.ts:670:26)
+[INFO] [UnifiedModelSelector] Selecting model for role: location_finder {
+  context: {
+    primaryLanguage: 'typescript',
+    size: 'small',
+    complexity: 3,
+    fileLanguage: 'typescript',
+    fileSize: 'small',
+    fileComplexity: 3,
+    issueType: 'quality',
+    issueSeverity: 'medium'
+  }
+}
+[ERROR] [AILocationFinder] Error finding location with AI: Error: No models available for selection
+    at UnifiedModelSelector.selectModel (/Users/alpinro/Code Prjects/codequal/packages/agents/src/model-selection/unified-model-selector.ts:237:13)
+    at async AILocationFinder.selectModels (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/ai-location-finder.ts:267:23)
+    at async AILocationFinder.findLocation (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/ai-location-finder.ts:108:22)
+    at async /Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/unified-ai-parser.ts:281:36
+    at async Promise.all (index 27)
+    at async UnifiedAIParser.parseDeepWikiResponse (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/unified-ai-parser.ts:266:21)
+    at async parseDeepWikiResponse (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/parse-deepwiki-response.ts:53:22)
+    at async Object.analyzeRepository (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/manual-pr-validator.ts:351:28)
+    at async DeepWikiApiWrapper.analyzeRepository (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/deepwiki-api-wrapper.ts:242:26)
+    at async analyzePR (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/manual-pr-validator.ts:670:26)
+[INFO] [UnifiedModelSelector] Selecting model for role: location_finder {
+  context: {
+    primaryLanguage: 'unknown',
+    size: 'enterprise',
+    complexity: 8,
+    fileLanguage: 'unknown',
+    fileSize: 'enterprise',
+    fileComplexity: 8,
+    issueType: 'quality',
+    issueSeverity: 'medium'
+  }
+}
+[ERROR] [AILocationFinder] Error finding location with AI: Error: No models available for selection
+    at UnifiedModelSelector.selectModel (/Users/alpinro/Code Prjects/codequal/packages/agents/src/model-selection/unified-model-selector.ts:237:13)
+    at async AILocationFinder.selectModels (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/ai-location-finder.ts:267:23)
+    at async AILocationFinder.findLocation (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/ai-location-finder.ts:108:22)
+    at async /Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/unified-ai-parser.ts:281:36
+    at async Promise.all (index 30)
+    at async UnifiedAIParser.parseDeepWikiResponse (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/unified-ai-parser.ts:266:21)
+    at async parseDeepWikiResponse (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/parse-deepwiki-response.ts:53:22)
+    at async Object.analyzeRepository (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/manual-pr-validator.ts:351:28)
+    at async DeepWikiApiWrapper.analyzeRepository (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/deepwiki-api-wrapper.ts:242:26)
+    at async analyzePR (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/manual-pr-validator.ts:670:26)
+[INFO] [UnifiedModelSelector] Selecting model for role: location_finder {
+  context: {
+    primaryLanguage: 'typescript',
+    size: 'small',
+    complexity: 2,
+    fileLanguage: 'typescript',
+    fileSize: 'small',
+    fileComplexity: 2,
+    issueType: 'quality',
+    issueSeverity: 'medium'
+  }
+}
+[ERROR] [AILocationFinder] Error finding location with AI: Error: No models available for selection
+    at UnifiedModelSelector.selectModel (/Users/alpinro/Code Prjects/codequal/packages/agents/src/model-selection/unified-model-selector.ts:237:13)
+    at async AILocationFinder.selectModels (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/ai-location-finder.ts:267:23)
+    at async AILocationFinder.findLocation (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/ai-location-finder.ts:108:22)
+    at async /Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/unified-ai-parser.ts:281:36
+    at async Promise.all (index 29)
+    at async UnifiedAIParser.parseDeepWikiResponse (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/unified-ai-parser.ts:266:21)
+    at async parseDeepWikiResponse (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/parse-deepwiki-response.ts:53:22)
+    at async Object.analyzeRepository (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/manual-pr-validator.ts:351:28)
+    at async DeepWikiApiWrapper.analyzeRepository (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/deepwiki-api-wrapper.ts:242:26)
+    at async analyzePR (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/manual-pr-validator.ts:670:26)
+[INFO] [UnifiedModelSelector] Selecting model for role: location_finder {
+  context: {
+    primaryLanguage: 'typescript',
+    size: 'enterprise',
+    complexity: 8,
+    fileLanguage: 'typescript',
+    fileSize: 'enterprise',
+    fileComplexity: 8,
+    issueType: 'quality',
+    issueSeverity: 'medium'
+  }
+}
+[ERROR] [AILocationFinder] Error finding location with AI: Error: No models available for selection
+    at UnifiedModelSelector.selectModel (/Users/alpinro/Code Prjects/codequal/packages/agents/src/model-selection/unified-model-selector.ts:237:13)
+    at async AILocationFinder.selectModels (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/ai-location-finder.ts:267:23)
+    at async AILocationFinder.findLocation (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/ai-location-finder.ts:108:22)
+    at async /Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/unified-ai-parser.ts:281:36
+    at async Promise.all (index 26)
+    at async UnifiedAIParser.parseDeepWikiResponse (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/deepwiki/services/unified-ai-parser.ts:266:21)
+    at async parseDeepWikiResponse (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/parse-deepwiki-response.ts:53:22)
+    at async Object.analyzeRepository (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/manual-pr-validator.ts:351:28)
+    at async DeepWikiApiWrapper.analyzeRepository (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/deepwiki-api-wrapper.ts:242:26)
+    at async analyzePR (/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/tests/regression/manual-pr-validator.ts:670:26)
+[UnifiedAIParser] [INFO] Enhanced locations for 34 issues 
+Parsed 34 issues from DeepWiki response (AI): { critical: 2, high: 7, medium: 22, low: 3 }
+📊 [34mUsing enhanced location finder for 34 issues...[0m
+🔍 Enhanced location finder searching 34 issues in /tmp/codequal-repos/sindresorhus-ky
+
+  Searching for: Security vulnerability in outdated dependencies vulnerability
+    ✅ Found: package.json:56 (file-search, confidence: 70%)
+
+  Searching for: Improper validation of user input vulnerability
+    ❌ Could not locate
+
+  Searching for: Outdated Dependency
+    ✅ Found: test/helpers/index.ts:1 (category-pattern, confidence: 30%)
+
+  Searching for: Uncaught Promise Rejection
+    ✅ Found: test/main.ts:361 (file-search, confidence: 70%)
+
+  Searching for: Memory Leak
+    ✅ Found: test/memory-leak.ts:8 (file-search, confidence: 70%)
+
+  Searching for: Inconsistent Async/Await Usage
+    ✅ Found: test/retry.ts:11 (file-search, confidence: 70%)
+
+  Searching for: Missing Error Handling
+    ✅ Found: source/core/constants.ts:16 (file-search, confidence: 70%)
+
+  Searching for: Security Vulnerability
+    ✅ Found: test/helpers/index.ts:1 (category-pattern, confidence: 30%)
+
+  Searching for: Improper Input Validation
+    ✅ Found: test/helpers/index.ts:1 (category-pattern, confidence: 30%)
+
+  Searching for: Denial of Service
+    ✅ Found: test/retry.ts:11 (file-search, confidence: 70%)
+
+  Searching for: Unoptimized File Upload Handling
+    ✅ Found: test/stream.ts:3 (file-search, confidence: 70%)
+
+  Searching for: Deprecated Method Usage
+    ✅ Found: source/core/constants.ts:2 (file-search, confidence: 70%)
+
+  Searching for: Missing TypeScript Types
+    ✅ Found: source/core/constants.ts:2 (file-search, confidence: 70%)
+
+  Searching for: Hardcoded Values
+    ✅ Found: test/fetch.ts:6 (file-search, confidence: 70%)
+
+  Searching for: Redundant Code
+    ✅ Found: test/headers.ts:144 (file-search, confidence: 70%)
+
+  Searching for: Poor Documentation
+    ✅ Found: README.md:249 (file-search, confidence: 70%)
+
+  Searching for: Lack of Test Cases
+    ✅ Found: test/retry.ts:1 (file-search, confidence: 70%)
+
+  Searching for: Outdated: typescript@5.5.4
+    ❌ Could not locate
+
+  Searching for: Missing Types
+    ✅ Found: source/core/constants.ts:2 (file-search, confidence: 70%)
+
+  Searching for: Code Smell
+    ✅ Found: test/retry.ts:31 (file-search, confidence: 70%)
+
+  Searching for: Code Smell
+    ✅ Found: test/retry.ts:31 (file-search, confidence: 70%)
+
+  Searching for: Code Smell
+    ✅ Found: test/stream.ts:21 (file-search, confidence: 70%)
+
+  Searching for: Code Smell
+    ✅ Found: source/core/constants.ts:62 (file-search, confidence: 70%)
+
+  Searching for: Code Smell
+    ✅ Found: test/helpers/index.ts:1 (category-pattern, confidence: 30%)
+
+  Searching for: Code Smell
+    ✅ Found: test/headers.ts:144 (file-search, confidence: 70%)
+
+  Searching for: Code Smell
+    ✅ Found: test/retry.ts:31 (file-search, confidence: 70%)
+
+  Searching for: Code Smell
+    ✅ Found: test/helpers/index.ts:1 (category-pattern, confidence: 30%)
+
+  Searching for: Code Smell
+    ✅ Found: test/helpers/index.ts:1 (category-pattern, confidence: 30%)
+
+  Searching for: Code Smell
+    ✅ Found: source/core/constants.ts:62 (file-search, confidence: 70%)
+
+  Searching for: Code Smell
+    ✅ Found: test/helpers/index.ts:1 (category-pattern, confidence: 30%)
+
+  Searching for: Code Smell
+    ✅ Found: README.md:13 (file-search, confidence: 70%)
+
+  Searching for: Low test coverage: 75%
+    ✅ Found: test/helpers/index.ts:1 (category-pattern, confidence: 30%)
+
+  Searching for: God objects
+    ✅ Found: test/helpers/index.ts:1 (category-pattern, confidence: 30%)
+
+  Searching for: Circular dependencies
+    ✅ Found: test/helpers/index.ts:1 (category-pattern, confidence: 30%)
+
+📊 Located 32/34 issues
+✅ [32mEnhanced location finder resolved 32/34 locations[0m
+📊 [34mFound 1 issues with unknown locations. Clarifying...[0m
+🔍 Clarifying locations for 1 issues with unknown locations...
+📝 0/1 issues have code snippets
+✅ Clarified 1 locations out of 1 unknown issues
+✅ Extracted code snippet from package.json:24 (11 lines)
+📝 Added code snippet for dep-outdated-1 from package.json:24
+📍 Updated location for dep-outdated-1: package.json:24 (100% confidence)
+✅ [32mClarified 1 locations[0m
+📊 [34mExtracting code snippets for 10 issues...[0m
+✅ Extracted snippet for Outdated Dependency from test/helpers/index.ts:1
+✅ Extracted snippet for Security Vulnerability from test/helpers/index.ts:1
+✅ Extracted snippet for Improper Input Validation from test/helpers/index.ts:1
+✅ Extracted snippet for Code Smell from test/helpers/index.ts:1
+✅ Extracted snippet for Code Smell from test/helpers/index.ts:1
+✅ Extracted snippet for Code Smell from test/helpers/index.ts:1
+✅ Extracted snippet for Code Smell from test/helpers/index.ts:1
+✅ Extracted snippet for Low test coverage: 75% from test/helpers/index.ts:1
+✅ Extracted snippet for God objects from test/helpers/index.ts:1
+✅ Extracted snippet for Circular dependencies from test/helpers/index.ts:1
+✅ [32mExtracted 10 code snippets from repository[0m
+💾 Cached DeepWiki response for https://github.com/sindresorhus/ky
+🔄 Applying intelligent response transformation...
+[DeepWikiResponseTransformer] Starting DeepWiki response transformation {
+  hasResponse: true,
+  repositoryUrl: 'https://github.com/sindresorhus/ky',
+  branch: 'main',
+  prId: undefined
+}
+[DeepWikiResponseTransformer] Response validation completed {
+  isValid: true,
+  hasIssues: true,
+  hasCompleteData: true,
+  missingFields: [],
+  malformedIssues: 0,
+  hasUnknownLocations: false,
+  issuesWithoutTitle: 0,
+  issuesWithoutSeverity: 0,
+  issuesWithoutCategory: 0,
+  confidence: 1
+}
+[DeepWikiResponseTransformer] Response is valid, returning with minimal processing 
+✅ [32mMain branch analyzed in 86.0s - Found 34 issues[0m
+
+[36mMain Branch Issues by Severity:[0m
+  🔴 CRITICAL: 2
+  🟠 HIGH: 7
+  🟡 MEDIUM: 22
+  🟢 LOW: 3
+
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+[1m[34mANALYZING PR BRANCH[0m
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+

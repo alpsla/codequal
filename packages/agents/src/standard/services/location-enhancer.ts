@@ -1,5 +1,9 @@
-import { ILocationFinder } from './location-finder';
-import { createLocationFinder } from './location-finder-enhanced';
+// Using EnhancedLocationFinder - the consolidated location finding implementation
+import { EnhancedLocationFinder } from './enhanced-location-finder';
+
+interface ILocationFinder {
+  findExactLocation(issue: any, repoPath: string): Promise<any>;
+}
 import { ModelVersionSync } from '@codequal/core';
 import { execSync } from 'child_process';
 import * as path from 'path';
@@ -36,7 +40,26 @@ export class LocationEnhancer {
     modelVersionSync?: ModelVersionSync,
     vectorStorage?: any
   ) {
-    this.locationFinder = locationFinder || createLocationFinder(modelVersionSync, vectorStorage);
+    // Create an adapter for EnhancedLocationFinder to match ILocationFinder interface
+    if (!locationFinder) {
+      const enhancedFinder = new EnhancedLocationFinder();
+      this.locationFinder = {
+        findExactLocation: async (issue: any, repoPath: string) => {
+          const results = await enhancedFinder.findLocations(repoPath, [{
+            id: issue.id || 'temp',
+            title: issue.title || issue.message || '',
+            description: issue.description || '',
+            category: issue.category || 'general',
+            severity: issue.severity || 'medium',
+            codeSnippet: issue.codeSnippet || issue.evidence?.snippet,
+            file: issue.file
+          }]);
+          return results[0] || null;
+        }
+      };
+    } else {
+      this.locationFinder = locationFinder;
+    }
   }
 
   async enhanceIssuesWithLocations(

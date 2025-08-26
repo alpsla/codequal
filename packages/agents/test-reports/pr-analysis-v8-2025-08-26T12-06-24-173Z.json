@@ -1,0 +1,745 @@
+{
+  "repositoryUrl": "https://github.com/sindresorhus/ky",
+  "prNumber": 700,
+  "mainBranchIssues": [
+    {
+      "id": "issue-1",
+      "title": "Potential denial of service due to lack of request timeout handling",
+      "description": "Potential denial of service due to lack of request timeout handling",
+      "severity": "high",
+      "category": "performance",
+      "location": {
+        "file": "source/core/constants.ts",
+        "line": 3
+      },
+      "file": "source/core/constants.ts",
+      "line": 16,
+      "codeSnippet": "import {type RequestInitRegistry} from '../types/request.js';",
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "issue-2",
+      "title": "Lack of input validation for request URLs, which may lead to unexpected behavior",
+      "description": "Lack of input validation for request URLs, which may lead to unexpected behavior",
+      "severity": "high",
+      "category": "security",
+      "location": {
+        "file": "source/core/index.ts",
+        "line": 45
+      },
+      "file": "source/core/index.ts",
+      "line": 45,
+      "codeSnippet": "`const url = new URL(input);`"
+    },
+    {
+      "id": "issue-3",
+      "title": "Use of deprecated API (ReadableStream) may lead to compatibility issues in older environments",
+      "description": "Use of deprecated API (ReadableStream) may lead to compatibility issues in older environments",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "source/core/constants.ts",
+        "line": 5
+      },
+      "file": "source/core/constants.ts",
+      "line": 5,
+      "codeSnippet": "`const supportsReadableStream = typeof globalThis.ReadableStream === 'function';`"
+    },
+    {
+      "id": "issue-4",
+      "title": "Missing error handling in promise chains could lead to unhandled promise rejections",
+      "description": "Missing error handling in promise chains could lead to unhandled promise rejections",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "test/hooks.ts",
+        "line": 3
+      },
+      "file": "test/hooks.ts",
+      "line": 112,
+      "codeSnippet": "import ky, {HTTPError} from '../source/index.js';",
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "issue-5",
+      "title": "Hardcoded URL in tests may lead to flaky tests if the external service changes",
+      "description": "Hardcoded URL in tests may lead to flaky tests if the external service changes",
+      "severity": "medium",
+      "category": "testing",
+      "location": {
+        "file": "test/main.ts",
+        "line": 6
+      },
+      "file": "test/main.ts",
+      "line": 200,
+      "codeSnippet": "import {createHttpTestServer} from './helpers/create-http-test-server.js';",
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "issue-6",
+      "title": "Lack of rate limiting could lead to abuse of the API",
+      "description": "Lack of rate limiting could lead to abuse of the API",
+      "severity": "high",
+      "category": "security",
+      "location": {
+        "file": "source/core/index.ts",
+        "line": 35
+      },
+      "file": "source/core/index.ts",
+      "line": 35,
+      "codeSnippet": "`return fetch(url, options);`"
+    },
+    {
+      "id": "issue-7",
+      "title": "Potential memory leak due to unclosed server connections in tests",
+      "description": "Potential memory leak due to unclosed server connections in tests",
+      "severity": "medium",
+      "category": "performance",
+      "location": {
+        "file": "test/hooks.ts",
+        "line": 5
+      },
+      "file": "test/hooks.ts",
+      "line": 85,
+      "codeSnippet": "import {createHttpTestServer} from './helpers/create-http-test-server.js';",
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "issue-8",
+      "title": "No validation of the body content type may lead to server errors",
+      "description": "No validation of the body content type may lead to server errors",
+      "severity": "medium",
+      "category": "security",
+      "location": {
+        "file": "source/core/index.ts",
+        "line": 70
+      },
+      "file": "source/core/index.ts",
+      "line": 70,
+      "codeSnippet": "`const contentType = request.headers['content-type'];`"
+    },
+    {
+      "id": "issue-9",
+      "title": "Use of `eval` in tests can lead to security vulnerabilities if input is not sanitized",
+      "description": "Use of `eval` in tests can lead to security vulnerabilities if input is not sanitized",
+      "severity": "critical",
+      "category": "security",
+      "location": {
+        "file": "test/browser.ts",
+        "line": 1
+      },
+      "file": "test/browser.ts",
+      "line": 50,
+      "codeSnippet": "import test, {type ExecutionContext} from 'ava';",
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "issue-10",
+      "title": "Lack of logging for failed requests may hinder debugging efforts",
+      "description": "Lack of logging for failed requests may hinder debugging efforts",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "source/core/index.ts",
+        "line": 120
+      },
+      "file": "source/core/index.ts",
+      "line": 120,
+      "codeSnippet": "`return response.json();`"
+    }
+  ],
+  "prBranchIssues": [
+    {
+      "id": "issue-1",
+      "title": "Potential denial of service through unhandled request timeouts",
+      "description": "Potential denial of service through unhandled request timeouts",
+      "severity": "high",
+      "category": "performance",
+      "location": {
+        "file": "test/main.ts",
+        "line": 88
+      },
+      "file": "test/main.ts",
+      "line": 88,
+      "codeSnippet": "await t.throwsAsync(ky(server.url, {timeout: 1000}).text(), { instanceOf: TimeoutError });"
+    },
+    {
+      "id": "issue-2",
+      "title": "Missing input validation for user-provided URLs",
+      "description": "Missing input validation for user-provided URLs",
+      "severity": "high",
+      "category": "security",
+      "location": {
+        "file": "source/core/constants.ts",
+        "line": 18
+      },
+      "file": "source/core/constants.ts",
+      "line": 18,
+      "codeSnippet": "const request = ky(inputRequest, {body: expectedBody});"
+    },
+    {
+      "id": "issue-3",
+      "title": "Lack of error handling for JSON parsing in response",
+      "description": "Lack of error handling for JSON parsing in response",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "test/main.ts",
+        "line": 5
+      },
+      "file": "test/main.ts",
+      "line": 55,
+      "codeSnippet": "import ky, {TimeoutError} from '../source/index.js';",
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "issue-4",
+      "title": "Potential buffer overflow from unbounded input handling",
+      "description": "Potential buffer overflow from unbounded input handling",
+      "severity": "high",
+      "category": "security",
+      "location": {
+        "file": "source/core/constants.ts",
+        "line": 51
+      },
+      "file": "source/core/constants.ts",
+      "line": 10,
+      "codeSnippet": "\tarrayBuffer: '*/*',",
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "issue-5",
+      "title": "Uncaught promise rejection in async hooks",
+      "description": "Uncaught promise rejection in async hooks",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "test/hooks.ts",
+        "line": 180
+      },
+      "file": "test/hooks.ts",
+      "line": 40,
+      "codeSnippet": "test('afterResponse hook can throw error to reject the request promise', async t => {",
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "issue-6",
+      "title": "Use of deprecated methods that may lead to future compatibility issues",
+      "description": "Use of deprecated methods that may lead to future compatibility issues",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "test/helpers/index.ts",
+        "line": 5
+      },
+      "file": "test/helpers/index.ts",
+      "line": 5,
+      "codeSnippet": "export * from './create-http-test-server.js';"
+    },
+    {
+      "id": "issue-7",
+      "title": "Potential memory leak from unbounded event listeners",
+      "description": "Potential memory leak from unbounded event listeners",
+      "severity": "high",
+      "category": "performance",
+      "location": {
+        "file": "test/browser.ts",
+        "line": 156
+      },
+      "file": "test/browser.ts",
+      "line": 24,
+      "codeSnippet": "\t\t\tonDownloadProgress(progressEvent) {",
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "issue-8",
+      "title": "Lack of rate limiting on request handlers",
+      "description": "Lack of rate limiting on request handlers",
+      "severity": "critical",
+      "category": "security",
+      "location": {
+        "file": "test/retry.ts",
+        "line": 127
+      },
+      "file": "test/retry.ts",
+      "line": 10,
+      "codeSnippet": "test('RateLimit-Reset is treated the same as Retry-After', async t => {",
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "issue-9",
+      "title": "Inconsistent error handling across different HTTP methods",
+      "description": "Inconsistent error handling across different HTTP methods",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "test/main.ts",
+        "line": 5
+      },
+      "file": "test/main.ts",
+      "line": 75,
+      "codeSnippet": "import ky, {TimeoutError} from '../source/index.js';",
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "issue-10",
+      "title": "Missing timeout handling for network requests",
+      "description": "Missing timeout handling for network requests",
+      "severity": "high",
+      "category": "performance",
+      "location": {
+        "file": "test/main.ts",
+        "line": 5
+      },
+      "file": "test/main.ts",
+      "line": 45,
+      "codeSnippet": "import ky, {TimeoutError} from '../source/index.js';",
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    }
+  ],
+  "categorized": {
+    "newIssues": [
+      {
+        "issue": {
+          "id": "issue-1",
+          "title": "Potential denial of service through unhandled request timeouts",
+          "description": "Potential denial of service through unhandled request timeouts",
+          "severity": "high",
+          "category": "performance",
+          "location": {
+            "file": "test/main.ts",
+            "line": 88
+          },
+          "file": "test/main.ts",
+          "line": 88,
+          "codeSnippet": "await t.throwsAsync(ky(server.url, {timeout: 1000}).text(), { instanceOf: TimeoutError });"
+        },
+        "category": "new",
+        "fingerprint": "test/main.ts:85:performance:high:5wwdag:hnnv4z",
+        "confidence": 0.6
+      },
+      {
+        "issue": {
+          "id": "issue-2",
+          "title": "Missing input validation for user-provided URLs",
+          "description": "Missing input validation for user-provided URLs",
+          "severity": "high",
+          "category": "security",
+          "location": {
+            "file": "source/core/constants.ts",
+            "line": 18
+          },
+          "file": "source/core/constants.ts",
+          "line": 18,
+          "codeSnippet": "const request = ky(inputRequest, {body: expectedBody});"
+        },
+        "category": "new",
+        "fingerprint": "source/core/constants.ts:15:security:high:rqui1f:e8ys92",
+        "confidence": 0.20999999999999996
+      },
+      {
+        "issue": {
+          "id": "issue-3",
+          "title": "Lack of error handling for JSON parsing in response",
+          "description": "Lack of error handling for JSON parsing in response",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "test/main.ts",
+            "line": 5
+          },
+          "file": "test/main.ts",
+          "line": 55,
+          "codeSnippet": "import ky, {TimeoutError} from '../source/index.js';",
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "new",
+        "fingerprint": "test/main.ts:5:code-quality:medium:od9hig:42hznr",
+        "confidence": 0.44999999999999996
+      },
+      {
+        "issue": {
+          "id": "issue-4",
+          "title": "Potential buffer overflow from unbounded input handling",
+          "description": "Potential buffer overflow from unbounded input handling",
+          "severity": "high",
+          "category": "security",
+          "location": {
+            "file": "source/core/constants.ts",
+            "line": 51
+          },
+          "file": "source/core/constants.ts",
+          "line": 10,
+          "codeSnippet": "\tarrayBuffer: '*/*',",
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "new",
+        "fingerprint": "source/core/constants.ts:50:security:high:mmjj4d:nguhvo",
+        "confidence": 0.32999999999999996
+      },
+      {
+        "issue": {
+          "id": "issue-5",
+          "title": "Uncaught promise rejection in async hooks",
+          "description": "Uncaught promise rejection in async hooks",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "test/hooks.ts",
+            "line": 180
+          },
+          "file": "test/hooks.ts",
+          "line": 40,
+          "codeSnippet": "test('afterResponse hook can throw error to reject the request promise', async t => {",
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "new",
+        "fingerprint": "test/hooks.ts:180:code-quality:medium:teoatk:lsynr7",
+        "confidence": 0.29999999999999993
+      },
+      {
+        "issue": {
+          "id": "issue-6",
+          "title": "Use of deprecated methods that may lead to future compatibility issues",
+          "description": "Use of deprecated methods that may lead to future compatibility issues",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "test/helpers/index.ts",
+            "line": 5
+          },
+          "file": "test/helpers/index.ts",
+          "line": 5,
+          "codeSnippet": "export * from './create-http-test-server.js';"
+        },
+        "category": "new",
+        "fingerprint": "test/helpers/index.ts:5:code-quality:medium:a3ju8z:w2b7e1",
+        "confidence": 0.4
+      },
+      {
+        "issue": {
+          "id": "issue-7",
+          "title": "Potential memory leak from unbounded event listeners",
+          "description": "Potential memory leak from unbounded event listeners",
+          "severity": "high",
+          "category": "performance",
+          "location": {
+            "file": "test/browser.ts",
+            "line": 156
+          },
+          "file": "test/browser.ts",
+          "line": 24,
+          "codeSnippet": "\t\t\tonDownloadProgress(progressEvent) {",
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "new",
+        "fingerprint": "test/browser.ts:155:performance:high:1sb21z:p24z0r",
+        "confidence": 0.6
+      },
+      {
+        "issue": {
+          "id": "issue-8",
+          "title": "Lack of rate limiting on request handlers",
+          "description": "Lack of rate limiting on request handlers",
+          "severity": "critical",
+          "category": "security",
+          "location": {
+            "file": "test/retry.ts",
+            "line": 127
+          },
+          "file": "test/retry.ts",
+          "line": 10,
+          "codeSnippet": "test('RateLimit-Reset is treated the same as Retry-After', async t => {",
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "new",
+        "fingerprint": "test/retry.ts:125:security:critical:fxbae4:4tm6r8",
+        "confidence": 0.7
+      },
+      {
+        "issue": {
+          "id": "issue-9",
+          "title": "Inconsistent error handling across different HTTP methods",
+          "description": "Inconsistent error handling across different HTTP methods",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "test/main.ts",
+            "line": 5
+          },
+          "file": "test/main.ts",
+          "line": 75,
+          "codeSnippet": "import ky, {TimeoutError} from '../source/index.js';",
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "new",
+        "fingerprint": "test/main.ts:5:code-quality:medium:77yy5k:42hznr",
+        "confidence": 0.44999999999999996
+      },
+      {
+        "issue": {
+          "id": "issue-10",
+          "title": "Missing timeout handling for network requests",
+          "description": "Missing timeout handling for network requests",
+          "severity": "high",
+          "category": "performance",
+          "location": {
+            "file": "test/main.ts",
+            "line": 5
+          },
+          "file": "test/main.ts",
+          "line": 45,
+          "codeSnippet": "import ky, {TimeoutError} from '../source/index.js';",
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "new",
+        "fingerprint": "test/main.ts:5:performance:high:jkza1d:42hznr",
+        "confidence": 0.55
+      }
+    ],
+    "fixedIssues": [
+      {
+        "issue": {
+          "id": "issue-1",
+          "title": "Potential denial of service due to lack of request timeout handling",
+          "description": "Potential denial of service due to lack of request timeout handling",
+          "severity": "high",
+          "category": "performance",
+          "location": {
+            "file": "source/core/constants.ts",
+            "line": 3
+          },
+          "file": "source/core/constants.ts",
+          "line": 16,
+          "codeSnippet": "import {type RequestInitRegistry} from '../types/request.js';",
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "fixed",
+        "fingerprint": "source/core/constants.ts:0:performance:high:wcc6t3:2h2m97",
+        "confidence": 0.20999999999999996
+      },
+      {
+        "issue": {
+          "id": "issue-2",
+          "title": "Lack of input validation for request URLs, which may lead to unexpected behavior",
+          "description": "Lack of input validation for request URLs, which may lead to unexpected behavior",
+          "severity": "high",
+          "category": "security",
+          "location": {
+            "file": "source/core/index.ts",
+            "line": 45
+          },
+          "file": "source/core/index.ts",
+          "line": 45,
+          "codeSnippet": "`const url = new URL(input);`"
+        },
+        "category": "fixed",
+        "fingerprint": "source/core/index.ts:45:security:high:52jxbr:uy5z84",
+        "confidence": 0.55
+      },
+      {
+        "issue": {
+          "id": "issue-3",
+          "title": "Use of deprecated API (ReadableStream) may lead to compatibility issues in older environments",
+          "description": "Use of deprecated API (ReadableStream) may lead to compatibility issues in older environments",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "source/core/constants.ts",
+            "line": 5
+          },
+          "file": "source/core/constants.ts",
+          "line": 5,
+          "codeSnippet": "`const supportsReadableStream = typeof globalThis.ReadableStream === 'function';`"
+        },
+        "category": "fixed",
+        "fingerprint": "source/core/constants.ts:5:code-quality:medium:abx7a1:my8sf8",
+        "confidence": 0.4
+      },
+      {
+        "issue": {
+          "id": "issue-4",
+          "title": "Missing error handling in promise chains could lead to unhandled promise rejections",
+          "description": "Missing error handling in promise chains could lead to unhandled promise rejections",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "test/hooks.ts",
+            "line": 3
+          },
+          "file": "test/hooks.ts",
+          "line": 112,
+          "codeSnippet": "import ky, {HTTPError} from '../source/index.js';",
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "fixed",
+        "fingerprint": "test/hooks.ts:0:code-quality:medium:o7srs3:obyaxw",
+        "confidence": 0.29999999999999993
+      },
+      {
+        "issue": {
+          "id": "issue-5",
+          "title": "Hardcoded URL in tests may lead to flaky tests if the external service changes",
+          "description": "Hardcoded URL in tests may lead to flaky tests if the external service changes",
+          "severity": "medium",
+          "category": "testing",
+          "location": {
+            "file": "test/main.ts",
+            "line": 6
+          },
+          "file": "test/main.ts",
+          "line": 200,
+          "codeSnippet": "import {createHttpTestServer} from './helpers/create-http-test-server.js';",
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "fixed",
+        "fingerprint": "test/main.ts:5:testing:medium:svpbv6:okf1dn",
+        "confidence": 0.44999999999999996
+      },
+      {
+        "issue": {
+          "id": "issue-6",
+          "title": "Lack of rate limiting could lead to abuse of the API",
+          "description": "Lack of rate limiting could lead to abuse of the API",
+          "severity": "high",
+          "category": "security",
+          "location": {
+            "file": "source/core/index.ts",
+            "line": 35
+          },
+          "file": "source/core/index.ts",
+          "line": 35,
+          "codeSnippet": "`return fetch(url, options);`"
+        },
+        "category": "fixed",
+        "fingerprint": "source/core/index.ts:35:security:high:mddpzv:a1ihud",
+        "confidence": 0.7
+      },
+      {
+        "issue": {
+          "id": "issue-7",
+          "title": "Potential memory leak due to unclosed server connections in tests",
+          "description": "Potential memory leak due to unclosed server connections in tests",
+          "severity": "medium",
+          "category": "performance",
+          "location": {
+            "file": "test/hooks.ts",
+            "line": 5
+          },
+          "file": "test/hooks.ts",
+          "line": 85,
+          "codeSnippet": "import {createHttpTestServer} from './helpers/create-http-test-server.js';",
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "fixed",
+        "fingerprint": "test/hooks.ts:5:performance:medium:v49ab0:okf1dn",
+        "confidence": 0.44999999999999996
+      },
+      {
+        "issue": {
+          "id": "issue-8",
+          "title": "No validation of the body content type may lead to server errors",
+          "description": "No validation of the body content type may lead to server errors",
+          "severity": "medium",
+          "category": "security",
+          "location": {
+            "file": "source/core/index.ts",
+            "line": 70
+          },
+          "file": "source/core/index.ts",
+          "line": 70,
+          "codeSnippet": "`const contentType = request.headers['content-type'];`"
+        },
+        "category": "fixed",
+        "fingerprint": "source/core/index.ts:70:security:medium:roon5x:70lzf3",
+        "confidence": 0.7
+      },
+      {
+        "issue": {
+          "id": "issue-9",
+          "title": "Use of `eval` in tests can lead to security vulnerabilities if input is not sanitized",
+          "description": "Use of `eval` in tests can lead to security vulnerabilities if input is not sanitized",
+          "severity": "critical",
+          "category": "security",
+          "location": {
+            "file": "test/browser.ts",
+            "line": 1
+          },
+          "file": "test/browser.ts",
+          "line": 50,
+          "codeSnippet": "import test, {type ExecutionContext} from 'ava';",
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "fixed",
+        "fingerprint": "test/browser.ts:0:security:critical:bnqk7q:ckva1j",
+        "confidence": 0.6
+      },
+      {
+        "issue": {
+          "id": "issue-10",
+          "title": "Lack of logging for failed requests may hinder debugging efforts",
+          "description": "Lack of logging for failed requests may hinder debugging efforts",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "source/core/index.ts",
+            "line": 120
+          },
+          "file": "source/core/index.ts",
+          "line": 120,
+          "codeSnippet": "`return response.json();`"
+        },
+        "category": "fixed",
+        "fingerprint": "source/core/index.ts:120:code-quality:medium:qy7lor:zeh9at",
+        "confidence": 0.7
+      }
+    ],
+    "unchangedIssues": [],
+    "summary": {
+      "totalNew": 10,
+      "totalFixed": 10,
+      "totalUnchanged": 0,
+      "netImpact": 0,
+      "prQualityScore": 0
+    },
+    "recommendations": [
+      "🚨 BLOCKING: Fix 1 critical issue(s) before merging",
+      "⚠️ Address 5 high-severity issue(s) introduced by this PR",
+      "✅ Great work! This PR fixes 10 existing issue(s)",
+      "🔴 Significant issues detected. Consider revising this PR."
+    ]
+  },
+  "metadata": {
+    "analysisDate": "2025-08-26T12:06:23.588Z",
+    "mainBranchAnalysisDuration": 14.5,
+    "prBranchAnalysisDuration": 11.4,
+    "totalDuration": 25.9,
+    "modelUsed": "dynamic-selection",
+    "iterationsPerBranch": 3,
+    "tokensUsed": 0
+  }
+}

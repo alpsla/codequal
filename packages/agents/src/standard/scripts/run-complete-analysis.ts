@@ -17,10 +17,9 @@
 
 import { ComparisonOrchestrator } from '../orchestrator/comparison-orchestrator';
 import { StandardAgentFactory, MockResearcherAgent } from '../infrastructure/factory';
-import { createDeepWikiService, IDeepWikiService } from '../deepwiki/services/deepwiki-client';
+import { DirectDeepWikiApiWithLocation } from '../services/direct-deepwiki-api-with-location';
 import { writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
-import { registerDeepWikiApi } from '../deepwiki/services/deepwiki-api-wrapper';
 
 interface AnalysisOptions {
   repository: string;
@@ -32,7 +31,7 @@ interface AnalysisOptions {
 
 class CompleteAnalysisRunner {
   private orchestrator!: ComparisonOrchestrator;
-  private deepWikiService!: IDeepWikiService;
+  private deepWikiService!: DirectDeepWikiApiWithLocation;
   private outputDir: string;
 
   constructor(options: AnalysisOptions) {
@@ -40,16 +39,14 @@ class CompleteAnalysisRunner {
     this.outputDir = options.outputDir || join(__dirname, '../reports', new Date().toISOString().split('T')[0]);
     mkdirSync(this.outputDir, { recursive: true });
 
-    // Initialize services
-    const logger = StandardAgentFactory.createLogger();
-    this.deepWikiService = createDeepWikiService(logger);
+    // Initialize services - using DirectDeepWikiApiWithLocation which includes location finding
+    this.deepWikiService = new DirectDeepWikiApiWithLocation();
     
     // Orchestrator will be initialized in init() method
   }
 
   async init() {
-    // Always register real DeepWiki API
-    await this.registerRealDeepWiki();
+    // DirectDeepWikiApiWithLocation already includes the real DeepWiki integration
 
     // Initialize orchestrator using static methods
     const logger = StandardAgentFactory.createLogger();
@@ -63,75 +60,6 @@ class CompleteAnalysisRunner {
     );
   }
 
-  private async registerRealDeepWiki() {
-    try {
-      // Try to import the real DeepWiki API from apps/api
-      const apiPath = join(__dirname, '../../../../../apps/api/dist/services/deepwiki-api-manager.js');
-      const { deepWikiApiManager } = await import(apiPath);
-      
-      // Create an adapter that converts the API response to the expected format
-      const adapter = {
-        async analyzeRepository(repositoryUrl: string, options?: any) {
-          const result = await deepWikiApiManager.analyzeRepository(repositoryUrl, options);
-          
-          // Log first issue to see structure
-          if (result && result.issues && result.issues.length > 0) {
-            console.log('🔍 DeepWiki Issue Example:');
-            const firstIssue = result.issues[0];
-            console.log('  - Has suggestion:', !!firstIssue.suggestion);
-            console.log('  - Has remediation:', !!firstIssue.remediation);
-            console.log('  - Has recommendation:', !!firstIssue.recommendation);
-            if (firstIssue.suggestion) {
-              console.log('  - Suggestion:', firstIssue.suggestion.substring(0, 100) + '...');
-            }
-          }
-          
-          // Convert the flat issue structure to nested structure expected by DeepWiki service
-          if (result && result.issues) {
-            result.issues = result.issues.map((issue: any) => ({
-              id: issue.id || `issue-${Math.random().toString(36).substr(2, 9)}`,
-              severity: issue.severity,
-              category: issue.category,
-              title: issue.message || issue.title,
-              description: issue.description || issue.message,
-              location: {
-                file: issue.file || 'unknown',
-                line: issue.line || 0,
-                column: issue.column
-              },
-              recommendation: issue.suggestion || issue.remediation,
-              suggestion: issue.suggestion,
-              remediation: issue.remediation,
-              rule: issue.rule
-            }));
-          }
-          
-          // Ensure the response has the expected structure
-          return {
-            issues: result.issues || [],
-            scores: result.scores || {
-              overall: 0,
-              security: 0,
-              performance: 0,
-              maintainability: 0,
-              testing: 0
-            },
-            metadata: result.metadata || {
-              timestamp: new Date().toISOString(),
-              tool_version: '1.0.0',
-              duration_ms: 0,
-              files_analyzed: 0
-            }
-          };
-        }
-      };
-      
-      registerDeepWikiApi(adapter);
-      console.log('✅ Real DeepWiki API registered');
-    } catch (error) {
-      console.warn('⚠️ Could not load real DeepWiki API, will use mock:', error instanceof Error ? error.message : String(error));
-    }
-  }
 
   private async getPRAuthor(repoUrl: string, prNumber: string): Promise<string> {
     try {
@@ -173,17 +101,16 @@ class CompleteAnalysisRunner {
       
       // Step 1: Analyze main branch
       console.log('🔍 Analyzing main branch...');
-      const mainBranchAnalysis = await this.deepWikiService.analyzeRepositoryForComparison(
+      const mainBranchAnalysis = await this.deepWikiService.analyzeRepository(
         options.repository,
-        'main'
+        { branch: 'main' }
       );
       
-      // Step 2: Analyze feature branch (PR branch)
+      // Step 2: Analyze feature branch (PR branch)  
       console.log(`🔍 Analyzing PR #${options.prNumber} branch...`);
-      const featureBranchAnalysis = await this.deepWikiService.analyzeRepositoryForComparison(
+      const featureBranchAnalysis = await this.deepWikiService.analyzeRepository(
         options.repository,
-        undefined, // Let DeepWiki determine the PR branch
-        options.prNumber
+        { prNumber: options.prNumber }
       );
       
       // Calculate DeepWiki scan duration

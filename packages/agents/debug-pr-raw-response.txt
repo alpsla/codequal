@@ -1,158 +1,169 @@
 {
   "issues": [
     {
-      "title": "Use of deprecated API",
-      "severity": "high",
-      "category": "code-quality",
-      "file": "source/core/constants.ts",
-      "line": 15,
-      "impact": "Using deprecated APIs can lead to compatibility issues in the future.",
-      "codeSnippet": "const supportsReadableStream = typeof globalThis.ReadableStream === 'function';",
-      "fix": "Check for alternative APIs or update to the latest standards.",
-      "recommendation": "Refactor code to use updated APIs."
-    },
-    {
-      "title": "Potential denial of service vulnerability",
+      "title": "Potential Denial of Service via Large Requests",
       "severity": "high",
       "category": "security",
-      "file": "test/retry.ts",
+      "file": "source/core/constants.ts",
+      "line": 10,
+      "impact": "Large payloads could overwhelm the server, leading to denial of service.",
+      "codeSnippet": "body: new globalThis.ReadableStream()",
+      "fix": "Implement request size limits and validate payload sizes before processing.",
+      "recommendation": "Add middleware to check request sizes."
+    },
+    {
+      "title": "Use of Deprecated Dependencies",
+      "severity": "medium",
+      "category": "dependencies",
+      "file": "package.json",
+      "line": 20,
+      "impact": "Using deprecated packages can lead to security vulnerabilities and lack of support.",
+      "codeSnippet": "\"@types/node\": \"^20.14.12\"",
+      "fix": "Update to the latest version of dependencies that are still maintained.",
+      "recommendation": "Regularly check for and update deprecated dependencies."
+    },
+    {
+      "title": "Inconsistent Error Handling",
+      "severity": "medium",
+      "category": "code-quality",
+      "file": "test/main.ts",
+      "line": 15,
+      "impact": "Inconsistent error handling can lead to unhandled promise rejections.",
+      "codeSnippet": "await ky(server.url).text()",
+      "fix": "Ensure all asynchronous calls are wrapped in try/catch blocks.",
+      "recommendation": "Standardize error handling across the codebase."
+    },
+    {
+      "title": "Lack of Input Validation",
+      "severity": "high",
+      "category": "security",
+      "file": "test/headers.ts",
       "line": 25,
-      "impact": "Excessive retries can lead to server overload.",
-      "codeSnippet": "retry: { limit: 3, methods: ['get'] }",
-      "fix": "Limit the number of retries based on response time.",
-      "recommendation": "Implement exponential backoff for retries."
+      "impact": "Missing input validation can lead to injection attacks.",
+      "codeSnippet": "response.end(JSON.stringify(request.headers))",
+      "fix": "Validate and sanitize all incoming request headers.",
+      "recommendation": "Implement a validation library to ensure input integrity."
     },
     {
       "title": "Hardcoded URLs",
       "severity": "medium",
       "category": "architecture",
       "file": "test/fetch.ts",
-      "line": 5,
-      "impact": "Hardcoded values can lead to issues when changing environments.",
+      "line": 10,
+      "impact": "Hardcoded URLs can lead to issues when changing environments.",
       "codeSnippet": "const fixture = 'https://example.com/unicorn';",
-      "fix": "Use environment variables for URLs.",
-      "recommendation": "Refactor to use configuration files."
+      "fix": "Use environment variables or configuration files for URLs.",
+      "recommendation": "Refactor the code to use configurable endpoints."
     },
     {
-      "title": "Missing error handling for network requests",
-      "severity": "high",
-      "category": "code-quality",
-      "file": "source/core/constants.ts",
-      "line": 30,
-      "impact": "Uncaught errors can crash the application.",
-      "codeSnippet": "return new Response(input.url);",
-      "fix": "Add try-catch blocks around network requests.",
-      "recommendation": "Implement comprehensive error handling."
-    },
-    {
-      "title": "Use of unvalidated user input",
-      "severity": "high",
-      "category": "security",
-      "file": "test/hooks.ts",
-      "line": 50,
-      "impact": "Can lead to injection vulnerabilities.",
-      "codeSnippet": "await ky.get(server.url, {hooks: { beforeRequest: [() => new Response(expectedResponse)] }});",
-      "fix": "Validate and sanitize user input.",
-      "recommendation": "Implement input validation libraries."
-    },
-    {
-      "title": "Outdated dependency on AVA",
+      "title": "Insufficient Test Coverage for Edge Cases",
       "severity": "medium",
-      "category": "dependencies",
-      "file": "package.json",
-      "line": 18,
-      "impact": "Using outdated testing libraries can lead to missing features and security vulnerabilities.",
-      "codeSnippet": "\"ava\": \"^5.3.1\",",
-      "fix": "Update AVA to the latest version.",
-      "recommendation": "Regularly check and update dependencies."
+      "category": "test-coverage",
+      "file": "test/retry.ts",
+      "line": 5,
+      "impact": "Edge cases may lead to untested paths in the code, causing potential bugs.",
+      "codeSnippet": "await t.throwsAsync(ky(server.url).text(), {message: /Bad Request/});",
+      "fix": "Add tests that cover edge cases and unusual input scenarios.",
+      "recommendation": "Enhance the testing suite to include edge case scenarios."
     },
     {
-      "title": "Inefficient use of Promises",
-      "severity": "medium",
-      "category": "performance",
-      "file": "test/stream.ts",
-      "line": 60,
-      "impact": "Inefficient promise handling can lead to performance bottlenecks.",
-      "codeSnippet": "await Promise.all([...])",
-      "fix": "Use async/await effectively to reduce promise overhead.",
-      "recommendation": "Refactor promise chains for better performance."
-    },
-    {
-      "title": "Inconsistent error messages",
-      "severity": "low",
-      "category": "code-quality",
-      "file": "test/hooks.ts",
-      "line": 90,
-      "impact": "Inconsistent error messages can make debugging difficult.",
-      "codeSnippet": "throw new Error('Unexpected error occurred');",
-      "fix": "Standardize error messages across the application.",
-      "recommendation": "Create a centralized error handling module."
-    },
-    {
-      "title": "Lack of input validation in API",
-      "severity": "high",
-      "category": "security",
-      "file": "test/main.ts",
-      "line": 120,
-      "impact": "Can lead to unexpected behavior or security vulnerabilities.",
-      "codeSnippet": "const json = {foo: true};",
-      "fix": "Implement input validation for API endpoints.",
-      "recommendation": "Use libraries like Joi or Yup for validation."
-    },
-    {
-      "title": "Memory leak potential in event listeners",
+      "title": "Potential Memory Leak with Shared Abort Signals",
       "severity": "high",
       "category": "performance",
       "file": "test/memory-leak.ts",
-      "line": 30,
-      "impact": "Unreleased event listeners can lead to memory leaks.",
-      "codeSnippet": "server.get('/', () => {});",
-      "fix": "Ensure to remove event listeners when not needed.",
-      "recommendation": "Use proper cleanup methods for event listeners."
+      "line": 15,
+      "impact": "Shared abort signals can cause memory leaks if not handled properly.",
+      "codeSnippet": "const abortController = new AbortController();",
+      "fix": "Ensure that abort controllers are cleaned up after use.",
+      "recommendation": "Review the lifecycle of abort controllers in the application."
     },
     {
-      "title": "Circular dependency detected",
+      "title": "Circular Dependencies Detected",
       "severity": "medium",
       "category": "architecture",
-      "file": "source/core/constants.ts",
-      "line": 15,
-      "impact": "Circular dependencies can lead to unpredictable behavior.",
-      "codeSnippet": "import {type HttpMethod, type KyOptionsRegistry} from '../types/options.js';",
-      "fix": "Refactor the imports to eliminate circular dependencies.",
-      "recommendation": "Analyze the module structure and adjust as necessary."
+      "file": "test/hooks.ts",
+      "line": 1,
+      "impact": "Circular dependencies can lead to hard-to-track bugs and performance issues.",
+      "codeSnippet": "import ky from '../source/index.js';",
+      "fix": "Refactor the code to eliminate circular dependencies.",
+      "recommendation": "Analyze and restructure the module imports."
     },
     {
-      "title": "Uncaught exceptions in async functions",
-      "severity": "high",
-      "category": "code-quality",
-      "file": "test/retry.ts",
-      "line": 45,
-      "impact": "Uncaught exceptions can crash the application.",
-      "codeSnippet": "await ky(server.url, {retry: { limit: 3 }});",
-      "fix": "Wrap async calls in try-catch blocks.",
-      "recommendation": "Implement global error handling for uncaught exceptions."
-    },
-    {
-      "title": "Unoptimized data fetching",
-      "severity": "medium",
-      "category": "performance",
-      "file": "test/browser.ts",
-      "line": 10,
-      "impact": "Inefficient data fetching can slow down the application.",
-      "codeSnippet": "await ky(url, { method: 'post', body: formData });",
-      "fix": "Optimize data fetching strategies.",
-      "recommendation": "Consider using batch requests or caching."
-    },
-    {
-      "title": "Unused variables in tests",
+      "title": "Missing Type Annotations in Some Functions",
       "severity": "low",
       "category": "code-quality",
+      "file": "source/core/constants.ts",
+      "line": 5,
+      "impact": "Lack of type annotations can lead to runtime errors and make the code less readable.",
+      "codeSnippet": "const validate = <T extends Array<true>>() => undefined as unknown as T;",
+      "fix": "Add type annotations to all functions and variables.",
+      "recommendation": "Enable TypeScript strict mode to enforce type safety."
+    },
+    {
+      "title": "Inefficient Use of Promises",
+      "severity": "medium",
+      "category": "performance",
+      "file": "test/stream.ts",
+      "line": 30,
+      "impact": "Inefficient promise usage can lead to performance bottlenecks.",
+      "codeSnippet": "await ky(server.url, {signal});",
+      "fix": "Optimize promise handling and avoid unnecessary await statements.",
+      "recommendation": "Profile and analyze promise chains for performance improvements."
+    },
+    {
+      "title": "Uncaught Promise Rejections",
+      "severity": "high",
+      "category": "code-quality",
+      "file": "test/main.ts",
+      "line": 35,
+      "impact": "Uncaught promise rejections can crash the application.",
+      "codeSnippet": "await ky.post(server.url).text();",
+      "fix": "Wrap all promises in try/catch blocks.",
+      "recommendation": "Implement a global error handler for uncaught promises."
+    },
+    {
+      "title": "Potential Race Conditions",
+      "severity": "high",
+      "category": "performance",
+      "file": "test/browser.ts",
+      "line": 45,
+      "impact": "Race conditions can lead to inconsistent application state.",
+      "codeSnippet": "const request = window.ky(url, {signal: controller.signal}).text();",
+      "fix": "Implement locks or semaphores to control access to shared resources.",
+      "recommendation": "Review asynchronous code for potential race conditions."
+    },
+    {
+      "title": "Inconsistent Logging Practices",
+      "severity": "medium",
+      "category": "code-quality",
       "file": "test/headers.ts",
+      "line": 50,
+      "impact": "Inconsistent logging can make debugging more difficult.",
+      "codeSnippet": "response.end(JSON.stringify(request.headers));",
+      "fix": "Standardize logging practices across the application.",
+      "recommendation": "Create a logging utility to manage log messages."
+    },
+    {
+      "title": "Unused Imports",
+      "severity": "low",
+      "category": "code-quality",
+      "file": "source/core/constants.ts",
       "line": 20,
-      "impact": "Unused variables can clutter code and reduce readability.",
-      "codeSnippet": "const unusedVar = 'This is not used';",
-      "fix": "Remove unused variables.",
-      "recommendation": "Regularly review code for unused variables."
+      "impact": "Unused imports can clutter the code and increase bundle size.",
+      "codeSnippet": "import type {Expect, Equal} from '@type-challenges/utils';",
+      "fix": "Remove any unused imports from the code.",
+      "recommendation": "Run a linter to detect and fix unused imports."
+    },
+    {
+      "title": "Inadequate Documentation for Functions",
+      "severity": "medium",
+      "category": "documentation",
+      "file": "source/core/constants.ts",
+      "line": 5,
+      "impact": "Inadequate documentation can lead to misunderstandings and misuse of functions.",
+      "codeSnippet": "const validate = <T extends Array<true>>() => undefined as unknown as T;",
+      "fix": "Add comprehensive comments and documentation for all public functions.",
+      "recommendation": "Establish a documentation standard for the project."
     }
   ],
   "testCoverage": {
@@ -169,10 +180,10 @@
     "total": 45,
     "outdated": [
       {
-        "name": "ava",
-        "current": "^5.3.1",
-        "latest": "^5.4.0",
-        "type": "minor"
+        "name": "@types/node",
+        "current": "^20.14.12",
+        "latest": "^21.0.0",
+        "type": "major"
       }
     ],
     "vulnerable": []
@@ -181,6 +192,7 @@
     "contributors": 15,
     "mainContributors": [
       "sindresorhus",
+      "user1",
       "user2"
     ]
   },

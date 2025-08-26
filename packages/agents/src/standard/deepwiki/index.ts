@@ -3,19 +3,22 @@
  */
 
 // Services
-export { DeepWikiClient, DeepWikiService, IDeepWikiService, createDeepWikiService } from './services/deepwiki-client';
-export { 
-  DeepWikiRepositoryAnalyzer,
-  ModelConfig,
-  ModelPreferences,
-  RepositoryAnalysisOptions,
-  RepositoryAnalysisResult,
-  CodeIssue 
-} from './services/deepwiki-repository-analyzer';
+// Archived: DeepWikiClient - replaced by DirectDeepWikiApiWithLocation
+// export { DeepWikiClient, DeepWikiService, IDeepWikiService, createDeepWikiService } from './services/deepwiki-client';
+// Archived: DeepWikiRepositoryAnalyzer - uses outdated parser approach
+// export { 
+//   DeepWikiRepositoryAnalyzer,
+//   ModelConfig,
+//   ModelPreferences,
+//   RepositoryAnalysisOptions,
+//   RepositoryAnalysisResult,
+//   CodeIssue 
+// } from './services/deepwiki-repository-analyzer';
 export { DeepWikiContextManager } from './services/deepwiki-context-manager';
 export { DeepWikiChatService } from './services/deepwiki-chat-service';
-export { DeepWikiResponseParser, parseDeepWikiResponse } from './services/deepwiki-response-parser';
-export { TwoPassAnalyzer } from './services/two-pass-analyzer';
+// Archived: DeepWikiResponseParser, parseDeepWikiResponse - using direct DeepWiki API with location finder instead
+// Archived: TwoPassAnalyzer - uses outdated parser approach
+// export { TwoPassAnalyzer } from './services/two-pass-analyzer';
 export { 
   ArchitectureVisualizer,
   ArchitectureDiagram,
@@ -28,7 +31,7 @@ export {
   ArchitectureMetrics
 } from './services/architecture-visualizer';
 export { DeepWikiCacheManager } from './services/deepwiki-cache-manager';
-export { DeepWikiApiWrapper } from './services/deepwiki-api-wrapper';
+// Archived: DeepWikiApiWrapper - duplicate functionality
 
 // Interfaces
 export * from './interfaces/deepwiki.interface';

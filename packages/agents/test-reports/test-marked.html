@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test Marked.js</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    .container { max-width: 800px; margin: 0 auto; }
+  </style>
+</head>
+<body>
+  <div class="container" id="content"></div>
+  <script>
+    const markdownContent = "# Test Report\n\n## Summary\n\nThis is a **test** report with:\n- Item 1\n- Item 2\n\n### Code Example\n\n```javascript\nconst test = 'hello';\nconsole.log(test);\n```\n\n| Column 1 | Column 2 |\n|----------|----------|\n| Value 1  | Value 2  |";
+    
+    document.getElementById('content').innerHTML = marked.parse(markdownContent);
+    console.log('Marked.js test completed');
+  </script>
+</body>
+</html>

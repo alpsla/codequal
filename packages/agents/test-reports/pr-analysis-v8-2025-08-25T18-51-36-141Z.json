@@ -1,0 +1,1572 @@
+{
+  "repositoryUrl": "https://github.com/sindresorhus/ky",
+  "prNumber": 700,
+  "mainBranchIssues": [
+    {
+      "id": "security-1",
+      "category": "security",
+      "severity": "critical",
+      "type": "XSS",
+      "title": "XSS vulnerability",
+      "description": "Improper handling of user-generated content can lead to Cross-Site Scripting (XSS) attacks.",
+      "location": {
+        "file": "test/browser.ts",
+        "line": 67
+      },
+      "impact": "Attackers could inject malicious scripts, compromising user data and application integrity.",
+      "remediation": "Sanitize user input before rendering",
+      "codeSnippet": "response.writeHead(200);\nresponse.end(userInput); // Unsafe output",
+      "fixedCode": "response.writeHead(200);\nresponse.end(sanitize(userInput));",
+      "metadata": {
+        "aiExtracted": true
+      }
+    },
+    {
+      "id": "security-2",
+      "category": "security",
+      "severity": "high",
+      "type": "Hardcoded Secrets",
+      "title": "Hardcoded Secrets vulnerability",
+      "description": "Hardcoded secrets such as API keys can lead to unauthorized access and data breaches.",
+      "location": {
+        "file": "source/config.ts",
+        "line": 12
+      },
+      "impact": "If exposed, they can be exploited by malicious users, leading to significant security risks.",
+      "remediation": "Use environment variables to manage sensitive data",
+      "codeSnippet": "const apiKey = '12345-ABCDE'; // Hardcoded API key",
+      "fixedCode": "const apiKey = process.env.API_KEY;",
+      "metadata": {
+        "aiExtracted": true
+      }
+    },
+    {
+      "id": "quality-1",
+      "category": "code-quality",
+      "severity": "high",
+      "type": "Missing Error Handling",
+      "title": "Missing Error Handling",
+      "description": "Missing error handling in HTTP requests",
+      "location": {
+        "file": "source/index.ts",
+        "line": 53
+      },
+      "impact": "Critical functions without tests can lead to undetected bugs and regressions, affecting application stability.",
+      "recommendation": "Add unit tests for the processPayment function to ensure its reliability and correctness.",
+      "metadata": {
+        "aiExtracted": true
+      },
+      "codeSnippet": "\tBeforeErrorHook,",
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "performance-4",
+      "category": "performance",
+      "severity": "high",
+      "type": "N+1 Query",
+      "title": "N+1 Query",
+      "description": "Current: Significant impact on performance due to excessive database queries, Expected: Reduced database load and faster response times",
+      "location": {
+        "file": "source/repository.ts",
+        "line": 32
+      },
+      "impact": "Excessive database queries significantly impacting performance.",
+      "recommendation": "Optimize the query by fetching all posts in a single query:\nconst posts = await getPostsByUsers(users.map(user => user.id));",
+      "metadata": {
+        "currentPerformance": "Significant impact on performance due to excessive database queries",
+        "expectedPerformance": "Reduced database load and faster response times",
+        "aiExtracted": true
+      }
+    },
+    {
+      "id": "dep-outdated-1",
+      "category": "dependencies",
+      "severity": "low",
+      "type": "outdated",
+      "title": "Outdated: express@4.18.2",
+      "description": "1 versions behind",
+      "message": "Update express to 4.18.3",
+      "recommendation": "Update to 4.18.3",
+      "metadata": {
+        "packageName": "express",
+        "currentVersion": "4.18.2",
+        "latestVersion": "4.18.3",
+        "versionsBehind": 1,
+        "dependencyType": "outdated",
+        "aiExtracted": true
+      }
+    },
+    {
+      "id": "quality-2",
+      "category": "code-quality",
+      "severity": "critical",
+      "type": "Potential XSS Vulnerability",
+      "title": "Potential XSS Vulnerability",
+      "description": "Potential XSS vulnerability in response handling",
+      "location": {
+        "file": "test/browser.ts",
+        "line": 0
+      },
+      "metadata": {
+        "aiExtracted": true
+      }
+    },
+    {
+      "id": "quality-3",
+      "category": "code-quality",
+      "severity": "medium",
+      "type": "Hardcoded Secrets",
+      "title": "Hardcoded Secrets",
+      "description": "Hardcoded secrets found in code",
+      "location": {
+        "file": "source/config.ts",
+        "line": 0
+      },
+      "metadata": {
+        "aiExtracted": true
+      }
+    },
+    {
+      "id": "quality-4",
+      "category": "code-quality",
+      "severity": "medium",
+      "type": "N+1 Query Problem",
+      "title": "N+1 Query Problem",
+      "description": "Unoptimized loop causing N+1 query problem",
+      "location": {
+        "file": "source/repository.ts",
+        "line": 0
+      },
+      "metadata": {
+        "aiExtracted": true
+      }
+    },
+    {
+      "id": "quality-5",
+      "category": "code-quality",
+      "severity": "medium",
+      "type": "Memory Leak",
+      "title": "Memory Leak",
+      "description": "Memory leak due to unreleased event listeners",
+      "location": {
+        "file": "source/eventHandler.ts",
+        "line": 0
+      },
+      "metadata": {
+        "aiExtracted": true
+      }
+    },
+    {
+      "id": "quality-6",
+      "category": "code-quality",
+      "severity": "critical",
+      "type": "Missing Unit Tests",
+      "title": "Missing Unit Tests",
+      "description": "Missing unit tests for critical functions",
+      "location": {
+        "file": "source/utils.ts",
+        "line": 0
+      },
+      "metadata": {
+        "aiExtracted": true
+      }
+    },
+    {
+      "id": "quality-7",
+      "category": "code-quality",
+      "severity": "medium",
+      "type": "Uncaught Promise Rejections",
+      "title": "Uncaught Promise Rejections",
+      "description": "Uncaught promise rejections in async functions",
+      "location": {
+        "file": "source/asyncHandler.ts",
+        "line": 0
+      },
+      "metadata": {
+        "aiExtracted": true
+      }
+    },
+    {
+      "id": "quality-complexity-8",
+      "category": "code-quality",
+      "severity": "low",
+      "type": "complexity",
+      "title": "High complexity in undefined",
+      "description": "Complexity: undefined",
+      "location": {
+        "file": "source/sort.ts",
+        "line": 0
+      },
+      "recommendation": "Refactor to reduce complexity",
+      "metadata": {
+        "metricType": "complexity",
+        "aiExtracted": true
+      }
+    },
+    {
+      "id": "quality-coverage-9",
+      "category": "code-quality",
+      "severity": "medium",
+      "type": "testing",
+      "title": "Low test coverage: 67.5%",
+      "description": "Increase test coverage to at least 80%",
+      "metadata": {
+        "metricType": "coverage",
+        "overall": 67.5,
+        "aiExtracted": true
+      }
+    },
+    {
+      "title": "Missing Error Handling for HTTP Request Failures",
+      "severity": "high",
+      "category": "code-quality",
+      "file": "source/core/Ky.ts",
+      "line": 120,
+      "codeSnippet": "\t\t\t\t\tthrow new Error('Streams are not supported in your environment. `ReadableStream` is missing.');",
+      "location": {
+        "file": "source/core/Ky.ts",
+        "line": 77
+      },
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "title": "Inefficient Loop in Retry Logic",
+      "severity": "medium",
+      "category": "performance",
+      "file": "test/retry.ts",
+      "line": 45,
+      "codeSnippet": "const defaultRetryCount = 2;",
+      "location": {
+        "file": "test/retry.ts",
+        "line": 7
+      },
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "title": "Lack of Input Validation for URL Parameters",
+      "severity": "critical",
+      "category": "security",
+      "file": "source/core/Ky.ts",
+      "line": 85,
+      "codeSnippet": "\tInput,",
+      "location": {
+        "file": "source/core/Ky.ts",
+        "line": 4
+      },
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "title": "Hardcoded URLs in Tests",
+      "severity": "medium",
+      "category": "testing",
+      "file": "test/browser.ts",
+      "line": 60,
+      "codeSnippet": "import {createHttpTestServer, type ExtendedHttpTestServer, type HttpServerOptions} from './helpers/create-http-test-server.js';",
+      "location": {
+        "file": "test/browser.ts",
+        "line": 7
+      },
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "title": "Missing Type Annotations for Parameters",
+      "severity": "medium",
+      "category": "code-quality",
+      "file": "source/core/Ky.ts",
+      "line": 32,
+      "codeSnippet": "\t\t\t\t\tthrow new Error('Streams are not supported in your environment. `ReadableStream` is missing.');",
+      "location": {
+        "file": "source/core/Ky.ts",
+        "line": 77
+      },
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "title": "Potential Memory Leak with Event Listeners",
+      "severity": "high",
+      "category": "performance",
+      "file": "test/browser.ts",
+      "line": 15,
+      "codeSnippet": "\t\t\tonDownloadProgress(progressEvent) {",
+      "location": {
+        "file": "test/browser.ts",
+        "line": 156
+      },
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "title": "Uncaught Promise Rejections in Asynchronous Tests",
+      "severity": "medium",
+      "category": "testing",
+      "file": "test/retry.ts",
+      "line": 70,
+      "codeSnippet": "import {createHttpTestServer} from './helpers/create-http-test-server.js';",
+      "location": {
+        "file": "test/retry.ts",
+        "line": 3
+      },
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "title": "Use of Deprecated APIs",
+      "severity": "high",
+      "category": "dependencies",
+      "file": "source/core/Ky.ts",
+      "line": 5,
+      "codeSnippet": "import { deprecatedFunction } from 'legacy-library';"
+    },
+    {
+      "title": "Insufficient Test Coverage for Edge Cases",
+      "severity": "medium",
+      "category": "testing",
+      "file": "test/hooks.ts",
+      "line": 20,
+      "codeSnippet": "import test from 'ava';",
+      "location": {
+        "file": "test/hooks.ts",
+        "line": 1
+      },
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "title": "Inconsistent Error Messages in API Responses",
+      "severity": "medium",
+      "category": "code-quality",
+      "file": "source/core/Ky.ts",
+      "line": 200,
+      "codeSnippet": "import {HTTPError} from '../errors/HTTPError.js';",
+      "location": {
+        "file": "source/core/Ky.ts",
+        "line": 1
+      },
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "title": "Missing JSDoc Comments for Public Methods",
+      "severity": "medium",
+      "category": "documentation",
+      "file": "source/core/Ky.ts",
+      "line": 10,
+      "codeSnippet": "\t\t\t\t\tthrow new Error('Streams are not supported in your environment. `ReadableStream` is missing.');",
+      "location": {
+        "file": "source/core/Ky.ts",
+        "line": 77
+      },
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    }
+  ],
+  "prBranchIssues": [
+    {
+      "id": "security-1",
+      "category": "security",
+      "severity": "high",
+      "type": "Hardcoded Dependency Version",
+      "title": "Hardcoded Dependency Version vulnerability",
+      "description": "Using hardcoded dependency versions can lead to security vulnerabilities and compatibility issues as libraries evolve.",
+      "location": {
+        "file": "package.json",
+        "line": 3
+      },
+      "impact": "Increases maintenance burden and exposure to vulnerabilities in outdated libraries",
+      "remediation": "Use a version range to allow for minor updates and security patches",
+      "codeSnippet": "\t\"version\": \"1.9.0\",",
+      "fixedCode": "\"@types/node\": \"^20.0.0\",",
+      "metadata": {
+        "aiExtracted": true
+      },
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "quality-9",
+      "category": "code-quality",
+      "severity": "medium",
+      "type": "Deprecated Package Usage",
+      "title": "Deprecated Package Usage",
+      "description": "Using deprecated packages can lead to issues when they are removed or no longer maintained.",
+      "location": {
+        "file": "package.json",
+        "line": 15
+      },
+      "impact": "Impacts the stability of the application",
+      "remediation": "Check for alternative packages or updated versions",
+      "codeSnippet": "\"@types/express\": \"^4.17.17\",",
+      "fixedCode": "\"@types/express\": \"latest\",",
+      "metadata": {
+        "aiExtracted": true
+      }
+    },
+    {
+      "id": "quality-8",
+      "category": "code-quality",
+      "severity": "critical",
+      "type": "Unused Dependencies",
+      "title": "Unused Dependencies",
+      "description": "Unused dependencies increase the size of the project and may introduce security vulnerabilities.",
+      "location": {
+        "file": "package.json",
+        "line": 56
+      },
+      "impact": "Increases project size and potential security risk",
+      "remediation": "Remove unused dependencies",
+      "codeSnippet": "\t\"devDependencies\": {",
+      "fixedCode": "// Remove the following line if not used\n// \"@types/body-parser\": \"^1.19.2\",",
+      "metadata": {
+        "aiExtracted": true
+      },
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "quality-1",
+      "category": "code-quality",
+      "severity": "critical",
+      "type": "Hardcoded Dependency Version",
+      "title": "Hardcoded Dependency Version",
+      "description": "Using hardcoded dependency versions can lead to security vulnerabilities and compatibility issues as libraries evolve.",
+      "location": {
+        "file": "package.json",
+        "line": 3
+      },
+      "impact": "Low test coverage can lead to undetected bugs and regressions, especially in critical areas of the application, affecting overall reliability.",
+      "recommendation": "Increase test coverage by adding unit tests for critical functions and components: // Example: Add tests for key API endpoints and business logic.",
+      "metadata": {
+        "aiExtracted": true
+      },
+      "codeSnippet": "\t\"version\": \"1.9.0\",",
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "dep-outdated-2",
+      "category": "dependencies",
+      "severity": "low",
+      "type": "outdated",
+      "title": "Outdated: @types/express@4.17.17",
+      "description": "1 versions behind",
+      "message": "Update @types/express to 4.17.18",
+      "recommendation": "Update to 4.17.18",
+      "metadata": {
+        "packageName": "@types/express",
+        "currentVersion": "4.17.17",
+        "latestVersion": "4.17.18",
+        "versionsBehind": 1,
+        "dependencyType": "outdated",
+        "aiExtracted": true
+      },
+      "location": {}
+    },
+    {
+      "id": "quality-2",
+      "category": "code-quality",
+      "severity": "medium",
+      "type": "Potential Memory Leak in Request Handling",
+      "title": "Potential Memory Leak in Request Handling",
+      "description": "If the server holds references to request objects without releasing them, it can lead to memory leaks.",
+      "location": {
+        "file": "test/browser.ts",
+        "line": 51
+      },
+      "metadata": {
+        "aiExtracted": true
+      },
+      "locationMethod": "file-search",
+      "locationConfidence": 70,
+      "codeSnippet": "\tserver.get('/', (_request, response) => {"
+    },
+    {
+      "id": "quality-3",
+      "category": "code-quality",
+      "severity": "low",
+      "type": "Deep Nesting in Request Handling Logic",
+      "title": "Deep Nesting in Request Handling Logic",
+      "description": "Deeply nested code can make the logic hard to follow and maintain, increasing the risk of bugs.",
+      "location": {
+        "file": "test/browser.ts",
+        "line": 75
+      },
+      "metadata": {
+        "aiExtracted": true
+      },
+      "locationMethod": "file-search",
+      "locationConfidence": 70,
+      "codeSnippet": "\tt.deepEqual(results, ['rainbow', 'rainbow', 'rainbow', 'rainbow']);"
+    },
+    {
+      "id": "quality-4",
+      "category": "code-quality",
+      "severity": "high",
+      "type": "Missing Test Cases for Error Handling",
+      "title": "Missing Test Cases for Error Handling",
+      "description": "Without testing error handling paths, the application may not behave as expected under failure conditions.",
+      "location": {
+        "file": "test/main.ts",
+        "line": 2
+      },
+      "metadata": {
+        "aiExtracted": true
+      },
+      "locationMethod": "file-search",
+      "locationConfidence": 70,
+      "codeSnippet": "import test from 'ava';"
+    },
+    {
+      "id": "quality-5",
+      "category": "code-quality",
+      "severity": "medium",
+      "type": "Lack of Timeout Handling in Requests",
+      "title": "Lack of Timeout Handling in Requests",
+      "description": "Not implementing timeout handling can cause requests to hang indefinitely.",
+      "location": {
+        "file": "test/main.ts",
+        "line": 5
+      },
+      "metadata": {
+        "aiExtracted": true
+      },
+      "locationMethod": "file-search",
+      "locationConfidence": 70,
+      "codeSnippet": "import ky, {TimeoutError} from '../source/index.js';"
+    },
+    {
+      "id": "quality-6",
+      "category": "code-quality",
+      "severity": "medium",
+      "type": "Inefficient Use of Promises in File Handling",
+      "title": "Inefficient Use of Promises in File Handling",
+      "description": "Using promises inefficiently can lead to performance bottlenecks.",
+      "location": {
+        "file": "test/browser.ts",
+        "line": 21
+      },
+      "metadata": {
+        "aiExtracted": true
+      },
+      "locationMethod": "file-search",
+      "locationConfidence": 70,
+      "codeSnippet": "\tserver.use('/distribution', express.static(DIST_DIR.replace(/^file:\\/\\//, '')));"
+    },
+    {
+      "id": "quality-7",
+      "category": "code-quality",
+      "severity": "medium",
+      "type": "Uncaught Exceptions in Asynchronous Code",
+      "title": "Uncaught Exceptions in Asynchronous Code",
+      "description": "Uncaught exceptions can lead to application crashes and unpredictable behavior.",
+      "location": {
+        "file": "test/browser.ts",
+        "line": 137
+      },
+      "metadata": {
+        "aiExtracted": true
+      },
+      "locationMethod": "file-search",
+      "locationConfidence": 70,
+      "codeSnippet": "defaultBrowsersTest('should not copy response body with 204 status code when using `onDownloadProgress` ', async (t: ExecutionContext, page: Page) => {"
+    },
+    {
+      "id": "quality-10",
+      "category": "code-quality",
+      "severity": "critical",
+      "type": "Low Test Coverage in Critical Areas",
+      "title": "Low Test Coverage in Critical Areas",
+      "description": "Low test coverage can lead to undetected bugs and regressions, especially in critical areas of the application.",
+      "location": {
+        "file": "test/main.ts",
+        "line": 2
+      },
+      "metadata": {
+        "aiExtracted": true
+      },
+      "locationMethod": "file-search",
+      "locationConfidence": 70,
+      "codeSnippet": "import test from 'ava';"
+    },
+    {
+      "id": "quality-coverage-11",
+      "category": "code-quality",
+      "severity": "medium",
+      "type": "testing",
+      "title": "Low test coverage: 67.5%",
+      "description": "Increase test coverage to at least 80%",
+      "metadata": {
+        "metricType": "coverage",
+        "overall": 67.5,
+        "aiExtracted": true
+      }
+    },
+    {
+      "id": "quality-1",
+      "category": "code-quality",
+      "severity": "high",
+      "type": "Scope Error",
+      "title": "Scope Error",
+      "description": "Error with OpenRouter API: cannot access free variable 'e_client' where it is not associated with a value in enclosing scope",
+      "location": {
+        "file": "package.json",
+        "line": 3
+      },
+      "impact": "Potential unauthorized access or malfunction due to scope access issues",
+      "remediation": "Ensure that all variables are properly scoped and accessible where needed",
+      "codeSnippet": "\t\"version\": \"1.9.0\",",
+      "fixedCode": "",
+      "metadata": {
+        "aiExtracted": true
+      },
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "security-2",
+      "category": "security",
+      "severity": "medium",
+      "type": "Configuration Issue",
+      "title": "Configuration Issue vulnerability",
+      "description": "Missing environment variable OPENROUTER_API_KEY",
+      "impact": "API may not function properly without a valid API key",
+      "remediation": "Ensure the OPENROUTER_API_KEY environment variable is set with a valid API key",
+      "codeSnippet": "",
+      "fixedCode": "",
+      "metadata": {
+        "aiExtracted": true
+      }
+    },
+    {
+      "id": "performance-2",
+      "category": "performance",
+      "severity": "medium",
+      "type": "Configuration Issue",
+      "title": "Configuration Issue",
+      "description": "Current: undefined, Expected: undefined",
+      "location": {
+        "file": "Environment Variables",
+        "line": "unknown"
+      },
+      "impact": "Missing OPENROUTER_API_KEY environment variable",
+      "recommendation": "Set the OPENROUTER_API_KEY environment variable with a valid API key",
+      "metadata": {
+        "aiExtracted": true
+      }
+    },
+    {
+      "id": "quality-2",
+      "category": "code-quality",
+      "severity": "medium",
+      "type": "Environment Variable Missing",
+      "title": "Environment Variable Missing",
+      "description": "Missing OPENROUTER_API_KEY environment variable or it is not set with a valid API key",
+      "location": {
+        "file": "test/browser.ts",
+        "line": 51
+      },
+      "metadata": {
+        "aiExtracted": true
+      },
+      "locationMethod": "file-search",
+      "locationConfidence": 70,
+      "codeSnippet": "\tserver.get('/', (_request, response) => {"
+    }
+  ],
+  "categorized": {
+    "newIssues": [
+      {
+        "issue": {
+          "id": "security-1",
+          "category": "security",
+          "severity": "high",
+          "type": "Hardcoded Dependency Version",
+          "title": "Hardcoded Dependency Version vulnerability",
+          "description": "Using hardcoded dependency versions can lead to security vulnerabilities and compatibility issues as libraries evolve.",
+          "location": {
+            "file": "package.json",
+            "line": 3
+          },
+          "impact": "Increases maintenance burden and exposure to vulnerabilities in outdated libraries",
+          "remediation": "Use a version range to allow for minor updates and security patches",
+          "codeSnippet": "\t\"version\": \"1.9.0\",",
+          "fixedCode": "\"@types/node\": \"^20.0.0\",",
+          "metadata": {
+            "aiExtracted": true
+          },
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "new",
+        "matchKey": "package.json|security|high|dependency-hardcoded-security-using-versions",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "quality-9",
+          "category": "code-quality",
+          "severity": "medium",
+          "type": "Deprecated Package Usage",
+          "title": "Deprecated Package Usage",
+          "description": "Using deprecated packages can lead to issues when they are removed or no longer maintained.",
+          "location": {
+            "file": "package.json",
+            "line": 15
+          },
+          "impact": "Impacts the stability of the application",
+          "remediation": "Check for alternative packages or updated versions",
+          "codeSnippet": "\"@types/express\": \"^4.17.17\",",
+          "fixedCode": "\"@types/express\": \"latest\",",
+          "metadata": {
+            "aiExtracted": true
+          }
+        },
+        "category": "new",
+        "matchKey": "package.json|code-quality|medium|deprecated-lead-packages-using",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "quality-8",
+          "category": "code-quality",
+          "severity": "critical",
+          "type": "Unused Dependencies",
+          "title": "Unused Dependencies",
+          "description": "Unused dependencies increase the size of the project and may introduce security vulnerabilities.",
+          "location": {
+            "file": "package.json",
+            "line": 56
+          },
+          "impact": "Increases project size and potential security risk",
+          "remediation": "Remove unused dependencies",
+          "codeSnippet": "\t\"devDependencies\": {",
+          "fixedCode": "// Remove the following line if not used\n// \"@types/body-parser\": \"^1.19.2\",",
+          "metadata": {
+            "aiExtracted": true
+          },
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "new",
+        "matchKey": "package.json|code-quality|critical|dependencies-increase-security-size-unused",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "quality-1",
+          "category": "code-quality",
+          "severity": "critical",
+          "type": "Hardcoded Dependency Version",
+          "title": "Hardcoded Dependency Version",
+          "description": "Using hardcoded dependency versions can lead to security vulnerabilities and compatibility issues as libraries evolve.",
+          "location": {
+            "file": "package.json",
+            "line": 3
+          },
+          "impact": "Low test coverage can lead to undetected bugs and regressions, especially in critical areas of the application, affecting overall reliability.",
+          "recommendation": "Increase test coverage by adding unit tests for critical functions and components: // Example: Add tests for key API endpoints and business logic.",
+          "metadata": {
+            "aiExtracted": true
+          },
+          "codeSnippet": "\t\"version\": \"1.9.0\",",
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "new",
+        "matchKey": "package.json|code-quality|critical|dependency-hardcoded-security-using-versions",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "dep-outdated-2",
+          "category": "dependencies",
+          "severity": "low",
+          "type": "outdated",
+          "title": "Outdated: @types/express@4.17.17",
+          "description": "1 versions behind",
+          "message": "Update @types/express to 4.17.18",
+          "recommendation": "Update to 4.17.18",
+          "metadata": {
+            "packageName": "@types/express",
+            "currentVersion": "4.17.17",
+            "latestVersion": "4.17.18",
+            "versionsBehind": 1,
+            "dependencyType": "outdated",
+            "aiExtracted": true
+          },
+          "location": {}
+        },
+        "category": "new",
+        "matchKey": "unknown|dependencies|low|type-typesexpress-update",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "quality-2",
+          "category": "code-quality",
+          "severity": "medium",
+          "type": "Potential Memory Leak in Request Handling",
+          "title": "Potential Memory Leak in Request Handling",
+          "description": "If the server holds references to request objects without releasing them, it can lead to memory leaks.",
+          "location": {
+            "file": "test/browser.ts",
+            "line": 51
+          },
+          "metadata": {
+            "aiExtracted": true
+          },
+          "locationMethod": "file-search",
+          "locationConfidence": 70,
+          "codeSnippet": "\tserver.get('/', (_request, response) => {"
+        },
+        "category": "new",
+        "matchKey": "test/browser.ts|code-quality|medium|holds-leak-memory-references-server",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "quality-3",
+          "category": "code-quality",
+          "severity": "low",
+          "type": "Deep Nesting in Request Handling Logic",
+          "title": "Deep Nesting in Request Handling Logic",
+          "description": "Deeply nested code can make the logic hard to follow and maintain, increasing the risk of bugs.",
+          "location": {
+            "file": "test/browser.ts",
+            "line": 75
+          },
+          "metadata": {
+            "aiExtracted": true
+          },
+          "locationMethod": "file-search",
+          "locationConfidence": 70,
+          "codeSnippet": "\tt.deepEqual(results, ['rainbow', 'rainbow', 'rainbow', 'rainbow']);"
+        },
+        "category": "new",
+        "matchKey": "test/browser.ts|code-quality|low|code-deeply-nested",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "quality-4",
+          "category": "code-quality",
+          "severity": "high",
+          "type": "Missing Test Cases for Error Handling",
+          "title": "Missing Test Cases for Error Handling",
+          "description": "Without testing error handling paths, the application may not behave as expected under failure conditions.",
+          "location": {
+            "file": "test/main.ts",
+            "line": 2
+          },
+          "metadata": {
+            "aiExtracted": true
+          },
+          "locationMethod": "file-search",
+          "locationConfidence": 70,
+          "codeSnippet": "import test from 'ava';"
+        },
+        "category": "new",
+        "matchKey": "test/main.ts|code-quality|high|condition-error-handling-testing-without",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "quality-5",
+          "category": "code-quality",
+          "severity": "medium",
+          "type": "Lack of Timeout Handling in Requests",
+          "title": "Lack of Timeout Handling in Requests",
+          "description": "Not implementing timeout handling can cause requests to hang indefinitely.",
+          "location": {
+            "file": "test/main.ts",
+            "line": 5
+          },
+          "metadata": {
+            "aiExtracted": true
+          },
+          "locationMethod": "file-search",
+          "locationConfidence": 70,
+          "codeSnippet": "import ky, {TimeoutError} from '../source/index.js';"
+        },
+        "category": "new",
+        "matchKey": "test/main.ts|code-quality|medium|cause-handling-implementing-timeout",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "quality-6",
+          "category": "code-quality",
+          "severity": "medium",
+          "type": "Inefficient Use of Promises in File Handling",
+          "title": "Inefficient Use of Promises in File Handling",
+          "description": "Using promises inefficiently can lead to performance bottlenecks.",
+          "location": {
+            "file": "test/browser.ts",
+            "line": 21
+          },
+          "metadata": {
+            "aiExtracted": true
+          },
+          "locationMethod": "file-search",
+          "locationConfidence": 70,
+          "codeSnippet": "\tserver.use('/distribution', express.static(DIST_DIR.replace(/^file:\\/\\//, '')));"
+        },
+        "category": "new",
+        "matchKey": "test/browser.ts|code-quality|medium|inefficiently-performance-promises-using",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "quality-7",
+          "category": "code-quality",
+          "severity": "medium",
+          "type": "Uncaught Exceptions in Asynchronous Code",
+          "title": "Uncaught Exceptions in Asynchronous Code",
+          "description": "Uncaught exceptions can lead to application crashes and unpredictable behavior.",
+          "location": {
+            "file": "test/browser.ts",
+            "line": 137
+          },
+          "metadata": {
+            "aiExtracted": true
+          },
+          "locationMethod": "file-search",
+          "locationConfidence": 70,
+          "codeSnippet": "defaultBrowsersTest('should not copy response body with 204 status code when using `onDownloadProgress` ', async (t: ExecutionContext, page: Page) => {"
+        },
+        "category": "new",
+        "matchKey": "test/browser.ts|code-quality|medium|exceptions-lead-uncaught",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "quality-10",
+          "category": "code-quality",
+          "severity": "critical",
+          "type": "Low Test Coverage in Critical Areas",
+          "title": "Low Test Coverage in Critical Areas",
+          "description": "Low test coverage can lead to undetected bugs and regressions, especially in critical areas of the application.",
+          "location": {
+            "file": "test/main.ts",
+            "line": 2
+          },
+          "metadata": {
+            "aiExtracted": true
+          },
+          "locationMethod": "file-search",
+          "locationConfidence": 70,
+          "codeSnippet": "import test from 'ava';"
+        },
+        "category": "new",
+        "matchKey": "test/main.ts|code-quality|critical|coverage-lead-test",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "quality-1",
+          "category": "code-quality",
+          "severity": "high",
+          "type": "Scope Error",
+          "title": "Scope Error",
+          "description": "Error with OpenRouter API: cannot access free variable 'e_client' where it is not associated with a value in enclosing scope",
+          "location": {
+            "file": "package.json",
+            "line": 3
+          },
+          "impact": "Potential unauthorized access or malfunction due to scope access issues",
+          "remediation": "Ensure that all variables are properly scoped and accessible where needed",
+          "codeSnippet": "\t\"version\": \"1.9.0\",",
+          "fixedCode": "",
+          "metadata": {
+            "aiExtracted": true
+          },
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "new",
+        "matchKey": "package.json|code-quality|high|cannot-error-openrouter-with",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "security-2",
+          "category": "security",
+          "severity": "medium",
+          "type": "Configuration Issue",
+          "title": "Configuration Issue vulnerability",
+          "description": "Missing environment variable OPENROUTER_API_KEY",
+          "impact": "API may not function properly without a valid API key",
+          "remediation": "Ensure the OPENROUTER_API_KEY environment variable is set with a valid API key",
+          "codeSnippet": "",
+          "fixedCode": "",
+          "metadata": {
+            "aiExtracted": true
+          }
+        },
+        "category": "new",
+        "matchKey": "unknown|security|medium|environment-key-missing-openrouter_api_key-variable",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "performance-2",
+          "category": "performance",
+          "severity": "medium",
+          "type": "Configuration Issue",
+          "title": "Configuration Issue",
+          "description": "Current: undefined, Expected: undefined",
+          "location": {
+            "file": "Environment Variables",
+            "line": "unknown"
+          },
+          "impact": "Missing OPENROUTER_API_KEY environment variable",
+          "recommendation": "Set the OPENROUTER_API_KEY environment variable with a valid API key",
+          "metadata": {
+            "aiExtracted": true
+          }
+        },
+        "category": "new",
+        "matchKey": "environment variables|performance|medium|current-expected-undefined",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "quality-2",
+          "category": "code-quality",
+          "severity": "medium",
+          "type": "Environment Variable Missing",
+          "title": "Environment Variable Missing",
+          "description": "Missing OPENROUTER_API_KEY environment variable or it is not set with a valid API key",
+          "location": {
+            "file": "test/browser.ts",
+            "line": 51
+          },
+          "metadata": {
+            "aiExtracted": true
+          },
+          "locationMethod": "file-search",
+          "locationConfidence": 70,
+          "codeSnippet": "\tserver.get('/', (_request, response) => {"
+        },
+        "category": "new",
+        "matchKey": "test/browser.ts|code-quality|medium|environment-key-missing-openrouter_api_key-variable",
+        "confidence": 1
+      }
+    ],
+    "fixedIssues": [
+      {
+        "issue": {
+          "id": "security-1",
+          "category": "security",
+          "severity": "critical",
+          "type": "XSS",
+          "title": "XSS vulnerability",
+          "description": "Improper handling of user-generated content can lead to Cross-Site Scripting (XSS) attacks.",
+          "location": {
+            "file": "test/browser.ts",
+            "line": 67
+          },
+          "impact": "Attackers could inject malicious scripts, compromising user data and application integrity.",
+          "remediation": "Sanitize user input before rendering",
+          "codeSnippet": "response.writeHead(200);\nresponse.end(userInput); // Unsafe output",
+          "fixedCode": "response.writeHead(200);\nresponse.end(sanitize(userInput));",
+          "metadata": {
+            "aiExtracted": true
+          }
+        },
+        "category": "fixed",
+        "matchKey": "test/browser.ts|security|critical|handling-improper-usergenerated-xss",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "security-2",
+          "category": "security",
+          "severity": "high",
+          "type": "Hardcoded Secrets",
+          "title": "Hardcoded Secrets vulnerability",
+          "description": "Hardcoded secrets such as API keys can lead to unauthorized access and data breaches.",
+          "location": {
+            "file": "source/config.ts",
+            "line": 12
+          },
+          "impact": "If exposed, they can be exploited by malicious users, leading to significant security risks.",
+          "remediation": "Use environment variables to manage sensitive data",
+          "codeSnippet": "const apiKey = '12345-ABCDE'; // Hardcoded API key",
+          "fixedCode": "const apiKey = process.env.API_KEY;",
+          "metadata": {
+            "aiExtracted": true
+          }
+        },
+        "category": "fixed",
+        "matchKey": "source/config.ts|security|high|hardcoded-key-keys-secrets-such",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "quality-1",
+          "category": "code-quality",
+          "severity": "high",
+          "type": "Missing Error Handling",
+          "title": "Missing Error Handling",
+          "description": "Missing error handling in HTTP requests",
+          "location": {
+            "file": "source/index.ts",
+            "line": 53
+          },
+          "impact": "Critical functions without tests can lead to undetected bugs and regressions, affecting application stability.",
+          "recommendation": "Add unit tests for the processPayment function to ensure its reliability and correctness.",
+          "metadata": {
+            "aiExtracted": true
+          },
+          "codeSnippet": "\tBeforeErrorHook,",
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "fixed",
+        "matchKey": "source/index.ts|code-quality|high|error-handling-http-missing-requests",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "performance-4",
+          "category": "performance",
+          "severity": "high",
+          "type": "N+1 Query",
+          "title": "N+1 Query",
+          "description": "Current: Significant impact on performance due to excessive database queries, Expected: Reduced database load and faster response times",
+          "location": {
+            "file": "source/repository.ts",
+            "line": 32
+          },
+          "impact": "Excessive database queries significantly impacting performance.",
+          "recommendation": "Optimize the query by fetching all posts in a single query:\nconst posts = await getPostsByUsers(users.map(user => user.id));",
+          "metadata": {
+            "currentPerformance": "Significant impact on performance due to excessive database queries",
+            "expectedPerformance": "Reduced database load and faster response times",
+            "aiExtracted": true
+          }
+        },
+        "category": "fixed",
+        "matchKey": "source/repository.ts|performance|high|current-impact-performance-significant",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "dep-outdated-1",
+          "category": "dependencies",
+          "severity": "low",
+          "type": "outdated",
+          "title": "Outdated: express@4.18.2",
+          "description": "1 versions behind",
+          "message": "Update express to 4.18.3",
+          "recommendation": "Update to 4.18.3",
+          "metadata": {
+            "packageName": "express",
+            "currentVersion": "4.18.2",
+            "latestVersion": "4.18.3",
+            "versionsBehind": 1,
+            "dependencyType": "outdated",
+            "aiExtracted": true
+          }
+        },
+        "category": "fixed",
+        "matchKey": "unknown|dependencies|low|express-update",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "quality-2",
+          "category": "code-quality",
+          "severity": "critical",
+          "type": "Potential XSS Vulnerability",
+          "title": "Potential XSS Vulnerability",
+          "description": "Potential XSS vulnerability in response handling",
+          "location": {
+            "file": "test/browser.ts",
+            "line": 0
+          },
+          "metadata": {
+            "aiExtracted": true
+          }
+        },
+        "category": "fixed",
+        "matchKey": "test/browser.ts|code-quality|critical|handling-potential-response-vulnerability-xss",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "quality-3",
+          "category": "code-quality",
+          "severity": "medium",
+          "type": "Hardcoded Secrets",
+          "title": "Hardcoded Secrets",
+          "description": "Hardcoded secrets found in code",
+          "location": {
+            "file": "source/config.ts",
+            "line": 0
+          },
+          "metadata": {
+            "aiExtracted": true
+          }
+        },
+        "category": "fixed",
+        "matchKey": "source/config.ts|code-quality|medium|code-found-hardcoded-secrets",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "quality-4",
+          "category": "code-quality",
+          "severity": "medium",
+          "type": "N+1 Query Problem",
+          "title": "N+1 Query Problem",
+          "description": "Unoptimized loop causing N+1 query problem",
+          "location": {
+            "file": "source/repository.ts",
+            "line": 0
+          },
+          "metadata": {
+            "aiExtracted": true
+          }
+        },
+        "category": "fixed",
+        "matchKey": "source/repository.ts|code-quality|medium|causing-loop-unoptimized",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "quality-5",
+          "category": "code-quality",
+          "severity": "medium",
+          "type": "Memory Leak",
+          "title": "Memory Leak",
+          "description": "Memory leak due to unreleased event listeners",
+          "location": {
+            "file": "source/eventHandler.ts",
+            "line": 0
+          },
+          "metadata": {
+            "aiExtracted": true
+          }
+        },
+        "category": "fixed",
+        "matchKey": "source/eventhandler.ts|code-quality|medium|event-leak-listeners-memory-unreleased",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "quality-6",
+          "category": "code-quality",
+          "severity": "critical",
+          "type": "Missing Unit Tests",
+          "title": "Missing Unit Tests",
+          "description": "Missing unit tests for critical functions",
+          "location": {
+            "file": "source/utils.ts",
+            "line": 0
+          },
+          "metadata": {
+            "aiExtracted": true
+          }
+        },
+        "category": "fixed",
+        "matchKey": "source/utils.ts|code-quality|critical|critical-missing-tests-unit",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "quality-7",
+          "category": "code-quality",
+          "severity": "medium",
+          "type": "Uncaught Promise Rejections",
+          "title": "Uncaught Promise Rejections",
+          "description": "Uncaught promise rejections in async functions",
+          "location": {
+            "file": "source/asyncHandler.ts",
+            "line": 0
+          },
+          "metadata": {
+            "aiExtracted": true
+          }
+        },
+        "category": "fixed",
+        "matchKey": "source/asynchandler.ts|code-quality|medium|async-promise-rejections-uncaught",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "quality-complexity-8",
+          "category": "code-quality",
+          "severity": "low",
+          "type": "complexity",
+          "title": "High complexity in undefined",
+          "description": "Complexity: undefined",
+          "location": {
+            "file": "source/sort.ts",
+            "line": 0
+          },
+          "recommendation": "Refactor to reduce complexity",
+          "metadata": {
+            "metricType": "complexity",
+            "aiExtracted": true
+          }
+        },
+        "category": "fixed",
+        "matchKey": "source/sort.ts|code-quality|low|complexity-undefined",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "title": "Missing Error Handling for HTTP Request Failures",
+          "severity": "high",
+          "category": "code-quality",
+          "file": "source/core/Ky.ts",
+          "line": 120,
+          "codeSnippet": "\t\t\t\t\tthrow new Error('Streams are not supported in your environment. `ReadableStream` is missing.');",
+          "location": {
+            "file": "source/core/Ky.ts",
+            "line": 77
+          },
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "fixed",
+        "matchKey": "source/core/ky.ts|code-quality|high|error-handling-http-missing-request",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "title": "Inefficient Loop in Retry Logic",
+          "severity": "medium",
+          "category": "performance",
+          "file": "test/retry.ts",
+          "line": 45,
+          "codeSnippet": "const defaultRetryCount = 2;",
+          "location": {
+            "file": "test/retry.ts",
+            "line": 7
+          },
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "fixed",
+        "matchKey": "test/retry.ts|performance|medium|inefficient-loop-retry",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "title": "Lack of Input Validation for URL Parameters",
+          "severity": "critical",
+          "category": "security",
+          "file": "source/core/Ky.ts",
+          "line": 85,
+          "codeSnippet": "\tInput,",
+          "location": {
+            "file": "source/core/Ky.ts",
+            "line": 4
+          },
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "fixed",
+        "matchKey": "source/core/ky.ts|security|critical|input-lack-parameters-validation",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "title": "Hardcoded URLs in Tests",
+          "severity": "medium",
+          "category": "testing",
+          "file": "test/browser.ts",
+          "line": 60,
+          "codeSnippet": "import {createHttpTestServer, type ExtendedHttpTestServer, type HttpServerOptions} from './helpers/create-http-test-server.js';",
+          "location": {
+            "file": "test/browser.ts",
+            "line": 7
+          },
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "fixed",
+        "matchKey": "test/browser.ts|testing|medium|hardcoded-tests-urls",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "title": "Missing Type Annotations for Parameters",
+          "severity": "medium",
+          "category": "code-quality",
+          "file": "source/core/Ky.ts",
+          "line": 32,
+          "codeSnippet": "\t\t\t\t\tthrow new Error('Streams are not supported in your environment. `ReadableStream` is missing.');",
+          "location": {
+            "file": "source/core/Ky.ts",
+            "line": 77
+          },
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "fixed",
+        "matchKey": "source/core/ky.ts|code-quality|medium|annotations-missing-parameters-type",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "title": "Potential Memory Leak with Event Listeners",
+          "severity": "high",
+          "category": "performance",
+          "file": "test/browser.ts",
+          "line": 15,
+          "codeSnippet": "\t\t\tonDownloadProgress(progressEvent) {",
+          "location": {
+            "file": "test/browser.ts",
+            "line": 156
+          },
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "fixed",
+        "matchKey": "test/browser.ts|performance|high|event-leak-memory-potential-with",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "title": "Uncaught Promise Rejections in Asynchronous Tests",
+          "severity": "medium",
+          "category": "testing",
+          "file": "test/retry.ts",
+          "line": 70,
+          "codeSnippet": "import {createHttpTestServer} from './helpers/create-http-test-server.js';",
+          "location": {
+            "file": "test/retry.ts",
+            "line": 3
+          },
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "fixed",
+        "matchKey": "test/retry.ts|testing|medium|async-promise-rejections-uncaught",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "title": "Use of Deprecated APIs",
+          "severity": "high",
+          "category": "dependencies",
+          "file": "source/core/Ky.ts",
+          "line": 5,
+          "codeSnippet": "import { deprecatedFunction } from 'legacy-library';"
+        },
+        "category": "fixed",
+        "matchKey": "source/core/ky.ts|dependencies|high|apis-deprecated",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "title": "Insufficient Test Coverage for Edge Cases",
+          "severity": "medium",
+          "category": "testing",
+          "file": "test/hooks.ts",
+          "line": 20,
+          "codeSnippet": "import test from 'ava';",
+          "location": {
+            "file": "test/hooks.ts",
+            "line": 1
+          },
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "fixed",
+        "matchKey": "test/hooks.ts|testing|medium|coverage-insufficient-test",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "title": "Inconsistent Error Messages in API Responses",
+          "severity": "medium",
+          "category": "code-quality",
+          "file": "source/core/Ky.ts",
+          "line": 200,
+          "codeSnippet": "import {HTTPError} from '../errors/HTTPError.js';",
+          "location": {
+            "file": "source/core/Ky.ts",
+            "line": 1
+          },
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "fixed",
+        "matchKey": "source/core/ky.ts|code-quality|medium|error-inconsistent-messages-responses",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "title": "Missing JSDoc Comments for Public Methods",
+          "severity": "medium",
+          "category": "documentation",
+          "file": "source/core/Ky.ts",
+          "line": 10,
+          "codeSnippet": "\t\t\t\t\tthrow new Error('Streams are not supported in your environment. `ReadableStream` is missing.');",
+          "location": {
+            "file": "source/core/Ky.ts",
+            "line": 77
+          },
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "fixed",
+        "matchKey": "source/core/ky.ts|documentation|medium|comments-jsdoc-missing-public",
+        "confidence": 1
+      }
+    ],
+    "unchangedIssues": [
+      {
+        "issue": {
+          "id": "quality-coverage-11",
+          "category": "code-quality",
+          "severity": "medium",
+          "type": "testing",
+          "title": "Low test coverage: 67.5%",
+          "description": "Increase test coverage to at least 80%",
+          "metadata": {
+            "metricType": "coverage",
+            "overall": 67.5,
+            "aiExtracted": true
+          }
+        },
+        "category": "unchanged",
+        "matchKey": "unknown|code-quality|medium|coverage-increase-test",
+        "confidence": 1
+      }
+    ],
+    "summary": {
+      "totalNew": 16,
+      "totalFixed": 23,
+      "totalUnchanged": 1,
+      "netImpact": -7,
+      "prQualityScore": 0
+    },
+    "recommendations": [
+      "🚨 BLOCKING: Fix 3 critical issue(s) introduced by this PR",
+      "⚠️ Address 3 high-severity issue(s) introduced by this PR",
+      "🎉 Excellent! Fixed 4 critical and 6 high severity issues",
+      "📈 Net improvement: 7 fewer issues after this PR",
+      "🔴 Significant issues detected. This PR needs work before merging."
+    ]
+  },
+  "metadata": {
+    "analysisDate": "2025-08-25T18:51:35.368Z",
+    "mainBranchAnalysisDuration": 121.7,
+    "prBranchAnalysisDuration": 127.7,
+    "totalDuration": 249.4,
+    "modelUsed": "dynamic-selection",
+    "iterationsPerBranch": 3,
+    "tokensUsed": 0
+  }
+}

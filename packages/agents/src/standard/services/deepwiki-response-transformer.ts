@@ -423,7 +423,7 @@ export class DeepWikiResponseTransformer {
         duration_ms: 0,
         files_analyzed: 0,
         repository: options.repositoryUrl
-      };
+      } as any;
     }
 
     // Fix malformed issues but DON'T add new fake ones
@@ -530,7 +530,7 @@ export class DeepWikiResponseTransformer {
         total_lines: enhanced.metadata.total_lines || this.estimateCodeLines(repoStructure),
         framework: repoStructure.framework,
         languages: repoStructure.languages.join(', ')
-      };
+      } as any;
     }
 
     return enhanced;

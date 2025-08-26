@@ -1,0 +1,637 @@
+{
+  "repositoryUrl": "https://github.com/sindresorhus/ky",
+  "prNumber": 500,
+  "mainBranchIssues": [
+    {
+      "id": "issue-1",
+      "title": "Potential for denial of service due to unbounded retries on failed requests",
+      "description": "Potential for denial of service due to unbounded retries on failed requests",
+      "severity": "high",
+      "category": "performance",
+      "location": {
+        "file": "test/retry.ts",
+        "line": 285
+      },
+      "file": "test/retry.ts",
+      "line": 15,
+      "codeSnippet": "test('respect number of retries', async t => {",
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "issue-2",
+      "title": "Lack of input validation for request parameters",
+      "description": "Lack of input validation for request parameters",
+      "severity": "medium",
+      "category": "security",
+      "location": {
+        "file": "source/core/constants.ts",
+        "line": 3
+      },
+      "file": "source/core/constants.ts",
+      "line": 8,
+      "codeSnippet": "import {type RequestInitRegistry} from '../types/request.js';",
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "issue-3",
+      "title": "Possible memory leak due to unclosed server instances",
+      "description": "Possible memory leak due to unclosed server instances",
+      "severity": "medium",
+      "category": "performance",
+      "location": {
+        "file": "test/main.ts",
+        "line": 6
+      },
+      "file": "test/main.ts",
+      "line": 45,
+      "codeSnippet": "import {createHttpTestServer} from './helpers/create-http-test-server.js';",
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "issue-4",
+      "title": "Inconsistent error handling for HTTP requests",
+      "description": "Inconsistent error handling for HTTP requests",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "test/hooks.ts",
+        "line": 3
+      },
+      "file": "test/hooks.ts",
+      "line": 50,
+      "codeSnippet": "import ky, {HTTPError} from '../source/index.js';",
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "issue-5",
+      "title": "Insufficient timeout management leading to potential hangs",
+      "description": "Insufficient timeout management leading to potential hangs",
+      "severity": "high",
+      "category": "performance",
+      "location": {
+        "file": "test/main.ts",
+        "line": 5
+      },
+      "file": "test/main.ts",
+      "line": 100,
+      "codeSnippet": "import ky, {TimeoutError} from '../source/index.js';",
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "issue-6",
+      "title": "Lack of type checking for function parameters",
+      "description": "Lack of type checking for function parameters",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "source/core/constants.ts",
+        "line": 1
+      },
+      "file": "source/core/constants.ts",
+      "line": 20,
+      "codeSnippet": "import type {Expect, Equal} from '@type-challenges/utils';",
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "issue-7",
+      "title": "Potential XSS vulnerability in response handling",
+      "description": "Potential XSS vulnerability in response handling",
+      "severity": "high",
+      "category": "security",
+      "location": {
+        "file": "test/browser.ts",
+        "line": 22
+      },
+      "file": "test/browser.ts",
+      "line": 55,
+      "codeSnippet": "\tserver.use((_, response, next) => {",
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "issue-8",
+      "title": "Use of deprecated Node.js APIs without fallbacks",
+      "description": "Use of deprecated Node.js APIs without fallbacks",
+      "severity": "medium",
+      "category": "performance",
+      "location": {
+        "file": "test/helpers/index.ts",
+        "line": 10
+      },
+      "file": "test/helpers/index.ts",
+      "line": 10,
+      "codeSnippet": "export * from './create-http-test-server.js';"
+    },
+    {
+      "id": "issue-9",
+      "title": "Unhandled promise rejection leading to application crashes",
+      "description": "Unhandled promise rejection leading to application crashes",
+      "severity": "critical",
+      "category": "code-quality",
+      "location": {
+        "file": "test/hooks.ts",
+        "line": 180
+      },
+      "file": "test/hooks.ts",
+      "line": 65,
+      "codeSnippet": "test('afterResponse hook can throw error to reject the request promise', async t => {",
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "issue-10",
+      "title": "Missing or unclear documentation for complex functions",
+      "description": "Missing or unclear documentation for complex functions",
+      "severity": "low",
+      "category": "code-quality",
+      "location": {
+        "file": "source/core/constants.ts",
+        "line": 5
+      },
+      "file": "source/core/constants.ts",
+      "line": 5,
+      "codeSnippet": "export const supportsAbortController = typeof globalThis.AbortController === 'function';"
+    }
+  ],
+  "prBranchIssues": [
+    {
+      "id": "issue-unchanged-1",
+      "title": "Potential for denial of service due to unbounded retries on failed requests",
+      "description": "Potential for denial of service due to unbounded retries on failed requests",
+      "severity": "high",
+      "category": "performance",
+      "location": {
+        "file": "test/retry.ts",
+        "line": 285
+      },
+      "file": "test/retry.ts",
+      "line": 285,
+      "codeSnippet": "test('respect number of retries', async t => {",
+      "status": "unchanged",
+      "originalFromMain": true,
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "issue-unchanged-2",
+      "title": "Lack of input validation for request parameters",
+      "description": "Lack of input validation for request parameters",
+      "severity": "medium",
+      "category": "security",
+      "location": {
+        "file": "source/core/constants.ts",
+        "line": 3
+      },
+      "file": "source/core/constants.ts",
+      "line": 3,
+      "codeSnippet": "import {type RequestInitRegistry} from '../types/request.js';",
+      "status": "unchanged",
+      "originalFromMain": true,
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "issue-unchanged-3",
+      "title": "Possible memory leak due to unclosed server instances",
+      "description": "Possible memory leak due to unclosed server instances",
+      "severity": "medium",
+      "category": "performance",
+      "location": {
+        "file": "test/main.ts",
+        "line": 6
+      },
+      "file": "test/main.ts",
+      "line": 6,
+      "codeSnippet": "import {createHttpTestServer} from './helpers/create-http-test-server.js';",
+      "status": "unchanged",
+      "originalFromMain": true,
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "issue-unchanged-4",
+      "title": "Inconsistent error handling for HTTP requests",
+      "description": "Inconsistent error handling for HTTP requests",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "test/hooks.ts",
+        "line": 3
+      },
+      "file": "test/hooks.ts",
+      "line": 3,
+      "codeSnippet": "import ky, {HTTPError} from '../source/index.js';",
+      "status": "unchanged",
+      "originalFromMain": true,
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "issue-unchanged-5",
+      "title": "Possible memory leak due to unclosed server instances",
+      "description": "Insufficient timeout management leading to potential hangs",
+      "severity": "high",
+      "category": "performance",
+      "location": {
+        "file": "test/main.ts",
+        "line": 6
+      },
+      "file": "test/main.ts",
+      "line": 5,
+      "codeSnippet": "import {createHttpTestServer} from './helpers/create-http-test-server.js';",
+      "status": "unchanged",
+      "originalFromMain": true,
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "issue-unchanged-6",
+      "title": "Lack of input validation for request parameters",
+      "description": "Lack of type checking for function parameters",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "source/core/constants.ts",
+        "line": 3
+      },
+      "file": "source/core/constants.ts",
+      "line": 1,
+      "codeSnippet": "import {type RequestInitRegistry} from '../types/request.js';",
+      "status": "unchanged",
+      "originalFromMain": true,
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "issue-unchanged-7",
+      "title": "Potential XSS vulnerability in response handling",
+      "description": "Potential XSS vulnerability in response handling",
+      "severity": "high",
+      "category": "security",
+      "location": {
+        "file": "test/browser.ts",
+        "line": 22
+      },
+      "file": "test/browser.ts",
+      "line": 22,
+      "codeSnippet": "\tserver.use((_, response, next) => {",
+      "status": "unchanged",
+      "originalFromMain": true,
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "issue-unchanged-8",
+      "title": "Use of deprecated Node.js APIs without fallbacks",
+      "description": "Use of deprecated Node.js APIs without fallbacks",
+      "severity": "medium",
+      "category": "performance",
+      "location": {
+        "file": "test/helpers/index.ts",
+        "line": 10
+      },
+      "file": "test/helpers/index.ts",
+      "line": 10,
+      "codeSnippet": "`const { createServer } = require('http');`",
+      "status": "unchanged",
+      "originalFromMain": true
+    },
+    {
+      "id": "issue-unchanged-9",
+      "title": "Unhandled promise rejection leading to application crashes",
+      "description": "Unhandled promise rejection leading to application crashes",
+      "severity": "critical",
+      "category": "code-quality",
+      "location": {
+        "file": "test/hooks.ts",
+        "line": 180
+      },
+      "file": "test/hooks.ts",
+      "line": 180,
+      "codeSnippet": "test('afterResponse hook can throw error to reject the request promise', async t => {",
+      "status": "unchanged",
+      "originalFromMain": true,
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "issue-new-1",
+      "title": "New potential race condition in request handling",
+      "description": "New potential race condition in request handling",
+      "severity": "medium",
+      "category": "performance",
+      "location": {
+        "file": "test/main.ts",
+        "line": 13
+      },
+      "file": "test/main.ts",
+      "line": 12,
+      "codeSnippet": "\tserver.get('/', (_request, response) => {",
+      "status": "new",
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    }
+  ],
+  "categorized": {
+    "newIssues": [
+      {
+        "issue": {
+          "id": "issue-new-1",
+          "title": "New potential race condition in request handling",
+          "description": "New potential race condition in request handling",
+          "severity": "medium",
+          "category": "performance",
+          "location": {
+            "file": "test/main.ts",
+            "line": 13
+          },
+          "file": "test/main.ts",
+          "line": 12,
+          "codeSnippet": "\tserver.get('/', (_request, response) => {",
+          "status": "new",
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "new",
+        "fingerprint": "test/main.ts:10:performance:medium:handling:get-get",
+        "confidence": 0.39
+      }
+    ],
+    "fixedIssues": [
+      {
+        "issue": {
+          "id": "issue-6",
+          "title": "Lack of type checking for function parameters",
+          "description": "Lack of type checking for function parameters",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "source/core/constants.ts",
+            "line": 1
+          },
+          "file": "source/core/constants.ts",
+          "line": 20,
+          "codeSnippet": "import type {Expect, Equal} from '@type-challenges/utils';",
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "fixed",
+        "fingerprint": "source/core/constants.ts:0:code-quality:medium:type:",
+        "confidence": 0.29000000000000004
+      },
+      {
+        "issue": {
+          "id": "issue-10",
+          "title": "Missing or unclear documentation for complex functions",
+          "description": "Missing or unclear documentation for complex functions",
+          "severity": "low",
+          "category": "code-quality",
+          "location": {
+            "file": "source/core/constants.ts",
+            "line": 5
+          },
+          "file": "source/core/constants.ts",
+          "line": 5,
+          "codeSnippet": "export const supportsAbortController = typeof globalThis.AbortController === 'function';"
+        },
+        "category": "fixed",
+        "fingerprint": "source/core/constants.ts:0:code-quality:low:generic:AbortController",
+        "confidence": 0.39
+      }
+    ],
+    "unchangedIssues": [
+      {
+        "issue": {
+          "id": "issue-unchanged-1",
+          "title": "Potential for denial of service due to unbounded retries on failed requests",
+          "description": "Potential for denial of service due to unbounded retries on failed requests",
+          "severity": "high",
+          "category": "performance",
+          "location": {
+            "file": "test/retry.ts",
+            "line": 285
+          },
+          "file": "test/retry.ts",
+          "line": 285,
+          "codeSnippet": "test('respect number of retries', async t => {",
+          "status": "unchanged",
+          "originalFromMain": true,
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "unchanged",
+        "fingerprint": "test/retry.ts:280:performance:high:denial:async-test",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-2",
+          "title": "Lack of input validation for request parameters",
+          "description": "Lack of input validation for request parameters",
+          "severity": "medium",
+          "category": "security",
+          "location": {
+            "file": "source/core/constants.ts",
+            "line": 3
+          },
+          "file": "source/core/constants.ts",
+          "line": 3,
+          "codeSnippet": "import {type RequestInitRegistry} from '../types/request.js';",
+          "status": "unchanged",
+          "originalFromMain": true,
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "unchanged",
+        "fingerprint": "source/core/constants.ts:0:security:medium:input-validation:js",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-3",
+          "title": "Possible memory leak due to unclosed server instances",
+          "description": "Possible memory leak due to unclosed server instances",
+          "severity": "medium",
+          "category": "performance",
+          "location": {
+            "file": "test/main.ts",
+            "line": 6
+          },
+          "file": "test/main.ts",
+          "line": 6,
+          "codeSnippet": "import {createHttpTestServer} from './helpers/create-http-test-server.js';",
+          "status": "unchanged",
+          "originalFromMain": true,
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "unchanged",
+        "fingerprint": "test/main.ts:0:performance:medium:leak-memory:js",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-4",
+          "title": "Inconsistent error handling for HTTP requests",
+          "description": "Inconsistent error handling for HTTP requests",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "test/hooks.ts",
+            "line": 3
+          },
+          "file": "test/hooks.ts",
+          "line": 3,
+          "codeSnippet": "import ky, {HTTPError} from '../source/index.js';",
+          "status": "unchanged",
+          "originalFromMain": true,
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "unchanged",
+        "fingerprint": "test/hooks.ts:0:code-quality:medium:error-handling:js",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-5",
+          "title": "Possible memory leak due to unclosed server instances",
+          "description": "Insufficient timeout management leading to potential hangs",
+          "severity": "high",
+          "category": "performance",
+          "location": {
+            "file": "test/main.ts",
+            "line": 6
+          },
+          "file": "test/main.ts",
+          "line": 5,
+          "codeSnippet": "import {createHttpTestServer} from './helpers/create-http-test-server.js';",
+          "status": "unchanged",
+          "originalFromMain": true,
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "unchanged",
+        "fingerprint": "test/main.ts:0:performance:high:timeout:js",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-6",
+          "title": "Lack of input validation for request parameters",
+          "description": "Lack of type checking for function parameters",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "source/core/constants.ts",
+            "line": 3
+          },
+          "file": "source/core/constants.ts",
+          "line": 1,
+          "codeSnippet": "import {type RequestInitRegistry} from '../types/request.js';",
+          "status": "unchanged",
+          "originalFromMain": true,
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "unchanged",
+        "fingerprint": "source/core/constants.ts:0:code-quality:medium:type:js",
+        "confidence": 0.85
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-7",
+          "title": "Potential XSS vulnerability in response handling",
+          "description": "Potential XSS vulnerability in response handling",
+          "severity": "high",
+          "category": "security",
+          "location": {
+            "file": "test/browser.ts",
+            "line": 22
+          },
+          "file": "test/browser.ts",
+          "line": 22,
+          "codeSnippet": "\tserver.use((_, response, next) => {",
+          "status": "unchanged",
+          "originalFromMain": true,
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "unchanged",
+        "fingerprint": "test/browser.ts:20:security:high:handling-xss:use-use",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-8",
+          "title": "Use of deprecated Node.js APIs without fallbacks",
+          "description": "Use of deprecated Node.js APIs without fallbacks",
+          "severity": "medium",
+          "category": "performance",
+          "location": {
+            "file": "test/helpers/index.ts",
+            "line": 10
+          },
+          "file": "test/helpers/index.ts",
+          "line": 10,
+          "codeSnippet": "`const { createServer } = require('http');`",
+          "status": "unchanged",
+          "originalFromMain": true
+        },
+        "category": "unchanged",
+        "fingerprint": "test/helpers/index.ts:10:performance:medium:deprecated:require",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-9",
+          "title": "Unhandled promise rejection leading to application crashes",
+          "description": "Unhandled promise rejection leading to application crashes",
+          "severity": "critical",
+          "category": "code-quality",
+          "location": {
+            "file": "test/hooks.ts",
+            "line": 180
+          },
+          "file": "test/hooks.ts",
+          "line": 180,
+          "codeSnippet": "test('afterResponse hook can throw error to reject the request promise', async t => {",
+          "status": "unchanged",
+          "originalFromMain": true,
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "unchanged",
+        "fingerprint": "test/hooks.ts:180:code-quality:critical:promise:async-test-throw",
+        "confidence": 1
+      }
+    ],
+    "summary": {
+      "totalNew": 1,
+      "totalFixed": 2,
+      "totalUnchanged": 9,
+      "netImpact": -1,
+      "prQualityScore": 55
+    },
+    "recommendations": [
+      "✅ Great work! This PR fixes 2 existing issue(s)",
+      "📈 Net improvement: 1 fewer issues after this PR",
+      "⚠️ PR needs attention. Please address the issues above."
+    ]
+  },
+  "metadata": {
+    "analysisDate": "2025-08-26T13:23:07.517Z",
+    "mainBranchAnalysisDuration": 16.6,
+    "prBranchAnalysisDuration": 21.5,
+    "totalDuration": 38.1,
+    "modelUsed": "dynamic-selection",
+    "iterationsPerBranch": 3,
+    "tokensUsed": 0
+  }
+}

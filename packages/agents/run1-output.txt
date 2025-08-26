@@ -1,0 +1,734 @@
+✅ Environment loaded from: /Users/alpinro/Code Prjects/codequal/.env
+✅ Environment loaded from: /Users/alpinro/Code Prjects/codequal/.env
+
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+[1m[34mCODEQUAL MANUAL PR VALIDATOR[0m
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+
+Repository: [1msindresorhus/ky[0m
+PR Number: [1m#700[0m
+DeepWiki API: [1mhttp://localhost:8001[0m
+Timeout: [1m600s[0m
+
+📊 [34mInitializing services...[0m
+📊 [34mConnecting to real DeepWiki API...[0m
+✅ [32mReal DeepWiki API registered[0m
+[DeepWikiResponseTransformer] Created ModelConfigResolver instance for deepwiki transformer 
+📊 [34mUsing real Supabase for configuration[0m
+Using AI-enhanced location finder
+Using pattern-based location finder (AI not enabled)
+Using AI-enhanced location finder
+Using pattern-based location finder (AI not enabled)
+
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+[1m[34mANALYZING MAIN BRANCH[0m
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+
+Redis error, using memory cache: connect ETIMEDOUT
+Redis error, using memory cache: connect ECONNREFUSED 10.116.0.7:6379
+Failed to connect to Redis, using memory cache: MaxRetriesPerRequestError: Reached the max retries per request limit (which is 1). Refer to "maxRetriesPerRequest" option for details.
+    at Socket.<anonymous> (/Users/alpinro/Code Prjects/codequal/node_modules/ioredis/built/redis/event_handler.js:182:37)
+    at Object.onceWrapper (node:events:622:26)
+    at Socket.emit (node:events:507:28)
+    at Socket.emit (node:domain:489:12)
+    at TCP.<anonymous> (node:net:351:12)
+Redis error, using memory cache: connect ETIMEDOUT
+Redis error, using memory cache: connect ETIMEDOUT
+Redis connection failed, falling back to memory cache
+
+🔍 DEBUG - Raw DeepWiki Response:
+Branch analyzed: main
+Response type: object
+Is JSON: true
+JSON keys: [
+  'issues',
+  'testCoverage',
+  'dependencies',
+  'teamMetrics',
+  'documentation',
+  'architecture'
+]
+Issues count: 14
+================================================================================
+📊 [34mUsing enhanced location finder for 14 issues...[0m
+🔍 Enhanced location finder searching 14 issues in /tmp/codequal-repos/sindresorhus-ky
+
+  Searching for: Potential Denial of Service due to Large File Uploads
+    ✅ Found: test/stream.ts:3 (file-search, confidence: 70%)
+
+  Searching for: Improper Error Handling in HTTP Requests
+    ✅ Found: test/main.ts:5 (file-search, confidence: 70%)
+
+  Searching for: Use of Deprecated Node.js APIs
+    ✅ Found: source/core/constants.ts:53 (file-search, confidence: 70%)
+
+  Searching for: Lack of Rate Limiting on API Endpoints
+    ✅ Found: test/retry.ts:127 (file-search, confidence: 70%)
+
+  Searching for: Missing Input Validation
+    ❌ Could not locate
+
+  Searching for: Outdated TypeScript Configuration
+    ❌ Could not locate
+
+  Searching for: Uncaught Promise Rejections in Tests
+    ✅ Found: test/main.ts:361 (file-search, confidence: 70%)
+
+  Searching for: Potential Memory Leak in Request Handling
+    ✅ Found: test/memory-leak.ts:8 (file-search, confidence: 70%)
+
+  Searching for: Excessive Retry Logic on API Calls
+    ✅ Found: test/retry.ts:7 (file-search, confidence: 70%)
+
+  Searching for: Hardcoded URLs in Tests
+    ✅ Found: test/main.ts:396 (file-search, confidence: 70%)
+
+  Searching for: Inconsistent Naming Conventions
+    ✅ Found: test/helpers/index.ts:1 (category-pattern, confidence: 30%)
+
+  Searching for: Potential Data Leakage in Error Messages
+    ✅ Found: test/hooks.ts:3 (file-search, confidence: 70%)
+
+  Searching for: Inadequate Documentation on API Usage
+    ✅ Found: README.md:45 (file-search, confidence: 70%)
+
+  Searching for: Unoptimized Dependency Management
+    ❌ Could not locate
+
+📊 Located 11/14 issues
+✅ [32mEnhanced location finder resolved 11/14 locations[0m
+💾 Cached DeepWiki response for https://github.com/sindresorhus/ky
+🔄 Applying intelligent response transformation...
+[DeepWikiResponseTransformer] Starting DeepWiki response transformation {
+  hasResponse: true,
+  repositoryUrl: 'https://github.com/sindresorhus/ky',
+  branch: 'main',
+  prId: undefined
+}
+[DeepWikiResponseTransformer] Response validation completed {
+  isValid: true,
+  hasIssues: true,
+  hasCompleteData: true,
+  missingFields: [],
+  malformedIssues: 0,
+  hasUnknownLocations: false,
+  issuesWithoutTitle: 0,
+  issuesWithoutSeverity: 0,
+  issuesWithoutCategory: 0,
+  confidence: 1
+}
+[DeepWikiResponseTransformer] Response is valid, returning with minimal processing 
+✅ [32mMain branch analyzed in 38.9s - Found 14 issues[0m
+
+[36mMain Branch Issues by Severity:[0m
+  🟠 HIGH: 5
+  🟡 MEDIUM: 7
+  🟢 LOW: 2
+
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+[1m[34mANALYZING PR BRANCH[0m
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+
+
+🔍 DEBUG - Raw DeepWiki Response:
+Branch analyzed: pull/700/head
+Response type: object
+Is JSON: true
+JSON keys: [
+  'issues',
+  'testCoverage',
+  'dependencies',
+  'teamMetrics',
+  'documentation',
+  'architecture'
+]
+Issues count: 15
+================================================================================
+📊 [34mUsing enhanced location finder for 15 issues...[0m
+🔍 Enhanced location finder searching 15 issues in /tmp/codequal-repos/sindresorhus-ky
+
+  Searching for: Missing Input Validation
+    ❌ Could not locate
+
+  Searching for: Use of eval() in code
+    ✅ Found: test/hooks.ts:485 (file-search, confidence: 70%)
+
+  Searching for: Hardcoded sensitive data
+    ✅ Found: source/core/constants.ts:38 (file-search, confidence: 70%)
+
+  Searching for: Inefficient data structure
+    ✅ Found: source/core/constants.ts:38 (file-search, confidence: 70%)
+
+  Searching for: Unnecessary promise wrapping
+    ✅ Found: test/retry.ts:11 (file-search, confidence: 70%)
+
+  Searching for: Outdated dependencies
+    ✅ Found: package.json:56 (file-search, confidence: 70%)
+
+  Searching for: Unused variables
+    ✅ Found: test/helpers/index.ts:1 (category-pattern, confidence: 30%)
+
+  Searching for: Complex function logic
+    ✅ Found: test/main.ts:480 (file-search, confidence: 70%)
+
+  Searching for: Lack of error handling
+    ✅ Found: source/core/constants.ts:16 (file-search, confidence: 70%)
+
+  Searching for: Excessive function length
+    ✅ Found: test/helpers/index.ts:1 (category-pattern, confidence: 30%)
+
+  Searching for: Potential for race conditions
+    ✅ Found: test/memory-leak.ts:8 (file-search, confidence: 70%)
+
+  Searching for: Inefficient looping
+    ✅ Found: test/headers.ts:16 (file-search, confidence: 70%)
+
+  Searching for: Inconsistent naming conventions
+    ✅ Found: test/helpers/index.ts:1 (category-pattern, confidence: 30%)
+
+  Searching for: Missing return type annotations
+    ✅ Found: source/core/constants.ts:19 (file-search, confidence: 70%)
+
+  Searching for: Circular dependency detected
+    ✅ Found: test/helpers/index.ts:1 (category-pattern, confidence: 30%)
+
+📊 Located 14/15 issues
+✅ [32mEnhanced location finder resolved 14/15 locations[0m
+💾 Cached DeepWiki response for https://github.com/sindresorhus/ky
+🔄 Applying intelligent response transformation...
+[DeepWikiResponseTransformer] Starting DeepWiki response transformation {
+  hasResponse: true,
+  repositoryUrl: 'https://github.com/sindresorhus/ky',
+  branch: undefined,
+  prId: '700'
+}
+[DeepWikiResponseTransformer] Response validation completed {
+  isValid: true,
+  hasIssues: true,
+  hasCompleteData: true,
+  missingFields: [],
+  malformedIssues: 0,
+  hasUnknownLocations: false,
+  issuesWithoutTitle: 0,
+  issuesWithoutSeverity: 0,
+  issuesWithoutCategory: 0,
+  confidence: 1
+}
+[DeepWikiResponseTransformer] Response is valid, returning with minimal processing 
+✅ [32mPR branch analyzed in 42.7s - Found 15 issues[0m
+
+[36mPR Branch Issues by Severity:[0m
+  🟠 HIGH: 5
+  🔴 CRITICAL: 1
+  🟡 MEDIUM: 7
+  🟢 LOW: 2
+
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+[1m[34mEXTRACTING CODE SNIPPETS[0m
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+
+Repo paths: {
+  main: '/tmp/codequal-repos/sindresorhus-ky',
+  pr: '/tmp/codequal-repos/sindresorhus-ky-pr-700'
+}
+  Checking 14 main branch issues for missing snippets...
+  Found 0 issues without snippets
+  Repo path: /tmp/codequal-repos/sindresorhus-ky, exists: true
+  Checking 15 PR branch issues for missing snippets...
+  Found 0 issues without snippets
+  Repo path: /tmp/codequal-repos/sindresorhus-ky-pr-700, exists: true
+
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+[1m[34mGENERATING COMPARISON REPORT[0m
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+
+📊 [34mSelecting optimal model...[0m
+📊 [34mComparing branches and generating report...[0m
+  📊 Issues with code snippets: 14/14
+  📊 Issues with code snippets: 15/15
+📊 [34mDEBUG: Main=14 issues, PR=15 issues[0m
+Starting orchestrated comparison analysis undefined
+Failed to fetch model config: {
+  code: '42P01',
+  details: null,
+  hint: null,
+  message: 'relation "public.model_configs" does not exist'
+}
+Requested new model config for orchestrator (typescript, medium, undefined)
+No configuration found, researching optimal model undefined
+Saved new configuration from researcher {
+  configId: 'config-1756128284315',
+  model: 'gpt-4o',
+  provider: 'openai'
+}
+Using model configuration {
+  model: 'gpt-4o',
+  provider: 'openai',
+  version: '2.0',
+  cost: 0.0032,
+  configAge: '33 months'
+}
+[ComparisonAgent] Initializing comparison agent {
+  config: {
+    language: 'typescript',
+    sizeCategory: 'medium',
+    role: 'comparison',
+    prompt: 'You are an expert AI comparison analyst specializing in code quality assessment.\n' +
+      '\n' +
+      'REPOSITORY CONTEXT:\n' +
+      '- Language: typescript\n' +
+      '- Size: medium (70 files)\n' +
+      '- Complexity: medium\n' +
+      '- Total Issues: 29\n' +
+      '\n' +
+      'This repository has moderate complexity.\n' +
+      '\n' +
+      'Focus areas:\n' +
+      '- Security vulnerabilities and their remediation\n' +
+      '- Performance optimizations and bottlenecks\n' +
+      '- Critical issues requiring immediate attention\n' +
+      '\n' +
+      'Ensure 100% accuracy, professional language, and actionable recommendations.',
+    modelConfig: { provider: 'openai', model: 'gpt-4o' }
+  }
+}
+Failed to fetch model config: {
+  code: '42P01',
+  details: null,
+  hint: null,
+  message: 'relation "public.model_configs" does not exist'
+}
+Requested new model config for comparator (typescript, medium, undefined)
+[ComparisonAgent] Using provided model config {
+  provider: 'openai',
+  model: 'gpt-4o',
+  temperature: 0.1,
+  maxTokens: 4000
+}
+Starting location enhancement for both branches undefined
+  ✓ Found repository at: /tmp/codequal-repos/sindresorhus-ky
+First issue structure: {
+  "title": "Potential Denial of Service due to Large File Uploads",
+  "severity": "high",
+  "category": "security",
+  "file": "test/stream.ts",
+  "line": 45,
+  "impact": "Large files can exhaust server resources, leading to service unavailability.",
+  "codeSnippet": "const largeBlob = createLargeBlob(10); // 10MB Blob",
+  "fix": "Implement size limits for file uploads.",
+  "recommendation": "Add validation to restrict file sizes.",
+  "location": {
+    "file": "test/stream.ts",
+    "line": 3,
+    "column": 0
+  },
+  "description": "Large files can exhaust server resources, leading to service unavailability.",
+  "suggestion": "Implement size limits for file uploads.",
+  "id": "issue-main-1756128238755-0",
+  "message": "Large files can exhaust server resources, leading to service unavailability."
+}
+Using pattern-based location finder
+Generating patterns for: {
+  strategy: 'semantic-analysis',
+  hasDescription: true,
+  description: 'Large files can exhaust server resources, leading ',
+  title: 'Potential Denial of Service due to Large File Uplo'
+}
+Pattern strategy: semantic-analysis (100% confidence)
+Using pattern-based location finder
+Generating patterns for: {
+  strategy: 'code-search',
+  hasDescription: true,
+  description: 'Errors may not be properly handled, leading to unh',
+  title: 'Improper Error Handling in HTTP Requests'
+}
+Pattern strategy: code-search (100% confidence)
+Using pattern-based location finder
+Generating patterns for: {
+  strategy: 'code-search',
+  hasDescription: true,
+  description: 'Deprecated APIs may be removed in future Node.js v',
+  title: 'Use of Deprecated Node.js APIs'
+}
+Pattern strategy: code-search (100% confidence)
+Using pattern-based location finder
+Generating patterns for: {
+  strategy: 'semantic-analysis',
+  hasDescription: true,
+  description: 'Exposes the service to brute force attacks and res',
+  title: 'Lack of Rate Limiting on API Endpoints'
+}
+Pattern strategy: semantic-analysis (100% confidence)
+Using pattern-based location finder
+Generating patterns for: {
+  strategy: 'semantic-analysis',
+  hasDescription: true,
+  description: 'Improperly validated inputs can lead to injection ',
+  title: 'Missing Input Validation'
+}
+Pattern strategy: semantic-analysis (100% confidence)
+Using pattern-based location finder
+Generating patterns for: {
+  strategy: 'code-search',
+  hasDescription: true,
+  description: 'Older TypeScript configurations may not leverage n',
+  title: 'Outdated TypeScript Configuration'
+}
+Pattern strategy: code-search (95% confidence)
+Using pattern-based location finder
+Generating patterns for: {
+  strategy: 'semantic-analysis',
+  hasDescription: true,
+  description: 'Uncaught rejections can cause test failures and ob',
+  title: 'Uncaught Promise Rejections in Tests'
+}
+Pattern strategy: semantic-analysis (100% confidence)
+Using pattern-based location finder
+Generating patterns for: {
+  strategy: 'semantic-analysis',
+  hasDescription: true,
+  description: 'Shared resources may lead to memory leaks over tim',
+  title: 'Potential Memory Leak in Request Handling'
+}
+Pattern strategy: semantic-analysis (100% confidence)
+Using pattern-based location finder
+Generating patterns for: {
+  strategy: 'code-search',
+  hasDescription: true,
+  description: 'Excessive retries can overload the server and lead',
+  title: 'Excessive Retry Logic on API Calls'
+}
+Pattern strategy: code-search (100% confidence)
+Using pattern-based location finder
+Generating patterns for: {
+  strategy: 'code-search',
+  hasDescription: true,
+  description: 'Hardcoded values reduce the flexibility of tests.',
+  title: 'Hardcoded URLs in Tests'
+}
+Pattern strategy: code-search (100% confidence)
+Using pattern-based location finder
+Generating patterns for: {
+  strategy: 'semantic-analysis',
+  hasDescription: true,
+  description: 'Inconsistent naming can lead to confusion and main',
+  title: 'Inconsistent Naming Conventions'
+}
+Pattern strategy: semantic-analysis (100% confidence)
+Using pattern-based location finder
+Generating patterns for: {
+  strategy: 'code-search',
+  hasDescription: true,
+  description: 'Error messages may expose sensitive information to',
+  title: 'Potential Data Leakage in Error Messages'
+}
+Pattern strategy: code-search (100% confidence)
+Using pattern-based location finder
+Generating patterns for: {
+  strategy: 'code-search',
+  hasDescription: true,
+  description: 'Users may struggle to understand how to use the AP',
+  title: 'Inadequate Documentation on API Usage'
+}
+Pattern strategy: code-search (50% confidence)
+Using pattern-based location finder
+Generating patterns for: {
+  strategy: 'code-search',
+  hasDescription: true,
+  description: 'Unoptimized dependencies can lead to larger bundle',
+  title: 'Unoptimized Dependency Management'
+}
+Pattern strategy: code-search (100% confidence)
+  ✓ Found repository at: /tmp/codequal-repos/sindresorhus-ky-pr-700
+First issue structure: {
+  "title": "Missing Input Validation",
+  "severity": "high",
+  "category": "security",
+  "file": "source/core/constants.ts",
+  "line": 5,
+  "impact": "Potential for injection attacks if user input is not properly validated.",
+  "codeSnippet": "const input = request.body;",
+  "fix": "Implement input validation and sanitization.",
+  "recommendation": "Use a library like Joi or express-validator.",
+  "location": {
+    "file": "source/core/constants.ts",
+    "line": 5,
+    "column": 0
+  },
+  "description": "Potential for injection attacks if user input is not properly validated.",
+  "suggestion": "Implement input validation and sanitization.",
+  "id": "issue-pull-700-head-1756128281434-0",
+  "message": "Potential for injection attacks if user input is not properly validated."
+}
+Using pattern-based location finder
+Generating patterns for: {
+  strategy: 'semantic-analysis',
+  hasDescription: true,
+  description: 'Potential for injection attacks if user input is n',
+  title: 'Missing Input Validation'
+}
+Pattern strategy: semantic-analysis (100% confidence)
+Using pattern-based location finder
+Generating patterns for: {
+  strategy: 'semantic-analysis',
+  hasDescription: true,
+  description: 'Security risk due to potential code injection.',
+  title: 'Use of eval() in code'
+}
+Pattern strategy: semantic-analysis (100% confidence)
+Using pattern-based location finder
+Generating patterns for: {
+  strategy: 'code-search',
+  hasDescription: true,
+  description: 'Exposure of sensitive information if the source is',
+  title: 'Hardcoded sensitive data'
+}
+Pattern strategy: code-search (100% confidence)
+Using pattern-based location finder
+Generating patterns for: {
+  strategy: 'semantic-analysis',
+  hasDescription: true,
+  description: 'Increased time complexity leading to slower perfor',
+  title: 'Inefficient data structure'
+}
+Pattern strategy: semantic-analysis (100% confidence)
+Using pattern-based location finder
+Generating patterns for: {
+  strategy: 'semantic-analysis',
+  hasDescription: true,
+  description: 'Unneeded overhead from wrapping synchronous code i',
+  title: 'Unnecessary promise wrapping'
+}
+Pattern strategy: semantic-analysis (100% confidence)
+Using pattern-based location finder
+Generating patterns for: {
+  strategy: 'code-search',
+  hasDescription: true,
+  description: 'Potential security vulnerabilities and lack of new',
+  title: 'Outdated dependencies'
+}
+Pattern strategy: code-search (100% confidence)
+Using pattern-based location finder
+Generating patterns for: {
+  strategy: 'code-search',
+  hasDescription: true,
+  description: 'Clutters the code and reduces readability.',
+  title: 'Unused variables'
+}
+Pattern strategy: code-search (100% confidence)
+Using pattern-based location finder
+Generating patterns for: {
+  strategy: 'semantic-analysis',
+  hasDescription: true,
+  description: 'Difficult to read and maintain.',
+  title: 'Complex function logic'
+}
+Pattern strategy: semantic-analysis (100% confidence)
+Using pattern-based location finder
+Generating patterns for: {
+  strategy: 'semantic-analysis',
+  hasDescription: true,
+  description: 'Uncaught exceptions may crash the application.',
+  title: 'Lack of error handling'
+}
+Pattern strategy: semantic-analysis (100% confidence)
+Using pattern-based location finder
+Generating patterns for: {
+  strategy: 'semantic-analysis',
+  hasDescription: true,
+  description: 'Harder to test and understand.',
+  title: 'Excessive function length'
+}
+Pattern strategy: semantic-analysis (100% confidence)
+Using pattern-based location finder
+Generating patterns for: {
+  strategy: 'semantic-analysis',
+  hasDescription: true,
+  description: 'Unpredictable behavior under concurrent requests.',
+  title: 'Potential for race conditions'
+}
+Pattern strategy: semantic-analysis (100% confidence)
+Using pattern-based location finder
+Generating patterns for: {
+  strategy: 'semantic-analysis',
+  hasDescription: true,
+  description: 'Slower execution time for large datasets.',
+  title: 'Inefficient looping'
+}
+Pattern strategy: semantic-analysis (100% confidence)
+Using pattern-based location finder
+Generating patterns for: {
+  strategy: 'semantic-analysis',
+  hasDescription: true,
+  description: 'Confuses developers and reduces code readability.',
+  title: 'Inconsistent naming conventions'
+}
+Pattern strategy: semantic-analysis (100% confidence)
+Using pattern-based location finder
+Generating patterns for: {
+  strategy: 'semantic-analysis',
+  hasDescription: true,
+  description: 'Makes it harder to understand function signatures.',
+  title: 'Missing return type annotations'
+}
+Pattern strategy: semantic-analysis (100% confidence)
+Using pattern-based location finder
+Generating patterns for: {
+  strategy: 'code-search',
+  hasDescription: true,
+  description: 'Can lead to unpredictable behavior and performance',
+  title: 'Circular dependency detected'
+}
+Pattern strategy: code-search (100% confidence)
+Starting educational research on unique issues undefined
+[EducatorAgent] Starting educational research { issueCount: 27, developerLevel: 'beginner' }
+[EducatorAgent] Educational research completed { pathsGenerated: 3, resourcesFound: 3 }
+Educational research completed for 27 unique issue patterns (from 29 total) undefined
+Found 1 matches using pattern search
+All strategies failed, using base finder
+All strategies failed, using base finder
+All strategies failed, using base finder
+Found 1 matches using pattern search
+All strategies failed, using base finder
+All strategies failed, using base finder
+All strategies failed, using base finder
+Found 1 matches using pattern search
+All strategies failed, using base finder
+Found 10 matches using pattern search
+Found 10 matches using pattern search
+Found 10 matches using pattern search
+Found 1 matches using pattern search
+Found 7 matches using pattern search
+Found 2 matches using pattern search
+Found 6 matches using pattern search
+Found 4 matches using pattern search
+All strategies failed, using base finder
+Found 2 matches using pattern search
+Found 1 matches using pattern search
+All strategies failed, using base finder
+All strategies failed, using base finder
+Found 6 matches using pattern search
+All strategies failed, using base finder
+Found 10 matches using pattern search
+All strategies failed, using base finder
+All strategies failed, using base finder
+All strategies failed, using base finder
+Enhanced main: 10/14 undefined
+Enhanced PR: 5/15 undefined
+All enhancements completed undefined
+Ensuring compatible analysis result {
+  hasIssues: true,
+  issueCount: 14,
+  hasRecommendations: false,
+  hasScores: true,
+  analysisKeys: [ 'issues', 'scores', 'metadata' ]
+}
+Ensuring compatible analysis result {
+  hasIssues: true,
+  issueCount: 15,
+  hasRecommendations: false,
+  hasScores: true,
+  analysisKeys: [ 'issues', 'scores', 'metadata' ]
+}
+[ComparisonAgent] Starting comparison analysis 
+[ComparisonAgent] Performing mock AI analysis {
+  mainIssues: 14,
+  featureIssues: 15,
+  mainScores: {},
+  featureScores: {}
+}
+[ComparisonAgent] Using actual issue lists without deduplication {
+  main: { count: 14 },
+  feature: { count: 15 },
+  note: 'Preserving all issue occurrences for complete visibility'
+}
+[ComparisonAgent] Matched issue: Inconsistent Naming Conventions {
+  isMatch: true,
+  confidence: 100,
+  matchType: 'exact',
+  details: 'Exact line match'
+}
+[ComparisonAgent] Comparison analysis results { resolved: 13, new: 14, unchanged: 1 }
+[ComparisonAgent] Generating final report with enhancements { hasEducation: true, includeEducation: true }
+V7 generator requested but has been removed. Using V8 instead.
+[INFO] [ReportGeneratorV8Fixes] Downgrading critical issue in test file: Use of eval() in code (test/hooks.ts) 
+[INFO] [ReportGeneratorV8Fixes] Downgrading high issue in test file: Potential for race conditions (test/memory-leak.ts) 
+[INFO] [ReportGeneratorV8Fixes] Downgrading high issue in test file: Circular dependency detected (test/helpers/index.ts) 
+[INFO] [ReportGeneratorV8Fixes] Downgrading high issue in test file: Potential Denial of Service due to Large File Uploads (test/stream.ts) 
+[INFO] [ReportGeneratorV8Fixes] Downgrading high issue in test file: Lack of Rate Limiting on API Endpoints (test/retry.ts) 
+[INFO] [ReportGeneratorV8Fixes] Downgrading high issue in test file: Missing Input Validation (test/headers.ts) 
+[INFO] [ReportGeneratorV8Fixes] Downgrading high issue in test file: Potential Memory Leak in Request Handling (test/memory-leak.ts) 
+[INFO] [ReportGeneratorV8Fixes] Downgrading high issue in test file: Potential Data Leakage in Error Messages (test/hooks.ts) 
+[INFO] [TrulyDynamicSelector] Selecting models for role: comparison 
+[INFO] [TrulyDynamicSelector] Found 316 total models in OpenRouter 
+[INFO] [TrulyDynamicSelector] 316 models meet basic requirements 
+[INFO] [TrulyDynamicSelector] Selected primary: google/gemini-2.5-pro-exp-03-25 (score: 1.19) 
+[INFO] [TrulyDynamicSelector] Selected fallback: anthropic/claude-opus-4.1 (score: 1.11) 
+[INFO] [TrulyDynamicSelector] Selecting models for role: comparison 
+Skills updated successfully { userId: 'sindresorhus', previousScore: 75, newScore: 67, change: -8 }
+
+🔍 DEBUG - Orchestrator result:
+Resolved issues: 0
+New issues: 0
+Modified issues: 0
+Unchanged issues: 0
+✅ [32mReport generated in 4.6s[0m
+
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+[1m[34mSAVING OUTPUTS[0m
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+
+✅ [32mMarkdown saved: /Users/alpinro/Code Prjects/codequal/packages/agents/test-outputs/manual-validation/sindresorhus-ky-pr700-2025-08-25T13-24-47.md[0m
+✅ [32mJSON saved: /Users/alpinro/Code Prjects/codequal/packages/agents/test-outputs/manual-validation/sindresorhus-ky-pr700-2025-08-25T13-24-47.json[0m
+✅ [32mHTML saved: /Users/alpinro/Code Prjects/codequal/packages/agents/test-outputs/manual-validation/sindresorhus-ky-pr700-2025-08-25T13-24-47.html[0m
+
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+[1m[34mANALYSIS COMPLETE[0m
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+
+[1m[32mSummary:[0m
+  📈 Resolved Issues: [32m13[0m
+  📉 New Issues: [31m14[0m
+  🔄 Modified Issues: [33m0[0m
+  ↔️  Unchanged Issues: 1
+
+[1mAssessment:[0m
+  🎯 PR Recommendation: [31mBLOCK[0m
+  🔒 Security Posture: degraded
+  📊 Code Quality: stable
+  💯 Confidence: 85%
+
+[1mModel Information:[0m
+  🤖 Model Used: gpt-4o
+  🏢 Orchestrator: v4.0
+
+[1mFiles Generated:[0m
+  📄 /Users/alpinro/Code Prjects/codequal/packages/agents/test-outputs/manual-validation/sindresorhus-ky-pr700-2025-08-25T13-24-47.md
+  📄 /Users/alpinro/Code Prjects/codequal/packages/agents/test-outputs/manual-validation/sindresorhus-ky-pr700-2025-08-25T13-24-47.json
+  📄 /Users/alpinro/Code Prjects/codequal/packages/agents/test-outputs/manual-validation/sindresorhus-ky-pr700-2025-08-25T13-24-47.html
+
+[1m[31mTop New Issues to Address:[0m
+
+  1. 🟠 [HIGH] Missing Input Validation
+     📍 source/core/constants.ts:5
+
+  2. 🔴 [CRITICAL] Use of eval() in code
+     📍 test/hooks.ts:485
+
+  3. 🟠 [HIGH] Hardcoded sensitive data
+     📍 source/core/constants.ts:38
+
+  4. 🟠 [HIGH] Lack of error handling
+     📍 source/core/constants.ts:74
+
+  5. 🟠 [HIGH] Potential for race conditions
+     📍 test/memory-leak.ts:8
+
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+[32m✨ Analysis completed successfully![0m
+[36m════════════════════════════════════════════════════════════════════════════════[0m
+
+[INFO] [TrulyDynamicSelector] Found 316 total models in OpenRouter 
+[INFO] [TrulyDynamicSelector] 316 models meet basic requirements 
+[INFO] [TrulyDynamicSelector] Selected primary: google/gemini-2.5-pro-exp-03-25 (score: 1.19) 
+[INFO] [TrulyDynamicSelector] Selected fallback: anthropic/claude-opus-4.1 (score: 1.11) 

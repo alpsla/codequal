@@ -878,7 +878,7 @@ Provide confidence scores and reasoning for each finding.`;
       }
     });
     
-    this.log('info', 'Mock analysis results', {
+    this.log('info', 'Comparison analysis results', {
       resolved: resolved.length,
       new: newIssues.length,
       unchanged: unchanged.length

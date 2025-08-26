@@ -1,0 +1,726 @@
+{
+  "repositoryUrl": "https://github.com/sindresorhus/ky",
+  "prNumber": 700,
+  "mainBranchIssues": [
+    {
+      "id": "issue-1",
+      "title": "Missing error handling for the promise resolving file upload.",
+      "description": "Missing error handling for the promise resolving file upload.",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "test/browser.ts",
+        "line": 320
+      },
+      "file": "test/browser.ts",
+      "line": 13,
+      "codeSnippet": "\tt.is(error, 'Error: Streams are not supported in your environment. `ReadableStream` is missing.');",
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "issue-2",
+      "title": "Potential unhandled rejection when the file stream fails.",
+      "description": "Potential unhandled rejection when the file stream fails.",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "test/browser.ts",
+        "line": 64
+      },
+      "file": "test/browser.ts",
+      "line": 25,
+      "codeSnippet": "\t\t{message: /`input` must not begin with a slash when using `prefixUrl`/},",
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "issue-3",
+      "title": "Timeout error not handled gracefully.",
+      "description": "Timeout error not handled gracefully.",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "test/browser.ts",
+        "line": 84
+      },
+      "file": "test/browser.ts",
+      "line": 48,
+      "codeSnippet": "\t\tsetTimeout(() => {",
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "issue-4",
+      "title": "Lack of validation for request body content.",
+      "description": "Lack of validation for request body content.",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "test/stream.ts",
+        "line": 9
+      },
+      "file": "test/stream.ts",
+      "line": 45,
+      "codeSnippet": "\tserver.post('/', async (request, response) => {",
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "issue-5",
+      "title": "Potential race condition with request count not being isolated.",
+      "description": "Potential race condition with request count not being isolated.",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "test/retry.ts",
+        "line": 12
+      },
+      "file": "test/retry.ts",
+      "line": 39,
+      "codeSnippet": "\tlet requestCount = 0;",
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "issue-6",
+      "title": "Missing check for valid response before parsing JSON.",
+      "description": "Missing check for valid response before parsing JSON.",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "test/fetch.ts",
+        "line": 99
+      },
+      "file": "test/fetch.ts",
+      "line": 40,
+      "codeSnippet": "\tconst options = {next: {revalidate: 3600}};",
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "issue-7",
+      "title": "Unused variable in the server response handler.",
+      "description": "Unused variable in the server response handler.",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "test/headers.ts",
+        "line": 7
+      },
+      "file": "test/headers.ts",
+      "line": 15,
+      "codeSnippet": "import {createHttpTestServer} from './helpers/create-http-test-server.js';",
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "issue-8",
+      "title": "Hardcoded timeout value could lead to inconsistent behavior.",
+      "description": "Hardcoded timeout value could lead to inconsistent behavior.",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "test/main.ts",
+        "line": 5
+      },
+      "file": "test/main.ts",
+      "line": 20,
+      "codeSnippet": "import ky, {TimeoutError} from '../source/index.js';",
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "issue-9",
+      "title": "Missing proper error handling when setting custom headers.",
+      "description": "Missing proper error handling when setting custom headers.",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "test/headers.ts",
+        "line": 142
+      },
+      "file": "test/headers.ts",
+      "line": 30,
+      "codeSnippet": "\tconst error = await t.throwsAsync(request);",
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "issue-10",
+      "title": "Potential memory leak when using shared abort signal.",
+      "description": "Potential memory leak when using shared abort signal.",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "test/memory-leak.ts",
+        "line": 8
+      },
+      "file": "test/memory-leak.ts",
+      "line": 6,
+      "codeSnippet": "test('shared abort signal must not cause memory leak of input', async t => {",
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    }
+  ],
+  "prBranchIssues": [
+    {
+      "id": "issue-1",
+      "title": "Missing error handling for promise resolution",
+      "description": "Missing error handling for promise resolution",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "test/browser.ts",
+        "line": 320
+      },
+      "file": "test/browser.ts",
+      "line": 45,
+      "codeSnippet": "\tt.is(error, 'Error: Streams are not supported in your environment. `ReadableStream` is missing.');",
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "issue-2",
+      "title": "Potential memory leak due to unhandled promises",
+      "description": "Potential memory leak due to unhandled promises",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "test/browser.ts",
+        "line": 75
+      },
+      "file": "test/browser.ts",
+      "line": 75,
+      "codeSnippet": "const request = window.ky(url, { signal: controller.signal }).text();"
+    },
+    {
+      "id": "issue-3",
+      "title": "Lack of timeout handling in file upload",
+      "description": "Lack of timeout handling in file upload",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "test/browser.ts",
+        "line": 84
+      },
+      "file": "test/browser.ts",
+      "line": 12,
+      "codeSnippet": "\t\tsetTimeout(() => {",
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "issue-4",
+      "title": "No validation for searchParams type",
+      "description": "No validation for searchParams type",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "test/browser.ts",
+        "line": 323
+      },
+      "file": "test/browser.ts",
+      "line": 102,
+      "codeSnippet": "defaultBrowsersTest('FormData with searchParams', async (t: ExecutionContext, page: Page) => {",
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "issue-5",
+      "title": "Potential unhandled rejection in async function",
+      "description": "Potential unhandled rejection in async function",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "test/retry.ts",
+        "line": 11
+      },
+      "file": "test/retry.ts",
+      "line": 20,
+      "codeSnippet": "test('network error', async t => {",
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "issue-6",
+      "title": "Inefficient response body parsing without stream handling",
+      "description": "Inefficient response body parsing without stream handling",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "test/stream.ts",
+        "line": 9
+      },
+      "file": "test/stream.ts",
+      "line": 35,
+      "codeSnippet": "\tserver.post('/', async (request, response) => {",
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "issue-7",
+      "title": "Lack of input validation for the fetch option",
+      "description": "Lack of input validation for the fetch option",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "test/fetch.ts",
+        "line": 9
+      },
+      "file": "test/fetch.ts",
+      "line": 7,
+      "codeSnippet": "\tconst customFetch: typeof fetch = async input => {",
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "issue-8",
+      "title": "Hardcoded timeout value could lead to performance issues",
+      "description": "Hardcoded timeout value could lead to performance issues",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "test/fetch.ts",
+        "line": 60
+      },
+      "file": "test/fetch.ts",
+      "line": 60,
+      "codeSnippet": "const timeout = 60_000;"
+    },
+    {
+      "id": "issue-9",
+      "title": "Missing error handling for JSON parsing",
+      "description": "Missing error handling for JSON parsing",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "test/headers.ts",
+        "line": 142
+      },
+      "file": "test/headers.ts",
+      "line": 50,
+      "codeSnippet": "\tconst error = await t.throwsAsync(request);",
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "issue-10",
+      "title": "Potential for undefined behavior with uninitialized variables",
+      "description": "Potential for undefined behavior with uninitialized variables",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "test/hooks.ts",
+        "line": 286
+      },
+      "file": "test/hooks.ts",
+      "line": 15,
+      "codeSnippet": "\t\t\t\t\t\t\treturn undefined;",
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    }
+  ],
+  "categorized": {
+    "newIssues": [
+      {
+        "issue": {
+          "id": "issue-2",
+          "title": "Potential memory leak due to unhandled promises",
+          "description": "Potential memory leak due to unhandled promises",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "test/browser.ts",
+            "line": 75
+          },
+          "file": "test/browser.ts",
+          "line": 75,
+          "codeSnippet": "const request = window.ky(url, { signal: controller.signal }).text();"
+        },
+        "category": "new",
+        "fingerprint": "test/browser.ts:75:code-quality:medium:33jpda:ryu4cc",
+        "confidence": 0.29999999999999993
+      },
+      {
+        "issue": {
+          "id": "issue-4",
+          "title": "No validation for searchParams type",
+          "description": "No validation for searchParams type",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "test/browser.ts",
+            "line": 323
+          },
+          "file": "test/browser.ts",
+          "line": 102,
+          "codeSnippet": "defaultBrowsersTest('FormData with searchParams', async (t: ExecutionContext, page: Page) => {",
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "new",
+        "fingerprint": "test/browser.ts:320:code-quality:medium:6k85oz:qcokhg",
+        "confidence": 0.29999999999999993
+      },
+      {
+        "issue": {
+          "id": "issue-5",
+          "title": "Potential unhandled rejection in async function",
+          "description": "Potential unhandled rejection in async function",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "test/retry.ts",
+            "line": 11
+          },
+          "file": "test/retry.ts",
+          "line": 20,
+          "codeSnippet": "test('network error', async t => {",
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "new",
+        "fingerprint": "test/retry.ts:10:code-quality:medium:swtebj:ccsgr2",
+        "confidence": 0.29999999999999993
+      },
+      {
+        "issue": {
+          "id": "issue-6",
+          "title": "Inefficient response body parsing without stream handling",
+          "description": "Inefficient response body parsing without stream handling",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "test/stream.ts",
+            "line": 9
+          },
+          "file": "test/stream.ts",
+          "line": 35,
+          "codeSnippet": "\tserver.post('/', async (request, response) => {",
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "new",
+        "fingerprint": "test/stream.ts:5:code-quality:medium:wtoavu:wluk8r",
+        "confidence": 0.29999999999999993
+      },
+      {
+        "issue": {
+          "id": "issue-7",
+          "title": "Lack of input validation for the fetch option",
+          "description": "Lack of input validation for the fetch option",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "test/fetch.ts",
+            "line": 9
+          },
+          "file": "test/fetch.ts",
+          "line": 7,
+          "codeSnippet": "\tconst customFetch: typeof fetch = async input => {",
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "new",
+        "fingerprint": "test/fetch.ts:5:code-quality:medium:gxfefg:7f49zw",
+        "confidence": 0.29999999999999993
+      },
+      {
+        "issue": {
+          "id": "issue-8",
+          "title": "Hardcoded timeout value could lead to performance issues",
+          "description": "Hardcoded timeout value could lead to performance issues",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "test/fetch.ts",
+            "line": 60
+          },
+          "file": "test/fetch.ts",
+          "line": 60,
+          "codeSnippet": "const timeout = 60_000;"
+        },
+        "category": "new",
+        "fingerprint": "test/fetch.ts:60:code-quality:medium:fqb050:hr8tgx",
+        "confidence": 0.29999999999999993
+      },
+      {
+        "issue": {
+          "id": "issue-9",
+          "title": "Missing error handling for JSON parsing",
+          "description": "Missing error handling for JSON parsing",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "test/headers.ts",
+            "line": 142
+          },
+          "file": "test/headers.ts",
+          "line": 50,
+          "codeSnippet": "\tconst error = await t.throwsAsync(request);",
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "new",
+        "fingerprint": "test/headers.ts:140:code-quality:medium:ffyj4o:mkbm9c",
+        "confidence": 0.29999999999999993
+      },
+      {
+        "issue": {
+          "id": "issue-10",
+          "title": "Potential for undefined behavior with uninitialized variables",
+          "description": "Potential for undefined behavior with uninitialized variables",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "test/hooks.ts",
+            "line": 286
+          },
+          "file": "test/hooks.ts",
+          "line": 15,
+          "codeSnippet": "\t\t\t\t\t\t\treturn undefined;",
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "new",
+        "fingerprint": "test/hooks.ts:285:code-quality:medium:m56f6r:bobg2j",
+        "confidence": 0.4
+      }
+    ],
+    "fixedIssues": [
+      {
+        "issue": {
+          "id": "issue-2",
+          "title": "Potential unhandled rejection when the file stream fails.",
+          "description": "Potential unhandled rejection when the file stream fails.",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "test/browser.ts",
+            "line": 64
+          },
+          "file": "test/browser.ts",
+          "line": 25,
+          "codeSnippet": "\t\t{message: /`input` must not begin with a slash when using `prefixUrl`/},",
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "fixed",
+        "fingerprint": "test/browser.ts:60:code-quality:medium:9jr0a4:i9hbgv",
+        "confidence": 0.29999999999999993
+      },
+      {
+        "issue": {
+          "id": "issue-4",
+          "title": "Lack of validation for request body content.",
+          "description": "Lack of validation for request body content.",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "test/stream.ts",
+            "line": 9
+          },
+          "file": "test/stream.ts",
+          "line": 45,
+          "codeSnippet": "\tserver.post('/', async (request, response) => {",
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "fixed",
+        "fingerprint": "test/stream.ts:5:code-quality:medium:ukoruy:wluk8r",
+        "confidence": 0.29999999999999993
+      },
+      {
+        "issue": {
+          "id": "issue-5",
+          "title": "Potential race condition with request count not being isolated.",
+          "description": "Potential race condition with request count not being isolated.",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "test/retry.ts",
+            "line": 12
+          },
+          "file": "test/retry.ts",
+          "line": 39,
+          "codeSnippet": "\tlet requestCount = 0;",
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "fixed",
+        "fingerprint": "test/retry.ts:10:code-quality:medium:3d4ad9:y2lxot",
+        "confidence": 0.29999999999999993
+      },
+      {
+        "issue": {
+          "id": "issue-6",
+          "title": "Missing check for valid response before parsing JSON.",
+          "description": "Missing check for valid response before parsing JSON.",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "test/fetch.ts",
+            "line": 99
+          },
+          "file": "test/fetch.ts",
+          "line": 40,
+          "codeSnippet": "\tconst options = {next: {revalidate: 3600}};",
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "fixed",
+        "fingerprint": "test/fetch.ts:95:code-quality:medium:qmpr09:bda7bo",
+        "confidence": 0.29999999999999993
+      },
+      {
+        "issue": {
+          "id": "issue-7",
+          "title": "Unused variable in the server response handler.",
+          "description": "Unused variable in the server response handler.",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "test/headers.ts",
+            "line": 7
+          },
+          "file": "test/headers.ts",
+          "line": 15,
+          "codeSnippet": "import {createHttpTestServer} from './helpers/create-http-test-server.js';",
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "fixed",
+        "fingerprint": "test/headers.ts:5:code-quality:medium:y3vv7a:okf1dn",
+        "confidence": 0.29999999999999993
+      },
+      {
+        "issue": {
+          "id": "issue-8",
+          "title": "Hardcoded timeout value could lead to inconsistent behavior.",
+          "description": "Hardcoded timeout value could lead to inconsistent behavior.",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "test/main.ts",
+            "line": 5
+          },
+          "file": "test/main.ts",
+          "line": 20,
+          "codeSnippet": "import ky, {TimeoutError} from '../source/index.js';",
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "fixed",
+        "fingerprint": "test/main.ts:5:code-quality:medium:y2nout:42hznr",
+        "confidence": 0.4
+      },
+      {
+        "issue": {
+          "id": "issue-9",
+          "title": "Missing proper error handling when setting custom headers.",
+          "description": "Missing proper error handling when setting custom headers.",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "test/headers.ts",
+            "line": 142
+          },
+          "file": "test/headers.ts",
+          "line": 30,
+          "codeSnippet": "\tconst error = await t.throwsAsync(request);",
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "fixed",
+        "fingerprint": "test/headers.ts:140:code-quality:medium:6oepse:mkbm9c",
+        "confidence": 0.29999999999999993
+      },
+      {
+        "issue": {
+          "id": "issue-10",
+          "title": "Potential memory leak when using shared abort signal.",
+          "description": "Potential memory leak when using shared abort signal.",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "test/memory-leak.ts",
+            "line": 8
+          },
+          "file": "test/memory-leak.ts",
+          "line": 6,
+          "codeSnippet": "test('shared abort signal must not cause memory leak of input', async t => {",
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "fixed",
+        "fingerprint": "test/memory-leak.ts:5:code-quality:medium:lrvrul:lbrfld",
+        "confidence": 0.42999999999999994
+      }
+    ],
+    "unchangedIssues": [
+      {
+        "issue": {
+          "id": "issue-1",
+          "title": "Missing error handling for promise resolution",
+          "description": "Missing error handling for promise resolution",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "test/browser.ts",
+            "line": 320
+          },
+          "file": "test/browser.ts",
+          "line": 45,
+          "codeSnippet": "\tt.is(error, 'Error: Streams are not supported in your environment. `ReadableStream` is missing.');",
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "unchanged",
+        "fingerprint": "test/browser.ts:320:code-quality:medium:iht9hr:53k9jr",
+        "confidence": 0.91
+      },
+      {
+        "issue": {
+          "id": "issue-3",
+          "title": "Lack of timeout handling in file upload",
+          "description": "Lack of timeout handling in file upload",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "test/browser.ts",
+            "line": 84
+          },
+          "file": "test/browser.ts",
+          "line": 12,
+          "codeSnippet": "\t\tsetTimeout(() => {",
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "unchanged",
+        "fingerprint": "test/browser.ts:80:code-quality:medium:m68y9s:ndfvyo",
+        "confidence": 0.9700000000000001
+      }
+    ],
+    "summary": {
+      "totalNew": 8,
+      "totalFixed": 8,
+      "totalUnchanged": 2,
+      "netImpact": 0,
+      "prQualityScore": 40
+    },
+    "recommendations": [
+      "✅ Great work! This PR fixes 8 existing issue(s)",
+      "⚠️ PR needs attention. Please address the issues above."
+    ]
+  },
+  "metadata": {
+    "analysisDate": "2025-08-26T03:20:24.176Z",
+    "mainBranchAnalysisDuration": 11.2,
+    "prBranchAnalysisDuration": 13.4,
+    "totalDuration": 24.6,
+    "modelUsed": "dynamic-selection",
+    "iterationsPerBranch": 3,
+    "tokensUsed": 0
+  }
+}

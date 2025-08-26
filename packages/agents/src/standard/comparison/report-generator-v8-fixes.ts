@@ -31,36 +31,47 @@ export class ReportGeneratorV8Fixes implements ReportFixes {
    * Test file issues should be low/medium priority, not blocking
    */
   adjustSeverityForTestFiles(issue: any): any {
-    const isTestFile = issue.file && (
-      issue.file.includes('/test/') ||
-      issue.file.includes('/tests/') ||
-      issue.file.includes('.test.') ||
-      issue.file.includes('.spec.') ||
-      issue.file.endsWith('_test.ts') ||
-      issue.file.endsWith('_test.js')
-    );
+    // Check both possible file locations
+    const file = issue.location?.file || issue.file || '';
+    const isTestFile = 
+      file.includes('/test/') ||
+      file.includes('/tests/') ||
+      file.includes('/test-') ||
+      file.includes('.test.') ||
+      file.includes('.spec.') ||
+      file.includes('test/') || // for paths like test/main.ts
+      file.endsWith('_test.ts') ||
+      file.endsWith('_test.js') ||
+      file.startsWith('test/');
     
     if (isTestFile) {
-      // Downgrade severity for test files
-      if (issue.severity === 'critical' || issue.severity === 'high') {
-        logger.info(`Downgrading severity for test file issue: ${issue.title}`);
+      // Downgrade severity for test files - they should never be high or critical
+      if (issue.severity === 'critical') {
+        logger.info(`Downgrading critical issue in test file: ${issue.title} (${file})`);
         return {
           ...issue,
           severity: 'medium',
           originalSeverity: issue.severity,
-          note: 'Severity adjusted: Issue in test file (non-blocking)',
+          note: 'Severity adjusted: Test file issue (non-production)',
           isTestFile: true
         };
       }
-      if (issue.severity === 'medium') {
+      if (issue.severity === 'high') {
+        logger.info(`Downgrading high issue in test file: ${issue.title} (${file})`);
         return {
           ...issue,
-          severity: 'low',
+          severity: 'medium',
           originalSeverity: issue.severity,
-          note: 'Severity adjusted: Issue in test file',
+          note: 'Severity adjusted: Test file issue (non-production)',
           isTestFile: true
         };
       }
+      // Keep medium and low as-is for test files
+      return {
+        ...issue,
+        isTestFile: true,
+        note: issue.note || 'Issue in test file'
+      };
     }
     
     return issue;
@@ -195,29 +206,76 @@ export class ReportGeneratorV8Fixes implements ReportFixes {
    * Calculate actual test coverage from issues
    */
   calculateTestCoverage(issues: any[]): number {
+    // Check if we have testing-related issues
     const testIssues = issues.filter(i => 
       i.category === 'testing' || 
-      i.title?.toLowerCase().includes('test') ||
-      i.title?.toLowerCase().includes('coverage')
+      (i.title?.toLowerCase() || '').includes('test') ||
+      (i.title?.toLowerCase() || '').includes('coverage') ||
+      (i.message?.toLowerCase() || '').includes('test') ||
+      (i.message?.toLowerCase() || '').includes('coverage')
     );
     
-    if (testIssues.length === 0) {
-      // No test issues means good coverage
-      return 85;
-    }
+    // Base coverage calculation
+    // Start with a base of 70% (typical for most projects)
+    let baseScore = 70;
     
-    // Calculate based on severity of test issues
-    let coverageScore = 100;
-    testIssues.forEach(issue => {
-      switch (issue.severity) {
-        case 'critical': coverageScore -= 30; break;
-        case 'high': coverageScore -= 20; break;
-        case 'medium': coverageScore -= 10; break;
-        case 'low': coverageScore -= 5; break;
-      }
+    // Adjust based on test file presence
+    const hasTestFiles = issues.some(i => {
+      const file = i.location?.file || i.file || '';
+      return file.includes('.test.') || file.includes('.spec.') || 
+             file.includes('__tests__/') || file.includes('/test/');
     });
     
-    return Math.max(0, Math.min(100, coverageScore));
+    if (hasTestFiles) {
+      baseScore = 75; // Projects with test files typically have better coverage
+    }
+    
+    // Adjust based on severity and count of testing issues
+    let adjustment = 0;
+    
+    if (testIssues.length === 0) {
+      // No test issues is good, add bonus
+      adjustment = 10;
+    } else {
+      // Deduct based on test issue severity
+      testIssues.forEach(issue => {
+        const severity = (issue.severity || 'medium').toLowerCase();
+        switch (severity) {
+          case 'critical': 
+            adjustment -= 15; // Missing critical test coverage
+            break;
+          case 'high': 
+            adjustment -= 10; // Important tests missing
+            break;
+          case 'medium': 
+            adjustment -= 5; // Some test gaps
+            break;
+          case 'low': 
+            adjustment -= 2; // Minor test improvements needed
+            break;
+        }
+      });
+    }
+    
+    // Check for specific testing patterns mentioned in issues
+    const hasMissingTests = issues.some(i => {
+      const text = `${i.title || ''} ${i.message || ''}`.toLowerCase();
+      return text.includes('no test') || text.includes('missing test') || 
+             text.includes('untested') || text.includes('not covered');
+    });
+    
+    if (hasMissingTests) {
+      adjustment -= 10; // Explicit missing tests
+    }
+    
+    // Calculate final score
+    const finalScore = baseScore + adjustment;
+    
+    // Ensure score is between 0 and 100
+    const coverage = Math.max(0, Math.min(100, finalScore));
+    
+    // Round to nearest 5 for cleaner presentation
+    return Math.round(coverage / 5) * 5;
   }
   
   /**

@@ -1,0 +1,647 @@
+{
+  "repositoryUrl": "https://github.com/sindresorhus/ky",
+  "prNumber": 700,
+  "mainBranchIssues": [
+    {
+      "id": "issue-1",
+      "title": "Missing error handling for network requests which may lead to unhandled promise rejections.",
+      "description": "Missing error handling for network requests which may lead to unhandled promise rejections.",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "test/retry.ts",
+        "line": 11
+      },
+      "file": "test/retry.ts",
+      "line": 10,
+      "locationMethod": "file-search",
+      "locationConfidence": 70,
+      "codeSnippet": "test('network error', async t => {"
+    },
+    {
+      "id": "issue-2",
+      "title": "Lack of validation for input parameters in the `ky.create()` method, which could lead to unexpected behavior if invalid options are provided.",
+      "description": "Lack of validation for input parameters in the `ky.create()` method, which could lead to unexpected behavior if invalid options are provided.",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "test/main.ts",
+        "line": 753
+      },
+      "file": "test/main.ts",
+      "line": 21,
+      "locationMethod": "file-search",
+      "locationConfidence": 70,
+      "codeSnippet": "test('supports Request instance as input', async t => {"
+    },
+    {
+      "id": "issue-3",
+      "title": "Potential memory leak due to shared abort signals not being properly managed.",
+      "description": "Potential memory leak due to shared abort signals not being properly managed.",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "test/memory-leak.ts",
+        "line": 8
+      },
+      "file": "test/memory-leak.ts",
+      "line": 10,
+      "locationMethod": "file-search",
+      "locationConfidence": 70,
+      "codeSnippet": "test('shared abort signal must not cause memory leak of input', async t => {"
+    },
+    {
+      "id": "issue-4",
+      "title": "Insufficient handling of timeout errors, which could lead to confusion if the timeout is reached without a clear message.",
+      "description": "Insufficient handling of timeout errors, which could lead to confusion if the timeout is reached without a clear message.",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "test/timeout.ts",
+        "line": 20
+      },
+      "file": "test/timeout.ts",
+      "line": 20
+    },
+    {
+      "id": "issue-5",
+      "title": "Use of deprecated or outdated libraries that may introduce security vulnerabilities.",
+      "description": "Use of deprecated or outdated libraries that may introduce security vulnerabilities.",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "package.json",
+        "line": 15
+      },
+      "file": "package.json",
+      "line": 15
+    },
+    {
+      "id": "issue-6",
+      "title": "Inconsistent error messages when requests fail, making it difficult to debug issues.",
+      "description": "Inconsistent error messages when requests fail, making it difficult to debug issues.",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "source/core/constants.ts",
+        "line": 16
+      },
+      "file": "source/core/constants.ts",
+      "line": 5,
+      "locationMethod": "file-search",
+      "locationConfidence": 70,
+      "codeSnippet": "\t\t\t\t// @ts-expect-error - Types are outdated."
+    },
+    {
+      "id": "issue-7",
+      "title": "Missing tests for edge cases in retry logic which could lead to untested paths in the code.",
+      "description": "Missing tests for edge cases in retry logic which could lead to untested paths in the code.",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "test/retry.ts",
+        "line": 3
+      },
+      "file": "test/retry.ts",
+      "line": 30,
+      "locationMethod": "file-search",
+      "locationConfidence": 70,
+      "codeSnippet": "import {createHttpTestServer} from './helpers/create-http-test-server.js';"
+    },
+    {
+      "id": "issue-8",
+      "title": "Potential for denial of service (DoS) if too many requests are retried without proper limits.",
+      "description": "Potential for denial of service (DoS) if too many requests are retried without proper limits.",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "test/retry.ts",
+        "line": 45
+      },
+      "file": "test/retry.ts",
+      "line": 45
+    },
+    {
+      "id": "issue-9",
+      "title": "Lack of type safety in some function parameters which could lead to runtime errors.",
+      "description": "Lack of type safety in some function parameters which could lead to runtime errors.",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "source/core/constants.ts",
+        "line": 1
+      },
+      "file": "source/core/constants.ts",
+      "line": 15,
+      "locationMethod": "file-search",
+      "locationConfidence": 70,
+      "codeSnippet": "import type {Expect, Equal} from '@type-challenges/utils';"
+    },
+    {
+      "id": "issue-10",
+      "title": "Inefficient handling of large responses, as they may consume a significant amount of memory if not streamed properly.",
+      "description": "Inefficient handling of large responses, as they may consume a significant amount of memory if not streamed properly.",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "test/fetch.ts",
+        "line": 35
+      },
+      "file": "test/fetch.ts",
+      "line": 35
+    }
+  ],
+  "prBranchIssues": [
+    {
+      "id": "issue-1",
+      "title": "Missing error handling for HTTP requests which may lead to unhandled promise rejections.",
+      "description": "Missing error handling for HTTP requests which may lead to unhandled promise rejections.",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "test/retry.ts",
+        "line": 11
+      },
+      "file": "test/retry.ts",
+      "line": 27,
+      "locationMethod": "file-search",
+      "locationConfidence": 70,
+      "codeSnippet": "test('network error', async t => {"
+    },
+    {
+      "id": "issue-2",
+      "title": "Potential memory leak due to shared abort signal usage without proper cleanup.",
+      "description": "Potential memory leak due to shared abort signal usage without proper cleanup.",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "test/memory-leak.ts",
+        "line": 8
+      },
+      "file": "test/memory-leak.ts",
+      "line": 25,
+      "locationMethod": "file-search",
+      "locationConfidence": 70,
+      "codeSnippet": "test('shared abort signal must not cause memory leak of input', async t => {"
+    },
+    {
+      "id": "issue-3",
+      "title": "Hardcoded timeout values can lead to unexpected behavior if they exceed maximum limits.",
+      "description": "Hardcoded timeout values can lead to unexpected behavior if they exceed maximum limits.",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "test/timeout.ts",
+        "line": 12
+      },
+      "file": "test/timeout.ts",
+      "line": 12
+    },
+    {
+      "id": "issue-4",
+      "title": "Lack of validation for input types in functions, which may cause runtime errors.",
+      "description": "Lack of validation for input types in functions, which may cause runtime errors.",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "source/core/constants.ts",
+        "line": 2
+      },
+      "file": "source/core/constants.ts",
+      "line": 5,
+      "locationMethod": "file-search",
+      "locationConfidence": 70,
+      "codeSnippet": "import {type HttpMethod, type KyOptionsRegistry} from '../types/options.js';"
+    },
+    {
+      "id": "issue-5",
+      "title": "Inconsistent error messages for HTTP errors, making debugging difficult.",
+      "description": "Inconsistent error messages for HTTP errors, making debugging difficult.",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "test/hooks.ts",
+        "line": 3
+      },
+      "file": "test/hooks.ts",
+      "line": 35,
+      "locationMethod": "file-search",
+      "locationConfidence": 70,
+      "codeSnippet": "import ky, {HTTPError} from '../source/index.js';"
+    },
+    {
+      "id": "issue-6",
+      "title": "Potential security risk due to lack of input sanitization in user-provided headers.",
+      "description": "Potential security risk due to lack of input sanitization in user-provided headers.",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "test/headers.ts",
+        "line": 22
+      },
+      "file": "test/headers.ts",
+      "line": 22
+    },
+    {
+      "id": "issue-7",
+      "title": "Missing tests for edge cases, particularly for response handling in async operations.",
+      "description": "Missing tests for edge cases, particularly for response handling in async operations.",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "test/fetch.ts",
+        "line": 8
+      },
+      "file": "test/fetch.ts",
+      "line": 8
+    },
+    {
+      "id": "issue-8",
+      "title": "Unhandled response parsing errors that may crash the application.",
+      "description": "Unhandled response parsing errors that may crash the application.",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "test/fetch.ts",
+        "line": 14
+      },
+      "file": "test/fetch.ts",
+      "line": 40,
+      "locationMethod": "file-search",
+      "locationConfidence": 70,
+      "codeSnippet": "\t\treturn new Response(input.url);"
+    },
+    {
+      "id": "issue-9",
+      "title": "Lack of support for aborting requests in certain scenarios, potentially leading to resource exhaustion.",
+      "description": "Lack of support for aborting requests in certain scenarios, potentially leading to resource exhaustion.",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "source/core/constants.ts",
+        "line": 5
+      },
+      "file": "source/core/constants.ts",
+      "line": 15,
+      "locationMethod": "file-search",
+      "locationConfidence": 70,
+      "codeSnippet": "export const supportsRequestStreams = (() => {"
+    },
+    {
+      "id": "issue-10",
+      "title": "Unclear documentation for function parameters, which may lead to misuse by developers.",
+      "description": "Unclear documentation for function parameters, which may lead to misuse by developers.",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "source/index.js",
+        "line": 1
+      },
+      "file": "source/index.js",
+      "line": 1
+    }
+  ],
+  "categorized": {
+    "newIssues": [
+      {
+        "issue": {
+          "id": "issue-2",
+          "title": "Potential memory leak due to shared abort signal usage without proper cleanup.",
+          "description": "Potential memory leak due to shared abort signal usage without proper cleanup.",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "test/memory-leak.ts",
+            "line": 8
+          },
+          "file": "test/memory-leak.ts",
+          "line": 25,
+          "locationMethod": "file-search",
+          "locationConfidence": 70,
+          "codeSnippet": "test('shared abort signal must not cause memory leak of input', async t => {"
+        },
+        "category": "new",
+        "fingerprint": "test/memory-leak.ts:5:code-quality:medium:lfh:lbrfld",
+        "confidence": 0.29999999999999993
+      },
+      {
+        "issue": {
+          "id": "issue-3",
+          "title": "Hardcoded timeout values can lead to unexpected behavior if they exceed maximum limits.",
+          "description": "Hardcoded timeout values can lead to unexpected behavior if they exceed maximum limits.",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "test/timeout.ts",
+            "line": 12
+          },
+          "file": "test/timeout.ts",
+          "line": 12
+        },
+        "category": "new",
+        "fingerprint": "test/timeout.ts:10:code-quality:medium:gzof96:",
+        "confidence": 0.24
+      },
+      {
+        "issue": {
+          "id": "issue-5",
+          "title": "Inconsistent error messages for HTTP errors, making debugging difficult.",
+          "description": "Inconsistent error messages for HTTP errors, making debugging difficult.",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "test/hooks.ts",
+            "line": 3
+          },
+          "file": "test/hooks.ts",
+          "line": 35,
+          "locationMethod": "file-search",
+          "locationConfidence": 70,
+          "codeSnippet": "import ky, {HTTPError} from '../source/index.js';"
+        },
+        "category": "new",
+        "fingerprint": "test/hooks.ts:0:code-quality:medium:y90jt6:obyaxw",
+        "confidence": 0.4
+      },
+      {
+        "issue": {
+          "id": "issue-6",
+          "title": "Potential security risk due to lack of input sanitization in user-provided headers.",
+          "description": "Potential security risk due to lack of input sanitization in user-provided headers.",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "test/headers.ts",
+            "line": 22
+          },
+          "file": "test/headers.ts",
+          "line": 22
+        },
+        "category": "new",
+        "fingerprint": "test/headers.ts:20:code-quality:medium:gdvreh:",
+        "confidence": 0.42999999999999994
+      },
+      {
+        "issue": {
+          "id": "issue-7",
+          "title": "Missing tests for edge cases, particularly for response handling in async operations.",
+          "description": "Missing tests for edge cases, particularly for response handling in async operations.",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "test/fetch.ts",
+            "line": 8
+          },
+          "file": "test/fetch.ts",
+          "line": 8
+        },
+        "category": "new",
+        "fingerprint": "test/fetch.ts:5:code-quality:medium:qrc5s:",
+        "confidence": 0.29999999999999993
+      },
+      {
+        "issue": {
+          "id": "issue-10",
+          "title": "Unclear documentation for function parameters, which may lead to misuse by developers.",
+          "description": "Unclear documentation for function parameters, which may lead to misuse by developers.",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "source/index.js",
+            "line": 1
+          },
+          "file": "source/index.js",
+          "line": 1
+        },
+        "category": "new",
+        "fingerprint": "source/index.js:0:code-quality:medium:49vaa8:",
+        "confidence": 0.52
+      }
+    ],
+    "fixedIssues": [
+      {
+        "issue": {
+          "id": "issue-1",
+          "title": "Missing error handling for network requests which may lead to unhandled promise rejections.",
+          "description": "Missing error handling for network requests which may lead to unhandled promise rejections.",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "test/retry.ts",
+            "line": 11
+          },
+          "file": "test/retry.ts",
+          "line": 10,
+          "locationMethod": "file-search",
+          "locationConfidence": 70,
+          "codeSnippet": "test('network error', async t => {"
+        },
+        "category": "fixed",
+        "fingerprint": "test/retry.ts:10:code-quality:medium:5jaokn:ccsgr2",
+        "confidence": 0.29999999999999993
+      },
+      {
+        "issue": {
+          "id": "issue-2",
+          "title": "Lack of validation for input parameters in the `ky.create()` method, which could lead to unexpected behavior if invalid options are provided.",
+          "description": "Lack of validation for input parameters in the `ky.create()` method, which could lead to unexpected behavior if invalid options are provided.",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "test/main.ts",
+            "line": 753
+          },
+          "file": "test/main.ts",
+          "line": 21,
+          "locationMethod": "file-search",
+          "locationConfidence": 70,
+          "codeSnippet": "test('supports Request instance as input', async t => {"
+        },
+        "category": "fixed",
+        "fingerprint": "test/main.ts:750:code-quality:medium:rnvqbr:4o5o5o",
+        "confidence": 0.42999999999999994
+      },
+      {
+        "issue": {
+          "id": "issue-3",
+          "title": "Potential memory leak due to shared abort signals not being properly managed.",
+          "description": "Potential memory leak due to shared abort signals not being properly managed.",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "test/memory-leak.ts",
+            "line": 8
+          },
+          "file": "test/memory-leak.ts",
+          "line": 10,
+          "locationMethod": "file-search",
+          "locationConfidence": 70,
+          "codeSnippet": "test('shared abort signal must not cause memory leak of input', async t => {"
+        },
+        "category": "fixed",
+        "fingerprint": "test/memory-leak.ts:5:code-quality:medium:7r9x3x:lbrfld",
+        "confidence": 0.29999999999999993
+      },
+      {
+        "issue": {
+          "id": "issue-4",
+          "title": "Insufficient handling of timeout errors, which could lead to confusion if the timeout is reached without a clear message.",
+          "description": "Insufficient handling of timeout errors, which could lead to confusion if the timeout is reached without a clear message.",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "test/timeout.ts",
+            "line": 20
+          },
+          "file": "test/timeout.ts",
+          "line": 20
+        },
+        "category": "fixed",
+        "fingerprint": "test/timeout.ts:20:code-quality:medium:15jwqe:",
+        "confidence": 0.24
+      },
+      {
+        "issue": {
+          "id": "issue-5",
+          "title": "Use of deprecated or outdated libraries that may introduce security vulnerabilities.",
+          "description": "Use of deprecated or outdated libraries that may introduce security vulnerabilities.",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "package.json",
+            "line": 15
+          },
+          "file": "package.json",
+          "line": 15
+        },
+        "category": "fixed",
+        "fingerprint": "package.json:15:code-quality:medium:w9uhz2:",
+        "confidence": 0.4
+      },
+      {
+        "issue": {
+          "id": "issue-8",
+          "title": "Potential for denial of service (DoS) if too many requests are retried without proper limits.",
+          "description": "Potential for denial of service (DoS) if too many requests are retried without proper limits.",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "test/retry.ts",
+            "line": 45
+          },
+          "file": "test/retry.ts",
+          "line": 45
+        },
+        "category": "fixed",
+        "fingerprint": "test/retry.ts:45:code-quality:medium:sxeqa:",
+        "confidence": 0.29999999999999993
+      }
+    ],
+    "unchangedIssues": [
+      {
+        "issue": {
+          "id": "issue-1",
+          "title": "Missing error handling for HTTP requests which may lead to unhandled promise rejections.",
+          "description": "Missing error handling for HTTP requests which may lead to unhandled promise rejections.",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "test/retry.ts",
+            "line": 11
+          },
+          "file": "test/retry.ts",
+          "line": 27,
+          "locationMethod": "file-search",
+          "locationConfidence": 70,
+          "codeSnippet": "test('network error', async t => {"
+        },
+        "category": "unchanged",
+        "fingerprint": "test/retry.ts:10:code-quality:medium:b930zl:ccsgr2",
+        "confidence": 0.91
+      },
+      {
+        "issue": {
+          "id": "issue-4",
+          "title": "Lack of validation for input types in functions, which may cause runtime errors.",
+          "description": "Lack of validation for input types in functions, which may cause runtime errors.",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "source/core/constants.ts",
+            "line": 2
+          },
+          "file": "source/core/constants.ts",
+          "line": 5,
+          "locationMethod": "file-search",
+          "locationConfidence": 70,
+          "codeSnippet": "import {type HttpMethod, type KyOptionsRegistry} from '../types/options.js';"
+        },
+        "category": "unchanged",
+        "fingerprint": "source/core/constants.ts:0:code-quality:medium:81886b:u6z40e",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-8",
+          "title": "Unhandled response parsing errors that may crash the application.",
+          "description": "Unhandled response parsing errors that may crash the application.",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "test/fetch.ts",
+            "line": 14
+          },
+          "file": "test/fetch.ts",
+          "line": 40,
+          "locationMethod": "file-search",
+          "locationConfidence": 70,
+          "codeSnippet": "\t\treturn new Response(input.url);"
+        },
+        "category": "unchanged",
+        "fingerprint": "test/fetch.ts:10:code-quality:medium:gsd8cp:1re90a",
+        "confidence": 0.8500000000000001
+      },
+      {
+        "issue": {
+          "id": "issue-9",
+          "title": "Lack of support for aborting requests in certain scenarios, potentially leading to resource exhaustion.",
+          "description": "Lack of support for aborting requests in certain scenarios, potentially leading to resource exhaustion.",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "source/core/constants.ts",
+            "line": 5
+          },
+          "file": "source/core/constants.ts",
+          "line": 15,
+          "locationMethod": "file-search",
+          "locationConfidence": 70,
+          "codeSnippet": "export const supportsRequestStreams = (() => {"
+        },
+        "category": "unchanged",
+        "fingerprint": "source/core/constants.ts:5:code-quality:medium:rmjg92:duamdz",
+        "confidence": 1
+      }
+    ],
+    "summary": {
+      "totalNew": 6,
+      "totalFixed": 6,
+      "totalUnchanged": 4,
+      "netImpact": 0,
+      "prQualityScore": 50
+    },
+    "recommendations": [
+      "✅ Great work! This PR fixes 6 existing issue(s)",
+      "⚠️ PR needs attention. Please address the issues above."
+    ]
+  },
+  "metadata": {
+    "analysisDate": "2025-08-26T03:03:26.130Z",
+    "mainBranchAnalysisDuration": 12.2,
+    "prBranchAnalysisDuration": 10.2,
+    "totalDuration": 22.4,
+    "modelUsed": "dynamic-selection",
+    "iterationsPerBranch": 3,
+    "tokensUsed": 0
+  }
+}

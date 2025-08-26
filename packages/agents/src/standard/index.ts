@@ -8,11 +8,12 @@
 export { ComparisonOrchestrator } from './orchestrator/comparison-orchestrator';
 
 // Services
-export { 
-  DeepWikiService, 
-  createDeepWikiService,
-  IDeepWikiService 
-} from './services/deepwiki-service';
+// Archived: DeepWikiService - replaced by DirectDeepWikiApiWithLocation
+// export { 
+//   DeepWikiService, 
+//   createDeepWikiService,
+//   IDeepWikiService 
+// } from './services/deepwiki-service';
 
 export {
   registerDeepWikiApi,
