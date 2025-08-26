@@ -97,7 +97,7 @@ const SYSTEM_STATE: SystemState = {
     },
     
     codeContextExtractor: { 
-      status: 'unknown', 
+      status: 'partial', 
       confidence: 0,
       issues: ['Referenced but may not exist']
     },
