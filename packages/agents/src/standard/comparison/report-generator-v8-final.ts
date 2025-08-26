@@ -57,6 +57,30 @@ export class ReportGeneratorV8Final {
       warn: (msg: string, ...args: any[]) => console.warn(`[V8] WARN: ${msg}`, ...args)
     };
   }
+  /**
+   * Generate fix suggestions for issues
+   */
+  private async generateFixSuggestions(issues: Issue[]): Promise<Map<string, any>> {
+    const fixMap = new Map<string, any>();
+    
+    try {
+      // Import and use the fix suggestion agent
+      const { FixSuggestionAgentV2 } = await import('../services/fix-suggestion-agent-v2');
+      const fixAgent = new FixSuggestionAgentV2();
+      
+      // Generate fixes for all issues
+      const fixes = await fixAgent.generateFixes(issues);
+      
+      // Map fixes by issue ID
+      fixes.forEach(fix => {
+        fixMap.set(fix.issueId, fix);
+      });
+    } catch (error) {
+      this.logger.warn('Failed to generate fix suggestions:', error);
+    }
+    
+    return fixMap;
+  }
 
   private formatIssuesAsMarkdown(title: string, issues: any[]): string {
     if (!issues || issues.length === 0) {
@@ -141,7 +165,7 @@ ${this.generateExecutiveSummary(v8CompatibleResult)}
 
 ${this.generatePRDecision(v8CompatibleResult)}
 
-${this.generateConsolidatedIssues(v8CompatibleResult)}
+${await this.generateConsolidatedIssues(v8CompatibleResult)}
 
 ${this.generateSecurityAnalysis(v8CompatibleResult)}
 
@@ -1154,9 +1178,13 @@ ${unchangedIssues.filter(i => i.severity === 'critical').slice(0, 3).map(i =>
 `;
   }
 
-  private generateConsolidatedIssues(comparisonResult: ComparisonResult): string {
+  private async generateConsolidatedIssues(comparisonResult: ComparisonResult): Promise<string> {
     const addedIssues = comparisonResult.addedIssues || comparisonResult.newIssues || [];
     const persistentIssues = comparisonResult.persistentIssues || comparisonResult.unchangedIssues || [];
+    
+    // Generate fix suggestions for all issues
+    const allIssues = [...addedIssues, ...persistentIssues];
+    const fixSuggestions = await this.generateFixSuggestions(allIssues);
     
     let content = `## 📋 Detailed Issue Analysis\n\n`;
     
@@ -1164,7 +1192,7 @@ ${unchangedIssues.filter(i => i.severity === 'critical').slice(0, 3).map(i =>
     if (addedIssues.length > 0) {
       content += `### 🆕 New Issues Introduced in This PR (${addedIssues.length})\n\n`;
       content += `*These issues are new in this PR and need to be addressed.*\n\n`;
-      content += this.formatDetailedIssues(addedIssues, 'NEW');
+      content += await this.formatDetailedIssuesWithFixes(addedIssues, 'NEW', fixSuggestions);
     } else {
       content += `### ✅ No New Issues Introduced\n\n`;
       content += `This PR does not introduce any new code quality issues.\n\n`;
@@ -1174,7 +1202,7 @@ ${unchangedIssues.filter(i => i.severity === 'critical').slice(0, 3).map(i =>
     if (persistentIssues.length > 0) {
       content += `<details>\n<summary>📌 Pre-existing Issues (${persistentIssues.length}) - Not introduced by this PR</summary>\n\n`;
       content += `*These issues already exist in the main branch. Consider creating a separate PR to address them.*\n\n`;
-      content += this.formatDetailedIssues(persistentIssues, 'EXISTING');
+      content += await this.formatDetailedIssuesWithFixes(persistentIssues, 'EXISTING', fixSuggestions);
       content += `</details>\n\n`;
     }
     
@@ -1208,6 +1236,36 @@ ${unchangedIssues.filter(i => i.severity === 'critical').slice(0, 3).map(i =>
           const enhancedIssue = this.fixes.addImpactField(issue);
           
           content += this.formatSingleIssue(enhancedIssue, id, showCode);
+        });
+      }
+    });
+    
+    return content;
+  }
+
+  private async formatDetailedIssuesWithFixes(issues: Issue[], prefix: string, fixSuggestions: Map<string, any>): Promise<string> {
+    let content = '';
+    
+    // Group by severity
+    const grouped = this.groupBySeverity(issues);
+    
+    ['critical', 'high', 'medium', 'low'].forEach(severity => {
+      const severityIssues = grouped[severity] || [];
+      if (severityIssues.length > 0) {
+        content += `#### ${this.getSeverityEmoji(severity)} ${this.capitalize(severity)} Priority (${severityIssues.length})\n\n`;
+        
+        severityIssues.forEach((issue, index) => {
+          // Validate code snippet before including it
+          const showCode = this.fixes.validateCodeSnippet(issue);
+          const id = `${prefix}-${severity.toUpperCase()}-${index + 1}`;
+          
+          // Add impact field
+          const enhancedIssue = this.fixes.addImpactField(issue);
+          
+          // Get fix suggestion if available
+          const fixSuggestion = fixSuggestions.get(issue.id);
+          
+          content += this.formatSingleIssueWithFix(enhancedIssue, id, showCode, fixSuggestion);
         });
       }
     });
@@ -1251,6 +1309,124 @@ ${unchangedIssues.filter(i => i.severity === 'critical').slice(0, 3).map(i =>
     
     // Add suggested fix if available
     if (enhancedIssue.suggestedFix || enhancedIssue.remediation) {
+      content += `\n✅ **Recommended Fix:**\n`;
+      content += enhancedIssue.suggestedFix || enhancedIssue.remediation;
+      content += '\n';
+    }
+    
+    // Add educational insights specific to this issue
+    content += `\n📚 **Learn More:**\n`;
+    
+    // Generate specific educational resources based on issue type
+    if (enhancedIssue.category === 'security') {
+      if (enhancedIssue.title?.toLowerCase().includes('injection') || enhancedIssue.title?.toLowerCase().includes('xss')) {
+        content += `- **OWASP Top 10:** [Injection Vulnerabilities](https://owasp.org/www-project-top-ten/)\n`;
+        content += `- **Course:** [Web Security Fundamentals](https://www.pluralsight.com/courses/web-security-fundamentals) (2 hours)\n`;
+        content += `- **Article:** [Preventing SQL Injection in Modern Applications](https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html)\n`;
+      } else if (enhancedIssue.title?.toLowerCase().includes('auth')) {
+        content += `- **Course:** [Authentication & Authorization Best Practices](https://www.udemy.com/course/authentication-authorization/) (3 hours)\n`;
+        content += `- **Guide:** [OWASP Authentication Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html)\n`;
+      } else {
+        content += `- **Course:** [Application Security Fundamentals](https://www.coursera.org/learn/software-security) (4 hours)\n`;
+        content += `- **Resource:** [OWASP Security Knowledge Framework](https://owasp.org/www-project-security-knowledge-framework/)\n`;
+      }
+    } else if (enhancedIssue.category === 'performance') {
+      content += `- **Course:** [Web Performance Optimization](https://www.udacity.com/course/website-performance-optimization--ud884) (2 hours)\n`;
+      content += `- **Article:** [JavaScript Performance Best Practices](https://developer.mozilla.org/en-US/docs/Learn/Performance)\n`;
+      content += `- **Tool:** [Chrome DevTools Performance Profiling](https://developer.chrome.com/docs/devtools/performance/)\n`;
+    } else if (enhancedIssue.category === 'code-quality') {
+      content += `- **Book:** [Clean Code by Robert Martin](https://www.amazon.com/Clean-Code-Handbook-Software-Craftsmanship/dp/0132350882)\n`;
+      content += `- **Course:** [Refactoring: Improving Existing Code](https://refactoring.guru/refactoring/course) (3 hours)\n`;
+      content += `- **Article:** [Code Quality Metrics](https://www.sonarsource.com/learn/code-quality-metrics/)\n`;
+    } else {
+      content += `- **General Resource:** [MDN Web Docs](https://developer.mozilla.org/)\n`;
+      content += `- **Course:** [Software Development Best Practices](https://www.coursera.org/learn/software-development-best-practices)\n`;
+    }
+    
+    // Add note if severity was adjusted for test files
+    if (file?.includes('test') && (enhancedIssue.severity === 'high' || enhancedIssue.severity === 'critical')) {
+      content += `\n📌 **Note:** Severity may be lower for test files - review in context.\n`;
+    }
+    
+    content += '\n';
+    return content;
+  }
+
+  private formatSingleIssueWithFix(issue: Issue, id: string, showCode: boolean, fixSuggestion?: any): string {
+    // Enhance issue context
+    const enhancedIssue = this.fixes.enhanceIssueContext(issue);
+    
+    const title = enhancedIssue.title || enhancedIssue.message || 'Issue';
+    let content = `##### [${id}] ${title}\n\n`;
+    
+    // Support both issue.location.file and issue.file formats
+    const file = enhancedIssue.location?.file || (enhancedIssue as any).file;
+    const line = enhancedIssue.location?.line || (enhancedIssue as any).line;
+    const location = file && line ? `${file}:${line}` : 'Unknown location';
+    
+    content += `📁 **Location:** \`${location}\`\n`;
+    content += `📝 **Description:** ${enhancedIssue.description || title}\n`;
+    content += `🏷️ **Category:** ${this.capitalize(enhancedIssue.category || 'general')} | **Type:** ${enhancedIssue.type || 'issue'}\n`;
+    
+    // Add context about why this is an issue
+    if (enhancedIssue.context) {
+      content += `💡 **Context:** ${enhancedIssue.context}\n`;
+    }
+    
+    // Add impact field
+    if (enhancedIssue.impact) {
+      content += `⚡ **Impact:** ${enhancedIssue.impact}\n`;
+    }
+    
+    // Only show code snippets if they're valid
+    if (showCode && enhancedIssue.codeSnippet) {
+      content += `\n🔍 **Problematic Code:**\n`;
+      content += '```' + this.getLanguageFromFile(file) + '\n';
+      content += enhancedIssue.codeSnippet + '\n';
+      content += '```\n';
+    }
+    
+    // Add FIX SUGGESTION SECTION (NEW!)
+    if (fixSuggestion) {
+      content += `\n🔧 **Fix Suggestion:**\n`;
+      
+      // Show confidence and estimated time
+      const confidenceEmoji = fixSuggestion.confidence === 'high' ? '🟢' : 
+                             fixSuggestion.confidence === 'medium' ? '🟡' : '🔴';
+      content += `${confidenceEmoji} **Confidence:** ${fixSuggestion.confidence} | `;
+      content += `⏱️ **Estimated Time:** ${fixSuggestion.estimatedMinutes} minutes\n`;
+      
+      // Show which template was used if applicable
+      if (fixSuggestion.templateUsed) {
+        content += `📋 **Template Applied:** ${fixSuggestion.templateUsed}\n`;
+      }
+      
+      // Show the explanation
+      content += `\n**What to do:** ${fixSuggestion.explanation}\n`;
+      
+      // Show the fixed code
+      content += `\n**Fixed Code (copy-paste ready):**\n`;
+      content += '```' + (fixSuggestion.language || this.getLanguageFromFile(file)) + '\n';
+      content += fixSuggestion.fixedCode + '\n';
+      content += '```\n';
+      
+      // If we have the original code in the fix suggestion, show a diff
+      if (fixSuggestion.originalCode && fixSuggestion.originalCode !== enhancedIssue.codeSnippet) {
+        content += `\n<details>\n<summary>📊 View Diff</summary>\n\n`;
+        content += '```diff\n';
+        // Simple diff - show removed and added
+        content += '- // Original code:\n';
+        fixSuggestion.originalCode.split('\n').forEach((line: string) => {
+          if (line.trim()) content += `- ${line}\n`;
+        });
+        content += '+ // Fixed code:\n';
+        fixSuggestion.fixedCode.split('\n').forEach((line: string) => {
+          if (line.trim()) content += `+ ${line}\n`;
+        });
+        content += '```\n</details>\n';
+      }
+    } else if (enhancedIssue.suggestedFix || enhancedIssue.remediation) {
+      // Fallback to original suggested fix if no AI fix available
       content += `\n✅ **Recommended Fix:**\n`;
       content += enhancedIssue.suggestedFix || enhancedIssue.remediation;
       content += '\n';
@@ -2970,31 +3146,107 @@ npx complexity-report src/
 `;
   }
 
-  private generateSecurityFixSuggestions(issues: Issue[]): string {
-    const grouped = this.groupIssuesByType(issues);
+  private async generateSecurityFixSuggestions(issues: Issue[]): Promise<string> {
     let suggestions = '';
     
-    if (grouped['input-validation']) {
-      suggestions += `
-#### Input Validation
+    // Try to get specific template-based fixes for each security issue
+    for (const issue of issues.filter(i => this.isSecurityIssue(i))) {
+      try {
+        // Import SecurityTemplateLibrary on demand
+        const { SecurityTemplateLibrary } = await import('../services/security-template-library');
+        const securityLib = new SecurityTemplateLibrary();
+        
+        // Get template match for this specific issue
+        const language = this.getLanguageFromFile(issue.location?.file || '');
+        const match = await securityLib.getTemplateMatch(issue, language);
+        
+        if (match && match.template) {
+          suggestions += `
+#### ${issue.title || issue.message}
+**Location:** ${issue.location?.file || 'Unknown file'}:${issue.location?.line || 'Unknown line'}
+
+${match.template.code}
+
+**Explanation:** ${match.template.explanation}
+
+**Confidence:** ${match.template.confidence} | **Time:** ${match.template.estimatedMinutes} minutes
+
+---
+`;
+        } else {
+          // Fallback to generic suggestions for this issue type
+          suggestions += this.generateGenericSecuritySuggestion(issue);
+        }
+      } catch (error) {
+        console.warn('Failed to generate security template fix:', error);
+        suggestions += this.generateGenericSecuritySuggestion(issue);
+      }
+    }
+    
+    return suggestions || '- Review OWASP Top 10 guidelines';
+  }
+
+  private generateGenericSecuritySuggestion(issue: Issue): string {
+    const type = this.categorizeSecurityIssue(issue);
+    
+    switch (type) {
+      case 'input-validation':
+        return `
+#### Input Validation Issue
 - Use validation libraries (Joi, Yup, Zod)
 - Implement allowlists instead of blocklists
 - Sanitize all user inputs
 - Validate at API boundaries
+
 `;
-    }
-    
-    if (grouped['authentication']) {
-      suggestions += `
-#### Authentication & Authorization
+      case 'authentication':
+        return `
+#### Authentication & Authorization Issue
 - Implement MFA/2FA
 - Use secure session management
 - Apply principle of least privilege
 - Rotate secrets regularly
+
+`;
+      default:
+        return `
+#### Security Issue: ${issue.title || issue.message}
+**Location:** ${issue.location?.file || 'Unknown file'}:${issue.location?.line || 'Unknown line'}
+- Review OWASP Top 10 guidelines
+- Implement security best practices
+
 `;
     }
+  }
+
+  private isSecurityIssue(issue: Issue): boolean {
+    const securityKeywords = [
+      'security', 'vulnerability', 'injection', 'xss', 'csrf', 
+      'auth', 'password', 'token', 'crypto', 'encryption',
+      'hardcoded', 'secret', 'expose', 'leak'
+    ];
     
-    return suggestions || '- Review OWASP Top 10 guidelines';
+    const text = `${issue.title || ''} ${issue.message || ''} ${issue.type || ''}`.toLowerCase();
+    return securityKeywords.some(keyword => text.includes(keyword));
+  }
+
+  private categorizeSecurityIssue(issue: Issue): string {
+    const text = `${issue.title || ''} ${issue.message || ''} ${issue.type || ''}`.toLowerCase();
+    
+    if (text.includes('validation') || text.includes('input') || text.includes('injection')) {
+      return 'input-validation';
+    }
+    if (text.includes('auth') || text.includes('session') || text.includes('password')) {
+      return 'authentication';
+    }
+    if (text.includes('crypto') || text.includes('encrypt') || text.includes('secret')) {
+      return 'cryptography';
+    }
+    if (text.includes('expose') || text.includes('leak') || text.includes('disclosure')) {
+      return 'data-exposure';
+    }
+    
+    return 'general';
   }
 
   private generatePerformanceFixSuggestions(issues: Issue[]): string {
