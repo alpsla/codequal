@@ -224,6 +224,37 @@ export class PRAnalysisCategorizer {
     mainBranchIssues: any[],
     prBranchIssues: any[]
   ): PRAnalysisResult {
+    // BUG-080 FIX: Validate for suspicious PR analysis failure
+    // If PR has 0 issues but main has many, it's likely an analysis failure
+    if (prBranchIssues.length === 0 && mainBranchIssues.length > 20) {
+      console.warn('⚠️ Suspicious result: PR has 0 issues but main has many. Likely PR analysis failure.');
+      console.warn('  Treating all main branch issues as UNCHANGED to avoid false "resolved" status');
+      
+      // Return all main issues as unchanged instead of resolved
+      return {
+        newIssues: [],
+        fixedIssues: [], // Don't mark as fixed when PR analysis likely failed
+        unchangedIssues: mainBranchIssues.map((issue, idx) => ({
+          issue,
+          category: 'unchanged',
+          fingerprint: `unchanged-${idx}`,
+          confidence: 0.5 // Low confidence due to analysis failure
+        })),
+        summary: {
+          totalNew: 0,
+          totalFixed: 0,
+          totalUnchanged: mainBranchIssues.length,
+          netImpact: 0,
+          prQualityScore: 50 // Neutral score when analysis is uncertain
+        },
+        recommendations: [
+          '⚠️ PR branch analysis may have failed - unable to determine actual impact',
+          '🔄 Please retry the analysis or check PR branch accessibility',
+          `ℹ️ ${mainBranchIssues.length} issues from main branch shown as unchanged (analysis incomplete)`
+        ]
+      };
+    }
+    
     const mainFingerprints = new Map<string, any>();
     const prFingerprints = new Map<string, any>();
     
