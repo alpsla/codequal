@@ -42,8 +42,8 @@ interface SystemState {
 }
 
 const SYSTEM_STATE: SystemState = {
-  version: '1.4.2', // Patch increment for comprehensive bug discovery session
-  lastSession: '2025-08-27', // System-wide pipeline failure discovery session
+  version: '1.4.3', // Patch increment after parser enhancement and bug discovery session
+  lastSession: '2025-08-27', // DeepWiki parser enhancement session with critical bug discoveries
   
   features: {
     // Core Analysis Features
@@ -56,16 +56,16 @@ const SYSTEM_STATE: SystemState = {
     
     deepwikiIntegration: { 
       status: 'partial', 
-      confidence: 60, // Downgraded due to non-deterministic results (BUG-072)
+      confidence: 65, // Improved parser multi-format support, but still has issues
       lastTested: '2025-08-27',
-      issues: ['Missing iteration stabilization logic causes non-deterministic results', 'Working solution exists in archived code but not integrated']
+      issues: ['Parser format mismatch issues (BUG-083)', 'Missing iteration stabilization (BUG-072)', 'Connection stability issues (BUG-081)']
     },
     
     reportGeneratorV8: { 
       status: 'broken', 
-      confidence: 40, // Downgraded due to BUG-082: missing code snippets and fix suggestions
+      confidence: 35, // Further downgraded due to BUG-082 format compliance issues
       lastTested: '2025-08-27',
-      issues: ['V8 format not generating properly', 'Missing code snippets and fix suggestions']
+      issues: ['V8 format structure issues (BUG-082)', 'Missing code snippets and metadata', 'Report generation timeouts (BUG-086)']
     },
     
     comparisonAgent: { 
@@ -76,10 +76,10 @@ const SYSTEM_STATE: SystemState = {
     
     // New Fix Suggestion System
     fixSuggestionAgent: { 
-      status: 'broken', 
-      confidence: 20, // Downgraded due to BUG-084: template matching and AI fallback not working
+      status: 'partial', 
+      confidence: 30, // Improved template priority, but integration still failing
       lastTested: '2025-08-27',
-      issues: ['Template matching not working', 'AI fallback timing out', 'No fixes appearing in reports', 'Security templates not integrated properly']
+      issues: ['Fix suggestions not appearing in reports (BUG-084)', 'Template vs AI integration incomplete', 'Fixed template priority but report integration broken']
     },
     
     // NEW: Security Template System (Option A/B)
@@ -146,9 +146,9 @@ const SYSTEM_STATE: SystemState = {
     
     redisCache: { 
       status: 'partial', 
-      confidence: 70, // Downgraded due to BUG-081 connection instability
+      confidence: 60, // Further downgraded due to BUG-085 stale data + BUG-081 connection issues  
       lastTested: '2025-08-27',
-      issues: ['Connection instability with public URL causing frequent disconnections']
+      issues: ['Connection instability (BUG-081)', 'Stale data between tests (BUG-085)', 'clearAllCaches method added but needs refinement']
     },
     
     // Monitoring and Analytics
@@ -338,16 +338,14 @@ const SYSTEM_STATE: SystemState = {
   ],
   
   nextTasks: [
-    // P0 (CRITICAL - MUST Fix Next Session)
-    'FIX BUG-072: Integrate DeepWiki iteration stabilization logic from archived adaptive-deepwiki-analyzer.ts',
-    'FIX BUG-079: Resolve socket hang up errors in PR branch analysis with real DeepWiki API',
-    'FIX BUG-080: Fix categorization logic to show "unchanged" instead of "resolved" on API failures',
-    'FIX BUG-081: Stabilize Redis connection or implement local fallback for development',
-    'FIX BUG-082: Fix V8 report format - restore code snippets and fix suggestions integration',
-    'FIX BUG-083: Fix DeepWiki parser format mismatch - handle numbered lists and error wrappers',
-    'FIX BUG-084: Fix suggestion generation system - template matching and AI fallback',
-    'FIX BUG-086: Fix report generation timeouts - implement progressive timeout handling',
-    'Validate deterministic results with test-debug-inconsistency.ts reproduction test',
+    // P0 (CRITICAL - MUST Fix Next Session - DEPENDENCY ORDER)
+    'PRIORITY 1: FIX BUG-079 & BUG-081: Fix connections (DeepWiki port-forward stability + Redis connection)',
+    'PRIORITY 2: FIX BUG-083 & BUG-072: Fix data pipeline (parser format handling + iteration stabilization)',
+    'PRIORITY 3: FIX BUG-082: Fix V8 report generation (format compliance, code snippets, metadata)',
+    'PRIORITY 4: FIX BUG-084: Fix fix suggestion integration (template vs AI, report integration)',
+    'PRIORITY 5: FIX BUG-086: Fix performance issues (timeouts, large PR handling)',
+    'CRITICAL: Follow dependency chain - DO NOT skip steps, each priority blocks the next',
+    'Validate fixes with reproduction tests for each bug before proceeding to next priority',
     
     // P1 (High Priority - After Critical Bugs Fixed)
     'Ensure convergence behavior works (2-6 iterations typical, max 10)',

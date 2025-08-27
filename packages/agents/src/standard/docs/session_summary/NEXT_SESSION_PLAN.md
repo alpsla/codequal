@@ -1,19 +1,46 @@
-# Next Session Plan - DeepWiki Iteration Stabilization Fix
+# Next Session Plan - Critical Bug Resolution (BUG-082 to BUG-086)
 ## Target Date: 2025-08-28
-## Objective: Fix BUG-072 - Integrate DeepWiki Iteration Stabilization Logic
+## Objective: Fix Critical System Issues Discovered During Parser Enhancement Session
 
 ### 🎯 Session Goals
-Fix non-deterministic DeepWiki results by integrating proven iteration stabilization logic from archived implementation.
+Resolve 5 critical bugs discovered during 2025-08-27 DeepWiki parser enhancement session. Fix issues in dependency order: connections → parsing → caching → generation → formatting.
 
-### ✅ COMPLETED (2025-08-27 - DeepWiki Investigation Session)
+### ✅ COMPLETED (2025-08-27 - DeepWiki Parser Enhancement Session)
 
-#### 1. ✅ Root Cause Analysis Complete
-**Completed**: Identified missing iteration stabilization logic as cause of non-deterministic results
+#### 1. ✅ DeepWiki Parser Multi-Format Support
+**Completed**: Enhanced parser to handle multiple DeepWiki response formats
 ```bash
-✅ Located working implementation in archived code
-✅ Created BUG-072 with comprehensive analysis
-✅ Built reproduction test case (test-debug-inconsistency.ts)  
-✅ Documented exact solution path and file locations
+✅ Fixed parser for both detailed and simple numbered list formats
+✅ Added automatic cache clearing after test runs
+✅ Improved location extraction accuracy
+✅ Enhanced error handling and debug logging
+```
+
+#### 2. ✅ Cache Management Implementation
+**Completed**: Fixed Redis cache stale data issues 
+```bash
+✅ Added clearAllCaches() method to prevent stale test data
+✅ Improved cache invalidation between test runs
+✅ Enhanced debug logging for cache status
+✅ Better memory management and cleanup
+```
+
+#### 3. ✅ Fix Suggestion Template Priority
+**Completed**: Fixed template vs AI fallback order in fix suggestions
+```bash
+✅ Changed to prioritize security templates over AI fallbacks
+✅ Modified to return null instead of generic safety fixes
+✅ Enhanced error handling in suggestion pipeline
+✅ Improved integration testing workflow
+```
+
+#### 4. ✅ Production State Bug Tracking
+**Completed**: Updated system with new bug discoveries
+```bash
+✅ Added BUG-082 to BUG-086 to production state tracking
+✅ Modified confidence scores based on session findings
+✅ Created comprehensive session documentation
+✅ Preserved debugging artifacts for next session
 ```
 
 #### 2. ✅ PREVIOUS COMPLETED (2025-08-26) - Security Template Integration 
@@ -37,51 +64,175 @@ Fix non-deterministic DeepWiki results by integrating proven iteration stabiliza
 
 ### 🚨 CRITICAL Priority 0 Tasks (Must Complete Next Session)
 
-#### 1. Fix BUG-072: Integrate DeepWiki Iteration Stabilization
+#### 1. Fix BUG-079 & BUG-081: Connection & Infrastructure Issues
 **Owner**: Senior Engineer  
-**Time**: 3-4 hours
-**Status**: HIGH PRIORITY - Affects core functionality reliability
+**Time**: 1-2 hours
+**Status**: BLOCKING - Must fix before proceeding with other bugs
+**Dependencies**: All other bugs depend on stable connections
 
 ```typescript
-// Phase 1: Code Integration (1-2 hours)
-- [ ] Extract iteration logic from archived file
-      Location: /Users/alpinro/Code Prjects/codequal/packages/agents/_archive/2025-08-25-deepwiki/adaptive-deepwiki-analyzer.ts
-- [ ] Integrate into DirectDeepWikiApiWithLocation.analyzeWithLocation()
-      Target: /Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/services/deepwiki-api-wrapper.ts
-- [ ] Add convergence detection (stop after 2 consecutive iterations with no new issues)
-- [ ] Add maximum iteration limit (10 iterations)
-- [ ] Implement issue deduplication logic
-- [ ] Preserve existing method signatures for backward compatibility
+// Phase 1: DeepWiki Connection Validation (45 minutes)
+- [ ] Test kubectl port-forward stability (BUG-081)
+      Command: kubectl port-forward -n codequal-dev deployment/deepwiki 8001:8001
+- [ ] Verify DEEPWIKI_API_URL environment variable
+- [ ] Test basic API connectivity with curl/fetch
+- [ ] Check pod health and restart if needed
+- [ ] Validate service discovery and routing
 
-// Phase 2: Testing & Validation (30 minutes)
-- [ ] Run reproduction test to verify fix
-      Command: USE_DEEPWIKI_MOCK=false npx ts-node test-debug-inconsistency.ts
-- [ ] Verify identical results across multiple runs
-- [ ] Test convergence behavior (should stabilize in 2-6 iterations)
-- [ ] Ensure all existing tests still pass
+// Phase 2: Redis Cache Connection (30 minutes) 
+- [ ] Test Redis connection stability (BUG-079)
+- [ ] Verify REDIS_URL configuration
+- [ ] Check cache read/write operations
+- [ ] Test clearAllCaches() method functionality
+- [ ] Validate cache invalidation between sessions
 
-// Phase 3: Performance & Edge Cases (30 minutes)
-- [ ] Test with difficult-to-analyze content
-- [ ] Verify reasonable iteration counts
-- [ ] Check memory usage during iterations
-- [ ] Validate response time impact (<2x current)
+// Phase 3: Environment Configuration (15 minutes)
+- [ ] Audit all environment variables
+- [ ] Verify service dependencies are running
+- [ ] Test mock vs real mode switching
+- [ ] Validate authentication and API keys
 ```
 
-#### Quick Reproduction Command
+#### 2. Fix BUG-083 & BUG-072: Data Pipeline Issues  
+**Owner**: Senior Engineer
+**Time**: 2-3 hours
+**Status**: HIGH PRIORITY - Core data flow issues
+**Dependencies**: Requires stable connections from Priority 1
+
+```typescript
+// Phase 1: Parser Format Refinement (1.5 hours) - BUG-083
+- [ ] Complete DeepWiki multi-format parser improvements
+      Location: src/standard/services/direct-deepwiki-api-with-location-v2.ts
+- [ ] Test with all known response format variations
+- [ ] Validate location extraction accuracy
+- [ ] Add format detection and logging
+- [ ] Test with real PR data (not just mock)
+
+// Phase 2: Iteration Stabilization (1-1.5 hours) - BUG-072
+- [ ] Integrate archived iteration logic if still needed
+      Source: _archive/2025-08-25-deepwiki/adaptive-deepwiki-analyzer.ts
+- [ ] Test for consistent results across multiple runs
+- [ ] Validate convergence behavior (2-6 iterations)
+- [ ] Check performance impact (<2x current time)
+```
+
+#### 3. Fix BUG-082: V8 Report Format Issues
+**Owner**: Senior Engineer
+**Time**: 2-3 hours  
+**Status**: HIGH PRIORITY - User-facing functionality broken
+**Dependencies**: Requires working data pipeline from Priority 2
+
+```typescript
+// Phase 1: Report Structure Validation (1 hour)
+- [ ] Audit V8 report format requirements
+      Reference: test-v8-final.ts (working implementation)
+- [ ] Compare current output vs expected format
+- [ ] Identify specific missing fields (snippets, metadata)
+- [ ] Document format discrepancies
+
+// Phase 2: Report Generation Pipeline Fix (1.5 hours)
+- [ ] Fix code snippet extraction in report-generator-v8-final.ts
+- [ ] Ensure proper metadata flow from parser to report
+- [ ] Validate issue type mapping and display
+- [ ] Test with PR 700 to reproduce original failure
+
+// Phase 3: Integration Testing (30 minutes)
+- [ ] Generate test report with known good data
+- [ ] Validate HTML and JSON outputs match V8 spec
+- [ ] Test with multiple PR types and sizes
+- [ ] Verify all report sections are populated
+```
+
+#### 4. Fix BUG-084: Fix Suggestion Generation Failures
+**Owner**: Senior Engineer
+**Time**: 1.5-2 hours
+**Status**: MEDIUM PRIORITY - Feature completeness issue  
+**Dependencies**: Requires working report generation from Priority 3
+
+```typescript
+// Phase 1: Template Integration Debugging (1 hour)
+- [ ] Debug fix suggestion generation failures in reports
+      Location: src/standard/services/fix-suggestion-agent-v2.ts
+- [ ] Validate template vs AI fallback integration 
+- [ ] Test SecurityTemplateLibrary integration
+- [ ] Check null return behavior vs generic fixes
+
+// Phase 2: Generation Pipeline Testing (45 minutes)
+- [ ] Test fix suggestions with various issue types
+- [ ] Validate template confidence scoring
+- [ ] Test Option A/B suggestion generation
+- [ ] Ensure suggestions appear in final reports
+```
+
+#### 5. Fix BUG-086: Report Generation Timeouts  
+**Owner**: Senior Engineer
+**Time**: 1-1.5 hours
+**Status**: MEDIUM PRIORITY - Performance and reliability
+**Dependencies**: All previous bugs should be resolved first
+
+```typescript
+// Phase 1: Performance Investigation (45 minutes)
+- [ ] Profile report generation for large PRs
+- [ ] Identify bottlenecks in processing pipeline
+- [ ] Test timeout thresholds and limits
+- [ ] Check memory usage during processing
+
+// Phase 2: Optimization Implementation (30 minutes)
+- [ ] Implement progress monitoring for long operations
+- [ ] Add intelligent timeouts based on content size
+- [ ] Optimize heavy processing operations
+- [ ] Add graceful degradation for timeouts
+```
+
+#### New Bug Priority Order (Must Follow Dependency Chain)
 ```bash
-cd /Users/alpinro/Code Prjects/codequal/packages/agents
-USE_DEEPWIKI_MOCK=false npx ts-node test-debug-inconsistency.ts
-# Should show different results each run BEFORE fix
-# Should show identical results each run AFTER fix
+PRIORITY 1: BUG-079, BUG-081 (Connections) ← BLOCKING
+PRIORITY 2: BUG-083, BUG-072 (Data Pipeline) ← HIGH  
+PRIORITY 3: BUG-082 (Report Generation) ← HIGH
+PRIORITY 4: BUG-084 (Fix Suggestions) ← MEDIUM
+PRIORITY 5: BUG-086 (Timeouts) ← MEDIUM
 ```
 
-### 📊 Success Criteria for BUG-072 Fix
+#### Quick Reproduction Commands for Each Bug
+```bash
+# BUG-079/081: Connection Issues
+kubectl get pods -n codequal-dev -l app=deepwiki
+curl http://localhost:8001/health || echo "DeepWiki not accessible"
 
-#### Functional Requirements (Must Pass)
-- [ ] **Deterministic Results**: Identical results for identical input across multiple runs
-- [ ] **Convergence Behavior**: Analysis stabilizes within reasonable iterations (2-6 typical)
-- [ ] **Backward Compatibility**: All existing tests pass without modification
-- [ ] **Reproduction Test**: test-debug-inconsistency.ts shows consistent behavior
+# BUG-083/072: Parser Issues  
+cd /Users/alpinro/Code\ Prjects/codequal/packages/agents
+USE_DEEPWIKI_MOCK=false npx ts-node test-debug-inconsistency.ts
+
+# BUG-082: Report Format Issues
+USE_DEEPWIKI_MOCK=true npx ts-node test-v8-final.ts
+# Compare output format with working reference
+
+# BUG-084: Fix Suggestion Issues  
+USE_DEEPWIKI_MOCK=true npx ts-node test-fix-suggestions-demo.ts
+
+# BUG-086: Timeout Issues
+USE_DEEPWIKI_MOCK=false npx ts-node test-large-pr-security.ts
+```
+
+### 📊 Success Criteria for Critical Bug Resolution
+
+#### Priority 1: Connection & Infrastructure (Must Pass)
+- [ ] **DeepWiki Connection**: Stable kubectl port-forward, API accessible at localhost:8001  
+- [ ] **Redis Connection**: Cache operations working, clearAllCaches() functional
+- [ ] **Environment Config**: All environment variables set and validated
+- [ ] **Service Health**: All dependent services running and accessible
+
+#### Priority 2: Data Pipeline (Must Pass)
+- [ ] **Parser Multi-Format**: Handles all known DeepWiki response formats
+- [ ] **Location Extraction**: Accurate file paths and line numbers extracted
+- [ ] **Iteration Stability**: Consistent results across multiple analysis runs
+- [ ] **Data Integrity**: No data loss through processing pipeline
+
+#### Priority 3: Report Generation (Must Pass)
+- [ ] **V8 Format Compliance**: Reports match expected V8 structure and content
+- [ ] **Code Snippets**: Proper code snippet extraction and display
+- [ ] **Metadata Preservation**: PR information flows correctly through pipeline
+- [ ] **Multi-Format Output**: HTML, JSON, and MD outputs all complete
 
 #### Performance Requirements (Must Meet)
 - [ ] **Response Time**: <2x current implementation time
@@ -326,10 +477,21 @@ Once BUG-072 is resolved, future sessions can focus on:
 
 ---
 
-**Plan Version: 2.0 (Updated for BUG-072)**
+**Plan Version: 3.0 (Updated for Critical Bug Resolution)**
 **Created: 2025-08-27**
 **Session Lead: TBD**  
-**Status: CRITICAL - BUG-072 Must Be Fixed**
-**Next Session Command:** "Fix BUG-072: Integrate DeepWiki iteration stabilization logic"
+**Status: CRITICAL - 5 New Bugs Must Be Fixed in Dependency Order**
+**Next Session Command:** "Fix critical bugs BUG-079 to BUG-086 in dependency order"
 
-**REMEMBER**: BUG-072 is HIGH PRIORITY and affects core functionality reliability. This must be fixed before other enhancements.
+**REMEMBER**: New bugs discovered during parser enhancement session must be fixed systematically. Follow dependency chain: connections → parsing → generation → suggestions → performance.
+
+### 🎯 Session Quick Start Command
+```bash
+cd /Users/alpinro/Code\ Prjects/codequal/packages/agents
+echo "Starting critical bug resolution session for BUG-079 to BUG-086"
+echo "Priority 1: Fix connections (DeepWiki + Redis)"
+echo "Priority 2: Fix data pipeline (parser + iteration)"  
+echo "Priority 3: Fix report generation (V8 format)"
+echo "Priority 4: Fix fix suggestions (template integration)"
+echo "Priority 5: Fix performance (timeouts)"
+```
