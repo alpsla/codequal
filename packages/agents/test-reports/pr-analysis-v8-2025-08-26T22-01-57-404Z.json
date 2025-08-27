@@ -1,0 +1,534 @@
+{
+  "repositoryUrl": "https://github.com/sindresorhus/ky",
+  "prNumber": 700,
+  "mainBranchIssues": [
+    {
+      "id": "issue-1",
+      "title": "Potential denial of service due to unbounded request retries",
+      "description": "Potential denial of service due to unbounded request retries",
+      "severity": "high",
+      "category": "performance",
+      "location": {
+        "file": "index.ts",
+        "line": 125
+      },
+      "file": "index.ts",
+      "line": 125,
+      "codeSnippet": "`if (this.retryCount < this.maxRetries) { ... }`"
+    },
+    {
+      "id": "issue-2",
+      "title": "Lack of input validation for URL parameters",
+      "description": "Lack of input validation for URL parameters",
+      "severity": "high",
+      "category": "security",
+      "location": {
+        "file": "src/index.ts",
+        "line": 56
+      },
+      "file": "src/index.ts",
+      "line": 56,
+      "codeSnippet": "`const response = await fetch(url);`"
+    },
+    {
+      "id": "issue-3",
+      "title": "Missing error handling for network requests",
+      "description": "Missing error handling for network requests",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "src/core.ts",
+        "line": 89
+      },
+      "file": "src/core.ts",
+      "line": 89,
+      "codeSnippet": "`const data = await response.json();`"
+    },
+    {
+      "id": "issue-4",
+      "title": "Unused variable leading to code bloat",
+      "description": "Unused variable leading to code bloat",
+      "severity": "low",
+      "category": "code-quality",
+      "location": {
+        "file": "src/utils.ts",
+        "line": 34
+      },
+      "file": "src/utils.ts",
+      "line": 34,
+      "codeSnippet": "`const unusedVar = 42;`"
+    },
+    {
+      "id": "issue-5",
+      "title": "Potential memory leak due to unbounded promise handling",
+      "description": "Potential memory leak due to unbounded promise handling",
+      "severity": "medium",
+      "category": "performance",
+      "location": {
+        "file": "src/queue.ts",
+        "line": 47
+      },
+      "file": "src/queue.ts",
+      "line": 47,
+      "codeSnippet": "`this.promises.push(fetch(...));`"
+    },
+    {
+      "id": "issue-6",
+      "title": "Hardcoded API endpoint without configuration option",
+      "description": "Hardcoded API endpoint without configuration option",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "src/constants.ts",
+        "line": 12
+      },
+      "file": "src/constants.ts",
+      "line": 12,
+      "codeSnippet": "`const API_URL = 'https://api.example.com';`"
+    },
+    {
+      "id": "issue-7",
+      "title": "Lack of type checking for incoming request data",
+      "description": "Lack of type checking for incoming request data",
+      "severity": "high",
+      "category": "security",
+      "location": {
+        "file": "src/types.ts",
+        "line": 22
+      },
+      "file": "src/types.ts",
+      "line": 22,
+      "codeSnippet": "`function handleRequest(data) { ... }`"
+    },
+    {
+      "id": "issue-8",
+      "title": "Potential race condition in request handling",
+      "description": "Potential race condition in request handling",
+      "severity": "high",
+      "category": "performance",
+      "location": {
+        "file": "src/request.ts",
+        "line": 66
+      },
+      "file": "src/request.ts",
+      "line": 66,
+      "codeSnippet": "`this.currentRequest = fetch(url);`"
+    },
+    {
+      "id": "issue-9",
+      "title": "Inconsistent error logging across modules",
+      "description": "Inconsistent error logging across modules",
+      "severity": "low",
+      "category": "code-quality",
+      "location": {
+        "file": "src/logger.ts",
+        "line": 15
+      },
+      "file": "src/logger.ts",
+      "line": 15,
+      "codeSnippet": "`console.error(err);`"
+    }
+  ],
+  "prBranchIssues": [
+    {
+      "id": "issue-unchanged-1",
+      "title": "Potential denial of service due to unbounded request retries",
+      "description": "Potential denial of service due to unbounded request retries",
+      "severity": "high",
+      "category": "performance",
+      "location": {
+        "file": "index.ts",
+        "line": 125
+      },
+      "file": "index.ts",
+      "line": 125,
+      "codeSnippet": "// Code related to request retries",
+      "status": "unchanged",
+      "originalFromMain": true
+    },
+    {
+      "id": "issue-unchanged-2",
+      "title": "Lack of input validation for URL parameters",
+      "description": "Lack of input validation for URL parameters",
+      "severity": "high",
+      "category": "security",
+      "location": {
+        "file": "src/index.ts",
+        "line": 56
+      },
+      "file": "src/index.ts",
+      "line": 56,
+      "codeSnippet": "// Code that handles URL parameters",
+      "status": "unchanged",
+      "originalFromMain": true
+    },
+    {
+      "id": "issue-unchanged-3",
+      "title": "Missing error handling for network requests",
+      "description": "Missing error handling for network requests",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "src/core.ts",
+        "line": 89
+      },
+      "file": "src/core.ts",
+      "line": 89,
+      "codeSnippet": "// Network request logic",
+      "status": "unchanged",
+      "originalFromMain": true
+    },
+    {
+      "id": "issue-unchanged-4",
+      "title": "Unused variable leading to code bloat",
+      "description": "Unused variable leading to code bloat",
+      "severity": "low",
+      "category": "code-quality",
+      "location": {
+        "file": "src/utils.ts",
+        "line": 34
+      },
+      "file": "src/utils.ts",
+      "line": 34,
+      "codeSnippet": "// Declaration of unused variable",
+      "status": "unchanged",
+      "originalFromMain": true
+    },
+    {
+      "id": "issue-unchanged-5",
+      "title": "Potential memory leak due to unbounded promise handling",
+      "description": "Potential memory leak due to unbounded promise handling",
+      "severity": "medium",
+      "category": "performance",
+      "location": {
+        "file": "src/queue.ts",
+        "line": 47
+      },
+      "file": "src/queue.ts",
+      "line": 47,
+      "codeSnippet": "// Promise handling code",
+      "status": "unchanged",
+      "originalFromMain": true
+    },
+    {
+      "id": "issue-unchanged-6",
+      "title": "Hardcoded API endpoint without configuration option",
+      "description": "Hardcoded API endpoint without configuration option",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "src/constants.ts",
+        "line": 12
+      },
+      "file": "src/constants.ts",
+      "line": 12,
+      "codeSnippet": "// Hardcoded API endpoint",
+      "status": "unchanged",
+      "originalFromMain": true
+    },
+    {
+      "id": "issue-unchanged-7",
+      "title": "Lack of type checking for incoming request data",
+      "description": "Lack of type checking for incoming request data",
+      "severity": "high",
+      "category": "security",
+      "location": {
+        "file": "src/types.ts",
+        "line": 22
+      },
+      "file": "src/types.ts",
+      "line": 22,
+      "codeSnippet": "// Incoming request data handling",
+      "status": "unchanged",
+      "originalFromMain": true
+    },
+    {
+      "id": "issue-unchanged-8",
+      "title": "Potential race condition in request handling",
+      "description": "Potential race condition in request handling",
+      "severity": "high",
+      "category": "performance",
+      "location": {
+        "file": "src/request.ts",
+        "line": 66
+      },
+      "file": "src/request.ts",
+      "line": 66,
+      "codeSnippet": "// Request handling logic",
+      "status": "unchanged",
+      "originalFromMain": true
+    },
+    {
+      "id": "issue-unchanged-9",
+      "title": "Inconsistent error logging across modules",
+      "description": "Inconsistent error logging across modules",
+      "severity": "low",
+      "category": "code-quality",
+      "location": {
+        "file": "src/logger.ts",
+        "line": 15
+      },
+      "file": "src/logger.ts",
+      "line": 15,
+      "codeSnippet": "// Error logging code",
+      "status": "unchanged",
+      "originalFromMain": true
+    }
+  ],
+  "categorized": {
+    "newIssues": [
+      {
+        "issue": {
+          "id": "issue-unchanged-6",
+          "title": "Hardcoded API endpoint without configuration option",
+          "description": "Hardcoded API endpoint without configuration option",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "src/constants.ts",
+            "line": 12
+          },
+          "file": "src/constants.ts",
+          "line": 12,
+          "codeSnippet": "// Hardcoded API endpoint",
+          "status": "unchanged",
+          "originalFromMain": true
+        },
+        "category": "new",
+        "fingerprint": "src/constants.ts:10:code-quality:medium:generic:",
+        "confidence": 0.25
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-7",
+          "title": "Lack of type checking for incoming request data",
+          "description": "Lack of type checking for incoming request data",
+          "severity": "high",
+          "category": "security",
+          "location": {
+            "file": "src/types.ts",
+            "line": 22
+          },
+          "file": "src/types.ts",
+          "line": 22,
+          "codeSnippet": "// Incoming request data handling",
+          "status": "unchanged",
+          "originalFromMain": true
+        },
+        "category": "new",
+        "fingerprint": "src/types.ts:20:security:high:type:",
+        "confidence": 0.25
+      }
+    ],
+    "fixedIssues": [
+      {
+        "issue": {
+          "id": "issue-6",
+          "title": "Hardcoded API endpoint without configuration option",
+          "description": "Hardcoded API endpoint without configuration option",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "src/constants.ts",
+            "line": 12
+          },
+          "file": "src/constants.ts",
+          "line": 12,
+          "codeSnippet": "`const API_URL = 'https://api.example.com';`"
+        },
+        "category": "fixed",
+        "fingerprint": "src/constants.ts:10:code-quality:medium:generic:com-example",
+        "confidence": 0.25
+      },
+      {
+        "issue": {
+          "id": "issue-7",
+          "title": "Lack of type checking for incoming request data",
+          "description": "Lack of type checking for incoming request data",
+          "severity": "high",
+          "category": "security",
+          "location": {
+            "file": "src/types.ts",
+            "line": 22
+          },
+          "file": "src/types.ts",
+          "line": 22,
+          "codeSnippet": "`function handleRequest(data) { ... }`"
+        },
+        "category": "fixed",
+        "fingerprint": "src/types.ts:20:security:high:type:handleRequest",
+        "confidence": 0.25
+      }
+    ],
+    "unchangedIssues": [
+      {
+        "issue": {
+          "id": "issue-unchanged-1",
+          "title": "Potential denial of service due to unbounded request retries",
+          "description": "Potential denial of service due to unbounded request retries",
+          "severity": "high",
+          "category": "performance",
+          "location": {
+            "file": "index.ts",
+            "line": 125
+          },
+          "file": "index.ts",
+          "line": 125,
+          "codeSnippet": "// Code related to request retries",
+          "status": "unchanged",
+          "originalFromMain": true
+        },
+        "category": "unchanged",
+        "fingerprint": "index.ts:120:performance:high:denial:",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-2",
+          "title": "Lack of input validation for URL parameters",
+          "description": "Lack of input validation for URL parameters",
+          "severity": "high",
+          "category": "security",
+          "location": {
+            "file": "src/index.ts",
+            "line": 56
+          },
+          "file": "src/index.ts",
+          "line": 56,
+          "codeSnippet": "// Code that handles URL parameters",
+          "status": "unchanged",
+          "originalFromMain": true
+        },
+        "category": "unchanged",
+        "fingerprint": "src/index.ts:50:security:high:input-validation:",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-3",
+          "title": "Missing error handling for network requests",
+          "description": "Missing error handling for network requests",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "src/core.ts",
+            "line": 89
+          },
+          "file": "src/core.ts",
+          "line": 89,
+          "codeSnippet": "// Network request logic",
+          "status": "unchanged",
+          "originalFromMain": true
+        },
+        "category": "unchanged",
+        "fingerprint": "src/core.ts:80:code-quality:medium:error-handling:",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-4",
+          "title": "Unused variable leading to code bloat",
+          "description": "Unused variable leading to code bloat",
+          "severity": "low",
+          "category": "code-quality",
+          "location": {
+            "file": "src/utils.ts",
+            "line": 34
+          },
+          "file": "src/utils.ts",
+          "line": 34,
+          "codeSnippet": "// Declaration of unused variable",
+          "status": "unchanged",
+          "originalFromMain": true
+        },
+        "category": "unchanged",
+        "fingerprint": "src/utils.ts:30:code-quality:low:unused:",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-5",
+          "title": "Potential memory leak due to unbounded promise handling",
+          "description": "Potential memory leak due to unbounded promise handling",
+          "severity": "medium",
+          "category": "performance",
+          "location": {
+            "file": "src/queue.ts",
+            "line": 47
+          },
+          "file": "src/queue.ts",
+          "line": 47,
+          "codeSnippet": "// Promise handling code",
+          "status": "unchanged",
+          "originalFromMain": true
+        },
+        "category": "unchanged",
+        "fingerprint": "src/queue.ts:40:performance:medium:handling-leak-memory-promise:",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-8",
+          "title": "Potential race condition in request handling",
+          "description": "Potential race condition in request handling",
+          "severity": "high",
+          "category": "performance",
+          "location": {
+            "file": "src/request.ts",
+            "line": 66
+          },
+          "file": "src/request.ts",
+          "line": 66,
+          "codeSnippet": "// Request handling logic",
+          "status": "unchanged",
+          "originalFromMain": true
+        },
+        "category": "unchanged",
+        "fingerprint": "src/request.ts:60:performance:high:handling:",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-9",
+          "title": "Inconsistent error logging across modules",
+          "description": "Inconsistent error logging across modules",
+          "severity": "low",
+          "category": "code-quality",
+          "location": {
+            "file": "src/logger.ts",
+            "line": 15
+          },
+          "file": "src/logger.ts",
+          "line": 15,
+          "codeSnippet": "// Error logging code",
+          "status": "unchanged",
+          "originalFromMain": true
+        },
+        "category": "unchanged",
+        "fingerprint": "src/logger.ts:10:code-quality:low:error:",
+        "confidence": 1
+      }
+    ],
+    "summary": {
+      "totalNew": 2,
+      "totalFixed": 2,
+      "totalUnchanged": 7,
+      "netImpact": 0,
+      "prQualityScore": 45
+    },
+    "recommendations": [
+      "⚠️ Address 1 high-severity issue(s) introduced by this PR",
+      "✅ Great work! This PR fixes 2 existing issue(s)",
+      "⚠️ PR needs attention. Please address the issues above."
+    ]
+  },
+  "metadata": {
+    "analysisDate": "2025-08-26T22:01:56.048Z",
+    "mainBranchAnalysisDuration": 12.2,
+    "prBranchAnalysisDuration": 16.5,
+    "totalDuration": 28.7,
+    "modelUsed": "dynamic-selection",
+    "iterationsPerBranch": 3,
+    "tokensUsed": 0
+  }
+}

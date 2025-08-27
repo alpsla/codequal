@@ -1,0 +1,1535 @@
+{
+  "repositoryUrl": "https://github.com/sindresorhus/ky",
+  "prNumber": 700,
+  "mainBranchIssues": [
+    {
+      "id": "issue-1",
+      "title": "Potential breaking change in the API when removing support for certain request options.",
+      "description": "Potential breaking change in the API when removing support for certain request options.",
+      "severity": "critical",
+      "category": "breaking-change",
+      "location": {
+        "file": "src/index.ts",
+        "line": 50
+      },
+      "file": "src/index.ts",
+      "line": 50,
+      "codeSnippet": "`delete options.someDeprecatedOption;`"
+    },
+    {
+      "id": "issue-2",
+      "title": "Possible exposure of secrets through environment variables in the build process.",
+      "description": "Possible exposure of secrets through environment variables in the build process.",
+      "severity": "high",
+      "category": "security",
+      "location": {
+        "file": "src/utils.ts",
+        "line": 15
+      },
+      "file": "src/utils.ts",
+      "line": 15,
+      "codeSnippet": "`const secret = process.env.SECRET_KEY;`"
+    },
+    {
+      "id": "issue-3",
+      "title": "Lack of input validation could lead to SQL injection in custom data handling functions.",
+      "description": "Lack of input validation could lead to SQL injection in custom data handling functions.",
+      "severity": "high",
+      "category": "security",
+      "location": {
+        "file": "src/database.ts",
+        "line": 30
+      },
+      "file": "src/database.ts",
+      "line": 30,
+      "codeSnippet": "`const query = \\`SELECT * FROM users WHERE id = ${userId}\\`;`"
+    },
+    {
+      "id": "issue-4",
+      "title": "Data loss risk due to unhandled promise rejections in data fetching functions.",
+      "description": "Data loss risk due to unhandled promise rejections in data fetching functions.",
+      "severity": "high",
+      "category": "data-loss",
+      "location": {
+        "file": "src/fetchData.ts",
+        "line": 22
+      },
+      "file": "src/fetchData.ts",
+      "line": 22,
+      "codeSnippet": "`fetch(url).then(response => response.json()).catch(err => console.error(err));`"
+    },
+    {
+      "id": "issue-5",
+      "title": "System crash risk due to uncaught exceptions in the main request handler.",
+      "description": "System crash risk due to uncaught exceptions in the main request handler.",
+      "severity": "high",
+      "category": "system-crash",
+      "location": {
+        "file": "src/server.ts",
+        "line": 40
+      },
+      "file": "src/server.ts",
+      "line": 40,
+      "codeSnippet": "`app.use((req, res, next) => { throw new Error(\"Crash!\"); });`"
+    },
+    {
+      "id": "issue-6",
+      "title": "Performance degradation due to synchronous file reading in the main thread.",
+      "description": "Performance degradation due to synchronous file reading in the main thread.",
+      "severity": "high",
+      "category": "performance",
+      "location": {
+        "file": "src/fileReader.ts",
+        "line": 10
+      },
+      "file": "src/fileReader.ts",
+      "line": 10,
+      "codeSnippet": "`const data = fs.readFileSync('/path/to/file');`"
+    },
+    {
+      "id": "issue-7",
+      "title": "Missing error handling in API responses can lead to misleading client-side behavior.",
+      "description": "Missing error handling in API responses can lead to misleading client-side behavior.",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "src/api.ts",
+        "line": 18
+      },
+      "file": "src/api.ts",
+      "line": 18,
+      "codeSnippet": "`res.send(data);`"
+    },
+    {
+      "id": "issue-8",
+      "title": "Potential infinite loop in retry mechanism without proper exit conditions.",
+      "description": "Potential infinite loop in retry mechanism without proper exit conditions.",
+      "severity": "medium",
+      "category": "performance",
+      "location": {
+        "file": "src/retry.ts",
+        "line": 25
+      },
+      "file": "src/retry.ts",
+      "line": 25,
+      "codeSnippet": "`while (attempts < maxAttempts) { /* retry logic */ }`"
+    },
+    {
+      "id": "issue-1",
+      "title": "Use of `unsafe` request method without validation",
+      "description": "Use of `unsafe` request method without validation",
+      "severity": "critical",
+      "category": "breaking-change",
+      "location": {
+        "file": "src/index.ts",
+        "line": 45
+      },
+      "file": "src/index.ts",
+      "line": 45,
+      "codeSnippet": "`const response = await ky('http://example.com/api', { method: 'DELETE' });`"
+    },
+    {
+      "id": "issue-2",
+      "title": "Lack of input sanitization leading to potential XSS",
+      "description": "Lack of input sanitization leading to potential XSS",
+      "severity": "high",
+      "category": "security",
+      "location": {
+        "file": "src/utils.ts",
+        "line": 78
+      },
+      "file": "src/utils.ts",
+      "line": 78,
+      "codeSnippet": "`document.body.innerHTML = response.data;`"
+    },
+    {
+      "id": "issue-3",
+      "title": "Potential for data loss if API response is not handled",
+      "description": "Potential for data loss if API response is not handled",
+      "severity": "high",
+      "category": "data-loss",
+      "location": {
+        "file": "src/api.ts",
+        "line": 112
+      },
+      "file": "src/api.ts",
+      "line": 112,
+      "codeSnippet": "`const data = await response.json(); // no error handling`"
+    },
+    {
+      "id": "issue-4",
+      "title": "Uncaught promise rejection causing system crash",
+      "description": "Uncaught promise rejection causing system crash",
+      "severity": "high",
+      "category": "system-crash",
+      "location": {
+        "file": "src/index.ts",
+        "line": 62
+      },
+      "file": "src/index.ts",
+      "line": 62,
+      "codeSnippet": "`const result = await fetchData(); // no try-catch`"
+    },
+    {
+      "id": "issue-5",
+      "title": "Inefficient looping leading to performance degradation",
+      "description": "Inefficient looping leading to performance degradation",
+      "severity": "medium",
+      "category": "performance",
+      "location": {
+        "file": "src/processor.ts",
+        "line": 34
+      },
+      "file": "src/processor.ts",
+      "line": 34,
+      "codeSnippet": "`for (let i = 0; i < items.length; i++) { process(items[i]); }`"
+    },
+    {
+      "id": "issue-6",
+      "title": "No rate limiting on API requests causing potential denial of service",
+      "description": "No rate limiting on API requests causing potential denial of service",
+      "severity": "medium",
+      "category": "performance",
+      "location": {
+        "file": "src/api.ts",
+        "line": 25
+      },
+      "file": "src/api.ts",
+      "line": 25,
+      "codeSnippet": "`const response = await ky('http://example.com/api');`"
+    },
+    {
+      "id": "issue-7",
+      "title": "Missing error handling for network failures",
+      "description": "Missing error handling for network failures",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "src/network.ts",
+        "line": 90
+      },
+      "file": "src/network.ts",
+      "line": 90,
+      "codeSnippet": "`const data = await ky.get(url); // no catch for errors`"
+    },
+    {
+      "id": "issue-8",
+      "title": "Hardcoded secrets in configuration",
+      "description": "Hardcoded secrets in configuration",
+      "severity": "high",
+      "category": "security",
+      "location": {
+        "file": "src/config.ts",
+        "line": 15
+      },
+      "file": "src/config.ts",
+      "line": 15,
+      "codeSnippet": "`const apiKey = '12345-abcde'; // sensitive information`"
+    },
+    {
+      "id": "issue-9",
+      "title": "Using deprecated methods in the library",
+      "description": "Using deprecated methods in the library",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "src/helpers.ts",
+        "line": 50
+      },
+      "file": "src/helpers.ts",
+      "line": 50,
+      "codeSnippet": "`const result = await ky.get(url, { timeout: 5000 }); // deprecated timeout option`"
+    },
+    {
+      "id": "issue-1",
+      "title": "Use of `eval` in code",
+      "description": "Use of `eval` in code",
+      "severity": "critical",
+      "category": "security",
+      "location": {
+        "file": "src/utils.js",
+        "line": 42
+      },
+      "file": "src/utils.js",
+      "line": 42,
+      "codeSnippet": "`const result = eval(expression);`"
+    },
+    {
+      "id": "issue-2",
+      "title": "Uncaught Promise rejection not handled",
+      "description": "Uncaught Promise rejection not handled",
+      "severity": "high",
+      "category": "performance",
+      "location": {
+        "file": "src/request.js",
+        "line": 78
+      },
+      "file": "src/request.js",
+      "line": 78,
+      "codeSnippet": "`return fetch(url).then(response => response.json());`"
+    },
+    {
+      "id": "issue-3",
+      "title": "Hardcoded API key exposure",
+      "description": "Hardcoded API key exposure",
+      "severity": "high",
+      "category": "security",
+      "location": {
+        "file": "src/config.js",
+        "line": 10
+      },
+      "file": "src/config.js",
+      "line": 10,
+      "codeSnippet": "`const apiKey = '12345-abcde-67890-fghij';`"
+    },
+    {
+      "id": "issue-5",
+      "title": "Lack of input validation in user input handling",
+      "description": "Lack of input validation in user input handling",
+      "severity": "medium",
+      "category": "security",
+      "location": {
+        "file": "src/input.js",
+        "line": 22
+      },
+      "file": "src/input.js",
+      "line": 22,
+      "codeSnippet": "`const userInput = req.body.input;`"
+    },
+    {
+      "id": "issue-6",
+      "title": "Missing error handling for network requests",
+      "description": "Missing error handling for network requests",
+      "severity": "medium",
+      "category": "performance",
+      "location": {
+        "file": "src/network.js",
+        "line": 56
+      },
+      "file": "src/network.js",
+      "line": 56,
+      "codeSnippet": "`const response = await axios.get(url);`"
+    },
+    {
+      "id": "issue-7",
+      "title": "Deprecated library usage",
+      "description": "Deprecated library usage",
+      "severity": "medium",
+      "category": "dependency-vulnerability",
+      "location": {
+        "file": "package.json",
+        "line": 5
+      },
+      "file": "package.json",
+      "line": 5,
+      "codeSnippet": "`\"axios\": \"^0.18.0\",`"
+    },
+    {
+      "id": "issue-8",
+      "title": "Potential data loss on abrupt application shutdown",
+      "description": "Potential data loss on abrupt application shutdown",
+      "severity": "medium",
+      "category": "data-loss",
+      "location": {
+        "file": "src/storage.js",
+        "line": 14
+      },
+      "file": "src/storage.js",
+      "line": 14,
+      "codeSnippet": "`localStorage.setItem('data', JSON.stringify(data));`"
+    },
+    {
+      "id": "issue-9",
+      "title": "Insufficient logging of errors",
+      "description": "Insufficient logging of errors",
+      "severity": "low",
+      "category": "code-quality",
+      "location": {
+        "file": "src/logger.js",
+        "line": 30
+      },
+      "file": "src/logger.js",
+      "line": 30,
+      "codeSnippet": "`console.error(err);`"
+    }
+  ],
+  "prBranchIssues": [
+    {
+      "id": "issue-unchanged-1",
+      "title": "Potential breaking change in the API when removing support for certain request options.",
+      "description": "Potential breaking change in the API when removing support for certain request options.",
+      "severity": "critical",
+      "category": "breaking-change",
+      "location": {
+        "file": "src/index.ts",
+        "line": 50
+      },
+      "file": "src/index.ts",
+      "line": 50,
+      "codeSnippet": "[exact code not provided]",
+      "status": "unchanged",
+      "originalFromMain": true
+    },
+    {
+      "id": "issue-unchanged-2",
+      "title": "Potential breaking change in the API when removing support for certain request options.",
+      "description": "Use of `unsafe` request method without validation",
+      "severity": "critical",
+      "category": "breaking-change",
+      "location": {
+        "file": "src/index.ts",
+        "line": 45
+      },
+      "file": "src/index.ts",
+      "line": 45,
+      "codeSnippet": "[exact code not provided]",
+      "status": "unchanged",
+      "originalFromMain": true
+    },
+    {
+      "id": "issue-unchanged-3",
+      "title": "Possible exposure of secrets through environment variables in the build process.",
+      "description": "Possible exposure of secrets through environment variables in the build process.",
+      "severity": "high",
+      "category": "security",
+      "location": {
+        "file": "src/utils.ts",
+        "line": 15
+      },
+      "file": "src/utils.ts",
+      "line": 15,
+      "codeSnippet": "[exact code not provided]",
+      "status": "unchanged",
+      "originalFromMain": true
+    },
+    {
+      "id": "issue-unchanged-4",
+      "title": "Lack of input validation could lead to SQL injection in custom data handling functions.",
+      "description": "Lack of input validation could lead to SQL injection in custom data handling functions.",
+      "severity": "high",
+      "category": "security",
+      "location": {
+        "file": "src/database.ts",
+        "line": 30
+      },
+      "file": "src/database.ts",
+      "line": 30,
+      "codeSnippet": "[exact code not provided]",
+      "status": "unchanged",
+      "originalFromMain": true
+    },
+    {
+      "id": "issue-unchanged-5",
+      "title": "Data loss risk due to unhandled promise rejections in data fetching functions.",
+      "description": "Data loss risk due to unhandled promise rejections in data fetching functions.",
+      "severity": "high",
+      "category": "data-loss",
+      "location": {
+        "file": "src/fetchData.ts",
+        "line": 22
+      },
+      "file": "src/fetchData.ts",
+      "line": 22,
+      "codeSnippet": "[exact code not provided]",
+      "status": "unchanged",
+      "originalFromMain": true
+    },
+    {
+      "id": "issue-unchanged-6",
+      "title": "System crash risk due to uncaught exceptions in the main request handler.",
+      "description": "System crash risk due to uncaught exceptions in the main request handler.",
+      "severity": "high",
+      "category": "system-crash",
+      "location": {
+        "file": "src/server.ts",
+        "line": 40
+      },
+      "file": "src/server.ts",
+      "line": 40,
+      "codeSnippet": "[exact code not provided]",
+      "status": "unchanged",
+      "originalFromMain": true
+    },
+    {
+      "id": "issue-unchanged-7",
+      "title": "Performance degradation due to synchronous file reading in the main thread.",
+      "description": "Performance degradation due to synchronous file reading in the main thread.",
+      "severity": "high",
+      "category": "performance",
+      "location": {
+        "file": "src/fileReader.ts",
+        "line": 10
+      },
+      "file": "src/fileReader.ts",
+      "line": 10,
+      "codeSnippet": "[exact code not provided]",
+      "status": "unchanged",
+      "originalFromMain": true
+    },
+    {
+      "id": "issue-unchanged-8",
+      "title": "Missing error handling in API responses can lead to misleading client-side behavior.",
+      "description": "Missing error handling in API responses can lead to misleading client-side behavior.",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "src/api.ts",
+        "line": 18
+      },
+      "file": "src/api.ts",
+      "line": 18,
+      "codeSnippet": "[exact code not provided]",
+      "status": "unchanged",
+      "originalFromMain": true
+    },
+    {
+      "id": "issue-unchanged-9",
+      "title": "Potential infinite loop in retry mechanism without proper exit conditions.",
+      "description": "Potential infinite loop in retry mechanism without proper exit conditions.",
+      "severity": "medium",
+      "category": "performance",
+      "location": {
+        "file": "src/retry.ts",
+        "line": 25
+      },
+      "file": "src/retry.ts",
+      "line": 25,
+      "codeSnippet": "[exact code not provided]",
+      "status": "unchanged",
+      "originalFromMain": true
+    },
+    {
+      "id": "issue-unchanged-10",
+      "title": "Lack of input sanitization leading to potential XSS",
+      "description": "Lack of input sanitization leading to potential XSS",
+      "severity": "high",
+      "category": "security",
+      "location": {
+        "file": "src/utils.ts",
+        "line": 78
+      },
+      "file": "src/utils.ts",
+      "line": 78,
+      "codeSnippet": "[exact code not provided]",
+      "status": "unchanged",
+      "originalFromMain": true
+    },
+    {
+      "id": "issue-unchanged-11",
+      "title": "Potential for data loss if API response is not handled",
+      "description": "Potential for data loss if API response is not handled",
+      "severity": "high",
+      "category": "data-loss",
+      "location": {
+        "file": "src/api.ts",
+        "line": 112
+      },
+      "file": "src/api.ts",
+      "line": 112,
+      "codeSnippet": "[exact code not provided]",
+      "status": "unchanged",
+      "originalFromMain": true
+    },
+    {
+      "id": "issue-unchanged-12",
+      "title": "Uncaught promise rejection causing system crash",
+      "description": "Uncaught promise rejection causing system crash",
+      "severity": "high",
+      "category": "system-crash",
+      "location": {
+        "file": "src/index.ts",
+        "line": 62
+      },
+      "file": "src/index.ts",
+      "line": 62,
+      "codeSnippet": "[exact code not provided]",
+      "status": "unchanged",
+      "originalFromMain": true
+    },
+    {
+      "id": "issue-unchanged-13",
+      "title": "Hardcoded secrets in configuration",
+      "description": "Hardcoded secrets in configuration",
+      "severity": "high",
+      "category": "security",
+      "location": {
+        "file": "src/config.ts",
+        "line": 15
+      },
+      "file": "src/config.ts",
+      "line": 15,
+      "codeSnippet": "[exact code not provided]",
+      "status": "unchanged",
+      "originalFromMain": true
+    },
+    {
+      "id": "issue-unchanged-14",
+      "title": "Hardcoded API key exposure",
+      "description": "Hardcoded API key exposure",
+      "severity": "high",
+      "category": "security",
+      "location": {
+        "file": "src/config.js",
+        "line": 10
+      },
+      "file": "src/config.js",
+      "line": 10,
+      "codeSnippet": "[exact code not provided]",
+      "status": "unchanged",
+      "originalFromMain": true
+    },
+    {
+      "id": "issue-unchanged-15",
+      "title": "Lack of input validation in user input handling",
+      "description": "Lack of input validation in user input handling",
+      "severity": "medium",
+      "category": "security",
+      "location": {
+        "file": "src/input.js",
+        "line": 22
+      },
+      "file": "src/input.js",
+      "line": 22,
+      "codeSnippet": "[exact code not provided]",
+      "status": "unchanged",
+      "originalFromMain": true
+    },
+    {
+      "id": "issue-unchanged-16",
+      "title": "Missing error handling for network failures",
+      "description": "Missing error handling for network requests",
+      "severity": "medium",
+      "category": "performance",
+      "location": {
+        "file": "src/network.js",
+        "line": 56
+      },
+      "file": "src/network.js",
+      "line": 56,
+      "codeSnippet": "[exact code not provided]",
+      "status": "unchanged",
+      "originalFromMain": true
+    },
+    {
+      "id": "issue-unchanged-17",
+      "title": "Deprecated library usage",
+      "description": "Deprecated library usage",
+      "severity": "medium",
+      "category": "dependency-vulnerability",
+      "location": {
+        "file": "package.json",
+        "line": 5
+      },
+      "file": "package.json",
+      "line": 5,
+      "codeSnippet": "[exact code not provided]",
+      "status": "unchanged",
+      "originalFromMain": true
+    },
+    {
+      "id": "issue-unchanged-18",
+      "title": "Insufficient logging of errors",
+      "description": "Insufficient logging of errors",
+      "severity": "low",
+      "category": "code-quality",
+      "location": {
+        "file": "src/logger.js",
+        "line": 30
+      },
+      "file": "src/logger.js",
+      "line": 30,
+      "codeSnippet": "[exact code not provided]",
+      "status": "unchanged",
+      "originalFromMain": true
+    },
+    {
+      "id": "issue-new-1",
+      "title": "Use of `eval` in code",
+      "description": "Use of `eval` in code",
+      "severity": "critical",
+      "category": "security",
+      "location": {
+        "file": "src/utils.js",
+        "line": 42
+      },
+      "file": "src/utils.js",
+      "line": 42,
+      "codeSnippet": "[exact code not provided]",
+      "status": "new"
+    },
+    {
+      "id": "issue-new-2",
+      "title": "Uncaught Promise rejection not handled",
+      "description": "Uncaught Promise rejection not handled",
+      "severity": "high",
+      "category": "performance",
+      "location": {
+        "file": "src/request.js",
+        "line": 78
+      },
+      "file": "src/request.js",
+      "line": 78,
+      "codeSnippet": "[The specific line of code causing the rejection]",
+      "status": "new"
+    },
+    {
+      "id": "issue-new-3",
+      "title": "Inefficient looping leading to performance degradation",
+      "description": "Inefficient looping leading to performance degradation",
+      "severity": "medium",
+      "category": "performance",
+      "location": {
+        "file": "src/processor.ts",
+        "line": 34
+      },
+      "file": "src/processor.ts",
+      "line": 34,
+      "codeSnippet": "[The specific line of code causing inefficiency]",
+      "status": "new"
+    },
+    {
+      "id": "issue-unchanged-12",
+      "title": "Using deprecated methods in the library",
+      "description": "Using deprecated methods in the library",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "src/helpers.ts",
+        "line": 50
+      },
+      "file": "src/helpers.ts",
+      "line": 50,
+      "codeSnippet": "// Deprecated method usage",
+      "status": "unchanged",
+      "originalFromMain": true
+    },
+    {
+      "id": "issue-unchanged-18",
+      "title": "Potential data loss on abrupt application shutdown",
+      "description": "Potential data loss on abrupt application shutdown",
+      "severity": "medium",
+      "category": "data-loss",
+      "location": {
+        "file": "src/storage.js",
+        "line": 14
+      },
+      "file": "src/storage.js",
+      "line": 14,
+      "codeSnippet": "// Shutdown handling code",
+      "status": "unchanged",
+      "originalFromMain": true
+    },
+    {
+      "id": "issue-new-4",
+      "title": "No rate limiting on API requests causing potential denial of service",
+      "description": "No rate limiting on API requests causing potential denial of service",
+      "severity": "medium",
+      "category": "performance",
+      "location": {
+        "file": "src/api.ts",
+        "line": 25
+      },
+      "file": "src/api.ts",
+      "line": 25,
+      "codeSnippet": "// API request handling without rate limiting",
+      "status": "new"
+    }
+  ],
+  "categorized": {
+    "newIssues": [
+      {
+        "issue": {
+          "id": "issue-unchanged-1",
+          "title": "Potential breaking change in the API when removing support for certain request options.",
+          "description": "Potential breaking change in the API when removing support for certain request options.",
+          "severity": "critical",
+          "category": "breaking-change",
+          "location": {
+            "file": "src/index.ts",
+            "line": 50
+          },
+          "file": "src/index.ts",
+          "line": 50,
+          "codeSnippet": "[exact code not provided]",
+          "status": "unchanged",
+          "originalFromMain": true
+        },
+        "category": "new",
+        "fingerprint": "src/index.ts:50:breaking-change:critical:generic:",
+        "confidence": 0.25
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-2",
+          "title": "Potential breaking change in the API when removing support for certain request options.",
+          "description": "Use of `unsafe` request method without validation",
+          "severity": "critical",
+          "category": "breaking-change",
+          "location": {
+            "file": "src/index.ts",
+            "line": 45
+          },
+          "file": "src/index.ts",
+          "line": 45,
+          "codeSnippet": "[exact code not provided]",
+          "status": "unchanged",
+          "originalFromMain": true
+        },
+        "category": "new",
+        "fingerprint": "src/index.ts:40:breaking-change:critical:validation:",
+        "confidence": 0.25
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-3",
+          "title": "Possible exposure of secrets through environment variables in the build process.",
+          "description": "Possible exposure of secrets through environment variables in the build process.",
+          "severity": "high",
+          "category": "security",
+          "location": {
+            "file": "src/utils.ts",
+            "line": 15
+          },
+          "file": "src/utils.ts",
+          "line": 15,
+          "codeSnippet": "[exact code not provided]",
+          "status": "unchanged",
+          "originalFromMain": true
+        },
+        "category": "new",
+        "fingerprint": "src/utils.ts:10:security:high:generic:",
+        "confidence": 0.25
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-5",
+          "title": "Data loss risk due to unhandled promise rejections in data fetching functions.",
+          "description": "Data loss risk due to unhandled promise rejections in data fetching functions.",
+          "severity": "high",
+          "category": "data-loss",
+          "location": {
+            "file": "src/fetchData.ts",
+            "line": 22
+          },
+          "file": "src/fetchData.ts",
+          "line": 22,
+          "codeSnippet": "[exact code not provided]",
+          "status": "unchanged",
+          "originalFromMain": true
+        },
+        "category": "new",
+        "fingerprint": "src/fetchdata.ts:20:data-loss:high:promise:",
+        "confidence": 0.25
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-6",
+          "title": "System crash risk due to uncaught exceptions in the main request handler.",
+          "description": "System crash risk due to uncaught exceptions in the main request handler.",
+          "severity": "high",
+          "category": "system-crash",
+          "location": {
+            "file": "src/server.ts",
+            "line": 40
+          },
+          "file": "src/server.ts",
+          "line": 40,
+          "codeSnippet": "[exact code not provided]",
+          "status": "unchanged",
+          "originalFromMain": true
+        },
+        "category": "new",
+        "fingerprint": "src/server.ts:40:system-crash:high:generic:",
+        "confidence": 0.25
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-7",
+          "title": "Performance degradation due to synchronous file reading in the main thread.",
+          "description": "Performance degradation due to synchronous file reading in the main thread.",
+          "severity": "high",
+          "category": "performance",
+          "location": {
+            "file": "src/fileReader.ts",
+            "line": 10
+          },
+          "file": "src/fileReader.ts",
+          "line": 10,
+          "codeSnippet": "[exact code not provided]",
+          "status": "unchanged",
+          "originalFromMain": true
+        },
+        "category": "new",
+        "fingerprint": "src/filereader.ts:10:performance:high:generic:",
+        "confidence": 0.25
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-9",
+          "title": "Potential infinite loop in retry mechanism without proper exit conditions.",
+          "description": "Potential infinite loop in retry mechanism without proper exit conditions.",
+          "severity": "medium",
+          "category": "performance",
+          "location": {
+            "file": "src/retry.ts",
+            "line": 25
+          },
+          "file": "src/retry.ts",
+          "line": 25,
+          "codeSnippet": "[exact code not provided]",
+          "status": "unchanged",
+          "originalFromMain": true
+        },
+        "category": "new",
+        "fingerprint": "src/retry.ts:20:performance:medium:generic:",
+        "confidence": 0.25
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-11",
+          "title": "Potential for data loss if API response is not handled",
+          "description": "Potential for data loss if API response is not handled",
+          "severity": "high",
+          "category": "data-loss",
+          "location": {
+            "file": "src/api.ts",
+            "line": 112
+          },
+          "file": "src/api.ts",
+          "line": 112,
+          "codeSnippet": "[exact code not provided]",
+          "status": "unchanged",
+          "originalFromMain": true
+        },
+        "category": "new",
+        "fingerprint": "src/api.ts:110:data-loss:high:generic:",
+        "confidence": 0.25
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-12",
+          "title": "Uncaught promise rejection causing system crash",
+          "description": "Uncaught promise rejection causing system crash",
+          "severity": "high",
+          "category": "system-crash",
+          "location": {
+            "file": "src/index.ts",
+            "line": 62
+          },
+          "file": "src/index.ts",
+          "line": 62,
+          "codeSnippet": "[exact code not provided]",
+          "status": "unchanged",
+          "originalFromMain": true
+        },
+        "category": "new",
+        "fingerprint": "src/index.ts:60:system-crash:high:promise:",
+        "confidence": 0.25
+      },
+      {
+        "issue": {
+          "id": "issue-new-1",
+          "title": "Use of `eval` in code",
+          "description": "Use of `eval` in code",
+          "severity": "critical",
+          "category": "security",
+          "location": {
+            "file": "src/utils.js",
+            "line": 42
+          },
+          "file": "src/utils.js",
+          "line": 42,
+          "codeSnippet": "[exact code not provided]",
+          "status": "new"
+        },
+        "category": "new",
+        "fingerprint": "src/utils.js:40:security:critical:generic:",
+        "confidence": 0.25
+      },
+      {
+        "issue": {
+          "id": "issue-new-2",
+          "title": "Uncaught Promise rejection not handled",
+          "description": "Uncaught Promise rejection not handled",
+          "severity": "high",
+          "category": "performance",
+          "location": {
+            "file": "src/request.js",
+            "line": 78
+          },
+          "file": "src/request.js",
+          "line": 78,
+          "codeSnippet": "[The specific line of code causing the rejection]",
+          "status": "new"
+        },
+        "category": "new",
+        "fingerprint": "src/request.js:70:performance:high:promise:",
+        "confidence": 0.25
+      },
+      {
+        "issue": {
+          "id": "issue-new-3",
+          "title": "Inefficient looping leading to performance degradation",
+          "description": "Inefficient looping leading to performance degradation",
+          "severity": "medium",
+          "category": "performance",
+          "location": {
+            "file": "src/processor.ts",
+            "line": 34
+          },
+          "file": "src/processor.ts",
+          "line": 34,
+          "codeSnippet": "[The specific line of code causing inefficiency]",
+          "status": "new"
+        },
+        "category": "new",
+        "fingerprint": "src/processor.ts:30:performance:medium:generic:",
+        "confidence": 0.25
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-18",
+          "title": "Potential data loss on abrupt application shutdown",
+          "description": "Potential data loss on abrupt application shutdown",
+          "severity": "medium",
+          "category": "data-loss",
+          "location": {
+            "file": "src/storage.js",
+            "line": 14
+          },
+          "file": "src/storage.js",
+          "line": 14,
+          "codeSnippet": "// Shutdown handling code",
+          "status": "unchanged",
+          "originalFromMain": true
+        },
+        "category": "new",
+        "fingerprint": "src/storage.js:10:data-loss:medium:generic:",
+        "confidence": 0.25
+      }
+    ],
+    "fixedIssues": [
+      {
+        "issue": {
+          "id": "issue-1",
+          "title": "Potential breaking change in the API when removing support for certain request options.",
+          "description": "Potential breaking change in the API when removing support for certain request options.",
+          "severity": "critical",
+          "category": "breaking-change",
+          "location": {
+            "file": "src/index.ts",
+            "line": 50
+          },
+          "file": "src/index.ts",
+          "line": 50,
+          "codeSnippet": "`delete options.someDeprecatedOption;`"
+        },
+        "category": "fixed",
+        "fingerprint": "src/index.ts:50:breaking-change:critical:generic:someDeprecatedOption",
+        "confidence": 0.25
+      },
+      {
+        "issue": {
+          "id": "issue-2",
+          "title": "Possible exposure of secrets through environment variables in the build process.",
+          "description": "Possible exposure of secrets through environment variables in the build process.",
+          "severity": "high",
+          "category": "security",
+          "location": {
+            "file": "src/utils.ts",
+            "line": 15
+          },
+          "file": "src/utils.ts",
+          "line": 15,
+          "codeSnippet": "`const secret = process.env.SECRET_KEY;`"
+        },
+        "category": "fixed",
+        "fingerprint": "src/utils.ts:10:security:high:generic:SECRET_KEY-env",
+        "confidence": 0.25
+      },
+      {
+        "issue": {
+          "id": "issue-4",
+          "title": "Data loss risk due to unhandled promise rejections in data fetching functions.",
+          "description": "Data loss risk due to unhandled promise rejections in data fetching functions.",
+          "severity": "high",
+          "category": "data-loss",
+          "location": {
+            "file": "src/fetchData.ts",
+            "line": 22
+          },
+          "file": "src/fetchData.ts",
+          "line": 22,
+          "codeSnippet": "`fetch(url).then(response => response.json()).catch(err => console.error(err));`"
+        },
+        "category": "fixed",
+        "fingerprint": "src/fetchdata.ts:20:data-loss:high:promise:fetch-json-then",
+        "confidence": 0.25
+      },
+      {
+        "issue": {
+          "id": "issue-5",
+          "title": "System crash risk due to uncaught exceptions in the main request handler.",
+          "description": "System crash risk due to uncaught exceptions in the main request handler.",
+          "severity": "high",
+          "category": "system-crash",
+          "location": {
+            "file": "src/server.ts",
+            "line": 40
+          },
+          "file": "src/server.ts",
+          "line": 40,
+          "codeSnippet": "`app.use((req, res, next) => { throw new Error(\"Crash!\"); });`"
+        },
+        "category": "fixed",
+        "fingerprint": "src/server.ts:40:system-crash:high:generic:Error-use-use",
+        "confidence": 0.25
+      },
+      {
+        "issue": {
+          "id": "issue-6",
+          "title": "Performance degradation due to synchronous file reading in the main thread.",
+          "description": "Performance degradation due to synchronous file reading in the main thread.",
+          "severity": "high",
+          "category": "performance",
+          "location": {
+            "file": "src/fileReader.ts",
+            "line": 10
+          },
+          "file": "src/fileReader.ts",
+          "line": 10,
+          "codeSnippet": "`const data = fs.readFileSync('/path/to/file');`"
+        },
+        "category": "fixed",
+        "fingerprint": "src/filereader.ts:10:performance:high:generic:readFileSync-readFileSync",
+        "confidence": 0.25
+      },
+      {
+        "issue": {
+          "id": "issue-8",
+          "title": "Potential infinite loop in retry mechanism without proper exit conditions.",
+          "description": "Potential infinite loop in retry mechanism without proper exit conditions.",
+          "severity": "medium",
+          "category": "performance",
+          "location": {
+            "file": "src/retry.ts",
+            "line": 25
+          },
+          "file": "src/retry.ts",
+          "line": 25,
+          "codeSnippet": "`while (attempts < maxAttempts) { /* retry logic */ }`"
+        },
+        "category": "fixed",
+        "fingerprint": "src/retry.ts:20:performance:medium:generic:while-while",
+        "confidence": 0.25
+      },
+      {
+        "issue": {
+          "id": "issue-1",
+          "title": "Use of `unsafe` request method without validation",
+          "description": "Use of `unsafe` request method without validation",
+          "severity": "critical",
+          "category": "breaking-change",
+          "location": {
+            "file": "src/index.ts",
+            "line": 45
+          },
+          "file": "src/index.ts",
+          "line": 45,
+          "codeSnippet": "`const response = await ky('http://example.com/api', { method: 'DELETE' });`"
+        },
+        "category": "fixed",
+        "fingerprint": "src/index.ts:40:breaking-change:critical:validation:await-com-ky",
+        "confidence": 0.25
+      },
+      {
+        "issue": {
+          "id": "issue-3",
+          "title": "Potential for data loss if API response is not handled",
+          "description": "Potential for data loss if API response is not handled",
+          "severity": "high",
+          "category": "data-loss",
+          "location": {
+            "file": "src/api.ts",
+            "line": 112
+          },
+          "file": "src/api.ts",
+          "line": 112,
+          "codeSnippet": "`const data = await response.json(); // no error handling`"
+        },
+        "category": "fixed",
+        "fingerprint": "src/api.ts:110:data-loss:high:generic:await-json-json",
+        "confidence": 0.25
+      },
+      {
+        "issue": {
+          "id": "issue-4",
+          "title": "Uncaught promise rejection causing system crash",
+          "description": "Uncaught promise rejection causing system crash",
+          "severity": "high",
+          "category": "system-crash",
+          "location": {
+            "file": "src/index.ts",
+            "line": 62
+          },
+          "file": "src/index.ts",
+          "line": 62,
+          "codeSnippet": "`const result = await fetchData(); // no try-catch`"
+        },
+        "category": "fixed",
+        "fingerprint": "src/index.ts:60:system-crash:high:promise:await-fetchData-try",
+        "confidence": 0.25
+      },
+      {
+        "issue": {
+          "id": "issue-5",
+          "title": "Inefficient looping leading to performance degradation",
+          "description": "Inefficient looping leading to performance degradation",
+          "severity": "medium",
+          "category": "performance",
+          "location": {
+            "file": "src/processor.ts",
+            "line": 34
+          },
+          "file": "src/processor.ts",
+          "line": 34,
+          "codeSnippet": "`for (let i = 0; i < items.length; i++) { process(items[i]); }`"
+        },
+        "category": "fixed",
+        "fingerprint": "src/processor.ts:30:performance:medium:generic:for-length-process",
+        "confidence": 0.25
+      },
+      {
+        "issue": {
+          "id": "issue-7",
+          "title": "Missing error handling for network failures",
+          "description": "Missing error handling for network failures",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "src/network.ts",
+            "line": 90
+          },
+          "file": "src/network.ts",
+          "line": 90,
+          "codeSnippet": "`const data = await ky.get(url); // no catch for errors`"
+        },
+        "category": "fixed",
+        "fingerprint": "src/network.ts:90:code-quality:medium:error-handling:await-get-get",
+        "confidence": 0.5
+      },
+      {
+        "issue": {
+          "id": "issue-1",
+          "title": "Use of `eval` in code",
+          "description": "Use of `eval` in code",
+          "severity": "critical",
+          "category": "security",
+          "location": {
+            "file": "src/utils.js",
+            "line": 42
+          },
+          "file": "src/utils.js",
+          "line": 42,
+          "codeSnippet": "`const result = eval(expression);`"
+        },
+        "category": "fixed",
+        "fingerprint": "src/utils.js:40:security:critical:generic:eval",
+        "confidence": 0.25
+      },
+      {
+        "issue": {
+          "id": "issue-2",
+          "title": "Uncaught Promise rejection not handled",
+          "description": "Uncaught Promise rejection not handled",
+          "severity": "high",
+          "category": "performance",
+          "location": {
+            "file": "src/request.js",
+            "line": 78
+          },
+          "file": "src/request.js",
+          "line": 78,
+          "codeSnippet": "`return fetch(url).then(response => response.json());`"
+        },
+        "category": "fixed",
+        "fingerprint": "src/request.js:70:performance:high:promise:fetch-json-then",
+        "confidence": 0.25
+      },
+      {
+        "issue": {
+          "id": "issue-8",
+          "title": "Potential data loss on abrupt application shutdown",
+          "description": "Potential data loss on abrupt application shutdown",
+          "severity": "medium",
+          "category": "data-loss",
+          "location": {
+            "file": "src/storage.js",
+            "line": 14
+          },
+          "file": "src/storage.js",
+          "line": 14,
+          "codeSnippet": "`localStorage.setItem('data', JSON.stringify(data));`"
+        },
+        "category": "fixed",
+        "fingerprint": "src/storage.js:10:data-loss:medium:generic:setItem-setItem-stringify",
+        "confidence": 0.25
+      }
+    ],
+    "unchangedIssues": [
+      {
+        "issue": {
+          "id": "issue-unchanged-4",
+          "title": "Lack of input validation could lead to SQL injection in custom data handling functions.",
+          "description": "Lack of input validation could lead to SQL injection in custom data handling functions.",
+          "severity": "high",
+          "category": "security",
+          "location": {
+            "file": "src/database.ts",
+            "line": 30
+          },
+          "file": "src/database.ts",
+          "line": 30,
+          "codeSnippet": "[exact code not provided]",
+          "status": "unchanged",
+          "originalFromMain": true
+        },
+        "category": "unchanged",
+        "fingerprint": "src/database.ts:30:security:high:handling-injection-input-sql-validation:",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-8",
+          "title": "Missing error handling in API responses can lead to misleading client-side behavior.",
+          "description": "Missing error handling in API responses can lead to misleading client-side behavior.",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "src/api.ts",
+            "line": 18
+          },
+          "file": "src/api.ts",
+          "line": 18,
+          "codeSnippet": "[exact code not provided]",
+          "status": "unchanged",
+          "originalFromMain": true
+        },
+        "category": "unchanged",
+        "fingerprint": "src/api.ts:10:code-quality:medium:error-handling:",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-10",
+          "title": "Lack of input sanitization leading to potential XSS",
+          "description": "Lack of input sanitization leading to potential XSS",
+          "severity": "high",
+          "category": "security",
+          "location": {
+            "file": "src/utils.ts",
+            "line": 78
+          },
+          "file": "src/utils.ts",
+          "line": 78,
+          "codeSnippet": "[exact code not provided]",
+          "status": "unchanged",
+          "originalFromMain": true
+        },
+        "category": "unchanged",
+        "fingerprint": "src/utils.ts:70:security:high:input-xss:",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-13",
+          "title": "Hardcoded secrets in configuration",
+          "description": "Hardcoded secrets in configuration",
+          "severity": "high",
+          "category": "security",
+          "location": {
+            "file": "src/config.ts",
+            "line": 15
+          },
+          "file": "src/config.ts",
+          "line": 15,
+          "codeSnippet": "[exact code not provided]",
+          "status": "unchanged",
+          "originalFromMain": true
+        },
+        "category": "unchanged",
+        "fingerprint": "src/config.ts:10:security:high:generic:",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-14",
+          "title": "Hardcoded API key exposure",
+          "description": "Hardcoded API key exposure",
+          "severity": "high",
+          "category": "security",
+          "location": {
+            "file": "src/config.js",
+            "line": 10
+          },
+          "file": "src/config.js",
+          "line": 10,
+          "codeSnippet": "[exact code not provided]",
+          "status": "unchanged",
+          "originalFromMain": true
+        },
+        "category": "unchanged",
+        "fingerprint": "src/config.js:10:security:high:generic:",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-15",
+          "title": "Lack of input validation in user input handling",
+          "description": "Lack of input validation in user input handling",
+          "severity": "medium",
+          "category": "security",
+          "location": {
+            "file": "src/input.js",
+            "line": 22
+          },
+          "file": "src/input.js",
+          "line": 22,
+          "codeSnippet": "[exact code not provided]",
+          "status": "unchanged",
+          "originalFromMain": true
+        },
+        "category": "unchanged",
+        "fingerprint": "src/input.js:20:security:medium:handling-input-validation:",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-16",
+          "title": "Missing error handling for network failures",
+          "description": "Missing error handling for network requests",
+          "severity": "medium",
+          "category": "performance",
+          "location": {
+            "file": "src/network.js",
+            "line": 56
+          },
+          "file": "src/network.js",
+          "line": 56,
+          "codeSnippet": "[exact code not provided]",
+          "status": "unchanged",
+          "originalFromMain": true
+        },
+        "category": "unchanged",
+        "fingerprint": "src/network.js:50:performance:medium:error-handling:",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-17",
+          "title": "Deprecated library usage",
+          "description": "Deprecated library usage",
+          "severity": "medium",
+          "category": "dependency-vulnerability",
+          "location": {
+            "file": "package.json",
+            "line": 5
+          },
+          "file": "package.json",
+          "line": 5,
+          "codeSnippet": "[exact code not provided]",
+          "status": "unchanged",
+          "originalFromMain": true
+        },
+        "category": "unchanged",
+        "fingerprint": "package.json:0:dependency-vulnerability:medium:deprecated:",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-18",
+          "title": "Insufficient logging of errors",
+          "description": "Insufficient logging of errors",
+          "severity": "low",
+          "category": "code-quality",
+          "location": {
+            "file": "src/logger.js",
+            "line": 30
+          },
+          "file": "src/logger.js",
+          "line": 30,
+          "codeSnippet": "[exact code not provided]",
+          "status": "unchanged",
+          "originalFromMain": true
+        },
+        "category": "unchanged",
+        "fingerprint": "src/logger.js:30:code-quality:low:errors:",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-12",
+          "title": "Using deprecated methods in the library",
+          "description": "Using deprecated methods in the library",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "src/helpers.ts",
+            "line": 50
+          },
+          "file": "src/helpers.ts",
+          "line": 50,
+          "codeSnippet": "// Deprecated method usage",
+          "status": "unchanged",
+          "originalFromMain": true
+        },
+        "category": "unchanged",
+        "fingerprint": "src/helpers.ts:50:code-quality:medium:deprecated:",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-new-4",
+          "title": "No rate limiting on API requests causing potential denial of service",
+          "description": "No rate limiting on API requests causing potential denial of service",
+          "severity": "medium",
+          "category": "performance",
+          "location": {
+            "file": "src/api.ts",
+            "line": 25
+          },
+          "file": "src/api.ts",
+          "line": 25,
+          "codeSnippet": "// API request handling without rate limiting",
+          "status": "new"
+        },
+        "category": "unchanged",
+        "fingerprint": "src/api.ts:20:performance:medium:denial-limiting-rate:",
+        "confidence": 1
+      }
+    ],
+    "summary": {
+      "totalNew": 13,
+      "totalFixed": 14,
+      "totalUnchanged": 11,
+      "netImpact": -1,
+      "prQualityScore": 0
+    },
+    "recommendations": [
+      "🚨 BLOCKING: Fix 3 critical issue(s) before merging",
+      "⚠️ Address 7 high-severity issue(s) introduced by this PR",
+      "✅ Great work! This PR fixes 14 existing issue(s)",
+      "📈 Net improvement: 1 fewer issues after this PR",
+      "🔴 Significant issues detected. Consider revising this PR."
+    ]
+  },
+  "metadata": {
+    "analysisDate": "2025-08-27T11:14:00.905Z",
+    "mainBranchAnalysisDuration": 37.4,
+    "prBranchAnalysisDuration": 72.4,
+    "totalDuration": 109.80000000000001,
+    "modelUsed": "dynamic-selection",
+    "iterationsPerBranch": 3,
+    "tokensUsed": 0
+  }
+}

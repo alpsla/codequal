@@ -1,0 +1,805 @@
+{
+  "repositoryUrl": "https://github.com/sindresorhus/ky",
+  "prNumber": 700,
+  "mainBranchIssues": [
+    {
+      "id": "issue-1",
+      "title": "`ky` does not handle response status codes properly, leading to unhandled rejection of promises.",
+      "description": "`ky` does not handle response status codes properly, leading to unhandled rejection of promises.",
+      "severity": "critical",
+      "category": "breaking-change",
+      "location": {
+        "file": "src/index.ts",
+        "line": 143
+      },
+      "file": "src/index.ts",
+      "line": 143,
+      "codeSnippet": "`if (!response.ok) throw new Error('Response not OK');`"
+    },
+    {
+      "id": "issue-2",
+      "title": "Missing input validation could lead to XSS attacks if user-generated content is included in requests.",
+      "description": "Missing input validation could lead to XSS attacks if user-generated content is included in requests.",
+      "severity": "high",
+      "category": "security",
+      "location": {
+        "file": "package.json",
+        "line": 53
+      },
+      "file": "src/index.ts",
+      "line": 72,
+      "codeSnippet": "\t\t\"axios\",",
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "issue-3",
+      "title": "Potential data loss if `JSON.parse` fails without a try-catch block, leading to unhandled exceptions.",
+      "description": "Potential data loss if `JSON.parse` fails without a try-catch block, leading to unhandled exceptions.",
+      "severity": "high",
+      "category": "data-loss",
+      "location": {
+        "file": "src/index.ts",
+        "line": 110
+      },
+      "file": "src/index.ts",
+      "line": 110,
+      "codeSnippet": "`return JSON.parse(await response.text());`"
+    },
+    {
+      "id": "issue-4",
+      "title": "Lack of rate limiting could lead to service unavailability during high traffic.",
+      "description": "Lack of rate limiting could lead to service unavailability during high traffic.",
+      "severity": "high",
+      "category": "availability",
+      "location": {
+        "file": "src/index.ts",
+        "line": 50
+      },
+      "file": "src/index.ts",
+      "line": 50,
+      "codeSnippet": "`return fetch(url, options);`"
+    },
+    {
+      "id": "issue-5",
+      "title": "The library does not gracefully handle network errors, which could result in application crashes.",
+      "description": "The library does not gracefully handle network errors, which could result in application crashes.",
+      "severity": "high",
+      "category": "system-crash",
+      "location": {
+        "file": "src/index.ts",
+        "line": 60
+      },
+      "file": "src/index.ts",
+      "line": 60,
+      "codeSnippet": "`const response = await fetch(url, options);`"
+    },
+    {
+      "id": "issue-6",
+      "title": "Performance degradation due to the synchronous handling of large response bodies without streaming.",
+      "description": "Performance degradation due to the synchronous handling of large response bodies without streaming.",
+      "severity": "medium",
+      "category": "performance",
+      "location": {
+        "file": "src/index.ts",
+        "line": 130
+      },
+      "file": "src/index.ts",
+      "line": 130,
+      "codeSnippet": "`const body = await response.text();`"
+    },
+    {
+      "id": "issue-7",
+      "title": "Hardcoded API endpoint may lead to issues if the endpoint changes.",
+      "description": "Hardcoded API endpoint may lead to issues if the endpoint changes.",
+      "severity": "low",
+      "category": "code-quality",
+      "location": {
+        "file": "src/index.ts",
+        "line": 20
+      },
+      "file": "src/index.ts",
+      "line": 20,
+      "codeSnippet": "`const apiUrl = 'https://api.example.com';`"
+    },
+    {
+      "id": "issue-1",
+      "title": "Breaking change in default behavior of request cancellation.",
+      "description": "Breaking change in default behavior of request cancellation.",
+      "severity": "critical",
+      "category": "breaking-change",
+      "location": {
+        "file": "index.js",
+        "line": 50
+      },
+      "file": "index.js",
+      "line": 50,
+      "codeSnippet": "`abortController.abort();`"
+    },
+    {
+      "id": "issue-2",
+      "title": "Dependency on outdated axios version with known CVEs.",
+      "description": "Dependency on outdated axios version with known CVEs.",
+      "severity": "high",
+      "category": "dependency-vulnerability",
+      "location": {
+        "file": "package.json",
+        "line": 53
+      },
+      "file": "package.json",
+      "line": 6,
+      "codeSnippet": "\t\t\"axios\",",
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "issue-3",
+      "title": "Potential XSS vulnerability due to unsanitized user input in URL.",
+      "description": "Potential XSS vulnerability due to unsanitized user input in URL.",
+      "severity": "high",
+      "category": "security",
+      "location": {
+        "file": "src/index.js",
+        "line": 75
+      },
+      "file": "src/index.js",
+      "line": 75,
+      "codeSnippet": "`const url = \\`${baseUrl}${userInput}\\`;`"
+    },
+    {
+      "id": "issue-4",
+      "title": "Lack of error handling for network failures leading to data loss.",
+      "description": "Lack of error handling for network failures leading to data loss.",
+      "severity": "high",
+      "category": "data-loss",
+      "location": {
+        "file": "src/request.js",
+        "line": 42
+      },
+      "file": "src/request.js",
+      "line": 42,
+      "codeSnippet": "`return fetch(url);`"
+    },
+    {
+      "id": "issue-5",
+      "title": "Infinite loop risk in retry mechanism under certain conditions.",
+      "description": "Infinite loop risk in retry mechanism under certain conditions.",
+      "severity": "high",
+      "category": "performance",
+      "location": {
+        "file": "src/retry.js",
+        "line": 34
+      },
+      "file": "src/retry.js",
+      "line": 34,
+      "codeSnippet": "`while (attempts < maxRetries) { /* retry logic */ }`"
+    },
+    {
+      "id": "issue-6",
+      "title": "Memory leak due to unbounded growth of cached responses.",
+      "description": "Memory leak due to unbounded growth of cached responses.",
+      "severity": "high",
+      "category": "performance",
+      "location": {
+        "file": "src/cache.js",
+        "line": 22
+      },
+      "file": "src/cache.js",
+      "line": 22,
+      "codeSnippet": "`this.cache.set(key, response);`"
+    },
+    {
+      "id": "issue-7",
+      "title": "Hardcoded API key exposure in source code.",
+      "description": "Hardcoded API key exposure in source code.",
+      "severity": "high",
+      "category": "security",
+      "location": {
+        "file": "src/config.js",
+        "line": 10
+      },
+      "file": "src/config.js",
+      "line": 10,
+      "codeSnippet": "`const apiKey = 'YOUR_API_KEY';`"
+    },
+    {
+      "id": "issue-8",
+      "title": "Unhandled promise rejection in async function.",
+      "description": "Unhandled promise rejection in async function.",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "src/asyncHandler.js",
+        "line": 15
+      },
+      "file": "src/asyncHandler.js",
+      "line": 15,
+      "codeSnippet": "`await someAsyncFunction();`"
+    },
+    {
+      "id": "issue-9",
+      "title": "Inefficient data processing leading to performance degradation.",
+      "description": "Inefficient data processing leading to performance degradation.",
+      "severity": "medium",
+      "category": "performance",
+      "location": {
+        "file": "src/processData.js",
+        "line": 18
+      },
+      "file": "src/processData.js",
+      "line": 18,
+      "codeSnippet": "`data.forEach(item => { /* processing logic */ });`"
+    },
+    {
+      "id": "issue-10",
+      "title": "Use of deprecated method in the fetch API.",
+      "description": "Use of deprecated method in the fetch API.",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "src/fetch.js",
+        "line": 29
+      },
+      "file": "src/fetch.js",
+      "line": 29,
+      "codeSnippet": "`fetch(url, { method: 'GET', mode: 'no-cors' });`"
+    },
+    {
+      "id": "issue-1",
+      "title": "Potentially breaking change in error handling mechanism when using the `catch` method.",
+      "description": "Potentially breaking change in error handling mechanism when using the `catch` method.",
+      "severity": "critical",
+      "category": "breaking-change",
+      "location": {
+        "file": "index.js",
+        "line": 150
+      },
+      "file": "index.js",
+      "line": 150,
+      "codeSnippet": "`throw new Error('Network error');`"
+    },
+    {
+      "id": "issue-2",
+      "title": "Lack of input validation may lead to XSS if user input is directly included in requests.",
+      "description": "Lack of input validation may lead to XSS if user input is directly included in requests.",
+      "severity": "high",
+      "category": "security",
+      "location": {
+        "file": "package.json",
+        "line": 53
+      },
+      "file": "src/index.js",
+      "line": 100,
+      "codeSnippet": "\t\t\"axios\",",
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "issue-4",
+      "title": "Unhandled promise rejection could lead to system crashes under certain conditions.",
+      "description": "Unhandled promise rejection could lead to system crashes under certain conditions.",
+      "severity": "high",
+      "category": "system-crash",
+      "location": {
+        "file": "src/index.js",
+        "line": 200
+      },
+      "file": "src/index.js",
+      "line": 200,
+      "codeSnippet": "`return this.fetch(url).then(...);`"
+    },
+    {
+      "id": "issue-5",
+      "title": "Inefficient retry mechanism may lead to performance degradation under high load.",
+      "description": "Inefficient retry mechanism may lead to performance degradation under high load.",
+      "severity": "medium",
+      "category": "performance",
+      "location": {
+        "file": "src/retry.js",
+        "line": 45
+      },
+      "file": "src/retry.js",
+      "line": 45,
+      "codeSnippet": "`setTimeout(() => this.retry(), delay);`"
+    },
+    {
+      "id": "issue-6",
+      "title": "Use of synchronous file system operations can block the event loop.",
+      "description": "Use of synchronous file system operations can block the event loop.",
+      "severity": "medium",
+      "category": "performance",
+      "location": {
+        "file": "src/file.js",
+        "line": 30
+      },
+      "file": "src/file.js",
+      "line": 30,
+      "codeSnippet": "`fs.readFileSync(filePath);`"
+    },
+    {
+      "id": "issue-8",
+      "title": "The absence of rate limiting could lead to service denial under heavy usage.",
+      "description": "The absence of rate limiting could lead to service denial under heavy usage.",
+      "severity": "medium",
+      "category": "system-crash",
+      "location": {
+        "file": "src/rateLimit.js",
+        "line": 15
+      },
+      "file": "src/rateLimit.js",
+      "line": 15,
+      "codeSnippet": "`requestCount++;`"
+    }
+  ],
+  "prBranchIssues": [],
+  "categorized": {
+    "newIssues": [],
+    "fixedIssues": [
+      {
+        "issue": {
+          "id": "issue-1",
+          "title": "`ky` does not handle response status codes properly, leading to unhandled rejection of promises.",
+          "description": "`ky` does not handle response status codes properly, leading to unhandled rejection of promises.",
+          "severity": "critical",
+          "category": "breaking-change",
+          "location": {
+            "file": "src/index.ts",
+            "line": 143
+          },
+          "file": "src/index.ts",
+          "line": 143,
+          "codeSnippet": "`if (!response.ok) throw new Error('Response not OK');`"
+        },
+        "category": "fixed",
+        "fingerprint": "src/index.ts:140:breaking-change:critical:promises.:Error-if-ok",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-2",
+          "title": "Missing input validation could lead to XSS attacks if user-generated content is included in requests.",
+          "description": "Missing input validation could lead to XSS attacks if user-generated content is included in requests.",
+          "severity": "high",
+          "category": "security",
+          "location": {
+            "file": "package.json",
+            "line": 53
+          },
+          "file": "src/index.ts",
+          "line": 72,
+          "codeSnippet": "\t\t\"axios\",",
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "fixed",
+        "fingerprint": "package.json:0:security:high:input-user-generated-validation-xss:",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-3",
+          "title": "Potential data loss if `JSON.parse` fails without a try-catch block, leading to unhandled exceptions.",
+          "description": "Potential data loss if `JSON.parse` fails without a try-catch block, leading to unhandled exceptions.",
+          "severity": "high",
+          "category": "data-loss",
+          "location": {
+            "file": "src/index.ts",
+            "line": 110
+          },
+          "file": "src/index.ts",
+          "line": 110,
+          "codeSnippet": "`return JSON.parse(await response.text());`"
+        },
+        "category": "fixed",
+        "fingerprint": "src/index.ts:110:data-loss:high:generic:parse-parse-text",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-4",
+          "title": "Lack of rate limiting could lead to service unavailability during high traffic.",
+          "description": "Lack of rate limiting could lead to service unavailability during high traffic.",
+          "severity": "high",
+          "category": "availability",
+          "location": {
+            "file": "src/index.ts",
+            "line": 50
+          },
+          "file": "src/index.ts",
+          "line": 50,
+          "codeSnippet": "`return fetch(url, options);`"
+        },
+        "category": "fixed",
+        "fingerprint": "src/index.ts:50:availability:high:limiting-rate:fetch",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-5",
+          "title": "The library does not gracefully handle network errors, which could result in application crashes.",
+          "description": "The library does not gracefully handle network errors, which could result in application crashes.",
+          "severity": "high",
+          "category": "system-crash",
+          "location": {
+            "file": "src/index.ts",
+            "line": 60
+          },
+          "file": "src/index.ts",
+          "line": 60,
+          "codeSnippet": "`const response = await fetch(url, options);`"
+        },
+        "category": "fixed",
+        "fingerprint": "src/index.ts:60:system-crash:high:errors,:await-fetch",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-6",
+          "title": "Performance degradation due to the synchronous handling of large response bodies without streaming.",
+          "description": "Performance degradation due to the synchronous handling of large response bodies without streaming.",
+          "severity": "medium",
+          "category": "performance",
+          "location": {
+            "file": "src/index.ts",
+            "line": 130
+          },
+          "file": "src/index.ts",
+          "line": 130,
+          "codeSnippet": "`const body = await response.text();`"
+        },
+        "category": "fixed",
+        "fingerprint": "src/index.ts:130:performance:medium:handling:await-text-text",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-7",
+          "title": "Hardcoded API endpoint may lead to issues if the endpoint changes.",
+          "description": "Hardcoded API endpoint may lead to issues if the endpoint changes.",
+          "severity": "low",
+          "category": "code-quality",
+          "location": {
+            "file": "src/index.ts",
+            "line": 20
+          },
+          "file": "src/index.ts",
+          "line": 20,
+          "codeSnippet": "`const apiUrl = 'https://api.example.com';`"
+        },
+        "category": "fixed",
+        "fingerprint": "src/index.ts:20:code-quality:low:generic:com-example",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-1",
+          "title": "Breaking change in default behavior of request cancellation.",
+          "description": "Breaking change in default behavior of request cancellation.",
+          "severity": "critical",
+          "category": "breaking-change",
+          "location": {
+            "file": "index.js",
+            "line": 50
+          },
+          "file": "index.js",
+          "line": 50,
+          "codeSnippet": "`abortController.abort();`"
+        },
+        "category": "fixed",
+        "fingerprint": "index.js:50:breaking-change:critical:generic:abort-abort",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-2",
+          "title": "Dependency on outdated axios version with known CVEs.",
+          "description": "Dependency on outdated axios version with known CVEs.",
+          "severity": "high",
+          "category": "dependency-vulnerability",
+          "location": {
+            "file": "package.json",
+            "line": 53
+          },
+          "file": "package.json",
+          "line": 6,
+          "codeSnippet": "\t\t\"axios\",",
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "fixed",
+        "fingerprint": "package.json:0:dependency-vulnerability:high:dependency:",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-3",
+          "title": "Potential XSS vulnerability due to unsanitized user input in URL.",
+          "description": "Potential XSS vulnerability due to unsanitized user input in URL.",
+          "severity": "high",
+          "category": "security",
+          "location": {
+            "file": "src/index.js",
+            "line": 75
+          },
+          "file": "src/index.js",
+          "line": 75,
+          "codeSnippet": "`const url = \\`${baseUrl}${userInput}\\`;`"
+        },
+        "category": "fixed",
+        "fingerprint": "src/index.js:70:security:high:input-xss:",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-4",
+          "title": "Lack of error handling for network failures leading to data loss.",
+          "description": "Lack of error handling for network failures leading to data loss.",
+          "severity": "high",
+          "category": "data-loss",
+          "location": {
+            "file": "src/request.js",
+            "line": 42
+          },
+          "file": "src/request.js",
+          "line": 42,
+          "codeSnippet": "`return fetch(url);`"
+        },
+        "category": "fixed",
+        "fingerprint": "src/request.js:40:data-loss:high:error-handling:fetch",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-5",
+          "title": "Infinite loop risk in retry mechanism under certain conditions.",
+          "description": "Infinite loop risk in retry mechanism under certain conditions.",
+          "severity": "high",
+          "category": "performance",
+          "location": {
+            "file": "src/retry.js",
+            "line": 34
+          },
+          "file": "src/retry.js",
+          "line": 34,
+          "codeSnippet": "`while (attempts < maxRetries) { /* retry logic */ }`"
+        },
+        "category": "fixed",
+        "fingerprint": "src/retry.js:30:performance:high:generic:while-while",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-6",
+          "title": "Memory leak due to unbounded growth of cached responses.",
+          "description": "Memory leak due to unbounded growth of cached responses.",
+          "severity": "high",
+          "category": "performance",
+          "location": {
+            "file": "src/cache.js",
+            "line": 22
+          },
+          "file": "src/cache.js",
+          "line": 22,
+          "codeSnippet": "`this.cache.set(key, response);`"
+        },
+        "category": "fixed",
+        "fingerprint": "src/cache.js:20:performance:high:leak-memory:cache-set-set",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-7",
+          "title": "Hardcoded API key exposure in source code.",
+          "description": "Hardcoded API key exposure in source code.",
+          "severity": "high",
+          "category": "security",
+          "location": {
+            "file": "src/config.js",
+            "line": 10
+          },
+          "file": "src/config.js",
+          "line": 10,
+          "codeSnippet": "`const apiKey = 'YOUR_API_KEY';`"
+        },
+        "category": "fixed",
+        "fingerprint": "src/config.js:10:security:high:generic:",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-8",
+          "title": "Unhandled promise rejection in async function.",
+          "description": "Unhandled promise rejection in async function.",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "src/asyncHandler.js",
+            "line": 15
+          },
+          "file": "src/asyncHandler.js",
+          "line": 15,
+          "codeSnippet": "`await someAsyncFunction();`"
+        },
+        "category": "fixed",
+        "fingerprint": "src/asynchandler.js:10:code-quality:medium:async-promise:await-someAsyncFunction",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-9",
+          "title": "Inefficient data processing leading to performance degradation.",
+          "description": "Inefficient data processing leading to performance degradation.",
+          "severity": "medium",
+          "category": "performance",
+          "location": {
+            "file": "src/processData.js",
+            "line": 18
+          },
+          "file": "src/processData.js",
+          "line": 18,
+          "codeSnippet": "`data.forEach(item => { /* processing logic */ });`"
+        },
+        "category": "fixed",
+        "fingerprint": "src/processdata.js:10:performance:medium:generic:forEach-forEach",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-10",
+          "title": "Use of deprecated method in the fetch API.",
+          "description": "Use of deprecated method in the fetch API.",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "src/fetch.js",
+            "line": 29
+          },
+          "file": "src/fetch.js",
+          "line": 29,
+          "codeSnippet": "`fetch(url, { method: 'GET', mode: 'no-cors' });`"
+        },
+        "category": "fixed",
+        "fingerprint": "src/fetch.js:20:code-quality:medium:deprecated:fetch",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-1",
+          "title": "Potentially breaking change in error handling mechanism when using the `catch` method.",
+          "description": "Potentially breaking change in error handling mechanism when using the `catch` method.",
+          "severity": "critical",
+          "category": "breaking-change",
+          "location": {
+            "file": "index.js",
+            "line": 150
+          },
+          "file": "index.js",
+          "line": 150,
+          "codeSnippet": "`throw new Error('Network error');`"
+        },
+        "category": "fixed",
+        "fingerprint": "index.js:150:breaking-change:critical:error-handling:Error-new-throw",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-2",
+          "title": "Lack of input validation may lead to XSS if user input is directly included in requests.",
+          "description": "Lack of input validation may lead to XSS if user input is directly included in requests.",
+          "severity": "high",
+          "category": "security",
+          "location": {
+            "file": "package.json",
+            "line": 53
+          },
+          "file": "src/index.js",
+          "line": 100,
+          "codeSnippet": "\t\t\"axios\",",
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "fixed",
+        "fingerprint": "package.json:0:security:high:input-validation-xss:",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-4",
+          "title": "Unhandled promise rejection could lead to system crashes under certain conditions.",
+          "description": "Unhandled promise rejection could lead to system crashes under certain conditions.",
+          "severity": "high",
+          "category": "system-crash",
+          "location": {
+            "file": "src/index.js",
+            "line": 200
+          },
+          "file": "src/index.js",
+          "line": 200,
+          "codeSnippet": "`return this.fetch(url).then(...);`"
+        },
+        "category": "fixed",
+        "fingerprint": "src/index.js:200:system-crash:high:promise:fetch-fetch-then",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-5",
+          "title": "Inefficient retry mechanism may lead to performance degradation under high load.",
+          "description": "Inefficient retry mechanism may lead to performance degradation under high load.",
+          "severity": "medium",
+          "category": "performance",
+          "location": {
+            "file": "src/retry.js",
+            "line": 45
+          },
+          "file": "src/retry.js",
+          "line": 45,
+          "codeSnippet": "`setTimeout(() => this.retry(), delay);`"
+        },
+        "category": "fixed",
+        "fingerprint": "src/retry.js:40:performance:medium:generic:retry-retry-setTimeout",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-6",
+          "title": "Use of synchronous file system operations can block the event loop.",
+          "description": "Use of synchronous file system operations can block the event loop.",
+          "severity": "medium",
+          "category": "performance",
+          "location": {
+            "file": "src/file.js",
+            "line": 30
+          },
+          "file": "src/file.js",
+          "line": 30,
+          "codeSnippet": "`fs.readFileSync(filePath);`"
+        },
+        "category": "fixed",
+        "fingerprint": "src/file.js:30:performance:medium:generic:readFileSync-readFileSync",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-8",
+          "title": "The absence of rate limiting could lead to service denial under heavy usage.",
+          "description": "The absence of rate limiting could lead to service denial under heavy usage.",
+          "severity": "medium",
+          "category": "system-crash",
+          "location": {
+            "file": "src/rateLimit.js",
+            "line": 15
+          },
+          "file": "src/rateLimit.js",
+          "line": 15,
+          "codeSnippet": "`requestCount++;`"
+        },
+        "category": "fixed",
+        "fingerprint": "src/ratelimit.js:10:system-crash:medium:denial-limiting-rate:",
+        "confidence": 1
+      }
+    ],
+    "unchangedIssues": [],
+    "summary": {
+      "totalNew": 0,
+      "totalFixed": 23,
+      "totalUnchanged": 0,
+      "netImpact": -23,
+      "prQualityScore": 80
+    },
+    "recommendations": [
+      "✅ Great work! This PR fixes 23 existing issue(s)",
+      "📈 Net improvement: 23 fewer issues after this PR",
+      "🌟 Excellent PR quality! Ready for review."
+    ]
+  },
+  "metadata": {
+    "analysisDate": "2025-08-27T03:53:59.177Z",
+    "mainBranchAnalysisDuration": 45.4,
+    "prBranchAnalysisDuration": 1.5,
+    "totalDuration": 46.9,
+    "modelUsed": "dynamic-selection",
+    "iterationsPerBranch": 3,
+    "tokensUsed": 0
+  }
+}

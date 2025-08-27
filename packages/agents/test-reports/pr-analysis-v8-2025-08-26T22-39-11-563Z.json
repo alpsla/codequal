@@ -1,0 +1,571 @@
+{
+  "repositoryUrl": "https://github.com/sindresorhus/ky",
+  "prNumber": 700,
+  "mainBranchIssues": [
+    {
+      "id": "issue-1",
+      "title": "Potential denial of service due to unbounded recursion in request retry logic",
+      "description": "Potential denial of service due to unbounded recursion in request retry logic",
+      "severity": "high",
+      "category": "performance",
+      "location": {
+        "file": "source/index.ts",
+        "line": 123
+      },
+      "file": "source/index.ts",
+      "line": 123,
+      "codeSnippet": "`return this.retry(...);`"
+    },
+    {
+      "id": "issue-2",
+      "title": "Lack of input validation for URL parameters leading to potential misuse",
+      "description": "Lack of input validation for URL parameters leading to potential misuse",
+      "severity": "high",
+      "category": "security",
+      "location": {
+        "file": "source/request.ts",
+        "line": 45
+      },
+      "file": "source/request.ts",
+      "line": 45,
+      "codeSnippet": "`const response = await fetch(url);`"
+    },
+    {
+      "id": "issue-3",
+      "title": "Missing error handling for network failures in fetch calls",
+      "description": "Missing error handling for network failures in fetch calls",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "source/request.ts",
+        "line": 67
+      },
+      "file": "source/request.ts",
+      "line": 67,
+      "codeSnippet": "`const data = await response.json();`"
+    },
+    {
+      "id": "issue-4",
+      "title": "Hardcoded timeout value may not suit all use cases",
+      "description": "Hardcoded timeout value may not suit all use cases",
+      "severity": "medium",
+      "category": "performance",
+      "location": {
+        "file": "source/index.ts",
+        "line": 61
+      },
+      "file": "source/index.ts",
+      "line": 89,
+      "codeSnippet": "export {TimeoutError} from './errors/TimeoutError.js';",
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "issue-5",
+      "title": "Potential memory leak due to uncleaned event listeners",
+      "description": "Potential memory leak due to uncleaned event listeners",
+      "severity": "medium",
+      "category": "performance",
+      "location": {
+        "file": "source/event.ts",
+        "line": 32
+      },
+      "file": "source/event.ts",
+      "line": 32,
+      "codeSnippet": "`window.addEventListener('resize', this.onResize);`"
+    },
+    {
+      "id": "issue-6",
+      "title": "Use of deprecated API method which may lead to compatibility issues",
+      "description": "Use of deprecated API method which may lead to compatibility issues",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "source/utils.ts",
+        "line": 15
+      },
+      "file": "source/utils.ts",
+      "line": 15,
+      "codeSnippet": "`document.all`"
+    },
+    {
+      "id": "issue-7",
+      "title": "Inadequate logging for request failures, making debugging difficult",
+      "description": "Inadequate logging for request failures, making debugging difficult",
+      "severity": "low",
+      "category": "code-quality",
+      "location": {
+        "file": "source/logger.ts",
+        "line": 54
+      },
+      "file": "source/logger.ts",
+      "line": 54,
+      "codeSnippet": "`console.error('Request failed');`"
+    },
+    {
+      "id": "issue-8",
+      "title": "Lack of type checks for response data leading to runtime errors",
+      "description": "Lack of type checks for response data leading to runtime errors",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "source/response.ts",
+        "line": 78
+      },
+      "file": "source/response.ts",
+      "line": 78,
+      "codeSnippet": "`if (data.someField) { ... }`"
+    },
+    {
+      "id": "issue-9",
+      "title": "No rate limiting implemented for API requests",
+      "description": "No rate limiting implemented for API requests",
+      "severity": "high",
+      "category": "security",
+      "location": {
+        "file": "source/api.ts",
+        "line": 22
+      },
+      "file": "source/api.ts",
+      "line": 22,
+      "codeSnippet": "`await fetch(apiUrl);`"
+    },
+    {
+      "id": "issue-10",
+      "title": "Potentially exposed sensitive data in error messages",
+      "description": "Potentially exposed sensitive data in error messages",
+      "severity": "critical",
+      "category": "security",
+      "location": {
+        "file": "source/error.ts",
+        "line": 36
+      },
+      "file": "source/error.ts",
+      "line": 36,
+      "codeSnippet": "`throw new Error(`Failed with code: ${response.status}`);`"
+    }
+  ],
+  "prBranchIssues": [
+    {
+      "id": "issue-unchanged-1",
+      "title": "Potential denial of service due to unbounded recursion in request retry logic",
+      "description": "Potential denial of service due to unbounded recursion in request retry logic",
+      "severity": "high",
+      "category": "performance",
+      "location": {
+        "file": "source/index.ts",
+        "line": 123
+      },
+      "file": "source/index.ts",
+      "line": 123,
+      "codeSnippet": "// Recursive retry logic here",
+      "status": "unchanged",
+      "originalFromMain": true
+    },
+    {
+      "id": "issue-unchanged-2",
+      "title": "Lack of input validation for URL parameters leading to potential misuse",
+      "description": "Lack of input validation for URL parameters leading to potential misuse",
+      "severity": "high",
+      "category": "security",
+      "location": {
+        "file": "source/request.ts",
+        "line": 45
+      },
+      "file": "source/request.ts",
+      "line": 45,
+      "codeSnippet": "// URL parameter handling code here",
+      "status": "unchanged",
+      "originalFromMain": true
+    },
+    {
+      "id": "issue-unchanged-3",
+      "title": "Missing error handling for network failures in fetch calls",
+      "description": "Missing error handling for network failures in fetch calls",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "source/request.ts",
+        "line": 67
+      },
+      "file": "source/request.ts",
+      "line": 67,
+      "codeSnippet": "// Fetch call without error handling",
+      "status": "unchanged",
+      "originalFromMain": true
+    },
+    {
+      "id": "issue-unchanged-4",
+      "title": "Hardcoded timeout value may not suit all use cases",
+      "description": "Hardcoded timeout value may not suit all use cases",
+      "severity": "medium",
+      "category": "performance",
+      "location": {
+        "file": "source/index.ts",
+        "line": 61
+      },
+      "file": "source/index.ts",
+      "line": 61,
+      "codeSnippet": "export {TimeoutError} from './errors/TimeoutError.js';",
+      "status": "unchanged",
+      "originalFromMain": true,
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "issue-unchanged-5",
+      "title": "Potential memory leak due to uncleaned event listeners",
+      "description": "Potential memory leak due to uncleaned event listeners",
+      "severity": "medium",
+      "category": "performance",
+      "location": {
+        "file": "source/event.ts",
+        "line": 32
+      },
+      "file": "source/event.ts",
+      "line": 32,
+      "codeSnippet": "// Event listener code here",
+      "status": "unchanged",
+      "originalFromMain": true
+    },
+    {
+      "id": "issue-unchanged-6",
+      "title": "Use of deprecated API method which may lead to compatibility issues",
+      "description": "Use of deprecated API method which may lead to compatibility issues",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "source/utils.ts",
+        "line": 15
+      },
+      "file": "source/utils.ts",
+      "line": 15,
+      "codeSnippet": "// Deprecated method call here",
+      "status": "unchanged",
+      "originalFromMain": true
+    },
+    {
+      "id": "issue-unchanged-7",
+      "title": "Inadequate logging for request failures, making debugging difficult",
+      "description": "Inadequate logging for request failures, making debugging difficult",
+      "severity": "low",
+      "category": "code-quality",
+      "location": {
+        "file": "source/logger.ts",
+        "line": 54
+      },
+      "file": "source/logger.ts",
+      "line": 54,
+      "codeSnippet": "// Logging code here",
+      "status": "unchanged",
+      "originalFromMain": true
+    },
+    {
+      "id": "issue-unchanged-8",
+      "title": "Lack of type checks for response data leading to runtime errors",
+      "description": "Lack of type checks for response data leading to runtime errors",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "source/response.ts",
+        "line": 78
+      },
+      "file": "source/response.ts",
+      "line": 78,
+      "codeSnippet": "// Response data handling code here",
+      "status": "unchanged",
+      "originalFromMain": true
+    },
+    {
+      "id": "issue-unchanged-9",
+      "title": "No rate limiting implemented for API requests",
+      "description": "No rate limiting implemented for API requests",
+      "severity": "high",
+      "category": "security",
+      "location": {
+        "file": "source/api.ts",
+        "line": 22
+      },
+      "file": "source/api.ts",
+      "line": 22,
+      "codeSnippet": "// API request handling here",
+      "status": "unchanged",
+      "originalFromMain": true
+    },
+    {
+      "id": "issue-unchanged-10",
+      "title": "Potentially exposed sensitive data in error messages",
+      "description": "Potentially exposed sensitive data in error messages",
+      "severity": "critical",
+      "category": "security",
+      "location": {
+        "file": "source/error.ts",
+        "line": 36
+      },
+      "file": "source/error.ts",
+      "line": 36,
+      "codeSnippet": "// Error message handling code here",
+      "status": "unchanged",
+      "originalFromMain": true
+    }
+  ],
+  "categorized": {
+    "newIssues": [
+      {
+        "issue": {
+          "id": "issue-unchanged-7",
+          "title": "Inadequate logging for request failures, making debugging difficult",
+          "description": "Inadequate logging for request failures, making debugging difficult",
+          "severity": "low",
+          "category": "code-quality",
+          "location": {
+            "file": "source/logger.ts",
+            "line": 54
+          },
+          "file": "source/logger.ts",
+          "line": 54,
+          "codeSnippet": "// Logging code here",
+          "status": "unchanged",
+          "originalFromMain": true
+        },
+        "category": "new",
+        "fingerprint": "source/logger.ts:50:code-quality:low:generic:",
+        "confidence": 0.25
+      }
+    ],
+    "fixedIssues": [
+      {
+        "issue": {
+          "id": "issue-7",
+          "title": "Inadequate logging for request failures, making debugging difficult",
+          "description": "Inadequate logging for request failures, making debugging difficult",
+          "severity": "low",
+          "category": "code-quality",
+          "location": {
+            "file": "source/logger.ts",
+            "line": 54
+          },
+          "file": "source/logger.ts",
+          "line": 54,
+          "codeSnippet": "`console.error('Request failed');`"
+        },
+        "category": "fixed",
+        "fingerprint": "source/logger.ts:50:code-quality:low:generic:error-error",
+        "confidence": 0.25
+      }
+    ],
+    "unchangedIssues": [
+      {
+        "issue": {
+          "id": "issue-unchanged-1",
+          "title": "Potential denial of service due to unbounded recursion in request retry logic",
+          "description": "Potential denial of service due to unbounded recursion in request retry logic",
+          "severity": "high",
+          "category": "performance",
+          "location": {
+            "file": "source/index.ts",
+            "line": 123
+          },
+          "file": "source/index.ts",
+          "line": 123,
+          "codeSnippet": "// Recursive retry logic here",
+          "status": "unchanged",
+          "originalFromMain": true
+        },
+        "category": "unchanged",
+        "fingerprint": "source/index.ts:120:performance:high:denial:",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-2",
+          "title": "Lack of input validation for URL parameters leading to potential misuse",
+          "description": "Lack of input validation for URL parameters leading to potential misuse",
+          "severity": "high",
+          "category": "security",
+          "location": {
+            "file": "source/request.ts",
+            "line": 45
+          },
+          "file": "source/request.ts",
+          "line": 45,
+          "codeSnippet": "// URL parameter handling code here",
+          "status": "unchanged",
+          "originalFromMain": true
+        },
+        "category": "unchanged",
+        "fingerprint": "source/request.ts:40:security:high:input-validation:",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-3",
+          "title": "Missing error handling for network failures in fetch calls",
+          "description": "Missing error handling for network failures in fetch calls",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "source/request.ts",
+            "line": 67
+          },
+          "file": "source/request.ts",
+          "line": 67,
+          "codeSnippet": "// Fetch call without error handling",
+          "status": "unchanged",
+          "originalFromMain": true
+        },
+        "category": "unchanged",
+        "fingerprint": "source/request.ts:60:code-quality:medium:error-handling:",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-4",
+          "title": "Hardcoded timeout value may not suit all use cases",
+          "description": "Hardcoded timeout value may not suit all use cases",
+          "severity": "medium",
+          "category": "performance",
+          "location": {
+            "file": "source/index.ts",
+            "line": 61
+          },
+          "file": "source/index.ts",
+          "line": 61,
+          "codeSnippet": "export {TimeoutError} from './errors/TimeoutError.js';",
+          "status": "unchanged",
+          "originalFromMain": true,
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "unchanged",
+        "fingerprint": "source/index.ts:60:performance:medium:timeout:js",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-5",
+          "title": "Potential memory leak due to uncleaned event listeners",
+          "description": "Potential memory leak due to uncleaned event listeners",
+          "severity": "medium",
+          "category": "performance",
+          "location": {
+            "file": "source/event.ts",
+            "line": 32
+          },
+          "file": "source/event.ts",
+          "line": 32,
+          "codeSnippet": "// Event listener code here",
+          "status": "unchanged",
+          "originalFromMain": true
+        },
+        "category": "unchanged",
+        "fingerprint": "source/event.ts:30:performance:medium:leak-memory:",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-6",
+          "title": "Use of deprecated API method which may lead to compatibility issues",
+          "description": "Use of deprecated API method which may lead to compatibility issues",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "source/utils.ts",
+            "line": 15
+          },
+          "file": "source/utils.ts",
+          "line": 15,
+          "codeSnippet": "// Deprecated method call here",
+          "status": "unchanged",
+          "originalFromMain": true
+        },
+        "category": "unchanged",
+        "fingerprint": "source/utils.ts:10:code-quality:medium:deprecated:",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-8",
+          "title": "Lack of type checks for response data leading to runtime errors",
+          "description": "Lack of type checks for response data leading to runtime errors",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "source/response.ts",
+            "line": 78
+          },
+          "file": "source/response.ts",
+          "line": 78,
+          "codeSnippet": "// Response data handling code here",
+          "status": "unchanged",
+          "originalFromMain": true
+        },
+        "category": "unchanged",
+        "fingerprint": "source/response.ts:70:code-quality:medium:errors-type:",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-9",
+          "title": "No rate limiting implemented for API requests",
+          "description": "No rate limiting implemented for API requests",
+          "severity": "high",
+          "category": "security",
+          "location": {
+            "file": "source/api.ts",
+            "line": 22
+          },
+          "file": "source/api.ts",
+          "line": 22,
+          "codeSnippet": "// API request handling here",
+          "status": "unchanged",
+          "originalFromMain": true
+        },
+        "category": "unchanged",
+        "fingerprint": "source/api.ts:20:security:high:limiting-rate:",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-10",
+          "title": "Potentially exposed sensitive data in error messages",
+          "description": "Potentially exposed sensitive data in error messages",
+          "severity": "critical",
+          "category": "security",
+          "location": {
+            "file": "source/error.ts",
+            "line": 36
+          },
+          "file": "source/error.ts",
+          "line": 36,
+          "codeSnippet": "// Error message handling code here",
+          "status": "unchanged",
+          "originalFromMain": true
+        },
+        "category": "unchanged",
+        "fingerprint": "source/error.ts:30:security:critical:error:",
+        "confidence": 1
+      }
+    ],
+    "summary": {
+      "totalNew": 1,
+      "totalFixed": 1,
+      "totalUnchanged": 9,
+      "netImpact": 0,
+      "prQualityScore": 53
+    },
+    "recommendations": [
+      "✅ Great work! This PR fixes 1 existing issue(s)",
+      "⚠️ PR needs attention. Please address the issues above."
+    ]
+  },
+  "metadata": {
+    "analysisDate": "2025-08-26T22:39:09.936Z",
+    "mainBranchAnalysisDuration": 16.5,
+    "prBranchAnalysisDuration": 17.4,
+    "totalDuration": 33.9,
+    "modelUsed": "dynamic-selection",
+    "iterationsPerBranch": 3,
+    "tokensUsed": 0
+  }
+}

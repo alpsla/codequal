@@ -1,0 +1,669 @@
+{
+  "repositoryUrl": "https://github.com/sindresorhus/ky",
+  "prNumber": 700,
+  "mainBranchIssues": [
+    {
+      "id": "issue-1",
+      "title": "Potential denial of service due to unbounded request retries",
+      "description": "Potential denial of service due to unbounded request retries",
+      "severity": "high",
+      "category": "performance",
+      "location": {
+        "file": "index.js",
+        "line": 120
+      },
+      "file": "index.js",
+      "line": 120,
+      "codeSnippet": "this.retryCount = 5; // no limit on response time"
+    },
+    {
+      "id": "issue-2",
+      "title": "No validation for user input in query parameters",
+      "description": "No validation for user input in query parameters",
+      "severity": "critical",
+      "category": "security",
+      "location": {
+        "file": "src/index.ts",
+        "line": 45
+      },
+      "file": "src/index.ts",
+      "line": 45,
+      "codeSnippet": "const response = await fetch(`api/resource?param=${inputParam}`);"
+    },
+    {
+      "id": "issue-3",
+      "title": "Missing error handling for fetch calls",
+      "description": "Missing error handling for fetch calls",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "src/request.ts",
+        "line": 88
+      },
+      "file": "src/request.ts",
+      "line": 88,
+      "codeSnippet": "const response = await fetch(url); // no try-catch"
+    },
+    {
+      "id": "issue-4",
+      "title": "Use of deprecated API method",
+      "description": "Use of deprecated API method",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "src/utils.ts",
+        "line": 32
+      },
+      "file": "src/utils.ts",
+      "line": 32,
+      "codeSnippet": "const result = oldApiMethod(); // deprecated"
+    },
+    {
+      "id": "issue-5",
+      "title": "Insecure use of HTTP instead of HTTPS",
+      "description": "Insecure use of HTTP instead of HTTPS",
+      "severity": "critical",
+      "category": "security",
+      "location": {
+        "file": "src/config.ts",
+        "line": 15
+      },
+      "file": "src/config.ts",
+      "line": 15,
+      "codeSnippet": "const apiUrl = 'http://example.com/api';"
+    },
+    {
+      "id": "issue-6",
+      "title": "Lack of input sanitization leading to potential XSS",
+      "description": "Lack of input sanitization leading to potential XSS",
+      "severity": "high",
+      "category": "security",
+      "location": {
+        "file": "src/components/Display.tsx",
+        "line": 56
+      },
+      "file": "src/components/Display.tsx",
+      "line": 56,
+      "codeSnippet": "return <div>{userInput}</div>; // unescaped"
+    },
+    {
+      "id": "issue-7",
+      "title": "High complexity in function leading to maintainability issues",
+      "description": "High complexity in function leading to maintainability issues",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "src/helpers.ts",
+        "line": 22
+      },
+      "file": "src/helpers.ts",
+      "line": 22,
+      "codeSnippet": "function complexFunction(param1, param2, param3) { ... }"
+    },
+    {
+      "id": "issue-8",
+      "title": "Hardcoded credentials in configuration",
+      "description": "Hardcoded credentials in configuration",
+      "severity": "critical",
+      "category": "security",
+      "location": {
+        "file": "src/config.ts",
+        "line": 10
+      },
+      "file": "src/config.ts",
+      "line": 10,
+      "codeSnippet": "const apiKey = '12345'; // hardcoded"
+    },
+    {
+      "id": "issue-9",
+      "title": "Potential memory leak due to event listener not being removed",
+      "description": "Potential memory leak due to event listener not being removed",
+      "severity": "medium",
+      "category": "performance",
+      "location": {
+        "file": "src/components/Listener.ts",
+        "line": 72
+      },
+      "file": "src/components/Listener.ts",
+      "line": 72,
+      "codeSnippet": "window.addEventListener('resize', handleResize);"
+    },
+    {
+      "id": "issue-10",
+      "title": "Lack of unit tests for critical functions",
+      "description": "Lack of unit tests for critical functions",
+      "severity": "medium",
+      "category": "testing",
+      "location": {
+        "file": "src/services/dataService.ts",
+        "line": 5
+      },
+      "file": "src/services/dataService.ts",
+      "line": 5,
+      "codeSnippet": "// No tests for fetchData function"
+    }
+  ],
+  "prBranchIssues": [
+    {
+      "id": "issue-unchanged-1",
+      "title": "Potential denial of service due to unbounded request retries",
+      "description": "Potential denial of service due to unbounded request retries",
+      "severity": "high",
+      "category": "performance",
+      "location": {
+        "file": "index.js",
+        "line": 120
+      },
+      "file": "index.js",
+      "line": 120,
+      "codeSnippet": "`// Retry logic without limits`",
+      "status": "unchanged",
+      "originalFromMain": true
+    },
+    {
+      "id": "issue-unchanged-2",
+      "title": "No validation for user input in query parameters",
+      "description": "No validation for user input in query parameters",
+      "severity": "critical",
+      "category": "security",
+      "location": {
+        "file": "src/index.ts",
+        "line": 45
+      },
+      "file": "src/index.ts",
+      "line": 45,
+      "codeSnippet": "`// No validation on query parameters`",
+      "status": "unchanged",
+      "originalFromMain": true
+    },
+    {
+      "id": "issue-unchanged-3",
+      "title": "Missing error handling for fetch calls",
+      "description": "Missing error handling for fetch calls",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "src/request.ts",
+        "line": 88
+      },
+      "file": "src/request.ts",
+      "line": 88,
+      "codeSnippet": "`fetch(url).then(response => response.json())`",
+      "status": "unchanged",
+      "originalFromMain": true
+    },
+    {
+      "id": "issue-unchanged-4",
+      "title": "Use of deprecated API method",
+      "description": "Use of deprecated API method",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "src/utils.ts",
+        "line": 32
+      },
+      "file": "src/utils.ts",
+      "line": 32,
+      "codeSnippet": "`oldDeprecatedMethod()`",
+      "status": "unchanged",
+      "originalFromMain": true
+    },
+    {
+      "id": "issue-unchanged-5",
+      "title": "Insecure use of HTTP instead of HTTPS",
+      "description": "Insecure use of HTTP instead of HTTPS",
+      "severity": "critical",
+      "category": "security",
+      "location": {
+        "file": "src/config.ts",
+        "line": 15
+      },
+      "file": "src/config.ts",
+      "line": 15,
+      "codeSnippet": "`http://example.com`",
+      "status": "unchanged",
+      "originalFromMain": true
+    },
+    {
+      "id": "issue-unchanged-6",
+      "title": "Lack of input sanitization leading to potential XSS",
+      "description": "Lack of input sanitization leading to potential XSS",
+      "severity": "high",
+      "category": "security",
+      "location": {
+        "file": "src/components/Display.tsx",
+        "line": 56
+      },
+      "file": "src/components/Display.tsx",
+      "line": 56,
+      "codeSnippet": "`<div>${userInput}</div>`",
+      "status": "unchanged",
+      "originalFromMain": true
+    },
+    {
+      "id": "issue-unchanged-7",
+      "title": "Insecure use of HTTP instead of HTTPS",
+      "description": "Hardcoded credentials in configuration",
+      "severity": "critical",
+      "category": "security",
+      "location": {
+        "file": "src/config.ts",
+        "line": 10
+      },
+      "file": "src/config.ts",
+      "line": 10,
+      "codeSnippet": "`const apiKey = 'hardcoded_key';`",
+      "status": "unchanged",
+      "originalFromMain": true
+    },
+    {
+      "id": "issue-new-1",
+      "title": "New security vulnerability due to improper authentication logic",
+      "description": "New security vulnerability due to improper authentication logic",
+      "severity": "critical",
+      "category": "security",
+      "location": {
+        "file": "src/auth.ts",
+        "line": 30
+      },
+      "file": "src/auth.ts",
+      "line": 30,
+      "codeSnippet": "`if (userInput === 'admin') { grantAccess(); }`",
+      "status": "new"
+    },
+    {
+      "id": "issue-new-2",
+      "title": "Performance degradation due to excessive logging in production",
+      "description": "Performance degradation due to excessive logging in production",
+      "severity": "medium",
+      "category": "performance",
+      "location": {
+        "file": "src/logger.ts",
+        "line": 12
+      },
+      "file": "src/logger.ts",
+      "line": 12,
+      "codeSnippet": "`console.log('Excessive logging');`",
+      "status": "new"
+    },
+    {
+      "id": "issue-new-3",
+      "title": "Missing error handling for new API endpoints",
+      "description": "Missing error handling for new API endpoints",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "src/api/newEndpoint.ts",
+        "line": 20
+      },
+      "file": "src/api/newEndpoint.ts",
+      "line": 20,
+      "codeSnippet": "`fetch(newApiUrl).then(res => res.json());`",
+      "status": "new"
+    },
+    {
+      "id": "issue-new-4",
+      "title": "Breaking change introduced by changing API response structure",
+      "description": "Breaking change introduced by changing API response structure",
+      "severity": "high",
+      "category": "code-quality",
+      "location": {
+        "file": "src/api/responseHandler.ts",
+        "line": 15
+      },
+      "file": "src/api/responseHandler.ts",
+      "line": 15,
+      "codeSnippet": "`return response.data.items;`",
+      "status": "new"
+    },
+    {
+      "id": "issue-new-5",
+      "title": "Lack of input validation in new feature implementation",
+      "description": "Lack of input validation in new feature implementation",
+      "severity": "critical",
+      "category": "security",
+      "location": {
+        "file": "src/features/newFeature.ts",
+        "line": 10
+      },
+      "file": "src/features/newFeature.ts",
+      "line": 10,
+      "codeSnippet": "`const userInput = req.body.input;`",
+      "status": "new"
+    }
+  ],
+  "categorized": {
+    "newIssues": [
+      {
+        "issue": {
+          "id": "issue-new-1",
+          "title": "New security vulnerability due to improper authentication logic",
+          "description": "New security vulnerability due to improper authentication logic",
+          "severity": "critical",
+          "category": "security",
+          "location": {
+            "file": "src/auth.ts",
+            "line": 30
+          },
+          "file": "src/auth.ts",
+          "line": 30,
+          "codeSnippet": "`if (userInput === 'admin') { grantAccess(); }`",
+          "status": "new"
+        },
+        "category": "new",
+        "fingerprint": "src/auth.ts:30:security:critical:authentication:grantAccess-if-if",
+        "confidence": 0.68
+      },
+      {
+        "issue": {
+          "id": "issue-new-2",
+          "title": "Performance degradation due to excessive logging in production",
+          "description": "Performance degradation due to excessive logging in production",
+          "severity": "medium",
+          "category": "performance",
+          "location": {
+            "file": "src/logger.ts",
+            "line": 12
+          },
+          "file": "src/logger.ts",
+          "line": 12,
+          "codeSnippet": "`console.log('Excessive logging');`",
+          "status": "new"
+        },
+        "category": "new",
+        "fingerprint": "src/logger.ts:10:performance:medium:generic:log-log",
+        "confidence": 0.75
+      },
+      {
+        "issue": {
+          "id": "issue-new-3",
+          "title": "Missing error handling for new API endpoints",
+          "description": "Missing error handling for new API endpoints",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "src/api/newEndpoint.ts",
+            "line": 20
+          },
+          "file": "src/api/newEndpoint.ts",
+          "line": 20,
+          "codeSnippet": "`fetch(newApiUrl).then(res => res.json());`",
+          "status": "new"
+        },
+        "category": "new",
+        "fingerprint": "src/api/newendpoint.ts:20:code-quality:medium:error-handling:fetch-json-then",
+        "confidence": 0.5
+      },
+      {
+        "issue": {
+          "id": "issue-new-4",
+          "title": "Breaking change introduced by changing API response structure",
+          "description": "Breaking change introduced by changing API response structure",
+          "severity": "high",
+          "category": "code-quality",
+          "location": {
+            "file": "src/api/responseHandler.ts",
+            "line": 15
+          },
+          "file": "src/api/responseHandler.ts",
+          "line": 15,
+          "codeSnippet": "`return response.data.items;`",
+          "status": "new"
+        },
+        "category": "new",
+        "fingerprint": "src/api/responsehandler.ts:10:code-quality:high:generic:data-items",
+        "confidence": 0.784
+      },
+      {
+        "issue": {
+          "id": "issue-new-5",
+          "title": "Lack of input validation in new feature implementation",
+          "description": "Lack of input validation in new feature implementation",
+          "severity": "critical",
+          "category": "security",
+          "location": {
+            "file": "src/features/newFeature.ts",
+            "line": 10
+          },
+          "file": "src/features/newFeature.ts",
+          "line": 10,
+          "codeSnippet": "`const userInput = req.body.input;`",
+          "status": "new"
+        },
+        "category": "new",
+        "fingerprint": "src/features/newfeature.ts:10:security:critical:input-validation:body-input",
+        "confidence": 0.47
+      }
+    ],
+    "fixedIssues": [
+      {
+        "issue": {
+          "id": "issue-7",
+          "title": "High complexity in function leading to maintainability issues",
+          "description": "High complexity in function leading to maintainability issues",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "src/helpers.ts",
+            "line": 22
+          },
+          "file": "src/helpers.ts",
+          "line": 22,
+          "codeSnippet": "function complexFunction(param1, param2, param3) { ... }"
+        },
+        "category": "fixed",
+        "fingerprint": "src/helpers.ts:20:code-quality:medium:generic:complexFunction",
+        "confidence": 0.59
+      },
+      {
+        "issue": {
+          "id": "issue-9",
+          "title": "Potential memory leak due to event listener not being removed",
+          "description": "Potential memory leak due to event listener not being removed",
+          "severity": "medium",
+          "category": "performance",
+          "location": {
+            "file": "src/components/Listener.ts",
+            "line": 72
+          },
+          "file": "src/components/Listener.ts",
+          "line": 72,
+          "codeSnippet": "window.addEventListener('resize', handleResize);"
+        },
+        "category": "fixed",
+        "fingerprint": "src/components/listener.ts:70:performance:medium:leak-memory:addEventListener-addEventListener",
+        "confidence": 0.75
+      },
+      {
+        "issue": {
+          "id": "issue-10",
+          "title": "Lack of unit tests for critical functions",
+          "description": "Lack of unit tests for critical functions",
+          "severity": "medium",
+          "category": "testing",
+          "location": {
+            "file": "src/services/dataService.ts",
+            "line": 5
+          },
+          "file": "src/services/dataService.ts",
+          "line": 5,
+          "codeSnippet": "// No tests for fetchData function"
+        },
+        "category": "fixed",
+        "fingerprint": "src/services/dataservice.ts:0:testing:medium:tests:for",
+        "confidence": 0.8300000000000001
+      }
+    ],
+    "unchangedIssues": [
+      {
+        "issue": {
+          "id": "issue-unchanged-1",
+          "title": "Potential denial of service due to unbounded request retries",
+          "description": "Potential denial of service due to unbounded request retries",
+          "severity": "high",
+          "category": "performance",
+          "location": {
+            "file": "index.js",
+            "line": 120
+          },
+          "file": "index.js",
+          "line": 120,
+          "codeSnippet": "`// Retry logic without limits`",
+          "status": "unchanged",
+          "originalFromMain": true
+        },
+        "category": "unchanged",
+        "fingerprint": "index.js:120:performance:high:denial:",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-2",
+          "title": "No validation for user input in query parameters",
+          "description": "No validation for user input in query parameters",
+          "severity": "critical",
+          "category": "security",
+          "location": {
+            "file": "src/index.ts",
+            "line": 45
+          },
+          "file": "src/index.ts",
+          "line": 45,
+          "codeSnippet": "`// No validation on query parameters`",
+          "status": "unchanged",
+          "originalFromMain": true
+        },
+        "category": "unchanged",
+        "fingerprint": "src/index.ts:40:security:critical:input-validation:",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-3",
+          "title": "Missing error handling for fetch calls",
+          "description": "Missing error handling for fetch calls",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "src/request.ts",
+            "line": 88
+          },
+          "file": "src/request.ts",
+          "line": 88,
+          "codeSnippet": "`fetch(url).then(response => response.json())`",
+          "status": "unchanged",
+          "originalFromMain": true
+        },
+        "category": "unchanged",
+        "fingerprint": "src/request.ts:80:code-quality:medium:error-handling:fetch-json-then",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-4",
+          "title": "Use of deprecated API method",
+          "description": "Use of deprecated API method",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "src/utils.ts",
+            "line": 32
+          },
+          "file": "src/utils.ts",
+          "line": 32,
+          "codeSnippet": "`oldDeprecatedMethod()`",
+          "status": "unchanged",
+          "originalFromMain": true
+        },
+        "category": "unchanged",
+        "fingerprint": "src/utils.ts:30:code-quality:medium:deprecated:oldDeprecatedMethod",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-5",
+          "title": "Insecure use of HTTP instead of HTTPS",
+          "description": "Insecure use of HTTP instead of HTTPS",
+          "severity": "critical",
+          "category": "security",
+          "location": {
+            "file": "src/config.ts",
+            "line": 15
+          },
+          "file": "src/config.ts",
+          "line": 15,
+          "codeSnippet": "`http://example.com`",
+          "status": "unchanged",
+          "originalFromMain": true
+        },
+        "category": "unchanged",
+        "fingerprint": "src/config.ts:10:security:critical:generic:com",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-6",
+          "title": "Lack of input sanitization leading to potential XSS",
+          "description": "Lack of input sanitization leading to potential XSS",
+          "severity": "high",
+          "category": "security",
+          "location": {
+            "file": "src/components/Display.tsx",
+            "line": 56
+          },
+          "file": "src/components/Display.tsx",
+          "line": 56,
+          "codeSnippet": "`<div>${userInput}</div>`",
+          "status": "unchanged",
+          "originalFromMain": true
+        },
+        "category": "unchanged",
+        "fingerprint": "src/components/display.tsx:50:security:high:input-xss:",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-7",
+          "title": "Insecure use of HTTP instead of HTTPS",
+          "description": "Hardcoded credentials in configuration",
+          "severity": "critical",
+          "category": "security",
+          "location": {
+            "file": "src/config.ts",
+            "line": 10
+          },
+          "file": "src/config.ts",
+          "line": 10,
+          "codeSnippet": "`const apiKey = 'hardcoded_key';`",
+          "status": "unchanged",
+          "originalFromMain": true
+        },
+        "category": "unchanged",
+        "fingerprint": "src/config.ts:10:security:critical:generic:",
+        "confidence": 1
+      }
+    ],
+    "summary": {
+      "totalNew": 5,
+      "totalFixed": 3,
+      "totalUnchanged": 7,
+      "netImpact": 2,
+      "prQualityScore": 15
+    },
+    "recommendations": [
+      "🚨 BLOCKING: Fix 2 critical issue(s) before merging",
+      "⚠️ Address 1 high-severity issue(s) introduced by this PR",
+      "✅ Great work! This PR fixes 3 existing issue(s)",
+      "🔴 Significant issues detected. Consider revising this PR."
+    ]
+  },
+  "metadata": {
+    "analysisDate": "2025-08-26T19:48:22.504Z",
+    "mainBranchAnalysisDuration": 13,
+    "prBranchAnalysisDuration": 19.2,
+    "totalDuration": 32.2,
+    "modelUsed": "dynamic-selection",
+    "iterationsPerBranch": 3,
+    "tokensUsed": 0
+  }
+}

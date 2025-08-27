@@ -1,0 +1,269 @@
+{
+  "repositoryUrl": "https://github.com/sindresorhus/ky",
+  "prNumber": 700,
+  "mainBranchIssues": [
+    {
+      "id": "issue-1",
+      "title": "Breaking change - removed support for the `timeout` option in requests",
+      "description": "Breaking change - removed support for the `timeout` option in requests",
+      "severity": "critical",
+      "category": "breaking-change",
+      "location": {
+        "file": "index.js",
+        "line": 42
+      },
+      "file": "index.js",
+      "line": 42,
+      "codeSnippet": "`throw new TypeError('Invalid timeout value'); // Previously supported timeout option`"
+    },
+    {
+      "id": "issue-2",
+      "title": "Critical dependency vulnerability - axios version has known CVE",
+      "description": "Critical dependency vulnerability - axios version has known CVE",
+      "severity": "critical",
+      "category": "dependency-vulnerability",
+      "location": {
+        "file": "package.json",
+        "line": 53
+      },
+      "file": "package.json",
+      "line": 17,
+      "codeSnippet": "\t\t\"axios\",",
+      "locationMethod": "file-search",
+      "locationConfidence": 70
+    },
+    {
+      "id": "issue-3",
+      "title": "Potential XSS vulnerability in URL handling",
+      "description": "Potential XSS vulnerability in URL handling",
+      "severity": "critical",
+      "category": "security",
+      "location": {
+        "file": "src/index.ts",
+        "line": 58
+      },
+      "file": "src/index.ts",
+      "line": 58,
+      "codeSnippet": "`url = url.replace(/<script.*?>.*?<\\/script>/g, ''); // Insufficient sanitization of user input`"
+    },
+    {
+      "id": "issue-4",
+      "title": "Missing await on async operation leads to data loss",
+      "description": "Missing await on async operation leads to data loss",
+      "severity": "critical",
+      "category": "data-loss",
+      "location": {
+        "file": "src/utils/request.ts",
+        "line": 76
+      },
+      "file": "src/utils/request.ts",
+      "line": 76,
+      "codeSnippet": "`sendRequest(options); // Missing await, may lead to race conditions`"
+    },
+    {
+      "id": "issue-5",
+      "title": "Unhandled promise rejection could crash the application",
+      "description": "Unhandled promise rejection could crash the application",
+      "severity": "critical",
+      "category": "system-crash",
+      "location": {
+        "file": "src/index.ts",
+        "line": 101
+      },
+      "file": "src/index.ts",
+      "line": 101,
+      "codeSnippet": "`fetchData().then(handleResponse); // Missing catch for promise rejection`"
+    },
+    {
+      "id": "issue-6",
+      "title": "Major performance degradation due to synchronous file read",
+      "description": "Major performance degradation due to synchronous file read",
+      "severity": "high",
+      "category": "performance",
+      "location": {
+        "file": "src/utils/file.ts",
+        "line": 34
+      },
+      "file": "src/utils/file.ts",
+      "line": 34,
+      "codeSnippet": "`const data = fs.readFileSync(filePath); // Synchronous read can block the event loop`"
+    },
+    {
+      "id": "issue-7",
+      "title": "Unused variable may indicate a logical error",
+      "description": "Unused variable may indicate a logical error",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "src/services/user.ts",
+        "line": 12
+      },
+      "file": "src/services/user.ts",
+      "line": 12,
+      "codeSnippet": "`const unusedVar = calculateSomething(); // Variable is never used`"
+    }
+  ],
+  "prBranchIssues": [],
+  "categorized": {
+    "newIssues": [],
+    "fixedIssues": [
+      {
+        "issue": {
+          "id": "issue-1",
+          "title": "Breaking change - removed support for the `timeout` option in requests",
+          "description": "Breaking change - removed support for the `timeout` option in requests",
+          "severity": "critical",
+          "category": "breaking-change",
+          "location": {
+            "file": "index.js",
+            "line": 42
+          },
+          "file": "index.js",
+          "line": 42,
+          "codeSnippet": "`throw new TypeError('Invalid timeout value'); // Previously supported timeout option`"
+        },
+        "category": "fixed",
+        "fingerprint": "index.js:40:breaking-change:critical:`timeout`:TypeError-new-throw",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-2",
+          "title": "Critical dependency vulnerability - axios version has known CVE",
+          "description": "Critical dependency vulnerability - axios version has known CVE",
+          "severity": "critical",
+          "category": "dependency-vulnerability",
+          "location": {
+            "file": "package.json",
+            "line": 53
+          },
+          "file": "package.json",
+          "line": 17,
+          "codeSnippet": "\t\t\"axios\",",
+          "locationMethod": "file-search",
+          "locationConfidence": 70
+        },
+        "category": "fixed",
+        "fingerprint": "package.json:0:dependency-vulnerability:critical:dependency:",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-3",
+          "title": "Potential XSS vulnerability in URL handling",
+          "description": "Potential XSS vulnerability in URL handling",
+          "severity": "critical",
+          "category": "security",
+          "location": {
+            "file": "src/index.ts",
+            "line": 58
+          },
+          "file": "src/index.ts",
+          "line": 58,
+          "codeSnippet": "`url = url.replace(/<script.*?>.*?<\\/script>/g, ''); // Insufficient sanitization of user input`"
+        },
+        "category": "fixed",
+        "fingerprint": "src/index.ts:50:security:critical:handling-xss:replace-replace",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-4",
+          "title": "Missing await on async operation leads to data loss",
+          "description": "Missing await on async operation leads to data loss",
+          "severity": "critical",
+          "category": "data-loss",
+          "location": {
+            "file": "src/utils/request.ts",
+            "line": 76
+          },
+          "file": "src/utils/request.ts",
+          "line": 76,
+          "codeSnippet": "`sendRequest(options); // Missing await, may lead to race conditions`"
+        },
+        "category": "fixed",
+        "fingerprint": "src/utils/request.ts:70:data-loss:critical:async:await-sendRequest",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-5",
+          "title": "Unhandled promise rejection could crash the application",
+          "description": "Unhandled promise rejection could crash the application",
+          "severity": "critical",
+          "category": "system-crash",
+          "location": {
+            "file": "src/index.ts",
+            "line": 101
+          },
+          "file": "src/index.ts",
+          "line": 101,
+          "codeSnippet": "`fetchData().then(handleResponse); // Missing catch for promise rejection`"
+        },
+        "category": "fixed",
+        "fingerprint": "src/index.ts:100:system-crash:critical:promise:fetchData-then-then",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-6",
+          "title": "Major performance degradation due to synchronous file read",
+          "description": "Major performance degradation due to synchronous file read",
+          "severity": "high",
+          "category": "performance",
+          "location": {
+            "file": "src/utils/file.ts",
+            "line": 34
+          },
+          "file": "src/utils/file.ts",
+          "line": 34,
+          "codeSnippet": "`const data = fs.readFileSync(filePath); // Synchronous read can block the event loop`"
+        },
+        "category": "fixed",
+        "fingerprint": "src/utils/file.ts:30:performance:high:generic:readFileSync-readFileSync",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-7",
+          "title": "Unused variable may indicate a logical error",
+          "description": "Unused variable may indicate a logical error",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "src/services/user.ts",
+            "line": 12
+          },
+          "file": "src/services/user.ts",
+          "line": 12,
+          "codeSnippet": "`const unusedVar = calculateSomething(); // Variable is never used`"
+        },
+        "category": "fixed",
+        "fingerprint": "src/services/user.ts:10:code-quality:medium:error-unused:calculateSomething",
+        "confidence": 1
+      }
+    ],
+    "unchangedIssues": [],
+    "summary": {
+      "totalNew": 0,
+      "totalFixed": 7,
+      "totalUnchanged": 0,
+      "netImpact": -7,
+      "prQualityScore": 80
+    },
+    "recommendations": [
+      "✅ Great work! This PR fixes 7 existing issue(s)",
+      "📈 Net improvement: 7 fewer issues after this PR",
+      "🌟 Excellent PR quality! Ready for review."
+    ]
+  },
+  "metadata": {
+    "analysisDate": "2025-08-27T01:12:06.502Z",
+    "mainBranchAnalysisDuration": 11.3,
+    "prBranchAnalysisDuration": 1.8,
+    "totalDuration": 13.100000000000001,
+    "modelUsed": "dynamic-selection",
+    "iterationsPerBranch": 3,
+    "tokensUsed": 0
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "repositoryUrl": "https://github.com/sindresorhus/ky",
+  "prNumber": 700,
+  "mainBranchIssues": [],
+  "prBranchIssues": [],
+  "categorized": {
+    "newIssues": [],
+    "fixedIssues": [],
+    "unchangedIssues": [],
+    "summary": {
+      "totalNew": 0,
+      "totalFixed": 0,
+      "totalUnchanged": 0,
+      "netImpact": 0,
+      "prQualityScore": 50
+    },
+    "recommendations": [
+      "⚠️ PR needs attention. Please address the issues above."
+    ]
+  },
+  "metadata": {
+    "analysisDate": "2025-08-26T16:26:44.508Z",
+    "mainBranchAnalysisDuration": 0.7,
+    "prBranchAnalysisDuration": 0.3,
+    "totalDuration": 1,
+    "modelUsed": "dynamic-selection",
+    "iterationsPerBranch": 3,
+    "tokensUsed": 0
+  }
+}
