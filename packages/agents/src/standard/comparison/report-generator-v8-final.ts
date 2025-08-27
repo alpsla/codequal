@@ -38,16 +38,19 @@ export class ReportGeneratorV8Final {
   private modelConfigResolver: DynamicModelSelector;
   private logger: any;
   private fixes: ReportGeneratorV8Fixes;
+  private modelConfig?: { model: string; provider?: string };
   // HTMLFormatter removed - using markdown directly
 
-  constructor() {
+  constructor(modelConfig?: { model: string; provider?: string }) {
     try {
       this.modelConfigResolver = new DynamicModelSelector();
       this.fixes = new ReportGeneratorV8Fixes();
+      this.modelConfig = modelConfig; // Store model config for reuse
     } catch (error) {
       // Fallback if model resolver fails
       this.modelConfigResolver = null as any;
       this.fixes = new ReportGeneratorV8Fixes();
+      this.modelConfig = modelConfig;
     }
     
     // Simple console logger
@@ -68,8 +71,10 @@ export class ReportGeneratorV8Final {
       const { FixSuggestionAgentV2 } = await import('../services/fix-suggestion-agent-v2');
       const fixAgent = new FixSuggestionAgentV2();
       
-      // Generate fixes for all issues
-      const fixes = await fixAgent.generateFixes(issues);
+      // Generate fixes for all issues, passing model config to avoid repeated selection
+      const fixes = await fixAgent.generateFixes(issues, undefined, { 
+        modelConfig: this.modelConfig 
+      });
       
       // Map fixes by issue ID
       fixes.forEach(fix => {
@@ -1299,11 +1304,20 @@ ${unchangedIssues.filter(i => i.severity === 'critical').slice(0, 3).map(i =>
       content += `⚡ **Impact:** ${enhancedIssue.impact}\n`;
     }
     
-    // Only show code snippets if they're valid
-    if (showCode && enhancedIssue.codeSnippet) {
+    // Show code snippets - if missing, show placeholder with instructions
+    if (showCode) {
       content += `\n🔍 **Problematic Code:**\n`;
       content += '```' + this.getLanguageFromFile(file) + '\n';
-      content += enhancedIssue.codeSnippet + '\n';
+      if (enhancedIssue.codeSnippet) {
+        content += enhancedIssue.codeSnippet + '\n';
+      } else {
+        // Show placeholder when code snippet is missing
+        content += `// Code snippet not available from analysis\n`;
+        content += `// Please review the code at: ${location}\n`;
+        if (line && line > 0) {
+          content += `// Check lines ${Math.max(1, line - 2)} to ${line + 2} for context\n`;
+        }
+      }
       content += '```\n';
     }
     
@@ -1378,11 +1392,20 @@ ${unchangedIssues.filter(i => i.severity === 'critical').slice(0, 3).map(i =>
       content += `⚡ **Impact:** ${enhancedIssue.impact}\n`;
     }
     
-    // Only show code snippets if they're valid
-    if (showCode && enhancedIssue.codeSnippet) {
+    // Show code snippets - if missing, show placeholder with instructions
+    if (showCode) {
       content += `\n🔍 **Problematic Code:**\n`;
       content += '```' + this.getLanguageFromFile(file) + '\n';
-      content += enhancedIssue.codeSnippet + '\n';
+      if (enhancedIssue.codeSnippet) {
+        content += enhancedIssue.codeSnippet + '\n';
+      } else {
+        // Show placeholder when code snippet is missing
+        content += `// Code snippet not available from analysis\n`;
+        content += `// Please review the code at: ${location}\n`;
+        if (line && line > 0) {
+          content += `// Check lines ${Math.max(1, line - 2)} to ${line + 2} for context\n`;
+        }
+      }
       content += '```\n';
     }
     
@@ -1404,11 +1427,39 @@ ${unchangedIssues.filter(i => i.severity === 'critical').slice(0, 3).map(i =>
       // Show the explanation
       content += `\n**What to do:** ${fixSuggestion.explanation}\n`;
       
-      // Show the fixed code
-      content += `\n**Fixed Code (copy-paste ready):**\n`;
-      content += '```' + (fixSuggestion.language || this.getLanguageFromFile(file)) + '\n';
-      content += fixSuggestion.fixedCode + '\n';
-      content += '```\n';
+      // Show the fixed code - check if it contains Option A/B structure
+      const hasOptions = fixSuggestion.fixedCode.includes('// OPTION A:') && fixSuggestion.fixedCode.includes('// OPTION B:');
+      
+      if (hasOptions) {
+        // Parse and display Option A and Option B separately
+        content += `\n**Choose Your Fix Approach:**\n\n`;
+        
+        // Extract Option A
+        const optionAMatch = fixSuggestion.fixedCode.match(/\/\/ OPTION A:[^\n]*\n([\s\S]*?)(?=\/\/ OPTION B:|$)/);
+        if (optionAMatch) {
+          content += `### 🔧 Option A: Drop-in Replacement\n`;
+          content += `*Maintains the same function signature - minimal changes to existing code*\n\n`;
+          content += '```' + (fixSuggestion.language || this.getLanguageFromFile(file)) + '\n';
+          content += optionAMatch[1].trim() + '\n';
+          content += '```\n\n';
+        }
+        
+        // Extract Option B
+        const optionBMatch = fixSuggestion.fixedCode.match(/\/\/ OPTION B:[^\n]*\n([\s\S]*?)$/);
+        if (optionBMatch) {
+          content += `### 🚀 Option B: Refactored Approach\n`;
+          content += `*More secure and maintainable, but requires updating calling code*\n\n`;
+          content += '```' + (fixSuggestion.language || this.getLanguageFromFile(file)) + '\n';
+          content += optionBMatch[1].trim() + '\n';
+          content += '```\n';
+        }
+      } else {
+        // Regular single fix display
+        content += `\n**Fixed Code (copy-paste ready):**\n`;
+        content += '```' + (fixSuggestion.language || this.getLanguageFromFile(file)) + '\n';
+        content += fixSuggestion.fixedCode + '\n';
+        content += '```\n';
+      }
       
       // If we have the original code in the fix suggestion, show a diff
       if (fixSuggestion.originalCode && fixSuggestion.originalCode !== enhancedIssue.codeSnippet) {
