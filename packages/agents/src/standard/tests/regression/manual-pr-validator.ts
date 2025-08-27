@@ -17,7 +17,7 @@ const envConfig = getEnvConfig();
  * kubectl port-forward -n codequal-dev deployment/deepwiki 8001:8001
  */
 
-import { DirectDeepWikiApiWithLocation } from '../../services/direct-deepwiki-api-with-location';
+import { DirectDeepWikiApiWithLocationV2 as DirectDeepWikiApiWithLocation } from '../../services/direct-deepwiki-api-with-location-v2';
 import { PRAnalysisCategorizer } from '../../services/pr-analysis-categorizer';
 import { ReportGeneratorV8Final } from '../../comparison/report-generator-v8-final';
 import { V8HtmlGenerator } from '../../utils/v8-html-generator';
@@ -272,6 +272,15 @@ ${colors.bright}Reports:${colors.reset}
     console.log(`${colors.cyan}Opening report in browser...${colors.reset}`);
     exec(`open "${htmlPath}"`);
     
+    // Clear caches after successful test to ensure clean next run
+    console.log(`\n${colors.cyan}Clearing caches for clean next run...${colors.reset}`);
+    try {
+      await deepwikiClient.clearAllCaches(repositoryUrl);
+      console.log(`${colors.green}✅ Caches cleared successfully${colors.reset}`);
+    } catch (clearError: any) {
+      console.log(`${colors.yellow}⚠️ Could not clear all caches: ${clearError.message}${colors.reset}`);
+    }
+    
   } catch (error: any) {
     console.error(`\n${colors.red}❌ Analysis failed:${colors.reset}`, error.message);
     console.error(error.stack);
@@ -280,6 +289,16 @@ ${colors.bright}Reports:${colors.reset}
       console.log(`\n${colors.yellow}⚠️ DeepWiki connection failed. Make sure port forwarding is active:${colors.reset}
 kubectl port-forward -n codequal-dev deployment/deepwiki 8001:8001
 `);
+    }
+    
+    // Try to clear caches even on failure to prevent bad data from persisting
+    console.log(`\n${colors.cyan}Attempting to clear caches after failure...${colors.reset}`);
+    try {
+      const deepwikiClient = new DirectDeepWikiApiWithLocation();
+      await deepwikiClient.clearAllCaches(repositoryUrl);
+      console.log(`${colors.green}✅ Caches cleared${colors.reset}`);
+    } catch (clearError: any) {
+      console.log(`${colors.yellow}⚠️ Could not clear caches: ${clearError.message}${colors.reset}`);
     }
     
     process.exit(1);
