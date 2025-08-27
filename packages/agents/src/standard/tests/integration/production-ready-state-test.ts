@@ -42,8 +42,8 @@ interface SystemState {
 }
 
 const SYSTEM_STATE: SystemState = {
-  version: '1.4.0', // Major version increment for Option A/B security template system
-  lastSession: '2025-08-26', // Today's session
+  version: '1.4.1', // Patch increment for BUG-072 investigation session
+  lastSession: '2025-08-27', // DeepWiki iteration stabilization discovery session
   
   features: {
     // Core Analysis Features
@@ -55,10 +55,10 @@ const SYSTEM_STATE: SystemState = {
     },
     
     deepwikiIntegration: { 
-      status: 'working', 
-      confidence: 80,
-      lastTested: '2025-08-26',
-      issues: ['Some parser services cleaned up but core functionality maintained']
+      status: 'partial', 
+      confidence: 60, // Downgraded due to non-deterministic results (BUG-072)
+      lastTested: '2025-08-27',
+      issues: ['Missing iteration stabilization logic causes non-deterministic results', 'Working solution exists in archived code but not integrated']
     },
     
     reportGeneratorV8: { 
@@ -206,6 +206,14 @@ const SYSTEM_STATE: SystemState = {
       discovered: '2025-08-20',
       status: 'open'
     },
+    {
+      id: 'BUG-072',
+      severity: 'high' as const,
+      description: 'Missing DeepWiki iteration stabilization logic causes non-deterministic results',
+      component: 'DirectDeepWikiApiWithLocation',
+      discovered: '2025-08-27',
+      status: 'open'
+    },
     
     // RESOLVED bugs from today's session
     {
@@ -261,16 +269,17 @@ const SYSTEM_STATE: SystemState = {
   ],
   
   nextTasks: [
-    // P0 (Critical - Next Session)
+    // P0 (CRITICAL - MUST Fix Next Session)
+    'FIX BUG-072: Integrate DeepWiki iteration stabilization logic from archived adaptive-deepwiki-analyzer.ts',
+    'Validate deterministic results with test-debug-inconsistency.ts reproduction test',
+    'Ensure convergence behavior works (2-6 iterations typical, max 10)',
+    'Performance test: response time should be <2x current implementation',
+    
+    // P1 (High Priority - After BUG-072 Fixed)
     'Test Option A/B security templates with real PRs containing security vulnerabilities',
-    'Validate template-based fixes appear correctly in production reports',
+    'Validate template-based fixes appear correctly in production reports', 
     'Fix AI fallback system to return real fixes instead of mock responses (BUG-077)',
     'Complete P0 template coverage: file upload, path traversal, input validation',
-    
-    // P1 (High Priority - This Week)
-    'Complete P1 template implementation: auth, data exposure, error handling',
-    'Implement real LLM integration for non-template issues',
-    'Production validation of Option A/B templates with 5+ real PRs',
     'Fix DeepWiki location parsing (BUG-068)',
     
     // P2 (Medium Priority - Next Sprint)  
@@ -396,41 +405,47 @@ describe('Production Readiness State', () => {
 export { SYSTEM_STATE };
 
 /**
- * Session Progress Summary for 2025-08-26:
+ * Session Progress Summary for 2025-08-27 (DeepWiki Investigation Session):
  * 
- * COMPLETED WORK:
- * - Fixed critical TypeScript compilation errors in fix suggestion agents
- * - Resolved import path issues for Issue type from analysis-types
- * - Added mock LLM integration for development/testing
- * - Fixed V8ReportFixes dependency issues with placeholder implementations
- * - Corrected test assertions in model-usage-analytics tests
- * - Fixed regex escaping issues in validation tests
- * - Successfully built project without compilation errors
+ * CRITICAL DISCOVERY:
+ * - Identified root cause of DeepWiki non-deterministic results: Missing iteration stabilization logic
+ * - Created BUG-072 with comprehensive analysis and solution path
+ * - Located working implementation in archived code: _archive/2025-08-25-deepwiki/adaptive-deepwiki-analyzer.ts
+ * - Built reproduction test case: test-debug-inconsistency.ts
+ * - Documented exact integration requirements and file locations
  * 
- * NEW FEATURES ADDED:
- * - Fix Suggestion Agent (basic version)
- * - Fix Suggestion Agent V2 (advanced version with template system)
- * - Function Fix Generator (code-level fix generation)
- * - V8 Report Validation Test
+ * INVESTIGATION FINDINGS:
+ * - Current DirectDeepWikiApiWithLocation makes single API calls without iteration control
+ * - Archived code includes proven 10-iteration max with 2-consecutive-no-new-issues convergence
+ * - Non-deterministic results cause user trust issues and testing problems
+ * - Performance impact will be <2x current implementation with proper limits
  * 
- * BUGS ADDRESSED:
- * - BUG-074: Model usage analytics test issues (partially resolved)
- * - Multiple TypeScript compilation errors (resolved)
- * - Critical import path issues (resolved)
+ * DOCUMENTATION CREATED:
+ * - SESSION_SUMMARY_2025_08_27_DEEPWIKI_ITERATION_STABILIZATION.md (comprehensive session summary)
+ * - BUG_072_MISSING_DEEPWIKI_ITERATION_STABILIZATION.md (detailed bug analysis)
+ * - Updated NEXT_SESSION_PLAN.md with specific BUG-072 fix requirements
+ * - Updated production-ready-state-test.ts with session findings
  * 
- * TECHNICAL IMPROVEMENTS:
- * - Improved code modularity in fix suggestion system
- * - Added proper mock implementations for testing
- * - Enhanced error handling in report generation
- * - Maintained test coverage while fixing critical issues
+ * BUG STATUS:
+ * - BUG-072: Created (HIGH severity) - Missing iteration stabilization logic
+ * - All previous bugs remain open (BUG-068 through BUG-071, BUG-077, BUG-078)
  * 
- * NEXT SESSION PRIORITIES:
- * 1. Implement real LLM integration for fix suggestion agents
- * 2. Create missing CodeContextExtractor service
- * 3. Fix DeepWiki location parsing (ongoing major bug)
- * 4. Complete integration testing of fix suggestion system
+ * TECHNICAL STATE:
+ * - DeepWiki integration downgraded from confidence 80 to 60 due to non-deterministic behavior
+ * - All other features remain stable
+ * - System requires immediate attention to BUG-072 before other enhancements
  * 
- * The system is now in a stable state with successful compilation,
- * core functionality working, and new fix suggestion capabilities
- * ready for further development.
+ * NEXT SESSION PRIORITY:
+ * 1. **CRITICAL**: Fix BUG-072 by integrating iteration logic from archived adaptive-deepwiki-analyzer.ts
+ * 2. Validate fix with reproduction test (test-debug-inconsistency.ts)
+ * 3. Ensure convergence behavior and performance requirements met
+ * 4. Update bug status to resolved after successful integration
+ * 
+ * REPRODUCTION COMMAND:
+ * cd /Users/alpinro/Code\ Prjects/codequal/packages/agents
+ * USE_DEEPWIKI_MOCK=false npx ts-node test-debug-inconsistency.ts
+ * 
+ * The system has a critical reliability issue that must be addressed
+ * before any other development work. The solution is well-documented
+ * and ready for implementation.
  */
