@@ -311,14 +311,15 @@ export class EnhancedLocationFinder {
   private extractSearchTerms(issue: IssueToLocate): string[] {
     const terms: Set<string> = new Set();
     
-    // Extract technical terms from title
-    const titleWords = issue.title.split(/\s+/)
+    // Extract technical terms from title - remove backticks and special chars
+    const cleanTitle = issue.title.replace(/`/g, '').replace(/[^a-zA-Z0-9\s_]/g, ' ');
+    const titleWords = cleanTitle.split(/\s+/)
       .filter(word => word.length > 3)
       .filter(word => !['with', 'from', 'that', 'this', 'have', 'been'].includes(word.toLowerCase()));
     
     titleWords.forEach(word => terms.add(word));
     
-    // Extract code-like terms from description
+    // Extract code-like terms from description - already removes backticks
     const codeTerms = issue.description.match(/`([^`]+)`/g) || [];
     codeTerms.forEach(term => terms.add(term.replace(/`/g, '')));
     
@@ -337,7 +338,10 @@ export class EnhancedLocationFinder {
       terms.add('promise');
     }
     
-    return Array.from(terms).slice(0, 5); // Top 5 terms
+    // Filter out shell-dangerous terms and escape remaining ones
+    return Array.from(terms)
+      .filter(term => term && /^[a-zA-Z0-9_]+$/.test(term)) // Only alphanumeric and underscore
+      .slice(0, 5); // Top 5 terms
   }
   
   /**
