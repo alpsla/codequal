@@ -1,0 +1,44 @@
+{
+  "timestamp": "2025-08-28T03:30:12.235Z",
+  "environment": {
+    "node": "v23.11.0",
+    "npm": "11.4.2",
+    "terminal": "vscode",
+    "cwd": "/Users/alpinro/Code Prjects/codequal/packages/agents",
+    "deepwikiUrl": "http://localhost:8001"
+  },
+  "results": [
+    {
+      "repository": "https://github.com/sindresorhus/ky",
+      "success": true,
+      "duration": 8.599,
+      "responseType": "string",
+      "issuesFound": 5,
+      "sampleIssue": {
+        "description": "**Issue Type:** Security",
+        "raw": "1. **Issue Type:** Security  \n"
+      },
+      "environment": {
+        "node": "v23.11.0",
+        "npm": "11.4.2",
+        "terminal": "vscode",
+        "cwd": "/Users/alpinro/Code Prjects/codequal/packages/agents",
+        "deepwikiUrl": "http://localhost:8001"
+      }
+    },
+    {
+      "repository": "https://github.com/sindresorhus/p-limit",
+      "success": false,
+      "duration": 0.96,
+      "responseType": "unknown",
+      "error": "Request failed with status code 500",
+      "environment": {
+        "node": "v23.11.0",
+        "npm": "11.4.2",
+        "terminal": "vscode",
+        "cwd": "/Users/alpinro/Code Prjects/codequal/packages/agents",
+        "deepwikiUrl": "http://localhost:8001"
+      }
+    }
+  ]
+}

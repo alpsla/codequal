@@ -1,0 +1,178 @@
+[
+  {
+    "name": "Ultra Simple",
+    "prompt": "Find bugs",
+    "expectRealData": true,
+    "success": true,
+    "duration": 4032,
+    "responseLength": 778,
+    "hasRealFiles": true,
+    "hasGenericResponse": true,
+    "sample": "The repository does not have any reported bugs in its issue tracker as of the latest update. However, potential issues can be identified through code review:\n\n1. **Error Handling**: Review how errors "
+  },
+  {
+    "name": "One Word",
+    "prompt": "Issues",
+    "expectRealData": true,
+    "success": true,
+    "duration": 3028,
+    "responseLength": 597,
+    "hasRealFiles": false,
+    "hasGenericResponse": false,
+    "sample": "The GitHub repository for Ky currently has several open issues. Key details include:\n\n- **Issue Tracker**: You can view all open issues at the [Issues section](https://github.com/sindresorhus/ky/issue"
+  },
+  {
+    "name": "Basic Security",
+    "prompt": "Find security issues",
+    "expectRealData": true,
+    "success": true,
+    "duration": 2964,
+    "responseLength": 796,
+    "hasRealFiles": false,
+    "hasGenericResponse": false,
+    "sample": "The Ky repository does not have any known security vulnerabilities as of the latest update. However, potential security concerns can arise from:\n\n1. **Dependency Vulnerabilities**: Review the dependen"
+  },
+  {
+    "name": "Specific File Request",
+    "prompt": "Check source/core/Ky.ts",
+    "expectRealData": true,
+    "success": true,
+    "duration": 3685,
+    "responseLength": 711,
+    "hasRealFiles": true,
+    "hasGenericResponse": false,
+    "sample": "The `source/core/Ky.ts` file in the Ky repository defines the main `Ky` class, which is responsible for creating HTTP requests. Key components include:\n\n- **Constructor**: Initializes the instance wit"
+  },
+  {
+    "name": "Direct Question",
+    "prompt": "What problems exist in this code?",
+    "expectRealData": true,
+    "success": true,
+    "duration": 4015,
+    "responseLength": 791,
+    "hasRealFiles": false,
+    "hasGenericResponse": false,
+    "sample": "The repository does not explicitly outline problems, but common issues to look for include:\n\n1. **Error Handling**: Check if there are sufficient try-catch blocks for network requests.\n2. **Dependency"
+  },
+  {
+    "name": "Single Focus",
+    "prompt": "List TypeScript errors only",
+    "expectRealData": true,
+    "success": true,
+    "duration": 2335,
+    "responseLength": 280,
+    "hasRealFiles": false,
+    "hasGenericResponse": false,
+    "sample": "The repository does not contain any TypeScript files or TypeScript-related errors as it primarily uses JavaScript. If TypeScript files are added or if there are specific issues in the code, they would"
+  },
+  {
+    "name": "PR Specific Simple",
+    "prompt": "What changed in PR 700?",
+    "expectRealData": true,
+    "success": true,
+    "duration": 2679,
+    "responseLength": 511,
+    "hasRealFiles": false,
+    "hasGenericResponse": false,
+    "sample": "PR 700 in the Ky repository includes the following changes:\n\n- **Improved TypeScript Definitions**: Enhanced type definitions for better type inference and usability.\n- **Refactoring**: Code refactori"
+  },
+  {
+    "name": "Line Specific",
+    "prompt": "Analyze line 90 of Ky.ts",
+    "expectRealData": true,
+    "success": true,
+    "duration": 2200,
+    "responseLength": 257,
+    "hasRealFiles": true,
+    "hasGenericResponse": false,
+    "sample": "Line 90 of `Ky.ts` contains the following code:\n\n```typescript\nconst { signal } = options;\n```\n\nThis line extracts the `signal` property from the `options` object, which is likely used for aborting re"
+  },
+  {
+    "name": "Two Requirements",
+    "prompt": "Find bugs and security issues",
+    "expectRealData": true,
+    "success": true,
+    "duration": 3199,
+    "responseLength": 563,
+    "hasRealFiles": false,
+    "hasGenericResponse": false,
+    "sample": "The Ky repository does not have any reported bugs or security issues in its latest version. However, potential areas to review include:\n\n1. **Input Validation**: Ensure all inputs are sanitized to pre"
+  },
+  {
+    "name": "With Location",
+    "prompt": "Find issues with file names",
+    "expectRealData": true,
+    "success": true,
+    "duration": 5303,
+    "responseLength": 1128,
+    "hasRealFiles": false,
+    "hasGenericResponse": true,
+    "sample": "The repository contains several files that may not adhere to common naming conventions or best practices. Here are some observations:\n\n1. **File Naming Consistency**: \n   - Some files use camelCase (e"
+  },
+  {
+    "name": "Medium Complexity",
+    "prompt": "Find all code quality issues in the repository. List each with file and line number.",
+    "expectRealData": true,
+    "success": true,
+    "duration": 5087,
+    "responseLength": 1060,
+    "hasRealFiles": false,
+    "hasGenericResponse": false,
+    "sample": "To identify code quality issues in the ky repository, review the following aspects commonly checked in code quality analysis:\n\n1. **Linting Issues**: Check for any linting errors or warnings using ESL"
+  },
+  {
+    "name": "Complex Original",
+    "prompt": "Analyze this repository for ALL code quality issues, security vulnerabilities, and best practice violations.\nFor each issue found, provide in this EXACT format:\nIssue #[number]:\n- Type: [security/performance/quality/style/best-practice]\n- Severity: [critical/high/medium/low]\n- File: [exact file path]\n- Line: [line number or range]\n- Description: [clear description of the issue]\n- Code: [relevant code snippet if available]\n- Fix: [suggested fix or improvement]",
+    "expectRealData": false,
+    "success": true,
+    "duration": 6309,
+    "responseLength": 1488,
+    "hasRealFiles": true,
+    "hasGenericResponse": false,
+    "sample": "Issue #1:\n- Type: security\n- Severity: high\n- File: src/index.ts\n- Line: 45\n- Description: Potential exposure of sensitive data in the request headers.\n- Code: `headers: { Authorization: token }`\n- Fi"
+  },
+  {
+    "name": "PR: What changed?",
+    "prompt": "What changed?",
+    "pr": 700,
+    "success": true,
+    "duration": 2518,
+    "responseLength": 331,
+    "hasRealFiles": false,
+    "hasGenericResponse": false,
+    "sample": "To find out what changed in the ky repository, refer to the \"Releases\" section on GitHub, which lists all the version updates along with their changelogs. You can also check the \"Commits\" section for "
+  },
+  {
+    "name": "PR: Find issues",
+    "prompt": "Find issues",
+    "pr": 700,
+    "success": true,
+    "duration": 1620,
+    "responseLength": 179,
+    "hasRealFiles": false,
+    "hasGenericResponse": false,
+    "sample": "The GitHub repository for Ky does not have any open issues at the moment. You can check the \"Issues\" tab on the repository page for the most current status and any future updates."
+  },
+  {
+    "name": "PR: Check line 90",
+    "prompt": "Check line 90",
+    "pr": 700,
+    "success": true,
+    "duration": 1473,
+    "responseLength": 191,
+    "hasRealFiles": false,
+    "hasGenericResponse": false,
+    "sample": "Line 90 of the `ky` repository typically corresponds to a specific function or feature within the code. To provide accurate information, please specify the file or context related to line 90."
+  },
+  {
+    "name": "PR: Review PR 700",
+    "prompt": "Review PR 700",
+    "pr": 700,
+    "success": true,
+    "duration": 2552,
+    "responseLength": 635,
+    "hasRealFiles": false,
+    "hasGenericResponse": false,
+    "sample": "PR 700 introduces several changes to the `ky` repository, focusing on improving error handling and response parsing. Key modifications include:\n\n- **Enhanced Error Handling**: The PR adds more descrip"
+  }
+]

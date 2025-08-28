@@ -1,0 +1,14 @@
+[
+  {
+    "sha": "ff4c594dfebfe1e1806920a06d9086d69f769a51",
+    "filename": "source/core/Ky.ts",
+    "status": "modified",
+    "additions": 1,
+    "deletions": 1,
+    "changes": 2,
+    "blob_url": "https://github.com/sindresorhus/ky/blob/c8ba785d6cea96778aa07140c0935dbe419f47e2/source%2Fcore%2FKy.ts",
+    "raw_url": "https://github.com/sindresorhus/ky/raw/c8ba785d6cea96778aa07140c0935dbe419f47e2/source%2Fcore%2FKy.ts",
+    "contents_url": "https://api.github.com/repos/sindresorhus/ky/contents/source%2Fcore%2FKy.ts?ref=c8ba785d6cea96778aa07140c0935dbe419f47e2",
+    "patch": "@@ -87,7 +87,7 @@ export class Ky {\n \t\t\t.finally(async () => {\n \t\t\t\t// Now that we know a retry is not needed, close the ReadableStream of the cloned request.\n \t\t\t\tif (!ky.request.bodyUsed) {\n-\t\t\t\t\tawait ky.request.body?.cancel();\n+\t\t\t\t\tky.request.body?.cancel();\n \t\t\t\t}\n \t\t\t}) as ResponsePromise;\n "
+  }
+]
