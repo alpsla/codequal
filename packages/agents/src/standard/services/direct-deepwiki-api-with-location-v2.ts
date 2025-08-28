@@ -576,7 +576,8 @@ DO NOT repeat issues already found. Look for NEW, UNIQUE issues.`;
                   'Connection': 'keep-alive',
                   'Keep-Alive': 'timeout=30'
                 },
-                timeout: 45000,  // Increased timeout for better stability
+                // BUG-086 FIX: Make timeout configurable via environment variable
+                timeout: parseInt(process.env.DEEPWIKI_TIMEOUT || '120000'),  // Default 120s, configurable via env
                 maxRedirects: 5,
                 validateStatus: (status) => status < 500,  // Don't throw on 4xx errors
                 // Axios configuration for better stream handling
@@ -1246,11 +1247,26 @@ Find at least 10 DIFFERENT issues with a mix of severities.`;
   private extractIssuesFromSection(section: string, defaultStatus: string): any[] {
     const issues: any[] = [];
     
-    // First try the detailed format
-    const itemMatches = section.matchAll(/\d+\.\s*Issue:\s*(.+?)[\n\s]+(?:Status:\s*\w+[\n\s]+)?Severity:\s*(\w+)[\n\s]+Category:\s*([\w-]+)[\n\s]+File\s*path:\s*([^\n]+)[\n\s]+Line\s*number:\s*(\d+)(?:[\n\s]+Code\s*snippet:\s*([^\n]+))?/gi);
+    // Enhanced regex to capture multi-line code snippets properly
+    // BUG-072/083 FIX: Support for multi-line code snippets with proper extraction
+    const itemMatches = section.matchAll(/\d+\.\s*Issue:\s*(.+?)[\n\s]+(?:Status:\s*\w+[\n\s]+)?Severity:\s*(\w+)[\n\s]+Category:\s*([\w-]+)[\n\s]+File\s*path:\s*([^\n]+)[\n\s]+Line\s*number:\s*(\d+)(?:[\n\s]+Code\s*snippet:\s*(.+?)(?=\n\d+\.|$))?/gis);
     
     for (const match of itemMatches) {
-      const [, description, severity, category, filePath, lineNumber, codeSnippet] = match;
+      const [fullMatch, description, severity, category, filePath, lineNumber, codeSnippetRaw] = match;
+      
+      // Extract code snippet - check for code blocks first, then inline code
+      let codeSnippet = undefined;
+      if (codeSnippetRaw) {
+        // Check for markdown code blocks
+        const codeBlockMatch = codeSnippetRaw.match(/```[\w]*\n?([\s\S]*?)```/);
+        if (codeBlockMatch) {
+          codeSnippet = codeBlockMatch[1].trim();
+        } else {
+          // Fall back to inline code or raw text
+          codeSnippet = codeSnippetRaw.trim();
+        }
+      }
+      
       issues.push({
         id: `issue-${defaultStatus}-${issues.length + 1}`,
         title: description.trim(),
@@ -1263,7 +1279,7 @@ Find at least 10 DIFFERENT issues with a mix of severities.`;
         },
         file: filePath.trim(),
         line: parseInt(lineNumber),
-        codeSnippet: codeSnippet ? codeSnippet.trim() : undefined,
+        codeSnippet: codeSnippet,
         status: defaultStatus
       });
     }
