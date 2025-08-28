@@ -83,3 +83,24 @@ export interface Recommendation {
   impact: 'low' | 'medium' | 'high';
   dependencies?: string[]; // Other recommendations that should be done first
 }
+
+// Additional types needed for specialized agents
+export interface AgentContext {
+  repositoryPath: string;
+  branchName: string;
+  files: string[];
+  toolResults?: any;
+}
+
+export interface AgentResponse {
+  success: boolean;
+  findings: Finding[];
+  summary: AnalysisSummary;
+  recommendations: Recommendation[];
+}
+
+export interface AgentCapability {
+  name: string;
+  description: string;
+  tools: string[];
+}
