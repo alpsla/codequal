@@ -17,7 +17,7 @@ const envConfig = getEnvConfig();
  * kubectl port-forward -n codequal-dev deployment/deepwiki 8001:8001
  */
 
-import { DirectDeepWikiApiWithLocationV2 as DirectDeepWikiApiWithLocation } from '../../services/direct-deepwiki-api-with-location-v2';
+import { SmartIterativeDeepWikiApi as DirectDeepWikiApiWithLocation } from '../../services/smart-iterative-deepwiki-api';
 import { PRAnalysisCategorizer } from '../../services/pr-analysis-categorizer';
 import { ReportGeneratorV8Final } from '../../comparison/report-generator-v8-final';
 import { V8HtmlGenerator } from '../../utils/v8-html-generator';
@@ -89,7 +89,7 @@ ${colors.bright}${colors.cyan}=====================================${colors.rese
     const mainResult = await deepwikiClient.analyzeRepository(repositoryUrl, {
       branch: 'main',
       useCache: false, // Don't use cache for accurate comparison
-      maxIterations: 3, // Use 3 iterations for speed
+      // maxIterations removed - let smart API decide based on quality
       confidenceThreshold: 0.8
     });
     
@@ -131,7 +131,6 @@ ${colors.bright}${colors.cyan}=====================================${colors.rese
     const prResult = await deepwikiClient.analyzeRepository(repositoryUrl, {
       branch: `pull/${prNumber}/head`,
       useCache: false,
-      maxIterations: 3,
       confidenceThreshold: 0.8,
       mainBranchIssues: mainIssues // Pass main branch issues for status tracking
     });
@@ -275,7 +274,7 @@ ${colors.bright}Reports:${colors.reset}
     // Clear caches after successful test to ensure clean next run
     console.log(`\n${colors.cyan}Clearing caches for clean next run...${colors.reset}`);
     try {
-      await deepwikiClient.clearAllCaches(repositoryUrl);
+      await deepwikiClient.clearAllCaches();
       console.log(`${colors.green}✅ Caches cleared successfully${colors.reset}`);
     } catch (clearError: any) {
       console.log(`${colors.yellow}⚠️ Could not clear all caches: ${clearError.message}${colors.reset}`);
@@ -295,7 +294,7 @@ kubectl port-forward -n codequal-dev deployment/deepwiki 8001:8001
     console.log(`\n${colors.cyan}Attempting to clear caches after failure...${colors.reset}`);
     try {
       const deepwikiClient = new DirectDeepWikiApiWithLocation();
-      await deepwikiClient.clearAllCaches(repositoryUrl);
+      await deepwikiClient.clearAllCaches();
       console.log(`${colors.green}✅ Caches cleared${colors.reset}`);
     } catch (clearError: any) {
       console.log(`${colors.yellow}⚠️ Could not clear caches: ${clearError.message}${colors.reset}`);
