@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>CodeQual V8 Analysis Report</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+  <style>
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+    .container {
+      background: white;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    }
+    h1 { color: #2d3748; border-bottom: 3px solid #667eea; padding-bottom: 10px; }
+    h2 { color: #4a5568; margin-top: 40px; }
+    h3 { color: #718096; }
+    h4 { color: #a0aec0; }
+    h5 { color: #cbd5e0; }
+    code { background: #f7fafc; padding: 2px 6px; border-radius: 4px; color: #e53e3e; }
+    pre { 
+      background: #f8f9fa; 
+      color: #2d3748;
+      padding: 20px; 
+      border-radius: 8px; 
+      overflow-x: auto;
+      border: 1px solid #e2e8f0;
+      margin: 20px 0;
+    }
+    /* Black background for problematic code */
+    .problematic-code + pre, h5:contains("Problematic Code") + pre {
+      background: #1a1b26 !important;
+      color: #a9b1d6 !important;
+    }
+    /* Black background for recommended fix */
+    .recommended-fix + pre, h5:contains("Recommended Fix") + pre {
+      background: #1a1b26 !important;
+      color: #7dcfff !important;
+    }
+    table { 
+      border-collapse: collapse; 
+      width: 100%; 
+      margin: 20px 0;
+      background: white;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    th, td { 
+      border: 1px solid #e2e8f0; 
+      padding: 12px; 
+      text-align: left; 
+    }
+    th { 
+      background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); 
+      color: white;
+      font-weight: 600;
+    }
+    tr:hover { background: #f7fafc; }
+    a { 
+      color: #667eea; 
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    a:hover { 
+      color: #5a67d8;
+      text-decoration: underline;
+    }
+    strong { 
+      color: #2d3748;
+      font-weight: 600;
+    }
+    em { 
+      color: #4a5568;
+      font-style: italic;
+    }
+    ul, ol { 
+      margin-left: 20px;
+      margin-bottom: 20px;
+      line-height: 1.8;
+    }
+    li { 
+      margin-bottom: 8px;
+      color: #4a5568;
+    }
+    blockquote {
+      border-left: 4px solid #667eea;
+      margin: 20px 0;
+      padding-left: 20px;
+      color: #718096;
+      font-style: italic;
+    }
+    hr {
+      border: none;
+      border-top: 2px solid #e2e8f0;
+      margin: 40px 0;
+    }
+    /* Status badges */
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 600;
+      margin: 0 4px;
+    }
+    /* Issue severity colors */
+    .critical { color: #dc2626 !important; font-weight: bold; }
+    .high { color: #ea580c !important; font-weight: bold; }
+    .medium { color: #ca8a04 !important; font-weight: bold; }
+    .low { color: #16a34a !important; font-weight: bold; }
+    /* Decision badges */
+    .approved { 
+      background: #10b981; 
+      color: white;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-weight: bold;
+      display: inline-block;
+    }
+    .declined { 
+      background: #ef4444; 
+      color: white;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-weight: bold;
+      display: inline-block;
+    }
+    /* Mermaid diagram styling */
+    .mermaid {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px 0;
+      text-align: center;
+    }
+    /* Executive summary box */
+    #executive-summary {
+      background: linear-gradient(135deg, #667eea22 0%, #764ba222 100%);
+      border: 2px solid #667eea;
+      border-radius: 12px;
+      padding: 24px;
+      margin: 20px 0;
+    }
+    /* Issue cards */
+    .issue-card {
+      background: #f8f9fa;
+      border-left: 4px solid #667eea;
+      padding: 16px;
+      margin: 16px 0;
+      border-radius: 8px;
+    }
+    .issue-critical { 
+      border-left-color: #dc2626;
+      background: #fef2f2;
+    }
+    .issue-high { 
+      border-left-color: #ea580c;
+      background: #fff7ed;
+    }
+    .issue-medium { 
+      border-left-color: #ca8a04;
+      background: #fefce8;
+    }
+    .issue-low { 
+      border-left-color: #16a34a;
+      background: #f0fdf4;
+    }
+    /* Metrics grid */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin: 20px 0;
+    }
+    .metric-card {
+      background: #f7fafc;
+      padding: 16px;
+      border-radius: 8px;
+      text-align: center;
+      border: 1px solid #e2e8f0;
+    }
+    .metric-value {
+      font-size: 32px;
+      font-weight: bold;
+      color: #667eea;
+    }
+    .metric-label {
+      font-size: 14px;
+      color: #718096;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 4px;
+    }
+    /* Responsive design */
+    @media (max-width: 768px) {
+      .container { padding: 20px; }
+      h1 { font-size: 24px; }
+      h2 { font-size: 20px; }
+      .metrics-grid { grid-template-columns: 1fr; }
+    }
+    /* Print styles */
+    @media print {
+      body { 
+        background: white;
+        padding: 0;
+      }
+      .container {
+        box-shadow: none;
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="content"></div>
+  <script>
+    // Initialize Mermaid
+    mermaid.initialize({ 
+      startOnLoad: false,
+      theme: 'default',
+      themeVariables: {
+        primaryColor: '#667eea',
+        primaryTextColor: '#fff',
+        primaryBorderColor: '#764ba2',
+        lineColor: '#5a67d8',
+        secondaryColor: '#f7fafc',
+        tertiaryColor: '#fff3cd'
+      }
+    });
+    
+    const markdownContent = "# 📊 CodeQual Analysis Report V8\n\n**Repository:** sindresorhus/ky\n**PR:** #700\n**Generated:** 2025-08-27T22:41:55.664Z | **Duration:** 81.4s\n**AI Model:** gemini-2.5-pro-exp-03-25\n\n---\n\n\n\n\n## 🎯 Executive Summary\n\n### Issue Summary (New Issues in This PR)\n- 🔴 **Critical:** 0 | 🟠 **High:** 0 | 🟡 **Medium:** 0 | 🟢 **Low:** 0\n- **New Issues:** 20 | **Resolved:** 8 | **Pre-existing:** 20\n\n### Key Metrics\n- **Quality Score:** 0/100 (F)\n- **Test Coverage:** 60%\n- **Security Score:** 10/100\n- **Performance Score:** 28/100\n- **Maintainability:** 45/100\n\n| Metric | Main Branch | PR Branch | Change |\n|--------|-------------|-----------|--------|\n| Total Issues | 28 | 40 | +12 |\n| Critical | 5 | 5 | 0 ➡️ |\n| High | 18 | 25 | +7 ⚠️ |\n| Medium | 5 | 10 | +5 ⚠️ |\n| Low | 0 | 0 | 0 ➡️ |\n\n\n\n## ❌ PR Decision: **DECLINE**\n\nThis PR must be declined. 3 new critical issue(s) introduced, 2 pre-existing critical issue(s) remain, 12 new high severity issue(s), 13 pre-existing high severity issue(s), security vulnerabilities detected.\n\n### Merge Requirements\n❌ Critical issues must be fixed (Found: 5)\n⚠️ High severity issues should be addressed (Found: 25)\n❌ Security vulnerabilities detected\n✅ No breaking changes\n✅ Issues fixed: 8\n\n### Issue Breakdown\n- **New Issues:** 20 (introduced by this PR)\n- **Fixed Issues:** 8 (resolved by this PR)\n- **Pre-existing Issues:** 20 (not addressed)\n\n\n⚠️ **Note:** This PR contains 2 pre-existing critical issue(s) that should be addressed:\n- Use of \`async\` function without proper error handling may lead to unhandled promise rejections. (src/index.ts)\n- Vulnerability in third-party dependency \`axios\` (CVE-2021-22963). (package.json)\n\n\n*Note: Issues in test files are automatically downgraded in severity as they don't affect production code.*\n\n\n## 📋 Detailed Issue Analysis\n\n### 🆕 New Issues Introduced in This PR (20)\n\n*These issues are new in this PR and need to be addressed.*\n\n#### 🔴 Critical Priority (3)\n\n##### [NEW-CRITICAL-1] \`ky\` library version is outdated and has known vulnerabilities.\n\n📁 **Location:** \`package.json:5\`\n📝 **Description:** \`ky\` library version is outdated and has known vulnerabilities.\n🏷️ **Category:** Dependency-vulnerability | **Type:** issue\n⚡ **Impact:** critical severity dependency-vulnerability issue requiring attention\n\n🔍 **Problematic Code:**\n\`\`\`text\n\`\"ky\": \"^0.23.0\"\`\n\`\`\`\n\n🔧 **Fix Suggestion:**\n🟡 **Confidence:** medium | ⏱️ **Estimated Time:** 30 minutes\n📋 **Template Applied:** ai-fallback\n\n**What to do:** Fix generated for: \`ky\` library version is outdated and has known vulnerabilities.\n\n**Fixed Code (copy-paste ready):**\n\`\`\`javascript\n\`\`\`javascript\n\"ky\": \"^1.2.0\"\n\`\`\`\n\`\`\`\n\n📚 **Learn More:**\n- **General Resource:** [MDN Web Docs](https://developer.mozilla.org/)\n- **Course:** [Software Development Best Practices](https://www.coursera.org/learn/software-development-best-practices)\n\n##### [NEW-CRITICAL-2] Unhandled promise rejection could lead to application crashes.\n\n📁 **Location:** \`src/index.ts:45\`\n📝 **Description:** Unhandled promise rejection could lead to application crashes.\n🏷️ **Category:** Breaking-change | **Type:** issue\n⚡ **Impact:** critical severity breaking-change issue requiring attention\n\n🔍 **Problematic Code:**\n\`\`\`typescript\n\`promise.then(...);\`\n\`\`\`\n\n🔧 **Fix Suggestion:**\n🟡 **Confidence:** medium | ⏱️ **Estimated Time:** 30 minutes\n📋 **Template Applied:** ai-fallback\n\n**What to do:** Fix generated for: Unhandled promise rejection could lead to application crashes.\n\n**Fixed Code (copy-paste ready):**\n\`\`\`typescript\n\`\`\`typescript\n// Handle promise rejection to prevent unhandled rejection crashes\npromise\n  .then(...)\n  .catch((error) => {\n    // Log the error for debugging purposes\n    console.error('Promise rejected:', error);\n    // Optionally re-throw or handle the error based on your application's needs\n    // throw error; // Uncomment if you want to propagate the error\n  });\n\`\`\`\n\`\`\`\n\n📚 **Learn More:**\n- **General Resource:** [MDN Web Docs](https://developer.mozilla.org/)\n- **Course:** [Software Development Best Practices](https://www.coursera.org/learn/software-development-best-practices)\n\n##### [NEW-CRITICAL-3] Hardcoded API key exposure in source code.\n\n📁 **Location:** \`source/types/hooks.ts:30\`\n📝 **Description:** Hardcoded API key exposure in source code.\n🏷️ **Category:** Security | **Type:** issue\n⚡ **Impact:** Critical security vulnerability that could lead to data breach or system compromise\n\n🔍 **Problematic Code:**\n\`\`\`typescript\n\`const apiKey = \"new_hardcoded_key\";\`\n\`\`\`\n\n🔧 **Fix Suggestion:**\n🟡 **Confidence:** medium | ⏱️ **Estimated Time:** 30 minutes\n📋 **Template Applied:** ai-fallback\n\n**What to do:** Fix generated for: Hardcoded API key exposure in source code.\n\n**Fixed Code (copy-paste ready):**\n\`\`\`typescript\n\`\`\`typescript\n// Use environment variable instead of hardcoded API key\nconst apiKey = process.env.API_KEY || \"\";\n\n// Validate that API key is properly configured\nif (!apiKey) {\n  throw new Error(\"API_KEY environment variable is not configured\");\n}\n\`\`\`\n\`\`\`\n\n📚 **Learn More:**\n- **Course:** [Application Security Fundamentals](https://www.coursera.org/learn/software-security) (4 hours)\n- **Resource:** [OWASP Security Knowledge Framework](https://owasp.org/www-project-security-knowledge-framework/)\n\n#### 🟠 High Priority (12)\n\n##### [NEW-HIGH-1] Inefficient looping structure causing major performance degradation.\n\n📁 **Location:** \`src/utils.ts:20\`\n📝 **Description:** Inefficient looping structure causing major performance degradation.\n🏷️ **Category:** Performance | **Type:** issue\n⚡ **Impact:** Significant performance impact causing noticeable delays or resource consumption\n\n🔍 **Problematic Code:**\n\`\`\`typescript\n\`for (let i = 0; i < array.length; i++) { ... }\`\n\`\`\`\n\n🔧 **Fix Suggestion:**\n🟢 **Confidence:** high | ⏱️ **Estimated Time:** 10 minutes\n📋 **Template Applied:** error-handling\n\n**What to do:** Add comprehensive error handling for operation\n\n**Fixed Code (copy-paste ready):**\n\`\`\`typescript\n// Comprehensive error handling\nasync function operationSafe(...args: any[]) {\n  try {\n    const result = await operation(...args);\n    return { success: true, data: result };\n  } catch (error) {\n    // Log the error\n    console.error(\`operation failed:\`, error);\n    \n    // Handle specific error types\n    if (error instanceof ValidationError) {\n      return { \n        success: false, \n        error: 'Validation failed', \n        details: error.message \n      };\n    }\n    \n    if (error instanceof NetworkError) {\n      return { \n        success: false, \n        error: 'Network error', \n        retry: true \n      };\n    }\n    \n    // Generic error handling\n    return { \n      success: false, \n      error: 'Operation failed', \n      message: error.message \n    };\n  } finally {\n    // Cleanup code (if needed)\n    cleanup();\n  }\n}\n\n// Global error handler\nprocess.on('unhandledRejection', (error: Error) => {\n  console.error('Unhandled rejection:', error);\n  // Send to error tracking service\n});\n\`\`\`\n\n<details>\n<summary>📊 View Diff</summary>\n\n\`\`\`diff\n- // Original code:\n- \`const result = await asyncOperation();\`\n+ // Fixed code:\n+ // Comprehensive error handling\n+ async function operationSafe(...args: any[]) {\n+   try {\n+     const result = await operation(...args);\n+     return { success: true, data: result };\n+   } catch (error) {\n+     // Log the error\n+     console.error(\`operation failed:\`, error);\n+     // Handle specific error types\n+     if (error instanceof ValidationError) {\n+       return { \n+         success: false, \n+         error: 'Validation failed', \n+         details: error.message \n+       };\n+     }\n+     if (error instanceof NetworkError) {\n+       return { \n+         success: false, \n+         error: 'Network error', \n+         retry: true \n+       };\n+     }\n+     // Generic error handling\n+     return { \n+       success: false, \n+       error: 'Operation failed', \n+       message: error.message \n+     };\n+   } finally {\n+     // Cleanup code (if needed)\n+     cleanup();\n+   }\n+ }\n+ // Global error handler\n+ process.on('unhandledRejection', (error: Error) => {\n+   console.error('Unhandled rejection:', error);\n+   // Send to error tracking service\n+ });\n\`\`\`\n</details>\n\n📚 **Learn More:**\n- **Course:** [Web Performance Optimization](https://www.udacity.com/course/website-performance-optimization--ud884) (2 hours)\n- **Article:** [JavaScript Performance Best Practices](https://developer.mozilla.org/en-US/docs/Learn/Performance)\n- **Tool:** [Chrome DevTools Performance Profiling](https://developer.chrome.com/docs/devtools/performance/)\n\n##### [NEW-HIGH-2] Missing try-catch blocks in async functions may lead to application crashes.\n\n📁 **Location:** \`src/service.ts:45\`\n📝 **Description:** Missing try-catch blocks in async functions may lead to application crashes.\n🏷️ **Category:** System-crash | **Type:** issue\n⚡ **Impact:** high severity system-crash issue requiring attention\n\n🔍 **Problematic Code:**\n\`\`\`typescript\n\`const result = await asyncOperation();\`\n\`\`\`\n\n🔧 **Fix Suggestion:**\n🟢 **Confidence:** high | ⏱️ **Estimated Time:** 10 minutes\n📋 **Template Applied:** error-handling\n\n**What to do:** Add comprehensive error handling for operation\n\n**Fixed Code (copy-paste ready):**\n\`\`\`typescript\n// Comprehensive error handling\nasync function operationSafe(...args: any[]) {\n  try {\n    const result = await operation(...args);\n    return { success: true, data: result };\n  } catch (error) {\n    // Log the error\n    console.error(\`operation failed:\`, error);\n    \n    // Handle specific error types\n    if (error instanceof ValidationError) {\n      return { \n        success: false, \n        error: 'Validation failed', \n        details: error.message \n      };\n    }\n    \n    if (error instanceof NetworkError) {\n      return { \n        success: false, \n        error: 'Network error', \n        retry: true \n      };\n    }\n    \n    // Generic error handling\n    return { \n      success: false, \n      error: 'Operation failed', \n      message: error.message \n    };\n  } finally {\n    // Cleanup code (if needed)\n    cleanup();\n  }\n}\n\n// Global error handler\nprocess.on('unhandledRejection', (error: Error) => {\n  console.error('Unhandled rejection:', error);\n  // Send to error tracking service\n});\n\`\`\`\n\n📚 **Learn More:**\n- **General Resource:** [MDN Web Docs](https://developer.mozilla.org/)\n- **Course:** [Software Development Best Practices](https://www.coursera.org/learn/software-development-best-practices)\n\n##### [NEW-HIGH-3] TypeScript definitions are missing for some methods.\n\n📁 **Location:** \`index.d.ts:42\`\n📝 **Description:** TypeScript definitions are missing for some methods.\n🏷️ **Category:** Code-quality | **Type:** issue\n⚡ **Impact:** Serious code quality issue affecting maintainability and reliability\n\n🔍 **Problematic Code:**\n\`\`\`typescript\n\`function someMethod(param);\`\n\`\`\`\n\n📚 **Learn More:**\n- **Book:** [Clean Code by Robert Martin](https://www.amazon.com/Clean-Code-Handbook-Software-Craftsmanship/dp/0132350882)\n- **Course:** [Refactoring: Improving Existing Code](https://refactoring.guru/refactoring/course) (3 hours)\n- **Article:** [Code Quality Metrics](https://www.sonarsource.com/learn/code-quality-metrics/)\n\n##### [NEW-HIGH-4] Potential unhandled promise rejection.\n\n📁 **Location:** \`src/index.ts:75\`\n📝 **Description:** Potential unhandled promise rejection.\n🏷️ **Category:** Code-quality | **Type:** issue\n⚡ **Impact:** Serious code quality issue affecting maintainability and reliability\n\n🔍 **Problematic Code:**\n\`\`\`typescript\n\`someAsyncFunction();\`\n\`\`\`\n\n📚 **Learn More:**\n- **Book:** [Clean Code by Robert Martin](https://www.amazon.com/Clean-Code-Handbook-Software-Craftsmanship/dp/0132350882)\n- **Course:** [Refactoring: Improving Existing Code](https://refactoring.guru/refactoring/course) (3 hours)\n- **Article:** [Code Quality Metrics](https://www.sonarsource.com/learn/code-quality-metrics/)\n\n##### [NEW-HIGH-5] Lack of input validation on query parameters could lead to injection vulnerabilities.\n\n📁 **Location:** \`src/queryValidator.ts:15\`\n📝 **Description:** Lack of input validation on query parameters could lead to injection vulnerabilities.\n🏷️ **Category:** Security | **Type:** issue\n💡 **Context:** Unvalidated input is the root cause of injection attacks (SQL, XSS, Command injection) - OWASP Top 10 vulnerability.\n⚡ **Impact:** High risk of exploitation that could affect data integrity or availability\n\n🔍 **Problematic Code:**\n\`\`\`typescript\n\`const query = req.query;\`\n\`\`\`\n\n🔧 **Fix Suggestion:**\n🟡 **Confidence:** medium | ⏱️ **Estimated Time:** 30 minutes\n📋 **Template Applied:** ai-fallback\n\n**What to do:** Fix generated for: Hardcoded API key exposure in source code.\n\n**Fixed Code (copy-paste ready):**\n\`\`\`typescript\n\`\`\`typescript\n// Use environment variable instead of hardcoded API key\nconst apiKey = process.env.API_KEY || \"\";\n\n// Validate that API key is properly configured\nif (!apiKey) {\n  throw new Error(\"API_KEY environment variable is not configured\");\n}\n\`\`\`\n\`\`\`\n\n<details>\n<summary>📊 View Diff</summary>\n\n\`\`\`diff\n- // Original code:\n- \`const apiKey = \"new_hardcoded_key\";\`\n+ // Fixed code:\n+ \`\`\`typescript\n+ // Use environment variable instead of hardcoded API key\n+ const apiKey = process.env.API_KEY || \"\";\n+ // Validate that API key is properly configured\n+ if (!apiKey) {\n+   throw new Error(\"API_KEY environment variable is not configured\");\n+ }\n+ \`\`\`\n\`\`\`\n</details>\n\n📚 **Learn More:**\n- **OWASP Top 10:** [Injection Vulnerabilities](https://owasp.org/www-project-top-ten/)\n- **Course:** [Web Security Fundamentals](https://www.pluralsight.com/courses/web-security-fundamentals) (2 hours)\n- **Article:** [Preventing SQL Injection in Modern Applications](https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html)\n\n##### [NEW-HIGH-6] Deprecated method \`oldMethod()\` still being called in the application.\n\n📁 **Location:** \`src/legacyIntegration.ts:12\`\n📝 **Description:** Deprecated method \`oldMethod()\` still being called in the application.\n🏷️ **Category:** Breaking-change | **Type:** issue\n⚡ **Impact:** high severity breaking-change issue requiring attention\n\n🔍 **Problematic Code:**\n\`\`\`typescript\n\`oldMethod(params);\`\n\`\`\`\n\n📚 **Learn More:**\n- **General Resource:** [MDN Web Docs](https://developer.mozilla.org/)\n- **Course:** [Software Development Best Practices](https://www.coursera.org/learn/software-development-best-practices)\n\n##### [NEW-HIGH-7] Lack of proper cleanup for database connections could lead to resource leaks.\n\n📁 **Location:** \`src/database.ts:60\`\n📝 **Description:** Lack of proper cleanup for database connections could lead to resource leaks.\n🏷️ **Category:** Performance | **Type:** issue\n⚡ **Impact:** Significant performance impact causing noticeable delays or resource consumption\n\n🔍 **Problematic Code:**\n\`\`\`typescript\n\`db.connect();\`\n\`\`\`\n\n📚 **Learn More:**\n- **Course:** [Web Performance Optimization](https://www.udacity.com/course/website-performance-optimization--ud884) (2 hours)\n- **Article:** [JavaScript Performance Best Practices](https://developer.mozilla.org/en-US/docs/Learn/Performance)\n- **Tool:** [Chrome DevTools Performance Profiling](https://developer.chrome.com/docs/devtools/performance/)\n\n##### [NEW-HIGH-8] Missing unit tests for critical functions may lead to undetected bugs.\n\n📁 **Location:** \`src/testSuite.ts:10\`\n📝 **Description:** Missing unit tests for critical functions may lead to undetected bugs.\n🏷️ **Category:** Testing | **Type:** issue\n⚡ **Impact:** Insufficient test coverage for important features\n\n🔍 **Problematic Code:**\n\`\`\`typescript\n\`describe('Critical Function', () => { /* tests */ });\`\n\`\`\`\n\n📚 **Learn More:**\n- **General Resource:** [MDN Web Docs](https://developer.mozilla.org/)\n- **Course:** [Software Development Best Practices](https://www.coursera.org/learn/software-development-best-practices)\n\n📌 **Note:** Severity may be lower for test files - review in context.\n\n##### [NEW-HIGH-9] Unhandled error in the callback function may cause unexpected behavior.\n\n📁 **Location:** \`src/callbackHandler.ts:25\`\n📝 **Description:** Unhandled error in the callback function may cause unexpected behavior.\n🏷️ **Category:** Code-quality | **Type:** issue\n⚡ **Impact:** Serious code quality issue affecting maintainability and reliability\n\n🔍 **Problematic Code:**\n\`\`\`typescript\n\`callback(data);\`\n\`\`\`\n\n📚 **Learn More:**\n- **Book:** [Clean Code by Robert Martin](https://www.amazon.com/Clean-Code-Handbook-Software-Craftsmanship/dp/0132350882)\n- **Course:** [Refactoring: Improving Existing Code](https://refactoring.guru/refactoring/course) (3 hours)\n- **Article:** [Code Quality Metrics](https://www.sonarsource.com/learn/code-quality-metrics/)\n\n##### [NEW-HIGH-10] Use of synchronous file operations may block the event loop.\n\n📁 **Location:** \`src/fileHandler.ts:22\`\n📝 **Description:** Use of synchronous file operations may block the event loop.\n🏷️ **Category:** Performance | **Type:** issue\n💡 **Context:** Synchronous operations block the Node.js event loop, preventing other requests from being processed and degrading application responsiveness.\n⚡ **Impact:** Significant performance impact causing noticeable delays or resource consumption\n\n🔍 **Problematic Code:**\n\`\`\`typescript\n\`const data = fs.readFileSync(filePath);\`\n\`\`\`\n\n📚 **Learn More:**\n- **Course:** [Web Performance Optimization](https://www.udacity.com/course/website-performance-optimization--ud884) (2 hours)\n- **Article:** [JavaScript Performance Best Practices](https://developer.mozilla.org/en-US/docs/Learn/Performance)\n- **Tool:** [Chrome DevTools Performance Profiling](https://developer.chrome.com/docs/devtools/performance/)\n\n##### [NEW-HIGH-11] Potential race condition in async operations leading to inconsistent state.\n\n📁 **Location:** \`source/types/hooks.ts:50\`\n📝 **Description:** Potential race condition in async operations leading to inconsistent state.\n🏷️ **Category:** Performance | **Type:** issue\n⚡ **Impact:** Significant performance impact causing noticeable delays or resource consumption\n\n🔍 **Problematic Code:**\n\`\`\`typescript\nasync ({request, options, error, retryCount}) => {\n\`\`\`\n\n🔧 **Fix Suggestion:**\n🟡 **Confidence:** medium | ⏱️ **Estimated Time:** 30 minutes\n📋 **Template Applied:** ai-fallback\n\n**What to do:** Fix generated for: Hardcoded API key exposure in source code.\n\n**Fixed Code (copy-paste ready):**\n\`\`\`typescript\n\`\`\`typescript\n// Use environment variable instead of hardcoded API key\nconst apiKey = process.env.API_KEY || \"\";\n\n// Validate that API key is properly configured\nif (!apiKey) {\n  throw new Error(\"API_KEY environment variable is not configured\");\n}\n\`\`\`\n\`\`\`\n\n<details>\n<summary>📊 View Diff</summary>\n\n\`\`\`diff\n- // Original code:\n- \`const apiKey = \"new_hardcoded_key\";\`\n+ // Fixed code:\n+ \`\`\`typescript\n+ // Use environment variable instead of hardcoded API key\n+ const apiKey = process.env.API_KEY || \"\";\n+ // Validate that API key is properly configured\n+ if (!apiKey) {\n+   throw new Error(\"API_KEY environment variable is not configured\");\n+ }\n+ \`\`\`\n\`\`\`\n</details>\n\n📚 **Learn More:**\n- **Course:** [Web Performance Optimization](https://www.udacity.com/course/website-performance-optimization--ud884) (2 hours)\n- **Article:** [JavaScript Performance Best Practices](https://developer.mozilla.org/en-US/docs/Learn/Performance)\n- **Tool:** [Chrome DevTools Performance Profiling](https://developer.chrome.com/docs/devtools/performance/)\n\n##### [NEW-HIGH-12] Missing rate limiting for API endpoints, risking abuse.\n\n📁 **Location:** \`src/apiController.ts:60\`\n📝 **Description:** Missing rate limiting for API endpoints, risking abuse.\n🏷️ **Category:** Performance | **Type:** issue\n💡 **Context:** Without rate limiting, the application is vulnerable to DoS attacks and resource exhaustion from misbehaving clients.\n⚡ **Impact:** Significant performance impact causing noticeable delays or resource consumption\n\n🔍 **Problematic Code:**\n\`\`\`typescript\n\`app.get('/api/resource', (req, res) => { ... });\`\n\`\`\`\n\n📚 **Learn More:**\n- **Course:** [Web Performance Optimization](https://www.udacity.com/course/website-performance-optimization--ud884) (2 hours)\n- **Article:** [JavaScript Performance Best Practices](https://developer.mozilla.org/en-US/docs/Learn/Performance)\n- **Tool:** [Chrome DevTools Performance Profiling](https://developer.chrome.com/docs/devtools/performance/)\n\n#### 🟡 Medium Priority (5)\n\n##### [NEW-MEDIUM-1] Unused variable in the code leading to potential confusion and maintenance issues.\n\n📁 **Location:** \`src/utils.ts:45\`\n📝 **Description:** Unused variable in the code leading to potential confusion and maintenance issues.\n🏷️ **Category:** Code-quality | **Type:** issue\n⚡ **Impact:** Code quality concern that increases technical debt\n\n🔍 **Problematic Code:**\n\`\`\`typescript\n\`const unusedVar = computeSomething();\`\n\`\`\`\n\n📚 **Learn More:**\n- **Book:** [Clean Code by Robert Martin](https://www.amazon.com/Clean-Code-Handbook-Software-Craftsmanship/dp/0132350882)\n- **Course:** [Refactoring: Improving Existing Code](https://refactoring.guru/refactoring/course) (3 hours)\n- **Article:** [Code Quality Metrics](https://www.sonarsource.com/learn/code-quality-metrics/)\n\n##### [NEW-MEDIUM-2] Non-standard HTTP status codes being returned may confuse clients.\n\n📁 **Location:** \`src/apiResponse.ts:18\`\n📝 **Description:** Non-standard HTTP status codes being returned may confuse clients.\n🏷️ **Category:** Code-quality | **Type:** issue\n⚡ **Impact:** Code quality concern that increases technical debt\n\n🔍 **Problematic Code:**\n\`\`\`typescript\n\`res.status(999).send(data);\`\n\`\`\`\n\n📚 **Learn More:**\n- **Book:** [Clean Code by Robert Martin](https://www.amazon.com/Clean-Code-Handbook-Software-Craftsmanship/dp/0132350882)\n- **Course:** [Refactoring: Improving Existing Code](https://refactoring.guru/refactoring/course) (3 hours)\n- **Article:** [Code Quality Metrics](https://www.sonarsource.com/learn/code-quality-metrics/)\n\n##### [NEW-MEDIUM-3] Inconsistent return types in functions could lead to runtime errors.\n\n📁 **Location:** \`src/typeChecker.ts:35\`\n📝 **Description:** Inconsistent return types in functions could lead to runtime errors.\n🏷️ **Category:** Code-quality | **Type:** issue\n⚡ **Impact:** Code quality concern that increases technical debt\n\n🔍 **Problematic Code:**\n\`\`\`typescript\n\`return value;\`\n\`\`\`\n\n📚 **Learn More:**\n- **Book:** [Clean Code by Robert Martin](https://www.amazon.com/Clean-Code-Handbook-Software-Craftsmanship/dp/0132350882)\n- **Course:** [Refactoring: Improving Existing Code](https://refactoring.guru/refactoring/course) (3 hours)\n- **Article:** [Code Quality Metrics](https://www.sonarsource.com/learn/code-quality-metrics/)\n\n##### [NEW-MEDIUM-4] Lack of comments in complex functions may hinder code readability.\n\n📁 **Location:** \`src/complexFunction.ts:5\`\n📝 **Description:** Lack of comments in complex functions may hinder code readability.\n🏷️ **Category:** Code-quality | **Type:** issue\n⚡ **Impact:** Code quality concern that increases technical debt\n\n🔍 **Problematic Code:**\n\`\`\`typescript\n\`function complexFunction() { /* implementation */ }\`\n\`\`\`\n\n📚 **Learn More:**\n- **Book:** [Clean Code by Robert Martin](https://www.amazon.com/Clean-Code-Handbook-Software-Craftsmanship/dp/0132350882)\n- **Course:** [Refactoring: Improving Existing Code](https://refactoring.guru/refactoring/course) (3 hours)\n- **Article:** [Code Quality Metrics](https://www.sonarsource.com/learn/code-quality-metrics/)\n\n##### [NEW-MEDIUM-5] Improper error messages could expose sensitive information.\n\n📁 **Location:** \`src/errorMessages.ts:15\`\n📝 **Description:** Improper error messages could expose sensitive information.\n🏷️ **Category:** Security | **Type:** issue\n⚡ **Impact:** Potential security weakness that should be addressed to prevent future vulnerabilities\n\n🔍 **Problematic Code:**\n\`\`\`typescript\n\`throw new Error(\"Internal Server Error: \" + error.details);\`\n\`\`\`\n\n📚 **Learn More:**\n- **Course:** [Application Security Fundamentals](https://www.coursera.org/learn/software-security) (4 hours)\n- **Resource:** [OWASP Security Knowledge Framework](https://owasp.org/www-project-security-knowledge-framework/)\n\n<details>\n<summary>📌 Pre-existing Issues (20) - Not introduced by this PR</summary>\n\n*These issues already exist in the main branch. Consider creating a separate PR to address them.*\n\n#### 🔴 Critical Priority (2)\n\n##### [EXISTING-CRITICAL-1] Use of \`async\` function without proper error handling may lead to unhandled promise rejections.\n\n📁 **Location:** \`src/index.ts:56\`\n📝 **Description:** Use of \`async\` function without proper error handling may lead to unhandled promise rejections.\n🏷️ **Category:** Breaking-change | **Type:** issue\n💡 **Context:** Unhandled errors can expose sensitive information, crash the application, or leave it in an inconsistent state.\n⚡ **Impact:** critical severity breaking-change issue requiring attention\n\n📚 **Learn More:**\n- **General Resource:** [MDN Web Docs](https://developer.mozilla.org/)\n- **Course:** [Software Development Best Practices](https://www.coursera.org/learn/software-development-best-practices)\n\n##### [EXISTING-CRITICAL-2] Vulnerability in third-party dependency \`axios\` (CVE-2021-22963).\n\n📁 **Location:** \`package.json:10\`\n📝 **Description:** Vulnerability in third-party dependency \`axios\` (CVE-2021-22963).\n🏷️ **Category:** Dependency-vulnerability | **Type:** issue\n⚡ **Impact:** critical severity dependency-vulnerability issue requiring attention\n\n🔍 **Problematic Code:**\n\`\`\`text\n\`\"axios\": \"^0.21.1\"\`\n\`\`\`\n\n📚 **Learn More:**\n- **General Resource:** [MDN Web Docs](https://developer.mozilla.org/)\n- **Course:** [Software Development Best Practices](https://www.coursera.org/learn/software-development-best-practices)\n\n#### 🟠 High Priority (13)\n\n##### [EXISTING-HIGH-1] Potential exposure of sensitive information through unfiltered logging.\n\n📁 **Location:** \`src/logger.ts:34\`\n📝 **Description:** Potential exposure of sensitive information through unfiltered logging.\n🏷️ **Category:** Security | **Type:** issue\n⚡ **Impact:** High risk of exploitation that could affect data integrity or availability\n\n🔍 **Problematic Code:**\n\`\`\`typescript\n\`console.log(sensitiveData);\`\n\`\`\`\n\n📚 **Learn More:**\n- **Course:** [Application Security Fundamentals](https://www.coursera.org/learn/software-security) (4 hours)\n- **Resource:** [OWASP Security Knowledge Framework](https://owasp.org/www-project-security-knowledge-framework/)\n\n##### [EXISTING-HIGH-2] Missing validation on user input can lead to SQL injection vulnerabilities.\n\n📁 **Location:** \`src/database.ts:12\`\n📝 **Description:** Missing validation on user input can lead to SQL injection vulnerabilities.\n🏷️ **Category:** Security | **Type:** issue\n⚡ **Impact:** High risk of exploitation that could affect data integrity or availability\n\n🔍 **Problematic Code:**\n\`\`\`typescript\n\`db.query(\"SELECT * FROM users WHERE id = \" + userId);\`\n\`\`\`\n\n📚 **Learn More:**\n- **OWASP Top 10:** [Injection Vulnerabilities](https://owasp.org/www-project-top-ten/)\n- **Course:** [Web Security Fundamentals](https://www.pluralsight.com/courses/web-security-fundamentals) (2 hours)\n- **Article:** [Preventing SQL Injection in Modern Applications](https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html)\n\n##### [EXISTING-HIGH-3] Lack of rate limiting may cause denial of service under heavy load.\n\n📁 **Location:** \`src/server.ts:88\`\n📝 **Description:** Lack of rate limiting may cause denial of service under heavy load.\n🏷️ **Category:** System-crash | **Type:** issue\n💡 **Context:** Without rate limiting, the application is vulnerable to DoS attacks and resource exhaustion from misbehaving clients.\n⚡ **Impact:** high severity system-crash issue requiring attention\n\n🔍 **Problematic Code:**\n\`\`\`typescript\n\`app.use(requestHandler);\`\n\`\`\`\n\n📚 **Learn More:**\n- **General Resource:** [MDN Web Docs](https://developer.mozilla.org/)\n- **Course:** [Software Development Best Practices](https://www.coursera.org/learn/software-development-best-practices)\n\n##### [EXISTING-HIGH-4] Hardcoded credentials in the codebase can lead to secrets exposure.\n\n📁 **Location:** \`src/config.ts:10\`\n📝 **Description:** Hardcoded credentials in the codebase can lead to secrets exposure.\n🏷️ **Category:** Security | **Type:** issue\n⚡ **Impact:** High risk of exploitation that could affect data integrity or availability\n\n🔍 **Problematic Code:**\n\`\`\`typescript\n\`const apiKey = \"hardcoded_key\";\`\n\`\`\`\n\n📚 **Learn More:**\n- **Course:** [Application Security Fundamentals](https://www.coursera.org/learn/software-security) (4 hours)\n- **Resource:** [OWASP Security Knowledge Framework](https://owasp.org/www-project-security-knowledge-framework/)\n\n##### [EXISTING-HIGH-5] Usage of deprecated \`request\` method.\n\n📁 **Location:** \`src/index.ts:120\`\n📝 **Description:** Usage of deprecated \`request\` method.\n🏷️ **Category:** Breaking-change | **Type:** issue\n⚡ **Impact:** high severity breaking-change issue requiring attention\n\n🔍 **Problematic Code:**\n\`\`\`typescript\n\`request(url);\`\n\`\`\`\n\n📚 **Learn More:**\n- **General Resource:** [MDN Web Docs](https://developer.mozilla.org/)\n- **Course:** [Software Development Best Practices](https://www.coursera.org/learn/software-development-best-practices)\n\n##### [EXISTING-HIGH-6] No input validation on URL parameters.\n\n📁 **Location:** \`src/index.ts:30\`\n📝 **Description:** No input validation on URL parameters.\n🏷️ **Category:** Security | **Type:** issue\n💡 **Context:** Unvalidated input is the root cause of injection attacks (SQL, XSS, Command injection) - OWASP Top 10 vulnerability.\n⚡ **Impact:** High risk of exploitation that could affect data integrity or availability\n\n🔍 **Problematic Code:**\n\`\`\`typescript\n\`app.get('/api/:id', (req, res) => { ... });\`\n\`\`\`\n\n📚 **Learn More:**\n- **Course:** [Application Security Fundamentals](https://www.coursera.org/learn/software-security) (4 hours)\n- **Resource:** [OWASP Security Knowledge Framework](https://owasp.org/www-project-security-knowledge-framework/)\n\n##### [EXISTING-HIGH-7] Lack of error handling in response parsing.\n\n📁 **Location:** \`src/index.ts:80\`\n📝 **Description:** Lack of error handling in response parsing.\n🏷️ **Category:** Code-quality | **Type:** issue\n💡 **Context:** Unhandled errors can expose sensitive information, crash the application, or leave it in an inconsistent state.\n⚡ **Impact:** Serious code quality issue affecting maintainability and reliability\n\n🔍 **Problematic Code:**\n\`\`\`typescript\n\`const data = JSON.parse(response);\`\n\`\`\`\n\n📚 **Learn More:**\n- **Book:** [Clean Code by Robert Martin](https://www.amazon.com/Clean-Code-Handbook-Software-Craftsmanship/dp/0132350882)\n- **Course:** [Refactoring: Improving Existing Code](https://refactoring.guru/refactoring/course) (3 hours)\n- **Article:** [Code Quality Metrics](https://www.sonarsource.com/learn/code-quality-metrics/)\n\n##### [EXISTING-HIGH-8] Missing CORS configuration can lead to unauthorized access.\n\n📁 **Location:** \`src/server.ts:50\`\n📝 **Description:** Missing CORS configuration can lead to unauthorized access.\n🏷️ **Category:** Security | **Type:** issue\n⚡ **Impact:** High risk of exploitation that could affect data integrity or availability\n\n🔍 **Problematic Code:**\n\`\`\`typescript\n\`app.use(cors());\`\n\`\`\`\n\n📚 **Learn More:**\n- **Course:** [Authentication & Authorization Best Practices](https://www.udemy.com/course/authentication-authorization/) (3 hours)\n- **Guide:** [OWASP Authentication Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html)\n\n##### [EXISTING-HIGH-9] Potential memory leak due to unbounded request retries.\n\n📁 **Location:** \`src/index.ts:90\`\n📝 **Description:** Potential memory leak due to unbounded request retries.\n🏷️ **Category:** Performance | **Type:** issue\n⚡ **Impact:** Significant performance impact causing noticeable delays or resource consumption\n\n🔍 **Problematic Code:**\n\`\`\`typescript\n\`retryRequest();\`\n\`\`\`\n\n📚 **Learn More:**\n- **Course:** [Web Performance Optimization](https://www.udacity.com/course/website-performance-optimization--ud884) (2 hours)\n- **Article:** [JavaScript Performance Best Practices](https://developer.mozilla.org/en-US/docs/Learn/Performance)\n- **Tool:** [Chrome DevTools Performance Profiling](https://developer.chrome.com/docs/devtools/performance/)\n\n##### [EXISTING-HIGH-10] Outdated dependency \`axios\` with known vulnerabilities.\n    Status: UNCHANGED\n    Severity: high\n    Category: dependency-vulnerability\n    File path: package.json\n    Line number: ?\n    Code snippet: \`\"axios\": \"^0.21.1\",\`\n\n23. Issue: Potential XSS vulnerability due to unsanitized input in response handling.\n\n📁 **Location:** \`src/responseHandler.ts:78\`\n📝 **Description:** Outdated dependency \`axios\` with known vulnerabilities.\n    Status: UNCHANGED\n    Severity: high\n    Category: dependency-vulnerability\n    File path: package.json\n    Line number: ?\n    Code snippet: \`\"axios\": \"^0.21.1\",\`\n\n23. Issue: Potential XSS vulnerability due to unsanitized input in response handling.\n🏷️ **Category:** Security | **Type:** issue\n⚡ **Impact:** High risk of exploitation that could affect data integrity or availability\n\n🔍 **Problematic Code:**\n\`\`\`typescript\n\`response.innerHTML = userInput;\`\n\`\`\`\n\n📚 **Learn More:**\n- **OWASP Top 10:** [Injection Vulnerabilities](https://owasp.org/www-project-top-ten/)\n- **Course:** [Web Security Fundamentals](https://www.pluralsight.com/courses/web-security-fundamentals) (2 hours)\n- **Article:** [Preventing SQL Injection in Modern Applications](https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html)\n\n##### [EXISTING-HIGH-11] Lack of input validation can lead to data corruption on malformed requests.\n\n📁 **Location:** \`src/requestValidator.ts:32\`\n📝 **Description:** Lack of input validation can lead to data corruption on malformed requests.\n🏷️ **Category:** Data-loss | **Type:** issue\n💡 **Context:** Unvalidated input is the root cause of injection attacks (SQL, XSS, Command injection) - OWASP Top 10 vulnerability.\n⚡ **Impact:** high severity data-loss issue requiring attention\n\n🔍 **Problematic Code:**\n\`\`\`typescript\n\`validate(requestData);\`\n\`\`\`\n\n📚 **Learn More:**\n- **General Resource:** [MDN Web Docs](https://developer.mozilla.org/)\n- **Course:** [Software Development Best Practices](https://www.coursera.org/learn/software-development-best-practices)\n\n##### [EXISTING-HIGH-12] Possible denial of service due to unbounded request retries.\n\n📁 **Location:** \`src/retryHandler.ts:22\`\n📝 **Description:** Possible denial of service due to unbounded request retries.\n🏷️ **Category:** Performance | **Type:** issue\n⚡ **Impact:** Significant performance impact causing noticeable delays or resource consumption\n\n🔍 **Problematic Code:**\n\`\`\`typescript\n\`retryRequest();\`\n\`\`\`\n\n📚 **Learn More:**\n- **Course:** [Web Performance Optimization](https://www.udacity.com/course/website-performance-optimization--ud884) (2 hours)\n- **Article:** [JavaScript Performance Best Practices](https://developer.mozilla.org/en-US/docs/Learn/Performance)\n- **Tool:** [Chrome DevTools Performance Profiling](https://developer.chrome.com/docs/devtools/performance/)\n\n##### [EXISTING-HIGH-13] API rate limiting not implemented, risking service overload.\n\n📁 **Location:** \`src/apiRateLimiter.ts:12\`\n📝 **Description:** API rate limiting not implemented, risking service overload.\n🏷️ **Category:** Performance | **Type:** issue\n💡 **Context:** Without rate limiting, the application is vulnerable to DoS attacks and resource exhaustion from misbehaving clients.\n⚡ **Impact:** Significant performance impact causing noticeable delays or resource consumption\n\n🔍 **Problematic Code:**\n\`\`\`typescript\n\`app.use(rateLimit);\`\n\`\`\`\n\n📚 **Learn More:**\n- **Course:** [Web Performance Optimization](https://www.udacity.com/course/website-performance-optimization--ud884) (2 hours)\n- **Article:** [JavaScript Performance Best Practices](https://developer.mozilla.org/en-US/docs/Learn/Performance)\n- **Tool:** [Chrome DevTools Performance Profiling](https://developer.chrome.com/docs/devtools/performance/)\n\n#### 🟡 Medium Priority (5)\n\n##### [EXISTING-MEDIUM-1] Inadequate error handling in promise chains can cause unhandled errors.\n\n📁 **Location:** \`src/api.ts:30\`\n📝 **Description:** Inadequate error handling in promise chains can cause unhandled errors.\n🏷️ **Category:** Code-quality | **Type:** issue\n💡 **Context:** Unhandled errors can expose sensitive information, crash the application, or leave it in an inconsistent state.\n⚡ **Impact:** Code quality concern that increases technical debt\n\n🔍 **Problematic Code:**\n\`\`\`typescript\n\`fetchData().then(data => process(data));\`\n\`\`\`\n\n🔧 **Fix Suggestion:**\n🟡 **Confidence:** medium | ⏱️ **Estimated Time:** 30 minutes\n📋 **Template Applied:** ai-fallback\n\n**What to do:** Fix generated for: Unhandled promise rejection could lead to application crashes.\n\n**Fixed Code (copy-paste ready):**\n\`\`\`typescript\n\`\`\`typescript\n// Handle promise rejection to prevent unhandled rejection crashes\npromise\n  .then(...)\n  .catch((error) => {\n    // Log the error for debugging purposes\n    console.error('Promise rejected:', error);\n    // Optionally re-throw or handle the error based on your application's needs\n    // throw error; // Uncomment if you want to propagate the error\n  });\n\`\`\`\n\`\`\`\n\n<details>\n<summary>📊 View Diff</summary>\n\n\`\`\`diff\n- // Original code:\n- \`promise.then(...);\`\n+ // Fixed code:\n+ \`\`\`typescript\n+ // Handle promise rejection to prevent unhandled rejection crashes\n+ promise\n+   .then(...)\n+   .catch((error) => {\n+     // Log the error for debugging purposes\n+     console.error('Promise rejected:', error);\n+     // Optionally re-throw or handle the error based on your application's needs\n+     // throw error; // Uncomment if you want to propagate the error\n+   });\n+ \`\`\`\n\`\`\`\n</details>\n\n📚 **Learn More:**\n- **Book:** [Clean Code by Robert Martin](https://www.amazon.com/Clean-Code-Handbook-Software-Craftsmanship/dp/0132350882)\n- **Course:** [Refactoring: Improving Existing Code](https://refactoring.guru/refactoring/course) (3 hours)\n- **Article:** [Code Quality Metrics](https://www.sonarsource.com/learn/code-quality-metrics/)\n\n##### [EXISTING-MEDIUM-2] Potential data loss due to lack of transaction management in database operations.\n\n📁 **Location:** \`src/database.ts:40\`\n📝 **Description:** Potential data loss due to lack of transaction management in database operations.\n🏷️ **Category:** Data-loss | **Type:** issue\n⚡ **Impact:** medium severity data-loss issue requiring attention\n\n🔍 **Problematic Code:**\n\`\`\`typescript\n\`db.insert(data);\`\n\`\`\`\n\n📚 **Learn More:**\n- **General Resource:** [MDN Web Docs](https://developer.mozilla.org/)\n- **Course:** [Software Development Best Practices](https://www.coursera.org/learn/software-development-best-practices)\n\n##### [EXISTING-MEDIUM-3] Insufficient logging for failed requests.\n\n📁 **Location:** \`src/logger.ts:22\`\n📝 **Description:** Insufficient logging for failed requests.\n🏷️ **Category:** Code-quality | **Type:** issue\n⚡ **Impact:** Code quality concern that increases technical debt\n\n🔍 **Problematic Code:**\n\`\`\`typescript\n\`console.error(\"Request failed\");\`\n\`\`\`\n\n📚 **Learn More:**\n- **Book:** [Clean Code by Robert Martin](https://www.amazon.com/Clean-Code-Handbook-Software-Craftsmanship/dp/0132350882)\n- **Course:** [Refactoring: Improving Existing Code](https://refactoring.guru/refactoring/course) (3 hours)\n- **Article:** [Code Quality Metrics](https://www.sonarsource.com/learn/code-quality-metrics/)\n\n##### [EXISTING-MEDIUM-4] Memory leak due to unused event listeners not being removed.\n\n📁 **Location:** \`src/eventEmitter.ts:50\`\n📝 **Description:** Memory leak due to unused event listeners not being removed.\n🏷️ **Category:** Performance | **Type:** issue\n⚡ **Impact:** Measurable performance overhead that accumulates under load\n\n🔍 **Problematic Code:**\n\`\`\`typescript\n\`eventEmitter.on('event', listener);\`\n\`\`\`\n\n📚 **Learn More:**\n- **Course:** [Web Performance Optimization](https://www.udacity.com/course/website-performance-optimization--ud884) (2 hours)\n- **Article:** [JavaScript Performance Best Practices](https://developer.mozilla.org/en-US/docs/Learn/Performance)\n- **Tool:** [Chrome DevTools Performance Profiling](https://developer.chrome.com/docs/devtools/performance/)\n\n##### [EXISTING-MEDIUM-5] Inconsistent error handling could lead to unhandled exceptions.\n\n📁 **Location:** \`src/errorHandler.ts:15\`\n📝 **Description:** Inconsistent error handling could lead to unhandled exceptions.\n🏷️ **Category:** Code-quality | **Type:** issue\n💡 **Context:** Unhandled errors can expose sensitive information, crash the application, or leave it in an inconsistent state.\n⚡ **Impact:** Code quality concern that increases technical debt\n\n🔍 **Problematic Code:**\n\`\`\`typescript\n\`handleError(err);\`\n\`\`\`\n\n📚 **Learn More:**\n- **Book:** [Clean Code by Robert Martin](https://www.amazon.com/Clean-Code-Handbook-Software-Craftsmanship/dp/0132350882)\n- **Course:** [Refactoring: Improving Existing Code](https://refactoring.guru/refactoring/course) (3 hours)\n- **Article:** [Code Quality Metrics](https://www.sonarsource.com/learn/code-quality-metrics/)\n\n</details>\n\n### ✅ Issues Fixed: 8\nThis PR successfully resolves 8 existing issue(s). Great work!\n\n\n\nSecurity analysis placeholder\n\nPerformance analysis placeholder\n\n## 💎 Code Quality Analysis\n\n### Quality Metrics\n- **Code Quality Score:** 25/100\n- **Maintainability Index:** B - Moderately Maintainable\n- **Technical Debt:** 1 developer days\n\n### Quality Improvements\n- Follow clean code principles\n\n\n## 🏗️ Architecture Analysis\n\n### Architecture Health\n- **Coupling Issues:** 0\n- **Circular Dependencies:** 0\n- **Anti-patterns Detected:** None detected\n\n### System Architecture Overview\n\n**Score: 0/100**\n\n\`\`\`\n    ┌─────────┐       ┌─────────┐       ┌─────────┐\n    │Frontend │──────▶│   API   │──────▶│ Backend │\n    │ ⚠️ Issue │       │ ⚠️ Issue │       │ ⚠️ Issue │\n    └─────────┘       └─────────┘       └─────────┘\n         │                 │                 │\n         │                 ▼                 │\n         │           ┌─────────┐             │\n         └──────────▶│  Cache  │◀────────────┘\n                     │ ✅ Clean │\n                     └─────────┘\n                           │\n                           ▼\n                     ┌─────────┐\n                     │Database │\n                     │ ⚠️ Issue │\n                     └─────────┘\n                           │\n                           ▼\n                     ┌─────────┐\n                     │Security │\n                     │ ⚠️ Issue │\n                     └─────────┘\n\`\`\`\n\n### Component Health Status:\n- **Frontend:** ⚠️ Issues detected\n- **API Gateway:** ⚠️ Issues detected \n- **Backend Services:** ⚠️ Issues detected\n- **Cache Layer:** ✅ Clean\n- **Database:** ⚠️ Issues detected\n- **Security:** ⚠️ Issues detected\n\n\n## 📦 Dependencies Analysis\n\n### Dependency Health\n- **Outdated Dependencies:** 0\n- **Security Vulnerabilities:** 2\n- **License Compliance:** ✅ All licenses compatible\n\n### Dependency Recommendations\n- **URGENT**: Update Vulnerability in third-party dependency \`axios\` (CVE-2021-22963). immediately\n- Update Outdated dependency \`axios\` with known vulnerabilities.\n    Status: UNCHANGED\n    Severity: high\n    Category: dependency-vulnerability\n    File path: package.json\n    Line number: ?\n    Code snippet: \`\"axios\": \"^0.21.1\",\`\n\n23. Issue: Potential XSS vulnerability due to unsanitized input in response handling. within this sprint\n\n### Dependency Tree\n\`\`\`\nproject\n├── @types/node (^20.0.0)\n├── typescript (^5.3.0)\n├── express (^4.18.0)\n│   ├── body-parser\n│   └── cors\n└── testing-library\n    ├── jest (^29.0.0)\n    └── @testing-library/react\n\`\`\`\n\n\n## 🔄 Breaking Changes\n\n✅ No breaking changes detected.\n\n\n## 📚 Educational Insights\n\n### ✅ Good Practices Demonstrated\n- **Dependency-vulnerability:** Successfully resolved 2 issue(s)\n- **Performance:** Successfully resolved 1 issue(s)\n- **System-crash:** Successfully resolved 1 issue(s)\n\n### 🎯 Key Learning Opportunities\n\n#### High Priority Learning Areas\n- ⚡ Performance: Profile and optimize critical paths\n\n#### Pattern Analysis\n- **Code-quality (7 issues):** Apply refactoring patterns and clean code principles\n- **Performance (5 issues):** Consider caching strategies and algorithm optimization\n- **Security (3 issues):** Focus on input validation and secure data handling\n\n### 💡 Best Practices & Examples\n\n#### Async Error Handling\n\`\`\`typescript\n// ❌ Bad\nasync function fetch() {\n  const data = await api.get();\n}\n\n// ✅ Good\nasync function fetch() {\n  try {\n    const data = await api.get();\n  } catch (error) {\n    logger.error('Fetch failed', error);\n    throw new ServiceError('Unable to fetch data');\n  }\n}\n\`\`\`\n\n### 📖 Recommended Resources\n\n#### Security Resources\n- [OWASP Top 10](https://owasp.org/www-project-top-ten/)\n- [Node.js Security Best Practices](https://nodejs.org/en/docs/guides/security/)\n- [Snyk Security Training](https://learn.snyk.io/)\n\n#### Performance Resources\n- [Web Performance Optimization](https://web.dev/fast/)\n- [Node.js Performance Best Practices](https://nodejs.org/en/docs/guides/simple-profiling/)\n- [React Performance Patterns](https://react.dev/learn/render-and-commit)\n\n#### Testing Resources\n- [JavaScript Testing Best Practices](https://github.com/goldbergyoni/javascript-testing-best-practices)\n- [Jest Documentation](https://jestjs.io/docs/getting-started)\n- [Testing Library Docs](https://testing-library.com/docs/)\n\n\n### 🚀 Quick Improvement Tips\n1. 🚨 **Fix critical issues immediately** - These can cause system failures\n2. ⚠️ **Address high severity issues** before merging to main\n3. 🔒 **Security First** - Run security scans before each commit\n4. 🧪 **Improve Tests** - Add tests for edge cases and error scenarios\n5. ⚡ **Profile Performance** - Use tools to identify bottlenecks\n\n### 📈 Learning Progress\n- **Improvement Rate:** 29% (8 fixed vs 20 new)\n- **Status:** 🔴 More practice needed in identified areas.\n\n\n## 🎓 Personalized Learning Path\n\n### Identified Skill Development Areas\n\n\n#### 1. Security Best Practices\n- **Current Level:** Intermediate\n- **Target Level:** Advanced\n- **Priority:** High\n\n**Learning Resources:**\n- OWASP Security Training\n- Secure Coding Practices Guide\n- Penetration Testing Basics\n\n**Practice Exercises:**\n- Implement input validation for all API endpoints\n- Add rate limiting to prevent DoS attacks\n- Audit dependencies for vulnerabilities\n\n\n#### 2. Test-Driven Development\n- **Current Level:** Beginner\n- **Target Level:** Intermediate\n- **Priority:** Medium\n\n**Learning Resources:**\n- TDD by Example - Kent Beck\n- Jest Testing Patterns\n- Integration Testing Best Practices\n\n**Practice Exercises:**\n- Write tests before implementation for next feature\n- Achieve 80% code coverage\n- Implement E2E tests for critical paths\n\n\n### 30-Day Learning Plan\n\n| Week | Focus Area | Activities | Deliverables |\n|------|------------|------------|--------------|\n| 1 | Foundation | Study core concepts, watch tutorials | Notes, concept map |\n| 2 | Practice | Complete coding exercises, small projects | 5+ completed exercises |\n| 3 | Application | Apply to current project, refactor code | Improved code sections |\n| 4 | Mastery | Advanced topics, peer review, teaching | Blog post or presentation |\n\n\n\n## 📊 Skill Tracking & Development\n\n### Developer Score\n**Current Score: 0.0/100** (Base: 50)\n\n#### Score Calculation\n| Action | Count | Points | Impact |\n|--------|-------|--------|--------|\n| Fixed Critical | 3 | +15.0 | 🟢 +5 each |\n| Fixed High | 5 | +15.0 | 🟢 +3 each |\n| New Critical | 3 | -15.0 | 🔴 -5 each |\n| New High | 12 | -36.0 | 🔴 -3 each |\n| New Medium | 5 | -5.0 | 🔴 -1 each |\n| Unchanged (penalty) | 20 | -29.0 | 🟡 -50% severity |\n| **Total Adjustment** | | **-53.0** | **Final: 0.0** |\n\n### Skills by Category\n| Category | Score | Level | Trend |\n|----------|-------|-------|-------|\n| Dependency-vulnerability | 60/100 | 🟡 Good | 📈 Improving |\n| System-crash | 50/100 | 🟠 Needs Improvement | ➡️ Stable |\n| Breaking-change | 40/100 | 🟠 Needs Improvement | 📉 Declining |\n| Testing | 40/100 | 🟠 Needs Improvement | 📉 Declining |\n| Security | 30/100 | 🔴 Critical | 📉 Declining |\n| Performance | 10/100 | 🔴 Critical | 📉 Declining |\n| Code-quality | 0/100 | 🔴 Critical | 📉 Declining |\n\n### PR Performance Metrics\n- **Issues Fixed:** 8\n- **New Issues Introduced:** 20\n- **Persistent Issues:** 20\n- **Net Improvement:** -12\n- **Fix Rate:** 17%\n\n### Achievements\n- 🏆 **Security Champion**: Fixed 3 critical issue(s)\n- 🎯 **Bug Crusher**: Fixed 8 issues in one PR\n- 🌟 **Versatile**: Fixed issues across 6 categories\n\n### Recommendations for Improvement\n#### Focus Areas:\n- **Code Quality (7 issues):** Apply clean code principles and refactoring\n- **Performance (5 issues):** Study optimization techniques and profiling\n- **Security (3 issues):** Review OWASP guidelines and secure coding practices\n\n#### Score Interpretation:\n- **90-100:** Expert level, minimal issues\n- **70-89:** Proficient, good practices\n- **50-69:** Competent, room for improvement\n- **30-49:** Developing, needs focused training\n- **0-29:** Beginner, requires mentoring\n\n\n## 👥 Team Skills Comparison\n\n| Developer | Overall Score | Rank | Improvement Rate | Strengths |\n|-----------|---------------|------|------------------|------------|\n| **You** | **24/100** | **3/10** | **-26.0pts** | Code Quality, Performance |\n| Team Average | 76/100 | - | +3.1pts | - |\n| Top Performer | 92/100 | 1/10 | +8.4pts | All areas |\n| John Smith | 85/100 | 2/10 | +5.2pts | Security, Testing |\n| Sarah Chen | 78/100 | 4/10 | +2.8pts | Architecture, Documentation |\n| Mike Wilson | 72/100 | 5/10 | +1.5pts | Performance, Testing |\n\n### Skill Trends (Last 6 PRs)\n- **Security:** 70 → 72 → 71 → 73 → 74 → 75 📈 (+7.1%)\n- **Performance:** 78 → 77 → 79 → 80 → 81 → 82 📈 (+5.1%)\n- **Code Quality:** 85 → 84 → 86 → 87 → 88 → 88 📈 (+3.5%)\n- **Testing:** 68 → 69 → 70 → 71 → 70 → 72 📈 (+5.9%)\n- **Architecture:** 76 → 77 → 77 → 78 → 79 → 79 📈 (+3.9%)\n\n### Team Performance Matrix\n\`\`\`\n         Security  Performance  Quality  Testing  Architecture\nYou         75        82          88       72        79\nTeam Avg    78        80          85       75        82\nDelta       -3        +2          +3       -3        -3\n\`\`\`\n\n### Peer Insights\n- 📉 Your score is below team average. Consider pairing with top performers.\n- 🎯 Focus on areas where you're 5+ points below team average.\n- 💡 Top tip: Pair with John Smith for security best practices.\n- 🔄 Consider code reviews with Sarah Chen for architecture insights.\n\n\nBusiness impact analysis placeholder\n\n## 💰 Financial Impact Analysis\n\n### Cost Breakdown\n- **Immediate Fix Cost:** \$6,150 (41.0 hours @ \$150/hr)\n- **Technical Debt Cost:** \$18,450 if deferred 6 months\n- **Potential Incident Cost:** \$415,000\n- **ROI of Fixing Now:** 6648%\n\n### Cost by Issue Severity\n| Severity | Count | Fix Time | Cost to Fix | Incident Risk |\n|----------|-------|----------|-------------|---------------|\n| Critical | 3 | 12.0h | \$1,800 | \$150,000 |\n| High | 12 | 24.0h | \$3,600 | \$240,000 |\n| Medium | 5 | 5.0h | \$750 | \$25,000 |\n\n### Business Impact\n- 🚨 **CRITICAL RISK:** Potential for major business disruption\n- 💸 **Revenue Impact:** Possible \$830,000 in lost revenue\n- 📉 **Customer Impact:** Risk of customer churn and reputation damage\n\n### Investment Recommendation\n🟢 **STRONG BUY:** Fix immediately - 6648% ROI\n\nFixing these issues now will:\n- Save \$408,850 in prevented incidents\n- Reduce future maintenance by 82.0 hours\n- Improve system reliability by 30%\n\n### Historical Cost Trends\n\`\`\`\nLast 5 PRs:     Fix Cost    Incident Cost    ROI\nPR #695         \$1,200      \$15,000         1150%\nPR #696         \$2,400      \$35,000         1358%\nPR #697         \$800        \$8,000          900%\nPR #698         \$3,600      \$55,000         1428%\nPR #699         \$1,500      \$20,000         1233%\nThis PR         \$6,150       \$415,000        6648%\n\`\`\`\n\n\n## ✅ Action Items\n\n### Immediate Actions (Before Merge)\n- [ ] Fix: Use of \`async\` function without proper error handling may lead to unhandled promise rejections. (src/index.ts)\n- [ ] Fix: \`ky\` library version is outdated and has known vulnerabilities. (package.json)\n- [ ] Fix: Vulnerability in third-party dependency \`axios\` (CVE-2021-22963). (package.json)\n- [ ] Fix: Unhandled promise rejection could lead to application crashes. (src/index.ts)\n- [ ] Fix: Hardcoded API key exposure in source code. (source/types/hooks.ts)\n\n### Short-term Actions (Within 1 Sprint)\n- [ ] Address: Potential exposure of sensitive information through unfiltered logging.\n- [ ] Address: Missing validation on user input can lead to SQL injection vulnerabilities.\n- [ ] Address: Lack of rate limiting may cause denial of service under heavy load.\n- [ ] Address: Inefficient looping structure causing major performance degradation.\n- [ ] Address: Hardcoded credentials in the codebase can lead to secrets exposure.\n\n### Long-term Improvements\n- [ ] Increase test coverage to 80%+\n- [ ] Implement automated security scanning\n- [ ] Set up performance monitoring\n- [ ] Create architecture documentation\n- [ ] Establish code review guidelines\n\n### Automation Opportunities\n- 🧪 Set up automated test generation\n- 🔒 Integrate security scanning in CI/CD\n\n\nPR comment placeholder\n\n## Report Metadata\n\n### Analysis Details\n- **Generated:** 2025-08-27T22:42:07.686Z\n- **Version:** V8 Final\n- **Analysis ID:** CQ-1756334527686\n- **Repository:** sindresorhus/ky\n- **PR Number:** #700\n- **Base Commit:** main\n- **Head Commit:** HEAD\n- **Files Analyzed:** 100\n- **Lines Changed:** +0/-0\n- **Scan Duration:** 81.4s\n- **AI Model:** gemini-2.5-pro-exp-03-25\n- **Report Format:** Markdown v8\n- **Timestamp:** 1756334528043";
+    
+    // Custom renderer for Mermaid blocks
+    const renderer = new marked.Renderer();
+    const originalCodeRenderer = renderer.code.bind(renderer);
+    
+    renderer.code = function(code, language) {
+      if (language === 'mermaid') {
+        return '<div class="mermaid">' + code + '</div>';
+      }
+      return originalCodeRenderer(code, language);
+    };
+    
+    // Override heading renderer to add IDs for navigation
+    renderer.heading = function(text, level) {
+      const escapedText = text.toLowerCase().replace(/[^\w]+/g, '-');
+      return '<h' + level + ' id="' + escapedText + '">' + text + '</h' + level + '>';
+    };
+    
+    // Override table renderer for better styling
+    renderer.table = function(header, body) {
+      return '<table class="data-table">\n'
+        + '<thead>\n'
+        + header
+        + '</thead>\n'
+        + '<tbody>\n'
+        + body
+        + '</tbody>\n'
+        + '</table>\n';
+    };
+    
+    marked.setOptions({ 
+      renderer: renderer,
+      highlight: function(code, lang) {
+        // Basic syntax highlighting colors
+        if (lang === 'javascript' || lang === 'typescript' || lang === 'js' || lang === 'ts') {
+          return code
+            .replace(/\/\/(.*)/g, '<span style="color:#6b7280">//$1</span>') // comments
+            .replace(/'([^']*)'/g, '<span style="color:#059669">\'$1\'</span>') // strings
+            .replace(/"([^"]*)"/g, '<span style="color:#059669">"$1"</span>') // strings
+            .replace(/\b(const|let|var|function|return|if|else|for|while)\b/g, '<span style="color:#7c3aed">$1</span>') // keywords
+            .replace(/\b(\d+)\b/g, '<span style="color:#dc2626">$1</span>'); // numbers
+        }
+        return code;
+      }
+    });
+    
+    // Parse markdown and render
+    document.getElementById('content').innerHTML = marked.parse(markdownContent);
+    
+    // Render Mermaid diagrams
+    mermaid.init();
+    
+    // Add interactive features
+    document.querySelectorAll('h2, h3, h4').forEach(heading => {
+      heading.style.cursor = 'pointer';
+      heading.onclick = function() {
+        const next = this.nextElementSibling;
+        if (next && next.style.display === 'none') {
+          next.style.display = 'block';
+        } else if (next) {
+          // Don't hide by default
+        }
+      };
+    });
+    
+    // Style issue blocks based on severity
+    document.querySelectorAll('h5').forEach(h5 => {
+      const text = h5.textContent;
+      if (text.includes('[CRITICAL-') || text.includes('Critical')) {
+        h5.classList.add('critical');
+        h5.parentElement?.classList.add('issue-critical');
+      } else if (text.includes('[HIGH-') || text.includes('High')) {
+        h5.classList.add('high');
+        h5.parentElement?.classList.add('issue-high');
+      } else if (text.includes('[MEDIUM-') || text.includes('Medium')) {
+        h5.classList.add('medium');
+        h5.parentElement?.classList.add('issue-medium');
+      } else if (text.includes('[LOW-') || text.includes('Low')) {
+        h5.classList.add('low');
+        h5.parentElement?.classList.add('issue-low');
+      }
+    });
+    
+    // Style decision badges
+    const decisionText = document.body.innerHTML;
+    if (decisionText.includes('APPROVE') && decisionText.includes('## ✅ PR Decision')) {
+      document.querySelectorAll('h2').forEach(h2 => {
+        if (h2.textContent.includes('PR Decision')) {
+          h2.innerHTML = h2.innerHTML.replace('APPROVE', '<span class="approved">APPROVED</span>');
+        }
+      });
+    } else if (decisionText.includes('DECLINE')) {
+      document.querySelectorAll('h2').forEach(h2 => {
+        if (h2.textContent.includes('PR Decision')) {
+          h2.innerHTML = h2.innerHTML.replace('DECLINE', '<span class="declined">DECLINED</span>');
+        }
+      });
+    }
+    
+    // Hide Alternative ASCII View section
+    const headers = document.querySelectorAll('h3, strong');
+    headers.forEach(h => {
+      if (h.textContent && h.textContent.includes('Alternative ASCII View')) {
+        h.style.display = 'none';
+        let nextElement = h.nextElementSibling;
+        while (nextElement && nextElement.tagName === 'PRE') {
+          nextElement.style.display = 'none';
+          nextElement = nextElement.nextElementSibling;
+        }
+      }
+    });
+  </script>
+</body>
+</html>

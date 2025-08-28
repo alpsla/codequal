@@ -1,0 +1,1307 @@
+{
+  "repositoryUrl": "https://github.com/sindresorhus/ky",
+  "prNumber": 700,
+  "mainBranchIssues": [
+    {
+      "id": "issue-1",
+      "title": "`ky` does not handle timeouts properly, which can lead to requests hanging indefinitely.",
+      "description": "`ky` does not handle timeouts properly, which can lead to requests hanging indefinitely.",
+      "severity": "critical",
+      "category": "breaking-change",
+      "location": {
+        "file": "src/index.ts",
+        "line": 86
+      },
+      "file": "src/index.ts",
+      "line": 86,
+      "codeSnippet": "`if (options.timeout) { ... }`"
+    },
+    {
+      "id": "issue-2",
+      "title": "The package `node-fetch` is used with known vulnerabilities (CVE-2021-22960).",
+      "description": "The package `node-fetch` is used with known vulnerabilities (CVE-2021-22960).",
+      "severity": "high",
+      "category": "dependency-vulnerability",
+      "location": {
+        "file": "package.json",
+        "line": 0
+      },
+      "file": "package.json",
+      "line": 0,
+      "codeSnippet": "`\"node-fetch\": \"^2.6.1\",`"
+    },
+    {
+      "id": "issue-3",
+      "title": "Lack of input validation can lead to potential XSS attacks if user input is not sanitized.",
+      "description": "Lack of input validation can lead to potential XSS attacks if user input is not sanitized.",
+      "severity": "high",
+      "category": "security",
+      "location": {
+        "file": "src/index.ts",
+        "line": 45
+      },
+      "file": "src/index.ts",
+      "line": 45,
+      "codeSnippet": "`const url = new URL(input);`"
+    },
+    {
+      "id": "issue-4",
+      "title": "The code does not handle network errors properly, which may result in unhandled promise rejections.",
+      "description": "The code does not handle network errors properly, which may result in unhandled promise rejections.",
+      "severity": "high",
+      "category": "performance",
+      "location": {
+        "file": "src/index.ts",
+        "line": 123
+      },
+      "file": "src/index.ts",
+      "line": 123,
+      "codeSnippet": "`return fetch(url, options).then(response => ...);`"
+    },
+    {
+      "id": "issue-5",
+      "title": "Sensitive information such as API keys could be exposed in error messages.",
+      "description": "Sensitive information such as API keys could be exposed in error messages.",
+      "severity": "high",
+      "category": "security",
+      "location": {
+        "file": "src/index.ts",
+        "line": 154
+      },
+      "file": "src/index.ts",
+      "line": 154,
+      "codeSnippet": "`console.error('Error:', error);`"
+    },
+    {
+      "id": "issue-6",
+      "title": "The absence of rate limiting can lead to service denial during peak loads.",
+      "description": "The absence of rate limiting can lead to service denial during peak loads.",
+      "severity": "medium",
+      "category": "performance",
+      "location": {
+        "file": "src/index.ts",
+        "line": 67
+      },
+      "file": "src/index.ts",
+      "line": 67,
+      "codeSnippet": "`const response = await fetch(url, options);`"
+    },
+    {
+      "id": "issue-7",
+      "title": "The `json` method does not handle parsing errors, which can lead to unhandled exceptions.",
+      "description": "The `json` method does not handle parsing errors, which can lead to unhandled exceptions.",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "src/index.ts",
+        "line": 130
+      },
+      "file": "src/index.ts",
+      "line": 130,
+      "codeSnippet": "`return response.json();`"
+    },
+    {
+      "id": "issue-8",
+      "title": "Potential for data loss if the response is not checked before accessing properties.",
+      "description": "Potential for data loss if the response is not checked before accessing properties.",
+      "severity": "medium",
+      "category": "data-loss",
+      "location": {
+        "file": "src/index.ts",
+        "line": 135
+      },
+      "file": "src/index.ts",
+      "line": 135,
+      "codeSnippet": "`const data = await response.json();`"
+    },
+    {
+      "id": "issue-9",
+      "title": "The library does not support cancellation of requests, leading to unnecessary resource usage.",
+      "description": "The library does not support cancellation of requests, leading to unnecessary resource usage.",
+      "severity": "medium",
+      "category": "performance",
+      "location": {
+        "file": "src/index.ts",
+        "line": 90
+      },
+      "file": "src/index.ts",
+      "line": 90,
+      "codeSnippet": "`const controller = new AbortController();`"
+    },
+    {
+      "id": "issue-10",
+      "title": "Outdated `typescript` version could lead to compatibility issues with newer TypeScript features.",
+      "description": "Outdated `typescript` version could lead to compatibility issues with newer TypeScript features.",
+      "severity": "low",
+      "category": "dependency-vulnerability",
+      "location": {
+        "file": "package.json",
+        "line": 0
+      },
+      "file": "package.json",
+      "line": 0,
+      "codeSnippet": "`\"typescript\": \"^3.9.7\",`"
+    },
+    {
+      "id": "issue-3",
+      "title": "Possible XSS vulnerability due to unsanitized user input in URL.",
+      "description": "Possible XSS vulnerability due to unsanitized user input in URL.",
+      "severity": "high",
+      "category": "security",
+      "location": {
+        "file": "src/utils.ts",
+        "line": 22
+      },
+      "file": "src/utils.ts",
+      "line": 22,
+      "codeSnippet": "`const finalUrl = `${baseUrl}/${encodeURIComponent(userInput)}`;`"
+    },
+    {
+      "id": "issue-5",
+      "title": "Memory leak due to unbounded request retries.",
+      "description": "Memory leak due to unbounded request retries.",
+      "severity": "high",
+      "category": "performance",
+      "location": {
+        "file": "src/retry.ts",
+        "line": 15
+      },
+      "file": "src/retry.ts",
+      "line": 15,
+      "codeSnippet": "`setTimeout(() => retryRequest(), delay); // no limit on retries`"
+    },
+    {
+      "id": "issue-7",
+      "title": "Inefficient data processing causing major performance degradation.",
+      "description": "Inefficient data processing causing major performance degradation.",
+      "severity": "medium",
+      "category": "performance",
+      "location": {
+        "file": "src/dataProcessing.ts",
+        "line": 50
+      },
+      "file": "src/dataProcessing.ts",
+      "line": 50,
+      "codeSnippet": "`data.forEach(item => process(item)); // can be optimized with map`"
+    },
+    {
+      "id": "issue-8",
+      "title": "Hardcoded API keys leading to secrets exposure.",
+      "description": "Hardcoded API keys leading to secrets exposure.",
+      "severity": "high",
+      "category": "security",
+      "location": {
+        "file": "src/config.ts",
+        "line": 5
+      },
+      "file": "src/config.ts",
+      "line": 5,
+      "codeSnippet": "`const API_KEY = 'your_api_key_here'; // sensitive information`"
+    },
+    {
+      "id": "issue-9",
+      "title": "Potentially incorrect content-type handling that could lead to data corruption.",
+      "description": "Potentially incorrect content-type handling that could lead to data corruption.",
+      "severity": "medium",
+      "category": "data-loss",
+      "location": {
+        "file": "src/response.ts",
+        "line": 12
+      },
+      "file": "src/response.ts",
+      "line": 12,
+      "codeSnippet": "",
+      "codeContext": [
+        "\tjson: <J = T >() => Promise<J>;",
+        "} & Response;",
+        ""
+      ]
+    },
+    {
+      "id": "issue-10",
+      "title": "Inefficient logging mechanism that may degrade system performance under load.",
+      "description": "Inefficient logging mechanism that may degrade system performance under load.",
+      "severity": "medium",
+      "category": "performance",
+      "location": {
+        "file": "src/logger.ts",
+        "line": 35
+      },
+      "file": "src/logger.ts",
+      "line": 35,
+      "codeSnippet": "`console.log(data); // synchronous logging can block event loop`"
+    },
+    {
+      "id": "issue-1",
+      "title": "`ky` does not handle non-2xx HTTP responses properly, leading to unhandled promise rejections.",
+      "description": "`ky` does not handle non-2xx HTTP responses properly, leading to unhandled promise rejections.",
+      "severity": "critical",
+      "category": "breaking-change",
+      "location": {
+        "file": "src/index.ts",
+        "line": 100
+      },
+      "file": "src/index.ts",
+      "line": 100,
+      "codeSnippet": "`throw new Error(response.statusText);`"
+    },
+    {
+      "id": "issue-5",
+      "title": "Using a synchronous function in a critical path may lead to system availability issues under load.",
+      "description": "Using a synchronous function in a critical path may lead to system availability issues under load.",
+      "severity": "high",
+      "category": "performance",
+      "location": {
+        "file": "src/utils.ts",
+        "line": 30
+      },
+      "file": "src/utils.ts",
+      "line": 30,
+      "codeSnippet": "`const result = JSON.parse(responseBody);`"
+    },
+    {
+      "id": "issue-6",
+      "title": "Failure to handle network errors gracefully may cause the application to crash.",
+      "description": "Failure to handle network errors gracefully may cause the application to crash.",
+      "severity": "high",
+      "category": "system-crash",
+      "location": {
+        "file": "src/index.ts",
+        "line": 60
+      },
+      "file": "src/index.ts",
+      "line": 60,
+      "codeSnippet": "`const response = await fetch(url);`"
+    },
+    {
+      "id": "issue-7",
+      "title": "Missing timeout configuration can lead to hanging requests.",
+      "description": "Missing timeout configuration can lead to hanging requests.",
+      "severity": "medium",
+      "category": "performance",
+      "location": {
+        "file": "src/index.ts",
+        "line": 80
+      },
+      "file": "src/index.ts",
+      "line": 80,
+      "codeSnippet": "`const response = await fetch(url);`"
+    },
+    {
+      "id": "issue-8",
+      "title": "The library does not log errors, making debugging difficult.",
+      "description": "The library does not log errors, making debugging difficult.",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "src/index.ts",
+        "line": 110
+      },
+      "file": "src/index.ts",
+      "line": 110,
+      "codeSnippet": "`console.error(error);`"
+    },
+    {
+      "id": "issue-9",
+      "title": "Hardcoded API endpoints may lead to issues if the endpoint changes.",
+      "description": "Hardcoded API endpoints may lead to issues if the endpoint changes.",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "src/index.ts",
+        "line": 20
+      },
+      "file": "src/index.ts",
+      "line": 20,
+      "codeSnippet": "`const apiUrl = 'https://api.example.com';`"
+    },
+    {
+      "id": "issue-10",
+      "title": "Potential memory leaks due to unclosed connections in long-running applications.",
+      "description": "Potential memory leaks due to unclosed connections in long-running applications.",
+      "severity": "medium",
+      "category": "performance",
+      "location": {
+        "file": "src/index.ts",
+        "line": 95
+      },
+      "file": "src/index.ts",
+      "line": 95,
+      "codeSnippet": "`client.close();`"
+    }
+  ],
+  "prBranchIssues": [
+    {
+      "id": "issue-unchanged-1",
+      "title": "`ky` does not handle timeouts properly, which can lead to requests hanging indefinitely.",
+      "description": "`ky` does not handle timeouts properly, which can lead to requests hanging indefinitely.",
+      "severity": "critical",
+      "category": "breaking-change",
+      "location": {
+        "file": "src/index.ts",
+        "line": 86
+      },
+      "file": "src/index.ts",
+      "line": 86,
+      "codeSnippet": "// Potentially problematic timeout handling code",
+      "status": "unchanged"
+    },
+    {
+      "id": "issue-unchanged-2",
+      "title": "The package `node-fetch` is used with known vulnerabilities (CVE-2021-22960).\n   Status: UNCHANGED\n   Severity: high\n   Category: dependency-vulnerability\n   File path: package.json\n   Line number: ?\n   Code snippet: // Dependency definition for node-fetch\n\n3. Issue: Lack of input validation can lead to potential XSS attacks if user input is not sanitized.",
+      "description": "The package `node-fetch` is used with known vulnerabilities (CVE-2021-22960).\n   Status: UNCHANGED\n   Severity: high\n   Category: dependency-vulnerability\n   File path: package.json\n   Line number: ?\n   Code snippet: // Dependency definition for node-fetch\n\n3. Issue: Lack of input validation can lead to potential XSS attacks if user input is not sanitized.",
+      "severity": "high",
+      "category": "security",
+      "location": {
+        "file": "src/index.ts",
+        "line": 45
+      },
+      "file": "src/index.ts",
+      "line": 45,
+      "codeSnippet": "// User input handling code",
+      "status": "unchanged"
+    },
+    {
+      "id": "issue-unchanged-3",
+      "title": "The code does not handle network errors properly, which may result in unhandled promise rejections.",
+      "description": "The code does not handle network errors properly, which may result in unhandled promise rejections.",
+      "severity": "high",
+      "category": "performance",
+      "location": {
+        "file": "src/index.ts",
+        "line": 123
+      },
+      "file": "src/index.ts",
+      "line": 123,
+      "codeSnippet": "// Network error handling code",
+      "status": "unchanged"
+    },
+    {
+      "id": "issue-unchanged-4",
+      "title": "Sensitive information such as API keys could be exposed in error messages.",
+      "description": "Sensitive information such as API keys could be exposed in error messages.",
+      "severity": "high",
+      "category": "security",
+      "location": {
+        "file": "src/index.ts",
+        "line": 154
+      },
+      "file": "src/index.ts",
+      "line": 154,
+      "codeSnippet": "// Error message construction code",
+      "status": "unchanged"
+    },
+    {
+      "id": "issue-unchanged-5",
+      "title": "The absence of rate limiting can lead to service denial during peak loads.",
+      "description": "The absence of rate limiting can lead to service denial during peak loads.",
+      "severity": "medium",
+      "category": "performance",
+      "location": {
+        "file": "src/index.ts",
+        "line": 67
+      },
+      "file": "src/index.ts",
+      "line": 67,
+      "codeSnippet": "// Rate limiting logic",
+      "status": "unchanged"
+    },
+    {
+      "id": "issue-unchanged-6",
+      "title": "The `json` method does not handle parsing errors, which can lead to unhandled exceptions.",
+      "description": "The `json` method does not handle parsing errors, which can lead to unhandled exceptions.",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "src/index.ts",
+        "line": 130
+      },
+      "file": "src/index.ts",
+      "line": 130,
+      "codeSnippet": "// JSON parsing code",
+      "status": "unchanged"
+    },
+    {
+      "id": "issue-unchanged-7",
+      "title": "Potential for data loss if the response is not checked before accessing properties.",
+      "description": "Potential for data loss if the response is not checked before accessing properties.",
+      "severity": "medium",
+      "category": "data-loss",
+      "location": {
+        "file": "src/index.ts",
+        "line": 135
+      },
+      "file": "src/index.ts",
+      "line": 135,
+      "codeSnippet": "// Response property access code",
+      "status": "unchanged"
+    },
+    {
+      "id": "issue-unchanged-8",
+      "title": "The library does not support cancellation of requests, leading to unnecessary resource usage.",
+      "description": "The library does not support cancellation of requests, leading to unnecessary resource usage.",
+      "severity": "medium",
+      "category": "performance",
+      "location": {
+        "file": "src/index.ts",
+        "line": 90
+      },
+      "file": "src/index.ts",
+      "line": 90,
+      "codeSnippet": "// Request cancellation logic",
+      "status": "unchanged"
+    },
+    {
+      "id": "issue-unchanged-9",
+      "title": "Outdated `typescript` version could lead to compatibility issues with newer TypeScript features.\n    Status: UNCHANGED\n    Severity: low\n    Category: dependency-vulnerability\n    File path: package.json\n    Line number: ?\n    Code snippet: // TypeScript dependency definition\n\n11. Issue: Possible XSS vulnerability due to unsanitized user input in URL.",
+      "description": "Outdated `typescript` version could lead to compatibility issues with newer TypeScript features.\n    Status: UNCHANGED\n    Severity: low\n    Category: dependency-vulnerability\n    File path: package.json\n    Line number: ?\n    Code snippet: // TypeScript dependency definition\n\n11. Issue: Possible XSS vulnerability due to unsanitized user input in URL.",
+      "severity": "high",
+      "category": "security",
+      "location": {
+        "file": "src/utils.ts",
+        "line": 22
+      },
+      "file": "src/utils.ts",
+      "line": 22,
+      "codeSnippet": "// URL handling code",
+      "status": "unchanged"
+    },
+    {
+      "id": "issue-unchanged-10",
+      "title": "Memory leak due to unbounded request retries.",
+      "description": "Memory leak due to unbounded request retries.",
+      "severity": "high",
+      "category": "performance",
+      "location": {
+        "file": "src/retry.ts",
+        "line": 15
+      },
+      "file": "src/retry.ts",
+      "line": 15,
+      "codeSnippet": "// Retry logic code",
+      "status": "unchanged"
+    },
+    {
+      "id": "issue-unchanged-11",
+      "title": "Inefficient data processing causing major performance degradation.",
+      "description": "Inefficient data processing causing major performance degradation.",
+      "severity": "medium",
+      "category": "performance",
+      "location": {
+        "file": "src/dataProcessing.ts",
+        "line": 50
+      },
+      "file": "src/dataProcessing.ts",
+      "line": 50,
+      "codeSnippet": "// Data processing logic",
+      "status": "unchanged"
+    },
+    {
+      "id": "issue-unchanged-12",
+      "title": "Hardcoded API keys leading to secrets exposure.",
+      "description": "Hardcoded API keys leading to secrets exposure.",
+      "severity": "high",
+      "category": "security",
+      "location": {
+        "file": "src/config.ts",
+        "line": 5
+      },
+      "file": "src/config.ts",
+      "line": 5,
+      "codeSnippet": "// Hardcoded API key",
+      "status": "unchanged"
+    },
+    {
+      "id": "issue-unchanged-13",
+      "title": "Potentially incorrect content-type handling that could lead to data corruption.",
+      "description": "Potentially incorrect content-type handling that could lead to data corruption.",
+      "severity": "medium",
+      "category": "data-loss",
+      "location": {
+        "file": "src/response.ts",
+        "line": 12
+      },
+      "file": "src/response.ts",
+      "line": 12,
+      "codeSnippet": "// Content-type handling code",
+      "status": "unchanged"
+    },
+    {
+      "id": "issue-unchanged-14",
+      "title": "Inefficient logging mechanism that may degrade system performance under load.",
+      "description": "Inefficient logging mechanism that may degrade system performance under load.",
+      "severity": "medium",
+      "category": "performance",
+      "location": {
+        "file": "src/logger.ts",
+        "line": 35
+      },
+      "file": "src/logger.ts",
+      "line": 35,
+      "codeSnippet": "// Logging mechanism code",
+      "status": "unchanged"
+    },
+    {
+      "id": "issue-unchanged-15",
+      "title": "`ky` does not handle non-2xx HTTP responses properly, leading to unhandled promise rejections.",
+      "description": "`ky` does not handle non-2xx HTTP responses properly, leading to unhandled promise rejections.",
+      "severity": "critical",
+      "category": "breaking-change",
+      "location": {
+        "file": "src/index.ts",
+        "line": 100
+      },
+      "file": "src/index.ts",
+      "line": 100,
+      "codeSnippet": "// Non-2xx response handling code",
+      "status": "unchanged"
+    },
+    {
+      "id": "issue-unchanged-16",
+      "title": "Using a synchronous function in a critical path may lead to system availability issues under load.",
+      "description": "Using a synchronous function in a critical path may lead to system availability issues under load.",
+      "severity": "high",
+      "category": "performance",
+      "location": {
+        "file": "src/utils.ts",
+        "line": 30
+      },
+      "file": "src/utils.ts",
+      "line": 30,
+      "codeSnippet": "// Synchronous function code",
+      "status": "unchanged"
+    },
+    {
+      "id": "issue-unchanged-17",
+      "title": "Failure to handle network errors gracefully may cause the application to crash.",
+      "description": "Failure to handle network errors gracefully may cause the application to crash.",
+      "severity": "high",
+      "category": "system-crash",
+      "location": {
+        "file": "src/index.ts",
+        "line": 60
+      },
+      "file": "src/index.ts",
+      "line": 60,
+      "codeSnippet": "// Network error handling code",
+      "status": "unchanged"
+    },
+    {
+      "id": "issue-unchanged-18",
+      "title": "Missing timeout configuration can lead to hanging requests.",
+      "description": "Missing timeout configuration can lead to hanging requests.",
+      "severity": "medium",
+      "category": "performance",
+      "location": {
+        "file": "src/index.ts",
+        "line": 80
+      },
+      "file": "src/index.ts",
+      "line": 80,
+      "codeSnippet": "// Timeout configuration code",
+      "status": "unchanged"
+    },
+    {
+      "id": "issue-unchanged-19",
+      "title": "The library does not log errors, making debugging difficult.",
+      "description": "The library does not log errors, making debugging difficult.",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "src/index.ts",
+        "line": 110
+      },
+      "file": "src/index.ts",
+      "line": 110,
+      "codeSnippet": "// Error logging code",
+      "status": "unchanged"
+    },
+    {
+      "id": "issue-unchanged-20",
+      "title": "Hardcoded API endpoints may lead to issues if the endpoint changes.",
+      "description": "Hardcoded API endpoints may lead to issues if the endpoint changes.",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "src/index.ts",
+        "line": 20
+      },
+      "file": "src/index.ts",
+      "line": 20,
+      "codeSnippet": "// Hardcoded endpoint",
+      "status": "unchanged"
+    },
+    {
+      "id": "issue-unchanged-21",
+      "title": "Potential memory leaks due to unclosed connections in long-running applications.",
+      "description": "Potential memory leaks due to unclosed connections in long-running applications.",
+      "severity": "medium",
+      "category": "performance",
+      "location": {
+        "file": "src/index.ts",
+        "line": 95
+      },
+      "file": "src/index.ts",
+      "line": 95,
+      "codeSnippet": "// Connection handling code",
+      "status": "unchanged"
+    },
+    {
+      "id": "issue-new-1",
+      "title": "Inefficient error handling in async functions may lead to unhandled exceptions.",
+      "description": "Inefficient error handling in async functions may lead to unhandled exceptions.",
+      "severity": "high",
+      "category": "performance",
+      "location": {
+        "file": "src/index.ts",
+        "line": 140
+      },
+      "file": "src/index.ts",
+      "line": 140,
+      "codeSnippet": "`await someAsyncFunction()`",
+      "status": "new"
+    }
+  ],
+  "categorized": {
+    "newIssues": [
+      {
+        "issue": {
+          "id": "issue-unchanged-7",
+          "title": "Potential for data loss if the response is not checked before accessing properties.",
+          "description": "Potential for data loss if the response is not checked before accessing properties.",
+          "severity": "medium",
+          "category": "data-loss",
+          "location": {
+            "file": "src/index.ts",
+            "line": 135
+          },
+          "file": "src/index.ts",
+          "line": 135,
+          "codeSnippet": "// Response property access code",
+          "status": "unchanged"
+        },
+        "category": "new",
+        "fingerprint": "src/index.ts:130:data-loss:medium:generic:",
+        "confidence": 0.25
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-8",
+          "title": "The library does not support cancellation of requests, leading to unnecessary resource usage.",
+          "description": "The library does not support cancellation of requests, leading to unnecessary resource usage.",
+          "severity": "medium",
+          "category": "performance",
+          "location": {
+            "file": "src/index.ts",
+            "line": 90
+          },
+          "file": "src/index.ts",
+          "line": 90,
+          "codeSnippet": "// Request cancellation logic",
+          "status": "unchanged"
+        },
+        "category": "new",
+        "fingerprint": "src/index.ts:90:performance:medium:generic:",
+        "confidence": 0.25
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-11",
+          "title": "Inefficient data processing causing major performance degradation.",
+          "description": "Inefficient data processing causing major performance degradation.",
+          "severity": "medium",
+          "category": "performance",
+          "location": {
+            "file": "src/dataProcessing.ts",
+            "line": 50
+          },
+          "file": "src/dataProcessing.ts",
+          "line": 50,
+          "codeSnippet": "// Data processing logic",
+          "status": "unchanged"
+        },
+        "category": "new",
+        "fingerprint": "src/dataprocessing.ts:50:performance:medium:generic:",
+        "confidence": 0.25
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-14",
+          "title": "Inefficient logging mechanism that may degrade system performance under load.",
+          "description": "Inefficient logging mechanism that may degrade system performance under load.",
+          "severity": "medium",
+          "category": "performance",
+          "location": {
+            "file": "src/logger.ts",
+            "line": 35
+          },
+          "file": "src/logger.ts",
+          "line": 35,
+          "codeSnippet": "// Logging mechanism code",
+          "status": "unchanged"
+        },
+        "category": "new",
+        "fingerprint": "src/logger.ts:30:performance:medium:generic:",
+        "confidence": 0.25
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-15",
+          "title": "`ky` does not handle non-2xx HTTP responses properly, leading to unhandled promise rejections.",
+          "description": "`ky` does not handle non-2xx HTTP responses properly, leading to unhandled promise rejections.",
+          "severity": "critical",
+          "category": "breaking-change",
+          "location": {
+            "file": "src/index.ts",
+            "line": 100
+          },
+          "file": "src/index.ts",
+          "line": 100,
+          "codeSnippet": "// Non-2xx response handling code",
+          "status": "unchanged"
+        },
+        "category": "new",
+        "fingerprint": "src/index.ts:100:breaking-change:critical:promise:",
+        "confidence": 0.25
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-16",
+          "title": "Using a synchronous function in a critical path may lead to system availability issues under load.",
+          "description": "Using a synchronous function in a critical path may lead to system availability issues under load.",
+          "severity": "high",
+          "category": "performance",
+          "location": {
+            "file": "src/utils.ts",
+            "line": 30
+          },
+          "file": "src/utils.ts",
+          "line": 30,
+          "codeSnippet": "// Synchronous function code",
+          "status": "unchanged"
+        },
+        "category": "new",
+        "fingerprint": "src/utils.ts:30:performance:high:generic:",
+        "confidence": 0.25
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-20",
+          "title": "Hardcoded API endpoints may lead to issues if the endpoint changes.",
+          "description": "Hardcoded API endpoints may lead to issues if the endpoint changes.",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "src/index.ts",
+            "line": 20
+          },
+          "file": "src/index.ts",
+          "line": 20,
+          "codeSnippet": "// Hardcoded endpoint",
+          "status": "unchanged"
+        },
+        "category": "new",
+        "fingerprint": "src/index.ts:20:code-quality:medium:generic:",
+        "confidence": 0.25
+      },
+      {
+        "issue": {
+          "id": "issue-new-1",
+          "title": "Inefficient error handling in async functions may lead to unhandled exceptions.",
+          "description": "Inefficient error handling in async functions may lead to unhandled exceptions.",
+          "severity": "high",
+          "category": "performance",
+          "location": {
+            "file": "src/index.ts",
+            "line": 140
+          },
+          "file": "src/index.ts",
+          "line": 140,
+          "codeSnippet": "`await someAsyncFunction()`",
+          "status": "new"
+        },
+        "category": "new",
+        "fingerprint": "src/index.ts:140:performance:high:async-error-handling:await-someAsyncFunction",
+        "confidence": 0.259
+      }
+    ],
+    "fixedIssues": [
+      {
+        "issue": {
+          "id": "issue-2",
+          "title": "The package `node-fetch` is used with known vulnerabilities (CVE-2021-22960).",
+          "description": "The package `node-fetch` is used with known vulnerabilities (CVE-2021-22960).",
+          "severity": "high",
+          "category": "dependency-vulnerability",
+          "location": {
+            "file": "package.json",
+            "line": 0
+          },
+          "file": "package.json",
+          "line": 0,
+          "codeSnippet": "`\"node-fetch\": \"^2.6.1\",`"
+        },
+        "category": "fixed",
+        "fingerprint": "package.json:0:dependency-vulnerability:high:generic:1-6",
+        "confidence": 0.7
+      },
+      {
+        "issue": {
+          "id": "issue-8",
+          "title": "Potential for data loss if the response is not checked before accessing properties.",
+          "description": "Potential for data loss if the response is not checked before accessing properties.",
+          "severity": "medium",
+          "category": "data-loss",
+          "location": {
+            "file": "src/index.ts",
+            "line": 135
+          },
+          "file": "src/index.ts",
+          "line": 135,
+          "codeSnippet": "`const data = await response.json();`"
+        },
+        "category": "fixed",
+        "fingerprint": "src/index.ts:130:data-loss:medium:generic:await-json-json",
+        "confidence": 0.25
+      },
+      {
+        "issue": {
+          "id": "issue-9",
+          "title": "The library does not support cancellation of requests, leading to unnecessary resource usage.",
+          "description": "The library does not support cancellation of requests, leading to unnecessary resource usage.",
+          "severity": "medium",
+          "category": "performance",
+          "location": {
+            "file": "src/index.ts",
+            "line": 90
+          },
+          "file": "src/index.ts",
+          "line": 90,
+          "codeSnippet": "`const controller = new AbortController();`"
+        },
+        "category": "fixed",
+        "fingerprint": "src/index.ts:90:performance:medium:generic:AbortController-new",
+        "confidence": 0.25
+      },
+      {
+        "issue": {
+          "id": "issue-10",
+          "title": "Outdated `typescript` version could lead to compatibility issues with newer TypeScript features.",
+          "description": "Outdated `typescript` version could lead to compatibility issues with newer TypeScript features.",
+          "severity": "low",
+          "category": "dependency-vulnerability",
+          "location": {
+            "file": "package.json",
+            "line": 0
+          },
+          "file": "package.json",
+          "line": 0,
+          "codeSnippet": "`\"typescript\": \"^3.9.7\",`"
+        },
+        "category": "fixed",
+        "fingerprint": "package.json:0:dependency-vulnerability:low:`typescript`-typescript:7-9",
+        "confidence": 0.8
+      },
+      {
+        "issue": {
+          "id": "issue-7",
+          "title": "Inefficient data processing causing major performance degradation.",
+          "description": "Inefficient data processing causing major performance degradation.",
+          "severity": "medium",
+          "category": "performance",
+          "location": {
+            "file": "src/dataProcessing.ts",
+            "line": 50
+          },
+          "file": "src/dataProcessing.ts",
+          "line": 50,
+          "codeSnippet": "`data.forEach(item => process(item)); // can be optimized with map`"
+        },
+        "category": "fixed",
+        "fingerprint": "src/dataprocessing.ts:50:performance:medium:generic:forEach-forEach-process",
+        "confidence": 0.25
+      },
+      {
+        "issue": {
+          "id": "issue-10",
+          "title": "Inefficient logging mechanism that may degrade system performance under load.",
+          "description": "Inefficient logging mechanism that may degrade system performance under load.",
+          "severity": "medium",
+          "category": "performance",
+          "location": {
+            "file": "src/logger.ts",
+            "line": 35
+          },
+          "file": "src/logger.ts",
+          "line": 35,
+          "codeSnippet": "`console.log(data); // synchronous logging can block event loop`"
+        },
+        "category": "fixed",
+        "fingerprint": "src/logger.ts:30:performance:medium:generic:log-log",
+        "confidence": 0.25
+      },
+      {
+        "issue": {
+          "id": "issue-1",
+          "title": "`ky` does not handle non-2xx HTTP responses properly, leading to unhandled promise rejections.",
+          "description": "`ky` does not handle non-2xx HTTP responses properly, leading to unhandled promise rejections.",
+          "severity": "critical",
+          "category": "breaking-change",
+          "location": {
+            "file": "src/index.ts",
+            "line": 100
+          },
+          "file": "src/index.ts",
+          "line": 100,
+          "codeSnippet": "`throw new Error(response.statusText);`"
+        },
+        "category": "fixed",
+        "fingerprint": "src/index.ts:100:breaking-change:critical:promise:Error-statusText-throw",
+        "confidence": 0.25
+      },
+      {
+        "issue": {
+          "id": "issue-5",
+          "title": "Using a synchronous function in a critical path may lead to system availability issues under load.",
+          "description": "Using a synchronous function in a critical path may lead to system availability issues under load.",
+          "severity": "high",
+          "category": "performance",
+          "location": {
+            "file": "src/utils.ts",
+            "line": 30
+          },
+          "file": "src/utils.ts",
+          "line": 30,
+          "codeSnippet": "`const result = JSON.parse(responseBody);`"
+        },
+        "category": "fixed",
+        "fingerprint": "src/utils.ts:30:performance:high:generic:parse-parse",
+        "confidence": 0.25
+      },
+      {
+        "issue": {
+          "id": "issue-9",
+          "title": "Hardcoded API endpoints may lead to issues if the endpoint changes.",
+          "description": "Hardcoded API endpoints may lead to issues if the endpoint changes.",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "src/index.ts",
+            "line": 20
+          },
+          "file": "src/index.ts",
+          "line": 20,
+          "codeSnippet": "`const apiUrl = 'https://api.example.com';`"
+        },
+        "category": "fixed",
+        "fingerprint": "src/index.ts:20:code-quality:medium:generic:com-example",
+        "confidence": 0.25
+      }
+    ],
+    "unchangedIssues": [
+      {
+        "issue": {
+          "id": "issue-unchanged-1",
+          "title": "`ky` does not handle timeouts properly, which can lead to requests hanging indefinitely.",
+          "description": "`ky` does not handle timeouts properly, which can lead to requests hanging indefinitely.",
+          "severity": "critical",
+          "category": "breaking-change",
+          "location": {
+            "file": "src/index.ts",
+            "line": 86
+          },
+          "file": "src/index.ts",
+          "line": 86,
+          "codeSnippet": "// Potentially problematic timeout handling code",
+          "status": "unchanged"
+        },
+        "category": "unchanged",
+        "fingerprint": "src/index.ts:80:breaking-change:critical:timeouts:",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-2",
+          "title": "The package `node-fetch` is used with known vulnerabilities (CVE-2021-22960).\n   Status: UNCHANGED\n   Severity: high\n   Category: dependency-vulnerability\n   File path: package.json\n   Line number: ?\n   Code snippet: // Dependency definition for node-fetch\n\n3. Issue: Lack of input validation can lead to potential XSS attacks if user input is not sanitized.",
+          "description": "The package `node-fetch` is used with known vulnerabilities (CVE-2021-22960).\n   Status: UNCHANGED\n   Severity: high\n   Category: dependency-vulnerability\n   File path: package.json\n   Line number: ?\n   Code snippet: // Dependency definition for node-fetch\n\n3. Issue: Lack of input validation can lead to potential XSS attacks if user input is not sanitized.",
+          "severity": "high",
+          "category": "security",
+          "location": {
+            "file": "src/index.ts",
+            "line": 45
+          },
+          "file": "src/index.ts",
+          "line": 45,
+          "codeSnippet": "// User input handling code",
+          "status": "unchanged"
+        },
+        "category": "unchanged",
+        "fingerprint": "src/index.ts:40:security:high:dependency-dependency-vulnerability-input-validation-xss:",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-3",
+          "title": "The code does not handle network errors properly, which may result in unhandled promise rejections.",
+          "description": "The code does not handle network errors properly, which may result in unhandled promise rejections.",
+          "severity": "high",
+          "category": "performance",
+          "location": {
+            "file": "src/index.ts",
+            "line": 123
+          },
+          "file": "src/index.ts",
+          "line": 123,
+          "codeSnippet": "// Network error handling code",
+          "status": "unchanged"
+        },
+        "category": "unchanged",
+        "fingerprint": "src/index.ts:120:performance:high:errors-promise:",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-4",
+          "title": "Sensitive information such as API keys could be exposed in error messages.",
+          "description": "Sensitive information such as API keys could be exposed in error messages.",
+          "severity": "high",
+          "category": "security",
+          "location": {
+            "file": "src/index.ts",
+            "line": 154
+          },
+          "file": "src/index.ts",
+          "line": 154,
+          "codeSnippet": "// Error message construction code",
+          "status": "unchanged"
+        },
+        "category": "unchanged",
+        "fingerprint": "src/index.ts:150:security:high:error:",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-5",
+          "title": "The absence of rate limiting can lead to service denial during peak loads.",
+          "description": "The absence of rate limiting can lead to service denial during peak loads.",
+          "severity": "medium",
+          "category": "performance",
+          "location": {
+            "file": "src/index.ts",
+            "line": 67
+          },
+          "file": "src/index.ts",
+          "line": 67,
+          "codeSnippet": "// Rate limiting logic",
+          "status": "unchanged"
+        },
+        "category": "unchanged",
+        "fingerprint": "src/index.ts:60:performance:medium:denial-limiting-rate:",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-6",
+          "title": "The `json` method does not handle parsing errors, which can lead to unhandled exceptions.",
+          "description": "The `json` method does not handle parsing errors, which can lead to unhandled exceptions.",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "src/index.ts",
+            "line": 130
+          },
+          "file": "src/index.ts",
+          "line": 130,
+          "codeSnippet": "// JSON parsing code",
+          "status": "unchanged"
+        },
+        "category": "unchanged",
+        "fingerprint": "src/index.ts:130:code-quality:medium:errors,:",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-9",
+          "title": "Outdated `typescript` version could lead to compatibility issues with newer TypeScript features.\n    Status: UNCHANGED\n    Severity: low\n    Category: dependency-vulnerability\n    File path: package.json\n    Line number: ?\n    Code snippet: // TypeScript dependency definition\n\n11. Issue: Possible XSS vulnerability due to unsanitized user input in URL.",
+          "description": "Outdated `typescript` version could lead to compatibility issues with newer TypeScript features.\n    Status: UNCHANGED\n    Severity: low\n    Category: dependency-vulnerability\n    File path: package.json\n    Line number: ?\n    Code snippet: // TypeScript dependency definition\n\n11. Issue: Possible XSS vulnerability due to unsanitized user input in URL.",
+          "severity": "high",
+          "category": "security",
+          "location": {
+            "file": "src/utils.ts",
+            "line": 22
+          },
+          "file": "src/utils.ts",
+          "line": 22,
+          "codeSnippet": "// URL handling code",
+          "status": "unchanged"
+        },
+        "category": "unchanged",
+        "fingerprint": "src/utils.ts:20:security:high:`typescript`-dependency-dependency-vulnerability-input-typescript-xss:",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-10",
+          "title": "Memory leak due to unbounded request retries.",
+          "description": "Memory leak due to unbounded request retries.",
+          "severity": "high",
+          "category": "performance",
+          "location": {
+            "file": "src/retry.ts",
+            "line": 15
+          },
+          "file": "src/retry.ts",
+          "line": 15,
+          "codeSnippet": "// Retry logic code",
+          "status": "unchanged"
+        },
+        "category": "unchanged",
+        "fingerprint": "src/retry.ts:10:performance:high:leak-memory:",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-12",
+          "title": "Hardcoded API keys leading to secrets exposure.",
+          "description": "Hardcoded API keys leading to secrets exposure.",
+          "severity": "high",
+          "category": "security",
+          "location": {
+            "file": "src/config.ts",
+            "line": 5
+          },
+          "file": "src/config.ts",
+          "line": 5,
+          "codeSnippet": "// Hardcoded API key",
+          "status": "unchanged"
+        },
+        "category": "unchanged",
+        "fingerprint": "src/config.ts:0:security:high:generic:",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-13",
+          "title": "Potentially incorrect content-type handling that could lead to data corruption.",
+          "description": "Potentially incorrect content-type handling that could lead to data corruption.",
+          "severity": "medium",
+          "category": "data-loss",
+          "location": {
+            "file": "src/response.ts",
+            "line": 12
+          },
+          "file": "src/response.ts",
+          "line": 12,
+          "codeSnippet": "// Content-type handling code",
+          "status": "unchanged"
+        },
+        "category": "unchanged",
+        "fingerprint": "src/response.ts:10:data-loss:medium:content-type-handling:",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-17",
+          "title": "Failure to handle network errors gracefully may cause the application to crash.",
+          "description": "Failure to handle network errors gracefully may cause the application to crash.",
+          "severity": "high",
+          "category": "system-crash",
+          "location": {
+            "file": "src/index.ts",
+            "line": 60
+          },
+          "file": "src/index.ts",
+          "line": 60,
+          "codeSnippet": "// Network error handling code",
+          "status": "unchanged"
+        },
+        "category": "unchanged",
+        "fingerprint": "src/index.ts:60:system-crash:high:errors:",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-18",
+          "title": "Missing timeout configuration can lead to hanging requests.",
+          "description": "Missing timeout configuration can lead to hanging requests.",
+          "severity": "medium",
+          "category": "performance",
+          "location": {
+            "file": "src/index.ts",
+            "line": 80
+          },
+          "file": "src/index.ts",
+          "line": 80,
+          "codeSnippet": "// Timeout configuration code",
+          "status": "unchanged"
+        },
+        "category": "unchanged",
+        "fingerprint": "src/index.ts:80:performance:medium:timeout:",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-19",
+          "title": "The library does not log errors, making debugging difficult.",
+          "description": "The library does not log errors, making debugging difficult.",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "src/index.ts",
+            "line": 110
+          },
+          "file": "src/index.ts",
+          "line": 110,
+          "codeSnippet": "// Error logging code",
+          "status": "unchanged"
+        },
+        "category": "unchanged",
+        "fingerprint": "src/index.ts:110:code-quality:medium:errors,:",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-21",
+          "title": "Potential memory leaks due to unclosed connections in long-running applications.",
+          "description": "Potential memory leaks due to unclosed connections in long-running applications.",
+          "severity": "medium",
+          "category": "performance",
+          "location": {
+            "file": "src/index.ts",
+            "line": 95
+          },
+          "file": "src/index.ts",
+          "line": 95,
+          "codeSnippet": "// Connection handling code",
+          "status": "unchanged"
+        },
+        "category": "unchanged",
+        "fingerprint": "src/index.ts:90:performance:medium:leaks-memory:",
+        "confidence": 1
+      }
+    ],
+    "summary": {
+      "totalNew": 8,
+      "totalFixed": 9,
+      "totalUnchanged": 14,
+      "netImpact": -1,
+      "prQualityScore": 20
+    },
+    "recommendations": [
+      "🚨 BLOCKING: Fix 1 critical issue(s) before merging",
+      "⚠️ Address 2 high-severity issue(s) introduced by this PR",
+      "✅ Great work! This PR fixes 9 existing issue(s)",
+      "📈 Net improvement: 1 fewer issues after this PR",
+      "🔴 Significant issues detected. Consider revising this PR."
+    ]
+  },
+  "metadata": {
+    "analysisDate": "2025-08-27T18:06:24.772Z",
+    "mainBranchAnalysisDuration": 37.4,
+    "prBranchAnalysisDuration": 73.2,
+    "totalDuration": 110.6,
+    "modelUsed": "dynamic-selection",
+    "iterationsPerBranch": 3,
+    "tokensUsed": 0
+  }
+}

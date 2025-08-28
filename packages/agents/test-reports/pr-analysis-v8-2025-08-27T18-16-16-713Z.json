@@ -1,0 +1,1281 @@
+{
+  "repositoryUrl": "https://github.com/sindresorhus/ky",
+  "prNumber": 700,
+  "mainBranchIssues": [
+    {
+      "id": "issue-1",
+      "title": "The `ky` instance is created with a default timeout that can lead to unhandled promise rejections if the request takes too long.",
+      "description": "The `ky` instance is created with a default timeout that can lead to unhandled promise rejections if the request takes too long.",
+      "severity": "critical",
+      "category": "breaking-change",
+      "location": {
+        "file": "src/index.ts",
+        "line": 34
+      },
+      "file": "src/index.ts",
+      "line": 34,
+      "codeSnippet": "`const ky = (input, options = {}) => { options.timeout = options.timeout || 10000; ...`"
+    },
+    {
+      "id": "issue-2",
+      "title": "The package `node-fetch` has known vulnerabilities (CVE-2021-22945) related to header injection.",
+      "description": "The package `node-fetch` has known vulnerabilities (CVE-2021-22945) related to header injection.",
+      "severity": "high",
+      "category": "dependency-vulnerability",
+      "location": {
+        "file": "package.json",
+        "line": 0
+      },
+      "file": "package.json",
+      "line": 0,
+      "codeSnippet": "`\"node-fetch\": \"^2.6.1\",`"
+    },
+    {
+      "id": "issue-3",
+      "title": "Lack of input validation could lead to XSS if untrusted data is passed directly into request parameters.",
+      "description": "Lack of input validation could lead to XSS if untrusted data is passed directly into request parameters.",
+      "severity": "high",
+      "category": "security",
+      "location": {
+        "file": "src/index.ts",
+        "line": 56
+      },
+      "file": "src/index.ts",
+      "line": 56,
+      "codeSnippet": "`const response = await fetch(input, options);`"
+    },
+    {
+      "id": "issue-4",
+      "title": "The absence of explicit error handling can lead to data loss if the response cannot be parsed.",
+      "description": "The absence of explicit error handling can lead to data loss if the response cannot be parsed.",
+      "severity": "high",
+      "category": "data-loss",
+      "location": {
+        "file": "src/index.ts",
+        "line": 82
+      },
+      "file": "src/index.ts",
+      "line": 82,
+      "codeSnippet": "`return response.json();`"
+    },
+    {
+      "id": "issue-5",
+      "title": "Unhandled promise rejections could cause system crashes in production environments.",
+      "description": "Unhandled promise rejections could cause system crashes in production environments.",
+      "severity": "high",
+      "category": "system",
+      "location": {
+        "file": "src/index.ts",
+        "line": 90
+      },
+      "file": "src/index.ts",
+      "line": 90,
+      "codeSnippet": "`return fetch(...).then(...);`"
+    },
+    {
+      "id": "issue-6",
+      "title": "The retry mechanism does not consider exponential backoff, which can lead to performance degradation under heavy load.",
+      "description": "The retry mechanism does not consider exponential backoff, which can lead to performance degradation under heavy load.",
+      "severity": "medium",
+      "category": "performance",
+      "location": {
+        "file": "src/retry.ts",
+        "line": 45
+      },
+      "file": "src/retry.ts",
+      "line": 45,
+      "codeSnippet": "`setTimeout(() => { ... }, 1000);`"
+    },
+    {
+      "id": "issue-7",
+      "title": "The `options.prefixUrl` can lead to incorrect URL formations if not properly validated.",
+      "description": "The `options.prefixUrl` can lead to incorrect URL formations if not properly validated.",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "src/index.ts",
+        "line": 22
+      },
+      "file": "src/index.ts",
+      "line": 22,
+      "codeSnippet": "`const prefixUrl = options.prefixUrl;`"
+    },
+    {
+      "id": "issue-8",
+      "title": "Missing type definitions for the response can lead to runtime errors and decreased developer experience.",
+      "description": "Missing type definitions for the response can lead to runtime errors and decreased developer experience.",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "src/types.ts",
+        "line": 10
+      },
+      "file": "src/types.ts",
+      "line": 10,
+      "codeSnippet": "`export type ResponseType = any;`"
+    },
+    {
+      "id": "issue-9",
+      "title": "The `options.headers` can be overridden without checks, potentially exposing sensitive information.",
+      "description": "The `options.headers` can be overridden without checks, potentially exposing sensitive information.",
+      "severity": "medium",
+      "category": "security",
+      "location": {
+        "file": "src/index.ts",
+        "line": 38
+      },
+      "file": "src/index.ts",
+      "line": 38,
+      "codeSnippet": "`options.headers = {...defaultHeaders, ...options.headers};`"
+    },
+    {
+      "id": "issue-10",
+      "title": "Potential memory leaks if streams are not properly closed after usage.",
+      "description": "Potential memory leaks if streams are not properly closed after usage.",
+      "severity": "low",
+      "category": "performance",
+      "location": {
+        "file": "src/stream.ts",
+        "line": 15
+      },
+      "file": "src/stream.ts",
+      "line": 15,
+      "codeSnippet": "`stream.on('data', (chunk) => { ... });`"
+    },
+    {
+      "id": "issue-1",
+      "title": "Missing TypeScript types for `options` parameter in `ky` function.",
+      "description": "Missing TypeScript types for `options` parameter in `ky` function.",
+      "severity": "high",
+      "category": "breaking-change",
+      "location": {
+        "file": "src/index.ts",
+        "line": 15
+      },
+      "file": "src/index.ts",
+      "line": 15,
+      "codeSnippet": "`export default function ky(input: string, options?: Options) {`"
+    },
+    {
+      "id": "issue-4",
+      "title": "Lack of error handling in `fetch` calls could lead to unhandled promise rejections.",
+      "description": "Lack of error handling in `fetch` calls could lead to unhandled promise rejections.",
+      "severity": "high",
+      "category": "code-quality",
+      "location": {
+        "file": "src/index.ts",
+        "line": 120
+      },
+      "file": "src/index.ts",
+      "line": 120,
+      "codeSnippet": "`return fetch(url, options);`"
+    },
+    {
+      "id": "issue-5",
+      "title": "Hardcoded sensitive information in the code.",
+      "description": "Hardcoded sensitive information in the code.",
+      "severity": "critical",
+      "category": "security",
+      "location": {
+        "file": "src/config.ts",
+        "line": 10
+      },
+      "file": "src/config.ts",
+      "line": 10,
+      "codeSnippet": "`const apiKey = '12345-ABCDE';`"
+    },
+    {
+      "id": "issue-7",
+      "title": "No timeout handling for requests, which can cause system hangs.",
+      "description": "No timeout handling for requests, which can cause system hangs.",
+      "severity": "high",
+      "category": "performance",
+      "location": {
+        "file": "src/index.ts",
+        "line": 150
+      },
+      "file": "src/index.ts",
+      "line": 150,
+      "codeSnippet": "`await fetch(url, options);`"
+    },
+    {
+      "id": "issue-10",
+      "title": "Potential for large payloads to cause performance degradation.",
+      "description": "Potential for large payloads to cause performance degradation.",
+      "severity": "medium",
+      "category": "performance",
+      "location": {
+        "file": "src/index.ts",
+        "line": 110
+      },
+      "file": "src/index.ts",
+      "line": 110,
+      "codeSnippet": "`const data = await response.json();`"
+    },
+    {
+      "id": "issue-1",
+      "title": "Unhandled promise rejection in fetch response",
+      "description": "Unhandled promise rejection in fetch response",
+      "severity": "critical",
+      "category": "breaking-change",
+      "location": {
+        "file": "index.js",
+        "line": 45
+      },
+      "file": "index.js",
+      "line": 45,
+      "codeSnippet": "`if (!response.ok) throw new Error('Network response was not ok');`"
+    },
+    {
+      "id": "issue-2",
+      "title": "Outdated axios dependency with known CVE",
+      "description": "Outdated axios dependency with known CVE",
+      "severity": "high",
+      "category": "dependency-vulnerability",
+      "location": {
+        "file": "package.json",
+        "line": 12
+      },
+      "file": "package.json",
+      "line": 12,
+      "codeSnippet": "`\"axios\": \"^0.21.1\", // CVE-2020-28470`"
+    },
+    {
+      "id": "issue-3",
+      "title": "Missing input validation for query parameters",
+      "description": "Missing input validation for query parameters",
+      "severity": "high",
+      "category": "security",
+      "location": {
+        "file": "src/request.js",
+        "line": 78
+      },
+      "file": "src/request.js",
+      "line": 78,
+      "codeSnippet": "`const response = await ky.get(\\`/endpoint?param=${param}\\`);`"
+    },
+    {
+      "id": "issue-4",
+      "title": "Potential data exposure in logs",
+      "description": "Potential data exposure in logs",
+      "severity": "high",
+      "category": "security",
+      "location": {
+        "file": "src/logger.js",
+        "line": 22
+      },
+      "file": "src/logger.js",
+      "line": 22,
+      "codeSnippet": "`console.log('Request data:', requestData);`"
+    },
+    {
+      "id": "issue-5",
+      "title": "Race condition in concurrent requests handling",
+      "description": "Race condition in concurrent requests handling",
+      "severity": "high",
+      "category": "performance",
+      "location": {
+        "file": "src/concurrency.js",
+        "line": 34
+      },
+      "file": "src/concurrency.js",
+      "line": 34,
+      "codeSnippet": "// Code location: src/concurrency.js:34"
+    },
+    {
+      "id": "issue-6",
+      "title": "Lack of error handling in retry mechanism",
+      "description": "Lack of error handling in retry mechanism",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "src/retry.js",
+        "line": 16
+      },
+      "file": "src/retry.js",
+      "line": 16,
+      "codeSnippet": "`setTimeout(() => this.retry(), this.delay);`"
+    },
+    {
+      "id": "issue-7",
+      "title": "Missing type annotations leading to potential type errors",
+      "description": "Missing type annotations leading to potential type errors",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "src/types.js",
+        "line": 10
+      },
+      "file": "src/types.js",
+      "line": 10,
+      "codeSnippet": "`function fetchData(url) { return fetch(url); }`"
+    },
+    {
+      "id": "issue-9",
+      "title": "Use of deprecated API endpoint",
+      "description": "Use of deprecated API endpoint",
+      "severity": "medium",
+      "category": "breaking-change",
+      "location": {
+        "file": "src/api.js",
+        "line": 15
+      },
+      "file": "src/api.js",
+      "line": 15,
+      "codeSnippet": "`fetch('/api/v1/old-endpoint');`"
+    },
+    {
+      "id": "issue-10",
+      "title": "Potential infinite loop in retry logic",
+      "description": "Potential infinite loop in retry logic",
+      "severity": "medium",
+      "category": "performance",
+      "location": {
+        "file": "src/retry.js",
+        "line": 23
+      },
+      "file": "src/retry.js",
+      "line": 23,
+      "codeSnippet": "`while (attempts < maxAttempts) { this.retry(); }`"
+    }
+  ],
+  "prBranchIssues": [
+    {
+      "id": "issue-unchanged-1",
+      "title": "The `ky` instance is created with a default timeout that can lead to unhandled promise rejections if the request takes too long.",
+      "description": "The `ky` instance is created with a default timeout that can lead to unhandled promise rejections if the request takes too long.",
+      "severity": "critical",
+      "category": "breaking-change",
+      "location": {
+        "file": "src/index.ts",
+        "line": 34
+      },
+      "file": "src/index.ts",
+      "line": 34,
+      "codeSnippet": "`const ky = create({timeout: 10000});`",
+      "status": "unchanged"
+    },
+    {
+      "id": "issue-unchanged-2",
+      "title": "The package `node-fetch` has known vulnerabilities (CVE-2021-22945) related to header injection.\n   Status: UNCHANGED\n   Severity: high\n   Category: dependency-vulnerability\n   File path: package.json\n   Line number: ?\n   Code snippet: `\"node-fetch\": \"^2.6.1\",`\n\n3. Issue: Lack of input validation could lead to XSS if untrusted data is passed directly into request parameters.",
+      "description": "The package `node-fetch` has known vulnerabilities (CVE-2021-22945) related to header injection.\n   Status: UNCHANGED\n   Severity: high\n   Category: dependency-vulnerability\n   File path: package.json\n   Line number: ?\n   Code snippet: `\"node-fetch\": \"^2.6.1\",`\n\n3. Issue: Lack of input validation could lead to XSS if untrusted data is passed directly into request parameters.",
+      "severity": "high",
+      "category": "security",
+      "location": {
+        "file": "src/index.ts",
+        "line": 56
+      },
+      "file": "src/index.ts",
+      "line": 56,
+      "codeSnippet": "`return ky(url, { headers });`",
+      "status": "unchanged"
+    },
+    {
+      "id": "issue-unchanged-3",
+      "title": "The absence of explicit error handling can lead to data loss if the response cannot be parsed.",
+      "description": "The absence of explicit error handling can lead to data loss if the response cannot be parsed.",
+      "severity": "high",
+      "category": "data-loss",
+      "location": {
+        "file": "src/index.ts",
+        "line": 82
+      },
+      "file": "src/index.ts",
+      "line": 82,
+      "codeSnippet": "`const data = await response.json();`",
+      "status": "unchanged"
+    },
+    {
+      "id": "issue-unchanged-4",
+      "title": "Unhandled promise rejections could cause system crashes in production environments.",
+      "description": "Unhandled promise rejections could cause system crashes in production environments.",
+      "severity": "high",
+      "category": "system",
+      "location": {
+        "file": "src/index.ts",
+        "line": 90
+      },
+      "file": "src/index.ts",
+      "line": 90,
+      "codeSnippet": "`return fetch(...).then(...);`",
+      "status": "unchanged"
+    },
+    {
+      "id": "issue-unchanged-5",
+      "title": "The retry mechanism does not consider exponential backoff, which can lead to performance degradation under heavy load.",
+      "description": "The retry mechanism does not consider exponential backoff, which can lead to performance degradation under heavy load.",
+      "severity": "medium",
+      "category": "performance",
+      "location": {
+        "file": "src/retry.ts",
+        "line": 45
+      },
+      "file": "src/retry.ts",
+      "line": 45,
+      "codeSnippet": "`setTimeout(retry, delay);`",
+      "status": "unchanged"
+    },
+    {
+      "id": "issue-unchanged-6",
+      "title": "The `options.prefixUrl` can lead to incorrect URL formations if not properly validated.",
+      "description": "The `options.prefixUrl` can lead to incorrect URL formations if not properly validated.",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "src/index.ts",
+        "line": 22
+      },
+      "file": "src/index.ts",
+      "line": 22,
+      "codeSnippet": "`const prefixUrl = options.prefixUrl;`",
+      "status": "unchanged"
+    },
+    {
+      "id": "issue-unchanged-7",
+      "title": "Missing type definitions for the response can lead to runtime errors and decreased developer experience.",
+      "description": "Missing type definitions for the response can lead to runtime errors and decreased developer experience.",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "src/types.ts",
+        "line": 10
+      },
+      "file": "src/types.ts",
+      "line": 10,
+      "codeSnippet": "`export type ResponseType = any;`",
+      "status": "unchanged"
+    },
+    {
+      "id": "issue-unchanged-8",
+      "title": "The `options.headers` can be overridden without checks, potentially exposing sensitive information.",
+      "description": "The `options.headers` can be overridden without checks, potentially exposing sensitive information.",
+      "severity": "medium",
+      "category": "security",
+      "location": {
+        "file": "src/index.ts",
+        "line": 38
+      },
+      "file": "src/index.ts",
+      "line": 38,
+      "codeSnippet": "`headers: {...defaultHeaders, ...options.headers},`",
+      "status": "unchanged"
+    },
+    {
+      "id": "issue-unchanged-9",
+      "title": "Potential memory leaks if streams are not properly closed after usage.",
+      "description": "Potential memory leaks if streams are not properly closed after usage.",
+      "severity": "low",
+      "category": "performance",
+      "location": {
+        "file": "src/stream.ts",
+        "line": 15
+      },
+      "file": "src/stream.ts",
+      "line": 15,
+      "codeSnippet": "`stream.pipe(destination);`",
+      "status": "unchanged"
+    },
+    {
+      "id": "issue-unchanged-10",
+      "title": "Missing TypeScript types for `options` parameter in `ky` function.",
+      "description": "Missing TypeScript types for `options` parameter in `ky` function.",
+      "severity": "high",
+      "category": "breaking-change",
+      "location": {
+        "file": "src/index.ts",
+        "line": 15
+      },
+      "file": "src/index.ts",
+      "line": 15,
+      "codeSnippet": "`function ky(url: string, options?: Options) {`",
+      "status": "unchanged"
+    },
+    {
+      "id": "issue-unchanged-11",
+      "title": "Lack of error handling in `fetch` calls could lead to unhandled promise rejections.",
+      "description": "Lack of error handling in `fetch` calls could lead to unhandled promise rejections.",
+      "severity": "high",
+      "category": "code-quality",
+      "location": {
+        "file": "src/index.ts",
+        "line": 120
+      },
+      "file": "src/index.ts",
+      "line": 120,
+      "codeSnippet": "`const response = await fetch(url);`",
+      "status": "unchanged"
+    },
+    {
+      "id": "issue-unchanged-12",
+      "title": "Hardcoded sensitive information in the code.",
+      "description": "Hardcoded sensitive information in the code.",
+      "severity": "critical",
+      "category": "security",
+      "location": {
+        "file": "src/config.ts",
+        "line": 10
+      },
+      "file": "src/config.ts",
+      "line": 10,
+      "codeSnippet": "`const apiKey = 'YOUR_API_KEY';`",
+      "status": "unchanged"
+    },
+    {
+      "id": "issue-unchanged-13",
+      "title": "No timeout handling for requests, which can cause system hangs.",
+      "description": "No timeout handling for requests, which can cause system hangs.",
+      "severity": "high",
+      "category": "performance",
+      "location": {
+        "file": "src/index.ts",
+        "line": 150
+      },
+      "file": "src/index.ts",
+      "line": 150,
+      "codeSnippet": "`await fetch(url);`",
+      "status": "unchanged"
+    },
+    {
+      "id": "issue-unchanged-14",
+      "title": "Potential for large payloads to cause performance degradation.",
+      "description": "Potential for large payloads to cause performance degradation.",
+      "severity": "medium",
+      "category": "performance",
+      "location": {
+        "file": "src/index.ts",
+        "line": 110
+      },
+      "file": "src/index.ts",
+      "line": 110,
+      "codeSnippet": "`const response = await ky(url, { method: 'POST', body });`",
+      "status": "unchanged"
+    },
+    {
+      "id": "issue-unchanged-15",
+      "title": "Unhandled promise rejection in fetch response.",
+      "description": "Unhandled promise rejection in fetch response.",
+      "severity": "critical",
+      "category": "breaking-change",
+      "location": {
+        "file": "index.js",
+        "line": 45
+      },
+      "file": "index.js",
+      "line": 45,
+      "codeSnippet": "`fetch(url).then(response => {...});`",
+      "status": "unchanged"
+    },
+    {
+      "id": "issue-unchanged-16",
+      "title": "Outdated axios dependency with known CVE.",
+      "description": "Outdated axios dependency with known CVE.",
+      "severity": "high",
+      "category": "dependency-vulnerability",
+      "location": {
+        "file": "package.json",
+        "line": 12
+      },
+      "file": "package.json",
+      "line": 12,
+      "codeSnippet": "`\"axios\": \"^0.21.1\",`",
+      "status": "unchanged"
+    },
+    {
+      "id": "issue-unchanged-17",
+      "title": "Missing input validation for query parameters.",
+      "description": "Missing input validation for query parameters.",
+      "severity": "high",
+      "category": "security",
+      "location": {
+        "file": "src/request.js",
+        "line": 78
+      },
+      "file": "src/request.js",
+      "line": 78,
+      "codeSnippet": "`const query = params;`",
+      "status": "unchanged"
+    },
+    {
+      "id": "issue-unchanged-18",
+      "title": "Potential data exposure in logs.",
+      "description": "Potential data exposure in logs.",
+      "severity": "high",
+      "category": "security",
+      "location": {
+        "file": "src/logger.js",
+        "line": 22
+      },
+      "file": "src/logger.js",
+      "line": 22,
+      "codeSnippet": "`console.log(data);`",
+      "status": "unchanged"
+    },
+    {
+      "id": "issue-unchanged-19",
+      "title": "Race condition in concurrent requests handling.",
+      "description": "Race condition in concurrent requests handling.",
+      "severity": "high",
+      "category": "performance",
+      "location": {
+        "file": "source/types/retry.ts",
+        "line": 3
+      },
+      "file": "src/concurrency.js",
+      "line": 34,
+      "codeSnippet": "The number of times to retry failed requests.",
+      "status": "unchanged",
+      "codeContext": [
+        "The number of times to retry failed requests."
+      ]
+    },
+    {
+      "id": "issue-unchanged-20",
+      "title": "Lack of error handling in retry mechanism.",
+      "description": "Lack of error handling in retry mechanism.",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "src/retry.js",
+        "line": 16
+      },
+      "file": "src/retry.js",
+      "line": 16,
+      "codeSnippet": "`if (shouldRetry) retry();`",
+      "status": "unchanged"
+    },
+    {
+      "id": "issue-unchanged-21",
+      "title": "Missing type annotations leading to potential type errors.",
+      "description": "Missing type annotations leading to potential type errors.",
+      "severity": "medium",
+      "category": "code-quality",
+      "location": {
+        "file": "src/types.js",
+        "line": 10
+      },
+      "file": "src/types.js",
+      "line": 10,
+      "codeSnippet": "`export type Options = any;`",
+      "status": "unchanged"
+    },
+    {
+      "id": "issue-unchanged-22",
+      "title": "Use of deprecated API endpoint.",
+      "description": "Use of deprecated API endpoint.",
+      "severity": "medium",
+      "category": "breaking-change",
+      "location": {
+        "file": "src/api.js",
+        "line": 15
+      },
+      "file": "src/api.js",
+      "line": 15,
+      "codeSnippet": "`fetch('https://deprecated.api/endpoint');`",
+      "status": "unchanged"
+    },
+    {
+      "id": "issue-unchanged-23",
+      "title": "Potential infinite loop in retry logic.",
+      "description": "Potential infinite loop in retry logic.",
+      "severity": "medium",
+      "category": "performance",
+      "location": {
+        "file": "src/retry.js",
+        "line": 23
+      },
+      "file": "src/retry.js",
+      "line": 23,
+      "codeSnippet": "`while (attempts < maxAttempts) { ... }`",
+      "status": "unchanged"
+    }
+  ],
+  "categorized": {
+    "newIssues": [
+      {
+        "issue": {
+          "id": "issue-unchanged-14",
+          "title": "Potential for large payloads to cause performance degradation.",
+          "description": "Potential for large payloads to cause performance degradation.",
+          "severity": "medium",
+          "category": "performance",
+          "location": {
+            "file": "src/index.ts",
+            "line": 110
+          },
+          "file": "src/index.ts",
+          "line": 110,
+          "codeSnippet": "`const response = await ky(url, { method: 'POST', body });`",
+          "status": "unchanged"
+        },
+        "category": "new",
+        "fingerprint": "src/index.ts:110:performance:medium:generic:await-ky",
+        "confidence": 0.25
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-15",
+          "title": "Unhandled promise rejection in fetch response.",
+          "description": "Unhandled promise rejection in fetch response.",
+          "severity": "critical",
+          "category": "breaking-change",
+          "location": {
+            "file": "index.js",
+            "line": 45
+          },
+          "file": "index.js",
+          "line": 45,
+          "codeSnippet": "`fetch(url).then(response => {...});`",
+          "status": "unchanged"
+        },
+        "category": "new",
+        "fingerprint": "index.js:40:breaking-change:critical:promise:fetch-then-then",
+        "confidence": 0.25
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-19",
+          "title": "Race condition in concurrent requests handling.",
+          "description": "Race condition in concurrent requests handling.",
+          "severity": "high",
+          "category": "performance",
+          "location": {
+            "file": "source/types/retry.ts",
+            "line": 3
+          },
+          "file": "src/concurrency.js",
+          "line": 34,
+          "codeSnippet": "The number of times to retry failed requests.",
+          "status": "unchanged",
+          "codeContext": [
+            "The number of times to retry failed requests."
+          ]
+        },
+        "category": "new",
+        "fingerprint": "source/types/retry.ts:0:performance:high:handling.:",
+        "confidence": 0.46199999999999997
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-23",
+          "title": "Potential infinite loop in retry logic.",
+          "description": "Potential infinite loop in retry logic.",
+          "severity": "medium",
+          "category": "performance",
+          "location": {
+            "file": "src/retry.js",
+            "line": 23
+          },
+          "file": "src/retry.js",
+          "line": 23,
+          "codeSnippet": "`while (attempts < maxAttempts) { ... }`",
+          "status": "unchanged"
+        },
+        "category": "new",
+        "fingerprint": "src/retry.js:20:performance:medium:generic:while-while",
+        "confidence": 0.25
+      }
+    ],
+    "fixedIssues": [
+      {
+        "issue": {
+          "id": "issue-2",
+          "title": "The package `node-fetch` has known vulnerabilities (CVE-2021-22945) related to header injection.",
+          "description": "The package `node-fetch` has known vulnerabilities (CVE-2021-22945) related to header injection.",
+          "severity": "high",
+          "category": "dependency-vulnerability",
+          "location": {
+            "file": "package.json",
+            "line": 0
+          },
+          "file": "package.json",
+          "line": 0,
+          "codeSnippet": "`\"node-fetch\": \"^2.6.1\",`"
+        },
+        "category": "fixed",
+        "fingerprint": "package.json:0:dependency-vulnerability:high:injection.:1-6",
+        "confidence": 0.25
+      },
+      {
+        "issue": {
+          "id": "issue-10",
+          "title": "Potential for large payloads to cause performance degradation.",
+          "description": "Potential for large payloads to cause performance degradation.",
+          "severity": "medium",
+          "category": "performance",
+          "location": {
+            "file": "src/index.ts",
+            "line": 110
+          },
+          "file": "src/index.ts",
+          "line": 110,
+          "codeSnippet": "`const data = await response.json();`"
+        },
+        "category": "fixed",
+        "fingerprint": "src/index.ts:110:performance:medium:generic:await-json-json",
+        "confidence": 0.25
+      },
+      {
+        "issue": {
+          "id": "issue-1",
+          "title": "Unhandled promise rejection in fetch response",
+          "description": "Unhandled promise rejection in fetch response",
+          "severity": "critical",
+          "category": "breaking-change",
+          "location": {
+            "file": "index.js",
+            "line": 45
+          },
+          "file": "index.js",
+          "line": 45,
+          "codeSnippet": "`if (!response.ok) throw new Error('Network response was not ok');`"
+        },
+        "category": "fixed",
+        "fingerprint": "index.js:40:breaking-change:critical:promise:Error-if-ok",
+        "confidence": 0.25
+      },
+      {
+        "issue": {
+          "id": "issue-5",
+          "title": "Race condition in concurrent requests handling",
+          "description": "Race condition in concurrent requests handling",
+          "severity": "high",
+          "category": "performance",
+          "location": {
+            "file": "src/concurrency.js",
+            "line": 34
+          },
+          "file": "src/concurrency.js",
+          "line": 34,
+          "codeSnippet": "// Code location: src/concurrency.js:34"
+        },
+        "category": "fixed",
+        "fingerprint": "src/concurrency.js:30:performance:high:handling:js",
+        "confidence": 0.46199999999999997
+      },
+      {
+        "issue": {
+          "id": "issue-10",
+          "title": "Potential infinite loop in retry logic",
+          "description": "Potential infinite loop in retry logic",
+          "severity": "medium",
+          "category": "performance",
+          "location": {
+            "file": "src/retry.js",
+            "line": 23
+          },
+          "file": "src/retry.js",
+          "line": 23,
+          "codeSnippet": "`while (attempts < maxAttempts) { this.retry(); }`"
+        },
+        "category": "fixed",
+        "fingerprint": "src/retry.js:20:performance:medium:generic:retry-retry-while",
+        "confidence": 0.25
+      }
+    ],
+    "unchangedIssues": [
+      {
+        "issue": {
+          "id": "issue-unchanged-1",
+          "title": "The `ky` instance is created with a default timeout that can lead to unhandled promise rejections if the request takes too long.",
+          "description": "The `ky` instance is created with a default timeout that can lead to unhandled promise rejections if the request takes too long.",
+          "severity": "critical",
+          "category": "breaking-change",
+          "location": {
+            "file": "src/index.ts",
+            "line": 34
+          },
+          "file": "src/index.ts",
+          "line": 34,
+          "codeSnippet": "`const ky = create({timeout: 10000});`",
+          "status": "unchanged"
+        },
+        "category": "unchanged",
+        "fingerprint": "src/index.ts:30:breaking-change:critical:promise-timeout:create",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-2",
+          "title": "The package `node-fetch` has known vulnerabilities (CVE-2021-22945) related to header injection.\n   Status: UNCHANGED\n   Severity: high\n   Category: dependency-vulnerability\n   File path: package.json\n   Line number: ?\n   Code snippet: `\"node-fetch\": \"^2.6.1\",`\n\n3. Issue: Lack of input validation could lead to XSS if untrusted data is passed directly into request parameters.",
+          "description": "The package `node-fetch` has known vulnerabilities (CVE-2021-22945) related to header injection.\n   Status: UNCHANGED\n   Severity: high\n   Category: dependency-vulnerability\n   File path: package.json\n   Line number: ?\n   Code snippet: `\"node-fetch\": \"^2.6.1\",`\n\n3. Issue: Lack of input validation could lead to XSS if untrusted data is passed directly into request parameters.",
+          "severity": "high",
+          "category": "security",
+          "location": {
+            "file": "src/index.ts",
+            "line": 56
+          },
+          "file": "src/index.ts",
+          "line": 56,
+          "codeSnippet": "`return ky(url, { headers });`",
+          "status": "unchanged"
+        },
+        "category": "unchanged",
+        "fingerprint": "src/index.ts:50:security:high:dependency-vulnerability-injection.-input-validation-xss:ky",
+        "confidence": 0.9166666666666666
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-3",
+          "title": "The absence of explicit error handling can lead to data loss if the response cannot be parsed.",
+          "description": "The absence of explicit error handling can lead to data loss if the response cannot be parsed.",
+          "severity": "high",
+          "category": "data-loss",
+          "location": {
+            "file": "src/index.ts",
+            "line": 82
+          },
+          "file": "src/index.ts",
+          "line": 82,
+          "codeSnippet": "`const data = await response.json();`",
+          "status": "unchanged"
+        },
+        "category": "unchanged",
+        "fingerprint": "src/index.ts:80:data-loss:high:error-handling:await-json-json",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-4",
+          "title": "Unhandled promise rejections could cause system crashes in production environments.",
+          "description": "Unhandled promise rejections could cause system crashes in production environments.",
+          "severity": "high",
+          "category": "system",
+          "location": {
+            "file": "src/index.ts",
+            "line": 90
+          },
+          "file": "src/index.ts",
+          "line": 90,
+          "codeSnippet": "`return fetch(...).then(...);`",
+          "status": "unchanged"
+        },
+        "category": "unchanged",
+        "fingerprint": "src/index.ts:90:system:high:promise:fetch-then-then",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-5",
+          "title": "The retry mechanism does not consider exponential backoff, which can lead to performance degradation under heavy load.",
+          "description": "The retry mechanism does not consider exponential backoff, which can lead to performance degradation under heavy load.",
+          "severity": "medium",
+          "category": "performance",
+          "location": {
+            "file": "src/retry.ts",
+            "line": 45
+          },
+          "file": "src/retry.ts",
+          "line": 45,
+          "codeSnippet": "`setTimeout(retry, delay);`",
+          "status": "unchanged"
+        },
+        "category": "unchanged",
+        "fingerprint": "src/retry.ts:40:performance:medium:generic:setTimeout",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-6",
+          "title": "The `options.prefixUrl` can lead to incorrect URL formations if not properly validated.",
+          "description": "The `options.prefixUrl` can lead to incorrect URL formations if not properly validated.",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "src/index.ts",
+            "line": 22
+          },
+          "file": "src/index.ts",
+          "line": 22,
+          "codeSnippet": "`const prefixUrl = options.prefixUrl;`",
+          "status": "unchanged"
+        },
+        "category": "unchanged",
+        "fingerprint": "src/index.ts:20:code-quality:medium:generic:prefixUrl",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-7",
+          "title": "Missing type definitions for the response can lead to runtime errors and decreased developer experience.",
+          "description": "Missing type definitions for the response can lead to runtime errors and decreased developer experience.",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "src/types.ts",
+            "line": 10
+          },
+          "file": "src/types.ts",
+          "line": 10,
+          "codeSnippet": "`export type ResponseType = any;`",
+          "status": "unchanged"
+        },
+        "category": "unchanged",
+        "fingerprint": "src/types.ts:10:code-quality:medium:errors-type:",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-8",
+          "title": "The `options.headers` can be overridden without checks, potentially exposing sensitive information.",
+          "description": "The `options.headers` can be overridden without checks, potentially exposing sensitive information.",
+          "severity": "medium",
+          "category": "security",
+          "location": {
+            "file": "src/index.ts",
+            "line": 38
+          },
+          "file": "src/index.ts",
+          "line": 38,
+          "codeSnippet": "`headers: {...defaultHeaders, ...options.headers},`",
+          "status": "unchanged"
+        },
+        "category": "unchanged",
+        "fingerprint": "src/index.ts:30:security:medium:generic:defaultHeaders-headers-options",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-9",
+          "title": "Potential memory leaks if streams are not properly closed after usage.",
+          "description": "Potential memory leaks if streams are not properly closed after usage.",
+          "severity": "low",
+          "category": "performance",
+          "location": {
+            "file": "src/stream.ts",
+            "line": 15
+          },
+          "file": "src/stream.ts",
+          "line": 15,
+          "codeSnippet": "`stream.pipe(destination);`",
+          "status": "unchanged"
+        },
+        "category": "unchanged",
+        "fingerprint": "src/stream.ts:10:performance:low:leaks-memory:pipe-pipe",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-10",
+          "title": "Missing TypeScript types for `options` parameter in `ky` function.",
+          "description": "Missing TypeScript types for `options` parameter in `ky` function.",
+          "severity": "high",
+          "category": "breaking-change",
+          "location": {
+            "file": "src/index.ts",
+            "line": 15
+          },
+          "file": "src/index.ts",
+          "line": 15,
+          "codeSnippet": "`function ky(url: string, options?: Options) {`",
+          "status": "unchanged"
+        },
+        "category": "unchanged",
+        "fingerprint": "src/index.ts:10:breaking-change:high:types-typescript:ky",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-11",
+          "title": "Lack of error handling in `fetch` calls could lead to unhandled promise rejections.",
+          "description": "Lack of error handling in `fetch` calls could lead to unhandled promise rejections.",
+          "severity": "high",
+          "category": "code-quality",
+          "location": {
+            "file": "src/index.ts",
+            "line": 120
+          },
+          "file": "src/index.ts",
+          "line": 120,
+          "codeSnippet": "`const response = await fetch(url);`",
+          "status": "unchanged"
+        },
+        "category": "unchanged",
+        "fingerprint": "src/index.ts:120:code-quality:high:error-handling-promise:await-fetch",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-12",
+          "title": "Hardcoded sensitive information in the code.",
+          "description": "Hardcoded sensitive information in the code.",
+          "severity": "critical",
+          "category": "security",
+          "location": {
+            "file": "src/config.ts",
+            "line": 10
+          },
+          "file": "src/config.ts",
+          "line": 10,
+          "codeSnippet": "`const apiKey = 'YOUR_API_KEY';`",
+          "status": "unchanged"
+        },
+        "category": "unchanged",
+        "fingerprint": "src/config.ts:10:security:critical:generic:",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-13",
+          "title": "No timeout handling for requests, which can cause system hangs.",
+          "description": "No timeout handling for requests, which can cause system hangs.",
+          "severity": "high",
+          "category": "performance",
+          "location": {
+            "file": "src/index.ts",
+            "line": 150
+          },
+          "file": "src/index.ts",
+          "line": 150,
+          "codeSnippet": "`await fetch(url);`",
+          "status": "unchanged"
+        },
+        "category": "unchanged",
+        "fingerprint": "src/index.ts:150:performance:high:handling-timeout:await-fetch",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-16",
+          "title": "Outdated axios dependency with known CVE.",
+          "description": "Outdated axios dependency with known CVE.",
+          "severity": "high",
+          "category": "dependency-vulnerability",
+          "location": {
+            "file": "package.json",
+            "line": 12
+          },
+          "file": "package.json",
+          "line": 12,
+          "codeSnippet": "`\"axios\": \"^0.21.1\",`",
+          "status": "unchanged"
+        },
+        "category": "unchanged",
+        "fingerprint": "package.json:0:dependency-vulnerability:high:dependency:1-21",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-17",
+          "title": "Missing input validation for query parameters.",
+          "description": "Missing input validation for query parameters.",
+          "severity": "high",
+          "category": "security",
+          "location": {
+            "file": "src/request.js",
+            "line": 78
+          },
+          "file": "src/request.js",
+          "line": 78,
+          "codeSnippet": "`const query = params;`",
+          "status": "unchanged"
+        },
+        "category": "unchanged",
+        "fingerprint": "src/request.js:70:security:high:input-validation:",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-18",
+          "title": "Potential data exposure in logs.",
+          "description": "Potential data exposure in logs.",
+          "severity": "high",
+          "category": "security",
+          "location": {
+            "file": "src/logger.js",
+            "line": 22
+          },
+          "file": "src/logger.js",
+          "line": 22,
+          "codeSnippet": "`console.log(data);`",
+          "status": "unchanged"
+        },
+        "category": "unchanged",
+        "fingerprint": "src/logger.js:20:security:high:generic:log-log",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-20",
+          "title": "Lack of error handling in retry mechanism.",
+          "description": "Lack of error handling in retry mechanism.",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "src/retry.js",
+            "line": 16
+          },
+          "file": "src/retry.js",
+          "line": 16,
+          "codeSnippet": "`if (shouldRetry) retry();`",
+          "status": "unchanged"
+        },
+        "category": "unchanged",
+        "fingerprint": "src/retry.js:10:code-quality:medium:error-handling:if-if-retry",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-21",
+          "title": "Missing type annotations leading to potential type errors.",
+          "description": "Missing type annotations leading to potential type errors.",
+          "severity": "medium",
+          "category": "code-quality",
+          "location": {
+            "file": "src/types.js",
+            "line": 10
+          },
+          "file": "src/types.js",
+          "line": 10,
+          "codeSnippet": "`export type Options = any;`",
+          "status": "unchanged"
+        },
+        "category": "unchanged",
+        "fingerprint": "src/types.js:10:code-quality:medium:errors.-type:",
+        "confidence": 1
+      },
+      {
+        "issue": {
+          "id": "issue-unchanged-22",
+          "title": "Use of deprecated API endpoint.",
+          "description": "Use of deprecated API endpoint.",
+          "severity": "medium",
+          "category": "breaking-change",
+          "location": {
+            "file": "src/api.js",
+            "line": 15
+          },
+          "file": "src/api.js",
+          "line": 15,
+          "codeSnippet": "`fetch('https://deprecated.api/endpoint');`",
+          "status": "unchanged"
+        },
+        "category": "unchanged",
+        "fingerprint": "src/api.js:10:breaking-change:medium:deprecated:api-fetch",
+        "confidence": 1
+      }
+    ],
+    "summary": {
+      "totalNew": 4,
+      "totalFixed": 5,
+      "totalUnchanged": 19,
+      "netImpact": -1,
+      "prQualityScore": 40
+    },
+    "recommendations": [
+      "🚨 BLOCKING: Fix 1 critical issue(s) before merging",
+      "⚠️ Address 1 high-severity issue(s) introduced by this PR",
+      "✅ Great work! This PR fixes 5 existing issue(s)",
+      "📈 Net improvement: 1 fewer issues after this PR",
+      "⚠️ PR needs attention. Please address the issues above."
+    ]
+  },
+  "metadata": {
+    "analysisDate": "2025-08-27T18:16:14.506Z",
+    "mainBranchAnalysisDuration": 39.5,
+    "prBranchAnalysisDuration": 65.9,
+    "totalDuration": 105.4,
+    "modelUsed": "dynamic-selection",
+    "iterationsPerBranch": 3,
+    "tokensUsed": 0
+  }
+}
