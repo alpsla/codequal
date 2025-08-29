@@ -19,7 +19,7 @@ export class StructuredDeepWikiParser {
   /**
    * Get the optimal prompt for structured responses
    */
-  getStructuredPrompt(analysisType: string = 'security, performance, and code quality'): string {
+  getStructuredPrompt(analysisType = 'security, performance, and code quality'): string {
     return `Analyze this repository for ${analysisType} issues.
 
 Return EXACTLY in this format for each issue (no other text):

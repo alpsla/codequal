@@ -70,7 +70,7 @@ try {
 // Test 7: MCP Integration imports
 console.log('\n7️⃣ Testing MCP integration...');
 try {
-  const { ParallelToolExecutor } = require('../../../mcp-hybrid/src/integration/parallel-tool-executor');
+  const { ParallelToolExecutor } = require('@codequal/mcp-hybrid/dist/integration/parallel-tool-executor');
   console.log('   ✅ MCP integration found');
 } catch (error: any) {
   console.log('   ❌ MCP integration missing:', error.message);

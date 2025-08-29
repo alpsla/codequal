@@ -48,7 +48,7 @@ export class DualBranchIndexingStrategy {
    */
   async buildDualIndices(
     repoUrl: string,
-    mainBranch: string = 'main',
+    mainBranch = 'main',
     prBranch: string
   ): Promise<DualBranchIndices> {
     console.log(`🔀 Building dual indices for ${mainBranch} and ${prBranch}...`);

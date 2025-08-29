@@ -270,7 +270,9 @@ export class BidirectionalCodeLocator {
           }
         }
       }
-    } catch {}
+    } catch {
+      // Ignore error and continue
+    }
     
     return null;
   }
@@ -305,7 +307,9 @@ export class BidirectionalCodeLocator {
           }
         }
       }
-    } catch {}
+    } catch {
+      // Ignore error and continue
+    }
     
     return null;
   }
@@ -340,7 +344,9 @@ export class BidirectionalCodeLocator {
             }
           }
         }
-      } catch {}
+      } catch {
+      // Ignore error and continue
+    }
     }
     
     return null;

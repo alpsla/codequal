@@ -1,0 +1,22 @@
+{
+  "name": "@codequal/browsertools-mcp",
+  "version": "1.0.0",
+  "description": "BrowserTools MCP Server for web performance testing",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.17.4",
+    "lighthouse": "^11.0.0",
+    "puppeteer": "^21.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "@types/puppeteer": "^5.4.7",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.0.0"
+  }
+}

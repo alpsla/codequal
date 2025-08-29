@@ -16,8 +16,9 @@ import {
   IssueCategory 
 } from '../types';
 import { logger } from '../utils/logger';
-// Use local mock until mcp-hybrid is built
-import { ParallelToolExecutor, IndividualToolResponse } from '../types/mcp-types';
+// Use MCP Tool Adapter to bridge with mcp-hybrid
+import { MCPToolAdapter } from '../adapters/MCP-Tool-Adapter';
+import { IndividualToolResponse } from '../types/mcp-types';
 
 export interface AnalysisOptions {
   tools?: ToolName[];        // Specific tools to run (default: all)
@@ -36,7 +37,7 @@ export interface SpecializedAgent {
 }
 
 export class BranchAnalyzer {
-  private toolExecutor: ParallelToolExecutor;
+  private toolExecutor: MCPToolAdapter;
   private specializedAgents: Map<IssueCategory, SpecializedAgent> = new Map();
   private defaultTools: ToolName[] = [
     'semgrep',
@@ -54,10 +55,10 @@ export class BranchAnalyzer {
   ];
   
   constructor(
-    toolExecutor?: ParallelToolExecutor,
+    toolExecutor?: MCPToolAdapter,
     specializedAgents?: SpecializedAgent[]
   ) {
-    this.toolExecutor = toolExecutor || new ParallelToolExecutor();
+    this.toolExecutor = toolExecutor || new MCPToolAdapter();
     
     // Register specialized agents if provided
     if (specializedAgents) {
@@ -544,7 +545,7 @@ export class BranchAnalyzer {
    */
   private async getCommitHash(repoPath: string): Promise<string> {
     try {
-      const { execSync } = require('child_process');
+      const { execSync } = await import('child_process');
       const hash = execSync('git rev-parse HEAD', { 
         cwd: repoPath,
         encoding: 'utf8' 
@@ -560,7 +561,7 @@ export class BranchAnalyzer {
    */
   private async countFiles(repoPath: string): Promise<number> {
     try {
-      const { execSync } = require('child_process');
+      const { execSync } = await import('child_process');
       // Count files, excluding common non-code directories
       const count = execSync(
         `find . -type f -name "*.js" -o -name "*.ts" -o -name "*.jsx" -o -name "*.tsx" -o -name "*.py" -o -name "*.java" -o -name "*.go" -o -name "*.rb" -o -name "*.php" -o -name "*.cs" -o -name "*.cpp" -o -name "*.c" -o -name "*.h" | grep -v node_modules | grep -v ".git" | wc -l`,

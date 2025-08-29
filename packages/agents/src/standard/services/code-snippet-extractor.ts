@@ -146,7 +146,9 @@ export class CodeSnippetExtractor {
         if (findResult && fs.existsSync(findResult)) {
           actualPath = findResult;
         }
-      } catch {}
+      } catch {
+        // Ignore error and continue
+      }
     }
     
     if (!actualPath) {
@@ -234,7 +236,9 @@ export class CodeSnippetExtractor {
                 
                 const grepCmd = `grep -r -n "${pattern}" "${dirPath}" ${includes} 2>/dev/null | head -2`;
                 searchResult += execSync(grepCmd, { encoding: 'utf-8', timeout: 1000 });
-              } catch {}
+              } catch {
+        // Ignore error and continue
+      }
             }
           }
         }

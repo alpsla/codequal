@@ -5,6 +5,7 @@
  * 
  * Specialized environment setup specialist for the CodeQual project
  * Mission: Prepare development environment and provide complete session context in under 2 minutes
+ * Updated: 2025-08-28 - Migrated from DeepWiki to MCP tools infrastructure
  */
 
 import * as fs from 'fs';
@@ -94,8 +95,8 @@ class CodeQualSessionStarter {
   private async checkSetupRequired(): Promise<boolean> {
     // Check key services
     const checks = [
-      this.checkDeepWikiPod(),
-      this.checkPortForwarding(),
+      this.checkDockerRunning(),
+      this.checkMCPServices(),
       this.checkRedis(),
       this.checkBuildExists()
     ];
@@ -132,15 +133,15 @@ class CodeQualSessionStarter {
           execSync('redis-server --daemonize yes', { stdio: 'pipe' });
         }
 
-        // Setup port forwarding
+        // Start MCP services if not running
         try {
-          execSync('curl -s http://localhost:8001/health', { stdio: 'pipe' });
+          execSync('curl -s http://localhost:3000/health', { stdio: 'pipe' });
         } catch {
-          console.log(chalk.gray('Setting up port forwarding...'));
-          execSync('pkill -f "port-forward.*8001"', { stdio: 'pipe' }).toString();
-          execSync('kubectl port-forward -n codequal-dev svc/deepwiki-api 8001:8001 &', { 
-            stdio: 'pipe' 
-          });
+          console.log(chalk.gray('Starting MCP services...'));
+          const dockerScript = path.join(this.agentsDir, 'start-secure-mcp-stack.sh');
+          if (fs.existsSync(dockerScript)) {
+            execSync(`bash ${dockerScript}`, { stdio: 'pipe' });
+          }
         }
 
         // Build if needed
@@ -196,7 +197,7 @@ class CodeQualSessionStarter {
   private async getLastSessionInfo(): Promise<string> {
     try {
       // First check NEXT_SESSION_PLAN.md as per SESSION_MANAGEMENT.md rules
-      const nextPlanPath = path.join(this.agentsDir, 'src/standard/docs/session_summary/NEXT_SESSION_PLAN.md');
+      const nextPlanPath = path.join(this.agentsDir, 'src/two-branch/docs/session-summary/NEXT_SESSION_PLAN.md');
       if (fs.existsSync(nextPlanPath)) {
         const content = fs.readFileSync(nextPlanPath, 'utf-8');
         const lines = content.split('\n');
@@ -215,7 +216,7 @@ class CodeQualSessionStarter {
       }
 
       // Fallback to latest session summary if NEXT_SESSION_PLAN.md doesn't exist
-      const sessionDir = path.join(this.agentsDir, 'src/standard/docs/session_summary');
+      const sessionDir = path.join(this.agentsDir, 'src/two-branch/docs/session-summary');
       if (!fs.existsSync(sessionDir)) {
         return 'No previous session found';
       }
@@ -263,21 +264,32 @@ class CodeQualSessionStarter {
   private async checkAllServices(): Promise<ServiceStatus[]> {
     const services: ServiceStatus[] = [];
 
-    // DeepWiki
-    const deepwikiStatus = await this.checkDeepWikiPod();
+    // Docker
+    const dockerStatus = await this.checkDockerRunning();
     services.push({
-      name: 'DeepWiki',
-      status: deepwikiStatus ? 'running' : 'stopped',
-      message: deepwikiStatus ? 'Pod running' : 'Pod not found'
+      name: 'Docker',
+      status: dockerStatus ? 'running' : 'stopped',
+      message: dockerStatus ? 'Docker Desktop running' : 'Docker Desktop not running'
     });
 
-    // Port Forward
-    const portForwardStatus = await this.checkPortForwarding();
-    services.push({
-      name: 'Port Forward',
-      status: portForwardStatus ? 'running' : 'stopped',
-      message: portForwardStatus ? 'localhost:8001 active' : 'Not forwarding'
-    });
+    // MCP Services (check multiple ports)
+    const mcpPorts = [
+      { port: 3000, name: 'MCP-Scan' },
+      { port: 3001, name: 'DevSecOps-MCP' },
+      { port: 3002, name: 'ESLint-MCP' },
+      { port: 3003, name: 'FileScopeMCP' },
+      { port: 3004, name: 'K6-MCP' },
+      { port: 3005, name: 'BrowserTools-MCP' }
+    ];
+
+    for (const { port, name } of mcpPorts) {
+      const status = await this.checkServicePort(port);
+      services.push({
+        name,
+        status: status ? 'running' : 'stopped',
+        message: status ? `localhost:${port} active` : 'Not running'
+      });
+    }
 
     // Redis
     const redisStatus = await this.checkRedis();
@@ -299,26 +311,44 @@ class CodeQualSessionStarter {
   }
 
   /**
-   * Check DeepWiki pod status
+   * Check Docker running
    */
-  private async checkDeepWikiPod(): Promise<boolean> {
+  private async checkDockerRunning(): Promise<boolean> {
     try {
-      const output = execSync('kubectl get pods -n codequal-dev -l app=deepwiki --no-headers', {
-        encoding: 'utf-8',
-        stdio: 'pipe'
-      });
-      return output.includes('Running');
+      execSync('docker info', { stdio: 'pipe' });
+      return true;
     } catch {
       return false;
     }
   }
 
   /**
-   * Check port forwarding
+   * Check MCP services
    */
-  private async checkPortForwarding(): Promise<boolean> {
+  private async checkMCPServices(): Promise<boolean> {
     try {
-      execSync('curl -s http://localhost:8001/health', { stdio: 'pipe' });
+      // Check if at least one MCP service is running
+      const ports = [3000, 3001, 3002, 3003, 3004, 3005];
+      for (const port of ports) {
+        try {
+          execSync(`curl -s http://localhost:${port}/health`, { stdio: 'pipe' });
+          return true; // At least one service is running
+        } catch {
+          // Continue checking other ports
+        }
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Check service port
+   */
+  private async checkServicePort(port: number): Promise<boolean> {
+    try {
+      execSync(`curl -s http://localhost:${port}/health`, { stdio: 'pipe' });
       return true;
     } catch {
       return false;
@@ -369,7 +399,7 @@ class CodeQualSessionStarter {
    */
   private async getCurrentPhase(): Promise<string> {
     try {
-      const planFile = path.join(this.agentsDir, 'src/standard/docs/planning/OPERATIONAL-PLAN.md');
+      const planFile = path.join(this.agentsDir, 'src/two-branch/docs/OPERATIONAL-PLAN.md');
       if (!fs.existsSync(planFile)) {
         return 'No operational plan found';
       }
@@ -387,7 +417,7 @@ class CodeQualSessionStarter {
   private async getPriorityTask(): Promise<string> {
     try {
       // First check NEXT_SESSION_PLAN.md as per SESSION_MANAGEMENT.md rules
-      const nextPlanPath = path.join(this.agentsDir, 'src/standard/docs/session_summary/NEXT_SESSION_PLAN.md');
+      const nextPlanPath = path.join(this.agentsDir, 'src/two-branch/docs/session-summary/NEXT_SESSION_PLAN.md');
       if (fs.existsSync(nextPlanPath)) {
         const content = fs.readFileSync(nextPlanPath, 'utf-8');
         
@@ -421,7 +451,7 @@ class CodeQualSessionStarter {
   private async getContinueFrom(): Promise<string> {
     try {
       // Read from NEXT_SESSION_PLAN.md
-      const nextPlanPath = path.join(this.agentsDir, 'src/standard/docs/session_summary/NEXT_SESSION_PLAN.md');
+      const nextPlanPath = path.join(this.agentsDir, 'src/two-branch/docs/session-summary/NEXT_SESSION_PLAN.md');
       if (fs.existsSync(nextPlanPath)) {
         const content = fs.readFileSync(nextPlanPath, 'utf-8');
         
@@ -461,39 +491,53 @@ class CodeQualSessionStarter {
   private generateQuickCommands(services: ServiceStatus[]): string[] {
     const commands: string[] = [];
 
+    // Check for GitHub token
+    if (!process.env.GITHUB_TOKEN) {
+      commands.push('export GITHUB_TOKEN=your_token_here  # Set GitHub token (REQUIRED)');
+    }
+
     // Add setup command if any service is down
     const hasIssues = services.some(s => s.status !== 'running');
     if (hasIssues) {
-      commands.push('npm run setup  # Fix all environment issues');
+      // Check if Docker is not running
+      const dockerDown = services.find(s => s.name === 'Docker' && s.status !== 'running');
+      if (dockerDown) {
+        commands.push('open -a Docker  # Start Docker Desktop (REQUIRED)');
+      }
+      
+      // Check if MCP services are down
+      const mcpDown = services.some(s => s.name.includes('MCP') && s.status !== 'running');
+      if (mcpDown && !dockerDown) {
+        commands.push('./start-secure-mcp-stack.sh  # Start all MCP services');
+      }
     }
 
-    // Add test commands with new shortcuts
-    commands.push('npm run test:pr:small  # Test with small PR (vercel/next.js#60000)');
-    commands.push('npm run test:pr:large  # Test with large PR (kubernetes/kubernetes#120000)');
+    // Add test commands for MCP integration
+    if (!hasIssues) {
+      commands.push('npx ts-node test-mcp-integration.ts  # Test MCP tools integration');
+      commands.push('npm run test:two-branch  # Test Two-Branch PR analysis');
+    }
 
     // Add specific fixes for down services
     services.forEach(service => {
       if (service.status !== 'running') {
         switch (service.name) {
-          case 'Port Forward':
-            commands.push('npm run setup:port-forward  # Fix port forwarding');
-            break;
           case 'Redis':
             commands.push('redis-server --daemonize yes  # Start Redis');
             break;
           case 'Build':
             commands.push('npm run build  # Build project');
             break;
-          case 'DeepWiki':
-            commands.push('kubectl rollout restart deployment/deepwiki -n codequal-dev  # Restart DeepWiki');
-            break;
         }
       }
     });
 
+    // Add service health check command
+    commands.push('for port in 3000 3001 3002 3003 3004 3005; do curl -s http://localhost:$port/health; done  # Check all MCP services');
+
     // Add standard run command if all services are up
-    if (!hasIssues) {
-      commands.push('npm run analyze -- --owner facebook --repo react --pr 28000  # Run full analysis');
+    if (!hasIssues && process.env.GITHUB_TOKEN) {
+      commands.push('USE_DEEPWIKI_MOCK=true npx ts-node src/two-branch/test-simple-pr.ts  # Run PR analysis with MCP tools');
     }
 
     return commands;
@@ -549,7 +593,7 @@ class CodeQualSessionStarter {
     // Display environment status
     console.log('\n' + chalk.bold('🌍 Environment:'));
     const envVars = [
-      'DEEPWIKI_API_URL',
+      'GITHUB_TOKEN',
       'REDIS_URL',
       'SUPABASE_URL',
       'OPENROUTER_API_KEY'
@@ -561,6 +605,15 @@ class CodeQualSessionStarter {
       const status = value ? chalk.green('configured') : chalk.red('missing');
       console.log(`${icon} ${varName}: ${status}`);
     });
+
+    // Display MCP Tools Info
+    console.log('\n' + chalk.bold('🔧 MCP Tools Configuration:'));
+    console.log(chalk.gray('• MCP-Scan (3000): Security vulnerability scanning'));
+    console.log(chalk.gray('• DevSecOps-MCP (3001): Integrated security tools'));
+    console.log(chalk.gray('• ESLint-MCP (3002): Official ESLint integration'));
+    console.log(chalk.gray('• FileScopeMCP (3003): Architecture analysis'));
+    console.log(chalk.gray('• K6-MCP (3004): Performance testing'));
+    console.log(chalk.gray('• BrowserTools-MCP (3005): Web performance'));
   }
 }
 

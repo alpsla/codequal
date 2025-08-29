@@ -297,7 +297,7 @@ export class DirectDeepWikiApiWithLocationV3 implements IDeepWikiApi {
    */
   private async callWithRetry<T>(
     fn: () => Promise<T>,
-    maxRetries: number = 3
+    maxRetries = 3
   ): Promise<T> {
     let lastError: any;
     

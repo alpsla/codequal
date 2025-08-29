@@ -350,7 +350,7 @@ export class DirectDeepWikiApiWithLocationV4 implements IDeepWikiApi {
    */
   private async callWithRetry<T>(
     fn: () => Promise<T>,
-    maxRetries: number = 3
+    maxRetries = 3
   ): Promise<T> {
     for (let i = 0; i < maxRetries; i++) {
       try {

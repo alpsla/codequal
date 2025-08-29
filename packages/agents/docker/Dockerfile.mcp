@@ -1,0 +1,28 @@
+# MCP Tools Security Container
+FROM node:18-alpine
+
+# Security: Run as non-root user
+RUN addgroup -g 1001 -S mcp && \
+    adduser -u 1001 -S mcp -G mcp
+
+# Install Python and build dependencies for MCP-Scan
+RUN apk add --no-cache python3 py3-pip gcc python3-dev musl-dev linux-headers
+
+# Create working directory
+WORKDIR /app
+
+# Install MCP tools (official versions only)
+RUN npm install -g @eslint/mcp@latest
+
+# Install security scanning (use break-system-packages for Alpine)
+RUN pip3 install --no-cache-dir --break-system-packages mcp-scan
+
+# Switch to non-root user
+USER mcp
+
+# Security: No root access, read-only filesystem recommended
+HEALTHCHECK --interval=30s --timeout=3s \
+  CMD node -e "console.log('healthy')" || exit 1
+
+# Default command
+CMD ["sh"]

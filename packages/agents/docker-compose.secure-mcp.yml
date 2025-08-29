@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  # Core Security Scanner - CRITICAL
+  mcp-scan:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.mcp
+    command: sh -c "mcp-scan serve --port 3000"
+    ports:
+      - "3000:3000"
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    volumes:
+      - /tmp
+      - ./:/workspace:ro
+    networks:
+      - secure-mcp
+    restart: unless-stopped
+    
+  # Official ESLint MCP Server - Code Quality
+  eslint-mcp:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.mcp
+    command: sh -c "npx @eslint/mcp"
+    ports:
+      - "3002:3002"
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - ./:/workspace:ro
+    networks:
+      - secure-mcp
+    environment:
+      - NODE_ENV=production
+      - PORT=3002
+    restart: unless-stopped
+      
+  # DevSecOps MCP - Security Tools Integration
+  devsecops-mcp:
+    build:
+      context: mcp-tools/devsecops-mcp
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - ./:/workspace:ro
+    networks:
+      - secure-mcp
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+
+networks:
+  secure-mcp:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+    driver_opts:
+      com.docker.network.bridge.name: secure_mcp_bridge

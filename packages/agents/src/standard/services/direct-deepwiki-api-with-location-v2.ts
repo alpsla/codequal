@@ -198,7 +198,7 @@ export class DirectDeepWikiApiWithLocationV2 implements IDeepWikiApi {
    */
   private async callWithRetry<T>(
     fn: () => Promise<T>,
-    maxRetries: number = 5
+    maxRetries = 5
   ): Promise<T> {
     for (let i = 0; i < maxRetries; i++) {
       try {
@@ -482,14 +482,14 @@ export class DirectDeepWikiApiWithLocationV2 implements IDeepWikiApi {
       
       // Initialize iteration tracking
       const iterations: any[] = [];
-      let finalResult: any = { issues: [] };
+      const finalResult: any = { issues: [] };
       let previousIssueCount = 0;
       let noNewIssuesCount = 0;
       const MIN_ITERATIONS = 3; // Minimum iterations to ensure stability
       const MAX_NO_NEW_ISSUES = 2; // Stop after 2 iterations with no new issues
       
       // Step 2: Build the base prompt
-      let basePrompt = this.buildPrompt(options);
+      const basePrompt = this.buildPrompt(options);
       
       // Step 3: Iterative DeepWiki Analysis with stabilization
       const maxIter = options?.maxIterations || this.maxIterations;

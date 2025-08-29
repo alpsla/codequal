@@ -589,46 +589,16 @@ node --prof dist/index.js
 node --prof-process isolate-*.log
 ```
 
-## 📊 DeepWiki Integration
-
-### Key Integration Points
-
-```typescript
-// DeepWiki API wrapper with retry logic
-export class DeepWikiApiWrapper {
-  private async callWithRetry<T>(
-    fn: () => Promise<T>,
-    maxRetries = 3
-  ): Promise<T> {
-    for (let i = 0; i < maxRetries; i++) {
-      try {
-        return await fn();
-      } catch (error) {
-        if (i === maxRetries - 1) throw error;
-        await this.delay(Math.pow(2, i) * 1000);
-      }
-    }
-    throw new Error('Max retries exceeded');
-  }
-}
-
-// Always use mock mode for testing
-const USE_DEEPWIKI_MOCK = process.env.USE_DEEPWIKI_MOCK === 'true';
-```
-
 ## 🚀 Kubernetes and Deployment
 
-### Port Forwarding for DeepWiki
+### General Port Forwarding
 
 ```bash
-# Setup port forwarding for local development
-kubectl port-forward -n codequal-dev deployment/deepwiki 8001:8001
-
 # Check pod status
-kubectl get pods -n codequal-dev -l app=deepwiki
+kubectl get pods -n codequal-dev
 
 # View logs
-kubectl logs -n codequal-dev -l app=deepwiki -f
+kubectl logs -n codequal-dev -l app=<service-name> -f
 ```
 
 ## 📚 Project-Specific Commands
@@ -639,8 +609,8 @@ kubectl logs -n codequal-dev -l app=deepwiki -f
 # Start CodeQual session
 npm run codequal:session
 
-# Run DeepWiki analysis
-USE_DEEPWIKI_MOCK=false npm run analyze -- --repo <url> --pr <number>
+# Run PR analysis
+npm run analyze -- --repo <url> --pr <number>
 
 # Run regression tests
 npm run test:regression
@@ -661,7 +631,6 @@ npm run lint:fix
 - **Always verify file paths and module names** before use
 - **Keep CLAUDE.md updated** when adding new patterns or dependencies
 - **Test your code** - No feature is complete without tests
-- **Use DeepWiki mock mode** for all tests except specific integration tests
 - **Check Redis connection** before running cache-dependent features
 - **Validate environment variables** on application startup
 - **USE V8 REPORT GENERATOR ONLY** - V7 is deprecated, see `docs/DEPRECATED_V7_WARNING.md`
@@ -692,37 +661,28 @@ rg --files -g "*.ts"
 The ONLY verified working implementation for V8 reports:
 ```bash
 cd /Users/alpinro/Code\ Prjects/codequal/packages/agents
-USE_DEEPWIKI_MOCK=true npx ts-node test-v8-final.ts
+npx ts-node test-v8-final.ts
 ```
 
 ### Testing with Real PRs
 ```bash
-# Always use mock mode until DeepWiki parser is fixed
-USE_DEEPWIKI_MOCK=true npx ts-node src/standard/tests/regression/manual-pr-validator.ts <PR_URL>
+npx ts-node src/standard/tests/regression/manual-pr-validator.ts <PR_URL>
 ```
 
 ### Important Testing Notes
-- **Always use USE_DEEPWIKI_MOCK=true** - Real DeepWiki integration is broken (returns "Unknown location")
 - **Reference test-v8-final.ts** for correct data structures
-- **Check generated reports** for "Unknown location" - if present, data pipeline is broken
 - **V7 generators are deprecated** - Do not use or fix them
 
 ## 🐛 Known Issues and Debugging
 
-### Critical Bugs (As of 2025-08-20)
-1. **BUG-068:** DeepWiki parser doesn't extract location data (all show as "unknown")
-2. **BUG-069:** PR metadata lost in pipeline
-3. **BUG-070:** Issue types showing as "undefined"
-4. **BUG-071:** Score calculation incorrect (24/100 for minor issues)
+### Critical Bugs (As of 2025-08-29)
+1. **BUG-069:** PR metadata lost in pipeline
+2. **BUG-070:** Issue types showing as "undefined"
+3. **BUG-071:** Score calculation incorrect (24/100 for minor issues)
 
 ### Common Issues
 
-1. **DeepWiki Connection Issues**
-   - Check kubectl port-forward is running
-   - Verify DEEPWIKI_API_URL is set to http://localhost:8001
-   - Check pod status with kubectl get pods
-
-2. **Redis Connection Issues**
+1. **Redis Connection Issues**
    - Ensure Redis is running locally or accessible
    - Check REDIS_URL environment variable
    - Use fallback to in-memory cache if Redis unavailable

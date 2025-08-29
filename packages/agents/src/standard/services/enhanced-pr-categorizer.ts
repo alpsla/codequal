@@ -46,8 +46,8 @@ export class EnhancedPRCategorizer {
     mainBranchIssues: any[],
     prBranchIssues: any[],
     repoPath: string,
-    baseBranch: string = 'main',
-    headBranch: string = 'HEAD'
+    baseBranch = 'main',
+    headBranch = 'HEAD'
   ): Promise<EnhancedCategorization> {
     console.log('🔍 Enhanced categorization with git diff analysis...');
     

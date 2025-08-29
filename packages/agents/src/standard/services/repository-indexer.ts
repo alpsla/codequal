@@ -55,7 +55,7 @@ export interface RepositoryIndex {
 export class RepositoryIndexer {
   private redis?: Redis;
   private cacheEnabled: boolean;
-  private cacheTTL: number = 1800; // 30 minutes default
+  private cacheTTL = 1800; // 30 minutes default
   
   constructor(redis?: Redis, options?: { cacheTTL?: number; cacheEnabled?: boolean }) {
     this.redis = redis;

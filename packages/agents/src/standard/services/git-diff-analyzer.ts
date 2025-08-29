@@ -30,8 +30,8 @@ export class GitDiffAnalyzer {
    */
   async analyzeDiff(
     repoPath: string,
-    baseBranch: string = 'main',
-    headBranch: string = 'HEAD'
+    baseBranch = 'main',
+    headBranch = 'HEAD'
   ): Promise<GitDiffAnalysis> {
     try {
       // Get list of modified files
@@ -307,8 +307,8 @@ export class GitDiffAnalyzer {
    */
   async getPRDiffSummary(
     repoPath: string,
-    baseBranch: string = 'main',
-    headBranch: string = 'HEAD'
+    baseBranch = 'main',
+    headBranch = 'HEAD'
   ): Promise<string> {
     try {
       const { stdout } = await execAsync(

@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  # Security Scanner - CRITICAL
+  mcp-scan:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.mcp
+    command: mcp-scan serve --port 3000
+    ports:
+      - "3000:3000"
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    volumes:
+      - /tmp
+    networks:
+      - mcp-network
+    
+  # Official ESLint MCP Server
+  eslint-mcp:
+    image: node:18-alpine
+    command: npx @eslint/mcp-server --port 3002
+    ports:
+      - "3002:3002"
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - ./:/workspace:ro
+    networks:
+      - mcp-network
+    environment:
+      - NODE_ENV=production
+      
+  # Temporary placeholder for DevSecOps-MCP
+  # Will be replaced once we clone and build the actual server
+  devsecops-placeholder:
+    image: alpine:latest
+    command: echo "DevSecOps-MCP to be installed"
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - mcp-network
+
+networks:
+  mcp-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16

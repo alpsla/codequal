@@ -54,6 +54,7 @@ export interface RepositoryContext {
   hasSecurityIssues: boolean;
   hasPerformanceIssues: boolean;
   fileTypes: Record<string, number>;
+  detectedLanguages?: Array<{name: string; percentage: number; files: number}>;
 }
 
 export interface ComparisonAnalysisRequest {
@@ -69,6 +70,7 @@ export interface ComparisonAnalysisRequest {
   sizeCategory?: string;
   userId: string;
   teamId?: string;
+  repository?: string;  // Repository URL for language detection
 }
 
 export interface PRMetadata {

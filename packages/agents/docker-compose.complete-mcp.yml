@@ -1,0 +1,150 @@
+version: '3.8'
+
+services:
+  # ===== SECURITY TOOLS =====
+  
+  # Core Security Scanner - CRITICAL
+  mcp-scan:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.mcp
+    command: sh -c "mcp-scan serve --port 3000"
+    ports:
+      - "3000:3000"
+    security_opt:
+      - no-new-privileges:true
+    read_only: false
+    volumes:
+      - ./:/workspace:ro
+    networks:
+      - secure-mcp
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    
+  # DevSecOps MCP - Security Tools Integration
+  devsecops-mcp:
+    build:
+      context: mcp-tools/devsecops-mcp
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - ./:/workspace:ro
+    networks:
+      - secure-mcp
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+
+  # ===== CODE QUALITY TOOLS =====
+  
+  # Official ESLint MCP Server
+  eslint-mcp:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.mcp
+    command: sh -c "npx @eslint/mcp"
+    ports:
+      - "3002:3002"
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - ./:/workspace:ro
+    networks:
+      - secure-mcp
+    environment:
+      - NODE_ENV=production
+      - PORT=3002
+    restart: unless-stopped
+  
+  # ===== ARCHITECTURE TOOLS =====
+  
+  # FileScopeMCP - Architecture Analysis
+  filescope-mcp:
+    build:
+      context: mcp-tools/FileScopeMCP
+      dockerfile: Dockerfile
+    ports:
+      - "3003:3003"
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - ./:/workspace:ro
+    networks:
+      - secure-mcp
+    environment:
+      - NODE_ENV=production
+      - PORT=3003
+    restart: unless-stopped
+  
+  # ===== PERFORMANCE TOOLS =====
+  
+  # K6 MCP - Performance Testing
+  k6-mcp:
+    build:
+      context: mcp-tools/k6-mcp
+      dockerfile: Dockerfile
+    ports:
+      - "3004:3004"
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - ./:/workspace:ro
+      - /tmp/k6-tests:/tmp/k6-tests
+    networks:
+      - secure-mcp
+    environment:
+      - NODE_ENV=production
+      - PORT=3004
+    restart: unless-stopped
+  
+  # BrowserTools MCP - Web Performance
+  browsertools-mcp:
+    build:
+      context: mcp-tools/browsertools-mcp
+      dockerfile: Dockerfile
+    ports:
+      - "3005:3005"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined  # Required for Chrome
+    volumes:
+      - ./:/workspace:ro
+    networks:
+      - secure-mcp
+    environment:
+      - NODE_ENV=production
+      - PORT=3005
+      - PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=false
+    shm_size: '2gb'  # Chrome needs shared memory
+    restart: unless-stopped
+
+  # ===== SUPPORTING SERVICES =====
+  
+  # Redis for caching
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - secure-mcp
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+networks:
+  secure-mcp:
+    driver: bridge
+
+volumes:
+  redis-data:
+    driver: local

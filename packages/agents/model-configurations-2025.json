@@ -1,0 +1,548 @@
+[
+  {
+    "id": "orchestrator-universal",
+    "role": "orchestrator",
+    "language": "universal",
+    "size": "large",
+    "primary_model": {
+      "provider": "openai",
+      "model": "gpt-5",
+      "weight": 0.4
+    },
+    "fallback_models": [
+      {
+        "provider": "anthropic", 
+        "model": "claude-3-opus-4.1",
+        "weight": 0.35
+      },
+      {
+        "provider": "google",
+        "model": "gemini-2.5-pro",
+        "weight": 0.25
+      }
+    ],
+    "context_window": 200000,
+    "temperature": 0.1,
+    "max_tokens": 8000
+  },
+  {
+    "id": "researcher-universal", 
+    "role": "researcher",
+    "language": "universal",
+    "size": "large",
+    "primary_model": {
+      "provider": "google",
+      "model": "gemini-2.5-pro",
+      "weight": 0.45
+    },
+    "fallback_models": [
+      {
+        "provider": "anthropic",
+        "model": "claude-3-sonnet-3.7", 
+        "weight": 0.35
+      },
+      {
+        "provider": "openai",
+        "model": "gpt-4.5",
+        "weight": 0.2
+      }
+    ],
+    "context_window": 1000000,
+    "temperature": 0.2,
+    "max_tokens": 6000
+  },
+  {
+    "id": "educator-universal",
+    "role": "educator", 
+    "language": "universal",
+    "size": "large",
+    "primary_model": {
+      "provider": "anthropic",
+      "model": "claude-3-sonnet-3.7",
+      "weight": 0.4
+    },
+    "fallback_models": [
+      {
+        "provider": "openai",
+        "model": "gpt-4.5",
+        "weight": 0.35
+      },
+      {
+        "provider": "google", 
+        "model": "gemini-2.5-pro",
+        "weight": 0.25
+      }
+    ],
+    "context_window": 200000,
+    "temperature": 0.3,
+    "max_tokens": 4000
+  },
+  {
+    "id": "security-javascript-small",
+    "role": "security",
+    "language": "javascript", 
+    "size": "small",
+    "primary_model": {
+      "provider": "meta",
+      "model": "llama-4-maverick",
+      "weight": 0.5
+    },
+    "fallback_models": [
+      {
+        "provider": "openai",
+        "model": "gpt-4o-mini",
+        "weight": 0.3
+      },
+      {
+        "provider": "deepseek",
+        "model": "deepseek-r1",
+        "weight": 0.2
+      }
+    ],
+    "context_window": 128000,
+    "temperature": 0.05,
+    "max_tokens": 2000
+  },
+  {
+    "id": "security-javascript-medium",
+    "role": "security", 
+    "language": "javascript",
+    "size": "medium",
+    "primary_model": {
+      "provider": "anthropic",
+      "model": "claude-3-sonnet-3.7",
+      "weight": 0.45
+    },
+    "fallback_models": [
+      {
+        "provider": "openai",
+        "model": "gpt-4.5",
+        "weight": 0.35
+      },
+      {
+        "provider": "deepseek",
+        "model": "deepseek-r1",
+        "weight": 0.2
+      }
+    ],
+    "context_window": 200000,
+    "temperature": 0.1,
+    "max_tokens": 4000
+  },
+  {
+    "id": "security-javascript-large",
+    "role": "security",
+    "language": "javascript",
+    "size": "large", 
+    "primary_model": {
+      "provider": "openai",
+      "model": "gpt-5",
+      "weight": 0.4
+    },
+    "fallback_models": [
+      {
+        "provider": "anthropic",
+        "model": "claude-3-opus-4.1",
+        "weight": 0.35
+      },
+      {
+        "provider": "google",
+        "model": "gemini-2.5-pro",
+        "weight": 0.25
+      }
+    ],
+    "context_window": 200000,
+    "temperature": 0.05,
+    "max_tokens": 8000
+  },
+  {
+    "id": "performance-python-small",
+    "role": "performance",
+    "language": "python",
+    "size": "small",
+    "primary_model": {
+      "provider": "deepseek", 
+      "model": "deepseek-r1",
+      "weight": 0.5
+    },
+    "fallback_models": [
+      {
+        "provider": "meta",
+        "model": "llama-4-scout",
+        "weight": 0.3
+      },
+      {
+        "provider": "alibaba",
+        "model": "qwen-2.5-coder",
+        "weight": 0.2
+      }
+    ],
+    "context_window": 128000,
+    "temperature": 0.1,
+    "max_tokens": 2000
+  },
+  {
+    "id": "performance-python-medium",
+    "role": "performance",
+    "language": "python", 
+    "size": "medium",
+    "primary_model": {
+      "provider": "google",
+      "model": "gemini-2.5-pro",
+      "weight": 0.45
+    },
+    "fallback_models": [
+      {
+        "provider": "anthropic",
+        "model": "claude-3-sonnet-3.7",
+        "weight": 0.35
+      },
+      {
+        "provider": "openai",
+        "model": "gpt-4.5",
+        "weight": 0.2
+      }
+    ],
+    "context_window": 1000000,
+    "temperature": 0.1,
+    "max_tokens": 4000
+  },
+  {
+    "id": "performance-python-large",
+    "role": "performance", 
+    "language": "python",
+    "size": "large",
+    "primary_model": {
+      "provider": "openai",
+      "model": "gpt-5",
+      "weight": 0.4
+    },
+    "fallback_models": [
+      {
+        "provider": "google",
+        "model": "gemini-2.5-pro", 
+        "weight": 0.35
+      },
+      {
+        "provider": "anthropic",
+        "model": "claude-3-opus-4.1",
+        "weight": 0.25
+      }
+    ],
+    "context_window": 200000,
+    "temperature": 0.1,
+    "max_tokens": 8000
+  },
+  {
+    "id": "code-quality-java-small",
+    "role": "code-quality",
+    "language": "java",
+    "size": "small", 
+    "primary_model": {
+      "provider": "meta",
+      "model": "llama-4-maverick",
+      "weight": 0.5
+    },
+    "fallback_models": [
+      {
+        "provider": "alibaba",
+        "model": "qwen-2.5-coder",
+        "weight": 0.3
+      },
+      {
+        "provider": "mistral", 
+        "model": "mistral-small-3.1",
+        "weight": 0.2
+      }
+    ],
+    "context_window": 128000,
+    "temperature": 0.1,
+    "max_tokens": 2000
+  },
+  {
+    "id": "code-quality-java-medium",
+    "role": "code-quality",
+    "language": "java",
+    "size": "medium",
+    "primary_model": {
+      "provider": "anthropic", 
+      "model": "claude-3-sonnet-3.7",
+      "weight": 0.45
+    },
+    "fallback_models": [
+      {
+        "provider": "openai",
+        "model": "gpt-4.5",
+        "weight": 0.35
+      },
+      {
+        "provider": "google",
+        "model": "gemini-2.5-flash",
+        "weight": 0.2
+      }
+    ],
+    "context_window": 200000,
+    "temperature": 0.1,
+    "max_tokens": 4000
+  },
+  {
+    "id": "code-quality-java-large", 
+    "role": "code-quality",
+    "language": "java",
+    "size": "large",
+    "primary_model": {
+      "provider": "google",
+      "model": "gemini-2.5-pro",
+      "weight": 0.4
+    },
+    "fallback_models": [
+      {
+        "provider": "openai",
+        "model": "gpt-5", 
+        "weight": 0.35
+      },
+      {
+        "provider": "anthropic",
+        "model": "claude-3-opus-4.1",
+        "weight": 0.25
+      }
+    ],
+    "context_window": 1000000,
+    "temperature": 0.1,
+    "max_tokens": 8000
+  },
+  {
+    "id": "architecture-typescript-small",
+    "role": "architecture",
+    "language": "typescript",
+    "size": "small",
+    "primary_model": {
+      "provider": "deepseek",
+      "model": "deepseek-r1",
+      "weight": 0.5
+    },
+    "fallback_models": [
+      {
+        "provider": "meta",
+        "model": "llama-4-scout",
+        "weight": 0.3
+      },
+      {
+        "provider": "openai", 
+        "model": "gpt-4o-mini",
+        "weight": 0.2
+      }
+    ],
+    "context_window": 128000,
+    "temperature": 0.1,
+    "max_tokens": 2000
+  },
+  {
+    "id": "architecture-typescript-medium",
+    "role": "architecture",
+    "language": "typescript",
+    "size": "medium",
+    "primary_model": {
+      "provider": "anthropic",
+      "model": "claude-3-sonnet-3.7",
+      "weight": 0.45
+    },
+    "fallback_models": [
+      {
+        "provider": "openai",
+        "model": "gpt-4.5", 
+        "weight": 0.35
+      },
+      {
+        "provider": "google",
+        "model": "gemini-2.5-pro",
+        "weight": 0.2
+      }
+    ],
+    "context_window": 200000,
+    "temperature": 0.15,
+    "max_tokens": 4000
+  },
+  {
+    "id": "architecture-typescript-large",
+    "role": "architecture",
+    "language": "typescript", 
+    "size": "large",
+    "primary_model": {
+      "provider": "openai",
+      "model": "gpt-5",
+      "weight": 0.4
+    },
+    "fallback_models": [
+      {
+        "provider": "google",
+        "model": "gemini-2.5-pro",
+        "weight": 0.35
+      },
+      {
+        "provider": "anthropic",
+        "model": "claude-3-opus-4.1",
+        "weight": 0.25
+      }
+    ],
+    "context_window": 200000, 
+    "temperature": 0.15,
+    "max_tokens": 8000
+  },
+  {
+    "id": "testing-go-small",
+    "role": "testing",
+    "language": "go",
+    "size": "small",
+    "primary_model": {
+      "provider": "alibaba",
+      "model": "qwen-2.5-coder",
+      "weight": 0.5
+    },
+    "fallback_models": [
+      {
+        "provider": "meta",
+        "model": "llama-4-maverick",
+        "weight": 0.3
+      },
+      {
+        "provider": "deepseek",
+        "model": "deepseek-r1", 
+        "weight": 0.2
+      }
+    ],
+    "context_window": 96000,
+    "temperature": 0.1,
+    "max_tokens": 2000
+  },
+  {
+    "id": "testing-go-medium",
+    "role": "testing",
+    "language": "go",
+    "size": "medium",
+    "primary_model": {
+      "provider": "anthropic",
+      "model": "claude-3-sonnet-3.7",
+      "weight": 0.45
+    },
+    "fallback_models": [
+      {
+        "provider": "openai", 
+        "model": "gpt-4.5",
+        "weight": 0.35
+      },
+      {
+        "provider": "google",
+        "model": "gemini-2.5-flash",
+        "weight": 0.2
+      }
+    ],
+    "context_window": 200000,
+    "temperature": 0.1,
+    "max_tokens": 4000
+  },
+  {
+    "id": "testing-go-large",
+    "role": "testing",
+    "language": "go",
+    "size": "large",
+    "primary_model": {
+      "provider": "google", 
+      "model": "gemini-2.5-pro",
+      "weight": 0.4
+    },
+    "fallback_models": [
+      {
+        "provider": "openai",
+        "model": "gpt-5",
+        "weight": 0.35
+      },
+      {
+        "provider": "anthropic",
+        "model": "claude-3-opus-4.1",
+        "weight": 0.25
+      }
+    ],
+    "context_window": 1000000,
+    "temperature": 0.1,
+    "max_tokens": 8000
+  },
+  {
+    "id": "documentation-rust-small",
+    "role": "documentation", 
+    "language": "rust",
+    "size": "small",
+    "primary_model": {
+      "provider": "mistral",
+      "model": "mistral-small-3.1",
+      "weight": 0.5
+    },
+    "fallback_models": [
+      {
+        "provider": "meta",
+        "model": "llama-4-scout",
+        "weight": 0.3
+      },
+      {
+        "provider": "deepseek",
+        "model": "deepseek-r1",
+        "weight": 0.2
+      }
+    ],
+    "context_window": 96000,
+    "temperature": 0.2, 
+    "max_tokens": 2000
+  },
+  {
+    "id": "documentation-rust-medium",
+    "role": "documentation",
+    "language": "rust",
+    "size": "medium",
+    "primary_model": {
+      "provider": "anthropic",
+      "model": "claude-3-sonnet-3.7",
+      "weight": 0.45
+    },
+    "fallback_models": [
+      {
+        "provider": "openai",
+        "model": "gpt-4.5",
+        "weight": 0.35
+      },
+      {
+        "provider": "google",
+        "model": "gemini-2.5-flash", 
+        "weight": 0.2
+      }
+    ],
+    "context_window": 200000,
+    "temperature": 0.2,
+    "max_tokens": 4000
+  },
+  {
+    "id": "documentation-rust-large",
+    "role": "documentation",
+    "language": "rust",
+    "size": "large",
+    "primary_model": {
+      "provider": "openai",
+      "model": "gpt-5",
+      "weight": 0.4
+    },
+    "fallback_models": [
+      {
+        "provider": "anthropic",
+        "model": "claude-3-opus-4.1", 
+        "weight": 0.35
+      },
+      {
+        "provider": "google",
+        "model": "gemini-2.5-pro",
+        "weight": 0.25
+      }
+    ],
+    "context_window": 200000,
+    "temperature": 0.2,
+    "max_tokens": 8000
+  }
+]

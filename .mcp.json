@@ -4,7 +4,7 @@
       "command": "npx",
       "args": ["@jpisnice/shadcn-ui-mcp-server"],
       "env": {
-        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN:-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}"
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
       }
     },
     "claude-agents": {

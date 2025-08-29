@@ -55,7 +55,7 @@ export class SmartCacheManager {
   /**
    * Generate cache key for analysis
    */
-  generateKey(repoUrl: string, branch: string, prefix: string = 'analysis'): string {
+  generateKey(repoUrl: string, branch: string, prefix = 'analysis'): string {
     const data = `${prefix}:${repoUrl}:${branch}:${Date.now()}`;
     return crypto.createHash('sha256').update(data).digest('hex');
   }

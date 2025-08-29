@@ -28,6 +28,7 @@ import {
 import { CategoryWeights } from './interfaces/config-provider.interface';
 import { BatchLocationEnhancer, LocationEnhancer } from '../services/location-enhancer';
 import { getDynamicModelConfig, trackDynamicAgentCall } from '../monitoring';
+import { LanguageRouter, LanguageDetectionResult } from './language-router';
 import type { AgentRole } from '../monitoring/services/dynamic-agent-cost-tracker.service';
 
 /**
@@ -37,6 +38,7 @@ export class ComparisonOrchestrator {
   private comparisonAgent: IReportingComparisonAgent;
   private batchLocationEnhancer: BatchLocationEnhancer;
   private locationEnhancer: LocationEnhancer;
+  private languageRouter: LanguageRouter;
   private modelConfigId = '';
   private primaryModel = '';
   private fallbackModel = '';
@@ -60,6 +62,7 @@ export class ComparisonOrchestrator {
     );
     this.batchLocationEnhancer = new BatchLocationEnhancer();
     this.locationEnhancer = new LocationEnhancer();
+    this.languageRouter = new LanguageRouter();
   }
 
   /**
@@ -109,11 +112,11 @@ export class ComparisonOrchestrator {
     try {
       // Ensure initialization
       if (!this.modelConfigId) {
-        const repoContext = this.analyzeRepositoryContext(request);
+        const repoContext = await this.analyzeRepositoryContext(request);
         await this.initialize(repoContext.language, this.mapSizeToCategory(repoContext.sizeCategory));
       }
       // Step 1: Analyze repository context for smart model selection
-      const repoContext = this.analyzeRepositoryContext(request);
+      const repoContext = await this.analyzeRepositoryContext(request);
       
       // Step 2: Get model configuration from Supabase (no validation, just pull)
       let config = await this.getConfiguration(request.userId, repoContext);
@@ -547,7 +550,7 @@ export class ComparisonOrchestrator {
   /**
    * Analyze repository context to determine complexity
    */
-  private analyzeRepositoryContext(request: ComparisonAnalysisRequest): RepositoryContext {
+  private async analyzeRepositoryContext(request: ComparisonAnalysisRequest): Promise<RepositoryContext> {
     const mainIssues = request.mainBranchAnalysis.issues || [];
     const featureIssues = request.featureBranchAnalysis.issues || [];
     const allIssues = [...mainIssues, ...featureIssues];
@@ -558,6 +561,30 @@ export class ComparisonOrchestrator {
     const performanceIssues = allIssues.filter(i => i.category === 'performance').length;
     
     const filesAnalyzed = request.mainBranchAnalysis.metadata?.files_analyzed || 0;
+    
+    // Use LanguageRouter for sophisticated language detection
+    let detectedLanguages: LanguageDetectionResult | undefined;
+    if (request.repository) {
+      try {
+        // Try to detect from repository path if available
+        detectedLanguages = await this.languageRouter.detectFromRepository(request.repository);
+        this.language = detectedLanguages.primary;
+        
+        // Log detected languages for debugging
+        if (this.logger) {
+          this.logger.info('Detected languages:', {
+            primary: detectedLanguages.primary,
+            all: detectedLanguages.languages.map(l => `${l.name} (${l.percentage}%)`).join(', ')
+          });
+        }
+      } catch (error) {
+        // Fallback to request language or default
+        this.language = request.language || 'typescript';
+      }
+    } else {
+      // Fallback to request language or default
+      this.language = request.language || 'typescript';
+    }
     
     // Determine complexity
     let complexity: 'low' | 'medium' | 'high' = 'low';
@@ -575,7 +602,7 @@ export class ComparisonOrchestrator {
     
     return {
       repoType: this.inferRepoType(request),
-      language: request.language || 'typescript',
+      language: this.language,
       sizeCategory: request.sizeCategory || 'medium',
       complexity,
       issueCount: allIssues.length,
@@ -583,7 +610,9 @@ export class ComparisonOrchestrator {
       filesAnalyzed,
       hasSecurityIssues: securityIssues > 0,
       hasPerformanceIssues: performanceIssues > 0,
-      fileTypes: this.analyzeFileTypes(allIssues)
+      fileTypes: this.analyzeFileTypes(allIssues),
+      // Add detected languages info for enhanced context
+      detectedLanguages: detectedLanguages?.languages
     };
   }
 
@@ -822,12 +851,195 @@ Ensure 100% accuracy, professional language, and actionable recommendations.`;
   }
 
   private inferRepoType(request: ComparisonAnalysisRequest): string {
-    // Infer from language and file patterns
-    const lang = request.language?.toLowerCase() || '';
+    // Use the language detected by LanguageRouter or fallback to request language
+    const lang = (this.language || request.language || '').toLowerCase();
+    
+    // Use LanguageRouter's language configuration for better mapping
+    const languageConfig = this.languageRouter.getLanguageConfig(lang);
+    
+    if (languageConfig) {
+      // Map based on language tier and type
+      switch (lang) {
+        case 'python':
+          return 'python-backend';
+        case 'javascript':
+        case 'typescript':
+          return 'node-fullstack';
+        case 'java':
+        case 'kotlin':
+        case 'scala':
+          return 'java-enterprise';
+        case 'csharp':
+        case 'fsharp':
+          return 'dotnet-enterprise';
+        case 'go':
+          return 'go-backend';
+        case 'rust':
+          return 'rust-systems';
+        case 'ruby':
+          return 'ruby-backend';
+        case 'php':
+          return 'php-web';
+        case 'swift':
+        case 'objectivec':
+          return 'ios-mobile';
+        case 'cpp':
+        case 'c':
+          return 'cpp-systems';
+        default:
+          // Use tier to determine type
+          if (languageConfig.tier === 1) {
+            return 'production-ready';
+          } else if (languageConfig.tier === 2) {
+            return 'well-supported';
+          } else {
+            return 'general';
+          }
+      }
+    }
+    
+    // Fallback to simple detection
     if (lang.includes('python')) return 'python-backend';
     if (lang.includes('javascript') || lang.includes('typescript')) return 'node-fullstack';
     if (lang.includes('java')) return 'java-enterprise';
     return 'general';
+  }
+
+  /**
+   * Get available tools for the detected language and category
+   */
+  public getToolsForLanguage(language?: string, category?: 'security' | 'quality' | 'dependencies' | 'performance'): string[] {
+    const lang = language || this.language || 'typescript';
+    const config = this.languageRouter.getLanguageConfig(lang);
+    
+    if (!config) {
+      // Fallback to basic tools
+      return ['semgrep', 'jscpd', 'cloc'];
+    }
+    
+    if (category) {
+      // Return tools for specific category
+      const categoryTools = config.tools[category];
+      if (Array.isArray(categoryTools)) {
+        return categoryTools;
+      }
+      return [];
+    }
+    
+    // Return all tools for the language
+    const allTools = new Set<string>();
+    Object.values(config.tools).forEach(tools => {
+      if (Array.isArray(tools)) {
+        tools.forEach(tool => allTools.add(tool));
+      }
+    });
+    
+    return Array.from(allTools);
+  }
+  
+  /**
+   * Get the specialized agent name for the detected language
+   */
+  public getSpecializedAgent(): string {
+    const lang = this.language || 'typescript';
+    const config = this.languageRouter.getLanguageConfig(lang);
+    return config?.agent || 'GeneralAgent';
+  }
+  
+  /**
+   * Check if all required tools are available for a language
+   */
+  public async checkToolAvailability(language?: string): Promise<{ available: string[], missing: string[] }> {
+    const lang = language || this.language || 'typescript';
+    const tools = this.getToolsForLanguage(lang);
+    
+    const available: string[] = [];
+    const missing: string[] = [];
+    
+    for (const tool of tools) {
+      const isAvailable = await this.languageRouter.isToolAvailable(tool);
+      if (isAvailable) {
+        available.push(tool);
+      } else {
+        missing.push(tool);
+      }
+    }
+    
+    return { available, missing };
+  }
+
+  
+  /**
+   * Initialize specialized agents with language-specific tool configurations
+   * This is called after language detection to configure each role-based agent
+   */
+  public async initializeSpecializedAgents(
+    language: string,
+    agents: {
+      security?: any,
+      performance?: any,
+      dependency?: any,
+      codeQuality?: any
+    }
+  ): Promise<void> {
+    const languageConfig = this.languageRouter.getLanguageConfig(language);
+    
+    if (!languageConfig) {
+      this.log('warn', `No language configuration found for ${language}, using defaults`);
+      return;
+    }
+    
+    // Configure Security Agent
+    if (agents.security && typeof agents.security.configureForLanguage === 'function') {
+      const securityTools = languageConfig.tools.security || ['semgrep'];
+      agents.security.configureForLanguage(language, securityTools);
+      this.log('info', `Configured SecurityAgent for ${language} with tools: ${securityTools.join(', ')}`);
+    }
+    
+    // Configure Performance Agent
+    if (agents.performance && typeof agents.performance.configureForLanguage === 'function') {
+      const performanceTools = languageConfig.tools.performance || [];
+      agents.performance.configureForLanguage(language, performanceTools);
+      this.log('info', `Configured PerformanceAgent for ${language} with tools: ${performanceTools.join(', ')}`);
+    }
+    
+    // Configure Dependency Agent
+    if (agents.dependency && typeof agents.dependency.configureForLanguage === 'function') {
+      const dependencyTools = languageConfig.tools.dependencies || [];
+      agents.dependency.configureForLanguage(language, dependencyTools);
+      this.log('info', `Configured DependencyAgent for ${language} with tools: ${dependencyTools.join(', ')}`);
+    }
+    
+    // Configure Code Quality Agent
+    if (agents.codeQuality && typeof agents.codeQuality.configureForLanguage === 'function') {
+      const qualityTools = languageConfig.tools.quality || [];
+      agents.codeQuality.configureForLanguage(language, qualityTools);
+      this.log('info', `Configured CodeQualityAgent for ${language} with tools: ${qualityTools.join(', ')}`);
+    }
+  }
+  
+  /**
+   * Get recommended model for a specific language
+   * Different models may perform better with different languages
+   */
+  public getRecommendedModelForLanguage(language: string): string {
+    const modelMapping: Record<string, string> = {
+      'objectivec': 'claude-3-opus',  // Better for Apple ecosystem
+      'swift': 'claude-3-opus',
+      'python': 'claude-3-sonnet',
+      'javascript': 'claude-3-sonnet',
+      'typescript': 'claude-3-sonnet',
+      'java': 'claude-3-opus',  // Better for enterprise patterns
+      'csharp': 'claude-3-opus',
+      'go': 'claude-3-sonnet',
+      'rust': 'claude-3-opus',  // Better for systems programming
+      'cpp': 'claude-3-opus',
+      'c': 'claude-3-opus',
+      'ruby': 'claude-3-sonnet',
+      'php': 'claude-3-sonnet'
+    };
+    
+    return modelMapping[language] || 'claude-3-sonnet';
   }
 
   private extractUserIds(request: ComparisonAnalysisRequest): string[] {

@@ -256,7 +256,7 @@ export class ConnectionResilienceManager extends EventEmitter {
   /**
    * Set data in cache with automatic fallback
    */
-  async setCached(key: string, value: any, ttl: number = 3600): Promise<void> {
+  async setCached(key: string, value: any, ttl = 3600): Promise<void> {
     const serialized = JSON.stringify(value);
     
     // Always store in memory cache
