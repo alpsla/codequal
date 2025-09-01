@@ -1,6 +1,9 @@
 # Two-Branch Analysis System
 
-This directory contains the complete implementation of CodeQual's two-branch analysis system, which replaces the broken DeepWiki integration with a robust solution that analyzes full repositories on both branches to accurately identify new, fixed, and unchanged issues.
+This directory contains the complete implementation of CodeQual's two-branch analysis system, which replaces the broken DeepWiki integration with a robust MCP-based solution that analyzes full repositories on both branches to accurately identify new, fixed, and unchanged issues.
+
+## 🚀 Key Achievement: NO MORE DEEPWIKI
+All analysis now comes from MCP tools (Semgrep, ESLint, Lighthouse) + Specialized Agents
 
 ## Directory Structure
 
@@ -100,18 +103,166 @@ This system integrates with existing infrastructure:
 - **Agent Framework** from `agents/src/base/`
 - **Redis & Supabase** for storage
 
+## 🔄 Complete Analysis Flow with File Paths
+
+### Phase 1: Git Operations & Setup
+```
+1. GitHub PR Request
+   ↓
+2. `/services/git-diff-service.ts` 
+   - Fetches PR metadata via GitHub API
+   - Gets list of changed files
+   - Extracts line-level diff details
+   ↓
+3. `/core/RepositoryManager.ts`
+   - Clones repository
+   - Checks out main branch
+   - Checks out PR branch
+```
+
+### Phase 2: MCP Tool Execution (Parallel for Both Branches)
+```
+4. `/services/mcp-orchestration-service.ts`
+   - Coordinates all MCP tools
+   - Runs tools on BOTH branches in parallel
+   ↓
+5. MCP Tool Wrappers (from `/mcp-wrappers/`)
+   - `/mcp-wrappers/semgrep-mcp.ts` → Security scanning
+   - `/mcp-wrappers/eslint-mcp.ts` → Code quality (JS/TS)
+   - `/mcp-wrappers/lighthouse-mcp.ts` → Performance metrics
+   ↓
+6. `/parsers/UniversalToolParser.ts`
+   - Standardizes all tool outputs
+   - Creates StandardizedFinding objects
+```
+
+### Phase 3: Specialized Agent Analysis
+```
+7. Specialized Agents (from `/specialized/`)
+   - `/specialized/enhanced-security-agent.ts`
+   - `/specialized/enhanced-code-quality-agent.ts`
+   - `/specialized/enhanced-performance-agent.ts`
+   - Each agent enriches findings with context
+```
+
+### Phase 4: Comparison & Education (Parallel)
+```
+8a. COMPARISON PATH:
+    `/services/issue-comparison-service.ts`
+    - Categorizes issues into:
+      * Resolved (in main, not in PR) ✅
+      * Existing (in both branches) ⚠️
+      * New in diff lines (user introduced) ❌
+      * New in changed files (should have cleaned) ❌
+    - Uses git diff to filter by changed files/lines
+    - Makes binary decision: BLOCK or APPROVE
+
+8b. EDUCATOR PATH (Parallel):
+    `/specialized/educator-agent.ts`
+    - Generates learning materials
+    - Creates improvement suggestions
+    - Provides resources
+```
+
+### Phase 5: Enhanced Reporting
+```
+9. `/services/enhanced-comparison-service.ts`
+   - Receives reports from ALL specialized agents
+   - Preserves complete metadata:
+     * Title, description, location
+     * Code snippets (before/issue/after)
+     * Recommendations with examples
+   - Groups by category (Security, Performance, etc.)
+   - Calculates severity scores per category
+```
+
+### Phase 6: Orchestration & Final Report
+```
+10. `/orchestrators/mcp-based-orchestrator.ts`
+    - Main entry point
+    - Coordinates entire flow
+    - Manages parallel execution
+    - Tracks skill impact
+    ↓
+11. `/reporters/ReportGeneratorV9.ts`
+    - Generates HTML report
+    - Creates markdown summary
+    - Produces JSON output
+```
+
+## 🎯 Issue Categorization Logic
+
+### The Three Categories (User's Requirement)
+1. **RESOLVED/FIXED Issues** ✅
+   - Exist in main branch but NOT in PR branch
+   - User fixed these (good!)
+   - Example: Security issue was in main, user removed vulnerable code
+
+2. **EXISTING Issues** ⚠️
+   - Present in BOTH branches
+   - Pre-existing, not introduced by PR
+   - Don't block PR but impact skill scores
+   - Example: Legacy code smell that wasn't touched
+
+3. **NEW Issues** ❌ (Two Sub-categories)
+   - **In Diff Lines**: Directly in changed lines
+     - User directly introduced these
+     - Example: Added vulnerable regex in new code
+   - **In Changed Files**: In modified files but outside diff lines
+     - User should have cleaned these (Boy Scout Rule)
+     - Example: File has existing issues, user modified file but didn't clean
+
+### Decision Logic (Binary)
+```typescript
+if (newIssuesInDiffLines.critical > 0 || newIssuesInDiffLines.high > 0 ||
+    newIssuesInChangedFiles.critical > 0 || newIssuesInChangedFiles.high > 0) {
+  return 'BLOCK';
+} else {
+  return 'APPROVE';
+}
+```
+
 ## Usage
 
 ```typescript
-import { TwoBranchAnalyzer } from './core/TwoBranchAnalyzer';
+import { MCPBasedOrchestrator } from './orchestrators/mcp-based-orchestrator';
 
-const analyzer = new TwoBranchAnalyzer();
-const report = await analyzer.analyzePR(
+const orchestrator = new MCPBasedOrchestrator({
+  parallel: true,           // Run comparison + educator in parallel
+  includeEducator: true,    // Generate educational content
+  trackSkills: true         // Track skill impact scores
+});
+
+const result = await orchestrator.analyzePullRequest(
   'https://github.com/owner/repo',
-  123
+  123  // PR number
 );
 
-console.log(`New issues: ${report.newIssues.length}`);
-console.log(`Fixed issues: ${report.fixedIssues.length}`);
-console.log(`Score: ${report.metrics.score}/100`);
+// Access categorized issues
+console.log(`Fixed issues: ${result.comparison.resolvedIssues.length}`);
+console.log(`Existing issues: ${result.comparison.existingIssues.length}`);
+console.log(`New in diff: ${result.comparison.newIssues.inDiffLines.length}`);
+console.log(`New in files: ${result.comparison.newIssues.inChangedFiles.length}`);
+
+// Binary decision
+console.log(`Decision: ${result.comparison.summary.recommendation.severity}`); // 'approve' or 'block'
 ```
+
+## 🧪 Testing
+
+```bash
+# Test complete flow (with mock data for speed)
+npx ts-node test-two-branch-complete-flow.ts
+
+# Test with real MCP tools (requires tools installed)
+GITHUB_TOKEN=your_token npx ts-node test-two-branch-complete-flow.ts
+```
+
+## 📝 Key Design Principles
+
+1. **No DeepWiki**: All analysis from MCP tools
+2. **Parallel Execution**: Comparison + Educator run simultaneously
+3. **Boy Scout Rule**: "Leave code cleaner than you found it"
+4. **Binary Decisions**: Only APPROVE or BLOCK (no middle ground)
+5. **Full Metadata**: Every issue has complete context and recommendations
+6. **Skill Tracking**: Existing issues impact developer skill scores

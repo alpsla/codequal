@@ -17,6 +17,41 @@ export interface ConsolidatedToolResults {
   executionTime: number;
 }
 
+export interface StandardizedFinding {
+  id: string;
+  tool: string;
+  toolSource?: string;
+  type: string;
+  severity: 'low' | 'medium' | 'high' | 'critical' | 'info';
+  message: string;
+  title?: string;
+  description?: string;
+  file: string;
+  line?: number;
+  column?: number;
+  rule?: string;
+  category?: string;
+  confidence?: number;
+  evidence?: string;
+  location?: {
+    file: string;
+    line?: number;
+    column?: number;
+    startLine?: number;
+    endLine?: number;
+  };
+  metadata?: Record<string, any>;
+}
+
+export interface StandardizedToolOutput {
+  tool: string;
+  success: boolean;
+  findings: StandardizedFinding[];
+  metrics?: Record<string, any>;
+  executionTime?: number;
+  error?: string;
+}
+
 export interface ParallelToolExecutorOptions {
   timeout?: number;
   continueOnError?: boolean;

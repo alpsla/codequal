@@ -552,8 +552,8 @@ export class LighthouseMCP {
       return `Error running Lighthouse: ${(result as any).error}`;
     }
     
-    const scores = result.scores;
-    const metrics = result.metrics;
+    const scores = (result as any).scores || {};
+    const metrics = (result as any).metrics || {};
     
     const parts = [];
     parts.push(`Performance: ${Math.round(scores.performance * 100)}/100`);

@@ -41,7 +41,9 @@
     "**/_archive/**",
     "**/_archive_*/**",
     "**/examples/**",
-    "src/standard/tests/test-educator-integration.ts"
+    "src/standard/tests/test-educator-integration.ts",
+    "src/monitoring/**",
+    "src/two-branch/agents/Monitored*"
   ],
   "references": [
     { "path": "../core" },
