@@ -1,0 +1,44 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kaniko-cpp-builder
+  namespace: codequal-dev
+spec:
+  template:
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+        - "--dockerfile=/workspace/Dockerfile"
+        - "--context=/workspace"
+        - "--destination=registry.digitalocean.com/codequal/analyzer:lang-cpp"
+        volumeMounts:
+        - name: dockerfile
+          mountPath: /workspace
+        - name: kaniko-secret
+          mountPath: /kaniko/.docker
+      restartPolicy: Never
+      volumes:
+      - name: dockerfile
+        configMap:
+          name: cpp-dockerfile
+      - name: kaniko-secret
+        secret:
+          secretName: regcred
+          items:
+          - key: .dockerconfigjson
+            path: config.json
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cpp-dockerfile
+  namespace: codequal-dev
+data:
+  Dockerfile: |
+    FROM ubuntu:22.04
+    RUN apt-get update && apt-get install -y cppcheck clang-format && \
+        apt-get clean && rm -rf /var/lib/apt/lists/*
+    WORKDIR /app
+    CMD ["cppcheck", "--version"]

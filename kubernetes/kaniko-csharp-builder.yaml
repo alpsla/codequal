@@ -1,0 +1,42 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kaniko-csharp-builder
+  namespace: codequal-dev
+spec:
+  template:
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+        - "--dockerfile=/workspace/Dockerfile"
+        - "--context=/workspace"
+        - "--destination=registry.digitalocean.com/codequal/analyzer:lang-csharp"
+        volumeMounts:
+        - name: dockerfile
+          mountPath: /workspace
+        - name: kaniko-secret
+          mountPath: /kaniko/.docker
+      restartPolicy: Never
+      volumes:
+      - name: dockerfile
+        configMap:
+          name: csharp-dockerfile
+      - name: kaniko-secret
+        secret:
+          secretName: regcred
+          items:
+          - key: .dockerconfigjson
+            path: config.json
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: csharp-dockerfile
+  namespace: codequal-dev
+data:
+  Dockerfile: |
+    FROM mcr.microsoft.com/dotnet/sdk:6.0
+    WORKDIR /app
+    CMD ["dotnet", "--version"]

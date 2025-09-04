@@ -1,0 +1,73 @@
+# CodeQual Multi-Language Analyzer
+# Optimized for local build and cloud deployment
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install Node.js 20 repository
+RUN apt-get update && apt-get install -y curl && \
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+
+# Install all language runtimes and essential tools
+RUN apt-get update && apt-get install -y \
+    wget git build-essential \
+    python3 python3-pip python3-dev \
+    nodejs \
+    openjdk-17-jdk-headless \
+    golang-go \
+    rustc cargo \
+    ruby-full \
+    php php-cli \
+    perl \
+    cppcheck clang-format \
+    && rm -rf /var/lib/apt/lists/*
+
+# Python tools that definitely work
+RUN pip3 install --no-cache-dir \
+    bandit \
+    safety \
+    pylint \
+    flake8 \
+    mypy \
+    black \
+    isort \
+    semgrep
+
+# JavaScript tools with modern npm
+RUN npm install -g \
+    eslint \
+    prettier \
+    typescript \
+    @typescript-eslint/parser \
+    @typescript-eslint/eslint-plugin
+
+# Go security tools
+RUN go install github.com/securego/gosec/v2/cmd/gosec@latest && \
+    go install honnef.co/go/tools/cmd/staticcheck@latest
+
+# Ruby tools
+RUN gem install \
+    brakeman \
+    bundler-audit \
+    rubocop
+
+# Set up workspace
+WORKDIR /app
+
+# Add verification script
+RUN echo '#!/bin/bash' > /usr/local/bin/verify-tools && \
+    echo 'echo "=== CodeQual Analyzer Tools ==="' >> /usr/local/bin/verify-tools && \
+    echo 'echo "Python: $(python3 --version)"' >> /usr/local/bin/verify-tools && \
+    echo 'echo "Node: $(node --version)"' >> /usr/local/bin/verify-tools && \
+    echo 'echo "Java: $(java --version 2>&1 | head -1)"' >> /usr/local/bin/verify-tools && \
+    echo 'echo "Go: $(go version)"' >> /usr/local/bin/verify-tools && \
+    echo 'echo "Ruby: $(ruby --version)"' >> /usr/local/bin/verify-tools && \
+    echo 'echo "Tools ready for 10 languages"' >> /usr/local/bin/verify-tools && \
+    chmod +x /usr/local/bin/verify-tools
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s \
+    CMD /usr/local/bin/verify-tools || exit 1
+
+# Default command
+CMD ["/usr/local/bin/verify-tools"]

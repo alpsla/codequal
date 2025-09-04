@@ -1,0 +1,84 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dockerfile-content
+  namespace: codequal-dev
+data:
+  Dockerfile: |
+    FROM node:20-bullseye
+    
+    LABEL maintainer="CodeQual Team" \
+          version="1.0.0-working" \
+          description="Working analyzer with core tools"
+    
+    # Install system dependencies
+    RUN apt-get update && apt-get install -y \
+        python3 python3-pip \
+        openjdk-17-jdk-headless \
+        git \
+        build-essential \
+        && rm -rf /var/lib/apt/lists/*
+    
+    # Python tools (tested and working)
+    RUN pip3 install \
+        bandit \
+        pylint \
+        black \
+        mypy \
+        isort
+    
+    # JavaScript/TypeScript tools (tested and working)
+    RUN npm install -g \
+        eslint \
+        prettier \
+        typescript \
+        @typescript-eslint/parser \
+        @typescript-eslint/eslint-plugin
+    
+    WORKDIR /app
+    
+    # Health check
+    HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+      CMD node -e "console.log('healthy')" || exit 1
+    
+    CMD ["sh", "-c", "echo 'CodeQual analyzer ready'; while true; do sleep 30; done"]
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kaniko-builder
+  namespace: codequal-dev
+spec:
+  template:
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+        - "--context=dir:///workspace"
+        - "--dockerfile=/workspace/Dockerfile"
+        - "--destination=registry.digitalocean.com/codequal/analyzer:working-v1"
+        volumeMounts:
+        - name: dockerfile
+          mountPath: /workspace
+        - name: kaniko-secret
+          mountPath: /kaniko/.docker
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "2Gi"
+            cpu: "1"
+      restartPolicy: Never
+      volumes:
+      - name: dockerfile
+        configMap:
+          name: dockerfile-content
+      - name: kaniko-secret
+        secret:
+          secretName: registry-credentials
+          items:
+          - key: .dockerconfigjson
+            path: config.json
+  backoffLimit: 1

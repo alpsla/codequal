@@ -1,0 +1,280 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analyzer-python
+  namespace: codequal-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: analyzer-python
+      language: python
+  template:
+    metadata:
+      labels:
+        app: analyzer-python
+        language: python
+    spec:
+      containers:
+      - name: analyzer
+        image: registry.digitalocean.com/codequal/analyzer:lang-python
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analyzer-javascript
+  namespace: codequal-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: analyzer-javascript
+      language: javascript
+  template:
+    metadata:
+      labels:
+        app: analyzer-javascript
+        language: javascript
+    spec:
+      containers:
+      - name: analyzer
+        image: registry.digitalocean.com/codequal/analyzer:lang-javascript
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analyzer-java
+  namespace: codequal-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: analyzer-java
+      language: java
+  template:
+    metadata:
+      labels:
+        app: analyzer-java
+        language: java
+    spec:
+      containers:
+      - name: analyzer
+        image: registry.digitalocean.com/codequal/analyzer:lang-java
+        resources:
+          requests:
+            memory: "768Mi"
+            cpu: "250m"
+          limits:
+            memory: "1.5Gi"
+            cpu: "500m"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analyzer-go
+  namespace: codequal-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: analyzer-go
+      language: go
+  template:
+    metadata:
+      labels:
+        app: analyzer-go
+        language: go
+    spec:
+      containers:
+      - name: analyzer
+        image: registry.digitalocean.com/codequal/analyzer:lang-go
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analyzer-rust
+  namespace: codequal-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: analyzer-rust
+      language: rust
+  template:
+    metadata:
+      labels:
+        app: analyzer-rust
+        language: rust
+    spec:
+      containers:
+      - name: analyzer
+        image: registry.digitalocean.com/codequal/analyzer:lang-rust
+        resources:
+          requests:
+            memory: "768Mi"
+            cpu: "250m"
+          limits:
+            memory: "1.5Gi"
+            cpu: "500m"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analyzer-ruby
+  namespace: codequal-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: analyzer-ruby
+      language: ruby
+  template:
+    metadata:
+      labels:
+        app: analyzer-ruby
+        language: ruby
+    spec:
+      containers:
+      - name: analyzer
+        image: registry.digitalocean.com/codequal/analyzer:lang-ruby
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analyzer-php
+  namespace: codequal-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: analyzer-php
+      language: php
+  template:
+    metadata:
+      labels:
+        app: analyzer-php
+        language: php
+    spec:
+      containers:
+      - name: analyzer
+        image: registry.digitalocean.com/codequal/analyzer:lang-php
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analyzer-perl
+  namespace: codequal-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: analyzer-perl
+      language: perl
+  template:
+    metadata:
+      labels:
+        app: analyzer-perl
+        language: perl
+    spec:
+      containers:
+      - name: analyzer
+        image: registry.digitalocean.com/codequal/analyzer:lang-perl
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "250m"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analyzer-cpp
+  namespace: codequal-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: analyzer-cpp
+      language: cpp
+  template:
+    metadata:
+      labels:
+        app: analyzer-cpp
+        language: cpp
+    spec:
+      containers:
+      - name: analyzer
+        image: registry.digitalocean.com/codequal/analyzer:lang-cpp
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analyzer-csharp
+  namespace: codequal-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: analyzer-csharp
+      language: csharp
+  template:
+    metadata:
+      labels:
+        app: analyzer-csharp
+        language: csharp
+    spec:
+      containers:
+      - name: analyzer
+        image: registry.digitalocean.com/codequal/analyzer:lang-csharp
+        resources:
+          requests:
+            memory: "768Mi"
+            cpu: "250m"
+          limits:
+            memory: "1.5Gi"
+            cpu: "500m"

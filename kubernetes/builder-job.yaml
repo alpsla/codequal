@@ -1,0 +1,54 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: docker-builder
+  namespace: codequal-dev
+spec:
+  template:
+    spec:
+      containers:
+      - name: docker-builder
+        image: docker:24-dind
+        securityContext:
+          privileged: true
+        env:
+        - name: DOCKER_HOST
+          value: tcp://localhost:2375
+        - name: DOCKER_TLS_CERTDIR
+          value: ""
+        command: 
+        - sh
+        - -c
+        - |
+          # Start Docker daemon
+          dockerd-entrypoint.sh &
+          sleep 10
+          
+          # Clone your repository (or copy Dockerfile)
+          apk add --no-cache git
+          git clone https://github.com/yourusername/codequal.git /workspace
+          cd /workspace/packages/agents
+          
+          # Build the image
+          docker build -f docker/Dockerfile.all-85-tools -t codequal/analyzer:all-tools .
+          
+          # Login to registry
+          echo "$REGISTRY_PASSWORD" | docker login registry.digitalocean.com -u $REGISTRY_USERNAME --password-stdin
+          
+          # Tag and push
+          docker tag codequal/analyzer:all-tools registry.digitalocean.com/codequal/analyzer:all-tools-v1
+          docker push registry.digitalocean.com/codequal/analyzer:all-tools-v1
+          
+          echo "Build complete!"
+        envFrom:
+        - secretRef:
+            name: registry-credentials
+        resources:
+          requests:
+            memory: "4Gi"
+            cpu: "2"
+          limits:
+            memory: "8Gi"
+            cpu: "4"
+      restartPolicy: Never
+  backoffLimit: 1
