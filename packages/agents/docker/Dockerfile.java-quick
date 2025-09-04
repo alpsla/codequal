@@ -1,0 +1,19 @@
+# Quick Java test container for AMD64
+FROM openjdk:17-slim
+
+# Install essential Java analysis tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    maven \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install SpotBugs
+RUN curl -L https://github.com/spotbugs/spotbugs/releases/download/4.7.3/spotbugs-4.7.3.tgz -o spotbugs.tgz && \
+    tar -xzf spotbugs.tgz && \
+    mv spotbugs-4.7.3 /opt/spotbugs && \
+    ln -s /opt/spotbugs/bin/spotbugs /usr/local/bin/spotbugs && \
+    rm spotbugs.tgz
+
+WORKDIR /workspace
+
+CMD ["java", "-version"]

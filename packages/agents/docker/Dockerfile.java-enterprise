@@ -1,0 +1,148 @@
+# CodeQual Java Enterprise Analysis Image
+# Optimized for Spring Boot, Android, and Enterprise Java applications
+# Size: ~2.5GB | Memory: 2-3GB | Tools: 9
+
+FROM openjdk:17-slim
+
+LABEL maintainer="CodeQual Team" \
+      version="1.0.0" \
+      description="Java enterprise analysis with PMD, Checkstyle, SpotBugs, OWASP DC" \
+      language="java" \
+      tools.count="9"
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    wget \
+    git \
+    unzip \
+    maven \
+    gradle \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create directories
+RUN mkdir -p /tools /analysis /cache
+
+WORKDIR /tools
+
+# ============================================
+# JAVA ANALYSIS TOOLS
+# ============================================
+
+# 1. PMD - Comprehensive code analysis (200+ rules)
+RUN wget -q https://github.com/pmd/pmd/releases/download/pmd_releases%2F7.7.0/pmd-dist-7.7.0-bin.zip && \
+    unzip -q pmd-dist-7.7.0-bin.zip && \
+    rm pmd-dist-7.7.0-bin.zip && \
+    ln -s /tools/pmd-bin-7.7.0/bin/pmd.sh /usr/local/bin/pmd
+
+# 2. Checkstyle - Code standards enforcement
+RUN wget -q https://github.com/checkstyle/checkstyle/releases/download/checkstyle-10.20.2/checkstyle-10.20.2-all.jar && \
+    echo '#!/bin/bash\njava -jar /tools/checkstyle-10.20.2-all.jar "$@"' > /usr/local/bin/checkstyle && \
+    chmod +x /usr/local/bin/checkstyle
+
+# 3. SpotBugs - Bug pattern detection
+RUN wget -q https://github.com/spotbugs/spotbugs/releases/download/4.8.6/spotbugs-4.8.6.tgz && \
+    tar -xzf spotbugs-4.8.6.tgz && \
+    rm spotbugs-4.8.6.tgz && \
+    ln -s /tools/spotbugs-4.8.6/bin/spotbugs /usr/local/bin/spotbugs
+
+# 4. OWASP Dependency Check - CVE vulnerability scanning
+RUN wget -q https://github.com/jeremylong/DependencyCheck/releases/download/v11.1.0/dependency-check-11.1.0-release.zip && \
+    unzip -q dependency-check-11.1.0-release.zip && \
+    rm dependency-check-11.1.0-release.zip && \
+    ln -s /tools/dependency-check/bin/dependency-check.sh /usr/local/bin/dependency-check
+
+# 5. Google Java Format - Consistent formatting
+RUN wget -q https://github.com/google/google-java-format/releases/download/v1.25.0/google-java-format-1.25.0-all-deps.jar && \
+    echo '#!/bin/bash\njava -jar /tools/google-java-format-1.25.0-all-deps.jar "$@"' > /usr/local/bin/google-java-format && \
+    chmod +x /usr/local/bin/google-java-format
+
+# 6. Error Prone - Compile-time bug detection
+RUN wget -q https://repo1.maven.org/maven2/com/google/errorprone/error_prone_core/2.36.0/error_prone_core-2.36.0-with-dependencies.jar
+
+# 7. FindSecBugs - Security-focused analysis
+RUN wget -q https://github.com/find-sec-bugs/find-sec-bugs/releases/download/version-1.13.0/findsecbugs-plugin-1.13.0.jar && \
+    mkdir -p /tools/spotbugs-4.8.6/plugin && \
+    cp findsecbugs-plugin-1.13.0.jar /tools/spotbugs-4.8.6/plugin/
+
+# 8. JaCoCo - Code coverage
+RUN wget -q https://repo1.maven.org/maven2/org/jacoco/jacoco/0.8.13/jacoco-0.8.13.zip && \
+    unzip -q jacoco-0.8.13.zip -d jacoco && \
+    rm jacoco-0.8.13.zip
+
+# 9. NullAway - Null pointer detection
+RUN wget -q https://repo1.maven.org/maven2/com/uber/nullaway/nullaway/0.12.2/nullaway-0.12.2.jar
+
+# ============================================
+# ENVIRONMENT CONFIGURATION
+# ============================================
+
+# Set Java memory options for optimal performance
+ENV JAVA_OPTS="-Xms1g -Xmx2g -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
+ENV MAVEN_OPTS="-Xms512m -Xmx1g"
+ENV GRADLE_OPTS="-Xms512m -Xmx1g -Dorg.gradle.daemon=false"
+
+# PATH configuration
+ENV PATH="/tools/pmd-bin-7.7.0/bin:/tools/spotbugs-4.8.6/bin:/tools/dependency-check/bin:${PATH}"
+
+# Cache directories
+ENV PMD_CACHE_DIR="/cache/pmd"
+ENV SPOTBUGS_HOME="/tools/spotbugs-4.8.6"
+ENV DEPENDENCY_CHECK_DATA="/cache/dependency-check"
+
+# ============================================
+# VERIFICATION & HEALTH CHECK
+# ============================================
+
+# Verification script
+RUN echo '#!/bin/bash' > /tools/verify.sh && \
+    echo 'echo "Java Tools Status:"' >> /tools/verify.sh && \
+    echo 'java -version' >> /tools/verify.sh && \
+    echo 'mvn -version' >> /tools/verify.sh && \
+    echo 'gradle -version' >> /tools/verify.sh && \
+    echo 'pmd --version' >> /tools/verify.sh && \
+    echo 'spotbugs -version' >> /tools/verify.sh && \
+    echo 'dependency-check --version' >> /tools/verify.sh && \
+    chmod +x /tools/verify.sh
+
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
+  CMD java -version && which pmd && which spotbugs
+
+# ============================================
+# ANALYSIS SCRIPTS
+# ============================================
+
+# Quick analysis script
+RUN cat > /usr/local/bin/analyze-java <<'EOF'
+#!/bin/bash
+PROJECT_PATH=${1:-.}
+OUTPUT_DIR=${2:-./analysis-results}
+
+mkdir -p $OUTPUT_DIR
+
+echo "🔍 Running Java Analysis Suite..."
+
+# PMD Analysis
+echo "Running PMD..."
+pmd check -d $PROJECT_PATH -R rulesets/java/quickstart.xml -f json -r $OUTPUT_DIR/pmd-report.json
+
+# Checkstyle
+echo "Running Checkstyle..."
+checkstyle -c /google_checks.xml $PROJECT_PATH -f json -o $OUTPUT_DIR/checkstyle-report.json
+
+# SpotBugs
+echo "Running SpotBugs..."
+spotbugs -textui -xml:withMessages -output $OUTPUT_DIR/spotbugs-report.xml $PROJECT_PATH
+
+# OWASP Dependency Check
+echo "Running Dependency Check..."
+dependency-check --project "Analysis" --scan $PROJECT_PATH --format JSON --out $OUTPUT_DIR/dependency-check-report.json
+
+echo "✅ Analysis complete. Results in $OUTPUT_DIR"
+EOF
+RUN chmod +x /usr/local/bin/analyze-java
+
+WORKDIR /analysis
+
+# Default command
+CMD ["/bin/bash"]

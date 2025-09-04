@@ -611,7 +611,7 @@ export class LicenseComplianceAgent extends BaseMultiToolAgent {
     );
     
     // Consolidate findings
-    const allFindings = this.consolidateFindings(toolResults);
+    const allFindings = await this.consolidateFindings(toolResults);
     
     // Generate summary
     const summary = this.generateSummary(allFindings);

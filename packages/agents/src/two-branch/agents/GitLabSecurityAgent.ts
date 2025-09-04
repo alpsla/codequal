@@ -326,7 +326,7 @@ export class GitLabSecurityAgent extends BaseMultiToolAgent {
     );
     
     // Consolidate and enrich findings
-    const consolidatedFindings = this.consolidateFindings(toolResults);
+    const consolidatedFindings = await this.consolidateFindings(toolResults);
     const enrichedFindings = this.enrichFindings(consolidatedFindings, input.context);
     
     return {

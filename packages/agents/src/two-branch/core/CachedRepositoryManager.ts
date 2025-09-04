@@ -211,15 +211,44 @@ export class CachedRepositoryManager {
       // Clone fresh
       await this.ensureDirectory(cachePath);
       
-      const cloneArgs = [
-        'clone',
-        options.shallow !== false ? `--depth ${options.depth || 50}` : '',
-        '--no-single-branch', // We need all branches for PR fetching
-        repoUrl,
-        cachePath
-      ].filter(Boolean).join(' ');
+      // Detect large repositories and use optimized cloning
+      const isLargeRepo = this.isLargeRepository(repoUrl);
       
-      await this.executeGitCommand(`git ${cloneArgs}`, { timeout: 300000 });
+      if (isLargeRepo) {
+        logger.info('🐘 Detected large repository, using optimized clone strategy...');
+        
+        // For large repos like rust-lang/rust, use partial clone
+        const cloneArgs = [
+          'clone',
+          '--filter=blob:none', // Don't download file contents initially
+          '--depth', '1', // Minimal history
+          '--no-single-branch', // We need all branches for PR fetching
+          repoUrl,
+          cachePath
+        ].join(' ');
+        
+        // Increased timeout for large repos
+        await this.executeGitCommand(`git ${cloneArgs}`, { timeout: 600000 }); // 10 minutes
+        
+        logger.info('📦 Partial clone complete, fetching essential data...');
+        
+        // Fetch a bit more history for better analysis
+        await this.executeGitCommand(
+          'git fetch --deepen=10',
+          { cwd: cachePath, timeout: 120000 }
+        );
+      } else {
+        // Standard clone for normal repos
+        const cloneArgs = [
+          'clone',
+          options.shallow !== false ? `--depth ${options.depth || 50}` : '',
+          '--no-single-branch', // We need all branches for PR fetching
+          repoUrl,
+          cachePath
+        ].filter(Boolean).join(' ');
+        
+        await this.executeGitCommand(`git ${cloneArgs}`, { timeout: 300000 });
+      }
       
       // Build repository index immediately after cloning
       logger.info('📚 Building initial repository index...');
@@ -269,7 +298,11 @@ export class CachedRepositoryManager {
     if (cachedIndex) {
       logger.info('✅ Loaded cached index');
       logger.info(`   Files indexed: ${cachedIndex.stats.totalFiles}`);
-      logger.info(`   Languages: ${Array.from(cachedIndex.stats.languages.keys()).join(', ')}`);
+      // Handle both Map and plain object cases for languages
+      const languages = cachedIndex.stats.languages instanceof Map
+        ? Array.from(cachedIndex.stats.languages.keys())
+        : Object.keys(cachedIndex.stats.languages || {});
+      logger.info(`   Languages: ${languages.join(', ')}`);
     }
     
     return {
@@ -313,19 +346,24 @@ export class CachedRepositoryManager {
    */
   private async createWorkingCopy(
     sourcePath: string,
-    targetPath: string
+    targetPath: string,
+    branch?: string
   ): Promise<void> {
-    // Try using git worktree (most efficient)
+    // For large repos, just create a regular copy to avoid worktree conflicts
+    // This is still fast since we're copying from local cache
     try {
+      logger.info('📋 Creating working copy from cache...');
+      
+      // Use rsync for efficient copying (excludes .git by default)
       await this.executeGitCommand(
-        `git worktree add ${targetPath} HEAD`,
-        { cwd: sourcePath }
+        `cp -R ${sourcePath} ${targetPath}`,
+        { timeout: 30000 }
       );
-      logger.info('✅ Created working copy using git worktree');
-    } catch {
-      // Fallback to copy
-      logger.info('📋 Creating working copy using file copy...');
-      await this.copyDirectory(sourcePath, targetPath);
+      
+      logger.info('✅ Created working copy from cache');
+    } catch (error) {
+      logger.error(`Failed to create working copy: ${error}`);
+      throw error;
     }
   }
 
@@ -526,6 +564,27 @@ export class CachedRepositoryManager {
   }
 
   // ... (Helper methods from original RepositoryManager)
+  
+  /**
+   * Detect if repository is known to be large
+   */
+  private isLargeRepository(repoUrl: string): boolean {
+    const largeRepos = [
+      'rust-lang/rust',
+      'torvalds/linux',
+      'chromium/chromium',
+      'llvm/llvm-project',
+      'gcc-mirror/gcc',
+      'WebKit/WebKit',
+      'microsoft/vscode',
+      'tensorflow/tensorflow',
+      'pytorch/pytorch',
+      'kubernetes/kubernetes'
+    ];
+    
+    // Check if URL contains any of the large repo patterns
+    return largeRepos.some(repo => repoUrl.includes(repo));
+  }
   
   private parseGitHubUrl(url: string): { owner: string; name: string } {
     const patterns = [

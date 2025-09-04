@@ -1,0 +1,63 @@
+# CodeQual Production-Ready Analyzer
+# Essential tools for immediate deployment
+FROM node:20-bullseye
+
+LABEL maintainer="CodeQual Team" \
+      version="1.0.0-production" \
+      description="Production-ready analyzer with essential tools"
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    # Python and essentials
+    python3 python3-pip \
+    # Java for Java analysis
+    openjdk-17-jdk-headless \
+    # Go for Go analysis
+    golang \
+    # Git for repo operations
+    git \
+    # Build tools
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Python tools (essential subset)
+RUN pip3 install \
+    bandit \
+    pylint \
+    black \
+    mypy \
+    isort
+
+# JavaScript/TypeScript tools
+RUN npm install -g \
+    eslint \
+    prettier \
+    typescript \
+    @typescript-eslint/parser \
+    @typescript-eslint/eslint-plugin
+
+# Java tools
+RUN cd /tmp && \
+    wget https://github.com/spotbugs/spotbugs/releases/download/4.8.3/spotbugs-4.8.3.zip && \
+    unzip spotbugs-4.8.3.zip && \
+    mv spotbugs-4.8.3 /opt/spotbugs && \
+    rm spotbugs-4.8.3.zip
+
+# Go tools
+RUN go install honnef.co/go/tools/cmd/staticcheck@latest && \
+    go install github.com/securego/gosec/v2/cmd/gosec@latest
+
+# Set working directory
+WORKDIR /app
+
+# Copy application code (will be added when available)
+
+# Install Node dependencies if package.json exists
+RUN if [ -f package.json ]; then npm ci --only=production || npm install --production; fi
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node -e "console.log('healthy')" || exit 1
+
+# Default command
+CMD ["node", "-e", "console.log('CodeQual analyzer ready'); setInterval(() => console.log('Running...'), 30000)"]

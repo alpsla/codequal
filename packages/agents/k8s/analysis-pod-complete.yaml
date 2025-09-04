@@ -1,0 +1,195 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: codequal-dev
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: tools-cache-pvc
+  namespace: codequal-dev
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: standard
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: repo-cache-pvc
+  namespace: codequal-dev
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: standard
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: analysis-config
+  namespace: codequal-dev
+data:
+  CLOUD_EXECUTION: "true"
+  CACHE_DIR: "/cache"
+  TOOLS_DIR: "/tools"
+  MAX_CACHE_SIZE_GB: "15"
+  ANALYSIS_TIMEOUT_MS: "300000"
+  ENABLE_CACHING: "true"
+  ENABLE_INDEXING: "true"
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: analysis-complete
+  namespace: codequal-dev
+  labels:
+    app: codequal-analysis
+    version: "1.0.0"
+    type: complete
+spec:
+  containers:
+  - name: analyzer
+    image: codequal/analysis:complete
+    imagePullPolicy: Always
+    resources:
+      requests:
+        memory: "2Gi"
+        cpu: "1000m"
+        ephemeral-storage: "5Gi"
+      limits:
+        memory: "4Gi"
+        cpu: "2000m"
+        ephemeral-storage: "10Gi"
+    env:
+    - name: NODE_ENV
+      value: "production"
+    - name: LOG_LEVEL
+      value: "info"
+    envFrom:
+    - configMapRef:
+        name: analysis-config
+    volumeMounts:
+    - name: tools-cache
+      mountPath: /tools-cache
+    - name: repo-cache
+      mountPath: /cache
+    - name: tmp
+      mountPath: /tmp
+    ports:
+    - containerPort: 3000
+      name: metrics
+    livenessProbe:
+      exec:
+        command:
+        - sh
+        - -c
+        - "which pmd && which eslint && which bandit"
+      initialDelaySeconds: 30
+      periodSeconds: 30
+    readinessProbe:
+      exec:
+        command:
+        - sh
+        - -c
+        - "/tools/verify-installation.sh"
+      initialDelaySeconds: 10
+      periodSeconds: 10
+  volumes:
+  - name: tools-cache
+    persistentVolumeClaim:
+      claimName: tools-cache-pvc
+  - name: repo-cache
+    persistentVolumeClaim:
+      claimName: repo-cache-pvc
+  - name: tmp
+    emptyDir:
+      sizeLimit: 5Gi
+  restartPolicy: Always
+  nodeSelector:
+    workload: analysis
+  tolerations:
+  - key: "dedicated"
+    operator: "Equal"
+    value: "analysis"
+    effect: "NoSchedule"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: analysis-service
+  namespace: codequal-dev
+spec:
+  selector:
+    app: codequal-analysis
+  ports:
+  - port: 3000
+    targetPort: 3000
+    name: metrics
+  type: ClusterIP
+---
+# For scaling: Deployment configuration
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analysis-deployment
+  namespace: codequal-dev
+spec:
+  replicas: 2  # Start with 2 pods for parallel processing
+  selector:
+    matchLabels:
+      app: codequal-analysis
+  template:
+    metadata:
+      labels:
+        app: codequal-analysis
+        version: "1.0.0"
+    spec:
+      containers:
+      - name: analyzer
+        image: codequal/analysis:complete
+        imagePullPolicy: Always
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        envFrom:
+        - configMapRef:
+            name: analysis-config
+        volumeMounts:
+        - name: repo-cache
+          mountPath: /cache
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - "which pmd && which eslint"
+          initialDelaySeconds: 30
+          periodSeconds: 30
+      volumes:
+      - name: repo-cache
+        emptyDir:
+          sizeLimit: 10Gi
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0

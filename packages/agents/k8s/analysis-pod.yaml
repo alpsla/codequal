@@ -1,0 +1,186 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: analysis-tools-installer
+  namespace: codequal-dev
+data:
+  install-tools.sh: |
+    #!/bin/bash
+    set -e
+    
+    echo "📦 Installing base dependencies..."
+    apt-get update
+    apt-get install -y \
+      curl \
+      wget \
+      git \
+      build-essential \
+      python3 \
+      python3-pip \
+      nodejs \
+      npm \
+      golang-go \
+      ruby \
+      ruby-dev \
+      default-jdk \
+      cmake \
+      clang \
+      clang-tidy \
+      cppcheck \
+      redis-tools \
+      jq
+    
+    echo "🦀 Installing Rust toolchain..."
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    source $HOME/.cargo/env
+    rustup component add clippy rustfmt
+    
+    echo "📦 Installing Rust security tools..."
+    cargo install cargo-audit cargo-geiger cargo-deny
+    
+    echo "🐍 Installing Python security tools..."
+    pip3 install --upgrade pip
+    pip3 install safety bandit mypy ruff pylint
+    
+    echo "📦 Installing Node.js security tools..."
+    npm install -g eslint semgrep @microsoft/eslint-formatter-sarif retire
+    
+    echo "💎 Installing Ruby security tools..."
+    gem install bundler-audit brakeman rubocop
+    
+    echo "🐹 Installing Go security tools..."
+    go install github.com/securego/gosec/v2/cmd/gosec@latest
+    go install honnef.co/go/tools/cmd/staticcheck@latest
+    curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b /usr/local/bin
+    
+    echo "☕ Installing Java security tools..."
+    wget https://github.com/spotbugs/spotbugs/releases/download/4.7.3/spotbugs-4.7.3.tgz
+    tar -xzf spotbugs-4.7.3.tgz -C /opt/
+    ln -s /opt/spotbugs-4.7.3/bin/spotbugs /usr/local/bin/spotbugs
+    
+    wget https://github.com/pmd/pmd/releases/download/pmd_releases%2F6.55.0/pmd-bin-6.55.0.zip
+    unzip pmd-bin-6.55.0.zip -d /opt/
+    ln -s /opt/pmd-bin-6.55.0/bin/run.sh /usr/local/bin/pmd
+    
+    echo "🔍 Installing generic security tools..."
+    pip3 install semgrep
+    
+    # Install gitleaks
+    wget https://github.com/gitleaks/gitleaks/releases/download/v8.18.0/gitleaks_8.18.0_linux_x64.tar.gz
+    tar -xzf gitleaks_8.18.0_linux_x64.tar.gz
+    mv gitleaks /usr/local/bin/
+    
+    # Install trivy
+    wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | apt-key add -
+    echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | tee -a /etc/apt/sources.list.d/trivy.list
+    apt-get update
+    apt-get install -y trivy
+    
+    echo "✅ All tools installed successfully!"
+    
+    # Set up environment
+    echo 'export PATH=$PATH:/root/.cargo/bin:/root/go/bin' >> /root/.bashrc
+    
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: analysis-cache-pvc
+  namespace: codequal-dev
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi
+  # Use default storage class
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analysis-pod
+  namespace: codequal-dev
+  labels:
+    app: codequal-analyzer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: codequal-analyzer
+  template:
+    metadata:
+      labels:
+        app: codequal-analyzer
+    spec:
+      containers:
+      - name: analyzer
+        image: ubuntu:22.04
+        command: ["/bin/bash"]
+        args: ["-c", "cp /scripts/install-tools.sh /tmp/ && chmod +x /tmp/install-tools.sh && /tmp/install-tools.sh && sleep infinity"]
+        workingDir: /analysis
+        resources:
+          requests:
+            memory: "8Gi"
+            cpu: "4"
+          limits:
+            memory: "16Gi"
+            cpu: "8"
+        volumeMounts:
+        - name: analysis-cache
+          mountPath: /cache
+        - name: tools-scripts
+          mountPath: /scripts
+        - name: workspace
+          mountPath: /analysis
+        env:
+        - name: REDIS_URL
+          value: "redis://:n7ud71guwMiBv3lOwyKGNbiDUThiyk3n@10.116.0.7:6379"
+        - name: PATH
+          value: "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/root/.cargo/bin:/root/go/bin:/root/.local/bin"
+        - name: CARGO_HOME
+          value: "/root/.cargo"
+        - name: RUSTUP_HOME
+          value: "/root/.rustup"
+        - name: GOPATH
+          value: "/root/go"
+        livenessProbe:
+          exec:
+            command:
+            - /bin/bash
+            - -c
+            - "echo 'alive'"
+          initialDelaySeconds: 300
+          periodSeconds: 30
+        readinessProbe:
+          exec:
+            command:
+            - /bin/bash
+            - -c
+            - "which cargo && which semgrep && which gitleaks"
+          initialDelaySeconds: 600
+          periodSeconds: 30
+      volumes:
+      - name: analysis-cache
+        persistentVolumeClaim:
+          claimName: analysis-cache-pvc
+      - name: tools-scripts
+        configMap:
+          name: analysis-tools-installer
+          defaultMode: 0755
+      - name: workspace
+        emptyDir:
+          sizeLimit: 50Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: analysis-service
+  namespace: codequal-dev
+spec:
+  selector:
+    app: codequal-analyzer
+  ports:
+  - port: 8080
+    targetPort: 8080
+    name: http
+  type: ClusterIP

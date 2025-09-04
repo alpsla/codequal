@@ -1,0 +1,20 @@
+# Quick Perl container for AMD64
+FROM perl:5.38-slim
+
+# Install CPAN and analysis tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    make \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Perl analysis tools
+RUN cpan App::cpanminus && \
+    cpanm --notest \
+    Perl::Critic \
+    Perl::Tidy \
+    Test::Perl::Critic \
+    && rm -rf /root/.cpanm
+
+WORKDIR /workspace
+
+CMD ["perl", "--version"]

@@ -248,7 +248,7 @@ export class MultiToolPerformanceAgent extends BaseMultiToolAgent {
       );
       
       // Consolidate findings
-      const consolidatedFindings = this.consolidateFindings(toolResults);
+      const consolidatedFindings = await this.consolidateFindings(toolResults);
       
       // Enrich with performance insights
       const enrichedFindings = this.enrichFindings(consolidatedFindings, input.context);

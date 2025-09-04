@@ -77,7 +77,7 @@ export class JavaSecurityAgent extends BaseMultiToolAgent {
       const toolResults = await this.runToolsInParallel(targetPath, language);
       
       // Consolidate findings
-      const findings = this.consolidateFindings(toolResults);
+      const findings = await this.consolidateFindings(toolResults);
       
       // Generate summary
       const summary = this.generateSummary(findings);

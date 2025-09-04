@@ -6,6 +6,7 @@
  */
 
 import { logger } from '../utils/logger';
+import { CodeSnippetExtractor } from '../utils/code-snippet-extractor';
 
 export interface ToolResult {
   tool: string;
@@ -37,6 +38,8 @@ export interface ToolExecutor {
   name: string;
   execute: (targetPath: string, language?: string) => Promise<ToolResult>;
   isApplicable?: (language: string) => boolean;
+  category?: 'core' | 'optional' | 'commercial' | 'external';
+  requiresConfig?: string[];
 }
 
 export abstract class BaseMultiToolAgent {
@@ -113,7 +116,7 @@ export abstract class BaseMultiToolAgent {
     tool: ToolExecutor,
     targetPath: string,
     language: string,
-    timeout = 30000
+    timeout = 60000
   ): Promise<ToolResult> {
     const startTime = Date.now();
     
@@ -157,12 +160,15 @@ export abstract class BaseMultiToolAgent {
   /**
    * Consolidate findings from multiple tools
    */
-  protected consolidateFindings(toolResults: ToolResult[]): any[] {
+  protected async consolidateFindings(toolResults: ToolResult[]): Promise<any[]> {
     const allFindings = [];
     const findingMap = new Map<string, any>();
     
     for (const result of toolResults) {
       for (const finding of result.findings) {
+        // Ensure required fields are populated
+        await this.populateRequiredFields(finding, result.tool);
+        
         // Create a fingerprint for deduplication
         const fingerprint = this.createFindingFingerprint(finding);
         
@@ -180,6 +186,103 @@ export abstract class BaseMultiToolAgent {
     }
     
     return allFindings;
+  }
+  
+  /**
+   * Populate required fields for proper issue tracking
+   */
+  protected async populateRequiredFields(finding: any, toolName: string): Promise<void> {
+    // Ensure title is set
+    if (!finding.title) {
+      finding.title = finding.message || finding.description || 
+                     `${finding.type || 'Issue'} in ${finding.file || 'unknown file'}`;
+    }
+    
+    // Ensure agent attribution
+    if (!finding.agent) {
+      finding.agent = this.agentName;
+    }
+    
+    // Ensure tool attribution
+    if (!finding.tool) {
+      finding.tool = toolName;
+    }
+    
+    // Ensure location is properly structured
+    if (!finding.location && (finding.file || finding.line)) {
+      finding.location = {
+        file: finding.file,
+        line: finding.line,
+        column: finding.column
+      };
+    }
+    
+    // Extract code snippet if not present
+    if (!finding.codeSnippet && finding.file && finding.line) {
+      finding.codeSnippet = await CodeSnippetExtractor.getIssueSnippet(
+        finding.file,
+        finding.line
+      );
+    }
+    
+    // Generate fix recommendation if missing
+    if (!finding.fixRecommendation) {
+      finding.fixRecommendation = this.generateFixRecommendation(finding);
+    }
+    
+    // Ensure impact and effort are set
+    if (!finding.impact) {
+      finding.impact = this.calculateImpact(finding.severity);
+    }
+    
+    if (!finding.effort) {
+      finding.effort = this.calculateEffort(finding.type, finding.severity);
+    }
+  }
+  
+  /**
+   * Generate fix recommendation based on issue type
+   */
+  protected generateFixRecommendation(finding: any): string {
+    const recommendations: Record<string, string> = {
+      'security': `Review and fix the security vulnerability. Consider using secure alternatives or adding proper validation.`,
+      'performance': `Optimize the code to improve performance. Consider caching, async operations, or algorithm improvements.`,
+      'quality': `Refactor the code to improve quality. Follow best practices and coding standards.`,
+      'dependency': `Update or replace the problematic dependency. Check for security advisories and compatibility.`,
+      'architecture': `Review the architectural design. Consider refactoring to improve maintainability.`,
+      'duplication': `Remove code duplication by extracting common functionality into reusable components.`,
+      'complexity': `Reduce complexity by breaking down into smaller, more manageable functions.`
+    };
+    
+    const category = finding.category || finding.type || 'quality';
+    return recommendations[category] || 'Review and fix the identified issue according to best practices.';
+  }
+  
+  /**
+   * Calculate impact based on severity
+   */
+  protected calculateImpact(severity: string): string {
+    const impactMap: Record<string, string> = {
+      'critical': 'high',
+      'high': 'high',
+      'medium': 'medium',
+      'low': 'low',
+      'info': 'low'
+    };
+    return impactMap[severity?.toLowerCase()] || 'medium';
+  }
+  
+  /**
+   * Calculate effort based on type and severity
+   */
+  protected calculateEffort(type: string, severity: string): string {
+    if (severity === 'critical' || severity === 'high') {
+      return 'high';
+    }
+    if (type === 'duplication' || type === 'complexity') {
+      return 'medium';
+    }
+    return 'low';
   }
   
   /**

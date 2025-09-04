@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: analysis-pod-simple
+  namespace: codequal-dev
+  labels:
+    app: codequal-analyzer
+spec:
+  containers:
+  - name: analyzer
+    image: ubuntu:22.04
+    command: ["/bin/bash"]
+    args: 
+      - -c
+      - |
+        apt-get update && apt-get install -y curl git python3 python3-pip nodejs npm golang-go ruby cargo
+        pip3 install semgrep bandit safety
+        npm install -g eslint
+        cargo install cargo-audit 2>/dev/null || true
+        echo "Basic tools installed. Pod ready."
+        sleep infinity
+    workingDir: /analysis
+    resources:
+      requests:
+        memory: "2Gi"
+        cpu: "1"
+      limits:
+        memory: "4Gi"
+        cpu: "2"
+    volumeMounts:
+    - name: workspace
+      mountPath: /analysis
+    env:
+    - name: REDIS_URL
+      value: "redis://localhost:6379"
+    - name: PATH
+      value: "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/root/.cargo/bin:/root/go/bin"
+  volumes:
+  - name: workspace
+    emptyDir:
+      sizeLimit: 10Gi

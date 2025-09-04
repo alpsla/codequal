@@ -79,7 +79,9 @@ export interface PRMetadata {
   title?: string;
   description?: string;
   author?: string;
+  owner?: string;  // Repository owner (e.g., "facebook" for facebook/react)
   created_at?: string;
+  duration?: number;  // Duration in milliseconds from creation to now/merge
   repository_url?: string;
   linesAdded?: number;
   linesRemoved?: number;

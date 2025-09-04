@@ -190,6 +190,49 @@ kubectl top pods -n codequal
 - `registry.digitalocean.com/codequal/cpp:latest` (131.30 MB)
 - `registry.digitalocean.com/codequal/csharp:latest` (277.01 MB)
 
+## Beta Testing Metrics to Track
+
+### Critical Metrics for Future Scaling Decisions
+During beta testing, track these metrics to inform production scaling:
+
+1. **Performance Metrics**
+   - Average analysis time per language
+   - Peak memory usage per language
+   - CPU utilization patterns
+   - Container startup times
+
+2. **Usage Patterns**
+   - Concurrent PR submissions
+   - Queue depth over time
+   - Peak usage hours
+   - Language distribution (% Python, JS, etc.)
+
+3. **Reliability Metrics**
+   - Failed analyses due to resources
+   - Timeout occurrences
+   - Retry success rates
+   - Tool failure patterns
+
+4. **Resource Utilization**
+   - Memory high-water marks
+   - CPU throttling events
+   - Disk I/O patterns
+   - Network bandwidth usage
+
+### Beta Configuration (No Auto-scaling Yet)
+```yaml
+# Simple beta setup - collect metrics first
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: beta-config
+data:
+  maxConcurrentJobs: "2"      # Process 2 PRs at once
+  jobTimeout: "600"           # 10 minute timeout
+  defaultReplicas: "0"        # Scale from zero
+  metricsCollection: "true"   # Gather scaling data
+```
+
 ## Remember
 - We're doing **language-specific** execution (10-30 tools, not 85)
 - Analysis takes **2-4 minutes**, not 10+
@@ -197,11 +240,13 @@ kubectl top pods -n codequal
 - Start with Phase 1: Get tools running on cloud
 - Deduplication already implemented in orchestrator
 - Use existing LanguageDetector service
+- **Track beta metrics** for future scaling decisions
 
 ## Key Decisions Made
 1. **Accept longer analysis times** for comprehensive coverage
 2. **Language-specific execution** reduces time from 10+ to 2-4 minutes
 3. **Phased deployment** - tools first, then hybrid, then full cloud
 4. **Quality-first** business model justifies thorough analysis
+5. **Beta-first approach** - gather real metrics before scaling
 
 Good luck! 🎯

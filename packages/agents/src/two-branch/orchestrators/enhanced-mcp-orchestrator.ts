@@ -530,7 +530,7 @@ export class EnhancedMCPOrchestrator {
       const { main, pr } = await this.repositoryManager.cloneForPRAnalysis(
         repoUrl,
         prNumber,
-        prMetadata.baseRef || 'main'
+        prMetadata.baseBranch || prMetadata.baseRef || 'main'
       );
       
       this.log('info', `✅ Branches ready: main=${main.localPath}, pr=${pr.localPath}`);
@@ -656,8 +656,10 @@ export class EnhancedMCPOrchestrator {
         url: `${prMetadata.repository_url}/pull/${prMetadata.number}`,
         title: prMetadata.title,
         author: prMetadata.author,
+        owner: prMetadata.owner,
         branch: prMetadata.headBranch,
         baseBranch: prMetadata.baseBranch,
+        duration: prMetadata.duration,
         platform: platformInfo.platform
       },
       

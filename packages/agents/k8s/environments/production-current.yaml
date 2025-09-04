@@ -1,0 +1,252 @@
+# CodeQual Production Environment - Current Setup
+# 2 nodes, 8GB RAM total, 30 tools
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: codequal-production
+  labels:
+    environment: production
+    team: codequal
+---
+# Resource Quota for Production
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: production-quota
+  namespace: codequal-production
+spec:
+  hard:
+    requests.memory: 6Gi    # 75% of 8GB
+    limits.memory: 7Gi      # Leave 1GB for system
+    requests.cpu: "3"
+    pods: "10"
+---
+# Production ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: production-config
+  namespace: codequal-production
+data:
+  environment: "production"
+  tools_count: "30"
+  max_analysis_time: "300"
+  cache_enabled: "true"
+  database_name: "codequal_production"
+  redis_url: "redis://redis-service:6379"
+---
+# Production Deployment - Core Tools (15 tools)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analysis-core
+  namespace: codequal-production
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: analysis
+      tier: core
+  template:
+    metadata:
+      labels:
+        app: analysis
+        tier: core
+        environment: production
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - analysis
+              topologyKey: kubernetes.io/hostname
+      containers:
+      - name: analyzer-core
+        image: codequal/production:core-v2
+        imagePullPolicy: Always
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1"
+          limits:
+            memory: "2.5Gi"
+            cpu: "1.5"
+        env:
+        - name: ENV
+          value: "production"
+        - name: TOOL_SET
+          value: "core"
+        - name: TOOLS_COUNT
+          value: "15"
+        - name: NODE_OPTIONS
+          value: "--max-old-space-size=1024"
+        volumeMounts:
+        - name: cache
+          mountPath: /cache
+        livenessProbe:
+          exec:
+            command:
+            - /tools/health.sh
+          initialDelaySeconds: 30
+          periodSeconds: 30
+      volumes:
+      - name: cache
+        persistentVolumeClaim:
+          claimName: analysis-cache-pvc
+---
+# Production Deployment - Extended Tools (15 tools)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analysis-extended
+  namespace: codequal-production
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: analysis
+      tier: extended
+  template:
+    metadata:
+      labels:
+        app: analysis
+        tier: extended
+        environment: production
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: tier
+                  operator: In
+                  values:
+                  - core
+              topologyKey: kubernetes.io/hostname
+      containers:
+      - name: analyzer-extended
+        image: codequal/production:extended-v2
+        imagePullPolicy: Always
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1"
+          limits:
+            memory: "2.5Gi"
+            cpu: "1.5"
+        env:
+        - name: ENV
+          value: "production"
+        - name: TOOL_SET
+          value: "extended"
+        - name: TOOLS_COUNT
+          value: "15"
+        volumeMounts:
+        - name: cache
+          mountPath: /cache
+      volumes:
+      - name: cache
+        persistentVolumeClaim:
+          claimName: analysis-cache-pvc
+---
+# Persistent Volume for Cache
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: analysis-cache-pvc
+  namespace: codequal-production
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: standard
+---
+# Service for Production
+apiVersion: v1
+kind: Service
+metadata:
+  name: analysis-service
+  namespace: codequal-production
+spec:
+  selector:
+    app: analysis
+  ports:
+  - port: 8080
+    targetPort: 8080
+    name: api
+  type: ClusterIP
+---
+# HPA for Core Pod
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: analysis-core-hpa
+  namespace: codequal-production
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: analysis-core
+  minReplicas: 1  # Always have 1 ready
+  maxReplicas: 2  # Max 2 core pods
+  metrics:
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 75
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+---
+# HPA for Extended Pod
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: analysis-extended-hpa
+  namespace: codequal-production
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: analysis-extended
+  minReplicas: 0  # Scale to zero when idle
+  maxReplicas: 2  # Max 2 extended pods
+  metrics:
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 75
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300  # Wait 5 min before scaling down
+---
+# Pod Disruption Budget
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: analysis-pdb
+  namespace: codequal-production
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: analysis
+      tier: core

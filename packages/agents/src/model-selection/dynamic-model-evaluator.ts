@@ -514,109 +514,138 @@ export class DynamicModelEvaluator {
  * Role-specific weight profiles
  */
 export const DYNAMIC_ROLE_WEIGHTS = {
-  deepwiki: {
-    quality: 0.60,      // CRITICAL - Deep code understanding essential
-    speed: 0.05,        // Can be slow, runs in background
-    cost: 0.20,         // Some cost sensitivity for high volume
-    freshness: 0.15,    // Keep freshness consistent
-    contextWindow: 0.00
-  },
-  'text-parser': {
-    quality: 0.20,      // LOW - Just pattern extraction from text
-    speed: 0.50,        // CRITICAL - Must be fast to avoid timeouts
-    cost: 0.20,         // Moderate - want cheap but reliable
-    freshness: 0.05,    // Very low - model version doesn't matter
-    contextWindow: 0.05 // Small - parsing text responses not code
-  },
-  researcher: {
-    quality: 0.55,      // HIGH - Needs to find accurate information
-    speed: 0.10,        // Moderate speed needed
-    cost: 0.20,         // Cost matters for frequent queries
-    freshness: 0.15,    // Keep freshness consistent
-    contextWindow: 0.00
-  },
+  // SECURITY - Balanced for vulnerability detection
   security: {
-    quality: 0.60,      // CRITICAL - Security accuracy paramount
-    speed: 0.05,        // Can take time for thorough analysis
-    cost: 0.20,         // Worth paying for security
-    freshness: 0.15,    // Keep freshness consistent
-    contextWindow: 0.00
+    quality: 0.50,      // 50% - High quality for vulnerability detection
+    speed: 0.20,        // 20% - Reasonable speed needed
+    cost: 0.30,         // 30% - Cost conscious but quality matters
+    freshness: 0.00,    // Models from last 3-6 months (handled separately)
+    contextWindow: 0.00 // Handled by size parameter
   },
-  architecture: {
-    quality: 0.55,      // HIGH - Architectural decisions critical
-    speed: 0.10,        // Can take time to analyze
-    cost: 0.20,         // Worth investment
-    freshness: 0.15,    // Keep freshness consistent
-    contextWindow: 0.00
-  },
+  
+  // PERFORMANCE - Balanced for bottleneck detection
   performance: {
-    quality: 0.40,      // MODERATE - Balance with speed
-    speed: 0.25,        // Speed important for perf analysis
-    cost: 0.20,         // Cost conscious
-    freshness: 0.15,    // Keep freshness consistent
+    quality: 0.45,      // 45% - Good quality for bottleneck detection
+    speed: 0.25,        // 25% - Faster analysis for performance testing
+    cost: 0.30,         // 30% - Cost matters for frequent runs
+    freshness: 0.00,
     contextWindow: 0.00
   },
+  
+  // ARCHITECTURE - Quality-focused for design decisions
+  architecture: {
+    quality: 0.55,      // 55% - Higher quality for design decisions
+    speed: 0.15,        // 15% - Can take more time
+    cost: 0.30,         // 30% - Balanced cost
+    freshness: 0.00,
+    contextWindow: 0.00
+  },
+  
+  // CODE QUALITY - Balanced for CI/CD
   code_quality: {
-    quality: 0.50,      // HIGH - Accuracy important
-    speed: 0.15,        // Moderate speed needed
-    cost: 0.20,         // Balanced cost
-    freshness: 0.15,    // Keep freshness consistent
+    quality: 0.40,      // 40% - Moderate quality sufficient
+    speed: 0.30,        // 30% - Faster for CI/CD integration
+    cost: 0.30,         // 30% - Cost effective for frequent runs
+    freshness: 0.00,
     contextWindow: 0.00
   },
+  
+  // DEPENDENCIES - Speed and cost balanced
   dependencies: {
-    quality: 0.35,      // MODERATE - Basic accuracy sufficient
-    speed: 0.20,        // Should be reasonably fast
-    cost: 0.30,         // Cost sensitive for frequent checks
-    freshness: 0.15,    // Keep freshness consistent
+    quality: 0.35,      // 35% - Basic accuracy for CVE detection
+    speed: 0.35,        // 35% - Fast for CI/CD pipelines
+    cost: 0.30,         // 30% - Cost sensitive
+    freshness: 0.00,
     contextWindow: 0.00
   },
-  documentation: {
-    quality: 0.30,      // LOW - Basic clarity sufficient
-    speed: 0.15,        // Moderate speed
-    cost: 0.40,         // Very cost sensitive
-    freshness: 0.15,    // Keep freshness consistent
+  
+  // DEEPWIKI - Quality-focused (legacy, being replaced)
+  deepwiki: {
+    quality: 0.50,      // 50% - Good code understanding needed
+    speed: 0.20,        // 20% - Reasonable speed
+    cost: 0.30,         // 30% - Balanced cost
+    freshness: 0.00,
     contextWindow: 0.00
   },
+  
+  // TEXT PARSER - Speed critical
+  'text-parser': {
+    quality: 0.20,      // 20% - Just pattern matching
+    speed: 0.50,        // 50% - Speed critical to avoid timeouts
+    cost: 0.30,         // 30% - Cheap but reliable
+    freshness: 0.00,
+    contextWindow: 0.00
+  },
+  
+  // RESEARCHER - Quality-focused for finding models
+  researcher: {
+    quality: 0.60,      // 60% - Must find best models accurately
+    speed: 0.10,        // 10% - Can take time to research
+    cost: 0.30,         // 30% - Research is worth investment
+    freshness: 0.00,
+    contextWindow: 0.00
+  },
+  
+  // TESTING - Balanced quality
   testing: {
-    quality: 0.50,      // HIGH - Test accuracy crucial
-    speed: 0.15,        // Can take time
-    cost: 0.20,         // Worth the investment
-    freshness: 0.15,    // Keep freshness consistent
+    quality: 0.45,      // 45% - Test accuracy important
+    speed: 0.25,        // 25% - Reasonable speed for test generation
+    cost: 0.30,         // 30% - Balanced cost
+    freshness: 0.00,
     contextWindow: 0.00
   },
+  
+  // DOCUMENTATION - Cost-sensitive
+  documentation: {
+    quality: 0.30,      // 30% - Basic clarity sufficient
+    speed: 0.30,        // 30% - Reasonable speed
+    cost: 0.40,         // 40% - Cost sensitive for docs
+    freshness: 0.00,
+    contextWindow: 0.00
+  },
+  
+  // TRANSLATOR - Balanced
   translator: {
-    quality: 0.35,      // MODERATE - Basic translation sufficient
-    speed: 0.25,        // Should be fast
-    cost: 0.25,         // Cost conscious
-    freshness: 0.15,    // Keep freshness consistent
+    quality: 0.35,      // 35% - Basic translation sufficient
+    speed: 0.35,        // 35% - Should be reasonably fast
+    cost: 0.30,         // 30% - Balanced cost
+    freshness: 0.00,
     contextWindow: 0.00
   },
+  
+  // LOCATION FINDER - Quality critical
   location_finder: {
-    quality: 0.65,      // HIGHEST - Must find exact locations
-    speed: 0.05,        // Can take time for accuracy
-    cost: 0.15,         // Worth paying for precision
-    freshness: 0.15,    // Keep freshness consistent
+    quality: 0.60,      // 60% - Must find exact locations
+    speed: 0.15,        // 15% - Can take time for accuracy
+    cost: 0.25,         // 25% - Worth paying for precision
+    freshness: 0.00,
     contextWindow: 0.00
   },
+  
+  // EDUCATIONAL - Cost-sensitive
   educational: {
-    quality: 0.25,      // LOW - Just needs to find resources
-    speed: 0.20,        // Should be reasonably quick
-    cost: 0.40,         // VERY cost sensitive - high volume
-    freshness: 0.15,    // Keep freshness consistent
+    quality: 0.30,      // 30% - Basic clarity sufficient
+    speed: 0.30,        // 30% - Reasonable response time
+    cost: 0.40,         // 40% - Cost sensitive for tutorials
+    freshness: 0.00,
     contextWindow: 0.00
   },
+  
+  // ORCHESTRATOR - Fast routing
   orchestrator: {
-    quality: 0.45,      // MODERATE - Routing decisions
-    speed: 0.20,        // Needs to be fast for routing
-    cost: 0.20,         // Balanced cost
-    freshness: 0.15,    // Keep freshness consistent
+    quality: 0.40,      // 40% - Good routing decisions
+    speed: 0.35,        // 35% - Fast routing needed
+    cost: 0.25,         // 25% - Runs frequently
+    freshness: 0.00,
     contextWindow: 0.00
   },
+  
+  // REPORT GENERATION - Balanced
   report_generation: {
-    quality: 0.40,      // MODERATE - Clear reporting
-    speed: 0.15,        // Can take some time
-    cost: 0.30,         // Cost sensitive
-    freshness: 0.15,    // Keep freshness consistent
+    quality: 0.40,      // 40% - Good quality reports
+    speed: 0.25,        // 25% - Can take time to synthesize
+    cost: 0.35,         // 35% - Cost conscious
+    freshness: 0.00,
     contextWindow: 0.00
   }
-};
+};;

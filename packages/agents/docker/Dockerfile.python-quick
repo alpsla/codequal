@@ -1,0 +1,10 @@
+# Quick Python test container for AMD64
+FROM python:3.11-slim
+
+# Install just essential tools for testing
+RUN pip install --no-cache-dir bandit pylint
+
+WORKDIR /workspace
+
+# Add a simple entry point for testing
+CMD ["python", "--version"]

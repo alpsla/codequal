@@ -1,0 +1,22 @@
+# Quick JavaScript/TypeScript container for AMD64
+FROM node:18-slim
+
+# Install analysis tools
+RUN npm install -g \
+    eslint \
+    @typescript-eslint/eslint-plugin \
+    @typescript-eslint/parser \
+    jshint \
+    prettier \
+    typescript \
+    && npm cache clean --force
+
+# Install security tools
+RUN npm install -g \
+    npm-audit-resolver \
+    snyk \
+    && npm cache clean --force
+
+WORKDIR /workspace
+
+CMD ["node", "--version"]

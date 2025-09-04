@@ -105,7 +105,7 @@ export class ImprovedJavaSecurityAgent extends BaseMultiToolAgent {
       input.language
     );
     
-    const issues = this.consolidateFindings(toolResults);
+    const issues = await this.consolidateFindings(toolResults);
     const executionTime = Date.now() - startTime;
     
     // Mark results if any tools used mock data

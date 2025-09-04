@@ -1,0 +1,17 @@
+# Quick C# container for AMD64
+FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine
+
+# Install .NET analysis tools
+RUN dotnet tool install --global dotnet-format && \
+    dotnet tool install --global security-scan && \
+    dotnet tool install --global dotnet-outdated-tool
+
+# Add tools to PATH
+ENV PATH="$PATH:/root/.dotnet/tools"
+
+# Install additional analysis tools
+RUN apk add --no-cache bash
+
+WORKDIR /workspace
+
+CMD ["dotnet", "--version"]

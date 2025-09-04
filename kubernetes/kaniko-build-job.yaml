@@ -1,0 +1,33 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kaniko-python-build
+  namespace: codequal-dev
+spec:
+  template:
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+        - "--context=git://github.com/yourusername/codequal.git#main"
+        - "--dockerfile=packages/agents/docker/Dockerfile.python"
+        - "--destination=registry.digitalocean.com/codequal/analyzer:lang-python-amd64"
+        volumeMounts:
+        - name: docker-config
+          mountPath: /kaniko/.docker
+      restartPolicy: Never
+      volumes:
+      - name: docker-config
+        secret:
+          secretName: regcred
+          items:
+          - key: .dockerconfigjson
+            path: config.json
+---
+# First create the registry secret:
+# kubectl create secret docker-registry regcred \
+#   --docker-server=registry.digitalocean.com \
+#   --docker-username=YOUR_DO_TOKEN \
+#   --docker-password=YOUR_DO_TOKEN \
+#   -n codequal-dev

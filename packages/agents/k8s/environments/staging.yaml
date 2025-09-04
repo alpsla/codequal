@@ -1,0 +1,141 @@
+# CodeQual Staging Environment
+# Minimal setup for testing - 1 node, 4GB RAM
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: codequal-staging
+  labels:
+    environment: staging
+    team: codequal
+---
+# Resource Quota for Staging
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: staging-quota
+  namespace: codequal-staging
+spec:
+  hard:
+    requests.memory: 3Gi
+    limits.memory: 3.5Gi
+    requests.cpu: "2"
+    pods: "5"
+---
+# ConfigMap for Staging Settings
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: staging-config
+  namespace: codequal-staging
+data:
+  environment: "staging"
+  tools_count: "10"
+  max_analysis_time: "60"
+  cache_enabled: "false"
+  database_name: "codequal_staging"
+---
+# Staging Deployment - Minimal Tools
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analysis-minimal
+  namespace: codequal-staging
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: analysis
+      tier: minimal
+  template:
+    metadata:
+      labels:
+        app: analysis
+        tier: minimal
+        environment: staging
+    spec:
+      containers:
+      - name: analyzer
+        image: codequal/minimal:testing-v1
+        imagePullPolicy: Always
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "1.5Gi"
+            cpu: "1000m"
+        env:
+        - name: ENV
+          value: "staging"
+        - name: NODE_OPTIONS
+          value: "--max-old-space-size=512"
+        - name: PYTHONOPTIMIZE
+          value: "1"
+        volumeMounts:
+        - name: workspace
+          mountPath: /code
+        - name: results
+          mountPath: /results
+        livenessProbe:
+          exec:
+            command:
+            - /usr/local/bin/health
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 10
+      volumes:
+      - name: workspace
+        emptyDir:
+          sizeLimit: 1Gi
+      - name: results
+        emptyDir:
+          sizeLimit: 500Mi
+---
+# Service for Staging
+apiVersion: v1
+kind: Service
+metadata:
+  name: analysis-service
+  namespace: codequal-staging
+spec:
+  selector:
+    app: analysis
+  ports:
+  - port: 8080
+    targetPort: 8080
+    name: api
+  type: ClusterIP
+---
+# HPA for Staging (Conservative)
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: analysis-hpa
+  namespace: codequal-staging
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: analysis-minimal
+  minReplicas: 0  # Scale to zero when idle
+  maxReplicas: 2  # Max 2 pods in staging
+  metrics:
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 70
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300  # 5 minutes
+      policies:
+      - type: Pods
+        value: 1
+        periodSeconds: 60

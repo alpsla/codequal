@@ -78,7 +78,7 @@ export class TransactionAwareAgent<T extends BaseMultiToolAgent = BaseMultiToolA
    */
   private async wrapMethod(
     methodName: string,
-    originalMethod: Function,
+    originalMethod: (...args: any[]) => any,
     metadata: any
   ): Promise<any> {
     const spanName = `${this.agentName}.${methodName}`;
@@ -159,7 +159,7 @@ export class TransactionAwareAgent<T extends BaseMultiToolAgent = BaseMultiToolA
    * Wrap tool execution with detailed tracking
    */
   private async wrapToolExecution(
-    originalMethod: Function,
+    originalMethod: (...args: any[]) => any,
     files: any[]
   ): Promise<any> {
     const spanName = `${this.agentName}.executeTools`;

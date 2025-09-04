@@ -1,0 +1,103 @@
+# Python Analysis Pod Deployment
+# Memory: 2.5GB | CPU: 2 cores | Tools: 17
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analysis-python
+  namespace: codequal-dev
+  labels:
+    app: analysis-pod
+    language: python
+    tier: "1"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: analysis-pod
+      language: python
+  template:
+    metadata:
+      labels:
+        app: analysis-pod
+        language: python
+        tier: "1"
+        tools-count: "17"
+    spec:
+      containers:
+      - name: python-analyzer
+        image: codequal/analysis:python
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            memory: "2048Mi"
+            cpu: "1500m"
+          limits:
+            memory: "2560Mi"  # 2.5GB
+            cpu: "2000m"      # 2 cores
+        ports:
+        - containerPort: 8080
+          name: api
+        env:
+        - name: POD_LANGUAGE
+          value: "python"
+        - name: ANALYSIS_MODE
+          value: "production"
+        - name: CACHE_ENABLED
+          value: "true"
+        - name: MAX_ANALYSIS_TIME
+          value: "300"  # 5 minutes timeout
+        - name: PYTHONOPTIMIZE
+          value: "1"
+        - name: PYTHONDONTWRITEBYTECODE
+          value: "1"
+        volumeMounts:
+        - name: cache
+          mountPath: /cache
+        - name: analysis-workspace
+          mountPath: /analysis
+        livenessProbe:
+          exec:
+            command:
+            - python
+            - -c
+            - "import bandit, pylint, mypy; print('OK')"
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 5
+        readinessProbe:
+          exec:
+            command:
+            - /tools/verify.sh
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+      volumes:
+      - name: cache
+        emptyDir:
+          sizeLimit: 1Gi
+      - name: analysis-workspace
+        emptyDir:
+          sizeLimit: 5Gi
+      nodeSelector:
+        workload-type: analysis
+      tolerations:
+      - key: "spot"
+        operator: "Equal"
+        value: "true"
+        effect: "NoSchedule"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: analysis-python-svc
+  namespace: codequal-dev
+spec:
+  selector:
+    app: analysis-pod
+    language: python
+  ports:
+  - port: 8080
+    targetPort: 8080
+    name: api
+  type: ClusterIP

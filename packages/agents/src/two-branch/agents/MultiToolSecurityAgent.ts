@@ -28,7 +28,10 @@ export class MultiToolSecurityAgent extends BaseMultiToolAgent {
         try {
           const { stdout } = await execAsync(
             `semgrep --config=auto --json ${targetPath}`,
-            { maxBuffer: 10 * 1024 * 1024 }
+            { 
+              maxBuffer: 10 * 1024 * 1024,
+              timeout: 180000 // 3 minutes for large repos
+            }
           );
           const results = JSON.parse(stdout);
           return {
@@ -123,6 +126,17 @@ export class MultiToolSecurityAgent extends BaseMultiToolAgent {
     {
       name: 'safety',
       execute: async (targetPath: string) => {
+        // Check Python version - safety has issues with Python 3.13
+        try {
+          const { stdout: pythonVersion } = await execAsync('python --version');
+          if (pythonVersion.includes('3.13')) {
+            console.log('   ⚠️ Skipping safety check (Python 3.13 compatibility issue)');
+            return { tool: 'safety', findings: [] };
+          }
+        } catch {
+          // Continue if we can't check version
+        }
+        
         const requirementsPath = path.join(targetPath, 'requirements.txt');
         if (!fs.existsSync(requirementsPath)) {
           return { tool: 'safety', findings: [] };
@@ -183,7 +197,10 @@ export class MultiToolSecurityAgent extends BaseMultiToolAgent {
         try {
           const { stdout } = await execAsync(
             `gitleaks detect --source ${targetPath} --report-format json`,
-            { maxBuffer: 10 * 1024 * 1024 }
+            { 
+              maxBuffer: 10 * 1024 * 1024,
+              timeout: 180000 // 3 minutes for large repos
+            }
           );
           const results = stdout ? JSON.parse(stdout) : [];
           return {
@@ -198,6 +215,94 @@ export class MultiToolSecurityAgent extends BaseMultiToolAgent {
         }
       },
       isApplicable: () => true // Check secrets in all projects
+    },
+    
+    {
+      name: 'clippy',
+      execute: async (targetPath: string) => {
+        try {
+          const { stdout } = await execAsync(
+            `cd ${targetPath} && cargo clippy --message-format=json 2>&1`,
+            { 
+              maxBuffer: 10 * 1024 * 1024,
+              timeout: 60000
+            }
+          );
+          const lines = stdout.split('\n').filter(line => line.trim());
+          const findings = [];
+          
+          for (const line of lines) {
+            try {
+              const msg = JSON.parse(line);
+              if (msg.reason === 'compiler-message' && msg.message) {
+                findings.push({
+                  type: 'quality',
+                  file: msg.message.spans?.[0]?.file_name,
+                  line: msg.message.spans?.[0]?.line_start,
+                  column: msg.message.spans?.[0]?.column_start,
+                  message: msg.message.message,
+                  severity: msg.message.level === 'error' ? 'high' : 'medium',
+                  rule: msg.message.code?.code || 'clippy'
+                });
+              }
+            } catch {}
+          }
+          
+          return {
+            tool: 'clippy',
+            findings
+          };
+        } catch {
+          return {
+            tool: 'clippy',
+            findings: []
+          };
+        }
+      },
+      isApplicable: (lang: string) => lang.toLowerCase() === 'rust'
+    },
+    
+    {
+      name: 'cargo-audit',
+      execute: async (targetPath: string) => {
+        try {
+          const { stdout } = await execAsync(
+            `cd ${targetPath} && cargo audit --json`,
+            { 
+              maxBuffer: 10 * 1024 * 1024,
+              timeout: 30000
+            }
+          );
+          const results = JSON.parse(stdout);
+          const findings = [];
+          
+          if (results.vulnerabilities?.list) {
+            results.vulnerabilities.list.forEach((vuln: any) => {
+              findings.push({
+                type: 'dependency',
+                package: vuln.package?.name,
+                version: vuln.package?.version,
+                message: vuln.advisory?.title || vuln.advisory?.description,
+                severity: vuln.advisory?.severity?.toLowerCase() || 'medium',
+                cve: vuln.advisory?.id,
+                file: 'Cargo.toml',
+                fixRecommendation: `Update ${vuln.package?.name} to version ${vuln.versions?.patched?.[0] || 'latest'}`
+              });
+            });
+          }
+          
+          return {
+            tool: 'cargo-audit',
+            findings
+          };
+        } catch {
+          return {
+            tool: 'cargo-audit',
+            findings: []
+          };
+        }
+      },
+      isApplicable: (lang: string) => lang.toLowerCase() === 'rust'
     }
   ];
   
@@ -214,16 +319,27 @@ export class MultiToolSecurityAgent extends BaseMultiToolAgent {
     
     // If we have a target path, run tools in parallel
     if (input.targetPath) {
+      // Determine timeout based on repository size or language
+      let timeout = 60000; // Default 1 minute
+      
+      // For Rust and other large repositories, increase timeout
+      if (input.language === 'rust' || input.language === 'cpp' || input.language === 'c') {
+        timeout = 180000; // 3 minutes for large compiled language repos
+      } else if (input.context?.repoSize && input.context.repoSize > 100000000) {
+        // If repo size is over 100MB, increase timeout
+        timeout = 180000; // 3 minutes
+      }
+      
       const toolResults = await this.runToolsInParallel(
         input.targetPath,
         input.language,
         {
-          timeout: 60000 // 1 minute timeout per tool
+          timeout // Dynamic timeout based on language/size
         }
       );
       
       // Consolidate findings from all tools
-      const consolidatedFindings = this.consolidateFindings(toolResults);
+      const consolidatedFindings = await this.consolidateFindings(toolResults);
       
       // Enrich findings with context
       const enrichedFindings = this.enrichFindings(consolidatedFindings, input.context);
@@ -237,7 +353,8 @@ export class MultiToolSecurityAgent extends BaseMultiToolAgent {
           totalExecutionTime: Date.now() - startTime,
           toolsExecuted: toolResults.filter(r => !r.metadata?.errors?.length).map(r => r.tool),
           toolsFailed: toolResults.filter(r => r.metadata?.errors?.length).map(r => r.tool),
-          parallelExecution: true
+          parallelExecution: true,
+          timeout // Include timeout in metadata
         }
       };
     }

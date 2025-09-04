@@ -1,0 +1,266 @@
+# CodeQual JavaScript/TypeScript Analysis Image
+# Optimized for React, Vue, Angular, Node.js applications
+# Size: ~1.5GB | Memory: 1-2GB | Tools: 10
+
+FROM node:20-slim
+
+LABEL maintainer="CodeQual Team" \
+      version="1.0.0" \
+      description="JavaScript/TypeScript analysis with ESLint, Prettier, Lighthouse" \
+      language="javascript,typescript" \
+      tools.count="10"
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    chromium \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create directories
+RUN mkdir -p /analysis /cache /tools
+
+# ============================================
+# JAVASCRIPT/TYPESCRIPT ANALYSIS TOOLS
+# ============================================
+
+# Core analysis tools
+RUN npm install -g \
+    eslint@latest \
+    prettier@latest \
+    jshint@latest \
+    jscpd@latest \
+    typescript@latest \
+    ts-node@latest
+
+# TypeScript ESLint support
+RUN npm install -g \
+    @typescript-eslint/parser@latest \
+    @typescript-eslint/eslint-plugin@latest
+
+# Security and quality plugins
+RUN npm install -g \
+    eslint-plugin-security@latest \
+    eslint-plugin-sonarjs@latest \
+    eslint-plugin-react@latest \
+    eslint-plugin-vue@latest \
+    eslint-plugin-angular@latest \
+    eslint-config-airbnb@latest \
+    eslint-config-standard@latest
+
+# Architecture and dependency tools
+RUN npm install -g \
+    madge@latest \
+    dependency-cruiser@latest \
+    depcheck@latest \
+    npm-check-updates@latest
+
+# Performance analysis
+RUN npm install -g \
+    lighthouse@latest \
+    webpack-bundle-analyzer@latest \
+    source-map-explorer@latest \
+    bundlesize@latest
+
+# Testing tools
+RUN npm install -g \
+    jest@latest \
+    mocha@latest \
+    nyc@latest
+
+# Additional utilities
+RUN npm install -g \
+    npm-audit-resolver@latest \
+    license-checker@latest \
+    snyk@latest
+
+# ============================================
+# ENVIRONMENT CONFIGURATION
+# ============================================
+
+# Node.js memory optimization
+ENV NODE_OPTIONS="--max-old-space-size=1536"
+ENV NODE_ENV="production"
+
+# Chrome/Chromium for Lighthouse
+ENV CHROME_PATH="/usr/bin/chromium"
+ENV LIGHTHOUSE_CHROMIUM_PATH="/usr/bin/chromium"
+
+# Cache directories
+ENV NPM_CONFIG_CACHE="/cache/npm"
+ENV ESLINT_CACHE_FILE="/cache/eslint/.eslintcache"
+
+# ============================================
+# DEFAULT CONFIGURATIONS
+# ============================================
+
+# ESLint default config
+RUN cat > /tools/.eslintrc.base.json <<'EOF'
+{
+  "env": {
+    "browser": true,
+    "es2021": true,
+    "node": true
+  },
+  "extends": [
+    "eslint:recommended",
+    "plugin:security/recommended",
+    "plugin:sonarjs/recommended"
+  ],
+  "parserOptions": {
+    "ecmaVersion": "latest",
+    "sourceType": "module"
+  },
+  "plugins": ["security", "sonarjs"],
+  "rules": {
+    "complexity": ["error", 10],
+    "max-lines": ["error", 500],
+    "max-depth": ["error", 4]
+  }
+}
+EOF
+
+# Prettier default config
+RUN cat > /tools/.prettierrc.json <<'EOF'
+{
+  "semi": true,
+  "trailingComma": "es5",
+  "singleQuote": true,
+  "printWidth": 100,
+  "tabWidth": 2,
+  "useTabs": false,
+  "bracketSpacing": true,
+  "arrowParens": "avoid"
+}
+EOF
+
+# Dependency-cruiser default config
+RUN cat > /tools/.dependency-cruiser.base.js <<'EOF'
+module.exports = {
+  forbidden: [
+    {
+      name: "circular",
+      severity: "error",
+      from: {},
+      to: { circular: true }
+    },
+    {
+      name: "duplicate-dep",
+      severity: "warn",
+      from: {},
+      to: { duplicateDependents: true }
+    }
+  ],
+  options: {
+    doNotFollow: "node_modules",
+    exclude: "test|spec|mock",
+    tsPreCompilationDeps: true,
+    reporterOptions: {
+      dot: { collapsePattern: "^(node_modules)" },
+      json: { indent: 2 }
+    }
+  }
+};
+EOF
+
+# ============================================
+# VERIFICATION & HEALTH CHECK
+# ============================================
+
+# Verification script
+RUN cat > /tools/verify.sh <<'EOF'
+#!/bin/bash
+echo "JavaScript/TypeScript Tools Status:"
+node --version
+npm --version
+eslint --version
+prettier --version
+tsc --version
+madge --version
+lighthouse --version
+dependency-cruiser --version
+echo "✅ All tools verified"
+EOF
+RUN chmod +x /tools/verify.sh
+
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
+  CMD node --version && which eslint && which prettier
+
+# ============================================
+# ANALYSIS SCRIPTS
+# ============================================
+
+# Quick analysis script
+RUN cat > /usr/local/bin/analyze-js <<'EOF'
+#!/bin/bash
+PROJECT_PATH=${1:-.}
+OUTPUT_DIR=${2:-./analysis-results}
+
+mkdir -p $OUTPUT_DIR
+
+echo "🔍 Running JavaScript/TypeScript Analysis Suite..."
+
+# ESLint
+echo "Running ESLint..."
+eslint $PROJECT_PATH \
+  --ext .js,.jsx,.ts,.tsx \
+  --format json \
+  --output-file $OUTPUT_DIR/eslint-report.json \
+  --config /tools/.eslintrc.base.json || true
+
+# Prettier check
+echo "Checking formatting with Prettier..."
+prettier --check "$PROJECT_PATH/**/*.{js,jsx,ts,tsx,json,css,md}" \
+  --config /tools/.prettierrc.json > $OUTPUT_DIR/prettier-report.txt || true
+
+# Security audit
+echo "Running npm audit..."
+cd $PROJECT_PATH && npm audit --json > $OUTPUT_DIR/npm-audit-report.json || true
+
+# Dependency analysis
+echo "Analyzing dependencies..."
+madge --circular --json $PROJECT_PATH > $OUTPUT_DIR/madge-circular.json || true
+dependency-cruiser --config /tools/.dependency-cruiser.base.js \
+  --output-type json $PROJECT_PATH > $OUTPUT_DIR/dependency-cruiser-report.json || true
+
+# Bundle size (if webpack config exists)
+if [ -f "$PROJECT_PATH/webpack.config.js" ]; then
+  echo "Analyzing bundle size..."
+  webpack-bundle-analyzer $PROJECT_PATH/dist/stats.json \
+    $OUTPUT_DIR --mode json > $OUTPUT_DIR/bundle-analysis.json || true
+fi
+
+# License check
+echo "Checking licenses..."
+cd $PROJECT_PATH && license-checker --json > $OUTPUT_DIR/license-report.json || true
+
+echo "✅ Analysis complete. Results in $OUTPUT_DIR"
+EOF
+RUN chmod +x /usr/local/bin/analyze-js
+
+# TypeScript-specific analysis
+RUN cat > /usr/local/bin/analyze-ts <<'EOF'
+#!/bin/bash
+PROJECT_PATH=${1:-.}
+OUTPUT_DIR=${2:-./analysis-results}
+
+mkdir -p $OUTPUT_DIR
+
+echo "🔍 Running TypeScript Analysis..."
+
+# Type checking
+echo "Type checking..."
+tsc --noEmit --project $PROJECT_PATH/tsconfig.json 2> $OUTPUT_DIR/typescript-errors.txt || true
+
+# Strict mode analysis
+echo "Analyzing with strict mode..."
+tsc --noEmit --strict --project $PROJECT_PATH/tsconfig.json 2> $OUTPUT_DIR/typescript-strict-errors.txt || true
+
+echo "✅ TypeScript analysis complete"
+EOF
+RUN chmod +x /usr/local/bin/analyze-ts
+
+WORKDIR /analysis
+
+# Default command
+CMD ["/bin/bash"]

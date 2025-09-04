@@ -1,0 +1,314 @@
+# CodeQual Kubernetes Pod Management Strategy
+# This file defines how we manage multiple language-specific pods
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: codequal-analysis
+  labels:
+    environment: production
+    team: codequal
+---
+# ============================================
+# RESOURCE QUOTAS PER NAMESPACE
+# ============================================
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: analysis-quota
+  namespace: codequal-analysis
+spec:
+  hard:
+    requests.cpu: "10"
+    requests.memory: 12Gi
+    limits.cpu: "20"
+    limits.memory: 16Gi
+    persistentvolumeclaims: "10"
+---
+# ============================================
+# NETWORK POLICY FOR POD ISOLATION
+# ============================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: analysis-pod-isolation
+  namespace: codequal-analysis
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: codequal-api
+    ports:
+    - protocol: TCP
+      port: 8080
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: codequal-cache
+    ports:
+    - protocol: TCP
+      port: 6379
+---
+# ============================================
+# CONFIGMAP FOR LANGUAGE ROUTING
+# ============================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: language-routing-config
+  namespace: codequal-analysis
+data:
+  routing.yaml: |
+    languages:
+      python:
+        pod: analysis-python
+        memory: 2560Mi
+        cpu: 2000m
+        tools: 17
+        tier: 1
+      javascript:
+        pod: analysis-javascript
+        memory: 2048Mi
+        cpu: 1500m
+        tools: 10
+        tier: 1
+      typescript:
+        pod: analysis-typescript
+        memory: 2048Mi
+        cpu: 1500m
+        tools: 10
+        tier: 1
+      java:
+        pod: analysis-java
+        memory: 2560Mi
+        cpu: 2000m
+        tools: 9
+        tier: 1
+      rust:
+        pod: analysis-rust
+        memory: 2048Mi
+        cpu: 2000m
+        tools: 16
+        tier: 2
+      go:
+        pod: analysis-go
+        memory: 1536Mi
+        cpu: 1500m
+        tools: 12
+        tier: 2
+      ruby:
+        pod: analysis-ruby
+        memory: 512Mi
+        cpu: 500m
+        tools: 9
+        tier: 3
+      php:
+        pod: analysis-php
+        memory: 512Mi
+        cpu: 500m
+        tools: 7
+        tier: 3
+      cpp:
+        pod: analysis-cpp
+        memory: 512Mi
+        cpu: 1000m
+        tools: 5
+        tier: 3
+---
+# ============================================
+# SERVICE FOR POD DISCOVERY
+# ============================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: analysis-router
+  namespace: codequal-analysis
+spec:
+  selector:
+    app: analysis-pod
+  ports:
+  - port: 8080
+    targetPort: 8080
+  type: ClusterIP
+---
+# ============================================
+# HORIZONTAL POD AUTOSCALER
+# ============================================
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: analysis-hpa
+  namespace: codequal-analysis
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: analysis-pods
+  minReplicas: 0  # Scale to zero when not in use
+  maxReplicas: 3  # Max 3 replicas per language
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300  # Wait 5 minutes before scaling down
+      policies:
+      - type: Percent
+        value: 50
+        periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 30   # Scale up quickly
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 30
+---
+# ============================================
+# PRIORITY CLASSES FOR TIER MANAGEMENT
+# ============================================
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: tier-1-critical
+value: 1000
+globalDefault: false
+description: "Tier 1 languages - Python, JS, Java"
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: tier-2-standard
+value: 500
+globalDefault: false
+description: "Tier 2 languages - Rust, Go"
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: tier-3-low
+value: 100
+globalDefault: false
+description: "Tier 3 languages - Ruby, PHP, C++"
+---
+# ============================================
+# POD DISRUPTION BUDGET
+# ============================================
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: analysis-pdb
+  namespace: codequal-analysis
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: analysis-pod
+      tier: "1"  # Keep Tier 1 pods always available
+---
+# ============================================
+# PERSISTENT VOLUME FOR SHARED CACHE
+# ============================================
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: analysis-cache-pvc
+  namespace: codequal-analysis
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: standard-rwo
+---
+# ============================================
+# POD TEMPLATE FOR LANGUAGE PODS
+# ============================================
+apiVersion: v1
+kind: Pod
+metadata:
+  name: analysis-template
+  namespace: codequal-analysis
+  labels:
+    app: analysis-pod
+    language: "TEMPLATE"
+    tier: "TEMPLATE"
+spec:
+  priorityClassName: tier-1-critical
+  containers:
+  - name: analysis
+    image: codequal/analysis:LANGUAGE
+    imagePullPolicy: Always
+    resources:
+      requests:
+        memory: "MEMORY"
+        cpu: "CPU"
+      limits:
+        memory: "MEMORY_LIMIT"
+        cpu: "CPU_LIMIT"
+    volumeMounts:
+    - name: cache
+      mountPath: /cache
+    - name: config
+      mountPath: /config
+    env:
+    - name: POD_LANGUAGE
+      value: "LANGUAGE"
+    - name: POD_TIER
+      value: "TIER"
+    - name: CACHE_PATH
+      value: "/cache"
+    livenessProbe:
+      exec:
+        command:
+        - /tools/verify.sh
+      initialDelaySeconds: 30
+      periodSeconds: 30
+    readinessProbe:
+      exec:
+        command:
+        - /tools/verify.sh
+      initialDelaySeconds: 10
+      periodSeconds: 10
+  volumes:
+  - name: cache
+    persistentVolumeClaim:
+      claimName: analysis-cache-pvc
+  - name: config
+    configMap:
+      name: language-routing-config
+  nodeSelector:
+    workload-type: analysis
+  tolerations:
+  - key: "analysis"
+    operator: "Equal"
+    value: "true"
+    effect: "NoSchedule"
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+            - key: language
+              operator: In
+              values:
+              - "LANGUAGE"
+          topologyKey: kubernetes.io/hostname

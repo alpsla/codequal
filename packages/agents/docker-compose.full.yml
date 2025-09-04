@@ -1,0 +1,315 @@
+# CodeQual Full Development Environment
+# All 85 tools across 9 language containers
+# Requires: 16-32GB RAM for optimal performance
+
+version: '3.8'
+
+services:
+  # ============================================
+  # ORCHESTRATOR - Routes requests to appropriate containers
+  # ============================================
+  orchestrator:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.orchestrator
+    container_name: codequal-orchestrator
+    ports:
+      - "8080:8080"
+    environment:
+      - ENVIRONMENT=development
+      - TOTAL_TOOLS=85
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgresql://codequal:codequal@postgres:5432/codequal
+    volumes:
+      - ./workspace:/workspace
+      - ./results:/results
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - codequal-network
+    mem_limit: 1g
+
+  # ============================================
+  # TIER 1: PRIMARY LANGUAGES (Most Used)
+  # ============================================
+  
+  # Python Container - 17 tools
+  python-analyzer:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.python-ml
+    image: codequal/python:full
+    container_name: codequal-python
+    environment:
+      - ANALYSIS_MODE=development
+      - TOOLS_COUNT=17
+      - CACHE_PATH=/cache
+    volumes:
+      - ./workspace:/workspace:ro
+      - ./cache/python:/cache
+      - ./results/python:/results
+    networks:
+      - codequal-network
+    mem_limit: 3g
+    mem_reservation: 2g
+    cpus: 2
+
+  # JavaScript/TypeScript Container - 10 tools
+  javascript-analyzer:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.javascript-node
+    image: codequal/javascript:full
+    container_name: codequal-javascript
+    environment:
+      - ANALYSIS_MODE=development
+      - TOOLS_COUNT=10
+      - NODE_OPTIONS=--max-old-space-size=1536
+    volumes:
+      - ./workspace:/workspace:ro
+      - ./cache/javascript:/cache
+      - ./results/javascript:/results
+    networks:
+      - codequal-network
+    mem_limit: 2g
+    mem_reservation: 1.5g
+    cpus: 1.5
+
+  # Java Container - 9 tools
+  java-analyzer:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.java-enterprise
+    image: codequal/java:full
+    container_name: codequal-java
+    environment:
+      - ANALYSIS_MODE=development
+      - TOOLS_COUNT=9
+      - JAVA_OPTS=-Xmx2g -XX:+UseG1GC
+    volumes:
+      - ./workspace:/workspace:ro
+      - ./cache/java:/cache
+      - ./results/java:/results
+    networks:
+      - codequal-network
+    mem_limit: 3g
+    mem_reservation: 2g
+    cpus: 2
+
+  # ============================================
+  # TIER 2: SYSTEMS LANGUAGES
+  # ============================================
+
+  # Rust Container - 16 tools
+  rust-analyzer:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.rust
+    image: codequal/rust:full
+    container_name: codequal-rust
+    environment:
+      - ANALYSIS_MODE=development
+      - TOOLS_COUNT=16
+      - CARGO_HOME=/cache/cargo
+      - RUSTUP_HOME=/cache/rustup
+    volumes:
+      - ./workspace:/workspace:ro
+      - ./cache/rust:/cache
+      - ./results/rust:/results
+    networks:
+      - codequal-network
+    mem_limit: 2g
+    mem_reservation: 1.5g
+    cpus: 2
+
+  # Go Container - 12 tools  
+  go-analyzer:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.go
+    image: codequal/go:full
+    container_name: codequal-go
+    environment:
+      - ANALYSIS_MODE=development
+      - TOOLS_COUNT=12
+      - GOPATH=/cache/go
+      - GOCACHE=/cache/go-build
+    volumes:
+      - ./workspace:/workspace:ro
+      - ./cache/go:/cache
+      - ./results/go:/results
+    networks:
+      - codequal-network
+    mem_limit: 2g
+    mem_reservation: 1.5g
+    cpus: 1.5
+
+  # ============================================
+  # TIER 3: SPECIALIZED LANGUAGES
+  # ============================================
+
+  # Ruby Container - 9 tools
+  ruby-analyzer:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.ruby
+    image: codequal/ruby:full
+    container_name: codequal-ruby
+    environment:
+      - ANALYSIS_MODE=development
+      - TOOLS_COUNT=9
+      - BUNDLE_PATH=/cache/bundle
+    volumes:
+      - ./workspace:/workspace:ro
+      - ./cache/ruby:/cache
+      - ./results/ruby:/results
+    networks:
+      - codequal-network
+    mem_limit: 1g
+    mem_reservation: 512m
+    cpus: 0.5
+
+  # PHP Container - 7 tools
+  php-analyzer:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.php
+    image: codequal/php:full
+    container_name: codequal-php
+    environment:
+      - ANALYSIS_MODE=development
+      - TOOLS_COUNT=7
+      - COMPOSER_CACHE_DIR=/cache/composer
+    volumes:
+      - ./workspace:/workspace:ro
+      - ./cache/php:/cache
+      - ./results/php:/results
+    networks:
+      - codequal-network
+    mem_limit: 1g
+    mem_reservation: 512m
+    cpus: 0.5
+
+  # C++ Container - 5 tools
+  cpp-analyzer:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.cpp
+    image: codequal/cpp:full
+    container_name: codequal-cpp
+    environment:
+      - ANALYSIS_MODE=development
+      - TOOLS_COUNT=5
+    volumes:
+      - ./workspace:/workspace:ro
+      - ./cache/cpp:/cache
+      - ./results/cpp:/results
+    networks:
+      - codequal-network
+    mem_limit: 1g
+    mem_reservation: 512m
+    cpus: 1
+
+  # ============================================
+  # INFRASTRUCTURE SERVICES
+  # ============================================
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: codequal-redis
+    command: redis-server --maxmemory 1gb --maxmemory-policy lru
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./redis-data:/data
+    networks:
+      - codequal-network
+    mem_limit: 1g
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:14-alpine
+    container_name: codequal-postgres
+    environment:
+      - POSTGRES_DB=codequal
+      - POSTGRES_USER=codequal
+      - POSTGRES_PASSWORD=codequal
+      - POSTGRES_INIT_DB_ARGS=--encoding=UTF8 --lc-collate=C --lc-ctype=C
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
+      - ./k8s/schema:/docker-entrypoint-initdb.d:ro
+    networks:
+      - codequal-network
+    mem_limit: 2g
+
+  # Monitoring (Optional)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: codequal-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus-data:/prometheus
+    networks:
+      - codequal-network
+    mem_limit: 512m
+    profiles: ["monitoring"]
+
+  # Grafana Dashboard (Optional)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: codequal-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_INSTALL_PLUGINS=redis-datasource
+    volumes:
+      - ./grafana-data:/var/lib/grafana
+      - ./monitoring/dashboards:/etc/grafana/provisioning/dashboards:ro
+    networks:
+      - codequal-network
+    mem_limit: 512m
+    profiles: ["monitoring"]
+
+networks:
+  codequal-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  redis-data:
+  prometheus-data:
+  grafana-data:
+
+# ============================================
+# USAGE INSTRUCTIONS
+# ============================================
+# 
+# 1. Start all services (requires ~16GB RAM):
+#    docker-compose -f docker-compose.full.yml up -d
+#
+# 2. Start specific language analyzers:
+#    docker-compose -f docker-compose.full.yml up -d python-analyzer javascript-analyzer
+#
+# 3. Start with monitoring:
+#    docker-compose -f docker-compose.full.yml --profile monitoring up -d
+#
+# 4. Check service status:
+#    docker-compose -f docker-compose.full.yml ps
+#
+# 5. View logs:
+#    docker-compose -f docker-compose.full.yml logs -f orchestrator
+#
+# 6. Stop all services:
+#    docker-compose -f docker-compose.full.yml down
+#
+# 7. Clean up volumes:
+#    docker-compose -f docker-compose.full.yml down -v
+#
+# ============================================

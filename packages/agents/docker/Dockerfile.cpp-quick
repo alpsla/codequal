@@ -1,0 +1,18 @@
+# Quick C++ container for AMD64
+FROM ubuntu:22.04
+
+# Install build tools and analyzers
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    cmake \
+    clang \
+    clang-tidy \
+    cppcheck \
+    valgrind \
+    git \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /workspace
+
+CMD ["g++", "--version"]

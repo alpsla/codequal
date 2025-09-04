@@ -1,0 +1,41 @@
+# CodeQual Minimal Test Image
+# Quick deployment test with essential tools only
+
+FROM node:20-slim
+
+LABEL maintainer="CodeQual Team" \
+      version="1.0.0-test" \
+      description="Minimal test deployment"
+
+WORKDIR /app
+
+# Install Python and essential tools
+RUN apt-get update && apt-get install -y \
+    python3 python3-pip git curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install a few Python tools for testing
+RUN pip3 install --break-system-packages --no-cache-dir \
+    bandit \
+    pylint \
+    black
+
+# Install a few JavaScript tools
+RUN npm install -g \
+    eslint \
+    prettier \
+    typescript
+
+# Copy application code
+COPY dist/ /app/dist/ || echo "No dist yet"
+COPY package*.json /app/ || echo "No package files"
+
+# Install production dependencies (if package.json exists)
+RUN if [ -f package.json ]; then npm install --production; fi
+
+# Health check endpoint
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node -e "console.log('healthy')" || exit 1
+
+# Run the application
+CMD ["node", "dist/index.js"]

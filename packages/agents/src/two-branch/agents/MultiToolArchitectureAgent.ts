@@ -364,7 +364,7 @@ export class MultiToolArchitectureAgent extends BaseMultiToolAgent {
       );
       
       // Consolidate findings from all tools
-      const consolidatedFindings = this.consolidateFindings(toolResults);
+      const consolidatedFindings = await this.consolidateFindings(toolResults);
       
       // Enrich findings with context and architectural insights
       const enrichedFindings = this.enrichFindings(consolidatedFindings, input.context);

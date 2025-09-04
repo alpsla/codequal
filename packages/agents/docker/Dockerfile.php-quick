@@ -1,0 +1,20 @@
+# Quick PHP container for AMD64
+FROM php:8.2-cli-alpine
+
+# Install Composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
+# Install PHP analysis tools globally
+RUN composer global require \
+    phpstan/phpstan \
+    vimeo/psalm \
+    squizlabs/php_codesniffer \
+    phpmd/phpmd \
+    --no-interaction --prefer-dist
+
+# Add composer global bin to PATH
+ENV PATH="/root/.composer/vendor/bin:${PATH}"
+
+WORKDIR /workspace
+
+CMD ["php", "--version"]

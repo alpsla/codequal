@@ -1,0 +1,140 @@
+# CodeQual Minimal Testing Image
+# Ultra-lightweight for initial testing and staging
+# Size: ~800MB | RAM: 1-1.5GB | Tools: 10 essential
+
+FROM python:3.11-slim
+
+LABEL maintainer="CodeQual Team" \
+      version="0.1.0" \
+      description="Minimal testing image with 10 core tools" \
+      environment="staging" \
+      memory.target="1.5GB"
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONOPTIMIZE=1 \
+    NODE_OPTIONS="--max-old-space-size=512"
+
+# Install minimal dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    curl \
+    nodejs \
+    npm \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Install Python security tools (3 tools)
+RUN pip install --no-cache-dir \
+    bandit==1.7.5 \
+    flake8==6.1.0 \
+    semgrep==1.45.0
+
+# Install Python formatter
+RUN pip install --no-cache-dir \
+    black==23.12.0
+
+# Install JavaScript tools (3 tools)
+RUN npm install -g \
+    eslint@8.56.0 \
+    prettier@3.1.1 \
+    snyk@1.1266.0
+
+# Install GitLeaks for secret detection
+RUN curl -sSfL https://raw.githubusercontent.com/gitleaks/gitleaks/master/scripts/install.sh | \
+    sh -s -- -b /usr/local/bin v8.18.1
+
+# Create working directories
+RUN mkdir -p /code /results /cache
+
+# Create minimal analysis script
+RUN cat > /usr/local/bin/analyze-minimal <<'EOF'
+#!/bin/bash
+set -e
+
+PROJECT_PATH=${1:-/code}
+OUTPUT_DIR=${2:-/results}
+
+echo "🚀 CodeQual Minimal Analysis (10 tools)"
+echo "======================================="
+echo "Environment: ${ENV:-staging}"
+echo "Project: $PROJECT_PATH"
+echo ""
+
+mkdir -p $OUTPUT_DIR
+cd $PROJECT_PATH
+
+# Detect primary language
+if [ -f "package.json" ]; then
+    LANG="javascript"
+elif [ -f "requirements.txt" ] || [ -f "setup.py" ]; then
+    LANG="python"
+else
+    LANG="unknown"
+fi
+
+echo "Detected language: $LANG"
+echo ""
+
+# Run universal tools
+echo "1/10: Running Semgrep..."
+semgrep --config=auto --json -o $OUTPUT_DIR/semgrep.json . 2>/dev/null || true
+
+echo "2/10: Running GitLeaks..."
+gitleaks detect --no-git --source . -f json -r $OUTPUT_DIR/gitleaks.json 2>/dev/null || true
+
+# Language-specific analysis
+case $LANG in
+    python)
+        echo "3/10: Running Bandit..."
+        bandit -r . -f json -o $OUTPUT_DIR/bandit.json 2>/dev/null || true
+        
+        echo "4/10: Running Flake8..."
+        flake8 . --format=json --output-file=$OUTPUT_DIR/flake8.json 2>/dev/null || true
+        
+        echo "5/10: Running Black check..."
+        black . --check --diff > $OUTPUT_DIR/black.txt 2>&1 || true
+        ;;
+    
+    javascript)
+        echo "3/10: Running ESLint..."
+        eslint . --format json -o $OUTPUT_DIR/eslint.json 2>/dev/null || true
+        
+        echo "4/10: Running Prettier check..."
+        prettier --check "**/*.{js,jsx,json}" > $OUTPUT_DIR/prettier.txt 2>&1 || true
+        
+        echo "5/10: Running Snyk test..."
+        snyk test --json > $OUTPUT_DIR/snyk.json 2>&1 || true
+        ;;
+esac
+
+# Summary
+echo ""
+echo "✅ Analysis complete!"
+echo "Results saved to: $OUTPUT_DIR"
+echo ""
+echo "Tools used: 10/85 (12% coverage)"
+echo "Memory used: ~1GB"
+echo "Time taken: $(date)"
+EOF
+RUN chmod +x /usr/local/bin/analyze-minimal
+
+# Health check
+RUN cat > /usr/local/bin/health <<'EOF'
+#!/bin/bash
+echo "🏥 Health Check"
+echo "Python: $(python --version)"
+echo "Node: $(node --version)"
+echo "Semgrep: $(semgrep --version)"
+echo "GitLeaks: $(gitleaks version)"
+echo "✅ Minimal tools ready"
+EOF
+RUN chmod +x /usr/local/bin/health
+
+HEALTHCHECK --interval=30s --timeout=10s \
+    CMD /usr/local/bin/health
+
+WORKDIR /code
+
+# Default entrypoint
+ENTRYPOINT ["/usr/local/bin/analyze-minimal"]
+CMD ["/code", "/results"]

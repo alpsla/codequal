@@ -8,6 +8,10 @@
 import { spawn } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as dotenv from 'dotenv';
+
+// Load environment variables from root .env file
+dotenv.config({ path: path.resolve(__dirname, '../../../../../.env') });
 
 // Import all security agents
 import { PHPSecurityAgent } from '../agents/PHPSecurityAgent';
@@ -164,7 +168,11 @@ class RealPRTestRunner {
       const availableTools = await this.checkToolAvailability(testCase.tools);
       result.toolsDetected = availableTools;
       
-      if (availableTools.length === 0) {
+      // For API-based agents (GitHub/GitLab), don't require CLI tools
+      if (testCase.language === 'GitHub' || testCase.language === 'GitLab') {
+        // These agents use APIs, not CLI tools
+        result.toolsDetected = ['api-based'];
+      } else if (availableTools.length === 0) {
         throw new Error('No tools available for this language');
       }
       
@@ -190,16 +198,28 @@ class RealPRTestRunner {
           
           // Run analysis using analyze method with proper input
           console.log(`   Running ${testCase.language} security analysis (BaseMultiToolAgent)...`);
-          const analysis = await agent.analyze({
+          
+          // For API-based agents (GitHub/GitLab), pass repoUrl instead of tempDir
+          const analysisInput = (testCase.language === 'GitHub' || testCase.language === 'GitLab') ? {
+            repoUrl: testCase.testRepo,
+            targetPath: testCase.testRepo,
+            language: testCase.language.toLowerCase(),
+            context: {
+              repoUrl: testCase.testRepo,
+              prNumber: testCase.prNumber
+            }
+          } : {
             targetPath: tempDir,
             language: testCase.language.toLowerCase().replace('javascript/typescript', 'javascript'),
             context: {
               repoUrl: testCase.testRepo,
               prNumber: testCase.prNumber
             }
-          });
+          };
           
-          result.toolsUsed = analysis.metadata?.toolsExecuted || availableTools;
+          const analysis = await agent.analyze(analysisInput);
+          
+          result.toolsUsed = analysis.metadata?.toolsExecuted || (testCase.language === 'GitHub' || testCase.language === 'GitLab' ? [] : availableTools);
           result.issuesFound = analysis.issues?.length || 0;
           result.details = analysis;
           result.status = result.toolsUsed.length > 0 ? 'success' : 'partial';
@@ -319,7 +339,9 @@ class RealPRTestRunner {
       'Rust': {
         ext: 'rs',
         files: [
-          { path: 'main.rs', content: 'fn main() {\n\tlet query = format!("SELECT * FROM users WHERE id={}", user_id);\n}', branch: 'main' }
+          { path: 'src/main.rs', content: 'use std::mem;\n\nunsafe fn dangerous() {\n\tlet mut data = vec![1, 2, 3];\n\tlet ptr = data.as_mut_ptr();\n\tmem::forget(data);\n\t*ptr = 5;\n}\n\nfn main() {\n\tlet result = "test".parse::<i32>().unwrap();\n\tunsafe { dangerous(); }\n}', branch: 'main' },
+          { path: 'Cargo.toml', content: '[package]\nname = "test-app"\nversion = "0.1.0"\n\n[dependencies]\nvulnerable-crate = "0.1.5"\nparser-lib = "1.2.3"', branch: 'main' },
+          { path: 'Cargo.lock', content: '# Mock Cargo.lock file for testing\n[[package]]\nname = "vulnerable-crate"\nversion = "0.1.5"', branch: 'main' }
         ]
       },
       'C++': {

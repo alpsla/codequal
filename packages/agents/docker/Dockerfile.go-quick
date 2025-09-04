@@ -1,0 +1,13 @@
+# Quick Go test container for AMD64
+FROM golang:1.21-alpine
+
+# Install essential Go analysis tools
+RUN apk add --no-cache git bash
+
+# Install Go security and quality tools
+RUN go install github.com/securego/gosec/v2/cmd/gosec@latest || true && \
+    go install honnef.co/go/tools/cmd/staticcheck@latest || true
+
+WORKDIR /workspace
+
+CMD ["go", "version"]

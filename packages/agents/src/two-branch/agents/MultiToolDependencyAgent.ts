@@ -252,15 +252,34 @@ export class MultiToolDependencyAgent extends BaseMultiToolAgent {
     {
       name: 'safety',
       execute: async (targetPath: string) => {
+        // Check Python version - safety has issues with Python 3.13
+        try {
+          const { stdout: pythonVersion } = await execAsync('python --version');
+          if (pythonVersion.includes('3.13')) {
+            console.log('   ⚠️ Skipping safety check (Python 3.13 compatibility issue)');
+            return { tool: 'safety', findings: [] };
+          }
+        } catch {
+          // Continue if we can't check version
+        }
+        
         // safety is FREE for Python (basic version)
         const requirementsPath = path.join(targetPath, 'requirements.txt');
-        if (!fs.existsSync(requirementsPath)) {
+        const pyprojectPath = path.join(targetPath, 'pyproject.toml');
+        
+        let command = '';
+        if (fs.existsSync(requirementsPath)) {
+          command = `safety check --json -r ${requirementsPath}`;
+        } else if (fs.existsSync(pyprojectPath)) {
+          // For pyproject.toml projects, scan current directory
+          command = `cd "${targetPath}" && safety check --json`;
+        } else {
           return { tool: 'safety', findings: [] };
         }
         
         try {
           const { stdout } = await execAsync(
-            `safety check --json -r ${requirementsPath}`,
+            command,
             { maxBuffer: 10 * 1024 * 1024 }
           );
           const results = JSON.parse(stdout);
@@ -268,7 +287,12 @@ export class MultiToolDependencyAgent extends BaseMultiToolAgent {
             tool: 'safety',
             findings: this.parseSafetyResults(results)
           };
-        } catch {
+        } catch (error) {
+          // In production, return empty instead of mock data
+          if (process.env.NODE_ENV === 'production' || process.env.DISABLE_MOCK_DATA === 'true') {
+            console.log(`safety failed: ${error}`);
+            return { tool: 'safety', findings: [] };
+          }
           return {
             tool: 'safety',
             findings: this.getMockSafetyFindings()
@@ -282,14 +306,27 @@ export class MultiToolDependencyAgent extends BaseMultiToolAgent {
       name: 'pip-audit',
       execute: async (targetPath: string) => {
         // pip-audit is FREE (by PyPA)
+        // Check for different Python dependency file formats
         const requirementsPath = path.join(targetPath, 'requirements.txt');
-        if (!fs.existsSync(requirementsPath)) {
+        const pyprojectPath = path.join(targetPath, 'pyproject.toml');
+        const setupPyPath = path.join(targetPath, 'setup.py');
+        
+        let command = '';
+        if (fs.existsSync(requirementsPath)) {
+          command = `pip-audit -r ${requirementsPath} --format json`;
+        } else if (fs.existsSync(pyprojectPath)) {
+          // For pyproject.toml, audit the current directory
+          command = `cd "${targetPath}" && pip-audit --format json`;
+        } else if (fs.existsSync(setupPyPath)) {
+          // For setup.py projects
+          command = `cd "${targetPath}" && pip-audit --format json`;
+        } else {
           return { tool: 'pip-audit', findings: [] };
         }
         
         try {
           const { stdout } = await execAsync(
-            `pip-audit -r ${requirementsPath} --format json`,
+            command,
             { maxBuffer: 10 * 1024 * 1024 }
           );
           const results = JSON.parse(stdout);
@@ -297,7 +334,12 @@ export class MultiToolDependencyAgent extends BaseMultiToolAgent {
             tool: 'pip-audit',
             findings: this.parsePipAuditResults(results)
           };
-        } catch {
+        } catch (error) {
+          // In production, return empty instead of mock data
+          if (process.env.NODE_ENV === 'production' || process.env.DISABLE_MOCK_DATA === 'true') {
+            console.log(`pip-audit failed: ${error}`);
+            return { tool: 'pip-audit', findings: [] };
+          }
           return {
             tool: 'pip-audit',
             findings: this.getMockPipAuditFindings()
@@ -417,7 +459,7 @@ export class MultiToolDependencyAgent extends BaseMultiToolAgent {
       );
       
       // Consolidate findings from all tools
-      const consolidatedFindings = this.consolidateFindings(toolResults);
+      const consolidatedFindings = await this.consolidateFindings(toolResults);
       
       // Enrich findings with context
       const enrichedFindings = this.enrichFindings(consolidatedFindings, input.context);

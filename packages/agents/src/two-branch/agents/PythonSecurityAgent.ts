@@ -29,7 +29,7 @@ export class PythonSecurityAgent extends BaseSecurityAgent {
     },
     {
       name: 'mypy',
-      command: 'mypy . --json-report mypy-report',
+      command: 'mypy . --no-error-summary --no-pretty',
       parseOutput: this.parseMypyOutput.bind(this)
     },
     {
@@ -53,7 +53,23 @@ export class PythonSecurityAgent extends BaseSecurityAgent {
    * Check which tools are available
    */
   private checkToolAvailability(): void {
+    // Check Python version for safety compatibility
+    let isPython313 = false;
+    try {
+      const pythonVersion = execSync('python --version', { encoding: 'utf8' }).trim();
+      isPython313 = pythonVersion.includes('3.13');
+    } catch {
+      // Continue if we can't check version
+    }
+    
     this.tools.forEach(tool => {
+      // Skip safety on Python 3.13 due to compatibility issues
+      if (tool.name === 'safety' && isPython313) {
+        console.log('   ⚠️ Skipping safety tool (Python 3.13 compatibility issue)');
+        tool.available = false;
+        return;
+      }
+      
       try {
         execSync(`which ${tool.name}`, { stdio: 'ignore' });
         tool.available = true;
@@ -110,11 +126,32 @@ export class PythonSecurityAgent extends BaseSecurityAgent {
   }
 
   /**
-   * Execute tool command (override for real execution)
+   * Execute tool command - REAL execution in production
    */
   protected async executeTool(command: string, files: FileInfo[]): Promise<string> {
     console.log(`   PythonSecurityAgent executing: ${command}`);
-    // For testing, return mock data for available tools
+    
+    // In production, ALWAYS execute real tools
+    if (process.env.NODE_ENV === 'production' || process.env.DISABLE_MOCK_DATA === 'true') {
+      const { execSync } = require('child_process');
+      try {
+        const output = execSync(command, {
+          encoding: 'utf8',
+          stdio: ['pipe', 'pipe', 'pipe'],
+          maxBuffer: 10 * 1024 * 1024
+        });
+        return output || '{}';
+      } catch (error: any) {
+        // Tool might exit with non-zero even with results
+        if (error.stdout) {
+          return error.stdout;
+        }
+        console.error(`   Tool execution failed: ${error.message}`);
+        return '{}';
+      }
+    }
+    
+    // Only in development, return mock data
     if (command.includes('safety')) {
       console.log(`   Returning mock Safety data`);
       return this.getMockSafetyData();
@@ -127,7 +164,6 @@ export class PythonSecurityAgent extends BaseSecurityAgent {
       console.log(`   Returning mock Mypy data`);
       return this.getMockMypyData();
     }
-    console.log(`   No mock data for command: ${command}`);
     return '{}';
   }
 
@@ -236,7 +272,15 @@ export class PythonSecurityAgent extends BaseSecurityAgent {
     try {
       const ruffData = JSON.parse(output);
       
-      ruffData.forEach((issue: any) => {
+      // Handle both array and object formats
+      const issueArray = Array.isArray(ruffData) ? ruffData : (ruffData.issues || ruffData.violations || []);
+      
+      if (!Array.isArray(issueArray)) {
+        console.error('Ruff output is not in expected format');
+        return issues;
+      }
+      
+      issueArray.forEach((issue: any) => {
         issues.push({
           id: `ruff-${issue.filename}-${issue.location.row}-${issue.code}`,
           type: this.isSecurityRule(issue.code) ? 'security' : 'code-quality',
@@ -267,7 +311,15 @@ export class PythonSecurityAgent extends BaseSecurityAgent {
     try {
       const pylintData = JSON.parse(output);
       
-      pylintData.forEach((issue: any) => {
+      // Handle both array and object formats
+      const issueArray = Array.isArray(pylintData) ? pylintData : (pylintData.messages || []);
+      
+      if (!Array.isArray(issueArray)) {
+        console.error('Pylint output is not in expected format');
+        return issues;
+      }
+      
+      issueArray.forEach((issue: any) => {
         if (this.isPylintSecurityRelevant(issue.symbol)) {
           issues.push({
             id: `pylint-${issue.path}-${issue.line}-${issue.symbol}`,

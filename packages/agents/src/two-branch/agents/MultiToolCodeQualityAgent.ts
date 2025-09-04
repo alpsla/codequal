@@ -19,6 +19,8 @@ import * as path from 'path';
 
 const execAsync = promisify(exec);
 
+import { MissingJavaScriptToolsExecutor } from './tools/MissingJavaScriptTools';
+
 export class MultiToolCodeQualityAgent extends BaseMultiToolAgent {
   protected agentName = 'MultiToolCodeQualityAgent';
   
@@ -86,6 +88,86 @@ export class MultiToolCodeQualityAgent extends BaseMultiToolAgent {
           return {
             tool: 'pylint',
             findings: this.getMockPylintFindings()
+          };
+        }
+      },
+      isApplicable: (lang: string) => lang.toLowerCase() === 'python'
+    },
+    
+    {
+      name: 'mypy',
+      execute: async (targetPath: string) => {
+        try {
+          const { stdout } = await execAsync(
+            `mypy ${targetPath} --no-error-summary --no-pretty`,
+            { maxBuffer: 10 * 1024 * 1024 }
+          );
+          // Parse mypy output (line-based format)
+          const issues = stdout.split('\n')
+            .filter(line => line.includes(':'))
+            .map(line => {
+              const match = line.match(/^(.+):(\d+):(\d+):\s*(\w+):\s*(.+)$/);
+              if (match) {
+                return {
+                  type: 'type-error',
+                  file: match[1],
+                  line: parseInt(match[2]),
+                  column: parseInt(match[3]),
+                  severity: match[4].toLowerCase(),
+                  message: match[5]
+                };
+              }
+              return null;
+            })
+            .filter(issue => issue !== null);
+          
+          return {
+            tool: 'mypy',
+            findings: issues
+          };
+        } catch {
+          if (process.env.NODE_ENV === 'production' || process.env.DISABLE_MOCK_DATA === 'true') {
+            return { tool: 'mypy', findings: [] };
+          }
+          return {
+            tool: 'mypy',
+            findings: []
+          };
+        }
+      },
+      isApplicable: (lang: string) => lang.toLowerCase() === 'python'
+    },
+    
+    {
+      name: 'ruff',
+      execute: async (targetPath: string) => {
+        try {
+          const { stdout } = await execAsync(
+            `ruff check ${targetPath} --output-format json`,
+            { maxBuffer: 10 * 1024 * 1024 }
+          );
+          const results = JSON.parse(stdout);
+          const issues = Array.isArray(results) ? results : (results.violations || []);
+          
+          return {
+            tool: 'ruff',
+            findings: issues.map(issue => ({
+              type: 'style',
+              file: issue.filename || issue.path,
+              line: issue.location?.row || issue.line,
+              column: issue.location?.column || issue.column,
+              severity: 'warning',
+              message: `${issue.code}: ${issue.message || issue.text}`,
+              rule: issue.code
+            }))
+          };
+        } catch {
+          if (process.env.NODE_ENV === 'production' || process.env.DISABLE_MOCK_DATA === 'true') {
+            return { tool: 'ruff', findings: [] };
+          }
+          return {
+            tool: 'ruff',
+            findings: []
           };
         }
       },
@@ -214,8 +296,239 @@ export class MultiToolCodeQualityAgent extends BaseMultiToolAgent {
         }
       },
       isApplicable: (lang: string) => ['javascript', 'typescript'].includes(lang.toLowerCase())
+    },
+    
+    {
+      name: 'rustfmt',
+      execute: async (targetPath: string) => {
+        try {
+          // Check formatting issues by running rustfmt in check mode
+          const { stdout, stderr } = await execAsync(
+            `cd ${targetPath} && cargo fmt -- --check 2>&1`,
+            { maxBuffer: 10 * 1024 * 1024 }
+          );
+          
+          const findings = [];
+          if (stderr || stdout.includes('Diff in')) {
+            // Parse diff output to find formatting issues
+            const lines = (stderr || stdout).split('\n');
+            lines.forEach(line => {
+              if (line.includes('Diff in') || line.startsWith('error:')) {
+                const match = line.match(/Diff in (.+?) at line (\d+)/);
+                if (match) {
+                  findings.push({
+                    type: 'style',
+                    file: match[1],
+                    line: parseInt(match[2]),
+                    message: 'Code formatting issue - run `cargo fmt` to fix',
+                    severity: 'low',
+                    rule: 'rustfmt'
+                  });
+                }
+              }
+            });
+          }
+          
+          return {
+            tool: 'rustfmt',
+            findings
+          };
+        } catch (error: any) {
+          // rustfmt returns non-zero exit code when formatting issues found
+          const findings = [];
+          if (error.stdout || error.stderr) {
+            findings.push({
+              type: 'style',
+              message: 'Code formatting issues detected - run `cargo fmt` to fix',
+              severity: 'low',
+              rule: 'rustfmt',
+              file: 'src/'
+            });
+          }
+          return {
+            tool: 'rustfmt',
+            findings
+          };
+        }
+      },
+      isApplicable: (lang: string) => lang.toLowerCase() === 'rust'
+    },
+    
+    {
+      name: 'clippy',
+      execute: async (targetPath: string) => {
+        try {
+          const { stdout } = await execAsync(
+            `cd ${targetPath} && cargo clippy --all-targets --message-format=json 2>&1`,
+            { 
+              maxBuffer: 10 * 1024 * 1024,
+              timeout: 60000
+            }
+          );
+          
+          const lines = stdout.split('\n').filter(line => line.trim());
+          const findings = [];
+          
+          for (const line of lines) {
+            try {
+              const msg = JSON.parse(line);
+              if (msg.reason === 'compiler-message' && msg.message) {
+                const level = msg.message.level;
+                if (level === 'warning' || level === 'error') {
+                  findings.push({
+                    type: 'quality',
+                    file: msg.message.spans?.[0]?.file_name,
+                    line: msg.message.spans?.[0]?.line_start,
+                    column: msg.message.spans?.[0]?.column_start,
+                    message: msg.message.message,
+                    severity: level === 'error' ? 'high' : 'medium',
+                    rule: msg.message.code?.code || 'clippy',
+                    fixRecommendation: msg.message.children?.[0]?.message || 'Apply clippy suggestion'
+                  });
+                }
+              }
+            } catch {}
+          }
+          
+          return {
+            tool: 'clippy',
+            findings
+          };
+        } catch {
+          return {
+            tool: 'clippy',
+            findings: []
+          };
+        }
+      },
+      isApplicable: (lang: string) => lang.toLowerCase() === 'rust'
+    },
+    
+    {
+      name: 'cargo-check',
+      execute: async (targetPath: string) => {
+        try {
+          const { stdout } = await execAsync(
+            `cd ${targetPath} && cargo check --message-format=json 2>&1`,
+            { 
+              maxBuffer: 10 * 1024 * 1024,
+              timeout: 60000
+            }
+          );
+          
+          const lines = stdout.split('\n').filter(line => line.trim());
+          const findings = [];
+          
+          for (const line of lines) {
+            try {
+              const msg = JSON.parse(line);
+              if (msg.reason === 'compiler-message' && msg.message) {
+                const level = msg.message.level;
+                if (level === 'error') {
+                  findings.push({
+                    type: 'error',
+                    file: msg.message.spans?.[0]?.file_name,
+                    line: msg.message.spans?.[0]?.line_start,
+                    column: msg.message.spans?.[0]?.column_start,
+                    message: msg.message.message,
+                    severity: 'high',
+                    rule: msg.message.code?.code || 'rustc',
+                    fixRecommendation: msg.message.children?.[0]?.message || 'Fix compilation error'
+                  });
+                }
+              }
+            } catch {}
+          }
+          
+          return {
+            tool: 'cargo-check',
+            findings
+          };
+        } catch {
+          return {
+            tool: 'cargo-check',
+            findings: []
+          };
+        }
+      },
+      isApplicable: (lang: string) => lang.toLowerCase() === 'rust'
     }
   ];
+  // Import missing tools executor at top of file
+  private missingToolsExecutor = new MissingJavaScriptToolsExecutor();
+
+  // Add missing JavaScript tools to the tools array
+  protected getMissingJavaScriptTools(): ToolExecutor[] {
+    return [
+      {
+        name: 'jshint',
+        execute: async (targetPath: string) => {
+          return await this.missingToolsExecutor.execute('jshint', targetPath) || {
+            tool: 'jshint',
+            findings: [],
+            metadata: { executionTime: 0, errors: ['Tool not available'] }
+          };
+        },
+        isApplicable: (lang: string) => ['javascript', 'typescript'].includes(lang.toLowerCase()),
+        category: 'core' as const
+      },
+      {
+        name: 'dependency-cruiser',
+        execute: async (targetPath: string) => {
+          return await this.missingToolsExecutor.execute('dependency-cruiser', targetPath) || {
+            tool: 'dependency-cruiser',
+            findings: [],
+            metadata: { executionTime: 0, errors: ['Tool not available'] }
+          };
+        },
+        isApplicable: (lang: string) => ['javascript', 'typescript'].includes(lang.toLowerCase()),
+        category: 'core' as const
+      },
+      {
+        name: 'complexity-report',
+        execute: async (targetPath: string) => {
+          return await this.missingToolsExecutor.execute('complexity-report', targetPath) || {
+            tool: 'complexity-report',
+            findings: [],
+            metadata: { executionTime: 0, errors: ['Tool not available'] }
+          };
+        },
+        isApplicable: (lang: string) => ['javascript', 'typescript'].includes(lang.toLowerCase()),
+        category: 'optional' as const
+      },
+      {
+        name: 'eslint-plugin-sonarjs',
+        execute: async (targetPath: string) => {
+          return await this.missingToolsExecutor.execute('eslint-plugin-sonarjs', targetPath) || {
+            tool: 'eslint-plugin-sonarjs',
+            findings: [],
+            metadata: { executionTime: 0, errors: ['Tool not available'] }
+          };
+        },
+        isApplicable: (lang: string) => ['javascript', 'typescript'].includes(lang.toLowerCase()),
+        category: 'core' as const
+      },
+      {
+        name: 'webpack-bundle-analyzer',
+        execute: async (targetPath: string) => {
+          return await this.missingToolsExecutor.execute('webpack-bundle-analyzer', targetPath) || {
+            tool: 'webpack-bundle-analyzer',
+            findings: [],
+            metadata: { executionTime: 0, errors: ['Tool not available'] }
+          };
+        },
+        isApplicable: (lang: string) => ['javascript', 'typescript'].includes(lang.toLowerCase()),
+        category: 'optional' as const,
+        requiresConfig: ['webpack.config.js', 'webpack.config.ts']
+      }
+    ];
+  }
+
+  // Initialize all tools including missing ones
+  protected initializeTools() {
+    // Add missing JavaScript tools to the existing tools array
+    this.tools = [...this.tools, ...this.getMissingJavaScriptTools()];
+  }
   
   /**
    * Main analysis method - runs all applicable code quality tools in parallel
@@ -239,7 +552,7 @@ export class MultiToolCodeQualityAgent extends BaseMultiToolAgent {
       );
       
       // Consolidate findings
-      const consolidatedFindings = this.consolidateFindings(toolResults);
+      const consolidatedFindings = await this.consolidateFindings(toolResults);
       
       // Enrich with context and categorization
       const enrichedFindings = this.enrichFindings(consolidatedFindings, input.context);

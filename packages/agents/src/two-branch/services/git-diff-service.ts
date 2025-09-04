@@ -382,6 +382,7 @@ export class GitDiffService {
     title: string;
     description: string;
     author: string;
+    owner: string;
     baseBranch: string;
     headBranch: string;
     state: string;
@@ -389,6 +390,7 @@ export class GitDiffService {
     updatedAt: string;
     linesAdded: number;
     linesDeleted: number;
+    duration: number;
   }> {
     const prInfo = this.parseGitHubUrl(repoUrl, prNumber);
     
@@ -406,17 +408,24 @@ export class GitDiffService {
 
       const pr = response.data;
       
+      // Calculate duration from creation to now (or merge time if merged)
+      const createdAt = new Date(pr.created_at);
+      const endTime = pr.merged_at ? new Date(pr.merged_at) : new Date();
+      const duration = endTime.getTime() - createdAt.getTime();
+      
       return {
         title: pr.title,
         description: pr.body || '',
         author: pr.user.login,
+        owner: prInfo.owner,
         baseBranch: pr.base.ref,
         headBranch: pr.head.ref,
         state: pr.state,
         createdAt: pr.created_at,
         updatedAt: pr.updated_at,
         linesAdded: pr.additions || 0,
-        linesDeleted: pr.deletions || 0
+        linesDeleted: pr.deletions || 0,
+        duration: duration
       };
     } catch (error: any) {
       console.error(`Failed to get PR metadata: ${error.message}`);

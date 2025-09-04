@@ -1,0 +1,73 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: analysis-minimal
+  namespace: codequal-dev
+  labels:
+    app: codequal-analyzer
+spec:
+  containers:
+  - name: analyzer
+    image: ubuntu:22.04
+    command: ["/bin/bash"]
+    args: 
+      - -c
+      - |
+        echo "Starting minimal analysis pod setup..."
+        apt-get update
+        
+        # Install essential tools only
+        apt-get install -y --no-install-recommends \
+          curl wget git ca-certificates \
+          python3-minimal python3-pip \
+          nodejs npm \
+          build-essential \
+          && rm -rf /var/lib/apt/lists/*
+        
+        # Install critical security tools
+        pip3 install --no-cache-dir semgrep
+        npm install -g --no-save eslint
+        
+        # Install Rust toolchain (minimal)
+        export CARGO_HOME=/opt/cargo
+        export RUSTUP_HOME=/opt/rustup
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --no-modify-path
+        export PATH="$CARGO_HOME/bin:$PATH"
+        
+        # Try to install cargo-audit if space permits
+        cargo install cargo-audit --features vendored-openssl || echo "cargo-audit skipped"
+        
+        echo "✅ Minimal pod setup complete"
+        echo "Available tools:"
+        which git && echo "  - git ✓"
+        which semgrep && echo "  - semgrep ✓"
+        which eslint && echo "  - eslint ✓"
+        which cargo && echo "  - cargo ✓"
+        
+        # Keep pod running
+        echo "Pod ready for analysis tasks"
+        sleep infinity
+    workingDir: /analysis
+    resources:
+      requests:
+        cpu: "500m"          # Reduced from 1 core
+        memory: "1536Mi"     # 1.5GB, fits within available 1.7GB
+      limits:
+        cpu: "900m"          # Less than 1 core available
+        memory: "1792Mi"     # Under 1.7GB threshold
+    volumeMounts:
+    - name: workspace
+      mountPath: /analysis
+    env:
+    - name: DEBIAN_FRONTEND
+      value: "noninteractive"
+    - name: PATH
+      value: "/opt/cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+    - name: CARGO_HOME
+      value: "/opt/cargo"
+    - name: RUSTUP_HOME
+      value: "/opt/rustup"
+  volumes:
+  - name: workspace
+    emptyDir:
+      sizeLimit: 5Gi  # Reduced from 10Gi

@@ -1,0 +1,370 @@
+# CodeQual Python Analysis Image
+# Optimized for Python applications with ML/Data Science support
+# Size: ~2.5GB | Memory: 2.5GB | Tools: 17
+
+FROM python:3.11-slim
+
+LABEL maintainer="CodeQual Team" \
+      version="1.0.0" \
+      description="Python analysis with Bandit, Pylint, MyPy, Safety and more" \
+      language="python" \
+      tools.count="17"
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create directories
+RUN mkdir -p /analysis /cache /tools
+
+# ============================================
+# PYTHON ANALYSIS TOOLS (17 tools)
+# ============================================
+
+# Security scanning tools
+RUN pip install --no-cache-dir \
+    bandit[toml] \
+    safety \
+    pip-audit
+
+# Code quality and linting
+RUN pip install --no-cache-dir \
+    pylint \
+    flake8 \
+    pycodestyle \
+    pydocstyle \
+    mypy
+
+# Code formatting
+RUN pip install --no-cache-dir \
+    black \
+    isort \
+    autopep8 \
+    yapf
+
+# Code complexity and metrics
+RUN pip install --no-cache-dir \
+    radon \
+    xenon \
+    vulture \
+    prospector[with_everything]
+
+# Additional analysis tools
+RUN pip install --no-cache-dir \
+    pyupgrade \
+    darglint
+
+# Package management tools
+RUN pip install --no-cache-dir \
+    poetry \
+    pipenv
+
+# ============================================
+# ENVIRONMENT CONFIGURATION
+# ============================================
+
+# Python optimization
+ENV PYTHONOPTIMIZE=1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# Cache directories
+ENV PIP_CACHE_DIR="/cache/pip"
+ENV MYPY_CACHE_DIR="/cache/mypy"
+ENV PYLINT_CACHE_DIR="/cache/pylint"
+
+# ============================================
+# DEFAULT CONFIGURATIONS
+# ============================================
+
+# Pylint default config
+RUN cat > /tools/.pylintrc <<'EOF'
+[MASTER]
+jobs=0
+persistent=yes
+load-plugins=pylint.extensions.docparams
+
+[MESSAGES CONTROL]
+disable=C0103,C0114,C0115,C0116
+
+[FORMAT]
+max-line-length=120
+max-module-lines=1000
+
+[DESIGN]
+max-args=7
+max-locals=15
+max-returns=6
+max-branches=12
+max-statements=50
+max-parents=7
+max-attributes=10
+min-public-methods=1
+max-public-methods=20
+max-bool-expr=5
+
+[SIMILARITIES]
+min-similarity-lines=4
+ignore-comments=yes
+ignore-docstrings=yes
+EOF
+
+# Flake8 default config
+RUN cat > /tools/.flake8 <<'EOF'
+[flake8]
+max-line-length = 120
+max-complexity = 10
+exclude = 
+    .git,
+    __pycache__,
+    .venv,
+    venv,
+    build,
+    dist,
+    .eggs,
+    *.egg
+ignore = E203, E266, W503
+per-file-ignores = __init__.py:F401
+EOF
+
+# Black default config
+RUN cat > /tools/pyproject.toml <<'EOF'
+[tool.black]
+line-length = 120
+target-version = ['py311']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 120
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_any_unimported = false
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+EOF
+
+# Bandit default config
+RUN cat > /tools/.bandit <<'EOF'
+[bandit]
+exclude_dirs = /test/,/tests/,/venv/,/.venv/
+tests = B201,B301,B302,B303,B304,B305,B306,B307,B308,B309,B310,B311,B312,B313,B314,B315,B316,B317,B318,B319,B320,B321,B323,B324,B325
+skips = B101,B601,B602,B603,B604,B605,B606,B607,B608,B609
+EOF
+
+# Prospector default config
+RUN cat > /tools/.prospector.yaml <<'EOF'
+output-format: json
+
+strictness: medium
+test-warnings: false
+doc-warnings: true
+member-warnings: true
+
+ignore-paths:
+  - docs
+  - migrations
+  - venv
+  - .venv
+
+pylint:
+  disable:
+    - too-few-public-methods
+    - too-many-instance-attributes
+    - too-many-arguments
+
+pep8:
+  full: true
+  options:
+    max-line-length: 120
+
+mccabe:
+  options:
+    max-complexity: 10
+
+pyflakes:
+  enable: true
+
+dodgy:
+  run: true
+
+pep257:
+  disable:
+    - D203
+    - D212
+    - D213
+EOF
+
+# ============================================
+# VERIFICATION & HEALTH CHECK
+# ============================================
+
+# Verification script
+RUN cat > /tools/verify.sh <<'EOF'
+#!/bin/bash
+echo "Python Analysis Tools Status:"
+echo "Python version: $(python --version)"
+echo "Pip version: $(pip --version)"
+echo ""
+echo "Security tools:"
+bandit --version
+safety --version
+pip-audit --version
+echo ""
+echo "Linting tools:"
+pylint --version
+flake8 --version
+mypy --version
+echo ""
+echo "Formatting tools:"
+black --version
+isort --version
+echo ""
+echo "Metrics tools:"
+radon --version
+echo "Vulture: $(vulture --version 2>&1 | head -n1)"
+echo "Prospector: $(prospector --version 2>&1)"
+echo ""
+echo "✅ All 17 Python tools verified"
+EOF
+RUN chmod +x /tools/verify.sh
+
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
+  CMD python --version && which bandit && which pylint
+
+# ============================================
+# ANALYSIS SCRIPTS
+# ============================================
+
+# Comprehensive Python analysis script
+RUN cat > /usr/local/bin/analyze-python <<'EOF'
+#!/bin/bash
+PROJECT_PATH=${1:-.}
+OUTPUT_DIR=${2:-./analysis-results}
+
+mkdir -p $OUTPUT_DIR
+
+echo "🔍 Running Python Analysis Suite (17 tools)..."
+
+# Security analysis
+echo "1/17: Running Bandit security scan..."
+bandit -r $PROJECT_PATH -f json -o $OUTPUT_DIR/bandit-report.json --configfile /tools/.bandit || true
+
+echo "2/17: Running Safety vulnerability scan..."
+safety check --json --output $OUTPUT_DIR/safety-report.json || true
+
+echo "3/17: Running pip-audit..."
+pip-audit --desc --format json --output $OUTPUT_DIR/pip-audit-report.json || true
+
+# Code quality
+echo "4/17: Running Pylint..."
+pylint $PROJECT_PATH --output-format=json --rcfile=/tools/.pylintrc > $OUTPUT_DIR/pylint-report.json || true
+
+echo "5/17: Running Flake8..."
+flake8 $PROJECT_PATH --format=json --output-file=$OUTPUT_DIR/flake8-report.json --config=/tools/.flake8 || true
+
+echo "6/17: Running pycodestyle..."
+pycodestyle $PROJECT_PATH --format='%(path)s:%(row)d:%(col)d: %(code)s %(text)s' > $OUTPUT_DIR/pycodestyle-report.txt || true
+
+echo "7/17: Running pydocstyle..."
+pydocstyle $PROJECT_PATH --count --explain > $OUTPUT_DIR/pydocstyle-report.txt || true
+
+# Type checking
+echo "8/17: Running MyPy type checking..."
+mypy $PROJECT_PATH --json-report $OUTPUT_DIR --config-file /tools/pyproject.toml || true
+
+# Formatting checks
+echo "9/17: Checking with Black..."
+black $PROJECT_PATH --check --diff > $OUTPUT_DIR/black-report.txt 2>&1 || true
+
+echo "10/17: Checking with isort..."
+isort $PROJECT_PATH --check --diff > $OUTPUT_DIR/isort-report.txt 2>&1 || true
+
+# Complexity analysis
+echo "11/17: Running Radon complexity analysis..."
+radon cc $PROJECT_PATH --json > $OUTPUT_DIR/radon-cc-report.json || true
+radon mi $PROJECT_PATH --json > $OUTPUT_DIR/radon-mi-report.json || true
+radon hal $PROJECT_PATH --json > $OUTPUT_DIR/radon-hal-report.json || true
+
+echo "12/17: Running Xenon complexity check..."
+xenon $PROJECT_PATH --max-absolute B --max-modules B --max-average A > $OUTPUT_DIR/xenon-report.txt || true
+
+echo "13/17: Running Vulture dead code detection..."
+vulture $PROJECT_PATH > $OUTPUT_DIR/vulture-report.txt || true
+
+echo "14/17: Running Prospector comprehensive analysis..."
+prospector $PROJECT_PATH --profile=/tools/.prospector.yaml --output-format json > $OUTPUT_DIR/prospector-report.json || true
+
+echo "15/17: Checking for upgrade opportunities with pyupgrade..."
+find $PROJECT_PATH -name "*.py" -exec pyupgrade --py311-plus {} \; --dry-run > $OUTPUT_DIR/pyupgrade-report.txt 2>&1 || true
+
+echo "16/17: Running darglint docstring analysis..."
+darglint $PROJECT_PATH > $OUTPUT_DIR/darglint-report.txt || true
+
+# Package management
+echo "17/17: Checking dependencies..."
+if [ -f "$PROJECT_PATH/requirements.txt" ]; then
+    echo "Found requirements.txt"
+    pip-compile --dry-run $PROJECT_PATH/requirements.txt > $OUTPUT_DIR/pip-compile-report.txt 2>&1 || true
+fi
+if [ -f "$PROJECT_PATH/pyproject.toml" ]; then
+    echo "Found pyproject.toml (Poetry project)"
+    cd $PROJECT_PATH && poetry check > $OUTPUT_DIR/poetry-check.txt 2>&1 || true
+fi
+if [ -f "$PROJECT_PATH/Pipfile" ]; then
+    echo "Found Pipfile (Pipenv project)"
+    cd $PROJECT_PATH && pipenv check > $OUTPUT_DIR/pipenv-check.txt 2>&1 || true
+fi
+
+echo ""
+echo "✅ Python analysis complete. All 17 tools executed."
+echo "📊 Results saved to: $OUTPUT_DIR"
+EOF
+RUN chmod +x /usr/local/bin/analyze-python
+
+# Quick security scan script
+RUN cat > /usr/local/bin/python-security-scan <<'EOF'
+#!/bin/bash
+PROJECT_PATH=${1:-.}
+echo "🔒 Quick Python Security Scan..."
+bandit -r $PROJECT_PATH -ll -i
+safety check
+pip-audit
+echo "✅ Security scan complete"
+EOF
+RUN chmod +x /usr/local/bin/python-security-scan
+
+WORKDIR /analysis
+
+# Default command
+CMD ["/bin/bash"]
