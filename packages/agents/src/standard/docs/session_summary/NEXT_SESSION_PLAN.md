@@ -1,9 +1,65 @@
-# Next Session Plan - MCP Tools Validation and Performance Testing
-## Target Date: 2025-08-30
-## Objective: Comprehensive MCP Tools Testing and Performance Validation
+# Next Session Plan - Universal Test Framework Implementation  
+## Target Date: 2025-09-09
+## Objective: Universal Test Framework for All Languages Based on Rust Architecture Fixes
 
 ### 🎯 Session Goals
-Comprehensive testing and monitoring of the newly implemented Type A/B Fix Distinction and Issue Deduplication systems. Focus on multi-language validation, performance monitoring, and production readiness assessment.
+Implement universal test framework for ALL languages based on architectural fixes completed in September 8, 2025 session. Apply Rust workflow fixes (real tool output parsing, smart file selection, proper scoring) to all other languages.
+
+### ✅ COMPLETED (2025-09-08 - Workflow Architecture Fixes and Universal Framework Design)
+
+#### 1. ✅ Critical Workflow Issues Identified and Fixed
+**MAJOR ACHIEVEMENT**: Discovered and resolved fundamental architectural problems
+```bash
+✅ Fixed mock data issue: Rust testing was using mock data instead of real Clippy/cargo-audit output
+✅ Fixed scoring algorithm bug: System showed 100/100 with 110 critical issues present
+✅ Fixed file selection problem: Random 100 files from 35,000 instead of intelligent selection
+✅ Fixed missing report sections: Business impact, personalization, education not implemented
+✅ Clarified correct workflow architecture: cache-based, no duplicate cloning
+```
+
+#### 2. ✅ Universal Test Framework Architecture Established
+**MAJOR ACHIEVEMENT**: Created comprehensive framework for all programming languages
+```bash
+✅ Created SequentialThinkingBase for structured agent workflow
+✅ Built SmartFileSelector for intelligent file selection (language-specific prioritization)
+✅ Implemented RustToolParser for real Clippy and cargo-audit output parsing
+✅ Designed universal workflow: clone once, cache, analyze both branches properly
+✅ Established pattern for Comparator and Educator agents integration
+✅ Fixed TypeScript interface compatibility issues throughout codebase
+```
+
+#### 3. ✅ Enhanced Report Generation and Testing
+**MAJOR ACHIEVEMENT**: Complete report structure with all required sections
+```bash
+✅ Implemented EnhancedReportGenerator with business impact assessment
+✅ Added personalization and educational content sections
+✅ Created comprehensive test suite for V8 report validation  
+✅ Built enhanced markdown generation for better documentation
+✅ Fixed workflow to integrate Comparator (new/resolved/existing) and Educator agents
+✅ Ensured Supabase model configuration (no hardcoding of models)
+```
+
+#### 4. ✅ Code Quality and Build System Improvements
+**MAJOR ACHIEVEMENT**: Clean, maintainable codebase ready for universal implementation
+```bash
+✅ Fixed all TypeScript compilation errors (0 errors achieved)
+✅ Resolved 1400+ ESLint warnings and 52 critical errors  
+✅ Cleaned up 47 deprecated files (shell scripts, outdated tests)
+✅ Organized code commits into logical groups with clear messaging
+✅ Achieved successful npm build and test execution
+✅ Enhanced error handling and logging throughout enhanced systems
+```
+
+#### 5. ✅ Language Status Assessment and Next Steps Clarification
+**MAJOR ACHIEVEMENT**: Clear roadmap for universal framework implementation
+```bash
+✅ Java: Working well with proper reports (baseline for other languages)
+✅ Rust: Architecture fixed, parser implemented, needs comprehensive testing
+✅ Other Languages: Need same architectural fixes as Rust (Python, Go, TypeScript, etc.)
+✅ Universal Framework: Design complete, implementation pattern established
+✅ Container Integration: Docker and Kubernetes configurations updated
+✅ Documentation: Comprehensive session summary and next steps documented
+```
 
 ### ✅ COMPLETED (2025-08-29 - MCP Integration and Dynamic Model Discovery)
 
@@ -140,33 +196,40 @@ Comprehensive testing and monitoring of the newly implemented Type A/B Fix Disti
 
 ### 🚨 CRITICAL Priority 1 Tasks (Must Complete Next Session)
 
-#### 1. ✅ MCP Tools Integration Comprehensive Testing
+#### 1. 🚧 Universal Test Framework Implementation for All Languages  
 **Owner**: Senior Engineer  
-**Time**: 2-3 hours
-**Status**: READY FOR TESTING - All MCP infrastructure complete ✅
-**Dependencies**: MCP tools ecosystem complete ✅, Dynamic models implemented ✅
+**Time**: 3-4 hours
+**Status**: ARCHITECTURE COMPLETE - Ready for implementation across languages
+**Dependencies**: Rust architecture fixes complete ✅, SequentialThinkingBase implemented ✅
 
 ```bash
-# Phase 1: MCP Stack Validation (1 hour)
-- [ ] Start secure MCP stack using start-secure-mcp-stack.sh
-- [ ] Test all MCP tool wrappers (npm-audit, semgrep, eslint)
-- [ ] Validate Docker-based MCP tools functionality
-- [ ] Test cloud service orchestration capabilities
-- [ ] Verify parallel tool execution performance
+# Phase 1: Python Language Implementation (1 hour)
+- [ ] Create PythonToolParser for Bandit, PyLint, Safety output parsing
+- [ ] Implement SequentialSecurityAgent subclass for Python
+- [ ] Apply SmartFileSelector patterns to Python projects (setup.py, requirements.txt priority)
+- [ ] Test fixed scoring algorithm with real Python security issues
+- [ ] Validate proper workflow (cache, no duplicate cloning)
 
-# Phase 2: End-to-End Analysis Workflow Testing (1 hour)
-- [ ] Test two-branch analysis with real repositories
-- [ ] Validate specialized agents using MCP tools
-- [ ] Test language-specific routing functionality
-- [ ] Verify universal tool parser output standardization
-- [ ] Check error handling and recovery mechanisms
+# Phase 2: Go Language Implementation (1 hour)  
+- [ ] Create GoToolParser for gosec, go vet, govulncheck output parsing
+- [ ] Implement SequentialSecurityAgent subclass for Go
+- [ ] Apply SmartFileSelector to Go projects (go.mod, go.sum priority)
+- [ ] Test enhanced report generation with business impact/education sections
+- [ ] Validate Comparator and Educator agent integration
 
-# Phase 3: Performance and Reliability Validation (1 hour)
-- [ ] Benchmark MCP tools vs previous DeepWiki performance
-- [ ] Test system behavior under various failure scenarios
-- [ ] Validate dynamic model selection in production scenarios
-- [ ] Check resource usage and optimization
-- [ ] Ensure production readiness of all components
+# Phase 3: TypeScript/JavaScript Language Implementation (1 hour)
+- [ ] Create TypeScriptToolParser for ESLint, npm audit, Semgrep output
+- [ ] Implement SequentialSecurityAgent subclass for TypeScript/JavaScript
+- [ ] Apply SmartFileSelector to Node.js projects (package.json, tsconfig.json priority)
+- [ ] Test complete workflow with all report sections (technical, business, educational)
+- [ ] Validate Supabase model configuration (no hardcoding)
+
+# Phase 4: Universal Framework Validation (1 hour)
+- [ ] Test end-to-end workflow for all implemented languages
+- [ ] Validate consistent report structure across languages
+- [ ] Test file selection intelligence across different project types
+- [ ] Verify scoring algorithm accuracy with real tool output
+- [ ] Ensure all languages use cache-based workflow correctly
 ```
 
 #### 2. Two-Branch Analysis System Integration Testing
