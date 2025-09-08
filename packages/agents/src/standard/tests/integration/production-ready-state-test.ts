@@ -476,6 +476,128 @@ const SYSTEM_STATE: SystemState = {
       component: 'rust-security-analysis',
       discovered: '2025-09-03',
       status: 'open'
+    },
+    
+    // V8 REPORT GENERATION BUGS (2025-09-06)
+    {
+      id: 'BUG-105',
+      severity: 'critical' as const,
+      description: 'V8 Report Scoring Logic Bug: Overall Score showing 100/100 (Grade: A) with 66+ Critical/High issues - should deduct Critical -5, High -3, Medium -1, Low -0.5 points',
+      component: 'v8-report-scoring',
+      discovered: '2025-09-06',
+      status: 'open'
+    },
+    {
+      id: 'BUG-106',
+      severity: 'high' as const,
+      description: 'V8 Report Impossible Zero Existing Issues: Shows 0 pre-existing issues which is almost impossible with comprehensive tooling - deduplication logic across 2 iterations not working',
+      component: 'v8-report-deduplication',
+      discovered: '2025-09-06',
+      status: 'open'
+    },
+    {
+      id: 'BUG-107',
+      severity: 'high' as const,
+      description: 'V8 Report Missing Code Snippets: Found issues missing code snippets and fix suggestions from agents - need actual code context inclusion',
+      component: 'v8-report-content',
+      discovered: '2025-09-06',
+      status: 'open'
+    },
+    {
+      id: 'BUG-108',
+      severity: 'medium' as const,
+      description: 'V8 Report Generic Impact Descriptions: Impact descriptions too generic (e.g., "performance issue detected by Performance Analyzer") - agents should provide specific impact data',
+      component: 'v8-report-impact-analysis',
+      discovered: '2025-09-06',
+      status: 'open'
+    },
+    {
+      id: 'BUG-109',
+      severity: 'medium' as const,
+      description: 'V8 Report Mixed Category Issues: Issues mixed across categories - under Security section shows architecture, dependency issues etc. Should sort by category then severity (Critical → High → Medium → Low)',
+      component: 'v8-report-categorization',
+      discovered: '2025-09-06',
+      status: 'open'
+    },
+    {
+      id: 'BUG-110',
+      severity: 'medium' as const,
+      description: 'V8 Report Generic Issue Descriptions: Descriptions like "performance issue detected by Performance Analyzer" are not helpful - need specific descriptions of what the issue actually is',
+      component: 'v8-report-descriptions',
+      discovered: '2025-09-06',
+      status: 'open'
+    },
+    {
+      id: 'BUG-111',
+      severity: 'medium' as const,
+      description: 'V8 Report Undefined Field in Resolved Issues: Shows "Issues Resolved: **undefined** - file5.ext:775" instead of proper title/description for resolved issues',
+      component: 'v8-report-resolved-issues',
+      discovered: '2025-09-06',
+      status: 'open'
+    },
+    {
+      id: 'BUG-112',
+      severity: 'high' as const,
+      description: 'V8 Report Duplicate Issues Not Filtered: Many duplicate tests appearing - deduplication logic at both agent and orchestrator level not working properly',
+      component: 'v8-report-duplicate-filtering',
+      discovered: '2025-09-06',
+      status: 'open'
+    },
+    {
+      id: 'BUG-113',
+      severity: 'medium' as const,
+      description: 'V8 Report Generic Training Recommendations: Training materials are generic category-based instead of specific to actual issues found - should combine similar issues for targeted training',
+      component: 'v8-report-training-recommendations',
+      discovered: '2025-09-06',
+      status: 'open'
+    },
+    {
+      id: 'BUG-114',
+      severity: 'low' as const,
+      description: 'V8 Report Unclear Resolution Rate: "Resolution Rate | 137/270" is unclear - needs better explanation of what these numbers mean (resolved vs total issues)',
+      component: 'v8-report-resolution-metrics',
+      discovered: '2025-09-06',
+      status: 'open'
+    },
+    {
+      id: 'BUG-115',
+      severity: 'medium' as const,
+      description: 'V8 Report Missing Team Actions Section: Need contextual "Recommended Team Actions" only when relevant, not generic boilerplate',
+      component: 'v8-report-team-actions',
+      discovered: '2025-09-06',
+      status: 'open'
+    },
+    {
+      id: 'BUG-116',
+      severity: 'medium' as const,
+      description: 'V8 Report Business Impact Format: Business Impact section needs executive-friendly format with ROI calculations, risk matrix, customer impact assessment',
+      component: 'v8-report-business-impact',
+      discovered: '2025-09-06',
+      status: 'open'
+    },
+    {
+      id: 'BUG-117',
+      severity: 'medium' as const,
+      description: 'V8 Report PR Comment Too Verbose: PR Comment Conclusion lists all issues instead of summarizing (e.g., "Fix 35 critical and all 26 high issues")',
+      component: 'v8-report-pr-comments',
+      discovered: '2025-09-06',
+      status: 'open'
+    },
+    {
+      id: 'BUG-118',
+      severity: 'low' as const,
+      description: 'V8 Report Missing Reporting Metadata: Need metadata showing performance and cost per agent/tool to identify which tools never provide findings for internal optimization',
+      component: 'v8-report-metadata',
+      discovered: '2025-09-06',
+      status: 'open'
+    },
+    {
+      id: 'BUG-119',
+      severity: 'low' as const,
+      description: 'V8 Report Missing User Personalization: Reports should include username/author name to make them more personal and contextual',
+      component: 'v8-report-personalization',
+      discovered: '2025-09-06',
+      status: 'open'
     }
   ],
   

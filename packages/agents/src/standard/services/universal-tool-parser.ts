@@ -318,10 +318,10 @@ export class UniversalToolParser {
   }
   
   /**
-   * Parse SonarQube output - NOT IMPLEMENTED (paid service)
+   * Parse SonarQube output - NOT IMPLEMENTED (Community Edition is FREE but not configured)
    */
   private parseSonarQube(output: any): ParsedToolResult {
-    // SonarQube is a paid service - not implemented
+    // SonarQube Community Edition is FREE but not configured in current setup
     return this.parseGeneric(output);
   }
   

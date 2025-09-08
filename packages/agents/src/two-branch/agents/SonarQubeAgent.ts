@@ -1,7 +1,8 @@
 /**
  * SonarQube Agent
  * Integrates with SonarQube for comprehensive code quality and security analysis
- * This is a paid tool with cost tracking
+ * UPDATED: SonarQube Community Edition is FREE but not configured in current setup
+ * Cost tracking is for potential SonarCloud or Enterprise usage
  */
 
 import { BaseMultiToolAgent } from './base-multi-tool-agent';
