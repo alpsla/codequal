@@ -31,3 +31,18 @@
 ## 🔄 Phase 1B Starting Now: OWASP Dependency Check
 
 Moving to implement OWASP Dependency Check Agent next...
+
+Last update from 09_06_25
+  | Language   | Security         | Dependencies     | Quality       | Performance | Architecture |
+  |------------|------------------|------------------|---------------|-------------|--------------|
+  | Python     | Bandit, safety   | pip-audit        | Pylint        | -           | -            |
+  | JavaScript | ESLint plugins   | npm audit        | ESLint        | -           | -            |
+  | Java       | SpotBugs         | dependency-check | PMD           | PMD         | PMD patterns |
+  | Go         | gosec            | go mod           | golangci-lint | golangci    | -            |
+  | TypeScript | ESLint           | npm audit        | TSC           | -           | -            |
+  | Ruby       | -                | -                | RuboCop       | -           | -            |
+  | PHP        | -                | -                | PHPCS         | -           | -            |
+  | C++        | -                | -                | Cppcheck      | Cppcheck    | -            |
+  | C#         | Roslyn           | -                | Roslyn        | Roslyn      | Roslyn       |
+  | Perl       | -                | -                | Perl::Critic  | -           | -            |
+  | Rust       | ✅ Custom scanner | -                | Clippy        | Clippy      | -            |
