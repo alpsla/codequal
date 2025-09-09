@@ -1,0 +1,107 @@
+FROM golang:1.21-alpine
+
+WORKDIR /app
+
+# Install build tools and git
+RUN apk add --no-cache git gcc musl-dev
+
+# Install Go analysis tools with compatible versions for Go 1.21
+RUN go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.54.2 && \
+    go install golang.org/x/tools/cmd/goimports@v0.13.0 && \
+    go install honnef.co/go/tools/cmd/staticcheck@v0.4.6 && \
+    go install github.com/securego/gosec/v2/cmd/gosec@v2.18.2 && \
+    go install github.com/fzipp/gocyclo/cmd/gocyclo@v0.6.0 && \
+    go install github.com/go-critic/go-critic/cmd/gocritic@v0.9.0 && \
+    go install github.com/mgechev/revive@v1.3.4
+
+# Create golangci-lint config optimized for file:line output and compatible with older versions
+RUN cat > /app/.golangci.yml << 'EOF'
+run:
+  timeout: 5m
+  tests: false
+  go: "1.21"
+
+output:
+  format: json
+  print-issued-lines: true
+  print-linter-name: true
+  path-prefix: ""
+
+linters:
+  disable-all: true
+  enable:
+    - gosec
+    - govet
+    - ineffassign
+    - unused
+    - gosimple
+    - gocyclo
+    - gofmt
+    - goimports
+    - revive
+    - gocritic
+    # Disable staticcheck temporarily due to compatibility issues
+    # - staticcheck
+
+linters-settings:
+  gosec:
+    severity: medium
+    confidence: medium
+    includes:
+      - G101
+      - G102
+      - G103
+      - G104
+      - G106
+      - G107
+      - G108
+      - G109
+      - G110
+  gocyclo:
+    min-complexity: 15
+  revive:
+    rules:
+      - name: exported
+      - name: var-naming
+      - name: package-comments
+      - name: blank-imports
+      - name: context-as-argument
+      - name: dot-imports
+      - name: error-return
+      - name: error-strings
+      - name: error-naming
+      - name: increment-decrement
+      - name: var-declaration
+      - name: range-loop-pointer
+      - name: receiver-naming
+      - name: time-naming
+      - name: unexported-return
+      - name: indent-error-flow
+      - name: errorf
+      - name: empty-block
+      - name: superfluous-else
+      - name: unused-parameter
+      - name: unreachable-code
+      - name: redefines-builtin-id
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - style
+      - performance
+    disabled-checks:
+      - unnamedResult
+      - hugeParam
+
+issues:
+  exclude-use-default: false
+  max-issues-per-linter: 0
+  max-same-issues: 0
+EOF
+
+# Test configuration and installations
+RUN go version && \
+    golangci-lint --version && \
+    gosec --version && \
+    echo "Go v4.1 container ready with optimized file:line support"
+
+CMD ["go", "version"]

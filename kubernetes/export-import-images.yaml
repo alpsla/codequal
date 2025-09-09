@@ -1,0 +1,102 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: restore-script
+  namespace: codequal-dev
+data:
+  restore.sh: |
+    #!/bin/sh
+    echo "🔄 Direct Restore from Kubernetes Cache"
+    echo "======================================="
+    echo ""
+    
+    # Since images are running in backup pods, they exist in containerd/docker
+    # We need to access the node's container runtime
+    
+    echo "Method 1: Using crictl (containerd)"
+    echo "------------------------------------"
+    
+    # List images in containerd
+    crictl images | grep analyzer || echo "Not using containerd"
+    
+    echo ""
+    echo "Method 2: Using docker (if available)"
+    echo "-------------------------------------"
+    
+    # Try docker
+    if command -v docker >/dev/null 2>&1; then
+      echo "Docker is available!"
+      
+      # Tag and push each image
+      for lang in python javascript java go ruby php cpp csharp perl; do
+        echo "Processing $lang..."
+        
+        # The image exists locally on the node
+        docker tag registry.digitalocean.com/codequal/analyzer:lang-${lang}-v3 \
+                   registry.digitalocean.com/codequal/analyzer:lang-${lang}-v3-restored
+        
+        docker push registry.digitalocean.com/codequal/analyzer:lang-${lang}-v3-restored
+      done
+    else
+      echo "Docker not available in this pod"
+    fi
+    
+    echo ""
+    echo "Method 3: Export as tar and re-import"
+    echo "-------------------------------------"
+    echo "This would require mounting host paths"
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: restore-with-access
+  namespace: codequal-dev
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      nodeName: codequal-prod-26x1f  # Pin to node with images
+      hostNetwork: true
+      hostPID: true
+      containers:
+      - name: restore
+        image: docker:dind
+        command: ["sh", "-c"]
+        args:
+        - |
+          echo "🔄 Attempting restore with host access"
+          
+          # Access host's docker daemon
+          export DOCKER_HOST=unix:///var/run/docker.sock
+          
+          echo "Checking for cached images..."
+          docker images | grep analyzer | grep v3 || echo "No v3 images found"
+          
+          echo "Checking for backup pods..."
+          docker ps | grep backup-pod || echo "Backup pods not visible"
+          
+          # Try to save and reload
+          for lang in python javascript java go ruby php cpp csharp perl; do
+            echo "Trying to save $lang..."
+            docker save registry.digitalocean.com/codequal/analyzer:lang-${lang}-v3 \
+              -o /tmp/${lang}.tar 2>/dev/null && echo "Saved $lang" || echo "Failed $lang"
+          done
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: docker-sock
+          mountPath: /var/run/docker.sock
+        - name: docker-config
+          mountPath: /root/.docker
+      restartPolicy: Never
+      volumes:
+      - name: docker-sock
+        hostPath:
+          path: /var/run/docker.sock
+          type: Socket
+      - name: docker-config
+        secret:
+          secretName: regcred
+          items:
+          - key: .dockerconfigjson
+            path: config.json

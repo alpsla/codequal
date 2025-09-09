@@ -1,0 +1,26 @@
+[
+  {
+    "repoSize": "medium",
+    "owner": "tokio-rs",
+    "repo": "tokio",
+    "prNumber": 6000,
+    "metrics": {
+      "setupTime": 1652,
+      "workspaceTime": 1519,
+      "analysisTime": 31300,
+      "totalTime": 34749
+    },
+    "files": {
+      "total": 688,
+      "changed": 1,
+      "analyzed": 2
+    },
+    "issues": {
+      "clippy": 589,
+      "audit": 1,
+      "outdated": 95,
+      "total": 685
+    },
+    "success": true
+  }
+]

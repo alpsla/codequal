@@ -1,0 +1,360 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: build-java-v3
+  namespace: codequal-dev
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+        - "--dockerfile=/workspace/Dockerfile"
+        - "--context=dir:///workspace"
+        - "--destination=registry.digitalocean.com/codequal/analyzer:lang-java-v3"
+        - "--cache=false"
+        - "--cleanup"
+        volumeMounts:
+        - name: dockerfile
+          mountPath: /workspace
+        - name: docker-config
+          mountPath: /kaniko/.docker
+      volumes:
+      - name: dockerfile
+        configMap:
+          name: dockerfile-java-fixed
+      - name: docker-config
+        secret:
+          secretName: regcred
+          items:
+          - key: .dockerconfigjson
+            path: config.json
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dockerfile-java-fixed
+  namespace: codequal-dev
+data:
+  Dockerfile: |
+    FROM openjdk:17-slim
+    
+    # Install build tools and analysis tools
+    RUN apt-get update && apt-get install -y \
+        wget unzip maven gradle \
+        && rm -rf /var/lib/apt/lists/*
+    
+    # Install SpotBugs
+    ENV SPOTBUGS_VERSION=4.8.3
+    RUN wget -q https://github.com/spotbugs/spotbugs/releases/download/${SPOTBUGS_VERSION}/spotbugs-${SPOTBUGS_VERSION}.zip \
+        && unzip -q spotbugs-${SPOTBUGS_VERSION}.zip -d /opt \
+        && rm spotbugs-${SPOTBUGS_VERSION}.zip \
+        && ln -s /opt/spotbugs-${SPOTBUGS_VERSION}/bin/spotbugs /usr/local/bin/spotbugs \
+        && chmod +x /usr/local/bin/spotbugs
+    
+    # Install PMD
+    ENV PMD_VERSION=7.0.0-rc4
+    RUN wget -q https://github.com/pmd/pmd/releases/download/pmd_releases%2F${PMD_VERSION}/pmd-dist-${PMD_VERSION}-bin.zip \
+        && unzip -q pmd-dist-${PMD_VERSION}-bin.zip -d /opt \
+        && rm pmd-dist-${PMD_VERSION}-bin.zip \
+        && ln -s /opt/pmd-bin-${PMD_VERSION}/bin/pmd /usr/local/bin/pmd \
+        && chmod +x /usr/local/bin/pmd
+    
+    WORKDIR /workspace
+    CMD ["/bin/bash"]
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: build-ruby-v3
+  namespace: codequal-dev
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+        - "--dockerfile=/workspace/Dockerfile"
+        - "--context=dir:///workspace"
+        - "--destination=registry.digitalocean.com/codequal/analyzer:lang-ruby-v3"
+        - "--cache=false"
+        - "--cleanup"
+        volumeMounts:
+        - name: dockerfile
+          mountPath: /workspace
+        - name: docker-config
+          mountPath: /kaniko/.docker
+      volumes:
+      - name: dockerfile
+        configMap:
+          name: dockerfile-ruby-fixed
+      - name: docker-config
+        secret:
+          secretName: regcred
+          items:
+          - key: .dockerconfigjson
+            path: config.json
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dockerfile-ruby-fixed
+  namespace: codequal-dev
+data:
+  Dockerfile: |
+    FROM ruby:3.2-slim
+    
+    # Install dependencies
+    RUN apt-get update && apt-get install -y \
+        build-essential git \
+        && rm -rf /var/lib/apt/lists/*
+    
+    # Install Ruby analysis tools
+    RUN gem install rubocop brakeman bundler-audit rails_best_practices reek
+    
+    # Create a default RuboCop config that works
+    RUN echo "AllCops:" > /etc/.rubocop.yml && \
+        echo "  NewCops: enable" >> /etc/.rubocop.yml && \
+        echo "  TargetRubyVersion: 3.2" >> /etc/.rubocop.yml
+    
+    WORKDIR /workspace
+    CMD ["/bin/bash"]
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: build-php-v3
+  namespace: codequal-dev
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+        - "--dockerfile=/workspace/Dockerfile"
+        - "--context=dir:///workspace"
+        - "--destination=registry.digitalocean.com/codequal/analyzer:lang-php-v3"
+        - "--cache=false"
+        - "--cleanup"
+        volumeMounts:
+        - name: dockerfile
+          mountPath: /workspace
+        - name: docker-config
+          mountPath: /kaniko/.docker
+      volumes:
+      - name: dockerfile
+        configMap:
+          name: dockerfile-php-fixed
+      - name: docker-config
+        secret:
+          secretName: regcred
+          items:
+          - key: .dockerconfigjson
+            path: config.json
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dockerfile-php-fixed
+  namespace: codequal-dev
+data:
+  Dockerfile: |
+    FROM php:8.2-cli
+    
+    # Install system dependencies
+    RUN apt-get update && apt-get install -y \
+        git unzip curl libzip-dev \
+        && docker-php-ext-install zip \
+        && rm -rf /var/lib/apt/lists/*
+    
+    # Install Composer
+    RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+    
+    # Install PHP analysis tools globally via Composer
+    RUN composer global require --no-interaction \
+        phpstan/phpstan \
+        phpmd/phpmd \
+        squizlabs/php_codesniffer \
+        vimeo/psalm \
+        && composer clear-cache
+    
+    # Add Composer global bin to PATH
+    ENV PATH="/root/.composer/vendor/bin:${PATH}"
+    
+    # Create default config files
+    RUN echo "parameters:" > /etc/phpstan.neon && \
+        echo "  level: 5" >> /etc/phpstan.neon && \
+        echo "  paths:" >> /etc/phpstan.neon && \
+        echo "    - ." >> /etc/phpstan.neon
+    
+    # Create a simple PHPMD ruleset
+    RUN echo '<?xml version="1.0"?>' > /etc/phpmd-ruleset.xml && \
+        echo '<ruleset name="PHPMD rule set">' >> /etc/phpmd-ruleset.xml && \
+        echo '  <description>Default PHPMD ruleset</description>' >> /etc/phpmd-ruleset.xml && \
+        echo '  <rule ref="rulesets/cleancode.xml" />' >> /etc/phpmd-ruleset.xml && \
+        echo '  <rule ref="rulesets/codesize.xml" />' >> /etc/phpmd-ruleset.xml && \
+        echo '  <rule ref="rulesets/controversial.xml" />' >> /etc/phpmd-ruleset.xml && \
+        echo '  <rule ref="rulesets/design.xml" />' >> /etc/phpmd-ruleset.xml && \
+        echo '  <rule ref="rulesets/naming.xml" />' >> /etc/phpmd-ruleset.xml && \
+        echo '  <rule ref="rulesets/unusedcode.xml" />' >> /etc/phpmd-ruleset.xml && \
+        echo '</ruleset>' >> /etc/phpmd-ruleset.xml
+    
+    WORKDIR /workspace
+    CMD ["/bin/bash"]
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: build-cpp-v3
+  namespace: codequal-dev
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+        - "--dockerfile=/workspace/Dockerfile"
+        - "--context=dir:///workspace"
+        - "--destination=registry.digitalocean.com/codequal/analyzer:lang-cpp-v3"
+        - "--cache=false"
+        - "--cleanup"
+        volumeMounts:
+        - name: dockerfile
+          mountPath: /workspace
+        - name: docker-config
+          mountPath: /kaniko/.docker
+      volumes:
+      - name: dockerfile
+        configMap:
+          name: dockerfile-cpp-fixed
+      - name: docker-config
+        secret:
+          secretName: regcred
+          items:
+          - key: .dockerconfigjson
+            path: config.json
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dockerfile-cpp-fixed
+  namespace: codequal-dev
+data:
+  Dockerfile: |
+    FROM gcc:12
+    
+    # Install clang, clang-tidy, cppcheck and other C++ tools
+    RUN apt-get update && apt-get install -y \
+        clang clang-tidy cppcheck valgrind \
+        cmake make \
+        && rm -rf /var/lib/apt/lists/*
+    
+    # Create a simple .clang-tidy config
+    RUN echo "Checks: '*,-fuchsia-*,-google-*,-llvm-*'" > /etc/.clang-tidy
+    
+    WORKDIR /workspace
+    CMD ["/bin/bash"]
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: build-perl-v3
+  namespace: codequal-dev
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+        - "--dockerfile=/workspace/Dockerfile"
+        - "--context=dir:///workspace"
+        - "--destination=registry.digitalocean.com/codequal/analyzer:lang-perl-v3"
+        - "--cache=false"
+        - "--cleanup"
+        volumeMounts:
+        - name: dockerfile
+          mountPath: /workspace
+        - name: docker-config
+          mountPath: /kaniko/.docker
+      volumes:
+      - name: dockerfile
+        configMap:
+          name: dockerfile-perl-fixed
+      - name: docker-config
+        secret:
+          secretName: regcred
+          items:
+          - key: .dockerconfigjson
+            path: config.json
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dockerfile-perl-fixed
+  namespace: codequal-dev
+data:
+  Dockerfile: |
+    FROM perl:5.38-slim
+    
+    # Install build tools and cpanminus
+    RUN apt-get update && apt-get install -y \
+        build-essential cpanminus \
+        && rm -rf /var/lib/apt/lists/*
+    
+    # Install Perl::Critic and Perl::Tidy
+    RUN cpanm --notest \
+        Perl::Critic \
+        Perl::Tidy \
+        Test::Perl::Critic \
+        Perl::Critic::Policy::Subroutines::ProhibitExplicitReturnUndef \
+        Perl::Critic::Policy::TestingAndDebugging::RequireUseStrict \
+        Perl::Critic::Policy::TestingAndDebugging::RequireUseWarnings
+    
+    # Create a default .perlcriticrc with reasonable defaults
+    RUN echo "# Default Perl::Critic configuration" > /etc/.perlcriticrc && \
+        echo "severity = 3" >> /etc/.perlcriticrc && \
+        echo "verbose = 8" >> /etc/.perlcriticrc && \
+        echo "" >> /etc/.perlcriticrc && \
+        echo "[TestingAndDebugging::RequireUseStrict]" >> /etc/.perlcriticrc && \
+        echo "severity = 5" >> /etc/.perlcriticrc && \
+        echo "" >> /etc/.perlcriticrc && \
+        echo "[TestingAndDebugging::RequireUseWarnings]" >> /etc/.perlcriticrc && \
+        echo "severity = 5" >> /etc/.perlcriticrc
+    
+    # Create a default .perltidyrc
+    RUN echo "# Default Perl::Tidy configuration" > /etc/.perltidyrc && \
+        echo "-l=120    # Max line length" >> /etc/.perltidyrc && \
+        echo "-i=4      # Indent level" >> /etc/.perltidyrc && \
+        echo "-ci=4     # Continuation indent" >> /etc/.perltidyrc && \
+        echo "-st       # Output to STDOUT" >> /etc/.perltidyrc && \
+        echo "-se       # Errors to STDERR" >> /etc/.perltidyrc && \
+        echo "-vt=2     # Vertical tightness" >> /etc/.perltidyrc && \
+        echo "-cti=0    # No extra indentation for closing brackets" >> /etc/.perltidyrc && \
+        echo "-pt=1     # Medium parenthesis tightness" >> /etc/.perltidyrc && \
+        echo "-bt=1     # Medium brace tightness" >> /etc/.perltidyrc && \
+        echo "-sbt=1    # Medium square bracket tightness" >> /etc/.perltidyrc && \
+        echo "-bbt=1    # Medium block brace tightness" >> /etc/.perltidyrc && \
+        echo "-nsfs     # No space before semicolons" >> /etc/.perltidyrc && \
+        echo "-nolq     # Don't outdent long quotes" >> /etc/.perltidyrc
+    
+    # Verify installations work
+    RUN perl -MPerl::Critic -e 'print "Perl::Critic installed\n"' && \
+        perl -MPerl::Tidy -e 'print "Perl::Tidy installed\n"'
+    
+    WORKDIR /workspace
+    CMD ["/bin/bash"]

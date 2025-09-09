@@ -1,0 +1,27 @@
+[
+  {
+    "repoSize": "large",
+    "owner": "rust-lang",
+    "repo": "rust",
+    "prNumber": 115432,
+    "metrics": {
+      "setupTime": 79303,
+      "workspaceTime": 0,
+      "analysisTime": 0,
+      "totalTime": 0
+    },
+    "files": {
+      "total": 0,
+      "changed": 0,
+      "analyzed": 0
+    },
+    "issues": {
+      "clippy": 0,
+      "audit": 0,
+      "outdated": 0,
+      "total": 0
+    },
+    "success": false,
+    "error": "stderr maxBuffer length exceeded"
+  }
+]

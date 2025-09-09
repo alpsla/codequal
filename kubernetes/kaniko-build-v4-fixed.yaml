@@ -1,0 +1,171 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kaniko-build-python-v4-1
+  namespace: codequal-dev
+spec:
+  template:
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+        - "--dockerfile=/workspace/Dockerfile"
+        - "--context=dir://workspace"
+        - "--destination=registry.digitalocean.com/codequal-registry/analyzer:lang-python-v4.1"
+        - "--cache=true"
+        - "--cache-ttl=24h"
+        - "--skip-tls-verify"
+        volumeMounts:
+        - name: dockerfile-volume
+          mountPath: /workspace
+        - name: docker-config
+          mountPath: /kaniko/.docker
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+      restartPolicy: Never
+      volumes:
+      - name: dockerfile-volume
+        configMap:
+          name: dockerfile-python-v4-1
+      - name: docker-config
+        secret:
+          secretName: registry-codequal
+          items:
+          - key: .dockerconfigjson
+            path: config.json
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kaniko-build-javascript-v4-1
+  namespace: codequal-dev
+spec:
+  template:
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+        - "--dockerfile=/workspace/Dockerfile"
+        - "--context=dir://workspace"
+        - "--destination=registry.digitalocean.com/codequal-registry/analyzer:lang-javascript-v4.1"
+        - "--cache=true"
+        - "--cache-ttl=24h"
+        - "--skip-tls-verify"
+        volumeMounts:
+        - name: dockerfile-volume
+          mountPath: /workspace
+        - name: docker-config
+          mountPath: /kaniko/.docker
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+      restartPolicy: Never
+      volumes:
+      - name: dockerfile-volume
+        configMap:
+          name: dockerfile-javascript-v4-1
+      - name: docker-config
+        secret:
+          secretName: registry-codequal
+          items:
+          - key: .dockerconfigjson
+            path: config.json
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kaniko-build-go-v4-2
+  namespace: codequal-dev
+spec:
+  template:
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+        - "--dockerfile=/workspace/Dockerfile"
+        - "--context=dir://workspace"
+        - "--destination=registry.digitalocean.com/codequal-registry/analyzer:lang-go-v4.2"
+        - "--cache=true"
+        - "--cache-ttl=24h"
+        - "--skip-tls-verify"
+        volumeMounts:
+        - name: dockerfile-volume
+          mountPath: /workspace
+        - name: docker-config
+          mountPath: /kaniko/.docker
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+      restartPolicy: Never
+      volumes:
+      - name: dockerfile-volume
+        configMap:
+          name: dockerfile-go-v4-2
+      - name: docker-config
+        secret:
+          secretName: registry-codequal
+          items:
+          - key: .dockerconfigjson
+            path: config.json
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kaniko-build-java-v4-1
+  namespace: codequal-dev
+spec:
+  template:
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+        - "--dockerfile=/workspace/Dockerfile"
+        - "--context=dir://workspace"
+        - "--destination=registry.digitalocean.com/codequal-registry/analyzer:lang-java-v4.1"
+        - "--cache=true"
+        - "--cache-ttl=24h"
+        - "--skip-tls-verify"
+        volumeMounts:
+        - name: dockerfile-volume
+          mountPath: /workspace
+        - name: docker-config
+          mountPath: /kaniko/.docker
+        resources:
+          requests:
+            memory: "1.5Gi"
+            cpu: "500m"
+          limits:
+            memory: "3Gi"
+            cpu: "1000m"
+      restartPolicy: Never
+      volumes:
+      - name: dockerfile-volume
+        configMap:
+          name: dockerfile-java-v4-1
+      - name: docker-config
+        secret:
+          secretName: registry-codequal
+          items:
+          - key: .dockerconfigjson
+            path: config.json

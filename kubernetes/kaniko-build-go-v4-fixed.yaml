@@ -1,0 +1,39 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: build-go-v4-fixed
+  namespace: codequal-dev
+spec:
+  template:
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+        - "--dockerfile=/workspace/Dockerfile.go.v4"
+        - "--context=dir:///workspace/"
+        - "--destination=registry.digitalocean.com/codequal-registry/analyzer:go-v4"
+        - "--cache=true"
+        - "--cache-repo=registry.digitalocean.com/codequal-registry/cache"
+        - "--compressed-caching=false"
+        - "--use-new-run"
+        volumeMounts:
+        - name: dockerfile-volume
+          mountPath: /workspace
+        - name: kaniko-secret
+          mountPath: /kaniko/.docker
+        env:
+        - name: DOCKER_CONFIG
+          value: /kaniko/.docker
+      volumes:
+      - name: dockerfile-volume
+        configMap:
+          name: dockerfile-go-v4-fixed
+      - name: kaniko-secret
+        secret:
+          secretName: registry-codequal
+          items:
+          - key: .dockerconfigjson
+            path: config.json
+      restartPolicy: Never
+  backoffLimit: 2

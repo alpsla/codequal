@@ -1,0 +1,111 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install Python for JSON processing (CRITICAL for enrichment agent)
+RUN apk add --no-cache python3 py3-pip
+
+# Install TypeScript and analysis tools
+RUN npm install -g \
+    typescript@5.4.5 \
+    @typescript-eslint/parser@7.2.0 \
+    @typescript-eslint/eslint-plugin@7.2.0 \
+    eslint@8.57.0 \
+    prettier@3.2.5 \
+    eslint-plugin-security@2.1.1 \
+    eslint-plugin-sonarjs@0.24.0 \
+    typedoc@0.25.12
+
+# Create TypeScript ESLint config with proper file:line output
+RUN echo '{\
+  "parser": "@typescript-eslint/parser",\
+  "plugins": ["@typescript-eslint", "security", "sonarjs"],\
+  "extends": [\
+    "eslint:recommended",\
+    "plugin:@typescript-eslint/recommended"\
+  ],\
+  "parserOptions": {\
+    "ecmaVersion": 2021,\
+    "sourceType": "module"\
+  },\
+  "rules": {\
+    "@typescript-eslint/no-unused-vars": "warn",\
+    "@typescript-eslint/explicit-function-return-type": "off",\
+    "@typescript-eslint/no-explicit-any": "warn",\
+    "@typescript-eslint/no-inferrable-types": "warn",\
+    "security/detect-object-injection": "warn",\
+    "sonarjs/cognitive-complexity": ["warn", 15]\
+  }\
+}' > /app/.eslintrc.json
+
+# Create tsconfig for proper TypeScript analysis
+RUN echo '{\
+  "compilerOptions": {\
+    "target": "ES2021",\
+    "module": "commonjs",\
+    "lib": ["ES2021"],\
+    "strict": true,\
+    "esModuleInterop": true,\
+    "skipLibCheck": true,\
+    "forceConsistentCasingInFileNames": true,\
+    "noEmit": true,\
+    "resolveJsonModule": true,\
+    "allowJs": true,\
+    "checkJs": true\
+  },\
+  "include": ["**/*.ts", "**/*.tsx", "**/*.js"],\
+  "exclude": ["node_modules", "dist", "build"]\
+}' > /app/tsconfig.json
+
+# Create unified wrapper for consistent JSON output with file:line
+RUN echo '#!/bin/sh\n\
+if [ "$1" = "tsc" ]; then\n\
+  shift\n\
+  # TypeScript compiler with JSON output\n\
+  tsc "$@" 2>&1 | python3 -c "import sys, json, re;\n\
+issues = [];\n\
+for line in sys.stdin:\n\
+  match = re.match(r\"(.+)\\((\\d+),(\\d+)\\): error (TS\\d+): (.+)\", line);\n\
+  if match:\n\
+    issues.append({\n\
+      \"file\": match.group(1),\n\
+      \"line\": int(match.group(2)),\n\
+      \"column\": int(match.group(3)),\n\
+      \"code\": match.group(4),\n\
+      \"message\": match.group(5),\n\
+      \"severity\": \"error\"\n\
+    });\n\
+if issues:\n\
+  print(json.dumps({\"issues\": issues}, indent=2));\n\
+else:\n\
+  print(json.dumps({\"issues\": []}))" || echo "{\"issues\": []}"\n\
+elif [ "$1" = "eslint" ]; then\n\
+  shift\n\
+  # ESLint with guaranteed file:line in JSON\n\
+  if [ ! -f ".eslintrc.json" ] && [ ! -f ".eslintrc.js" ] && [ ! -f "eslint.config.js" ]; then\n\
+    eslint --config /app/.eslintrc.json --format json "$@" 2>/dev/null | \n\
+      python3 -c "import sys, json;\n\
+data = json.loads(sys.stdin.read()) if sys.stdin else [];\n\
+for file_data in data:\n\
+  if \"messages\" in file_data:\n\
+    for msg in file_data[\"messages\"]:\n\
+      if \"line\" not in msg or \"column\" not in msg:\n\
+        msg[\"line\"] = msg.get(\"line\", 1);\n\
+        msg[\"column\"] = msg.get(\"column\", 1);\n\
+print(json.dumps(data, indent=2))" || echo "[{\"messages\":[]}]"\n\
+  else\n\
+    eslint --format json "$@" 2>/dev/null || echo "[{\"messages\":[]}]"\n\
+  fi\n\
+else\n\
+  echo "{\"error\": \"Unknown command: $1\"}"\n\
+fi' > /usr/local/bin/ts-analyze && \
+    chmod +x /usr/local/bin/ts-analyze
+
+# Verify all installations
+RUN node --version && \
+    tsc --version && \
+    eslint --version && \
+    python3 --version && \
+    echo "TypeScript v4.1 container ready with Python support"
+
+CMD ["node", "--version"]

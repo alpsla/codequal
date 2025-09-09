@@ -1,0 +1,325 @@
+# Strategy 2: Distributed Rust build across multiple pods
+# Each pod builds specific components, then combines results
+
+---
+# Base Rust environment - shared by all builds
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rust-base-dockerfile
+  namespace: codequal-dev
+data:
+  Dockerfile.base: |
+    FROM rust:1.75-slim
+    WORKDIR /app
+    RUN apt-get update && apt-get install -y pkg-config libssl-dev git curl \
+        && apt-get clean && rm -rf /var/lib/apt/lists/*
+    RUN rustup component add clippy rustfmt
+    CMD ["rustc", "--version"]
+
+---
+# Pod 1: Core analysis tools (clippy, rustfmt, basic tools)
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: rust-build-core
+  namespace: codequal-dev
+  labels:
+    component: rust-core
+    build-strategy: distributed
+spec:
+  template:
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        args:
+          - "--dockerfile=/workspace/Dockerfile.base"
+          - "--context=/workspace"
+          - "--destination=registry.digitalocean.com/codequal/analyzer:rust-core-v1"
+          - "--cache=true"
+          - "--cache-repo=registry.digitalocean.com/codequal/analyzer/cache"
+        volumeMounts:
+        - name: dockerfile
+          mountPath: /workspace
+        - name: kaniko-secret
+          mountPath: /kaniko/.docker
+      restartPolicy: Never
+      volumes:
+      - name: dockerfile
+        configMap:
+          name: rust-base-dockerfile
+          items:
+          - key: Dockerfile.base
+            path: Dockerfile.base
+      - name: kaniko-secret
+        secret:
+          secretName: regcred
+          items:
+          - key: .dockerconfigjson
+            path: config.json
+
+---
+# Pod 2: Audit and security tools
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rust-security-dockerfile
+  namespace: codequal-dev
+data:
+  Dockerfile.security: |
+    FROM registry.digitalocean.com/codequal/analyzer:rust-core-v1
+    WORKDIR /app
+    
+    # Install security-focused tools separately
+    RUN cargo install cargo-audit --locked --force
+    RUN cargo install cargo-deny@0.14.0 --locked --force
+    
+    # Custom security scanner (replaces cargo-geiger)
+    RUN cat > /usr/local/bin/security-analyze << 'EOF'
+    #!/bin/bash
+    echo '{"security_tools": ['
+    echo '"audit": '
+    cargo audit --json 2>&1 || echo '{"error": "audit_failed"}'
+    echo ', "deny": '
+    cargo deny list --format json 2>&1 || echo '{"error": "deny_failed"}'
+    echo ']}'
+    EOF
+    RUN chmod +x /usr/local/bin/security-analyze
+    
+    CMD ["security-analyze"]
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: rust-build-security
+  namespace: codequal-dev
+  labels:
+    component: rust-security
+    build-strategy: distributed
+spec:
+  template:
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        resources:
+          requests:
+            memory: "1.5Gi"
+            cpu: "500m"
+          limits:
+            memory: "2.5Gi"
+            cpu: "1000m"
+        args:
+          - "--dockerfile=/workspace/Dockerfile.security"
+          - "--context=/workspace"
+          - "--destination=registry.digitalocean.com/codequal/analyzer:rust-security-v1"
+          - "--cache=true"
+          - "--cache-repo=registry.digitalocean.com/codequal/analyzer/cache"
+        volumeMounts:
+        - name: dockerfile
+          mountPath: /workspace
+        - name: kaniko-secret
+          mountPath: /kaniko/.docker
+      restartPolicy: Never
+      volumes:
+      - name: dockerfile
+        configMap:
+          name: rust-security-dockerfile
+          items:
+          - key: Dockerfile.security
+            path: Dockerfile.security
+      - name: kaniko-secret
+        secret:
+          secretName: regcred
+          items:
+          - key: .dockerconfigjson
+            path: config.json
+
+---
+# Pod 3: Maintenance and utility tools
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rust-utility-dockerfile
+  namespace: codequal-dev
+data:
+  Dockerfile.utility: |
+    FROM registry.digitalocean.com/codequal/analyzer:rust-core-v1
+    WORKDIR /app
+    
+    # Install utility tools
+    RUN cargo install cargo-outdated@0.15.0 --locked --force
+    RUN cargo install cargo-machete --locked --force
+    RUN cargo install cargo-license --locked --force
+    
+    # Utility analysis script
+    RUN cat > /usr/local/bin/utility-analyze << 'EOF'
+    #!/bin/bash
+    echo '{"utility_tools": ['
+    echo '"outdated": '
+    cargo outdated --format json 2>&1 || echo '{"error": "outdated_failed"}'
+    echo ', "unused_deps": '
+    cargo machete --json 2>&1 || echo '{"error": "machete_failed"}'
+    echo ']}'
+    EOF
+    RUN chmod +x /usr/local/bin/utility-analyze
+    
+    CMD ["utility-analyze"]
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: rust-build-utility
+  namespace: codequal-dev
+  labels:
+    component: rust-utility
+    build-strategy: distributed
+spec:
+  template:
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        args:
+          - "--dockerfile=/workspace/Dockerfile.utility"
+          - "--context=/workspace"
+          - "--destination=registry.digitalocean.com/codequal/analyzer:rust-utility-v1"
+          - "--cache=true"
+          - "--cache-repo=registry.digitalocean.com/codequal/analyzer/cache"
+        volumeMounts:
+        - name: dockerfile
+          mountPath: /workspace
+        - name: kaniko-secret
+          mountPath: /kaniko/.docker
+      restartPolicy: Never
+      volumes:
+      - name: dockerfile
+        configMap:
+          name: rust-utility-dockerfile
+          items:
+          - key: Dockerfile.utility
+            path: Dockerfile.utility
+      - name: kaniko-secret
+        secret:
+          secretName: regcred
+          items:
+          - key: .dockerconfigjson
+            path: config.json
+
+---
+# Final: Combine all components into single runtime image
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rust-combined-dockerfile
+  namespace: codequal-dev
+data:
+  Dockerfile.combined: |
+    FROM rust:1.75-slim as final
+    WORKDIR /app
+    
+    # Copy binaries from distributed builds
+    COPY --from=registry.digitalocean.com/codequal/analyzer:rust-security-v1 /usr/local/cargo/bin/cargo-audit /usr/local/cargo/bin/
+    COPY --from=registry.digitalocean.com/codequal/analyzer:rust-security-v1 /usr/local/cargo/bin/cargo-deny /usr/local/cargo/bin/
+    COPY --from=registry.digitalocean.com/codequal/analyzer:rust-utility-v1 /usr/local/cargo/bin/cargo-outdated /usr/local/cargo/bin/
+    COPY --from=registry.digitalocean.com/codequal/analyzer:rust-utility-v1 /usr/local/cargo/bin/cargo-machete /usr/local/cargo/bin/
+    COPY --from=registry.digitalocean.com/codequal/analyzer:rust-utility-v1 /usr/local/cargo/bin/cargo-license /usr/local/cargo/bin/
+    
+    # Copy analysis scripts
+    COPY --from=registry.digitalocean.com/codequal/analyzer:rust-security-v1 /usr/local/bin/security-analyze /usr/local/bin/
+    COPY --from=registry.digitalocean.com/codequal/analyzer:rust-utility-v1 /usr/local/bin/utility-analyze /usr/local/bin/
+    
+    # Install system dependencies
+    RUN apt-get update && apt-get install -y pkg-config libssl-dev git curl \
+        && apt-get clean && rm -rf /var/lib/apt/lists/*
+    RUN rustup component add clippy rustfmt
+    
+    # Create orchestrator script
+    RUN cat > /usr/local/bin/rust-analyze-distributed << 'EOF'
+    #!/bin/bash
+    echo '{"analysis": "distributed", "language": "rust", "components": ['
+    
+    # Run clippy directly
+    echo '"clippy": '
+    cargo clippy --message-format=json -- -W clippy::all 2>&1 | head -50 || echo '{"error": "clippy_failed"}'
+    echo ','
+    
+    # Run security analysis
+    echo '"security": '
+    security-analyze 2>&1 || echo '{"error": "security_analysis_failed"}'
+    echo ','
+    
+    # Run utility analysis
+    echo '"utilities": '
+    utility-analyze 2>&1 || echo '{"error": "utility_analysis_failed"}'
+    
+    echo ']}'
+    EOF
+    RUN chmod +x /usr/local/bin/rust-analyze-distributed
+    
+    CMD ["rust-analyze-distributed"]
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: rust-build-final-distributed
+  namespace: codequal-dev
+  labels:
+    component: rust-final
+    build-strategy: distributed
+spec:
+  template:
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "1.5Gi"
+            cpu: "1000m"
+        args:
+          - "--dockerfile=/workspace/Dockerfile.combined"
+          - "--context=/workspace"
+          - "--destination=registry.digitalocean.com/codequal/analyzer:lang-rust-distributed-v1"
+          - "--cache=true"
+          - "--cache-repo=registry.digitalocean.com/codequal/analyzer/cache"
+        volumeMounts:
+        - name: dockerfile
+          mountPath: /workspace
+        - name: kaniko-secret
+          mountPath: /kaniko/.docker
+      restartPolicy: Never
+      volumes:
+      - name: dockerfile
+        configMap:
+          name: rust-combined-dockerfile
+          items:
+          - key: Dockerfile.combined
+            path: Dockerfile.combined
+      - name: kaniko-secret
+        secret:
+          secretName: regcred
+          items:
+          - key: .dockerconfigjson
+            path: config.json

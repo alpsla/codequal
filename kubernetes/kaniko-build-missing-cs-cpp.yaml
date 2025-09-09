@@ -1,0 +1,108 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: missing-dockerfiles
+  namespace: codequal-dev
+data:
+  Dockerfile.csharp: |
+    FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
+    
+    # Install additional security tools
+    RUN dotnet tool install --global security-scan --version 5.* || true
+    RUN dotnet tool install --global dotnet-sonarscanner || true
+    
+    ENV PATH="${PATH}:/root/.dotnet/tools"
+    
+    WORKDIR /app
+    
+    # Keep container running for analysis
+    CMD ["tail", "-f", "/dev/null"]
+  
+  Dockerfile.cpp: |
+    FROM ubuntu:22.04
+    
+    ENV DEBIAN_FRONTEND=noninteractive
+    
+    RUN apt-get update && apt-get install -y \
+        build-essential \
+        g++ \
+        gcc \
+        clang \
+        clang-tidy \
+        cppcheck \
+        valgrind \
+        cmake \
+        && rm -rf /var/lib/apt/lists/*
+    
+    WORKDIR /app
+    
+    # Keep container running for analysis
+    CMD ["tail", "-f", "/dev/null"]
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: build-csharp-v3
+  namespace: codequal-dev
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+        - "--dockerfile=Dockerfile.csharp"
+        - "--context=dir:///workspace"
+        - "--destination=registry.digitalocean.com/codequal/analyzer:lang-csharp-v3"
+        - "--cache=true"
+        volumeMounts:
+        - name: dockerfile
+          mountPath: /workspace
+        - name: kaniko-secret
+          mountPath: /kaniko/.docker
+      restartPolicy: Never
+      volumes:
+      - name: dockerfile
+        configMap:
+          name: missing-dockerfiles
+      - name: kaniko-secret
+        secret:
+          secretName: regcred
+          items:
+          - key: .dockerconfigjson
+            path: config.json
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: build-cpp-v3
+  namespace: codequal-dev
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+        - "--dockerfile=Dockerfile.cpp"
+        - "--context=dir:///workspace"
+        - "--destination=registry.digitalocean.com/codequal/analyzer:lang-cpp-v3"
+        - "--cache=true"
+        volumeMounts:
+        - name: dockerfile
+          mountPath: /workspace
+        - name: kaniko-secret
+          mountPath: /kaniko/.docker
+      restartPolicy: Never
+      volumes:
+      - name: dockerfile
+        configMap:
+          name: missing-dockerfiles
+      - name: kaniko-secret
+        secret:
+          secretName: regcred
+          items:
+          - key: .dockerconfigjson
+            path: config.json

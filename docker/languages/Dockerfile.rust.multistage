@@ -1,0 +1,98 @@
+# Multi-stage Rust build with aggressive layer caching and resource optimization
+# Strategy 1: Incremental tool installation with intermediate caching
+
+# Stage 1: Base Rust environment
+FROM rust:1.75-slim AS rust-base
+WORKDIR /tmp
+RUN apt-get update && apt-get install -y \
+    pkg-config \
+    libssl-dev \
+    git \
+    curl \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Stage 2: Core components (lightweight)
+FROM rust-base AS core-tools
+RUN rustup component add clippy rustfmt
+# Cache this layer - these components are stable and fast
+
+# Stage 3: Quick analysis tools (lower memory footprint)
+FROM core-tools AS quick-tools
+RUN cargo install cargo-audit --locked
+RUN cargo install cargo-outdated@0.15.0 --locked --force
+# Install individually to leverage Docker layer caching
+
+# Stage 4: Medium complexity tools
+FROM quick-tools AS medium-tools
+RUN cargo install cargo-deny@0.14.0 --locked --force
+RUN cargo install cargo-machete --locked --force
+RUN cargo install cargo-license --locked --force
+
+# Stage 5: Problem tool alternative (skip cargo-geiger)
+FROM medium-tools AS analysis-tools
+# Create custom unsafe scanner instead of cargo-geiger
+RUN cat > /usr/local/bin/unsafe-scanner << 'EOF'
+#!/bin/bash
+# Lightweight alternative to cargo-geiger for unsafe code detection
+echo '{"unsafe_analysis": "starting"}'
+
+# Find all unsafe blocks and functions
+grep -rn "unsafe" --include="*.rs" . | grep -E "(unsafe\s+fn|unsafe\s*{)" | \
+while IFS= read -r line; do
+    file=$(echo "$line" | cut -d: -f1)
+    linenum=$(echo "$line" | cut -d: -f2)
+    context=$(echo "$line" | cut -d: -f3-)
+    echo "{\"type\": \"unsafe_code\", \"file\": \"$file\", \"line\": $linenum, \"context\": \"$context\"}"
+done
+EOF
+RUN chmod +x /usr/local/bin/unsafe-scanner
+
+# Stage 6: Final runtime with all tools and optimized scripts
+FROM analysis-tools AS final
+WORKDIR /app
+
+# Create optimized analysis scripts
+RUN cat > /usr/local/bin/rust-analyze-memory-efficient << 'EOF'
+#!/bin/bash
+# Memory-efficient analysis that runs tools sequentially with cleanup
+
+echo '{"analysis": "memory_efficient", "language": "rust", "timestamp": "'$(date -Iseconds)'"}'
+
+# Function to run tool and cleanup
+run_tool() {
+    local tool_name="$1"
+    local command="$2"
+    
+    echo "\"$tool_name\": {"
+    if eval "$command" 2>/dev/null; then
+        echo '"status": "success"'
+    else
+        echo '"status": "error", "message": "Tool execution failed"'
+    fi
+    echo "},"
+    
+    # Force garbage collection if possible
+    sync
+    echo 3 > /proc/sys/vm/drop_caches 2>/dev/null || true
+}
+
+echo '"tools": {'
+
+# Run tools sequentially with memory management
+run_tool "clippy" "cargo clippy --message-format=json -- -W clippy::all 2>&1 | head -100"
+run_tool "audit" "cargo audit --json 2>&1 || true"
+run_tool "unsafe_scan" "unsafe-scanner"
+
+echo '"metadata": {"strategy": "sequential", "memory_optimized": true}'
+echo '}}'
+EOF
+RUN chmod +x /usr/local/bin/rust-analyze-memory-efficient
+
+# Verify core installations only (skip problematic tools)
+RUN rustc --version && \
+    cargo --version && \
+    cargo clippy --version && \
+    cargo audit --version
+
+CMD ["rustc", "--version"]

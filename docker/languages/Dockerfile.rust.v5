@@ -1,0 +1,151 @@
+FROM rust:1.81-slim
+
+WORKDIR /app
+
+# Install necessary system dependencies
+RUN apt-get update && apt-get install -y \
+    pkg-config \
+    libssl-dev \
+    git \
+    curl \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Rust tools for comprehensive analysis
+# Note: Removed cargo-geiger due to persistent build issues
+# The custom-unsafe-scanner provides similar functionality
+RUN cargo install cargo-audit --locked && \
+    cargo install cargo-outdated@0.16.0 --locked && \
+    cargo install cargo-deny@0.17.0 --locked && \
+    cargo install cargo-machete --locked && \
+    cargo install cargo-license --locked
+
+# Install clippy (comes with rustup by default in recent versions)
+RUN rustup component add clippy
+
+# Install rustfmt for code formatting checks
+RUN rustup component add rustfmt
+
+# Create wrapper scripts for better tool integration
+
+# Clippy wrapper with JSON output
+RUN cat > /usr/local/bin/clippy-json << 'EOF'
+#!/bin/bash
+cargo clippy --message-format=json -- -W clippy::all -W clippy::pedantic -W clippy::nursery 2>&1
+EOF
+RUN chmod +x /usr/local/bin/clippy-json
+
+# Cargo audit wrapper with JSON output
+RUN cat > /usr/local/bin/audit-json << 'EOF'
+#!/bin/bash
+cargo audit --json 2>&1 || true
+EOF
+RUN chmod +x /usr/local/bin/audit-json
+
+# Enhanced security scanner for unsafe code detection (replaces cargo-geiger)
+RUN cat > /usr/local/bin/rust-security-scan << 'EOF'
+#!/bin/bash
+
+# Custom security pattern scanner for Rust
+echo '{"security_scan": "starting"}'
+
+# Common security patterns to check (including unsafe code)
+patterns=(
+    "unsafe\s*{"
+    "std::mem::transmute"
+    "std::ptr::read"
+    "std::ptr::write"
+    "std::slice::from_raw_parts"
+    "std::mem::forget"
+    "std::mem::uninitialized"
+    "std::mem::zeroed"
+    "unwrap()"
+    "expect("
+    "panic!"
+    "todo!"
+    "unimplemented!"
+    "unreachable!"
+)
+
+results="[]"
+for pattern in "${patterns[@]}"; do
+    matches=$(grep -rn "$pattern" --include="*.rs" . 2>/dev/null | head -10)
+    if [ ! -z "$matches" ]; then
+        # Format as JSON (simplified)
+        while IFS= read -r line; do
+            file=$(echo "$line" | cut -d: -f1)
+            linenum=$(echo "$line" | cut -d: -f2)
+            echo "{\"type\": \"security\", \"pattern\": \"$pattern\", \"file\": \"$file\", \"line\": $linenum}"
+        done <<< "$matches"
+    fi
+done
+EOF
+RUN chmod +x /usr/local/bin/rust-security-scan
+
+# Performance analyzer wrapper
+RUN cat > /usr/local/bin/rust-perf-check << 'EOF'
+#!/bin/bash
+
+# Check for performance anti-patterns
+echo '{"performance_check": "starting"}'
+
+# Check for common performance issues
+patterns=(
+    "clone()"
+    "Box::new"
+    "Vec::new"
+    "String::new"
+    "collect::<Vec"
+    "to_string()"
+    "format!"
+)
+
+for pattern in "${patterns[@]}"; do
+    count=$(grep -r "$pattern" --include="*.rs" . 2>/dev/null | wc -l)
+    if [ $count -gt 0 ]; then
+        echo "{\"pattern\": \"$pattern\", \"occurrences\": $count, \"severity\": \"info\"}"
+    fi
+done
+EOF
+RUN chmod +x /usr/local/bin/rust-perf-check
+
+# Create a comprehensive analysis script
+RUN cat > /usr/local/bin/rust-analyze-all << 'EOF'
+#!/bin/bash
+
+echo '{"analysis": "comprehensive", "language": "rust", "tools": ['
+
+# Run clippy
+echo '"clippy": '
+clippy-json || echo '{"error": "clippy failed"}'
+echo ','
+
+# Run cargo audit
+echo '"audit": '
+audit-json || echo '{"error": "audit failed"}'
+echo ','
+
+# Run security scan (enhanced to replace cargo-geiger)
+echo '"security": ['
+rust-security-scan
+echo '],'
+
+# Run performance check
+echo '"performance": ['
+rust-perf-check
+echo ']'
+
+echo ']}'
+EOF
+RUN chmod +x /usr/local/bin/rust-analyze-all
+
+# Verify installations (removed cargo-geiger verification)
+RUN rustc --version && \
+    cargo --version && \
+    cargo clippy --version && \
+    cargo audit --version && \
+    cargo outdated --version && \
+    cargo deny --version && \
+    cargo machete --version
+
+CMD ["rustc", "--version"]

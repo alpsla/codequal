@@ -8,21 +8,7 @@
 export { ComparisonOrchestrator } from './orchestrator/comparison-orchestrator';
 
 // Services
-// Archived: DeepWikiService - replaced by DirectDeepWikiApiWithLocation
-// export { 
-//   DeepWikiService, 
-//   createDeepWikiService,
-//   IDeepWikiService 
-// } from './services/deepwiki-service';
-
-export {
-  registerDeepWikiApi,
-  getDeepWikiApi,
-  IDeepWikiApi,
-  DeepWikiApiWrapper
-} from './services/deepwiki-api-wrapper';
-
-export { registerRealDeepWikiApi } from './services/register-deepwiki';
+// The codebase uses MCP tools and the two-branch analysis system
 
 // Model Research Service
 export { ModelResearcherService } from './services/model-researcher-service';

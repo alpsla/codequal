@@ -1,0 +1,66 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: build-go-v3
+  namespace: codequal-dev
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+        - "--dockerfile=/workspace/Dockerfile"
+        - "--context=dir:///workspace"
+        - "--destination=registry.digitalocean.com/codequal/analyzer:lang-go-v3"
+        - "--cache=false"
+        - "--cleanup"
+        volumeMounts:
+        - name: dockerfile
+          mountPath: /workspace
+        - name: docker-config
+          mountPath: /kaniko/.docker
+      volumes:
+      - name: dockerfile
+        configMap:
+          name: dockerfile-go-v3
+      - name: docker-config
+        secret:
+          secretName: regcred
+          items:
+          - key: .dockerconfigjson
+            path: config.json
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dockerfile-go-v3
+  namespace: codequal-dev
+data:
+  Dockerfile: |
+    FROM golang:1.21-alpine
+    
+    # Install git and build tools
+    RUN apk add --no-cache git gcc musl-dev
+    
+    # Install Go analysis and security tools with specific compatible versions
+    RUN go install golang.org/x/tools/cmd/goimports@v0.13.0 && \
+        go install github.com/securego/gosec/v2/cmd/gosec@v2.18.2 && \
+        go install golang.org/x/lint/golint@latest && \
+        go install github.com/fzipp/gocyclo/cmd/gocyclo@latest && \
+        go install github.com/gordonklaus/ineffassign@latest && \
+        go install github.com/jgautheron/goconst/cmd/goconst@latest && \
+        go install github.com/kisielk/errcheck@latest
+    
+    # Install staticcheck v2023.1.6 (compatible with Go 1.21)
+    RUN go install honnef.co/go/tools/cmd/staticcheck@2023.1.6
+    
+    # Set up Go environment
+    ENV GO111MODULE=on
+    ENV GOPATH=/go
+    ENV PATH="/go/bin:${PATH}"
+    
+    WORKDIR /workspace
+    CMD ["/bin/sh"]

@@ -13,31 +13,54 @@ A cloud-based PR analysis system that:
 - Provides educational materials for each issue
 - Deploys on 8GB Kubernetes cluster
 
-## Current Status (September 4, 2025)
+## Current Status (September 9, 2025)
 ✅ **Language Container Migration COMPLETE** - All 10 language containers built and deployed
 ✅ **Build fixed and working** - TypeScript compilation successful  
 ✅ **Container Registry** - All images in DigitalOcean registry
 ✅ **Kubernetes Deployments** - Language-specific deployments ready
-⏳ **Next: Integration Testing** - Test containers with orchestrator
+✅ **V8 Analyzer Migration Started** - Core files moved to two-branch architecture
+⚠️ **CRITICAL: Complete V8 Migration** - Remaining report generators need migration
 
 ## Your Next Steps
 
 ### 1. Read These Documents (in order):
 ```bash
-# 1. Latest session summary - what we accomplished
-cat /Users/alpinro/Code\ Prjects/codequal/docs/session-summary/2025-09-04-language-containers.md
+# 1. CRITICAL - Latest session summary (V8 migration work)
+cat /Users/alpinro/Code\ Prjects/codequal/packages/agents/src/two-branch/docs/session_summary/SESSION_SUMMARY_2025_09_09_V8_ANALYZER_MIGRATION.md
 
-# 2. Implementation plan - tells you what to do next  
+# 2. Bug reports for current issues
+cat /Users/alpinro/Code\ Prjects/codequal/packages/agents/src/two-branch/docs/bugs/BUG_073_V8_ANALYZER_MIGRATION.md
+cat /Users/alpinro/Code\ Prjects/codequal/packages/agents/src/two-branch/docs/bugs/BUG_074_V8_BASE_ANALYZER_SIZE_VIOLATION.md
+
+# 3. Implementation plan - tells you what to do next  
 cat /Users/alpinro/Code\ Prjects/codequal/docs/IMPLEMENTATION_PLAN_2025.md
 
-# 3. Production flow - how the system actually works
+# 4. Production flow - how the system actually works
 cat /Users/alpinro/Code\ Prjects/codequal/docs/ACCURATE_PRODUCTION_FLOW.md
-
-# 4. Deployment guide - Kubernetes deployment instructions
-cat /Users/alpinro/Code\ Prjects/codequal/kubernetes/DEPLOYMENT_GUIDE.md
 ```
 
-### 2. Verify Language Container Deployment:
+### 2. CRITICAL - Complete V8 Analyzer Migration:
+```bash
+# MUST complete these items to prevent data loss:
+
+# 1. Move remaining large V8 files from standard to two-branch:
+ls -la /Users/alpinro/Code\ Prjects/codequal/packages/agents/src/standard/comparison/report-generator-v8*
+# These files need immediate migration before standard directory removal
+
+# 2. Split oversized files per CLAUDE.md guidelines:
+# v8-base-analyzer.ts: 945 lines -> split into 6 modules (<500 lines each)
+# dynamic-model-selector.ts: 532 lines -> split into 3 modules
+# report-generator-v8-final.ts: ~3500 lines -> major refactoring needed
+
+# 3. Update all import references to use two-branch paths
+# 4. Run build to identify any remaining import errors
+npm run build --workspace=packages/agents
+
+# 5. Test V8 functionality still works after migration
+npm test -- --grep="v8"
+```
+
+### 3. Verify Language Container Deployment:
 ```bash
 # All 10 language containers are in DigitalOcean registry
 kubectl get pods -n codequal-dev
@@ -116,7 +139,7 @@ PR URL → Orchestrator → Clone both branches → Detect language
 - [x] Resolved network/resource conflicts
 
 ### Phase 2: Integration Testing (NEXT PRIORITY)
-- [ ] Deploy language-specific pods to K8s cluster
+- [x] Deploy language-specific pods to K8s cluster
 - [ ] Test individual language containers with real repositories
 - [ ] Create CloudToolExecutor wrapper for orchestrator
 - [ ] Verify language detection routes to correct containers

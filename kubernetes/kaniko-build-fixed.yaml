@@ -1,0 +1,387 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dockerfile-configs-fixed
+  namespace: codequal-dev
+data:
+  Dockerfile.javascript: |
+    FROM node:20-slim
+    
+    # Install ESLint, Prettier, TypeScript and other JavaScript tools
+    RUN npm install -g \
+        eslint@latest \
+        prettier@latest \
+        typescript@latest \
+        @typescript-eslint/eslint-plugin@latest \
+        @typescript-eslint/parser@latest \
+        eslint-plugin-security@latest \
+        eslint-plugin-node@latest \
+        jshint@latest \
+        && npm cache clean --force
+    
+    # Create a default ESLint configuration for v9+
+    RUN mkdir -p /etc && echo 'import js from "@eslint/js";' > /etc/eslint.config.mjs && \
+        echo 'export default [js.configs.recommended];' >> /etc/eslint.config.mjs
+    
+    # Create a default Prettier config
+    RUN echo '{"semi": true, "singleQuote": true}' > /etc/.prettierrc
+    
+    # Create a default TypeScript config
+    RUN echo '{"compilerOptions": {"target": "ES2020", "module": "commonjs", "strict": true}}' > /etc/tsconfig.json
+    
+    WORKDIR /workspace
+    ENV ESLINT_USE_FLAT_CONFIG=true
+    CMD ["/bin/bash"]
+
+  Dockerfile.java: |
+    FROM openjdk:17-slim
+    
+    # Install build tools and analysis tools
+    RUN apt-get update && apt-get install -y \
+        wget unzip maven gradle \
+        && rm -rf /var/lib/apt/lists/*
+    
+    # Install SpotBugs
+    ENV SPOTBUGS_VERSION=4.8.3
+    RUN wget -q https://github.com/spotbugs/spotbugs/releases/download/${SPOTBUGS_VERSION}/spotbugs-${SPOTBUGS_VERSION}.zip \
+        && unzip -q spotbugs-${SPOTBUGS_VERSION}.zip -d /opt \
+        && rm spotbugs-${SPOTBUGS_VERSION}.zip \
+        && ln -s /opt/spotbugs-${SPOTBUGS_VERSION}/bin/spotbugs /usr/local/bin/spotbugs \
+        && chmod +x /usr/local/bin/spotbugs
+    
+    # Install PMD
+    ENV PMD_VERSION=7.0.0
+    RUN wget -q https://github.com/pmd/pmd/releases/download/pmd_releases%2F${PMD_VERSION}/pmd-dist-${PMD_VERSION}-bin.zip \
+        && unzip -q pmd-dist-${PMD_VERSION}-bin.zip -d /opt \
+        && rm pmd-dist-${PMD_VERSION}-bin.zip \
+        && ln -s /opt/pmd-bin-${PMD_VERSION}/bin/pmd /usr/local/bin/pmd \
+        && chmod +x /usr/local/bin/pmd
+    
+    WORKDIR /workspace
+    CMD ["/bin/bash"]
+
+  Dockerfile.ruby: |
+    FROM ruby:3.2-slim
+    
+    # Install development tools
+    RUN apt-get update && apt-get install -y \
+        build-essential git \
+        && rm -rf /var/lib/apt/lists/*
+    
+    # Install Ruby analysis tools
+    RUN gem install \
+        brakeman \
+        rubocop \
+        rubocop-performance \
+        rubocop-rails \
+        reek \
+        rails_best_practices \
+        bundler-audit \
+        && gem cleanup
+    
+    # Create a default RuboCop configuration
+    RUN mkdir -p /etc && echo 'AllCops:' > /etc/.rubocop.yml && \
+        echo '  NewCops: enable' >> /etc/.rubocop.yml && \
+        echo '  TargetRubyVersion: 3.2' >> /etc/.rubocop.yml && \
+        echo 'Style/Documentation:' >> /etc/.rubocop.yml && \
+        echo '  Enabled: false' >> /etc/.rubocop.yml
+    
+    ENV RUBOCOP_CONFIG=/etc/.rubocop.yml
+    WORKDIR /workspace
+    CMD ["/bin/bash"]
+
+  Dockerfile.php: |
+    FROM php:8.2-cli
+    
+    # Install system dependencies
+    RUN apt-get update && apt-get install -y \
+        git unzip libzip-dev \
+        && docker-php-ext-install zip \
+        && rm -rf /var/lib/apt/lists/*
+    
+    # Install Composer
+    RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" \
+        && php composer-setup.php --install-dir=/usr/local/bin --filename=composer \
+        && php -r "unlink('composer-setup.php');"
+    
+    # Install PHP analysis tools globally
+    WORKDIR /tmp/php-tools
+    RUN composer require --dev \
+        phpstan/phpstan:^1.10 \
+        phpmd/phpmd:^2.14 \
+        squizlabs/php_codesniffer:^3.7 \
+        && mv vendor /opt/php-tools \
+        && rm -rf /tmp/php-tools
+    
+    # Create symlinks for the tools
+    RUN ln -s /opt/php-tools/bin/phpstan /usr/local/bin/phpstan \
+        && ln -s /opt/php-tools/bin/phpmd /usr/local/bin/phpmd \
+        && ln -s /opt/php-tools/bin/phpcs /usr/local/bin/phpcs \
+        && ln -s /opt/php-tools/bin/phpcbf /usr/local/bin/phpcbf
+    
+    # Create default PHPStan configuration
+    RUN mkdir -p /etc && echo 'parameters:' > /etc/phpstan.neon && \
+        echo '  level: 5' >> /etc/phpstan.neon && \
+        echo '  paths:' >> /etc/phpstan.neon && \
+        echo '    - .' >> /etc/phpstan.neon
+    
+    WORKDIR /workspace
+    CMD ["/bin/bash"]
+
+  Dockerfile.cpp: |
+    FROM gcc:12
+    
+    # Install additional C++ analysis tools
+    RUN apt-get update && apt-get install -y \
+        cppcheck clang clang-tidy clang-format \
+        cmake valgrind python3-pip \
+        && pip3 install cpplint \
+        && rm -rf /var/lib/apt/lists/*
+    
+    # Create default .clang-tidy configuration
+    RUN mkdir -p /etc && echo '---' > /etc/.clang-tidy && \
+        echo 'Checks: "bugprone-*,cert-*,clang-analyzer-*,cppcoreguidelines-*,misc-*,modernize-*,performance-*,readability-*"' >> /etc/.clang-tidy && \
+        echo 'WarningsAsErrors: ""' >> /etc/.clang-tidy && \
+        echo 'HeaderFilterRegex: ".*"' >> /etc/.clang-tidy && \
+        echo 'FormatStyle: google' >> /etc/.clang-tidy
+    
+    WORKDIR /workspace
+    CMD ["/bin/bash"]
+
+  Dockerfile.perl: |
+    FROM perl:5.38-slim
+    
+    # Install system dependencies
+    RUN apt-get update && apt-get install -y \
+        build-essential cpanminus \
+        && rm -rf /var/lib/apt/lists/*
+    
+    # Install Perl::Critic and related tools
+    RUN cpanm --notest \
+        Perl::Critic \
+        Perl::Tidy \
+        B::Keywords \
+        Config::Tiny \
+        Exception::Class \
+        File::HomeDir \
+        File::Which \
+        List::MoreUtils \
+        PPI \
+        PPIx::Regexp \
+        Readonly \
+        String::Format \
+        && rm -rf /root/.cpanm/work
+    
+    # Create a default .perlcriticrc configuration
+    RUN mkdir -p /etc && echo 'severity = 3' > /etc/.perlcriticrc && \
+        echo 'verbose = 8' >> /etc/.perlcriticrc && \
+        echo '[BuiltinFunctions::ProhibitStringyEval]' >> /etc/.perlcriticrc && \
+        echo 'severity = 5' >> /etc/.perlcriticrc
+    
+    WORKDIR /workspace
+    CMD ["/bin/bash"]
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: build-javascript-fixed
+  namespace: codequal-dev
+spec:
+  template:
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+          - "--dockerfile=/workspace/Dockerfile.javascript"
+          - "--context=dir:///workspace"
+          - "--destination=registry.digitalocean.com/codequal/analyzer:lang-javascript-v3"
+          - "--cache=true"
+          - "--cache-ttl=24h"
+        volumeMounts:
+        - name: dockerfile
+          mountPath: /workspace
+        - name: docker-config
+          mountPath: /kaniko/.docker
+      restartPolicy: Never
+      volumes:
+      - name: dockerfile
+        configMap:
+          name: dockerfile-configs-fixed
+      - name: docker-config
+        secret:
+          secretName: regcred
+          items:
+          - key: .dockerconfigjson
+            path: config.json
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: build-java-fixed
+  namespace: codequal-dev
+spec:
+  template:
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+          - "--dockerfile=/workspace/Dockerfile.java"
+          - "--context=dir:///workspace"
+          - "--destination=registry.digitalocean.com/codequal/analyzer:lang-java-v3"
+          - "--cache=true"
+          - "--cache-ttl=24h"
+        volumeMounts:
+        - name: dockerfile
+          mountPath: /workspace
+        - name: docker-config
+          mountPath: /kaniko/.docker
+      restartPolicy: Never
+      volumes:
+      - name: dockerfile
+        configMap:
+          name: dockerfile-configs-fixed
+      - name: docker-config
+        secret:
+          secretName: regcred
+          items:
+          - key: .dockerconfigjson
+            path: config.json
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: build-ruby-fixed
+  namespace: codequal-dev
+spec:
+  template:
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+          - "--dockerfile=/workspace/Dockerfile.ruby"
+          - "--context=dir:///workspace"
+          - "--destination=registry.digitalocean.com/codequal/analyzer:lang-ruby-v3"
+          - "--cache=true"
+          - "--cache-ttl=24h"
+        volumeMounts:
+        - name: dockerfile
+          mountPath: /workspace
+        - name: docker-config
+          mountPath: /kaniko/.docker
+      restartPolicy: Never
+      volumes:
+      - name: dockerfile
+        configMap:
+          name: dockerfile-configs-fixed
+      - name: docker-config
+        secret:
+          secretName: regcred
+          items:
+          - key: .dockerconfigjson
+            path: config.json
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: build-php-fixed
+  namespace: codequal-dev
+spec:
+  template:
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+          - "--dockerfile=/workspace/Dockerfile.php"
+          - "--context=dir:///workspace"
+          - "--destination=registry.digitalocean.com/codequal/analyzer:lang-php-v3"
+          - "--cache=true"
+          - "--cache-ttl=24h"
+        volumeMounts:
+        - name: dockerfile
+          mountPath: /workspace
+        - name: docker-config
+          mountPath: /kaniko/.docker
+      restartPolicy: Never
+      volumes:
+      - name: dockerfile
+        configMap:
+          name: dockerfile-configs-fixed
+      - name: docker-config
+        secret:
+          secretName: regcred
+          items:
+          - key: .dockerconfigjson
+            path: config.json
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: build-cpp-fixed
+  namespace: codequal-dev
+spec:
+  template:
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+          - "--dockerfile=/workspace/Dockerfile.cpp"
+          - "--context=dir:///workspace"
+          - "--destination=registry.digitalocean.com/codequal/analyzer:lang-cpp-v3"
+          - "--cache=true"
+          - "--cache-ttl=24h"
+        volumeMounts:
+        - name: dockerfile
+          mountPath: /workspace
+        - name: docker-config
+          mountPath: /kaniko/.docker
+      restartPolicy: Never
+      volumes:
+      - name: dockerfile
+        configMap:
+          name: dockerfile-configs-fixed
+      - name: docker-config
+        secret:
+          secretName: regcred
+          items:
+          - key: .dockerconfigjson
+            path: config.json
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: build-perl-fixed
+  namespace: codequal-dev
+spec:
+  template:
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+          - "--dockerfile=/workspace/Dockerfile.perl"
+          - "--context=dir:///workspace"
+          - "--destination=registry.digitalocean.com/codequal/analyzer:lang-perl-v3"
+          - "--cache=true"
+          - "--cache-ttl=24h"
+        volumeMounts:
+        - name: dockerfile
+          mountPath: /workspace
+        - name: docker-config
+          mountPath: /kaniko/.docker
+      restartPolicy: Never
+      volumes:
+      - name: dockerfile
+        configMap:
+          name: dockerfile-configs-fixed
+      - name: docker-config
+        secret:
+          secretName: regcred
+          items:
+          - key: .dockerconfigjson
+            path: config.json

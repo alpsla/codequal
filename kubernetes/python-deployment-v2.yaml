@@ -1,0 +1,29 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analyzer-python-v2
+  namespace: codequal-dev
+spec:
+  replicas: 0  # Scale from zero
+  selector:
+    matchLabels:
+      app: analyzer-python-v2
+      language: python
+  template:
+    metadata:
+      labels:
+        app: analyzer-python-v2
+        language: python
+    spec:
+      containers:
+      - name: analyzer
+        image: registry.digitalocean.com/codequal/analyzer:lang-python-v2
+        command: ["sleep", "infinity"]  # Keep container running for testing
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "250m"

@@ -1,0 +1,317 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: final-test-files-v4
+  namespace: codequal-dev
+data:
+  test.py: |
+    import unused_module
+    def calculate():
+        return a + b  # Line 3
+    if x == None:  # Line 4
+        pass
+    exec('print(1)')  # Line 6
+
+  test.js: |
+    var x = 5  // Line 1 - missing semicolon
+    var unused = 'not used';  // Line 2
+    function test() {
+        return a + b;  // Line 4 - undefined vars
+    }
+    if (x == '5') {  // Line 6 - should use ===
+        console.log('test');
+    }
+
+  test.ts: |
+    function calculate(a, b) {  // Line 1 - missing types
+        return a + b;
+    }
+    let data: any = {};  // Line 3 - any type
+    const unused = 'not used';  // Line 4
+    eval('test');  // Line 5 - security issue
+
+  Test.java: |
+    public class Test {
+        private static String unused = "not used";  // Line 2
+        
+        public static void method() {
+            String result = undefinedVar;  // Line 5
+        }
+        
+        public static void main(String[] args) {
+            method();
+        }
+    }
+
+  test.php: |
+    <?php
+    $unused = "not used";  // Line 2
+    
+    function calculate() {
+        return $a + $b;  // Line 5 - undefined vars
+    }
+    
+    echo $_POST['data'];  // Line 8 - XSS risk
+    ?>
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: final-test-python-v4
+  namespace: codequal-dev
+spec:
+  ttlSecondsAfterFinished: 600
+  template:
+    spec:
+      imagePullSecrets:
+      - name: registry-codequal
+      restartPolicy: Never
+      containers:
+      - name: test-container
+        image: registry.digitalocean.com/codequal-registry/analyzer:lang-python-v4
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        command: ["/bin/sh"]
+        args:
+        - -c
+        - |
+          echo "=== Python v4 File:Line Analysis ==="
+          echo "Container: lang-python-v4"
+          echo ""
+          
+          cp /test-files/test.py /tmp/test.py
+          
+          echo "=== Flake8 Output ==="
+          flake8 /tmp/test.py 2>&1 | head -10
+          echo ""
+          
+          echo "=== Pylint Output ==="
+          pylint /tmp/test.py 2>&1 | grep -E "^/tmp|^.*:[0-9]+:" | head -10
+          echo ""
+          
+          echo "=== Bandit Security Output ==="
+          bandit /tmp/test.py -f txt 2>&1 | head -15
+          echo ""
+          
+          echo "=== Analysis Complete ==="
+        volumeMounts:
+        - name: test-files
+          mountPath: /test-files
+      volumes:
+      - name: test-files
+        configMap:
+          name: final-test-files-v4
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: final-test-javascript-v4
+  namespace: codequal-dev
+spec:
+  ttlSecondsAfterFinished: 600
+  template:
+    spec:
+      imagePullSecrets:
+      - name: registry-codequal
+      restartPolicy: Never
+      containers:
+      - name: test-container
+        image: registry.digitalocean.com/codequal-registry/analyzer:lang-javascript-v4
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        command: ["/bin/sh"]
+        args:
+        - -c
+        - |
+          echo "=== JavaScript v4 File:Line Analysis ==="
+          echo "Container: lang-javascript-v4"
+          echo ""
+          
+          cp /test-files/test.js /tmp/test.js
+          
+          echo "=== Node.js Syntax Check ==="
+          node -c /tmp/test.js 2>&1 || true
+          echo ""
+          
+          echo "=== ESLint Output ==="
+          eslint /tmp/test.js --format unix 2>&1 | head -10
+          echo ""
+          
+          echo "=== JSHint Output ==="
+          jshint /tmp/test.js 2>&1 | head -10
+          echo ""
+          
+          echo "=== Analysis Complete ==="
+        volumeMounts:
+        - name: test-files
+          mountPath: /test-files
+      volumes:
+      - name: test-files
+        configMap:
+          name: final-test-files-v4
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: final-test-typescript-v41
+  namespace: codequal-dev
+spec:
+  ttlSecondsAfterFinished: 600
+  template:
+    spec:
+      imagePullSecrets:
+      - name: registry-codequal
+      restartPolicy: Never
+      containers:
+      - name: test-container
+        image: registry.digitalocean.com/codequal-registry/analyzer:lang-typescript-v4.1
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        command: ["/bin/sh"]
+        args:
+        - -c
+        - |
+          echo "=== TypeScript v4.1 File:Line Analysis ==="
+          echo "Container: lang-typescript-v4.1"
+          echo ""
+          
+          cp /test-files/test.ts /tmp/test.ts
+          
+          echo "=== TypeScript Compiler Output ==="
+          tsc --noEmit /tmp/test.ts 2>&1 | head -10
+          echo ""
+          
+          echo "=== ESLint TypeScript Output ==="
+          eslint /tmp/test.ts --format unix 2>&1 | head -10
+          echo ""
+          
+          echo "=== Analysis Complete ==="
+        volumeMounts:
+        - name: test-files
+          mountPath: /test-files
+      volumes:
+      - name: test-files
+        configMap:
+          name: final-test-files-v4
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: final-test-java-v4
+  namespace: codequal-dev
+spec:
+  ttlSecondsAfterFinished: 600
+  template:
+    spec:
+      imagePullSecrets:
+      - name: registry-codequal
+      restartPolicy: Never
+      containers:
+      - name: test-container
+        image: registry.digitalocean.com/codequal-registry/analyzer:lang-java-v4
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        command: ["/bin/sh"]
+        args:
+        - -c
+        - |
+          echo "=== Java v4 File:Line Analysis ==="
+          echo "Container: lang-java-v4"
+          echo ""
+          
+          cp /test-files/Test.java /tmp/Test.java
+          
+          echo "=== Java Compiler Output ==="
+          javac /tmp/Test.java 2>&1 | head -10
+          echo ""
+          
+          echo "=== PMD Output (with correct syntax) ==="
+          pmd check -d /tmp -f text -R java-basic,java-design 2>&1 | head -15
+          echo ""
+          
+          echo "=== Analysis Complete ==="
+        volumeMounts:
+        - name: test-files
+          mountPath: /test-files
+      volumes:
+      - name: test-files
+        configMap:
+          name: final-test-files-v4
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: final-test-php-v4
+  namespace: codequal-dev
+spec:
+  ttlSecondsAfterFinished: 600
+  template:
+    spec:
+      imagePullSecrets:
+      - name: registry-codequal
+      restartPolicy: Never
+      containers:
+      - name: test-container
+        image: registry.digitalocean.com/codequal-registry/analyzer:lang-php-v4
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        command: ["/bin/sh"]
+        args:
+        - -c
+        - |
+          echo "=== PHP v4 File:Line Analysis ==="
+          echo "Container: lang-php-v4"
+          echo ""
+          
+          cp /test-files/test.php /tmp/test.php
+          
+          echo "=== PHP Syntax Check ==="
+          php -l /tmp/test.php 2>&1 || true
+          echo ""
+          
+          echo "=== PHPCS Output ==="
+          phpcs /tmp/test.php --report=emacs 2>&1 | head -10
+          echo ""
+          
+          echo "=== PHPMD Output ==="
+          phpmd /tmp/test.php text cleancode,unusedcode 2>&1 | head -10
+          echo ""
+          
+          echo "=== Analysis Complete ==="
+        volumeMounts:
+        - name: test-files
+          mountPath: /test-files
+      volumes:
+      - name: test-files
+        configMap:
+          name: final-test-files-v4

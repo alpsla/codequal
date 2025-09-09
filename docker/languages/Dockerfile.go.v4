@@ -1,0 +1,69 @@
+FROM golang:1.21-alpine
+
+WORKDIR /app
+
+# Install build tools and git
+RUN apk add --no-cache git gcc musl-dev
+
+# Install Go analysis tools
+RUN go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.55.2 && \
+    go install golang.org/x/tools/cmd/goimports@latest && \
+    go install honnef.co/go/tools/cmd/staticcheck@latest && \
+    go install github.com/securego/gosec/v2/cmd/gosec@latest && \
+    go install github.com/fzipp/gocyclo/cmd/gocyclo@latest && \
+    go install github.com/go-critic/go-critic/cmd/gocritic@latest && \
+    go install golang.org/x/lint/golint@latest && \
+    go install github.com/mgechev/revive@latest
+
+# Create golangci-lint config with file:line output
+RUN echo 'run:\n\
+  timeout: 5m\n\
+  tests: false\n\
+\n\
+output:\n\
+  format: json\n\
+  print-issued-lines: true\n\
+  print-linter-name: true\n\
+\n\
+linters:\n\
+  enable:\n\
+    - gosec\n\
+    - govet\n\
+    - staticcheck\n\
+    - ineffassign\n\
+    - deadcode\n\
+    - structcheck\n\
+    - varcheck\n\
+    - unused\n\
+    - gosimple\n\
+    - gocyclo\n\
+    - gofmt\n\
+    - goimports\n\
+    - revive\n\
+\n\
+linters-settings:\n\
+  gosec:\n\
+    includes:\n\
+      - G101\n\
+      - G102\n\
+      - G103\n\
+      - G104\n\
+      - G106\n\
+      - G107\n\
+      - G108\n\
+      - G109\n\
+      - G110\n\
+  gocyclo:\n\
+    min-complexity: 15\n\
+  revive:\n\
+    rules:\n\
+      - name: exported\n\
+      - name: var-naming\n\
+      - name: package-comments' > /app/.golangci.yml
+
+# Verify installations
+RUN go version && \
+    golangci-lint --version && \
+    gosec --version
+
+CMD ["go", "version"]

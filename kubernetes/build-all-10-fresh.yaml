@@ -1,0 +1,198 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: all-dockerfiles
+  namespace: codequal-dev
+data:
+  Dockerfile.python: |
+    FROM python:3.11-slim
+    RUN pip install --no-cache-dir \
+        bandit \
+        safety \
+        pylint \
+        flake8 \
+        black \
+        mypy \
+        pytest \
+        coverage
+    WORKDIR /app
+    CMD ["python3"]
+  
+  Dockerfile.javascript: |
+    FROM node:20-alpine
+    RUN npm install -g \
+        eslint \
+        prettier \
+        typescript \
+        @typescript-eslint/parser \
+        @typescript-eslint/eslint-plugin
+    WORKDIR /app
+    CMD ["node"]
+  
+  Dockerfile.java: |
+    FROM openjdk:17-slim
+    RUN apt-get update && apt-get install -y wget unzip && \
+        wget https://github.com/pmd/pmd/releases/download/pmd_releases%2F6.55.0/pmd-bin-6.55.0.zip && \
+        unzip pmd-bin-6.55.0.zip && \
+        mv pmd-bin-6.55.0 /opt/pmd && \
+        rm pmd-bin-6.55.0.zip
+    ENV PATH="/opt/pmd/bin:${PATH}"
+    WORKDIR /app
+    CMD ["java", "-version"]
+  
+  Dockerfile.go: |
+    FROM golang:1.21-alpine
+    RUN apk add --no-cache git && \
+        go install honnef.co/go/tools/cmd/staticcheck@latest && \
+        go install golang.org/x/tools/cmd/goimports@latest
+    WORKDIR /app
+    CMD ["go", "version"]
+  
+  Dockerfile.ruby: |
+    FROM ruby:3.2-slim
+    RUN gem install \
+        brakeman \
+        rubocop \
+        bundler-audit \
+        --no-document
+    WORKDIR /app
+    CMD ["ruby", "--version"]
+  
+  Dockerfile.php: |
+    FROM php:8.2-cli-alpine
+    RUN apk add --no-cache git && \
+        curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer && \
+        composer global require phpstan/phpstan phpmd/phpmd squizlabs/php_codesniffer
+    ENV PATH="/root/.composer/vendor/bin:${PATH}"
+    WORKDIR /app
+    CMD ["php", "--version"]
+  
+  Dockerfile.cpp: |
+    FROM ubuntu:22.04
+    RUN apt-get update && apt-get install -y \
+        g++ \
+        clang \
+        cppcheck \
+        clang-tidy \
+        && rm -rf /var/lib/apt/lists/*
+    WORKDIR /app
+    CMD ["g++", "--version"]
+  
+  Dockerfile.csharp: |
+    FROM mcr.microsoft.com/dotnet/sdk:6.0
+    RUN dotnet tool install --global security-scan --version 5.* || true
+    ENV PATH="${PATH}:/root/.dotnet/tools"
+    WORKDIR /app
+    CMD ["dotnet", "--version"]
+  
+  Dockerfile.perl: |
+    FROM perl:5.38-slim
+    RUN cpan install Perl::Critic
+    WORKDIR /app
+    CMD ["perl", "--version"]
+  
+  Dockerfile.rust: |
+    FROM rust:1.75
+    RUN rustup component add clippy rustfmt
+    WORKDIR /app
+    CMD ["rustc", "--version"]
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: build-python
+  namespace: codequal-dev
+spec:
+  template:
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+        - "--dockerfile=Dockerfile.python"
+        - "--context=dir:///workspace"
+        - "--destination=registry.digitalocean.com/codequal-registry/analyzer:lang-python-v3"
+        - "--cache=true"
+        volumeMounts:
+        - name: dockerfile
+          mountPath: /workspace
+        - name: kaniko-secret
+          mountPath: /kaniko/.docker
+      restartPolicy: Never
+      volumes:
+      - name: dockerfile
+        configMap:
+          name: all-dockerfiles
+      - name: kaniko-secret
+        secret:
+          secretName: registry-codequal
+          items:
+          - key: .dockerconfigjson
+            path: config.json
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: build-javascript
+  namespace: codequal-dev
+spec:
+  template:
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+        - "--dockerfile=Dockerfile.javascript"
+        - "--context=dir:///workspace"
+        - "--destination=registry.digitalocean.com/codequal-registry/analyzer:lang-javascript-v3"
+        - "--cache=true"
+        volumeMounts:
+        - name: dockerfile
+          mountPath: /workspace
+        - name: kaniko-secret
+          mountPath: /kaniko/.docker
+      restartPolicy: Never
+      volumes:
+      - name: dockerfile
+        configMap:
+          name: all-dockerfiles
+      - name: kaniko-secret
+        secret:
+          secretName: registry-codequal
+          items:
+          - key: .dockerconfigjson
+            path: config.json
+---
+# Continue for other 8 languages...
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: build-java
+  namespace: codequal-dev
+spec:
+  template:
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+        - "--dockerfile=Dockerfile.java"
+        - "--context=dir:///workspace"
+        - "--destination=registry.digitalocean.com/codequal-registry/analyzer:lang-java-v3"
+        - "--cache=true"
+        volumeMounts:
+        - name: dockerfile
+          mountPath: /workspace
+        - name: kaniko-secret
+          mountPath: /kaniko/.docker
+      restartPolicy: Never
+      volumes:
+      - name: dockerfile
+        configMap:
+          name: all-dockerfiles
+      - name: kaniko-secret
+        secret:
+          secretName: registry-codequal
+          items:
+          - key: .dockerconfigjson
+            path: config.json

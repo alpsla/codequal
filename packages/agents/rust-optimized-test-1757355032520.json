@@ -1,0 +1,26 @@
+[
+  {
+    "repoSize": "small",
+    "owner": "rust-lang",
+    "repo": "rustlings",
+    "prNumber": 1700,
+    "metrics": {
+      "setupTime": 1761,
+      "workspaceTime": 711,
+      "analysisTime": 21519,
+      "totalTime": 24096
+    },
+    "files": {
+      "total": 112,
+      "changed": 0,
+      "analyzed": 0
+    },
+    "issues": {
+      "clippy": 3,
+      "audit": 1,
+      "outdated": 191,
+      "total": 195
+    },
+    "success": true
+  }
+]

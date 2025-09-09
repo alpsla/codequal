@@ -1,0 +1,510 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dockerfile-python-v4-1
+  namespace: codequal-dev
+data:
+  Dockerfile: |
+    FROM python:3.11-slim
+
+    WORKDIR /app
+
+    # Install system dependencies for Python analysis tools
+    RUN apt-get update && apt-get install -y \
+        gcc \
+        g++ \
+        git \
+        && rm -rf /var/lib/apt/lists/*
+
+    # Install Python analysis tools with JSON output support and fixed versions
+    RUN pip install --no-cache-dir \
+        flake8==7.0.0 \
+        flake8-json==24.4.0 \
+        pylint==3.3.8 \
+        bandit==1.7.5 \
+        safety==3.0.1 \
+        mypy==1.8.0 \
+        black==24.1.1 \
+        radon==6.0.1 \
+        vulture==2.11 \
+        pycodestyle==2.11.1 \
+        pydocstyle==6.3.0 \
+        pyflakes==3.2.0 \
+        isort==5.13.2
+
+    # Create wrapper scripts for JSON output
+    RUN cat > /usr/local/bin/flake8-json << 'EOF'
+    #!/bin/bash
+    flake8 "$@" --format=json
+    EOF
+
+    RUN cat > /usr/local/bin/pylint-json << 'EOF'
+    #!/bin/bash
+    pylint "$@" --output-format=json --reports=no
+    EOF
+
+    RUN cat > /usr/local/bin/bandit-json << 'EOF'
+    #!/bin/bash
+    bandit "$@" -f json
+    EOF
+
+    RUN cat > /usr/local/bin/mypy-json << 'EOF'
+    #!/bin/bash
+    mypy "$@" --show-column-numbers --show-error-codes --json-report=/tmp/mypy-report 2>/dev/null
+    if [ -f /tmp/mypy-report/mypy_report.json ]; then
+        cat /tmp/mypy-report/mypy_report.json
+        rm -rf /tmp/mypy-report
+    else
+        echo '{"files": [], "errors": []}'
+    fi
+    EOF
+
+    # Make wrapper scripts executable
+    RUN chmod +x /usr/local/bin/flake8-json && \
+        chmod +x /usr/local/bin/pylint-json && \
+        chmod +x /usr/local/bin/bandit-json && \
+        chmod +x /usr/local/bin/mypy-json
+
+    # Create a basic Python config for consistent behavior
+    RUN cat > /app/.flake8 << 'EOF'
+    [flake8]
+    max-line-length = 120
+    max-complexity = 12
+    exclude = .git,__pycache__,build,dist,*.egg
+    ignore = E203,W503
+    EOF
+
+    RUN cat > /app/.pylintrc << 'EOF'
+    [MASTER]
+    jobs=1
+    unsafe-load-any-extension=no
+
+    [MESSAGES CONTROL]
+    disable=C0103,C0111,R0903,R0913,W0613,C0330
+
+    [REPORTS]
+    output-format=json
+    reports=no
+
+    [FORMAT]
+    max-line-length=120
+    max-module-lines=1000
+
+    [DESIGN]
+    max-args=8
+    max-locals=20
+    max-returns=6
+    max-branches=15
+    max-statements=60
+    EOF
+
+    # Verify installations and wrapper scripts
+    RUN python --version && \
+        flake8 --version && \
+        pylint --version && \
+        bandit --version && \
+        mypy --version && \
+        black --version && \
+        isort --version && \
+        echo "Python v4.1 container ready with optimized JSON output support"
+
+    CMD ["python", "--version"]
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dockerfile-javascript-v4-1
+  namespace: codequal-dev
+data:
+  Dockerfile: |
+    FROM node:20-alpine
+
+    WORKDIR /app
+
+    # Install ESLint v8 and essential plugins with JSON output support
+    RUN npm install -g \
+        eslint@8.57.0 \
+        prettier@3.2.5 \
+        typescript@5.4.5 \
+        @typescript-eslint/parser@7.2.0 \
+        @typescript-eslint/eslint-plugin@7.2.0 \
+        eslint-config-standard@17.1.0 \
+        eslint-plugin-import@2.29.1 \
+        eslint-plugin-node@11.1.0 \
+        eslint-plugin-promise@6.1.1 \
+        eslint-plugin-sonarjs@0.24.0 \
+        eslint-plugin-security@2.1.1 \
+        jshint@2.13.6
+
+    # Create a minimal working ESLint config that doesn't require external plugins
+    RUN echo '{\
+      "env": {\
+        "es2021": true,\
+        "node": true\
+      },\
+      "extends": "eslint:recommended",\
+      "parserOptions": {\
+        "ecmaVersion": "latest",\
+        "sourceType": "module"\
+      },\
+      "rules": {\
+        "no-unused-vars": "warn",\
+        "no-undef": "error",\
+        "semi": ["error", "always"]\
+      }\
+    }' > /app/.eslintrc.json
+
+    # Set default ESLint config location
+    ENV ESLINT_CONFIG_FILE=/app/.eslintrc.json
+
+    # Update PATH to include node_modules bin directory and create symlinks
+    ENV PATH="/usr/local/lib/node_modules/.bin:$PATH"
+    
+    # Create symlinks for ESLint and other tools to ensure PATH accessibility
+    RUN ln -sf /usr/local/lib/node_modules/eslint/bin/eslint.js /usr/local/bin/eslint && \
+        ln -sf /usr/local/lib/node_modules/prettier/bin/prettier.cjs /usr/local/bin/prettier && \
+        ln -sf /usr/local/lib/node_modules/typescript/bin/tsc /usr/local/bin/tsc && \
+        chmod +x /usr/local/bin/eslint /usr/local/bin/prettier /usr/local/bin/tsc
+
+    # Verify installations and paths
+    RUN node --version && \
+        eslint --version && \
+        prettier --version && \
+        tsc --version && \
+        which eslint && \
+        ls -la /usr/local/bin/eslint
+
+    CMD ["node", "--version"]
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dockerfile-go-v4-2
+  namespace: codequal-dev
+data:
+  Dockerfile: |
+    FROM golang:1.21-alpine
+
+    WORKDIR /app
+
+    # Install build tools and git
+    RUN apk add --no-cache git gcc musl-dev
+
+    # Install Go analysis tools with compatible versions for Go 1.21
+    RUN go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.54.2 && \
+        go install golang.org/x/tools/cmd/goimports@v0.13.0 && \
+        go install honnef.co/go/tools/cmd/staticcheck@v0.4.6 && \
+        go install github.com/securego/gosec/v2/cmd/gosec@v2.18.2 && \
+        go install github.com/fzipp/gocyclo/cmd/gocyclo@v0.6.0 && \
+        go install github.com/go-critic/go-critic/cmd/gocritic@v0.9.0 && \
+        go install github.com/mgechev/revive@v1.3.4
+
+    # Create golangci-lint config optimized for structured JSON output with file:line info
+    RUN cat > /app/.golangci.yml << 'EOF'
+    run:
+      timeout: 5m
+      tests: false
+      go: "1.21"
+
+    output:
+      format: json
+      print-issued-lines: true
+      print-linter-name: true
+      uniq-by-line: true
+      path-prefix: ""
+      sort-results: true
+
+    linters:
+      disable-all: true
+      enable:
+        - gosec
+        - govet
+        - ineffassign
+        - unused
+        - gosimple
+        - gocyclo
+        - gofmt
+        - goimports
+        - revive
+        - gocritic
+        - staticcheck
+
+    linters-settings:
+      gosec:
+        severity: medium
+        confidence: medium
+        excludes:
+          - G104 # Errors unhandled (too many false positives)
+        includes:
+          - G101  # Look for hard coded credentials
+          - G102  # Bind to all interfaces
+          - G103  # Audit the use of unsafe block
+          - G106  # Audit the use of ssh.InsecureIgnoreHostKey
+          - G107  # Url provided to HTTP request as taint input
+          - G108  # Profiling endpoint automatically exposed
+          - G109  # Potential Integer overflow made by strconv.Atoi result conversion
+          - G110  # Potential DoS vulnerability via decompression bomb
+      gocyclo:
+        min-complexity: 15
+      revive:
+        severity: warning
+        rules:
+          - name: exported
+            severity: warning
+            disabled: false
+            arguments:
+              - "checkPrivateReceivers"
+              - "sayRepetitiveInsteadOfStutters"
+          - name: var-naming
+          - name: package-comments
+          - name: blank-imports
+          - name: context-as-argument
+          - name: dot-imports
+          - name: error-return
+          - name: error-strings
+          - name: error-naming
+          - name: increment-decrement
+          - name: var-declaration
+          - name: range-loop-pointer
+          - name: receiver-naming
+          - name: time-naming
+          - name: unexported-return
+          - name: indent-error-flow
+          - name: errorf
+          - name: empty-block
+          - name: superfluous-else
+          - name: unused-parameter
+          - name: unreachable-code
+          - name: redefines-builtin-id
+      gocritic:
+        enabled-tags:
+          - diagnostic
+          - style
+          - performance
+        disabled-checks:
+          - unnamedResult
+          - hugeParam
+      staticcheck:
+        checks: ["all", "-ST1000", "-ST1003", "-ST1016", "-ST1020", "-ST1021", "-ST1022"]
+
+    issues:
+      exclude-use-default: false
+      max-issues-per-linter: 0
+      max-same-issues: 0
+      new: false
+      fix: false
+    EOF
+
+    # Create a wrapper script that ensures proper JSON output with file:line format
+    RUN cat > /usr/local/bin/golangci-lint-json << 'EOF'
+    #!/bin/sh
+    # Wrapper script for golangci-lint to ensure consistent JSON output
+    CONFIG_FILE="${GOLANGCI_CONFIG_FILE:-/app/.golangci.yml}"
+    TIMEOUT="${GOLANGCI_TIMEOUT:-5m}"
+
+    # Run golangci-lint with explicit JSON format and error handling
+    golangci-lint run \
+      --config="$CONFIG_FILE" \
+      --timeout="$TIMEOUT" \
+      --out-format=json \
+      --print-issued-lines \
+      --print-linter-name \
+      --sort-results \
+      --new=false \
+      --fix=false \
+      "$@" 2>&1 | jq -c '
+        if type == "object" and has("Issues") then
+          .Issues[] | {
+            "file": .Pos.Filename,
+            "line": .Pos.Line,
+            "column": .Pos.Column,
+            "severity": (if .Severity then .Severity else "warning" end),
+            "message": .Text,
+            "rule": .FromLinter,
+            "ruleId": .RuleId
+          }
+        else
+          empty
+        end
+      ' 2>/dev/null || echo '{"error": "golangci-lint analysis failed or no issues found"}'
+    EOF
+
+    RUN chmod +x /usr/local/bin/golangci-lint-json
+
+    # Install jq for JSON processing
+    RUN apk add --no-cache jq
+
+    # Test configuration and installations
+    RUN go version && \
+        golangci-lint --version && \
+        gosec --version && \
+        staticcheck --version && \
+        jq --version && \
+        echo "Go v4.2 container ready with optimized file:line JSON support"
+
+    CMD ["go", "version"]
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dockerfile-java-v4-1
+  namespace: codequal-dev
+data:
+  Dockerfile: |
+    FROM openjdk:17-slim
+
+    WORKDIR /app
+
+    # Install necessary tools
+    RUN apt-get update && apt-get install -y wget unzip curl && \
+        apt-get clean && \
+        rm -rf /var/lib/apt/lists/*
+
+    # Install PMD with a specific version known to work well
+    ENV PMD_VERSION=7.0.0
+    RUN wget -q https://github.com/pmd/pmd/releases/download/pmd_releases%2F${PMD_VERSION}/pmd-dist-${PMD_VERSION}-bin.zip && \
+        unzip -q pmd-dist-${PMD_VERSION}-bin.zip && \
+        mv pmd-bin-${PMD_VERSION} /opt/pmd && \
+        rm pmd-dist-${PMD_VERSION}-bin.zip && \
+        ln -s /opt/pmd/bin/pmd /usr/local/bin/pmd
+
+    # Install SpotBugs
+    ENV SPOTBUGS_VERSION=4.8.3
+    RUN wget -q https://github.com/spotbugs/spotbugs/releases/download/${SPOTBUGS_VERSION}/spotbugs-${SPOTBUGS_VERSION}.zip && \
+        unzip -q spotbugs-${SPOTBUGS_VERSION}.zip && \
+        mv spotbugs-${SPOTBUGS_VERSION} /opt/spotbugs && \
+        rm spotbugs-${SPOTBUGS_VERSION}.zip && \
+        ln -s /opt/spotbugs/bin/spotbugs /usr/local/bin/spotbugs
+
+    # Install Checkstyle
+    ENV CHECKSTYLE_VERSION=10.12.7
+    RUN wget -q https://github.com/checkstyle/checkstyle/releases/download/checkstyle-${CHECKSTYLE_VERSION}/checkstyle-${CHECKSTYLE_VERSION}-all.jar -O /opt/checkstyle.jar
+
+    # Create PMD wrapper script with JSON output and proper ruleset handling
+    RUN cat > /usr/local/bin/pmd-wrapper << 'EOF'
+    #!/bin/bash
+
+    # Set default values
+    RULESET="${PMD_RULESET:-/opt/pmd/codequal-rules.xml}"
+    FORMAT="${PMD_FORMAT:-json}"
+    TIMEOUT="${PMD_TIMEOUT:-30}"
+
+    # Function to run PMD with proper error handling
+    run_pmd() {
+        local cmd="$1"
+        shift
+        
+        case "$cmd" in
+            "check")
+                timeout "$TIMEOUT" /opt/pmd/bin/pmd check \
+                    --rulesets "$RULESET" \
+                    --format "$FORMAT" \
+                    --report-file /dev/stdout \
+                    --fail-on-violation false \
+                    "$@" 2>&1 || {
+                        echo '{"error": "PMD analysis failed or timed out", "exitCode": '$?'}'
+                    }
+                ;;
+            *)
+                /opt/pmd/bin/pmd "$cmd" "$@"
+                ;;
+        esac
+    }
+
+    run_pmd "$@"
+    EOF
+
+    RUN chmod +x /usr/local/bin/pmd-wrapper
+
+    # Create comprehensive PMD ruleset with proper configuration
+    RUN cat > /opt/pmd/codequal-rules.xml << 'EOF'
+    <?xml version="1.0"?>
+    <ruleset name="CodeQual Java Rules"
+        xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+        
+        <description>Comprehensive ruleset for Java code analysis</description>
+        
+        <!-- Error Prone Rules -->
+        <rule ref="category/java/errorprone.xml/EmptyCatchBlock" />
+        <rule ref="category/java/errorprone.xml/EmptyIfStmt" />
+        <rule ref="category/java/errorprone.xml/EmptyWhileStmt" />
+        <rule ref="category/java/errorprone.xml/EmptyTryBlock" />
+        <rule ref="category/java/errorprone.xml/EmptyFinallyBlock" />
+        <rule ref="category/java/errorprone.xml/EmptyStatementNotInLoop" />
+        <rule ref="category/java/errorprone.xml/JumbledIncrementer" />
+        <rule ref="category/java/errorprone.xml/MisplacedNullCheck" />
+        <rule ref="category/java/errorprone.xml/OverrideBothEqualsAndHashcode" />
+        <rule ref="category/java/errorprone.xml/ReturnFromFinallyBlock" />
+        <rule ref="category/java/errorprone.xml/UnconditionalIfStatement" />
+        <rule ref="category/java/errorprone.xml/UnnecessaryConversionTemporary" />
+        <rule ref="category/java/errorprone.xml/UnusedNullCheckInEquals" />
+        <rule ref="category/java/errorprone.xml/UselessOperationOnImmutable" />
+        
+        <!-- Best Practices -->
+        <rule ref="category/java/bestpractices.xml/UnusedLocalVariable" />
+        <rule ref="category/java/bestpractices.xml/UnusedPrivateField" />
+        <rule ref="category/java/bestpractices.xml/UnusedPrivateMethod" />
+        <rule ref="category/java/bestpractices.xml/AvoidPrintStackTrace" />
+        <rule ref="category/java/bestpractices.xml/AvoidReassigningParameters" />
+        <rule ref="category/java/bestpractices.xml/DefaultLabelNotLastInSwitchStmt" />
+        <rule ref="category/java/bestpractices.xml/ForLoopCanBeForeach" />
+        <rule ref="category/java/bestpractices.xml/LooseCoupling" />
+        <rule ref="category/java/bestpractices.xml/MethodReturnsInternalArray" />
+        <rule ref="category/java/bestpractices.xml/MissingOverride" />
+        <rule ref="category/java/bestpractices.xml/PreserveStackTrace" />
+        <rule ref="category/java/bestpractices.xml/ReplaceHashtableWithMap" />
+        <rule ref="category/java/bestpractices.xml/ReplaceVectorWithList" />
+        <rule ref="category/java/bestpractices.xml/SwitchStmtsShouldHaveDefault" />
+        <rule ref="category/java/bestpractices.xml/SystemPrintln" />
+        <rule ref="category/java/bestpractices.xml/UseCollectionIsEmpty" />
+        <rule ref="category/java/bestpractices.xml/UseStringBufferLength" />
+        
+        <!-- Security Rules -->
+        <rule ref="category/java/security.xml/HardCodedCryptoKey" />
+        <rule ref="category/java/security.xml/InsecureCryptoIv" />
+        
+        <!-- Performance Rules -->
+        <rule ref="category/java/performance.xml/AvoidInstantiatingObjectsInLoops" />
+        <rule ref="category/java/performance.xml/AvoidUsingShortType" />
+        <rule ref="category/java/performance.xml/BigIntegerInstantiation" />
+        <rule ref="category/java/performance.xml/BooleanInstantiation" />
+        
+        <!-- Design Rules -->
+        <rule ref="category/java/design.xml/AvoidDeeplyNestedIfStmts">
+            <properties>
+                <property name="problemDepth" value="4" />
+            </properties>
+        </rule>
+        <rule ref="category/java/design.xml/CyclomaticComplexity">
+            <properties>
+                <property name="classReportLevel" value="80" />
+                <property name="methodReportLevel" value="10" />
+            </properties>
+        </rule>
+        <rule ref="category/java/design.xml/ExcessiveMethodLength">
+            <properties>
+                <property name="minimum" value="100" />
+            </properties>
+        </rule>
+        <rule ref="category/java/design.xml/ExcessiveParameterList">
+            <properties>
+                <property name="minimum" value="8" />
+            </properties>
+        </rule>
+        
+    </ruleset>
+    EOF
+
+    # Verify installations
+    RUN java --version && \
+        /opt/pmd/bin/pmd --version && \
+        echo "SpotBugs installed at /opt/spotbugs" && \
+        echo "Java v4.1 container ready with comprehensive PMD ruleset"
+
+    CMD ["java", "--version"]

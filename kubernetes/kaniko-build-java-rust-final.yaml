@@ -1,0 +1,353 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dockerfile-java-v4-final
+  namespace: codequal-dev
+data:
+  Dockerfile: |
+    FROM openjdk:17-slim
+
+    WORKDIR /app
+
+    # Install necessary tools
+    RUN apt-get update && apt-get install -y wget unzip curl git && \
+        apt-get clean && \
+        rm -rf /var/lib/apt/lists/*
+
+    # Install PMD with a specific version known to work well
+    ENV PMD_VERSION=7.0.0
+    RUN wget -q https://github.com/pmd/pmd/releases/download/pmd_releases%2F${PMD_VERSION}/pmd-dist-${PMD_VERSION}-bin.zip && \
+        unzip -q pmd-dist-${PMD_VERSION}-bin.zip && \
+        mv pmd-bin-${PMD_VERSION} /opt/pmd && \
+        rm pmd-dist-${PMD_VERSION}-bin.zip && \
+        ln -s /opt/pmd/bin/pmd /usr/local/bin/pmd
+
+    # Install SpotBugs
+    ENV SPOTBUGS_VERSION=4.8.3
+    RUN wget -q https://github.com/spotbugs/spotbugs/releases/download/${SPOTBUGS_VERSION}/spotbugs-${SPOTBUGS_VERSION}.zip && \
+        unzip -q spotbugs-${SPOTBUGS_VERSION}.zip && \
+        mv spotbugs-${SPOTBUGS_VERSION} /opt/spotbugs && \
+        rm spotbugs-${SPOTBUGS_VERSION}.zip && \
+        ln -s /opt/spotbugs/bin/spotbugs /usr/local/bin/spotbugs
+
+    # Install Checkstyle
+    ENV CHECKSTYLE_VERSION=10.12.7
+    RUN wget -q https://github.com/checkstyle/checkstyle/releases/download/checkstyle-${CHECKSTYLE_VERSION}/checkstyle-${CHECKSTYLE_VERSION}-all.jar -O /opt/checkstyle.jar
+
+    # Install JaCoCo for code coverage
+    ENV JACOCO_VERSION=0.8.11
+    RUN wget -q https://github.com/jacoco/jacoco/releases/download/v${JACOCO_VERSION}/jacoco-${JACOCO_VERSION}.zip && \
+        unzip -q jacoco-${JACOCO_VERSION}.zip -d /opt/jacoco && \
+        rm jacoco-${JACOCO_VERSION}.zip && \
+        chmod +x /opt/jacoco/lib/*.jar
+
+    # Install OWASP Dependency Check
+    ENV DEPENDENCY_CHECK_VERSION=9.0.9
+    RUN wget -q https://github.com/jeremylong/DependencyCheck/releases/download/v${DEPENDENCY_CHECK_VERSION}/dependency-check-${DEPENDENCY_CHECK_VERSION}-release.zip && \
+        unzip -q dependency-check-${DEPENDENCY_CHECK_VERSION}-release.zip && \
+        mv dependency-check /opt/dependency-check && \
+        rm dependency-check-${DEPENDENCY_CHECK_VERSION}-release.zip && \
+        chmod +x /opt/dependency-check/bin/dependency-check.sh
+
+    # Create wrapper scripts using proper heredoc syntax
+    RUN cat > /usr/local/bin/pmd-wrapper << 'EOFSCRIPT' && chmod +x /usr/local/bin/pmd-wrapper
+    #!/bin/bash
+    RULESET="${PMD_RULESET:-/opt/pmd/codequal-rules.xml}"
+    FORMAT="${PMD_FORMAT:-json}"
+    TIMEOUT="${PMD_TIMEOUT:-30}"
+    run_pmd() {
+        local cmd="$1"
+        shift
+        case "$cmd" in
+            "check")
+                timeout "$TIMEOUT" /opt/pmd/bin/pmd check \
+                    --rulesets "$RULESET" \
+                    --format "$FORMAT" \
+                    --report-file /dev/stdout \
+                    --fail-on-violation false \
+                    "$@" 2>&1 || {
+                        echo '{"error": "PMD analysis failed or timed out", "exitCode": '$?'}'
+                    }
+                ;;
+            *)
+                /opt/pmd/bin/pmd "$cmd" "$@"
+                ;;
+        esac
+    }
+    run_pmd "$@"
+    EOFSCRIPT
+
+    # Create JaCoCo wrapper script
+    RUN cat > /usr/local/bin/jacoco-wrapper << 'EOFSCRIPT' && chmod +x /usr/local/bin/jacoco-wrapper
+    #!/bin/bash
+    JACOCO_AGENT="/opt/jacoco/lib/jacocoagent.jar"
+    JACOCO_CLI="/opt/jacoco/lib/jacococli.jar"
+    case "$1" in
+        "agent")
+            echo "-javaagent:${JACOCO_AGENT}=destfile=jacoco.exec"
+            ;;
+        "report")
+            shift
+            java -jar ${JACOCO_CLI} report "$@"
+            ;;
+        "dump")
+            shift
+            java -jar ${JACOCO_CLI} dump "$@"
+            ;;
+        "merge")
+            shift
+            java -jar ${JACOCO_CLI} merge "$@"
+            ;;
+        *)
+            echo "Usage: jacoco-wrapper {agent|report|dump|merge} [options]"
+            exit 1
+            ;;
+    esac
+    EOFSCRIPT
+
+    # Create analyze wrapper for all tools
+    RUN cat > /usr/local/bin/analyze << 'EOFSCRIPT' && chmod +x /usr/local/bin/analyze
+    #!/bin/bash
+    case "$1" in
+        "pmd")
+            shift
+            pmd-wrapper check "$@"
+            ;;
+        "spotbugs")
+            shift
+            /opt/spotbugs/bin/spotbugs "$@"
+            ;;
+        "checkstyle")
+            shift
+            java -jar /opt/checkstyle.jar "$@"
+            ;;
+        "jacoco")
+            shift
+            jacoco-wrapper "$@"
+            ;;
+        "dependency-check")
+            shift
+            /opt/dependency-check/bin/dependency-check.sh "$@"
+            ;;
+        *)
+            echo "Available tools: pmd, spotbugs, checkstyle, jacoco, dependency-check"
+            echo "Versions:"
+            java --version
+            /opt/pmd/bin/pmd --version
+            echo "SpotBugs 4.8.3"
+            echo "Checkstyle 10.12.7"
+            echo "JaCoCo 0.8.11"
+            echo "OWASP Dependency Check 9.0.9"
+            ;;
+    esac
+    EOFSCRIPT
+
+    # Create PMD ruleset
+    RUN mkdir -p /opt/pmd && cat > /opt/pmd/codequal-rules.xml << 'EOF'
+    <?xml version="1.0"?>
+    <ruleset name="CodeQual Java Rules"
+        xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+        <description>Comprehensive ruleset for Java code analysis</description>
+        <rule ref="category/java/errorprone.xml/EmptyCatchBlock" />
+        <rule ref="category/java/errorprone.xml/EmptyIfStmt" />
+        <rule ref="category/java/errorprone.xml/EmptyWhileStmt" />
+        <rule ref="category/java/errorprone.xml/ReturnFromFinallyBlock" />
+        <rule ref="category/java/bestpractices.xml/UnusedLocalVariable" />
+        <rule ref="category/java/bestpractices.xml/UnusedPrivateField" />
+        <rule ref="category/java/bestpractices.xml/UnusedPrivateMethod" />
+        <rule ref="category/java/security.xml/HardCodedCryptoKey" />
+        <rule ref="category/java/performance.xml/AvoidInstantiatingObjectsInLoops" />
+        <rule ref="category/java/design.xml/CyclomaticComplexity">
+            <properties>
+                <property name="methodReportLevel" value="10" />
+            </properties>
+        </rule>
+    </ruleset>
+    EOF
+
+    # Verify installations
+    RUN java --version && \
+        /opt/pmd/bin/pmd --version && \
+        echo "All tools installed successfully"
+
+    CMD ["java", "--version"]
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dockerfile-rust-v4-final
+  namespace: codequal-dev
+data:
+  Dockerfile: |
+    FROM rust:1.81-slim
+
+    WORKDIR /app
+
+    # Install necessary system dependencies
+    RUN apt-get update && apt-get install -y \
+        pkg-config \
+        libssl-dev \
+        git \
+        curl \
+        && apt-get clean \
+        && rm -rf /var/lib/apt/lists/*
+
+    # Install Rust tools for comprehensive analysis
+    # Note: Version constraints for Rust 1.81 compatibility
+    RUN cargo install cargo-audit --locked && \
+        cargo install cargo-outdated@0.16.0 --locked && \
+        cargo install cargo-geiger@0.11.7 --locked && \
+        cargo install cargo-deny --locked && \
+        cargo install cargo-machete --locked && \
+        cargo install cargo-license --locked
+
+    # Install clippy and rustfmt
+    RUN rustup component add clippy && \
+        rustup component add rustfmt
+
+    # Create wrapper scripts with proper heredoc syntax
+    RUN cat > /usr/local/bin/clippy-json << 'EOFSCRIPT' && chmod +x /usr/local/bin/clippy-json
+    #!/bin/bash
+    cargo clippy --message-format=json -- -W clippy::all -W clippy::pedantic -W clippy::nursery 2>&1
+    EOFSCRIPT
+
+    RUN cat > /usr/local/bin/audit-json << 'EOFSCRIPT' && chmod +x /usr/local/bin/audit-json
+    #!/bin/bash
+    cargo audit --json 2>&1 || true
+    EOFSCRIPT
+
+    # Security scanner
+    RUN cat > /usr/local/bin/rust-security-scan << 'EOFSCRIPT' && chmod +x /usr/local/bin/rust-security-scan
+    #!/bin/bash
+    echo '{"security_scan": "starting"}'
+    patterns=(
+        "unsafe\s*{"
+        "std::mem::transmute"
+        "unwrap()"
+        "panic!"
+    )
+    for pattern in "${patterns[@]}"; do
+        matches=$(grep -rn "$pattern" --include="*.rs" . 2>/dev/null | head -10)
+        if [ ! -z "$matches" ]; then
+            while IFS= read -r line; do
+                file=$(echo "$line" | cut -d: -f1)
+                linenum=$(echo "$line" | cut -d: -f2)
+                echo "{\"type\": \"security\", \"pattern\": \"$pattern\", \"file\": \"$file\", \"line\": $linenum}"
+            done <<< "$matches"
+        fi
+    done
+    EOFSCRIPT
+
+    # Create comprehensive analyze wrapper
+    RUN cat > /usr/local/bin/analyze << 'EOFSCRIPT' && chmod +x /usr/local/bin/analyze
+    #!/bin/bash
+    case "$1" in
+        "clippy")
+            clippy-json
+            ;;
+        "audit")
+            audit-json
+            ;;
+        "security")
+            rust-security-scan
+            ;;
+        "outdated")
+            cargo outdated --format json
+            ;;
+        "deny")
+            cargo deny check
+            ;;
+        *)
+            echo "Available tools: clippy, audit, security, outdated, deny"
+            echo "Versions:"
+            rustc --version
+            cargo --version
+            cargo clippy --version
+            cargo audit --version
+            ;;
+    esac
+    EOFSCRIPT
+
+    # Verify installations
+    RUN rustc --version && \
+        cargo --version && \
+        cargo clippy --version && \
+        cargo audit --version && \
+        echo "All Rust tools installed successfully"
+
+    CMD ["rustc", "--version"]
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: build-java-v4-final
+  namespace: codequal-dev
+spec:
+  template:
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+          - "--dockerfile=/workspace/Dockerfile"
+          - "--context=dir:///workspace"
+          - "--destination=registry.digitalocean.com/codequal-registry/analyzer:lang-java-v4.9"
+          - "--cache=true"
+          - "--cache-ttl=24h"
+        volumeMounts:
+        - name: dockerfile
+          mountPath: /workspace
+        - name: kaniko-secret
+          mountPath: /kaniko/.docker
+      restartPolicy: Never
+      volumes:
+      - name: dockerfile
+        configMap:
+          name: dockerfile-java-v4-final
+      - name: kaniko-secret
+        secret:
+          secretName: registry-codequal
+          items:
+          - key: .dockerconfigjson
+            path: config.json
+  backoffLimit: 2
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: build-rust-v4-final
+  namespace: codequal-dev
+spec:
+  template:
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+          - "--dockerfile=/workspace/Dockerfile"
+          - "--context=dir:///workspace"
+          - "--destination=registry.digitalocean.com/codequal-registry/analyzer:lang-rust-v4.8"
+          - "--cache=true"
+          - "--cache-ttl=24h"
+        volumeMounts:
+        - name: dockerfile
+          mountPath: /workspace
+        - name: kaniko-secret
+          mountPath: /kaniko/.docker
+      restartPolicy: Never
+      volumes:
+      - name: dockerfile
+        configMap:
+          name: dockerfile-rust-v4-final
+      - name: kaniko-secret
+        secret:
+          secretName: registry-codequal
+          items:
+          - key: .dockerconfigjson
+            path: config.json
+  backoffLimit: 2

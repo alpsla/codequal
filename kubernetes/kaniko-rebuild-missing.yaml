@@ -1,0 +1,169 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: rebuild-go-v3
+  namespace: codequal-dev
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+        - "--dockerfile=Dockerfile.go"
+        - "--context=dir:///workspace"
+        - "--destination=registry.digitalocean.com/codequal/analyzer:lang-go-v3"
+        - "--cache=true"
+        volumeMounts:
+        - name: dockerfile
+          mountPath: /workspace
+        - name: kaniko-secret
+          mountPath: /kaniko/.docker
+      restartPolicy: Never
+      volumes:
+      - name: dockerfile
+        configMap:
+          name: language-dockerfiles
+      - name: kaniko-secret
+        secret:
+          secretName: regcred
+          items:
+          - key: .dockerconfigjson
+            path: config.json
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: rebuild-rust-v3
+  namespace: codequal-dev
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+        - "--dockerfile=Dockerfile.rust"
+        - "--context=dir:///workspace"
+        - "--destination=registry.digitalocean.com/codequal/analyzer:lang-rust-v3"
+        - "--cache=true"
+        volumeMounts:
+        - name: dockerfile
+          mountPath: /workspace
+        - name: kaniko-secret
+          mountPath: /kaniko/.docker
+      restartPolicy: Never
+      volumes:
+      - name: dockerfile
+        configMap:
+          name: language-dockerfiles
+      - name: kaniko-secret
+        secret:
+          secretName: regcred
+          items:
+          - key: .dockerconfigjson
+            path: config.json
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: rebuild-ruby-v3
+  namespace: codequal-dev
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+        - "--dockerfile=Dockerfile.ruby"
+        - "--context=dir:///workspace"
+        - "--destination=registry.digitalocean.com/codequal/analyzer:lang-ruby-v3"
+        - "--cache=true"
+        volumeMounts:
+        - name: dockerfile
+          mountPath: /workspace
+        - name: kaniko-secret
+          mountPath: /kaniko/.docker
+      restartPolicy: Never
+      volumes:
+      - name: dockerfile
+        configMap:
+          name: language-dockerfiles
+      - name: kaniko-secret
+        secret:
+          secretName: regcred
+          items:
+          - key: .dockerconfigjson
+            path: config.json
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: rebuild-php-v3
+  namespace: codequal-dev
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+        - "--dockerfile=Dockerfile.php"
+        - "--context=dir:///workspace"
+        - "--destination=registry.digitalocean.com/codequal/analyzer:lang-php-v3"
+        - "--cache=true"
+        volumeMounts:
+        - name: dockerfile
+          mountPath: /workspace
+        - name: kaniko-secret
+          mountPath: /kaniko/.docker
+      restartPolicy: Never
+      volumes:
+      - name: dockerfile
+        configMap:
+          name: language-dockerfiles
+      - name: kaniko-secret
+        secret:
+          secretName: regcred
+          items:
+          - key: .dockerconfigjson
+            path: config.json
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: rebuild-java-v3
+  namespace: codequal-dev
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+        - "--dockerfile=Dockerfile.java"
+        - "--context=dir:///workspace"
+        - "--destination=registry.digitalocean.com/codequal/analyzer:lang-java-v3"
+        - "--cache=true"
+        volumeMounts:
+        - name: dockerfile
+          mountPath: /workspace
+        - name: kaniko-secret
+          mountPath: /kaniko/.docker
+      restartPolicy: Never
+      volumes:
+      - name: dockerfile
+        configMap:
+          name: language-dockerfiles
+      - name: kaniko-secret
+        secret:
+          secretName: regcred
+          items:
+          - key: .dockerconfigjson
+            path: config.json

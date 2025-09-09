@@ -1,0 +1,27 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install Python analysis tools with JSON output support
+RUN pip install --no-cache-dir \
+    flake8==7.0.0 \
+    flake8-json==24.1.0 \
+    pylint==3.3.8 \
+    bandit==1.7.5 \
+    safety==3.0.1 \
+    mypy==1.8.0 \
+    black==24.1.1 \
+    radon==6.0.1 \
+    vulture==2.11
+
+# Create a simple wrapper script for flake8 JSON output
+RUN echo '#!/bin/bash\nflake8 "$@" --format=json' > /usr/local/bin/flake8-json && \
+    chmod +x /usr/local/bin/flake8-json
+
+# Verify installations
+RUN python --version && \
+    flake8 --version && \
+    pylint --version && \
+    bandit --version
+
+CMD ["python", "--version"]

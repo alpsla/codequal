@@ -1,0 +1,462 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-files-v4
+  namespace: codequal-dev
+data:
+  # Python test file with common issues
+  test.py: |
+    import os
+    import sys
+    
+    # Undefined variable issue
+    def calculate_sum():
+        result = a + b  # NameError: name 'a' is not defined
+        return result
+    
+    # Unused import
+    import json
+    
+    # Long line issue
+    very_long_variable_name = "This is a very long string that should trigger a line length warning in most Python linters and code analysis tools"
+    
+    # Missing docstring
+    def process_data(data):
+        if data == None:  # Use 'is None' instead
+            return []
+        return data.split(',')
+    
+    # Potential security issue
+    exec(user_input)  # Dangerous use of exec
+    
+    if __name__ == "__main__":
+        calculate_sum()
+
+  # JavaScript test file with common issues
+  test.js: |
+    // Missing semicolon
+    var x = 5
+    var y = 10
+    
+    // Unused variable
+    var unusedVar = "not used";
+    
+    // Undefined variable
+    function calculateSum() {
+        return a + b; // 'a' and 'b' are not defined
+    }
+    
+    // Equality comparison issue
+    if (x == "5") {
+        console.log("Should use === instead of ==");
+    }
+    
+    // Missing var/let/const
+    globalVar = "This creates a global variable";
+    
+    // Potential security issue
+    eval(userInput); // Dangerous use of eval
+    
+    // Function without return
+    function processData(data) {
+        data.split(',');
+    }
+
+  # TypeScript test file with common issues  
+  test.ts: |
+    // Missing type annotations
+    function calculateSum(a, b) {
+        return a + b;
+    }
+    
+    // Any type usage
+    let data: any = getData();
+    
+    // Unused variable
+    const unusedConst = "not used";
+    
+    // Undefined variable
+    function processData() {
+        return undefinedVar; // Variable not defined
+    }
+    
+    // Interface with optional properties
+    interface User {
+        name: string;
+        age: number;
+        email?: string;
+    }
+    
+    // Missing null check
+    function getUserName(user: User): string {
+        return user.name.toUpperCase(); // Potential null reference
+    }
+    
+    // Potential security issue
+    const result = eval(userInput); // Dangerous use of eval
+
+  # Java test file with common issues
+  Test.java: |
+    import java.util.*;
+    import java.io.*;
+    
+    public class Test {
+        // Unused variable
+        private static final String UNUSED_CONSTANT = "not used";
+        
+        // Missing exception handling
+        public static void readFile() {
+            FileReader fr = new FileReader("nonexistent.txt"); // IOException not handled
+        }
+        
+        // Potential null pointer
+        public static String processString(String input) {
+            return input.toUpperCase(); // Potential NPE if input is null
+        }
+        
+        // Unused import and method
+        public static void unusedMethod() {
+            System.out.println("This method is never called");
+        }
+        
+        // Resource leak
+        public static void resourceLeak() {
+            try {
+                FileInputStream fis = new FileInputStream("test.txt");
+                // Stream not closed
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        
+        // Magic number
+        public static void calculate() {
+            int result = someValue * 42; // Magic number
+        }
+        
+        public static void main(String[] args) {
+            processString(null);
+        }
+    }
+
+  # PHP test file with common issues
+  test.php: |
+    <?php
+    
+    // Unused variable
+    $unusedVariable = "not used";
+    
+    // Undefined variable
+    function calculateSum() {
+        return $a + $b; // Variables not defined
+    }
+    
+    // Missing error handling
+    function readFile() {
+        $content = file_get_contents("nonexistent.txt"); // No error handling
+        return $content;
+    }
+    
+    // SQL injection potential
+    function getUser($id) {
+        $query = "SELECT * FROM users WHERE id = " . $id; // SQL injection risk
+        return mysql_query($query);
+    }
+    
+    // XSS vulnerability
+    function displayMessage($message) {
+        echo $message; // Should escape output
+    }
+    
+    // Deprecated function
+    function connectDatabase() {
+        return mysql_connect("localhost", "user", "pass"); // mysql_connect is deprecated
+    }
+    
+    // Missing validation
+    if ($_POST['action'] == 'delete') {
+        deleteUser($_POST['id']); // No CSRF protection or validation
+    }
+    
+    ?>
+
+---
+# Python v4 Test Job
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: test-python-v4
+  namespace: codequal-dev
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      imagePullSecrets:
+      - name: registry-codequal
+      restartPolicy: Never
+      containers:
+      - name: test-container
+        image: registry.digitalocean.com/codequal-registry/analyzer:lang-python-v4
+        command: ["/bin/bash"]
+        args:
+        - -c
+        - |
+          echo "=== Testing Python v4 Container ==="
+          echo "Container: lang-python-v4"
+          echo "Timestamp: $(date)"
+          echo ""
+          
+          # Copy test file
+          cp /test-files/test.py /tmp/test.py
+          
+          # Run Python analysis tools
+          echo "=== Running flake8 ==="
+          flake8 /tmp/test.py 2>&1 || true
+          echo ""
+          
+          echo "=== Running pylint ==="
+          pylint /tmp/test.py 2>&1 || true
+          echo ""
+          
+          echo "=== Running bandit (security) ==="
+          bandit /tmp/test.py 2>&1 || true
+          echo ""
+          
+          echo "=== Testing Python syntax check ==="
+          python -m py_compile /tmp/test.py 2>&1 || true
+          echo ""
+          
+          echo "=== Container test completed ==="
+        volumeMounts:
+        - name: test-files
+          mountPath: /test-files
+      volumes:
+      - name: test-files
+        configMap:
+          name: test-files-v4
+
+---
+# JavaScript v4 Test Job
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: test-javascript-v4
+  namespace: codequal-dev
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      imagePullSecrets:
+      - name: registry-codequal
+      restartPolicy: Never
+      containers:
+      - name: test-container
+        image: registry.digitalocean.com/codequal-registry/analyzer:lang-javascript-v4
+        command: ["/bin/bash"]
+        args:
+        - -c
+        - |
+          echo "=== Testing JavaScript v4 Container ==="
+          echo "Container: lang-javascript-v4"
+          echo "Timestamp: $(date)"
+          echo ""
+          
+          # Copy test file
+          cp /test-files/test.js /tmp/test.js
+          
+          # Run JavaScript analysis tools
+          echo "=== Running ESLint ==="
+          eslint /tmp/test.js 2>&1 || true
+          echo ""
+          
+          echo "=== Running JSHint ==="
+          jshint /tmp/test.js 2>&1 || true
+          echo ""
+          
+          echo "=== Testing Node.js syntax check ==="
+          node -c /tmp/test.js 2>&1 || true
+          echo ""
+          
+          echo "=== Container test completed ==="
+        volumeMounts:
+        - name: test-files
+          mountPath: /test-files
+      volumes:
+      - name: test-files
+        configMap:
+          name: test-files-v4
+
+---
+# TypeScript v4.1 Test Job
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: test-typescript-v41
+  namespace: codequal-dev
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      imagePullSecrets:
+      - name: registry-codequal
+      restartPolicy: Never
+      containers:
+      - name: test-container
+        image: registry.digitalocean.com/codequal-registry/analyzer:lang-typescript-v4.1
+        command: ["/bin/bash"]
+        args:
+        - -c
+        - |
+          echo "=== Testing TypeScript v4.1 Container ==="
+          echo "Container: lang-typescript-v4.1"
+          echo "Timestamp: $(date)"
+          echo ""
+          
+          # Copy test file
+          cp /test-files/test.ts /tmp/test.ts
+          
+          # Create basic tsconfig.json
+          cat > /tmp/tsconfig.json << 'EOF'
+          {
+            "compilerOptions": {
+              "target": "es2020",
+              "module": "commonjs",
+              "strict": true,
+              "noImplicitAny": true
+            }
+          }
+          EOF
+          
+          # Run TypeScript analysis tools
+          echo "=== Running TypeScript Compiler ==="
+          tsc --noEmit /tmp/test.ts 2>&1 || true
+          echo ""
+          
+          echo "=== Running TSLint ==="
+          tslint /tmp/test.ts 2>&1 || true
+          echo ""
+          
+          echo "=== Running ESLint with TypeScript ==="
+          eslint /tmp/test.ts 2>&1 || true
+          echo ""
+          
+          echo "=== Container test completed ==="
+        volumeMounts:
+        - name: test-files
+          mountPath: /test-files
+      volumes:
+      - name: test-files
+        configMap:
+          name: test-files-v4
+
+---
+# Java v4 Test Job
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: test-java-v4
+  namespace: codequal-dev
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      imagePullSecrets:
+      - name: registry-codequal
+      restartPolicy: Never
+      containers:
+      - name: test-container
+        image: registry.digitalocean.com/codequal-registry/analyzer:lang-java-v4
+        command: ["/bin/bash"]
+        args:
+        - -c
+        - |
+          echo "=== Testing Java v4 Container ==="
+          echo "Container: lang-java-v4"
+          echo "Timestamp: $(date)"
+          echo ""
+          
+          # Copy test file
+          cp /test-files/Test.java /tmp/Test.java
+          
+          # Run Java analysis tools
+          echo "=== Running Java Compiler ==="
+          javac /tmp/Test.java 2>&1 || true
+          echo ""
+          
+          echo "=== Running CheckStyle ==="
+          checkstyle /tmp/Test.java 2>&1 || true
+          echo ""
+          
+          echo "=== Running SpotBugs ==="
+          # Compile first for SpotBugs
+          javac /tmp/Test.java -d /tmp 2>/dev/null || true
+          spotbugs -textui /tmp 2>&1 || true
+          echo ""
+          
+          echo "=== Running PMD ==="
+          pmd -d /tmp -f text -rulesets java-basic 2>&1 || true
+          echo ""
+          
+          echo "=== Container test completed ==="
+        volumeMounts:
+        - name: test-files
+          mountPath: /test-files
+      volumes:
+      - name: test-files
+        configMap:
+          name: test-files-v4
+
+---
+# PHP v4 Test Job
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: test-php-v4
+  namespace: codequal-dev
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      imagePullSecrets:
+      - name: registry-codequal
+      restartPolicy: Never
+      containers:
+      - name: test-container
+        image: registry.digitalocean.com/codequal-registry/analyzer:lang-php-v4
+        command: ["/bin/bash"]
+        args:
+        - -c
+        - |
+          echo "=== Testing PHP v4 Container ==="
+          echo "Container: lang-php-v4"
+          echo "Timestamp: $(date)"
+          echo ""
+          
+          # Copy test file
+          cp /test-files/test.php /tmp/test.php
+          
+          # Run PHP analysis tools
+          echo "=== Running PHP Syntax Check ==="
+          php -l /tmp/test.php 2>&1 || true
+          echo ""
+          
+          echo "=== Running PHPCS (CodeSniffer) ==="
+          phpcs /tmp/test.php 2>&1 || true
+          echo ""
+          
+          echo "=== Running PHPStan ==="
+          phpstan analyse /tmp/test.php --level=5 2>&1 || true
+          echo ""
+          
+          echo "=== Running PHPMD ==="
+          phpmd /tmp/test.php text cleancode,codesize,controversial,design,naming,unusedcode 2>&1 || true
+          echo ""
+          
+          echo "=== Container test completed ==="
+        volumeMounts:
+        - name: test-files
+          mountPath: /test-files
+      volumes:
+      - name: test-files
+        configMap:
+          name: test-files-v4

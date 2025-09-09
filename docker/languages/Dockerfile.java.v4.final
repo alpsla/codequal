@@ -1,0 +1,206 @@
+FROM openjdk:17-slim
+
+WORKDIR /app
+
+# Install necessary tools
+RUN apt-get update && apt-get install -y wget unzip curl git && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install PMD with a specific version known to work well
+ENV PMD_VERSION=7.0.0
+RUN wget -q https://github.com/pmd/pmd/releases/download/pmd_releases%2F${PMD_VERSION}/pmd-dist-${PMD_VERSION}-bin.zip && \
+    unzip -q pmd-dist-${PMD_VERSION}-bin.zip && \
+    mv pmd-bin-${PMD_VERSION} /opt/pmd && \
+    rm pmd-dist-${PMD_VERSION}-bin.zip && \
+    ln -s /opt/pmd/bin/pmd /usr/local/bin/pmd
+
+# Install SpotBugs
+ENV SPOTBUGS_VERSION=4.8.3
+RUN wget -q https://github.com/spotbugs/spotbugs/releases/download/${SPOTBUGS_VERSION}/spotbugs-${SPOTBUGS_VERSION}.zip && \
+    unzip -q spotbugs-${SPOTBUGS_VERSION}.zip && \
+    mv spotbugs-${SPOTBUGS_VERSION} /opt/spotbugs && \
+    rm spotbugs-${SPOTBUGS_VERSION}.zip && \
+    ln -s /opt/spotbugs/bin/spotbugs /usr/local/bin/spotbugs
+
+# Install Checkstyle
+ENV CHECKSTYLE_VERSION=10.12.7
+RUN wget -q https://github.com/checkstyle/checkstyle/releases/download/checkstyle-${CHECKSTYLE_VERSION}/checkstyle-${CHECKSTYLE_VERSION}-all.jar -O /opt/checkstyle.jar
+
+# Install JaCoCo for code coverage
+ENV JACOCO_VERSION=0.8.11
+RUN wget -q https://github.com/jacoco/jacoco/releases/download/v${JACOCO_VERSION}/jacoco-${JACOCO_VERSION}.zip && \
+    unzip -q jacoco-${JACOCO_VERSION}.zip -d /opt/jacoco && \
+    rm jacoco-${JACOCO_VERSION}.zip && \
+    chmod +x /opt/jacoco/lib/*.jar
+
+# Install OWASP Dependency Check
+ENV DEPENDENCY_CHECK_VERSION=9.0.9
+RUN wget -q https://github.com/jeremylong/DependencyCheck/releases/download/v${DEPENDENCY_CHECK_VERSION}/dependency-check-${DEPENDENCY_CHECK_VERSION}-release.zip && \
+    unzip -q dependency-check-${DEPENDENCY_CHECK_VERSION}-release.zip && \
+    mv dependency-check /opt/dependency-check && \
+    rm dependency-check-${DEPENDENCY_CHECK_VERSION}-release.zip && \
+    chmod +x /opt/dependency-check/bin/dependency-check.sh
+
+# Create PMD wrapper script with JSON output and proper ruleset handling
+RUN cat > /usr/local/bin/pmd-wrapper << 'EOF'
+#!/bin/bash
+
+# Set default values
+RULESET="${PMD_RULESET:-/opt/pmd/codequal-rules.xml}"
+FORMAT="${PMD_FORMAT:-json}"
+TIMEOUT="${PMD_TIMEOUT:-30}"
+
+# Function to run PMD with proper error handling
+run_pmd() {
+    local cmd="$1"
+    shift
+    
+    case "$cmd" in
+        "check")
+            timeout "$TIMEOUT" /opt/pmd/bin/pmd check \
+                --rulesets "$RULESET" \
+                --format "$FORMAT" \
+                --report-file /dev/stdout \
+                --fail-on-violation false \
+                "$@" 2>&1 || {
+                    echo '{"error": "PMD analysis failed or timed out", "exitCode": '$?'}'
+                }
+            ;;
+        *)
+            /opt/pmd/bin/pmd "$cmd" "$@"
+            ;;
+    esac
+}
+
+run_pmd "$@"
+EOF
+
+RUN chmod +x /usr/local/bin/pmd-wrapper
+
+# Create JaCoCo wrapper script for easy usage
+RUN cat > /usr/local/bin/jacoco-wrapper << 'EOF'
+#!/bin/bash
+
+# JaCoCo wrapper for code coverage analysis
+JACOCO_AGENT="/opt/jacoco/lib/jacocoagent.jar"
+JACOCO_CLI="/opt/jacoco/lib/jacococli.jar"
+
+case "$1" in
+    "agent")
+        echo "-javaagent:${JACOCO_AGENT}=destfile=jacoco.exec"
+        ;;
+    "report")
+        shift
+        java -jar ${JACOCO_CLI} report "$@"
+        ;;
+    "dump")
+        shift
+        java -jar ${JACOCO_CLI} dump "$@"
+        ;;
+    "merge")
+        shift
+        java -jar ${JACOCO_CLI} merge "$@"
+        ;;
+    *)
+        echo "Usage: jacoco-wrapper {agent|report|dump|merge} [options]"
+        echo "  agent  - Print JVM agent string for code coverage"
+        echo "  report - Generate coverage report from exec file"
+        echo "  dump   - Dump execution data from running JVM"
+        echo "  merge  - Merge multiple exec files"
+        exit 1
+        ;;
+esac
+EOF
+
+RUN chmod +x /usr/local/bin/jacoco-wrapper
+
+# Create comprehensive PMD ruleset with proper configuration
+RUN cat > /opt/pmd/codequal-rules.xml << 'EOF'
+<?xml version="1.0"?>
+<ruleset name="CodeQual Java Rules"
+    xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+    
+    <description>Comprehensive ruleset for Java code analysis</description>
+    
+    <!-- Error Prone Rules -->
+    <rule ref="category/java/errorprone.xml/EmptyCatchBlock" />
+    <rule ref="category/java/errorprone.xml/EmptyIfStmt" />
+    <rule ref="category/java/errorprone.xml/EmptyWhileStmt" />
+    <rule ref="category/java/errorprone.xml/EmptyTryBlock" />
+    <rule ref="category/java/errorprone.xml/EmptyFinallyBlock" />
+    <rule ref="category/java/errorprone.xml/EmptyStatementNotInLoop" />
+    <rule ref="category/java/errorprone.xml/JumbledIncrementer" />
+    <rule ref="category/java/errorprone.xml/MisplacedNullCheck" />
+    <rule ref="category/java/errorprone.xml/OverrideBothEqualsAndHashcode" />
+    <rule ref="category/java/errorprone.xml/ReturnFromFinallyBlock" />
+    <rule ref="category/java/errorprone.xml/UnconditionalIfStatement" />
+    <rule ref="category/java/errorprone.xml/UnnecessaryConversionTemporary" />
+    <rule ref="category/java/errorprone.xml/UnusedNullCheckInEquals" />
+    <rule ref="category/java/errorprone.xml/UselessOperationOnImmutable" />
+    
+    <!-- Best Practices -->
+    <rule ref="category/java/bestpractices.xml/UnusedLocalVariable" />
+    <rule ref="category/java/bestpractices.xml/UnusedPrivateField" />
+    <rule ref="category/java/bestpractices.xml/UnusedPrivateMethod" />
+    <rule ref="category/java/bestpractices.xml/AvoidPrintStackTrace" />
+    <rule ref="category/java/bestpractices.xml/AvoidReassigningParameters" />
+    <rule ref="category/java/bestpractices.xml/DefaultLabelNotLastInSwitchStmt" />
+    <rule ref="category/java/bestpractices.xml/ForLoopCanBeForeach" />
+    <rule ref="category/java/bestpractices.xml/LooseCoupling" />
+    <rule ref="category/java/bestpractices.xml/MethodReturnsInternalArray" />
+    <rule ref="category/java/bestpractices.xml/MissingOverride" />
+    <rule ref="category/java/bestpractices.xml/PreserveStackTrace" />
+    <rule ref="category/java/bestpractices.xml/ReplaceHashtableWithMap" />
+    <rule ref="category/java/bestpractices.xml/ReplaceVectorWithList" />
+    <rule ref="category/java/bestpractices.xml/SwitchStmtsShouldHaveDefault" />
+    <rule ref="category/java/bestpractices.xml/SystemPrintln" />
+    <rule ref="category/java/bestpractices.xml/UseCollectionIsEmpty" />
+    <rule ref="category/java/bestpractices.xml/UseStringBufferLength" />
+    
+    <!-- Security Rules -->
+    <rule ref="category/java/security.xml/HardCodedCryptoKey" />
+    <rule ref="category/java/security.xml/InsecureCryptoIv" />
+    
+    <!-- Performance Rules -->
+    <rule ref="category/java/performance.xml/AvoidInstantiatingObjectsInLoops" />
+    <rule ref="category/java/performance.xml/AvoidUsingShortType" />
+    <rule ref="category/java/performance.xml/BigIntegerInstantiation" />
+    <rule ref="category/java/performance.xml/BooleanInstantiation" />
+    
+    <!-- Design Rules -->
+    <rule ref="category/java/design.xml/AvoidDeeplyNestedIfStmts">
+        <properties>
+            <property name="problemDepth" value="4" />
+        </properties>
+    </rule>
+    <rule ref="category/java/design.xml/CyclomaticComplexity">
+        <properties>
+            <property name="classReportLevel" value="80" />
+            <property name="methodReportLevel" value="10" />
+        </properties>
+    </rule>
+    <rule ref="category/java/design.xml/ExcessiveMethodLength">
+        <properties>
+            <property name="minimum" value="100" />
+        </properties>
+    </rule>
+    <rule ref="category/java/design.xml/ExcessiveParameterList">
+        <properties>
+            <property name="minimum" value="8" />
+        </properties>
+    </rule>
+    
+</ruleset>
+EOF
+
+# Verify installations
+RUN java --version && \
+    /opt/pmd/bin/pmd --version && \
+    echo "SpotBugs installed at /opt/spotbugs" && \
+    echo "JaCoCo installed at /opt/jacoco" && \
+    echo "Dependency Check installed at /opt/dependency-check"
+
+CMD ["java", "--version"]

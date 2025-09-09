@@ -1,0 +1,46 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: build-rust-v5-lightweight
+  namespace: codequal-dev
+spec:
+  ttlSecondsAfterFinished: 300
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:v1.23.0
+        args:
+        - "--dockerfile=/workspace/Dockerfile.rust"
+        - "--context=dir:///workspace"
+        - "--destination=asia-south1-docker.pkg.dev/codequal-440103/codequal-registry/rust:v5-lightweight"
+        - "--cache=true"
+        - "--cache-ttl=24h"
+        - "--compressed-caching=false"
+        - "--cleanup"
+        - "--log-format=text"
+        - "--verbosity=info"
+        volumeMounts:
+        - name: dockerfile
+          mountPath: /workspace
+        - name: kaniko-secret
+          mountPath: /kaniko/.docker
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1"
+      volumes:
+      - name: dockerfile
+        configMap:
+          name: dockerfile-rust-v5-fixed
+      - name: kaniko-secret
+        secret:
+          secretName: kaniko-secret
+          items:
+          - key: .dockerconfigjson
+            path: config.json

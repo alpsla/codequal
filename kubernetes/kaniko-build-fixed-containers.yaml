@@ -1,0 +1,125 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kaniko-build-python-fixed
+  namespace: codequal-dev
+spec:
+  template:
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+          - "--dockerfile=/workspace/Dockerfile.python.fixed"
+          - "--context=dir:///workspace"
+          - "--destination=registry.digitalocean.com/codequal-registry/analyzer:lang-python-v4"
+          - "--cache=true"
+          - "--cache-ttl=24h"
+        volumeMounts:
+        - name: dockerfile
+          mountPath: /workspace
+        - name: kaniko-secret
+          mountPath: /kaniko/.docker
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1"
+          limits:
+            memory: "4Gi"
+            cpu: "2"
+      restartPolicy: Never
+      volumes:
+      - name: dockerfile
+        configMap:
+          name: dockerfile-python-fixed
+      - name: kaniko-secret
+        secret:
+          secretName: regcred
+          items:
+            - key: .dockerconfigjson
+              path: config.json
+  backoffLimit: 2
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kaniko-build-javascript-fixed
+  namespace: codequal-dev
+spec:
+  template:
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+          - "--dockerfile=/workspace/Dockerfile.javascript.fixed"
+          - "--context=dir:///workspace"
+          - "--destination=registry.digitalocean.com/codequal-registry/analyzer:lang-javascript-v4"
+          - "--cache=true"
+          - "--cache-ttl=24h"
+        volumeMounts:
+        - name: dockerfile
+          mountPath: /workspace
+        - name: kaniko-secret
+          mountPath: /kaniko/.docker
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1"
+          limits:
+            memory: "4Gi"
+            cpu: "2"
+      restartPolicy: Never
+      volumes:
+      - name: dockerfile
+        configMap:
+          name: dockerfile-javascript-fixed
+      - name: kaniko-secret
+        secret:
+          secretName: regcred
+          items:
+            - key: .dockerconfigjson
+              path: config.json
+  backoffLimit: 2
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kaniko-build-java-fixed
+  namespace: codequal-dev
+spec:
+  template:
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+          - "--dockerfile=/workspace/Dockerfile.java.fixed"
+          - "--context=dir:///workspace"
+          - "--destination=registry.digitalocean.com/codequal-registry/analyzer:lang-java-v4"
+          - "--cache=true"
+          - "--cache-ttl=24h"
+        volumeMounts:
+        - name: dockerfile
+          mountPath: /workspace
+        - name: kaniko-secret
+          mountPath: /kaniko/.docker
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1"
+          limits:
+            memory: "4Gi"
+            cpu: "2"
+      restartPolicy: Never
+      volumes:
+      - name: dockerfile
+        configMap:
+          name: dockerfile-java-fixed
+      - name: kaniko-secret
+        secret:
+          secretName: regcred
+          items:
+            - key: .dockerconfigjson
+              path: config.json
+  backoffLimit: 2

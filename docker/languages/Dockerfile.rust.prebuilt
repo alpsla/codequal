@@ -1,0 +1,24 @@
+FROM debian:bookworm-slim
+
+# Install runtime dependencies only
+RUN apt-get update && apt-get install -y \
+    curl \
+    ca-certificates \
+    git \
+    --no-install-recommends && \
+    rm -rf /var/lib/apt/lists/*
+
+# Download pre-built binaries
+RUN curl -L https://github.com/rustsec/rustsec/releases/latest/download/cargo-audit-x86_64-unknown-linux-musl.tar.gz | tar xz -C /usr/local/bin && \
+    curl -L https://github.com/kbknapp/cargo-outdated/releases/download/v0.15.0/cargo-outdated-v0.15.0-x86_64-unknown-linux-gnu.tar.gz | tar xz -C /usr/local/bin && \
+    chmod +x /usr/local/bin/cargo-*
+
+# Custom unsafe scanner (no compilation needed)
+RUN echo '#!/bin/bash' > /usr/local/bin/unsafe-scanner && \
+    echo 'echo "Scanning for unsafe code patterns..."' >> /usr/local/bin/unsafe-scanner && \
+    echo 'grep -rn "unsafe\\s*{" --include="*.rs" . 2>/dev/null | head -20' >> /usr/local/bin/unsafe-scanner && \
+    echo 'exit 0' >> /usr/local/bin/unsafe-scanner && \
+    chmod +x /usr/local/bin/unsafe-scanner
+
+WORKDIR /app
+CMD ["bash"]

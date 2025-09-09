@@ -1,0 +1,65 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: restore-to-registry
+  namespace: codequal-dev
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      containers:
+      - name: crane
+        image: gcr.io/go-containerregistry/crane:latest
+        command: ["/busybox/sh", "-c"]
+        args:
+        - |
+          echo "🔄 Restoring images from Kubernetes cache to Registry"
+          echo "====================================================="
+          echo ""
+          
+          # List of images to restore
+          images="
+          lang-python-v3
+          lang-javascript-v3
+          lang-java-v3
+          lang-go-v3
+          lang-ruby-v3
+          lang-php-v3
+          lang-cpp-v3
+          lang-csharp-v3
+          lang-perl-v3
+          "
+          
+          for img in $images; do
+            echo "📦 Copying $img..."
+            
+            # Copy from current registry location (cached in K8s) back to registry
+            # This works because the images are still referenced by the backup pod
+            crane copy \
+              registry.digitalocean.com/codequal/analyzer:$img \
+              registry.digitalocean.com/codequal/analyzer:$img \
+              --insecure \
+              2>/dev/null || echo "   ⚠️  $img needs rebuild"
+          done
+          
+          echo ""
+          echo "📦 Restoring API image..."
+          crane copy \
+            registry.digitalocean.com/codequal/api:bundle-v2 \
+            registry.digitalocean.com/codequal/api:bundle-v2 \
+            --insecure \
+            2>/dev/null || echo "   ⚠️  API needs rebuild"
+          
+          echo ""
+          echo "✅ Restore attempt complete!"
+        volumeMounts:
+        - name: docker-config
+          mountPath: /root/.docker
+      restartPolicy: Never
+      volumes:
+      - name: docker-config
+        secret:
+          secretName: regcred
+          items:
+          - key: .dockerconfigjson
+            path: config.json

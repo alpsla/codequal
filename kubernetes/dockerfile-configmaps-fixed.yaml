@@ -1,0 +1,155 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dockerfile-python-fixed
+  namespace: codequal-dev
+data:
+  Dockerfile.python.fixed: |
+    FROM python:3.11-slim
+    
+    WORKDIR /app
+    
+    # Install Python analysis tools with JSON output support
+    RUN pip install --no-cache-dir \
+        flake8==7.0.0 \
+        flake8-json==24.1.0 \
+        pylint==3.3.8 \
+        bandit==1.7.5 \
+        safety==3.0.1 \
+        mypy==1.8.0 \
+        black==24.1.1 \
+        radon==6.0.1 \
+        vulture==2.11
+    
+    # Create a simple wrapper script for flake8 JSON output
+    RUN echo '#!/bin/bash\nflake8 "$@" --format=json' > /usr/local/bin/flake8-json && \
+        chmod +x /usr/local/bin/flake8-json
+    
+    # Verify installations
+    RUN python --version && \
+        flake8 --version && \
+        pylint --version && \
+        bandit --version
+    
+    CMD ["python", "--version"]
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dockerfile-javascript-fixed
+  namespace: codequal-dev
+data:
+  Dockerfile.javascript.fixed: |
+    FROM node:20-alpine
+    
+    WORKDIR /app
+    
+    # Install ESLint v8 and essential plugins with JSON output support
+    RUN npm install -g \
+        eslint@8.57.0 \
+        prettier@3.2.5 \
+        typescript@5.4.5 \
+        @typescript-eslint/parser@7.2.0 \
+        @typescript-eslint/eslint-plugin@7.2.0 \
+        eslint-config-standard@17.1.0 \
+        eslint-plugin-import@2.29.1 \
+        eslint-plugin-node@11.1.0 \
+        eslint-plugin-promise@6.1.1 \
+        eslint-plugin-sonarjs@0.24.0 \
+        eslint-plugin-security@2.1.1 \
+        jshint@2.13.6
+    
+    # Create a minimal working ESLint config that doesn't require external plugins
+    RUN echo '{\
+      "env": {\
+        "es2021": true,\
+        "node": true\
+      },\
+      "extends": "eslint:recommended",\
+      "parserOptions": {\
+        "ecmaVersion": "latest",\
+        "sourceType": "module"\
+      },\
+      "rules": {\
+        "no-unused-vars": "warn",\
+        "no-undef": "error",\
+        "semi": ["error", "always"]\
+      }\
+    }' > /app/.eslintrc.json
+    
+    # Set default ESLint config location
+    ENV ESLINT_CONFIG_FILE=/app/.eslintrc.json
+    
+    # Verify installations
+    RUN node --version && \
+        eslint --version && \
+        prettier --version && \
+        tsc --version
+    
+    CMD ["node", "--version"]
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dockerfile-java-fixed
+  namespace: codequal-dev
+data:
+  Dockerfile.java.fixed: |
+    FROM openjdk:17-slim
+    
+    WORKDIR /app
+    
+    # Install necessary tools
+    RUN apt-get update && apt-get install -y wget unzip curl && \
+        apt-get clean && \
+        rm -rf /var/lib/apt/lists/*
+    
+    # Install PMD with a specific version known to work well
+    ENV PMD_VERSION=7.0.0
+    RUN wget -q https://github.com/pmd/pmd/releases/download/pmd_releases%2F${PMD_VERSION}/pmd-dist-${PMD_VERSION}-bin.zip && \
+        unzip -q pmd-dist-${PMD_VERSION}-bin.zip && \
+        mv pmd-bin-${PMD_VERSION} /opt/pmd && \
+        rm pmd-dist-${PMD_VERSION}-bin.zip && \
+        ln -s /opt/pmd/bin/pmd /usr/local/bin/pmd
+    
+    # Install SpotBugs
+    ENV SPOTBUGS_VERSION=4.8.3
+    RUN wget -q https://github.com/spotbugs/spotbugs/releases/download/${SPOTBUGS_VERSION}/spotbugs-${SPOTBUGS_VERSION}.zip && \
+        unzip -q spotbugs-${SPOTBUGS_VERSION}.zip && \
+        mv spotbugs-${SPOTBUGS_VERSION} /opt/spotbugs && \
+        rm spotbugs-${SPOTBUGS_VERSION}.zip && \
+        ln -s /opt/spotbugs/bin/spotbugs /usr/local/bin/spotbugs
+    
+    # Install Checkstyle
+    ENV CHECKSTYLE_VERSION=10.12.7
+    RUN wget -q https://github.com/checkstyle/checkstyle/releases/download/checkstyle-${CHECKSTYLE_VERSION}/checkstyle-${CHECKSTYLE_VERSION}-all.jar -O /opt/checkstyle.jar
+    
+    # Create a simple PMD wrapper script that works quickly
+    RUN echo '#!/bin/bash\n\
+    if [ "$1" = "check" ]; then\n\
+        shift\n\
+        timeout 5 /opt/pmd/bin/pmd check "$@" 2>&1 || echo "{\\"error\\": \\"PMD analysis completed or timed out\\"}"\n\
+    else\n\
+        /opt/pmd/bin/pmd "$@"\n\
+    fi' > /usr/local/bin/pmd-wrapper && \
+        chmod +x /usr/local/bin/pmd-wrapper
+    
+    # Create minimal PMD ruleset for faster execution
+    RUN echo '<?xml version="1.0"?>\n\
+    <ruleset name="Quick Rules"\n\
+        xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"\n\
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"\n\
+        xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">\n\
+        <description>Minimal ruleset for quick analysis</description>\n\
+        <rule ref="category/java/errorprone.xml/EmptyCatchBlock" />\n\
+        <rule ref="category/java/errorprone.xml/EmptyIfStmt" />\n\
+        <rule ref="category/java/bestpractices.xml/UnusedLocalVariable" />\n\
+        <rule ref="category/java/bestpractices.xml/UnusedPrivateField" />\n\
+    </ruleset>' > /opt/pmd/quick-rules.xml
+    
+    # Verify installations
+    RUN java --version && \
+        /opt/pmd/bin/pmd --version && \
+        echo "SpotBugs installed at /opt/spotbugs"
+    
+    CMD ["java", "--version"]

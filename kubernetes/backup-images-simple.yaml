@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: image-backup-pod
+  namespace: codequal-dev
+spec:
+  containers:
+  - name: python
+    image: registry.digitalocean.com/codequal/analyzer:lang-python-v3
+    imagePullPolicy: Always
+    command: ["sleep", "3600"]
+  - name: javascript
+    image: registry.digitalocean.com/codequal/analyzer:lang-javascript-v3
+    imagePullPolicy: Always
+    command: ["sleep", "3600"]
+  - name: java
+    image: registry.digitalocean.com/codequal/analyzer:lang-java-v3
+    imagePullPolicy: Always
+    command: ["sleep", "3600"]
+  - name: go
+    image: registry.digitalocean.com/codequal/analyzer:lang-go-v3
+    imagePullPolicy: Always
+    command: ["sleep", "3600"]
+  - name: ruby
+    image: registry.digitalocean.com/codequal/analyzer:lang-ruby-v3
+    imagePullPolicy: Always
+    command: ["sleep", "3600"]
+  - name: php
+    image: registry.digitalocean.com/codequal/analyzer:lang-php-v3
+    imagePullPolicy: Always
+    command: ["sleep", "3600"]
+  - name: cpp
+    image: registry.digitalocean.com/codequal/analyzer:lang-cpp-v3
+    imagePullPolicy: Always
+    command: ["sleep", "3600"]
+  - name: csharp
+    image: registry.digitalocean.com/codequal/analyzer:lang-csharp-v3
+    imagePullPolicy: Always
+    command: ["sleep", "3600"]
+  - name: perl
+    image: registry.digitalocean.com/codequal/analyzer:lang-perl-v3
+    imagePullPolicy: Always
+    command: ["sleep", "3600"]
+  restartPolicy: Never

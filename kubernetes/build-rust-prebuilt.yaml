@@ -1,0 +1,41 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: build-rust-prebuilt
+  namespace: codequal-dev
+spec:
+  template:
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+          - "--dockerfile=/workspace/Dockerfile.rust.prebuilt"
+          - "--context=/workspace"
+          - "--destination=registry.digitalocean.com/codequal-registry/analyzer:lang-rust-prebuilt"
+          - "--cache=true"
+          - "--cache-repo=registry.digitalocean.com/codequal-registry/cache"
+        volumeMounts:
+        - name: dockerfile
+          mountPath: /workspace
+        - name: kaniko-secret
+          mountPath: /kaniko/.docker
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1"
+      restartPolicy: Never
+      volumes:
+      - name: dockerfile
+        configMap:
+          name: rust-prebuilt-dockerfile
+      - name: kaniko-secret
+        secret:
+          secretName: kaniko-secret
+          items:
+            - key: .dockerconfigjson
+              path: config.json
+  backoffLimit: 1

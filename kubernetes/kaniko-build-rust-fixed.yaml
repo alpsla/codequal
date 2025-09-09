@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rust-dockerfile-fixed
+  namespace: codequal-dev
+data:
+  Dockerfile.rust: |
+    FROM rust:1.75-slim
+    WORKDIR /app
+    RUN rustup component add clippy rustfmt
+    CMD ["rustc", "--version"]
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kaniko-build-rust-fixed
+  namespace: codequal-dev
+spec:
+  template:
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+          - "--dockerfile=/workspace/Dockerfile.rust"
+          - "--context=/workspace"
+          - "--destination=registry.digitalocean.com/codequal/analyzer:lang-rust-v2"
+          - "--cache=true"
+          - "--cache-repo=registry.digitalocean.com/codequal/analyzer/cache"
+        volumeMounts:
+        - name: dockerfile
+          mountPath: /workspace
+        - name: kaniko-secret
+          mountPath: /kaniko/.docker
+      restartPolicy: Never
+      volumes:
+      - name: dockerfile
+        configMap:
+          name: rust-dockerfile-fixed
+          items:
+          - key: Dockerfile.rust
+            path: Dockerfile.rust
+      - name: kaniko-secret
+        secret:
+          secretName: regcred
+          items:
+            - key: .dockerconfigjson
+              path: config.json

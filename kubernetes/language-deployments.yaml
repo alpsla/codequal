@@ -18,13 +18,13 @@ spec:
     spec:
       containers:
       - name: analyzer
-        image: registry.digitalocean.com/codequal/analyzer:lang-python
+        image: registry.digitalocean.com/codequal-registry/analyzer:lang-python-v4
         resources:
           requests:
-            memory: "512Mi"
+            memory: "1Gi"
             cpu: "250m"
           limits:
-            memory: "1Gi"
+            memory: "2Gi"
             cpu: "500m"
 ---
 apiVersion: apps/v1

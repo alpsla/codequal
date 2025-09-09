@@ -1,0 +1,104 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies for Python analysis tools
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python analysis tools with JSON output support and fixed versions
+RUN pip install --no-cache-dir \
+    flake8==7.0.0 \
+    flake8-json==24.1.0 \
+    pylint==3.3.8 \
+    bandit==1.7.5 \
+    safety==3.0.1 \
+    mypy==1.8.0 \
+    black==24.1.1 \
+    radon==6.0.1 \
+    vulture==2.11 \
+    pycodestyle==2.11.1 \
+    pydocstyle==6.3.0 \
+    pyflakes==3.2.0 \
+    isort==5.13.2
+
+# Create wrapper scripts for JSON output
+RUN cat > /usr/local/bin/flake8-json << 'EOF'
+#!/bin/bash
+flake8 "$@" --format=json
+EOF
+
+RUN cat > /usr/local/bin/pylint-json << 'EOF'
+#!/bin/bash
+pylint "$@" --output-format=json --reports=no
+EOF
+
+RUN cat > /usr/local/bin/bandit-json << 'EOF'
+#!/bin/bash
+bandit "$@" -f json
+EOF
+
+RUN cat > /usr/local/bin/mypy-json << 'EOF'
+#!/bin/bash
+mypy "$@" --show-column-numbers --show-error-codes --json-report=/tmp/mypy-report 2>/dev/null
+if [ -f /tmp/mypy-report/mypy_report.json ]; then
+    cat /tmp/mypy-report/mypy_report.json
+    rm -rf /tmp/mypy-report
+else
+    echo '{"files": [], "errors": []}'
+fi
+EOF
+
+# Make wrapper scripts executable
+RUN chmod +x /usr/local/bin/flake8-json && \
+    chmod +x /usr/local/bin/pylint-json && \
+    chmod +x /usr/local/bin/bandit-json && \
+    chmod +x /usr/local/bin/mypy-json
+
+# Create a basic Python config for consistent behavior
+RUN cat > /app/.flake8 << 'EOF'
+[flake8]
+max-line-length = 120
+max-complexity = 12
+exclude = .git,__pycache__,build,dist,*.egg
+ignore = E203,W503
+EOF
+
+RUN cat > /app/.pylintrc << 'EOF'
+[MASTER]
+jobs=1
+unsafe-load-any-extension=no
+
+[MESSAGES CONTROL]
+disable=C0103,C0111,R0903,R0913,W0613,C0330
+
+[REPORTS]
+output-format=json
+reports=no
+
+[FORMAT]
+max-line-length=120
+max-module-lines=1000
+
+[DESIGN]
+max-args=8
+max-locals=20
+max-returns=6
+max-branches=15
+max-statements=60
+EOF
+
+# Verify installations and wrapper scripts
+RUN python --version && \
+    flake8 --version && \
+    pylint --version && \
+    bandit --version && \
+    mypy --version && \
+    black --version && \
+    isort --version && \
+    echo "Python v4.1 container ready with optimized JSON output support"
+
+CMD ["python", "--version"]

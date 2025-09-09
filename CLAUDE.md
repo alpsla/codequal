@@ -45,9 +45,7 @@ packages/
                     __tests__/
                         comparison.test.ts
                 services/
-                    deepwiki-api-wrapper.ts
                     __tests__/
-                        deepwiki-api-wrapper.test.ts
                 infrastructure/
                     supabase/
                     redis/
@@ -241,18 +239,18 @@ import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 
 describe('ComparisonAgent', () => {
   let agent: ComparisonAgent;
-  let mockDeepWikiService: jest.Mocked<DeepWikiService>;
+  let mockAnalysisService: jest.Mocked<AnalysisService>;
 
   beforeEach(() => {
-    mockDeepWikiService = createMockDeepWikiService();
-    agent = new ComparisonAgent(mockDeepWikiService);
+    mockAnalysisService = createMockAnalysisService();
+    agent = new ComparisonAgent(mockAnalysisService);
   });
 
   describe('analyzeRepository', () => {
     it('should successfully analyze a valid repository', async () => {
       // Arrange
       const repoUrl = 'https://github.com/test/repo';
-      mockDeepWikiService.analyze.mockResolvedValue(mockAnalysisResult);
+      mockAnalysisService.analyze.mockResolvedValue(mockAnalysisResult);
 
       // Act
       const result = await agent.analyzeRepository(repoUrl);
@@ -260,12 +258,12 @@ describe('ComparisonAgent', () => {
       // Assert
       expect(result).toBeDefined();
       expect(result.issues).toHaveLength(3);
-      expect(mockDeepWikiService.analyze).toHaveBeenCalledWith(repoUrl);
+      expect(mockAnalysisService.analyze).toHaveBeenCalledWith(repoUrl);
     });
 
     it('should handle API errors gracefully', async () => {
       // Arrange
-      mockDeepWikiService.analyze.mockRejectedValue(new Error('API Error'));
+      mockAnalysisService.analyze.mockRejectedValue(new Error('API Error'));
 
       // Act & Assert
       await expect(agent.analyzeRepository('invalid-url'))
@@ -297,14 +295,14 @@ export class ValidationError extends Error {
   }
 }
 
-export class DeepWikiAPIError extends Error {
+export class AnalysisAPIError extends Error {
   constructor(
     message: string,
     public statusCode?: number,
     public response?: unknown
   ) {
     super(message);
-    this.name = 'DeepWikiAPIError';
+    this.name = 'AnalysisAPIError';
   }
 }
 
@@ -319,8 +317,8 @@ async function processAnalysis(data: unknown): Promise<AnalysisResult> {
       logger.warn('Validation failed:', error.message);
       throw new BadRequestError(error.message);
     }
-    if (error instanceof DeepWikiAPIError) {
-      logger.error('DeepWiki API error:', error);
+    if (error instanceof AnalysisAPIError) {
+      logger.error('Analysis API error:', error);
       throw new ServiceUnavailableError('Analysis service temporarily unavailable');
     }
     logger.error('Unexpected error:', error);
@@ -374,8 +372,6 @@ const envSchema = z.object({
   PORT: z.string().transform(Number).default('3000'),
   DATABASE_URL: z.string().url(),
   REDIS_URL: z.string().url().optional(),
-  DEEPWIKI_API_URL: z.string().url(),
-  DEEPWIKI_API_KEY: z.string(),
   SUPABASE_URL: z.string().url(),
   SUPABASE_SERVICE_ROLE_KEY: z.string(),
   OPENROUTER_API_KEY: z.string(),
@@ -386,7 +382,7 @@ const envSchema = z.object({
 export const config = envSchema.parse(process.env);
 
 // Type-safe config usage
-const apiUrl = config.DEEPWIKI_API_URL;
+// Use config properties as needed
 ```
 
 ## 🏗️ Data Models and Validation
@@ -457,7 +453,7 @@ Types: feat, fix, docs, style, refactor, test, chore, perf
 
 Example:
 ```
-feat(agents): add retry logic for DeepWiki API calls
+feat(agents): add retry logic for API calls
 
 - Implement exponential backoff strategy
 - Add configurable max retry attempts

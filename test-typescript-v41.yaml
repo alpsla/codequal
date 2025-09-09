@@ -1,0 +1,51 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: test-typescript-v41
+  namespace: codequal-dev
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      imagePullSecrets:
+      - name: registry-codequal
+      restartPolicy: Never
+      containers:
+      - name: test-container
+        image: registry.digitalocean.com/codequal-registry/analyzer:lang-typescript-v4.1
+        command: ["/bin/bash"]
+        args:
+        - -c
+        - |
+          echo "=== Testing TypeScript v4.1 Container ==="
+          echo "Container: lang-typescript-v4.1"
+          echo "Timestamp: $(date)"
+          echo ""
+          
+          # Copy test file
+          cp /test-files/test.ts /tmp/test.ts
+          
+          # Create basic tsconfig.json
+          echo '{"compilerOptions":{"target":"es2020","module":"commonjs","strict":true,"noImplicitAny":true}}' > /tmp/tsconfig.json
+          
+          # Run TypeScript analysis tools
+          echo "=== Running TypeScript Compiler ==="
+          tsc --noEmit /tmp/test.ts 2>&1 || true
+          echo ""
+          
+          echo "=== Running TSLint ==="
+          tslint /tmp/test.ts 2>&1 || true
+          echo ""
+          
+          echo "=== Running ESLint with TypeScript ==="
+          eslint /tmp/test.ts 2>&1 || true
+          echo ""
+          
+          echo "=== Container test completed ==="
+        volumeMounts:
+        - name: test-files
+          mountPath: /test-files
+      volumes:
+      - name: test-files
+        configMap:
+          name: test-files-v4

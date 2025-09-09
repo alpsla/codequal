@@ -9,9 +9,6 @@ export * as logging from './utils/logger';
 export { createLogger } from './utils/logger';
 export type { Logger } from './utils/logger';
 
-// DeepWiki Integration
-export * as deepwiki from './deepwiki';
-
 // Re-export types directly from their respective files
 export type { 
   Agent, 
@@ -45,8 +42,7 @@ export type {
 
 // Export regular exports from ModelVersionSync
 export {
-  ModelVersionSync,
-  createDeepWikiModelConfig
+  ModelVersionSync
 } from './services/model-selection/ModelVersionSync';
 
 // Export repository model config types

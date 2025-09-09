@@ -1,0 +1,223 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: language-dockerfiles
+  namespace: codequal-dev
+data:
+  Dockerfile.javascript: |
+    FROM node:20-alpine
+    WORKDIR /app
+    RUN npm install -g eslint prettier typescript @typescript-eslint/parser
+    CMD ["node", "--version"]
+  
+  Dockerfile.go: |
+    FROM golang:1.21-alpine
+    WORKDIR /app
+    RUN apk add --no-cache git
+    RUN go install honnef.co/go/tools/cmd/staticcheck@2023.1.7
+    CMD ["go", "version"]
+  
+  Dockerfile.rust: |
+    FROM rust:1.75-slim
+    WORKDIR /app
+    RUN cargo install cargo-audit@0.20.0
+    CMD ["rustc", "--version"]
+  
+  Dockerfile.ruby: |
+    FROM ruby:3.2-slim
+    WORKDIR /app
+    RUN apt-get update && apt-get install -y build-essential && \
+        gem install brakeman rubocop && \
+        apt-get clean && rm -rf /var/lib/apt/lists/*
+    CMD ["ruby", "--version"]
+  
+  Dockerfile.cpp: |
+    FROM gcc:12
+    WORKDIR /app
+    RUN apt-get update && apt-get install -y cppcheck clang-tools
+    CMD ["gcc", "--version"]
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kaniko-build-javascript
+  namespace: codequal-dev
+spec:
+  template:
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+          - "--dockerfile=/workspace/Dockerfile.javascript"
+          - "--context=/workspace"
+          - "--destination=registry.digitalocean.com/codequal/analyzer:lang-javascript-v2"
+          - "--cache=true"
+          - "--cache-repo=registry.digitalocean.com/codequal/analyzer/cache"
+        volumeMounts:
+        - name: dockerfile
+          mountPath: /workspace
+        - name: kaniko-secret
+          mountPath: /kaniko/.docker
+      restartPolicy: Never
+      volumes:
+      - name: dockerfile
+        configMap:
+          name: language-dockerfiles
+          items:
+          - key: Dockerfile.javascript
+            path: Dockerfile.javascript
+      - name: kaniko-secret
+        secret:
+          secretName: regcred
+          items:
+            - key: .dockerconfigjson
+              path: config.json
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kaniko-build-go
+  namespace: codequal-dev
+spec:
+  template:
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+          - "--dockerfile=/workspace/Dockerfile.go"
+          - "--context=/workspace"
+          - "--destination=registry.digitalocean.com/codequal/analyzer:lang-go-v2"
+          - "--cache=true"
+          - "--cache-repo=registry.digitalocean.com/codequal/analyzer/cache"
+        volumeMounts:
+        - name: dockerfile
+          mountPath: /workspace
+        - name: kaniko-secret
+          mountPath: /kaniko/.docker
+      restartPolicy: Never
+      volumes:
+      - name: dockerfile
+        configMap:
+          name: language-dockerfiles
+          items:
+          - key: Dockerfile.go
+            path: Dockerfile.go
+      - name: kaniko-secret
+        secret:
+          secretName: regcred
+          items:
+            - key: .dockerconfigjson
+              path: config.json
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kaniko-build-rust
+  namespace: codequal-dev
+spec:
+  template:
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+          - "--dockerfile=/workspace/Dockerfile.rust"
+          - "--context=/workspace"
+          - "--destination=registry.digitalocean.com/codequal/analyzer:lang-rust-v2"
+          - "--cache=true"
+          - "--cache-repo=registry.digitalocean.com/codequal/analyzer/cache"
+        volumeMounts:
+        - name: dockerfile
+          mountPath: /workspace
+        - name: kaniko-secret
+          mountPath: /kaniko/.docker
+      restartPolicy: Never
+      volumes:
+      - name: dockerfile
+        configMap:
+          name: language-dockerfiles
+          items:
+          - key: Dockerfile.rust
+            path: Dockerfile.rust
+      - name: kaniko-secret
+        secret:
+          secretName: regcred
+          items:
+            - key: .dockerconfigjson
+              path: config.json
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kaniko-build-ruby
+  namespace: codequal-dev
+spec:
+  template:
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+          - "--dockerfile=/workspace/Dockerfile.ruby"
+          - "--context=/workspace"
+          - "--destination=registry.digitalocean.com/codequal/analyzer:lang-ruby-v2"
+          - "--cache=true"
+          - "--cache-repo=registry.digitalocean.com/codequal/analyzer/cache"
+        volumeMounts:
+        - name: dockerfile
+          mountPath: /workspace
+        - name: kaniko-secret
+          mountPath: /kaniko/.docker
+      restartPolicy: Never
+      volumes:
+      - name: dockerfile
+        configMap:
+          name: language-dockerfiles
+          items:
+          - key: Dockerfile.ruby
+            path: Dockerfile.ruby
+      - name: kaniko-secret
+        secret:
+          secretName: regcred
+          items:
+            - key: .dockerconfigjson
+              path: config.json
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kaniko-build-cpp
+  namespace: codequal-dev
+spec:
+  template:
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+          - "--dockerfile=/workspace/Dockerfile.cpp"
+          - "--context=/workspace"
+          - "--destination=registry.digitalocean.com/codequal/analyzer:lang-cpp-v2"
+          - "--cache=true"
+          - "--cache-repo=registry.digitalocean.com/codequal/analyzer/cache"
+        volumeMounts:
+        - name: dockerfile
+          mountPath: /workspace
+        - name: kaniko-secret
+          mountPath: /kaniko/.docker
+      restartPolicy: Never
+      volumes:
+      - name: dockerfile
+        configMap:
+          name: language-dockerfiles
+          items:
+          - key: Dockerfile.cpp
+            path: Dockerfile.cpp
+      - name: kaniko-secret
+        secret:
+          secretName: regcred
+          items:
+            - key: .dockerconfigjson
+              path: config.json

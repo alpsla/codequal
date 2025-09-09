@@ -1,0 +1,46 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: rebuild-all-10-langs
+  namespace: codequal-dev
+spec:
+  ttlSecondsAfterFinished: 600
+  parallelism: 3  # Build 3 at a time to avoid overload
+  completions: 10
+  template:
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+        - "--dockerfile=$(DOCKERFILE)"
+        - "--context=dir:///workspace"
+        - "--destination=registry.digitalocean.com/codequal/analyzer:$(TAG)"
+        - "--cache=true"
+        - "--compressed-caching=true"
+        - "--snapshot-mode=time"
+        env:
+        - name: DOCKERFILE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.annotations['dockerfile']
+        - name: TAG
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.annotations['tag']
+        volumeMounts:
+        - name: dockerfile
+          mountPath: /workspace
+        - name: kaniko-secret
+          mountPath: /kaniko/.docker
+      restartPolicy: Never
+      volumes:
+      - name: dockerfile
+        configMap:
+          name: language-dockerfiles
+      - name: kaniko-secret
+        secret:
+          secretName: regcred
+          items:
+          - key: .dockerconfigjson
+            path: config.json

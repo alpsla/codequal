@@ -1,0 +1,57 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install ESLint v8 and essential plugins with JSON output support
+RUN npm install -g \
+    eslint@8.57.0 \
+    prettier@3.2.5 \
+    typescript@5.4.5 \
+    @typescript-eslint/parser@7.2.0 \
+    @typescript-eslint/eslint-plugin@7.2.0 \
+    eslint-config-standard@17.1.0 \
+    eslint-plugin-import@2.29.1 \
+    eslint-plugin-node@11.1.0 \
+    eslint-plugin-promise@6.1.1 \
+    eslint-plugin-sonarjs@0.24.0 \
+    eslint-plugin-security@2.1.1 \
+    jshint@2.13.6
+
+# Create a minimal working ESLint config that doesn't require external plugins
+RUN echo '{\
+  "env": {\
+    "es2021": true,\
+    "node": true\
+  },\
+  "extends": "eslint:recommended",\
+  "parserOptions": {\
+    "ecmaVersion": "latest",\
+    "sourceType": "module"\
+  },\
+  "rules": {\
+    "no-unused-vars": "warn",\
+    "no-undef": "error",\
+    "semi": ["error", "always"]\
+  }\
+}' > /app/.eslintrc.json
+
+# Set default ESLint config location
+ENV ESLINT_CONFIG_FILE=/app/.eslintrc.json
+
+# Create symlink for ESLint to ensure PATH accessibility
+RUN ln -sf /usr/local/lib/node_modules/.bin/eslint /usr/local/bin/eslint && \
+    ln -sf /usr/local/lib/node_modules/.bin/prettier /usr/local/bin/prettier && \
+    ln -sf /usr/local/lib/node_modules/.bin/tsc /usr/local/bin/tsc
+
+# Update PATH to include node_modules bin directory
+ENV PATH="/usr/local/lib/node_modules/.bin:$PATH"
+
+# Verify installations and paths
+RUN node --version && \
+    eslint --version && \
+    prettier --version && \
+    tsc --version && \
+    which eslint && \
+    ls -la /usr/local/bin/eslint
+
+CMD ["node", "--version"]

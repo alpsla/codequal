@@ -1,0 +1,60 @@
+FROM golang:1.21-alpine
+
+WORKDIR /app
+
+# Install build tools and git
+RUN apk add --no-cache git gcc musl-dev
+
+# Install Go analysis tools - using stable versions for Go 1.21
+RUN go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.54.2 && \
+    go install golang.org/x/tools/cmd/goimports@v0.13.0 && \
+    go install honnef.co/go/tools/cmd/staticcheck@v0.4.6 && \
+    go install github.com/securego/gosec/v2/cmd/gosec@v2.18.2 && \
+    go install github.com/fzipp/gocyclo/cmd/gocyclo@v0.6.0 && \
+    go install github.com/go-critic/go-critic/cmd/gocritic@v0.9.0 && \
+    go install github.com/mgechev/revive@v1.3.4
+
+# Create golangci-lint config with proper YAML formatting and file:line output
+RUN cat > /app/.golangci.yml << 'EOF'
+run:
+  timeout: 5m
+  tests: false
+
+output:
+  format: json
+  print-issued-lines: true
+  print-linter-name: true
+
+linters:
+  enable:
+    - gosec
+    - govet
+    - staticcheck
+    - ineffassign
+    - unused
+    - gosimple
+    - gocyclo
+    - gofmt
+    - goimports
+    - revive
+
+linters-settings:
+  gosec:
+    severity: medium
+    confidence: medium
+  gocyclo:
+    min-complexity: 15
+  revive:
+    rules:
+      - name: exported
+      - name: var-naming
+      - name: package-comments
+EOF
+
+# Verify installations
+RUN go version && \
+    golangci-lint --version && \
+    gosec --version && \
+    echo "Go v4 container ready with file:line support"
+
+CMD ["go", "version"]
