@@ -34,6 +34,7 @@ export interface ToolConfig {
   name: string;
   command: string;
   agent: string;
+  supportsFileList?: boolean;
   parser: (output: string, workspacePath: string) => Promise<Issue[]>;
 }
 
@@ -106,7 +107,14 @@ export interface AnalysisResult {
   modifiedFiles: string[];
   businessImpact: BusinessImpact;
   skillScore: SkillScore;
-  metadata: AnalysisMetadata;
+  educationalResources?: EducationalResource[];
+  metadata: AnalysisMetadata & {
+    analyzedAt: string;
+    analyzer: string;
+    repoUrl: string;
+    executionTime: number;
+    model?: any;
+  };
 }
 
 // Educational resource

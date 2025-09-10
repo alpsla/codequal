@@ -138,7 +138,7 @@ Vulnerable code samples for each language covering:
 ### Kubernetes Clusters
 - **Production:** codequal-prod
   - API pods running
-  - DeepWiki service active
+  - Code analyzer active
 - **Development:** codequal-dev
   - Testing namespace available
   - Can deploy test pods

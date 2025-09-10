@@ -31,7 +31,7 @@ curl http://localhost:8001/health
 ```bash
 # Test parser with debug mode
 cd /Users/alpinro/Code\ Prjects/codequal/packages/agents
-USE_DEEPWIKI_MOCK=false npx ts-node test-debug-deepwiki-pr.ts
+USE_MOCK_ANALYZER=false npx ts-node test-debug-deepwiki-pr.ts
 
 # Key file to fix:
 # src/standard/services/direct-deepwiki-api-with-location-v2.ts
@@ -41,7 +41,7 @@ USE_DEEPWIKI_MOCK=false npx ts-node test-debug-deepwiki-pr.ts
 ### 3️⃣ Fix Report Generation (BUG-082)
 ```bash
 # Test V8 report generation
-USE_DEEPWIKI_MOCK=true npx ts-node test-v8-final.ts
+USE_MOCK_ANALYZER=true npx ts-node test-v8-final.ts
 
 # Key file to fix:
 # src/standard/comparison/report-generator-v8-final.ts
@@ -106,16 +106,16 @@ npm run test:integration -- --testNamePattern="production-ready-state"
 ### Test Specific Fix
 ```bash
 # After fixing parser (BUG-083):
-USE_DEEPWIKI_MOCK=false npx ts-node test-debug-deepwiki-pr.ts
+USE_MOCK_ANALYZER=false npx ts-node test-debug-deepwiki-pr.ts
 
 # After fixing report (BUG-082):
-USE_DEEPWIKI_MOCK=true npx ts-node test-v8-final.ts
+USE_MOCK_ANALYZER=true npx ts-node test-v8-final.ts
 
 # After fixing suggestions (BUG-084):
 npx ts-node test-fix-suggestions-demo.ts
 
 # Full integration test:
-USE_DEEPWIKI_MOCK=false timeout 300 npx ts-node src/standard/tests/regression/manual-pr-validator.ts https://github.com/sindresorhus/ky/pull/700
+USE_MOCK_ANALYZER=false timeout 300 npx ts-node src/standard/tests/regression/manual-pr-validator.ts https://github.com/sindresorhus/ky/pull/700
 ```
 
 ---
@@ -181,7 +181,7 @@ src/standard/tests/regression/manual-pr-validator.ts
 
 ### When Fix Suggestions Fail:
 1. Check OPENROUTER_API_KEY is set
-2. Verify USE_DEEPWIKI_MOCK environment variable
+2. Verify USE_MOCK_ANALYZER environment variable
 3. Check template matching in debug logs
 4. Look for timeout errors in AI generation
 
@@ -204,7 +204,7 @@ The session is successful when:
 5. ✅ Test command below completes successfully:
 
 ```bash
-USE_DEEPWIKI_MOCK=false timeout 300 npx ts-node \
+USE_MOCK_ANALYZER=false timeout 300 npx ts-node \
   src/standard/tests/regression/manual-pr-validator.ts \
   https://github.com/sindresorhus/ky/pull/700
 ```
@@ -222,7 +222,7 @@ Expected output:
 
 1. ❌ Don't skip fixing connection issues first
 2. ❌ Don't modify V7 generators (deprecated)
-3. ❌ Don't use USE_DEEPWIKI_MOCK=true for integration tests
+3. ❌ Don't use USE_MOCK_ANALYZER=true for integration tests
 4. ❌ Don't forget to clear caches between tests
 5. ❌ Don't ignore timeout errors
 

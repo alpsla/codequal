@@ -35,13 +35,21 @@ import { V9BusinessImpact } from './v9-business-impact';
 import { V9ReportFormatter } from './v9-report-formatter';
 
 // Import utilities
-import { OptimizedRepoManager } from '../utils/optimized-repo-manager';
-import { DynamicModelSelector } from '../services/dynamic-model-selector';
-import { SmartFileSelector, SelectedFiles } from '../utils/smart-file-selector';
+import { getRepoManager, getFileSelector } from '../utils/repository-utils-factory';
+import type { OptimizedRepoManager } from '../utils/optimized-repo-manager';
+import type { SmartFileSelector, SelectedFiles } from '../utils/smart-file-selector';
+
+// Simple model selector (since DynamicModelSelector doesn't exist)
+class SimpleModelSelector {
+  async selectModel(language: string, task: string): Promise<string> {
+    // Return a default model for now
+    return 'gpt-4o-mini';
+  }
+}
 
 export abstract class V9BaseAnalyzer {
   protected repoManager: OptimizedRepoManager;
-  protected modelSelector: DynamicModelSelector;
+  protected modelSelector: SimpleModelSelector;
   protected fileSelector: SmartFileSelector;
   protected supabase: any;
   protected logger: Console = console;
@@ -65,10 +73,10 @@ export abstract class V9BaseAnalyzer {
   };
   
   constructor() {
-    // Initialize utilities
-    this.repoManager = new OptimizedRepoManager();
-    this.modelSelector = new DynamicModelSelector();
-    this.fileSelector = new SmartFileSelector();
+    // Initialize utilities using factory
+    this.repoManager = getRepoManager();
+    this.modelSelector = new SimpleModelSelector();
+    this.fileSelector = getFileSelector();
     
     // Initialize Supabase
     const supabaseUrl = process.env.SUPABASE_URL || '';

@@ -22,7 +22,7 @@ npx ts-node src/two-branch/__tests__/integration-smoke-test.ts
 cd ../mcp-hybrid && npm install && npm run build && cd ../agents
 
 # 4. Test with mock PR
-USE_DEEPWIKI_MOCK=false npx ts-node src/two-branch/__tests__/test-pr-analysis.ts
+USE_MOCK_ANALYZER=false npx ts-node src/two-branch/__tests__/test-pr-analysis.ts
 ```
 
 ---
@@ -134,10 +134,10 @@ graph LR
 npx ts-node src/two-branch/__tests__/integration-smoke-test.ts
 
 # Test PR analysis (needs MCP)
-USE_DEEPWIKI_MOCK=false npm run analyze -- --repo https://github.com/sindresorhus/ky --pr 700
+USE_MOCK_ANALYZER=false npm run analyze -- --repo https://github.com/sindresorhus/ky --pr 700
 
 # Test with mock data (no MCP needed)
-USE_DEEPWIKI_MOCK=true npx ts-node src/two-branch/__tests__/test-pr-analysis.ts
+USE_MOCK_ANALYZER=true npx ts-node src/two-branch/__tests__/test-pr-analysis.ts
 
 # Check TypeScript compilation
 npx tsc --noEmit

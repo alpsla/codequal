@@ -49,7 +49,7 @@ npx ts-node test-final-improvements.ts  # Tests both Type A/B and deduplication
 
 **1.1 JavaScript/TypeScript Testing**
 ```bash
-USE_DEEPWIKI_MOCK=false npx ts-node test-language-js.ts \
+USE_MOCK_ANALYZER=false npx ts-node test-language-js.ts \
   --repo https://github.com/expressjs/express \
   --pr 5000
 ```
@@ -59,7 +59,7 @@ USE_DEEPWIKI_MOCK=false npx ts-node test-language-js.ts \
 
 **1.2 Python Testing**
 ```bash
-USE_DEEPWIKI_MOCK=false npx ts-node test-language-python.ts \
+USE_MOCK_ANALYZER=false npx ts-node test-language-python.ts \
   --repo https://github.com/django/django \
   --pr 15000
 ```
@@ -69,7 +69,7 @@ USE_DEEPWIKI_MOCK=false npx ts-node test-language-python.ts \
 
 **1.3 Go Testing**
 ```bash
-USE_DEEPWIKI_MOCK=false npx ts-node test-language-go.ts \
+USE_MOCK_ANALYZER=false npx ts-node test-language-go.ts \
   --repo https://github.com/gin-gonic/gin \
   --pr 3000
 ```
@@ -79,7 +79,7 @@ USE_DEEPWIKI_MOCK=false npx ts-node test-language-go.ts \
 
 **1.4 Java Testing**
 ```bash
-USE_DEEPWIKI_MOCK=false npx ts-node test-language-java.ts \
+USE_MOCK_ANALYZER=false npx ts-node test-language-java.ts \
   --repo https://github.com/spring-projects/spring-boot \
   --pr 30000
 ```
@@ -195,11 +195,11 @@ npx ts-node test-final-improvements.ts
 ### Real PR Tests
 ```bash
 # Test with real PR (known good case)
-USE_DEEPWIKI_MOCK=false npx ts-node src/standard/tests/regression/manual-pr-validator.ts \
+USE_MOCK_ANALYZER=false npx ts-node src/standard/tests/regression/manual-pr-validator.ts \
   https://github.com/sindresorhus/ky/pull/700
 
 # Test with large PR
-USE_DEEPWIKI_MOCK=false npx ts-node src/standard/tests/regression/manual-pr-validator.ts \
+USE_MOCK_ANALYZER=false npx ts-node src/standard/tests/regression/manual-pr-validator.ts \
   https://github.com/microsoft/vscode/pull/180000
 ```
 
@@ -283,7 +283,7 @@ By end of next session, you should have:
 
 ## 🚨 Important Notes
 
-- **Always test with USE_DEEPWIKI_MOCK=false for real validation**
+- **Always test with USE_MOCK_ANALYZER=false for real validation**
 - **Monitor Redis memory usage during large repo tests**
 - **Keep API keys ready (OpenRouter, DeepWiki)**
 - **Document any language-specific quirks found**
@@ -307,7 +307,7 @@ redis-cli ping
 npx ts-node clear-all-redis-cache.ts
 
 # Generate test report
-USE_DEEPWIKI_MOCK=true npx ts-node test-v8-final.ts
+USE_MOCK_ANALYZER=true npx ts-node test-v8-final.ts
 ```
 
 ---

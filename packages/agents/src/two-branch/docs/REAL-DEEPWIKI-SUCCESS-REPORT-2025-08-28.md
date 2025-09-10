@@ -3,7 +3,7 @@
 **Date:** 2025-08-28  
 **Repository:** https://github.com/sindresorhus/ky (VALID ✅)  
 **PR:** #700  
-**Mode:** USE_DEEPWIKI_MOCK=false (Real DeepWiki API)  
+**Mode:** USE_MOCK_ANALYZER=false (Real DeepWiki API)  
 **Status:** **SUCCESS** 🎉
 
 ## 🎯 Executive Summary
@@ -168,11 +168,11 @@ Non-critical - system falls back to default configurations.
 
 ```bash
 # Analyze a specific PR (WORKING ✅)
-USE_DEEPWIKI_MOCK=false npx ts-node src/standard/scripts/run-complete-analysis.ts \
+USE_MOCK_ANALYZER=false npx ts-node src/standard/scripts/run-complete-analysis.ts \
   --repo https://github.com/sindresorhus/ky --pr 700
 
 # Use manual validator (WORKING ✅)
-USE_DEEPWIKI_MOCK=false npx ts-node src/standard/tests/regression/manual-pr-validator.ts \
+USE_MOCK_ANALYZER=false npx ts-node src/standard/tests/regression/manual-pr-validator.ts \
   https://github.com/sindresorhus/ky/pull/700
 
 # Other valid repositories to test:

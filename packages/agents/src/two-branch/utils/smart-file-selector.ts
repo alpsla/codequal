@@ -126,6 +126,21 @@ export class SmartFileSelector {
 
   private readonly MAX_FILES_DEFAULT = 500;  // Reasonable limit
 
+  /**
+   * Count total files in repository for a given language
+   */
+  /**
+   * Count total files in repository for a given language
+   */
+  async countFiles(repoPath: string, language: string): Promise<number> {
+    const extensions = this.getFileExtensions(language);
+    const extArray = extensions.split('|');
+    const { stdout } = await exec(
+      `find "${repoPath}" -type f \\( ${extArray.map(ext => `-name "*.${ext}"`).join(' -o ')} \\) | wc -l`
+    );
+    return parseInt(stdout.trim(), 10) || 0;
+  }
+
   async selectFiles(config: FileSelectionConfig): Promise<SelectedFiles> {
     const maxFiles = config.maxFiles || this.MAX_FILES_DEFAULT;
     const result: SelectedFiles = {

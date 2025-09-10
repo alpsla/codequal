@@ -57,7 +57,7 @@ max_tokens: 300  // Too small for complex fixes
 
 Fix generation requires:
 - `OPENROUTER_API_KEY` - Must be set for AI fallback
-- `USE_DEEPWIKI_MOCK` - Must be 'false' for real AI generation
+- `USE_MOCK_ANALYZER` - Must be 'false' for real AI generation
 
 If these aren't properly configured, AI fallback silently fails.
 
@@ -171,7 +171,7 @@ For immediate improvement without code changes:
 1. **Ensure Environment Variables:**
    ```bash
    export OPENROUTER_API_KEY=your-key-here
-   export USE_DEEPWIKI_MOCK=false
+   export USE_MOCK_ANALYZER=false
    ```
 
 2. **Use Better Models:**

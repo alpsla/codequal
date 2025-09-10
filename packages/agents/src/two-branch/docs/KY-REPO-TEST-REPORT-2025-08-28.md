@@ -1,7 +1,7 @@
 # CodeQual Analysis Report: sindresorhus/ky Repository
 **Date:** 2025-08-28  
 **Repository:** https://github.com/sindresorhus/ky  
-**Analysis Mode:** Real DeepWiki API (USE_DEEPWIKI_MOCK=false)
+**Analysis Mode:** Real DeepWiki API (USE_MOCK_ANALYZER=false)
 
 ## Executive Summary
 
@@ -97,16 +97,16 @@ The iteration logic gives up too quickly when it gets filtered results.
 
 ### Immediate Actions:
 1. **DO NOT USE** real DeepWiki API for production until location extraction is fixed
-2. **CONTINUE** using mock mode (USE_DEEPWIKI_MOCK=true) for testing
+2. **CONTINUE** using mock mode (USE_MOCK_ANALYZER=true) for testing
 3. **IMPLEMENT** relaxed validation that accepts issues with partial location data
 
 ### Testing Strategy:
 ```bash
 # For now, use mock mode for all testing
-USE_DEEPWIKI_MOCK=true npx ts-node test-v8-final.ts
+USE_MOCK_ANALYZER=true npx ts-node test-v8-final.ts
 
 # Once location parser is fixed, retry with:
-USE_DEEPWIKI_MOCK=false npx ts-node src/standard/tests/regression/manual-pr-validator.ts https://github.com/sindresorhus/ky/pull/700
+USE_MOCK_ANALYZER=false npx ts-node src/standard/tests/regression/manual-pr-validator.ts https://github.com/sindresorhus/ky/pull/700
 ```
 
 ## 📝 Test Validation Results

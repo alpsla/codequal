@@ -75,10 +75,10 @@ Archived duplicate/outdated API implementations:
 ```bash
 # Real DeepWiki testing (requires port forwarding)
 kubectl port-forward -n codequal-dev deployment/deepwiki 8001:8001
-USE_DEEPWIKI_MOCK=false npx ts-node src/standard/tests/regression/manual-pr-validator.ts <PR_URL>
+USE_MOCK_ANALYZER=false npx ts-node src/standard/tests/regression/manual-pr-validator.ts <PR_URL>
 
 # Quick testing with mock
-USE_DEEPWIKI_MOCK=true npm test src/standard/tests/regression/
+USE_MOCK_ANALYZER=true npm test src/standard/tests/regression/
 
 # Run all regression tests
 npm test src/standard/tests/regression/
@@ -110,7 +110,7 @@ const result = await api.analyzeRepository('https://github.com/owner/repo', {
 6. **Cost Efficient:** 33x lower than original estimates
 
 ## ⚠️ Important Notes
-- Always use `USE_DEEPWIKI_MOCK=false` for real testing
+- Always use `USE_MOCK_ANALYZER=false` for real testing
 - DeepWiki must be running (kubectl port-forward)
 - Variance of ~30% per iteration is expected (handled by iterative collection)
 - Researcher agent only runs quarterly (not per analysis)

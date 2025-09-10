@@ -43,10 +43,10 @@
 ```bash
 # Test command sequence
 kubectl port-forward -n codequal-dev deployment/deepwiki 8001:8001
-USE_DEEPWIKI_MOCK=false npm test
+USE_MOCK_ANALYZER=false npm test
 ```
-- [ ] Test with mock mode: `USE_DEEPWIKI_MOCK=true`
-- [ ] Test with real DeepWiki: `USE_DEEPWIKI_MOCK=false`
+- [ ] Test with mock mode: `USE_MOCK_ANALYZER=true`
+- [ ] Test with real DeepWiki: `USE_MOCK_ANALYZER=false`
 - [ ] Verify response parsing works correctly
 - [ ] Check that code snippets are extracted
 
@@ -114,13 +114,13 @@ USE_DEEPWIKI_MOCK=false npm test
 npm run build && npm run typecheck
 
 # 2. Quick integration test
-USE_DEEPWIKI_MOCK=true npx ts-node test-v8-final.ts
+USE_MOCK_ANALYZER=true npx ts-node test-v8-final.ts
 
 # 3. Location finder test
-USE_DEEPWIKI_MOCK=true npx ts-node test-location-enhancement.ts
+USE_MOCK_ANALYZER=true npx ts-node test-location-enhancement.ts
 
 # 4. Full PR analysis test
-USE_DEEPWIKI_MOCK=false npx ts-node src/standard/tests/regression/manual-pr-validator.ts https://github.com/sindresorhus/ky/pull/700
+USE_MOCK_ANALYZER=false npx ts-node src/standard/tests/regression/manual-pr-validator.ts https://github.com/sindresorhus/ky/pull/700
 
 # 5. Check for remaining imports to archived files
 grep -r "from.*_archive" src --include="*.ts" | grep -v "^src/.*_archive"

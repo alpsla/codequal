@@ -14,7 +14,13 @@ import { promisify } from 'util';
 import * as fs from 'fs';
 import * as path from 'path';
 import Redis from 'ioredis';
-import { createLogger } from '@codequal/core';
+// Simple logger implementation to avoid circular dependencies
+const createLogger = (name: string) => ({
+  info: (msg: string, data?: any) => console.log(`[${name}] ${msg}`, data || ''),
+  error: (msg: string, error?: any) => console.error(`[${name}] ${msg}`, error || ''),
+  warn: (msg: string, data?: any) => console.warn(`[${name}] ${msg}`, data || ''),
+  debug: (msg: string, data?: any) => process.env.DEBUG && console.log(`[${name}] DEBUG: ${msg}`, data || '')
+});
 
 const exec = promisify(execCallback);
 const logger = createLogger('OptimizedRepoManager');

@@ -94,7 +94,7 @@ function getUserByEmailSafe(email: string, verified: boolean = true) {
 ## Validation Command
 ```bash
 cd /Users/alpinro/Code\ Prjects/codequal/packages/agents
-USE_DEEPWIKI_MOCK=true npx ts-node test-quick-validation.ts
+USE_MOCK_ANALYZER=true npx ts-node test-quick-validation.ts
 ```
 
 ## Success Criteria Met

@@ -90,12 +90,12 @@
    - Investigate DeepWiki API connection timeouts
    - Add retry logic with exponential backoff
    - Test with real PR analysis scenarios
-   - **Test Command:** `USE_DEEPWIKI_MOCK=false npx ts-node test-realistic-pr-simple.ts`
+   - **Test Command:** `USE_MOCK_ANALYZER=false npx ts-node test-realistic-pr-simple.ts`
 
 2. **FIX BUG-072: Iteration Stabilization**
    - Integrate logic from `_archive/2025-08-25-deepwiki/adaptive-deepwiki-analyzer.ts`
    - Implement 10-iteration max with convergence detection
-   - **Test Command:** `USE_DEEPWIKI_MOCK=false npx ts-node test-debug-inconsistency.ts`
+   - **Test Command:** `USE_MOCK_ANALYZER=false npx ts-node test-debug-inconsistency.ts`
 
 3. **FIX BUG-080: Categorization Logic**
    - Add proper error handling for API failures
@@ -157,8 +157,8 @@ Infrastructure Issues:
 cd /Users/alpinro/Code\ Prjects/codequal/packages/agents
 
 # Environment setup
-USE_DEEPWIKI_MOCK=true  # For stable testing
-USE_DEEPWIKI_MOCK=false # For debugging connection issues
+USE_MOCK_ANALYZER=true  # For stable testing
+USE_MOCK_ANALYZER=false # For debugging connection issues
 
 # Redis connection (unstable)
 REDIS_URL=<public-redis-url>  # Known to disconnect frequently
@@ -198,9 +198,9 @@ REDIS_URL=<public-redis-url>  # Known to disconnect frequently
 ### **Validation Tests:**
 ```bash
 # These should all pass without errors:
-USE_DEEPWIKI_MOCK=false npx ts-node test-debug-inconsistency.ts
-USE_DEEPWIKI_MOCK=false npx ts-node test-realistic-pr-simple.ts
-USE_DEEPWIKI_MOCK=true npx ts-node test-v8-final.ts
+USE_MOCK_ANALYZER=false npx ts-node test-debug-inconsistency.ts
+USE_MOCK_ANALYZER=false npx ts-node test-realistic-pr-simple.ts
+USE_MOCK_ANALYZER=true npx ts-node test-v8-final.ts
 npm test # Full test suite
 ```
 

@@ -49,7 +49,7 @@ kubectl exec -n codequal-dev deployment/deepwiki -- git config --global url."htt
 
 ### Problem: Mock Mode Not Working
 **Cause:** Mock implementation broken
-**Solution:** Use real DeepWiki (`USE_DEEPWIKI_MOCK=false`)
+**Solution:** Use real DeepWiki (`USE_MOCK_ANALYZER=false`)
 
 ## Test File Locations
 
@@ -75,7 +75,7 @@ npx ts-node test-real-pr-final-validation.ts
 
 ```bash
 # For real DeepWiki
-export USE_DEEPWIKI_MOCK=false
+export USE_MOCK_ANALYZER=false
 export DEEPWIKI_API_URL=http://localhost:8001
 
 # For testing with less filtering

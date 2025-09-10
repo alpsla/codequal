@@ -13,7 +13,7 @@ Successfully completed a major cleanup of test files and removed mock functional
 - `DeepWikiApiWrapper.analyzeRepository()` - Always uses real API
 
 ### Environment Variable Removed
-- `USE_DEEPWIKI_MOCK` - Completely removed from codebase
+- `USE_MOCK_ANALYZER` - Completely removed from codebase
 
 ## Part 2: Test File Cleanup
 ### Files Archived (21 total)

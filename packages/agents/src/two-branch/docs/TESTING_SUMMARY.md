@@ -2,14 +2,14 @@
 
 ## Test Results (2025-08-26)
 
-### ✅ With Mock DeepWiki (USE_DEEPWIKI_MOCK=true)
+### ✅ With Mock DeepWiki (USE_MOCK_ANALYZER=true)
 
 **Status: FULLY WORKING**
 
 #### Quick Validation Test
 ```bash
 cd /Users/alpinro/Code\ Prjects/codequal/packages/agents
-USE_DEEPWIKI_MOCK=true npx ts-node test-quick-validation.ts
+USE_MOCK_ANALYZER=true npx ts-node test-quick-validation.ts
 ```
 - Template fixes: ✅ Working
 - AI fallback: ✅ Working  
@@ -17,13 +17,13 @@ USE_DEEPWIKI_MOCK=true npx ts-node test-quick-validation.ts
 
 #### Complete System Test
 ```bash
-USE_DEEPWIKI_MOCK=true npx ts-node test-pr-complete-system.ts
+USE_MOCK_ANALYZER=true npx ts-node test-pr-complete-system.ts
 ```
 - TypeScript issues: ✅ 100% coverage
 - Python issues: ✅ 100% coverage
 - Java issues: ✅ 100% coverage
 
-### ✅ With Real DeepWiki (USE_DEEPWIKI_MOCK=false)
+### ✅ With Real DeepWiki (USE_MOCK_ANALYZER=false)
 
 **Status: WORKING WITH REAL DATA**
 
@@ -38,7 +38,7 @@ curl -s http://localhost:8001/health
 
 #### Quick Validation Test
 ```bash
-USE_DEEPWIKI_MOCK=false DEEPWIKI_API_URL=http://localhost:8001 \
+USE_MOCK_ANALYZER=false DEEPWIKI_API_URL=http://localhost:8001 \
 DEEPWIKI_API_KEY=dw-key-e48329b6c05b4a36a18d65af21ac3c2f \
 npx ts-node test-quick-validation.ts
 ```
@@ -152,14 +152,14 @@ function getUserByEmailSafe(email: string, verified: boolean = true) {
 
 ```bash
 # Quick test with mock
-USE_DEEPWIKI_MOCK=true npx ts-node test-quick-validation.ts
+USE_MOCK_ANALYZER=true npx ts-node test-quick-validation.ts
 
 # Test with real DeepWiki
 kubectl port-forward -n codequal-dev deployment/deepwiki 8001:8001 &
-USE_DEEPWIKI_MOCK=false DEEPWIKI_API_URL=http://localhost:8001 \
+USE_MOCK_ANALYZER=false DEEPWIKI_API_URL=http://localhost:8001 \
   DEEPWIKI_API_KEY=dw-key-e48329b6c05b4a36a18d65af21ac3c2f \
   npx ts-node test-quick-validation.ts
 
 # Full system test
-USE_DEEPWIKI_MOCK=true npx ts-node test-pr-complete-system.ts
+USE_MOCK_ANALYZER=true npx ts-node test-pr-complete-system.ts
 ```

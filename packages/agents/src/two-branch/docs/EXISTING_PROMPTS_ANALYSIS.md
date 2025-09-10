@@ -74,7 +74,7 @@ rolePrompt: 'You are an expert code reviewer focused on security, performance, a
 
 ### 1.3 DeepWiki Related Prompts (To Be Migrated)
 
-Found various prompts in DeepWiki services that should inform our new approach:
+Found various prompts in Code analyzers that should inform our new approach:
 - Architecture analysis prompts
 - Security-focused prompts
 - Location finding prompts
