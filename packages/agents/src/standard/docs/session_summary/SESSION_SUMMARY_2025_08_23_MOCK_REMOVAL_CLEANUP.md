@@ -10,16 +10,16 @@ The primary goal of this session was to force the system to work with real-world
 ## 📋 Major Accomplishments
 
 ### 1. ✅ Complete Mock Functionality Removal
-**Scope**: Removed all USE_DEEPWIKI_MOCK functionality from DeepWiki service
+**Scope**: Removed all USE_MOCK_ANALYZER functionality from Code analyzer
 **Files Modified**: 11 core service files
 **Impact**: System now forces real API usage, exposing hidden pipeline issues
 **Lines Changed**: -842 deletions, +432 additions
 
 **Key Changes**:
-- Removed USE_DEEPWIKI_MOCK environment variable support
+- Removed USE_MOCK_ANALYZER environment variable support
 - Eliminated mock analysis response generation  
 - Removed mock data fallback mechanisms
-- Updated all DeepWiki service interfaces to use real API only
+- Updated all Code analyzer interfaces to use real API only
 - Modified analysis schemas to expect real data structures
 - Cleaned up conditional mock/real code paths
 
@@ -122,7 +122,7 @@ The primary goal of this session was to force the system to work with real-world
 ## 🔄 Git Commit Summary
 Created 5 atomic commits with clear separation of concerns:
 
-1. **e6f82a7**: `refactor: Remove all mock functionality from DeepWiki service`
+1. **e6f82a7**: `refactor: Remove all mock functionality from Code analyzer`
 2. **0f58684**: `chore: Archive 21 obsolete test and configuration files`  
 3. **e76916a**: `feat: Add enhanced DeepWiki analysis services`
 4. **e9a8b91**: `refactor: Update core components for real DeepWiki integration`
@@ -156,13 +156,13 @@ Created 5 atomic commits with clear separation of concerns:
 ### Quick Start Commands
 ```bash
 # 1. Start testing with real DeepWiki immediately
-USE_DEEPWIKI_MOCK=false npx ts-node src/standard/tests/regression/manual-pr-validator.ts https://github.com/microsoft/TypeScript/pull/58729
+USE_MOCK_ANALYZER=false npx ts-node src/standard/tests/regression/manual-pr-validator.ts https://github.com/microsoft/TypeScript/pull/58729
 
 # 2. Check location transformation pipeline
 grep -r "unknown" src/standard/services/deepwiki-response-transformer.ts
 
 # 3. Test different languages
-USE_DEEPWIKI_MOCK=false npx ts-node test-different-languages.ts
+USE_MOCK_ANALYZER=false npx ts-node test-different-languages.ts
 ```
 
 ## 📊 Session Metrics

@@ -171,7 +171,7 @@ const ruleResult = await parser.parse(response);
 OPENROUTER_API_KEY=sk-or-v1-xxx
 
 # Optional
-USE_DEEPWIKI_MOCK=true  # Force mock mode
+USE_MOCK_ANALYZER=true  # Force mock mode
 DEEPWIKI_API_URL=http://localhost:8001
 ```
 

@@ -27,7 +27,7 @@ This session focused on investigating and documenting critical issues with DeepW
 
 **Reproduction Command:**
 ```bash
-USE_DEEPWIKI_MOCK=false npx ts-node test-debug-inconsistency.ts
+USE_MOCK_ANALYZER=false npx ts-node test-debug-inconsistency.ts
 ```
 
 **Impact:** 
@@ -114,7 +114,7 @@ class AdaptiveDeepWikiAnalyzer {
 ### Reproduction Test Created
 - **File:** `test-debug-inconsistency.ts`
 - **Purpose:** Demonstrates non-deterministic behavior
-- **Usage:** `USE_DEEPWIKI_MOCK=false npx ts-node test-debug-inconsistency.ts`
+- **Usage:** `USE_MOCK_ANALYZER=false npx ts-node test-debug-inconsistency.ts`
 
 ### Expected vs. Actual Behavior
 - **Expected:** Consistent results across multiple runs

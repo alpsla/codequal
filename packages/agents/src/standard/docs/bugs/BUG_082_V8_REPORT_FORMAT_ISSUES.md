@@ -19,7 +19,7 @@ V8 reports are not generating in the proper format structure. Missing code snipp
 
 ```bash
 cd /Users/alpinro/Code\ Prjects/codequal/packages/agents
-USE_DEEPWIKI_MOCK=true npx ts-node test-v8-final.ts
+USE_MOCK_ANALYZER=true npx ts-node test-v8-final.ts
 # Output will show format issues and missing data
 ```
 

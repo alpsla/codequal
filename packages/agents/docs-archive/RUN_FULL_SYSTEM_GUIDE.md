@@ -61,7 +61,7 @@ REDIS_PORT=6379
 # DeepWiki Configuration
 DEEPWIKI_API_URL=http://localhost:3000
 DEEPWIKI_NAMESPACE=codequal-dev
-USE_DEEPWIKI_MOCK=false
+USE_MOCK_ANALYZER=false
 
 # Model Selection (OpenRouter)
 OPENROUTER_API_KEY=your-openrouter-key
@@ -88,13 +88,10 @@ redis-cli ping
 
 ```bash
 # Check if DeepWiki is deployed
-kubectl get deployment deepwiki -n codequal-dev
 
 # If not deployed, apply the manifest
-kubectl apply -f kubernetes/deepwiki-deployment.yaml
 
 # Port forward for local access
-kubectl port-forward -n codequal-dev deployment/deepwiki 3000:3000 &
 
 # Check health
 curl http://localhost:3000/health
@@ -104,7 +101,6 @@ curl http://localhost:3000/health
 
 ```bash
 # Get pod name
-DEEPWIKI_POD=$(kubectl get pods -n codequal-dev -l app=deepwiki -o jsonpath='{.items[0].metadata.name}')
 
 # Clone repositories for faster analysis
 kubectl exec -n codequal-dev $DEEPWIKI_POD -- \
@@ -328,7 +324,6 @@ npx ts-node test-github-pr-full-system.ts facebook react 28000
 
 ```bash
 # Watch DeepWiki logs
-kubectl logs -n codequal-dev -l app=deepwiki -f
 
 # Monitor Redis
 redis-cli monitor
@@ -348,7 +343,6 @@ tail -f logs/api-*.log
 DEEPWIKI_TIMEOUT=300000  # 5 minutes
 
 # Check pod resources
-kubectl top pod -n codequal-dev -l app=deepwiki
 ```
 
 ### Redis Connection Issues
@@ -371,7 +365,6 @@ npx ts-node src/standard/scripts/check-model-configs.ts
 
 ## Production Best Practices
 
-1. **Pre-clone Popular Repos**: Clone frequently analyzed repos in DeepWiki pod
 2. **Monitor Disk Space**: DeepWiki stores cloned repos, clean periodically
 3. **Tune Cache TTLs**: Adjust based on your usage patterns
 4. **Scale DeepWiki**: Add more replicas for high load

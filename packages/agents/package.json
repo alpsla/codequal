@@ -1,5 +1,23 @@
 {
+  "name": "@codequal/agents",
+  "version": "9.0.0",
+  "description": "V9 Two-Branch Analyzer - Production Implementation",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc --skipLibCheck",
+    "clean": "rm -rf dist",
+    "test": "echo 'Use integration tests only'",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix"
+  },
   "dependencies": {
-    "@supabase/supabase-js": "^2.57.4"
+    "@supabase/supabase-js": "^2.57.4",
+    "redis": "^4.6.0",
+    "ioredis": "^5.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
   }
 }

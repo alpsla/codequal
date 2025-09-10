@@ -75,7 +75,16 @@ export interface ResearchResult {
 export declare class ResearcherAgent {
     private user;
     private config?;
-    constructor(user: AuthenticatedUser, config?: ResearchConfig);
+    private primaryModel?;
+    private fallbackModel?;
+    private modelConfigId?;
+    private language;
+    private repositorySize;
+    constructor(user: AuthenticatedUser, config?: ResearchConfig | undefined);
+    /**
+     * Initialize the agent with dynamic model configuration
+     */
+    initialize(language?: string, repoSize?: 'small' | 'medium' | 'large' | 'enterprise'): Promise<void>;
     /**
      * Perform research to find the best model
      */

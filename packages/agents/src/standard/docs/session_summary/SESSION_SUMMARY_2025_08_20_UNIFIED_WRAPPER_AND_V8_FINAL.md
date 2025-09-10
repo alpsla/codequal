@@ -126,7 +126,7 @@ class LocationValidator {
 ```bash
 # Primary working test (verified)
 cd /Users/alpinro/Code\ Prjects/codequal/packages/agents
-USE_DEEPWIKI_MOCK=true npx ts-node test-v8-complete-final.ts
+USE_MOCK_ANALYZER=true npx ts-node test-v8-complete-final.ts
 ```
 
 ### 📈 Metrics & Performance

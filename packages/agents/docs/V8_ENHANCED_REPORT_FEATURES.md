@@ -33,7 +33,7 @@ The `ReportGeneratorV8Enhanced` class extends the V8 Final generator with intell
 
 The report now dynamically detects and displays which AI model was used:
 - Checks for `OPENROUTER_MODEL` environment variable
-- Detects mock mode (`USE_DEEPWIKI_MOCK=true`)
+- Detects mock mode (`USE_MOCK_ANALYZER=true`)
 - Checks for `ANTHROPIC_MODEL` environment variable
 - Falls back to "Dynamic Model Selection (Quality-First)"
 

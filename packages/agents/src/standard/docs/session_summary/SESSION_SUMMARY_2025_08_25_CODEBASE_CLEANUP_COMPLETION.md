@@ -131,7 +131,7 @@ LocationEnhancement → V8ReportGenerator → HTML/Markdown Output
 
 ### Medium Priority - Quality Assurance
 4. **Real DeepWiki Integration Testing**
-   - **Need:** Comprehensive testing with `USE_DEEPWIKI_MOCK=false`
+   - **Need:** Comprehensive testing with `USE_MOCK_ANALYZER=false`
    - **Coverage:** Test with different repository types (small/medium/large)
    - **Metrics:** Monitor iteration counts, data quality, and cost implications
 
@@ -151,7 +151,7 @@ npm run build
 npm test src/standard/tests/regression/
 
 # 3. Test integration with real data
-USE_DEEPWIKI_MOCK=false npm test src/standard/tests/integration/deepwiki/
+USE_MOCK_ANALYZER=false npm test src/standard/tests/integration/deepwiki/
 
 # 4. Validate V8 report generation
 npx ts-node src/standard/tests/regression/v8-report-validation.test.ts
@@ -160,16 +160,15 @@ npx ts-node src/standard/tests/regression/v8-report-validation.test.ts
 ### Phase 2: DeepWiki Integration Testing (HIGH - 45 minutes)
 ```bash
 # 1. Set up DeepWiki connection
-kubectl port-forward -n codequal-dev deployment/deepwiki 8001:8001
 
 # 2. Test real API with small repository
-USE_DEEPWIKI_MOCK=false npx ts-node src/standard/tests/regression/manual-pr-validator.ts https://github.com/sindresorhus/ky
+USE_MOCK_ANALYZER=false npx ts-node src/standard/tests/regression/manual-pr-validator.ts https://github.com/sindresorhus/ky
 
 # 3. Test iterative collection system
-USE_DEEPWIKI_MOCK=false npx ts-node src/standard/tests/integration/deepwiki/test-comparison-direct.ts
+USE_MOCK_ANALYZER=false npx ts-node src/standard/tests/integration/deepwiki/test-comparison-direct.ts
 
 # 4. Verify location mapping works
-USE_DEEPWIKI_MOCK=false npx ts-node src/standard/tests/regression/manual-pr-validator-enhanced.ts
+USE_MOCK_ANALYZER=false npx ts-node src/standard/tests/regression/manual-pr-validator-enhanced.ts
 ```
 
 ### Phase 3: Location Services Cleanup (HIGH - 60 minutes)
@@ -188,7 +187,7 @@ grep -r "location-finder\|location-enhancer\|ai-location-finder" src/ --include=
 ### Phase 4: Performance and Quality Validation (MEDIUM - 30 minutes)
 ```bash
 # 1. Test with different repository sizes
-USE_DEEPWIKI_MOCK=false npx ts-node test-repository-sizes.ts
+USE_MOCK_ANALYZER=false npx ts-node test-repository-sizes.ts
 
 # 2. Monitor iteration counts and costs
 # Create basic monitoring script for API usage
@@ -229,10 +228,9 @@ npm run test:coverage
 npm run build && echo "✅ Build successful"
 
 # 2. Start DeepWiki if needed
-kubectl port-forward -n codequal-dev deployment/deepwiki 8001:8001 &
 
 # 3. Quick smoke test  
-USE_DEEPWIKI_MOCK=false npx ts-node src/standard/tests/regression/manual-pr-validator.ts https://github.com/sindresorhus/ky
+USE_MOCK_ANALYZER=false npx ts-node src/standard/tests/regression/manual-pr-validator.ts https://github.com/sindresorhus/ky
 ```
 
 ### Core Testing Sequence (30 minutes)
@@ -244,10 +242,10 @@ npm test src/standard/tests/regression/ | tee test-results.log
 grep -r "import.*location" src/standard --include="*.ts" | grep -v "_archive" > location-imports.txt
 
 # 3. Real data quality test
-USE_DEEPWIKI_MOCK=false npx ts-node create-quality-test-report.ts > quality-check.md
+USE_MOCK_ANALYZER=false npx ts-node create-quality-test-report.ts > quality-check.md
 
 # 4. Performance baseline
-time USE_DEEPWIKI_MOCK=false npx ts-node test-performance-baseline.ts
+time USE_MOCK_ANALYZER=false npx ts-node test-performance-baseline.ts
 ```
 
 ## 🎯 Key Decisions for Next Session

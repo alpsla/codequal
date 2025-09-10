@@ -148,7 +148,7 @@ cd /Users/alpinro/Code\ Prjects/codequal/packages/agents
 npm run build
 
 # Check critical functionality
-USE_DEEPWIKI_MOCK=true npx ts-node test-validation-complete.ts
+USE_MOCK_ANALYZER=true npx ts-node test-validation-complete.ts
 
 # Verify report quality
 diff -u ./FINAL_VALIDATION_REPORT.md ../test-integration/reports/codequal_deepwiki-pr-analysis-report.md

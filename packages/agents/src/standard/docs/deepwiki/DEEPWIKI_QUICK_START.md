@@ -2,7 +2,6 @@
 
 ## Overview
 
-This guide provides a streamlined process for setting up and connecting to the DeepWiki Kubernetes pod for testing and development. No more spending time figuring out how to start DeepWiki each session!
 
 ## Prerequisites
 
@@ -23,7 +22,6 @@ This guide provides a streamlined process for setting up and connecting to the D
 This script will:
 1. ✅ Check kubectl and cluster connection
 2. ✅ Verify namespace exists
-3. ✅ Find or deploy DeepWiki pod
 4. ✅ Setup port forwarding (API on 8001, Frontend on 3000)
 5. ✅ Test the connection
 6. ✅ Create helper scripts
@@ -35,7 +33,6 @@ This script will:
 - Verifies kubectl is installed
 - Checks Kubernetes cluster connection
 - Ensures `codequal-dev` namespace exists
-- Finds existing DeepWiki pod or offers to deploy one
 
 ### 2. **Port Forwarding Setup**
 - Automatically sets up port forwarding for:
@@ -55,7 +52,7 @@ Creates `.env.deepwiki` file with:
 DEEPWIKI_API_URL=http://localhost:8001
 DEEPWIKI_NAMESPACE=codequal-dev
 DEEPWIKI_POD_NAME=<actual-pod-name>
-USE_DEEPWIKI_MOCK=false
+USE_MOCK_ANALYZER=false
 ```
 
 ### 5. **Helper Scripts Creation**
@@ -95,22 +92,18 @@ Open browser to: http://localhost:3000
 
 ### Check DeepWiki Pod Status
 ```bash
-kubectl get pods -n codequal-dev -l app=deepwiki
 ```
 
 ### View DeepWiki Logs
 ```bash
-kubectl logs -n codequal-dev -l app=deepwiki --tail=100
 ```
 
 ### Execute Commands in Pod
 ```bash
-kubectl exec -it -n codequal-dev $(kubectl get pods -n codequal-dev -l app=deepwiki -o jsonpath='{.items[0].metadata.name}') -- bash
 ```
 
 ### Check Disk Usage
 ```bash
-kubectl exec -n codequal-dev $(kubectl get pods -n codequal-dev -l app=deepwiki -o jsonpath='{.items[0].metadata.name}') -- df -h
 ```
 
 ## Reconnecting to Existing Pod
@@ -149,32 +142,26 @@ pkill -f "kubectl port-forward"
 If the pod is not found:
 ```bash
 # Check if deployment exists
-kubectl get deployment deepwiki -n codequal-dev
 
 # Check pod status
 kubectl get pods -n codequal-dev
 
 # Restart deployment if needed
-kubectl rollout restart deployment/deepwiki -n codequal-dev
 ```
 
 ### Connection Refused
 If API calls fail with "connection refused":
 1. Check port forwarding is active: `ps aux | grep port-forward`
-2. Check pod is running: `kubectl get pods -n codequal-dev -l app=deepwiki`
-3. Check pod logs: `kubectl logs -n codequal-dev -l app=deepwiki`
 
 ### API Key Issues
 If you need to set the OpenRouter API key:
 ```bash
 # Create/update the secret
-kubectl create secret generic deepwiki-api-keys \
   --from-literal=OPENROUTER_API_KEY=your-key-here \
   --namespace codequal-dev \
   --dry-run=client -o yaml | kubectl apply -f -
 
 # Restart the pod to pick up new secret
-kubectl rollout restart deployment/deepwiki -n codequal-dev
 ```
 
 ## Integration with Tests
@@ -183,16 +170,16 @@ kubectl rollout restart deployment/deepwiki -n codequal-dev
 When running tests, ensure:
 1. Environment is sourced: `source .env.deepwiki`
 2. Port forwarding is active (check with `ps aux | grep port-forward`)
-3. `USE_DEEPWIKI_MOCK=false` is set
+3. `USE_MOCK_ANALYZER=false` is set
 
 ### Example Test Run
 ```bash
 # Full orchestrator test with real DeepWiki
 cd packages/agents
-USE_DEEPWIKI_MOCK=false npm test orchestrator-real-flow.test.ts
+USE_MOCK_ANALYZER=false npm test orchestrator-real-flow.test.ts
 
 # Direct comparison agent test
-USE_DEEPWIKI_MOCK=false npm test comparison-agent-real-flow.test.ts
+USE_MOCK_ANALYZER=false npm test comparison-agent-real-flow.test.ts
 ```
 
 ## API Endpoints

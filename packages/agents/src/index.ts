@@ -1,66 +1,42 @@
-// Types
-export * from './types/agent-types';
-export * from './types/research';
-export * from './types/recommendation-types';
+/**
+ * CodeQual V9 Two-Branch Analyzer
+ * 
+ * PRODUCTION IMPLEMENTATION - DO NOT REIMPLEMENT
+ * 
+ * This is the ONLY active implementation. All other versions are deprecated.
+ * 
+ * Flow:
+ * 1. Clone repo → Redis cache
+ * 2. Create PR workspace
+ * 3. Run tools on BOTH branches
+ * 4. Compare issues (new/resolved/existing)
+ * 5. Generate report
+ */
 
-// Agents
-export * from './base/base-agent';
-export * from './claude/claude-agent';
-export * from './deepseek/deepseek-agent';
-export * from './chatgpt/chatgpt-agent';
-export * from './gemini/gemini-agent';
-// MCP agent archived - use @codequal/mcp-hybrid instead
-// CodeWhisperer agent removed
+// Export ONLY the V9 implementation
+export { V9AnalyzerFramework as CodeQualAnalyzer } from './two-branch/analyzers/v9-analyzer-framework';
+export { V9BaseAnalyzer } from './two-branch/analyzers/v9-base-analyzer';
+export { V9JavaAnalyzer } from './two-branch/analyzers/v9-java-analyzer';
+export { V9RustAnalyzer } from './two-branch/analyzers/v9-rust-analyzer';
+export { V9PythonAnalyzer } from './two-branch/analyzers/v9-python-analyzer';
+export { V9JavaScriptAnalyzer } from './two-branch/analyzers/v9-javascript-analyzer';
 
-// Specialized Agents
-export * from './specialized/dependency-agent';
-export * from './specialized/architecture-agent';
+// Export types
+export * from './two-branch/analyzers/v9-types';
 
-// Standard Agent Implementations
-export * from './standard/comparison/comparison-agent';
-export * from './standard/orchestrator/comparison-orchestrator';
-// Export specific items to avoid conflicts
-export { 
-  ComparisonAgent,
-  ComparisonOrchestrator,
-  StandardAgentFactory,
-  createTestOrchestrator
-} from './standard';
+// Export utilities
+export { getRepoManager, getFileSelector } from './two-branch/utils/repository-utils-factory';
 
-// Factory
-export * from './factory/agent-factory';
+// Session validator
+export { validateImplementation } from './session-validator';
 
-// Multi-Agent System
-export * from './multi-agent';
-export * from './multi-agent/types';
-
-// Orchestrator
-// Report enhancer functionality moved to Standard directory
-
-// Prompts
-export * from './prompts/prompt-loader';
-
-// Researcher
-export { ResearcherAgent } from './researcher/researcher-agent';
-export * from './researcher/researcher-service';
-// export * from './researcher/enhanced-model-selection-rules'; // Archived
-
-// Services
-export * from './services/skill-tracking-service';
-export { ReportFormatterService, StandardReport } from './services/report-formatter.service';
-export { RecommendationService } from './services/recommendation-service';
-export * from './services/educational-compilation-service';
-export { IssueResolutionDetector, type IssueComparison } from './services/issue-resolution-detector';
-export * from './services/token-usage-extractor';
-export * from './services/model-token-tracker';
-
-// Model Selection
-export * from './model-selection/unified-model-selector';
-export * from './model-selection/dynamic-model-evaluator';
-export * from './model-selection/ai-model-selector';
-
-// Translator
-export * from './translator';
-
-// Support
-export * from './support/support-chatbot';
+// Mark everything else as deprecated
+console.warn(`
+╔══════════════════════════════════════════════════════╗
+║             CODEQUAL V9 - PRODUCTION                 ║
+╠══════════════════════════════════════════════════════╣
+║  ✅ Active: V9 Two-Branch Analyzer                   ║
+║  📁 Path: src/two-branch/analyzers/                  ║
+║  ⚠️  All other implementations are DEPRECATED        ║
+╚══════════════════════════════════════════════════════╝
+`);

@@ -99,7 +99,7 @@ npm test -- --testNamePattern="should return real courses"
 
 ### Test with Real APIs
 ```bash
-USE_DEEPWIKI_MOCK=false npm run test:integration
+USE_MOCK_ANALYZER=false npm run test:integration
 ```
 
 ## 🔗 Related Documentation

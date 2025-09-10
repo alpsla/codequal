@@ -1,0 +1,58 @@
+# CodeQual Configuration - Single Source of Truth
+# Generated: 2025-09-10
+# DO NOT MANUALLY EDIT - Use 'npm run update-config' 
+
+version: 2.0
+status: PRODUCTION
+
+# ACTIVE IMPLEMENTATION - THIS IS THE ONLY ONE TO USE
+implementation:
+  name: "V9 Two-Branch Analyzer"
+  version: "9.0.0"
+  path: "packages/agents/src/two-branch/"
+  entry_point: "packages/agents/src/two-branch/analyzers/v9-analyzer-framework.ts"
+  
+# Core Flow (DO NOT REIMPLEMENT)
+flow:
+  1_clone: "Clone repo to cache with Redis indexing"
+  2_branch: "Create PR workspace with COW (copy-on-write)"
+  3_analyze: "Run tools on BOTH main and PR branches"
+  4_compare: "V9IssueComparator compares and categorizes"
+  5_orchestrate: "ComparisonOrchestrator manages parallel execution"
+  6_report: "V9ReportFormatter generates final output"
+
+# Testing Strategy
+testing:
+  strategy: "integration-only"
+  required_tests:
+    - "test-v9-kafka-fixed.ts"
+    - "test-v9-full-integration.ts"
+  smoke_test: "test-v9-validation-suite.ts"
+  
+# Deprecated - DO NOT USE
+deprecated:
+  - path: "packages/agents/src/standard/"
+    reason: "Replaced by V9 two-branch implementation"
+    removal_date: "2025-10-01"
+  - path: "packages/agents/src/specialized/"
+    reason: "Merged into V9 analyzers"
+    removal_date: "2025-10-01"
+    
+# Cloud Resources
+cloud:
+  docker_images:
+    all_tools: "codequal/analysis:all-85-tools"
+    languages:
+      java: "codequal/analysis:java-enterprise"
+      python: "codequal/analysis:python-ml"
+      rust: "codequal/analysis:rust-quick"
+      javascript: "codequal/analysis:javascript-node"
+  kubernetes:
+    namespace: "codequal-dev"
+    configs: "packages/agents/k8s/"
+    
+# Session Validation
+validation:
+  on_startup: true
+  check_command: "npx ts-node packages/agents/src/session-validator.ts"
+  fail_on_duplicate: true

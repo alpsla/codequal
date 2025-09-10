@@ -29,11 +29,10 @@ node test-enhanced-report.ts
 
 ```bash
 # Run with mock data (faster)
-USE_DEEPWIKI_MOCK=true node test-real-pr700-correct.ts
+USE_MOCK_ANALYZER=true node test-real-pr700-correct.ts
 
 # Run with real DeepWiki (requires port-forward)
-kubectl port-forward -n codequal-dev deployment/deepwiki 8001:8001 &
-USE_DEEPWIKI_MOCK=false node test-real-pr700-correct.ts
+USE_MOCK_ANALYZER=false node test-real-pr700-correct.ts
 ```
 
 ## 🔍 Validation Commands Used
@@ -238,7 +237,7 @@ node -e "require('dotenv').config({path:'../../.env'}); console.log('API Key:', 
 ## 💡 Testing Tips
 
 1. **Always build before testing**: `npm run build`
-2. **Use mock data for fast iteration**: `USE_DEEPWIKI_MOCK=true`
+2. **Use mock data for fast iteration**: `USE_MOCK_ANALYZER=true`
 3. **Check browser console for JS errors** when viewing HTML
 4. **Save test outputs** for comparison: `cp enhanced-report-test.html enhanced-report-backup.html`
 5. **Use diff to compare changes**: `diff enhanced-report-backup.html enhanced-report-test.html`

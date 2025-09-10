@@ -53,7 +53,7 @@ const deduplicateIssues = (issues: any[]) => { /* implementation */ };
 
 ### Mock Data Test ✅
 ```bash
-USE_DEEPWIKI_MOCK=true npx ts-node src/standard/tests/regression/manual-pr-validator.ts
+USE_MOCK_ANALYZER=true npx ts-node src/standard/tests/regression/manual-pr-validator.ts
 ```
 **Result:** Successfully generates reports with:
 - 4 new issues detected
@@ -64,7 +64,7 @@ USE_DEEPWIKI_MOCK=true npx ts-node src/standard/tests/regression/manual-pr-valid
 
 ### Real Data Test ⚠️
 ```bash
-USE_DEEPWIKI_MOCK=false npx ts-node src/standard/tests/regression/manual-pr-validator.ts https://github.com/sindresorhus/ky/pull/700
+USE_MOCK_ANALYZER=false npx ts-node src/standard/tests/regression/manual-pr-validator.ts https://github.com/sindresorhus/ky/pull/700
 ```
 **Result:** Returns 0 issues - DeepWiki API responds but finds no issues in PR #700
 
@@ -97,7 +97,7 @@ USE_DEEPWIKI_MOCK=false npx ts-node src/standard/tests/regression/manual-pr-vali
 1. **Test with Known Problematic PR:**
    ```bash
    # Try PRs that are known to have issues
-   USE_DEEPWIKI_MOCK=false npx ts-node src/standard/tests/regression/manual-pr-validator.ts https://github.com/vercel/next.js/pull/31616
+   USE_MOCK_ANALYZER=false npx ts-node src/standard/tests/regression/manual-pr-validator.ts https://github.com/vercel/next.js/pull/31616
    ```
 
 2. **Debug DeepWiki Raw Response:**
@@ -116,7 +116,6 @@ USE_DEEPWIKI_MOCK=false npx ts-node src/standard/tests/regression/manual-pr-vali
 1. **DeepWiki API Behavior:**
    - Is it analyzing the PR diff or just the repository?
    - Does it need specific parameters for PR analysis?
-   - Check DeepWiki logs: `kubectl logs -n codequal-dev -l app=deepwiki`
 
 2. **Response Format Consistency:**
    - Sometimes returns plain text, sometimes JSON
@@ -130,13 +129,12 @@ USE_DEEPWIKI_MOCK=false npx ts-node src/standard/tests/regression/manual-pr-vali
 
 ```bash
 # Setup DeepWiki port forwarding
-kubectl port-forward -n codequal-dev svc/deepwiki-api 8001:8001
 
 # Run with mock data (working)
-USE_DEEPWIKI_MOCK=true npx ts-node src/standard/tests/regression/manual-pr-validator.ts
+USE_MOCK_ANALYZER=true npx ts-node src/standard/tests/regression/manual-pr-validator.ts
 
 # Run with real data (returns 0 issues)
-USE_DEEPWIKI_MOCK=false npx ts-node src/standard/tests/regression/manual-pr-validator.ts https://github.com/sindresorhus/ky/pull/700
+USE_MOCK_ANALYZER=false npx ts-node src/standard/tests/regression/manual-pr-validator.ts https://github.com/sindresorhus/ky/pull/700
 
 # Direct DeepWiki test
 curl -X POST http://localhost:8001/chat/completions/stream \
@@ -162,10 +160,9 @@ open test-outputs/manual-validation/*.html
 cd /Users/alpinro/Code\ Prjects/codequal/packages/agents
 
 # Setup DeepWiki
-kubectl port-forward -n codequal-dev svc/deepwiki-api 8001:8001
 
 # Test with real data
-USE_DEEPWIKI_MOCK=false npx ts-node src/standard/tests/regression/manual-pr-validator.ts [PR_URL]
+USE_MOCK_ANALYZER=false npx ts-node src/standard/tests/regression/manual-pr-validator.ts [PR_URL]
 ```
 
 ---

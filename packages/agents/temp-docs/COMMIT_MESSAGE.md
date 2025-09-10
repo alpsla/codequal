@@ -16,7 +16,7 @@ BREAKING CHANGE: V7 report generators are now deprecated. Default export changed
 Key findings:
 - V8 generator works perfectly with proper data
 - DeepWiki parser is broken (returns all locations as "unknown")
-- Must use USE_DEEPWIKI_MOCK=true until parser is fixed
+- Must use USE_MOCK_ANALYZER=true until parser is fixed
 
 Docs created:
 - V8_WORKING_REFERENCE.md - Working implementation guide

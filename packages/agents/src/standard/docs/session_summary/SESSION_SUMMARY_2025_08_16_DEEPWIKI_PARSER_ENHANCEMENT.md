@@ -35,7 +35,6 @@
 - Model now correctly displays in reports (e.g., "gpt-4o")
 
 ### 3. DeepWiki Git Configuration
-- Configured git in DeepWiki pod: `git config --global url.'https://TOKEN@github.com/'.insteadOf`
 - Used existing GITHUB_TOKEN from environment
 - DeepWiki can now successfully clone and analyze repositories
 

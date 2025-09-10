@@ -46,10 +46,9 @@ DeepWiki's analysis can produce different results on subsequent runs of the same
 
 ```bash
 # Ensure DeepWiki is accessible
-kubectl port-forward -n codequal-dev deployment/deepwiki 8001:8001
 
 # Run iterative analysis
-USE_DEEPWIKI_MOCK=false npx ts-node test-iterative-deepwiki-analysis.ts
+USE_MOCK_ANALYZER=false npx ts-node test-iterative-deepwiki-analysis.ts
 ```
 
 ### Custom Repository Analysis
@@ -69,7 +68,7 @@ const result = await analyzer.analyze();
 
 ### Environment Variables
 
-- `USE_DEEPWIKI_MOCK`: Set to `false` for real analysis
+- `USE_MOCK_ANALYZER`: Set to `false` for real analysis
 - `DEEPWIKI_API_URL`: DeepWiki endpoint (default: `http://localhost:8001`)
 - `DEEPWIKI_API_KEY`: API key if required
 - `OPENROUTER_API_KEY`: For model selection
@@ -184,10 +183,8 @@ private generateIssueKey(issue: Issue): string {
 
 ```bash
 # Check pod status
-kubectl get pods -n codequal-dev -l app=deepwiki
 
 # Restart port forwarding
-kubectl port-forward -n codequal-dev deployment/deepwiki 8001:8001
 ```
 
 ### Slow Convergence

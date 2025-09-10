@@ -72,14 +72,11 @@ The parser is working correctly, but the orchestrator/comparison agent is not pr
 ### Testing Environment Setup
 For the next session, ensure:
 
-1. **DeepWiki pod is running:**
    ```bash
-   kubectl get pods -n codequal-dev -l app=deepwiki
    ```
 
 2. **Port forwarding active (REQUIRED):**
    ```bash
-   kubectl port-forward -n codequal-dev deployment/deepwiki 8001:8001 &
    ```
 
 3. **Redis running:**
@@ -90,7 +87,7 @@ For the next session, ensure:
 4. **Test command to use:**
    ```bash
    cd /Users/alpinro/Code\ Prjects/codequal/packages/agents
-   USE_AI_PARSER=false USE_DEEPWIKI_MOCK=false npx ts-node src/standard/tests/regression/manual-pr-validator.ts https://github.com/sindresorhus/ky/pull/700
+   USE_AI_PARSER=false USE_MOCK_ANALYZER=false npx ts-node src/standard/tests/regression/manual-pr-validator.ts https://github.com/sindresorhus/ky/pull/700
    ```
 
 ## 📁 Key Files Modified

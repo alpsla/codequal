@@ -45,10 +45,10 @@ These have been moved to `_archive/2025-08-25-cleanup/`:
 
 ```bash
 # Real DeepWiki testing (requires port forwarding)
-USE_DEEPWIKI_MOCK=false npx ts-node src/standard/tests/regression/manual-pr-validator.ts <PR_URL>
+USE_MOCK_ANALYZER=false npx ts-node src/standard/tests/regression/manual-pr-validator.ts <PR_URL>
 
 # Quick testing with mock
-USE_DEEPWIKI_MOCK=true npm test src/standard/tests/regression/
+USE_MOCK_ANALYZER=true npm test src/standard/tests/regression/
 ```
 
 ## Cost per Analysis

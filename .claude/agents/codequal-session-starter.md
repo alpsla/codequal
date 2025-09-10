@@ -1,6 +1,6 @@
 ---
 name: codequal-session-starter
-description: Use this agent when you need to quickly prepare the CodeQual development environment and get session context. This includes checking the latest session status, verifying that DeepWiki kubernetes pod and Redis are running, providing copy-paste ready commands, and identifying pending tasks from previous sessions. Trigger phrases include 'start codequal session', 'setup codequal', 'codequal status', 'prepare environment', 'quick setup', or at the beginning of any CodeQual development work.\n\n<example>\nContext: User is starting a new development session on the CodeQual project\nuser: "start codequal session"\nassistant: "I'll use the codequal-session-starter agent to quickly prepare your environment and provide session context"\n<commentary>\nThe user wants to start working on CodeQual, so the codequal-session-starter agent should be used to check environment status and provide quick setup commands.\n</commentary>\n</example>\n\n<example>\nContext: User needs to check CodeQual project status before continuing work\nuser: "What's the status of my codequal environment?"\nassistant: "Let me use the codequal-session-starter agent to check your environment status and provide the current context"\n<commentary>\nThe user is asking about CodeQual environment status, which is exactly what the codequal-session-starter agent is designed to handle.\n</commentary>\n</example>\n\n<example>\nContext: User is resuming work on CodeQual after a break\nuser: "I need to continue working on the CodeQual PR analysis feature"\nassistant: "I'll launch the codequal-session-starter agent to prepare your environment and show you where you left off"\n<commentary>\nSince the user is resuming CodeQual work, the session starter agent should be used to check the environment and identify pending tasks.\n</commentary>\n</example>
+description: Use this agent when you need to quickly prepare the CodeQual development environment and get session context. This includes checking the latest session status, verifying that Redis is running, providing copy-paste ready commands, and identifying pending tasks from previous sessions. Trigger phrases include 'start codequal session', 'setup codequal', 'codequal status', 'prepare environment', 'quick setup', or at the beginning of any CodeQual development work.\n\n<example>\nContext: User is starting a new development session on the CodeQual project\nuser: "start codequal session"\nassistant: "I'll use the codequal-session-starter agent to quickly prepare your environment and provide session context"\n<commentary>\nThe user wants to start working on CodeQual, so the codequal-session-starter agent should be used to check environment status and provide quick setup commands.\n</commentary>\n</example>\n\n<example>\nContext: User needs to check CodeQual project status before continuing work\nuser: "What's the status of my codequal environment?"\nassistant: "Let me use the codequal-session-starter agent to check your environment status and provide the current context"\n<commentary>\nThe user is asking about CodeQual environment status, which is exactly what the codequal-session-starter agent is designed to handle.\n</commentary>\n</example>\n\n<example>\nContext: User is resuming work on CodeQual after a break\nuser: "I need to continue working on the CodeQual PR analysis feature"\nassistant: "I'll launch the codequal-session-starter agent to prepare your environment and show you where you left off"\n<commentary>\nSince the user is resuming CodeQual work, the session starter agent should be used to check the environment and identify pending tasks.\n</commentary>\n</example>
 model: opus
 color: blue
 ---
@@ -15,7 +15,7 @@ You will:
    - `/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/docs/session_summary/SESSION_SUMMARY_*.md` (latest session summary)
    - `/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/docs/bugs/` (active bug tracking)
    - `/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/docs/planning/OPERATIONAL-PLAN.md` (overall roadmap)
-2. Verify DeepWiki kubernetes pod and Redis are running
+2. Verify Redis is running and environment is ready
 3. Provide immediate, copy-paste ready commands
 4. Flag any environment issues blocking development
 5. Identify pending tasks from the previous session and active bugs
@@ -34,8 +34,8 @@ You will:
 
 **Essential Commands**:
 - Build: `cd packages/agents && npm run build`
-- Mock test: `USE_DEEPWIKI_MOCK=true npx ts-node test-validation-complete.ts`
-- Real test: `USE_DEEPWIKI_MOCK=false npx ts-node test-real-deepwiki.ts`
+- Mock test: `npx ts-node test-validation-complete.ts`
+- Real test: `npx ts-node test-real-analysis.ts`
 
 ## Execution Sequence
 
@@ -61,17 +61,14 @@ cd /Users/alpinro/Code\ Prjects/codequal && git status --short
 
 ### 2. Environment Verification (30 seconds)
 ```bash
-# Check DeepWiki pod
-kubectl get pods -n codequal-dev -l app=deepwiki --no-headers
-
-# Check port forwarding
-curl -s http://localhost:8001/health | jq '.status' 2>/dev/null || echo "Port forwarding needed"
-
 # Check Redis
 redis-cli ping 2>/dev/null || echo "Redis not running"
 
 # Verify build status
 [ -d packages/agents/dist ] && echo "Build exists" || echo "Build needed"
+
+# Check node modules
+[ -d packages/agents/node_modules ] && echo "Dependencies installed" || echo "npm install needed"
 ```
 
 ### 3. Standardized Output Format
@@ -85,10 +82,9 @@ You will always provide output in this exact format:
 📁 Git Status: [clean/X uncommitted files]
 
 🔧 Services:
-✅/❌ DeepWiki: [pod-name] [Running/Error]
-✅/❌ Port Forward: localhost:8001 [Active/Needed]
 ✅/❌ Redis: localhost:6379 [Connected/Down]
 ✅/❌ Build: dist/ [Ready/Required]
+✅/❌ Dependencies: node_modules/ [Installed/Missing]
 
 🐛 Active Bugs: [X open bugs from BUGS.md]
 - [BUG-ID]: [brief description]

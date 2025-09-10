@@ -91,10 +91,10 @@ source .env.deepwiki
 
 ```bash
 # With real DeepWiki
-USE_DEEPWIKI_MOCK=false npm run analyze -- --repo <url> --pr <number>
+USE_MOCK_ANALYZER=false npm run analyze -- --repo <url> --pr <number>
 
 # With mock (faster for testing)
-USE_DEEPWIKI_MOCK=true npm run analyze -- --repo <url> --pr <number>
+USE_MOCK_ANALYZER=true npm run analyze -- --repo <url> --pr <number>
 ```
 
 ### DeepWiki Resources
@@ -181,7 +181,7 @@ npm test src/standard/tests/integration/deepwiki/orchestrator-real-flow.test.ts
 
 ```bash
 # DeepWiki Configuration
-USE_DEEPWIKI_MOCK=true              # Use mock for testing
+USE_MOCK_ANALYZER=true              # Use mock for testing
 DEEPWIKI_API_URL=http://localhost:8080
 DEEPWIKI_API_KEY=your-key
 
@@ -221,7 +221,6 @@ REDIS_URL=redis://localhost:6379
 
 2. **"DeepWiki timeout"**
    - Use `--mock` flag for testing
-   - Check DeepWiki pod status: `kubectl get pods -n codequal-dev`
 
 3. **"Supabase error"**
    - Check environment variables

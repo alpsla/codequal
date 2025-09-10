@@ -47,7 +47,6 @@ ls ./packages/agents/src/standard/tests/integration/deepwiki/
 ## Key Files
 
 1. **setup-deepwiki-environment.sh**
-   - Automated setup script for DeepWiki pod connection
    - Handles port forwarding, validation, and environment setup
    - Creates helper scripts for quick tasks
 
@@ -91,7 +90,7 @@ ls ./packages/agents/src/standard/tests/integration/deepwiki/
 4. **Run Tests**
    ```bash
    cd packages/agents
-   USE_DEEPWIKI_MOCK=false npm test src/standard/tests/integration/deepwiki/your-test.test.ts
+   USE_MOCK_ANALYZER=false npm test src/standard/tests/integration/deepwiki/your-test.test.ts
    ```
 
 ## Benefits of This Structure

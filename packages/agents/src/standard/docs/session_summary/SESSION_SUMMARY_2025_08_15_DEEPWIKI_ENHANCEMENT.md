@@ -79,7 +79,6 @@ if (typeof response.data === 'string') {
 ### Context Mechanism Test
 - DeepWiki doesn't maintain repository context between calls
 - Redis caching is essential for persistence
-- Git authentication prevents repository cloning on DeepWiki pod
 
 ### Prompt Optimization Test
 - Tested 10 strategies with structure scores from 0-60/100

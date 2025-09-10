@@ -663,7 +663,7 @@ Return only the fixed code without explanation.`;
     }
     
     // FALLBACK: Try AI generation if templates didn't produce a fix
-    if (process.env.OPENROUTER_API_KEY && process.env.USE_DEEPWIKI_MOCK !== 'true') {
+    if (process.env.OPENROUTER_API_KEY && process.env.USE_MOCK_ANALYZER !== 'true') {
       try {
         let modelId = this.cachedModel; // Use cached model if available
         

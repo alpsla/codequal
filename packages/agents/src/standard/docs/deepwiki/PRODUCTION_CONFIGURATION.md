@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document outlines the production configuration for DeepWiki integration with CodeQual. The system is fully functional and ready for production deployment with `USE_DEEPWIKI_MOCK=false`.
+This document outlines the production configuration for DeepWiki integration with CodeQual. The system is fully functional and ready for production deployment with `USE_MOCK_ANALYZER=false`.
 
 ## Current Status ✅
 
@@ -18,7 +18,7 @@ This document outlines the production configuration for DeepWiki integration wit
 
 ```bash
 # DeepWiki Configuration
-export USE_DEEPWIKI_MOCK=false          # Must be false for real DeepWiki
+export USE_MOCK_ANALYZER=false          # Must be false for real DeepWiki
 export DEEPWIKI_API_KEY=<your-key>      # DeepWiki API key
 
 # Supabase Configuration
@@ -43,7 +43,7 @@ export CACHE_TTL=1800                   # Cache TTL in seconds
 Redis is **REQUIRED** for production deployments. It provides:
 - Caching of DeepWiki analysis results
 - Performance optimization (2-10x speedup for cached results)
-- Reduced load on DeepWiki service
+- Reduced load on Code analyzer
 - Cost savings by avoiding repeated analysis
 
 ### Redis Initialization
@@ -115,7 +115,6 @@ const { stdout } = await execAsync(
 
 ### Health Check ✅
 ```bash
-kubectl exec -n codequal-dev deepwiki-6455889865-sfj9z -- curl -s http://localhost:8001/health
 # Response: {"status":"healthy","timestamp":"2025-08-02T02:30:00.000Z","service":"deepwiki-api"}
 ```
 
@@ -130,11 +129,10 @@ The DeepWiki API currently returns embedding errors for some repositories:
 When this occurs, the system automatically creates a degraded result with:
 - Default scores (50/100)
 - System message indicating analysis unavailable
-- Recommendation to check DeepWiki service
+- Recommendation to check Code analyzer
 
 ## Production Checklist
 
-- [x] DeepWiki pod running
 - [x] kubectl configured with access to namespace
 - [x] Health check passing
 - [x] API calls working via kubectl exec
@@ -147,7 +145,7 @@ When this occurs, the system automatically creates a degraded result with:
 ## Known Issues
 
 1. **Embedding Errors**: Some repositories return "No valid document embeddings found"
-   - This appears to be a DeepWiki service issue
+   - This appears to be a Code analyzer issue
    - System handles gracefully with degraded results
    - Does not block the analysis flow
 
@@ -161,7 +159,7 @@ When this occurs, the system automatically creates a degraded result with:
 
 ```bash
 # Set environment
-export USE_DEEPWIKI_MOCK=false
+export USE_MOCK_ANALYZER=false
 
 # Run tests
 cd packages/agents
@@ -186,14 +184,12 @@ const result = await orchestrator.executeComparison({
 
 Check DeepWiki logs:
 ```bash
-kubectl logs -n codequal-dev deployment/deepwiki -f
 ```
 
 Check disk usage:
 ```bash
-kubectl exec -n codequal-dev deployment/deepwiki -- df -h /root/.adalflow
 ```
 
 ## Conclusion
 
-The DeepWiki integration is production-ready with `USE_DEEPWIKI_MOCK=false`. While some repositories may not return full analysis due to embedding issues, the system handles these cases gracefully with fallback responses. The full orchestrator flow works end-to-end, generating reports and PR comments as expected.
+The DeepWiki integration is production-ready with `USE_MOCK_ANALYZER=false`. While some repositories may not return full analysis due to embedding issues, the system handles these cases gracefully with fallback responses. The full orchestrator flow works end-to-end, generating reports and PR comments as expected.

@@ -4,12 +4,10 @@
 
 ### Current Description:
 ```
-Use this agent when you need to quickly prepare the CodeQual development environment and get session context. This includes checking the latest session status, verifying that DeepWiki kubernetes pod and Redis are running, providing copy-paste ready commands, and identifying pending tasks from previous sessions.
 ```
 
 ### Updated Description (ADD THIS):
 ```
-Use this agent when you need to quickly prepare the CodeQual development environment and get session context. This includes checking the latest session status, verifying that DeepWiki kubernetes pod and Redis are running, providing copy-paste ready commands, and identifying pending tasks from previous sessions. 
 
 IMPORTANT: The agent should ALWAYS check for and read the NEXT_SESSION_START.md file if it exists at /Users/alpinro/Code Prjects/codequal/packages/agents/NEXT_SESSION_START.md. This file contains:
 - Quick start instructions from the previous session

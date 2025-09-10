@@ -216,7 +216,6 @@ Critical debugging session focused on identifying and addressing report accuracy
 4. **Fix Data Mapping**: Address any issues found in transformation pipeline
 
 ### Environment Setup
-1. Ensure `kubectl port-forward -n codequal-dev svc/deepwiki-api 8001:8001` is running
 2. Verify Redis connection for caching
 3. Run debugging scripts with real PR data
 4. Monitor logs for data transformation errors
@@ -286,7 +285,6 @@ Critical debugging session focused on identifying and addressing report accuracy
 ### Priority 1: Test Real DeepWiki Response Format
 ```bash
 # 1. Start port forward
-kubectl port-forward -n codequal-dev deployment/deepwiki 8001:8001
 
 # 2. Run structured test
 cd /Users/alpinro/Code\ Prjects/codequal/packages/agents
@@ -323,7 +321,7 @@ console.log('Parsed issues:', parsed.issues.length);
 QUICK_TEST=true npx ts-node src/standard/deepwiki/scripts/test-context-mechanism.ts
 
 # Test 2: Real PR with DeepWiki
-USE_DEEPWIKI_MOCK=false npx ts-node src/standard/tests/regression/manual-pr-validator.ts https://github.com/sindresorhus/ky/pull/700
+USE_MOCK_ANALYZER=false npx ts-node src/standard/tests/regression/manual-pr-validator.ts https://github.com/sindresorhus/ky/pull/700
 
 # Test 3: Direct API test with new prompts
 npx ts-node src/standard/deepwiki/scripts/test-structured-api.ts
@@ -348,10 +346,8 @@ npx ts-node src/standard/deepwiki/scripts/test-structured-api.ts
 
 ```bash
 # 1. Check DeepWiki status
-kubectl get pods -n codequal-dev -l app=deepwiki
 
 # 2. Setup port forward
-kubectl port-forward -n codequal-dev deployment/deepwiki 8001:8001
 
 # 3. Run test suite
 cd /Users/alpinro/Code\ Prjects/codequal/packages/agents
@@ -377,7 +373,7 @@ cd /Users/alpinro/Code\ Prjects/codequal/packages/agents
 ```bash
 export DEEPWIKI_API_URL=http://localhost:8001
 export DEEPWIKI_API_KEY=dw-key-e48329b6c05b4a36a18d65af21ac3c2f
-export USE_DEEPWIKI_MOCK=false
+export USE_MOCK_ANALYZER=false
 export REDIS_URL=redis://localhost:6379
 ```
 

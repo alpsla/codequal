@@ -105,7 +105,7 @@ Created comprehensive test script (test-json-format-fixes.ts) that verifies:
 ## 🚀 Next Steps
 
 1. **Integration Testing** ✅
-   - Test with real PRs using USE_DEEPWIKI_MOCK=false
+   - Test with real PRs using USE_MOCK_ANALYZER=false
    - Verify all fixes work with actual DeepWiki responses
 
 2. **Report Generator Alignment**

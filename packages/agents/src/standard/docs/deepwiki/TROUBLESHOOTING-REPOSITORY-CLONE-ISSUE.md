@@ -30,20 +30,17 @@ The error message showed a trailing slash in the URL (`/is-odd/`), leading to in
 
 1. **Checked DeepWiki Health**
    ```bash
-   kubectl get pods -n codequal-dev -l app=deepwiki
    curl http://localhost:8001/health
    ```
    Result: DeepWiki was running and healthy
 
 2. **Examined Git Configuration**
    ```bash
-   kubectl exec -n codequal-dev deployment/deepwiki -- git config --global --list
    ```
    Found: `url.https://ghp_TOKEN@github.com/.insteadof=https://github.com/`
    
 3. **Tested Direct Cloning in Pod**
    ```bash
-   kubectl exec -n codequal-dev deployment/deepwiki -- \
      git clone --depth=1 https://github.com/sindresorhus/is-odd /tmp/test
    ```
    Result: Same error - repository not found
@@ -87,14 +84,13 @@ const request = {
 
 2. **Test Cloning in Pod**
    ```bash
-   kubectl exec -n codequal-dev deployment/deepwiki -- \
      git clone --depth=1 https://github.com/sindresorhus/ky /tmp/test
    # Success!
    ```
 
 3. **Run Analysis Test**
    ```bash
-   USE_DEEPWIKI_MOCK=false npx ts-node test-deepwiki-simple-repo.ts
+   USE_MOCK_ANALYZER=false npx ts-node test-deepwiki-simple-repo.ts
    # ✅ Response received in 2.2s
    ```
 
@@ -150,10 +146,8 @@ const request = {
 ### DeepWiki Health Check
 ```bash
 # Check pod status
-kubectl get pods -n codequal-dev -l app=deepwiki
 
 # Start port forwarding
-kubectl port-forward -n codequal-dev deployment/deepwiki 8001:8001 &
 
 # Health check
 curl http://localhost:8001/health
@@ -162,11 +156,9 @@ curl http://localhost:8001/health
 ### Test Repository Clone
 ```bash
 # Test in pod
-kubectl exec -n codequal-dev deployment/deepwiki -- \
   git clone --depth=1 https://github.com/sindresorhus/ky /tmp/test
 
 # Clean up
-kubectl exec -n codequal-dev deployment/deepwiki -- rm -rf /tmp/test
 ```
 
 ### Common Valid Test Repositories
@@ -181,8 +173,6 @@ kubectl exec -n codequal-dev deployment/deepwiki -- rm -rf /tmp/test
 
 ## Support
 For additional help with DeepWiki issues:
-- Check logs: `kubectl logs -n codequal-dev deployment/deepwiki --tail=100`
-- View all configuration: `kubectl describe deployment/deepwiki -n codequal-dev`
 - Contact: DevOps team via #deepwiki-support channel
 
 ---
@@ -197,11 +187,9 @@ For additional help with DeepWiki issues:
 
   1️⃣ Check Pod Status
 
-  kubectl get pods -n codequal-dev -l app=deepwiki
 
   2️⃣ Start Port Forwarding
 
-  kubectl port-forward -n codequal-dev deployment/deepwiki 8001:8001 &
 
   3️⃣ Verify Health
 
@@ -212,7 +200,6 @@ For additional help with DeepWiki issues:
   # ⚠️ DON'T use sindresorhus/is-odd - it doesn't exist!
   # ✅ Use sindresorhus/ky instead:
 
-  kubectl exec -n codequal-dev deployment/deepwiki -- \
     git clone --depth=1 https://github.com/sindresorhus/ky /tmp/test
 
   ⚠️ MOST IMPORTANT:

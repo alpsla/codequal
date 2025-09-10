@@ -27,7 +27,7 @@ Before starting any testing session, run the environment setup:
 
 ### Step 1.5: Register DeepWiki API (For Real DeepWiki Tests)
 
-**Note:** This step is only needed if running tests with real DeepWiki (USE_DEEPWIKI_MOCK=false).
+**Note:** This step is only needed if running tests with real DeepWiki (USE_MOCK_ANALYZER=false).
 
 ```bash
 cd packages/agents
@@ -40,7 +40,6 @@ This script will:
 - ✅ Verify all prerequisites (kubectl, Node.js, npm)
 - ✅ Check Kubernetes connection
 - ✅ Setup DeepWiki port forwarding
-- ✅ Configure GitHub authentication in DeepWiki pod
 - ✅ Check/start Redis (optional)
 - ✅ Create `.env.test` with proper configuration
 - ✅ Build the project if needed
@@ -53,8 +52,6 @@ This script will:
 After setup, verify everything is working:
 
 ```bash
-# Check DeepWiki pod status
-kubectl get pods -n codequal-dev -l app=deepwiki
 
 # Check if port forwarding is active
 lsof -i :8001
@@ -64,7 +61,6 @@ redis-cli ping
 ```
 
 Expected outputs:
-- DeepWiki pod should show STATUS: Running
 - Port 8001 should show kubectl port-forward process
 - Redis should respond with PONG
 
@@ -85,7 +81,7 @@ Now you can run any test suite:
 #### Option B: V8 Validation Tests
 ```bash
 cd packages/agents
-USE_DEEPWIKI_MOCK=true npx ts-node test-v8-validation.ts
+USE_MOCK_ANALYZER=true npx ts-node test-v8-validation.ts
 ```
 - Tests V8 report generator
 - Validates issue formatting
@@ -134,7 +130,7 @@ For comprehensive testing before commits or PRs:
 3. **V8 Validation Tests**
    ```bash
    cd packages/agents
-   USE_DEEPWIKI_MOCK=true npx ts-node test-v8-validation.ts
+   USE_MOCK_ANALYZER=true npx ts-node test-v8-validation.ts
    ```
 
 4. **Regression Tests** (critical before merge)
@@ -151,7 +147,7 @@ For comprehensive testing before commits or PRs:
 - Best for final validation
 
 ```bash
-export USE_DEEPWIKI_MOCK=false
+export USE_MOCK_ANALYZER=false
 ```
 
 ### Mock Mode (Fast Testing)
@@ -161,7 +157,7 @@ export USE_DEEPWIKI_MOCK=false
 - Good for development
 
 ```bash
-export USE_DEEPWIKI_MOCK=true
+export USE_MOCK_ANALYZER=true
 ```
 
 ## CI/CD Testing
@@ -170,7 +166,7 @@ For continuous integration pipelines:
 
 ```bash
 # Use mocks for speed and reliability
-export USE_DEEPWIKI_MOCK=true
+export USE_MOCK_ANALYZER=true
 export SKIP_HEALTH_CHECK=true
 export NODE_ENV=test
 
@@ -184,8 +180,6 @@ npm test
 
 | Problem | Solution |
 |---------|----------|
-| DeepWiki not accessible | Run: `kubectl port-forward -n codequal-dev deployment/deepwiki 8001:8001` |
-| GitHub auth failing | Update token: `kubectl set env -n codequal-dev deployment/deepwiki GITHUB_TOKEN=<new-token>` |
 | Build errors | Clean build: `rm -rf dist && npm run build` |
 | Port already in use | Kill process: `pkill -f "port-forward.*8001"` |
 | Redis not available | Start Redis: `redis-server` (or tests will use memory cache) |
@@ -263,7 +257,7 @@ Create `.env.test.local` for personal overrides:
 ```bash
 # Personal test configuration
 DEEPWIKI_API_URL=http://localhost:8001
-USE_DEEPWIKI_MOCK=true
+USE_MOCK_ANALYZER=true
 REDIS_URL=redis://localhost:6379
 LOG_LEVEL=debug
 ```
@@ -383,13 +377,12 @@ npm run build
 ./scripts/test-environment-setup.sh
 
 # Daily workflow
-kubectl get pods -n codequal-dev     # Check DeepWiki pod
 lsof -i :8001                        # Verify port forwarding
 ./quick-test.sh                       # Quick validation (from root)
 
 # Test execution (from packages/agents)
 cd packages/agents
-USE_DEEPWIKI_MOCK=true npx ts-node test-v8-validation.ts
+USE_MOCK_ANALYZER=true npx ts-node test-v8-validation.ts
 npm test -- --watch                  # Watch mode for development
 npm test -- --coverage               # Generate coverage report
 ```
@@ -414,15 +407,12 @@ Remember: **Always run regression tests before merging!**
 # 1. Setup environment (keeps port forwarding active)
 ./scripts/test-environment-setup.sh
 
-# 2. Check DeepWiki pod status
-kubectl get pods -n codequal-dev -l app=deepwiki
 
 # 3. Start port forwarding if needed
-kubectl port-forward -n codequal-dev deployment/deepwiki 8001:8001 &
 
 # 4. Now run your tests
 cd packages/agents
-USE_DEEPWIKI_MOCK=true npx ts-node test-v8-validation.ts
+USE_MOCK_ANALYZER=true npx ts-node test-v8-validation.ts
 ```
 
 ### Subsequent Runs (Same Session):
@@ -430,21 +420,18 @@ USE_DEEPWIKI_MOCK=true npx ts-node test-v8-validation.ts
 ```bash
 # Just run the tests directly - no need to setup again
 cd packages/agents
-USE_DEEPWIKI_MOCK=true npx ts-node test-v8-validation.ts
+USE_MOCK_ANALYZER=true npx ts-node test-v8-validation.ts
 ```
 
 ### If Tests Fail Unexpectedly:
 
 ```bash
-# Check DeepWiki pod
-kubectl get pods -n codequal-dev -l app=deepwiki
 
 # Check port forwarding
 lsof -i :8001
 
 # If something is down, restart port forwarding
 pkill -f "port-forward.*8001"
-kubectl port-forward -n codequal-dev deployment/deepwiki 8001:8001 &
 ```
 
   -----

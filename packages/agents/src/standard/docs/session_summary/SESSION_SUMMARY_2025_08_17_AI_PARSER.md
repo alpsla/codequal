@@ -187,7 +187,7 @@ class UnifiedAIParser {
 
 ### Existing System Integration
 - **DynamicModelSelector**: Primary/fallback model selection
-- **DeepWiki Services**: Enhanced response processing
+- **Code Analyzers**: Enhanced response processing
 - **Comparison Agent**: Improved analysis quality
 - **Report Generation**: Better structured data for reports
 

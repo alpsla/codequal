@@ -114,7 +114,7 @@ packages/agents/src/standard/
 
 ```bash
 # Use mock DeepWiki for testing
-USE_DEEPWIKI_MOCK=true
+USE_MOCK_ANALYZER=true
 
 # Supabase configuration (if using persistence)
 SUPABASE_URL=your-supabase-url

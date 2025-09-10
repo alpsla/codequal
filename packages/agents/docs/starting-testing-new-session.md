@@ -224,7 +224,6 @@ echo "=== CodeQual Session Status ==="
 echo "Directory: $(pwd)"
 echo "Git branch: $(git branch --show-current)"
 echo "Last build: $(stat -f "%Sm" dist/index.js 2>/dev/null || echo "Not built")"
-echo "DeepWiki: $(kubectl get pods -n codequal-dev -l app=deepwiki --no-headers 2>/dev/null | wc -l) pods"
 echo "Redis: $(redis-cli ping 2>/dev/null || echo "Not running")"
 echo "Reports: $(ls test-outputs/manual-validation/*.md 2>/dev/null | wc -l) files"
 echo "================================"
@@ -248,7 +247,6 @@ echo "================================"
 ## 💡 Pro Tips
 
 1. **Start with test-v8-final.ts** - It's the only fully verified working test
-2. **Keep console open to kubectl logs** - Watch DeepWiki pod logs if debugging
 3. **Check generated reports immediately** - Look for "Unknown location" and mock data
 4. **Use TodoWrite agent** - Track your progress through the session
 5. **Comment suspicious code immediately** - Better to have errors than fake results
@@ -267,7 +265,6 @@ npx tsc --noEmit --skipLibCheck
 
 ### Port Forwarding Lost
 ```bash
-kubectl port-forward -n codequal-dev deployment/deepwiki 8001:8001
 ```
 
 ### Redis Connection Failed

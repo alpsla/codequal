@@ -347,13 +347,13 @@ PRIORITY 5: Developer Tooling ← MEDIUM priority for adoption
 cd /Users/alpinro/Code\ Prjects/codequal/packages/agents
 
 # Test Type A/B classification across languages
-USE_DEEPWIKI_MOCK=true npx ts-node test-fix-type-ab.ts
+USE_MOCK_ANALYZER=true npx ts-node test-fix-type-ab.ts
 
 # Test deduplication system
-USE_DEEPWIKI_MOCK=true npx ts-node test-deduplication.ts  
+USE_MOCK_ANALYZER=true npx ts-node test-deduplication.ts  
 
 # Test comprehensive improvements
-USE_DEEPWIKI_MOCK=true npx ts-node test-final-improvements.ts
+USE_MOCK_ANALYZER=true npx ts-node test-final-improvements.ts
 
 # PRIORITY 2: Performance & Monitoring
 # Benchmark performance across different repository sizes
@@ -361,7 +361,7 @@ npm run benchmark:small && npm run benchmark:medium && npm run benchmark:large
 
 # PRIORITY 3: Production Integration  
 # Test with real repositories (Java example)
-USE_DEEPWIKI_MOCK=false npx ts-node test-java-repository-analysis.ts
+USE_MOCK_ANALYZER=false npx ts-node test-java-repository-analysis.ts
 
 # PRIORITY 4: ML Integration Setup
 # Test data collection pipeline  
@@ -426,9 +426,9 @@ ls -la src/standard/services/issue-deduplicator.ts               # Deduplication
 ls -la src/standard/comparison/report-generator-v8-final-enhanced.ts  # Enhanced reports
 
 # 3. Test current system functionality
-USE_DEEPWIKI_MOCK=true npx ts-node test-fix-type-ab.ts           # Verify Type A/B works
-USE_DEEPWIKI_MOCK=true npx ts-node test-deduplication.ts         # Verify deduplication works
-USE_DEEPWIKI_MOCK=true npx ts-node test-final-improvements.ts    # Verify integration works
+USE_MOCK_ANALYZER=true npx ts-node test-fix-type-ab.ts           # Verify Type A/B works
+USE_MOCK_ANALYZER=true npx ts-node test-deduplication.ts         # Verify deduplication works
+USE_MOCK_ANALYZER=true npx ts-node test-final-improvements.ts    # Verify integration works
 
 # 4. Prepare for multi-language testing
 # Download/prepare test repositories for each target language:
@@ -628,12 +628,12 @@ If comprehensive testing reveals critical issues:
 ```bash
 # Validate current enhancements are working
 cd /Users/alpinro/Code\ Prjects/codequal/packages/agents
-USE_DEEPWIKI_MOCK=true npx ts-node test-fix-type-ab.ts
-USE_DEEPWIKI_MOCK=true npx ts-node test-deduplication.ts
+USE_MOCK_ANALYZER=true npx ts-node test-fix-type-ab.ts
+USE_MOCK_ANALYZER=true npx ts-node test-deduplication.ts
 
 # Test multi-language support
-USE_DEEPWIKI_MOCK=true npx ts-node test-java-analysis.ts
-USE_DEEPWIKI_MOCK=true npx ts-node test-csharp-analysis.ts
+USE_MOCK_ANALYZER=true npx ts-node test-java-analysis.ts
+USE_MOCK_ANALYZER=true npx ts-node test-csharp-analysis.ts
 
 # Performance benchmarking
 npm run benchmark:performance

@@ -151,10 +151,8 @@ After completing these tasks, we should have:
 ## Commands to Start Next Session
 ```bash
 # 1. Check DeepWiki connection
-kubectl get pods -n codequal-dev -l app=deepwiki
 
 # 2. Port forward if needed
-kubectl port-forward -n codequal-dev deployment/deepwiki 8001:8001
 
 # 3. Test location parsing
 npx ts-node src/standard/tests/regression/manual-pr-validator.ts https://github.com/sindresorhus/ky/pull/700

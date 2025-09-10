@@ -17,7 +17,7 @@ V8 reports not generating in proper format structure. Missing code snippets, inc
 
 ### Reproduction
 ```bash
-USE_DEEPWIKI_MOCK=true npx ts-node test-v8-final.ts
+USE_MOCK_ANALYZER=true npx ts-node test-v8-final.ts
 # Outputs incomplete/malformed reports
 ```
 
@@ -42,7 +42,7 @@ Parser still struggling with some DeepWiki response formats despite improvements
 
 ### Reproduction
 ```bash
-USE_DEEPWIKI_MOCK=false npx ts-node test-debug-inconsistency.ts
+USE_MOCK_ANALYZER=false npx ts-node test-debug-inconsistency.ts
 # Shows parser format handling issues
 ```
 
@@ -68,7 +68,7 @@ Fix suggestions not being generated consistently in reports. Template vs AI inte
 
 ### Reproduction
 ```bash
-USE_DEEPWIKI_MOCK=true npx ts-node test-fix-suggestions-demo.ts
+USE_MOCK_ANALYZER=true npx ts-node test-fix-suggestions-demo.ts
 # Fix suggestions not appearing in reports
 ```
 
@@ -95,8 +95,8 @@ Redis cache not being properly invalidated between test runs despite clearAllCac
 ### Reproduction
 ```bash
 # Run same test twice - may get different results from cache
-USE_DEEPWIKI_MOCK=false npx ts-node test-real-pr-quick.ts
-USE_DEEPWIKI_MOCK=false npx ts-node test-real-pr-quick.ts
+USE_MOCK_ANALYZER=false npx ts-node test-real-pr-quick.ts
+USE_MOCK_ANALYZER=false npx ts-node test-real-pr-quick.ts
 ```
 
 ### Root Cause
@@ -121,7 +121,7 @@ Large PR analysis timing out during report generation. Cannot process complex or
 
 ### Reproduction
 ```bash
-USE_DEEPWIKI_MOCK=false npx ts-node test-large-pr-security.ts
+USE_MOCK_ANALYZER=false npx ts-node test-large-pr-security.ts
 # Times out on large/complex PRs
 ```
 
@@ -205,16 +205,16 @@ BUG-086 (Performance)
 ### Testing Commands:
 ```bash
 # Test full pipeline end-to-end
-USE_DEEPWIKI_MOCK=false npx ts-node test-complete-bug072.ts
+USE_MOCK_ANALYZER=false npx ts-node test-complete-bug072.ts
 
 # Test report generation  
-USE_DEEPWIKI_MOCK=true npx ts-node test-v8-final.ts
+USE_MOCK_ANALYZER=true npx ts-node test-v8-final.ts
 
 # Test fix suggestions
-USE_DEEPWIKI_MOCK=true npx ts-node test-fix-suggestions-demo.ts
+USE_MOCK_ANALYZER=true npx ts-node test-fix-suggestions-demo.ts
 
 # Test performance  
-USE_DEEPWIKI_MOCK=false npx ts-node test-large-pr-security.ts
+USE_MOCK_ANALYZER=false npx ts-node test-large-pr-security.ts
 ```
 
 ---

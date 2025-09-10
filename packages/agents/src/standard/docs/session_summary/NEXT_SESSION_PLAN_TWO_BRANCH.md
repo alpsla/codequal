@@ -86,7 +86,7 @@ npx ts-node test-infrastructure-connections.ts
 #### Phase 1: Small Repository Testing (1 hour)
 ```bash
 # Test with Ky HTTP client repository (known working)
-USE_DEEPWIKI_MOCK=false npx ts-node test-two-branch-ky-repo.ts
+USE_MOCK_ANALYZER=false npx ts-node test-two-branch-ky-repo.ts
 
 # Validate issue identification and comparison
 # Check new vs fixed vs unchanged categorization
@@ -161,7 +161,7 @@ npm run typecheck
 npx ts-node src/two-branch/tests/integration/complete-flow.test.ts
 
 # Phase 3: Real repository testing  
-USE_DEEPWIKI_MOCK=false npx ts-node test-two-branch-real-analysis.ts
+USE_MOCK_ANALYZER=false npx ts-node test-two-branch-real-analysis.ts
 
 # Phase 4: Performance validation
 npm run benchmark:two-branch-performance

@@ -46,7 +46,7 @@ async function clearAllDataAndPrepare() {
   console.log('📝 Instructions for Real Analysis:\n');
   console.log('1. Run a real CodeQual analysis:');
   console.log('   cd /Users/alpinro/Code\\ Prjects/codequal/packages/agents');
-  console.log('   USE_DEEPWIKI_MOCK=false npm run analyze -- --repo https://github.com/sindresorhus/ky --pr 700\n');
+  console.log('   USE_MOCK_ANALYZER=false npm run analyze -- --repo https://github.com/sindresorhus/ky --pr 700\n');
   
   console.log('2. The analysis will automatically track:');
   console.log('   • Execution time for each agent operation');

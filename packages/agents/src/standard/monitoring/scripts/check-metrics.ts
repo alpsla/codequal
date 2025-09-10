@@ -75,7 +75,7 @@ async function checkMetrics() {
     console.log('⚠️  No agent activity found in the database');
     console.log('\n🔧 To generate metrics:');
     console.log('   1. Run an analysis: npm run analyze -- --repo <url> --pr <number>');
-    console.log('   2. Ensure tracking is enabled (USE_DEEPWIKI_MOCK=false)');
+    console.log('   2. Ensure tracking is enabled (USE_MOCK_ANALYZER=false)');
     console.log('   3. Check that agents are initialized with tracking');
     return;
   }

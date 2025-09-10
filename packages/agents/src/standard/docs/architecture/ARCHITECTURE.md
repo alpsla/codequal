@@ -249,7 +249,7 @@ Quick setup:
 
 # Run DeepWiki tests
 cd packages/agents
-USE_DEEPWIKI_MOCK=false npm test src/standard/tests/integration/deepwiki/
+USE_MOCK_ANALYZER=false npm test src/standard/tests/integration/deepwiki/
 ```
 
 Run tests:

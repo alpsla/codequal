@@ -80,7 +80,7 @@ if (monthsOld <= 1) score += 35;  // Released within last month
 
 2. **Test Web Search Integration**:
    ```bash
-   USE_DEEPWIKI_MOCK=true npx ts-node test-model-research-flow.ts
+   USE_MOCK_ANALYZER=true npx ts-node test-model-research-flow.ts
    ```
 
 3. **Enable Quarterly Scheduler**:

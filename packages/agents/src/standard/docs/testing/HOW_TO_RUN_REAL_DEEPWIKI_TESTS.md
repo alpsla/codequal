@@ -65,7 +65,7 @@ npx ts-node test-v8-html-report.ts
 # Navigate and run the V8 validation test
 cd /Users/alpinro/Code\ Prjects/codequal/packages/agents && \
 npm run build && \
-USE_DEEPWIKI_MOCK=true npx ts-node test-v8-validation.ts
+USE_MOCK_ANALYZER=true npx ts-node test-v8-validation.ts
 ```
 
 ### Run Real PR Enhanced Tests
@@ -74,12 +74,12 @@ USE_DEEPWIKI_MOCK=true npx ts-node test-v8-validation.ts
 # Simple enhanced test
 cd /Users/alpinro/Code\ Prjects/codequal/packages/agents && \
 npm run build && \
-USE_DEEPWIKI_MOCK=true npx ts-node test-real-pr-v8-enhanced-simple.ts
+USE_MOCK_ANALYZER=true npx ts-node test-real-pr-v8-enhanced-simple.ts
 
 # Full enhanced test
 cd /Users/alpinro/Code\ Prjects/codequal/packages/agents && \
 npm run build && \
-USE_DEEPWIKI_MOCK=true npx ts-node test-real-pr-v8-enhanced.ts
+USE_MOCK_ANALYZER=true npx ts-node test-real-pr-v8-enhanced.ts
 ```
 
 ## 📊 Generated Report Locations
@@ -111,7 +111,6 @@ npm test src/standard/tests/regression/unified-regression-suite.test.ts
    `/Users/alpinro/Code Prjects/codequal/packages/agents/src/standard/comparison/report-generator-v8-final.ts`
 3. Check if DeepWiki is running:
    ```bash
-   kubectl get pods -n codequal-dev -l app=deepwiki
    ```
 4. Verify port forwarding is active:
    ```bash
@@ -127,7 +126,7 @@ npm test src/standard/tests/regression/unified-regression-suite.test.ts
 
 ## 📝 Important Notes
 
-- **Always use `USE_DEEPWIKI_MOCK=true`** for testing unless specifically testing DeepWiki integration
+- **Always use `USE_MOCK_ANALYZER=true`** for testing unless specifically testing DeepWiki integration
 - DeepWiki analyzes entire repositories, NOT PR diffs (critical limitation discovered)
 - V7 generators are deprecated - only use V8
 - Check `packages/agents/src/standard/docs/session_summary/NEXT_SESSION_PLAN.md` for current issues
@@ -141,17 +140,14 @@ npm test src/standard/tests/regression/unified-regression-suite.test.ts
 cd /Users/alpinro/Code\ Prjects/codequal
 ./scripts/test-environment-setup.sh 2>/dev/null || echo "Setup script not found - manual setup required"
 
-# 2. Check DeepWiki pod status
-kubectl get pods -n codequal-dev -l app=deepwiki
 
 # 3. Start port forwarding if needed
-kubectl port-forward -n codequal-dev deployment/deepwiki 8001:8001 &
 
 # 4. Navigate to agents directory
 cd packages/agents
 
 # 5. Run a quick test with mock data
-USE_DEEPWIKI_MOCK=true npx ts-node test-v8-validation.ts
+USE_MOCK_ANALYZER=true npx ts-node test-v8-validation.ts
 ```
 
 ### Subsequent Runs (Same Session):
@@ -159,24 +155,21 @@ USE_DEEPWIKI_MOCK=true npx ts-node test-v8-validation.ts
 ```bash
 # Just run the tests directly - no need to setup again
 cd /Users/alpinro/Code\ Prjects/codequal/packages/agents
-USE_DEEPWIKI_MOCK=true npx ts-node test-v8-validation.ts
+USE_MOCK_ANALYZER=true npx ts-node test-v8-validation.ts
 ```
 
 ### If Tests Fail Unexpectedly:
 
 ```bash
-# Check DeepWiki pod
-kubectl get pods -n codequal-dev -l app=deepwiki
 
 # Check port forwarding
 lsof -i :8001
 
 # Restart port forwarding if needed
 pkill -f "port-forward.*8001"
-kubectl port-forward -n codequal-dev deployment/deepwiki 8001:8001 &
 
 # Try test again with mock mode
-USE_DEEPWIKI_MOCK=true npx ts-node test-v8-validation.ts
+USE_MOCK_ANALYZER=true npx ts-node test-v8-validation.ts
 ```
 
 ---

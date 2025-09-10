@@ -86,7 +86,7 @@ The CodeQual analysis system has severe regressions that make reports unusable. 
 
 ```bash
 # With real DeepWiki
-USE_DEEPWIKI_MOCK=false npx ts-node src/standard/tests/regression/manual-pr-validator.ts https://github.com/sindresorhus/ky/pull/700
+USE_MOCK_ANALYZER=false npx ts-node src/standard/tests/regression/manual-pr-validator.ts https://github.com/sindresorhus/ky/pull/700
 
 # Check for:
 # - File paths not "unknown"

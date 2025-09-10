@@ -9,11 +9,8 @@ Fix the orchestrator/comparison agent to preserve parsed issues in final reports
 
 ### 1. Environment Setup (CRITICAL)
 ```bash
-# Check DeepWiki pod status
-kubectl get pods -n codequal-dev -l app=deepwiki
 
 # Start port forwarding (REQUIRED)
-kubectl port-forward -n codequal-dev deployment/deepwiki 8001:8001 &
 
 # Verify Redis
 redis-cli ping
@@ -25,7 +22,7 @@ cd /Users/alpinro/Code\ Prjects/codequal/packages/agents
 ### 2. Immediate Test
 ```bash
 # Test with known working case (parser extracts 5 issues)
-USE_AI_PARSER=false USE_DEEPWIKI_MOCK=false npx ts-node src/standard/tests/regression/manual-pr-validator.ts https://github.com/sindresorhus/ky/pull/700
+USE_AI_PARSER=false USE_MOCK_ANALYZER=false npx ts-node src/standard/tests/regression/manual-pr-validator.ts https://github.com/sindresorhus/ky/pull/700
 
 # Check outputs (should show 0 issues in reports despite parser finding 5)
 open test-outputs/manual-validation/sindresorhus-ky-700-*.html
@@ -92,10 +89,10 @@ Look for patterns like:
 ### Alternative Test Cases
 ```bash
 # SWR repository (different format)
-USE_AI_PARSER=false USE_DEEPWIKI_MOCK=false npx ts-node src/standard/tests/regression/manual-pr-validator.ts https://github.com/vercel/swr/pull/2950
+USE_AI_PARSER=false USE_MOCK_ANALYZER=false npx ts-node src/standard/tests/regression/manual-pr-validator.ts https://github.com/vercel/swr/pull/2950
 
 # Next.js repository
-USE_AI_PARSER=false USE_DEEPWIKI_MOCK=false npx ts-node src/standard/tests/regression/manual-pr-validator.ts https://github.com/vercel/next.js/pull/45678
+USE_AI_PARSER=false USE_MOCK_ANALYZER=false npx ts-node src/standard/tests/regression/manual-pr-validator.ts https://github.com/vercel/next.js/pull/45678
 ```
 
 ## 🔧 Previous Session Achievements

@@ -5,7 +5,7 @@
  * 
  * Specialized environment setup specialist for the CodeQual project
  * Mission: Prepare development environment and provide complete session context in under 2 minutes
- * Updated: 2025-08-28 - Migrated from DeepWiki to MCP tools infrastructure
+ * Updated: 2025-09-10 - Removed deprecated DeepWiki references
  */
 
 import * as fs from 'fs';
@@ -537,7 +537,7 @@ class CodeQualSessionStarter {
 
     // Add standard run command if all services are up
     if (!hasIssues && process.env.GITHUB_TOKEN) {
-      commands.push('USE_DEEPWIKI_MOCK=true npx ts-node src/two-branch/test-simple-pr.ts  # Run PR analysis with MCP tools');
+      commands.push('npx ts-node src/two-branch/test-simple-pr.ts  # Run PR analysis with MCP tools');
     }
 
     return commands;

@@ -4,7 +4,6 @@
 
 1. **Start DeepWiki port forwarding:**
 ```bash
-kubectl port-forward -n codequal-dev deployment/deepwiki 8001:8001
 ```
 
 2. **Verify environment variables in .env:**

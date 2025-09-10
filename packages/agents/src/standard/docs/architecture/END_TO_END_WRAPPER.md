@@ -583,8 +583,6 @@ export class MonitoringIntegration {
 **Error:** `DeepWiki analysis timed out`
 
 **Solutions:**
-- Ensure DeepWiki is running: `kubectl get pods -n codequal-dev`
-- Check port forwarding: `kubectl port-forward -n codequal-dev deployment/deepwiki 8001:8001`
 - Increase timeout in configuration
 
 #### 3. Invalid PR URL

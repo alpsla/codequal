@@ -121,10 +121,9 @@ try {
 
 ```bash
 # 1. Start DeepWiki port forwarding
-kubectl port-forward -n codequal-dev deployment/deepwiki 8001:8001 &
 
 # 2. Set environment variables
-export USE_DEEPWIKI_MOCK=false
+export USE_MOCK_ANALYZER=false
 export DEEPWIKI_API_URL=http://localhost:8001
 export DEEPWIKI_API_KEY=dw-key-e48329b6c05b4a36a18d65af21ac3c2f
 export OPENROUTER_API_KEY=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

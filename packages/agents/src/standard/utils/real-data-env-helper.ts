@@ -78,7 +78,7 @@ export class RealDataEnvironment {
     this.backupEnvironment();
     
     // Set real data env vars
-    process.env.USE_DEEPWIKI_MOCK = 'false';
+    process.env.USE_MOCK_ANALYZER = 'false';
     process.env.DEEPWIKI_API_URL = this.config.deepwiki.apiUrl;
     process.env.DEEPWIKI_API_KEY = this.config.deepwiki.apiKey;
     
@@ -105,7 +105,7 @@ export class RealDataEnvironment {
    */
   private backupEnvironment(): void {
     const varsToBackup = [
-      'USE_DEEPWIKI_MOCK',
+      'USE_MOCK_ANALYZER',
       'DEEPWIKI_API_URL',
       'DEEPWIKI_API_KEY',
       'REDIS_URL',
@@ -157,16 +157,13 @@ export class RealDataEnvironment {
     // Check Kubernetes/DeepWiki
     try {
       const kubectlOutput = execSync(
-        'kubectl get pods -n codequal-dev -l app=deepwiki --no-headers 2>/dev/null',
         { encoding: 'utf-8' }
       );
       
       if (kubectlOutput && kubectlOutput.includes('Running')) {
         status.kubernetes = true;
         status.deepwiki = true;
-        console.log('✅ DeepWiki pod is running');
       } else {
-        console.warn('⚠️ DeepWiki pod not running - using port forward instead');
         this.setupPortForward();
       }
     } catch (error) {
@@ -192,7 +189,6 @@ export class RealDataEnvironment {
    */
   private setupPortForward(): void {
     try {
-      console.log('Setting up port forward to DeepWiki pod...');
       
       // Kill any existing port forwards
       try {
@@ -203,7 +199,6 @@ export class RealDataEnvironment {
       
       // Start new port forward in background
       execSync(
-        'kubectl port-forward -n codequal-dev deployment/deepwiki 8001:8000 > /dev/null 2>&1 &',
         { stdio: 'ignore' }
       );
       

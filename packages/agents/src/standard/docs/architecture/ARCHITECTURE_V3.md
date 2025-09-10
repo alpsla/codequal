@@ -159,10 +159,10 @@ npm run analyze -- --repo https://github.com/owner/repo --pr 123
 ### 3. **Testing**
 ```typescript
 // Always use mock mode for tests
-USE_DEEPWIKI_MOCK=true npx ts-node test-v8-final.ts
+USE_MOCK_ANALYZER=true npx ts-node test-v8-final.ts
 
 // Manual validation
-USE_DEEPWIKI_MOCK=true npx ts-node src/standard/tests/regression/manual-pr-validator.ts <PR_URL>
+USE_MOCK_ANALYZER=true npx ts-node src/standard/tests/regression/manual-pr-validator.ts <PR_URL>
 ```
 
 ## Environment Configuration
@@ -196,17 +196,16 @@ npm test
 ### Integration Tests
 ```bash
 # With mock DeepWiki
-USE_DEEPWIKI_MOCK=true npm test src/standard/tests/integration/
+USE_MOCK_ANALYZER=true npm test src/standard/tests/integration/
 
 # With real DeepWiki (requires port forward)
-kubectl port-forward -n codequal-dev deployment/deepwiki 8001:8001
-USE_DEEPWIKI_MOCK=false npm test src/standard/tests/integration/
+USE_MOCK_ANALYZER=false npm test src/standard/tests/integration/
 ```
 
 ### Regression Tests
 ```bash
 # Always use mock for regression tests
-USE_DEEPWIKI_MOCK=true npm test src/standard/tests/regression/
+USE_MOCK_ANALYZER=true npm test src/standard/tests/regression/
 ```
 
 ## Known Issues and Solutions
@@ -409,7 +408,7 @@ npx ts-node test-fix-generation-languages.ts
 ### Integration with Real Issues
 ```bash
 # Run complete analysis with fixes
-USE_DEEPWIKI_MOCK=true npx ts-node src/standard/tests/regression/manual-pr-validator.ts https://github.com/user/repo/pull/123
+USE_MOCK_ANALYZER=true npx ts-node src/standard/tests/regression/manual-pr-validator.ts https://github.com/user/repo/pull/123
 ```
 
 ## Performance Impact
