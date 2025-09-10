@@ -48,7 +48,10 @@ export class SmartFileSelector {
       '**/ffi*.rs',
       '**/network*.rs',
       '**/api*.rs',
-      '**/handler*.rs'
+      '**/handler*.rs',
+      '**/database*.rs',
+      '**/db*.rs',
+      '**/cache*.rs'
     ],
     java: [
       '**/Application.java',
@@ -60,7 +63,17 @@ export class SmartFileSelector {
       '**/Controller*.java',
       '**/Service*.java',
       '**/Repository*.java',
-      '**/Config*.java'
+      '**/Config*.java',
+      '**/Entity*.java',
+      '**/Model*.java',
+      '**/Dto*.java',
+      '**/Mapper*.java',
+      '**/Filter*.java',
+      '**/Interceptor*.java',
+      '**/Validator*.java',
+      '**/Exception*.java',
+      '**/Handler*.java',
+      '**/Manager*.java'
     ],
     javascript: [
       'index.js',
@@ -146,14 +159,26 @@ export class SmartFileSelector {
       console.log('   🧪 Including test coverage...');
       result.testFiles = await this.getTestFiles(config);
 
-      // Deduplicate and limit
-      const allFiles = this.deduplicateFiles([
+      // Deduplicate
+      let allFiles = this.deduplicateFiles([
         ...result.prChangedFiles,
         ...result.criticalFiles,
         ...result.entryPoints,
         ...result.configFiles,
         ...result.testFiles
       ]);
+
+      // If we don't have enough files, try to backfill with more relevant files
+      if (allFiles.length < maxFiles) {
+        console.log(`   🔄 Backfilling to reach target (current: ${allFiles.length}, target: ${maxFiles})...`);
+        const additionalFiles = await this.backfillFiles(config, allFiles, maxFiles - allFiles.length);
+        
+        // Add the additional files to the critical category for tracking
+        result.criticalFiles.push(...additionalFiles);
+        
+        // Re-deduplicate after adding backfill
+        allFiles = this.deduplicateFiles([...allFiles, ...additionalFiles]);
+      }
 
       // Apply intelligent limiting
       const selectedFiles = this.applyIntelligentLimit(allFiles, maxFiles, result);
@@ -203,8 +228,9 @@ export class SmartFileSelector {
 
     for (const pattern of patterns) {
       try {
+        // Increased limit from 50 to 100 per pattern for better coverage
         const { stdout } = await exec(
-          `cd ${config.repoPath} && find . -path "${pattern}" -type f | head -20 | sed 's|^./||'`
+          `cd ${config.repoPath} && find . -path "${pattern}" -type f | head -100 | sed 's|^./||'`
         );
         const files = stdout.trim().split('\n').filter(f => f.length > 0);
         criticalFiles.push(...files);
@@ -232,7 +258,7 @@ export class SmartFileSelector {
     for (const pattern of patterns) {
       try {
         const { stdout } = await exec(
-          `cd ${config.repoPath} && find . -path "${pattern}" -type f | head -10 | sed 's|^./||'`
+          `cd ${config.repoPath} && find . -path "${pattern}" -type f | head -30 | sed 's|^./||'`
         );
         const files = stdout.trim().split('\n').filter(f => f.length > 0);
         entryFiles.push(...files);
@@ -286,9 +312,9 @@ export class SmartFileSelector {
     if (!pattern) return [];
 
     try {
-      // Get test files related to changed files
+      // Increased limit from 50 to 100 for better test coverage
       const { stdout } = await exec(
-        `cd ${config.repoPath} && find . -name "${pattern}" -type f | head -20 | sed 's|^./||'`
+        `cd ${config.repoPath} && find . -name "${pattern}" -type f | head -100 | sed 's|^./||'`
       );
       return stdout.trim().split('\n').filter(f => f.length > 0);
     } catch (error) {
@@ -305,44 +331,86 @@ export class SmartFileSelector {
     maxFiles: number, 
     categories: SelectedFiles
   ): string[] {
-    if (files.length <= maxFiles) {
-      return files;
-    }
-
     // Priority order: PR changes > Critical > Entry points > Config > Tests
     const prioritized: string[] = [];
     
-    // Always include PR changed files (up to 60% of limit)
-    const prLimit = Math.floor(maxFiles * 0.6);
-    prioritized.push(...categories.prChangedFiles.slice(0, prLimit));
+    // Always include ALL PR changed files (highest priority)
+    prioritized.push(...categories.prChangedFiles);
     
-    // Add critical files (up to 20% of limit)
-    const criticalLimit = Math.floor(maxFiles * 0.2);
-    const criticalToAdd = categories.criticalFiles
-      .filter(f => !prioritized.includes(f))
-      .slice(0, criticalLimit);
-    prioritized.push(...criticalToAdd);
+    // Calculate remaining budget
+    let remainingBudget = maxFiles - prioritized.length;
     
-    // Add entry points (up to 10% of limit)
-    const entryLimit = Math.floor(maxFiles * 0.1);
-    const entryToAdd = categories.entryPoints
-      .filter(f => !prioritized.includes(f))
-      .slice(0, entryLimit);
-    prioritized.push(...entryToAdd);
+    // If we have fewer files than the limit, be more aggressive with allocation
+    const totalAvailable = files.length;
+    const needsBackfill = totalAvailable < maxFiles;
     
-    // Add config files (up to 5% of limit)
-    const configToAdd = categories.configFiles
-      .filter(f => !prioritized.includes(f))
-      .slice(0, Math.floor(maxFiles * 0.05));
-    prioritized.push(...configToAdd);
-    
-    // Fill remaining with test files
-    const remaining = maxFiles - prioritized.length;
-    if (remaining > 0) {
+    if (needsBackfill) {
+      // We have fewer files than max, so take everything we found
+      // Distribute based on what we actually have
+      
+      // Add all critical files
+      const criticalToAdd = categories.criticalFiles
+        .filter(f => !prioritized.includes(f));
+      prioritized.push(...criticalToAdd);
+      
+      // Add all entry points
+      const entryToAdd = categories.entryPoints
+        .filter(f => !prioritized.includes(f));
+      prioritized.push(...entryToAdd);
+      
+      // Add all config files
+      const configToAdd = categories.configFiles
+        .filter(f => !prioritized.includes(f));
+      prioritized.push(...configToAdd);
+      
+      // Add all test files
+      const testsToAdd = categories.testFiles
+        .filter(f => !prioritized.includes(f));
+      prioritized.push(...testsToAdd);
+      
+    } else {
+      // We have more files than max, so apply intelligent limits
+      
+      // Add critical files (aim for 40% of remaining budget)
+      const criticalLimit = Math.floor(remainingBudget * 0.4);
+      const criticalToAdd = categories.criticalFiles
+        .filter(f => !prioritized.includes(f))
+        .slice(0, criticalLimit);
+      prioritized.push(...criticalToAdd);
+      remainingBudget = maxFiles - prioritized.length;
+      
+      // Add entry points (aim for 30% of remaining budget)
+      const entryLimit = Math.floor(remainingBudget * 0.3);
+      const entryToAdd = categories.entryPoints
+        .filter(f => !prioritized.includes(f))
+        .slice(0, entryLimit);
+      prioritized.push(...entryToAdd);
+      remainingBudget = maxFiles - prioritized.length;
+      
+      // Add test files (aim for 20% of remaining budget)
+      const testLimit = Math.floor(remainingBudget * 0.2);
       const testsToAdd = categories.testFiles
         .filter(f => !prioritized.includes(f))
-        .slice(0, remaining);
+        .slice(0, testLimit);
       prioritized.push(...testsToAdd);
+      remainingBudget = maxFiles - prioritized.length;
+      
+      // Add config files (remaining budget)
+      if (remainingBudget > 0) {
+        const configToAdd = categories.configFiles
+          .filter(f => !prioritized.includes(f))
+          .slice(0, remainingBudget);
+        prioritized.push(...configToAdd);
+      }
+      
+      // If we still have room, add more critical files
+      remainingBudget = maxFiles - prioritized.length;
+      if (remainingBudget > 0) {
+        const moreCritical = categories.criticalFiles
+          .filter(f => !prioritized.includes(f))
+          .slice(criticalToAdd.length, criticalToAdd.length + remainingBudget);
+        prioritized.push(...moreCritical);
+      }
     }
 
     return prioritized.slice(0, maxFiles);
@@ -368,6 +436,105 @@ export class SmartFileSelector {
     }
 
     return parts.join(', ');
+  }
+
+  private async backfillFiles(
+    config: FileSelectionConfig, 
+    existingFiles: string[], 
+    needed: number
+  ): Promise<string[]> {
+    const additionalFiles: string[] = [];
+    
+    try {
+      // Strategy 1: Get more source files based on importance patterns
+      const importancePatterns: Record<string, string[]> = {
+        java: [
+          '**/dao/*.java',
+          '**/util/*.java', 
+          '**/helper/*.java',
+          '**/factory/*.java',
+          '**/builder/*.java',
+          '**/adapter/*.java',
+          '**/decorator/*.java',
+          '**/strategy/*.java',
+          '**/observer/*.java',
+          '**/command/*.java'
+        ],
+        javascript: [
+          '**/utils/*.js',
+          '**/lib/*.js',
+          '**/helpers/*.js',
+          '**/services/*.js',
+          '**/controllers/*.js',
+          '**/models/*.js'
+        ],
+        typescript: [
+          '**/utils/*.ts',
+          '**/lib/*.ts', 
+          '**/helpers/*.ts',
+          '**/services/*.ts',
+          '**/controllers/*.ts',
+          '**/models/*.ts'
+        ],
+        python: [
+          '**/utils/*.py',
+          '**/lib/*.py',
+          '**/helpers/*.py',
+          '**/services/*.py',
+          '**/controllers/*.py',
+          '**/models/*.py'
+        ],
+        rust: [
+          '**/mod.rs',
+          '**/utils/*.rs',
+          '**/helpers/*.rs',
+          '**/traits/*.rs'
+        ],
+        go: [
+          '**/pkg/**/*.go',
+          '**/internal/**/*.go',
+          '**/utils/*.go',
+          '**/helpers/*.go'
+        ]
+      };
+
+      const patterns = importancePatterns[config.language] || [];
+      
+      for (const pattern of patterns) {
+        if (additionalFiles.length >= needed) break;
+        
+        try {
+          const limit = Math.min(50, needed - additionalFiles.length);
+          const { stdout } = await exec(
+            `cd ${config.repoPath} && find . -path "${pattern}" -type f | head -${limit} | sed 's|^./||'`
+          );
+          const files = stdout.trim().split('\n')
+            .filter(f => f.length > 0 && !existingFiles.includes(f) && !additionalFiles.includes(f));
+          additionalFiles.push(...files);
+        } catch (error) {
+          // Pattern didn't match, continue
+        }
+      }
+
+      // Strategy 2: If still need more, get recently modified files
+      if (additionalFiles.length < needed) {
+        const stillNeeded = needed - additionalFiles.length;
+        const { stdout } = await exec(
+          `cd ${config.repoPath} && find . -name "*.${this.getMainExtension(config.language)}" -type f -exec stat -f "%m %N" {} \\; | sort -rn | head -${stillNeeded + existingFiles.length + additionalFiles.length} | cut -d' ' -f2- | sed 's|^./||'`
+        );
+        
+        const recentFiles = stdout.trim().split('\n')
+          .filter(f => f.length > 0 && !existingFiles.includes(f) && !additionalFiles.includes(f))
+          .slice(0, stillNeeded);
+        
+        additionalFiles.push(...recentFiles);
+      }
+      
+    } catch (error) {
+      console.error('Error during backfill:', error);
+    }
+
+    return additionalFiles.slice(0, needed);
   }
 
   private async fallbackSelection(config: FileSelectionConfig): Promise<SelectedFiles> {

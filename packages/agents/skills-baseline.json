@@ -1,0 +1,29 @@
+{
+  "team": {
+    "security": 72,
+    "performance": 68,
+    "maintainability": 85,
+    "testing": 61,
+    "documentation": 74
+  },
+  "individuals": [
+    {
+      "developer": "dev1",
+      "security": 78,
+      "performance": 82,
+      "maintainability": 88
+    },
+    {
+      "developer": "dev2",
+      "security": 65,
+      "performance": 71,
+      "maintainability": 82
+    },
+    {
+      "developer": "dev3",
+      "security": 71,
+      "performance": 64,
+      "maintainability": 85
+    }
+  ]
+}

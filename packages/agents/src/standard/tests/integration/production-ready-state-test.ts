@@ -688,6 +688,40 @@ const SYSTEM_STATE: SystemState = {
       component: 'v8-report-personalization',
       discovered: '2025-09-06',
       status: 'open'
+    },
+    
+    // NEW BUGS (2025-09-10) - V9 Analyzer Implementation Issues
+    {
+      id: 'BUG-120',
+      severity: 'high' as const,
+      description: 'V9 analyzer not using ModelAwareBaseAgent.ts - Current implementation uses hardcoded/mocked models instead of ModelAwareBaseAgent with proper Supabase fallback logic',
+      component: 'v9-analyzer-system',
+      discovered: '2025-09-10',
+      status: 'open'
+    },
+    {
+      id: 'BUG-121',
+      severity: 'high' as const,
+      description: 'Missing core V9 report sections - Lost PR decision (approved/rejected), complete issues list with full metadata, missing issue details, code snippets, and fix recommendations',
+      component: 'v9-report-template',
+      discovered: '2025-09-10',
+      status: 'open'
+    },
+    {
+      id: 'BUG-122',
+      severity: 'high' as const,
+      description: 'Not using V9BaseAnalyzer properly - Should extend from V9BaseAnalyzer class, use proper issue structure from v9-types.ts, missing integration with V9IssueComparator, V9BusinessImpactCalculator',
+      component: 'v9-architecture-integration',
+      discovered: '2025-09-10',
+      status: 'open'
+    },
+    {
+      id: 'BUG-123',
+      severity: 'medium' as const,
+      description: 'Fallback logic incorrect - Falls back to hardcoded defaults instead of using fallback_model field from Supabase config, missing proper ModelConfigResolver integration',
+      component: 'model-configuration-system',
+      discovered: '2025-09-10',
+      status: 'open'
     }
   ],
   
