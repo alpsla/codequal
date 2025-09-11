@@ -9,6 +9,9 @@ export * as logging from './utils/logger';
 export { createLogger } from './utils/logger';
 export type { Logger } from './utils/logger';
 
+// Utils - export for backward compatibility
+export * from './utils';
+
 // Re-export types directly from their respective files
 export type { 
   Agent, 
@@ -55,6 +58,8 @@ export type {
 
 // Export model version constants
 export * from './config/models/model-versions';
+// Export agent registry types
+export { AgentProvider, AgentRole } from './config/agent-registry';
 
 // Export model selection services
 export * from './services/model-selection/RepositoryModelSelectionService';

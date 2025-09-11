@@ -1,5 +1,5 @@
 import { Agent, AnalysisResult } from '../agent';
-import { createLogger, Logger, LoggableData } from '@codequal/core/utils';
+import { createLogger, Logger, LoggableData } from '@codequal/core';
 import { extractTokenUsage, TokenUsage } from '../services/token-usage-extractor';
 
 /**

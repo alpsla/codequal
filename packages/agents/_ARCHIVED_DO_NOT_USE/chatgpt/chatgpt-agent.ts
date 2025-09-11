@@ -1,8 +1,7 @@
 import { BaseAgent } from '../base/base-agent';
 import { AnalysisResult, Insight, Suggestion, EducationalContent } from '../agent';
 import { loadPromptTemplate } from '../prompts/prompt-loader';
-import { DEFAULT_MODELS_BY_PROVIDER } from '@codequal/core/config/models/model-versions';
-import { createLogger, LoggableData } from '@codequal/core/utils';
+import { DEFAULT_MODELS_BY_PROVIDER, createLogger, LoggableData } from '@codequal/core';
 import OpenAI from 'openai';
 
 /**

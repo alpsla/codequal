@@ -284,7 +284,7 @@ export class OptimizedRepoManager {
         throw new Error(`GitHub API error: ${response.statusText}`);
       }
 
-      const files = await response.json();
+      const files = await response.json() as any[];
       return files.map((f: any) => f.filename);
     } catch (error) {
       logger.error(`Failed to fetch PR files from API:`, error);

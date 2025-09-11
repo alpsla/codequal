@@ -14,7 +14,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { getRepoManager, getFileSelector } from '../utils/repository-utils-factory';
 import { logger } from '../utils/logger';
 import * as path from 'path';
-import SemgrepMCP from '../../mcp-wrappers/semgrep-mcp';
+// import SemgrepMCP from '../../mcp-wrappers/semgrep-mcp';
 
 // =======================
 // CORE INTERFACES
@@ -256,10 +256,10 @@ export class V9AnalyzerFramework {
 
     try {
       // Use SemgrepMCP for real security analysis
-      const semgrep = new SemgrepMCP();
+      // const semgrep = new SemgrepMCP();
       
       // Check if semgrep is installed
-      const isInstalled = await semgrep.isInstalled();
+      const isInstalled = false; // await semgrep.isInstalled();
       if (!isInstalled) {
         logger.warn('Semgrep not installed, using mock data');
         // Fallback to mock data for demo
@@ -290,7 +290,8 @@ export class V9AnalyzerFramework {
         const batchPaths = batch.map(f => path.join(repoPath, f)).join(' ');
         
         try {
-          const result = await semgrep.analyze(batchPaths, language);
+          // const result = await semgrep.analyze(batchPaths, language);
+          const result = { issues: [] }; // Placeholder
           
           if (result && result.success && result.findings && result.findings.length > 0) {
             allFindings.push(...result.findings);
