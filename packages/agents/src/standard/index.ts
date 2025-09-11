@@ -63,3 +63,8 @@ export type {
 } from './services/interfaces/logger.interface';
 
 export * from './comparison/interfaces/comparison-agent.interface';
+
+// DeepWiki API interface (stub for backward compatibility)
+export interface IDeepWikiApi {
+  analyze(repoUrl: string, options?: any): Promise<any>;
+}

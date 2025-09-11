@@ -1,6 +1,5 @@
 import express from 'express';
 import { Request, Response } from 'express';
-import { WebhookHandlerService, GitHubWebhookPayload, GitLabWebhookPayload } from '@codequal/core/services/deepwiki-tools';
 import { VectorStorageService } from '@codequal/database';
 import { createLogger } from '@codequal/core/utils';
 import crypto from 'crypto';
@@ -9,26 +8,12 @@ const router = express.Router();
 const logger = createLogger('WebhookRoutes');
 
 // Initialize webhook handler (this would typically be dependency injected)
-let webhookHandler: WebhookHandlerService;
+// let webhookHandler: WebhookHandlerService; // DeepWiki functionality removed
 
 // Initialize webhook handler with required dependencies
 const initializeWebhookHandler = () => {
-  if (!webhookHandler) {
-    const vectorStorageService = new VectorStorageService();
-    const embeddingService = null; // Mock embedding service for webhooks
-    
-    webhookHandler = new WebhookHandlerService(
-      vectorStorageService,
-      embeddingService,
-      logger,
-      {
-        namespace: process.env.KUBERNETES_NAMESPACE || 'deepwiki',
-        podName: process.env.DEEPWIKI_POD_NAME || 'deepwiki-tools',
-        containerName: process.env.DEEPWIKI_CONTAINER_NAME || 'deepwiki-tools'
-      }
-    );
-  }
-  return webhookHandler;
+  // DeepWiki webhook handler functionality removed
+  return null;
 };
 
 /**
@@ -50,12 +35,12 @@ router.post('/github', express.raw({ type: 'application/json' }), async (req: Re
     // Validate webhook signature if secret is configured
     if (githubSecret && signature) {
       const handler = initializeWebhookHandler();
-      const isValid = handler.validateWebhookSignature(
-        req.body.toString(),
-        signature,
-        githubSecret,
-        'github'
-      );
+      if (!handler) {
+        logger.warn('DeepWiki webhook functionality removed');
+        return res.status(503).json({ error: 'DeepWiki functionality removed' });
+      }
+      // Signature validation removed with DeepWiki
+      const isValid = true;
       
       if (!isValid) {
         logger.warn('Invalid GitHub webhook signature');
@@ -64,7 +49,7 @@ router.post('/github', express.raw({ type: 'application/json' }), async (req: Re
     }
 
     // Parse payload
-    let payload: GitHubWebhookPayload;
+    let payload: any; // GitHubWebhookPayload type removed with DeepWiki
     try {
       payload = JSON.parse(req.body.toString());
     } catch (parseError) {
@@ -75,8 +60,8 @@ router.post('/github', express.raw({ type: 'application/json' }), async (req: Re
     }
 
     // Process webhook
-    const handler = initializeWebhookHandler();
-    const result = await handler.handleGitHubWebhook(eventType, payload);
+    // DeepWiki webhook handling removed
+    const result = { success: false, message: 'DeepWiki functionality removed', jobId: null, toolResults: null, error: 'DeepWiki removed' };
 
     if (result.success) {
       logger.info('GitHub webhook processed successfully', {
@@ -134,7 +119,8 @@ router.post('/gitlab', express.json(), async (req: Request, res: Response) => {
     // Validate webhook token if secret is configured
     if (gitlabSecret && token) {
       const handler = initializeWebhookHandler();
-      const isValid = handler.validateGitLabWebhookToken(token, gitlabSecret);
+      // GitLab validation removed with DeepWiki
+      const isValid = true;
       
       if (!isValid) {
         logger.warn('Invalid GitLab webhook token');
@@ -143,15 +129,15 @@ router.post('/gitlab', express.json(), async (req: Request, res: Response) => {
     }
 
     // Validate payload structure
-    const payload: GitLabWebhookPayload = req.body;
+    const payload: any = req.body; // GitLabWebhookPayload type removed with DeepWiki
     if (!payload.object_kind || !payload.project) {
       logger.error('Invalid GitLab webhook payload structure');
       return res.status(400).json({ error: 'Invalid payload structure' });
     }
 
     // Process webhook
-    const handler = initializeWebhookHandler();
-    const result = await handler.handleGitLabWebhook(payload);
+    // DeepWiki webhook handling removed
+    const result = { success: false, message: 'DeepWiki functionality removed', jobId: null, toolResults: null, error: 'DeepWiki removed' };
 
     if (result.success) {
       logger.info('GitLab webhook processed successfully', {
@@ -210,11 +196,12 @@ router.post('/manual', express.json(), async (req: Request, res: Response) => {
 
     // Process manual trigger
     const handler = initializeWebhookHandler();
-    const result = await handler.handleManualTrigger(repositoryUrl, {
-      branch,
-      enabledTools,
-      triggeredBy
-    });
+    if (!handler) {
+      return res.status(503).json({ error: 'DeepWiki functionality removed' });
+    }
+    // Manual trigger removed with DeepWiki
+    const result = { success: false, message: 'DeepWiki functionality removed', jobId: null, toolResults: null, error: 'DeepWiki removed' };
+    // await handler.handleManualTrigger(repositoryUrl, { branch, enabledTools, triggeredBy });
 
     if (result.success) {
       logger.info('Manual trigger processed successfully', {
@@ -257,7 +244,11 @@ router.post('/manual', express.json(), async (req: Request, res: Response) => {
 router.get('/status', async (req: Request, res: Response) => {
   try {
     const handler = initializeWebhookHandler();
-    const status = await handler.getWebhookStatus();
+    if (!handler) {
+      return res.status(503).json({ error: 'DeepWiki functionality removed' });
+    }
+    // Status check removed with DeepWiki
+    const status = { webhooks: [], totalProcessed: 0, totalErrors: 0 };
 
     return res.status(200).json({
       ...status,

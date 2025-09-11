@@ -5,7 +5,6 @@
  */
 
 import { createLogger } from '@codequal/core/utils';
-import { ToolResultRetrievalService } from '@codequal/core/services/deepwiki-tools';
 import { AuthenticatedUser } from '../middleware/auth-middleware';
 import { Finding, Recommendation, PRContext, CompiledFindings, DeepWikiSummary } from './result-orchestrator';
 
@@ -157,7 +156,7 @@ export class EducationalToolOrchestrator {
 
   constructor(
     private authenticatedUser: AuthenticatedUser,
-    private toolResultRetrievalService: ToolResultRetrievalService
+    private toolResultRetrievalService: any // ToolResultRetrievalService removed with DeepWiki
   ) {}
 
   /**

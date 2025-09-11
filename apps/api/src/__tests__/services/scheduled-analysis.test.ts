@@ -1,11 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { RepositorySchedulerService } from '@codequal/core/services/scheduling';
-import { WebhookHandlerService } from '@codequal/core/services/deepwiki-tools';
 import { createLogger } from '@codequal/core/utils';
 
 // Mock dependencies
 jest.mock('@codequal/core/services/scheduling');
-jest.mock('@codequal/core/services/deepwiki-tools');
 jest.mock('@codequal/core/utils');
 
 describe('Scheduled Repository Analysis', () => {

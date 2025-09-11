@@ -34,12 +34,9 @@ import stripeWebhookRoutes from './routes/stripe-webhooks';
 import simpleScanRoutes from './routes/simple-scan-fixed';
 import usageStatsRoutes from './routes/usage-stats';
 import researcherRoutes from './routes/researcher';
-import deepwikiTempStorageRoutes from './routes/deepwiki-temp-storage';
 import metricsRoutes from './routes/metrics';
 import monitoringPublicRoutes from './routes/monitoring-public';
 import { errorHandler } from './middleware/error-handler';
-import { deepWikiAlertService } from './services/deepwiki-alerts';
-import { metricsCollector } from './services/deepwiki-metrics-collector';
 // import { i18nMiddleware, translateResponse, validateLanguage } from './middleware/i18n-middleware';
 import { requestLogger } from './middleware/request-logger';
 import { monitoringMiddleware, analysisMonitoringMiddleware } from './middleware/monitoring-middleware';
@@ -217,9 +214,6 @@ app.use('/stripe', stripeWebhookRoutes);
 // Note: This must come before the auth middleware to allow public access
 app.use('/api/monitoring/public', monitoringPublicRoutes);
 
-// DeepWiki temp storage monitoring routes (before global auth middleware)
-// Note: Individual route auth is handled in the router
-app.use('/api/deepwiki/temp', deepwikiTempStorageRoutes);
 
 // Internal API routes (requires user authentication)
 app.use('/api', authMiddleware);
@@ -267,13 +261,7 @@ async function startServer() {
       logger.info(`Auth endpoints available at http://localhost:${PORT}/auth`);
       logger.info(`Test OAuth at http://localhost:${PORT}/auth-test.html`);
       
-      // Start DeepWiki alert service
-      deepWikiAlertService.start();
-      logger.info('Started DeepWiki disk monitoring alerts');
       
-      // Start DeepWiki metrics collection (every 60 seconds)
-      metricsCollector.startCollection(60000);
-      logger.info('Started DeepWiki metrics collection to Supabase');
       
       // Start metrics auto-push if configured
       if (process.env.DO_METRICS_TOKEN) {

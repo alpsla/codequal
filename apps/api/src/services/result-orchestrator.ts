@@ -105,7 +105,6 @@ export interface ExistingIssue {
   created_at: string;
   updated_at: string;
 }
-import { deepWikiApiManager } from './deepwiki-api-manager';
 import { PRContextService } from './pr-context-service';
 import { ResultProcessor } from './result-processor';
 import { EducationalContentService } from './educational-content-service';
@@ -116,7 +115,6 @@ import { storeAnalysisInHistory } from '../routes/analysis';
 import { EnhancedMultiAgentExecutor, AnalysisStrategy, AgentPosition } from '@codequal/agents';
 import { ModelVersionSync, RepositorySizeCategory } from '@codequal/core';
 import { VectorContextService } from '@codequal/agents';
-import { ToolResultRetrievalService, AgentToolResults } from '@codequal/core/services/deepwiki-tools';
 import { VectorStorageService, EnhancedChunk } from '@codequal/database';
 import { createLogger, LoggableData } from '@codequal/core/utils';
 // @ts-expect-error - Module will be available after build
@@ -140,8 +138,6 @@ import { getTokenUsageAggregator, TokenUsageAggregator, AggregatedTokenUsage } f
 import { createClient } from '@supabase/supabase-js';
 import { getUnifiedProgressTracer } from './unified-progress-tracer';
 import { reportIdMappingService } from './report-id-mapping-service';
-import { metricsCollector } from './deepwiki-metrics-collector';
-import { GitDiffAnalyzerService } from '@codequal/core/services/deepwiki-tools';
 
 // State management for tracking analyses and completed reports
 interface OrchestratorState {

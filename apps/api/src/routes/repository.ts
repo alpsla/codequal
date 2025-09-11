@@ -1,6 +1,5 @@
 import { Router, Request, Response } from 'express';
 import { checkRepositoryAccess } from '../middleware/auth-middleware';
-import { deepWikiApiManager as deepWikiManager } from '../services/deepwiki-api-manager';
 import { enforceTrialLimits, incrementScanCount } from '../middleware/trial-enforcement';
 import { getSupabase } from '@codequal/database/supabase/client';
 
@@ -35,8 +34,8 @@ repositoryRoutes.get('/status', async (req: Request, res: Response) => {
     }
 
     // Check repository status
-    // deepWikiManager is now a singleton, no need to instantiate
-    const existsInVectorDB = await deepWikiManager.checkRepositoryExists(repositoryUrl);
+    // DeepWiki functionality removed
+    const existsInVectorDB = false;
 
     // Calculate next scheduled analysis (mock implementation)
     const nextScheduledAnalysis = new Date();
@@ -106,7 +105,8 @@ repositoryRoutes.post('/analyze', enforceTrialLimits, incrementScanCount, async 
 
     // Check if analysis already exists (unless forced)
     if (!force) {
-      const existsInVectorDB = await deepWikiManager.checkRepositoryExists(repositoryUrl);
+      // DeepWiki functionality removed
+      const existsInVectorDB = false;
       if (existsInVectorDB) {
         return res.status(409).json({ 
           error: 'Repository analysis already exists. Use force=true to re-analyze.',
@@ -117,7 +117,8 @@ repositoryRoutes.post('/analyze', enforceTrialLimits, incrementScanCount, async 
     }
 
     // Trigger analysis
-    const jobId = await deepWikiManager.triggerRepositoryAnalysis(repositoryUrl);
+    // DeepWiki functionality removed
+    const jobId = 'removed';
 
     res.json({
       message: 'Repository analysis triggered successfully',
@@ -149,7 +150,8 @@ repositoryRoutes.get('/jobs', async (req: Request, res: Response) => {
     }
     // deepWikiManager is now a singleton, no need to instantiate
     
-    const activeJobs = await deepWikiManager.getActiveJobs();
+    // DeepWiki functionality removed
+    const activeJobs: any[] = [];
 
     res.json({
       activeJobs: activeJobs.map((job: any) => ({
@@ -184,7 +186,8 @@ repositoryRoutes.get('/job/:jobId', async (req: Request, res: Response) => {
     }
     
     // deepWikiManager is now a singleton, no need to instantiate
-    const job = await deepWikiManager.getJobStatus(jobId);
+    // DeepWiki functionality removed
+    const job = null;
 
     if (!job) {
       return res.status(404).json({ 
@@ -235,7 +238,8 @@ repositoryRoutes.delete('/job/:jobId', async (req: Request, res: Response) => {
     }
     
     // deepWikiManager is now a singleton, no need to instantiate
-    const cancelled = await deepWikiManager.cancelJob(jobId);
+    // DeepWiki functionality removed
+    const cancelled = false;
 
     if (!cancelled) {
       return res.status(404).json({ 

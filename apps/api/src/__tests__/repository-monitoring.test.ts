@@ -1,8 +1,6 @@
 import request from 'supertest';
 import express from 'express';
 import monitoringRouter from '../routes/monitoring';
-import deepwikiMetricsRouter from '../routes/deepwiki-metrics';
-import deepwikiMetricsJsonRouter from '../routes/deepwiki-metrics-json';
 import monitoringPublicRouter from '../routes/monitoring-public';
 
 // Mock exec to avoid actual kubectl calls
@@ -37,8 +35,6 @@ describe('Repository Storage Monitoring Endpoints', () => {
     app = express();
     app.use(express.json());
     app.use('/api/monitoring', monitoringRouter);
-    app.use('/', deepwikiMetricsRouter);
-    app.use('/', deepwikiMetricsJsonRouter);
     app.use('/', monitoringPublicRouter);
   });
 

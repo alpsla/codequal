@@ -237,7 +237,6 @@ describe('Analysis Trigger Scenarios - Real World Cases', () => {
             };
           }
           return {
-            method: 'deepwiki-api',
             reason: 'GitHub main branch supported',
             deepWikiAvailable: true
           };
@@ -246,7 +245,6 @@ describe('Analysis Trigger Scenarios - Real World Cases', () => {
 
       expect(platformDetection.requiresLocalClone(gitlabUrl)).toBe(true);
       expect(platformDetection.getCloneStrategy(gitlabUrl).method).toBe('local-clone');
-      expect(platformDetection.getCloneStrategy('https://github.com/test/repo').method).toBe('deepwiki-api');
     });
   });
 

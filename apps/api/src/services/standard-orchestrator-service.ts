@@ -7,8 +7,6 @@
 
 // import { createProductionOrchestrator } from '@codequal/agents/standard/infrastructure/factory';
 import { ComparisonAnalysisRequest, ComparisonResult } from '@codequal/agents/standard/types/analysis-types';
-import { deepWikiApiManager } from './deepwiki-api-manager';
-import { registerDeepWikiWithStandard } from './register-deepwiki-standard';
 import { createLogger } from '@codequal/core/utils/logger';
 
 const logger = createLogger('standard-orchestrator-service');

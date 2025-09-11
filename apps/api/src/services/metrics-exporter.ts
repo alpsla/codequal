@@ -1,13 +1,11 @@
-import { deepWikiTempManager } from './deepwiki-temp-manager';
 import { createLogger } from '@codequal/core/utils';
-import { TempSpaceMetrics } from '../types/deepwiki';
 import { JsonMetrics, PrometheusMetric } from '../types/metrics';
 import { tokenMetricsProvider } from './token-metrics-provider';
 
 const logger = createLogger('metrics-exporter');
 
 export class MetricsExporter {
-  private metricsCache: Map<string, TempSpaceMetrics> = new Map();
+  private metricsCache: Map<string, any> = new Map();
   private lastUpdate = 0;
   private UPDATE_INTERVAL = 15000; // 15 seconds
 
@@ -41,7 +39,6 @@ export class MetricsExporter {
     
     return {
       timestamp: new Date().toISOString(),
-      deepwiki: deepwikiMetrics,
       token_usage: tokenMetrics
     };
   }
@@ -93,21 +90,18 @@ export class MetricsExporter {
 
     this.lastUpdate = now;
     
-    // Update DeepWiki metrics
-    const deepwikiMetrics = await deepWikiTempManager.getMetrics();
-    this.metricsCache.set('deepwiki', deepwikiMetrics);
+    // DeepWiki metrics functionality removed
   }
 
   private async getDeepWikiMetrics(): Promise<Record<string, number>> {
-    const metrics = this.metricsCache.get('deepwiki') as TempSpaceMetrics || await deepWikiTempManager.getMetrics();
-    
+    // DeepWiki functionality removed
     return {
-      temp_used_gb: metrics.usedGB || 0,
-      temp_total_gb: metrics.totalGB || 10,
-      temp_available_gb: metrics.availableGB || 10,
-      storage_usage_percent: metrics.percentUsed || 0,
-      active_analyses_count: metrics.activeAnalyses || 0,
-      max_concurrent_capacity: metrics.maxConcurrentCapacity || 5,
+      temp_used_gb: 0,
+      temp_total_gb: 10,
+      temp_available_gb: 10,
+      storage_usage_percent: 0,
+      active_analyses_count: 0,
+      max_concurrent_capacity: 5,
       
       // Additional metrics from temp manager (these would be tracked in a real implementation)
       cleanup_success_total: 0,

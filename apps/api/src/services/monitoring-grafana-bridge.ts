@@ -6,7 +6,6 @@
  */
 
 import { createLogger } from '@codequal/core/utils';
-import { deepWikiTempManager } from './deepwiki-temp-manager';
 import { PerformanceMonitor } from './monitoring-enhancements';
 import { getGlobalMonitoringService } from '../routes/monitoring';
 
@@ -116,7 +115,8 @@ export class MonitoringGrafanaBridge {
   async collectMetrics(): Promise<void> {
     try {
       // Collect DeepWiki storage metrics
-      const storageMetrics = await deepWikiTempManager.getMetrics();
+      // DeepWiki functionality removed
+      const storageMetrics = { usedGB: 0, totalGB: 0 };
       this.recordMetric('deepwiki_storage_used_gb', storageMetrics.usedGB, {
         source: 'deepwiki'
       });

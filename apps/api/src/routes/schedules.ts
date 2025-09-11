@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, no-console */
 import { Router, Request, Response } from 'express';
 import { RepositorySchedulerService } from '@codequal/core/services/scheduling';
-import { WebhookHandlerService } from '@codequal/core/services/deepwiki-tools';
 import { createLogger } from '@codequal/core/utils';
 import { authMiddleware } from '../middleware/auth-middleware';
 
@@ -169,19 +168,11 @@ scheduleRoutes.post('/repositories/:repoUrl/schedule/run', async (req: Request, 
     const mockEmbeddingService = {} as any;
     const mockLogger = createLogger('WebhookHandler');
     
-    const webhookHandler = new WebhookHandlerService(
-      mockVectorStorage,
-      mockEmbeddingService,
-      mockLogger
-    );
+    // DeepWiki webhook handler functionality removed
+    // const webhookHandler = new WebhookHandlerService(...);
     
-    const result = await webhookHandler.handleScheduledScan(
-      repositoryUrl,
-      {
-        enabledTools: schedule.enabledTools,
-        branch: 'main'
-      }
-    );
+    // DeepWiki scheduled scan functionality removed
+    const result = { success: false, message: 'DeepWiki functionality removed', jobId: null };
     
     res.json({
       status: 'triggered',
