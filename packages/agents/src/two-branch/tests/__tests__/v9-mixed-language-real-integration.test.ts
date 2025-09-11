@@ -28,7 +28,7 @@ describe('V9 Mixed Language Real Integration Tests', () => {
   let javaAnalyzer: V9JavaAnalyzer;
   let rustAnalyzer: V9RustAnalyzer;
   let repoManager: OptimizedRepoManager;
-  let testResults: Map<string, { java?: AnalysisResult; rust?: AnalysisResult; combined?: AnalysisResult }> = new Map();
+  const testResults: Map<string, { java?: AnalysisResult; rust?: AnalysisResult; combined?: AnalysisResult }> = new Map();
 
   // Skip tests if environment is not properly configured
   const environmentCheck = TestConfigUtils.checkEnvironment();
@@ -572,7 +572,7 @@ describe('V9 Mixed Language Real Integration Tests', () => {
   /**
    * Create mock Java analysis result
    */
-  function createMockJavaResult(issues: Issue[] = [], score: number = 80): AnalysisResult {
+  function createMockJavaResult(issues: Issue[] = [], score = 80): AnalysisResult {
     const blockingIssues = issues.filter(i => 
       (i.status === 'new' && ['critical', 'high'].includes(i.severity)) ||
       (i.status === 'existing' && ['critical', 'high'].includes(i.severity) && i.inModifiedFile)
@@ -621,7 +621,7 @@ describe('V9 Mixed Language Real Integration Tests', () => {
   /**
    * Create mock Rust analysis result
    */
-  function createMockRustResult(issues: Issue[] = [], score: number = 85): AnalysisResult {
+  function createMockRustResult(issues: Issue[] = [], score = 85): AnalysisResult {
     const blockingIssues = issues.filter(i => 
       (i.status === 'new' && ['critical', 'high'].includes(i.severity)) ||
       (i.status === 'existing' && ['critical', 'high'].includes(i.severity) && i.inModifiedFile)
@@ -676,7 +676,7 @@ describe('V9 Mixed Language Real Integration Tests', () => {
     status: 'new' | 'existing',
     description: string,
     category: 'Security' | 'Performance' | 'Quality' = 'Quality',
-    inModifiedFile: boolean = true
+    inModifiedFile = true
   ): Issue {
     return {
       id,

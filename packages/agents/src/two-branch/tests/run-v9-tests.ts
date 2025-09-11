@@ -59,7 +59,7 @@ interface PerformanceReport {
 class V9TestRunner {
   private config: TestConfig;
   private results: TestResults;
-  private startTime: number = 0;
+  private startTime = 0;
 
   constructor(config: TestConfig) {
     this.config = config;

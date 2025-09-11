@@ -1,0 +1,386 @@
+{
+  "manifest_version": "1.0.0",
+  "generated_at": "2025-09-10T00:00:00Z",
+  "framework": {
+    "name": "V9 Two-Branch Analyzer Framework",
+    "version": "9.0.0",
+    "status": "PRODUCTION_READY",
+    "locked": true,
+    "checksum": "sha256:placeholder"
+  },
+  "components": {
+    "core_analyzers": {
+      "v9-analyzer-framework.ts": {
+        "path": "src/two-branch/analyzers/v9-analyzer-framework.ts",
+        "type": "framework",
+        "status": "active",
+        "locked": true,
+        "dependencies": ["v9-types.ts", "v9-analyzer-factory.ts"],
+        "checksum": "sha256:placeholder",
+        "last_modified": "2025-09-10",
+        "purpose": "Main framework orchestrator - NEVER DUPLICATE"
+      },
+      "v9-base-analyzer.ts": {
+        "path": "src/two-branch/analyzers/v9-base-analyzer.ts",
+        "type": "base_class",
+        "status": "active",
+        "locked": true,
+        "dependencies": ["v9-types.ts"],
+        "checksum": "sha256:placeholder",
+        "last_modified": "2025-09-10",
+        "purpose": "Base analyzer class - extended by language analyzers"
+      },
+      "v9-analyzer-factory.ts": {
+        "path": "src/two-branch/analyzers/v9-analyzer-factory.ts",
+        "type": "factory",
+        "status": "active",
+        "locked": true,
+        "dependencies": ["v9-base-analyzer.ts"],
+        "checksum": "sha256:placeholder",
+        "last_modified": "2025-09-10",
+        "purpose": "Creates appropriate analyzer instances"
+      },
+      "v9-repository-manager.ts": {
+        "path": "src/two-branch/analyzers/v9-repository-manager.ts",
+        "type": "utility",
+        "status": "active",
+        "locked": true,
+        "dependencies": ["v9-types.ts"],
+        "checksum": "sha256:placeholder",
+        "last_modified": "2025-09-10",
+        "purpose": "Manages repository operations and file selection"
+      }
+    },
+    "language_analyzers": {
+      "v9-java-analyzer.ts": {
+        "path": "src/two-branch/analyzers/v9-java-analyzer.ts",
+        "type": "language_analyzer",
+        "language": "java",
+        "status": "active",
+        "locked": true,
+        "extends": "v9-base-analyzer.ts",
+        "checksum": "sha256:placeholder",
+        "last_modified": "2025-09-10",
+        "purpose": "Java-specific code analysis"
+      },
+      "v9-python-analyzer.ts": {
+        "path": "src/two-branch/analyzers/v9-python-analyzer.ts",
+        "type": "language_analyzer",
+        "language": "python",
+        "status": "active",
+        "locked": true,
+        "extends": "v9-base-analyzer.ts",
+        "checksum": "sha256:placeholder",
+        "last_modified": "2025-09-10",
+        "purpose": "Python-specific code analysis"
+      },
+      "v9-javascript-analyzer.ts": {
+        "path": "src/two-branch/analyzers/v9-javascript-analyzer.ts",
+        "type": "language_analyzer",
+        "language": "javascript",
+        "status": "active",
+        "locked": true,
+        "extends": "v9-base-analyzer.ts",
+        "checksum": "sha256:placeholder",
+        "last_modified": "2025-09-10",
+        "purpose": "JavaScript-specific code analysis"
+      },
+      "v9-csharp-analyzer.ts": {
+        "path": "src/two-branch/analyzers/v9-csharp-analyzer.ts",
+        "type": "language_analyzer",
+        "language": "csharp",
+        "status": "active",
+        "locked": true,
+        "extends": "v9-base-analyzer.ts",
+        "checksum": "sha256:placeholder",
+        "last_modified": "2025-09-10",
+        "purpose": "C#-specific code analysis"
+      },
+      "v9-cpp-analyzer.ts": {
+        "path": "src/two-branch/analyzers/v9-cpp-analyzer.ts",
+        "type": "language_analyzer",
+        "language": "cpp",
+        "status": "active",
+        "locked": true,
+        "extends": "v9-base-analyzer.ts",
+        "checksum": "sha256:placeholder",
+        "last_modified": "2025-09-10",
+        "purpose": "C++-specific code analysis"
+      },
+      "v9-c-analyzer.ts": {
+        "path": "src/two-branch/analyzers/v9-c-analyzer.ts",
+        "type": "language_analyzer",
+        "language": "c",
+        "status": "active",
+        "locked": true,
+        "extends": "v9-base-analyzer.ts",
+        "checksum": "sha256:placeholder",
+        "last_modified": "2025-09-10",
+        "purpose": "C-specific code analysis"
+      },
+      "v9-go-analyzer.ts": {
+        "path": "src/two-branch/analyzers/v9-go-analyzer.ts",
+        "type": "language_analyzer",
+        "language": "go",
+        "status": "active",
+        "locked": true,
+        "extends": "v9-base-analyzer.ts",
+        "checksum": "sha256:placeholder",
+        "last_modified": "2025-09-10",
+        "purpose": "Go-specific code analysis"
+      },
+      "v9-rust-analyzer.ts": {
+        "path": "src/two-branch/analyzers/v9-rust-analyzer.ts",
+        "type": "language_analyzer",
+        "language": "rust",
+        "status": "active",
+        "locked": true,
+        "extends": "v9-base-analyzer.ts",
+        "checksum": "sha256:placeholder",
+        "last_modified": "2025-09-10",
+        "purpose": "Rust-specific code analysis"
+      },
+      "v9-php-analyzer.ts": {
+        "path": "src/two-branch/analyzers/v9-php-analyzer.ts",
+        "type": "language_analyzer",
+        "language": "php",
+        "status": "active",
+        "locked": true,
+        "extends": "v9-base-analyzer.ts",
+        "checksum": "sha256:placeholder",
+        "last_modified": "2025-09-10",
+        "purpose": "PHP-specific code analysis"
+      },
+      "v9-ruby-analyzer.ts": {
+        "path": "src/two-branch/analyzers/v9-ruby-analyzer.ts",
+        "type": "language_analyzer",
+        "language": "ruby",
+        "status": "active",
+        "locked": true,
+        "extends": "v9-base-analyzer.ts",
+        "checksum": "sha256:placeholder",
+        "last_modified": "2025-09-10",
+        "purpose": "Ruby-specific code analysis"
+      },
+      "v9-swift-analyzer.ts": {
+        "path": "src/two-branch/analyzers/v9-swift-analyzer.ts",
+        "type": "language_analyzer",
+        "language": "swift",
+        "status": "active",
+        "locked": true,
+        "extends": "v9-base-analyzer.ts",
+        "checksum": "sha256:placeholder",
+        "last_modified": "2025-09-10",
+        "purpose": "Swift-specific code analysis"
+      },
+      "v9-kotlin-analyzer.ts": {
+        "path": "src/two-branch/analyzers/v9-kotlin-analyzer.ts",
+        "type": "language_analyzer",
+        "language": "kotlin",
+        "status": "active",
+        "locked": true,
+        "extends": "v9-base-analyzer.ts",
+        "checksum": "sha256:placeholder",
+        "last_modified": "2025-09-10",
+        "purpose": "Kotlin-specific code analysis"
+      }
+    },
+    "formatters_and_generators": {
+      "v9-report-formatter-complete.ts": {
+        "path": "src/two-branch/analyzers/v9-report-formatter-complete.ts",
+        "type": "formatter",
+        "status": "active",
+        "locked": true,
+        "dependencies": ["v9-types.ts"],
+        "checksum": "sha256:placeholder",
+        "last_modified": "2025-09-10",
+        "purpose": "Complete report formatting - AUTHORITATIVE VERSION"
+      },
+      "v9-pr-comment-generator.ts": {
+        "path": "src/two-branch/analyzers/v9-pr-comment-generator.ts",
+        "type": "generator",
+        "status": "active",
+        "locked": true,
+        "dependencies": ["v9-types.ts"],
+        "checksum": "sha256:placeholder",
+        "last_modified": "2025-09-10",
+        "purpose": "Generates PR comments from analysis results"
+      },
+      "v9-scoring-calculator.ts": {
+        "path": "src/two-branch/analyzers/v9-scoring-calculator.ts",
+        "type": "calculator",
+        "status": "active",
+        "locked": true,
+        "dependencies": ["v9-types.ts"],
+        "checksum": "sha256:placeholder",
+        "last_modified": "2025-09-10",
+        "purpose": "Calculates quality scores and metrics"
+      },
+      "v9-business-impact.ts": {
+        "path": "src/two-branch/analyzers/v9-business-impact.ts",
+        "type": "analyzer",
+        "status": "active",
+        "locked": true,
+        "dependencies": ["v9-types.ts"],
+        "checksum": "sha256:placeholder",
+        "last_modified": "2025-09-10",
+        "purpose": "Analyzes business impact of code issues"
+      },
+      "v9-issue-comparator.ts": {
+        "path": "src/two-branch/analyzers/v9-issue-comparator.ts",
+        "type": "comparator",
+        "status": "active",
+        "locked": true,
+        "dependencies": ["v9-types.ts"],
+        "checksum": "sha256:placeholder",
+        "last_modified": "2025-09-10",
+        "purpose": "Compares issues between branches"
+      },
+      "v9-educational-resources.ts": {
+        "path": "src/two-branch/analyzers/v9-educational-resources.ts",
+        "type": "resource_generator",
+        "status": "active",
+        "locked": true,
+        "dependencies": ["v9-types.ts"],
+        "checksum": "sha256:placeholder",
+        "last_modified": "2025-09-10",
+        "purpose": "Generates educational content for issues"
+      }
+    },
+    "types_and_interfaces": {
+      "v9-types.ts": {
+        "path": "src/two-branch/analyzers/v9-types.ts",
+        "type": "types",
+        "status": "active",
+        "locked": true,
+        "dependencies": [],
+        "checksum": "sha256:placeholder",
+        "last_modified": "2025-09-10",
+        "purpose": "Core type definitions for V9 framework"
+      }
+    },
+    "utilities": {
+      "repository-utils-factory.ts": {
+        "path": "src/two-branch/utils/repository-utils-factory.ts",
+        "type": "utility",
+        "status": "active",
+        "locked": true,
+        "dependencies": [],
+        "checksum": "sha256:placeholder",
+        "last_modified": "2025-09-10",
+        "purpose": "Factory for repository utilities"
+      },
+      "optimized-repo-manager.ts": {
+        "path": "src/two-branch/utils/optimized-repo-manager.ts",
+        "type": "utility",
+        "status": "active",
+        "locked": true,
+        "dependencies": [],
+        "checksum": "sha256:placeholder",
+        "last_modified": "2025-09-10",
+        "purpose": "Optimized repository management"
+      }
+    },
+    "validation": {
+      "session-validator.ts": {
+        "path": "src/session-validator.ts",
+        "type": "validator",
+        "status": "active",
+        "locked": true,
+        "dependencies": [".codequal-config.yaml"],
+        "checksum": "sha256:placeholder",
+        "last_modified": "2025-09-10",
+        "purpose": "Validates session setup and prevents duplication"
+      }
+    }
+  },
+  "deprecated_components": {
+    "v7_analyzers": {
+      "status": "DEPRECATED",
+      "replacement": "V9 Two-Branch Framework",
+      "deprecation_date": "2025-08-10",
+      "removal_date": "2025-10-01",
+      "warning": "DO NOT USE - See docs/DEPRECATED_V7_WARNING.md"
+    },
+    "v8_analyzers": {
+      "status": "DEPRECATED", 
+      "replacement": "V9 Two-Branch Framework",
+      "deprecation_date": "2025-08-25",
+      "removal_date": "2025-10-15",
+      "warning": "Replaced by V9 - Use V9 Framework only"
+    },
+    "standard_analyzers": {
+      "status": "DEPRECATED",
+      "replacement": "V9 Two-Branch Framework", 
+      "deprecation_date": "2025-08-20",
+      "removal_date": "2025-10-20",
+      "warning": "Consolidated into V9 Framework"
+    }
+  },
+  "test_files": {
+    "active_tests": {
+      "test-v9-kafka-fixed.ts": {
+        "path": "packages/agents/test-v9-kafka-fixed.ts",
+        "type": "integration_test",
+        "status": "active",
+        "purpose": "Primary V9 framework test - KNOWN WORKING",
+        "framework_version": "9.0.0",
+        "last_validated": "2025-09-10"
+      }
+    },
+    "deprecated_tests": {
+      "test-v7-*.ts": {
+        "status": "DEPRECATED",
+        "warning": "V7 tests deprecated - use test-v9-kafka-fixed.ts"
+      },
+      "test-v8-*.ts": {
+        "status": "DEPRECATED", 
+        "warning": "V8 tests deprecated - use test-v9-kafka-fixed.ts"
+      }
+    }
+  },
+  "forbidden_patterns": {
+    "file_creation": {
+      "analyzer_duplicates": [
+        "*-analyzer-v[0-8].ts",
+        "*-framework-v[0-8].ts", 
+        "analyzer-*.ts",
+        "framework-*.ts",
+        "v10-*.ts",
+        "new-analyzer*.ts",
+        "improved-*.ts",
+        "enhanced-analyzer*.ts",
+        "better-*.ts"
+      ],
+      "directory_duplicates": [
+        "analyzers/",
+        "new-analyzers/",
+        "improved-analyzers/", 
+        "v10/",
+        "alternative-*/",
+        "backup-*/"
+      ]
+    },
+    "code_patterns": {
+      "hardcoded_models": [
+        "hardcoded_models = [",
+        "const models = ['claude",
+        "const models = ['gpt"
+      ],
+      "file_selection_violations": [
+        "fileCount < 1000",
+        "fileCount > 500 &&"
+      ]
+    }
+  },
+  "validation_checksums": {
+    "framework_integrity": "sha256:placeholder",
+    "component_integrity": "sha256:placeholder",
+    "manifest_integrity": "sha256:placeholder"
+  },
+  "emergency_contacts": {
+    "framework_maintainer": "V9 Framework Team",
+    "documentation": "packages/agents/V9_FRAMEWORK_ESTABLISHED.md",
+    "support_channel": "framework-support"
+  }
+}

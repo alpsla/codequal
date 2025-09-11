@@ -57,8 +57,8 @@ export class OptimizedRepoManager {
   private metrics: Map<string, CloneMetrics>;
 
   constructor(
-    cacheDir: string = '/tmp/codequal/cache/repos',
-    workspaceDir: string = '/tmp/codequal/workspaces',
+    cacheDir = '/tmp/codequal/cache/repos',
+    workspaceDir = '/tmp/codequal/workspaces',
     redisUrl?: string
   ) {
     this.cacheDir = cacheDir;

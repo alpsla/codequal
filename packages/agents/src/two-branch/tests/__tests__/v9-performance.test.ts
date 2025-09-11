@@ -406,8 +406,8 @@ describe('V9 Performance and Load Tests', () => {
 // Helper function to create test issues
 function createTestIssue(
   id: number,
-  prefix: string = 'test',
-  suffix: string = ''
+  prefix = 'test',
+  suffix = ''
 ): Issue {
   return {
     id: `${prefix}-${id}-${suffix}`,

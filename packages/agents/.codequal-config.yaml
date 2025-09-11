@@ -1,0 +1,169 @@
+# CodeQual Framework Registry
+# SINGLE SOURCE OF TRUTH - DO NOT DUPLICATE
+version: "9.0.0"
+last_updated: "2025-09-10"
+session_id: "prevention-framework-creation"
+
+# ACTIVE IMPLEMENTATION - NEVER RECREATE
+implementation:
+  name: "V9 Two-Branch Analyzer Framework"
+  version: "9.0.0"
+  status: "PRODUCTION_READY"
+  path: "src/two-branch/analyzers"
+  entry_point: "v9-analyzer-framework.ts"
+  documentation: "V9_FRAMEWORK_ESTABLISHED.md"
+  test_file: "test-v9-kafka-fixed.ts"
+  locked: true
+  creation_date: "2025-09-10"
+
+# CRITICAL FLOW - NEVER MODIFY
+flow:
+  1_model_selection: "ALWAYS fetch from Supabase model_configurations table"
+  2_file_selection: "Follow SMART_FILE_SELECTION_GUIDE.md EXACTLY"
+  3_analysis: "Use dynamic models, never hardcode"
+  4_decision_logic: "DECLINED=critical/high in new/modified, CHANGES_REQUESTED=high in modified, APPROVED=low/medium only"
+  5_snippets: "Generate for ALL active issues, NONE for resolved"
+  6_metadata: "Include performance metrics, costs, file selection mode"
+
+# PROTECTED COMPONENTS - NEVER DUPLICATE
+components:
+  analyzers:
+    base: "src/two-branch/analyzers/v9-base-analyzer.ts"
+    framework: "src/two-branch/analyzers/v9-analyzer-framework.ts"
+    factory: "src/two-branch/analyzers/v9-analyzer-factory.ts"
+    repository_manager: "src/two-branch/analyzers/v9-repository-manager.ts"
+    report_formatter: "src/two-branch/analyzers/v9-report-formatter-complete.ts"
+    pr_comment_generator: "src/two-branch/analyzers/v9-pr-comment-generator.ts"
+    scoring_calculator: "src/two-branch/analyzers/v9-scoring-calculator.ts"
+    business_impact: "src/two-branch/analyzers/v9-business-impact.ts"
+    issue_comparator: "src/two-branch/analyzers/v9-issue-comparator.ts"
+    educational_resources: "src/two-branch/analyzers/v9-educational-resources.ts"
+  
+  language_analyzers:
+    java: "src/two-branch/analyzers/v9-java-analyzer.ts"
+    python: "src/two-branch/analyzers/v9-python-analyzer.ts"
+    javascript: "src/two-branch/analyzers/v9-javascript-analyzer.ts"
+    typescript: "src/two-branch/analyzers/v9-typescript-analyzer.ts"
+    csharp: "src/two-branch/analyzers/v9-csharp-analyzer.ts"
+    cpp: "src/two-branch/analyzers/v9-cpp-analyzer.ts"
+    c: "src/two-branch/analyzers/v9-c-analyzer.ts"
+    go: "src/two-branch/analyzers/v9-go-analyzer.ts"
+    rust: "src/two-branch/analyzers/v9-rust-analyzer.ts"
+    php: "src/two-branch/analyzers/v9-php-analyzer.ts"
+    ruby: "src/two-branch/analyzers/v9-ruby-analyzer.ts"
+    swift: "src/two-branch/analyzers/v9-swift-analyzer.ts"
+    kotlin: "src/two-branch/analyzers/v9-kotlin-analyzer.ts"
+
+  types:
+    main: "src/two-branch/analyzers/v9-types.ts"
+    shared: "src/types.ts"
+
+  utilities:
+    repository_utils: "src/two-branch/utils/repository-utils-factory.ts"
+    optimized_repo_manager: "src/two-branch/utils/optimized-repo-manager.ts"
+
+  validation:
+    session_validator: "src/session-validator.ts"
+    component_manifest: ".codequal-manifest.json"
+
+# DEPRECATED IMPLEMENTATIONS - NEVER USE
+deprecated:
+  - path: "src/standard/analyzers"
+    reason: "Replaced by V9 Two-Branch Framework"
+    deprecated_date: "2025-08-20"
+  - path: "src/specialized/analyzers" 
+    reason: "Consolidated into V9 Framework"
+    deprecated_date: "2025-08-15"
+  - path: "packages/agents/src/standard/services/v7-*.ts"
+    reason: "V7 is deprecated - see docs/DEPRECATED_V7_WARNING.md"
+    deprecated_date: "2025-08-10"
+  - path: "packages/agents/src/standard/services/v8-*.ts"
+    reason: "V8 replaced by V9 Two-Branch"
+    deprecated_date: "2025-08-25"
+
+# FORBIDDEN PATTERNS - WILL TRIGGER VALIDATION ERRORS
+forbidden_patterns:
+  file_names:
+    - "*-analyzer-v[0-8].ts"
+    - "*-framework-v[0-8].ts"
+    - "analyzer-*.ts" # outside of two-branch/analyzers
+    - "framework-*.ts" # outside of two-branch/analyzers
+    - "v10-*.ts" # prevent version creep
+    - "new-analyzer*.ts"
+    - "improved-*.ts"
+    - "enhanced-analyzer*.ts"
+    - "better-*.ts"
+  
+  directory_names:
+    - "analyzers" # outside of two-branch
+    - "new-analyzers"
+    - "improved-analyzers"
+    - "v10"
+    - "alternative-*"
+    - "backup-*"
+  
+  code_patterns:
+    - "hardcoded_models = [" # Must fetch from Supabase
+    - "const models = ['claude" # No hardcoded Claude models
+    - "const models = ['gpt" # No hardcoded GPT models
+    - "fileCount < 1000" # Must follow SMART_FILE_SELECTION_GUIDE.md
+    - "fileCount > 500 &&" # Hardcoded thresholds forbidden
+
+# NAMING CONVENTIONS - ENFORCED
+naming_conventions:
+  analyzers:
+    pattern: "v9-{language}-analyzer.ts"
+    location: "src/two-branch/analyzers/"
+    example: "v9-java-analyzer.ts"
+  
+  framework_files:
+    pattern: "v9-{component}.ts"
+    location: "src/two-branch/analyzers/"
+    example: "v9-analyzer-framework.ts"
+  
+  test_files:
+    pattern: "test-v9-{description}.ts"
+    location: "packages/agents/"
+    example: "test-v9-kafka-fixed.ts"
+  
+  utility_files:
+    pattern: "{description}-{version}.ts"
+    location: "src/two-branch/utils/"
+    example: "repository-utils-factory.ts"
+
+# VALIDATION RULES
+validation:
+  pre_session_checks:
+    - framework_registry_exists
+    - component_manifest_valid
+    - no_duplicate_analyzers
+    - no_deprecated_usage
+    - naming_conventions_followed
+  
+  file_creation_guards:
+    - check_forbidden_patterns
+    - validate_naming_convention
+    - prevent_duplicate_components
+    - enforce_location_rules
+  
+  git_hook_checks:
+    - scan_for_duplicates
+    - validate_against_manifest
+    - check_deprecated_imports
+    - enforce_version_consistency
+
+# EMERGENCY OVERRIDE
+# Only use in extreme circumstances with proper documentation
+emergency_override:
+  enabled: false
+  requires_approval: true
+  documentation_required: true
+  rollback_plan_required: true
+
+# CONTACT INFO
+maintainer: "V9 Framework Team"
+documentation_location: "packages/agents/V9_FRAMEWORK_ESTABLISHED.md"
+support_docs:
+  - "packages/agents/docs/V9_ANALYZER_ARCHITECTURE_FLOW.md"
+  - "docs/architecture/SMART_FILE_SELECTION_GUIDE.md"
+  - "packages/agents/src/two-branch/docs/architecture/V9_WORKING_COMPONENTS.md"

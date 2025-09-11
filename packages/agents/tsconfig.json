@@ -25,7 +25,8 @@
     "**/*.spec.ts",
     "**/tests/**",
     "**/archive/**",
-    "**/deprecated/**"
+    "**/deprecated/**",
+    "**/orchestrator/**"
   ],
   "references": [
     { "path": "../core" },

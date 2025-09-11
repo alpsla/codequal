@@ -26,7 +26,7 @@ import {
 describe('V9 Rust Analyzer - Real Integration Tests', () => {
   let analyzer: V9RustAnalyzer;
   let repoManager: OptimizedRepoManager;
-  let testResults: Map<string, AnalysisResult> = new Map();
+  const testResults: Map<string, AnalysisResult> = new Map();
 
   // Skip tests if environment is not properly configured
   const environmentCheck = TestConfigUtils.checkEnvironment();
@@ -678,7 +678,7 @@ describe('V9 Rust Analyzer - Real Integration Tests', () => {
     severity: 'critical' | 'high' | 'medium' | 'low',
     status: 'new' | 'existing',
     description: string,
-    inModifiedFile: boolean = true
+    inModifiedFile = true
   ): Issue {
     return {
       id,

@@ -17,7 +17,9 @@ module.exports = {
     'src/multi-agent/examples/**/*',
     'src/researcher/*.d.ts',
     'src/researcher/*.js',
-    'src/**/_archive*/**/*'
+    'src/**/_archive*/**/*',
+    'src/**/*.d.ts',
+    '_ARCHIVED_DO_NOT_USE/**/*'
   ],
   rules: {
     '@typescript-eslint/no-explicit-any': 'off',

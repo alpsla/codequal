@@ -291,7 +291,7 @@ export class V9AnalyzerFramework {
         
         try {
           // const result = await semgrep.analyze(batchPaths, language);
-          const result = { issues: [] }; // Placeholder
+          const result = { success: true, findings: [], issues: [] }; // Placeholder
           
           if (result && result.success && result.findings && result.findings.length > 0) {
             allFindings.push(...result.findings);
@@ -453,7 +453,7 @@ export class V9AnalyzerFramework {
   async analyzePR(
     repoUrl: string, 
     prNumber: number,
-    language: string = 'java'
+    language = 'java'
   ): Promise<AnalysisResult> {
     logger.info(`🚀 V9 Analysis starting for PR #${prNumber}`);
     

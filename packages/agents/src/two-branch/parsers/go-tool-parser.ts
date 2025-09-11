@@ -253,7 +253,7 @@ export class GoToolParser {
     let issues: GoIssue[] = [];
     let exitCode = 0;
     let rawOutput = '';
-    let coverage = {
+    const coverage = {
       percentage: 0,
       packages: {} as { [key: string]: number }
     };
@@ -272,7 +272,7 @@ export class GoToolParser {
       // Parse JSON output line by line
       const lines = rawOutput.split('\n');
       const testResults: any[] = [];
-      let coverageData: any = {};
+      const coverageData: any = {};
       
       for (const line of lines) {
         if (line.trim() && line.startsWith('{')) {

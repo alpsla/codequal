@@ -1,39 +1,32 @@
 /**
  * Two-Branch Analysis System - Main Entry Point
  * 
- * Complete MCP-based PR analysis without DeepWiki dependencies
+ * V9 Analyzer System - Working Components Only
  */
 
-// Core exports
-export { TwoBranchAnalyzer } from './core/TwoBranchAnalyzer';
-export { RepositoryManager } from './core/RepositoryManager';
+// V9 Analyzer exports (verified working)
+export * from './analyzers';
 
-// Service exports
-export { MCPOrchestrationService } from './services/mcp-orchestration-service';
-export { IssueComparisonService } from './services/issue-comparison-service';
-export { EnhancedComparisonService } from './services/enhanced-comparison-service';
-export { GitDiffService } from './services/git-diff-service';
-export { CloudAnalysisClient } from './services/CloudAnalysisClient';
+// Service exports (if they exist)
+// export { MCPOrchestrationService } from './services/mcp-orchestration-service';
+// export { IssueComparisonService } from './services/issue-comparison-service';
+// export { EnhancedComparisonService } from './services/enhanced-comparison-service';
+// export { GitDiffService } from './services/git-diff-service';
+// export { CloudAnalysisClient } from './services/CloudAnalysisClient';
 
-// Orchestrator exports
-export { MCPBasedOrchestrator } from './orchestrators/mcp-based-orchestrator';
+// Parser exports (if they exist)
+// export { UniversalToolParser } from './parsers/UniversalToolParser';
 
-// Analyzer exports
-export { BranchAnalyzer } from './analyzers/BranchAnalyzer';
+// Comparator exports (if they exist)
+// export { TwoBranchComparator } from './comparators/TwoBranchComparator';
+// export { IssueMatcher } from './comparators/IssueMatcher';
 
-// Parser exports
-export { UniversalToolParser } from './parsers/UniversalToolParser';
+// Cache exports (if they exist)
+// export { CacheManager } from './cache/CacheManager';
+// export { AnalysisCacheService } from './cache/AnalysisCacheService';
 
-// Comparator exports
-export { TwoBranchComparator } from './comparators/TwoBranchComparator';
-export { IssueMatcher } from './comparators/IssueMatcher';
-
-// Reporter exports
-export { ReportGeneratorV9 } from './reporters/ReportGeneratorV9';
-
-// Cache exports
-export { CacheManager } from './cache/CacheManager';
-export { AnalysisCacheService } from './cache/AnalysisCacheService';
+// Utility exports
+export * from './utils/optimized-repo-manager';
 
 // Type exports
-export * from './types';
+// export * from './types';

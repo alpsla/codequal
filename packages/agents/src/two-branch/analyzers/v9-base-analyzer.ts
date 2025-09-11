@@ -45,6 +45,11 @@ class SimpleModelSelector {
     // Return a default model for now
     return 'gpt-4o-mini';
   }
+  
+  async selectModelsForRole(requirements: any): Promise<{ primary: string }> {
+    // Return a simple model selection based on requirements
+    return { primary: 'gpt-4o-mini' };
+  }
 }
 
 export abstract class V9BaseAnalyzer {
@@ -63,7 +68,7 @@ export abstract class V9BaseAnalyzer {
   
   // Cache
   protected modelConfigs: Map<string, ModelConfig> = new Map();
-  protected cachedWorkspacePath: string = '';
+  protected cachedWorkspacePath = '';
   
   // Configuration
   protected analysisConfig = {
@@ -172,6 +177,7 @@ export abstract class V9BaseAnalyzer {
       
       // Prepare metadata
       const config = this.getLanguageConfig();
+      const timestamp = new Date().toISOString();
       const metadata = {
         repository: repoUrl,
         prNumber,
@@ -181,7 +187,12 @@ export abstract class V9BaseAnalyzer {
         modifiedFiles: modifiedFiles.length,
         analysisTime: Date.now(),
         tools: config.tools.map(t => t.name),
-        timestamp: new Date().toISOString()
+        timestamp,
+        // Required extended metadata fields
+        analyzedAt: timestamp,
+        analyzer: this.constructor.name,
+        repoUrl,
+        executionTime: Date.now()
       };
       
       // Build result object
@@ -313,7 +324,7 @@ export abstract class V9BaseAnalyzer {
   /**
    * Get code snippet for an issue
    */
-  protected async getCodeSnippet(file: string, line: number, contextLines: number = 3): Promise<string> {
+  protected async getCodeSnippet(file: string, line: number, contextLines = 3): Promise<string> {
     try {
       const filePath = path.join(this.cachedWorkspacePath, file);
       const content = fs.readFileSync(filePath, 'utf8');

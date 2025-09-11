@@ -27,7 +27,7 @@ import {
 describe('V9 Java Analyzer - Real Integration Tests', () => {
   let analyzer: V9JavaAnalyzer;
   let repoManager: OptimizedRepoManager;
-  let testResults: Map<string, AnalysisResult> = new Map();
+  const testResults: Map<string, AnalysisResult> = new Map();
 
   // Skip tests if environment is not properly configured
   const environmentCheck = TestConfigUtils.checkEnvironment();

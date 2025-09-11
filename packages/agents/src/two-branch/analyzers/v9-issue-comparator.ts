@@ -175,7 +175,7 @@ export class V9IssueComparator {
   findSimilarIssues(
     issue: Issue,
     allIssues: Issue[],
-    threshold: number = 0.8
+    threshold = 0.8
   ): Issue[] {
     const similar: Issue[] = [];
     const issueText = `${issue.title} ${issue.description}`.toLowerCase();

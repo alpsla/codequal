@@ -20,7 +20,7 @@ export interface RepositoryConfig {
 export class V9RepositoryManager {
   private repoManager: OptimizedRepoManager;
   private fileSelector: SmartFileSelector;
-  private cachedWorkspacePath: string = '';
+  private cachedWorkspacePath = '';
   
   constructor(private config: RepositoryConfig) {
     this.repoManager = getRepoManager();
@@ -171,7 +171,7 @@ export class V9RepositoryManager {
   /**
    * Get code snippet from file
    */
-  async getCodeSnippet(file: string, line: number, contextLines: number = 3): Promise<string> {
+  async getCodeSnippet(file: string, line: number, contextLines = 3): Promise<string> {
     try {
       const fullPath = path.join(this.cachedWorkspacePath, file);
       if (!fs.existsSync(fullPath)) {

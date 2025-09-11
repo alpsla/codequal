@@ -402,8 +402,8 @@ function createMockIssue(
   id: string, 
   severity: 'critical' | 'high' | 'medium' | 'low',
   status: 'new' | 'existing' | 'resolved',
-  file: string = 'src/Test.java',
-  inModifiedFile: boolean = true
+  file = 'src/Test.java',
+  inModifiedFile = true
 ): Issue {
   return {
     id,

@@ -51,7 +51,7 @@ const TEST_TARGETS = [
 class RealJavaAnalyzerV9 extends V9JavaAnalyzer {
   private modelSelector: UnifiedModelSelector;
   private aiService: AIService;
-  private workspaceDir: string = '/tmp/codequal-v9-test';
+  private workspaceDir = '/tmp/codequal-v9-test';
   
   constructor() {
     super();
