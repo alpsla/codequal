@@ -2,6 +2,47 @@
 
 This file provides comprehensive guidance to Claude Code when working with the CodeQual codebase.
 
+## 🚨 MANDATORY: V9 CANONICAL ARCHITECTURE
+
+**⚠️ STOP! Before doing ANYTHING with V9, read `/V9-SYSTEM-OVERVIEW.md` FIRST!**
+
+The V9 infrastructure is ALREADY BUILT. Do NOT recreate:
+- Tool execution logic → use `V9ToolOrchestrator`
+- Repository management → use `V9RepositoryManager`
+- File selection → use `SmartFileSelector`
+- Container images → use `analyzer:lang-*` from our registry
+- Caching → use existing Redis infrastructure
+
+**CRITICAL**: ALL PR analysis MUST follow the V9 Canonical Architecture documented in:
+- `/V9-SYSTEM-OVERVIEW.md` - Complete system overview (READ THIS FIRST!)
+- `packages/agents/V9_CANONICAL_ARCHITECTURE.md` - The ONLY approved flow
+- `packages/agents/DEPRECATED_FLOWS_DO_NOT_USE.md` - Patterns to AVOID
+
+### V9 Infrastructure That Already Exists
+1. **Repository Management**: `V9RepositoryManager` handles cloning, caching, indexing
+2. **Smart File Selection**: < 10k files = 100% coverage, > 10k = smart selection of ~500 files
+3. **Tool Containers**: `analyzer:lang-java-v5.1`, `analyzer:lang-python-v4.3`, etc. in our registry
+4. **Kubernetes Setup**: PVC `codequal-workspace`, namespace `codequal-dev`
+5. **Working Test**: `packages/agents/test-v8-final.ts` - reference implementation
+
+### V9 Flow Requirements (MANDATORY)
+1. **Tool Execution**: Always run on BOTH branches (main + PR)
+2. **Agent Processing**: ALL 5 agents must process (Security, Quality, Performance, Architecture, Dependency)
+3. **Orchestrator**: Must deduplicate issues
+4. **Split Services**: Must send to BOTH Educator AND Comparator in parallel
+5. **AI Generation**: Use AI for fixes, NEVER templates
+6. **No Alternatives**: Do NOT create alternative flows or "improved" versions
+
+### FORBIDDEN Patterns
+- ❌ Creating new tool execution logic (use existing V9ToolOrchestrator)
+- ❌ Creating new file selection algorithms (use SmartFileSelector)
+- ❌ Using generic Docker images (use our analyzer:lang-* images)
+- ❌ Creating "enhanced", "proper", "final" versions of existing components
+- ❌ Fallback simulations when real execution fails
+- ❌ Template-based fix generation
+- ❌ Bypassing any step in the canonical flow
+- ❌ Single-branch analysis
+
 ## Core Development Philosophy
 
 ### KISS (Keep It Simple, Stupid)

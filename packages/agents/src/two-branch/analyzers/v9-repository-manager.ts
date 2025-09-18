@@ -7,7 +7,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { execSync } from 'child_process';
 import { getRepoManager, getFileSelector } from '../utils/repository-utils-factory';
-import type { OptimizedRepoManager } from '../utils/optimized-repo-manager';
+import type { CloudRepositoryManager } from '../utils/cloud-repository-manager';
 import type { SmartFileSelector, SelectedFiles } from '../utils/smart-file-selector';
 import { logger } from '../utils/logger';
 
@@ -18,7 +18,7 @@ export interface RepositoryConfig {
 }
 
 export class V9RepositoryManager {
-  private repoManager: OptimizedRepoManager;
+  private repoManager: CloudRepositoryManager;
   private fileSelector: SmartFileSelector;
   private cachedWorkspacePath = '';
   
@@ -41,25 +41,23 @@ export class V9RepositoryManager {
     const owner = urlParts[0];
     const repo = urlParts[1];
     
-    // Create PR workspace
+    // Create PR workspace in cloud
     const workspace = await this.repoManager.createPRWorkspace(
-      owner,
-      repo,
-      prNumber,
-      'main' // default base branch
+      repoUrl,
+      prNumber
     );
-    
-    this.cachedWorkspacePath = workspace.path;
-    
+
+    this.cachedWorkspacePath = workspace.cloudPath;
+
     // Log repository stats
-    const fileCount = await this.countFiles(workspace.path);
-    logger.info(`📊 Repository contains ${fileCount} files`);
-    
-    // For main path, we'll use the same directory with different branch
-    // This is a simplification - in reality we'd need separate checkouts
+    logger.info(`📊 Repository contains ${workspace.filesCount} files`);
+
+    // Setup main workspace too
+    const mainWorkspace = await this.repoManager.setupRepository(repoUrl, 'main');
+
     return {
-      mainPath: workspace.path, // Using same path for now
-      prPath: workspace.path
+      mainPath: mainWorkspace.cloudPath,
+      prPath: workspace.cloudPath
     };
   }
   
@@ -134,9 +132,9 @@ export class V9RepositoryManager {
     try {
       const fileCount = await this.countFiles(repoPath);
       
-      // Use smart selection for large repositories
-      if (fileCount > this.config.maxFiles * 2) {
-        logger.info(`🔍 Large repository detected (${fileCount} files) - using smart selection`);
+      // Use smart selection for large repositories (>10,000 files)
+      if (fileCount > 10000) {
+        logger.info(`🔍 Large repository detected (${fileCount} files > 10,000) - using smart selection`);
         return true;
       }
       
