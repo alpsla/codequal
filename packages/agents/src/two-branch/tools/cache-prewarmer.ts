@@ -391,41 +391,43 @@ export class CachePrewarmer {
 // Export singleton instance
 export const cachePrewarmer = new CachePrewarmer();
 
+// CLI runner function
+async function runCLI(prewarmer: CachePrewarmer, command: string, args: string[]) {
+  switch (command) {
+    case 'prewarm-all':
+      await prewarmer.prewarmPopularRepositories();
+      break;
+    case 'prewarm-repo':
+      if (args.length < 2) {
+        console.error('Usage: prewarm-repo <repo-url> <language>');
+        process.exit(1);
+      }
+      await prewarmer.prewarmForRepository(args[0], args[1]);
+      break;
+    case 'analyze': {
+      const effectiveness = await prewarmer.analyzeCacheEffectiveness();
+      console.log('Cache Effectiveness:', effectiveness);
+      break;
+    }
+    case 'learn':
+      await prewarmer.learnFromMisses();
+      break;
+    case 'stats': {
+      const stats = await prewarmer.getStatistics();
+      console.log('Cache Statistics:', stats);
+      break;
+    }
+    default:
+      console.log('Commands: prewarm-all, prewarm-repo, analyze, learn, stats');
+  }
+  process.exit(0);
+}
+
 // CLI for manual pre-warming
 if (require.main === module) {
   const prewarmer = new CachePrewarmer();
-
   const command = process.argv[2];
   const args = process.argv.slice(3);
 
-  async function run() {
-    switch (command) {
-      case 'prewarm-all':
-        await prewarmer.prewarmPopularRepositories();
-        break;
-      case 'prewarm-repo':
-        if (args.length < 2) {
-          console.error('Usage: prewarm-repo <repo-url> <language>');
-          process.exit(1);
-        }
-        await prewarmer.prewarmForRepository(args[0], args[1]);
-        break;
-      case 'analyze':
-        const effectiveness = await prewarmer.analyzeCacheEffectiveness();
-        console.log('Cache Effectiveness:', effectiveness);
-        break;
-      case 'learn':
-        await prewarmer.learnFromMisses();
-        break;
-      case 'stats':
-        const stats = await prewarmer.getStatistics();
-        console.log('Cache Statistics:', stats);
-        break;
-      default:
-        console.log('Commands: prewarm-all, prewarm-repo, analyze, learn, stats');
-    }
-    process.exit(0);
-  }
-
-  run().catch(console.error);
+  runCLI(prewarmer, command, args).catch(console.error);
 }

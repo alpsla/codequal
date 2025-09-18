@@ -181,7 +181,7 @@ class LanguageTestRunner {
     logger.info('\n📋 Language-Specific Validation:');
 
     switch (testCase.language) {
-      case 'java':
+      case 'java': {
         // Java-specific validations
         const javaIssues = result.report?.comparison.newIssues.filter(
           (i: any) => i.file.endsWith('.java')
@@ -206,6 +206,7 @@ class LanguageTestRunner {
         logger.info(`  ✓ Resource leak issues detected: ${hasResourceLeak ? 'YES' : 'NO'}`);
         logger.info(`  ✓ Concurrency issues detected: ${hasConcurrency ? 'YES' : 'NO'}`);
         break;
+      }
 
       // Add more language-specific validations as we test them
       default:

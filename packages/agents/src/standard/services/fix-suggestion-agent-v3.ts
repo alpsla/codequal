@@ -481,9 +481,9 @@ Provide the fixed code in a code block.`;
     // Code blocks
     if (suggestion.originalCode) {
       output += '**Original Code:**\n';
-      output += `\`\`\`${suggestion.language}\n`;
+      output += '```' + suggestion.language + '\n';
       output += suggestion.originalCode;
-      output += '\n\`\`\`\n\n';
+      output += '\n```\n\n';
     }
     
     if (suggestion.fixType === 'A') {
@@ -492,9 +492,9 @@ Provide the fixed code in a code block.`;
       output += '**Fixed Code (adjust before applying):**\n';
     }
     
-    output += `\`\`\`${suggestion.language}\n`;
+    output += '```' + suggestion.language + '\n';
     output += suggestion.fixedCode;
-    output += '\n\`\`\`\n\n';
+    output += '\n```\n\n';
     
     // Metadata
     output += `**Confidence:** ${suggestion.confidence}\n`;

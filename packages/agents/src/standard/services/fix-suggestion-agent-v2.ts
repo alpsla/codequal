@@ -46,7 +46,7 @@ export class FixSuggestionAgentV2 {
   private supabase: any;
   // private modelSelector: TrulyDynamicSelector; // TODO: Implement proper model selector
   private promptConfig: FixPromptConfig | null = null;
-  private languageTemplates: Map<string, Map<string, Function>> = new Map();
+  private languageTemplates: Map<string, Map<string, (...args: any[]) => any>> = new Map();
   private contextExtractor: CodeContextExtractor;
   private templateInterpolator: TemplateInterpolator;
   private cachedModel: string | undefined; // Cache model to avoid repeated selection
@@ -78,7 +78,7 @@ export class FixSuggestionAgentV2 {
   /**
    * Register a fix template for multiple languages
    */
-  private registerTemplate(pattern: string, languages: Record<string, Function>) {
+  private registerTemplate(pattern: string, languages: Record<string, (...args: any[]) => any>) {
     if (!this.languageTemplates.has(pattern)) {
       this.languageTemplates.set(pattern, new Map());
     }
@@ -332,7 +332,7 @@ Return ONLY the fixed code snippet, no explanation.`,
     
     switch (language) {
       case 'typescript':
-      case 'javascript':
+      case 'javascript': {
         // Check if we know the type from parameters
         const param = context.parameters.find(p => p.name === variable);
         if (param?.type && param.type !== 'any') {
@@ -351,7 +351,8 @@ Return ONLY the fixed code snippet, no explanation.`,
         return `if (!${variable} || typeof ${variable} !== 'string') {
   throw new Error('Invalid ${variable}: expected non-empty string');
 }`;
-        
+      }
+
       case 'python':
         return `if not ${variable} or not isinstance(${variable}, str):
     raise ValueError(f"Invalid ${variable}: expected non-empty string")`;
@@ -435,7 +436,7 @@ if err != nil {
     
     switch (language) {
       case 'typescript':
-      case 'javascript':
+      case 'javascript': {
         // Find the query string
         const queryMatch = code.match(/["'`]([^"'`]*(?:SELECT|INSERT|UPDATE|DELETE)[^"'`]*)["'`]/i);
         if (queryMatch) {
@@ -456,6 +457,7 @@ const params = [${params.join(', ')}];
 const result = await db.query(query, params);`;
         }
         break;
+      }
         
       case 'python':
         return `# Use parameterized query to prevent SQL injection

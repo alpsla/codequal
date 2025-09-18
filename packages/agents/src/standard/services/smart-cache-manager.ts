@@ -164,7 +164,9 @@ export class SmartCacheManager {
       if (this.redis) {
         try {
           await this.redis.set(`meta:${key}`, JSON.stringify(metadata));
-        } catch {}
+        } catch {
+          // Ignore metadata storage errors
+        }
       }
     }
     
@@ -206,7 +208,9 @@ export class SmartCacheManager {
     if (this.redis) {
       try {
         await this.redis.del(`cache:${key}`, `meta:${key}`);
-      } catch {}
+      } catch {
+        // Ignore deletion errors
+      }
     }
     
     console.log(`🗑️ Cache invalidated: ${key}`);
@@ -368,7 +372,9 @@ export class SmartCacheManager {
         if (keys.length > 0 || metaKeys.length > 0) {
           await this.redis.del(...keys, ...metaKeys);
         }
-      } catch {}
+      } catch {
+        // Ignore clear errors
+      }
     }
     
     console.log(`🗑️ Cleared all cache (${count} entries)`);

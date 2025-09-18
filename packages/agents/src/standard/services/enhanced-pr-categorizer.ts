@@ -280,7 +280,7 @@ export class EnhancedPRCategorizer {
    * Normalize file path for comparison
    */
   private normalizeFilePath(path: string): string {
-    return path.replace(/^[\/\\]+/, '').replace(/\\/g, '/').toLowerCase();
+    return path.replace(/^[/\\]+/, '').replace(/\\/g, '/').toLowerCase();
   }
   
   /**
@@ -328,11 +328,11 @@ export class EnhancedPRCategorizer {
         message += `- Fixed ${summary.totalFixed} issues (positive contribution)\n`;
         break;
         
-      case 'decline':
+      case 'decline': {
         emoji = '❌';
         message = `${emoji} **DECLINE** - Critical issues detected\n\n`;
         message += `This PR cannot be merged due to critical problems:\n`;
-        
+
         // Check for specific issue types in new issues
         const hasBreaking = definitelyNew.some(i => i.category === 'breaking-change');
         const hasDependency = definitelyNew.some(i => i.category === 'dependency-vulnerability');
@@ -354,6 +354,7 @@ export class EnhancedPRCategorizer {
         }
         message += `\nPlease fix all critical issues before resubmitting.\n`;
         break;
+      }
     }
     
     // Add context about pre-existing issues

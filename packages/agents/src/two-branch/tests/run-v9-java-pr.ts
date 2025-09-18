@@ -100,7 +100,9 @@ class V9JavaPRAnalyzer {
   }
   
   private async setupWorkspace() {
-    await execAsync(`rm -rf ${this.workDir}`).catch(() => {});
+    await execAsync(`rm -rf ${this.workDir}`).catch(() => {
+      // Ignore cleanup errors
+    });
     await execAsync(`mkdir -p ${this.workDir}`);
   }
   
@@ -470,7 +472,9 @@ ${catIssues.slice(0, 5).map((i: any) =>
   
   private async cleanup() {
     console.log('\n🧹 Cleaning up...');
-    await execAsync(`rm -rf ${this.workDir}`).catch(() => {});
+    await execAsync(`rm -rf ${this.workDir}`).catch(() => {
+      // Ignore cleanup errors
+    });
   }
 }
 

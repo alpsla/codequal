@@ -93,7 +93,9 @@ class V9CompletePRAnalyzer {
   }
   
   private async setupWorkspace() {
-    await execAsync(`rm -rf ${this.workDir}`).catch(() => {});
+    await execAsync(`rm -rf ${this.workDir}`).catch(() => {
+      // Ignore cleanup errors
+    });
     await execAsync(`mkdir -p ${this.workDir}`);
   }
   
@@ -839,7 +841,9 @@ ${blockingIssues.map((i: any) => `- Fix ${i.title} in \`${i.file}\``).join('\n')
   
   private async cleanup() {
     console.log('\n🧹 Cleaning up...');
-    await execAsync(`rm -rf ${this.workDir}`).catch(() => {});
+    await execAsync(`rm -rf ${this.workDir}`).catch(() => {
+      // Ignore cleanup errors
+    });
   }
 }
 

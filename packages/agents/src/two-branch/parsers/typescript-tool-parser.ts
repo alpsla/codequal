@@ -284,7 +284,9 @@ export class TypeScriptToolParser {
         }
         
         // Clean up the report file
-        await fs.unlink(reportPath).catch(() => {});
+        await fs.unlink(reportPath).catch(() => {
+          // Ignore cleanup errors
+        });
       } catch (e) {
         // Parse from stdout if JSON file not available
         issues = this.parseJestTextOutput(rawOutput);

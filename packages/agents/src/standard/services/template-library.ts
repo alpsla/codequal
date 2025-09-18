@@ -1507,7 +1507,7 @@ function ${funcName}(${params}) {
   // Process validated payment
   try {
     // Log the payment attempt
-    console.log(\`Processing payment of \$\${amount.toFixed(2)}\${hasUserId ? ' for user \${userId}' : ''}\`);
+    console.log(\`Processing payment of $\${amount.toFixed(2)}\${hasUserId ? ' for user \${userId}' : ''}\`);
     
     // Call your payment processor (e.g., Stripe)
     return stripe.charge(${hasUserId ? 'userId, ' : ''}amount);

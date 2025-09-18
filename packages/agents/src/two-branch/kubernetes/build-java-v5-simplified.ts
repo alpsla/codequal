@@ -134,7 +134,7 @@ RUN wget -q https://github.com/pmd/pmd/releases/download/pmd_releases%2F7.0.0/pm
 RUN wget -q https://github.com/checkstyle/checkstyle/releases/download/checkstyle-10.12.5/checkstyle-10.12.5-all.jar \\
     && mv checkstyle-10.12.5-all.jar /opt/checkstyle.jar \\
     && echo '#!/bin/bash' > /usr/local/bin/checkstyle \\
-    && echo 'java -jar /opt/checkstyle.jar "\$@"' >> /usr/local/bin/checkstyle \\
+    && echo 'java -jar /opt/checkstyle.jar "$@"' >> /usr/local/bin/checkstyle \\
     && chmod +x /usr/local/bin/checkstyle
 
 # Create Google checks XML directly (avoid network download)
@@ -148,7 +148,7 @@ RUN pip3 install --no-cache-dir semgrep==1.45.0
 # Set environment
 ENV SPOTBUGS_HOME=/opt/spotbugs
 ENV PMD_HOME=/opt/pmd
-ENV PATH=\$PATH:/opt/spotbugs/bin:/opt/pmd/bin
+ENV PATH=$PATH:/opt/spotbugs/bin:/opt/pmd/bin
 
 # Verification script
 RUN echo '#!/bin/bash' > /verify-tools.sh \\

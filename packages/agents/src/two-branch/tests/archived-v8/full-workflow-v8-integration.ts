@@ -797,7 +797,9 @@ spec:
         await exec(`kubectl apply -f /tmp/${podName}.yaml`);
         
         // Wait for pod to complete
-        await exec(`kubectl wait --for=condition=Ready pod/${podName} -n codequal-dev --timeout=30s`).catch(() => {});
+        await exec(`kubectl wait --for=condition=Ready pod/${podName} -n codequal-dev --timeout=30s`).catch(() => {
+          // Ignore kubectl wait errors
+        });
         await new Promise(resolve => setTimeout(resolve, 5000));
         
         // Get logs

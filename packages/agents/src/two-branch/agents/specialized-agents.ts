@@ -118,11 +118,11 @@ abstract class BaseSpecializedAgent {
     }
     
     // Extract best practices if present
-    const practicesMatch = response.match(/(?:best practices?|guidelines?|recommendations?)[\s\S]*?([•\-\*][\s\S]*?)(?:\n\n|$)/i);
+    const practicesMatch = response.match(/(?:best practices?|guidelines?|recommendations?)[\s\S]*?([•\-*][\s\S]*?)(?:\n\n|$)/i);
     const bestPractices = practicesMatch
       ? practicesMatch[1].split('\n')
-          .filter(p => p.trim().match(/^[•\-\*]/))
-          .map(p => p.replace(/^[•\-\*]\s*/, '').trim())
+          .filter(p => p.trim().match(/^[•\-*]/))
+          .map(p => p.replace(/^[•\-*]\s*/, '').trim())
           .slice(0, 3) // Limit to 3 best practices
       : [];
 

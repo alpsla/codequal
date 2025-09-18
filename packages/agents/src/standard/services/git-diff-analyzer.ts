@@ -59,11 +59,12 @@ export class GitDiffAnalyzer {
           case 'D':
             deletedFiles.push(file);
             break;
-          case 'R':
+          case 'R': {
             // Renamed files - treat as modified
             const [, newFile] = file.split('\t');
             modifiedFiles.push(newFile || file);
             break;
+          }
         }
       });
       
@@ -297,7 +298,7 @@ export class GitDiffAnalyzer {
   private normalizePath(filePath: string): string {
     // Remove leading slashes and normalize separators
     return filePath
-      .replace(/^[\/\\]+/, '')
+      .replace(/^[/\\]+/, '')
       .replace(/\\/g, '/')
       .toLowerCase();
   }

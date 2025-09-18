@@ -4,6 +4,7 @@
  */
 
 import { EnvironmentConfig } from '../config/environment';
+import * as fs from 'fs';
 
 export class MockDataGuard {
   private static config = EnvironmentConfig.getInstance();
@@ -103,7 +104,6 @@ export class MockDataGuard {
     
     // Could also write to a security audit log
     if (process.env.SECURITY_AUDIT_LOG) {
-      const fs = require('fs');
       fs.appendFileSync(
         process.env.SECURITY_AUDIT_LOG,
         JSON.stringify({ ...violation, severity: 'CRITICAL' }) + '\n'

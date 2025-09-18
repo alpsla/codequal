@@ -372,10 +372,11 @@ async function main() {
       case '--no-parallel':
         config.parallel = false;
         break;
-      case '--suite':
+      case '--suite': {
         const suiteName = args[++i];
         config.suites = config.suites.filter(s => s.name.includes(suiteName));
         break;
+      }
       case '--timeout':
         config.timeout = parseInt(args[++i], 10);
         break;

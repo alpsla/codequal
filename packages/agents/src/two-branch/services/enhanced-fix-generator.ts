@@ -5,7 +5,7 @@
 
 import OpenAI from 'openai';
 import { createLogger } from '../../../../core/src/utils/logger';
-const pQueue = require('p-queue').default;
+import PQueue from 'p-queue';
 
 const logger = createLogger('enhanced-fix-generator');
 
@@ -70,7 +70,7 @@ export class EnhancedFixGenerator {
       }
     };
 
-    this.queue = new pQueue({ concurrency: 5 });
+    this.queue = new PQueue({ concurrency: 5 });
   }
 
   /**

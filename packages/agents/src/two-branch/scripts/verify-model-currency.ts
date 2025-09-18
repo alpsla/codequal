@@ -8,6 +8,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
+import { execSync } from 'child_process';
 import * as dotenv from 'dotenv';
 
 dotenv.config();
@@ -120,7 +121,6 @@ async function verifyModelCurrency() {
 async function checkSourceCode() {
   console.log('\n🔍 Checking source code for hardcoded models...\n');
   
-  const { execSync } = require('child_process');
   
   try {
     // Search for outdated model references

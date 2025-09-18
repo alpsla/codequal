@@ -148,7 +148,9 @@ class RealJavaAnalyzerV9 extends V9JavaAnalyzer {
     const repoPath = path.join(this.workspaceDir, repoName);
     
     // Clean up if exists
-    await execAsync(`rm -rf "${repoPath}"`).catch(() => {});
+    await execAsync(`rm -rf "${repoPath}"`).catch(() => {
+      // Ignore cleanup errors
+    });
     await fs.mkdir(this.workspaceDir, { recursive: true });
     
     // Clone with depth 1 for speed
@@ -388,7 +390,9 @@ Response format: [{"type": "security", "severity": "high", "line": 10, "message"
    */
   private async cleanup(repoPath: string): Promise<void> {
     console.log('\n🧹 Cleaning up temporary files...');
-    await execAsync(`rm -rf "${repoPath}"`).catch(() => {});
+    await execAsync(`rm -rf "${repoPath}"`).catch(() => {
+      // Ignore cleanup errors
+    });
   }
 }
 

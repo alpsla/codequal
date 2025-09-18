@@ -232,7 +232,7 @@ class V9RealIntegrationRunner {
   private parseCustomPR(): RealTestCase[] {
     if (!this.options.prUrl) return [];
 
-    const urlMatch = this.options.prUrl.match(/github\.com\/([^\/]+)\/([^\/]+)\/pull\/(\d+)/);
+    const urlMatch = this.options.prUrl.match(/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/);
     if (!urlMatch) {
       throw new Error(`Invalid PR URL format: ${this.options.prUrl}`);
     }
