@@ -4,7 +4,7 @@
  * Ready for Reporter Agent consumption
  */
 
-import { createLogger } from '@codequal/core/utils';
+import { createLogger } from '../utils';
 import { EducationalResult } from '../multi-agent/educational-agent';
 import { RecommendationModule } from '../types/recommendation-types';
 

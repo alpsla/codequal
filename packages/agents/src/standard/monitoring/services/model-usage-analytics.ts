@@ -6,7 +6,7 @@
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { createLogger } from '@codequal/core/utils';
+import { createLogger } from '../../utils';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 

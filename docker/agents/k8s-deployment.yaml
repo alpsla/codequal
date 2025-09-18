@@ -1,0 +1,162 @@
+---
+# Redis Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-cache
+  namespace: codequal-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis-cache
+  template:
+    metadata:
+      labels:
+        app: redis-cache
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        ports:
+        - containerPort: 6379
+        command: ["redis-server", "--appendonly", "yes"]
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "250m"
+      volumes:
+      - name: redis-data
+        emptyDir: {}
+
+---
+# Redis Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-cache
+  namespace: codequal-dev
+spec:
+  selector:
+    app: redis-cache
+  ports:
+  - port: 6379
+    targetPort: 6379
+  type: ClusterIP
+
+---
+# Hybrid Agent Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hybrid-agent
+  namespace: codequal-dev
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: hybrid-agent
+  template:
+    metadata:
+      labels:
+        app: hybrid-agent
+    spec:
+      containers:
+      - name: hybrid-agent
+        image: registry.digitalocean.com/codequal-registry/hybrid-agent:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: PORT
+          value: "3000"
+        - name: REDIS_URL
+          value: "redis://redis-cache:6379"
+        - name: LOG_LEVEL
+          value: "info"
+        - name: OPENROUTER_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: api-secrets
+              key: OPENROUTER_API_KEY
+        - name: SUPABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: api-secrets
+              key: SUPABASE_URL
+              optional: true
+        - name: SUPABASE_SERVICE_KEY
+          valueFrom:
+            secretKeyRef:
+              name: api-secrets
+              key: SUPABASE_SERVICE_KEY
+              optional: true
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+
+---
+# Hybrid Agent Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: hybrid-agent-service
+  namespace: codequal-dev
+spec:
+  selector:
+    app: hybrid-agent
+  ports:
+  - port: 80
+    targetPort: 3000
+  type: LoadBalancer
+
+---
+# Horizontal Pod Autoscaler
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: hybrid-agent-hpa
+  namespace: codequal-dev
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: hybrid-agent
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80

@@ -1,0 +1,246 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apk add --no-cache python3 py3-pip make g++ git
+
+# Create package.json
+RUN echo '{\
+  "name": "@codequal/hybrid-agent-demo",\
+  "version": "1.0.0",\
+  "description": "Hybrid agent service with caching (demo mode)",\
+  "main": "src/index.js",\
+  "scripts": {\
+    "start": "node src/index.js"\
+  }\
+}' > package.json
+
+# Install production dependencies
+RUN npm install --save \
+    openai@4.38.5 \
+    ioredis@5.3.2 \
+    winston@3.11.0 \
+    express@4.18.2 \
+    crypto
+
+# Create source directory
+RUN mkdir -p src
+
+# Create demo service with simulated fixes
+RUN cat > src/index.js << 'EOF'
+const express = require('express');
+const Redis = require('ioredis');
+const crypto = require('crypto');
+
+const app = express();
+app.use(express.json());
+
+// Initialize Redis
+const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
+const hitRate = { hits: 0, misses: 0 };
+
+// Demo fix patterns
+const FIX_PATTERNS = {
+  'eslint:style': {
+    'Missing semicolon': 'Add semicolon at the end of line',
+    'Line too long': 'Break line into multiple lines',
+    'Unexpected var': 'Replace var with const or let'
+  },
+  'spotbugs:BAD_PRACTICE': {
+    'Method may fail to close stream': 'Use try-with-resources statement',
+    'Equals method should not assume anything about the type of its argument': 'Add instanceof check before casting'
+  },
+  'pylint:convention': {
+    'Line too long': 'Break line at 79 characters',
+    'Missing module docstring': 'Add """Module description.""" at top of file'
+  },
+  'security:vulnerability': {
+    'SQL injection': 'Use parameterized queries',
+    'XSS vulnerability': 'Sanitize user input with HTML escaping'
+  }
+};
+
+function generateCacheKey(issue) {
+  const parts = [
+    issue.tool || 'unknown',
+    issue.type || 'unknown',
+    issue.category || 'general',
+    issue.language || 'any'
+  ];
+  return `fix:${parts.join(':')}:${crypto.createHash('md5').update(JSON.stringify(issue)).digest('hex')}`;
+}
+
+function getHitRate() {
+  const total = hitRate.hits + hitRate.misses;
+  if (total === 0) return 0;
+  return Math.round((hitRate.hits / total) * 100);
+}
+
+function generateDemoFix(issue) {
+  const patternKey = `${issue.tool}:${issue.category}`;
+  const patterns = FIX_PATTERNS[patternKey] || {};
+  const fix = patterns[issue.message] || `Apply standard fix for ${issue.type} issue`;
+
+  return {
+    fix,
+    confidence: issue.tool === 'eslint' ? 'high' : 'medium',
+    explanation: `Demo fix for ${issue.tool} ${issue.category} issue`,
+    timestamp: new Date().toISOString(),
+    agent: selectAgent(issue)
+  };
+}
+
+function selectAgent(issue) {
+  if (issue.type === 'security' || issue.category?.includes('security')) return 'security';
+  if (issue.type === 'performance') return 'performance';
+  if (issue.type === 'architecture') return 'architecture';
+  if (issue.type === 'dependency') return 'dependency';
+  return 'quality';
+}
+
+// Health check
+app.get('/health', async (req, res) => {
+  try {
+    await redis.ping();
+    res.json({
+      status: 'healthy',
+      mode: 'demo',
+      service: 'hybrid-agent',
+      redis: 'connected',
+      agents: ['security', 'performance', 'quality', 'architecture', 'dependency'],
+      cacheHitRate: getHitRate() + '%'
+    });
+  } catch (error) {
+    res.status(500).json({ status: 'unhealthy', error: error.message });
+  }
+});
+
+// Generate fix endpoint
+app.post('/fix', async (req, res) => {
+  const { issue } = req.body;
+  if (!issue) {
+    return res.status(400).json({ error: 'Issue data required' });
+  }
+
+  try {
+    const cacheKey = generateCacheKey(issue);
+
+    // Check cache first
+    const cached = await redis.get(cacheKey);
+    if (cached) {
+      hitRate.hits++;
+      console.log(`Cache HIT for ${issue.tool}:${issue.category} (${getHitRate()}% hit rate)`);
+      const fix = JSON.parse(cached);
+      fix.cached = true;
+      return res.json({ success: true, fix, cached: true, cacheHitRate: getHitRate() + '%' });
+    }
+
+    // Generate demo fix
+    hitRate.misses++;
+    console.log(`Cache MISS for ${issue.tool}:${issue.category} (${getHitRate()}% hit rate)`);
+
+    const fix = generateDemoFix(issue);
+
+    // Store in cache (TTL: 1 hour for demo)
+    await redis.setex(cacheKey, 3600, JSON.stringify(fix));
+    console.log(`Cached fix for ${issue.tool}:${issue.category}`);
+
+    res.json({ success: true, fix, cached: false, cacheHitRate: getHitRate() + '%' });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Batch fix endpoint
+app.post('/fix/batch', async (req, res) => {
+  const { issues } = req.body;
+  if (!issues || !Array.isArray(issues)) {
+    return res.status(400).json({ error: 'Array of issues required' });
+  }
+
+  const results = [];
+  let cached = 0;
+  let generated = 0;
+
+  for (const issue of issues) {
+    try {
+      const cacheKey = generateCacheKey(issue);
+
+      // Check cache
+      const cachedFix = await redis.get(cacheKey);
+      let fix;
+
+      if (cachedFix) {
+        hitRate.hits++;
+        fix = JSON.parse(cachedFix);
+        fix.cached = true;
+        cached++;
+        console.log(`Cache HIT for ${issue.tool}:${issue.category}`);
+      } else {
+        hitRate.misses++;
+        fix = generateDemoFix(issue);
+        await redis.setex(cacheKey, 3600, JSON.stringify(fix));
+        generated++;
+        console.log(`Cache MISS and generated for ${issue.tool}:${issue.category}`);
+      }
+
+      results.push({ issue, fix, success: true });
+    } catch (error) {
+      results.push({ issue, error: error.message, success: false });
+    }
+  }
+
+  res.json({
+    success: true,
+    results,
+    stats: {
+      total: issues.length,
+      cached,
+      generated,
+      failed: results.filter(r => !r.success).length,
+      cacheHitRate: getHitRate() + '%'
+    }
+  });
+});
+
+// Stats endpoint
+app.get('/stats', (req, res) => {
+  res.json({
+    mode: 'demo',
+    cacheHitRate: getHitRate() + '%',
+    hits: hitRate.hits,
+    misses: hitRate.misses,
+    total: hitRate.hits + hitRate.misses
+  });
+});
+
+// Clear cache endpoint (for testing)
+app.delete('/cache', async (req, res) => {
+  try {
+    await redis.flushdb();
+    hitRate.hits = 0;
+    hitRate.misses = 0;
+    res.json({ success: true, message: 'Cache cleared' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Hybrid Agent Demo Service running on port ${PORT}`);
+  console.log('Mode: DEMO (using simulated fixes)');
+  console.log('Redis URL:', process.env.REDIS_URL || 'redis://localhost:6379');
+});
+EOF
+
+# Set environment variables
+ENV NODE_ENV=development \
+    PORT=3000 \
+    REDIS_URL=redis://localhost:6379
+
+EXPOSE 3000
+
+CMD ["node", "src/index.js"]

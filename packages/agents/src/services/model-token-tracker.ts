@@ -6,8 +6,8 @@
  * to get real-time pricing information.
  */
 
-import { createLogger, Logger } from '@codequal/core/utils';
-import { ModelVersionSync, ModelPricing } from '@codequal/core/services/model-selection/ModelVersionSync';
+import { createLogger, Logger } from '../utils';
+import { ModelVersionSync, ModelPricing } from '../utils/model-types';
 import { VectorStorageService } from '@codequal/database';
 
 // Import TokenUsage from token-usage-extractor to avoid duplicate export
@@ -177,19 +177,10 @@ export class ModelTokenTracker {
     
     try {
       // Try to get from Vector DB via ModelVersionSync
-      const canonicalVersion = await this.modelVersionSync.getCanonicalVersion(
-        model.includes('/') ? model.split('/')[0] : 'openrouter',
-        model.includes('/') ? model.split('/').slice(1).join('/') : model
-      );
+      const canonicalVersion = this.modelVersionSync.getCanonicalVersion(model);
       
-      if (canonicalVersion && canonicalVersion.pricing) {
-        const pricing: ModelPricing = {
-          input: canonicalVersion.pricing.input,
-          output: canonicalVersion.pricing.output
-        };
-        this.modelPricingCache.set(model, pricing);
-        return pricing;
-      }
+      // For now, return default pricing since getCanonicalVersion returns a string
+      // TODO: Implement proper pricing lookup based on canonical version
       
       // Fallback to default pricing if not found
       const defaultPricing: ModelPricing = {

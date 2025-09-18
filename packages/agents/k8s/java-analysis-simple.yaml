@@ -1,0 +1,81 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: java-analysis-pr-17620
+  namespace: codequal-dev
+  labels:
+    app: codequal-analysis
+    language: java
+    pr: "17620"
+spec:
+  restartPolicy: Never
+  containers:
+  - name: java-analyzer
+    image: openjdk:17-slim
+    imagePullPolicy: IfNotPresent
+    resources:
+      requests:
+        memory: "1Gi"
+        cpu: "500m"
+      limits:
+        memory: "2Gi"
+        cpu: "1000m"
+    env:
+    - name: REPOSITORY_URL
+      value: "https://github.com/apache/kafka"
+    - name: PR_NUMBER
+      value: "17620"
+    command:
+    - /bin/bash
+    - -c
+    - |
+      echo "==================================="
+      echo "Java PR Analysis - Cloud Execution"
+      echo "==================================="
+      echo "Repository: $REPOSITORY_URL"
+      echo "PR Number: $PR_NUMBER"
+      echo "Pod: $(hostname)"
+      echo "Date: $(date)"
+      echo ""
+
+      # Install git and basic tools
+      apt-get update && apt-get install -y git curl wget
+
+      # Create workspace
+      mkdir -p /workspace && cd /workspace
+
+      # Clone repository (shallow clone for speed)
+      echo "Cloning repository..."
+      git clone --depth 10 $REPOSITORY_URL repo
+      cd repo
+
+      # Get PR info
+      echo ""
+      echo "Fetching PR #$PR_NUMBER..."
+      git fetch origin pull/$PR_NUMBER/head:pr-$PR_NUMBER --depth=10
+
+      # Show modified files
+      echo ""
+      echo "Modified files in PR:"
+      git diff --name-only origin/trunk...pr-$PR_NUMBER
+
+      # Count changes
+      echo ""
+      echo "Statistics:"
+      git diff --stat origin/trunk...pr-$PR_NUMBER
+
+      # Simulated tool execution (in real deployment, tools would be pre-installed)
+      echo ""
+      echo "Tool Execution Results (Simulated):"
+      echo "===================================="
+      echo "✓ SpotBugs: 0 security issues found"
+      echo "✓ PMD-Quality: 2 code style issues"
+      echo "✓ PMD-Performance: 0 performance issues"
+      echo "✓ PMD-Architecture: 1 design issue"
+      echo "✓ Checkstyle: 5 formatting issues"
+      echo "✓ Semgrep: 0 security vulnerabilities"
+      echo "✓ OWASP Dependency Check: 0 vulnerable dependencies"
+
+      echo ""
+      echo "Cloud execution completed successfully!"
+      echo "Results available in pod: $(hostname)"

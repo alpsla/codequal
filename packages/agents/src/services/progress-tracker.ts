@@ -4,7 +4,7 @@
  */
 
 import { EventEmitter } from 'events';
-import { createLogger } from '@codequal/core';
+import { createLogger } from '../utils';
 import { v4 as uuidv4 } from 'uuid';
 
 export interface ProgressUpdate {

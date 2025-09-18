@@ -3,7 +3,7 @@
  * Provides detailed logging for troubleshooting and monitoring
  */
 
-import { createLogger } from '@codequal/core';
+import { createLogger } from '../utils';
 import { v4 as uuidv4 } from 'uuid';
 
 export interface DebugContext {

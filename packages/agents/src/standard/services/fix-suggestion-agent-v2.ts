@@ -691,7 +691,7 @@ Return only the fixed code without explanation.`;
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-              model: modelId || 'anthropic/claude-3-sonnet',
+              model: modelId, // No hardcoded fallback - must load from Supabase
               messages: [
                 { role: 'system', content: 'You are a code fix generator. Provide ONLY the fixed code without any explanation or markdown formatting.' },
                 { role: 'user', content: prompt }
@@ -705,7 +705,7 @@ Return only the fixed code without explanation.`;
           clearTimeout(timeout);
           
           if (response.ok) {
-            const data = await response.json();
+            const data: any = await response.json();
             const fixContent = data.choices?.[0]?.message?.content || '';
             if (fixContent && fixContent.trim()) {
               console.log('  ✅ AI generated fix successfully');

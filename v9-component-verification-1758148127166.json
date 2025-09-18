@@ -1,0 +1,22 @@
+{
+  "core": {
+    "V9ScoringCalculator": "PASS",
+    "V9IssueComparator": "PASS",
+    "V9BusinessImpact": "PASS",
+    "V9EducationalResources": "PASS",
+    "V9ReportFormatterComplete": "PASS",
+    "V9PRCommentGenerator": "PASS"
+  },
+  "utilities": {
+    "OptimizedRepoManager": "PASS",
+    "SmartFileSelector": "PASS",
+    "CloudRepositoryManager": "PASS",
+    "V9RepositoryManager": "PASS",
+    "V9ToolOrchestrator": "FAIL - supabaseUrl is required."
+  },
+  "summary": {
+    "total": 11,
+    "passed": 10,
+    "failed": 1
+  }
+}

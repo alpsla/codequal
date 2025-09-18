@@ -7,7 +7,7 @@
 
 // PERMANENT FIX: Use centralized environment loader
 import { getEnvConfig } from '../utils/env-loader';
-import { createLogger } from '@codequal/core';
+import { createLogger } from '../utils';
 import axios from 'axios';
 
 const logger = createLogger('TrulyDynamicSelector');

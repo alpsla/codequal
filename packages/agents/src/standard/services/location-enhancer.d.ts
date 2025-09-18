@@ -1,7 +1,7 @@
 interface ILocationFinder {
     findExactLocation(issue: any, repoPath: string): Promise<any>;
 }
-import { ModelVersionSync } from '@codequal/core';
+import { ModelVersionSync } from '../utils';
 export interface EnhancedIssue {
     id: string;
     title: string;

@@ -11,7 +11,7 @@ export { ComparisonOrchestrator } from './orchestrator/comparison-orchestrator';
 // The codebase uses MCP tools and the two-branch analysis system
 
 // Model Research Service
-export { ModelResearcherService } from './services/model-researcher-service';
+export { ModelResearcherService } from '../two-branch/research-services/model-researcher-service';
 
 // Factory
 export { 

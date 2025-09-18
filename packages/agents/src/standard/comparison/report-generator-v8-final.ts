@@ -18,7 +18,7 @@ import {
 } from '../types/analysis-types';
 import { OWASPMapper } from '../utils/owasp-mapper';
 import { ModelConfigResolver } from '../orchestrator/model-config-resolver';
-import { ModelResearcherService } from '../services/model-researcher-service';
+import { ModelResearcherService } from '../../two-branch/research-services/model-researcher-service';
 import { ReportGeneratorV8Fixes } from './report-generator-v8-fixes';
 import { DynamicModelSelector } from '../services/dynamic-model-selector';
 // HTMLIssueFormatter removed - using markdown format directly

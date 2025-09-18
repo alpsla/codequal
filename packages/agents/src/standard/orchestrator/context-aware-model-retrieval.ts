@@ -8,8 +8,11 @@
  */
 
 import { VectorStorageService } from '@codequal/database';
-import { ModelVersionInfo } from '@codequal/core';
-import { createLogger } from '@codequal/core/utils';
+// import { ModelVersionInfo } from '../utils';
+import { createLogger } from '../utils';
+
+// Temporary type definition
+type ModelVersionInfo = any;
 
 const logger = createLogger('ContextAwareModelRetrieval');
 

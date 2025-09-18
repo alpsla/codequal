@@ -19,6 +19,7 @@ import { V9RubyAnalyzer } from './v9-ruby-analyzer';
 import { V9PHPAnalyzer } from './v9-php-analyzer';
 import { V9SwiftAnalyzer } from './v9-swift-analyzer';
 import { V9KotlinAnalyzer } from './v9-kotlin-analyzer';
+// Web analyzers removed - not part of core framework
 
 /**
  * Supported languages for V9 analyzers
@@ -36,7 +37,9 @@ export type SupportedLanguage =
   | 'ruby'
   | 'php'
   | 'swift'
-  | 'kotlin';
+  | 'kotlin'
+  | 'web'
+  | 'html';
 
 /**
  * Language mapping for common variations
@@ -54,7 +57,7 @@ const LANGUAGE_ALIASES: Record<string, SupportedLanguage> = {
   'cs': 'csharp',
   'c#': 'csharp',
   'rb': 'ruby',
-  'kt': 'kotlin'
+  'kt': 'kotlin',
 };
 
 /**
@@ -81,7 +84,7 @@ const EXTENSION_TO_LANGUAGE: Record<string, SupportedLanguage> = {
   '.php': 'php',
   '.swift': 'swift',
   '.kt': 'kotlin',
-  '.kts': 'kotlin'
+  '.kts': 'kotlin',
 };
 
 /**
@@ -186,7 +189,9 @@ export class V9AnalyzerFactory {
       'ruby',
       'php',
       'swift',
-      'kotlin'
+      'kotlin',
+      'web',
+      'html'
     ];
   }
   
@@ -221,7 +226,9 @@ export class V9AnalyzerFactory {
       ruby: ['.rb', '.gemspec'],
       php: ['.php', '.phtml'],
       swift: ['.swift'],
-      kotlin: ['.kt', '.kts']
+      kotlin: ['.kt', '.kts'],
+      web: ['.html', '.htm', '.css', '.scss', '.sass', '.less', '.vue', '.svelte', '.js', '.jsx', '.ts', '.tsx'],
+      html: ['.html', '.htm', '.css', '.scss', '.sass', '.less']
     };
     
     return extensionMap[normalizedLanguage] || [];

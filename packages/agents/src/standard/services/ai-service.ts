@@ -11,7 +11,7 @@
  * - Provides cost tracking and monitoring
  */
 
-import { ModelVersionInfo } from '@codequal/core';
+import { ModelVersionInfo } from '../../utils';
 
 // Create a simple logger for now
 const createLogger = (name: string) => ({
@@ -210,7 +210,7 @@ export class AIService {
       throw new Error(`OpenRouter API error (${response.status}): ${error}`);
     }
     
-    const data = await response.json();
+    const data: any = await response.json();
     
     if (!data.choices?.[0]?.message?.content) {
       throw new Error('Invalid response from OpenRouter');

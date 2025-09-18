@@ -1,89 +1,47 @@
 /**
- * Dynamic Model Selector Service - Temporary Stub
+ * Dynamic Model Selector Service
  * 
- * TODO: Move full implementation from standard/services/dynamic-model-selector.ts
- * This is currently a 532-line file that needs to be split according to CLAUDE.md guidelines.
+ * This integrates with the full implementation from standard/services
+ * to provide proper dynamic model selection based on Supabase configurations
  */
 
-export interface RoleRequirements {
-  role: string;
-  description: string;
-  languages?: string[];
-  repositorySize: 'small' | 'medium' | 'large' | 'enterprise';
-  maxCostPerMillion?: number;
-  weights: {
-    quality: number;
-    speed: number;
-    cost: number;
-  };
-  minContextWindow?: number;
-  requiresReasoning?: boolean;
-  requiresCodeAnalysis?: boolean;
-}
+// Import the full implementation from standard services
+import { DynamicModelSelector as StandardDynamicModelSelector } from '../../standard/services/dynamic-model-selector';
 
-export interface ModelCandidate {
-  id: string;
-  provider: string;
-  model: string;
-  contextLength: number;
-  pricing: {
-    prompt: number;
-    completion: number;
-  };
-  qualityScore?: number;
-  speedScore?: number;
-  costScore?: number;
-  totalScore?: number;
-}
+// Re-export interfaces for compatibility
+export { RoleRequirements, ModelCandidate } from '../../standard/services/dynamic-model-selector';
 
 /**
- * Temporary stub implementation
- * Full implementation needs to be moved and split from standard directory
+ * Dynamic Model Selector for Two-Branch Architecture
+ * Extends the standard implementation with two-branch specific features
  */
-export class DynamicModelSelector {
-  private openRouterApiKey: string;
-  
+export class DynamicModelSelector extends StandardDynamicModelSelector {
   constructor(apiKey?: string) {
-    this.openRouterApiKey = apiKey || process.env.OPENROUTER_API_KEY || '';
+    super(apiKey);
   }
   
   /**
-   * Temporary fallback implementation
-   * Returns hardcoded models until full service is migrated
+   * Override to add two-branch specific model selection logic
+   * This ensures we get models optimized for comparing two branches
    */
-  async selectModelsForRole(requirements: RoleRequirements): Promise<{
-    primary: ModelCandidate;
-    fallback: ModelCandidate;
-    reasoning: string;
-  }> {
-    // Fallback to default models based on role
-    const defaultModels = this.getDefaultModels(requirements.role);
-    
-    return {
-      primary: defaultModels.primary,
-      fallback: defaultModels.fallback,
-      reasoning: `Using fallback models until full DynamicModelSelector is migrated to two-branch architecture. Role: ${requirements.role}`
-    };
-  }
-  
-  private getDefaultModels(role: string): { primary: ModelCandidate; fallback: ModelCandidate } {
-    const primaryModel: ModelCandidate = {
-      id: 'anthropic/claude-3-opus-20240229',
-      provider: 'anthropic',
-      model: 'anthropic/claude-3-opus-20240229',
-      contextLength: 200000,
-      pricing: { prompt: 15, completion: 75 }
+  async selectModelsForTwoBranchAnalysis(role: string, repoSize: 'small' | 'medium' | 'large' | 'enterprise') {
+    // For two-branch analysis, we need models with good reasoning
+    // to properly categorize issues as new/existing/resolved
+    const requirements = {
+      role,
+      description: `Two-branch ${role} analysis for issue comparison`,
+      repositorySize: repoSize,
+      weights: {
+        quality: 0.7,  // High quality for accurate comparison
+        speed: 0.2,    // Speed is less critical
+        cost: 0.1      // Cost is lowest priority for accuracy
+      },
+      requiresReasoning: true,
+      requiresCodeAnalysis: true,
+      minContextWindow: repoSize === 'enterprise' ? 100000 : 32000
     };
     
-    const fallbackModel: ModelCandidate = {
-      id: 'openai/gpt-4o-mini',
-      provider: 'openai', 
-      model: 'openai/gpt-4o-mini',
-      contextLength: 128000,
-      pricing: { prompt: 0.15, completion: 0.6 }
-    };
-    
-    return { primary: primaryModel, fallback: fallbackModel };
+    return this.selectModelsForRole(requirements);
   }
 }
 

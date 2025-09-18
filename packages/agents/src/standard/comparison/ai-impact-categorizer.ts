@@ -7,8 +7,7 @@
  */
 
 import { Issue } from '../types/analysis-types';
-import { UnifiedModelSelector, createUnifiedModelSelector } from '../../model-selection/unified-model-selector';
-import { ModelVersionSync } from '@codequal/core';
+import { DynamicModelSelector } from '../services/dynamic-model-selector';
 import { AIService } from '../services/ai-service';
 
 interface ImpactCategorizationResult {
@@ -18,28 +17,17 @@ interface ImpactCategorizationResult {
 }
 
 export class AIImpactCategorizer {
-  private modelSelector: UnifiedModelSelector;
+  private modelSelector: DynamicModelSelector;
   private aiService: AIService;
   private cache: Map<string, ImpactCategorizationResult> = new Map();
   
   constructor(
-    private modelVersionSync?: any,
     private vectorStorage?: any
   ) {
     // Initialize model selector
-    if (modelVersionSync instanceof UnifiedModelSelector) {
-      this.modelSelector = modelVersionSync;
-    } else if (modelVersionSync) {
-      this.modelSelector = createUnifiedModelSelector(modelVersionSync);
-    } else {
-      // Create default model version sync if none provided
-      const defaultSync = new ModelVersionSync(
-        console as any,
-        process.env.SUPABASE_URL,
-        process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY
-      );
-      this.modelSelector = createUnifiedModelSelector(defaultSync);
-    }
+    this.modelSelector = new DynamicModelSelector(
+      process.env.OPENROUTER_API_KEY
+    );
     
     // Initialize AI service
     this.aiService = new AIService({} as any);
@@ -81,7 +69,19 @@ export class AIImpactCategorizer {
     
     let modelSelection;
     try {
-      modelSelection = await this.modelSelector.selectModel('categorization', repoContext);
+      modelSelection = await this.modelSelector.selectModelsForRole({
+        role: 'categorization',
+        description: 'AI impact categorization',
+        repositorySize: repoContext?.size || 'medium',
+        weights: {
+          quality: 0.6,
+          speed: 0.2,
+          cost: 0.2
+        },
+        minContextWindow: 32000,
+        requiresReasoning: true,
+        requiresCodeAnalysis: true
+      });
     } catch (error) {
       console.warn('Model selection failed, using default fallback', error);
       // Use a default fallback configuration
@@ -186,12 +186,18 @@ export class AIImpactCategorizer {
   private async triggerResearcherForContext(issue: Issue): Promise<void> {
     try {
       // Import ResearcherService dynamically to avoid circular dependencies
-      const { ResearcherService } = await import('../../researcher/researcher-service.js');
+      // Commented out - two-branch has build issues
+      // const { ResearcherService } = await import('../../two-branch/researcher/researcher-service');
+      return; // Skip researcher for now
       
-      // Create researcher instance
-      const researcher = new ResearcherService({
-        modelVersionSync: this.modelVersionSync
-      } as any);
+      // Create researcher instance with a system user
+      const systemUser = {
+        id: 'system',
+        email: 'system@codequal.com',
+        name: 'System'
+      } as any; // Basic authenticated user for system operations
+      
+      // const researcher = new ResearcherService(systemUser, undefined);
       
       // Research context for this specific issue pattern
       const researchQuery = `${issue.category} ${issue.severity} issue: ${issue.message}`;

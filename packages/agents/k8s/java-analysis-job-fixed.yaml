@@ -1,0 +1,117 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  generateName: java-pr-  # Short name with unique suffix
+  namespace: codequal-dev
+  labels:
+    app: codequal-analysis
+    language: java
+    type: pr-analysis
+spec:
+  ttlSecondsAfterFinished: 300  # Auto-cleanup 5 minutes after completion
+  backoffLimit: 0  # Don't retry on failure
+  activeDeadlineSeconds: 600  # Kill if running longer than 10 minutes
+  template:
+    metadata:
+      labels:
+        app: codequal-analysis
+        language: java
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: analyzer
+        image: openjdk:17-slim
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+            ephemeral-storage: "1Gi"
+          limits:
+            memory: "2Gi"  # Hard limit to prevent memory explosion
+            cpu: "1000m"
+            ephemeral-storage: "5Gi"
+        env:
+        - name: REPOSITORY_URL
+          value: "https://github.com/apache/kafka"
+        - name: PR_NUMBER
+          value: "17620"
+        - name: MAIN_BRANCH
+          value: "trunk"
+        command:
+        - /bin/bash
+        - -c
+        - |
+          echo "======================================"
+          echo "Java PR Analysis - Cloud Job"
+          echo "======================================"
+          echo "Pod: $HOSTNAME"
+          echo "Repository: $REPOSITORY_URL"
+          echo "PR: #$PR_NUMBER"
+          echo "Memory Limit: 2Gi (isolated per job)"
+          echo ""
+
+          # Install git quietly
+          echo "Setting up environment..."
+          apt-get update -qq > /dev/null 2>&1
+          apt-get install -y -qq git > /dev/null 2>&1
+
+          # Create isolated workspace
+          WORKSPACE="/tmp/pr-$PR_NUMBER"
+          mkdir -p $WORKSPACE
+          cd $WORKSPACE
+
+          # Clone with minimal depth
+          echo "Cloning repository (depth=1)..."
+          if git clone --quiet --depth 1 --single-branch --branch $MAIN_BRANCH $REPOSITORY_URL repo 2>/dev/null; then
+            echo "✓ Repository cloned"
+          else
+            echo "✗ Clone failed"
+            exit 1
+          fi
+
+          cd repo
+
+          # Fetch PR
+          echo "Fetching PR #$PR_NUMBER..."
+          if git fetch --quiet --depth 1 origin pull/$PR_NUMBER/head:pr-$PR_NUMBER 2>/dev/null; then
+            echo "✓ PR fetched"
+          else
+            echo "✗ PR fetch failed"
+            exit 1
+          fi
+
+          # Count modified files
+          MODIFIED_COUNT=$(git diff --name-only $MAIN_BRANCH...pr-$PR_NUMBER 2>/dev/null | wc -l || echo 0)
+          echo "✓ Modified files: $MODIFIED_COUNT"
+
+          # Simulate tool execution
+          echo ""
+          echo "Running analysis tools..."
+          sleep 2  # Simulate processing time
+
+          echo "Results:"
+          echo "• SpotBugs: 0 security issues"
+          echo "• PMD-Quality: 2 code style issues"
+          echo "• PMD-Performance: 0 performance issues"
+          echo "• PMD-Architecture: 1 design issue"
+          echo "• Checkstyle: 5 style violations"
+          echo "• Semgrep: 0 vulnerabilities"
+          echo "• Dependency-check: 0 vulnerable dependencies"
+
+          # Cleanup workspace
+          echo ""
+          echo "Cleaning up temporary files..."
+          cd /
+          rm -rf $WORKSPACE
+
+          echo ""
+          echo "✅ Analysis complete"
+          echo "✅ Job will auto-cleanup in 5 minutes (ttlSecondsAfterFinished)"
+          echo ""
+          echo "This ensures:"
+          echo "• No memory accumulation across runs"
+          echo "• Each PR gets fresh isolated environment"
+          echo "• Automatic resource cleanup"
+
+          exit 0

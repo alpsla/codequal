@@ -4,7 +4,8 @@ import { EnhancedLocationFinder } from './enhanced-location-finder';
 interface ILocationFinder {
   findExactLocation(issue: any, repoPath: string): Promise<any>;
 }
-import { ModelVersionSync } from '@codequal/core';
+// import { ModelVersionSync } from '../utils';
+type ModelVersionSync = any;
 import { execSync } from 'child_process';
 import * as path from 'path';
 

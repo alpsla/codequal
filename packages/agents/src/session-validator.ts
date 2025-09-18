@@ -277,7 +277,7 @@ function checkForDuplicateAnalyzers(config: CodeQualConfig, manifest: ComponentM
   // Check for forbidden file patterns in project
   const forbiddenPatterns = manifest.forbidden_patterns.file_creation.analyzer_duplicates;
   
-  function scanDirectory(dirPath: string, relativePath: string = ''): void {
+  function scanDirectory(dirPath: string, relativePath = ''): void {
     if (!fs.existsSync(dirPath)) return;
     
     const items = fs.readdirSync(dirPath);

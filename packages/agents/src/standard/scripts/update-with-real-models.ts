@@ -8,7 +8,7 @@
 import { createClient } from '@supabase/supabase-js';
 import * as path from 'path';
 import * as dotenv from 'dotenv';
-import { ModelResearcher } from '../services/model-researcher';
+import { ModelResearcher } from '../../two-branch/research-services/model-researcher';
 
 // Load environment variables
 dotenv.config({ path: path.join(__dirname, '..', '..', '..', '..', '..', '.env') });

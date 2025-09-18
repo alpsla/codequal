@@ -1,0 +1,44 @@
+🚀 Starting Java PR Validation (Dynamic Models)
+📦 Repository: apache/kafka
+🔢 PR Number: #17620
+============================================================
+
+📊 Loading model configurations from Supabase...
+Found 27 configurations
+✅ SecurityAnalyzer: google/gemini-2.5-flash-image-preview:free
+✅ QualityAnalyzer: deepseek/deepseek-r1-distill-llama-8b
+✅ PerformanceAnalyzer: deepseek/deepseek-chat-v3.1:free
+✅ ArchitectureAnalyzer: google/gemini-2.5-flash-image-preview:free
+✅ DependencyAnalyzer: deepseek/deepseek-r1-distill-llama-8b
+✅ EducatorAgent: deepseek/deepseek-r1-distill-llama-8b
+
+1️⃣ Running SecurityAnalyzer...
+   Model: google/gemini-2.5-flash-image-preview:free
+   Primary failed, trying fallback: google/gemini-2.5-flash-image-preview
+   ✅ Found 0 issues (1845 tokens, $0.0018)
+
+2️⃣ Running QualityAnalyzer...
+   Model: deepseek/deepseek-r1-distill-llama-8b
+   ✅ Found 0 issues (1560 tokens, $0.5127)
+
+3️⃣ Running PerformanceAnalyzer...
+   Model: deepseek/deepseek-chat-v3.1:free
+   ✅ Found 0 issues (979 tokens, $0.2298)
+
+4️⃣ Running ArchitectureAnalyzer...
+   Model: google/gemini-2.5-flash-image-preview:free
+   Primary failed, trying fallback: google/gemini-2.5-flash-image-preview
+   ✅ Found 0 issues (1953 tokens, $0.0020)
+
+5️⃣ Running DependencyAnalyzer...
+   Model: deepseek/deepseek-r1-distill-llama-8b
+   ✅ Found 0 issues (884 tokens, $0.2905)
+
+6️⃣ Running EducatorAgent...
+   Model: deepseek/deepseek-r1-distill-llama-8b
+   ✅ Found 0 issues (1074 tokens, $0.3530)
+
+============================================================
+✅ PR Validation Complete!
+📄 Report saved: /Users/alpinro/Code Prjects/codequal/packages/agents/java-pr-dynamic-report.md
+💰 Total Cost: $1.3898

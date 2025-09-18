@@ -13,7 +13,9 @@
     "forceConsistentCasingInFileNames": true,
     "strict": false,
     "skipLibCheck": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true
   },
   "include": [
     "src/**/*"
@@ -25,8 +27,7 @@
     "**/*.spec.ts",
     "**/tests/**",
     "**/archive/**",
-    "**/deprecated/**",
-    "**/orchestrator/**"
+    "**/deprecated/**"
   ],
   "references": [
     { "path": "../core" },

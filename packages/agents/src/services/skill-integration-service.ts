@@ -1,4 +1,4 @@
-import { createLogger } from '@codequal/core/utils';
+import { createLogger } from '../utils';
 import { SkillTrackingService } from './skill-tracking-service';
 import { PRSkillAssessmentService, PRMetadata } from './pr-skill-assessment-service';
 import { RecommendationService } from './recommendation-service';

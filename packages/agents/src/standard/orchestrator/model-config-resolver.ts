@@ -6,7 +6,7 @@
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { ModelResearcherService } from '../services/model-researcher-service';
+import { ModelResearcherService } from '../../two-branch/research-services/model-researcher-service';
 
 export interface ModelConfiguration {
   role: string;

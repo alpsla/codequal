@@ -1,0 +1,261 @@
+# All-in-One Agent Container
+# Includes all CodeQual agents: Orchestrator, Educator, Comparator, Researcher, and Fix Agents
+FROM node:20-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Install build dependencies
+RUN apk add --no-cache python3 py3-pip make g++ git
+
+# Create comprehensive package.json
+RUN echo '{\
+  "name": "@codequal/agent-service",\
+  "version": "9.0.0",\
+  "description": "Complete agent service for CodeQual including all agent types",\
+  "main": "dist/index.js",\
+  "scripts": {\
+    "start": "node dist/index.js",\
+    "build": "tsc",\
+    "dev": "ts-node src/index.ts"\
+  }\
+}' > package.json
+
+# Install all dependencies needed by all agents
+RUN npm install --save \
+    openai@4.38.5 \
+    ioredis@5.3.2 \
+    @grpc/grpc-js@1.10.1 \
+    @grpc/proto-loader@0.7.10 \
+    winston@3.11.0 \
+    dotenv@16.3.1 \
+    p-queue@7.4.1 \
+    p-retry@5.1.2 \
+    @supabase/supabase-js@2.39.3 \
+    zod@3.22.4 \
+    axios@1.6.7 \
+    marked@11.1.1
+
+# Install dev dependencies
+RUN npm install --save-dev \
+    typescript@5.3.3 \
+    @types/node@20.11.19 \
+    @types/marked@6.0.0 \
+    ts-node@10.9.2
+
+# Copy all agent source code
+# Fix generation agents
+COPY packages/agents/src/two-branch/agents/specialized-agents.ts src/agents/fix/
+COPY packages/agents/src/two-branch/agents/cloud-wrappers.ts src/agents/
+COPY packages/agents/src/two-branch/architecture/hybrid-fix-architecture.ts src/architecture/
+
+# Core comparators and orchestrator
+COPY packages/agents/src/two-branch/comparators/ src/comparators/
+
+# Researcher services (using correct path)
+COPY packages/agents/src/two-branch/research-services/ src/research-services/
+COPY packages/agents/src/two-branch/researcher/ src/researcher/
+
+# Services, tools, and utils
+COPY packages/agents/src/two-branch/services/ src/services/
+COPY packages/agents/src/two-branch/utils/ src/utils/
+COPY packages/agents/src/two-branch/tools/ src/tools/
+
+# Create unified entry point that can run different agents based on environment
+RUN echo 'import * as grpc from "@grpc/grpc-js";\
+import winston from "winston";\
+import dotenv from "dotenv";\
+\
+// Load environment\
+dotenv.config();\
+\
+// Import all agents\
+import { SecurityAgent, PerformanceAgent, CodeQualityAgent, ArchitectureAgent, DependencyAgent } from "./agents/fix/specialized-agents";\
+import { HybridFixService } from "./architecture/hybrid-fix-architecture";\
+\
+// Import existing researcher and educational services\
+import { ResearcherService } from "./researcher/researcher-service";\
+import { EducationalService } from "./researcher/educational-service";\
+\
+const logger = winston.createLogger({\
+  level: process.env.LOG_LEVEL || "info",\
+  format: winston.format.combine(\
+    winston.format.timestamp(),\
+    winston.format.errors({ stack: true }),\
+    winston.format.json()\
+  ),\
+  transports: [new winston.transports.Console()]\
+});\
+\
+// Determine which agent to run based on AGENT_TYPE env var\
+const AGENT_TYPE = process.env.AGENT_TYPE || "quality";\
+const PORT = process.env.PORT || 50051;\
+\
+logger.info(`Starting CodeQual Agent Service`);\
+logger.info(`Agent Type: ${AGENT_TYPE}`);\
+logger.info(`Port: ${PORT}`);\
+\
+// Agent factory\
+function createAgent() {\
+  switch (AGENT_TYPE.toLowerCase()) {\
+    case "security":\
+      return new SecurityAgent();\
+    case "performance":\
+      return new PerformanceAgent();\
+    case "quality":\
+      return new CodeQualityAgent();\
+    case "architecture":\
+      return new ArchitectureAgent();\
+    case "dependency":\
+      return new DependencyAgent();\
+    case "orchestrator":\
+      logger.info("Orchestrator mode - coordinating all agents");\
+      return null; // Orchestrator has different flow\
+    case "educator":\
+      logger.info("Educator mode - generating learning content");\
+      return null; // Educator has different flow\
+    case "comparator":\
+      logger.info("Comparator mode - comparing branches");\
+      return null; // Comparator has different flow\
+    case "researcher":\
+      logger.info("Researcher mode - analyzing patterns");\
+      return null; // Researcher has different flow\
+    default:\
+      logger.warn(`Unknown agent type: ${AGENT_TYPE}, defaulting to quality`);\
+      return new CodeQualityAgent();\
+  }\
+}\
+\
+// Initialize the appropriate agent\
+const agent = createAgent();\
+const service = new HybridFixService();\
+\
+// gRPC server setup for fix agents\
+if (agent) {\
+  const server = new grpc.Server({\
+    "grpc.max_receive_message_length": 50 * 1024 * 1024,\
+    "grpc.max_send_message_length": 50 * 1024 * 1024\
+  });\
+\
+  server.bindAsync(\
+    `0.0.0.0:${PORT}`,\
+    grpc.ServerCredentials.createInsecure(),\
+    (err, port) => {\
+      if (err) {\
+        logger.error("Failed to start gRPC server:", err);\
+        process.exit(1);\
+      }\
+      logger.info(`${AGENT_TYPE} Agent listening on port ${port}`);\
+      server.start();\
+    }\
+  );\
+\
+  // Health check endpoint\
+  const healthCheck = (call: any, callback: any) => {\
+    callback(null, {\
+      status: "healthy",\
+      agent: AGENT_TYPE,\
+      version: "9.0.0",\
+      timestamp: new Date().toISOString()\
+    });\
+  };\
+\
+  // Fix generation endpoint\
+  const generateFix = async (call: any, callback: any) => {\
+    try {\
+      const issue = call.request;\
+      const fix = await agent.generateFixSuggestion(issue);\
+      callback(null, fix);\
+    } catch (error) {\
+      logger.error("Fix generation failed:", error);\
+      callback(error);\
+    }\
+  };\
+} else {\
+  // Handle non-fix agents (orchestrator, educator, etc.)\
+  logger.info(`Running ${AGENT_TYPE} in cloud mode`);\
+  \
+  // Import cloud wrappers for support agents\
+  const { CloudEducatorAgent, CloudResearcherAgent, CloudComparatorAgent } = require("./agents/cloud-wrappers");\
+  \
+  // Different initialization based on agent type\
+  switch (AGENT_TYPE.toLowerCase()) {\
+    case "orchestrator":\
+      // Orchestrator coordinates everything - needs custom implementation\
+      logger.info("Orchestrator ready to coordinate analysis");\
+      // TODO: Implement orchestrator gRPC service\
+      break;\
+    case "educator":\
+      // Start educator service in cloud mode\
+      const educator = new CloudEducatorAgent();\
+      educator.start(parseInt(PORT));\
+      break;\
+    case "comparator":\
+      // Start comparator service in cloud mode\
+      const comparator = new CloudComparatorAgent();\
+      comparator.start(parseInt(PORT));\
+      break;\
+    case "researcher":\
+      // Start researcher service in cloud mode\
+      const researcher = new CloudResearcherAgent();\
+      researcher.start(parseInt(PORT));\
+      break;\
+  }\
+}\
+\
+// Graceful shutdown\
+process.on("SIGTERM", async () => {\
+  logger.info("SIGTERM received, shutting down gracefully...");\
+  process.exit(0);\
+});\
+\
+process.on("SIGINT", async () => {\
+  logger.info("SIGINT received, shutting down gracefully...");\
+  process.exit(0);\
+});' > src/index.ts
+
+# Create TypeScript config
+RUN echo '{\
+  "compilerOptions": {\
+    "target": "ES2022",\
+    "module": "commonjs",\
+    "lib": ["ES2022"],\
+    "outDir": "./dist",\
+    "rootDir": "./src",\
+    "strict": true,\
+    "esModuleInterop": true,\
+    "skipLibCheck": true,\
+    "forceConsistentCasingInFileNames": true,\
+    "resolveJsonModule": true,\
+    "moduleResolution": "node",\
+    "types": ["node"]\
+  },\
+  "include": ["src/**/*"],\
+  "exclude": ["node_modules", "dist"]\
+}' > tsconfig.json
+
+# Build the application
+RUN npm run build
+
+# Environment variables with defaults
+ENV NODE_ENV=production \
+    AGENT_TYPE=quality \
+    PORT=50051 \
+    REDIS_URL=redis://redis-cache:6379 \
+    BATCH_SIZE=50 \
+    CACHE_TTL=604800 \
+    CONCURRENCY=10 \
+    LOG_LEVEL=info \
+    OPENROUTER_API_KEY="" \
+    SUPABASE_URL="" \
+    SUPABASE_SERVICE_KEY=""
+
+# Expose multiple ports for different services
+EXPOSE 50051 8080 9090
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD node -e "require('net').createConnection(process.env.PORT || 50051, 'localhost').on('connect', () => process.exit(0)).on('error', () => process.exit(1))"
+
+# Run the appropriate agent based on AGENT_TYPE
+CMD ["node", "--max-old-space-size=2048", "dist/index.js"]

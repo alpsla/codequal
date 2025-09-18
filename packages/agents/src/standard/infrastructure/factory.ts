@@ -8,7 +8,7 @@ import { ComparisonOrchestrator } from '../orchestrator/comparison-orchestrator'
 import { IConfigProvider, AnalysisConfig, ModelSelection } from '../orchestrator/interfaces/config-provider.interface';
 import { ISkillProvider, DeveloperSkills, SkillUpdate, TeamSkills, HistoryParams, SkillHistory, CategoryScores } from '../orchestrator/interfaces/skill-provider.interface';
 import { IDataStore, AnalysisReport } from '../services/interfaces/data-store.interface';
-import { ResearcherAgent } from '../../researcher/researcher-agent';
+import { ResearcherAgent } from '../../two-branch/researcher/researcher-agent';
 import { AuthenticatedUser, UserRole, UserStatus } from '../../multi-agent/types/auth';
 import { RepositoryContext } from '../types/analysis-types';
 
@@ -260,7 +260,7 @@ class MockResearcherAgent extends ResearcherAgent {
         userAgent: 'Mock User Agent'
       },
       role: 'user' as UserRole,
-      status: 'active' as UserStatus
+      status: UserStatus.ACTIVE
     };
     const mockConfig = {
       researchDepth: 'shallow' as const,

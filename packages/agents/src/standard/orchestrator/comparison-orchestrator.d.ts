@@ -13,7 +13,7 @@
 import { IConfigProvider } from './interfaces/config-provider.interface';
 import { ISkillProvider } from './interfaces/skill-provider.interface';
 import { IEducatorAgent } from '../educator/interfaces/educator.interface';
-import { ResearcherAgent } from '../../researcher/researcher-agent';
+import { ResearcherAgent } from '../../two-branch/researcher/researcher-agent';
 import { IReportingComparisonAgent } from '../comparison/interfaces/comparison-agent.interface';
 import { IDataStore } from '../services/interfaces/data-store.interface';
 import { ComparisonAnalysisRequest, ComparisonResult } from '../types/analysis-types';

@@ -1,0 +1,136 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: java-pr-analysis-17620
+  namespace: codequal-dev
+spec:
+  backoffLimit: 1
+  ttlSecondsAfterFinished: 300  # Auto-cleanup after 5 minutes
+  template:
+    metadata:
+      labels:
+        app: codequal-analysis
+        language: java
+        pr: "17620"
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: java-analyzer
+        image: codequal/java-tools:v45  # Using the successful v45 build
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+            ephemeral-storage: "10Gi"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+            ephemeral-storage: "20Gi"
+        env:
+        - name: ANALYSIS_MODE
+          value: "cloud"
+        - name: REPOSITORY_URL
+          value: "https://github.com/apache/kafka"
+        - name: PR_NUMBER
+          value: "17620"
+        - name: LANGUAGE
+          value: "java"
+        - name: WORKSPACE_ID
+          value: "kafka-pr-17620"
+        - name: MAIN_BRANCH
+          value: "trunk"
+        - name: CLOUD_EXECUTION
+          value: "true"
+        - name: LOG_LEVEL
+          value: "info"
+        command:
+        - /bin/bash
+        - -c
+        - |
+          echo "Starting Java PR Analysis in Cloud Pod"
+          echo "======================================="
+          echo "Repository: $REPOSITORY_URL"
+          echo "PR Number: $PR_NUMBER"
+          echo "Workspace: $WORKSPACE_ID"
+
+          # Create workspace directories
+          mkdir -p /workspace/main /workspace/pr /workspace/cache
+          cd /workspace
+
+          # Clone repository (main branch)
+          echo "Cloning repository..."
+          git clone --depth 100 --branch $MAIN_BRANCH $REPOSITORY_URL main
+
+          # Setup PR branch
+          echo "Fetching PR branch..."
+          cd main
+          git fetch origin pull/$PR_NUMBER/head:pr-$PR_NUMBER
+          cd ..
+
+          # Create PR workspace
+          cp -r main pr
+          cd pr
+          git checkout pr-$PR_NUMBER
+
+          # Run Java analysis tools
+          echo "Running Java analysis tools..."
+
+          # SpotBugs
+          if command -v spotbugs &> /dev/null; then
+            echo "Running SpotBugs..."
+            spotbugs -textui -effort:max -low . > /workspace/spotbugs-output.txt 2>&1 || true
+          fi
+
+          # PMD
+          if command -v pmd &> /dev/null; then
+            echo "Running PMD for quality..."
+            pmd check -d . -R rulesets/java/quickstart.xml -f text > /workspace/pmd-quality.txt 2>&1 || true
+
+            echo "Running PMD for performance..."
+            pmd check -d . -R rulesets/java/performance.xml -f text > /workspace/pmd-performance.txt 2>&1 || true
+
+            echo "Running PMD for architecture..."
+            pmd check -d . -R rulesets/java/design.xml -f text > /workspace/pmd-architecture.txt 2>&1 || true
+          fi
+
+          # Checkstyle
+          if command -v checkstyle &> /dev/null; then
+            echo "Running Checkstyle..."
+            checkstyle -c /google_checks.xml . > /workspace/checkstyle.txt 2>&1 || true
+          fi
+
+          # Semgrep
+          if command -v semgrep &> /dev/null; then
+            echo "Running Semgrep..."
+            semgrep --config=auto --json . > /workspace/semgrep.json 2>&1 || true
+          fi
+
+          # OWASP Dependency Check
+          if command -v dependency-check &> /dev/null; then
+            echo "Running OWASP Dependency Check..."
+            dependency-check --scan . --format JSON --out /workspace/dep-check.json 2>&1 || true
+          fi
+
+          # Output results summary
+          echo ""
+          echo "Analysis Complete!"
+          echo "=================="
+          echo "Tool Results:"
+          ls -la /workspace/*.txt /workspace/*.json 2>/dev/null || echo "No output files found"
+
+          # Count issues found (simple grep for demonstration)
+          echo ""
+          echo "Issues Summary:"
+          echo "SpotBugs: $(grep -c "Bug" /workspace/spotbugs-output.txt 2>/dev/null || echo 0) issues"
+          echo "PMD Quality: $(grep -c ":" /workspace/pmd-quality.txt 2>/dev/null || echo 0) issues"
+          echo "Checkstyle: $(grep -c "ERROR" /workspace/checkstyle.txt 2>/dev/null || echo 0) issues"
+
+          echo ""
+          echo "Cloud-based Java analysis completed successfully!"
+        volumeMounts:
+        - name: workspace
+          mountPath: /workspace
+      volumes:
+      - name: workspace
+        emptyDir: {}

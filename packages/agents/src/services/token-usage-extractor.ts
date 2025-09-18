@@ -5,7 +5,7 @@
  * information from various AI model API responses dynamically.
  */
 
-import { createLogger, Logger } from '@codequal/core/utils';
+import { createLogger, Logger } from '../utils';
 
 /**
  * Standard token usage format

@@ -4,7 +4,7 @@
  */
 
 import { DynamicModelSelector } from '../services/dynamic-model-selector';
-import { createLogger } from '@codequal/core/utils';
+import { createLogger } from '../utils';
 
 const logger = createLogger('ReportGeneratorV8Fixes');
 

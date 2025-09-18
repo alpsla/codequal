@@ -157,6 +157,7 @@ export class RealDataEnvironment {
     // Check Kubernetes/DeepWiki
     try {
       const kubectlOutput = execSync(
+        'kubectl get pods -n codequal-dev 2>/dev/null || echo "Not found"',
         { encoding: 'utf-8' }
       );
       
@@ -199,6 +200,7 @@ export class RealDataEnvironment {
       
       // Start new port forward in background
       execSync(
+        'kubectl port-forward -n codequal-dev svc/deepwiki-service 8001:8001 > /dev/null 2>&1 &',
         { stdio: 'ignore' }
       );
       

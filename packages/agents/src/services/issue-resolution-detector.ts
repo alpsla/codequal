@@ -1,4 +1,4 @@
-import { createLogger } from '@codequal/core/utils';
+import { createLogger } from '../utils';
 
 /**
  * Interface for issue comparison

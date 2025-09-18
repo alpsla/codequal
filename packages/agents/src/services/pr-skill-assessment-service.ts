@@ -1,4 +1,4 @@
-import { createLogger } from '@codequal/core/utils';
+import { createLogger } from '../utils';
 import { SkillTrackingService, SkillAssessment } from './skill-tracking-service';
 import { AuthenticatedUser } from '../multi-agent/types/auth';
 

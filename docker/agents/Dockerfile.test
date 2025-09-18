@@ -1,0 +1,12 @@
+FROM node:20-alpine
+WORKDIR /app
+
+# Create a simple test agent
+RUN echo '{  "name": "test-agent",  "version": "1.0.0",  "main": "index.js"}' > package.json
+
+RUN npm install express ioredis
+
+# Create test server
+RUN echo 'const express = require("express");const Redis = require("ioredis");const app = express();const redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379");app.get("/health", async (req, res) => {  try {    await redis.ping();    res.json({ status: "healthy", agent: process.env.AGENT_TYPE || "test", redis: "connected" });  } catch (error) {    res.status(500).json({ status: "unhealthy", error: error.message });  }});app.post("/analyze", (req, res) => {  res.json({     agent: process.env.AGENT_TYPE || "test",    message: "Test analysis complete",    issues: []  });});const PORT = process.env.PORT || 3000;app.listen(PORT, () => {  console.log();});' > index.js
+
+CMD ["node", "index.js"]

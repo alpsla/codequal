@@ -1,4 +1,4 @@
-import { createLogger } from '@codequal/core/utils';
+import { createLogger } from '../utils';
 import { BasicDeduplicator, Finding, DeduplicationResult } from './basic-deduplicator';
 
 export interface AgentResult {

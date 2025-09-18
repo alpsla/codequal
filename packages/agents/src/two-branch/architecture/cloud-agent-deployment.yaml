@@ -1,0 +1,216 @@
+# Cloud deployment configuration for specialized agents
+# Agents run as microservices with auto-scaling and caching
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: fix-agent-service
+  namespace: codequal-dev
+spec:
+  selector:
+    app: fix-agents
+  ports:
+    - port: 50051
+      targetPort: 50051
+      name: grpc
+    - port: 8080
+      targetPort: 8080
+      name: metrics
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: security-agent
+  namespace: codequal-dev
+spec:
+  replicas: 3  # Start with 3 replicas
+  selector:
+    matchLabels:
+      app: fix-agents
+      agent: security
+  template:
+    metadata:
+      labels:
+        app: fix-agents
+        agent: security
+    spec:
+      containers:
+      - name: security-agent
+        image: codequal/security-agent:v9
+        ports:
+        - containerPort: 50051
+        env:
+        - name: AGENT_TYPE
+          value: "security"
+        - name: REDIS_URL
+          value: "redis://redis-service:6379"
+        - name: OPENROUTER_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: openrouter-secret
+              key: api-key
+        - name: BATCH_SIZE
+          value: "50"
+        - name: CACHE_TTL
+          value: "604800"  # 7 days
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: performance-agent
+  namespace: codequal-dev
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: fix-agents
+      agent: performance
+  template:
+    metadata:
+      labels:
+        app: fix-agents
+        agent: performance
+    spec:
+      containers:
+      - name: performance-agent
+        image: codequal/performance-agent:v9
+        ports:
+        - containerPort: 50051
+        env:
+        - name: AGENT_TYPE
+          value: "performance"
+        - name: REDIS_URL
+          value: "redis://redis-service:6379"
+        - name: OPENROUTER_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: openrouter-secret
+              key: api-key
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: quality-agent
+  namespace: codequal-dev
+spec:
+  replicas: 5  # More replicas for quality issues (most common)
+  selector:
+    matchLabels:
+      app: fix-agents
+      agent: quality
+  template:
+    metadata:
+      labels:
+        app: fix-agents
+        agent: quality
+    spec:
+      containers:
+      - name: quality-agent
+        image: codequal/quality-agent:v9
+        ports:
+        - containerPort: 50051
+        env:
+        - name: AGENT_TYPE
+          value: "quality"
+        - name: REDIS_URL
+          value: "redis://redis-service:6379"
+        - name: OPENROUTER_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: openrouter-secret
+              key: api-key
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+
+---
+# Horizontal Pod Autoscaler for automatic scaling
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: quality-agent-hpa
+  namespace: codequal-dev
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: quality-agent
+  minReplicas: 2
+  maxReplicas: 20
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+
+---
+# Redis for distributed caching
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis-cache
+  namespace: codequal-dev
+spec:
+  serviceName: redis-service
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis-cache
+  template:
+    metadata:
+      labels:
+        app: redis-cache
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        ports:
+        - containerPort: 6379
+        command:
+          - redis-server
+          - "--save"
+          - "60 1000"  # Persist every 60s if 1000+ keys changed
+          - "--maxmemory"
+          - "2gb"
+          - "--maxmemory-policy"
+          - "allkeys-lru"  # Evict least recently used keys
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+  volumeClaimTemplates:
+  - metadata:
+      name: redis-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 10Gi

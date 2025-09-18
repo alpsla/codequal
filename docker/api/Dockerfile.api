@@ -1,0 +1,295 @@
+# Simplified API Service
+# Just triggers cloud analysis and returns results
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Create package.json
+RUN echo '{\
+  "name": "@codequal/api-service",\
+  "version": "9.0.0",\
+  "description": "Simplified API service that triggers cloud analysis",\
+  "main": "dist/index.js",\
+  "scripts": {\
+    "start": "node dist/index.js",\
+    "build": "tsc",\
+    "dev": "ts-node src/index.ts"\
+  }\
+}' > package.json
+
+# Install minimal dependencies
+RUN npm install --save \
+    express@4.18.2 \
+    @grpc/grpc-js@1.10.1 \
+    @grpc/proto-loader@0.7.10 \
+    ioredis@5.3.2 \
+    @supabase/supabase-js@2.39.3 \
+    winston@3.11.0 \
+    dotenv@16.3.1 \
+    cors@2.8.5 \
+    helmet@7.1.0 \
+    express-rate-limit@7.1.5 \
+    uuid@9.0.1
+
+# Install dev dependencies
+RUN npm install --save-dev \
+    typescript@5.3.3 \
+    @types/node@20.11.19 \
+    @types/express@4.17.21 \
+    @types/cors@2.8.17 \
+    @types/uuid@9.0.7 \
+    ts-node@10.9.2
+
+# Create simplified API that delegates to cloud
+RUN echo 'import express from "express";\
+import cors from "cors";\
+import helmet from "helmet";\
+import rateLimit from "express-rate-limit";\
+import * as grpc from "@grpc/grpc-js";\
+import winston from "winston";\
+import { createClient } from "@supabase/supabase-js";\
+import { v4 as uuidv4 } from "uuid";\
+import Redis from "ioredis";\
+\
+// Initialize logger\
+const logger = winston.createLogger({\
+  level: process.env.LOG_LEVEL || "info",\
+  format: winston.format.json(),\
+  transports: [new winston.transports.Console()]\
+});\
+\
+// Initialize services\
+const app = express();\
+const redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379");\
+const supabase = createClient(\
+  process.env.SUPABASE_URL!,\
+  process.env.SUPABASE_SERVICE_KEY!\
+);\
+\
+// Middleware\
+app.use(helmet());\
+app.use(cors());\
+app.use(express.json());\
+\
+// Rate limiting\
+const limiter = rateLimit({\
+  windowMs: 60 * 1000, // 1 minute\
+  max: 10, // 10 requests per minute\
+  message: "Too many requests, please try again later"\
+});\
+\
+app.use("/api/analyze", limiter);\
+\
+// Health check\
+app.get("/health", (req, res) => {\
+  res.json({\
+    status: "healthy",\
+    service: "api",\
+    version: "9.0.0",\
+    timestamp: new Date().toISOString()\
+  });\
+});\
+\
+// Main analysis endpoint - simplified!\
+app.post("/api/analyze", async (req, res) => {\
+  const { prUrl, depth = "standard", userId } = req.body;\
+  \
+  if (!prUrl) {\
+    return res.status(400).json({ error: "PR URL is required" });\
+  }\
+  \
+  const analysisId = uuidv4();\
+  const startTime = Date.now();\
+  \
+  try {\
+    logger.info(`Starting analysis ${analysisId} for ${prUrl}`);\
+    \
+    // Step 1: Trigger orchestrator in the cloud\
+    const orchestratorClient = new grpc.Client(\
+      process.env.ORCHESTRATOR_URL || "orchestrator:8080",\
+      grpc.credentials.createInsecure()\
+    );\
+    \
+    // Send to orchestrator\
+    const analysisRequest = {\
+      id: analysisId,\
+      prUrl,\
+      depth,\
+      userId,\
+      timestamp: new Date().toISOString()\
+    };\
+    \
+    // Store in Redis for tracking\
+    await redis.setex(\
+      `analysis:${analysisId}`,\
+      3600, // 1 hour TTL\
+      JSON.stringify({ status: "processing", ...analysisRequest })\
+    );\
+    \
+    // Trigger orchestrator (async - returns immediately)\
+    orchestratorClient.makeUnaryRequest(\
+      "/codequal.Orchestrator/Analyze",\
+      (x: any) => Buffer.from(JSON.stringify(x)),\
+      (x: any) => JSON.parse(x.toString()),\
+      analysisRequest,\
+      (error: any, response: any) => {\
+        if (error) {\
+          logger.error(`Orchestrator error for ${analysisId}:`, error);\
+          redis.setex(\
+            `analysis:${analysisId}`,\
+            3600,\
+            JSON.stringify({ status: "failed", error: error.message })\
+          );\
+        } else {\
+          logger.info(`Analysis ${analysisId} completed in ${Date.now() - startTime}ms`);\
+          // Store result\
+          redis.setex(\
+            `analysis:${analysisId}`,\
+            3600,\
+            JSON.stringify({ status: "completed", ...response })\
+          );\
+        }\
+      }\
+    );\
+    \
+    // Return immediately with analysis ID\
+    res.json({\
+      success: true,\
+      analysisId,\
+      message: "Analysis started",\
+      statusUrl: `/api/status/${analysisId}`,\
+      estimatedTime: "30-60 seconds"\
+    });\
+    \
+  } catch (error: any) {\
+    logger.error(`Failed to start analysis ${analysisId}:`, error);\
+    res.status(500).json({\
+      success: false,\
+      error: "Failed to start analysis",\
+      analysisId\
+    });\
+  }\
+});\
+\
+// Status check endpoint\
+app.get("/api/status/:analysisId", async (req, res) => {\
+  const { analysisId } = req.params;\
+  \
+  try {\
+    const result = await redis.get(`analysis:${analysisId}`);\
+    \
+    if (!result) {\
+      return res.status(404).json({ error: "Analysis not found" });\
+    }\
+    \
+    const analysis = JSON.parse(result);\
+    res.json(analysis);\
+  } catch (error) {\
+    logger.error(`Failed to get status for ${analysisId}:`, error);\
+    res.status(500).json({ error: "Failed to get analysis status" });\
+  }\
+});\
+\
+// Get analysis result (when completed)\
+app.get("/api/results/:analysisId", async (req, res) => {\
+  const { analysisId } = req.params;\
+  \
+  try {\
+    // Check Redis first\
+    const cached = await redis.get(`analysis:${analysisId}`);\
+    if (cached) {\
+      const analysis = JSON.parse(cached);\
+      if (analysis.status === "completed") {\
+        return res.json(analysis);\
+      }\
+    }\
+    \
+    // Check Supabase for persisted results\
+    const { data, error } = await supabase\
+      .from("analysis_results")\
+      .select("*")\
+      .eq("id", analysisId)\
+      .single();\
+    \
+    if (error || !data) {\
+      return res.status(404).json({ error: "Analysis not found" });\
+    }\
+    \
+    res.json(data);\
+  } catch (error) {\
+    logger.error(`Failed to get results for ${analysisId}:`, error);\
+    res.status(500).json({ error: "Failed to get analysis results" });\
+  }\
+});\
+\
+// Webhook endpoint for orchestrator callbacks\
+app.post("/api/webhook/analysis-complete", async (req, res) => {\
+  const { analysisId, report, metrics } = req.body;\
+  \
+  try {\
+    // Store in Supabase\
+    await supabase.from("analysis_results").upsert({\
+      id: analysisId,\
+      report,\
+      metrics,\
+      completed_at: new Date().toISOString()\
+    });\
+    \
+    // Update Redis\
+    await redis.setex(\
+      `analysis:${analysisId}`,\
+      3600,\
+      JSON.stringify({ status: "completed", report, metrics })\
+    );\
+    \
+    res.json({ success: true });\
+  } catch (error) {\
+    logger.error("Webhook processing failed:", error);\
+    res.status(500).json({ error: "Webhook processing failed" });\
+  }\
+});\
+\
+const PORT = process.env.PORT || 3000;\
+app.listen(PORT, () => {\
+  logger.info(`API Service listening on port ${PORT}`);\
+  logger.info("Endpoints:");\
+  logger.info("  POST /api/analyze - Start analysis");\
+  logger.info("  GET  /api/status/:id - Check status");\
+  logger.info("  GET  /api/results/:id - Get results");\
+});' > src/index.ts
+
+# TypeScript config
+RUN echo '{\
+  "compilerOptions": {\
+    "target": "ES2022",\
+    "module": "commonjs",\
+    "lib": ["ES2022"],\
+    "outDir": "./dist",\
+    "rootDir": "./src",\
+    "strict": true,\
+    "esModuleInterop": true,\
+    "skipLibCheck": true,\
+    "forceConsistentCasingInFileNames": true,\
+    "resolveJsonModule": true,\
+    "moduleResolution": "node"\
+  },\
+  "include": ["src/**/*"],\
+  "exclude": ["node_modules", "dist"]\
+}' > tsconfig.json
+
+# Build
+RUN npm run build
+
+# Environment
+ENV NODE_ENV=production \
+    PORT=3000 \
+    REDIS_URL=redis://redis-cache:6379 \
+    ORCHESTRATOR_URL=orchestrator:8080 \
+    LOG_LEVEL=info
+
+EXPOSE 3000
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3000/health', (r) => r.statusCode === 200 ? process.exit(0) : process.exit(1))"
+
+CMD ["node", "dist/index.js"]

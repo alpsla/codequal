@@ -1,0 +1,133 @@
+# Performance Agent Container
+# Handles performance optimization fix suggestions
+FROM node:20-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Install build dependencies
+RUN apk add --no-cache python3 py3-pip make g++
+
+# Create package.json for agent
+RUN echo '{\
+  "name": "@codequal/performance-agent",\
+  "version": "9.0.0",\
+  "description": "Performance optimization fix generation agent for CodeQual",\
+  "main": "dist/index.js",\
+  "scripts": {\
+    "start": "node dist/index.js",\
+    "build": "tsc",\
+    "dev": "ts-node src/index.ts"\
+  }\
+}' > package.json
+
+# Install dependencies
+RUN npm install --save \
+    openai@4.38.5 \
+    ioredis@5.3.2 \
+    @grpc/grpc-js@1.10.1 \
+    @grpc/proto-loader@0.7.10 \
+    winston@3.11.0 \
+    dotenv@16.3.1
+
+# Install dev dependencies
+RUN npm install --save-dev \
+    typescript@5.3.3 \
+    @types/node@20.11.19 \
+    ts-node@10.9.2
+
+# Copy agent source code
+COPY packages/agents/src/two-branch/agents/specialized-agents.ts src/agents/
+COPY packages/agents/src/two-branch/architecture/hybrid-fix-architecture.ts src/architecture/
+COPY packages/agents/src/two-branch/services/dynamic-model-selector.ts src/services/
+
+# Create main entry point
+RUN echo 'import { PerformanceAgent } from "./agents/specialized-agents";\
+import { HybridFixService } from "./architecture/hybrid-fix-architecture";\
+import * as grpc from "@grpc/grpc-js";\
+import * as protoLoader from "@grpc/proto-loader";\
+import winston from "winston";\
+\
+const logger = winston.createLogger({\
+  level: process.env.LOG_LEVEL || "info",\
+  format: winston.format.json(),\
+  transports: [new winston.transports.Console()]\
+});\
+\
+const agent = new PerformanceAgent();\
+const service = new HybridFixService();\
+\
+// gRPC server setup\
+const server = new grpc.Server();\
+const PORT = process.env.PORT || 50051;\
+\
+server.bindAsync(\
+  `0.0.0.0:${PORT}`,\
+  grpc.ServerCredentials.createInsecure(),\
+  (err, port) => {\
+    if (err) {\
+      logger.error("Failed to start gRPC server:", err);\
+      process.exit(1);\
+    }\
+    logger.info(`Performance Agent listening on port ${port}`);\
+    server.start();\
+  }\
+);\
+\
+// Health check endpoint\
+const healthCheck = (call: any, callback: any) => {\
+  callback(null, { status: "healthy", agent: "performance", version: "9.0.0" });\
+};\
+\
+// Fix generation endpoint\
+const generateFix = async (call: any, callback: any) => {\
+  try {\
+    const issue = call.request;\
+    const fix = await agent.generateFixSuggestion(issue);\
+    callback(null, fix);\
+  } catch (error) {\
+    logger.error("Fix generation failed:", error);\
+    callback(error);\
+  }\
+};' > src/index.ts
+
+# Create TypeScript config
+RUN echo '{\
+  "compilerOptions": {\
+    "target": "ES2022",\
+    "module": "commonjs",\
+    "lib": ["ES2022"],\
+    "outDir": "./dist",\
+    "rootDir": "./src",\
+    "strict": true,\
+    "esModuleInterop": true,\
+    "skipLibCheck": true,\
+    "forceConsistentCasingInFileNames": true,\
+    "resolveJsonModule": true,\
+    "moduleResolution": "node",\
+    "types": ["node"]\
+  },\
+  "include": ["src/**/*"],\
+  "exclude": ["node_modules", "dist"]\
+}' > tsconfig.json
+
+# Build the application
+RUN npm run build
+
+# Environment variables
+ENV NODE_ENV=production \
+    PORT=50051 \
+    REDIS_URL=redis://redis-cache:6379 \
+    BATCH_SIZE=50 \
+    CACHE_TTL=604800 \
+    LOG_LEVEL=info
+
+# Expose gRPC port
+EXPOSE 50051
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node -e "require('net').createConnection(50051, 'localhost').on('connect', () => process.exit(0)).on('error', () => process.exit(1))"
+
+# Run the agent
+CMD ["node", "dist/index.js"]

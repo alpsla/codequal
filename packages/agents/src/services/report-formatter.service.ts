@@ -1,4 +1,4 @@
-import { createLogger } from '@codequal/core/utils';
+import { createLogger } from '../utils';
 
 /**
  * Standard report structure for UI consistency

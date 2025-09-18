@@ -3,7 +3,7 @@
  * Manages data lifecycle and prevents exponential growth
  */
 
-import { createLogger } from '@codequal/core/utils';
+import { createLogger } from '../utils';
 import { CronJob } from 'cron';
 
 export interface RetentionPolicyConfig {

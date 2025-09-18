@@ -1,0 +1,127 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: v9-api-deployment
+  namespace: codequal-dev
+  labels:
+    app: v9-api
+    version: v9
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: v9-api
+  template:
+    metadata:
+      labels:
+        app: v9-api
+        version: v9
+    spec:
+      containers:
+      - name: api
+        image: registry.digitalocean.com/codequal-registry/v9-api:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: PORT
+          value: "3000"
+        - name: HYBRID_AGENT_URL
+          value: "http://hybrid-agent-service:3000"
+        - name: CLOUD_TOOLS_URL
+          value: "http://cloud-tools-service:3000"
+        - name: REDIS_URL
+          value: "redis://redis-service:6379"
+        - name: OPENROUTER_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: api-secrets
+              key: openrouter-api-key
+        - name: SUPABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: api-secrets
+              key: supabase-url
+        - name: SUPABASE_SERVICE_ROLE_KEY
+          valueFrom:
+            secretKeyRef:
+              name: api-secrets
+              key: supabase-service-key
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /api/v9/health
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /api/v9/health
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: v9-api-service
+  namespace: codequal-dev
+  labels:
+    app: v9-api
+spec:
+  type: LoadBalancer
+  selector:
+    app: v9-api
+  ports:
+  - port: 80
+    targetPort: 3000
+    protocol: TCP
+    name: http
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: v9-api-hpa
+  namespace: codequal-dev
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: v9-api-deployment
+  minReplicas: 3
+  maxReplicas: 20
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: api-secrets
+  namespace: codequal-dev
+type: Opaque
+stringData:
+  openrouter-api-key: "sk-or-v1-YOUR_KEY_HERE"
+  supabase-url: "https://your-project.supabase.co"
+  supabase-service-key: "your-service-role-key"

@@ -1,0 +1,282 @@
+version: '3.8'
+
+services:
+  # Redis cache for pattern storage
+  redis-cache:
+    image: redis:7-alpine
+    container_name: codequal-redis-cache
+    command: >
+      redis-server
+      --maxmemory 2gb
+      --maxmemory-policy allkeys-lru
+      --save 60 1000
+      --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - codequal-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # Security Agent
+  security-agent:
+    build:
+      context: ../../
+      dockerfile: docker/agents/Dockerfile.all-agents
+    container_name: codequal-security-agent
+    environment:
+      - AGENT_TYPE=security
+      - PORT=50051
+      - REDIS_URL=redis://redis-cache:6379
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - LOG_LEVEL=info
+      - BATCH_SIZE=50
+      - CACHE_TTL=604800
+    ports:
+      - "50051:50051"
+    depends_on:
+      redis-cache:
+        condition: service_healthy
+    networks:
+      - codequal-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 3
+
+  # Performance Agent
+  performance-agent:
+    build:
+      context: ../../
+      dockerfile: docker/agents/Dockerfile.all-agents
+    container_name: codequal-performance-agent
+    environment:
+      - AGENT_TYPE=performance
+      - PORT=50052
+      - REDIS_URL=redis://redis-cache:6379
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - LOG_LEVEL=info
+      - BATCH_SIZE=50
+      - CACHE_TTL=604800
+    ports:
+      - "50052:50052"
+    depends_on:
+      redis-cache:
+        condition: service_healthy
+    networks:
+      - codequal-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+
+  # Quality Agent (handles 89% of issues - needs more resources)
+  quality-agent:
+    build:
+      context: ../../
+      dockerfile: docker/agents/Dockerfile.all-agents
+    container_name: codequal-quality-agent
+    environment:
+      - AGENT_TYPE=quality
+      - PORT=50053
+      - REDIS_URL=redis://redis-cache:6379
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - LOG_LEVEL=info
+      - BATCH_SIZE=50
+      - CACHE_TTL=604800
+      - CONCURRENCY=10
+    ports:
+      - "50053:50053"
+    depends_on:
+      redis-cache:
+        condition: service_healthy
+    networks:
+      - codequal-network
+    deploy:
+      replicas: 3  # More replicas for high-volume agent
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 3
+
+  # Architecture Agent
+  architecture-agent:
+    build:
+      context: ../../
+      dockerfile: docker/agents/Dockerfile.all-agents
+    container_name: codequal-architecture-agent
+    environment:
+      - AGENT_TYPE=architecture
+      - PORT=50054
+      - REDIS_URL=redis://redis-cache:6379
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - LOG_LEVEL=info
+      - BATCH_SIZE=50
+      - CACHE_TTL=604800
+    ports:
+      - "50054:50054"
+    depends_on:
+      redis-cache:
+        condition: service_healthy
+    networks:
+      - codequal-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+
+  # Dependency Agent
+  dependency-agent:
+    build:
+      context: ../../
+      dockerfile: docker/agents/Dockerfile.all-agents
+    container_name: codequal-dependency-agent
+    environment:
+      - AGENT_TYPE=dependency
+      - PORT=50055
+      - REDIS_URL=redis://redis-cache:6379
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - LOG_LEVEL=info
+      - BATCH_SIZE=50
+      - CACHE_TTL=604800
+    ports:
+      - "50055:50055"
+    depends_on:
+      redis-cache:
+        condition: service_healthy
+    networks:
+      - codequal-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+
+  # Orchestrator Agent
+  orchestrator:
+    build:
+      context: ../../
+      dockerfile: docker/agents/Dockerfile.all-agents
+    container_name: codequal-orchestrator
+    environment:
+      - AGENT_TYPE=orchestrator
+      - PORT=8080
+      - REDIS_URL=redis://redis-cache:6379
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      - LOG_LEVEL=info
+    ports:
+      - "8080:8080"
+    depends_on:
+      - security-agent
+      - performance-agent
+      - quality-agent
+      - architecture-agent
+      - dependency-agent
+    networks:
+      - codequal-network
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+
+  # Educator Agent
+  educator:
+    build:
+      context: ../../
+      dockerfile: docker/agents/Dockerfile.all-agents
+    container_name: codequal-educator
+    environment:
+      - AGENT_TYPE=educator
+      - PORT=8081
+      - REDIS_URL=redis://redis-cache:6379
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - LOG_LEVEL=info
+    ports:
+      - "8081:8081"
+    depends_on:
+      redis-cache:
+        condition: service_healthy
+    networks:
+      - codequal-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+
+  # Comparator Agent
+  comparator:
+    build:
+      context: ../../
+      dockerfile: docker/agents/Dockerfile.all-agents
+    container_name: codequal-comparator
+    environment:
+      - AGENT_TYPE=comparator
+      - PORT=8082
+      - REDIS_URL=redis://redis-cache:6379
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - LOG_LEVEL=info
+    ports:
+      - "8082:8082"
+    depends_on:
+      redis-cache:
+        condition: service_healthy
+    networks:
+      - codequal-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+
+  # Researcher Agent
+  researcher:
+    build:
+      context: ../../
+      dockerfile: docker/agents/Dockerfile.all-agents
+    container_name: codequal-researcher
+    environment:
+      - AGENT_TYPE=researcher
+      - PORT=8083
+      - REDIS_URL=redis://redis-cache:6379
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - LOG_LEVEL=info
+    ports:
+      - "8083:8083"
+    depends_on:
+      redis-cache:
+        condition: service_healthy
+    networks:
+      - codequal-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+
+networks:
+  codequal-network:
+    driver: bridge
+
+volumes:
+  redis-data:
+    driver: local

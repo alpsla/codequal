@@ -3,7 +3,7 @@
  * Stores MCP tool execution results in Vector DB for future retrieval and learning
  */
 
-import { createLogger } from '@codequal/core/utils';
+import { createLogger } from '../utils';
 import { v4 as uuidv4 } from 'uuid';
 
 export interface ToolResultData {

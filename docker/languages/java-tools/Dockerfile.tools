@@ -1,0 +1,86 @@
+FROM openjdk:17-slim
+
+# Install required tools
+RUN apt-get update && apt-get install -y \
+    wget \
+    curl \
+    git \
+    maven \
+    gradle \
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install SpotBugs
+RUN wget https://github.com/spotbugs/spotbugs/releases/download/4.8.0/spotbugs-4.8.0.zip \
+    && unzip spotbugs-4.8.0.zip -d /opt \
+    && rm spotbugs-4.8.0.zip \
+    && ln -s /opt/spotbugs-4.8.0/bin/spotbugs /usr/local/bin/spotbugs
+
+# Install PMD
+RUN wget https://github.com/pmd/pmd/releases/download/pmd_releases%2F6.55.0/pmd-bin-6.55.0.zip \
+    && unzip pmd-bin-6.55.0.zip -d /opt \
+    && rm pmd-bin-6.55.0.zip \
+    && ln -s /opt/pmd-bin-6.55.0/bin/run.sh /usr/local/bin/pmd
+
+# Install Checkstyle
+RUN wget https://github.com/checkstyle/checkstyle/releases/download/checkstyle-10.12.5/checkstyle-10.12.5-all.jar \
+    && mv checkstyle-10.12.5-all.jar /opt/checkstyle.jar \
+    && echo '#!/bin/bash\njava -jar /opt/checkstyle.jar "$@"' > /usr/local/bin/checkstyle \
+    && chmod +x /usr/local/bin/checkstyle
+
+# Install OWASP Dependency Check
+RUN wget https://github.com/jeremylong/DependencyCheck/releases/download/v9.0.0/dependency-check-9.0.0-release.zip \
+    && unzip dependency-check-9.0.0-release.zip -d /opt \
+    && rm dependency-check-9.0.0-release.zip \
+    && ln -s /opt/dependency-check/bin/dependency-check.sh /usr/local/bin/dependency-check
+
+# Install SonarScanner
+RUN wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip \
+    && unzip sonar-scanner-cli-5.0.1.3006-linux.zip -d /opt \
+    && rm sonar-scanner-cli-5.0.1.3006-linux.zip \
+    && ln -s /opt/sonar-scanner-5.0.1.3006-linux/bin/sonar-scanner /usr/local/bin/sonar-scanner
+
+# Create tool executor service
+WORKDIR /app
+
+# Create tool executor script
+RUN cat > tool-executor.sh << 'EOF'
+#!/bin/bash
+
+TOOL=$1
+WORKSPACE=$2
+OUTPUT_FILE="/tmp/tool-output.json"
+
+cd $WORKSPACE || exit 1
+
+case $TOOL in
+  spotbugs)
+    spotbugs -textui -xml -output /tmp/spotbugs.xml . 2>&1
+    # Convert XML to JSON (simplified)
+    echo '{"tool":"spotbugs","issues":[],"raw":"'$(cat /tmp/spotbugs.xml | base64 -w0)'"}' > $OUTPUT_FILE
+    ;;
+  pmd)
+    pmd check -d . -R rulesets/java/quickstart.xml -f json > $OUTPUT_FILE 2>&1
+    ;;
+  checkstyle)
+    checkstyle -c /google_checks.xml -f json . > $OUTPUT_FILE 2>&1
+    ;;
+  dependency-check)
+    dependency-check --scan . --format JSON --out $OUTPUT_FILE 2>&1
+    ;;
+  sonarqube)
+    sonar-scanner -Dsonar.projectKey=test -Dsonar.sources=. > /tmp/sonar.log 2>&1
+    echo '{"tool":"sonarqube","issues":[],"log":"'$(cat /tmp/sonar.log | base64 -w0)'"}' > $OUTPUT_FILE
+    ;;
+  *)
+    echo '{"error":"Unknown tool: '$TOOL'"}' > $OUTPUT_FILE
+    ;;
+esac
+
+cat $OUTPUT_FILE
+EOF
+
+RUN chmod +x tool-executor.sh
+
+# Default command
+CMD ["/bin/bash", "-c", "while true; do sleep 30; done"]

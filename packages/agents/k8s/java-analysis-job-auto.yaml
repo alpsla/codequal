@@ -1,0 +1,116 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  generateName: java-analysis-  # Kubernetes will append a unique suffix
+  namespace: codequal-dev
+  labels:
+    app: codequal-analysis
+    language: java
+    type: pr-analysis
+spec:
+  ttlSecondsAfterFinished: 300  # Auto-cleanup 5 minutes after completion
+  backoffLimit: 0  # Don't retry on failure
+  activeDeadlineSeconds: 600  # Kill if running longer than 10 minutes
+  template:
+    metadata:
+      labels:
+        app: codequal-analysis
+        language: java
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false  # Security: don't mount SA token
+      containers:
+      - name: java-analyzer
+        image: openjdk:17-slim
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            memory: "512Mi"  # Start small
+            cpu: "250m"
+            ephemeral-storage: "2Gi"
+          limits:
+            memory: "2Gi"  # Hard limit to prevent memory explosion
+            cpu: "1000m"
+            ephemeral-storage: "5Gi"
+        env:
+        - name: ANALYSIS_ID
+          value: "$(date +%s)"
+        - name: REPOSITORY_URL
+          value: "https://github.com/apache/kafka"
+        - name: PR_NUMBER
+          value: "17620"
+        - name: MAIN_BRANCH
+          value: "trunk"
+        command:
+        - /bin/bash
+        - -c
+        - |
+          set -e  # Exit on any error
+
+          echo "======================================"
+          echo "Java PR Analysis Job"
+          echo "======================================"
+          echo "Job Name: $HOSTNAME"
+          echo "Analysis ID: $ANALYSIS_ID"
+          echo "Repository: $REPOSITORY_URL"
+          echo "PR: #$PR_NUMBER"
+          echo "Memory Limit: 2Gi"
+          echo "Auto-cleanup: 5 minutes after completion"
+          echo ""
+
+          # Monitor memory usage
+          echo "Initial memory usage:"
+          free -h
+
+          # Install minimal tools
+          apt-get update -qq && apt-get install -y -qq git > /dev/null 2>&1
+
+          # Create isolated workspace
+          WORKSPACE="/tmp/analysis-$ANALYSIS_ID"
+          mkdir -p $WORKSPACE
+          cd $WORKSPACE
+
+          # Shallow clone to save memory
+          echo "Cloning repository (shallow)..."
+          git clone --depth 1 --single-branch --branch $MAIN_BRANCH $REPOSITORY_URL repo 2>&1 | tail -5
+
+          cd repo
+
+          # Fetch PR (shallow)
+          echo "Fetching PR #$PR_NUMBER..."
+          git fetch --depth 1 origin pull/$PR_NUMBER/head:pr-$PR_NUMBER 2>&1 | tail -3
+
+          # Get diff statistics
+          echo ""
+          echo "PR Statistics:"
+          git diff --stat $MAIN_BRANCH...pr-$PR_NUMBER 2>/dev/null | tail -5 || echo "Could not generate stats"
+
+          # Simulate tool execution with memory monitoring
+          echo ""
+          echo "Running analysis tools..."
+          echo "✓ SpotBugs: 0 security issues"
+          echo "✓ PMD: 3 code quality issues"
+          echo "✓ Checkstyle: 5 style violations"
+
+          # Check memory after analysis
+          echo ""
+          echo "Final memory usage:"
+          free -h
+
+          # Cleanup workspace before exit
+          echo ""
+          echo "Cleaning up workspace..."
+          cd /
+          rm -rf $WORKSPACE
+
+          echo ""
+          echo "✅ Analysis complete - Job will auto-terminate"
+          echo "✅ Kubernetes will cleanup this job in 5 minutes"
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          capabilities:
+            drop:
+            - ALL

@@ -15,7 +15,7 @@
  */
 
 import { IConfigProvider } from '../orchestrator/interfaces/config-provider.interface';
-import { ResearcherAgent } from '../../researcher/researcher-agent';
+import { ResearcherAgent } from '../../two-branch/researcher/researcher-agent';
 import { ModelSelection, AnalysisConfig } from '../orchestrator/interfaces/config-provider.interface';
 import { IMonitoringService } from './interfaces/monitoring-service.interface';
 

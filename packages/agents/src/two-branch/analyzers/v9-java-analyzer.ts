@@ -21,16 +21,36 @@ export class V9JavaAnalyzer extends V9BaseAnalyzer {
       name: 'Java',
       fileExtensions: ['.java', '.xml', '.gradle', '.mvn'],
       tools: [
+        // NOTE: These tools are deployed in cloud pods - do not add new tools without:
+        // 1. Building a container with the tool installed
+        // 2. Pushing to cloud repository
+        // 3. Updating cloud pod deployment
+
+        // SpotBugs - Security and Quality analysis
         {
           name: 'spotbugs',
           command: 'spotbugs -textui -effort:max -low . 2>&1 || true',
-          agent: 'QualityAnalyzer',
+          agent: 'SecurityAnalyzer',  // SpotBugs primarily finds security bugs
           parser: this.parseSpotBugsOutput.bind(this)
         },
+
+        // PMD - Multi-role tool (Quality, Performance, Architecture)
         {
-          name: 'pmd',
+          name: 'pmd-quality',
           command: 'pmd check -d . -R rulesets/java/quickstart.xml -f text 2>&1 || true',
           agent: 'QualityAnalyzer',
+          parser: this.parsePMDOutput.bind(this)
+        },
+        {
+          name: 'pmd-performance',
+          command: 'pmd check -d . -R rulesets/java/performance.xml -f text 2>&1 || true',
+          agent: 'PerformanceAnalyzer',
+          parser: this.parsePMDOutput.bind(this)
+        },
+        {
+          name: 'pmd-architecture',
+          command: 'pmd check -d . -R rulesets/java/design.xml -f text 2>&1 || true',
+          agent: 'ArchitectureAnalyzer',
           parser: this.parsePMDOutput.bind(this)
         },
         {
@@ -39,18 +59,23 @@ export class V9JavaAnalyzer extends V9BaseAnalyzer {
           agent: 'QualityAnalyzer',
           parser: this.parseCheckstyleOutput.bind(this)
         },
-        {
-          name: 'dependency-check',
-          command: 'dependency-check --scan . --format JSON --out dep-check.json 2>&1 || true',
-          agent: 'DependencyAnalyzer',
-          parser: this.parseDependencyCheckOutput.bind(this)
-        },
+
+        // Security tools (SecurityAnalyzer role)
         {
           name: 'semgrep',
           command: 'semgrep --config=auto --json . 2>&1 || true',
           agent: 'SecurityAnalyzer',
           parser: this.parseSemgrepOutput.bind(this)
+        },
+
+        // Dependency tools (DependencyAnalyzer role)
+        {
+          name: 'dependency-check',
+          command: 'dependency-check --scan . --format JSON --out dep-check.json 2>&1 || true',
+          agent: 'DependencyAnalyzer',
+          parser: this.parseDependencyCheckOutput.bind(this)
         }
+
       ],
       suggestedFixPatterns: {
         'sql injection': `// Use PreparedStatement with parameterized queries
@@ -119,7 +144,7 @@ synchronized(lock) {
         }
         
         issues.push({
-          id: `SPOT-${bugType}`,
+          id: `SPOT-${bugType}-${Date.now()}`,
           category,
           severity,
           status: 'new',
@@ -242,9 +267,9 @@ synchronized(lock) {
             if (dep.vulnerabilities && dep.vulnerabilities.length > 0) {
               for (const vuln of dep.vulnerabilities) {
                 issues.push({
-                  id: vuln.name || `CVE-${issues.length + 1}`,
+                  id: `${vuln.name || 'CVE'}-${Date.now()}`,
                   category: 'Dependency',
-                  severity: this.cvssToSeverity(vuln.cvssScore),
+                  severity: this.cvssToSeverity(vuln.cvssScore || vuln.severity),
                   status: 'new',
                   title: `Vulnerability in ${dep.fileName}`,
                   description: vuln.description || 'Security vulnerability detected',
@@ -253,7 +278,7 @@ synchronized(lock) {
                   tool: 'dependency-check',
                   agent: 'DependencyAnalyzer',
                   impact: 'Known security vulnerability',
-                  businessImpact: this.getBusinessImpact('Dependency', this.cvssToSeverity(vuln.cvssScore)),
+                  businessImpact: this.getBusinessImpact('Dependency', this.cvssToSeverity(vuln.cvssScore || vuln.severity)),
                   suggestedFix: `Update ${dep.fileName} to latest secure version`
                 });
               }

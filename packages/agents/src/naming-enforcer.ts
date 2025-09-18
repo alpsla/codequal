@@ -163,7 +163,7 @@ export class NamingEnforcer {
 
   private matchesPattern(fileName: string, pattern: string): boolean {
     // Convert naming pattern to regex
-    let regexPattern = pattern
+    const regexPattern = pattern
       .replace(/\{[^}]+\}/g, '[a-z-]+') // Replace {language} with [a-z-]+
       .replace(/\*/g, '.*')
       .replace(/\?/g, '.');

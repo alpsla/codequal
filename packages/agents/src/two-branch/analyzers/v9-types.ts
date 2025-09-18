@@ -173,3 +173,54 @@ export interface ReportOptions {
   includeSkillScore: boolean;
   groupSimilarIssues: boolean;
 }
+
+// Two-branch analysis types
+export interface ToolPerformance {
+  name: string;
+  executionTime: string;
+  issuesFound: number;
+  filesAnalyzed?: number;
+}
+
+export interface BranchAnalysis {
+  branch: string;
+  issues: Issue[];
+  filesAnalyzed: number;
+  executionTime: number;
+  toolPerformance: ToolPerformance[];
+}
+
+export interface IssueComparison {
+  newIssues: Issue[];
+  existingInModified: Issue[];
+  existingInUnmodified: Issue[];
+  resolvedIssues: Issue[];
+}
+
+export interface ExecutionMetadata {
+  totalExecutionTime: number;
+  mainBranchIssueCount: number;
+  prBranchIssueCount: number;
+  modifiedFiles: string[];
+  toolsUsed: string[];
+  modelsUsed: Array<{
+    agent: string;
+    model: string;
+    provider: string;
+  }>;
+  totalCost: number;
+}
+
+export interface TwoBranchAnalysisResult {
+  repository: string;
+  prNumber: number;
+  language: string;
+  mainBranchAnalysis: BranchAnalysis;
+  prBranchAnalysis: BranchAnalysis;
+  comparison: IssueComparison;
+  decision: 'APPROVED' | 'CHANGES REQUESTED' | 'DECLINED';
+  decisionReason: string;
+  qualityScore: number;
+  prComment: string;
+  metadata: ExecutionMetadata;
+}

@@ -3,7 +3,7 @@
  * Generates structured, actionable recommendations from compiled agent findings
  */
 
-import { createLogger } from '@codequal/core/utils';
+import { createLogger } from '../utils';
 import { 
   RecommendationModule, 
   ActionableRecommendation, 
@@ -11,7 +11,7 @@ import {
 } from '../types/recommendation-types';
 import { SkillTrackingService, SkillProgression } from './skill-tracking-service';
 import { AuthenticatedUser } from '../multi-agent/types/auth';
-import { DeveloperSkill } from '@codequal/database/models/skill';
+import { DeveloperSkill } from '@codequal/database/dist/models/skill';
 
 const logger = createLogger('RecommendationService');
 

@@ -14,7 +14,7 @@
 import { IConfigProvider, AnalysisConfig, ModelSelection } from './interfaces/config-provider.interface';
 import { ISkillProvider, DeveloperSkills, SkillUpdate } from './interfaces/skill-provider.interface';
 import { IEducatorAgent } from '../educator/interfaces/educator.interface';
-import { ResearcherAgent } from '../../researcher/researcher-agent';
+import { ResearcherAgent } from '../../two-branch/researcher/researcher-agent';
 import { ComparisonAgent } from '../comparison/comparison-agent';
 import { IReportingComparisonAgent } from '../comparison/interfaces/comparison-agent.interface';
 import { IDataStore, AnalysisReport } from '../services/interfaces/data-store.interface';

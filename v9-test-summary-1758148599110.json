@@ -1,0 +1,82 @@
+[
+  {
+    "language": "java",
+    "repository": "apache/kafka",
+    "prNumber": 17620,
+    "success": true,
+    "issuesFound": 61,
+    "reportGenerated": true,
+    "duration": 30,
+    "error": null
+  },
+  {
+    "language": "python",
+    "repository": "django/django",
+    "prNumber": 18000,
+    "success": true,
+    "issuesFound": 35,
+    "reportGenerated": true,
+    "duration": 39,
+    "error": null
+  },
+  {
+    "language": "javascript",
+    "repository": "facebook/react",
+    "prNumber": 28000,
+    "success": true,
+    "issuesFound": 32,
+    "reportGenerated": true,
+    "duration": 12,
+    "error": null
+  },
+  {
+    "language": "typescript",
+    "repository": "microsoft/TypeScript",
+    "prNumber": 55000,
+    "success": true,
+    "issuesFound": 28,
+    "reportGenerated": true,
+    "duration": 10,
+    "error": null
+  },
+  {
+    "language": "go",
+    "repository": "kubernetes/kubernetes",
+    "prNumber": 120000,
+    "success": true,
+    "issuesFound": 51,
+    "reportGenerated": true,
+    "duration": 24,
+    "error": null
+  },
+  {
+    "language": "rust",
+    "repository": "rust-lang/rust",
+    "prNumber": 115000,
+    "success": true,
+    "issuesFound": 22,
+    "reportGenerated": true,
+    "duration": 6,
+    "error": null
+  },
+  {
+    "language": "ruby",
+    "repository": "rails/rails",
+    "prNumber": 50000,
+    "success": true,
+    "issuesFound": 27,
+    "reportGenerated": true,
+    "duration": 5,
+    "error": null
+  },
+  {
+    "language": "cpp",
+    "repository": "bitcoin/bitcoin",
+    "prNumber": 28000,
+    "success": true,
+    "issuesFound": 49,
+    "reportGenerated": true,
+    "duration": 5,
+    "error": null
+  }
+]

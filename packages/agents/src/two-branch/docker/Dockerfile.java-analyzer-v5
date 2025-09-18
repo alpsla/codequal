@@ -1,0 +1,97 @@
+# Enhanced Java Analyzer Image v5
+# Includes: SpotBugs, PMD, Checkstyle, Semgrep, and more
+
+FROM openjdk:11-jdk-slim
+
+# Install basic tools and dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    wget \
+    git \
+    python3 \
+    python3-pip \
+    nodejs \
+    npm \
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /tools
+
+# Install SpotBugs (v4.8.0)
+RUN wget -q https://github.com/spotbugs/spotbugs/releases/download/4.8.0/spotbugs-4.8.0.zip \
+    && unzip spotbugs-4.8.0.zip \
+    && mv spotbugs-4.8.0 /opt/spotbugs \
+    && rm spotbugs-4.8.0.zip \
+    && ln -s /opt/spotbugs/bin/spotbugs /usr/local/bin/spotbugs
+
+# Install PMD (v7.0.0)
+RUN wget -q https://github.com/pmd/pmd/releases/download/pmd_releases%2F7.0.0/pmd-dist-7.0.0-bin.zip \
+    && unzip pmd-dist-7.0.0-bin.zip \
+    && mv pmd-bin-7.0.0 /opt/pmd \
+    && rm pmd-dist-7.0.0-bin.zip \
+    && ln -s /opt/pmd/bin/pmd /usr/local/bin/pmd
+
+# Install Checkstyle (v10.12.5)
+RUN wget -q https://github.com/checkstyle/checkstyle/releases/download/checkstyle-10.12.5/checkstyle-10.12.5-all.jar \
+    && mv checkstyle-10.12.5-all.jar /opt/checkstyle.jar \
+    && echo '#!/bin/bash\njava -jar /opt/checkstyle.jar "$@"' > /usr/local/bin/checkstyle \
+    && chmod +x /usr/local/bin/checkstyle
+
+# Download Google Java Style for Checkstyle
+RUN wget -q https://raw.githubusercontent.com/google/styleguide/gh-pages/google_checks.xml \
+    && mv google_checks.xml /opt/google_checks.xml \
+    && ln -s /opt/google_checks.xml /google_checks.xml
+
+# Install Semgrep via pip
+RUN pip3 install semgrep==1.45.0 \
+    && ln -s /usr/local/bin/semgrep /usr/bin/semgrep 2>/dev/null || true
+
+# Install Error Prone (additional Java static analysis)
+RUN wget -q https://repo1.maven.org/maven2/com/google/errorprone/error_prone_ant/2.23.0/error_prone_ant-2.23.0.jar \
+    && mv error_prone_ant-2.23.0.jar /opt/error_prone.jar
+
+# Install SonarScanner
+RUN wget -q https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip \
+    && unzip sonar-scanner-cli-5.0.1.3006-linux.zip \
+    && mv sonar-scanner-5.0.1.3006-linux /opt/sonar-scanner \
+    && rm sonar-scanner-cli-5.0.1.3006-linux.zip \
+    && ln -s /opt/sonar-scanner/bin/sonar-scanner /usr/local/bin/sonar-scanner
+
+# Install Infer (Facebook's static analyzer)
+RUN wget -q https://github.com/facebook/infer/releases/download/v1.1.0/infer-linux64-v1.1.0.tar.xz \
+    && tar -xJf infer-linux64-v1.1.0.tar.xz \
+    && mv infer-linux64-v1.1.0 /opt/infer \
+    && rm infer-linux64-v1.1.0.tar.xz \
+    && ln -s /opt/infer/bin/infer /usr/local/bin/infer
+
+# Create rulesets directory for PMD
+RUN mkdir -p /opt/pmd/rulesets \
+    && cd /opt/pmd \
+    && ls -la
+
+# Set environment variables
+ENV SPOTBUGS_HOME=/opt/spotbugs
+ENV PMD_HOME=/opt/pmd
+ENV PATH=$PATH:/opt/spotbugs/bin:/opt/pmd/bin:/opt/sonar-scanner/bin:/opt/infer/bin
+
+# Create a test script to verify all tools
+RUN echo '#!/bin/bash' > /usr/local/bin/verify-tools.sh \
+    && echo 'echo "=== Verifying Tool Installation ==="' >> /usr/local/bin/verify-tools.sh \
+    && echo 'echo -n "SpotBugs: " && which spotbugs && spotbugs -version 2>&1 | head -1' >> /usr/local/bin/verify-tools.sh \
+    && echo 'echo -n "PMD: " && which pmd && pmd --version 2>&1 | head -1' >> /usr/local/bin/verify-tools.sh \
+    && echo 'echo -n "Checkstyle: " && which checkstyle && java -jar /opt/checkstyle.jar --version 2>&1' >> /usr/local/bin/verify-tools.sh \
+    && echo 'echo -n "Semgrep: " && which semgrep && semgrep --version' >> /usr/local/bin/verify-tools.sh \
+    && echo 'echo -n "SonarScanner: " && which sonar-scanner && sonar-scanner --version 2>&1 | head -2' >> /usr/local/bin/verify-tools.sh \
+    && echo 'echo -n "Infer: " && which infer && infer --version 2>&1 | head -1' >> /usr/local/bin/verify-tools.sh \
+    && echo 'echo "=== All Tools Verified ==="' >> /usr/local/bin/verify-tools.sh \
+    && chmod +x /usr/local/bin/verify-tools.sh
+
+# Set default working directory
+WORKDIR /workspace
+
+# Run verification on build
+RUN /usr/local/bin/verify-tools.sh
+
+# Default command
+CMD ["/bin/bash"]

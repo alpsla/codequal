@@ -36,25 +36,13 @@ import { V9ReportFormatter } from './v9-report-formatter';
 
 // Import utilities
 import { getRepoManager, getFileSelector } from '../utils/repository-utils-factory';
-import type { OptimizedRepoManager } from '../utils/optimized-repo-manager';
+import type { CloudRepositoryManager } from '../utils/cloud-repository-manager';
 import type { SmartFileSelector, SelectedFiles } from '../utils/smart-file-selector';
-
-// Simple model selector (since DynamicModelSelector doesn't exist)
-class SimpleModelSelector {
-  async selectModel(language: string, task: string): Promise<string> {
-    // Return a default model for now
-    return 'gpt-4o-mini';
-  }
-  
-  async selectModelsForRole(requirements: any): Promise<{ primary: string }> {
-    // Return a simple model selection based on requirements
-    return { primary: 'gpt-4o-mini' };
-  }
-}
+import { DynamicModelSelector } from '../services/dynamic-model-selector';
 
 export abstract class V9BaseAnalyzer {
-  protected repoManager: OptimizedRepoManager;
-  protected modelSelector: SimpleModelSelector;
+  protected repoManager: CloudRepositoryManager;
+  protected modelSelector: DynamicModelSelector;
   protected fileSelector: SmartFileSelector;
   protected supabase: any;
   protected logger: Console = console;
@@ -80,7 +68,7 @@ export abstract class V9BaseAnalyzer {
   constructor() {
     // Initialize utilities using factory
     this.repoManager = getRepoManager();
-    this.modelSelector = new SimpleModelSelector();
+    this.modelSelector = new DynamicModelSelector(process.env.OPENROUTER_API_KEY);
     this.fileSelector = getFileSelector();
     
     // Initialize Supabase
@@ -286,22 +274,18 @@ export abstract class V9BaseAnalyzer {
     const owner = urlParts[0];
     const repo = urlParts[1].replace('.git', '');
     
-    // Setup main branch cache
-    await this.repoManager.setupRepo({
-      owner,
-      repo,
-      defaultBranch: 'main'
-    });
-    
-    // Create PR workspace
-    const prWorkspace = await this.repoManager.createPRWorkspace(owner, repo, prNumber);
-    
-    // Get paths
-    const mainPath = path.join('/tmp/codequal/cache/repos', owner, repo);
-    const prPath = prWorkspace.path;
-    
+    // Setup repository in cloud
+    const mainWorkspace = await this.repoManager.setupRepository(repoUrl, 'main');
+
+    // Create PR workspace in cloud
+    const prWorkspace = await this.repoManager.createPRWorkspace(repoUrl, prNumber);
+
+    // For cloud workspaces, we use workspace IDs instead of local paths
+    const mainPath = mainWorkspace.cloudPath;
+    const prPath = prWorkspace.cloudPath;
+
     // Get list of modified files
-    const modifiedFiles = prWorkspace.changedFiles || await this.getModifiedFiles(mainPath, prPath);
+    const modifiedFiles = prWorkspace.modifiedFiles || [];
     
     return { mainPath, prPath, modifiedFiles };
   }

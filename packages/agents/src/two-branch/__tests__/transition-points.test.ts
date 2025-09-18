@@ -20,7 +20,7 @@ import { BranchAnalyzer, SpecializedAgent } from '../analyzers/BranchAnalyzer';
 import { TwoBranchComparator } from '../comparators/TwoBranchComparator';
 import { TwoBranchAnalyzer } from '../core/TwoBranchAnalyzer';
 import { ReportGeneratorV9 } from '../reporters/ReportGeneratorV9';
-import { ModelResearcherService } from '../../standard/services/model-researcher-service';
+import { ModelResearcherService } from '../research-services/model-researcher-service';
 import { AnalysisCacheService } from '../cache/AnalysisCacheService';
 import { logger } from '../utils/logger';
 

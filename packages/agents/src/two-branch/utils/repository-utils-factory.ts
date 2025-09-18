@@ -4,7 +4,7 @@
  * using factory pattern to avoid circular dependencies
  */
 
-import { OptimizedRepoManager } from './optimized-repo-manager';
+import { CloudRepositoryManager } from './cloud-repository-manager';
 import { SmartFileSelector } from './smart-file-selector';
 
 export interface RepositoryUtilsConfig {
@@ -17,19 +17,15 @@ export interface RepositoryUtilsConfig {
  * Factory for creating repository utility instances
  */
 export class RepositoryUtilsFactory {
-  private static repoManagerInstance: OptimizedRepoManager | null = null;
+  private static repoManagerInstance: CloudRepositoryManager | null = null;
   private static fileSelectorInstance: SmartFileSelector | null = null;
 
   /**
-   * Get or create OptimizedRepoManager instance
+   * Get or create CloudRepositoryManager instance
    */
-  static getRepoManager(config?: RepositoryUtilsConfig): OptimizedRepoManager {
+  static getRepoManager(config?: RepositoryUtilsConfig): CloudRepositoryManager {
     if (!this.repoManagerInstance) {
-      this.repoManagerInstance = new OptimizedRepoManager(
-        config?.cacheDir,
-        config?.workspaceDir,
-        config?.redisUrl
-      );
+      this.repoManagerInstance = new CloudRepositoryManager();
     }
     return this.repoManagerInstance;
   }
@@ -47,12 +43,8 @@ export class RepositoryUtilsFactory {
   /**
    * Create new instances (non-singleton)
    */
-  static createRepoManager(config?: RepositoryUtilsConfig): OptimizedRepoManager {
-    return new OptimizedRepoManager(
-      config?.cacheDir,
-      config?.workspaceDir,
-      config?.redisUrl
-    );
+  static createRepoManager(config?: RepositoryUtilsConfig): CloudRepositoryManager {
+    return new CloudRepositoryManager();
   }
 
   static createFileSelector(): SmartFileSelector {
@@ -64,7 +56,7 @@ export class RepositoryUtilsFactory {
    */
   static reset(): void {
     if (this.repoManagerInstance) {
-      this.repoManagerInstance.close().catch(() => {});
+      // CloudRepositoryManager doesn't have close method
       this.repoManagerInstance = null;
     }
     this.fileSelectorInstance = null;
@@ -79,6 +71,6 @@ export const getFileSelector = () =>
   RepositoryUtilsFactory.getFileSelector();
 
 // Export classes for direct instantiation if needed
-export { OptimizedRepoManager, SmartFileSelector };
-export type { RepoConfig, PRWorkspace, CloneMetrics } from './optimized-repo-manager';
+export { CloudRepositoryManager, SmartFileSelector };
+export type { CloudWorkspace, CloudAnalysisRequest, CloudToolResult } from './cloud-repository-manager';
 export type { FileSelectionConfig, SelectedFiles } from './smart-file-selector';
