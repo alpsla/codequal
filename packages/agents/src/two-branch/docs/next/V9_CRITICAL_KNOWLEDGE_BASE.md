@@ -151,13 +151,22 @@ const command = `cd ${repoPath} && tool-name --simple-args`;
 - **Timeouts extended:** To 20 minutes for full repository analysis
 - **Cache reuse:** Properly implemented with PVC labels
 
-#### Output Handling Improvements
-**Problem:** Tool outputs too large causing buffer overflow
-**Fix:** Added output limiting with `head -5000` to prevent issues
+#### Output Handling Improvements (UPDATED 2025-09-18)
+**Problem:** Tool outputs too verbose, showing progress instead of just issues
+**Fix:** Filtered output to show only issues, not progress logs
 ```bash
-# Tool execution now includes output limiting
-kubectl logs ${podName} | head -5000
+# Before: All output including progress
+pmd check -d . -R category/java/bestpractices.xml -f text 2>&1 | head -5000
+
+# After: Only issues, filtered and structured
+pmd check -d . -R category/java/bestpractices.xml -f text --no-progress --no-cache 2>&1 |
+  grep -v '^Processing' | grep -v '^Analyzed' | head -2000
+
+# JSON tools with structured output
+semgrep --config=auto --json --quiet . 2>/dev/null |
+  jq -r '.results[] | "\(.path):\(.start.line): \(.check_id): \(.extra.message)"' | head -2000
 ```
+**Impact:** Faster analysis, smaller logs, clearer issue reporting
 
 ### 4. Infrastructure Requirements (CRITICAL)
 - **NO USE_LOCAL_TOOLS:** All tools MUST run in Kubernetes pods

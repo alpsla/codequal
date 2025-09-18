@@ -4,7 +4,9 @@ This file provides comprehensive guidance to Claude Code when working with the C
 
 ## 🚨 MANDATORY: V9 CANONICAL ARCHITECTURE
 
-**⚠️ STOP! Before doing ANYTHING with V9, read `/V9-SYSTEM-OVERVIEW.md` FIRST!**
+**⚠️ STOP! Before doing ANYTHING with V9:**
+1. **FIRST READ:** `packages/agents/src/two-branch/docs/next/V9_CRITICAL_KNOWLEDGE_BASE.md` - Contains ALL critical V9 facts, terminology, and recent fixes
+2. **THEN READ:** `/V9-SYSTEM-OVERVIEW.md` - Complete system overview
 
 The V9 infrastructure is ALREADY BUILT. Do NOT recreate:
 - Tool execution logic → use `V9ToolOrchestrator`
@@ -14,7 +16,8 @@ The V9 infrastructure is ALREADY BUILT. Do NOT recreate:
 - Caching → use existing Redis infrastructure
 
 **CRITICAL**: ALL PR analysis MUST follow the V9 Canonical Architecture documented in:
-- `/V9-SYSTEM-OVERVIEW.md` - Complete system overview (READ THIS FIRST!)
+- `packages/agents/src/two-branch/docs/next/V9_CRITICAL_KNOWLEDGE_BASE.md` - **START HERE** - Critical facts and common misconceptions
+- `/V9-SYSTEM-OVERVIEW.md` - Complete system overview
 - `packages/agents/V9_CANONICAL_ARCHITECTURE.md` - The ONLY approved flow
 - `packages/agents/DEPRECATED_FLOWS_DO_NOT_USE.md` - Patterns to AVOID
 

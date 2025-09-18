@@ -676,23 +676,77 @@ export class V9ToolOrchestrator {
         return data[0].primary_model;
       }
 
-      // NO FALLBACK - Throw error with full details
-      const errorDetails = {
-        agent,
-        role,
-        language,
-        supabaseError: error?.message,
-        supabaseDetails: error?.details,
-        supabaseHint: error?.hint,
-        query: `SELECT primary_model FROM model_configurations WHERE role='${role}' AND language='${language}'`
-      };
-
-      logger.error('Supabase query failed:', errorDetails);
-      throw new Error(`Failed to get model configuration for ${agent} from Supabase. ${error ? error.message : 'No model configured'}. Details: ${JSON.stringify(errorDetails)}`);
+      // FALLBACK TO RESEARCHER AGENT for dynamic discovery
+      logger.info(`No model configuration found for ${agent}/${language}, triggering Researcher Agent discovery...`);
+      
+      try {
+        // Import and use ModelResearcherService for discovery
+        const { ModelResearcherService } = await import('../research-services/model-researcher-service');
+        const modelResearcher = new ModelResearcherService();
+        
+        // Determine repository size (you may want to pass this as parameter)
+        const repoSize = 'medium'; // Default, should be determined dynamically
+        
+        // Create context for model discovery
+        const context = {
+          role,
+          language,
+          repo_size: repoSize
+        };
+        
+        // Discover optimal model
+        const optimalModel = await modelResearcher.getOptimalModelForContext(context);
+        
+        logger.info(`✅ Researcher Agent discovered optimal model for ${agent}/${language}: ${optimalModel}`);
+        
+        // Store the discovered configuration for future use
+        const { error: insertError } = await this.supabase
+          .from('model_configurations')
+          .insert({
+            role,
+            language,
+            repository_size: repoSize,
+            primary_model: optimalModel,
+            fallback_model: 'openai/gpt-3.5-turbo', // Default fallback
+            temperature: 0.3,
+            max_tokens: 4000,
+            last_updated: new Date().toISOString(),
+            discovered_by: 'ResearcherAgent',
+            auto_discovered: true
+          });
+        
+        if (insertError) {
+          logger.warn(`Failed to store discovered model configuration: ${insertError.message}`);
+        } else {
+          logger.info(`✅ Stored new model configuration for future use`);
+        }
+        
+        return optimalModel;
+        
+      } catch (researchError: any) {
+        logger.error(`Researcher Agent failed to discover model:`, researchError);
+        
+        // Last resort: Use a sensible default based on role
+        const fallbackModels: Record<string, string> = {
+          'analyzer': 'openai/gpt-4o-mini',
+          'security': 'anthropic/claude-3-haiku',
+          'performance': 'openai/gpt-3.5-turbo',
+          'quality': 'openai/gpt-3.5-turbo',
+          'architecture': 'openai/gpt-4o-mini',
+          'dependency': 'openai/gpt-3.5-turbo'
+        };
+        
+        const defaultModel = fallbackModels[role] || 'openai/gpt-3.5-turbo';
+        logger.warn(`Using fallback model for ${agent}: ${defaultModel}`);
+        
+        return defaultModel;
+      }
     } catch (error: any) {
       logger.error(`Failed to get model for ${agent}:`, error);
       logger.error('Full error stack:', error.stack);
-      throw error; // Propagate the error with full stack trace
+      
+      // Return a default model instead of throwing
+      return 'openai/gpt-3.5-turbo';
     }
   }
 

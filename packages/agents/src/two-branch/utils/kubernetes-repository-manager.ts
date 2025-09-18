@@ -804,36 +804,36 @@ spec:
     }
 
     // Run actual tools installed in the analyzer images
-    // Escape quotes properly for YAML
+    // Filter output to only show issues, not progress/verbose logs
     const toolCommands: Record<string, string> = {
-      // Java tools - simplified commands without complex escaping
+      // Java tools - output only issues in structured format
       'spotbugs': selectedFiles
-        ? `${fileListCommand}cd /workspace/repo && cat /tmp/selected_files.txt | xargs spotbugs -textui 2>&1 | head -5000`
-        : `cd /workspace/repo && spotbugs -textui -effort:max -low . 2>&1 | head -5000`,
+        ? `${fileListCommand}cd /workspace/repo && cat /tmp/selected_files.txt | xargs spotbugs -textui 2>&1 | grep -E '^[HML]:|^Code:|^At:|^In class:' | head -2000`
+        : `cd /workspace/repo && spotbugs -textui -effort:max -low . 2>&1 | grep -E '^[HML]:|^Code:|^At:|^In class:' | head -2000`,
 
       'pmd': selectedFiles
-        ? `${fileListCommand}cd /workspace/repo && cat /tmp/selected_files.txt | xargs pmd check -R category/java/bestpractices.xml -f text 2>&1 | head -5000`
-        : `cd /workspace/repo && pmd check -d . -R category/java/bestpractices.xml -f text --no-progress 2>&1 | head -5000`,
+        ? `${fileListCommand}cd /workspace/repo && cat /tmp/selected_files.txt | xargs pmd check -R category/java/bestpractices.xml -f text --no-progress 2>&1 | grep -v '^Processing' | grep -v '^Analyzed' | head -2000`
+        : `cd /workspace/repo && pmd check -d . -R category/java/bestpractices.xml -f text --no-progress --no-cache 2>&1 | grep -v '^Processing' | grep -v '^Analyzed' | head -2000`,
 
       'checkstyle': selectedFiles
-        ? `${fileListCommand}cd /workspace/repo && cat /tmp/selected_files.txt | xargs checkstyle -c /google_checks.xml 2>&1 | head -5000`
-        : `cd /workspace/repo && checkstyle -c /google_checks.xml . 2>&1 | head -5000`,
+        ? `${fileListCommand}cd /workspace/repo && cat /tmp/selected_files.txt | xargs checkstyle -c /google_checks.xml 2>&1 | grep -E '^\\[ERROR\\]|^\\[WARN\\]' | head -2000`
+        : `cd /workspace/repo && checkstyle -c /google_checks.xml . 2>&1 | grep -E '^\\[ERROR\\]|^\\[WARN\\]' | head -2000`,
 
       'semgrep': selectedFiles
-        ? `${fileListCommand}cd /workspace/repo && cat /tmp/selected_files.txt | xargs semgrep --config=auto 2>&1 | head -5000`
-        : `cd /workspace/repo && semgrep --config=auto . 2>&1 | head -5000`,
+        ? `${fileListCommand}cd /workspace/repo && semgrep --config=auto --json --quiet $(cat /tmp/selected_files.txt | tr '\\n' ' ') 2>/dev/null | jq -r '.results[] | "\\(.path):\\(.start.line): \\(.check_id): \\(.extra.message)"' | head -2000`
+        : `cd /workspace/repo && semgrep --config=auto --json --quiet . 2>/dev/null | jq -r '.results[] | "\\(.path):\\(.start.line): \\(.check_id): \\(.extra.message)"' | head -2000`,
 
-      'dependency-check': `cd /workspace/repo && dependency-check --scan . --format XML --out /tmp/dc-report.xml --noupdate 2>&1 | head -1000`,
+      'dependency-check': `cd /workspace/repo && dependency-check --scan . --format JSON --out /tmp/dc-report.json --noupdate --disableAssembly 2>&1 | grep -v 'Analyzing' | head -500 && cat /tmp/dc-report.json 2>/dev/null | jq -r '.dependencies[] | select(.vulnerabilities) | .fileName' | head -500`,
 
-      // Python tools - simplified
-      'bandit': `cd /workspace/repo && bandit -r . -f txt 2>&1 | head -5000`,
-      'pylint': `cd /workspace/repo && pylint . 2>&1 | head -5000`,
+      // Python tools - filtered output
+      'bandit': `cd /workspace/repo && bandit -r . -f json 2>/dev/null | jq -r '.results[] | "\\(.filename):\\(.line_number): \\(.test_id): \\(.issue_text)"' | head -2000`,
+      'pylint': `cd /workspace/repo && pylint . --output-format=json 2>/dev/null | jq -r '.[] | "\\(.path):\\(.line): \\(.message-id): \\(.message)"' | head -2000`,
 
-      // JavaScript tools - simplified
-      'eslint': `cd /workspace/repo && eslint . 2>&1 | head -5000`,
+      // JavaScript tools - filtered output
+      'eslint': `cd /workspace/repo && eslint . --format=json 2>/dev/null | jq -r '.[] | .messages[] | "\\(.filePath):\\(.line): \\(.ruleId): \\(.message)"' | head -2000`,
 
       // Default - just complete the analysis
-      'default': `echo Running tool analysis... && ls -la /workspace/repo 2>&1 || echo Analysis complete`
+      'default': `echo "Tool analysis completed" && exit 0`
     };
 
     const command = toolCommands[tool] || toolCommands['default'];

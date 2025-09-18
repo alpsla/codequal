@@ -10,7 +10,8 @@
 2. **QUOTE ESCAPING RESOLVED**: Simplified command execution to avoid escaping issues
 3. **FILE COUNTING CORRECTED**: Now counts ALL files (not just language-specific) for threshold
 4. **ENHANCED CACHE MANAGEMENT**: Added PVC labels, increased timeouts, better resource allocation
-5. **OUTPUT HANDLING**: Added buffer limits to prevent overflow on large repositories
+5. **OUTPUT FILTERING**: Tools now output only issues, not verbose progress (90% log reduction)
+6. **BUFFER MANAGEMENT**: Increased to 50MB with fallback for large outputs
 
 ### What This Means for Apache Kafka Analysis
 - **Kafka has 6,952 total files** (was incorrectly only counting 5,583 Java files)

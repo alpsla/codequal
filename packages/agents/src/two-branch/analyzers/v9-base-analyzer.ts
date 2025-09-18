@@ -359,18 +359,19 @@ export abstract class V9BaseAnalyzer {
       );
       const lineCount = parseInt(locOutput.trim(), 10);
       
-      // Use smart selection for large repositories (>10,000 files OR >50,000 LOC)
-      if (fileCount > 10000 || lineCount > 50000) {
+      // Use smart selection for large repositories (≥10,000 files OR ≥50,000 LOC)
+      // IMPORTANT: V9 spec says <10,000 files should analyze ALL files
+      if (fileCount >= 10000 || lineCount >= 50000) {
         this.logger.log(`📊 Large repository detected:`);
         this.logger.log(`   - Files: ${fileCount.toLocaleString()}`);
         this.logger.log(`   - Lines of code: ${lineCount.toLocaleString()}`);
         this.logger.log(`   → Using smart file selection (500 file limit)`);
         return true;
       } else {
-        this.logger.log(`📊 Small/medium repository:`);
+        this.logger.log(`📊 Small/medium repository (< 10,000 files):`);
         this.logger.log(`   - Files: ${fileCount.toLocaleString()}`);
         this.logger.log(`   - Lines of code: ${lineCount.toLocaleString()}`);
-        this.logger.log(`   → Analyzing all files`);
+        this.logger.log(`   → Analyzing ALL files (100% coverage)`);
         return false;
       }
     } catch (error) {
