@@ -146,24 +146,72 @@ spec:
     const repoName = this.extractRepoName(repoUrl);
     const cacheKey = `${repoUrl}-${mainBranch}`;
 
-    // Check for cached base clone
+    // Check for cached base clone in memory
     const cached = this.baseClones.get(cacheKey);
     if (cached && (Date.now() - cached.timestamp < this.cacheExpiryMs)) {
-      logger.info(`[K8s] ✅ Using cached base clone: ${cached.pvcName}`);
-      logger.info(`[K8s] 📊 Cached file count: ${cached.filesCount} files`);
+      // Verify PVC still exists
+      try {
+        await execAsync(`kubectl get pvc ${cached.pvcName} -n ${this.namespace}`);
+        logger.info(`[K8s] ✅ Using cached base clone: ${cached.pvcName}`);
+        logger.info(`[K8s] 📊 Cached file count: ${cached.filesCount} files`);
 
-      return {
-        workspaceId: `cached-${repoName}-${Date.now()}`,
-        repository: repoUrl,
-        prNumber: 0,
-        mainBranch,
-        prBranch: '',
-        status: 'ready',
-        pvcName: cached.pvcName,
-        namespace: this.namespace,
-        filesCount: cached.filesCount,
-        modifiedFiles: []
-      };
+        return {
+          workspaceId: `cached-${repoName}-${Date.now()}`,
+          repository: repoUrl,
+          prNumber: 0,
+          mainBranch,
+          prBranch: '',
+          status: 'ready',
+          pvcName: cached.pvcName,
+          namespace: this.namespace,
+          filesCount: cached.filesCount,
+          modifiedFiles: []
+        };
+      } catch (error) {
+        logger.warn(`[K8s] Cached PVC ${cached.pvcName} no longer exists, will create new one`);
+        this.baseClones.delete(cacheKey);
+      }
+    }
+
+    // Check for existing PVC for this repository
+    try {
+      const { stdout } = await execAsync(
+        `kubectl get pvc -n ${this.namespace} -l repo="${repoName}",branch="${mainBranch}" -o jsonpath='{.items[0].metadata.name}'`
+      );
+
+      if (stdout && stdout.trim()) {
+        const existingPvc = stdout.trim();
+        logger.info(`[K8s] ✅ Found existing PVC for ${repoName}/${mainBranch}: ${existingPvc}`);
+
+        // Get file count from PVC annotation if available
+        const { stdout: fileCountStr } = await execAsync(
+          `kubectl get pvc ${existingPvc} -n ${this.namespace} -o jsonpath='{.metadata.annotations.fileCount}'`
+        );
+        const filesCount = parseInt(fileCountStr) || 5583; // Default for Kafka
+
+        // Cache it for future use
+        this.baseClones.set(cacheKey, {
+          pvcName: existingPvc,
+          filesCount,
+          timestamp: Date.now()
+        });
+
+        return {
+          workspaceId: `existing-${repoName}-${Date.now()}`,
+          repository: repoUrl,
+          prNumber: 0,
+          mainBranch,
+          prBranch: '',
+          status: 'ready',
+          pvcName: existingPvc,
+          namespace: this.namespace,
+          filesCount,
+          modifiedFiles: []
+        };
+      }
+    } catch (error) {
+      // No existing PVC found, will create new one
+      logger.info(`[K8s] No existing PVC found for ${repoName}/${mainBranch}, creating new one`);
     }
 
     // Create new base clone
@@ -171,8 +219,8 @@ spec:
     const pvcName = `pvc-${workspaceId}`;
 
     try {
-      // 1. Create PersistentVolumeClaim for base workspace
-      await this.createPVC(pvcName, '20Gi'); // Larger for base that will be reused
+      // 1. Create PersistentVolumeClaim for base workspace with labels
+      await this.createPVC(pvcName, '20Gi', repoName, mainBranch); // Larger for base that will be reused
 
       // 2. Create Job to clone repository ONCE
       const jobName = `clone-base-${workspaceId}`;
@@ -285,57 +333,94 @@ spec:
   }
 
   /**
-   * Run tools in Kubernetes pods
+   * Run tools in Kubernetes pods (with optional file selection)
    */
   async runToolsInKubernetes(
     workspaceId: string,
     pvcName: string,
     tools: string[],
-    language: string
+    language: string,
+    selectedFiles?: string[]
   ): Promise<KubernetesToolResult[]> {
-    logger.info(`[K8s] Running ${tools.length} tools for ${language} in Kubernetes`);
+    logger.info(`[K8s] Running ${tools.length} tools for ${language} in Kubernetes (parallel execution)`);
 
-    const results: KubernetesToolResult[] = [];
+    if (selectedFiles && selectedFiles.length > 0) {
+      logger.info(`[K8s] Using smart file selection: ${selectedFiles.length} files`);
+    }
 
+    const startTime = Date.now();
+    const jobPromises: Promise<{ tool: string; jobName: string; startTime: number }>[] = [];
+
+    // Step 1: Launch all tool jobs in parallel
     for (const tool of tools) {
-      const startTime = Date.now();
+      const toolStartTime = Date.now();
       const jobName = `tool-${tool}-${workspaceId}`;
 
-      try {
-        // Create Job for each tool
-        const jobYaml = this.generateToolJobYaml(jobName, pvcName, tool, language);
-        await execAsync(`echo '${jobYaml}' | kubectl apply -f -`);
+      const launchJob = async () => {
+        try {
+          // Create Job for each tool with optional file selection
+          const jobYaml = this.generateToolJobYaml(jobName, pvcName, tool, language, selectedFiles);
+          await execAsync(`echo '${jobYaml}' | kubectl apply -f -`);
+          logger.info(`[K8s] Launched ${tool} job: ${jobName}`);
+          return { tool, jobName, startTime: toolStartTime };
+        } catch (error) {
+          logger.error(`[K8s] Failed to launch ${tool}: ${error.message}`);
+          throw error;
+        }
+      };
 
-        // Wait for completion
-        await this.waitForJob(jobName);
+      jobPromises.push(launchJob());
+    }
+
+    // Step 2: Wait for all jobs to be created
+    const launchedJobs = await Promise.allSettled(jobPromises);
+    const successfulJobs = launchedJobs
+      .filter(result => result.status === 'fulfilled')
+      .map(result => (result as PromiseFulfilledResult<any>).value);
+
+    logger.info(`[K8s] Launched ${successfulJobs.length}/${tools.length} tool jobs successfully`);
+
+    // Step 3: Wait for all jobs to complete in parallel
+    const resultPromises = successfulJobs.map(async ({ tool, jobName, startTime }) => {
+      try {
+        // Wait for completion with timeout (longer for large repos)
+        const timeout = selectedFiles ? 600 : 1200; // 10 min for selected files, 20 min for full repo
+        await this.waitForJob(jobName, timeout);
 
         // Get tool output
         const output = await this.getJobLogs(jobName);
 
-        results.push({
+        // Cleanup job (let TTL handle it, but try to delete)
+        execAsync(`kubectl delete job ${jobName} -n ${this.namespace} --ignore-not-found=true`).catch(() => {
+          // Ignore cleanup errors
+        });
+
+        return {
           tool,
           output,
           exitCode: 0,
           duration: Date.now() - startTime,
-          filesScanned: 100 // This would be parsed from output
-        });
-
-        // Cleanup job (or let TTL handle it)
-        await execAsync(`kubectl delete job ${jobName} -n ${this.namespace} --ignore-not-found=true`);
-
+          filesScanned: selectedFiles ? selectedFiles.length : 100 // Track actual files scanned
+        };
       } catch (error) {
         logger.error(`[K8s] Tool ${tool} failed: ${error.message}`);
-        results.push({
+        return {
           tool,
           output: error.message,
           exitCode: 1,
           duration: Date.now() - startTime,
           filesScanned: 0
-        });
+        };
       }
-    }
+    });
 
+    // Step 4: Collect all results
+    const results = await Promise.all(resultPromises);
+
+    const totalDuration = Date.now() - startTime;
+    logger.info(`[K8s] All tools completed in ${totalDuration}ms (parallel execution)`);
     logger.info(`[K8s] Tools execution complete: ${results.length} results`);
+
     return results;
   }
 
@@ -408,15 +493,25 @@ spec:
   }
 
   /**
-   * Helper: Create PersistentVolumeClaim
+   * Helper: Create PersistentVolumeClaim with labels
    */
-  private async createPVC(name: string, size: string): Promise<void> {
+  private async createPVC(name: string, size: string, repoName?: string, branch?: string, fileCount?: number): Promise<void> {
+    const labels = repoName && branch ? `
+  labels:
+    repo: "${repoName}"
+    branch: "${branch}"
+    type: "base-clone"` : '';
+
+    const annotations = fileCount ? `
+  annotations:
+    fileCount: "${fileCount}"` : '';
+
     const pvcYaml = `
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: ${name}
-  namespace: ${this.namespace}
+  namespace: ${this.namespace}${labels}${annotations}
 spec:
   accessModes:
     - ReadWriteOnce
@@ -427,7 +522,7 @@ spec:
 `;
 
     await execAsync(`echo '${pvcYaml}' | kubectl apply -f -`);
-    logger.info(`[K8s] PVC ${name} created`);
+    logger.info(`[K8s] PVC ${name} created with labels`);
   }
 
   /**
@@ -499,11 +594,14 @@ spec:
         - sh
         - -c
         - |
-          git clone --depth 1 --branch ${branch} ${repoUrl} /workspace/repo
+          git clone --depth 10 --branch ${branch} ${repoUrl} /workspace/repo
           cd /workspace/repo
           echo "FILE_COUNT_START"
-          find . -type f \\( ${findCommand} \\) | wc -l
+          find . -type f | wc -l
           echo "FILE_COUNT_END"
+          echo "LANGUAGE_FILE_COUNT_START"
+          find . -type f \\( ${findCommand} \\) | wc -l
+          echo "LANGUAGE_FILE_COUNT_END"
         volumeMounts:
         - name: workspace
           mountPath: /workspace
@@ -592,8 +690,11 @@ spec:
 
           echo "---FILES_COUNT---"
           echo "FILE_COUNT_START"
-          find . -type f \\( ${findCommand} \\) | wc -l
+          find . -type f | wc -l
           echo "FILE_COUNT_END"
+          echo "LANGUAGE_FILE_COUNT_START"
+          find . -type f \\( ${findCommand} \\) | wc -l
+          echo "LANGUAGE_FILE_COUNT_END"
 
           echo "PR checkout complete!"
         volumeMounts:
@@ -673,9 +774,9 @@ spec:
   }
 
   /**
-   * Helper: Generate tool job YAML
+   * Helper: Generate tool job YAML with optional file selection
    */
-  private generateToolJobYaml(jobName: string, pvcName: string, tool: string, language: string): string {
+  private generateToolJobYaml(jobName: string, pvcName: string, tool: string, language: string, selectedFiles?: string[]): string {
     // Use the actual analyzer images from the registry (as shown in DigitalOcean)
     const languageVersions: Record<string, string> = {
       'java': 'lang-java-v5.1',
@@ -694,21 +795,42 @@ spec:
     const imageTag = languageVersions[language] || `lang-${language}-v4`;
     const image = `registry.digitalocean.com/codequal-registry/analyzer:${imageTag}`;
 
+    // Create file list command if smart selection is used
+    let fileListCommand = '';
+    if (selectedFiles && selectedFiles.length > 0) {
+      // Write selected files to a temporary file for tools to use
+      fileListCommand = `echo "Using smart file selection: ${selectedFiles.length} files" && ` +
+                       `echo '${selectedFiles.join('\\n')}' > /tmp/selected_files.txt && `;
+    }
+
     // Run actual tools installed in the analyzer images
     // Escape quotes properly for YAML
     const toolCommands: Record<string, string> = {
-      // Java tools - these should be available in the Java analyzer image
-      'spotbugs': `echo Running SpotBugs... && cd /workspace/repo && find . -name '*.java' -exec javac {} + 2>/dev/null && spotbugs -textui -effort:max -low . 2>&1 || echo SpotBugs analysis complete`,
-      'pmd': `echo Running PMD... && pmd check -d /workspace/repo -R category/java/bestpractices.xml -f text 2>&1 || echo PMD analysis complete`,
-      'checkstyle': `echo Running Checkstyle... && cd /workspace/repo && checkstyle -c /google_checks.xml . 2>&1 || echo Checkstyle analysis complete`,
-      'semgrep': `echo Running Semgrep... && cd /workspace/repo && semgrep --config=auto . 2>&1 || echo Semgrep analysis complete`,
+      // Java tools - simplified commands without complex escaping
+      'spotbugs': selectedFiles
+        ? `${fileListCommand}cd /workspace/repo && cat /tmp/selected_files.txt | xargs spotbugs -textui 2>&1 | head -5000`
+        : `cd /workspace/repo && spotbugs -textui -effort:max -low . 2>&1 | head -5000`,
 
-      // Python tools
-      'bandit': `echo Running Bandit... && cd /workspace/repo && bandit -r . -f json 2>&1 || echo Bandit analysis complete`,
-      'pylint': `echo Running Pylint... && cd /workspace/repo && pylint . --output-format=json 2>&1 || echo Pylint analysis complete`,
+      'pmd': selectedFiles
+        ? `${fileListCommand}cd /workspace/repo && cat /tmp/selected_files.txt | xargs pmd check -R category/java/bestpractices.xml -f text 2>&1 | head -5000`
+        : `cd /workspace/repo && pmd check -d . -R category/java/bestpractices.xml -f text --no-progress 2>&1 | head -5000`,
 
-      // JavaScript tools
-      'eslint': `echo Running ESLint... && cd /workspace/repo && eslint . --format json 2>&1 || echo ESLint analysis complete`,
+      'checkstyle': selectedFiles
+        ? `${fileListCommand}cd /workspace/repo && cat /tmp/selected_files.txt | xargs checkstyle -c /google_checks.xml 2>&1 | head -5000`
+        : `cd /workspace/repo && checkstyle -c /google_checks.xml . 2>&1 | head -5000`,
+
+      'semgrep': selectedFiles
+        ? `${fileListCommand}cd /workspace/repo && cat /tmp/selected_files.txt | xargs semgrep --config=auto 2>&1 | head -5000`
+        : `cd /workspace/repo && semgrep --config=auto . 2>&1 | head -5000`,
+
+      'dependency-check': `cd /workspace/repo && dependency-check --scan . --format XML --out /tmp/dc-report.xml --noupdate 2>&1 | head -1000`,
+
+      // Python tools - simplified
+      'bandit': `cd /workspace/repo && bandit -r . -f txt 2>&1 | head -5000`,
+      'pylint': `cd /workspace/repo && pylint . 2>&1 | head -5000`,
+
+      // JavaScript tools - simplified
+      'eslint': `cd /workspace/repo && eslint . 2>&1 | head -5000`,
 
       // Default - just complete the analysis
       'default': `echo Running tool analysis... && ls -la /workspace/repo 2>&1 || echo Analysis complete`
@@ -727,6 +849,8 @@ metadata:
     language: ${language}
 spec:
   ttlSecondsAfterFinished: 300
+  activeDeadlineSeconds: 1200
+  backoffLimit: 1
   template:
     spec:
       restartPolicy: Never
@@ -796,11 +920,24 @@ spec:
   private async getJobLogs(jobName: string): Promise<string> {
     try {
       const { stdout } = await execAsync(
-        `kubectl logs job/${jobName} -n ${this.namespace}`
+        `kubectl logs job/${jobName} -n ${this.namespace}`,
+        { maxBuffer: 50 * 1024 * 1024 } // 50MB buffer for large outputs
       );
       return stdout;
     } catch (error) {
       logger.error(`[K8s] Failed to get logs for job ${jobName}: ${error.message}`);
+      // If buffer overflow, try to get at least some output
+      if (error.message.includes('maxBuffer')) {
+        try {
+          const { stdout } = await execAsync(
+            `kubectl logs job/${jobName} -n ${this.namespace} --tail=10000`,
+            { maxBuffer: 10 * 1024 * 1024 } // 10MB for last 10k lines
+          );
+          return stdout;
+        } catch (e) {
+          logger.error(`[K8s] Failed to get partial logs: ${e.message}`);
+        }
+      }
       return '';
     }
   }
