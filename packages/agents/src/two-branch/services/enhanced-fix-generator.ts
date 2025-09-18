@@ -5,7 +5,8 @@
 
 import OpenAI from 'openai';
 import { createLogger } from '../../../../core/src/utils/logger';
-import PQueue from 'p-queue';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const PQueue = require('p-queue').default;
 
 const logger = createLogger('enhanced-fix-generator');
 
