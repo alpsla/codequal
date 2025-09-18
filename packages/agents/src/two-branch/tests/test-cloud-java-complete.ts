@@ -205,7 +205,7 @@ async function testJavaWithFullReport() {
     // Initialize model fallback handler and resolver
     const modelResolver = new ModelConfigResolver();
     const fallbackHandler = new ModelFallbackHandler(logger);
-    let agentsUsed = [];
+    const agentsUsed = [];
 
     // Define roles to analyze
     const roles = ['security', 'quality', 'performance'];

@@ -54,7 +54,7 @@ export class LocalRepositoryManager {
   /**
    * Clone repository locally
    */
-  async setupRepository(repoUrl: string, mainBranch: string = 'main'): Promise<LocalWorkspace> {
+  async setupRepository(repoUrl: string, mainBranch = 'main'): Promise<LocalWorkspace> {
     logger.info(`[Local] Cloning repository: ${repoUrl}`);
 
     const repoName = this.extractRepoName(repoUrl);

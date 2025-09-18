@@ -52,7 +52,7 @@ export class RedisToolOutputManager {
     tool: string,
     output: string,
     executionTime: number,
-    success: boolean = true,
+    success = true,
     error?: string
   ): Promise<void> {
     const key = this.getKey(workspace, branch, tool);
@@ -296,7 +296,7 @@ export class RedisToolOutputManager {
       // Look for lines that contain file paths with line numbers
       const filePattern = /^\s*(\S+\.java)\s*$/;
       const findingPattern = /^\s*(\d+)┆\s*(.+)$/;
-      const rulePattern = /^\s*([a-z\.\-]+)\s*$/;
+      const rulePattern = /^\s*([a-z.-]+)\s*$/;
 
       let currentFile = '';
       let currentRule = '';

@@ -211,7 +211,7 @@ spec:
 
     } catch (error) {
       // Cleanup on error
-      await execAsync(`kubectl delete job ${jobName} -n ${this.kubeNamespace}`).catch(() => {});
+      await execAsync(`kubectl delete job ${jobName} -n ${this.kubeNamespace}`).catch(() => { /* Ignore cleanup errors */ });
       throw error;
     }
   }

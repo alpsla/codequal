@@ -354,7 +354,9 @@ if (require.main === module) {
       });
       
       // Keep the process running
-      setInterval(() => {}, 1000);
+      setInterval(() => {
+        // Keep alive
+      }, 1000);
       break;
 
     case 'check':
@@ -362,16 +364,17 @@ if (require.main === module) {
       guard.generateComplianceReport();
       break;
 
-    case 'validate':
+    case 'validate': {
       const filePath = process.argv[3];
       if (!filePath) {
         console.error('❌ Usage: node framework-guards.ts validate <file-path>');
         process.exit(1);
       }
-      
+
       const isValid = guard.validateExistingFile(filePath);
       process.exit(isValid ? 0 : 1);
       break;
+    }
 
     default:
       console.log('🛡️  Framework Guard - Duplication Prevention System\n');

@@ -70,7 +70,7 @@ async function showSummary(timeRange = '1h') {
     sum + (a.input_tokens || 0) + (a.output_tokens || 0), 0) || 0;
   
   const avgDuration = total > 0
-    ? activities?.reduce((sum, a) => sum + (a.duration_ms || 0), 0)! / total
+    ? (activities?.reduce((sum, a) => sum + (a.duration_ms || 0), 0) || 0) / total
     : 0;
   
   // Create summary table

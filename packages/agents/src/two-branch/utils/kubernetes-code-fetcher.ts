@@ -38,7 +38,7 @@ export class KubernetesCodeFetcher {
     file: string,
     line: number,
     column?: number,
-    contextLines: number = 3
+    contextLines = 3
   ): Promise<CodeSnippet | null> {
     try {
       logger.info(`[K8s] Fetching code snippet from ${file}:${line} in workspace ${workspaceId}`);
@@ -189,7 +189,7 @@ spec:
   /**
    * Helper: Wait for job completion
    */
-  private async waitForJob(jobName: string, timeout: number = 10): Promise<void> {
+  private async waitForJob(jobName: string, timeout = 10): Promise<void> {
     const startTime = Date.now();
 
     while (Date.now() - startTime < timeout * 1000) {

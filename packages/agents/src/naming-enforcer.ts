@@ -416,13 +416,13 @@ if (require.main === module) {
       enforcer.generateComplianceReport();
       break;
 
-    case 'validate':
+    case 'validate': {
       const filePath = process.argv[3];
       if (!filePath) {
         console.error('❌ Usage: node naming-enforcer.ts validate <file-path>');
         process.exit(1);
       }
-      
+
       const result = enforcer.validateFileName(filePath);
       if (result.valid) {
         console.log(`✅ ${filePath} follows naming conventions`);
@@ -435,22 +435,24 @@ if (require.main === module) {
         process.exit(1);
       }
       break;
+    }
 
-    case 'suggest':
+    case 'suggest': {
       const targetPath = process.argv[3];
       if (!targetPath) {
         console.error('❌ Usage: node naming-enforcer.ts suggest <file-path>');
         process.exit(1);
       }
-      
+
       const suggestions = enforcer.suggestCorrectNames(targetPath);
       console.log(`💡 Naming suggestions for ${targetPath}:`);
       suggestions.forEach((suggestion, index) => {
         console.log(`   ${index + 1}. ${suggestion}`);
       });
       break;
+    }
 
-    case 'structure':
+    case 'structure': {
       console.log('🏗️  Checking directory structure...');
       const structureResult = enforcer.validateDirectoryStructure();
       if (structureResult.valid) {
@@ -462,6 +464,7 @@ if (require.main === module) {
         structureResult.suggestions.forEach(s => console.log(`   • ${s}`));
       }
       break;
+    }
 
     default:
       console.log('📏 Naming Convention Enforcer - V9 Framework\n');

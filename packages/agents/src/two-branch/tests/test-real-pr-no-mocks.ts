@@ -51,7 +51,7 @@ const TEST_CASES = {
   }
 };
 
-async function runRealPRAnalysis(language: string = 'java') {
+async function runRealPRAnalysis(language = 'java') {
   const testCase = TEST_CASES[language as keyof typeof TEST_CASES];
 
   if (!testCase) {

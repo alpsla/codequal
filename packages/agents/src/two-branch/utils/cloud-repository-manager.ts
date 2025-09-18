@@ -56,7 +56,7 @@ export class CloudRepositoryManager {
    * Setup repository in cloud (clone, cache, index)
    * This replaces local cloning
    */
-  async setupRepository(repoUrl: string, mainBranch: string = 'main'): Promise<CloudWorkspace> {
+  async setupRepository(repoUrl: string, mainBranch = 'main'): Promise<CloudWorkspace> {
     logger.info(`[Cloud] Setting up repository in cloud: ${repoUrl}`);
 
     try {

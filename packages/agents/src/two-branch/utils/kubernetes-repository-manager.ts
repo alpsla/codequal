@@ -43,7 +43,7 @@ export class KubernetesRepositoryManager {
   private namespace: string;
   private storageClass: string;
   private baseClones: Map<string, { pvcName: string; filesCount: number; timestamp: number }> = new Map();
-  private cacheExpiryMs: number = 3600000; // 1 hour cache
+  private cacheExpiryMs = 3600000; // 1 hour cache
 
   constructor() {
     this.namespace = process.env.K8S_NAMESPACE || 'codequal-dev';
@@ -118,7 +118,7 @@ spec:
     };
 
     // Extract owner/repo from URL
-    const match = repoUrl.match(/github\.com\/([^\/]+\/[^\/\.]+)/);
+    const match = repoUrl.match(/github\.com\/([^/]+\/[^/.]+)/);
     if (match) {
       const repoKey = match[1];
       if (knownBranches[repoKey]) {
@@ -135,7 +135,7 @@ spec:
    * Setup repository in Kubernetes (uses cached base clone if available)
    * If mainBranch is 'auto', will use known default or 'main'
    */
-  async setupRepository(repoUrl: string, mainBranch: string = 'auto', language: string = 'java'): Promise<KubernetesWorkspace> {
+  async setupRepository(repoUrl: string, mainBranch = 'auto', language = 'java'): Promise<KubernetesWorkspace> {
     logger.info(`[K8s] Setting up repository in Kubernetes: ${repoUrl}`);
 
     // Auto-detect branch if needed
@@ -220,9 +220,9 @@ spec:
   async createPRWorkspace(
     repoUrl: string,
     prNumber: number,
-    language: string = 'java',
+    language = 'java',
     basePvcName?: string,
-    mainBranch: string = 'main'
+    mainBranch = 'main'
   ): Promise<KubernetesWorkspace> {
     logger.info(`[K8s] Creating COW PR workspace for PR #${prNumber}`);
 
@@ -458,7 +458,7 @@ spec:
   /**
    * Helper: Generate clone job YAML
    */
-  private generateCloneJobYaml(jobName: string, pvcName: string, repoUrl: string, branch: string, language: string = 'java'): string {
+  private generateCloneJobYaml(jobName: string, pvcName: string, repoUrl: string, branch: string, language = 'java'): string {
     // Map language to file extensions
     const extensionMap: Record<string, string> = {
       'java': '*.java',
@@ -523,7 +523,7 @@ spec:
     basePvcName: string,
     repoUrl: string,
     prNumber: number,
-    language: string = 'java'
+    language = 'java'
   ): string {
     // Map language to file extensions
     const extensionMap: Record<string, string> = {
@@ -612,7 +612,7 @@ spec:
   /**
    * Helper: Generate PR clone job YAML (old method, kept for compatibility)
    */
-  private generatePRCloneJobYaml(jobName: string, pvcName: string, repoUrl: string, prNumber: number, language: string = 'java'): string {
+  private generatePRCloneJobYaml(jobName: string, pvcName: string, repoUrl: string, prNumber: number, language = 'java'): string {
     // Map language to file extensions
     const extensionMap: Record<string, string> = {
       'java': '*.java',
@@ -756,7 +756,7 @@ spec:
   /**
    * Helper: Wait for job completion
    */
-  private async waitForJob(jobName: string, timeout: number = 300): Promise<void> {
+  private async waitForJob(jobName: string, timeout = 300): Promise<void> {
     const startTime = Date.now();
 
     while (Date.now() - startTime < timeout * 1000) {
