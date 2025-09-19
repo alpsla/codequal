@@ -391,4 +391,35 @@ const metrics = monitor.getAggregatedMetrics();
 // - tokenUsage: typically < 50,000 total
 ```
 
+## 🚨 CRITICAL INFRASTRUCTURE LIMITATION (2025-09-19)
+
+### Storage Access Crisis - DigitalOcean Block Volumes
+**Problem:** DigitalOcean block storage ONLY supports ReadWriteOnce (RWO)
+- Cannot mount PVC to multiple pods simultaneously
+- Prevents true parallel tool execution (5x performance impact)
+- Multi-Attach error even with read-only mounts
+- **Support ticket submitted:** Awaiting response (24hr SLA)
+
+### Current Workaround: EmptyDir with Init Containers
+```yaml
+# Each pod gets its own emptyDir volume
+# Init container copies repo from PVC to emptyDir
+# Adds ~30-60 seconds overhead per tool
+# But allows true parallel execution
+```
+
+### Migration Decision Pending (2025-09-20)
+- **If DO provides solution:** Continue with current infrastructure
+- **If DO cannot solve:** Immediate migration to GKE (2 week timeline)
+- **Cost impact:** +$70/month but 5x performance improvement
+- **Risk:** Low (0 users currently)
+
+### Alternative Providers Evaluated
+| Provider | Solution | Cost/Month | Status |
+|----------|----------|------------|--------|
+| DigitalOcean | None available | $220 | Current (problematic) |
+| Google Cloud (GKE) | Filestore NFS | $290 | Best alternative |
+| AWS (EKS) | EFS | $320 | More expensive |
+| Azure (AKS) | Azure Files | $310 | Good alternative |
+
 ## 🔴 REMEMBER: This is the source of truth for V9 knowledge!

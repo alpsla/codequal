@@ -761,7 +761,7 @@ spec:
           git diff --name-only origin/$DEFAULT_BRANCH...HEAD
           echo "---FILES_COUNT---"
           echo "FILE_COUNT_START"
-          find . -type f \\( ${findCommand} \\) | wc -l
+          find . -type f | wc -l
           echo "FILE_COUNT_END"
         volumeMounts:
         - name: workspace
@@ -804,39 +804,42 @@ spec:
     }
 
     // Run actual tools installed in the analyzer images
-    // Filter output to only show issues, not progress/verbose logs
+    // Use simpler commands without complex filtering to avoid YAML issues
     const toolCommands: Record<string, string> = {
-      // Java tools - output only issues in structured format
+      // Java tools - run without filtering, let the agent process the output
       'spotbugs': selectedFiles
-        ? `${fileListCommand}cd /workspace/repo && cat /tmp/selected_files.txt | xargs spotbugs -textui 2>&1 | grep -E '^[HML]:|^Code:|^At:|^In class:' | head -2000`
-        : `cd /workspace/repo && spotbugs -textui -effort:max -low . 2>&1 | grep -E '^[HML]:|^Code:|^At:|^In class:' | head -2000`,
+        ? `${fileListCommand}cd /workspace/repo && cat /tmp/selected_files.txt | xargs spotbugs -textui 2>&1 | head -3000`
+        : `cd /workspace/repo && spotbugs -textui -effort:max -low . 2>&1 | head -3000`,
 
       'pmd': selectedFiles
-        ? `${fileListCommand}cd /workspace/repo && cat /tmp/selected_files.txt | xargs pmd check -R category/java/bestpractices.xml -f text --no-progress 2>&1 | grep -v '^Processing' | grep -v '^Analyzed' | head -2000`
-        : `cd /workspace/repo && pmd check -d . -R category/java/bestpractices.xml -f text --no-progress --no-cache 2>&1 | grep -v '^Processing' | grep -v '^Analyzed' | head -2000`,
+        ? `${fileListCommand}cd /workspace/repo && cat /tmp/selected_files.txt | xargs pmd check -R category/java/bestpractices.xml -f text --no-progress --no-cache 2>&1 | grep -v Processing | grep -v Analyzed | head -3000`
+        : `cd /workspace/repo && pmd check -d . -R category/java/bestpractices.xml -f text --no-progress --no-cache 2>&1 | grep -v Processing | grep -v Analyzed | head -3000`,
 
       'checkstyle': selectedFiles
-        ? `${fileListCommand}cd /workspace/repo && cat /tmp/selected_files.txt | xargs checkstyle -c /google_checks.xml 2>&1 | grep -E '^\\[ERROR\\]|^\\[WARN\\]' | head -2000`
-        : `cd /workspace/repo && checkstyle -c /google_checks.xml . 2>&1 | grep -E '^\\[ERROR\\]|^\\[WARN\\]' | head -2000`,
+        ? `${fileListCommand}cd /workspace/repo && cat /tmp/selected_files.txt | xargs checkstyle -c /google_checks.xml 2>&1 | head -3000`
+        : `cd /workspace/repo && checkstyle -c /google_checks.xml . 2>&1 | head -3000`,
 
       'semgrep': selectedFiles
-        ? `${fileListCommand}cd /workspace/repo && semgrep --config=auto --json --quiet $(cat /tmp/selected_files.txt | tr '\\n' ' ') 2>/dev/null | jq -r '.results[] | "\\(.path):\\(.start.line): \\(.check_id): \\(.extra.message)"' | head -2000`
-        : `cd /workspace/repo && semgrep --config=auto --json --quiet . 2>/dev/null | jq -r '.results[] | "\\(.path):\\(.start.line): \\(.check_id): \\(.extra.message)"' | head -2000`,
+        ? `${fileListCommand}cd /workspace/repo && semgrep --config=auto --text . 2>&1 | head -3000`
+        : `cd /workspace/repo && semgrep --config=auto --text . 2>&1 | head -3000`,
 
-      'dependency-check': `cd /workspace/repo && dependency-check --scan . --format JSON --out /tmp/dc-report.json --noupdate --disableAssembly 2>&1 | grep -v 'Analyzing' | head -500 && cat /tmp/dc-report.json 2>/dev/null | jq -r '.dependencies[] | select(.vulnerabilities) | .fileName' | head -500`,
+      'dependency-check': `cd /workspace/repo && dependency-check --scan . --format TEXT --out /tmp/dc-report.txt --noupdate --disableAssembly 2>&1 | head -1000`,
 
-      // Python tools - filtered output
-      'bandit': `cd /workspace/repo && bandit -r . -f json 2>/dev/null | jq -r '.results[] | "\\(.filename):\\(.line_number): \\(.test_id): \\(.issue_text)"' | head -2000`,
-      'pylint': `cd /workspace/repo && pylint . --output-format=json 2>/dev/null | jq -r '.[] | "\\(.path):\\(.line): \\(.message-id): \\(.message)"' | head -2000`,
+      // Python tools - simplified output
+      'bandit': `cd /workspace/repo && bandit -r . -f txt 2>&1 | head -3000`,
+      'pylint': `cd /workspace/repo && pylint . 2>&1 | head -3000`,
 
-      // JavaScript tools - filtered output
-      'eslint': `cd /workspace/repo && eslint . --format=json 2>/dev/null | jq -r '.[] | .messages[] | "\\(.filePath):\\(.line): \\(.ruleId): \\(.message)"' | head -2000`,
+      // JavaScript tools - simplified output
+      'eslint': `cd /workspace/repo && eslint . 2>&1 | head -3000`,
 
       // Default - just complete the analysis
-      'default': `echo "Tool analysis completed" && exit 0`
+      'default': `echo Tool analysis completed && exit 0`
     };
 
     const command = toolCommands[tool] || toolCommands['default'];
+
+    // Escape the command for YAML - replace quotes with escaped quotes
+    const escapedCommand = command.replace(/"/g, '\\"');
 
     return `
 apiVersion: batch/v1
@@ -856,24 +859,46 @@ spec:
       restartPolicy: Never
       imagePullSecrets:
       - name: registry-codequal-registry
+      initContainers:
+      - name: copy-repo
+        image: busybox:latest
+        command: ["sh", "-c"]
+        args:
+        - |
+          echo "[$(date)] Starting repository copy..."
+          cp -r /source/repo /workspace/
+          echo "[$(date)] Repository copied successfully ($(du -sh /workspace/repo | cut -f1))"
+        volumeMounts:
+        - name: source-pvc
+          mountPath: /source
+          readOnly: true
+        - name: workspace
+          mountPath: /workspace
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
       containers:
       - name: ${tool}
         image: ${image}
-        command: ["sh", "-c", "${command}"]
+        command: ["sh", "-c", "${escapedCommand}"]
         volumeMounts:
         - name: workspace
           mountPath: /workspace
         resources:
           requests:
-            memory: "1Gi"
-            cpu: "500m"
+            memory: "512Mi"
+            cpu: "250m"
           limits:
             memory: "2Gi"
             cpu: "1000m"
       volumes:
-      - name: workspace
+      - name: source-pvc
         persistentVolumeClaim:
           claimName: ${pvcName}
+      - name: workspace
+        emptyDir:
+          sizeLimit: 10Gi
 `;
   }
 
