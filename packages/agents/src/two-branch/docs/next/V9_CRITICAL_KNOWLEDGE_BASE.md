@@ -1,5 +1,45 @@
 # 🧠 V9 CRITICAL KNOWLEDGE BASE
 **IMPORTANT: Start every V9 session by reading this file**
+**Last Updated: September 19, 2024 - Session Summary**
+
+## 🚨 CRITICAL UPDATE - REPORT MUST HAVE 34 SECTIONS!
+
+### ⚠️ RECURRING PROBLEM PATTERN
+We keep losing report sections when fixing other issues. The V9 report MUST have ALL 34 sections:
+1. Executive Summary (with Immediate Risk)
+2. Decision (ONLY "APPROVED" or "DECLINED")
+3. Issue Summary (New/Existing/Resolved/Blocking/Backlog)
+4. Detailed Issues with Education
+5. Business Impact Analysis
+6. Risk Matrix with Explanations
+7. Score Calculation Breakdown
+8. Skills Development Tracking
+9. Personalized PR Comment
+10. AI-Powered Fix Suggestions
+11. Educational Resources
+12. Phased Educational Plan
+13. Team Skills Tracking
+14. Analysis Metadata
+15. Performance Metrics
+16. Agent Performance Tracking
+17. Tool Performance Metrics
+18. Cost Analysis Breakdown
+19. Recommended Actions
+20. Resolution Metrics
+21. Progress Tracking
+22. Quality Trends
+23. Achievement Tracking
+24. Learning Path Progress
+25. Code Ownership Map
+26. Technical Debt Tracking
+27. Security Posture Assessment
+28. Performance Optimization Opportunities
+29. Architecture Compliance Report
+30. Dependency Health Check
+31. Monitoring & Alerts Configuration
+32. CI/CD Integration Status
+33. Next Sprint Planning
+34. Footer with Timestamps
 
 ## 🚨 STOP! Key Facts to Remember
 
@@ -46,7 +86,7 @@ Issue Comparator:
   - packages/agents/src/two-branch/analyzers/v9-issue-comparator.ts
 
 Report Formatter:
-  - packages/agents/src/two-branch/analyzers/v9-report-formatter-final.ts
+  - packages/agents/src/two-branch/analyzers/v9-report-formatter.ts  # ONLY formatter (final deleted)
 
 Dynamic Model Selection:
   - packages/agents/src/two-branch/researcher/researcher-agent.ts

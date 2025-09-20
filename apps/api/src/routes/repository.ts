@@ -186,35 +186,11 @@ repositoryRoutes.get('/job/:jobId', async (req: Request, res: Response) => {
     }
     
     // deepWikiManager is now a singleton, no need to instantiate
-    // DeepWiki functionality removed
-    const job = null;
-
-    if (!job) {
-      return res.status(404).json({ 
-        error: 'Job not found',
-        jobId 
-      });
-    }
-
-    if ('jobId' in job) {
-      res.json({
-        jobId: job.jobId,
-        repositoryUrl: job.repositoryUrl,
-        status: job.status,
-        startedAt: job.startedAt,
-        completedAt: 'completedAt' in job ? job.completedAt : undefined,
-        error: 'error' in job ? job.error : undefined,
-        progress: job.status === 'completed' ? 100 : 
-                 job.status === 'processing' ? 75 : 
-                 job.status === 'failed' ? 0 : 25
-      });
-    } else {
-      res.json({
-        jobId,
-        status: job.status,
-        progress: 100
-      });
-    }
+    // DeepWiki functionality removed - returning job not found for all requests
+    return res.status(404).json({
+      error: 'Job not found - DeepWiki functionality has been removed',
+      jobId
+    });
 
   } catch (error) {
     console.error('Job status fetch error:', error);

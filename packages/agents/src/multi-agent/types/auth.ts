@@ -49,3 +49,14 @@ export enum UserStatus {
   INACTIVE = 'inactive',
   PENDING = 'pending'
 }
+
+export interface UserPermissions {
+  repositories?: Record<string, string[]>;
+  organizations?: string[];
+  globalPermissions?: string[];
+  quotas?: {
+    requestsPerHour: number;
+    maxConcurrentExecutions: number;
+    storageQuotaMB: number;
+  };
+}

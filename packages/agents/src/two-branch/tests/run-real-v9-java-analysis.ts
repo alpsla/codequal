@@ -8,7 +8,7 @@
 
 import * as dotenv from 'dotenv';
 import { V9AnalyzerFrameworkEnhanced } from '../analyzers/v9-analyzer-framework-enhanced';
-import { V9ReportFormatterFinal } from '../analyzers/v9-report-formatter-final';
+import { V9ReportFormatterFinal } from '../analyzers/v9-report-formatter';
 import { createClient } from '@supabase/supabase-js';
 import * as fs from 'fs';
 import * as path from 'path';

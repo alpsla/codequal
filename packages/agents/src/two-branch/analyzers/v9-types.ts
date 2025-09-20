@@ -51,6 +51,7 @@ export interface BusinessImpact {
   summary: string;
   immediateRisk: string;
   futureRisk: string;
+  riskLevel?: 'critical' | 'high' | 'medium' | 'low';
   financialImpact: {
     fixCost: string;
     exploitCost: string;
@@ -94,7 +95,7 @@ export interface AnalysisMetadata {
 
 // Complete analysis result
 export interface AnalysisResult {
-  decision: 'approved' | 'rejected';
+  decision: 'APPROVED' | 'DECLINED';
   confidence: number;
   reason: string;
   qualityScore: number;
@@ -218,7 +219,7 @@ export interface TwoBranchAnalysisResult {
   mainBranchAnalysis: BranchAnalysis;
   prBranchAnalysis: BranchAnalysis;
   comparison: IssueComparison;
-  decision: 'APPROVED' | 'CHANGES REQUESTED' | 'DECLINED';
+  decision: 'APPROVED' | 'DECLINED';
   decisionReason: string;
   qualityScore: number;
   prComment: string;

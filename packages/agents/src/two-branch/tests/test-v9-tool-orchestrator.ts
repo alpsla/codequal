@@ -12,7 +12,7 @@
 import { config } from 'dotenv';
 import * as path from 'path';
 import { V9AnalyzerFrameworkEnhanced } from '../analyzers/v9-analyzer-framework-enhanced';
-import { V9ReportFormatterFinal } from '../analyzers/v9-report-formatter-final';
+import { V9ReportFormatterFinal } from '../analyzers/v9-report-formatter';
 
 // Load environment variables
 config({ path: path.join(__dirname, '../../../.env') });

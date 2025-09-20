@@ -1,5 +1,5 @@
 import { createLogger } from '@codequal/core/utils';
-import { VectorContextService, createVectorContextService } from '@codequal/agents/multi-agent/vector-context-service';
+import { VectorContextService } from '@codequal/agents/multi-agent/vector-context-service';
 import { reportIdMappingService } from './report-id-mapping-service';
 import { StandardReport } from '@codequal/agents/services/report-formatter.service';
 import { AgentRole } from '@codequal/core/config/agent-registry';
@@ -141,16 +141,16 @@ export class VectorReportRetrievalService {
     
     // Extract recent analysis
     if (results.recentAnalysis && Array.isArray(results.recentAnalysis)) {
-      chunks.push(...results.recentAnalysis.map((r) => ({
+      chunks.push(...results.recentAnalysis.map((r: any) => ({
         type: 'analysis',
         content: r.content || r,
         metadata: r.metadata || {}
       })));
     }
-    
+
     // Extract historical patterns
     if (results.historicalPatterns && Array.isArray(results.historicalPatterns)) {
-      chunks.push(...results.historicalPatterns.map((r) => ({
+      chunks.push(...results.historicalPatterns.map((r: any) => ({
         type: 'pattern',
         content: r.content || r,
         metadata: r.metadata || {}
@@ -159,7 +159,7 @@ export class VectorReportRetrievalService {
     
     // Extract similar issues
     if (results.similarIssues && Array.isArray(results.similarIssues)) {
-      chunks.push(...results.similarIssues.map((r) => ({
+      chunks.push(...results.similarIssues.map((r: any) => ({
         type: 'issue',
         content: r.content || r,
         metadata: r.metadata || {}
@@ -203,7 +203,7 @@ export class VectorReportRetrievalService {
     if (allContext) {
       // Extract recent analysis
       if (allContext.recentAnalysis && Array.isArray(allContext.recentAnalysis)) {
-        chunks.push(...allContext.recentAnalysis.map((r) => ({
+        chunks.push(...allContext.recentAnalysis.map((r: any) => ({
           type: 'analysis',
           content: r.content || r,
           metadata: r.metadata || {}
@@ -212,7 +212,7 @@ export class VectorReportRetrievalService {
       
       // Extract historical patterns
       if (allContext.historicalPatterns && Array.isArray(allContext.historicalPatterns)) {
-        chunks.push(...allContext.historicalPatterns.map((r) => ({
+        chunks.push(...allContext.historicalPatterns.map((r: any) => ({
           type: 'pattern',
           content: r.content || r,
           metadata: r.metadata || {}
@@ -221,7 +221,7 @@ export class VectorReportRetrievalService {
       
       // Extract similar issues
       if (allContext.similarIssues && Array.isArray(allContext.similarIssues)) {
-        chunks.push(...allContext.similarIssues.map((r) => ({
+        chunks.push(...allContext.similarIssues.map((r: any) => ({
           type: 'issue',
           content: r.content || r,
           metadata: r.metadata || {}

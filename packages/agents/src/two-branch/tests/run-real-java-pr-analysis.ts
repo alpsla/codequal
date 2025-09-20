@@ -158,7 +158,7 @@ async function runRealJavaPRAnalysis() {
     }
 
     // Generate markdown report
-    const V9ReportFormatterFinal = await import('../analyzers/v9-report-formatter-final');
+    const V9ReportFormatterFinal = await import('../analyzers/v9-report-formatter');
     const formatter = new V9ReportFormatterFinal.V9ReportFormatterFinal();
     const markdownReport = await formatter.generateCompleteReport(result, repoUrl, prNumber);
     

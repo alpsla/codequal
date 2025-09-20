@@ -46,3 +46,36 @@ export interface EducationalResult {
   relatedTopics?: string[];
   recommendedNextSteps?: string[];
 }
+
+/**
+ * Educational Agent stub for backward compatibility
+ */
+export class EducationalAgent {
+  constructor(config?: any) {
+    console.log('EducationalAgent: Legacy stub initialized');
+  }
+
+  async generateEducationalContent(findings: any[]): Promise<EducationalResult[]> {
+    console.log(`Generating educational content for ${findings.length} findings`);
+    return findings.map((finding, index) => ({
+      topic: `Learning Topic ${index + 1}`,
+      content: `Educational content for ${finding.type || 'issue'}`,
+      level: 'intermediate' as const,
+      examples: [`Example for ${finding.type || 'issue'}`],
+      resources: [`Resource link for ${finding.type || 'issue'}`],
+      metadata: { findingId: finding.id }
+    }));
+  }
+
+  async compileEducationalReport(results: EducationalResult[]): Promise<any> {
+    console.log(`Compiling educational report for ${results.length} results`);
+    return {
+      summary: `Educational report compiled for ${results.length} topics`,
+      results,
+      metadata: {
+        timestamp: Date.now(),
+        totalTopics: results.length
+      }
+    };
+  }
+}

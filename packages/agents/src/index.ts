@@ -4,6 +4,55 @@
  * Main export file for agent functionality
  */
 
+// Export multi-agent compatibility stubs
+export * from './multi-agent';
+
+// Export factory and enums
+export { AgentFactory, AgentProvider, AgentRole } from './factory';
+
+// Export services
+export { ReportFormatterService } from './services/report-formatter.service';
+export { RecommendationService } from './services/recommendation-service';
+export { EducationalCompilationService } from './services/educational-compilation-service';
+export { SkillTrackingService } from './services/skill-tracking-service';
+export { IssueResolutionDetector } from './services/issue-resolution-detector';
+
+// Mock exports for compatibility
+export const EnhancedMultiAgentExecutor = class {
+  constructor() {
+    console.log('EnhancedMultiAgentExecutor: Legacy stub');
+  }
+};
+
+export enum AnalysisStrategy {
+  STANDARD = 'standard',
+  ENHANCED = 'enhanced'
+}
+
+export enum AgentPosition {
+  PRIMARY = 'primary',
+  SECONDARY = 'secondary'
+}
+
+export enum ReportFormat {
+  HTML = 'html',
+  JSON = 'json',
+  MARKDOWN = 'markdown'
+}
+
+export const ReporterAgent = class {
+  constructor() {
+    console.log('ReporterAgent: Legacy stub');
+  }
+};
+
+export interface StandardReport {
+  id: string;
+  type: string;
+  content: any;
+  metadata: any;
+}
+
 // Temporarily commented out two-branch exports due to build issues
 // These need to be re-enabled after fixing missing dependencies in two-branch
 

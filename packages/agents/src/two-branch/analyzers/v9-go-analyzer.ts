@@ -23,7 +23,7 @@ export class V9GoAnalyzer extends V9BaseAnalyzer {
     const timestamp = new Date().toISOString();
     
     return {
-      decision: 'approved' as const,
+      decision: 'APPROVED' as const,
       confidence: 95,
       reason: 'No critical issues found in Go analysis',
       qualityScore: 100,

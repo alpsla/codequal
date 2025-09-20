@@ -22,8 +22,8 @@
 // Factory - ALWAYS use this to create analyzers
 export { V9AnalyzerFactory, type SupportedLanguage } from './v9-analyzer-factory';
 
-// Report Generation - Use the COMPLETE versions
-export { V9ReportFormatterComplete as V9ReportFormatter } from './v9-report-formatter-complete';
+// Report Generation - Use the MAIN formatter (formerly v9-report-formatter-final)
+export { V9ReportFormatterFinal as V9ReportFormatter } from './v9-report-formatter';
 export { V9PRCommentGenerator } from './v9-pr-comment-generator';
 
 // Core Types

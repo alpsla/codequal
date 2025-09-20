@@ -23,7 +23,7 @@ export class V9CAnalyzer extends V9BaseAnalyzer {
     const timestamp = new Date().toISOString();
     
     return {
-      decision: 'approved' as const,
+      decision: 'APPROVED' as const,
       confidence: 95,
       reason: 'No critical issues found in C analysis',
       qualityScore: 100,

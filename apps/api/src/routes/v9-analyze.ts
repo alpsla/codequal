@@ -150,13 +150,26 @@ router.post('/analyze', async (req: Request, res: Response) => {
   try {
     // Validate request
     const validatedRequest = AnalyzeRequestSchema.parse(req.body);
-    const { repositoryUrl, prNumber, language: requestedLanguage, options = {} } = validatedRequest;
+    const { repositoryUrl, prNumber, language: requestedLanguage, options } = validatedRequest;
+
+    // Set default options with proper typing
+    const analysisOptions = {
+      skipCache: false,
+      generateFixes: true,
+      includeEducational: true,
+      timeout: 300000,
+      models: {
+        primary: 'anthropic/claude-3-haiku-20240307',
+        fallback: 'openai/gpt-3.5-turbo'
+      },
+      ...options
+    };
 
     logger.info('Starting V9 analysis', {
       repository: repositoryUrl,
       pr: prNumber,
       language: requestedLanguage,
-      options
+      options: analysisOptions
     });
 
     // Generate analysis ID
@@ -184,7 +197,7 @@ router.post('/analyze', async (req: Request, res: Response) => {
     let fixGenerationTime = 0;
     let cacheStats = { hits: 0, misses: 0, hitRate: '0%' };
 
-    if (options.generateFixes && toolResults.issues.length > 0) {
+    if (analysisOptions.generateFixes && toolResults.issues.length > 0) {
       logger.info('Generating fixes with hybrid agents...');
       const fixStart = Date.now();
 
@@ -209,7 +222,7 @@ router.post('/analyze', async (req: Request, res: Response) => {
           fix: fix.suggestion,
           fixConfidence: fix.confidence,
           fixCached: fix.cached,
-          educationalContent: options.includeEducational ? fix.educational : undefined
+          educationalContent: analysisOptions.includeEducational ? fix.educational : undefined
         };
       }
       return issue;
@@ -281,7 +294,7 @@ router.post('/analyze', async (req: Request, res: Response) => {
     res.json(response);
 
   } catch (error) {
-    logger.error('Analysis failed', error);
+    logger.error('Analysis failed', error as any);
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Analysis failed',
@@ -319,7 +332,7 @@ router.get('/analyze/:analysisId', async (req: Request, res: Response) => {
 
     res.json(results);
   } catch (error) {
-    logger.error('Failed to retrieve analysis', error);
+    logger.error('Failed to retrieve analysis', error as any);
     res.status(500).json({
       success: false,
       error: 'Failed to retrieve analysis'
@@ -402,7 +415,7 @@ router.post('/cache/clear', async (req: Request, res: Response) => {
 // Helper functions
 
 async function detectLanguageFromRepo(repoUrl: string): Promise<string> {
-  const match = repoUrl.match(/github\.com\/([^\/]+)\/([^\/]+)/);
+  const match = repoUrl.match(/github\.com\/([^/]+)\/([^/]+)/);
   if (!match) throw new Error('Invalid GitHub URL');
 
   const [, owner, repo] = match;
@@ -485,7 +498,7 @@ async function generateFixesWithHybridAgents(issues: any[], prInfo: any) {
       cacheStats: response.data.stats
     };
   } catch (error) {
-    logger.error('Fix generation failed', error);
+    logger.error('Fix generation failed', error as any);
     return {
       fixes: new Map(),
       cacheStats: { hits: 0, misses: 0, hitRate: '0%' }

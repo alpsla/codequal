@@ -17,4 +17,13 @@ export class VectorContextService {
       message: 'Vector context service stub'
     };
   }
+
+  async getRepositoryContext(repositoryUrl: string, agentRole: any, userId?: string): Promise<any> {
+    console.log(`Getting repository context for ${repositoryUrl} with role ${agentRole}`);
+    return {
+      results: [],
+      metadata: {},
+      message: 'Repository context service stub'
+    };
+  }
 }

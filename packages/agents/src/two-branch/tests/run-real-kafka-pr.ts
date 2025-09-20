@@ -14,7 +14,7 @@ import { execSync } from 'child_process';
 // Load environment variables
 dotenv.config();
 
-import { V9ReportFormatterFinal, CompleteMetadata } from '../analyzers/v9-report-formatter-final';
+import { V9ReportFormatterFinal, CompleteMetadata } from '../analyzers/v9-report-formatter';
 import { V9JavaAnalyzer } from '../analyzers/v9-java-analyzer';
 import { 
   Issue, 

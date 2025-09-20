@@ -80,7 +80,7 @@ export async function trackDeepWikiCall(data: TrackingData): Promise<void> {
     }
   } catch (error) {
     // Don't let tracking errors break the main flow
-    logger.error('Error in tracking:', error);
+    logger.error('Error in tracking:', error as any);
   }
 }
 

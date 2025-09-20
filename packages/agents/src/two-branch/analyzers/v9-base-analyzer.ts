@@ -32,7 +32,7 @@ import { V9ScoringCalculator } from './v9-scoring-calculator';
 import { V9IssueComparator } from './v9-issue-comparator';
 import { V9EducationalResources } from './v9-educational-resources';
 import { V9BusinessImpact } from './v9-business-impact';
-import { V9ReportFormatter } from './v9-report-formatter';
+import { V9ReportFormatterFinal as V9ReportFormatter } from './v9-report-formatter';
 
 // Import utilities
 import { getRepoManager, getFileSelector } from '../utils/repository-utils-factory';
@@ -146,7 +146,7 @@ export abstract class V9BaseAnalyzer {
       );
       
       // Determine approval decision
-      const decision = this.scoringCalculator.shouldApprove(qualityScore) ? 'approved' : 'rejected';
+      const decision = this.scoringCalculator.shouldApprove(qualityScore) ? 'APPROVED' : 'DECLINED';
       const reason = this.generateDecisionReason(decision, blockingIssues, qualityScore);
       
       // Calculate business impact
@@ -202,7 +202,65 @@ export abstract class V9BaseAnalyzer {
       };
       
       // Generate and save report
-      const report = await this.reportFormatter.generateReport(result, config.name);
+      const completeMetadata: any = {
+        // Repository Information
+        repository: repoUrl.split('/').pop() || 'unknown',
+        repoUrl,
+        prNumber,
+        prTitle: `PR #${prNumber}`,
+        branch: 'feature',
+        baseBranch: 'main',
+
+        // Author Information (defaults)
+        prAuthor: 'unknown',
+        prAuthorEmail: 'unknown@example.com',
+        repoOwner: repoUrl.split('/')[3] || 'unknown',
+        organizationName: repoUrl.split('/')[3] || 'unknown',
+
+        // Code Statistics
+        totalLinesOfCode: 0,
+        linesAdded: 0,
+        linesDeleted: 0,
+        linesModified: 0,
+        filesModified: modifiedFiles?.length || 0,
+        totalFiles: 0,
+        languageBreakdown: {},
+
+        // Performance Metrics
+        totalDuration: Date.now() - (metadata as any).executionTime || 0,
+        cloneTime: 0,
+        analysisTime: 0,
+        reportGenerationTime: 0,
+
+        // Agent Performance
+        agentsUsed: [],
+
+        // Tool Performance
+        toolsUsed: [],
+
+        // Cost Analysis
+        totalCost: 0,
+        costBreakdown: {
+          aiModels: 0,
+          infrastructure: 0,
+          tools: 0
+        },
+        estimatedMonthlyCost: 0,
+
+        // Analysis Configuration
+        analyzer: this.constructor.name,
+        analyzerVersion: '9.0.0',
+        smartFileSelection: true,
+        maxFilesAnalyzed: 500,
+
+        // Timestamps
+        startTime: timestamp,
+        endTime: new Date().toISOString(),
+        timestamp,
+        analyzedAt: timestamp
+      };
+
+      const report = await this.reportFormatter.generateCompleteReport(result, completeMetadata, config.name);
       await this.saveReport(report, prNumber);
       
       this.logger.log('✅ Analysis complete!');
@@ -528,7 +586,7 @@ export abstract class V9BaseAnalyzer {
     blockingIssues: Issue[], 
     score: number
   ): string {
-    if (decision === 'approved') {
+    if (decision === 'APPROVED') {
       if (blockingIssues.length === 0) {
         return `Code quality meets standards with a score of ${score.toFixed(1)}/100. No blocking issues found.`;
       } else {

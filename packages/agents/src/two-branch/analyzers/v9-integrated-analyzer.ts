@@ -5,7 +5,7 @@
 
 import { RedisToolOutputManager, ToolOutput } from '../utils/redis-tool-output-manager';
 import { KubernetesRepositoryManager } from '../utils/kubernetes-repository-manager';
-import { V9ReportFormatterFinal } from './v9-report-formatter-final';
+import { V9ReportFormatterFinal } from './v9-report-formatter';
 import { DynamicModelSelector } from '../services/dynamic-model-selector';
 import { logger } from '../utils/logger';
 import OpenAI from 'openai';
@@ -488,7 +488,7 @@ export class V9IntegratedAnalyzer {
 
     // Prepare AnalysisResult in the format expected by V9ReportFormatterFinal
     const analysisResult: any = {
-      decision: prIssues.filter(i => i.severity === 'critical').length > 0 ? 'rejected' : 'approved',
+      decision: prIssues.filter(i => i.severity === 'critical').length > 0 ? 'DECLINED' : 'APPROVED',
       confidence: 0.85,
       reason: prIssues.filter(i => i.severity === 'critical').length > 0
         ? 'Critical issues found that must be addressed'

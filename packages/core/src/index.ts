@@ -58,15 +58,13 @@ export type {
 
 // Export model version constants
 export * from './config/models/model-versions';
-// Export agent registry types
-export { AgentProvider, AgentRole } from './config/agent-registry';
 
 // Export model selection services
 export * from './services/model-selection/RepositoryModelSelectionService';
 export * from './services/model-selection/RepositoryCalibrationService';
 export * from './services/model-selection/ModelConfigStore';
 
-// Export agent registry types  
+// Export agent registry types (single export to avoid duplicates)
 export {
   AgentProvider,
   AgentRole,

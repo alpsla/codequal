@@ -44,7 +44,9 @@ export class UnifiedProgressTracer extends EventEmitter {
     // this.progressTracker = getProgressTracker();
     // Mock progress tracker for now
     this.progressTracker = {
-      updateProgress: () => {},
+      updateProgress: (analysisId: string, phase: string, progress: number) => {
+        console.log(`Progress update for ${analysisId}: ${phase} at ${progress}%`);
+      },
       getProgress: () => ({
         phases: {
           setup: { status: 'completed', progress: 100 },
@@ -55,7 +57,9 @@ export class UnifiedProgressTracer extends EventEmitter {
         overall: 25
       }),
       getActiveAnalyses: () => [],
-      cleanupOldAnalyses: () => {}
+      cleanupOldAnalyses: () => {
+        console.log('Cleaning up old analyses');
+      }
     };
     this.dataFlowMonitor = dataFlowMonitor;
     

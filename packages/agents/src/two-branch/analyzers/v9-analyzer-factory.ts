@@ -96,7 +96,7 @@ export class V9AnalyzerFactory {
   
   /**
    * Create an analyzer for the specified language
-   * 
+   *
    * @param language - Language name or alias
    * @returns Appropriate analyzer instance
    * @throws Error if language is not supported
@@ -134,7 +134,18 @@ export class V9AnalyzerFactory {
         throw new Error(`Unsupported language: ${language}. Supported languages: ${this.getSupportedLanguages().join(', ')}`);
     }
   }
-  
+
+  /**
+   * Alias for create() method for backward compatibility
+   *
+   * @param language - Language name or alias
+   * @returns Appropriate analyzer instance
+   * @throws Error if language is not supported
+   */
+  static createAnalyzer(language: string): V9BaseAnalyzer {
+    return this.create(language);
+  }
+
   /**
    * Auto-detect language from file extensions
    * 

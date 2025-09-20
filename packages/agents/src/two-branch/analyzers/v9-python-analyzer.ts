@@ -303,7 +303,7 @@ from myproject.utils import helper
     const timestamp = new Date().toISOString();
     
     return {
-      decision: 'approved' as const,
+      decision: 'APPROVED' as const,
       confidence: 95,
       reason: 'No critical issues found in Python analysis',
       qualityScore: 100,

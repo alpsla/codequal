@@ -20,7 +20,7 @@ const envPath = path.join(__dirname, '../../../.env');
 console.log(`Loading env from: ${envPath}`);
 dotenv.config({ path: envPath });
 
-import { V9ReportFormatterFinal, CompleteMetadata } from '../analyzers/v9-report-formatter-final';
+import { V9ReportFormatterFinal, CompleteMetadata } from '../analyzers/v9-report-formatter';
 import { V9_DEFAULT_CONFIG } from '../templates/v9-template-config';
 import { 
   Issue, 

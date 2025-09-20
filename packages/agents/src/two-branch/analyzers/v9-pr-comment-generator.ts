@@ -91,8 +91,8 @@ export class V9PRCommentGenerator {
     };
 
     const greeting = greetings[tone as keyof typeof greetings][0];
-    
-    if (result.decision === 'approved') {
+
+    if (result.decision === 'APPROVED') {
       return `${greeting} Great work on this PR! Your code quality score is **${result.qualityScore.toFixed(1)}/100** (${result.grade}). 🎉`;
     } else if (result.qualityScore >= 60) {
       return `${greeting} Thanks for your contribution! Your code quality score is **${result.qualityScore.toFixed(1)}/100** (${result.grade}). With a few improvements, this PR will be ready to merge.`;
@@ -105,8 +105,8 @@ export class V9PRCommentGenerator {
    * Generate decision summary with personalized explanation
    */
   private generateDecisionSummary(result: AnalysisResult): string {
-    const emoji = result.decision === 'approved' ? '✅' : '⚠️';
-    const decision = result.decision === 'approved' ? 'APPROVED' : 'NEEDS WORK';
+    const emoji = result.decision === 'APPROVED' ? '✅' : '⚠️';
+    const decision = result.decision === 'APPROVED' ? 'APPROVED' : 'NEEDS WORK';
     
     let summary = `## ${emoji} PR Status: ${decision}\n\n`;
     summary += `**Confidence Level:** ${result.confidence}%\n\n`;
@@ -315,8 +315,8 @@ export class V9PRCommentGenerator {
    */
   private generateClosing(result: AnalysisResult, authorName: string, tone: string): string {
     const closings: string[] = [];
-    
-    if (result.decision === 'approved') {
+
+    if (result.decision === 'APPROVED') {
       closings.push(`## 🎉 Ready to Merge!\n`);
       closings.push(`Excellent work, ${authorName}! Your code meets our quality standards and is ready for production.`);
     } else if (result.blockingIssues.length > 0) {

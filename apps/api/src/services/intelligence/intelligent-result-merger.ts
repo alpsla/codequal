@@ -7,6 +7,13 @@ export interface Finding {
   type: string;
   severity: string;
   message: string;
+  description?: string;
+  category?: string;
+  confidence?: number;
+  file?: string;
+  line?: number;
+  column?: number;
+  tool?: string;
   location?: {
     file: string;
     line?: number;
@@ -78,6 +85,13 @@ export interface MergeStrategy {
 export class IntelligentResultMerger {
   private readonly logger = createLogger('IntelligentResultMerger');
   // private readonly deduplicator = new BasicDeduplicator();
+  private readonly deduplicator = {
+    findSimilarGroups: (findings: Finding[]) => ({
+      groups: [],
+      statistics: { totalFindings: findings.length, duplicateGroups: 0, duplicatesRemoved: 0 }
+    }),
+    deduplicateFindings: (findings: Finding[]) => findings
+  };
   
   /**
    * Merge results from multiple agents with intelligent deduplication

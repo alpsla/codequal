@@ -26,7 +26,7 @@ if (!process.env.OPENROUTER_API_KEY) {
 
 // Now import other modules
 import { createClient } from '@supabase/supabase-js';
-import { V9ReportFormatterFinal } from '../analyzers/v9-report-formatter-final';
+import { V9ReportFormatterFinal } from '../analyzers/v9-report-formatter';
 import { ModelConfigResolver } from '../../standard/orchestrator/model-config-resolver';
 import fetch from 'node-fetch';
 
