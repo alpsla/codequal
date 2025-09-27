@@ -126,9 +126,9 @@ function listRequiredSections(): void {
  */
 function validateReportFile(
   filePath: string,
-  threshold: number = 90,
-  verbose: boolean = false,
-  json: boolean = false
+  threshold = 90,
+  verbose = false,
+  json = false
 ): number {
   // Resolve file path
   const resolvedPath = resolve(filePath);

@@ -8,7 +8,7 @@ This directory contains the comprehensive regression test suite designed to prev
 
 - ✅ **Dynamic Model Selection** never breaks again
 - ✅ **Scoring System (5/3/1/0.5)** is protected from regression
-- ✅ **Report Generator v7** functionality is preserved
+- ✅ **Report Generator v8** functionality is preserved
 - ✅ **Multi-language support** works across all scenarios
 - ✅ **Core functionality** is tested against real PRs
 

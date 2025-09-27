@@ -37,11 +37,12 @@ import { V9ReportFormatterFinal as V9ReportFormatter } from './v9-report-formatt
 // Import utilities
 import { getRepoManager, getFileSelector } from '../utils/repository-utils-factory';
 import type { CloudRepositoryManager } from '../utils/cloud-repository-manager';
+import type { KubernetesRepositoryManager } from '../utils/kubernetes-repository-manager';
 import type { SmartFileSelector, SelectedFiles } from '../utils/smart-file-selector';
 import { DynamicModelSelector } from '../services/dynamic-model-selector';
 
 export abstract class V9BaseAnalyzer {
-  protected repoManager: CloudRepositoryManager;
+  protected repoManager: CloudRepositoryManager | KubernetesRepositoryManager;
   protected modelSelector: DynamicModelSelector;
   protected fileSelector: SmartFileSelector;
   protected supabase: any;
@@ -338,9 +339,9 @@ export abstract class V9BaseAnalyzer {
     // Create PR workspace in cloud
     const prWorkspace = await this.repoManager.createPRWorkspace(repoUrl, prNumber);
 
-    // For cloud workspaces, we use workspace IDs instead of local paths
-    const mainPath = mainWorkspace.cloudPath;
-    const prPath = prWorkspace.cloudPath;
+    // For cloud/kubernetes workspaces, we use workspace IDs instead of local paths
+    const mainPath = 'cloudPath' in mainWorkspace ? mainWorkspace.cloudPath : mainWorkspace.workspaceId;
+    const prPath = 'cloudPath' in prWorkspace ? prWorkspace.cloudPath : prWorkspace.workspaceId;
 
     // Get list of modified files
     const modifiedFiles = prWorkspace.modifiedFiles || [];

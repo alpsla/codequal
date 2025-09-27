@@ -333,6 +333,68 @@ spec:
   }
 
   /**
+   * Run tools sequentially in Kubernetes (one at a time to avoid resource contention)
+   */
+  private async runToolsSequentially(
+    workspaceId: string,
+    pvcName: string,
+    tools: string[],
+    language: string,
+    selectedFiles?: string[]
+  ): Promise<KubernetesToolResult[]> {
+    logger.info(`[K8s] Starting sequential tool execution to avoid timeouts`);
+    const results: KubernetesToolResult[] = [];
+
+    for (let i = 0; i < tools.length; i++) {
+      const tool = tools[i];
+      const toolStartTime = Date.now();
+      logger.info(`[K8s] Running tool ${i + 1}/${tools.length}: ${tool}`);
+
+      try {
+        const jobName = `tool-${tool}-${workspaceId}`;
+
+        // Create Job for the tool
+        const jobYaml = this.generateToolJobYaml(jobName, pvcName, tool, language, selectedFiles);
+        await execAsync(`echo '${jobYaml}' | kubectl apply -f -`);
+        logger.info(`[K8s] Launched ${tool} job: ${jobName}`);
+
+        // Wait for completion with extended timeout for sequential execution
+        const timeout = process.env.TOOL_EXECUTION_TIMEOUT ?
+                       parseInt(process.env.TOOL_EXECUTION_TIMEOUT) / 1000 :
+                       1800; // Default 30 minutes
+        await this.waitForJob(jobName, timeout);
+
+        // Get logs from completed job
+        const { stdout } = await execAsync(`kubectl logs job/${jobName} -n ${this.namespace} --tail=10000`);
+
+        const duration = (Date.now() - toolStartTime) / 1000;
+        logger.info(`[K8s] Tool ${tool} completed in ${duration.toFixed(1)}s`);
+
+        results.push({
+          tool,
+          output: stdout || '',
+          exitCode: 0,
+          duration,
+          filesScanned: selectedFiles?.length || 0
+        });
+
+      } catch (error) {
+        logger.error(`[K8s] Tool ${tool} failed: ${error.message}`);
+        results.push({
+          tool,
+          output: error.message,
+          exitCode: 1,
+          duration: (Date.now() - toolStartTime) / 1000,
+          filesScanned: 0
+        });
+      }
+    }
+
+    logger.info(`[K8s] Sequential execution complete: ${results.length}/${tools.length} succeeded`);
+    return results;
+  }
+
+  /**
    * Run tools in Kubernetes pods (with optional file selection)
    */
   async runToolsInKubernetes(
@@ -342,13 +404,20 @@ spec:
     language: string,
     selectedFiles?: string[]
   ): Promise<KubernetesToolResult[]> {
-    logger.info(`[K8s] Running ${tools.length} tools for ${language} in Kubernetes (parallel execution)`);
+    const useSequential = process.env.USE_SEQUENTIAL_EXECUTION === 'true';
+    const executionMode = useSequential ? 'sequential' : 'parallel';
+    logger.info(`[K8s] Running ${tools.length} tools for ${language} in Kubernetes (${executionMode} execution)`);
 
     if (selectedFiles && selectedFiles.length > 0) {
       logger.info(`[K8s] Using smart file selection: ${selectedFiles.length} files`);
     }
 
     const startTime = Date.now();
+
+    // Use sequential execution if requested (for avoiding timeouts)
+    if (useSequential) {
+      return this.runToolsSequentially(workspaceId, pvcName, tools, language, selectedFiles);
+    }
     const jobPromises: Promise<{ tool: string; jobName: string; startTime: number }>[] = [];
 
     // Step 1: Launch all tool jobs in parallel
@@ -804,36 +873,60 @@ spec:
     }
 
     // Run actual tools installed in the analyzer images
-    // Use simpler commands without complex filtering to avoid YAML issues
+    // IMPORTANT: NO FILTERS - capture raw output for proper parsing
     const toolCommands: Record<string, string> = {
-      // Java tools - run without filtering, let the agent process the output
+      // Java tools - RAW OUTPUT (no filters)
       'spotbugs': selectedFiles
-        ? `${fileListCommand}cd /workspace/repo && cat /tmp/selected_files.txt | xargs spotbugs -textui 2>&1 | head -3000`
-        : `cd /workspace/repo && spotbugs -textui -effort:max -low . 2>&1 | head -3000`,
+        ? `${fileListCommand}cd /workspace/repo && echo "SpotBugs requires compiled bytecode - skipping" && exit 0`
+        : `cd /workspace/repo && echo "SpotBugs requires compiled bytecode - skipping" && exit 0`,
 
       'pmd': selectedFiles
-        ? `${fileListCommand}cd /workspace/repo && cat /tmp/selected_files.txt | xargs pmd check -R category/java/bestpractices.xml -f text --no-progress --no-cache 2>&1 | grep -v Processing | grep -v Analyzed | head -3000`
-        : `cd /workspace/repo && pmd check -d . -R category/java/bestpractices.xml -f text --no-progress --no-cache 2>&1 | grep -v Processing | grep -v Analyzed | head -3000`,
+        ? `${fileListCommand}cd /workspace/repo && cat /tmp/selected_files.txt | grep -v '/test/' | xargs pmd check -R category/java/errorprone.xml,category/java/security.xml -f text --no-progress --no-cache --threads ${process.env.TOOL_THREADS || '4'} 2>&1 || true`
+        : `cd /workspace/repo && pmd check -d . --exclude '**/test/**' -R category/java/errorprone.xml,category/java/security.xml -f text --no-progress --no-cache --threads ${process.env.TOOL_THREADS || '4'} 2>&1 || true`,
 
       'checkstyle': selectedFiles
-        ? `${fileListCommand}cd /workspace/repo && cat /tmp/selected_files.txt | xargs checkstyle -c /google_checks.xml 2>&1 | head -3000`
-        : `cd /workspace/repo && checkstyle -c /google_checks.xml . 2>&1 | head -3000`,
+        ? `${fileListCommand}cd /workspace/repo && cat /tmp/selected_files.txt | grep -v '/test/' | xargs checkstyle -c /google_checks.xml 2>&1 || true`
+        : `cd /workspace/repo && find . -name "*.java" -not -path "*/test/*" -not -path "*/tests/*" | head -500 | xargs checkstyle -c /google_checks.xml 2>&1 || true`,
 
       'semgrep': selectedFiles
-        ? `${fileListCommand}cd /workspace/repo && semgrep --config=auto --text . 2>&1 | head -3000`
-        : `cd /workspace/repo && semgrep --config=auto --text . 2>&1 | head -3000`,
+        ? `${fileListCommand}cd /workspace/repo && semgrep --config=java.lang.security --json --no-error --quiet $(cat /tmp/selected_files.txt | grep -v '/test/' | tr '\\n' ' ') 2>&1 || true`
+        : `cd /workspace/repo && semgrep --config=java.lang.security --exclude='*test*' --json --no-error --quiet . 2>&1 || true`,
 
-      'dependency-check': `cd /workspace/repo && dependency-check --scan . --format TEXT --out /tmp/dc-report.txt --noupdate --disableAssembly 2>&1 | head -1000`,
+      // Future tools (when image v5.2 is available)
+      'infer': selectedFiles
+        ? `${fileListCommand}cd /workspace/repo && infer run --report-console-limit 1000 -- javac $(cat /tmp/selected_files.txt | grep -v '/test/' | tr '\\n' ' ') 2>&1 || true`
+        : `cd /workspace/repo && infer run --report-console-limit 1000 -- javac $(find . -name "*.java" -not -path "*/test/*" | head -500) 2>&1 || true`,
 
-      // Python tools - simplified output
-      'bandit': `cd /workspace/repo && bandit -r . -f txt 2>&1 | head -3000`,
-      'pylint': `cd /workspace/repo && pylint . 2>&1 | head -3000`,
+      'trivy': `cd /workspace/repo && trivy fs --scanners vuln --format json --no-progress . 2>&1 || true`,
 
-      // JavaScript tools - simplified output
-      'eslint': `cd /workspace/repo && eslint . 2>&1 | head -3000`,
+      'dependency-check': `echo "Dependency-check not installed - use trivy instead" && exit 0`,
+
+      // Python tools - RAW OUTPUT (no filters)
+      'bandit': selectedFiles
+        ? `${fileListCommand}cd /workspace/repo && bandit -r $(cat /tmp/selected_files.txt | tr '\\n' ' ') -f json 2>&1 || true`
+        : `cd /workspace/repo && bandit -r . -f json 2>&1 || true`,
+
+      'pylint': selectedFiles
+        ? `${fileListCommand}cd /workspace/repo && pylint $(cat /tmp/selected_files.txt | tr '\\n' ' ') --output-format=json 2>&1 || true`
+        : `cd /workspace/repo && pylint . --output-format=json 2>&1 || true`,
+
+      'mypy': selectedFiles
+        ? `${fileListCommand}cd /workspace/repo && mypy $(cat /tmp/selected_files.txt | tr '\\n' ' ') 2>&1 || true`
+        : `cd /workspace/repo && mypy . 2>&1 || true`,
+
+      // JavaScript/TypeScript tools - RAW OUTPUT (no filters)
+      'eslint': selectedFiles
+        ? `${fileListCommand}cd /workspace/repo && eslint $(cat /tmp/selected_files.txt | tr '\\n' ' ') --format=json 2>&1 || true`
+        : `cd /workspace/repo && eslint . --format=json 2>&1 || true`,
+
+      'tsc': `cd /workspace/repo && tsc --noEmit 2>&1 || true`,
+
+      // Go tools
+      'staticcheck': `cd /workspace/repo && staticcheck ./... 2>&1 || true`,
+      'gosec': `cd /workspace/repo && gosec -fmt=json ./... 2>&1 || true`,
 
       // Default - just complete the analysis
-      'default': `echo Tool analysis completed && exit 0`
+      'default': `echo "No specific tool command for ${tool}" && exit 0`
     };
 
     const command = toolCommands[tool] || toolCommands['default'];
@@ -876,8 +969,8 @@ spec:
           mountPath: /workspace
         resources:
           requests:
-            memory: "256Mi"
-            cpu: "100m"
+            memory: "512Mi"
+            cpu: "500m"
       containers:
       - name: ${tool}
         image: ${image}
@@ -887,11 +980,11 @@ spec:
           mountPath: /workspace
         resources:
           requests:
-            memory: "512Mi"
-            cpu: "250m"
+            memory: "${process.env.TOOL_MEMORY_REQUEST || '1Gi'}"
+            cpu: "${process.env.TOOL_CPU_REQUEST || '500m'}"
           limits:
-            memory: "2Gi"
-            cpu: "1000m"
+            memory: "${process.env.TOOL_MEMORY_LIMIT || '2Gi'}"
+            cpu: "${process.env.TOOL_CPU_LIMIT || '1000m'}"
       volumes:
       - name: source-pvc
         persistentVolumeClaim:

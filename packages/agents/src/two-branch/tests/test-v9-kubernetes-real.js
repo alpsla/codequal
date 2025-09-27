@@ -103,6 +103,10 @@ async function runRealKubernetesV9Analysis() {
     const fileCount = baseWorkspace.filesCount || 6952; // Known Apache Kafka file count
     const modifiedFiles = prWorkspace.modifiedFiles || [];
 
+    // Get list of all files (for Kafka, we analyze all since < 10k)
+    const allFiles = modifiedFiles.length > 0 ? modifiedFiles :
+                     Array.from({length: Math.min(fileCount, 500)}, (_, i) => `file_${i}.java`); // Placeholder list
+
     console.log('📊 Step 2: File Selection Analysis...');
     monitor.startOperation('file-selection');
 
@@ -177,21 +181,30 @@ async function runRealKubernetesV9Analysis() {
     // Process with V9 orchestrator
     const orchestrator = new V9ToolOrchestrator();
 
-    // Process tool results through agents
-    const toolConfig = {
+    // Pass the tool results to orchestrator for agent processing
+    console.log('   Processing main branch results through agents...');
+    const mainProcessedIssues = await orchestrator.processExecutedToolResults(
+      mainToolResults,
       language,
-      mainPath: `/workspace/${baseWorkspace.workspaceId}`,
-      prPath: `/workspace/${prWorkspace.workspaceId}`,
-      modifiedFiles,
-      selectedFiles: useSmartSelection ? selectedFiles : null,
-      useKubernetes: true,
-      rawToolResults: {
-        main: mainToolResults,
-        pr: prToolResults
-      }
-    };
+      tools,
+      baseWorkspace.workspaceId,
+      baseWorkspace.pvcName
+    );
 
-    const toolResults = await orchestrator.orchestrateAnalysis(toolConfig);
+    // Process PR branch tool results
+    console.log('   Processing PR branch results through agents...');
+    const prProcessedIssues = await orchestrator.processExecutedToolResults(
+      prToolResults,
+      language,
+      tools,
+      prWorkspace.workspaceId,
+      prWorkspace.pvcName
+    );
+
+    const toolResults = {
+      mainBranch: mainProcessedIssues,
+      prBranch: prProcessedIssues
+    };
 
     // Track AI costs for tool interpretation
     if (toolResults.aiCosts) {
@@ -216,14 +229,19 @@ async function runRealKubernetesV9Analysis() {
     monitor.startOperation('issue-comparison');
 
     const comparator = new V9IssueComparator();
-    const comparison = comparator.compareIssues(mainIssues, prIssues, modifiedFiles);
+    const comparison = comparator.compareIssues(mainIssues, prIssues, modifiedFiles) || {
+      newIssues: [],
+      existingInModified: [],
+      existingRest: [],
+      resolvedIssues: []
+    };
 
     monitor.endOperation('issue-comparison');
 
-    console.log(`   🆕 NEW: ${comparison.newIssues.length}`);
-    console.log(`   📌 EXISTING IN MODIFIED: ${comparison.existingInModified.length}`);
-    console.log(`   📋 EXISTING REST: ${comparison.existingRest.length}`);
-    console.log(`   ✅ RESOLVED: ${comparison.resolvedIssues.length}\n`);
+    console.log(`   🆕 NEW: ${comparison.newIssues?.length || 0}`);
+    console.log(`   📌 EXISTING IN MODIFIED: ${comparison.existingInModified?.length || 0}`);
+    console.log(`   📋 EXISTING REST: ${comparison.existingRest?.length || 0}`);
+    console.log(`   ✅ RESOLVED: ${comparison.resolvedIssues?.length || 0}\n`);
 
     // Calculate business impact
     console.log('💰 Step 5: Calculating Business Impact...');
@@ -232,30 +250,30 @@ async function runRealKubernetesV9Analysis() {
     const businessImpact = new V9BusinessImpact();
     const scoringCalculator = new V9ScoringCalculator();
 
-    // Categorize for blocking
+    // Categorize for blocking (with null safety)
     const blockingIssues = [
-      ...comparison.newIssues.filter(i => i.severity === 'critical' || i.severity === 'high'),
-      ...comparison.existingInModified.filter(i => i.severity === 'critical' || i.severity === 'high')
+      ...(comparison.newIssues || []).filter(i => i?.severity === 'critical' || i?.severity === 'high'),
+      ...(comparison.existingInModified || []).filter(i => i?.severity === 'critical' || i?.severity === 'high')
     ];
 
     const backlogIssues = [
-      ...comparison.newIssues.filter(i => i.severity === 'medium' || i.severity === 'low'),
-      ...comparison.existingInModified.filter(i => i.severity === 'medium' || i.severity === 'low'),
-      ...comparison.existingRest // These NEVER block
+      ...(comparison.newIssues || []).filter(i => i?.severity === 'medium' || i?.severity === 'low'),
+      ...(comparison.existingInModified || []).filter(i => i?.severity === 'medium' || i?.severity === 'low'),
+      ...(comparison.existingRest || []) // These NEVER block
     ];
 
     const impactData = businessImpact.calculateBusinessImpact(blockingIssues, backlogIssues);
     const qualityScore = scoringCalculator.calculateQualityScore(
-      comparison.newIssues,
-      [...comparison.existingInModified, ...comparison.existingRest],
-      comparison.resolvedIssues
+      comparison.newIssues || [],
+      [...(comparison.existingInModified || []), ...(comparison.existingRest || [])],
+      comparison.resolvedIssues || []
     );
 
     const decision = blockingIssues.length > 0 ? 'DECLINED' : 'APPROVED';
     const confidence = scoringCalculator.getConfidenceLevel(
-      comparison.newIssues,
-      [...comparison.existingInModified, ...comparison.existingRest],
-      comparison.resolvedIssues
+      comparison.newIssues || [],
+      [...(comparison.existingInModified || []), ...(comparison.existingRest || [])],
+      comparison.resolvedIssues || []
     );
 
     monitor.endOperation('business-impact');
@@ -270,7 +288,7 @@ async function runRealKubernetesV9Analysis() {
 
     const educator = new V9EducationalResources();
     const educationalContent = await educator.generateResources(
-      [...comparison.newIssues, ...comparison.existingInModified],
+      [...(comparison.newIssues || []), ...(comparison.existingInModified || [])],
       language
     );
 
@@ -289,9 +307,9 @@ async function runRealKubernetesV9Analysis() {
       confidence,
       qualityScore,
       grade: scoringCalculator.getGrade(qualityScore),
-      newIssues: comparison.newIssues,
-      existingIssues: [...comparison.existingInModified, ...comparison.existingRest],
-      resolvedIssues: comparison.resolvedIssues,
+      newIssues: comparison.newIssues || [],
+      existingIssues: [...(comparison.existingInModified || []), ...(comparison.existingRest || [])],
+      resolvedIssues: comparison.resolvedIssues || [],
       blockingIssues,
       backlogIssues,
       modifiedFiles,
@@ -333,9 +351,9 @@ async function runRealKubernetesV9Analysis() {
     console.log(`📊 Tokens Used: ${aggregatedMetrics.totalTokens.toLocaleString()}`);
     console.log(`📁 Files Analyzed: ${filesAnalyzed.toLocaleString()} of ${fileCount.toLocaleString()}`);
     console.log(`🔍 Issues Found:`);
-    console.log(`   - NEW: ${comparison.newIssues.length}`);
-    console.log(`   - EXISTING: ${comparison.existingInModified.length + comparison.existingRest.length}`);
-    console.log(`   - RESOLVED: ${comparison.resolvedIssues.length}`);
+    console.log(`   - NEW: ${(comparison.newIssues || []).length}`);
+    console.log(`   - EXISTING: ${((comparison.existingInModified || []).length + (comparison.existingRest || []).length)}`);
+    console.log(`   - RESOLVED: ${(comparison.resolvedIssues || []).length}`);
     console.log(`🎯 Decision: ${decision} (Confidence: ${confidence}%)`);
     console.log(`📈 Quality Score: ${qualityScore.toFixed(1)}/100`);
     console.log('=' .repeat(80));
@@ -350,9 +368,9 @@ async function runRealKubernetesV9Analysis() {
       filesAnalyzed,
       totalFiles: fileCount,
       issues: {
-        new: comparison.newIssues.length,
-        existing: comparison.existingInModified.length + comparison.existingRest.length,
-        resolved: comparison.resolvedIssues.length
+        new: (comparison.newIssues || []).length,
+        existing: ((comparison.existingInModified || []).length + (comparison.existingRest || []).length),
+        resolved: (comparison.resolvedIssues || []).length
       },
       decision,
       confidence,

@@ -14,7 +14,7 @@ export class V9ReportWithValidation {
   private validator: V9TemplateValidator;
   private minimumScore: number;
 
-  constructor(minimumScore: number = 90) {
+  constructor(minimumScore = 90) {
     this.validator = new V9TemplateValidator();
     this.minimumScore = minimumScore;
   }

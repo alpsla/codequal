@@ -594,7 +594,7 @@ export class V9TemplateValidator {
    */
   public meetsMinimumRequirements(
     reportContent: string,
-    minimumScore: number = 90
+    minimumScore = 90
   ): boolean {
     const result = this.validateReport(reportContent);
     return result.score >= minimumScore && result.isValid;
@@ -635,7 +635,7 @@ export function validateV9Report(reportContent: string): ValidationResult {
  */
 export function isValidV9Report(
   reportContent: string,
-  minimumScore: number = 90
+  minimumScore = 90
 ): boolean {
   const validator = new V9TemplateValidator();
   return validator.meetsMinimumRequirements(reportContent, minimumScore);

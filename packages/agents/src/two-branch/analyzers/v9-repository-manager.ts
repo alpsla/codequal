@@ -8,6 +8,7 @@ import * as path from 'path';
 import { execSync } from 'child_process';
 import { getRepoManager, getFileSelector } from '../utils/repository-utils-factory';
 import type { CloudRepositoryManager } from '../utils/cloud-repository-manager';
+import type { KubernetesRepositoryManager } from '../utils/kubernetes-repository-manager';
 import type { SmartFileSelector, SelectedFiles } from '../utils/smart-file-selector';
 import { logger } from '../utils/logger';
 
@@ -18,10 +19,10 @@ export interface RepositoryConfig {
 }
 
 export class V9RepositoryManager {
-  private repoManager: CloudRepositoryManager;
+  private repoManager: CloudRepositoryManager | KubernetesRepositoryManager;
   private fileSelector: SmartFileSelector;
   private cachedWorkspacePath = '';
-  
+
   constructor(private config: RepositoryConfig) {
     this.repoManager = getRepoManager();
     this.fileSelector = getFileSelector();
@@ -47,7 +48,7 @@ export class V9RepositoryManager {
       prNumber
     );
 
-    this.cachedWorkspacePath = workspace.cloudPath;
+    this.cachedWorkspacePath = 'cloudPath' in workspace ? workspace.cloudPath : workspace.workspaceId;
 
     // Log repository stats
     logger.info(`📊 Repository contains ${workspace.filesCount} files`);
@@ -56,8 +57,8 @@ export class V9RepositoryManager {
     const mainWorkspace = await this.repoManager.setupRepository(repoUrl, 'main');
 
     return {
-      mainPath: mainWorkspace.cloudPath,
-      prPath: workspace.cloudPath
+      mainPath: 'cloudPath' in mainWorkspace ? mainWorkspace.cloudPath : mainWorkspace.workspaceId,
+      prPath: 'cloudPath' in workspace ? workspace.cloudPath : workspace.workspaceId
     };
   }
   
