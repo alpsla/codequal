@@ -1,0 +1,194 @@
+version: "3.8"
+
+# V9 Architecture with Language-Specific Analyzers
+# Each language image contains all 5 tools (Security, Dependency, Architecture, Performance, Quality)
+# This config analyzes a repository with automatic language detection
+
+networks:
+  codequal:
+    driver: bridge
+
+services:
+  # Redis for caching and coordination
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    networks:
+      - codequal
+    ports:
+      - "6379:6379"
+    volumes:
+      - /mnt/workspace/cache/redis:/data
+    command: redis-server --appendonly yes --maxmemory 4gb --maxmemory-policy allkeys-lru
+
+  # ============ LANGUAGE-SPECIFIC ANALYZERS ============
+  # Each runs ALL 5 tools (Security, Dependency, Architecture, Performance, Quality) for its language
+  
+  # JAVA ANALYZER - Main Branch
+  main-java:
+    image: registry.digitalocean.com/codequal/analyzer:lang-java-v5.1
+    container_name: main-java-analyzer
+    cpuset: "0"  # Dedicated CPU 0
+    mem_limit: 6g  # Java analysis needs more memory
+    networks:
+      - codequal
+    volumes:
+      - /mnt/workspace/repos/main:/workspace/repo:ro
+      - /mnt/workspace/output/main/java:/workspace/output
+    environment:
+      - LANGUAGE=java
+      - BRANCH=main
+      - REDIS_HOST=redis
+      - ANALYSIS_TOOLS=security,dependency,architecture,performance,quality
+    command: ["/analyze.sh", "/workspace/repo", "/workspace/output"]
+    depends_on:
+      - redis
+
+  # JAVA ANALYZER - PR Branch
+  pr-java:
+    image: registry.digitalocean.com/codequal/analyzer:lang-java-v5.1
+    container_name: pr-java-analyzer
+    cpuset: "1"  # Dedicated CPU 1
+    mem_limit: 6g
+    networks:
+      - codequal
+    volumes:
+      - /mnt/workspace/repos/pr:/workspace/repo:ro
+      - /mnt/workspace/output/pr/java:/workspace/output
+    environment:
+      - LANGUAGE=java
+      - BRANCH=pr
+      - REDIS_HOST=redis
+      - ANALYSIS_TOOLS=security,dependency,architecture,performance,quality
+    command: ["/analyze.sh", "/workspace/repo", "/workspace/output"]
+    depends_on:
+      - redis
+
+  # PYTHON ANALYZER - Main Branch
+  main-python:
+    image: registry.digitalocean.com/codequal/analyzer:lang-python-v4.3
+    container_name: main-python-analyzer
+    cpuset: "2"  # Dedicated CPU 2
+    mem_limit: 4g
+    networks:
+      - codequal
+    volumes:
+      - /mnt/workspace/repos/main:/workspace/repo:ro
+      - /mnt/workspace/output/main/python:/workspace/output
+    environment:
+      - LANGUAGE=python
+      - BRANCH=main
+      - REDIS_HOST=redis
+      - ANALYSIS_TOOLS=security,dependency,architecture,performance,quality
+    command: ["/analyze.sh", "/workspace/repo", "/workspace/output"]
+    depends_on:
+      - redis
+
+  # PYTHON ANALYZER - PR Branch
+  pr-python:
+    image: registry.digitalocean.com/codequal/analyzer:lang-python-v4.3
+    container_name: pr-python-analyzer
+    cpuset: "3"  # Dedicated CPU 3
+    mem_limit: 4g
+    networks:
+      - codequal
+    volumes:
+      - /mnt/workspace/repos/pr:/workspace/repo:ro
+      - /mnt/workspace/output/pr/python:/workspace/output
+    environment:
+      - LANGUAGE=python
+      - BRANCH=pr
+      - REDIS_HOST=redis
+      - ANALYSIS_TOOLS=security,dependency,architecture,performance,quality
+    command: ["/analyze.sh", "/workspace/repo", "/workspace/output"]
+    depends_on:
+      - redis
+
+  # JAVASCRIPT/TYPESCRIPT ANALYZER - Main Branch
+  main-javascript:
+    image: registry.digitalocean.com/codequal/analyzer:lang-javascript-v4.3
+    container_name: main-js-analyzer
+    cpuset: "0,1"  # Can share CPUs with less intensive tasks
+    mem_limit: 3g
+    networks:
+      - codequal
+    volumes:
+      - /mnt/workspace/repos/main:/workspace/repo:ro
+      - /mnt/workspace/output/main/javascript:/workspace/output
+    environment:
+      - LANGUAGE=javascript
+      - BRANCH=main
+      - REDIS_HOST=redis
+      - ANALYSIS_TOOLS=security,dependency,architecture,performance,quality
+    command: ["/analyze.sh", "/workspace/repo", "/workspace/output"]
+    depends_on:
+      - redis
+
+  # JAVASCRIPT/TYPESCRIPT ANALYZER - PR Branch  
+  pr-javascript:
+    image: registry.digitalocean.com/codequal/analyzer:lang-javascript-v4.3
+    container_name: pr-js-analyzer
+    cpuset: "2,3"  # Can share CPUs
+    mem_limit: 3g
+    networks:
+      - codequal
+    volumes:
+      - /mnt/workspace/repos/pr:/workspace/repo:ro
+      - /mnt/workspace/output/pr/javascript:/workspace/output
+    environment:
+      - LANGUAGE=javascript
+      - BRANCH=pr
+      - REDIS_HOST=redis
+      - ANALYSIS_TOOLS=security,dependency,architecture,performance,quality
+    command: ["/analyze.sh", "/workspace/repo", "/workspace/output"]
+    depends_on:
+      - redis
+
+  # GO ANALYZER - Main Branch (if needed)
+  main-go:
+    image: registry.digitalocean.com/codequal/analyzer:lang-go-v4.6
+    container_name: main-go-analyzer
+    cpuset: "0,1"
+    mem_limit: 4g
+    networks:
+      - codequal
+    volumes:
+      - /mnt/workspace/repos/main:/workspace/repo:ro
+      - /mnt/workspace/output/main/go:/workspace/output
+    environment:
+      - LANGUAGE=go
+      - BRANCH=main
+      - REDIS_HOST=redis
+      - ANALYSIS_TOOLS=security,dependency,architecture,performance,quality
+    command: ["/analyze.sh", "/workspace/repo", "/workspace/output"]
+    depends_on:
+      - redis
+    profiles:
+      - go  # Only start if --profile go is specified
+
+  # GO ANALYZER - PR Branch (if needed)
+  pr-go:
+    image: registry.digitalocean.com/codequal/analyzer:lang-go-v4.6
+    container_name: pr-go-analyzer
+    cpuset: "2,3"
+    mem_limit: 4g
+    networks:
+      - codequal
+    volumes:
+      - /mnt/workspace/repos/pr:/workspace/repo:ro
+      - /mnt/workspace/output/pr/go:/workspace/output
+    environment:
+      - LANGUAGE=go
+      - BRANCH=pr
+      - REDIS_HOST=redis
+      - ANALYSIS_TOOLS=security,dependency,architecture,performance,quality
+    command: ["/analyze.sh", "/workspace/repo", "/workspace/output"]
+    depends_on:
+      - redis
+    profiles:
+      - go  # Only start if --profile go is specified
+
+# Usage:
+# For Java/Python/JS projects: docker compose up -d
+# For Go projects: docker compose --profile go up -d
+# For Rust projects: docker compose --profile rust up -d (add rust services similarly)
