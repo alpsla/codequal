@@ -416,7 +416,7 @@ spec:
   private buildToolCommand(toolName: string): string {
     const commands: Record<string, string> = {
       spotbugs: 'find . -name "*.class" | xargs spotbugs -textui -low -xml 2>&1',
-      pmd: 'pmd pmd -d . -R rulesets/java/quickstart.xml -f json 2>&1',
+      pmd: 'pmd check -d . -R rulesets/java/quickstart.xml -f json 2>&1',
       checkstyle: 'checkstyle -c /google_checks.xml . 2>&1',
       'dependency-check': 'dependency-check --scan . --format JSON --out /tmp/dc.json && cat /tmp/dc.json',
       sonarqube: 'sonar-scanner -Dsonar.projectKey=test -Dsonar.sources=.',

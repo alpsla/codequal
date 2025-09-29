@@ -53,7 +53,7 @@ export class ToolConnectionManager {
       name: 'pmd',
       category: 'quality',
       languages: ['java'],
-      command: 'pmd pmd -f xml',
+      command: 'pmd check -f xml',
       parser: 'xml',
       fixGenerator: 'pmd-fix-generator',
       enabled: true

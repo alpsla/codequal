@@ -37,12 +37,12 @@ import { V9ReportFormatterFinal as V9ReportFormatter } from './v9-report-formatt
 // Import utilities
 import { getRepoManager, getFileSelector } from '../utils/repository-utils-factory';
 import type { CloudRepositoryManager } from '../utils/cloud-repository-manager';
-import type { KubernetesRepositoryManager } from '../utils/kubernetes-repository-manager';
+import type { OracleRepositoryManager } from '../utils/oracle-repository-manager';
 import type { SmartFileSelector, SelectedFiles } from '../utils/smart-file-selector';
 import { DynamicModelSelector } from '../services/dynamic-model-selector';
 
 export abstract class V9BaseAnalyzer {
-  protected repoManager: CloudRepositoryManager | KubernetesRepositoryManager;
+  protected repoManager: CloudRepositoryManager | OracleRepositoryManager;
   protected modelSelector: DynamicModelSelector;
   protected fileSelector: SmartFileSelector;
   protected supabase: any;

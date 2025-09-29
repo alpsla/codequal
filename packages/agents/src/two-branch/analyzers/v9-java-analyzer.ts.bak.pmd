@@ -37,19 +37,19 @@ export class V9JavaAnalyzer extends V9BaseAnalyzer {
         // PMD - Multi-role tool (Quality, Performance, Architecture)
         {
           name: 'pmd-quality',
-          command: 'pmd pmd -d . -R rulesets/java/quickstart.xml -f text 2>&1 || true',
+          command: 'pmd check -d . -R rulesets/java/quickstart.xml -f text 2>&1 || true',
           agent: 'QualityAnalyzer',
           parser: this.parsePMDOutput.bind(this)
         },
         {
           name: 'pmd-performance',
-          command: 'pmd pmd -d . -R rulesets/java/performance.xml -f text 2>&1 || true',
+          command: 'pmd check -d . -R rulesets/java/performance.xml -f text 2>&1 || true',
           agent: 'PerformanceAnalyzer',
           parser: this.parsePMDOutput.bind(this)
         },
         {
           name: 'pmd-architecture',
-          command: 'pmd pmd -d . -R rulesets/java/design.xml -f text 2>&1 || true',
+          command: 'pmd check -d . -R rulesets/java/design.xml -f text 2>&1 || true',
           agent: 'ArchitectureAnalyzer',
           parser: this.parsePMDOutput.bind(this)
         },

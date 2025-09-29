@@ -8,7 +8,7 @@ import * as path from 'path';
 import { execSync } from 'child_process';
 import { getRepoManager, getFileSelector } from '../utils/repository-utils-factory';
 import type { CloudRepositoryManager } from '../utils/cloud-repository-manager';
-import type { KubernetesRepositoryManager } from '../utils/kubernetes-repository-manager';
+import type { OracleRepositoryManager } from '../utils/oracle-repository-manager';
 import type { SmartFileSelector, SelectedFiles } from '../utils/smart-file-selector';
 import { logger } from '../utils/logger';
 
@@ -19,7 +19,7 @@ export interface RepositoryConfig {
 }
 
 export class V9RepositoryManager {
-  private repoManager: CloudRepositoryManager | KubernetesRepositoryManager;
+  private repoManager: CloudRepositoryManager | OracleRepositoryManager;
   private fileSelector: SmartFileSelector;
   private cachedWorkspacePath = '';
 

@@ -22,6 +22,13 @@ k8s/*/secrets.yaml
 !.env.example
 !.env.template
 
+# SSH Keys - NEVER commit private keys
+keys/oracle/*.key
+keys/**/*.key
+!keys/**/*.pub
+*.key
+!*.key.pub
+
 # Test files and temporary scripts
 apps/api/test-*.js
 apps/api/test-*.html

@@ -7,37 +7,38 @@
  */
 
 import { CloudRepositoryManager } from './cloud-repository-manager';
-import { KubernetesRepositoryManager } from './kubernetes-repository-manager';
+import { OracleRepositoryManager } from './oracle-repository-manager';
 import { SmartFileSelector } from './smart-file-selector';
 
 export interface RepositoryUtilsConfig {
   cacheDir?: string;
   workspaceDir?: string;
   redisUrl?: string;
-  useKubernetes?: boolean;
+  useOracle?: boolean;
 }
 
 /**
  * Factory for creating repository utility instances
  */
 export class RepositoryUtilsFactory {
-  private static repoManagerInstance: CloudRepositoryManager | KubernetesRepositoryManager | null = null;
+  private static repoManagerInstance: CloudRepositoryManager | OracleRepositoryManager | null = null;
   private static fileSelectorInstance: SmartFileSelector | null = null;
 
   /**
    * Get or create repository manager instance
-   * Uses KubernetesRepositoryManager when USE_KUBERNETES env var is set or config specifies it
+   * Uses OracleRepositoryManager for ARM direct execution, CloudRepositoryManager as fallback
    */
-  static getRepoManager(config?: RepositoryUtilsConfig): CloudRepositoryManager | KubernetesRepositoryManager {
+  static getRepoManager(config?: RepositoryUtilsConfig): CloudRepositoryManager | OracleRepositoryManager {
     if (!this.repoManagerInstance) {
-      // Check if we should use Kubernetes mode (per V9 requirements)
-      const useKubernetes = config?.useKubernetes ||
-                           process.env.USE_KUBERNETES === 'true' ||
-                           process.env.USE_LOCAL_TOOLS === 'false';
+      // Check if we should use Oracle direct execution mode
+      const useOracle = config?.useOracle ||
+                       process.env.USE_ORACLE === 'true' ||
+                       process.env.DIRECT_DOCKER_EXECUTION === 'true' ||
+                       process.env.USE_ARM_ANALYZERS === 'true';
 
-      if (useKubernetes) {
-        console.log('[Two-Branch] Using KubernetesRepositoryManager for V9 execution');
-        this.repoManagerInstance = new KubernetesRepositoryManager();
+      if (useOracle) {
+        console.log('[Two-Branch] Using OracleRepositoryManager for ARM direct execution');
+        this.repoManagerInstance = new OracleRepositoryManager();
       } else {
         console.log('[Two-Branch] Using CloudRepositoryManager (fallback mode)');
         this.repoManagerInstance = new CloudRepositoryManager();
@@ -59,13 +60,14 @@ export class RepositoryUtilsFactory {
   /**
    * Create new instances (non-singleton)
    */
-  static createRepoManager(config?: RepositoryUtilsConfig): CloudRepositoryManager | KubernetesRepositoryManager {
-    const useKubernetes = config?.useKubernetes ||
-                         process.env.USE_KUBERNETES === 'true' ||
-                         process.env.USE_LOCAL_TOOLS === 'false';
+  static createRepoManager(config?: RepositoryUtilsConfig): CloudRepositoryManager | OracleRepositoryManager {
+    const useOracle = config?.useOracle ||
+                     process.env.USE_ORACLE === 'true' ||
+                     process.env.DIRECT_DOCKER_EXECUTION === 'true' ||
+                     process.env.USE_ARM_ANALYZERS === 'true';
 
-    if (useKubernetes) {
-      return new KubernetesRepositoryManager();
+    if (useOracle) {
+      return new OracleRepositoryManager();
     } else {
       return new CloudRepositoryManager();
     }
@@ -95,6 +97,7 @@ export const getFileSelector = () =>
   RepositoryUtilsFactory.getFileSelector();
 
 // Export classes for direct instantiation if needed
-export { CloudRepositoryManager, KubernetesRepositoryManager, SmartFileSelector };
+export { CloudRepositoryManager, OracleRepositoryManager, SmartFileSelector };
 export type { CloudWorkspace, CloudAnalysisRequest, CloudToolResult } from './cloud-repository-manager';
+export type { OracleWorkspace, OracleToolResult } from './oracle-repository-manager';
 export type { FileSelectionConfig, SelectedFiles } from './smart-file-selector';

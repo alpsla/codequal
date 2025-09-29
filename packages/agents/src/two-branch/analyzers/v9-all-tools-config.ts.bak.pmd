@@ -10,7 +10,7 @@ export const V9_TOOLS_CONFIG = {
   java: {
     tools: [
       { name: 'spotbugs', command: 'spotbugs -textui -effort:max -low . 2>&1 || true' },
-      { name: 'pmd', command: 'pmd pmd -d . -R rulesets/java/quickstart.xml -f text 2>&1 || true' },
+      { name: 'pmd', command: 'pmd check -d . -R rulesets/java/quickstart.xml -f text 2>&1 || true' },
       { name: 'checkstyle', command: 'checkstyle -c /google_checks.xml . 2>&1 || true' },
       { name: 'dependency-check', command: 'dependency-check --scan . --format JSON --out dep-check.json 2>&1 || true' },
       { name: 'semgrep', command: 'semgrep --config=auto --json . 2>&1 || true' }

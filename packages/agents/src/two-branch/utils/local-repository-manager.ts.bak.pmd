@@ -207,17 +207,17 @@ export class LocalRepositoryManager {
 
       case 'pmd-quality':
         // PMD for code quality
-        command = `cd ${repoPath} && pmd pmd -d . -R rulesets/java/quickstart.xml -f text 2>&1 || true`;
+        command = `cd ${repoPath} && pmd check -d . -R rulesets/java/quickstart.xml -f text 2>&1 || true`;
         break;
 
       case 'pmd-performance':
         // PMD for performance
-        command = `cd ${repoPath} && pmd pmd -d . -R rulesets/java/performance.xml -f text 2>&1 || true`;
+        command = `cd ${repoPath} && pmd check -d . -R rulesets/java/performance.xml -f text 2>&1 || true`;
         break;
 
       case 'pmd-architecture':
         // PMD for architecture
-        command = `cd ${repoPath} && pmd pmd -d . -R rulesets/java/design.xml -f text 2>&1 || true`;
+        command = `cd ${repoPath} && pmd check -d . -R rulesets/java/design.xml -f text 2>&1 || true`;
         break;
 
       case 'checkstyle':

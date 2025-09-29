@@ -140,7 +140,7 @@ spec:
                 spotbugs -textui -xml -output /tmp/result.xml . 2>&1
                 ;;
               pmd)
-                pmd pmd -d . -R rulesets/java/quickstart.xml -f json > /tmp/result.json 2>&1
+                pmd check -d . -R rulesets/java/quickstart.xml -f json > /tmp/result.json 2>&1
                 ;;
               checkstyle)
                 checkstyle -c /google_checks.xml -f json . > /tmp/result.json 2>&1
@@ -276,7 +276,7 @@ spec:
   private getToolCommand(toolName: string): string {
     const commands: Record<string, string> = {
       spotbugs: 'spotbugs -textui -low -effort:max -nested:true -auxclasspath . .',
-      pmd: 'pmd pmd -d . -R rulesets/java/quickstart.xml -f json',
+      pmd: 'pmd check -d . -R rulesets/java/quickstart.xml -f json',
       checkstyle: 'checkstyle -c /google_checks.xml -f json .',
       'error-prone': 'javac -J-Xbootclasspath/p:error_prone.jar -processor com.google.errorprone.ErrorProneCompiler *.java',
       infer: 'infer run -- javac *.java',

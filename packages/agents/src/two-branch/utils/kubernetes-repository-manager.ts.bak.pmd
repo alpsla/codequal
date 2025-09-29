@@ -883,8 +883,8 @@ spec:
         : `cd /workspace/repo && echo "SpotBugs requires compiled bytecode - skipping" && exit 0`,
 
       'pmd': selectedFiles
-        ? `${fileListCommand}cd /workspace/repo && cat /tmp/selected_files.txt | grep -v '/test/' | xargs pmd pmd -R category/java/errorprone.xml,category/java/security.xml -f text   ${process.env.TOOL_THREADS || '4'} 2>&1 || true`
-        : `cd /workspace/repo && pmd pmd -d . --exclude '**/test/**' -R category/java/errorprone.xml,category/java/security.xml -f text   ${process.env.TOOL_THREADS || '4'} 2>&1 || true`,
+        ? `${fileListCommand}cd /workspace/repo && cat /tmp/selected_files.txt | grep -v '/test/' | xargs pmd check -R category/java/errorprone.xml,category/java/security.xml -f text --no-progress --no-cache --threads ${process.env.TOOL_THREADS || '4'} 2>&1 || true`
+        : `cd /workspace/repo && pmd check -d . --exclude '**/test/**' -R category/java/errorprone.xml,category/java/security.xml -f text --no-progress --no-cache --threads ${process.env.TOOL_THREADS || '4'} 2>&1 || true`,
 
       'checkstyle': selectedFiles
         ? `${fileListCommand}cd /workspace/repo && cat /tmp/selected_files.txt | grep -v '/test/' | xargs checkstyle -c /google_checks.xml 2>&1 || true`
@@ -899,7 +899,7 @@ spec:
         ? `${fileListCommand}cd /workspace/repo && infer run --report-console-limit 1000 -- javac $(cat /tmp/selected_files.txt | grep -v '/test/' | tr '\\n' ' ') 2>&1 || true`
         : `cd /workspace/repo && infer run --report-console-limit 1000 -- javac $(find . -name "*.java" -not -path "*/test/*" | head -500) 2>&1 || true`,
 
-      'trivy': `cd /workspace/repo && trivy fs --scanners vuln --format json  . 2>&1 || true`,
+      'trivy': `cd /workspace/repo && trivy fs --scanners vuln --format json --no-progress . 2>&1 || true`,
 
       'dependency-check': `echo "Dependency-check not installed - use trivy instead" && exit 0`,
 

@@ -134,7 +134,7 @@ export class JavaToolParser {
         ? files.filter(f => f.endsWith('.java')).join(',')
         : 'src/main/java';
       
-      const command = `cd ${repoPath} && pmd pmd -d ${sourceDir} -R rulesets/java/quickstart.xml -f json 2>&1`;
+      const command = `cd ${repoPath} && pmd check -d ${sourceDir} -R rulesets/java/quickstart.xml -f json 2>&1`;
       
       const { stdout, stderr } = await exec(command, { 
         maxBuffer: 10 * 1024 * 1024,

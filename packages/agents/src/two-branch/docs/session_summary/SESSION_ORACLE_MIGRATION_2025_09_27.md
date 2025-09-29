@@ -10,7 +10,7 @@
 - **Specs**: 4 OCPUs (ARM), 24GB RAM, 200GB storage
 - **OS**: Oracle Linux 9.6 (not Ubuntu as initially assumed)
 - **User**: opc (not ubuntu)
-- **SSH Key**: `~/Downloads/ssh-key-2025-05-08.key`
+- **SSH Key**: `./keys/oracle/ssh-key-2025-05-08.key` (moved from ~/Desktop/)
 
 ### 2. Resolved Performance Bottlenecks
 **Previous Issues on DigitalOcean:**
