@@ -142,10 +142,10 @@ export class OracleRepositoryManager {
       git fetch origin pull/${prNumber}/head:pr-${prNumber} &&
       git checkout pr-${prNumber} &&
       echo "Detecting default branch..." &&
-      DEFAULT_BRANCH=\$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@' || echo 'main') &&
-      echo "Default branch: \$DEFAULT_BRANCH" &&
+      DEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@' || echo 'main') &&
+      echo "Default branch: $DEFAULT_BRANCH" &&
       echo "Getting modified files..." &&
-      git diff --name-only origin/\$DEFAULT_BRANCH...HEAD | head -50 &&
+      git diff --name-only origin/$DEFAULT_BRANCH...HEAD | head -50 &&
       echo "FILE_COUNT_START" &&
       find . -type f -name "*.java" -o -name "*.py" -o -name "*.js" -o -name "*.ts" -o -name "*.go" -o -name "*.rs" -o -name "*.rb" -o -name "*.php" -o -name "*.cs" -o -name "*.kt" -o -name "*.swift" | wc -l &&
       echo "FILE_COUNT_END" &&
@@ -213,7 +213,7 @@ export class OracleRepositoryManager {
         cd ${workspace.remotePath} &&
         echo "Running ${tool} with ARM analyzer..." &&
         docker run --rm --platform=linux/arm64 \\
-          -v "\$(pwd):/workspace" \\
+          -v "$(pwd):/workspace" \\
           -w /workspace \\
           --memory=2g \\
           --cpus=1 \\
