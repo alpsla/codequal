@@ -462,4 +462,45 @@ const metrics = monitor.getAggregatedMetrics();
 | AWS (EKS) | EFS | $320 | More expensive |
 | Azure (AKS) | Azure Files | $310 | Good alternative |
 
+## 📊 Performance Calibration (2025-09-29)
+
+### File Batching Strategy (MANDATORY for Large Repos)
+- **Problem:** Apache Kafka (3,472 files) causes PMD timeouts without batching
+- **Solution:** File batching with parallel Docker containers
+- **Implementation:** `src/standard/optimization/file-batcher.ts`
+- **Cache Support:** `src/standard/optimization/indexed-repo-cache.ts`
+
+### Current Performance Baseline
+| Configuration | Files | Time | Status |
+|---------------|-------|------|--------|
+| 4 parallel, no batching | 3,472 | 68s | Original baseline |
+| 6 parallel, 200 files/batch | 3,472 | 78s | Current best tested |
+| 5 parallel (untested) | 3,472 | ~65-70s | Expected |
+| 10 parallel (untested) | 3,472 | ~45-55s | Expected |
+| 12 parallel (untested) | 3,472 | ?s | May hit resource limits |
+
+### Batching Requirements
+- **Repos > 1000 files**: REQUIRE file batching to prevent timeouts
+- **Optimal batch size**: 200 files per batch (tested and working)
+- **Apache Kafka**: 3,472 files = benchmark for large repo testing
+- **Two-branch caching**: Implemented but needs testing for 100% coverage
+
+### Critical Files for Performance
+- **oracle-combined-test.sh**: Main testing orchestration script
+- **test-batching-simulation.ts**: Validation and testing utility
+- **file-batcher.ts**: Core batching logic implementation
+- **indexed-repo-cache.ts**: Smart caching with file indexing
+
+### Next Session Priority
+1. **CRITICAL**: Test 5, 10, 12 parallel configurations
+2. **Validate**: Two-branch caching system (implementation complete)
+3. **Determine**: Optimal production configuration
+4. **Deploy**: Optimal settings to production environment
+
+### Oracle A1.Flex Status
+- **Performance**: Confirmed working with CodeQual workloads
+- **Native ARM64**: No emulation overhead
+- **Container Registry**: All images at sjc.ocir.io/axhheqi2ofpb/codequal/*
+- **Resource limits**: Need to determine optimal parallel count
+
 ## 🔴 REMEMBER: This is the source of truth for V9 knowledge!

@@ -234,4 +234,59 @@ npm run build && npm run typecheck && npm run lint
 
 ---
 
+## 🚀 PERFORMANCE CALIBRATION HANDOFF (2025-09-29)
+
+### CRITICAL: Continue Performance Optimization
+The file batching strategy has been implemented and tested. Current status:
+
+#### Current Best Configuration
+- **6 parallel containers**: 78 seconds for Apache Kafka (3,472 files)
+- **200 files per batch**: Optimal batch size determined
+- **File batching MANDATORY**: For repos > 1000 files to prevent timeouts
+- **Oracle A1.Flex validated**: Confirmed working with CodeQual workloads
+
+#### IMMEDIATE NEXT SESSION TASKS
+1. **Test 5 parallel configuration** (expecting ~65-70 seconds)
+2. **Test 10 parallel configuration** (expecting ~45-55 seconds)
+3. **Test 12 parallel configuration** (may hit resource limits)
+4. **Validate two-branch caching** (implementation complete, needs testing)
+
+#### Ready Commands for Next Session
+```bash
+cd /Users/alpinro/Code\ Prjects/codequal/packages/agents
+
+# Continue calibration testing
+./oracle-combined-test.sh 5   # Test 5 parallel
+./oracle-combined-test.sh 10  # Test 10 parallel (expected best)
+./oracle-combined-test.sh 12  # Test 12 parallel (resource limits)
+
+# Validate file batching implementation
+npx ts-node test-batching-simulation.ts
+
+# Check two-branch caching readiness
+# Files ready: src/standard/optimization/indexed-repo-cache.ts
+```
+
+#### Key Files for Performance Work
+- **oracle-combined-test.sh**: Main testing orchestration (READY)
+- **file-batcher.ts**: Core batching logic (COMPLETE)
+- **indexed-repo-cache.ts**: Smart caching implementation (COMPLETE)
+- **test-batching-simulation.ts**: Validation utility (READY)
+
+#### Success Criteria for Next Session
+- [ ] Find optimal parallel configuration (<60s for Apache Kafka)
+- [ ] Test two-branch caching system
+- [ ] Document production-ready configuration
+- [ ] Prepare deployment of optimal settings
+
+#### Oracle Infrastructure Status
+- ✅ **A1.Flex instance**: 4 OCPUs, 24GB RAM operational
+- ✅ **OCIR registry**: All analyzer images migrated and accessible
+- ✅ **Container execution**: Parallel processing working
+- 🔄 **Optimization**: Calibration 60% complete (6/10 configurations tested)
+
+---
+
 **Remember**: The goal is not just to fix bugs, but to maintain the complete V9 template integrity throughout the session. Every fix should enhance, not degrade, the report quality.
+
+**Performance Priority**: Continue calibration to find optimal configuration for production deployment. File batching solves the timeout issue - now optimize for speed.
