@@ -234,56 +234,242 @@ npm run build && npm run typecheck && npm run lint
 
 ---
 
-## 🚀 PERFORMANCE CALIBRATION HANDOFF (2025-09-29)
+## 🖥️ ORACLE A1.FLEX SERVER CONNECTION
 
-### CRITICAL: Continue Performance Optimization
-The file batching strategy has been implemented and tested. Current status:
-
-#### Current Best Configuration
-- **6 parallel containers**: 78 seconds for Apache Kafka (3,472 files)
-- **200 files per batch**: Optimal batch size determined
-- **File batching MANDATORY**: For repos > 1000 files to prevent timeouts
-- **Oracle A1.Flex validated**: Confirmed working with CodeQual workloads
-
-#### IMMEDIATE NEXT SESSION TASKS
-1. **Test 5 parallel configuration** (expecting ~65-70 seconds)
-2. **Test 10 parallel configuration** (expecting ~45-55 seconds)
-3. **Test 12 parallel configuration** (may hit resource limits)
-4. **Validate two-branch caching** (implementation complete, needs testing)
-
-#### Ready Commands for Next Session
-```bash
-cd /Users/alpinro/Code\ Prjects/codequal/packages/agents
-
-# Continue calibration testing
-./oracle-combined-test.sh 5   # Test 5 parallel
-./oracle-combined-test.sh 10  # Test 10 parallel (expected best)
-./oracle-combined-test.sh 12  # Test 12 parallel (resource limits)
-
-# Validate file batching implementation
-npx ts-node test-batching-simulation.ts
-
-# Check two-branch caching readiness
-# Files ready: src/standard/optimization/indexed-repo-cache.ts
+### Server Details
+```yaml
+Hostname: 129.213.49.128
+Region: Oracle Cloud (US West)
+Instance Type: A1.Flex
+CPUs: 4 OCPUs (ARM64)
+Memory: 24GB RAM
+OS: Oracle Linux 8
+Purpose: Performance testing and calibration
 ```
 
-#### Key Files for Performance Work
-- **oracle-combined-test.sh**: Main testing orchestration (READY)
-- **file-batcher.ts**: Core batching logic (COMPLETE)
-- **indexed-repo-cache.ts**: Smart caching implementation (COMPLETE)
-- **test-batching-simulation.ts**: Validation utility (READY)
+### SSH Connection
 
-#### Success Criteria for Next Session
-- [ ] Find optimal parallel configuration (<60s for Apache Kafka)
-- [ ] Test two-branch caching system
-- [ ] Document production-ready configuration
-- [ ] Prepare deployment of optimal settings
+**SSH Key Location**:
+```bash
+/Users/alpinro/Code Prjects/codequal/keys/oracle/ssh-key-2025-05-08.key
+```
 
-#### Oracle Infrastructure Status
-- ✅ **A1.Flex instance**: 4 OCPUs, 24GB RAM operational
-- ✅ **OCIR registry**: All analyzer images migrated and accessible
-- ✅ **Container execution**: Parallel processing working
-- 🔄 **Optimization**: Calibration 60% complete (6/10 configurations tested)
+**Connect to Oracle**:
+```bash
+# Full SSH command
+ssh -i /Users/alpinro/Code\ Prjects/codequal/keys/oracle/ssh-key-2025-05-08.key \
+    opc@129.213.49.128
+
+# Recommended: Create SSH alias for easier access
+```
+
+**Create SSH Alias** (Add to `~/.ssh/config`):
+```bash
+Host oracle-codequal
+    HostName 129.213.49.128
+    User opc
+    IdentityFile /Users/alpinro/Code Prjects/codequal/keys/oracle/ssh-key-2025-05-08.key
+    ServerAliveInterval 60
+    ServerAliveCountMax 3
+
+# Then connect with: ssh oracle-codequal
+```
+
+### Quick Access Commands
+
+**Check Server Status**:
+```bash
+# Check if server is accessible
+ssh -i /Users/alpinro/Code\ Prjects/codequal/keys/oracle/ssh-key-2025-05-08.key \
+    opc@129.213.49.128 'echo "Oracle server is up"; uptime'
+
+# Check Docker status
+ssh -i /Users/alpinro/Code\ Prjects/codequal/keys/oracle/ssh-key-2025-05-08.key \
+    opc@129.213.49.128 'docker ps && docker images | head -5'
+
+# Check Redis status
+ssh -i /Users/alpinro/Code\ Prjects/codequal/keys/oracle/ssh-key-2025-05-08.key \
+    opc@129.213.49.128 'redis-cli PING'
+```
+
+**Copy Files to Oracle**:
+```bash
+# Copy test scripts
+cd /Users/alpinro/Code\ Prjects/codequal/packages/agents
+scp -i /Users/alpinro/Code\ Prjects/codequal/keys/oracle/ssh-key-2025-05-08.key \
+    oracle-calibration-test.sh \
+    opc@129.213.49.128:/home/opc/
+
+# Copy multiple files
+scp -i /Users/alpinro/Code\ Prjects/codequal/keys/oracle/ssh-key-2025-05-08.key \
+    *.sh \
+    opc@129.213.49.128:/home/opc/
+```
+
+**Run Tests on Oracle**:
+```bash
+# Run calibration test
+ssh -i /Users/alpinro/Code\ Prjects/codequal/keys/oracle/ssh-key-2025-05-08.key \
+    opc@129.213.49.128 \
+    '/home/opc/oracle-calibration-test.sh 4 300 3'
+
+# Run multi-tool test
+ssh -i /Users/alpinro/Code\ Prjects/codequal/keys/oracle/ssh-key-2025-05-08.key \
+    opc@129.213.49.128 \
+    '/home/opc/oracle-multi-tool-test.sh all'
+```
+
+### Oracle Resources on Server
+
+**Test Repository**:
+```bash
+Location: /tmp/kafka-repo
+Contents: Apache Kafka (3,472 Java files)
+Status: Already cloned and ready
+```
+
+**Test Scripts** (Located in `/home/opc/`):
+- `oracle-calibration-test.sh` - Single-tool testing (PMD)
+- `oracle-multi-tool-test.sh` - Multi-tool orchestration
+- `test-two-branch-cache.sh` - Cache validation
+
+**Docker Images Available**:
+```bash
+Registry: registry.digitalocean.com/codequal-registry
+Java Analyzer: analyzer:lang-java-v5.1-arm
+All Tools: PMD, Checkstyle, SpotBugs, Semgrep
+```
+
+**Redis Cache**:
+```bash
+Host: localhost (on Oracle server)
+Port: 6379 (default)
+Status: Running and validated
+Check: redis-cli PING → PONG
+```
+
+### Troubleshooting
+
+**If SSH connection fails**:
+```bash
+# 1. Check SSH key permissions
+chmod 600 /Users/alpinro/Code\ Prjects/codequal/keys/oracle/ssh-key-2025-05-08.key
+
+# 2. Test connection with verbose output
+ssh -v -i /Users/alpinro/Code\ Prjects/codequal/keys/oracle/ssh-key-2025-05-08.key \
+    opc@129.213.49.128
+
+# 3. Verify server is up (ping)
+ping 129.213.49.128
+```
+
+**If Docker not responding**:
+```bash
+# Check Docker status
+ssh oracle-codequal 'sudo systemctl status docker'
+
+# Restart Docker if needed
+ssh oracle-codequal 'sudo systemctl restart docker'
+```
+
+**If Redis not responding**:
+```bash
+# Check Redis status
+ssh oracle-codequal 'sudo systemctl status redis'
+
+# Restart Redis if needed
+ssh oracle-codequal 'sudo systemctl restart redis'
+```
+
+---
+
+## 🚀 PERFORMANCE CALIBRATION STATUS (2025-09-29 COMPLETE)
+
+### ✅ CALIBRATION COMPLETE - OPTIMAL CONFIGURATION FOUND
+
+**Optimal Configuration**:
+- **4 parallel containers**: 63 seconds for Apache Kafka (3,472 files) ⭐
+- **300 files per batch**: Optimal batch size
+- **3 PMD threads**: Best threading configuration
+- **Resource allocation**: 1 CPU, 5GB RAM per container
+
+### Performance Results Summary
+
+| Config | Time | vs Optimal | Status |
+|--------|------|------------|--------|
+| **4 parallel** | **63s** | **baseline** | **✅ OPTIMAL** |
+| 5 parallel | 71s | -13% | Slower |
+| 6 parallel | 78s | -24% | Slower |
+| 10 parallel | 94s | -49% | Poor |
+| 12 parallel | 100s | -59% | Poor |
+
+**Key Finding**: More parallelism causes resource contention on 4-core system
+
+### Cache Validation ✅
+- Redis caching validated and operational
+- Main branch cached: 9,921 violations
+- Cache retrieval: <1 second (99% time savings)
+- TTL: 24 hours
+- Production ready
+
+### NEXT SESSION PRIORITIES
+
+**Phase 2-6: Complete Java (BLOCKER for other languages)**:
+1. 🔄 **Multi-tool calibration** - Fix Semgrep (173s → 20s target)
+2. ⚠️ **Two-branch testing** - Test Apache Kafka PR #17620
+3. ⚠️ **V9 integration** - Generate complete report (34 sections)
+4. ⚠️ **User review** - Get feedback and approval (≥7/10 score)
+5. ⚠️ **Production deploy** - Deploy and monitor
+
+**Only after Java 100% complete** → Proceed to Python
+
+### Ready Commands for Next Session
+
+```bash
+# Navigate to agents directory
+cd /Users/alpinro/Code\ Prjects/codequal/packages/agents
+
+# Run optimal configuration test (validation)
+ssh -i /Users/alpinro/Code\ Prjects/codequal/keys/oracle/ssh-key-2025-05-08.key \
+    opc@129.213.49.128 \
+    '/home/opc/oracle-calibration-test.sh 4 300 3'
+
+# Run multi-tool test
+ssh -i /Users/alpinro/Code\ Prjects/codequal/keys/oracle/ssh-key-2025-05-08.key \
+    opc@129.213.49.128 \
+    '/home/opc/oracle-multi-tool-test.sh all'
+
+# Check results
+ssh oracle-codequal 'cat /tmp/multi-tool-results/summary.txt'
+```
+
+### Key Files - Current Locations
+
+**Process Documentation**:
+- `/packages/agents/src/two-branch/docs/process/TWO_BRANCH_ANALYSIS_COMPLETE_GUIDE.md` ⭐
+- `/packages/agents/src/two-branch/docs/process/PERFORMANCE_CALIBRATION_RESULTS.md`
+- `/packages/agents/src/two-branch/docs/process/MULTI_TOOL_EXECUTION_STRATEGY.md`
+
+**Testing Scripts**:
+- `oracle-calibration-test.sh` - Optimal config testing
+- `oracle-multi-tool-test.sh` - All Java tools
+- `test-two-branch-cache.sh` - Cache validation
+
+**Implementation Files**:
+- `file-batcher.ts` - Batching logic (COMPLETE)
+- `indexed-repo-cache.ts` - Smart caching (COMPLETE)
+- `two-branch-cache-manager.ts` - Two-branch orchestration (READY)
+
+### Infrastructure Status
+
+- ✅ **Oracle A1.Flex**: 4 OCPUs, 24GB RAM @ 129.213.49.128
+- ✅ **Performance calibrated**: 4 parallel = 63s optimal
+- ✅ **Redis caching**: Operational with 24h TTL
+- ✅ **Docker images**: All Java tools available
+- ✅ **Test repository**: Apache Kafka ready at /tmp/kafka-repo
+- 🔄 **Multi-tool**: Testing in progress (Semgrep needs optimization)
+- ⚠️ **V9 integration**: Not started
+- ⚠️ **User approval**: Pending
 
 ---
 
