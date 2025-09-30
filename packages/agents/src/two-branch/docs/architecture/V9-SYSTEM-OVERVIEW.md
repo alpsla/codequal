@@ -24,19 +24,21 @@
 
 ### 3. Tool Execution Infrastructure
 - **Location**: `/packages/agents/src/two-branch/analyzers/v9-tool-orchestrator.ts`
-- **Container Images** (in registry.digitalocean.com/codequal):
-  - `analyzer:lang-java-v5.1` - Java tools (SpotBugs, PMD, Checkstyle, etc.)
-  - `analyzer:lang-python-v4.3` - Python tools
-  - `analyzer:lang-javascript-v4.3` - JavaScript/TypeScript tools
-  - `analyzer:lang-go-v2.1` - Go tools
-  - `analyzer:lang-rust-v1.3` - Rust tools
+- **Deployment**: Direct Docker on Oracle Cloud VMs (NOT Kubernetes)
+- **Container Images** (in iad.ocir.io/codequal/):
+  - `analyzer:lang-java-v5.3` - Java tools (PMD, Checkstyle, Semgrep, SpotBugs, Dependency-Check)
+  - `analyzer:lang-python-v4.3` - Python tools (Pylint, Bandit, MyPy, Safety)
+  - `analyzer:lang-javascript-v4.3` - JavaScript/TypeScript tools (ESLint, TSC, npm audit)
+  - `analyzer:lang-go-v2.1` - Go tools (golangci-lint, gosec, go vet)
+  - `analyzer:lang-rust-v1.3` - Rust tools (Clippy, cargo-audit)
 - **DO NOT** try to use generic Docker images - use our specialized analyzers
 
-### 4. Kubernetes Infrastructure
-- **Namespace**: `codequal-dev`
-- **PVC**: `codequal-workspace` (10Gi storage for repositories)
-- **Registry Secret**: `registry-codequal` (for pulling our analyzer images)
-- **Hybrid Agent**: `http://129.212.136.24` (orchestrates cloud execution)
+### 4. Oracle Cloud Infrastructure
+- **Cloud Provider**: Oracle Cloud Infrastructure (OCI)
+- **VM**: A1.Flex (4 OCPU, 24GB RAM, ARM64)
+- **Registry**: Oracle Container Image Repository (OCIR) - `iad.ocir.io/codequal/`
+- **Storage**: `/data/` volumes on VM (CVE database, repository cache)
+- **Deployment Model**: Direct Docker execution (no Kubernetes overhead)
 
 ### 5. The 5 Mandatory Agents
 All located in `/packages/agents/src/two-branch/agents/specialized-agents.ts`:
@@ -117,17 +119,24 @@ graph TD
 ## 🔍 Quick Diagnostic Commands
 
 ```bash
-# Check if Kubernetes is accessible
-kubectl get pods -n codequal-dev
+# Check Oracle VM connectivity
+ssh opc@<oracle-vm-ip>
 
-# Check if PVC exists
-kubectl get pvc -n codequal-dev
+# Check Docker containers
+docker ps
 
 # Check if analyzer images are available
-doctl registry repository list-tags codequal
+docker images | grep ocir
+
+# Check shared volumes
+ls -lh /data/dependency-check/active
+ls -lh /data/repositories/
 
 # Check environment variables
-env | grep -E "(SUPABASE|OPENROUTER|REDIS|HYBRID_AGENT)"
+env | grep -E "(SUPABASE|OPENROUTER|REDIS|NVD_API_KEY)"
+
+# Check cron jobs
+crontab -l
 
 # Run the WORKING test
 cd /Users/alpinro/Code\ Prjects/codequal/packages/agents
@@ -137,17 +146,20 @@ npx ts-node test-v8-final.ts
 ## 📊 Real Infrastructure Status
 
 ### What's Actually Running:
-- ✅ Kubernetes cluster with 11+ pods
-- ✅ PVC `codequal-workspace` for repository storage
-- ✅ Analyzer containers in DigitalOcean registry
-- ✅ Redis cache for results
+- ✅ Oracle Cloud VM (A1.Flex, 4 OCPU, 24GB RAM)
+- ✅ Direct Docker execution (no Kubernetes)
+- ✅ Analyzer containers in Oracle Container Registry (OCIR)
+- ✅ Shared CVE database cache (3GB + 2GB indexes)
+- ✅ Redis cache for analysis results
 - ✅ Supabase for persistence
-- ✅ Hybrid Agent for orchestration
+- ✅ UnifiedMonitoringService + Grafana dashboards
 
 ### What Needs Manual Setup:
-- Repository must be cloned to PVC first
-- Registry credentials must be configured
-- Environment variables must be set (.env file)
+- Oracle VM SSH access
+- OCIR registry login credentials
+- Environment variables (.env file)
+- NVD API key for Dependency-Check
+- System cron for daily database updates
 
 ## 🎯 Testing Apache Kafka PR #17620
 

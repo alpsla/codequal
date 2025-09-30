@@ -1,5 +1,13 @@
 # Universal Framework Architecture
 
+> **⚠️ DEPRECATED INFRASTRUCTURE REFERENCES**
+>
+> This document contains outdated infrastructure references. For current architecture:
+> - See [DEPLOYMENT-ARCHITECTURE.md](./DEPLOYMENT-ARCHITECTURE.md) for Oracle Cloud setup
+> - See [TOOL-EXECUTION-PIPELINE.md](./TOOL-EXECUTION-PIPELINE.md) for tool execution details
+> - The tool parsers and concepts in this document are still relevant
+> - Infrastructure has migrated from Kubernetes to Direct Docker on Oracle Cloud
+
 ## 🎯 Overview
 
 The Universal Framework is a comprehensive solution for analyzing code quality across all major programming languages. It addresses the critical bugs discovered in the previous implementation:

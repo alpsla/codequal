@@ -128,13 +128,16 @@ As of 2025-09-19, the following V9 components have been verified to work correct
 
 ## 🌩️ Cloud Architecture Context
 
-As of 2025-08-28, the system migrated from local DeepWiki Kubernetes to cloud-based architecture:
+As of 2025-09-30, the system migrated to Oracle Cloud Infrastructure with direct Docker:
 
-- **Analysis Service**: DigitalOcean droplet (157.230.9.119:3010)
-- **Agents**: Cloud-based execution via BaseCloudAgent
-- **Tools**: Run in cloud environment with Redis caching
-- **V9ToolOrchestrator**: Coordinates between local orchestration and cloud execution
-- **Required ENV**: `CLOUD_ANALYSIS_URL`, `SUPABASE_URL`, `OPENROUTER_API_KEY`
+- **Cloud Provider**: Oracle Cloud Infrastructure (OCI)
+- **Deployment**: Direct Docker on ARM64 VMs (NOT Kubernetes)
+- **Container Registry**: Oracle Container Image Repository (OCIR) - `iad.ocir.io/codequal/`
+- **VM**: A1.Flex (4 OCPU, 24GB RAM, ARM64)
+- **Shared Storage**: `/data/dependency-check/` (3GB CVE database + 2GB indexes)
+- **Tools**: Run as ephemeral Docker containers with read-only volume mounts
+- **V9ToolOrchestrator**: Coordinates direct Docker execution
+- **Required ENV**: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `OPENROUTER_API_KEY`, `NVD_API_KEY`
 
 ## 📝 Required Metadata Fields
 
