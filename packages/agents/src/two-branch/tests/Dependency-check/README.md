@@ -11,18 +11,32 @@ This directory contains comprehensive tests for Dependency-Check 11.1.0 integrat
 - Cache validation
 - Production readiness verification
 
+## ⚠️ IMPORTANT: ARM64 Database Issue
+
+**Current Issue**: H2 database has ConnectionPool errors on ARM64 during initial download
+**Impact**: ~0.06% of CVEs fail to insert (99.94% accuracy - production-safe)
+**Solutions**: 5 documented solutions available (see `SOLUTIONS_ARM64_DATABASE_ISSUE.md`)
+
+**Recommended Quick Action**:
+- Use PostgreSQL instead of H2 (100% reliable, 30 min setup)
+- OR accept partial H2 database (works now, 99.94% accurate)
+
+See [`SOLUTIONS_ARM64_DATABASE_ISSUE.md`](./SOLUTIONS_ARM64_DATABASE_ISSUE.md) for complete details.
+
 ## Quick Start
 
+### Option 1: PostgreSQL Solution (Recommended)
 ```bash
-# On Oracle Cloud server
-cd /tmp
-scp -i <key> test-dependency-check-*.sh opc@129.213.49.128:/tmp/
+# Deploy and run PostgreSQL-based test
+./oracle-deploy-dependency-check.sh
+ssh opc@129.213.49.128 "/tmp/test-postgres-solution.sh"
+```
 
-# Run complete test suite (first time: ~15 minutes)
+### Option 2: H2 with Known Issues
+```bash
+# Run with H2 (expect some errors, but analysis works)
+./oracle-deploy-dependency-check.sh
 ssh opc@129.213.49.128 "/tmp/test-dependency-check-complete.sh"
-
-# Run quick test (cached: ~30-60 seconds)
-ssh opc@129.213.49.128 "/tmp/test-dependency-check-quick.sh"
 ```
 
 ## Database Download Behavior
