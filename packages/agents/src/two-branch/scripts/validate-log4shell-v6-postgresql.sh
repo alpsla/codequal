@@ -164,7 +164,18 @@ fi
 # Final result
 echo ""
 echo "========================================"
-if [ "${EXIT_CODE:-0}" -eq "1" ] && [ -f "$TEST_DIR/dependency-check-report.json" ] && grep -q "CVE-2021-44228" "$TEST_DIR/dependency-check-report.json"; then
+
+# Check all conditions separately for better readability
+VALIDATION_PASSED=0
+if [ "${EXIT_CODE:-0}" -eq "1" ]; then
+  if [ -f "$TEST_DIR/dependency-check-report.json" ]; then
+    if grep -q "CVE-2021-44228" "$TEST_DIR/dependency-check-report.json"; then
+      VALIDATION_PASSED=1
+    fi
+  fi
+fi
+
+if [ "$VALIDATION_PASSED" -eq "1" ]; then
   echo "✅ VALIDATION PASSED"
   echo "========================================"
   echo ""
