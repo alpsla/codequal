@@ -16,6 +16,8 @@ import { DynamicModelSelector } from '../../standard/services/dynamic-model-sele
 import { VectorStorageService } from '@codequal/database';
 import { createLogger } from '../../utils';
 // import { SystemAuthService, SYSTEM_USER } from '@codequal/core/auth/system-auth'; // TODO: Fix this import
+import { CVEUpdateTask } from './tasks/cve-update-task';
+import { createClient } from '@supabase/supabase-js';
 
 // Temporary placeholders
 const ModelVersionSync = {} as any;
@@ -41,6 +43,8 @@ export class EnhancedSchedulerService {
   private vectorStorage: VectorStorageService;
   private systemAuth: typeof SystemAuthService;
   private scheduledTasks: Map<string, cron.ScheduledTask> = new Map();
+  private supabaseClient: ReturnType<typeof createClient>;
+  private cveUpdateTask?: CVEUpdateTask;
   
   private constructor() {
     // Initialize services
@@ -48,9 +52,26 @@ export class EnhancedSchedulerService {
     this.modelVersionSync = new ModelVersionSync(logger);
     this.vectorStorage = new VectorStorageService();
     this.systemAuth = SystemAuthService.getInstance();
-    
+
+    // Initialize Supabase client
+    this.supabaseClient = createClient(
+      process.env.SUPABASE_URL || '',
+      process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+    );
+
+    // Initialize CVE update task if NVD API key is configured
+    if (process.env.NVD_API_KEY) {
+      this.cveUpdateTask = new CVEUpdateTask(
+        this.supabaseClient,
+        process.env.NVD_API_KEY
+      );
+      logger.info('CVE Update Task initialized');
+    } else {
+      logger.warn('NVD_API_KEY not configured - CVE updates disabled');
+    }
+
     logger.info('Enhanced Scheduler Service initialized with Dynamic Model Selector');
-    
+
     // Register default scheduled tasks
     this.registerDefaultTasks();
   }
@@ -73,7 +94,7 @@ export class EnhancedSchedulerService {
       schedule: '0 2 1 */3 *', // At 02:00 on day 1 every 3 months
       status: 'active'
     });
-    
+
     // Weekly model freshness check (every Sunday at 3 AM)
     this.scheduleTask({
       id: 'weekly-freshness-check',
@@ -81,7 +102,7 @@ export class EnhancedSchedulerService {
       schedule: '0 3 * * 0', // At 03:00 on Sunday
       status: 'active'
     });
-    
+
     // Daily cost optimization review (every day at 1 AM)
     this.scheduleTask({
       id: 'daily-cost-review',
@@ -89,6 +110,17 @@ export class EnhancedSchedulerService {
       schedule: '0 1 * * *', // At 01:00 every day
       status: 'active'
     });
+
+    // Daily CVE database update (every day at 2 AM)
+    if (this.cveUpdateTask) {
+      this.scheduleTask({
+        id: 'daily-cve-update',
+        name: 'Daily NVD CVE Database Update',
+        schedule: '0 2 * * *', // At 02:00 every day
+        status: 'active'
+      });
+      logger.info('CVE database update scheduled for daily execution at 2 AM');
+    }
   }
   
   /**
@@ -120,28 +152,32 @@ export class EnhancedSchedulerService {
    */
   private async executeTask(task: ScheduledTask): Promise<void> {
     logger.info(`Executing scheduled task: ${task.name}`);
-    
+
     try {
       switch (task.id) {
         case 'quarterly-model-research':
           await this.runQuarterlyModelResearch();
           break;
-          
+
         case 'weekly-freshness-check':
           await this.runWeeklyFreshnessCheck();
           break;
-          
+
         case 'daily-cost-review':
           await this.runDailyCostOptimization();
           break;
-          
+
+        case 'daily-cve-update':
+          await this.runDailyCVEUpdate();
+          break;
+
         default:
           logger.warn(`Unknown task: ${task.id}`);
       }
-      
+
       task.lastRun = new Date();
       logger.info(`Task ${task.name} completed successfully`);
-      
+
     } catch (error) {
       logger.error(`Task ${task.name} failed:`, { error: String(error) });
     }
@@ -266,29 +302,54 @@ export class EnhancedSchedulerService {
    */
   async runDailyCostOptimization(): Promise<void> {
     logger.info('=== DAILY COST OPTIMIZATION STARTING ===');
-    
+
     // Analyze usage patterns and costs
     // const usageStats = await this.vectorStorage.getModelUsageStats(); // TODO: Implement method
     const usageStats = {}; // Placeholder
-    
+
     // Identify high-cost, low-value configurations
     for (const stat of Object.values(usageStats)) {
       const costPerRequest = (stat as any).totalCost / (stat as any).requestCount;
-      
+
       if (costPerRequest > 0.01) { // $0.01 per request threshold
         logger.warn(`High cost detected for ${(stat as any).role}: $${costPerRequest.toFixed(4)} per request`);
-        
+
         // Find more cost-effective alternative
         const requirements = this.getRequirementsForRole((stat as any).role);
         requirements.weights.cost = Math.min(requirements.weights.cost * 1.5, 0.8); // Increase cost weight
-        
+
         const selection = await this.modelSelector.selectModelsForRole(requirements);
-        
+
         logger.info(`Suggested alternative: ${selection.primary.id} (${(selection.primary.pricing.prompt + selection.primary.pricing.completion) / 2}/M tokens)`);
       }
     }
-    
+
     logger.info('=== DAILY COST OPTIMIZATION COMPLETED ===');
+  }
+
+  /**
+   * Run daily CVE database update
+   * Downloads NVD delta updates and stores in Supabase
+   */
+  async runDailyCVEUpdate(): Promise<void> {
+    if (!this.cveUpdateTask) {
+      logger.error('CVE update task not initialized - NVD_API_KEY may be missing');
+      return;
+    }
+
+    logger.info('=== DAILY CVE DATABASE UPDATE STARTING ===');
+
+    try {
+      await this.cveUpdateTask.execute();
+      logger.info('=== DAILY CVE DATABASE UPDATE COMPLETED ===');
+    } catch (error: any) {
+      logger.error('=== DAILY CVE DATABASE UPDATE FAILED ===', {
+        error: error.message,
+        stack: error.stack
+      });
+      // Note: Error is already logged in CVEUpdateTask, but we log here too for scheduler context
+      throw error;
+    }
   }
   
   /**

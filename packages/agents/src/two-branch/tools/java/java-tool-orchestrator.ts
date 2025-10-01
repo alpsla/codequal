@@ -169,7 +169,7 @@ export class JavaToolOrchestrator {
 
   constructor(
     config: Partial<JavaToolConfig> = {},
-    dockerImage: string = 'registry.digitalocean.com/codequal-registry/analyzer:lang-java-v5.3-arm'
+    dockerImage: string = 'iad.ocir.io/codequal/analyzer:lang-java-v5.3-arm'
   ) {
     this.config = { ...DEFAULT_JAVA_CONFIG, ...config };
     this.dockerImage = dockerImage;

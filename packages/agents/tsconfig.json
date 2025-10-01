@@ -27,7 +27,9 @@
     "**/*.spec.ts",
     "**/tests/**",
     "**/archive/**",
-    "**/deprecated/**"
+    "**/deprecated/**",
+    "**/_archived/**",
+    "**/_archived_supabase_cve/**"
   ],
   "references": [
     { "path": "../core" },
