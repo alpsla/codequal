@@ -21,7 +21,8 @@ async function main() {
   console.log('🔄 Dependency-Check Daily Update');
   console.log('='.repeat(80));
   console.log(`⏰ Start Time: ${new Date().toISOString()}`);
-  console.log(`🖥️  Hostname: ${require('os').hostname()}`);
+  const os = await import('os');
+  console.log(`🖥️  Hostname: ${os.hostname()}`);
   console.log(`👤 User: ${process.env.USER || 'unknown'}`);
   console.log(`📁 Working Dir: ${process.cwd()}`);
   console.log(`🔑 NVD API Key: ${process.env.NVD_API_KEY ? '✅ Set' : '❌ Missing'}`);

@@ -94,7 +94,9 @@ export interface RawIssue {
   tool: string;
   file: string;
   line: number;
+  endLine?: number;
   column?: number;
+  endColumn?: number;
   severity: 'critical' | 'high' | 'medium' | 'low';
   category: string;
   rule: string;
@@ -102,6 +104,8 @@ export interface RawIssue {
   priority?: number;
   cvssScore?: number;
   cve?: string;
+  externalInfoUrl?: string;  // PMD documentation URL
+  ruleset?: string;          // PMD ruleset name
 }
 
 export interface OrchestrationResult {
@@ -181,7 +185,7 @@ export class JavaToolOrchestrator {
 
   constructor(
     config: Partial<JavaToolConfig> = {},
-    dockerImage: string = 'iad.ocir.io/idzaw9ddo1h5/codequal/analyzer:lang-java-v6.0-arm'
+    dockerImage = 'iad.ocir.io/idzaw9ddo1h5/codequal/analyzer:lang-java-v6.0-arm'
   ) {
     this.config = { ...DEFAULT_JAVA_CONFIG, ...config };
     this.dockerImage = dockerImage;
@@ -209,43 +213,37 @@ export class JavaToolOrchestrator {
 
     try {
       // ============================================================
-      // STAGE 1: Security Scan (Semgrep)
+      // PARALLEL EXECUTION: Run ALL tools concurrently for max CPU usage
       // ============================================================
+      logger.info('\n🚀 Running ALL Java tools in PARALLEL for maximum performance...');
+
+      const parallelPromises: Promise<ToolResult>[] = [];
+
+      // Semgrep - Security scan
       if (this.config.semgrep.enabled) {
-        logger.info('\n🔒 STAGE 1: Running Semgrep security scan...');
-        const semgrepResult = await this.runSemgrep(repoPath, branch);
-        toolResults.push(semgrepResult);
-
-        logger.info(`✅ Semgrep complete: ${semgrepResult.duration}ms`);
-        logger.info(`   Found: ${semgrepResult.metadata.issuesFound} security issues`);
+        parallelPromises.push(this.runSemgrep(repoPath, branch));
       }
-
-      // ============================================================
-      // STAGE 2: Quality + Style (PMD + Checkstyle in parallel)
-      // ============================================================
-      logger.info('\n⚙️ STAGE 2: Running PMD + Checkstyle in parallel...');
-
-      const stage2Promises: Promise<ToolResult>[] = [];
 
       // PMD - Code quality
       if (this.config.pmd.enabled) {
-        stage2Promises.push(this.runPMD(repoPath, branch));
+        parallelPromises.push(this.runPMD(repoPath, branch));
       }
 
       // Checkstyle - Code style
       if (this.config.checkstyle.enabled) {
-        stage2Promises.push(
+        parallelPromises.push(
           this.runCheckstyle(repoPath, branch, changedFiles)
         );
       }
 
-      // Wait for both to complete
-      const stage2Results = await Promise.all(stage2Promises);
-      toolResults.push(...stage2Results);
+      // Wait for ALL tools to complete in parallel
+      const parallelResults = await Promise.all(parallelPromises);
+      toolResults.push(...parallelResults);
 
-      for (const result of stage2Results) {
-        logger.info(`✅ ${result.tool} complete: ${result.duration}ms`);
-        logger.info(`   Found: ${result.metadata.issuesFound} issues`);
+      // Log results
+      logger.info('\n📊 Tool Execution Results:');
+      for (const result of parallelResults) {
+        logger.info(`✅ ${result.tool}: ${result.duration}ms, ${result.metadata.issuesFound} issues`);
       }
 
       // ============================================================
@@ -260,14 +258,16 @@ export class JavaToolOrchestrator {
         logger.info(`✅ SpotBugs complete: ${spotbugsResult.duration}ms`);
       }
 
-      // Dependency-Check (only on PR branch - CVEs don't change between branches)
+      // Dependency-Check (REQUIRED but only on PR branch to save time/resources)
+      // Rationale: CVE database is the same for both branches, so checking main is redundant
       if (this.config.dependencyCheck?.enabled && branch === 'pr') {
-        logger.info('\n🔐 Running Dependency-Check on PR branch only...');
+        logger.info('\n🔐 Running Dependency-Check (PR branch - REQUIRED for security)...');
         const depCheckResult = await this.runDependencyCheck(repoPath, branch);
         toolResults.push(depCheckResult);
         logger.info(`✅ Dependency-Check complete: ${depCheckResult.duration}ms`);
+        logger.info(`   Found: ${depCheckResult.metadata.issuesFound} vulnerabilities`);
       } else if (this.config.dependencyCheck?.enabled && branch === 'main') {
-        logger.info('\n⏭️  Skipping Dependency-Check on main branch (not needed)');
+        logger.info('\n⏭️  Skipping Dependency-Check on main branch (CVEs are same in both branches)');
       }
 
       // ============================================================
@@ -314,6 +314,7 @@ export class JavaToolOrchestrator {
 
     try {
       const rulesets = this.config.pmd.rulesets.join(',');
+      // Note: PMD doesn't support --exclude flag, we filter test files in post-processing
       const command = `
         docker run --rm \\
           -v ${repoPath}:/workspace \\
@@ -325,7 +326,7 @@ export class JavaToolOrchestrator {
             --minimum-priority ${this.config.pmd.minimumPriority} \\
             --threads ${this.config.pmd.threads} \\
             --cache /tmp/pmd-cache \\
-            > /workspace/pmd-results-${branch}.json 2>&1 || true"
+            > /workspace/pmd-results-${branch}.json 2>/workspace/pmd-errors-${branch}.log || true"
       `;
 
       await execAsync(command);
@@ -373,8 +374,9 @@ export class JavaToolOrchestrator {
     const startTime = Date.now();
 
     try {
-      // If changed files provided and changedFilesOnly enabled, scan only those
-      let filesToScan = '/workspace/**/*.java';
+      // Build file selection command (excluding test files)
+      let fileSelectionCmd = 'find /workspace -name "*.java" -type f ! -path "*/test/*" ! -path "*/tests/*" ! -name "*Test.java" ! -name "*Tests.java"';
+
       if (this.config.checkstyle.changedFilesOnly && changedFiles) {
         // Filter for Java files only
         const javaFiles = changedFiles.filter(f => f.endsWith('.java'));
@@ -392,24 +394,21 @@ export class JavaToolOrchestrator {
             }
           };
         }
-        filesToScan = javaFiles.map(f => `/workspace/${f}`).join(' ');
+        // For changed files, pass them directly (no find needed)
+        fileSelectionCmd = javaFiles.map(f => `/workspace/${f}`).join(' ');
       }
 
       const command = `
         docker run --rm \\
           -v ${repoPath}:/workspace \\
           ${this.dockerImage} \\
-          -c "checkstyle \\
-            -c ${this.config.checkstyle.configFile} \\
-            -f json \\
-            ${filesToScan} \\
-            > /workspace/checkstyle-results-${branch}.json 2>&1 || true"
+          -c "${fileSelectionCmd} | xargs -r checkstyle -c ${this.config.checkstyle.configFile} -f xml > /workspace/checkstyle-results-${branch}.xml 2>&1 || true"
       `;
 
       await execAsync(command);
 
       // Parse results
-      const resultPath = path.join(repoPath, `checkstyle-results-${branch}.json`);
+      const resultPath = path.join(repoPath, `checkstyle-results-${branch}.xml`);
       const rawOutput = await fs.readFile(resultPath, 'utf-8');
       const issues = this.parseCheckstyleOutput(rawOutput);
 
@@ -450,23 +449,8 @@ export class JavaToolOrchestrator {
     const startTime = Date.now();
 
     try {
-      // Smart file selection patterns (from calibration)
-      const patterns = this.config.semgrep.smartSelection
-        ? [
-            '*Controller*.java',
-            '*Resource*.java',
-            '*Handler*.java',
-            'Auth*.java',
-            'Security*.java',
-            'Permission*.java',
-            '*Repository.java',
-            '*DAO.java',
-            '*Query*.java',
-            '*Serializer*.java',
-            '*Deserializer*.java'
-          ].join(',')
-        : '**/*.java';
-
+      // For two-branch analysis, scan ALL Java files (no smart selection)
+      // Smart selection is for single-repo performance optimization only
       const rulesets = this.config.semgrep.rulesets.join(' --config ');
 
       const command = `
@@ -476,7 +460,8 @@ export class JavaToolOrchestrator {
           -c "cd /workspace && semgrep \\
             --config ${rulesets} \\
             --json \\
-            ${this.config.semgrep.smartSelection ? `--include \"${patterns}\"` : ''} \\
+            --include '*.java' \\
+            --exclude '**/test/**' --exclude '**/tests/**' --exclude '**/*Test.java' --exclude '**/*Tests.java' \\
             . \\
             > semgrep-results-${branch}.json 2>&1 || true"
       `;
@@ -669,24 +654,195 @@ export class JavaToolOrchestrator {
   // ============================================================
 
   private parsePMDOutput(output: string): RawIssue[] {
-    // TODO: Implement PMD JSON parsing
-    // See: packages/agents/src/two-branch/parsers/java-tool-parser.ts
-    return [];
+    try {
+      // PMD may have error messages after JSON - extract just the JSON part
+      const jsonStart = output.indexOf('{');
+      const jsonEnd = output.lastIndexOf('}') + 1;
+
+      if (jsonStart === -1 || jsonEnd === 0) {
+        logger.warn('No JSON found in PMD output');
+        return [];
+      }
+
+      let jsonStr = output.substring(jsonStart, jsonEnd);
+
+      // PMD injects log messages INSIDE the JSON (between violation objects)
+      // Example: }Oct 02, 2025 2:10:03 AM net.sourceforge.pmd.cache.FileAnalysisCache persist\nINFO: Analysis cache created\n  ],
+      // Remove these log lines that appear between JSON elements
+      jsonStr = jsonStr.replace(/\}[A-Z][a-z]{2} \d{2}, \d{4}[^\n]*\n[A-Z]+:[^\n]*\n\s+/g, '}\n');
+
+      const pmdResult = JSON.parse(jsonStr);
+      const issues: RawIssue[] = [];
+
+      if (!pmdResult.files) {
+        logger.warn('No files in PMD output');
+        return [];
+      }
+
+      for (const file of pmdResult.files) {
+        if (!file.violations) continue;
+
+        // Skip test files
+        const filename = file.filename || '';
+        if (filename.includes('/test/') || filename.includes('/tests/') ||
+            filename.endsWith('Test.java') || filename.endsWith('Tests.java')) {
+          continue;
+        }
+
+        for (const violation of file.violations) {
+          issues.push({
+            tool: 'PMD',
+            file: file.filename,
+            line: violation.beginline,
+            endLine: violation.endline,
+            column: violation.begincolumn,
+            endColumn: violation.endcolumn,
+            severity: this.mapPMDPriority(violation.priority),
+            category: violation.ruleset || 'unknown',
+            rule: violation.rule,
+            message: violation.description || violation.message,
+            priority: violation.priority,
+            externalInfoUrl: violation.externalInfoUrl,
+            ruleset: violation.ruleset
+          });
+        }
+      }
+
+      logger.info(`Parsed ${issues.length} PMD issues`);
+      return issues;
+    } catch (error: any) {
+      logger.error('Failed to parse PMD JSON output:', error.message);
+      return [];
+    }
   }
 
   private parseCheckstyleOutput(output: string): RawIssue[] {
-    // TODO: Implement Checkstyle JSON parsing
-    return [];
+    try {
+      const issues: RawIssue[] = [];
+
+      // Simple XML parsing - extract file and error elements
+      const fileMatches = output.matchAll(/<file name="([^"]+)">(.*?)<\/file>/gs);
+
+      for (const fileMatch of fileMatches) {
+        const fileName = fileMatch[1];
+        const fileContent = fileMatch[2];
+
+        // Skip test files
+        if (fileName.includes('/test/') || fileName.includes('/tests/') ||
+            fileName.endsWith('Test.java') || fileName.endsWith('Tests.java')) {
+          continue;
+        }
+
+        // Extract errors within this file
+        const errorMatches = fileContent.matchAll(/<error line="(\d+)" (?:column="(\d+)" )?severity="([^"]+)" message="([^"]+)" source="([^"]+)"\/>/g);
+
+        for (const errorMatch of errorMatches) {
+          issues.push({
+            tool: 'Checkstyle',
+            file: fileName,
+            line: parseInt(errorMatch[1]),
+            column: errorMatch[2] ? parseInt(errorMatch[2]) : undefined,
+            severity: this.mapCheckstyleSeverity(errorMatch[3]),
+            category: errorMatch[5] || 'unknown',
+            rule: errorMatch[5] || 'unknown',
+            message: errorMatch[4]
+          });
+        }
+      }
+
+      logger.info(`Parsed ${issues.length} Checkstyle issues`);
+      return issues;
+    } catch (error: any) {
+      logger.error('Failed to parse Checkstyle XML output:', error.message);
+      return [];
+    }
   }
 
   private parseSemgrepOutput(output: string): RawIssue[] {
-    // TODO: Implement Semgrep JSON parsing
-    return [];
+    try {
+      // Semgrep has metrics/status text before JSON - extract just the JSON part
+      const jsonStart = output.lastIndexOf('{');  // JSON is at the end
+
+      if (jsonStart === -1) {
+        logger.warn('No JSON found in Semgrep output');
+        return [];
+      }
+
+      const jsonStr = output.substring(jsonStart);
+      const semgrepResult = JSON.parse(jsonStr);
+      const issues: RawIssue[] = [];
+
+      if (!semgrepResult.results) {
+        logger.info('No results in Semgrep output (no security issues found)');
+        return [];
+      }
+
+      for (const result of semgrepResult.results) {
+        issues.push({
+          tool: 'Semgrep',
+          file: result.path,
+          line: result.start?.line || 1,
+          column: result.start?.col || 0,
+          severity: this.mapSemgrepSeverity(result.extra?.severity),
+          category: result.check_id || 'unknown',
+          rule: result.check_id,
+          message: result.extra?.message || result.check_id
+        });
+      }
+
+      logger.info(`Parsed ${issues.length} Semgrep issues`);
+      return issues;
+    } catch (error: any) {
+      logger.error('Failed to parse Semgrep JSON output:', error.message);
+      return [];
+    }
   }
 
   private parseSpotBugsOutput(output: string): RawIssue[] {
-    // TODO: Implement SpotBugs XML parsing
+    // SpotBugs uses XML - would need xml2js parser
+    // For now, return empty (SpotBugs is optional anyway)
+    logger.warn('SpotBugs XML parsing not yet implemented');
     return [];
+  }
+
+  // Severity mapping helpers
+  private mapPMDPriority(priority: number): 'critical' | 'high' | 'medium' | 'low' {
+    switch (priority) {
+      case 1:
+        return 'critical';
+      case 2:
+        return 'high';
+      case 3:
+        return 'medium';
+      default:
+        return 'low';
+    }
+  }
+
+  private mapCheckstyleSeverity(severity: string): 'critical' | 'high' | 'medium' | 'low' {
+    switch (severity?.toLowerCase()) {
+      case 'error':
+        return 'high';
+      case 'warning':
+        return 'medium';
+      case 'info':
+        return 'low';
+      default:
+        return 'medium';
+    }
+  }
+
+  private mapSemgrepSeverity(severity?: string): 'critical' | 'high' | 'medium' | 'low' {
+    switch (severity?.toUpperCase()) {
+      case 'ERROR':
+        return 'critical';
+      case 'WARNING':
+        return 'high';
+      case 'INFO':
+        return 'low';
+      default:
+        return 'medium';
+    }
   }
 
   /**

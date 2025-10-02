@@ -16,6 +16,7 @@ import { createClient } from '@supabase/supabase-js';
 import { logger } from '../utils/logger';
 import { UnifiedLocationService } from '../../standard/services/unified-location-service';
 import { KubernetesCodeFetcher } from '../utils/kubernetes-code-fetcher';
+import { JavaToolOrchestrator, ToolResult as JavaToolResult, RawIssue, JavaToolConfig } from '../tools/java/java-tool-orchestrator';
 
 const execAsync = promisify(exec);
 
@@ -172,6 +173,371 @@ export class V9ToolOrchestrator {
     this.logIssueSummary(dedupedIssues);
 
     return dedupedIssues;
+  }
+
+  /**
+   * Java-specific orchestration using JavaToolOrchestrator
+   * This method directly uses the JavaToolOrchestrator which returns structured issues
+   */
+  async orchestrateJavaAnalysis(
+    repoPath: string,
+    branch: 'main' | 'pr',
+    changedFiles?: string[],
+    options?: {
+      severityFilter?: 'critical' | 'high' | 'medium' | 'low' | 'all';
+      enableFallback?: boolean;  // If true, fall back to next severity if no issues found
+    }
+  ): Promise<ProcessedIssue[]> {
+    logger.info(`🎯 Starting Java-Specific Tool Orchestration (${branch} branch)`);
+    logger.info(`📁 Repository: ${repoPath}`);
+
+    try {
+      // Create JavaToolOrchestrator with default config
+      const javaConfig: Partial<JavaToolConfig> = {
+        pmd: {
+          enabled: true,
+          minimumPriority: 2,  // Priority 1 = Critical, 2 = High (include both for better analysis)
+          rulesets: ['category/java/errorprone.xml', 'category/java/bestpractices.xml'],
+          parallel: 2,
+          threads: 3,
+          memory: '5g'
+        },
+        checkstyle: {
+          enabled: false,  // Disabled for critical-only analysis (Checkstyle doesn't have critical-severity issues)
+          configFile: '/sun_checks.xml',
+          parallel: 2,
+          memory: '3g',
+          changedFilesOnly: false
+        },
+        semgrep: {
+          enabled: true,
+          rulesets: ['p/security-audit', 'p/java'],
+          parallel: 4,
+          smartSelection: true,
+          memory: '2g'
+        },
+        spotbugs: {
+          enabled: false,  // Optional - requires compilation
+          priority: 'high',
+          effort: 'default',
+          memory: '4g'
+        },
+        dependencyCheck: {
+          enabled: true,  // REQUIRED - always run for security vulnerabilities
+          failOnCVSS: 7.0,
+          timeout: 300,
+          postgres: {
+            enabled: true,
+            connectionString: process.env.DEPCHECK_DB_URL || 'jdbc:postgresql://localhost:5432/nvd',
+            dbUser: process.env.DEPCHECK_DB_USER || 'depcheck_scanner',
+            dbPassword: process.env.DEPCHECK_DB_PASSWORD || '',
+            dbDriver: process.env.DEPCHECK_JDBC_DRIVER || '/tmp/jdbc-drivers/postgresql-42.7.1.jar'
+          }
+        }
+      };
+
+      const javaOrchestrator = new JavaToolOrchestrator(javaConfig);
+
+      // Run Java tools
+      logger.info('🔧 Executing Java tools via JavaToolOrchestrator...');
+      const orchestrationResult = await javaOrchestrator.orchestrate(
+        repoPath,
+        branch,
+        changedFiles
+      );
+
+      if (!orchestrationResult.success) {
+        logger.error('❌ Java tool orchestration failed');
+        return [];
+      }
+
+      logger.info(`✅ Java tools executed: ${orchestrationResult.toolResults.length} tools`);
+      logger.info(`📊 Total issues found: ${orchestrationResult.summary.totalIssues}`);
+
+      // Convert JavaToolResult[] to ProcessedIssue[] with code enrichment
+      const processedIssues = await this.convertJavaResultsToProcessedIssues(
+        orchestrationResult.toolResults,
+        branch,
+        repoPath
+      );
+
+      logger.info(`✅ Converted to ${processedIssues.length} processed issues`);
+      this.logIssueSummary(processedIssues);
+
+      // Filter by severity if requested
+      if (options?.severityFilter && options.severityFilter !== 'all') {
+        return this.applySeverityFilter(
+          processedIssues,
+          options.severityFilter,
+          options.enableFallback ?? true  // Default: enable fallback
+        );
+      }
+
+      return processedIssues;
+
+    } catch (error: any) {
+      logger.error(`❌ Java analysis failed: ${error.message}`);
+      logger.error(error.stack);
+      return [];
+    }
+  }
+
+  /**
+   * Apply severity filtering with automatic fallback
+   * If no issues found at requested severity, falls back to next level
+   */
+  private applySeverityFilter(
+    issues: ProcessedIssue[],
+    requestedSeverity: 'critical' | 'high' | 'medium' | 'low',
+    enableFallback: boolean
+  ): ProcessedIssue[] {
+    const severityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
+    const severityNames = ['critical', 'high', 'medium', 'low'] as const;
+
+    let currentSeverity = requestedSeverity;
+    let filtered: ProcessedIssue[] = [];
+
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const minSeverity = severityOrder[currentSeverity];
+      filtered = issues.filter(issue =>
+        severityOrder[issue.severity] <= minSeverity
+      );
+
+      if (filtered.length > 0 || !enableFallback) {
+        // Found issues or fallback disabled
+        if (currentSeverity !== requestedSeverity) {
+          logger.info(`⚠️  No ${requestedSeverity} issues found, fell back to ${currentSeverity}+`);
+        }
+        logger.info(`🔍 Filtered to ${filtered.length} issues (${currentSeverity}+ severity)`);
+        return filtered;
+      }
+
+      // Try next severity level
+      const currentIndex = severityNames.indexOf(currentSeverity);
+      if (currentIndex >= severityNames.length - 1) {
+        // Reached lowest severity, return empty
+        logger.warn(`⚠️  No issues found at any severity level`);
+        return [];
+      }
+
+      currentSeverity = severityNames[currentIndex + 1];
+      logger.info(`⚠️  No ${severityNames[currentIndex]} issues found, trying ${currentSeverity}...`);
+    }
+  }
+
+  /**
+   * Extract code snippet from file at specified line
+   */
+  private async extractCodeSnippet(
+    repoPath: string,
+    filePath: string,
+    startLine: number,
+    endLine?: number,
+    contextLines = 3
+  ): Promise<string> {
+    try {
+      const fs = await import('fs/promises');
+      const path = await import('path');
+
+      // Remove /workspace prefix if present
+      const cleanPath = filePath.replace('/workspace/', '');
+      const fullPath = path.join(repoPath, cleanPath);
+
+      const content = await fs.readFile(fullPath, 'utf-8');
+      const lines = content.split('\n');
+
+      const actualEndLine = endLine || startLine;
+      const snippetStart = Math.max(0, startLine - contextLines - 1);
+      const snippetEnd = Math.min(lines.length, actualEndLine + contextLines);
+
+      const snippet = lines.slice(snippetStart, snippetEnd)
+        .map((line, idx) => {
+          const lineNum = snippetStart + idx + 1;
+          const marker = (lineNum >= startLine && lineNum <= actualEndLine) ? '→' : ' ';
+          return `${String(lineNum).padStart(4, ' ')}${marker} ${line}`;
+        })
+        .join('\n');
+
+      return snippet;
+    } catch (error: any) {
+      return `// Unable to extract code snippet: ${error.message}`;
+    }
+  }
+
+  /**
+   * Generate AI-powered fix suggestion and impact analysis
+   */
+  private generateEnrichedSuggestion(issue: RawIssue): {
+    suggestion: string;
+    impact: string;
+  } {
+    // For now, use rule-based suggestions (AI integration can be added later)
+    const impacts: Record<string, string> = {
+      'ReturnEmptyCollectionRatherThanNull': 'Returning null instead of empty collections can cause NullPointerExceptions in calling code, leading to runtime crashes.',
+      'AvoidCatchingGenericException': 'Catching generic exceptions masks specific error conditions, making debugging difficult and potentially hiding critical failures.',
+      'GuardLogStatement': 'Unguarded log statements execute expensive string operations even when logging is disabled, degrading performance.',
+    };
+
+    const suggestions: Record<string, string> = {
+      'ReturnEmptyCollectionRatherThanNull': `Instead of returning null, return Collections.emptyList(), Collections.emptySet(), or Collections.emptyMap(). Example:\n\n  // Bad\n  return null;\n  \n  // Good\n  return Collections.emptyList();`,
+      'AvoidCatchingGenericException': 'Catch specific exception types instead of Exception or Throwable. This allows proper error handling for different failure scenarios.',
+      'GuardLogStatement': `Wrap log statements with level guards:\n\n  // Bad\n  log.debug("Expensive: " + data);\n  \n  // Good\n  if (log.isDebugEnabled()) {\n    log.debug("Expensive: " + data);\n  }`,
+    };
+
+    return {
+      impact: impacts[issue.rule] || `Code quality issue detected by ${issue.tool}. ${issue.message}`,
+      suggestion: suggestions[issue.rule] || `Review the ${issue.tool} documentation: ${(issue as any).externalInfoUrl || 'N/A'}`
+    };
+  }
+
+  /**
+   * Convert JavaToolOrchestrator's ToolResult[] to V9's ProcessedIssue[]
+   */
+  private async convertJavaResultsToProcessedIssues(
+    javaResults: JavaToolResult[],
+    branch: string,
+    repoPath: string
+  ): Promise<ProcessedIssue[]> {
+    const processedIssues: ProcessedIssue[] = [];
+
+    for (const toolResult of javaResults) {
+      if (!toolResult.success || !toolResult.issues || toolResult.issues.length === 0) {
+        continue;
+      }
+
+      // Convert each RawIssue to ProcessedIssue (with enrichment)
+      for (const rawIssue of toolResult.issues) {
+        // Ensure message exists (required field for deduplication)
+        const message = rawIssue.message || rawIssue.rule || 'No description available';
+
+        // Extract code snippet from file
+        const codeSnippet = await this.extractCodeSnippet(
+          repoPath,
+          rawIssue.file,
+          rawIssue.line,
+          rawIssue.endLine
+        );
+
+        // Generate enriched suggestion and impact
+        const enrichment = this.generateEnrichedSuggestion(rawIssue);
+
+        const processedIssue: ProcessedIssue = {
+          id: `${toolResult.tool}-${branch}-${rawIssue.file}-${rawIssue.line}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          title: `${rawIssue.rule}: ${message.substring(0, 80)}`, // Rule + message
+          severity: rawIssue.severity,
+          category: this.mapJavaToolToCategory(toolResult.tool),
+          file: rawIssue.file,
+          line: rawIssue.line,
+          column: rawIssue.column,
+          tool: toolResult.tool,
+          agent: this.mapJavaToolToAgent(toolResult.tool),
+          confidence: this.calculateConfidence(rawIssue),
+          description: `${message}\n\n**Impact**: ${enrichment.impact}`,  // Message + Impact
+          suggestion: enrichment.suggestion,
+          codeSnippet: codeSnippet,
+          rawToolOutput: JSON.stringify(rawIssue, null, 2)
+        };
+
+        processedIssues.push(processedIssue);
+      }
+    }
+
+    return processedIssues;
+  }
+
+  /**
+   * Convert ProcessedIssue to ToolIssue format (for TwoBranchComparator)
+   */
+  convertProcessedIssuesToToolIssues(processedIssues: ProcessedIssue[]): any[] {
+    return processedIssues.map(issue => ({
+      id: issue.id,
+      tool: issue.tool,
+      ruleId: issue.title.substring(0, 50), // Use title as ruleId
+      category: issue.category as any,
+      file: issue.file,
+      startLine: issue.line,
+      endLine: issue.line,
+      startColumn: issue.column,
+      endColumn: issue.column,
+      severity: issue.severity as any,
+      message: issue.description, // ProcessedIssue.description → ToolIssue.message
+      codeSnippet: issue.codeSnippet,
+      metadata: {
+        agent: issue.agent,
+        confidence: issue.confidence,
+        suggestion: issue.suggestion,
+        suggestedFix: issue.suggestedFix
+      }
+    }));
+  }
+
+  /**
+   * Map Java tool names to V9 categories
+   */
+  private mapJavaToolToCategory(tool: string): string {
+    const mapping: Record<string, string> = {
+      'PMD': 'code-quality',
+      'Checkstyle': 'code-style',
+      'Semgrep': 'security',
+      'SpotBugs': 'bugs',
+      'Dependency-Check': 'dependencies'
+    };
+    return mapping[tool] || 'general';
+  }
+
+  /**
+   * Map Java tool names to V9 agent names
+   */
+  private mapJavaToolToAgent(tool: string): string {
+    const mapping: Record<string, string> = {
+      'PMD': 'CodeQualityAgent',
+      'Checkstyle': 'CodeQualityAgent',
+      'Semgrep': 'SecurityAgent',
+      'SpotBugs': 'CodeQualityAgent',
+      'Dependency-Check': 'DependencyAgent'
+    };
+    return mapping[tool] || 'CodeQualityAgent';
+  }
+
+  /**
+   * Calculate confidence score based on issue metadata
+   */
+  private calculateConfidence(issue: RawIssue): number {
+    // Base confidence on severity and tool type
+    let confidence = 0.7; // Default
+
+    // Higher confidence for critical/high severity
+    if (issue.severity === 'critical') confidence = 0.95;
+    else if (issue.severity === 'high') confidence = 0.85;
+    else if (issue.severity === 'medium') confidence = 0.75;
+    else if (issue.severity === 'low') confidence = 0.65;
+
+    // Boost confidence if CVE is present (Dependency-Check)
+    if (issue.cve) confidence = Math.min(0.98, confidence + 0.1);
+
+    // Boost confidence if CVSS score is high
+    if (issue.cvssScore && issue.cvssScore >= 9.0) confidence = 0.98;
+    else if (issue.cvssScore && issue.cvssScore >= 7.0) confidence = Math.min(0.95, confidence + 0.05);
+
+    return confidence;
+  }
+
+  /**
+   * Generate fix suggestion based on issue metadata
+   */
+  private generateSuggestion(issue: RawIssue): string | undefined {
+    // For CVEs, suggest updating dependency
+    if (issue.cve) {
+      return `Update dependency to patch ${issue.cve} (CVSS: ${issue.cvssScore || 'N/A'})`;
+    }
+
+    // For code quality issues, use the rule name
+    if (issue.rule) {
+      return `Review and fix violation of rule: ${issue.rule}`;
+    }
+
+    return undefined;
   }
 
   /**

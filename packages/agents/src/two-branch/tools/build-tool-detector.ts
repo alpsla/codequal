@@ -360,8 +360,8 @@ export async function compileRepository(
   logger.info(`🔨 Compiling repository with: ${buildInfo.buildTool.tool}`);
   logger.info(`   Command: ${buildInfo.buildTool.compileCommand}`);
 
-  const { exec } = require('child_process');
-  const { promisify } = require('util');
+  const { exec } = await import('child_process');
+  const { promisify } = await import('util');
   const execAsync = promisify(exec);
 
   const startTime = Date.now();
