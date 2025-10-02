@@ -1,11 +1,51 @@
 # Dependency-Check: Next Session Quick Start
 
-**Last Updated:** 2025-10-01 18:00 UTC
-**Current Status:** ⏳ CVE database loading (67% complete - 2018-2025 continuation)
+**Last Updated:** 2025-10-02 00:20 UTC
+**Current Status:** 🔴 **BLOCKING ISSUE - Docker v6.0 ENTRYPOINT Pattern Fix Required**
+**Priority:** HIGH - Start here immediately
 
 ---
 
-## Current Session Summary (2025-10-01)
+## 🔴 CRITICAL: Docker v6.0 Architecture Issue (2025-10-02)
+
+### Problem Discovered
+The `analyzer:lang-java-v6.0-arm` Docker image uses a **custom ENTRYPOINT** instead of standard bash/sh shells. All JavaToolOrchestrator methods are using the wrong pattern.
+
+**Current Pattern** (❌ Broken):
+```typescript
+docker run image bash -c 'command'  // Cannot execute binary file error
+```
+
+**Required Pattern** (✅ Working):
+```typescript
+docker run image -c "command"  // Uses ENTRYPOINT, works perfectly
+```
+
+### Proof It Works
+The monthly-log4shell-validation.sh script **runs successfully** on Oracle Cloud using the same v6.0 image with the correct pattern.
+
+### Immediate Action Required
+
+**File to Fix**: `src/two-branch/tools/java/java-tool-orchestrator.ts`
+
+**4 Methods Need Updates**:
+1. `runPMD()` - Line ~303
+2. `runCheckstyle()` - Line ~384
+3. `runSemgrep()` - Line ~450
+4. `runDependencyCheck()` - Line ~605
+
+**Simple Change for Each Method**:
+- Remove: `bash -c 'command'`
+- Replace with: `-c "command"`
+- Change single quotes to double quotes
+
+**Estimated Time**: 2 hours total (30 min coding + 90 min testing)
+
+**Complete Instructions**: See `DOCKER_V6_ARCHITECTURE_DISCOVERY.md`
+
+---
+
+## Previous Session Summary (2025-10-01)
 
 ### Major Achievement: PostgreSQL Migration Complete ✅
 

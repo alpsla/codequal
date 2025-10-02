@@ -57,11 +57,17 @@ export interface JavaToolConfig {
   };
   dependencyCheck?: {
     enabled: boolean;
-    nvdApiKey?: string;
     failOnCVSS: number;             // e.g., 7.0 for HIGH and above
-    updateFrequency: 'always' | 'daily' | 'weekly';
     suppressionFile?: string;
     timeout: number;
+    // PostgreSQL backend configuration (v6.0+)
+    postgres?: {
+      enabled: boolean;
+      connectionString: string;     // jdbc:postgresql://host:port/database
+      dbUser: string;               // depcheck_scanner (read-only)
+      dbPassword: string;
+      dbDriver: string;              // /tmp/jdbc-drivers/postgresql-42.7.1.jar
+    };
   };
 }
 
@@ -151,10 +157,16 @@ export const DEFAULT_JAVA_CONFIG: JavaToolConfig = {
     memory: '4g'
   },
   dependencyCheck: {
-    enabled: false,                  // Optional - requires NVD API key
+    enabled: false,                  // Optional - enable for CVE scanning
     failOnCVSS: 7.0,                // Block only HIGH and CRITICAL
-    updateFrequency: 'daily',
-    timeout: 600
+    timeout: 600,
+    postgres: {
+      enabled: true,                 // Use PostgreSQL backend (v6.0+)
+      connectionString: 'jdbc:postgresql://127.0.0.1:5432/depcheck',
+      dbUser: 'depcheck_scanner',
+      dbPassword: 'depcheck_scan_2025',
+      dbDriver: '/tmp/jdbc-drivers/postgresql-42.7.1.jar'
+    }
   }
 };
 
@@ -169,7 +181,7 @@ export class JavaToolOrchestrator {
 
   constructor(
     config: Partial<JavaToolConfig> = {},
-    dockerImage: string = 'iad.ocir.io/codequal/analyzer:lang-java-v5.3-arm'
+    dockerImage: string = 'iad.ocir.io/idzaw9ddo1h5/codequal/analyzer:lang-java-v6.0-arm'
   ) {
     this.config = { ...DEFAULT_JAVA_CONFIG, ...config };
     this.dockerImage = dockerImage;
@@ -248,12 +260,14 @@ export class JavaToolOrchestrator {
         logger.info(`✅ SpotBugs complete: ${spotbugsResult.duration}ms`);
       }
 
-      // Dependency-Check (requires NVD API key)
-      if (this.config.dependencyCheck?.enabled) {
-        logger.info('\n🔐 Running Dependency-Check (optional)...');
+      // Dependency-Check (only on PR branch - CVEs don't change between branches)
+      if (this.config.dependencyCheck?.enabled && branch === 'pr') {
+        logger.info('\n🔐 Running Dependency-Check on PR branch only...');
         const depCheckResult = await this.runDependencyCheck(repoPath, branch);
         toolResults.push(depCheckResult);
         logger.info(`✅ Dependency-Check complete: ${depCheckResult.duration}ms`);
+      } else if (this.config.dependencyCheck?.enabled && branch === 'main') {
+        logger.info('\n⏭️  Skipping Dependency-Check on main branch (not needed)');
       }
 
       // ============================================================
@@ -304,14 +318,14 @@ export class JavaToolOrchestrator {
         docker run --rm \\
           -v ${repoPath}:/workspace \\
           ${this.dockerImage} \\
-          bash -c 'pmd check \\
+          -c "pmd pmd \\
             -d /workspace \\
             -f json \\
             -R ${rulesets} \\
             --minimum-priority ${this.config.pmd.minimumPriority} \\
             --threads ${this.config.pmd.threads} \\
             --cache /tmp/pmd-cache \\
-            > /workspace/pmd-results-${branch}.json 2>&1 || true'
+            > /workspace/pmd-results-${branch}.json 2>&1 || true"
       `;
 
       await execAsync(command);
@@ -385,11 +399,11 @@ export class JavaToolOrchestrator {
         docker run --rm \\
           -v ${repoPath}:/workspace \\
           ${this.dockerImage} \\
-          bash -c 'checkstyle \\
+          -c "checkstyle \\
             -c ${this.config.checkstyle.configFile} \\
             -f json \\
             ${filesToScan} \\
-            > /workspace/checkstyle-results-${branch}.json 2>&1 || true'
+            > /workspace/checkstyle-results-${branch}.json 2>&1 || true"
       `;
 
       await execAsync(command);
@@ -459,12 +473,12 @@ export class JavaToolOrchestrator {
         docker run --rm \\
           -v ${repoPath}:/workspace \\
           ${this.dockerImage} \\
-          bash -c 'cd /workspace && semgrep \\
+          -c "cd /workspace && semgrep \\
             --config ${rulesets} \\
             --json \\
-            ${this.config.semgrep.smartSelection ? `--include "${patterns}"` : ''} \\
+            ${this.config.semgrep.smartSelection ? `--include \"${patterns}\"` : ''} \\
             . \\
-            > semgrep-results-${branch}.json 2>&1 || true'
+            > semgrep-results-${branch}.json 2>&1 || true"
       `;
 
       await execAsync(command);
@@ -521,12 +535,12 @@ export class JavaToolOrchestrator {
         docker run --rm \\
           -v ${repoPath}:/workspace \\
           ${this.dockerImage} \\
-          bash -c 'spotbugs \\
+          -c "spotbugs \\
             -${this.config.spotbugs?.priority} \\
             -effort:${this.config.spotbugs?.effort} \\
             -xml:withMessages \\
             -output /workspace/spotbugs-results-${branch}.xml \\
-            /workspace/target/classes /workspace/build/classes 2>&1 || true'
+            /workspace/target/classes /workspace/build/classes 2>&1 || true"
       `;
 
       await execAsync(command);
@@ -565,6 +579,10 @@ export class JavaToolOrchestrator {
   /**
    * Run Dependency-Check (optional - requires NVD API key)
    */
+  /**
+   * Run Dependency-Check with PostgreSQL backend (v6.0)
+   * Uses preloaded CVE database (208K+ CVEs, 2018-2025)
+   */
   private async runDependencyCheck(
     repoPath: string,
     branch: string
@@ -572,24 +590,40 @@ export class JavaToolOrchestrator {
     const startTime = Date.now();
 
     try {
-      if (!this.config.dependencyCheck?.nvdApiKey) {
-        throw new Error('NVD_API_KEY is required for Dependency-Check');
+      const pg = this.config.dependencyCheck?.postgres;
+      if (!pg?.enabled) {
+        throw new Error('PostgreSQL backend is required for Dependency-Check v6.0');
       }
+
+      // Build PostgreSQL connection parameters for JDBC
+      const jdbcParams = [
+        `--connectionString ${pg.connectionString}`,
+        `--dbUser ${pg.dbUser}`,
+        `--dbPassword ${pg.dbPassword}`,
+        `--dbDriverName org.postgresql.Driver`,
+        `--dbDriverPath ${pg.dbDriver}`
+      ].join(' ');
 
       const command = `
         docker run --rm \\
           -v ${repoPath}:/workspace \\
-          -v /data/dependency-check:/data/dependency-check \\
-          -e NVD_API_KEY=${this.config.dependencyCheck.nvdApiKey} \\
+          -v $(dirname ${pg.dbDriver}):$(dirname ${pg.dbDriver}):ro \\
+          --network host \\
+          -e CLASSPATH="/opt/dependency-check/lib/*:${pg.dbDriver}" \\
           ${this.dockerImage} \\
-          bash -c 'dependency-check \\
+          -c "dependency-check \\
             --scan /workspace \\
             --format JSON \\
             --out /workspace/dependency-check-results-${branch} \\
-            --nvdApiKey $NVD_API_KEY \\
+            --project \\"CodeQual-${branch}\\" \\
+            ${jdbcParams} \\
             --failOnCVSS ${this.config.dependencyCheck.failOnCVSS} \\
-            --data /data/dependency-check 2>&1 || true'
+            --disableNodeAudit \\
+            --disableYarnAudit 2>&1 || true"
       `;
+
+      logger.info(`Running Dependency-Check with PostgreSQL backend...`);
+      logger.info(`Database: ${pg.connectionString}`);
 
       await execAsync(command, {
         timeout: this.config.dependencyCheck.timeout * 1000
@@ -655,9 +689,55 @@ export class JavaToolOrchestrator {
     return [];
   }
 
+  /**
+   * Parse Dependency-Check JSON report
+   * Format: { dependencies: [ { fileName, vulnerabilities: [ { name, severity, cvssv3, description } ] } ] }
+   */
   private parseDependencyCheckOutput(output: string): RawIssue[] {
-    // TODO: Implement Dependency-Check JSON parsing
-    return [];
+    try {
+      const report = JSON.parse(output);
+      const issues: RawIssue[] = [];
+
+      if (!report.dependencies || !Array.isArray(report.dependencies)) {
+        logger.warn('No dependencies found in Dependency-Check report');
+        return [];
+      }
+
+      for (const dependency of report.dependencies) {
+        if (!dependency.vulnerabilities || dependency.vulnerabilities.length === 0) {
+          continue;
+        }
+
+        for (const vuln of dependency.vulnerabilities) {
+          // Map CVSS score to severity
+          const cvssScore = vuln.cvssv3?.baseScore || vuln.cvssv2?.score || 0;
+          let severity: 'critical' | 'high' | 'medium' | 'low' = 'low';
+
+          if (cvssScore >= 9.0) severity = 'critical';
+          else if (cvssScore >= 7.0) severity = 'high';
+          else if (cvssScore >= 4.0) severity = 'medium';
+
+          issues.push({
+            tool: 'Dependency-Check',
+            file: dependency.fileName || 'pom.xml',
+            line: 0, // Dependency issues don't have line numbers
+            severity,
+            category: 'dependency-vulnerability',
+            rule: vuln.name || 'UNKNOWN-CVE',
+            message: vuln.description || `Vulnerability in ${dependency.fileName}`,
+            cvssScore,
+            cve: vuln.name
+          });
+        }
+      }
+
+      logger.info(`Parsed ${issues.length} CVE issues from Dependency-Check report`);
+      return issues;
+
+    } catch (error: any) {
+      logger.error('Failed to parse Dependency-Check output:', error);
+      return [];
+    }
   }
 
   // ============================================================
