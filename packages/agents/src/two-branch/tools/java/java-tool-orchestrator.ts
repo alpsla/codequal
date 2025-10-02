@@ -760,29 +760,69 @@ export class JavaToolOrchestrator {
 
   private parseSemgrepOutput(output: string): RawIssue[] {
     try {
-      // Semgrep has metrics/status text before JSON - extract just the JSON part
-      const jsonStart = output.lastIndexOf('{');  // JSON is at the end
+      // Semgrep outputs status text BEFORE the JSON (table, metrics, etc.)
+      // Find the JSON object by looking for the first opening brace that starts a valid JSON object
+      // The JSON starts after the scan status table with {"errors": [], "paths": {...}, "results": [...]}
 
-      if (jsonStart === -1) {
-        logger.warn('No JSON found in Semgrep output');
+      // Strategy: Find the line that starts with '{"errors"' (Semgrep JSON structure)
+      const jsonStartMarker = '{"errors":';
+      const jsonStartIndex = output.indexOf(jsonStartMarker);
+
+      if (jsonStartIndex === -1) {
+        logger.warn('No Semgrep JSON found in output');
         return [];
       }
 
-      const jsonStr = output.substring(jsonStart);
-      const semgrepResult = JSON.parse(jsonStr);
+      // Extract from that point to the end
+      const jsonPortion = output.substring(jsonStartIndex);
+
+      // JSON might have trailing text after it, so we need to find the actual JSON bounds
+      // Try parsing progressively shorter substrings until we get valid JSON
+      let jsonStr = jsonPortion;
+      let semgrepResult: any;
+
+      // Try to parse, removing trailing characters if needed
+      for (let i = 0; i < 1000; i++) {
+        try {
+          semgrepResult = JSON.parse(jsonStr);
+          break; // Success!
+        } catch (e) {
+          // Try removing last character and retry
+          if (jsonStr.length > jsonStartMarker.length) {
+            jsonStr = jsonStr.substring(0, jsonStr.length - 1);
+          } else {
+            throw new Error('Could not parse Semgrep JSON even after trimming');
+          }
+        }
+      }
+
+      if (!semgrepResult) {
+        logger.warn('Failed to parse Semgrep JSON after retries');
+        return [];
+      }
+
       const issues: RawIssue[] = [];
 
-      if (!semgrepResult.results) {
+      if (!semgrepResult.results || semgrepResult.results.length === 0) {
         logger.info('No results in Semgrep output (no security issues found)');
         return [];
       }
 
+      // Skip test files during parsing
       for (const result of semgrepResult.results) {
+        const filePath = result.path || '';
+        if (filePath.includes('/test/') || filePath.includes('/tests/') ||
+            filePath.endsWith('Test.java') || filePath.endsWith('Tests.java')) {
+          continue;
+        }
+
         issues.push({
           tool: 'Semgrep',
           file: result.path,
           line: result.start?.line || 1,
+          endLine: result.end?.line,
           column: result.start?.col || 0,
+          endColumn: result.end?.col,
           severity: this.mapSemgrepSeverity(result.extra?.severity),
           category: result.check_id || 'unknown',
           rule: result.check_id,
