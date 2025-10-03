@@ -7,6 +7,7 @@ import { RedisToolOutputManager, ToolOutput } from '../utils/redis-tool-output-m
 import { KubernetesRepositoryManager } from '../utils/kubernetes-repository-manager';
 import { V9ReportFormatterFinal } from './v9-report-formatter';
 import { DynamicModelSelector } from '../services/dynamic-model-selector';
+import { SkillScoreManager } from '../services/skill-score-manager';
 import { logger } from '../utils/logger';
 import OpenAI from 'openai';
 
@@ -490,11 +491,28 @@ export class V9IntegratedAnalyzer {
     const categoryScores: Record<string, number> = {};
     const categories = ['Security', 'Performance', 'Architecture', 'Dependency', 'Quality'];
     categories.forEach(category => {
-      const categoryIssues = prIssues.filter(i => 
+      const categoryIssues = prIssues.filter(i =>
         this.getIssueCategory(i).toLowerCase().includes(category.toLowerCase())
       );
       categoryScores[category] = Math.max(0, 100 - (categoryIssues.length * 2));
     });
+
+    // Calculate quality score (needed for skill tracking)
+    const qualityScore = Math.max(0, 100 - (prIssues.length * 2));
+
+    // Calculate skill score with database persistence
+    const skillScore = await this.calculateAndSaveSkillScore(
+      data.repository,
+      data.prNumber,
+      data.prAuthor || 'unknown@example.com',
+      newIssues,
+      resolvedIssues,
+      existingIssues,
+      prIssues,
+      data.language,
+      processingTime,
+      qualityScore
+    );
 
     // Prepare AnalysisResult in the format expected by V9ReportFormatterFinal
     const analysisResult: any = {
@@ -503,7 +521,7 @@ export class V9IntegratedAnalyzer {
       reason: prIssues.filter(i => i.severity === 'critical').length > 0
         ? 'Critical issues found that must be addressed'
         : 'No blocking issues found',
-      qualityScore: Math.max(0, 100 - (prIssues.length * 2)),
+      qualityScore,
       grade: prIssues.length === 0 ? 'A' : prIssues.length < 10 ? 'B' : prIssues.length < 30 ? 'C' : 'D',
 
       // Categorized issues - properly formatted with all required fields
@@ -535,20 +553,8 @@ export class V9IntegratedAnalyzer {
         ]
       },
 
-      // Skill tracking (placeholder)
-      skillScore: {
-        developer: 'Team',
-        score: 75,
-        trend: [70, 72, 75],
-        categories: {
-          security: 80,
-          performance: 70,
-          architecture: 75,
-          dependency: 85,
-          quality: 65
-        },
-        recommendations: data.aiInsights.recommendations || []
-      },
+      // Skill tracking - Real calculation with database persistence
+      skillScore,
 
       metadata: {
         repository: data.repository,
@@ -957,5 +963,195 @@ ${lineNum+1}: // Surrounding code`;
         code: `${lineNum}: // Apply appropriate fix based on the specific issue`
       };
     }
+  }
+
+  /**
+   * Calculate and save skill score with database persistence
+   * Returns SkillScore object for inclusion in AnalysisResult
+   */
+  private async calculateAndSaveSkillScore(
+    repository: string,
+    prNumber: number,
+    developerEmail: string,
+    newIssues: any[],
+    resolvedIssues: any[],
+    existingIssues: any[],
+    allPrIssues: any[],
+    language: string,
+    analysisDuration: number,
+    qualityScore: number
+  ): Promise<any> {
+    try {
+      // Create Supabase client
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabase = createClient(
+        process.env.SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
+
+      const skillScoreManager = new SkillScoreManager(supabase);
+
+      // Calculate current score
+      const currentScore = this.calculateSkillScore(newIssues, resolvedIssues, existingIssues);
+
+      // Calculate category scores
+      const categoryScores = {
+        security: this.calculateCategoryScore(newIssues, 'Security'),
+        performance: this.calculateCategoryScore(newIssues, 'Performance'),
+        architecture: this.calculateCategoryScore(newIssues, 'Architecture'),
+        dependency: this.calculateCategoryScore(newIssues, 'Dependency'),
+        codeQuality: this.calculateCategoryScore(newIssues, 'Quality')
+      };
+
+      // Get baseline and trend
+      const baseline = await skillScoreManager.getBaselineScore(developerEmail, repository);
+      const trend = await skillScoreManager.getScoreTrend(developerEmail, repository, 5);
+
+      // Generate recommendations
+      const recommendations = this.generateSkillRecommendations(newIssues, categoryScores);
+
+      // Save to database
+      await skillScoreManager.saveSkillScore({
+        developerEmail,
+        developerName: developerEmail.split('@')[0], // Extract name from email
+        repository,
+        prNumber,
+        overallScore: currentScore,
+        qualityScore,
+        categoryScores,
+        issueCounts: {
+          new: newIssues.length,
+          resolved: resolvedIssues.length,
+          critical: allPrIssues.filter(i => i.severity === 'critical').length,
+          high: allPrIssues.filter(i => i.severity === 'high').length,
+          medium: allPrIssues.filter(i => i.severity === 'medium').length,
+          low: allPrIssues.filter(i => i.severity === 'low').length
+        },
+        language,
+        analysisDuration
+      });
+
+      // Calculate delta
+      const { delta } = await skillScoreManager.calculateDelta(developerEmail, repository, currentScore);
+
+      console.log(`[V9IntegratedAnalyzer] Skill score calculated: ${currentScore}/100 (baseline: ${baseline}, delta: ${delta > 0 ? '+' : ''}${delta})`);
+
+      // Return SkillScore object
+      return {
+        developer: developerEmail.split('@')[0],
+        score: currentScore,
+        trend: [...trend, currentScore], // Add current score to trend
+        categories: categoryScores,
+        recommendations
+      };
+    } catch (error) {
+      console.error('[V9IntegratedAnalyzer] Error calculating skill score:', error);
+      // Fallback to simple calculation without database
+      const fallbackScore = this.calculateSkillScore(newIssues, resolvedIssues, existingIssues);
+      return {
+        developer: 'Developer',
+        score: fallbackScore,
+        trend: [fallbackScore],
+        categories: {
+          security: this.calculateCategoryScore(newIssues, 'Security'),
+          performance: this.calculateCategoryScore(newIssues, 'Performance'),
+          architecture: this.calculateCategoryScore(newIssues, 'Architecture'),
+          dependency: this.calculateCategoryScore(newIssues, 'Dependency'),
+          quality: this.calculateCategoryScore(newIssues, 'Quality')
+        },
+        recommendations: []
+      };
+    }
+  }
+
+  /**
+   * Calculate overall skill score based on issues
+   * Formula: 100 - (weighted issue penalties) + (resolved issue bonuses)
+   */
+  private calculateSkillScore(
+    newIssues: any[],
+    resolvedIssues: any[],
+    existingIssues: any[]
+  ): number {
+    let score = 100;
+
+    // Penalties for new issues introduced
+    newIssues.forEach(issue => {
+      switch (issue.severity) {
+        case 'critical': score -= 5; break;
+        case 'high': score -= 2; break;
+        case 'medium': score -= 1; break;
+        case 'low': score -= 0.5; break;
+      }
+    });
+
+    // Bonuses for resolved issues
+    resolvedIssues.forEach(issue => {
+      switch (issue.severity) {
+        case 'critical': score += 3; break;
+        case 'high': score += 1.5; break;
+        case 'medium': score += 0.75; break;
+        case 'low': score += 0.25; break;
+      }
+    });
+
+    // Ensure score stays in 0-100 range
+    return Math.max(0, Math.min(100, Math.round(score)));
+  }
+
+  /**
+   * Calculate category-specific score
+   * Score = 100 - (weighted penalties for issues in this category)
+   */
+  private calculateCategoryScore(issues: any[], category: string): number {
+    const categoryIssues = issues.filter(i =>
+      this.getIssueCategory(i).toLowerCase().includes(category.toLowerCase())
+    );
+
+    let score = 100;
+    categoryIssues.forEach(issue => {
+      switch (issue.severity) {
+        case 'critical': score -= 10; break;
+        case 'high': score -= 5; break;
+        case 'medium': score -= 2; break;
+        case 'low': score -= 1; break;
+      }
+    });
+
+    return Math.max(0, Math.min(100, Math.round(score)));
+  }
+
+  /**
+   * Generate recommendations based on category scores
+   */
+  private generateSkillRecommendations(
+    issues: any[],
+    categoryScores: Record<string, number>
+  ): string[] {
+    const recommendations: string[] = [];
+
+    // Find weakest categories
+    const sortedCategories = Object.entries(categoryScores)
+      .sort(([, a], [, b]) => a - b);
+
+    // Add recommendations for weak categories
+    sortedCategories.slice(0, 3).forEach(([category, score]) => {
+      if (score < 70) {
+        recommendations.push(`Focus on improving ${category} (score: ${score}/100)`);
+      }
+    });
+
+    // Add issue-specific recommendations
+    const criticalIssues = issues.filter(i => i.severity === 'critical');
+    if (criticalIssues.length > 0) {
+      recommendations.push(`Address ${criticalIssues.length} critical issue(s) immediately`);
+    }
+
+    const highIssues = issues.filter(i => i.severity === 'high');
+    if (highIssues.length > 5) {
+      recommendations.push(`Reduce high-severity issues (currently ${highIssues.length})`);
+    }
+
+    return recommendations.slice(0, 5); // Max 5 recommendations
   }
 }
