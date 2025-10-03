@@ -109,6 +109,8 @@ export interface AnalysisResult {
   businessImpact: BusinessImpact;
   skillScore: SkillScore;
   educationalResources?: EducationalResource[];
+  // NEW: Category-specific scores for V9 reporting
+  categoryScores?: Record<string, number>;
   metadata: AnalysisMetadata & {
     analyzedAt: string;
     analyzer: string;

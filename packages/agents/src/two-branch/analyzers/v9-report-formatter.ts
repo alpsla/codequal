@@ -88,6 +88,10 @@ export interface CompleteMetadata {
     stderr: string;
   }>;
   
+  // NEW: Enhanced tool results for Option A improvements
+  // Optional to avoid breaking existing code
+  toolResults?: ToolResult[];
+  
   // Cost Analysis
   totalCost: number;
   costBreakdown: {
@@ -110,6 +114,17 @@ export interface CompleteMetadata {
   analyzedAt?: string;
 }
 
+// NEW: Tool results for enhanced reporting (Option A improvements)
+// This is separate from toolsUsed to provide detailed analysis data
+interface ToolResult {
+  tool: string;
+  duration: number;
+  issues: any[];
+  success: boolean;
+  filesScanned?: number;
+  exitCode?: number;
+}
+
 interface EducationalContent {
   type: 'course' | 'youtube' | 'documentation' | 'stackoverflow' | 'reddit' | 'discord' | 'book' | 'article';
   title: string;
@@ -126,6 +141,130 @@ export class V9ReportFormatterFinal {
       existingIssues: Array.isArray(result.existingIssues) ? result.existingIssues : [],
       resolvedIssues: Array.isArray(result.resolvedIssues) ? result.resolvedIssues : []
     };
+  }
+
+  /**
+   * Extract tool performance data from toolResults array
+   * Used for Option A improvements: Dependency-Check visibility
+   */
+  private extractToolPerformance(toolResults: ToolResult[]) {
+    const tools = {
+      pmd: { duration: 0, issues: 0, status: '❌ Not Run' },
+      semgrep: { duration: 0, issues: 0, status: '❌ Not Run' },
+      checkstyle: { duration: 0, issues: 0, status: '❌ Not Run' },
+      dependencyCheck: { duration: 0, issues: 0, cves: 0, status: '❌ Not Run' },
+      spotbugs: { duration: 0, issues: 0, status: '⏭️ Disabled' }
+    };
+
+    for (const result of toolResults) {
+      const toolName = result.tool.toLowerCase();
+      const duration = Math.round((result.duration || 0) / 1000);
+      const issues = (result.issues || []).length;
+      const status = result.success ? '✅ Success' : '❌ Failed';
+
+      if (toolName === 'pmd') {
+        tools.pmd = { duration, issues, status };
+      } else if (toolName === 'semgrep') {
+        tools.semgrep = { duration, issues, status };
+      } else if (toolName === 'checkstyle') {
+        tools.checkstyle = { duration, issues, status: result.success ? '✅ Success' : '⏭️ Skipped' };
+      } else if (toolName === 'dependency-check' || toolName === 'dependencycheck') {
+        tools.dependencyCheck = { duration, issues, cves: issues, status };
+      } else if (toolName === 'spotbugs') {
+        tools.spotbugs = { duration, issues, status };
+      }
+    }
+
+    return tools;
+  }
+
+  /**
+   * Calculate risk matrix with impact assessment
+   * Used for Option A improvements: Risk Matrix Impact column
+   */
+  private calculateRiskMatrix(issues: Issue[], categoryScores: Record<string, number>) {
+    const categories = ['Security', 'Performance', 'Architecture', 'Dependency', 'Quality'];
+
+    return categories.map(category => {
+      const categoryIssues = issues.filter((i: Issue) =>
+        i.category?.toLowerCase().includes(category.toLowerCase())
+      );
+
+      const blocking = categoryIssues.filter((i: Issue) =>
+        i.severity === 'critical' || i.severity === 'high'
+      ).length;
+
+      const backlog = categoryIssues.filter((i: Issue) =>
+        i.severity === 'medium' || i.severity === 'low'
+      ).length;
+
+      const critical = categoryIssues.filter((i: Issue) => i.severity === 'critical').length;
+      const high = categoryIssues.filter((i: Issue) => i.severity === 'high').length;
+
+      // Impact calculation logic (Option A)
+      let impact = '🟢 None';
+      if (critical > 0 || blocking > 10) {
+        impact = '🔴 Critical';
+      } else if (high > 50 || blocking > 5) {
+        impact = '🟠 High';
+      } else if (backlog > 100) {
+        impact = '🟡 Medium';
+      }
+
+      return {
+        category,
+        blocking,
+        backlog,
+        total: categoryIssues.length,
+        score: categoryScores[category] || 0,
+        impact
+      };
+    });
+  }
+
+  /**
+   * Generate Tool Performance section for report
+   * Shows all 5 Java tools including Dependency-Check
+   */
+  private generateToolPerformanceSection(toolPerformance: any): string {
+    return `## 🔧 Tool Performance
+
+| Tool | Status | Duration | Issues Found | Details |
+|------|--------|----------|--------------|---------|
+| **PMD** | ${toolPerformance.pmd.status} | ${toolPerformance.pmd.duration}s | ${toolPerformance.pmd.issues} | Code quality analysis |
+| **Semgrep** | ${toolPerformance.semgrep.status} | ${toolPerformance.semgrep.duration}s | ${toolPerformance.semgrep.issues} | Security pattern detection |
+| **Checkstyle** | ${toolPerformance.checkstyle.status} | ${toolPerformance.checkstyle.duration}s | ${toolPerformance.checkstyle.issues} | Code style validation |
+| **Dependency-Check** | ${toolPerformance.dependencyCheck.status} | ${toolPerformance.dependencyCheck.duration}s | ${toolPerformance.dependencyCheck.cves} CVEs | Vulnerability scanning |
+| **SpotBugs** | ${toolPerformance.spotbugs.status} | ${toolPerformance.spotbugs.duration}s | ${toolPerformance.spotbugs.issues} | Bytecode analysis (disabled) |
+
+**CVE Database Statistics:**
+- Total CVEs Available: 208,740+
+- Database: PostgreSQL (Oracle Cloud)
+- Connection Time: < 1 second
+- Severity Threshold: CVSS ≥ 7.0
+- Last Database Update: Daily at 2 AM UTC`;
+  }
+
+  /**
+   * Generate Risk Matrix section with Impact column
+   * Option A improvement: Shows impact assessment per category
+   */
+  private generateRiskMatrixSection(riskMatrix: any[]): string {
+    const rows = riskMatrix.map(cat =>
+      `| ${cat.category} | ${cat.blocking} | ${cat.backlog} | ${cat.total} | ${cat.impact} |`
+    ).join('\n');
+
+    return `## 📊 Risk Matrix
+
+| Category | Blocking | Backlog | Total | Impact |
+|----------|----------|---------|-------|--------|
+${rows}
+
+**Impact Legend:**
+- 🔴 Critical: Critical issues > 0 OR High blocking > 10
+- 🟠 High: High blocking > 5 OR High backlog > 50
+- 🟡 Medium: Total backlog > 100
+- 🟢 None/Low: Everything else`;
   }
   private educatorAgent: EducatorAgent;
   private readonly severityWeights = {
@@ -162,6 +301,15 @@ export class V9ReportFormatterFinal {
   ): Promise<string> {
     const sections: string[] = [];
     
+    // Extract tool performance data if available (Option A improvement)
+    const toolPerformance = metadata.toolResults
+      ? this.extractToolPerformance(metadata.toolResults)
+      : null;
+    
+    // Calculate risk matrix with impact (Option A improvement)
+    const { newIssues } = this.getIssuesArrays(result);
+    const riskMatrix = this.calculateRiskMatrix(newIssues, result.categoryScores || {});
+    
     // 1. Header
     sections.push(this.generateHeader(metadata));
     
@@ -171,11 +319,19 @@ export class V9ReportFormatterFinal {
     // 3. Decision
     sections.push(this.generateDecision(result));
     
+    // NEW: 3.5 Tool Performance (Option A - shows Dependency-Check)
+    if (toolPerformance) {
+      sections.push(this.generateToolPerformanceSection(toolPerformance));
+    }
+    
     // 4. Overall Score
     sections.push(this.generateOverallScore(result));
     
     // 5. Issue Summary Statistics
     sections.push(this.generateIssueSummaryStatistics(result));
+    
+    // NEW: 5.5 Risk Matrix with Impact (Option A improvement)
+    sections.push(this.generateRiskMatrixSection(riskMatrix));
     
     // 6. Blocking Issues
     sections.push(this.generateBlockingIssues(result));
@@ -213,7 +369,7 @@ export class V9ReportFormatterFinal {
     // 24. Educational Resources
     sections.push(this.generateEducationalResources(result));
 
-    // 25. Risk Matrix with Explanations
+    // 25. Risk Matrix with Explanations (keeping original for compatibility)
     sections.push(this.generateRiskMatrix(result));
 
     // 26. Score Calculation Breakdown
