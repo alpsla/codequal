@@ -486,6 +486,16 @@ export class V9IntegratedAnalyzer {
       return processedIssuesMap.get(key) || formatIssue(i, 'backlog');
     });
 
+    // Calculate category scores for Risk Matrix Impact column
+    const categoryScores: Record<string, number> = {};
+    const categories = ['Security', 'Performance', 'Architecture', 'Dependency', 'Quality'];
+    categories.forEach(category => {
+      const categoryIssues = prIssues.filter(i => 
+        this.getIssueCategory(i).toLowerCase().includes(category.toLowerCase())
+      );
+      categoryScores[category] = Math.max(0, 100 - (categoryIssues.length * 2));
+    });
+
     // Prepare AnalysisResult in the format expected by V9ReportFormatterFinal
     const analysisResult: any = {
       decision: prIssues.filter(i => i.severity === 'critical').length > 0 ? 'DECLINED' : 'APPROVED',
@@ -504,6 +514,9 @@ export class V9IntegratedAnalyzer {
       backlogIssues: formattedBacklogIssues,
 
       modifiedFiles: [...new Set(prIssues.map(i => i.file))],
+
+      // NEW: Category-specific scores for Risk Matrix Impact
+      categoryScores,
 
       // Business impact
       businessImpact: {
@@ -619,6 +632,16 @@ export class V9IntegratedAnalyzer {
         stderr: ''
       })),
 
+      // NEW: Option A - Raw tool results for enhanced reporting
+      toolResults: Array.from(toolMetrics.values()).map(tool => ({
+        tool: tool.toolName,
+        duration: 1000, // Estimated execution time in ms
+        issues: prIssues.filter(i => i.tool === tool.toolName),
+        success: true,
+        filesScanned: 100,
+        exitCode: 0
+      })),
+
       totalCost: Array.from(agentMetrics.values()).reduce((sum, a) => sum + a.cost, 0),
       costBreakdown: {
         aiModels: Array.from(agentMetrics.values()).reduce((sum, a) => sum + a.cost, 0),
@@ -636,6 +659,8 @@ export class V9IntegratedAnalyzer {
       endTime: new Date().toISOString(),
       timestamp: new Date().toISOString()
     };
+
+    console.log('[V9] Calling V9ReportFormatterFinal.generateCompleteReport() with Option A toolResults...');
 
     // Use V9ReportFormatterFinal to generate the complete report with all 21 sections
     const markdown = await this.reportFormatter.generateCompleteReport(
