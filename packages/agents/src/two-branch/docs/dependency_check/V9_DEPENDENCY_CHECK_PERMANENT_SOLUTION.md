@@ -118,8 +118,43 @@ dependencyCheck: {
 - **Schedule**: 2 AM UTC daily
 - **Script**: `/home/opc/codequal/scripts/daily-cve-update.sh`
 - **Action**: Downloads new CVEs from NVD, updates PostgreSQL
-- **Duration**: ~4 seconds
+- **Duration**: 5-10 minutes (delta updates only)
 - **Logs**: `/var/log/cve-updates.log`
+
+### 4. Log4Shell Validation (Automatic)
+
+**Why Log4Shell Validation?**
+- CVE-2021-44228 (Log4Shell) is the most critical vulnerability (CVSS 10.0)
+- Validates database integrity after updates
+- Ensures critical CVE detection always works
+
+**Current Setup:**
+- **Schedule**: Monthly (1st of month, 3 AM UTC)
+- **Script**: `/home/opc/codequal/scripts/monthly-log4shell-validation.sh`
+- **Duration**: ~5 seconds
+- **Test**: Scans vulnerable log4j-core-2.14.1.jar
+- **Expected**: Detects CVE-2021-44228
+
+**Enhanced Setup (Recommended):**
+- **Schedule**: Daily after CVE updates (2:15 AM UTC)
+- **Script**: `/home/opc/codequal/scripts/daily-cve-update-with-validation.sh`
+- **Benefits**:
+  - Validates database after every update
+  - Immediate detection of issues
+  - Ensures Log4Shell always detectable
+  - Alerts if validation fails
+
+**Deployment:**
+```bash
+# Update crontab on Oracle Cloud
+crontab -e
+
+# Replace:
+0 2 * * * /home/opc/codequal/scripts/daily-cve-update.sh
+
+# With:
+0 2 * * * /home/opc/codequal/scripts/daily-cve-update-with-validation.sh
+```
 
 ---
 
