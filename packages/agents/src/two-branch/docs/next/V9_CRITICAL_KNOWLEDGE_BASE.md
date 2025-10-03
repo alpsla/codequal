@@ -1,6 +1,6 @@
 # 🧠 V9 CRITICAL KNOWLEDGE BASE
 **IMPORTANT: Start every V9 session by reading this file**
-**Last Updated: September 19, 2024 - Session Summary**
+**Last Updated: October 3, 2025 - Dependency-Check Integration Complete**
 
 ## 🚨 CRITICAL UPDATE - REPORT MUST HAVE 34 SECTIONS!
 
@@ -68,6 +68,44 @@ We keep losing report sections when fixing other issues. The V9 report MUST have
 - **BLOCKS:** Critical/High severity in NEW or EXISTING IN MODIFIED FILES
 - **NEVER BLOCKS:** Any issues in EXISTING REST (unchanged files)
 
+## 🔐 Dependency-Check Configuration (October 2025)
+
+### ✅ PERMANENT SOLUTION - Oracle Cloud PostgreSQL
+
+**Status:** Integrated into V9 Core - Zero configuration needed
+
+### How It Works
+1. **Database:** Oracle Cloud hosts PostgreSQL with 208K+ CVEs cached
+2. **Updates:** Daily cron job at 2 AM UTC refreshes CVE database
+3. **Performance:** < 5 seconds per scan (vs 5-10 minutes file-based)
+4. **Integration:** DEFAULT_JAVA_CONFIG automatically uses Oracle PostgreSQL
+
+### Configuration (Automatic via .env)
+```bash
+ORACLE_DEPCHECK_DB_URL=jdbc:postgresql://129.213.49.128:5432/nvd
+ORACLE_DEPCHECK_DB_USER=depcheck_scanner
+ORACLE_DEPCHECK_DB_PASSWORD=
+ORACLE_DEPCHECK_JDBC_DRIVER=/tmp/jdbc-drivers/postgresql-42.7.1.jar
+```
+
+### Usage (No Configuration Needed)
+```typescript
+// ✅ Just use JavaToolOrchestrator - Oracle PostgreSQL automatic
+const orchestrator = new JavaToolOrchestrator();
+await orchestrator.orchestrate(repoPath, 'pr');
+// Dependency-Check automatically uses Oracle Cloud cache
+```
+
+### Common Mistakes to Avoid
+- ❌ **DON'T** manually configure PostgreSQL in tests
+- ❌ **DON'T** use file-based mode (`--data` flag)
+- ❌ **DON'T** override DEFAULT_JAVA_CONFIG dependency-check settings
+- ✅ **DO** use JavaToolOrchestrator defaults (Oracle configured automatically)
+
+### Documentation
+- Complete guide: `src/two-branch/docs/dependency_check/V9_DEPENDENCY_CHECK_PERMANENT_SOLUTION.md`
+- Bug fix summary: `src/two-branch/docs/dependency_check/SESSION_2025_10_03_DEPENDENCY_CHECK_BUG_FIX.md`
+
 ## 📁 V9 System Architecture
 
 ### Core Files You Must Know
@@ -87,6 +125,11 @@ Issue Comparator:
 
 Report Formatter:
   - packages/agents/src/two-branch/analyzers/v9-report-formatter.ts  # ONLY formatter (final deleted)
+
+Code Snippet Validator:
+  - packages/agents/src/two-branch/utils/code-snippet-validator.ts  # NEW: Universal snippet validation
+  - Tool-agnostic, language-agnostic validation and false positive detection
+  - Works with PMD, ESLint, Semgrep, Dependency-Check, etc.
 
 Dynamic Model Selection:
   - packages/agents/src/two-branch/researcher/researcher-agent.ts

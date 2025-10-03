@@ -1,13 +1,18 @@
 /**
  * Java Tool Orchestrator for V9
  *
- * Implements the 3-tool orchestration strategy calibrated on September 29-30, 2025:
- * - 2-stage pipeline: Semgrep → (PMD + Checkstyle) parallel
- * - Critical-only severity filtering (99.9% noise reduction)
- * - Total time: 139s (24% faster than sequential)
+ * Implements the 4-tool REQUIRED orchestration strategy:
+ * - PMD: Code quality analysis (critical + high priority)
+ * - Semgrep: Security vulnerability detection
+ * - Checkstyle: Code style compliance (optional for critical-only mode)
+ * - Dependency-Check: CVE scanning (REQUIRED, PR-only to save resources)
  *
- * @see /packages/agents/src/two-branch/docs/next/SEVERITY_FILTERING_STRATEGY.md
- * @see /tmp/SESSION_SUMMARY_2025-09-30_COMPLETE.md
+ * Optional tools:
+ * - SpotBugs: Additional bug detection (requires compilation)
+ *
+ * Performance: ~50s per branch (all tools parallel)
+ *
+ * @see /packages/agents/src/two-branch/docs/dependency_check/FINAL_JAVA_V9_COMPLETE.md
  */
 
 import { exec } from 'child_process';
@@ -15,6 +20,7 @@ import { promisify } from 'util';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import { logger } from '../../utils/logger';
+import { determineCodeQualSeverity } from '../../utils/severity-mapper';
 
 const execAsync = promisify(exec);
 
@@ -23,7 +29,7 @@ const execAsync = promisify(exec);
 // ============================================================
 
 export interface JavaToolConfig {
-  // Core tools (always enabled)
+  // REQUIRED TOOLS (Code Quality & Security)
   pmd: {
     enabled: boolean;
     minimumPriority: 1 | 2;        // 1=critical only, 2=critical+high
@@ -32,13 +38,6 @@ export interface JavaToolConfig {
     threads: number;
     memory: string;
   };
-  checkstyle: {
-    enabled: boolean;
-    configFile: string;             // google_checks.xml
-    parallel: number;
-    memory: string;
-    changedFilesOnly: boolean;
-  };
   semgrep: {
     enabled: boolean;
     rulesets: string[];
@@ -46,17 +45,8 @@ export interface JavaToolConfig {
     smartSelection: boolean;
     memory: string;
   };
-
-  // Optional tools (disabled by default)
-  spotbugs?: {
-    enabled: boolean;
-    priority: 'high' | 'medium' | 'low';
-    effort: 'min' | 'default' | 'max';
-    buildCommand?: string;          // e.g., "mvn compile"
-    memory: string;
-  };
-  dependencyCheck?: {
-    enabled: boolean;
+  dependencyCheck: {
+    enabled: boolean;               // REQUIRED (not optional!)
     failOnCVSS: number;             // e.g., 7.0 for HIGH and above
     suppressionFile?: string;
     timeout: number;
@@ -68,6 +58,22 @@ export interface JavaToolConfig {
       dbPassword: string;
       dbDriver: string;              // /tmp/jdbc-drivers/postgresql-42.7.1.jar
     };
+  };
+
+  // OPTIONAL TOOLS (Can be disabled)
+  checkstyle: {
+    enabled: boolean;
+    configFile: string;             // google_checks.xml
+    parallel: number;
+    memory: string;
+    changedFilesOnly: boolean;
+  };
+  spotbugs?: {
+    enabled: boolean;
+    priority: 'high' | 'medium' | 'low';
+    effort: 'min' | 'default' | 'max';
+    buildCommand?: string;          // e.g., "mvn compile"
+    memory: string;
   };
 }
 
@@ -129,6 +135,7 @@ export interface OrchestrationResult {
 // ============================================================
 
 export const DEFAULT_JAVA_CONFIG: JavaToolConfig = {
+  // REQUIRED TOOLS
   pmd: {
     enabled: true,
     minimumPriority: 2,              // Critical + High
@@ -140,13 +147,6 @@ export const DEFAULT_JAVA_CONFIG: JavaToolConfig = {
     threads: 3,
     memory: '5g'
   },
-  checkstyle: {
-    enabled: true,
-    configFile: '/google_checks.xml',
-    parallel: 2,
-    memory: '3g',
-    changedFilesOnly: true           // Only analyze changed files in PR context
-  },
   semgrep: {
     enabled: true,
     rulesets: ['p/security-audit', 'p/java'],
@@ -154,23 +154,32 @@ export const DEFAULT_JAVA_CONFIG: JavaToolConfig = {
     smartSelection: true,            // Only security-critical files
     memory: '2g'
   },
+  dependencyCheck: {
+    enabled: true,                   // REQUIRED (not optional!) - PR-only execution
+    failOnCVSS: 7.0,                // Block only HIGH and CRITICAL (CVSS >= 7.0)
+    timeout: 300,                   // 5 minutes timeout
+    postgres: {
+      enabled: true,                 // Use PostgreSQL backend (v6.0+) - Oracle Cloud
+      connectionString: process.env.ORACLE_DEPCHECK_DB_URL || 'jdbc:postgresql://129.213.49.128:5432/nvd',
+      dbUser: process.env.ORACLE_DEPCHECK_DB_USER || 'depcheck_scanner',
+      dbPassword: process.env.ORACLE_DEPCHECK_DB_PASSWORD || '',
+      dbDriver: process.env.ORACLE_DEPCHECK_JDBC_DRIVER || '/tmp/jdbc-drivers/postgresql-42.7.1.jar'
+    }
+  },
+
+  // OPTIONAL TOOLS
+  checkstyle: {
+    enabled: false,                  // Optional - disabled for critical-only mode
+    configFile: '/sun_checks.xml',   // Use sun_checks.xml (google_checks.xml has version compatibility issues)
+    parallel: 2,
+    memory: '3g',
+    changedFilesOnly: true           // Only analyze changed files in PR context
+  },
   spotbugs: {
     enabled: false,                  // Optional - requires compilation
     priority: 'high',
     effort: 'default',
     memory: '4g'
-  },
-  dependencyCheck: {
-    enabled: false,                  // Optional - enable for CVE scanning
-    failOnCVSS: 7.0,                // Block only HIGH and CRITICAL
-    timeout: 600,
-    postgres: {
-      enabled: true,                 // Use PostgreSQL backend (v6.0+)
-      connectionString: 'jdbc:postgresql://127.0.0.1:5432/depcheck',
-      dbUser: 'depcheck_scanner',
-      dbPassword: 'depcheck_scan_2025',
-      dbDriver: '/tmp/jdbc-drivers/postgresql-42.7.1.jar'
-    }
   }
 };
 
@@ -202,48 +211,69 @@ export class JavaToolOrchestrator {
   async orchestrate(
     repoPath: string,
     branch: 'main' | 'pr',
-    changedFiles?: string[]
+    changedFiles?: string[],
+    options?: { includeAllSeverities?: boolean }
   ): Promise<OrchestrationResult> {
     const startTime = Date.now();
     const toolResults: ToolResult[] = [];
+    const includeAllSeverities = options?.includeAllSeverities ?? false;
 
     logger.info(`🎯 Starting Java Tool Orchestration (${branch} branch)`);
     logger.info(`📁 Repository: ${repoPath}`);
-    logger.info(`🔧 Tools: ${this.getEnabledTools().join(', ')}`);
+    logger.info(`🔧 Mode: ${includeAllSeverities ? 'ALL SEVERITIES' : 'CRITICAL/HIGH ONLY'}`);
 
     try {
       // ============================================================
-      // PARALLEL EXECUTION: Run ALL tools concurrently for max CPU usage
+      // PHASE 1: REQUIRED TOOLS (Parallel: PMD + Semgrep)
       // ============================================================
-      logger.info('\n🚀 Running ALL Java tools in PARALLEL for maximum performance...');
+      logger.info('\n🚀 Phase 1: Running REQUIRED tools (PMD + Semgrep) in parallel...');
 
-      const parallelPromises: Promise<ToolResult>[] = [];
-
-      // Semgrep - Security scan
-      if (this.config.semgrep.enabled) {
-        parallelPromises.push(this.runSemgrep(repoPath, branch));
-      }
+      const phase1Promises: Promise<ToolResult>[] = [];
 
       // PMD - Code quality
       if (this.config.pmd.enabled) {
-        parallelPromises.push(this.runPMD(repoPath, branch));
+        phase1Promises.push(this.runPMD(repoPath, branch));
       }
 
-      // Checkstyle - Code style
-      if (this.config.checkstyle.enabled) {
-        parallelPromises.push(
-          this.runCheckstyle(repoPath, branch, changedFiles)
-        );
+      // Semgrep - Security scan
+      if (this.config.semgrep.enabled) {
+        phase1Promises.push(this.runSemgrep(repoPath, branch));
       }
 
-      // Wait for ALL tools to complete in parallel
-      const parallelResults = await Promise.all(parallelPromises);
-      toolResults.push(...parallelResults);
+      // Wait for Phase 1 completion
+      const phase1Results = await Promise.all(phase1Promises);
+      toolResults.push(...phase1Results);
 
-      // Log results
-      logger.info('\n📊 Tool Execution Results:');
-      for (const result of parallelResults) {
+      // Log Phase 1 results
+      logger.info('\n📊 Phase 1 Results:');
+      for (const result of phase1Results) {
         logger.info(`✅ ${result.tool}: ${result.duration}ms, ${result.metadata.issuesFound} issues`);
+      }
+
+      // ============================================================
+      // CHECKSTYLE DECISION LOGIC
+      // ============================================================
+      const criticalHighCount = phase1Results.reduce((sum, r) => 
+        sum + r.metadata.severity.critical + r.metadata.severity.high, 0
+      );
+
+      const shouldRunCheckstyle = 
+        this.config.checkstyle.enabled && 
+        (includeAllSeverities || criticalHighCount === 0);
+
+      if (this.config.checkstyle.enabled) {
+        if (shouldRunCheckstyle) {
+          if (includeAllSeverities) {
+            logger.info('\n📝 Running Checkstyle: User requested ALL severity levels');
+          } else {
+            logger.info('\n📝 Running Checkstyle: No critical/high issues found, checking style compliance');
+          }
+          const checkstyleResult = await this.runCheckstyle(repoPath, branch, changedFiles);
+          toolResults.push(checkstyleResult);
+          logger.info(`✅ Checkstyle complete: ${checkstyleResult.duration}ms, ${checkstyleResult.metadata.issuesFound} issues`);
+        } else {
+          logger.info(`\n⏭️  Skipping Checkstyle: Found ${criticalHighCount} critical/high issues (style check not needed)`);
+        }
       }
 
       // ============================================================
@@ -374,35 +404,14 @@ export class JavaToolOrchestrator {
     const startTime = Date.now();
 
     try {
-      // Build file selection command (excluding test files)
-      let fileSelectionCmd = 'find /workspace -name "*.java" -type f ! -path "*/test/*" ! -path "*/tests/*" ! -name "*Test.java" ! -name "*Tests.java"';
-
-      if (this.config.checkstyle.changedFilesOnly && changedFiles) {
-        // Filter for Java files only
-        const javaFiles = changedFiles.filter(f => f.endsWith('.java'));
-        if (javaFiles.length === 0) {
-          logger.info('No Java files changed, skipping Checkstyle');
-          return {
-            tool: 'Checkstyle',
-            success: true,
-            duration: Date.now() - startTime,
-            issues: [],
-            metadata: {
-              filesScanned: 0,
-              issuesFound: 0,
-              severity: { critical: 0, high: 0, medium: 0, low: 0 }
-            }
-          };
-        }
-        // For changed files, pass them directly (no find needed)
-        fileSelectionCmd = javaFiles.map(f => `/workspace/${f}`).join(' ');
-      }
-
+      // Use a simpler approach: run checkstyle on specific directory
+      // For large repos, scan in batches to avoid command line length issues
       const command = `
         docker run --rm \\
           -v ${repoPath}:/workspace \\
           ${this.dockerImage} \\
-          -c "${fileSelectionCmd} | xargs -r checkstyle -c ${this.config.checkstyle.configFile} -f xml > /workspace/checkstyle-results-${branch}.xml 2>&1 || true"
+          -c "find /workspace -name '*.java' -type f ! -path '*/test/*' ! -path '*/tests/*' ! -name '*Test.java' ! -name '*Tests.java' -print0 | \\
+              xargs -0 -n 500 checkstyle -c ${this.config.checkstyle.configFile} -f xml 2>&1 > /workspace/checkstyle-results-${branch}.xml || true"
       `;
 
       await execAsync(command);
@@ -582,12 +591,12 @@ export class JavaToolOrchestrator {
 
       // Build PostgreSQL connection parameters for JDBC
       const jdbcParams = [
-        `--connectionString ${pg.connectionString}`,
-        `--dbUser ${pg.dbUser}`,
-        `--dbPassword ${pg.dbPassword}`,
+        `--connectionString "${pg.connectionString}"`,
+        `--dbUser "${pg.dbUser}"`,
+        pg.dbPassword ? `--dbPassword "${pg.dbPassword}"` : '',
         `--dbDriverName org.postgresql.Driver`,
-        `--dbDriverPath ${pg.dbDriver}`
-      ].join(' ');
+        `--dbDriverPath "${pg.dbDriver}"`
+      ].filter(p => p).join(' ');
 
       const command = `
         docker run --rm \\
@@ -600,11 +609,11 @@ export class JavaToolOrchestrator {
             --scan /workspace \\
             --format JSON \\
             --out /workspace/dependency-check-results-${branch} \\
-            --project \\"CodeQual-${branch}\\" \\
+            --project 'CodeQual-${branch}' \\
             ${jdbcParams} \\
             --failOnCVSS ${this.config.dependencyCheck.failOnCVSS} \\
             --disableNodeAudit \\
-            --disableYarnAudit 2>&1 || true"
+            --disableYarnAudit"
       `;
 
       logger.info(`Running Dependency-Check with PostgreSQL backend...`);
@@ -690,6 +699,15 @@ export class JavaToolOrchestrator {
         }
 
         for (const violation of file.violations) {
+          // Use enhanced severity mapping considering priority, category, and rule ID
+          const severity = determineCodeQualSeverity(
+            'PMD',
+            violation.priority,
+            violation.ruleset || 'unknown',
+            violation.rule,
+            violation.description || violation.message
+          );
+
           issues.push({
             tool: 'PMD',
             file: file.filename,
@@ -697,7 +715,7 @@ export class JavaToolOrchestrator {
             endLine: violation.endline,
             column: violation.begincolumn,
             endColumn: violation.endcolumn,
-            severity: this.mapPMDPriority(violation.priority),
+            severity,
             category: violation.ruleset || 'unknown',
             rule: violation.rule,
             message: violation.description || violation.message,
@@ -839,13 +857,70 @@ export class JavaToolOrchestrator {
   }
 
   private parseSpotBugsOutput(output: string): RawIssue[] {
-    // SpotBugs uses XML - would need xml2js parser
-    // For now, return empty (SpotBugs is optional anyway)
-    logger.warn('SpotBugs XML parsing not yet implemented');
-    return [];
+    try {
+      const issues: RawIssue[] = [];
+
+      // SpotBugs XML format:
+      // <BugInstance type="TYPE" priority="1|2|3" category="CATEGORY">
+      //   <Class classname="com.example.Foo">
+      //     <SourceLine classname="..." start="15" end="77" sourcefile="Foo.java" sourcepath="..." />
+      //   </Class>
+      //   OR just: <SourceLine classname="..." start="123" end="125" sourcefile="Foo.java" ... />
+      // </BugInstance>
+
+      // Extract bug instances
+      const bugInstanceRegex = /<BugInstance[^>]+type="([^"]+)"[^>]+priority="(\d)"[^>]+category="([^"]+)"[^>]*>([\s\S]*?)<\/BugInstance>/g;
+
+      let match;
+      while ((match = bugInstanceRegex.exec(output)) !== null) {
+        const bugType = match[1];
+        const priority = parseInt(match[2]);
+        const category = match[3];
+        const bugContent = match[4];
+
+        // Find SourceLine with both sourcefile and start attributes
+        // Look for: sourcefile="..." start="..."  OR  start="..." ... sourcefile="..."
+        const sourceLineRegex = /<SourceLine[^>]*?(?:sourcefile="([^"]+)"[^>]*?start="(\d+)"|start="(\d+)"[^>]*?sourcefile="([^"]+)")[^>]*?\/>/;
+        const sourceLineMatch = bugContent.match(sourceLineRegex);
+
+        if (sourceLineMatch) {
+          // Handle both attribute orders
+          const file = sourceLineMatch[1] || sourceLineMatch[4];
+          const line = parseInt(sourceLineMatch[2] || sourceLineMatch[3]);
+
+          // Map SpotBugs priority to severity (1=high, 2=medium, 3=low)
+          let severity: 'critical' | 'high' | 'medium' | 'low' = 'medium';
+          if (priority === 1) severity = 'high';
+          else if (priority === 2) severity = 'medium';
+          else severity = 'low';
+
+          issues.push({
+            tool: 'SpotBugs',
+            file,
+            line,
+            severity,
+            category: category.toLowerCase(),
+            rule: bugType,
+            message: bugType.replace(/_/g, ' ') // Convert DM_DEFAULT_ENCODING to "DM DEFAULT ENCODING"
+          });
+        }
+      }
+
+      logger.info(`Parsed ${issues.length} SpotBugs issues from XML`);
+      return issues;
+
+    } catch (error: any) {
+      logger.error('Failed to parse SpotBugs XML output:', error.message);
+      return [];
+    }
   }
 
   // Severity mapping helpers
+  /**
+   * @deprecated Use determineCodeQualSeverity from severity-mapper.ts instead
+   * This method only considers priority, not category or rule ID.
+   * Kept for backward compatibility with non-PMD tools.
+   */
   private mapPMDPriority(priority: number): 'critical' | 'high' | 'medium' | 'low' {
     switch (priority) {
       case 1:
