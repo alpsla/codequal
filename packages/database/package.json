@@ -7,7 +7,9 @@
   "exports": {
     ".": "./dist/index.js",
     "./supabase/*": "./dist/supabase/*.js",
-    "./models/*": "./dist/models/*.js"
+    "./models/*": "./dist/models/*.js",
+    "./dist/models/*": "./dist/models/*.js",
+    "./dist/supabase/*": "./dist/supabase/*.js"
   },
   "scripts": {
     "build": "tsc --skipLibCheck && node scripts/post-build.js",

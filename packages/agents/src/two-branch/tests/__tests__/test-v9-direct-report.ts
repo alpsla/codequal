@@ -70,9 +70,9 @@ async function generateDirectV9Report() {
         timeout: 300,
         postgres: {
           enabled: true,
-          connectionString: process.env.ORACLE_DEPCHECK_DB_URL || 'jdbc:postgresql://129.213.49.128:5432/nvd',
+          connectionString: process.env.ORACLE_DEPCHECK_DB_URL || 'jdbc:postgresql://localhost:5432/depcheck',
           dbUser: process.env.ORACLE_DEPCHECK_DB_USER || 'depcheck_scanner',
-          dbPassword: process.env.ORACLE_DEPCHECK_DB_PASSWORD || '',
+          dbPassword: process.env.ORACLE_DEPCHECK_DB_PASSWORD || 'postgres123',
           dbDriver: process.env.ORACLE_DEPCHECK_JDBC_DRIVER || '/tmp/jdbc-drivers/postgresql-42.7.1.jar'
         }
       },

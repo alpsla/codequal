@@ -1,4 +1,4 @@
-import { createLogger } from '../utils';
+import { createLogger } from '../standard/utils';
 import { SkillModel, DeveloperSkill, SkillHistoryEntry } from '@codequal/database/dist/models/skill';
 import { AuthenticatedUser } from '../multi-agent/types/auth';
 import { getSupabase } from '@codequal/database/dist/supabase/client';

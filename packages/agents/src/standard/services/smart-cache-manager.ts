@@ -41,13 +41,13 @@ export class SmartCacheManager {
     this.redis = redis;
     this.strategy = {
       clearAfterDelivery: true,      // Default: clear after delivery
-      ttl: 300,                      // Default: 5 minutes
+      ttl: 300,                      // Default: 5 minutes for production
       invalidateOnError: true,       // Default: clear bad data
       keepSuccessfulOnly: true,      // Default: only cache good data
       maxCacheSize: 100,            // Default: max 100 items
       ...strategy
     };
-    
+
     // Start cleanup interval
     this.startCleanupInterval();
   }
