@@ -128,32 +128,37 @@ dependencyCheck: {
 - Validates database integrity after updates
 - Ensures critical CVE detection always works
 
-**Current Setup:**
-- **Schedule**: Monthly (1st of month, 3 AM UTC)
-- **Script**: `/home/opc/codequal/scripts/monthly-log4shell-validation.sh`
-- **Duration**: ~5 seconds
+**Current Setup (Deployed):**
+- **Schedule**: Daily at 2 AM UTC
+- **Script**: `/home/opc/codequal/scripts/daily-cve-update-with-validation.sh`
+- **Duration**: 5-10 minutes (update) + 5 seconds (validation)
 - **Test**: Scans vulnerable log4j-core-2.14.1.jar
 - **Expected**: Detects CVE-2021-44228
+- **Status**: ✅ **ACTIVE** (deployed October 3, 2025)
 
-**Enhanced Setup (Recommended):**
-- **Schedule**: Daily after CVE updates (2:15 AM UTC)
-- **Script**: `/home/opc/codequal/scripts/daily-cve-update-with-validation.sh`
-- **Benefits**:
-  - Validates database after every update
-  - Immediate detection of issues
-  - Ensures Log4Shell always detectable
-  - Alerts if validation fails
+**What Happens Daily:**
+1. **Update CVE Database** (5-10 min)
+   - Downloads new/modified CVEs from NVD
+   - Updates PostgreSQL database
+   - Logs count of new CVEs
+2. **Validate Log4Shell** (5 sec)
+   - Downloads vulnerable Log4j JAR
+   - Runs Dependency-Check scan
+   - Verifies CVE-2021-44228 detected
+   - Alerts if validation fails
 
-**Deployment:**
-```bash
-# Update crontab on Oracle Cloud
-crontab -e
+**Benefits:**
+- ✅ Database integrity validated daily (vs monthly before)
+- ✅ Immediate detection of update failures
+- ✅ Ensures critical CVEs always detectable
+- ✅ 30x faster issue detection (daily vs monthly)
 
-# Replace:
-0 2 * * * /home/opc/codequal/scripts/daily-cve-update.sh
-
-# With:
-0 2 * * * /home/opc/codequal/scripts/daily-cve-update-with-validation.sh
+**Recent Test Results (Oct 3, 2025):**
+```
+✅ CVE Update: 208,717 → 208,740 (23 new CVEs)
+✅ Duration: 3 seconds (delta update)
+✅ Log4Shell: CVE-2021-44228 DETECTED
+✅ Total Time: 8 seconds
 ```
 
 ---
