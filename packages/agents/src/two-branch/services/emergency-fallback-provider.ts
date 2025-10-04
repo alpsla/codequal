@@ -43,11 +43,19 @@ export class EmergencyFallbackProvider {
   private loadConfig(): EmergencyFallbackConfig {
     const provider = (process.env.EMERGENCY_FALLBACK_PROVIDER || 'gemini') as EmergencyProvider;
 
+    // Helper to strip provider prefix from model name (e.g., "google/gemini-2.5-pro" → "gemini-2.5-pro")
+    const stripProviderPrefix = (modelName: string): string => {
+      return modelName.replace(/^(google|anthropic|openai)\//i, '');
+    };
+
+    // Get model from env or use defaults
+    const envModel = process.env.EMERGENCY_FALLBACK_MODEL;
+
     // Default models for each provider (best quality/price ratio)
     const defaultModels: Record<EmergencyProvider, string> = {
-      gemini: process.env.EMERGENCY_FALLBACK_MODEL || 'gemini-2.0-flash-thinking-exp',
-      anthropic: process.env.EMERGENCY_FALLBACK_MODEL || 'claude-sonnet-4-20250514',
-      openai: process.env.EMERGENCY_FALLBACK_MODEL || 'gpt-4o',
+      gemini: envModel ? stripProviderPrefix(envModel) : 'gemini-2.5-pro',
+      anthropic: envModel ? stripProviderPrefix(envModel) : 'claude-sonnet-4-20250514',
+      openai: envModel ? stripProviderPrefix(envModel) : 'gpt-4o',
       none: ''
     };
 
@@ -147,7 +155,9 @@ export class EmergencyFallbackProvider {
       const combinedPrompt = `${systemPrompt}\n\n${userPrompt}`;
 
       const result = await model.generateContent(combinedPrompt);
-      const response = await result.response;
+      const response = result.response;
+
+      // Get text from response
       const content = response.text();
 
       return {
