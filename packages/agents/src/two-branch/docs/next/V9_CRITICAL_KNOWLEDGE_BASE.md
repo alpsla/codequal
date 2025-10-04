@@ -1,6 +1,42 @@
 # 🧠 V9 CRITICAL KNOWLEDGE BASE
 **IMPORTANT: Start every V9 session by reading this file**
-**Last Updated: October 3, 2025 - Dependency-Check Integration Complete**
+**Last Updated: October 4, 2025 - Oracle Cloud Testing Policy Added**
+
+---
+
+## 🚨 CRITICAL: TESTING POLICY - ORACLE CLOUD ONLY
+
+### ⛔ NEVER TEST LOCALLY - WASTE OF TIME
+
+**Problem**: Every session wastes 15-30 minutes trying local tests that ALWAYS fail
+
+**Root Cause**:
+- Local Redis not available (10.116.0.7:6379) → Connection refused
+- Local PostgreSQL CVE database not available → Incomplete tests
+- Local Docker images not pre-deployed → Download time wasted
+
+**Solution**: ALWAYS test on Oracle Cloud from session start
+
+**Oracle Cloud Details:**
+```bash
+# SSH Connection
+ssh -i "/Users/alpinro/Code Prjects/codequal/keys/oracle/ssh-key-2025-05-08.key" opc@129.213.49.128
+
+# Infrastructure Available:
+- Redis: 10.116.0.7:6379 ✅
+- PostgreSQL: 129.213.49.128:5432/depcheck ✅
+- Docker Images: analyzer:lang-java-v6.0-arm ✅
+- OSS Index Credentials: Configured ✅
+```
+
+**Test Scripts on Oracle:**
+- `oracle-multi-tool-test.sh` - All Java tools
+- `test-checkstyle-oracle.sh` - Checkstyle validation
+- `test-ossindex-oracle.sh` - OSS Index validation
+
+**NEVER run integration tests locally - they will fail!**
+
+---
 
 ## 🚨 CRITICAL UPDATE - REPORT MUST HAVE 34 SECTIONS!
 
