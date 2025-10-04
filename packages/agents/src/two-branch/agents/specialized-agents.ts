@@ -5,6 +5,7 @@
 
 import OpenAI from 'openai';
 import { DynamicModelSelector } from '../services/dynamic-model-selector';
+import { getResilientAIClient } from '../services/resilient-ai-client';
 
 interface IssueContext {
   title: string;
@@ -53,6 +54,7 @@ abstract class BaseSpecializedAgent {
 
   /**
    * Generate fix suggestion using AI based on issue context
+   * Uses centralized resilient AI client with complete fallback chain
    */
   async generateFixSuggestion(issue: IssueContext): Promise<FixSuggestion> {
     const modelConfig = await this.modelSelector.selectModelsForTwoBranchAnalysis(
@@ -60,30 +62,31 @@ abstract class BaseSpecializedAgent {
       'medium'
     );
 
-    const prompt = this.buildPrompt(issue);
+    const systemPrompt = this.getSystemPrompt();
+    const userPrompt = this.buildPrompt(issue);
 
     try {
-      const response = await this.openRouter.chat.completions.create({
+      // Use centralized resilient AI client (handles all tiers automatically)
+      const aiClient = getResilientAIClient();
+
+      const response = await aiClient.chat({
+        systemPrompt,
+        userPrompt,
+        role: this.agentRole,
         model: modelConfig.primary.id,
-        messages: [
-          {
-            role: 'system',
-            content: this.getSystemPrompt()
-          },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
         temperature: 0.3,
-        max_tokens: 1500
+        maxTokens: 1500
       });
 
-      const aiResponse = response.choices[0].message.content || '';
-      return this.parseAIResponse(aiResponse, issue);
-    } catch (error) {
-      console.error(`[${this.agentRole}] Error generating fix:`, error);
-      // Fallback to a structured default
+      return this.parseAIResponse(response.content, issue);
+
+    } catch (error: any) {
+      // If AI service is completely unavailable, rethrow the friendly error
+      if (error.name === 'AIServiceUnavailableError') {
+        throw error;
+      }
+      // For other unexpected errors, use default fix
+      console.error(`[${this.agentRole}] Unexpected error, using fallback:`, error);
       return this.getDefaultFix(issue);
     }
   }

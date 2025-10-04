@@ -66,32 +66,43 @@ export function getModifiedFilesBetweenBranches(
   baseBranch: string,
   compareBranch: string
 ): string[] {
+  // Try three-dot diff first (merge base approach)
   try {
-    // Try three-dot diff first (merge base approach)
     const diffOutput = execSync(
       `git diff --name-only --find-renames ${baseBranch}...${compareBranch}`,
-      { cwd: repoPath, encoding: 'utf-8' }
+      { cwd: repoPath, encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }
+    );
+
+    const files = diffOutput
+      .split('\n')
+      .filter(line => line.trim() !== '')
+      .map(file => file.trim());
+
+    // If we got files, return them
+    if (files.length > 0) {
+      return files;
+    }
+  } catch (error) {
+    // Three-dot diff failed (no merge base), will try two-dot
+  }
+
+  // Fallback to two-dot diff if no merge base exists or three-dot returned nothing
+  try {
+    const diffOutput = execSync(
+      `git diff --name-only --find-renames ${baseBranch}..${compareBranch}`,
+      { cwd: repoPath, encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }
     );
 
     return diffOutput
       .split('\n')
       .filter(line => line.trim() !== '')
       .map(file => file.trim());
-  } catch (error) {
-    // Fallback to two-dot diff if no merge base exists
-    try {
-      const diffOutput = execSync(
-        `git diff --name-only --find-renames ${baseBranch}..${compareBranch}`,
-        { cwd: repoPath, encoding: 'utf-8' }
-      );
-
-      return diffOutput
-        .split('\n')
-        .filter(line => line.trim() !== '')
-        .map(file => file.trim());
-    } catch (fallbackError) {
-      throw new Error(`Failed to get modified files: ${fallbackError}`);
-    }
+  } catch (fallbackError: any) {
+    // If both approaches fail, log warning and return empty array
+    // This allows analysis to continue without modified file filtering
+    console.warn(`⚠️  Could not determine modified files between ${baseBranch} and ${compareBranch}: ${fallbackError.message}`);
+    console.warn('   Analysis will include ALL files (no filtering by modified files)');
+    return [];
   }
 }
 

@@ -200,16 +200,26 @@ export class V9ReportFormatterFinal {
 
       const critical = categoryIssues.filter((i: Issue) => i.severity === 'critical').length;
       const high = categoryIssues.filter((i: Issue) => i.severity === 'high').length;
+      const medium = categoryIssues.filter((i: Issue) => i.severity === 'medium').length;
 
-      // Impact calculation logic (Option A)
-      let impact = '🟢 None';
-      if (critical > 0 || blocking > 10) {
-        impact = '🔴 Critical';
-      } else if (high > 50 || blocking > 5) {
-        impact = '🟠 High';
-      } else if (backlog > 100) {
-        impact = '🟡 Medium';
+      // Impact calculation logic - Option B (Stricter) with Team-Configurable Thresholds
+      // Team can configure thresholds via environment variables or team settings
+      // Default: ANY critical/high = DECLINED, medium does NOT cause decline (for Impact display only)
+      const criticalThreshold = parseInt(process.env.IMPACT_CRITICAL_THRESHOLD || '0', 10);
+      const highThreshold = parseInt(process.env.IMPACT_HIGH_THRESHOLD || '0', 10);
+      const mediumThreshold = parseInt(process.env.IMPACT_MEDIUM_THRESHOLD || '999999', 10); // Medium never blocks by default
+
+      let impact = '🟢 Low';
+      if (critical > criticalThreshold) {
+        impact = '🔴 Critical';  // BLOCKS PR
+      } else if (high > highThreshold) {
+        impact = '🟠 High';      // BLOCKS PR
+      } else if (medium > mediumThreshold) {
+        impact = '🟡 Medium';    // Does NOT block (default: 999999 threshold)
       }
+      // IMPORTANT: Impact is for display only. PR decision is based on critical + high ONLY.
+      // Even 1000 medium issues = APPROVED (if no critical/high)
+      // Teams can set IMPACT_MEDIUM_THRESHOLD=0 to make medium issues block PRs too
 
       return {
         category,

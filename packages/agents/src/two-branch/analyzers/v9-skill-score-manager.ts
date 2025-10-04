@@ -15,7 +15,7 @@ import { SkillScore } from '../analyzers/v9-types';
 export interface SkillScoreData {
   developerEmail: string;
   developerName?: string;
-  repository: string;
+  repository: string;  // Will be stored as 'repo_name' in database
   prNumber: number;
   branch?: string;
   overallScore: number;
@@ -51,11 +51,11 @@ export class SkillScoreManager {
     repository: string
   ): Promise<number> {
     try {
-      const { data, error } = await this.supabase
+      const { data, error} = await this.supabase
         .from('skill_scores')
         .select('overall_score')
         .eq('developer_email', developerEmail)
-        .eq('repository', repository)
+        .eq('repo_name', repository)  // Fixed: use 'repo_name' column
         .order('analyzed_at', { ascending: false })
         .limit(5);
 
@@ -94,7 +94,7 @@ export class SkillScoreManager {
         .from('skill_scores')
         .select('overall_score')
         .eq('developer_email', developerEmail)
-        .eq('repository', repository)
+        .eq('repo_name', repository)  // Fixed: use 'repo_name' column
         .order('analyzed_at', { ascending: true })
         .limit(limit);
 
@@ -127,7 +127,7 @@ export class SkillScoreManager {
       const { error } = await this.supabase.from('skill_scores').insert({
         developer_email: scoreData.developerEmail,
         developer_name: scoreData.developerName,
-        repository: scoreData.repository,
+        repo_name: scoreData.repository,  // Fixed: use 'repo_name' column
         pr_number: scoreData.prNumber,
         branch: scoreData.branch,
         overall_score: scoreData.overallScore,

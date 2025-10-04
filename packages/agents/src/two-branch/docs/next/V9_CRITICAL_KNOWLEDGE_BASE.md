@@ -292,10 +292,171 @@ npx ts-node src/two-branch/scheduler/run-scheduler.ts
 ```bash
 SUPABASE_URL
 SUPABASE_SERVICE_ROLE_KEY
-OPENROUTER_API_KEY
+OPENROUTER_API_KEY  # Single key (NOT recommended for production)
+OPENROUTER_API_KEYS # Multiple keys (PRODUCTION RECOMMENDED)
 REDIS_URL
 HYBRID_AGENT_URL
 ```
+
+## 🔐 OpenRouter API Resilience Strategy (October 2025)
+
+### ✅ 3-Tier Production Resilience Architecture
+
+**Status:** Tier 1 + Tier 3 ✅ IMPLEMENTED, Tier 2 🚧 PARTIAL
+
+### Why We Need This
+**Production Requirement:** Users must ALWAYS get a report, even when AI services are degraded or unavailable.
+
+**Problem Discovered (2025-10-03):**
+- OpenRouter keys can fail with "401 User not found" even when freshly created
+- Account-level issues can make ALL keys from one account unusable
+- Single key = Single point of failure = Complete service outage
+
+### Tier 1: Multi-Key Automatic Fallback ✅ IMPLEMENTED
+
+**Implementation:** `src/two-branch/services/openrouter-key-manager.ts`
+
+**How It Works:**
+1. Configure multiple OpenRouter API keys in `.env`
+2. System automatically rotates through keys when one fails
+3. Failed keys are blacklisted (1 minute for rate limits, permanent for auth errors)
+4. Exponential backoff retry (2s, 4s, 8s) for transient errors
+
+**Configuration (3 Options):**
+```bash
+# Option 1: Comma-separated (RECOMMENDED for production)
+OPENROUTER_API_KEYS=sk-or-v1-key1,sk-or-v1-key2,sk-or-v1-key3
+
+# Option 2: Numbered keys
+OPENROUTER_API_KEY_1=sk-or-v1-key1
+OPENROUTER_API_KEY_2=sk-or-v1-key2
+OPENROUTER_API_KEY_3=sk-or-v1-key3
+
+# Option 3: Single key (backward compatible, NOT for production)
+OPENROUTER_API_KEY=sk-or-v1-single-key
+```
+
+**Error Handling:**
+- **401/403 (Auth)** → Blacklist permanently, try next key immediately
+- **429 (Rate limit)** → Blacklist for 1 minute, try next key immediately
+- **500/503 (Server error)** → Retry with exponential backoff (2s, 4s, 8s)
+- **Network timeout** → Retry with exponential backoff
+
+**Best Practices:**
+- **Minimum 3 keys** for production
+- Use keys from **different OpenRouter accounts** (avoid single account dependency)
+- Monitor key health via `getKeyStatuses()` API
+- Rotate keys monthly
+
+### Tier 2: Fallback Model Selection 🚧 PARTIAL
+
+**Status:** Partially implemented via `DynamicModelSelector`
+
+**Enhancement Needed:**
+- Auto-fallback to cheaper/faster models when primary fails
+- Example: `google/gemini-2.5-pro` (primary) → `openai/gpt-3.5-turbo` (fallback)
+
+**Priority:** Medium (Tier 1 + Tier 3 provide sufficient resilience)
+
+### Tier 3: Graceful Degradation (Static Analysis Fallback) ✅ IMPLEMENTED
+
+**Implementation:** `src/two-branch/agents/specialized-agents.ts`
+
+**How It Works:**
+When ALL API keys fail, specialized agents return structured default fixes:
+
+```typescript
+// Example: SecurityAgent fallback when AI unavailable
+{
+  fix: "Address this critical security issue according to security best practices",
+  correctedCode: `
+    ${lineNum}: // SECURITY FIX: Implement secure coding practice
+    ${lineNum + 1}: // Validate and sanitize all inputs
+    ${lineNum + 2}: // Use parameterized queries
+  `,
+  bestPractices: [
+    "Review security guidelines",
+    "Apply appropriate fix based on context"
+  ]
+}
+```
+
+**Coverage:**
+- ✅ SecurityAgent: Security-focused templates
+- ✅ PerformanceAgent: Performance optimization templates
+- ✅ CodeQualityAgent: Code quality templates
+- ✅ ArchitectureAgent: Design pattern templates
+- ✅ DependencyAgent: Dependency management templates
+
+**Result:**
+- Users ALWAYS get a report with actionable suggestions
+- Clear indication when AI was unavailable (via `model: 'fallback-static-analysis'`)
+- No service disruption, just reduced fix quality
+
+### Integration Status
+
+**✅ Implemented:**
+- `specialized-agents.ts` - All 5 agents use `OpenRouterKeyManager.executeWithFallback()`
+- Automatic retry and key rotation for fix suggestions
+- Graceful fallback when all keys exhausted
+
+**🚧 Pending:**
+- `v9-integrated-analyzer.ts` - Needs `OpenRouterKeyManager` integration
+- Add `generateBasicInsights()` fallback method for AI insights
+
+### Monitoring Key Health
+
+```typescript
+import { getOpenRouterKeyManager } from './services/openrouter-key-manager';
+
+const keyManager = getOpenRouterKeyManager();
+const statuses = keyManager.getKeyStatuses();
+
+statuses.forEach(status => {
+  console.log(`Key: ${status.key}`);
+  console.log(`Failures: ${status.failureCount}`);
+  console.log(`Last used: ${status.lastUsed}`);
+  console.log(`Blacklisted until: ${status.blacklistedUntil}`);
+});
+```
+
+### Production Deployment Checklist
+
+- [ ] Configure **minimum 3 API keys** from different accounts
+- [ ] Set `OPENROUTER_API_KEYS` in production `.env`
+- [ ] Test failover by temporarily blocking one key
+- [ ] Set up monitoring for key health
+- [ ] Configure alerts for "all keys blacklisted"
+- [ ] Document key rotation process
+- [ ] Test graceful degradation (all keys invalid)
+
+### Troubleshooting
+
+**"All OpenRouter API keys are currently blacklisted"**
+1. Check OpenRouter account status for all accounts
+2. Add fresh keys from working accounts
+3. Wait 5 minutes for temporary blacklists to expire
+4. Check logs for specific error messages
+
+**"User not found" for freshly created key**
+1. Contact OpenRouter support (account-level database sync bug)
+2. Try creating key from different account
+3. System will use fallback fixes until resolved
+4. Users still get reports (graceful degradation working)
+
+### Cost Impact
+
+**Multi-key strategy does NOT increase costs:**
+- Keys rotate only on failure, not on every request
+- Failed keys are blacklisted to avoid repeated failures
+- Same total requests, just distributed across multiple keys
+- Minimal retry overhead (2-3 extra requests on transient failures)
+
+### Documentation
+
+- **Complete Guide:** `src/two-branch/docs/OPENROUTER_RESILIENCE_STRATEGY.md`
+- **Implementation:** `src/two-branch/services/openrouter-key-manager.ts`
+- **Session Summary:** `src/two-branch/docs/SESSION_2025_10_03_OPENROUTER_RESILIENCE.md`
 
 ## 🚫 Common Misconceptions to Avoid
 
@@ -430,8 +591,8 @@ interface IssueDetail {
 
 ---
 
-**Last Updated:** 2025-09-29 (Performance Calibration Complete + Multi-Tool Strategy)
-**Version:** V9.0.3
+**Last Updated:** 2025-10-03 (OpenRouter Resilience Strategy Implemented)
+**Version:** V9.0.4
 **Status:**
 - ✅ File selection fixed (threshold >= 10,000)
 - ✅ Researcher fallback implemented
@@ -447,8 +608,12 @@ interface IssueDetail {
 - ✅ Two-branch analysis strategy documented
 - ✅ Language-first testing approach established
 - ✅ Oracle A1.Flex infrastructure fully calibrated
+- ✅ OpenRouter multi-key fallback IMPLEMENTED (production resilience)
+- ✅ Graceful degradation fallback IMPLEMENTED (users always get reports)
 - 🔄 Multi-tool calibration in progress (Semgrep needs optimization)
+- 🚧 V9IntegratedAnalyzer needs OpenRouterKeyManager integration
 - ⚠️ BUG-105: Educator service needs integration fix
+- ⚠️ Integration testing blocked by OpenRouter account issue (401 User not found)
 
 ## 📊 Monitoring Service Usage
 

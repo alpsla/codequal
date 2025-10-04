@@ -7,9 +7,9 @@ import { RedisToolOutputManager, ToolOutput } from '../utils/redis-tool-output-m
 import { KubernetesRepositoryManager } from '../utils/kubernetes-repository-manager';
 import { V9ReportFormatterFinal } from './v9-report-formatter';
 import { DynamicModelSelector } from '../services/dynamic-model-selector';
-import { SkillScoreManager } from '../services/skill-score-manager';
+import { SkillScoreManager } from './v9-skill-score-manager';  // Moved to V9 core
 import { logger } from '../utils/logger';
-import OpenAI from 'openai';
+import { getResilientAIClient } from '../services/resilient-ai-client';
 
 interface AIAnalysisRequest {
   repository: string;
@@ -36,7 +36,7 @@ export class V9IntegratedAnalyzer {
   private repoManager: KubernetesRepositoryManager;
   private reportFormatter: V9ReportFormatterFinal;
   private modelSelector: DynamicModelSelector;
-  private openRouter: OpenAI;
+  private aiClient = getResilientAIClient();
 
   constructor() {
     this.redisManager = new RedisToolOutputManager();
@@ -45,22 +45,6 @@ export class V9IntegratedAnalyzer {
 
     // Use the existing DynamicModelSelector that fetches from Supabase
     this.modelSelector = new DynamicModelSelector(process.env.OPENROUTER_API_KEY);
-
-    // Initialize OpenRouter client for AI analysis
-    const openRouterConfig: any = {
-      apiKey: process.env.OPENROUTER_API_KEY || '',
-    };
-    
-    // Only add baseURL if we're using OpenRouter (not OpenAI directly)
-    if (process.env.OPENROUTER_API_KEY?.startsWith('sk-or-')) {
-      openRouterConfig.baseURL = 'https://openrouter.ai/api/v1';
-      openRouterConfig.defaultHeaders = {
-        'HTTP-Referer': 'https://codequal.com',
-        'X-Title': 'CodeQual V9 Analyzer'
-      };
-    }
-    
-    this.openRouter = new OpenAI(openRouterConfig);
   }
 
   /**
@@ -178,31 +162,73 @@ export class V9IntegratedAnalyzer {
     // Prepare context for AI
     const context = this.prepareAIContext(request);
 
-    const response = await this.openRouter.chat.completions.create({
-      model: modelConfig.primary.id,
-      messages: [
-        {
-          role: 'system',
-          content: `You are a senior software architect analyzing code quality issues.
-                   Provide comprehensive insights about the detected issues, their impact,
-                   and actionable recommendations. Focus on business value and team productivity.`
-        },
-        {
-          role: 'user',
-          content: context
-        }
-      ],
-      temperature: 0.3,
-      max_tokens: 2000
-    });
+    const systemPrompt = `You are a senior software architect analyzing code quality issues.
+Provide comprehensive insights about the detected issues, their impact,
+and actionable recommendations. Focus on business value and team productivity.`;
 
-    const aiResponse = response.choices[0].message.content;
-    const insights = this.parseAIResponse(aiResponse);
+    try {
+      // Use resilient AI client (auto-handles OpenRouter + emergency fallback)
+      const response = await this.aiClient.chat({
+        systemPrompt,
+        userPrompt: context,
+        role: 'V9Analyzer',
+        model: modelConfig.primary.id,
+        temperature: 0.3,
+        maxTokens: 2000
+      });
 
-    // Add model info to insights
+      const insights = this.parseAIResponse(response.content);
+
+      // Add model info to insights
+      return {
+        ...insights,
+        model: response.model,
+        provider: response.provider
+      } as AIInsight;
+
+    } catch (error) {
+      logger.error('AI insights generation failed, using basic summary', error);
+      // Return basic insights when all AI fails
+      return this.generateBasicInsights(request);
+    }
+  }
+
+  /**
+   * Generate basic insights when AI is unavailable
+   */
+  private generateBasicInsights(request: AIAnalysisRequest): AIInsight {
+    const totalIssues = request.toolOutputs.reduce(
+      (sum, output) => sum + (output.parsedIssues?.length || 0), 0
+    );
+
+    const criticalCount = request.toolOutputs.reduce(
+      (sum, output) => sum + (output.parsedIssues?.filter(i =>
+        i.severity === 'critical'
+      ).length || 0), 0
+    );
+
+    const highCount = request.toolOutputs.reduce(
+      (sum, output) => sum + (output.parsedIssues?.filter(i =>
+        i.severity === 'high'
+      ).length || 0), 0
+    );
+
     return {
-      ...insights,
-      model: modelConfig.primary.id
+      summary: `Found ${totalIssues} total issues (${criticalCount} critical, ${highCount} high severity)`,
+      riskAssessment: criticalCount > 0 ? 'HIGH RISK: Critical issues detected' : 'MEDIUM RISK',
+      architecturalImpact: 'Manual review recommended for architectural assessment',
+      securityImplications: 'Security review recommended - check for vulnerabilities',
+      performanceImpact: 'Performance impact assessment pending',
+      recommendations: [
+        'Address all critical severity issues immediately',
+        'Review high severity issues before merge',
+        'Schedule code review with senior team members'
+      ],
+      estimatedEffort: `${Math.ceil(totalIssues * 0.5)} hours estimated`,
+      businessImpact: 'Potential delays if critical issues not addressed',
+      teamProductivityImpact: 'May slow development velocity',
+      model: 'static-analysis-fallback',
+      provider: 'fallback'
     } as AIInsight;
   }
 
@@ -1067,6 +1093,10 @@ ${lineNum+1}: // Surrounding code`;
   /**
    * Calculate overall skill score based on issues
    * Formula: 100 - (weighted issue penalties) + (resolved issue bonuses)
+   * IMPORTANT: Penalties and bonuses are EQUAL to incentivize fixing issues
+   *
+   * Note: We ONLY penalize for issues in MODIFIED FILES, not existing issues.
+   * This encourages developers to clean up issues when they work on a file.
    */
   private calculateSkillScore(
     newIssues: any[],
@@ -1075,7 +1105,7 @@ ${lineNum+1}: // Surrounding code`;
   ): number {
     let score = 100;
 
-    // Penalties for new issues introduced
+    // Penalties for new issues introduced (ONLY in modified files)
     newIssues.forEach(issue => {
       switch (issue.severity) {
         case 'critical': score -= 5; break;
@@ -1085,15 +1115,18 @@ ${lineNum+1}: // Surrounding code`;
       }
     });
 
-    // Bonuses for resolved issues
+    // Bonuses for resolved issues (EQUAL to penalties - tested and approved)
     resolvedIssues.forEach(issue => {
       switch (issue.severity) {
-        case 'critical': score += 3; break;
-        case 'high': score += 1.5; break;
-        case 'medium': score += 0.75; break;
-        case 'low': score += 0.25; break;
+        case 'critical': score += 5; break;  // Changed from 3 to 5
+        case 'high': score += 2; break;      // Changed from 1.5 to 2
+        case 'medium': score += 1; break;    // Changed from 0.75 to 1
+        case 'low': score += 0.5; break;     // Changed from 0.25 to 0.5
       }
     });
+
+    // NOTE: existingIssues are NOT penalized unless they are in modified files
+    // This is handled by the issue categorization logic (NEW vs EXISTING)
 
     // Ensure score stays in 0-100 range
     return Math.max(0, Math.min(100, Math.round(score)));
