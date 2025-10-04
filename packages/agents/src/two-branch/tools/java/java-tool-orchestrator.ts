@@ -58,6 +58,12 @@ export interface JavaToolConfig {
       dbPassword: string;
       dbDriver: string;              // /tmp/jdbc-drivers/postgresql-42.7.1.jar
     };
+    // OSS Index configuration (Sonatype vulnerability database)
+    ossIndex?: {
+      enabled: boolean;
+      username: string;               // OSS Index account email
+      apiToken: string;               // OSS Index API token
+    };
   };
 
   // OPTIONAL TOOLS (Can be disabled)
@@ -72,7 +78,9 @@ export interface JavaToolConfig {
     enabled: boolean;
     priority: 'high' | 'medium' | 'low';
     effort: 'min' | 'default' | 'max';
-    buildCommand?: string;          // e.g., "mvn compile"
+    buildCommand?: string;          // Custom build command (optional)
+    autoDetectBuildSystem?: boolean; // Auto-detect Gradle/Maven (default: true)
+    supportedBuildSystems?: string[]; // e.g., ['gradle', 'maven'] (default)
     memory: string;
   };
 }
@@ -93,6 +101,8 @@ export interface ToolResult {
       medium: number;
       low: number;
     };
+    skipped?: boolean;
+    skipReason?: string;
   };
 }
 
@@ -164,6 +174,11 @@ export const DEFAULT_JAVA_CONFIG: JavaToolConfig = {
       dbUser: process.env.ORACLE_DEPCHECK_DB_USER || 'depcheck_scanner',
       dbPassword: process.env.ORACLE_DEPCHECK_DB_PASSWORD || 'postgres123',
       dbDriver: process.env.ORACLE_DEPCHECK_JDBC_DRIVER || '/tmp/jdbc-drivers/postgresql-42.7.1.jar'
+    },
+    ossIndex: {
+      enabled: true,                 // Use Sonatype OSS Index for additional vulnerability data
+      username: process.env.OSS_INDEX_USERNAME || '',
+      apiToken: process.env.OSS_INDEX_API_TOKEN || ''
     }
   },
 
@@ -176,9 +191,11 @@ export const DEFAULT_JAVA_CONFIG: JavaToolConfig = {
     changedFilesOnly: true           // Only analyze changed files in PR context
   },
   spotbugs: {
-    enabled: false,                  // Optional - requires compilation
+    enabled: false,                   // Optional - requires compilation
     priority: 'high',
     effort: 'default',
+    autoDetectBuildSystem: true,      // Auto-detect Gradle/Maven
+    supportedBuildSystems: ['gradle', 'maven'], // Only enable for stable build systems
     memory: '4g'
   }
 };
@@ -223,6 +240,40 @@ export class JavaToolOrchestrator {
     logger.info(`🔧 Mode: ${includeAllSeverities ? 'ALL SEVERITIES' : 'CRITICAL/HIGH ONLY'}`);
 
     try {
+      // FIX #3: Actually checkout the requested branch before analysis
+      // Get current branch for validation
+      const { stdout: currentBranch } = await execAsync(`git -C ${repoPath} branch --show-current`);
+      const currentBranchName = currentBranch.trim();
+
+      logger.info(`📍 Current branch: ${currentBranchName}`);
+
+      // Determine target branch name
+      let targetBranch: string;
+      if (branch === 'main') {
+        targetBranch = 'main';
+      } else {
+        // For PR, detect the actual PR branch (could be pr-with-checkstyle-violations, feature/xyz, etc.)
+        // Assume caller has already set up the repo with the correct PR branch checked out
+        // We'll validate it's NOT main
+        if (currentBranchName === 'main' || currentBranchName === 'master') {
+          throw new Error(
+            `Branch parameter is 'pr' but repository is on ${currentBranchName}. ` +
+            `Please checkout PR branch before calling orchestrate()`
+          );
+        }
+        targetBranch = currentBranchName;
+      }
+
+      // Checkout target branch if not already there
+      if (currentBranchName !== targetBranch) {
+        logger.info(`🔄 Checking out ${targetBranch}...`);
+        await execAsync(`git -C ${repoPath} checkout ${targetBranch}`);
+        logger.info(`✅ Checked out ${targetBranch}`);
+      } else {
+        logger.info(`✅ Already on ${targetBranch}`);
+      }
+
+
       // ============================================================
       // PHASE 1: REQUIRED TOOLS (Parallel: PMD + Semgrep)
       // ============================================================
@@ -343,13 +394,18 @@ export class JavaToolOrchestrator {
     const startTime = Date.now();
 
     try {
-      const rulesets = this.config.pmd.rulesets.join(',');
+      // FIX #1: Provide default rulesets if config is empty
+      const rulesets = this.config.pmd.rulesets.length > 0
+        ? this.config.pmd.rulesets.join(',')
+        : 'category/java/bestpractices.xml,category/java/codestyle.xml,category/java/design.xml,category/java/errorprone.xml,category/java/performance.xml';
+
       // Note: PMD doesn't support --exclude flag, we filter test files in post-processing
+      // FIX #4: Use "pmd check" instead of "pmd pmd" (official PMD 7 syntax)
       const command = `
         docker run --rm \\
           -v ${repoPath}:/workspace \\
           ${this.dockerImage} \\
-          -c "pmd pmd \\
+          -c "pmd check \\
             -d /workspace \\
             -f json \\
             -R ${rulesets} \\
@@ -404,13 +460,14 @@ export class JavaToolOrchestrator {
     const startTime = Date.now();
 
     try {
-      // Use a simpler approach: run checkstyle on specific directory
+      // FIX #2: Use less aggressive test file exclusion - only exclude src/test directories
+      // Old pattern excluded files with "Test" in the name, missing violations in test examples
       // For large repos, scan in batches to avoid command line length issues
       const command = `
         docker run --rm \\
           -v ${repoPath}:/workspace \\
           ${this.dockerImage} \\
-          -c "find /workspace -name '*.java' -type f ! -path '*/test/*' ! -path '*/tests/*' ! -name '*Test.java' ! -name '*Tests.java' -print0 | \\
+          -c "find /workspace -name '*.java' -type f ! -path '*/src/test/*' ! -path '*/src/tests/*' -print0 | \\
               xargs -0 -n 500 checkstyle -c ${this.config.checkstyle.configFile} -f xml 2>&1 > /workspace/checkstyle-results-${branch}.xml || true"
       `;
 
@@ -509,6 +566,121 @@ export class JavaToolOrchestrator {
   }
 
   /**
+   * Detect build system and determine if SpotBugs should run
+   */
+  private async shouldEnableSpotBugs(repoPath: string): Promise<{
+    enabled: boolean;
+    buildSystem?: string;
+    buildCommand?: string;
+    skipReason?: string;
+  }> {
+    // User explicitly disabled
+    if (!this.config.spotbugs?.enabled) {
+      return { enabled: false, skipReason: 'disabled-by-config' };
+    }
+
+    // User provided custom build command (trust them)
+    if (this.config.spotbugs.buildCommand) {
+      return {
+        enabled: true,
+        buildSystem: 'custom',
+        buildCommand: this.config.spotbugs.buildCommand
+      };
+    }
+
+    // Auto-detect build system (if enabled)
+    if (this.config.spotbugs.autoDetectBuildSystem !== false) {
+      const detection = await this.detectBuildSystem(repoPath);
+
+      // Check if supported
+      const supported = this.config.spotbugs.supportedBuildSystems || ['gradle', 'maven'];
+      if (!supported.includes(detection.buildSystem)) {
+        return {
+          enabled: false,
+          buildSystem: detection.buildSystem,
+          skipReason: `build-system-unsupported: ${detection.buildSystem}`
+        };
+      }
+
+      // Supported build system found
+      return {
+        enabled: true,
+        buildSystem: detection.buildSystem,
+        buildCommand: detection.buildCommand
+      };
+    }
+
+    // No build command and auto-detect disabled
+    return {
+      enabled: false,
+      skipReason: 'no-build-command-provided'
+    };
+  }
+
+  /**
+   * Detect build system (Gradle, Maven, Ant, etc.)
+   */
+  private async detectBuildSystem(repoPath: string): Promise<{
+    buildSystem: string;
+    buildCommand?: string;
+  }> {
+    // Check for Gradle (priority: wrapper > gradle)
+    if (await this.fileExists(path.join(repoPath, 'gradlew'))) {
+      return {
+        buildSystem: 'gradle',
+        buildCommand: `cd ${repoPath} && ./gradlew compileJava compileTestJava -x test --no-daemon`
+      };
+    }
+    if (await this.fileExists(path.join(repoPath, 'build.gradle')) ||
+        await this.fileExists(path.join(repoPath, 'build.gradle.kts'))) {
+      return {
+        buildSystem: 'gradle',
+        buildCommand: `cd ${repoPath} && gradle compileJava compileTestJava -x test --no-daemon`
+      };
+    }
+
+    // Check for Maven (priority: wrapper > mvn)
+    if (await this.fileExists(path.join(repoPath, 'mvnw'))) {
+      return {
+        buildSystem: 'maven',
+        buildCommand: `cd ${repoPath} && ./mvnw clean compile -DskipTests`
+      };
+    }
+    if (await this.fileExists(path.join(repoPath, 'pom.xml'))) {
+      return {
+        buildSystem: 'maven',
+        buildCommand: `cd ${repoPath} && mvn clean compile -DskipTests`
+      };
+    }
+
+    // Check for Ant
+    if (await this.fileExists(path.join(repoPath, 'build.xml'))) {
+      return { buildSystem: 'ant' };  // No auto-command (too variable)
+    }
+
+    // Check for Bazel
+    if (await this.fileExists(path.join(repoPath, 'WORKSPACE')) &&
+        await this.fileExists(path.join(repoPath, 'BUILD'))) {
+      return { buildSystem: 'bazel' };
+    }
+
+    // Unknown/custom
+    return { buildSystem: 'unknown' };
+  }
+
+  /**
+   * Helper: Check if file exists
+   */
+  private async fileExists(filePath: string): Promise<boolean> {
+    try {
+      await fs.access(filePath);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
    * Run SpotBugs (optional - requires compilation)
    */
   private async runSpotBugs(
@@ -517,14 +689,38 @@ export class JavaToolOrchestrator {
   ): Promise<ToolResult> {
     const startTime = Date.now();
 
+    // FIX #5: Graceful degradation - separate compilation errors from SpotBugs errors
     try {
-      // Step 1: Compile if build command provided
+      // Step 1: Try to compile if build command provided
       if (this.config.spotbugs?.buildCommand) {
         logger.info('  Compiling project for SpotBugs...');
-        await execAsync(this.config.spotbugs.buildCommand, { cwd: repoPath });
+        try {
+          await execAsync(this.config.spotbugs.buildCommand, { cwd: repoPath });
+          logger.info('  ✅ Compilation successful');
+        } catch (compilationError: any) {
+          // GRACEFUL DEGRADATION: Compilation failed, skip SpotBugs but continue other tools
+          logger.warn('⚠️  SpotBugs skipped: Compilation failed');
+          logger.warn(`   Reason: ${compilationError.message.split('\n')[0]}`);
+          logger.info('   Other tools will continue running...');
+
+          return {
+            tool: 'SpotBugs',
+            success: false,
+            duration: Date.now() - startTime,
+            issues: [],
+            error: `Compilation failed: ${compilationError.message.split('\n')[0]}`,
+            metadata: {
+              filesScanned: 0,
+              issuesFound: 0,
+              severity: { critical: 0, high: 0, medium: 0, low: 0 },
+              skipped: true,
+              skipReason: 'compilation-failed'
+            }
+          };
+        }
       }
 
-      // Step 2: Run SpotBugs on compiled classes
+      // Step 2: Run SpotBugs on compiled classes (only if compilation succeeded)
       const command = `
         docker run --rm \\
           -v ${repoPath}:/workspace \\
@@ -554,6 +750,7 @@ export class JavaToolOrchestrator {
       };
 
     } catch (error: any) {
+      // SpotBugs execution error (not compilation)
       logger.error('SpotBugs execution failed:', error);
       return {
         tool: 'SpotBugs',
@@ -598,6 +795,13 @@ export class JavaToolOrchestrator {
         `--dbDriverPath "${pg.dbDriver}"`
       ].filter(p => p).join(' ');
 
+      // Build OSS Index parameters (if enabled)
+      const ossIndex = this.config.dependencyCheck?.ossIndex;
+      const ossIndexParams = ossIndex?.enabled ? [
+        `--ossIndexUsername "${ossIndex.username}"`,
+        `--ossIndexPassword "${ossIndex.apiToken}"`
+      ].join(' ') : '';
+
       const command = `
         docker run --rm \\
           -v ${repoPath}:/workspace \\
@@ -611,6 +815,7 @@ export class JavaToolOrchestrator {
             --out /workspace/dependency-check-results-${branch} \\
             --project 'CodeQual-${branch}' \\
             ${jdbcParams} \\
+            ${ossIndexParams} \\
             --failOnCVSS ${this.config.dependencyCheck.failOnCVSS} \\
             --disableNodeAudit \\
             --disableYarnAudit"
@@ -618,6 +823,9 @@ export class JavaToolOrchestrator {
 
       logger.info(`Running Dependency-Check with PostgreSQL backend...`);
       logger.info(`Database: ${pg.connectionString}`);
+      if (ossIndex?.enabled) {
+        logger.info(`OSS Index: Enabled (user: ${ossIndex.username})`);
+      }
 
       try {
         await execAsync(command, {
