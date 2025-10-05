@@ -158,7 +158,7 @@ export class OpenRouterKeyManager {
               'HTTP-Referer': 'https://codequal.com',
               'X-Title': agentRole ? `CodeQual ${agentRole} Agent` : 'CodeQual'
             }
-          });
+          } as any);
 
           const result = await fn(client);
 
@@ -222,7 +222,7 @@ export class OpenRouterKeyManager {
       const client = new OpenAI({
         apiKey: key,
         baseURL: 'https://openrouter.ai/api/v1'
-      });
+      } as any);
 
       // Quick test call
       await client.chat.completions.create({

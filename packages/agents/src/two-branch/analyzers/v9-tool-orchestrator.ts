@@ -242,7 +242,7 @@ export class V9ToolOrchestrator {
       logger.info('🔧 Executing Java tools via JavaToolOrchestrator...');
       const orchestrationResult = await javaOrchestrator.orchestrate(
         repoPath,
-        branch,
+        branch === 'main' ? 'base' : 'pr',
         changedFiles
       );
 
