@@ -353,8 +353,8 @@ export class JavaToolOrchestrator {
         toolResults.push(depCheckResult);
         logger.info(`✅ Dependency-Check complete: ${depCheckResult.duration}ms`);
         logger.info(`   Found: ${depCheckResult.metadata.issuesFound} vulnerabilities`);
-      } else if (this.config.dependencyCheck?.enabled && branch === 'main') {
-        logger.info('\n⏭️  Skipping Dependency-Check on main branch (CVEs are same in both branches)');
+      } else if (this.config.dependencyCheck?.enabled && branch === 'base') {
+        logger.info('\n⏭️  Skipping Dependency-Check on base branch (CVEs are same in both branches)');
       }
 
       // ============================================================
