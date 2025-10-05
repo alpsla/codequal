@@ -345,16 +345,14 @@ export class JavaToolOrchestrator {
         logger.info(`✅ SpotBugs complete: ${spotbugsResult.duration}ms`);
       }
 
-      // Dependency-Check (REQUIRED but only on PR branch to save time/resources)
-      // Rationale: CVE database is the same for both branches, so checking main is redundant
-      if (this.config.dependencyCheck?.enabled && branch === 'pr') {
-        logger.info('\n🔐 Running Dependency-Check (PR branch - REQUIRED for security)...');
+      // Dependency-Check (REQUIRED on BOTH branches for proper two-branch analysis)
+      // Run on both branches to properly categorize CVEs as NEW/RESOLVED/EXISTING
+      if (this.config.dependencyCheck?.enabled) {
+        logger.info(`\n🔐 Running Dependency-Check (${branch} branch - REQUIRED for security)...`);
         const depCheckResult = await this.runDependencyCheck(repoPath, branch);
         toolResults.push(depCheckResult);
         logger.info(`✅ Dependency-Check complete: ${depCheckResult.duration}ms`);
         logger.info(`   Found: ${depCheckResult.metadata.issuesFound} vulnerabilities`);
-      } else if (this.config.dependencyCheck?.enabled && branch === 'base') {
-        logger.info('\n⏭️  Skipping Dependency-Check on base branch (CVEs are same in both branches)');
       }
 
       // ============================================================
