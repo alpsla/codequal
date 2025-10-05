@@ -227,7 +227,7 @@ export class JavaToolOrchestrator {
    */
   async orchestrate(
     repoPath: string,
-    branch: 'main' | 'pr',
+    branch: 'base' | 'pr',
     changedFiles?: string[],
     options?: { includeAllSeverities?: boolean }
   ): Promise<OrchestrationResult> {
@@ -249,15 +249,21 @@ export class JavaToolOrchestrator {
 
       // Determine target branch name
       let targetBranch: string;
-      if (branch === 'main') {
-        targetBranch = 'main';
+      if (branch === 'base') {
+        // Dynamically detect the default branch (trunk, main, master, etc.)
+        const { detectDefaultBranch } = await import('../../utils/git-utils');
+        targetBranch = detectDefaultBranch(repoPath);
+        logger.info(`🔍 Detected default branch: ${targetBranch}`);
       } else {
         // For PR, detect the actual PR branch (could be pr-with-checkstyle-violations, feature/xyz, etc.)
         // Assume caller has already set up the repo with the correct PR branch checked out
-        // We'll validate it's NOT main
-        if (currentBranchName === 'main' || currentBranchName === 'master') {
+        // We'll validate it's NOT a default branch
+        const { detectDefaultBranch } = await import('../../utils/git-utils');
+        const defaultBranch = detectDefaultBranch(repoPath);
+
+        if (currentBranchName === defaultBranch) {
           throw new Error(
-            `Branch parameter is 'pr' but repository is on ${currentBranchName}. ` +
+            `Branch parameter is 'pr' but repository is on ${currentBranchName} (default branch). ` +
             `Please checkout PR branch before calling orchestrate()`
           );
         }
