@@ -39,6 +39,13 @@ export class EmergencyFallbackProvider {
 
   /**
    * Load emergency fallback configuration from environment
+   *
+   * Configuration options:
+   * - EMERGENCY_FALLBACK_PROVIDER: Provider to use (gemini, anthropic, openai)
+   * - EMERGENCY_FALLBACK_MODEL: Specific model for the provider
+   * - GEMINI_MODEL: Gemini-specific model override
+   * - CLAUDE_MODEL: Anthropic-specific model override
+   * - GPT_MODEL: OpenAI-specific model override
    */
   private loadConfig(): EmergencyFallbackConfig {
     const provider = (process.env.EMERGENCY_FALLBACK_PROVIDER || 'gemini') as EmergencyProvider;
@@ -48,16 +55,30 @@ export class EmergencyFallbackProvider {
       return modelName.replace(/^(google|anthropic|openai)\//i, '');
     };
 
-    // Get model from env or use defaults
-    const envModel = process.env.EMERGENCY_FALLBACK_MODEL;
-
-    // Default models for each provider (best quality/price ratio)
-    const defaultModels: Record<EmergencyProvider, string> = {
-      gemini: envModel ? stripProviderPrefix(envModel) : 'gemini-2.5-pro',
-      anthropic: envModel ? stripProviderPrefix(envModel) : 'claude-sonnet-4-20250514',
-      openai: envModel ? stripProviderPrefix(envModel) : 'gpt-4o',
-      none: ''
+    // Get provider-specific model from env
+    const getModelForProvider = (providerName: EmergencyProvider): string => {
+      // Priority: Provider-specific env var > EMERGENCY_FALLBACK_MODEL > default
+      switch (providerName) {
+        case 'gemini':
+          return process.env.GEMINI_MODEL ||
+                 process.env.EMERGENCY_FALLBACK_MODEL ||
+                 'gemini-2.5-pro';
+        case 'anthropic':
+          return process.env.CLAUDE_MODEL ||
+                 process.env.EMERGENCY_FALLBACK_MODEL ||
+                 'claude-sonnet-4-20250514';
+        case 'openai':
+          return process.env.GPT_MODEL ||
+                 process.env.EMERGENCY_FALLBACK_MODEL ||
+                 'gpt-4o';
+        case 'none':
+          return '';
+      }
     };
+
+    // Get model for selected provider
+    const rawModel = getModelForProvider(provider);
+    const model = stripProviderPrefix(rawModel);
 
     // Get API key for the selected provider
     const apiKeyMap: Record<EmergencyProvider, string> = {
@@ -76,9 +97,17 @@ export class EmergencyFallbackProvider {
       );
     }
 
+    // Log the configuration for transparency
+    if (provider !== 'none' && apiKey) {
+      console.log(
+        `[EmergencyFallbackProvider] ✅ Configured: ${provider}/${model} ` +
+        `(from ${process.env.GEMINI_MODEL || process.env.CLAUDE_MODEL || process.env.GPT_MODEL ? 'provider-specific' : process.env.EMERGENCY_FALLBACK_MODEL ? 'EMERGENCY_FALLBACK_MODEL' : 'default'})`
+      );
+    }
+
     return {
       provider,
-      model: defaultModels[provider],
+      model,
       apiKey
     };
   }
