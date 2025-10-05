@@ -400,12 +400,12 @@ export class JavaToolOrchestrator {
         : 'category/java/bestpractices.xml,category/java/codestyle.xml,category/java/design.xml,category/java/errorprone.xml,category/java/performance.xml';
 
       // Note: PMD doesn't support --exclude flag, we filter test files in post-processing
-      // FIX #4: Use "pmd check" instead of "pmd pmd" (official PMD 7 syntax)
+      // Use "pmd pmd" syntax with correct flag format (--flag-name)
       const command = `
         docker run --rm \\
           -v ${repoPath}:/workspace \\
           ${this.dockerImage} \\
-          -c "pmd check \\
+          -c "pmd pmd \\
             -d /workspace \\
             -f json \\
             -R ${rulesets} \\
