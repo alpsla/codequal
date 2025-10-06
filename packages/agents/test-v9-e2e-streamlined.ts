@@ -36,6 +36,7 @@ console.log("📊 STEP 1: Creating comprehensive test data...\n");
 
 const testIssues: Issue[] = [
   // NEW CRITICAL ISSUES (Block merge)
+  // BUG-106 FIX: Added code snippets with ±5 lines context
   {
     id: "sec-001",
     category: "Security",
@@ -48,7 +49,15 @@ const testIssues: Issue[] = [
     tool: "semgrep",
     agent: "SecurityAgent",
     impact: "High security risk - could allow unauthorized database access",
-    businessImpact: "Critical data breach risk, potential GDPR violation ($50k-500k)"
+    businessImpact: "Critical data breach risk, potential GDPR violation ($50k-500k)",
+    codeSnippet: `43:   public User findById(String userId) {
+44:     try {
+45:       String query = "SELECT * FROM users WHERE id = '" + userId + "'";  // ❌ SQL Injection
+46:       Statement stmt = connection.createStatement();
+47:       ResultSet rs = stmt.executeQuery(query);
+48:       return mapResultToUser(rs);
+49:     } catch (SQLException e) {
+50:       throw new DatabaseException("Failed to find user", e);`
   },
   {
     id: "sec-002",
@@ -62,7 +71,15 @@ const testIssues: Issue[] = [
     tool: "semgrep",
     agent: "SecurityAgent",
     impact: "Credentials exposed in version control",
-    businessImpact: "Potential unauthorized database access"
+    businessImpact: "Potential unauthorized database access",
+    codeSnippet: `21:   public class DatabaseConfig {
+22:     private static final String DB_URL = "jdbc:postgresql://localhost:5432/mydb";
+23:     private static final String DB_PASSWORD = "SuperSecret123!";  // ❌ Hardcoded credentials
+24:     private static final String DB_USER = "admin";
+25:
+26:     public Connection getConnection() throws SQLException {
+27:       return DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+28:     }`
   },
 
   // NEW HIGH ISSUES (Block merge)

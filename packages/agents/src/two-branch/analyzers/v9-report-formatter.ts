@@ -355,38 +355,29 @@ ${rows}
     // 16. Issue Distribution Analysis
     sections.push(this.generateIssueDistribution(result));
     
-    // 17. Phased Educational Plan
+    // 17. Educational Plan (merged: Phased Plan + Resources)
     sections.push(this.generatePhasedEducationalPlan(result));
-    
-    // 18. Business Impact Analysis
-    sections.push(this.generateBusinessImpact(result));
-    
-    // 19. Individual Skills Tracking
-    sections.push(this.generateSkillsTracking(result));
-    
-    // 20. Team Skills Tracking (Placeholder)
-    sections.push(this.generateTeamSkillsPlaceholder());
-    
-    // 21. Analysis Metadata
-    sections.push(this.generateAnalysisMetadata(metadata));
-    
-    // 22. Recommended Actions
-    sections.push(this.generateRecommendedActions(result));
-    
-    // 23. AI-Powered Fix Suggestions
-    sections.push(await this.generateAIPoweredFixSuggestions(result));
-
-    // 24. Educational Resources
     sections.push(this.generateEducationalResources(result));
 
-    // 25. Risk Matrix with Explanations (keeping original for compatibility)
-    sections.push(this.generateRiskMatrix(result));
+    // 18. Business Impact Analysis
+    sections.push(this.generateBusinessImpact(result));
 
-    // 26. Score Calculation Breakdown
+    // 19. Skills Tracking (consolidated: Individual + Team + Development)
+    sections.push(this.generateSkillsTracking(result));
+    sections.push(this.generateTeamSkillsPlaceholder());
+
+    // 20. Analysis Metadata
+    sections.push(this.generateAnalysisMetadata(metadata));
+
+    // 21. Recommended Actions
+    sections.push(this.generateRecommendedActions(result));
+
+    // 22. Score Calculation Breakdown
     sections.push(this.generateScoreCalculationBreakdown(result));
 
-    // 27. Skills Development Tracking
-    sections.push(this.generateSkillsDevelopmentTracking(result));
+    // NOTE: AI-Powered Fix Suggestions are embedded in detailed issues (section 7-14)
+    // NOTE: Skills Development is covered in section 19 (no separate section needed)
+    // NOTE: Risk Matrix is shown once in section 5.5 (no duplicate needed)
 
     // 28. Personalized PR Comment
     sections.push(this.generatePRComment(result, metadata));
