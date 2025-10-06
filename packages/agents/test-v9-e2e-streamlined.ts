@@ -184,6 +184,21 @@ const testIssues: Issue[] = [
   },
 
   // EXISTING ISSUES (for context)
+  // BUG-102 TEST CASE: EXISTING critical issue in MODIFIED file (should BLOCK)
+  {
+    id: "sec-004",
+    category: "Security",
+    severity: "critical",
+    status: "existing",
+    title: "Insecure Deserialization",
+    description: "Untrusted data deserialization vulnerability in modified file",
+    file: "src/db/UserRepository.java",  // This is in modifiedFiles!
+    line: 120,
+    tool: "semgrep",
+    agent: "SecurityAgent",
+    impact: "Remote code execution risk in existing code",
+    businessImpact: "Critical security vulnerability in modified file - must be addressed"
+  },
   {
     id: "arch-002",
     category: "Architecture",
@@ -231,7 +246,23 @@ console.log(`   Final Score: ${qualityScore.toFixed(1)}/100 (Grade: ${grade})\n`
 // ================================================================
 console.log("📋 STEP 3: Creating AnalysisResult...\n");
 
-const blockingIssues = newIssues.filter(i => i.severity === 'critical' || i.severity === 'high');
+// BUG-102 FIX: Check both NEW issues AND EXISTING issues in MODIFIED files
+const modifiedFiles = [
+  "src/db/UserRepository.java",
+  "src/services/UserService.java",
+  "src/config/DatabaseConfig.java",
+  "src/utils/DataProcessor.java",
+  "src/web/UserController.java"
+];
+
+// Blocking issues = NEW critical/high OR EXISTING critical/high in MODIFIED files
+const blockingNewIssues = newIssues.filter(i => i.severity === 'critical' || i.severity === 'high');
+const blockingExistingInModified = existingIssues.filter(i =>
+  (i.severity === 'critical' || i.severity === 'high') &&
+  modifiedFiles.some(f => i.file.includes(f))
+);
+const blockingIssues = [...blockingNewIssues, ...blockingExistingInModified];
+
 const backlogIssues = newIssues.filter(i => i.severity === 'medium' || i.severity === 'low');
 const decision = blockingIssues.length > 0 ? 'DECLINED' : 'APPROVED';
 
@@ -239,7 +270,7 @@ const testResult: AnalysisResult = {
   decision,
   confidence: 0.95,
   reason: blockingIssues.length > 0
-    ? `${blockingIssues.length} critical/high severity issues require immediate attention`
+    ? `${blockingNewIssues.length} NEW critical/high + ${blockingExistingInModified.length} EXISTING critical/high in modified files require immediate attention`
     : 'All quality checks passed',
   qualityScore,
   grade,
@@ -248,13 +279,7 @@ const testResult: AnalysisResult = {
   resolvedIssues,
   blockingIssues,
   backlogIssues,
-  modifiedFiles: [
-    "src/db/UserRepository.java",
-    "src/services/UserService.java",
-    "src/config/DatabaseConfig.java",
-    "src/utils/DataProcessor.java",
-    "src/web/UserController.java"
-  ],
+  modifiedFiles,
   categoryScores: {
     Security: 45,      // Critical issues drag this down
     Performance: 75,   // Some issues, some improvements
