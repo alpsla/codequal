@@ -1131,11 +1131,10 @@ ${impact.riskMatrix && impact.riskMatrix.length > 0 ?
   }
   
   private generateSkillsTracking(result: AnalysisResult): string {
-    // PROPERLY INITIALIZE SKILL SCORE AT 50 FOR FIRST-TIME ANALYSIS
-    // Handle both formats (current/score) for backwards compatibility
-    const scoreValue = (result.skillScore as any)?.current || result.skillScore?.score || 0;
-    const isFirstAnalysis = !result.skillScore || scoreValue === 0;
-    const baseScore = isFirstAnalysis ? 50 : scoreValue || 50;
+    // BUG-111 & BUG-118 FIX: Use qualityScore consistently (same as saved to Supabase)
+    // The qualityScore is the authoritative score that was calculated and saved
+    const scoreValue = result.qualityScore || 50;
+    const isFirstAnalysis = !result.skillScore || scoreValue === 50;
 
     // Ensure categories are properly initialized
     const defaultCategories = {
@@ -1148,18 +1147,12 @@ ${impact.riskMatrix && impact.riskMatrix.length > 0 ?
 
     let skills = {
       developer: 'Unknown',
-      score: baseScore,
+      score: scoreValue, // Use qualityScore directly - matches what was saved
       trend: 'neutral',
       categories: (result.skillScore as any)?.categories || defaultCategories,
       recommendations: (result.skillScore as any)?.recommendations || [],
       learning: (result.skillScore as any)?.learning || []
     };
-
-    // USE THE HELPER METHOD TO ADJUST SCORE BASED ON ISSUES
-    if (!isFirstAnalysis && result.skillScore) {
-      const adjustedScore = this.calculateAdjustedSkillScore(result, skills.score);
-      skills = { ...skills, score: adjustedScore };
-    }
 
     return `## Individual Skills Tracking
 
@@ -1508,8 +1501,20 @@ The risk matrix evaluates issues across categories to identify areas of concern.
 
   /**
    * Get risk impact level based on score
+   * BUG-116 FIX: Handle both numeric and string scores
    */
-  private getRiskImpactLevel(score: number): string {
+  private getRiskImpactLevel(score: number | string): string {
+    // If score is already a string like "Critical", "High", etc., map it to emoji
+    if (typeof score === 'string') {
+      const scoreStr = score.toLowerCase();
+      if (scoreStr === 'critical') return '🔴 Critical';
+      if (scoreStr === 'high') return '🟠 High';
+      if (scoreStr === 'medium') return '🟡 Medium';
+      if (scoreStr === 'low') return '🟢 Low';
+      return '⚪ None';
+    }
+
+    // Numeric scoring
     if (score >= 10) return '🔴 Critical';
     if (score >= 5) return '🟠 High';
     if (score >= 2) return '🟡 Medium';
