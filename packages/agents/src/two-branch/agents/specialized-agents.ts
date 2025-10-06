@@ -163,17 +163,29 @@ ${lineNum + 2}: // Apply appropriate solution based on context`;
   }
 
   protected generateDefaultCode(issue: IssueContext): string {
-    const lineNum = issue.line || 1;
-    return `${lineNum}: // Apply fix for ${issue.type} issue
-${lineNum + 1}: // ${issue.description}
-${lineNum + 2}: // TODO: Implement proper fix based on context`;
+    // BUG-112 FIX: Use meaningful code instead of generic fallback
+    return this.generateMeaningfulCode(issue);
   }
 
   protected getDefaultFix(issue: IssueContext): FixSuggestion {
+    // BUG-112 FIX: Provide specific fallback based on role
+    const roleSpecificFix = {
+      'Security': `Implement secure coding practice: validate inputs, use prepared statements, apply least privilege`,
+      'Performance': `Optimize algorithm: consider caching, use efficient data structures, profile performance`,
+      'Architecture': `Refactor design: apply SOLID principles, use appropriate design patterns, reduce coupling`,
+      'CodeQuality': `Improve code quality: follow naming conventions, add documentation, reduce complexity`,
+      'Dependency': `Update dependency: check for security patches, verify compatibility, test thoroughly`
+    };
+
     return {
-      fix: `Address this ${issue.severity} ${issue.type} issue according to ${this.agentRole.toLowerCase()} best practices`,
-      correctedCode: this.generateDefaultCode(issue),
-      bestPractices: [`Review ${this.agentRole.toLowerCase()} guidelines`, 'Apply appropriate fix based on context']
+      fix: roleSpecificFix[this.agentRole as keyof typeof roleSpecificFix] ||
+           `Address this ${issue.severity} ${issue.type} issue according to ${this.agentRole.toLowerCase()} best practices`,
+      correctedCode: this.generateMeaningfulCode(issue),
+      bestPractices: [
+        `Review ${this.agentRole.toLowerCase()} best practices documentation`,
+        `Consult with team lead for ${issue.severity} ${issue.type} issues`,
+        `Apply industry-standard solutions for this issue type`
+      ]
     };
   }
 }

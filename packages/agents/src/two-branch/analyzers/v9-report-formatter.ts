@@ -710,6 +710,7 @@ ${issue.codeSnippet || '// Code snippet not available'}
 `;
 
     // Only add fix suggestions if the agent successfully generated them
+    // BUG-117 FIX: Avoid duplicate code blocks - explanation often contains the code already
     if (fixSuggestion) {
       issueReport += `
 **AI-Generated Fix:** ${fixSuggestion.fix}
@@ -718,13 +719,21 @@ ${issue.codeSnippet || '// Code snippet not available'}
 \`\`\`${this.getLanguageFromFile(issue.file)}
 ${fixSuggestion.correctedCode}
 \`\`\`
-
-${fixSuggestion.explanation ? `**Explanation:** ${fixSuggestion.explanation}` : ''}
-
-${fixSuggestion.bestPractices && fixSuggestion.bestPractices.length > 0 ?
-`**Best Practices:**
-${fixSuggestion.bestPractices.map(practice => `- ${practice}`).join('\n')}` : ''}
 `;
+
+      // Only add explanation if it doesn't duplicate the corrected code
+      if (fixSuggestion.explanation && !fixSuggestion.explanation.includes('```')) {
+        issueReport += `
+**Explanation:** ${fixSuggestion.explanation}
+`;
+      }
+
+      if (fixSuggestion.bestPractices && fixSuggestion.bestPractices.length > 0) {
+        issueReport += `
+**Best Practices:**
+${fixSuggestion.bestPractices.map(practice => `- ${practice}`).join('\n')}
+`;
+      }
     }
 
     issueReport += `
@@ -1222,7 +1231,7 @@ ${skills.recommendations && skills.recommendations.length > 0 ?
 |--------|-------|
 | Total Repository Files | ${(metadata.totalFiles || 0).toLocaleString()} |
 | Files Analyzed | ${(metadata.maxFilesAnalyzed || 0).toLocaleString()} |
-| Coverage | ${metadata.totalFiles ? (((metadata.maxFilesAnalyzed || 0) / metadata.totalFiles) * 100).toFixed(1) : '0.0'}% |
+| Coverage | ${metadata.totalFiles ? Math.min(100, (((metadata.maxFilesAnalyzed || 0) / metadata.totalFiles) * 100)).toFixed(1) : '0.0'}% |
 | Analysis Type | ${metadata.smartFileSelection ? 'Smart Selection' : 'Full Scan'} |
 | Lines per Second | ${metadata.analysisTime ? Math.round((metadata.totalLinesOfCode || 0) / (metadata.analysisTime / 1000)) : 0} |
 
