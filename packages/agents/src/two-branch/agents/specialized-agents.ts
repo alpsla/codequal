@@ -199,12 +199,15 @@ Be specific and practical.`;
 File: ${issue.file}, Line: ${issue.line}
 ${issue.codeSnippet ? `Code:\n${issue.codeSnippet}` : ''}
 
-Provide:
-1. One sentence fix description
-2. Corrected code (production-ready)
-3. Security impact if not fixed
+Provide (BUG-108 FIX - Be specific):
+1. One sentence fix description with SPECIFIC class/method names
+2. Required imports (if any) - e.g., "import java.sql.PreparedStatement;"
+3. Corrected code (production-ready) with exact replacements
+4. "Why This Works" - Brief explanation of security improvement
+5. Security impact if not fixed
 
-Be direct and specific. No introductions.`;
+REQUIRED: Use specific class names, no generic phrases like "apply appropriate solution".
+Be direct and actionable.`;
   }
 }
 
@@ -229,12 +232,15 @@ Be practical and specific.`;
 File: ${issue.file}, Line: ${issue.line}
 ${issue.codeSnippet ? `Code:\n${issue.codeSnippet}` : ''}
 
-Provide:
-1. Specific optimization (one sentence)
-2. Optimized code
-3. Complexity improvement (e.g., O(n²) → O(n))
+Provide (BUG-108 FIX - Be specific):
+1. Specific optimization with EXACT algorithm/data structure names
+2. Required imports (if any) - e.g., "import java.util.HashMap;"
+3. Optimized code (production-ready) with exact replacements
+4. Complexity improvement (e.g., O(n²) → O(n log n))
+5. "Why This Works" - Brief performance benefit explanation
 
-Be direct. No fluff.`;
+REQUIRED: Use specific data structures/algorithms, no generic phrases like "optimize appropriately".
+Be direct and actionable.`;
   }
 }
 
@@ -259,12 +265,15 @@ Keep it practical.`;
 File: ${issue.file}
 ${issue.codeSnippet ? `Code:\n${issue.codeSnippet}` : ''}
 
-Provide:
-1. Refactoring approach (one sentence)
-2. Improved code structure
-3. Design pattern used (if any)
+Provide (BUG-108 FIX - Be specific):
+1. Refactoring approach with SPECIFIC class/interface names
+2. Required imports (if any)
+3. Improved code structure with exact implementations
+4. Design pattern used (be specific - e.g., "Strategy Pattern" not "appropriate pattern")
+5. "Why This Works" - Explain architectural benefit
 
-Be specific and actionable.`;
+REQUIRED: Use specific class names, no phrases like "apply appropriate solution".
+Be direct and actionable.`;
   }
 }
 
@@ -289,12 +298,15 @@ Keep responses short.`;
 File: ${issue.file}, Line: ${issue.line}
 ${issue.codeSnippet ? `Code:\n${issue.codeSnippet}` : ''}
 
-Provide:
-1. Improvement (one sentence)
-2. Clean code example
-3. Why this is better
+Provide (BUG-108 FIX - Be specific):
+1. Improvement with SPECIFIC method/variable names
+2. Required imports (if any)
+3. Clean code example (production-ready) with exact replacements
+4. "Why This Works" - Brief code quality benefit explanation
+5. Relevant clean code principle (e.g., "Single Responsibility Principle")
 
-Be concise and practical.`;
+REQUIRED: Use specific names, no generic phrases like "improve as needed".
+Be concise and actionable.`;
   }
 }
 
@@ -319,12 +331,15 @@ Be direct.`;
 File: ${issue.file}
 ${issue.codeSnippet ? `Context:\n${issue.codeSnippet}` : ''}
 
-Provide:
-1. Fix action (update/replace/remove)
-2. Correct configuration
-3. Alternative if needed
+Provide (BUG-108 FIX - Be specific):
+1. Fix action with EXACT dependency name and version (e.g., "Update log4j from 2.14.0 to 2.17.1")
+2. Correct configuration (production-ready) with exact syntax
+3. Alternative library if replacement needed (with specific version)
+4. "Why This Works" - Brief security/compatibility benefit
+5. Migration steps if breaking changes exist
 
-Be specific about versions.`;
+REQUIRED: Use exact package names and versions, no phrases like "update to latest version".
+Be specific and actionable.`;
   }
 }
 

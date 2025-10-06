@@ -29,6 +29,7 @@ import {
   DependencyAgent,
   CodeQualityAgent
 } from '../agents/specialized-agents';
+import { LinkValidator } from '../utils/link-validator';
 import axios from 'axios';
 
 export interface CompleteMetadata {
@@ -1679,7 +1680,7 @@ Your code quality is excellent! Consider reviewing general best practices to mai
         case 'Quality':
         default:
           content += `- [🧹 Clean Code](https://www.oreilly.com/library/view/clean-code-a/9780136083238/) - Code quality principles\n`;
-          content += `- [📏 Code Metrics](https://martinfowler.com/bliki/CodeMetrics.html) - Measuring code quality\n`;
+          content += `- [📏 Code Quality Guide](https://refactoring.guru/refactoring) - Refactoring and code quality\n`;  // BUG-107: Fixed broken martinfowler.com link
           content += `- [✅ Testing Best Practices](https://testingjavascript.com/) - Testing strategies\n\n`;
           break;
       }
