@@ -21,6 +21,8 @@ dotenv.config({ path: path.join(__dirname, '.env') });
 
 import { V9ReportFormatterFinal, CompleteMetadata } from "./src/two-branch/analyzers/v9-report-formatter";
 import type { AnalysisResult, Issue } from "./src/two-branch/analyzers/v9-types";
+import { SkillScoreManager, SkillScoreData } from "./src/two-branch/analyzers/v9-skill-score-manager";
+import { createClient } from '@supabase/supabase-js';
 import * as fs from "fs";
 
 console.log("╔═══════════════════════════════════════════════════════════╗");
@@ -521,9 +523,35 @@ console.log(`      Agents: ${testMetadata.agentsUsed.length}`);
 console.log(`      Total Cost: $${testMetadata.totalCost}\n`);
 
 // ================================================================
+// STEP 4.5: BUG-104 FIX - Skills Tracking with SkillScoreManager
+// ================================================================
+console.log("🎯 STEP 4.5: Integrating skills tracking with SkillScoreManager...\n");
+
+// Initialize Supabase client
+const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+const skillManager = new SkillScoreManager(supabase);
+
+// Get baseline and trend (will return 50 for new users)
+const developerEmail = testMetadata.prAuthorEmail;
+const repository = testMetadata.repository;
+
+// ================================================================
 // STEP 5: Generate Complete V9 Report
 // ================================================================
 async function generateAndAnalyzeReport() {
+  // BUG-104 FIX: Get baseline and trend using SkillScoreManager
+  console.log("📊 Fetching skills baseline and trend...\n");
+
+  const baseline = await skillManager.getBaselineScore(developerEmail, repository);
+  const trend = await skillManager.getScoreTrend(developerEmail, repository, 5);
+
+  console.log(`   Baseline score: ${baseline}/100 ${trend.length === 0 ? '(first-time developer)' : `(from ${trend.length} previous PRs)`}`);
+  console.log(`   Score trend: ${trend.length > 0 ? `[${trend.join(', ')}]` : 'N/A (first PR)'}\n`);
+
   console.log("📝 STEP 5: Generating complete V9 report...\n");
 
   const formatter = new V9ReportFormatterFinal();
@@ -534,9 +562,46 @@ async function generateAndAnalyzeReport() {
   );
 
   // ================================================================
-  // STEP 6: Save and Analyze Report
+  // STEP 6: BUG-104 - Save skills to Supabase
   // ================================================================
-  console.log("💾 STEP 6: Saving and analyzing report...\n");
+  console.log("💾 STEP 6: Saving skills to Supabase...\n");
+
+  // Prepare skill score data
+  const skillScoreData: SkillScoreData = {
+    developerEmail: testMetadata.prAuthorEmail,
+    developerName: testMetadata.prAuthor,
+    repository: testMetadata.repository,
+    prNumber: testMetadata.prNumber,
+    branch: testMetadata.branch,
+    overallScore: testResult.qualityScore,
+    qualityScore: testResult.qualityScore,
+    categoryScores: {
+      security: testResult.categoryScores?.Security || 50,
+      performance: testResult.categoryScores?.Performance || 50,
+      architecture: testResult.categoryScores?.Architecture || 50,
+      dependency: testResult.categoryScores?.Dependency || 50,
+      codeQuality: testResult.categoryScores?.Quality || 50
+    },
+    issueCounts: {
+      new: newIssues.length,
+      resolved: resolvedIssues.length,
+      critical: newIssues.filter(i => i.severity === 'critical').length,
+      high: newIssues.filter(i => i.severity === 'high').length,
+      medium: newIssues.filter(i => i.severity === 'medium').length,
+      low: newIssues.filter(i => i.severity === 'low').length
+    },
+    language: testMetadata.languageBreakdown ? Object.keys(testMetadata.languageBreakdown)[0] : 'java',
+    analysisDuration: testMetadata.totalDuration
+  };
+
+  // Save to Supabase
+  await skillManager.saveSkillScore(skillScoreData);
+  console.log(`   ✅ Skills saved to Supabase for ${testMetadata.prAuthor}\n`);
+
+  // ================================================================
+  // STEP 7: Save and Analyze Report
+  // ================================================================
+  console.log("📄 STEP 7: Saving and analyzing report...\n");
 
 const outputDir = "/tmp/v9-reports";
 if (!fs.existsSync(outputDir)) {
