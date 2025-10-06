@@ -1487,13 +1487,21 @@ ${(result.skillScore?.recommendations || []).slice(0, 2).map(r => `- ${r}`).join
       return '**Risk Matrix:** Evaluates the distribution and impact of issues across different categories.\n';
     }
 
-    const totalScore = riskMatrix.reduce((sum, r) => sum + (r.score || 0), 0);
-    const highestRisk = riskMatrix.reduce((max, r) => (r.score || 0) > (max.score || 0) ? r : max, riskMatrix[0]);
+    // BUG-115 FIX: Convert string scores to descriptive text instead of concatenating
+    const riskLevels = riskMatrix.map(r => r.score || 'None').filter(s => s !== 'None' && s !== 0);
+    const riskSummary = riskLevels.length > 0 ? riskLevels.join(', ') : 'None';
+    const highestRisk = riskMatrix.reduce((max, r) => {
+      const maxScore = typeof max.score === 'string' ? max.score : String(max.score || 0);
+      const rScore = typeof r.score === 'string' ? r.score : String(r.score || 0);
+      // Priority: Critical > High > Medium > Low > None
+      const priority = { 'Critical': 4, 'High': 3, 'Medium': 2, 'Low': 1 };
+      return (priority[rScore as keyof typeof priority] || 0) > (priority[maxScore as keyof typeof priority] || 0) ? r : max;
+    }, riskMatrix[0]);
 
     return `**Risk Matrix Explanation:**
 The risk matrix evaluates issues across categories to identify areas of concern.
-- Total Risk Score: ${totalScore}
-- Highest Risk Category: ${highestRisk?.category || 'N/A'} (Score: ${highestRisk?.score || 0})
+- Risk Levels Found: ${riskSummary}
+- Highest Risk Category: ${highestRisk?.category || 'N/A'} (Score: ${highestRisk?.score || 'None'})
 - Blocking issues require immediate attention before deployment
 `;
   }
