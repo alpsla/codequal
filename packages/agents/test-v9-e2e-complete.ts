@@ -15,15 +15,20 @@
  * Expected Outcome: Complete V9 report with all sections populated
  */
 
+import * as dotenv from 'dotenv';
+import * as pathModule from "path";
+
+// Load environment variables from local .env
+dotenv.config({ path: pathModule.join(__dirname, '.env') });
+
 import { JavaToolOrchestrator } from "./src/two-branch/tools/java/java-tool-orchestrator";
 import type { OrchestrationResult, RawIssue } from "./src/two-branch/tools/java/java-tool-orchestrator";
 import { detectDefaultBranch, getModifiedFilesBetweenBranches } from "./src/two-branch/utils/git-utils";
-import { SpecializedAgentFactory } from "./src/two-branch/agents/specialized-agents";
+import { SpecializedAgentFactory, SecurityAgent, CodeQualityAgent, PerformanceAgent, ArchitectureAgent, DependencyAgent } from "./src/two-branch/agents/specialized-agents";
 import { V9EducationalResources } from "./src/two-branch/analyzers/v9-educational-resources";
-import { V9ReportFormatter } from "./src/two-branch/analyzers/v9-report-formatter";
+import { V9ReportFormatterFinal } from "./src/two-branch/analyzers/v9-report-formatter";
 import { execSync } from "child_process";
 import * as fs from "fs";
-import * as path from "path";
 
 // Configuration
 const KAFKA_REPO = "/tmp/kafka-repo";
@@ -247,11 +252,11 @@ async function runV9CompleteE2E(): Promise<V9AnalysisResult> {
 
   // Initialize specialized agents with Gemini 2.5 Pro fallback
   const agentFactory = new SpecializedAgentFactory();
-  const securityAgent = agentFactory.createAgent('security');
-  const qualityAgent = agentFactory.createAgent('quality');
-  const performanceAgent = agentFactory.createAgent('performance');
-  const architectureAgent = agentFactory.createAgent('architecture');
-  const dependencyAgent = agentFactory.createAgent('dependency');
+  const securityAgent = new SecurityAgent();
+  const qualityAgent = new CodeQualityAgent();
+  const performanceAgent = new PerformanceAgent();
+  const architectureAgent = new ArchitectureAgent();
+  const dependencyAgent = new DependencyAgent();
 
   // Map issues to agents based on tool/category
   const securityIssues = categorizedIssues.filter(i =>
@@ -341,16 +346,11 @@ async function runV9CompleteE2E(): Promise<V9AnalysisResult> {
 
   // Generate educational resources
   const educator = new V9EducationalResources();
-  const educationalMaterials = await educator.generateResources({
-    issues: categorizedIssues,
-    language: 'java',
-    severity: 'high'
-  });
+  const educationalMaterials = await educator.getEducationalResources(categorizedIssues, 'java');
 
   console.log(`\n   ✅ Educational resources generated:`);
-  console.log(`      Training modules: ${educationalMaterials.securityTraining?.length || 0}`);
-  console.log(`      Performance guides: ${educationalMaterials.performanceOptimization?.length || 0}`);
-  console.log(`      Documentation links: ${educationalMaterials.bestPractices?.length || 0}\n`);
+  console.log(`      Total resources: ${educationalMaterials.length}`);
+  console.log(`      Resource types: ${[...new Set(educationalMaterials.map(r => r.type))].join(', ')}\n`);
 
   // ================================================================
   // STEP 6: Blocking Decision Logic
@@ -398,10 +398,10 @@ async function runV9CompleteE2E(): Promise<V9AnalysisResult> {
   };
 
   // Generate full V9 report with all 34 sections
-  const formatter = new V9ReportFormatter();
-  const report = formatter.generateReport({
-    issues: categorizedIssues,
-    metadata: {
+  const formatter = new V9ReportFormatterFinal();
+  const report = formatter.generateCompleteReport(
+    categorizedIssues,
+    {
       repository: result.metadata.repository,
       prNumber: result.metadata.prNumber,
       baseBranch: result.metadata.baseBranch,
@@ -410,15 +410,11 @@ async function runV9CompleteE2E(): Promise<V9AnalysisResult> {
       prTitle: 'Apache Kafka PR #17620',
       analysisTimestamp: result.metadata.analysisTimestamp,
       duration: result.metadata.totalDuration,
+      modifiedFiles: result.metadata.modifiedFiles,
       decision: decision
     },
-    educationalResources: educationalMaterials,
-    agentMetrics: {
-      SecurityAgent: { processed: securityIssues.length, enriched: securityIssues.filter(i => i.fixSuggestion).length },
-      CodeQualityAgent: { processed: qualityIssues.length, enriched: qualityIssues.filter(i => i.fixSuggestion).length },
-      PerformanceAgent: { processed: performanceIssues.length, enriched: performanceIssues.filter(i => i.fixSuggestion).length }
-    }
-  });
+    educationalMaterials
+  );
 
   const reportPath = path.join(OUTPUT_DIR, `v9-complete-e2e-${Date.now()}.md`);
   fs.writeFileSync(reportPath, report);

@@ -39,37 +39,37 @@ import { getRepoManager, getFileSelector } from '../utils/repository-utils-facto
 import type { CloudRepositoryManager } from '../utils/cloud-repository-manager';
 import type { OracleRepositoryManager } from '../utils/oracle-repository-manager';
 import type { SmartFileSelector, SelectedFiles } from '../utils/smart-file-selector';
-import { DynamicModelSelector } from '../services/dynamic-model-selector';
+import { ModelConfigResolver } from '../../standard/orchestrator/model-config-resolver';
 
 export abstract class V9BaseAnalyzer {
   protected repoManager: CloudRepositoryManager | OracleRepositoryManager;
-  protected modelSelector: DynamicModelSelector;
+  protected modelConfigResolver: ModelConfigResolver;
   protected fileSelector: SmartFileSelector;
   protected supabase: any;
   protected logger: Console = console;
-  
+
   // V9 Modules
   protected scoringCalculator: V9ScoringCalculator;
   protected issueComparator: V9IssueComparator;
   protected educationalResources: V9EducationalResources;
   protected businessImpact: V9BusinessImpact;
   protected reportFormatter: V9ReportFormatter;
-  
+
   // Cache
   protected modelConfigs: Map<string, ModelConfig> = new Map();
   protected cachedWorkspacePath = '';
-  
+
   // Configuration
   protected analysisConfig = {
     useSmartSelection: true,  // Default to smart selection
     maxFiles: 500,            // Default file limit
     forceFullAnalysis: false  // Override for full repo analysis
   };
-  
+
   constructor() {
     // Initialize utilities using factory
     this.repoManager = getRepoManager();
-    this.modelSelector = new DynamicModelSelector(process.env.OPENROUTER_API_KEY);
+    this.modelConfigResolver = new ModelConfigResolver(console);
     this.fileSelector = getFileSelector();
     
     // Initialize Supabase
@@ -105,10 +105,7 @@ export abstract class V9BaseAnalyzer {
   async analyzePR(repoUrl: string, prNumber: number): Promise<void> {
     try {
       this.logger.log(`🚀 Starting V9 analysis for PR #${prNumber}`);
-      
-      // Load model configurations from Supabase
-      await this.loadModelConfigs();
-      
+
       // Clone and prepare repositories
       const { mainPath, prPath, modifiedFiles } = await this.prepareRepositories(repoUrl, prNumber);
       
@@ -273,52 +270,44 @@ export abstract class V9BaseAnalyzer {
   }
   
   /**
-   * Load model configurations from Supabase
+   * Get model configuration for a specific agent using ModelConfigResolver
+   * This follows the proper architecture:
+   * 1. Check Supabase for existing config (role + language + repo size)
+   * 2. If not found, trigger Researcher to find optimal models via web search
+   * 3. Researcher validates models exist in OpenRouter
+   * 4. Store in Supabase for current and future use
    */
-  protected async loadModelConfigs(): Promise<void> {
+  protected async getModelForAgent(
+    role: string,
+    language: string,
+    repoSize: 'small' | 'medium' | 'large' | 'enterprise'
+  ): Promise<any> {
     try {
-      const { data, error } = await this.supabase
-        .from('model_configurations')
-        .select('*')
-        .order('last_updated', { ascending: false });
-      
-      if (error) throw error;
-      
-      // Store configs in map for quick lookup
-      for (const config of data || []) {
-        this.modelConfigs.set(config.agent_name, config);
-      }
-      
-      this.logger.log(`📊 Loaded ${this.modelConfigs.size} model configurations`);
-    } catch (error) {
-      this.logger.warn('Failed to load model configs, using defaults:', error);
-    }
-  }
-  
-  /**
-   * Get model configuration for a specific agent
-   */
-  protected async getModelForAgent(role: string): Promise<any> {
-    // Check cached configs first
-    if (this.modelConfigs.has(role)) {
-      const config = this.modelConfigs.get(role)!;
+      // Use ModelConfigResolver which handles Supabase lookup + Researcher fallback
+      const config = await this.modelConfigResolver.getModelConfiguration(
+        role,
+        language,
+        repoSize
+      );
+
+      // Return model in format expected by agents
       return {
-        id: config.model_id,
-        temperature: config.temperature,
-        maxTokens: config.max_tokens
+        id: config.primary_model,
+        provider: config.primary_provider,
+        fallback: {
+          id: config.fallback_model,
+          provider: config.fallback_provider
+        },
+        temperature: 0.3, // Default temperature
+        maxTokens: 4096   // Default max tokens
       };
+    } catch (error: any) {
+      this.logger.error(`Failed to get model for ${role}/${language}/${repoSize}:`, error.message);
+
+      // If ModelConfigResolver throws (research pending), propagate the error
+      // The orchestrator should retry after Researcher completes
+      throw error;
     }
-    
-    // Fallback to dynamic selection
-    const requirements = {
-      role,
-      description: `Agent for ${role}`,
-      repositorySize: 'medium' as const,
-      weights: { quality: 0.7, speed: 0.2, cost: 0.1 }
-    };
-    
-    const { primary } = await this.modelSelector.selectModelsForRole(requirements);
-    return primary;
   }
   
   /**

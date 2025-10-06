@@ -668,15 +668,11 @@ Return only the fixed code without explanation.`;
     if (process.env.OPENROUTER_API_KEY && process.env.USE_MOCK_ANALYZER !== 'true') {
       try {
         let modelId = this.cachedModel; // Use cached model if available
-        
+
         // Only select model if not cached
         if (!modelId) {
-          const { DynamicModelSelectorV8 } = await import('../comparison/dynamic-model-selector-v8');
-          const modelSelector = new DynamicModelSelectorV8();
-          modelId = await modelSelector.selectOptimalModel({ 
-            language,
-            taskType: 'fix-generation'
-          });
+          // Use emergency fallback model for fix generation
+          modelId = process.env.EMERGENCY_FALLBACK_MODEL || 'google/gemini-2.5-flash';
           this.cachedModel = modelId; // Cache for reuse
         }
         

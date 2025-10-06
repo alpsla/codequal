@@ -5,6 +5,7 @@
 
 import OpenAI from 'openai';
 import { createLogger } from '../../../../core/src/utils/logger';
+import { trackModelUsage } from '../utils/model-usage-tracker';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const PQueue = require('p-queue').default;
 
@@ -139,12 +140,13 @@ export class EnhancedFixGenerator {
     config: FixGeneratorConfig
   ): Promise<IssueFix> {
     const prompt = this.buildEnhancedPrompt(agentType, issue);
+    const selectedModel = this.selectModel(issue);
 
     let retries = 0;
     while (retries < config.maxRetries) {
       try {
         const response = await this.openai.chat.completions.create({
-          model: this.selectModel(issue),
+          model: selectedModel,
           messages: [
             { role: 'system', content: this.getSystemPrompt(agentType) },
             { role: 'user', content: prompt }
@@ -154,6 +156,12 @@ export class EnhancedFixGenerator {
         });
 
         const content = response.choices[0].message.content || '';
+
+        // Track model usage (Phase 3 - BUG-110)
+        const tokensUsed = response.usage?.total_tokens || 0;
+        const cost = this.estimateCost(selectedModel, tokensUsed);
+        trackModelUsage(selectedModel, agentType, tokensUsed, cost);
+
         return this.parseFixResponse(issue, content);
 
       } catch (error: any) {
@@ -173,6 +181,10 @@ export class EnhancedFixGenerator {
    * Build enhanced prompt with code context
    */
   private buildEnhancedPrompt(agentType: string, issue: any): string {
+    // Extract class name from file path if available
+    const fileName = issue.file ? issue.file.split('/').pop() : '';
+    const className = fileName ? fileName.replace(/\.\w+$/, '') : 'YourClass';
+
     return `Fix this ${issue.type} issue in ${issue.language || 'Java'}:
 
 Tool: ${issue.tool}
@@ -182,22 +194,37 @@ Severity: ${issue.severity}
 Message: ${issue.message}
 File: ${issue.file}
 Line: ${issue.line}
+${issue.codeSnippet ? `\nContext:\n${issue.codeSnippet}\n` : ''}
 
 Generate a response in the following JSON format:
 {
   "explanation": "Brief explanation of the issue",
-  "codeSnippet": "Actual code snippet showing the fix",
-  "beforeCode": "Code before the fix (if applicable)",
-  "afterCode": "Code after the fix",
+  "codeSnippet": "Complete, working code with proper class/method names",
+  "beforeCode": "Actual problematic code",
+  "afterCode": "Fixed code with complete implementation",
   "effort": "trivial|small|medium|large",
   "confidence": "high|medium|low"
 }
 
-Important:
-- Provide ACTUAL CODE, not descriptions
-- Include proper syntax for ${issue.language || 'Java'}
-- Make the fix immediately applicable
-- Consider the severity when suggesting fixes`;
+CRITICAL REQUIREMENTS:
+- Provide COMPLETE, COMPILABLE code with actual class names (e.g., ${className})
+- Include ALL necessary imports at the top of the code
+- Use SPECIFIC method and variable names from the context, NOT placeholders
+- Include proper error handling where applicable
+- Add brief inline comments explaining the fix
+- Ensure the code follows ${issue.language || 'Java'} best practices
+- Make the fix directly copy-pasteable into the project
+- Consider the severity (${issue.severity}) when suggesting fixes
+
+BAD EXAMPLES (DO NOT DO THIS):
+❌ "// Add validation here"
+❌ "YourMethod() { /* implementation */ }"
+❌ "import com.example.*;"
+
+GOOD EXAMPLES:
+✅ "import java.sql.PreparedStatement;"
+✅ "public void processUser(User user) { validateUser(user); }"
+✅ Complete working code with specific names`;
   }
 
   /**
@@ -255,12 +282,17 @@ Always provide specific version numbers and migration guides.`
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
+        const codeSnippet = parsed.codeSnippet || parsed.afterCode || '';
+
+        // Validate code snippet quality
+        const isQualityCode = this.validateCodeQuality(codeSnippet, issue);
+
         return {
           issueId: issue.id,
           fix: parsed.explanation || 'Fix generated',
-          codeSnippet: parsed.codeSnippet || parsed.afterCode || this.generateDefaultSnippet(issue),
+          codeSnippet: isQualityCode ? codeSnippet : this.generateDefaultSnippet(issue),
           explanation: parsed.explanation || 'Apply the fix shown in the code snippet',
-          confidence: parsed.confidence || 'medium',
+          confidence: isQualityCode ? (parsed.confidence || 'medium') : 'low',
           effort: parsed.effort || 'small'
         };
       }
@@ -274,14 +306,50 @@ Always provide specific version numbers and migration guides.`
       ? codeMatch[0].replace(/```\w*\n?/g, '').trim()
       : this.generateDefaultSnippet(issue);
 
+    // Validate extracted code
+    const isQualityCode = this.validateCodeQuality(codeSnippet, issue);
+
     return {
       issueId: issue.id,
       fix: content.split('\n')[0] || 'Fix generated',
-      codeSnippet: codeSnippet,
+      codeSnippet: isQualityCode ? codeSnippet : this.generateDefaultSnippet(issue),
       explanation: content,
-      confidence: 'medium',
+      confidence: isQualityCode ? 'medium' : 'low',
       effort: 'small'
     };
+  }
+
+  /**
+   * Validate that generated code has good quality and specificity
+   */
+  private validateCodeQuality(code: string, issue: any): boolean {
+    if (!code || code.length < 20) return false;
+
+    // Check for placeholder patterns (bad)
+    const badPatterns = [
+      /YourClass(?!Name)/i,  // "YourClass" but not "YourClassName"
+      /YourMethod/i,
+      /\/\/ implementation/i,
+      /\/\/ Add.*here/i,
+      /\/\/ TODO/i,
+      /\.\.\./,  // Ellipsis indicating incomplete code
+      /\/\* .* \*\//,  // Generic comments
+      /import.*\.\*/,  // Wildcard imports
+    ];
+
+    for (const pattern of badPatterns) {
+      if (pattern.test(code)) {
+        logger.warn(`Code validation failed for ${issue.id}: matched pattern ${pattern}`);
+        return false;
+      }
+    }
+
+    // Check for good patterns (required for quality)
+    const hasImports = /^import\s+[\w.]+;/m.test(code);
+    const hasSpecificNames = /class\s+\w+|void\s+\w+|public\s+\w+/i.test(code);
+    const hasImplementation = code.split('\n').length >= 3;  // At least 3 lines
+
+    return hasSpecificNames && hasImplementation;
   }
 
   /**
@@ -424,6 +492,23 @@ ${f.codeSnippet}
       byEffort.large * 3;         // 3 hours
 
     return Math.round(hours * 10) / 10;
+  }
+
+  /**
+   * Estimate cost based on model and tokens (Phase 3 - BUG-110)
+   */
+  private estimateCost(model: string, tokens: number): number {
+    // Approximate pricing per 1M tokens (input + output averaged)
+    const pricing: Record<string, number> = {
+      'openai/gpt-3.5-turbo': 1.5,  // $1.50 per 1M tokens
+      'openai/gpt-4o-mini': 0.6,    // $0.60 per 1M tokens
+      'anthropic/claude-3-haiku': 1.25,  // $1.25 per 1M tokens
+      'anthropic/claude-3-haiku-20240307': 1.25,
+      'anthropic/claude-3-sonnet': 15.0,  // $15.00 per 1M tokens
+    };
+
+    const pricePerMillion = pricing[model] || 2.0;  // Default fallback
+    return (tokens / 1_000_000) * pricePerMillion;
   }
 }
 

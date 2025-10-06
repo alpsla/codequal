@@ -23,6 +23,12 @@ Comprehensive monitoring system for CodeQual, tracking performance, security, fi
 ### 📁 [API](./api/)
 - [API Endpoints](./api/endpoints.md) - All monitoring API endpoints documentation
 
+### 📁 [Schema](./schema/)
+- [System Alerts Table](./schema/system-alerts-table.sql) - Database schema for system alerts
+
+### 🔧 System-Specific Monitoring
+- [Model Selection Fallback Monitoring](./model-selection-fallback-monitoring.md) - OpenRouter key rotation and emergency fallback alerts
+
 ## Quick Start
 
 ### 1. View DeepWiki Dashboard

@@ -58,7 +58,7 @@ abstract class BaseSpecializedAgent {
    */
   async generateFixSuggestion(issue: IssueContext): Promise<FixSuggestion> {
     const modelConfig = await this.modelSelector.selectModelsForTwoBranchAnalysis(
-      'analysis',
+      this.agentRole.toLowerCase(),
       'medium'
     );
 

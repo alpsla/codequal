@@ -11,7 +11,7 @@
 /* cspell:ignore openrouter codequal anthropic gemini claude openai */
 
 import { AIService } from '../../standard/services/ai-service';
-import { UnifiedModelSelector } from '../../model-selection/unified-model-selector';
+// ModelSelector removed - Researcher uses direct AI calls, not model selection
 import { RESEARCH_PROMPTS } from './research-prompts';
 import { createLogger } from '../../utils';
 import * as dotenv from 'dotenv';
