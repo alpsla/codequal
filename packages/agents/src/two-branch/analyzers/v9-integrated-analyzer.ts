@@ -167,6 +167,7 @@ export class V9IntegratedAnalyzer {
 
   /**
    * Generate AI-powered insights from tool outputs
+   * BUG-119 FIX: Use ModelConfigResolver for orchestrator role
    */
   private async generateAIInsights(
     request: AIAnalysisRequest
@@ -175,13 +176,15 @@ export class V9IntegratedAnalyzer {
       (sum, output) => sum + (output.parsedIssues?.length || 0), 0
     );
 
-    // Get model configuration from Supabase dynamically
-    const modelConfig = await this.modelSelector.selectModelsForTwoBranchAnalysis(
-      'analysis',
-      'medium'
+    // BUG-119 FIX: Use ModelConfigResolver for orchestrator role
+    // Orchestrator is language-dependent but size-independent (uses 'medium' as default)
+    const modelConfig = await this.modelConfigResolver.getModelConfiguration(
+      'orchestrator',
+      this.detectedLanguage,
+      'medium'  // Orchestrator uses medium as standard
     );
 
-    logger.info(`Using model ${modelConfig.primary.id} for AI analysis (from Supabase)`);
+    logger.info(`[Orchestrator] Using model ${modelConfig.primary_model} for ${this.detectedLanguage}/medium`);
 
     // Prepare context for AI
     const context = this.prepareAIContext(request);
@@ -195,8 +198,8 @@ and actionable recommendations. Focus on business value and team productivity.`;
       const response = await this.aiClient.chat({
         systemPrompt,
         userPrompt: context,
-        role: 'V9Analyzer',
-        model: modelConfig.primary.id,
+        role: 'orchestrator',  // BUG-119 FIX: Use proper role name
+        model: modelConfig.primary_model,  // BUG-119 FIX: Use primary_model not primary.id
         temperature: 0.3,
         maxTokens: 2000
       });
