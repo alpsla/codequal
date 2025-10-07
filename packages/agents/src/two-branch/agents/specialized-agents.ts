@@ -273,19 +273,52 @@ Keep it practical.`;
   }
 
   protected buildPrompt(issue: IssueContext): string {
+    // BUG-124 FIX: Add specific guidance for common architectural issues
+    const specificGuidance = this.getSpecificGuidanceForIssue(issue);
+
     return `Architecture issue: ${issue.description}
 File: ${issue.file}
 ${issue.codeSnippet ? `Code:\n${issue.codeSnippet}` : ''}
 
-Provide (BUG-108 FIX - Be specific):
-1. Refactoring approach with SPECIFIC class/interface names
-2. Required imports (if any)
-3. Improved code structure with exact implementations
-4. Design pattern used (be specific - e.g., "Strategy Pattern" not "appropriate pattern")
-5. "Why This Works" - Explain architectural benefit
+${specificGuidance}
 
-REQUIRED: Use specific class names, no phrases like "apply appropriate solution".
-Be direct and actionable.`;
+Provide (BUG-108 & BUG-124 FIX - Be VERY specific):
+1. Concrete refactoring steps with EXACT class/interface names (e.g., "Extract UserRepository, EmailService, FileService")
+2. Required imports (if any)
+3. Refactored code showing NEW class structure (not comments, actual code)
+4. Design pattern name (e.g., "Single Responsibility Principle", "Dependency Injection")
+5. "Why This Works" - Explain architectural improvement
+
+CRITICAL: NO generic phrases like "apply appropriate solution" or "refactor as needed".
+Show ACTUAL refactored code with specific names.`;
+  }
+
+  /**
+   * BUG-124 FIX: Provide issue-specific guidance for better AI responses
+   */
+  private getSpecificGuidanceForIssue(issue: IssueContext): string {
+    const description = issue.description.toLowerCase();
+    const title = issue.title?.toLowerCase() || '';
+
+    if (description.includes('god class') || description.includes('too many responsibilities') || title.includes('god class')) {
+      return `SPECIFIC TASK: This is a God Class with too many responsibilities.
+Extract separate classes for each responsibility domain (e.g., database operations → UserRepository, email operations → EmailService, file operations → FileService).
+Show the refactored class structure with ACTUAL class names from the code.`;
+    }
+
+    if (description.includes('circular dependency') || title.includes('circular')) {
+      return `SPECIFIC TASK: Break the circular dependency.
+Use Dependency Inversion (introduce interface) or Event-Driven Architecture (use events/messages).
+Show EXACTLY which interface to create and how to inject it.`;
+    }
+
+    if (description.includes('tight coupling') || description.includes('coupling')) {
+      return `SPECIFIC TASK: Reduce coupling using interfaces or dependency injection.
+Create specific interfaces and show how to inject dependencies.`;
+    }
+
+    return `SPECIFIC TASK: Apply SOLID principles to improve the design.
+Show concrete refactoring with actual class and interface names.`;
   }
 }
 

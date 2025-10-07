@@ -272,10 +272,10 @@ export class V9ReportFormatterFinal {
 ${rows}
 
 **Impact Legend:**
-- 🔴 Critical: Critical issues > 0 OR High blocking > 10
-- 🟠 High: High blocking > 5 OR High backlog > 50
-- 🟡 Medium: Total backlog > 100
-- 🟢 None/Low: Everything else`;
+- 🔴 **BLOCKING**: At least 1 critical OR 1 high severity issue (new or existing in modified files)
+- 🟠 **HIGH**: Requires attention but won't block merge
+- 🟡 **MEDIUM**: Should be addressed in follow-up PR
+- 🟢 **LOW**: Optional improvements`;
   }
   private educatorAgent: EducatorAgent;
   private readonly severityWeights = {

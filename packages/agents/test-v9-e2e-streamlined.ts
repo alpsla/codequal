@@ -95,7 +95,14 @@ const testIssues: Issue[] = [
     tool: "pmd",
     agent: "PerformanceAgent",
     impact: "Database performance degradation under load",
-    businessImpact: "Slower response times affecting user experience"
+    businessImpact: "Slower response times affecting user experience",
+    codeSnippet: `121:   public List<Order> getUserOrders(List<User> users) {
+122:     List<Order> orders = new ArrayList<>();
+123:     for (User user : users) {  // ❌ N+1 Query Problem
+124:       orders.addAll(orderRepository.findByUserId(user.getId()));  // DB call per user!
+125:     }
+126:     return orders;
+127:   }`
   },
   {
     id: "arch-001",
@@ -109,7 +116,15 @@ const testIssues: Issue[] = [
     tool: "pmd",
     agent: "ArchitectureAgent",
     impact: "Tight coupling reduces modularity",
-    businessImpact: "Difficult to maintain and test"
+    businessImpact: "Difficult to maintain and test",
+    codeSnippet: `13:   import com.example.services.OrderService;
+14:
+15:   public class UserService {  // ❌ Circular Dependency
+16:     private OrderService orderService;  // UserService → OrderService
+17:
+18:     public UserService(OrderService orderService) {
+19:       this.orderService = orderService;  // OrderService also depends on UserService!
+20:     }`
   },
 
   // NEW MEDIUM ISSUES (Backlog)
@@ -125,7 +140,17 @@ const testIssues: Issue[] = [
     tool: "checkstyle",
     agent: "CodeQualityAgent",
     impact: "Reduced code maintainability",
-    businessImpact: "Minor - increased development time"
+    businessImpact: "Minor - increased development time",
+    codeSnippet: `65:   public Result processData(Data data, Config config) {  // ❌ Cyclomatic Complexity: 15
+66:     if (data == null) return null;
+67:     if (config.isEnabled() && data.hasValue()) {
+68:       if (config.getType().equals("A")) {
+69:         if (data.getValue() > 100) { /* complex logic */ }
+70:         else if (data.getValue() > 50) { /* complex logic */ }
+71:       } else if (config.getType().equals("B")) { /* more nested conditions */ }
+72:     }
+73:     return result;  // Too many nested conditions and branches
+74:   }`
   },
   {
     id: "dep-001",
@@ -139,7 +164,14 @@ const testIssues: Issue[] = [
     tool: "dependency-check",
     agent: "DependencyAgent",
     impact: "Moderate security risk",
-    businessImpact: "Potential CVE exploitation"
+    businessImpact: "Potential CVE exploitation",
+    codeSnippet: `43:   <dependency>
+44:     <groupId>com.fasterxml.jackson.core</groupId>
+45:     <artifactId>jackson-databind</artifactId>  // ❌ Vulnerable Version
+46:     <version>2.12.0</version>  <!-- CVE-2020-36518, CVE-2021-46877 -->
+47:   </dependency>
+48:   <!-- Should update to 2.17.0 or later -->
+49: </dependencies>`
   },
 
   // NEW LOW ISSUES (Backlog)
@@ -155,7 +187,15 @@ const testIssues: Issue[] = [
     tool: "checkstyle",
     agent: "CodeQualityAgent",
     impact: "Minor code clarity issue",
-    businessImpact: "Minimal - slightly reduced readability"
+    businessImpact: "Minimal - slightly reduced readability",
+    codeSnippet: `3:   package com.example.utils;
+4:   import java.util.ArrayList;
+5:   import java.util.HashMap;  // ❌ Unused Import
+6:   import java.util.List;
+7:
+8:   public class Helper {
+9:     // HashMap is never used in this class
+10:   }`
   },
 
   // RESOLVED ISSUES (Positive contribution)
@@ -216,7 +256,15 @@ const testIssues: Issue[] = [
     tool: "semgrep",
     agent: "SecurityAgent",
     impact: "Remote code execution risk in existing code",
-    businessImpact: "Critical security vulnerability in modified file - must be addressed"
+    businessImpact: "Critical security vulnerability in modified file - must be addressed",
+    codeSnippet: `118:   public User deserializeUser(byte[] data) {
+119:     try {
+120:       ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(data));  // ❌ Insecure Deserialization
+121:       return (User) ois.readObject();  // Untrusted data can execute arbitrary code!
+122:     } catch (Exception e) {
+123:       throw new RuntimeException(e);
+124:     }
+125:   }`
   },
   {
     id: "arch-002",
@@ -230,7 +278,19 @@ const testIssues: Issue[] = [
     tool: "pmd",
     agent: "ArchitectureAgent",
     impact: "Design smell",
-    businessImpact: "Technical debt"
+    businessImpact: "Technical debt",
+    codeSnippet: `1:   public class LegacyService {  // ❌ God Class - 2,500 lines, 45 methods
+2:     // Database operations
+3:     public void saveUser() { /* 50 lines */ }
+4:     public void deleteUser() { /* 30 lines */ }
+5:     // Email operations
+6:     public void sendEmail() { /* 80 lines */ }
+7:     // File operations
+8:     public void uploadFile() { /* 100 lines */ }
+9:     // Analytics
+10:     public void trackMetrics() { /* 60 lines */ }
+11:     // Too many responsibilities in one class!
+12:   }`
   }
 ];
 
@@ -299,12 +359,18 @@ const testResult: AnalysisResult = {
   blockingIssues,
   backlogIssues,
   modifiedFiles,
+  // BUG-131 FIX: Correct category scoring (start 50, deduct by severity)
+  // Security: 50 - (2 NEW critical × 5) - (1 EXISTING critical × 5) = 35
+  // Performance: 50 - (1 NEW high × 3) + (1 RESOLVED medium × 1) = 48
+  // Architecture: 50 - (1 NEW high × 3) - (1 EXISTING medium × 1) = 46
+  // Quality: 50 - (1 NEW medium × 1) - (1 NEW low × 0.5) + (1 RESOLVED low × 0.5) = 49
+  // Dependency: 50 - (1 NEW medium × 1) = 49
   categoryScores: {
-    Security: 45,      // Critical issues drag this down
-    Performance: 75,   // Some issues, some improvements
-    Architecture: 70,  // High issue but not critical
-    Quality: 80,       // Minor issues only
-    Dependency: 85     // Few medium issues
+    Security: 35,      // 2 NEW critical + 1 EXISTING critical = -15
+    Performance: 48,   // 1 NEW high - 1 RESOLVED medium
+    Architecture: 46,  // 1 NEW high + 1 EXISTING medium
+    Quality: 49,       // 1 NEW medium + 1 NEW low - 1 RESOLVED low
+    Dependency: 49     // 1 NEW medium
   },
   businessImpact: {
     summary: "Critical security vulnerabilities require immediate attention before merge",
@@ -326,14 +392,15 @@ const testResult: AnalysisResult = {
   },
   skillScore: {
     developer: "kafka-contributor",
-    score: 68,
+    score: 68,  // This will match qualityScore from SkillScoreManager
     trend: [62, 65, 68],
+    // BUG-131 FIX: Category scores must match categoryScores above
     categories: {
-      security: 45,
-      performance: 75,
-      architecture: 70,
-      dependency: 85,
-      quality: 80
+      security: 35,      // Matches categoryScores.Security
+      performance: 48,   // Matches categoryScores.Performance
+      architecture: 46,  // Matches categoryScores.Architecture
+      dependency: 49,    // Matches categoryScores.Dependency
+      quality: 49        // Matches categoryScores.Quality
     },
     recommendations: [
       "Priority: Complete OWASP Top 10 security training",
@@ -382,12 +449,12 @@ const testMetadata: CompleteMetadata = {
   repoOwner: "apache",
   organizationName: "Apache Software Foundation",
 
-  totalLinesOfCode: 500000,
+  totalLinesOfCode: 850000,  // BUG-122 FIX: Accurate Apache Kafka LOC count
   linesAdded: 250,
   linesDeleted: 100,
   linesModified: 350,
   filesModified: 5,
-  totalFiles: 3472,
+  totalFiles: 3472,  // Accurate file count for Apache Kafka
   languageBreakdown: { java: 95, kotlin: 3, scala: 2 },
 
   totalDuration: 220,
