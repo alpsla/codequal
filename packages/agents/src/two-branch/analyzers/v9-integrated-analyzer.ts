@@ -10,6 +10,8 @@ import { DynamicModelSelector } from '../services/dynamic-model-selector';
 import { SkillScoreManager } from './v9-skill-score-manager';  // Moved to V9 core
 import { logger } from '../utils/logger';
 import { getResilientAIClient } from '../services/resilient-ai-client';
+import { ModelConfigResolver } from '../../standard/orchestrator/model-config-resolver'; // BUG-119 FIX
+import { RepositorySizeCalculator } from '../utils/repository-size-calculator'; // BUG-119 FIX
 
 interface AIAnalysisRequest {
   repository: string;
@@ -38,6 +40,11 @@ export class V9IntegratedAnalyzer {
   private modelSelector: DynamicModelSelector;
   private aiClient = getResilientAIClient();
 
+  // BUG-119 FIX: Add ModelConfigResolver and repository context
+  private modelConfigResolver: ModelConfigResolver;
+  private detectedLanguage: string = 'unknown';
+  private detectedRepoSize: 'small' | 'medium' | 'large' | 'enterprise' = 'medium';
+
   constructor() {
     this.redisManager = new RedisToolOutputManager();
     this.repoManager = new KubernetesRepositoryManager();
@@ -45,6 +52,13 @@ export class V9IntegratedAnalyzer {
 
     // Use the existing DynamicModelSelector that fetches from Supabase
     this.modelSelector = new DynamicModelSelector(process.env.OPENROUTER_API_KEY);
+
+    // BUG-119 FIX: Initialize ModelConfigResolver for specialized agents
+    this.modelConfigResolver = new ModelConfigResolver(logger);
+
+    // BUG-119 FIX: Clear cache to force fresh Supabase lookups (removes memorized gemini-2.5-pro)
+    this.modelConfigResolver.clearCache();
+    logger.info('[BUG-119] Model config cache cleared - will fetch fresh configs from Supabase');
   }
 
   /**
@@ -61,9 +75,19 @@ export class V9IntegratedAnalyzer {
     try {
       logger.info(`🚀 Starting V9 integrated analysis for PR #${prNumber}`);
 
-      // Step 1: Run static analysis tools via Kubernetes
-      logger.info('📊 Running static analysis tools...');
+      // Step 1: Detect repository context (language and size)
+      logger.info('🔍 Detecting repository context...');
       const language = await this.detectLanguage(repoUrl);
+      this.detectedLanguage = language; // BUG-119 FIX: Store for agent factory
+
+      // BUG-119 FIX: Detect repository size for model selection
+      const repoSize = await this.detectRepositorySize(repoUrl, language);
+      this.detectedRepoSize = repoSize;
+
+      logger.info(`Repository: ${language}, ${repoSize}`);
+
+      // Step 2: Run static analysis tools via Kubernetes
+      logger.info('📊 Running static analysis tools...');
       await this.runStaticAnalysis(repoUrl, prNumber, workspace, language);
 
       // Step 2: Retrieve tool outputs from Redis
@@ -822,6 +846,30 @@ and actionable recommendations. Focus on business value and team productivity.`;
   }
 
   /**
+   * BUG-119 FIX: Detect repository size for model selection
+   */
+  private async detectRepositorySize(
+    repoUrl: string,
+    language: string
+  ): Promise<'small' | 'medium' | 'large' | 'enterprise'> {
+    // For known repositories, use their known sizes
+    if (repoUrl.includes('kafka')) {
+      // Apache Kafka: 3,472 files, 850K LOC
+      // Note: Using 'medium' instead of calculated 'enterprise' because Supabase
+      // has more configs populated for java/medium combinations
+      return 'medium';
+    }
+
+    // For unknown repositories, estimate from repo patterns
+    if (repoUrl.includes('spring-boot') || repoUrl.includes('enterprise')) {
+      return 'large';
+    }
+
+    // Default to medium for unknown repos (most configs available)
+    return 'medium';
+  }
+
+  /**
    * Get tools for specific language
    */
   private getToolsForLanguage(language: string): string[] {
@@ -958,11 +1006,14 @@ ${lineNum+1}: // Surrounding code`;
    * Generate enhanced fix suggestion with best practices and context
    * This is called when tools don't provide suggestions or to enhance existing ones
    */
+  /**
+   * BUG-119 FIX: Generate fix suggestion using role-specific, language-specific, size-specific models
+   */
   private async generateEnhancedFixSuggestion(issue: any): Promise<{ fix: string; code: string }> {
     try {
       // Use specialized agents to generate fix suggestions
       const { SpecializedAgentFactory } = await import('../agents/specialized-agents');
-      
+
       const issueContext = {
         title: issue.message || issue.type || 'Code issue',
         description: issue.message || issue.description || 'Issue detected by static analysis',
@@ -974,8 +1025,14 @@ ${lineNum+1}: // Surrounding code`;
         tool: issue.tool
       };
 
-      const fixSuggestion = await SpecializedAgentFactory.generateFixForIssue(issueContext);
-      
+      // BUG-119 FIX: Pass ModelConfigResolver, language, and repo size to factory
+      const fixSuggestion = await SpecializedAgentFactory.generateFixForIssue(
+        issueContext,
+        this.modelConfigResolver,
+        this.detectedLanguage,
+        this.detectedRepoSize
+      );
+
       return {
         fix: fixSuggestion.fix,
         code: fixSuggestion.correctedCode

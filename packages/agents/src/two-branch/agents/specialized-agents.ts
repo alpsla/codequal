@@ -6,6 +6,7 @@
 import OpenAI from 'openai';
 import { DynamicModelSelector } from '../services/dynamic-model-selector';
 import { getResilientAIClient } from '../services/resilient-ai-client';
+import { ModelConfiguration } from '../../standard/orchestrator/model-config-resolver';
 
 interface IssueContext {
   title: string;
@@ -27,15 +28,16 @@ interface FixSuggestion {
 
 /**
  * Base class for all specialized agents
+ * BUG-119 FIX: Accepts ModelConfiguration from orchestrator instead of creating own selector
  */
 abstract class BaseSpecializedAgent {
   protected openRouter: OpenAI;
-  protected modelSelector: DynamicModelSelector;
+  protected modelConfig: ModelConfiguration | null = null;
   protected agentRole: string;
 
-  constructor(role: string) {
+  constructor(role: string, modelConfig?: ModelConfiguration) {
     this.agentRole = role;
-    this.modelSelector = new DynamicModelSelector(process.env.OPENROUTER_API_KEY);
+    this.modelConfig = modelConfig || null; // BUG-119 FIX: Accept config from orchestrator
 
     const openRouterConfig: any = {
       apiKey: process.env.OPENROUTER_API_KEY || '',
@@ -54,13 +56,15 @@ abstract class BaseSpecializedAgent {
 
   /**
    * Generate fix suggestion using AI based on issue context
+   * BUG-119 FIX: Uses model from ModelConfiguration (via orchestrator) instead of DynamicModelSelector
    * Uses centralized resilient AI client with complete fallback chain
    */
-  async generateFixSuggestion(issue: IssueContext): Promise<FixSuggestion> {
-    const modelConfig = await this.modelSelector.selectModelsForTwoBranchAnalysis(
-      this.agentRole.toLowerCase(),
-      'medium'
-    );
+  async generateFixSuggestion(issue: IssueContext, modelOverride?: string): Promise<FixSuggestion> {
+    // BUG-119 FIX: Use provided model override or model from config
+    // Priority: modelOverride > modelConfig.primary_model > fallback default
+    const modelToUse = modelOverride ||
+                      this.modelConfig?.primary_model ||
+                      'google/gemini-2.5-flash'; // Last resort fallback
 
     const systemPrompt = this.getSystemPrompt();
     const userPrompt = this.buildPrompt(issue);
@@ -73,7 +77,7 @@ abstract class BaseSpecializedAgent {
         systemPrompt,
         userPrompt,
         role: this.agentRole,
-        model: modelConfig.primary.id,
+        model: modelToUse, // BUG-119 FIX: Use specific model from config
         temperature: 0.3,
         maxTokens: 1500
       });
@@ -192,10 +196,11 @@ ${lineNum + 2}: // Apply appropriate solution based on context`;
 
 /**
  * Security Agent - Handles security vulnerabilities and threats
+ * BUG-119 FIX: Accepts ModelConfiguration from factory
  */
 export class SecurityAgent extends BaseSpecializedAgent {
-  constructor() {
-    super('Security');
+  constructor(modelConfig?: ModelConfiguration) {
+    super('Security', modelConfig);
   }
 
   protected getSystemPrompt(): string {
@@ -225,10 +230,11 @@ Be direct and actionable.`;
 
 /**
  * Performance Agent - Handles performance optimizations
+ * BUG-119 FIX: Accepts ModelConfiguration from factory
  */
 export class PerformanceAgent extends BaseSpecializedAgent {
-  constructor() {
-    super('Performance');
+  constructor(modelConfig?: ModelConfiguration) {
+    super('Performance', modelConfig);
   }
 
   protected getSystemPrompt(): string {
@@ -258,10 +264,11 @@ Be direct and actionable.`;
 
 /**
  * Architecture Agent - Handles design patterns and structural issues
+ * BUG-119 FIX: Accepts ModelConfiguration from factory
  */
 export class ArchitectureAgent extends BaseSpecializedAgent {
-  constructor() {
-    super('Architecture');
+  constructor(modelConfig?: ModelConfiguration) {
+    super('Architecture', modelConfig);
   }
 
   protected getSystemPrompt(): string {
@@ -324,10 +331,11 @@ Show concrete refactoring with actual class and interface names.`;
 
 /**
  * Code Quality Agent - Handles code style, readability, and maintainability
+ * BUG-119 FIX: Accepts ModelConfiguration from factory
  */
 export class CodeQualityAgent extends BaseSpecializedAgent {
-  constructor() {
-    super('CodeQuality');
+  constructor(modelConfig?: ModelConfiguration) {
+    super('CodeQuality', modelConfig);
   }
 
   protected getSystemPrompt(): string {
@@ -357,10 +365,11 @@ Be concise and actionable.`;
 
 /**
  * Dependency Agent - Handles dependency issues and package management
+ * BUG-119 FIX: Accepts ModelConfiguration from factory
  */
 export class DependencyAgent extends BaseSpecializedAgent {
-  constructor() {
-    super('Dependency');
+  constructor(modelConfig?: ModelConfiguration) {
+    super('Dependency', modelConfig);
   }
 
   protected getSystemPrompt(): string {
@@ -390,42 +399,84 @@ Be specific and actionable.`;
 
 /**
  * Agent Factory - Creates appropriate agent based on issue category
+ * BUG-119 FIX: No caching - creates fresh agents with ModelConfiguration from orchestrator
  */
 export class SpecializedAgentFactory {
-  private static agents = new Map<string, BaseSpecializedAgent>();
+  /**
+   * BUG-119 FIX: Generate fix using role-specific, language-specific, size-specific model
+   *
+   * @param issue Issue context
+   * @param modelConfigResolver ModelConfigResolver from orchestrator
+   * @param language Repository language (from LanguageDetector)
+   * @param repoSize Repository size category (from RepositorySizeCalculator)
+   */
+  static async generateFixForIssue(
+    issue: IssueContext,
+    modelConfigResolver: any,  // ModelConfigResolver from orchestrator
+    language: string,
+    repoSize: 'small' | 'medium' | 'large' | 'enterprise'
+  ): Promise<FixSuggestion> {
+    // Determine role from issue type
+    const role = this.getRoleForCategory(issue.type);
 
-  static getAgent(category: string): BaseSpecializedAgent {
-    // Normalize category
-    const normalizedCategory = category.toLowerCase();
+    // Get model config from Supabase (or trigger Researcher if missing)
+    const modelConfig = await modelConfigResolver.getModelConfiguration(
+      role,
+      language,
+      repoSize
+    );
 
-    // Check cache
-    if (this.agents.has(normalizedCategory)) {
-      return this.agents.get(normalizedCategory)!;
-    }
+    console.log(`[AgentFactory] ${role}/${language}/${repoSize} → ${modelConfig.primary_model}`);
 
-    // Create appropriate agent
-    let agent: BaseSpecializedAgent;
+    // Create agent with proper model config
+    const agent = this.createAgent(issue.type, modelConfig);
 
-    if (normalizedCategory.includes('security') || normalizedCategory.includes('vulnerability')) {
-      agent = new SecurityAgent();
-    } else if (normalizedCategory.includes('performance') || normalizedCategory.includes('optimization')) {
-      agent = new PerformanceAgent();
-    } else if (normalizedCategory.includes('architecture') || normalizedCategory.includes('design')) {
-      agent = new ArchitectureAgent();
-    } else if (normalizedCategory.includes('dependency') || normalizedCategory.includes('package')) {
-      agent = new DependencyAgent();
-    } else {
-      // Default to Code Quality for general issues
-      agent = new CodeQualityAgent();
-    }
-
-    // Cache and return
-    this.agents.set(normalizedCategory, agent);
-    return agent;
+    // Generate fix using role-specific, language-specific model
+    return await agent.generateFixSuggestion(issue, modelConfig.primary_model);
   }
 
-  static async generateFixForIssue(issue: IssueContext): Promise<FixSuggestion> {
-    const agent = this.getAgent(issue.type);
-    return agent.generateFixSuggestion(issue);
+  /**
+   * BUG-119 FIX: Create agent with ModelConfiguration
+   */
+  private static createAgent(
+    category: string,
+    modelConfig: ModelConfiguration
+  ): BaseSpecializedAgent {
+    const normalizedCategory = category.toLowerCase();
+
+    if (normalizedCategory.includes('security') || normalizedCategory.includes('vulnerability')) {
+      return new SecurityAgent(modelConfig);
+    } else if (normalizedCategory.includes('performance') || normalizedCategory.includes('optimization')) {
+      return new PerformanceAgent(modelConfig);
+    } else if (normalizedCategory.includes('architecture') || normalizedCategory.includes('design')) {
+      return new ArchitectureAgent(modelConfig);
+    } else if (normalizedCategory.includes('dependency') || normalizedCategory.includes('package')) {
+      return new DependencyAgent(modelConfig);
+    } else {
+      // Default to Code Quality for general issues
+      return new CodeQualityAgent(modelConfig);
+    }
+  }
+
+  /**
+   * BUG-119 FIX: Map issue category to role name for Supabase lookup
+   */
+  private static getRoleForCategory(category: string): string {
+    const cat = category.toLowerCase();
+
+    if (cat.includes('security') || cat.includes('vulnerability')) {
+      return 'security';
+    }
+    if (cat.includes('performance') || cat.includes('optimization')) {
+      return 'performance';
+    }
+    if (cat.includes('architecture') || cat.includes('design')) {
+      return 'architecture';
+    }
+    if (cat.includes('dependency') || cat.includes('package')) {
+      return 'dependency';
+    }
+
+    return 'codequality';
   }
 }
