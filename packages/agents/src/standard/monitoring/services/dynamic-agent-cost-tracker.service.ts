@@ -115,7 +115,7 @@ export class DynamicAgentCostTrackerService {
     try {
       // Query Supabase for best matching config
       let query = this.supabase
-        .from('model_configs')
+        .from('model_configurations')
         .select('*')
         .eq('role', role)
         .eq('is_active', true);
@@ -216,7 +216,7 @@ export class DynamicAgentCostTrackerService {
     try {
       // Get the model config to calculate cost
       const { data: config } = await this.supabase
-        .from('model_configs')
+        .from('model_configurations')
         .select('*')
         .eq('id', params.modelConfigId)
         .single();
@@ -286,7 +286,7 @@ export class DynamicAgentCostTrackerService {
     try {
       // Get current performance score
       const { data: config } = await this.supabase
-        .from('model_configs')
+        .from('model_configurations')
         .select('performance_score, usage_count, success_count')
         .eq('id', configId)
         .single();
@@ -299,7 +299,7 @@ export class DynamicAgentCostTrackerService {
       const newPerformanceScore = (newSuccessCount / newUsageCount) * 100;
       
       await this.supabase
-        .from('model_configs')
+        .from('model_configurations')
         .update({
           performance_score: newPerformanceScore,
           usage_count: newUsageCount,

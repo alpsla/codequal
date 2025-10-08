@@ -295,7 +295,7 @@ export class SmartAgentTrackerService {
     
     // Query Supabase
     const { data, error } = await this.supabase
-      .from('model_configs')
+      .from('model_configurations')
       .select('*')
       .eq('role', role)
       .eq('is_active', true)
