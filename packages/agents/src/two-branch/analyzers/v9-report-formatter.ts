@@ -516,7 +516,7 @@ ${rows}
 - Score: ${result.qualityScore || 0}/100 (${result.grade || 'F'})
 - Decision: ${decision}
 - New Issues: ${newIssues.length} (${blocking} blocking)
-- Confidence: ${((result.confidence || 0.85) * 100).toFixed(0)}%
+- Confidence: ${(result.confidence || 85).toFixed(0)}%
 - Immediate Risk: ${immediateRisk}`;
   }
   
@@ -530,7 +530,7 @@ ${rows}
 
 ### ${emoji} ${text}
 
-**Confidence Level:** ${(result.confidence * 100).toFixed(0)}%
+**Confidence Level:** ${(result.confidence || 85).toFixed(0)}%
 
 **Reasoning:**
 > ${result.reason}`;
@@ -1233,13 +1233,13 @@ ${skills.recommendations && skills.recommendations.length > 0 ?
 | Files Analyzed | ${(metadata.maxFilesAnalyzed || 0).toLocaleString()} |
 | Coverage | ${metadata.totalFiles ? Math.min(100, (((metadata.maxFilesAnalyzed || 0) / metadata.totalFiles) * 100)).toFixed(1) : '0.0'}% |
 | Analysis Type | ${metadata.smartFileSelection ? 'Smart Selection' : 'Full Scan'} |
-| Lines per Second | ${metadata.analysisTime ? Math.round((metadata.totalLinesOfCode || 0) / (metadata.analysisTime / 1000)) : 0} |
+| Lines per Second | ${metadata.analysisTime ? Math.round((metadata.totalLinesOfCode || 0) / metadata.analysisTime) : 0} |
 
 ### Agent Performance
 | Agent | Files | Issues | Time | Cost |
 |-------|-------|--------|------|------|
 ${(metadata.agentsUsed || []).map(a =>
-  `| ${a.agentName} | ${(a.filesAnalyzed || 0).toLocaleString()} | ${a.issuesFound || 0} | ${((a.executionTime || 0) / 1000).toFixed(1)}s | $${(a.cost || 0).toFixed(4)} |`
+  `| ${a.agentName} | ${(a.filesAnalyzed || 0).toLocaleString()} | ${a.issuesFound || 0} | ${(a.executionTime || 0).toFixed(1)}s | $${(a.cost || 0).toFixed(4)} |`
 ).join('\n') || '| No agents data available | - | - | - | - |'}
 
 ### Tool Performance

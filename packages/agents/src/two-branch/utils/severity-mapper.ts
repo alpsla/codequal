@@ -76,6 +76,23 @@ function mapPMDSeverity(
   description?: string
 ): CodeQualSeverity {
 
+  // RULE-SPECIFIC OVERRIDES (takes precedence over category/priority)
+  // These are style/best practice issues that should never be HIGH
+  const styleRules: Record<string, CodeQualSeverity> = {
+    'loggerisnotstaticfinal': 'medium',           // Logging style issue
+    'returnemptycollectionratherthannull': 'medium', // Best practice
+    'avoidbranchingstatementaslastinloop': 'medium', // Code style
+    'uselocalewithtouppercase': 'low',            // Locale awareness
+    'uselocalewithtolowercase': 'low',            // Locale awareness
+    'guidanceontostring': 'low',                  // Documentation
+    'commentsize': 'low',                         // Documentation style
+    'commentrequired': 'low'                      // Documentation requirement
+  };
+
+  if (styleRules[ruleId]) {
+    return styleRules[ruleId];
+  }
+
   // CRITICAL: Security priority 1-2 or error prone priority 1 with runtime impact
   if (category.includes('security') && priority <= 2) {
     return 'critical';

@@ -831,19 +831,29 @@ export class JavaToolOrchestrator {
         logger.info(`OSS Index: Enabled (user: ${ossIndex.username})`);
       }
 
+      let exitCode = 0;
       try {
         await execAsync(command, {
           timeout: this.config.dependencyCheck.timeout * 1000
         });
       } catch (error: any) {
-        // Exit codes 13-14 are acceptable (warnings/errors but analysis completed)
-        // Exit code 13: Analysis failed
-        // Exit code 14: Analysis encountered errors (e.g., OSS Index auth)
+        exitCode = error.code || 0;
+        // Exit code 13: Analysis failed (fatal error, no output generated)
+        // Exit code 14: Analysis encountered non-fatal errors (output may be generated)
         // Exit code 0: Success, no vulnerabilities
-        if (error.code && error.code >= 13 && error.code <= 14) {
-          logger.warn(`Dependency-Check completed with exit code ${error.code} (non-critical warnings)`);
-        } else {
-          throw error; // Re-throw if it's a real failure
+        if (exitCode === 13) {
+          // Exit code 13 means analysis failed completely - no output file generated
+          logger.error(`Dependency-Check analysis failed (exit code 13): ${error.message}`);
+          throw new Error(`Dependency-Check analysis failed. This usually means:\n` +
+            `1. Database connection issue\n` +
+            `2. Invalid configuration\n` +
+            `3. OSS Index authentication failed\n` +
+            `Original error: ${error.message}`);
+        } else if (exitCode === 14) {
+          // Exit code 14 is acceptable (non-fatal errors, output should still exist)
+          logger.warn(`Dependency-Check completed with exit code 14 (non-fatal errors)`);
+        } else if (exitCode !== 0) {
+          throw error; // Re-throw unexpected exit codes
         }
       }
 
@@ -853,6 +863,15 @@ export class JavaToolOrchestrator {
         `dependency-check-results-${branch}`,
         'dependency-check-report.json'
       );
+
+      // Check if output file exists
+      try {
+        await fs.access(resultPath);
+      } catch {
+        logger.error(`Dependency-Check output file not found: ${resultPath}`);
+        throw new Error(`Dependency-Check failed to generate output file (exit code: ${exitCode})`);
+      }
+
       const rawOutput = await fs.readFile(resultPath, 'utf-8');
       const issues = this.parseDependencyCheckOutput(rawOutput);
 

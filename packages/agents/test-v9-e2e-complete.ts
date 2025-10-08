@@ -130,7 +130,14 @@ async function runV9CompleteE2E(): Promise<V9AnalysisResult> {
   // Get modified files
   execSync("git checkout pr-17620", { cwd: KAFKA_REPO, stdio: "ignore" });
   const modifiedFiles = new Set(getModifiedFilesBetweenBranches(KAFKA_REPO, mainBranch, "pr-17620"));
-  console.log(`   Modified files: ${modifiedFiles.size}\n`);
+  const totalFiles = 3472; // From repository size calculation
+  console.log(`   Modified files: ${modifiedFiles.size}`);
+  if (modifiedFiles.size > totalFiles) {
+    console.log(`   ⚠️  WARNING: Modified files (${modifiedFiles.size}) > total files (${totalFiles})!`);
+    console.log(`   This may indicate duplicate counting (renames/moves counted twice)\n`);
+  } else {
+    console.log(`   ✅ File count valid (${((modifiedFiles.size / totalFiles) * 100).toFixed(1)}% of repository)\n`);
+  }
 
   if (!fs.existsSync(OUTPUT_DIR)) fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 
