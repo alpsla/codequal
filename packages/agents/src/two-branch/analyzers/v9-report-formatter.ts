@@ -310,8 +310,13 @@ ${rows}
     language: string,
     options?: any
   ): Promise<string> {
+    // BUG-125 FIX: Initialize EducatorAgent with Supabase model config
+    // Determine repository size from metadata
+    const repoSize = this.determineRepoSize(metadata.totalFiles);
+    await this.educatorAgent.initialize(language, repoSize);
+
     const sections: string[] = [];
-    
+
     // Extract tool performance data if available (Option A improvement)
     const toolPerformance = metadata.toolResults
       ? this.extractToolPerformance(metadata.toolResults)
@@ -2201,6 +2206,17 @@ ${this.generateAchievements(result)}
       previousCriticalCount: 2,
       criticalChange: -1
     };
+  }
+
+  /**
+   * BUG-125 FIX: Determine repository size category from file count
+   * Used for model configuration lookup in Supabase
+   */
+  private determineRepoSize(totalFiles: number): 'small' | 'medium' | 'large' | 'enterprise' {
+    if (totalFiles < 100) return 'small';
+    if (totalFiles < 1000) return 'medium';
+    if (totalFiles < 10000) return 'large';
+    return 'enterprise';
   }
 
   private getShortTermGoal(result: AnalysisResult): string {
