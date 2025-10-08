@@ -140,20 +140,23 @@ export class ModelConfigResolver {
     language: string,
     size: string
   ): Promise<ModelConfiguration> {
-    // Check cache first
+    // BUG-119 FIX: Normalize role name (codequality → code_quality)
+    const normalizedRole = this.normalizeRoleName(role);
+
+    // Check cache first (use original role for cache key)
     const cacheKey = `${role}/${language}/${size}`;
     if (this.cache.has(cacheKey)) {
       this.log('debug', `Using cached configuration for ${cacheKey}`);
       return this.cache.get(cacheKey)!;
     }
 
-    this.log('info', `Retrieving model configuration for ${cacheKey}`);
+    this.log('info', `Retrieving model configuration for ${cacheKey} (normalized: ${normalizedRole})`);
 
-    // Try to get from Supabase
+    // Try to get from Supabase using normalized role name
     const { data, error } = await this.supabase
       .from('model_configurations')
       .select('*')
-      .eq('role', role)
+      .eq('role', normalizedRole)
       .eq('language', language)
       .eq('size_category', size)
       .single();
@@ -776,6 +779,24 @@ export class ModelConfigResolver {
   /**
    * Clear cache
    */
+
+  /**
+   * BUG-119 FIX: Normalize role names for Supabase lookup
+   * Maps code conventions to database conventions
+   */
+  private normalizeRoleName(role: string): string {
+    const normalized = role.toLowerCase();
+    
+    // Map common variations to database names
+    const roleMap: Record<string, string> = {
+      'codequality': 'code_quality',
+      'code-quality': 'code_quality',
+      'code_quality': 'code_quality'
+    };
+    
+    return roleMap[normalized] || normalized;
+  }
+
   clearCache(): void {
     this.cache.clear();
     this.log('info', 'Configuration cache cleared');
