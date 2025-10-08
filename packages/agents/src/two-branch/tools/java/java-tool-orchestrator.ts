@@ -455,7 +455,7 @@ export class JavaToolOrchestrator {
       const issues = this.parsePMDOutput(rawOutput);
 
       return {
-        tool: 'PMD',
+        tool: 'pmd',
         success: true,
         duration: Date.now() - startTime,
         issues,
@@ -466,7 +466,7 @@ export class JavaToolOrchestrator {
     } catch (error: any) {
       logger.error('PMD execution failed:', error);
       return {
-        tool: 'PMD',
+        tool: 'pmd',
         success: false,
         duration: Date.now() - startTime,
         issues: [],
@@ -511,7 +511,7 @@ export class JavaToolOrchestrator {
       const issues = this.parseCheckstyleOutput(rawOutput);
 
       return {
-        tool: 'Checkstyle',
+        tool: 'checkstyle',
         success: true,
         duration: Date.now() - startTime,
         issues,
@@ -522,7 +522,7 @@ export class JavaToolOrchestrator {
     } catch (error: any) {
       logger.error('Checkstyle execution failed:', error);
       return {
-        tool: 'Checkstyle',
+        tool: 'checkstyle',
         success: false,
         duration: Date.now() - startTime,
         issues: [],
@@ -572,7 +572,7 @@ export class JavaToolOrchestrator {
       const issues = this.parseSemgrepOutput(rawOutput);
 
       return {
-        tool: 'Semgrep',
+        tool: 'semgrep',
         success: true,
         duration: Date.now() - startTime,
         issues,
@@ -583,7 +583,7 @@ export class JavaToolOrchestrator {
     } catch (error: any) {
       logger.error('Semgrep execution failed:', error);
       return {
-        tool: 'Semgrep',
+        tool: 'semgrep',
         success: false,
         duration: Date.now() - startTime,
         issues: [],
@@ -736,7 +736,7 @@ export class JavaToolOrchestrator {
           logger.info('   Other tools will continue running...');
 
           return {
-            tool: 'SpotBugs',
+            tool: 'spotbugs',
             success: false,
             duration: Date.now() - startTime,
             issues: [],
@@ -773,7 +773,7 @@ export class JavaToolOrchestrator {
       const issues = this.parseSpotBugsOutput(rawOutput);
 
       return {
-        tool: 'SpotBugs',
+        tool: 'spotbugs',
         success: true,
         duration: Date.now() - startTime,
         issues,
@@ -785,7 +785,7 @@ export class JavaToolOrchestrator {
       // SpotBugs execution error (not compilation)
       logger.error('SpotBugs execution failed:', error);
       return {
-        tool: 'SpotBugs',
+        tool: 'spotbugs',
         success: false,
         duration: Date.now() - startTime,
         issues: [],
@@ -904,7 +904,7 @@ export class JavaToolOrchestrator {
       const issues = this.parseDependencyCheckOutput(rawOutput);
 
       return {
-        tool: 'Dependency-Check',
+        tool: 'dependency-check',
         success: true,
         duration: Date.now() - startTime,
         issues,
@@ -915,7 +915,7 @@ export class JavaToolOrchestrator {
     } catch (error: any) {
       logger.error('Dependency-Check execution failed:', error);
       return {
-        tool: 'Dependency-Check',
+        tool: 'dependency-check',
         success: false,
         duration: Date.now() - startTime,
         issues: [],
@@ -1027,7 +1027,7 @@ export class JavaToolOrchestrator {
 
         for (const errorMatch of errorMatches) {
           issues.push({
-            tool: 'Checkstyle',
+            tool: 'checkstyle',
             file: fileName,
             line: parseInt(errorMatch[1]),
             column: errorMatch[2] ? parseInt(errorMatch[2]) : undefined,
@@ -1106,7 +1106,7 @@ export class JavaToolOrchestrator {
         }
 
         issues.push({
-          tool: 'Semgrep',
+          tool: 'semgrep',
           file: result.path,
           line: result.start?.line || 1,
           endLine: result.end?.line,
@@ -1166,7 +1166,7 @@ export class JavaToolOrchestrator {
           else severity = 'low';
 
           issues.push({
-            tool: 'SpotBugs',
+            tool: 'spotbugs',
             file,
             line,
             severity,
@@ -1260,7 +1260,7 @@ export class JavaToolOrchestrator {
           else if (cvssScore >= 4.0) severity = 'medium';
 
           issues.push({
-            tool: 'Dependency-Check',
+            tool: 'dependency-check',
             file: dependency.fileName || 'pom.xml',
             line: 0, // Dependency issues don't have line numbers
             severity,
