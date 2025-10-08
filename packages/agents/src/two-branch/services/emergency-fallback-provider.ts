@@ -62,7 +62,7 @@ export class EmergencyFallbackProvider {
         case 'gemini':
           return process.env.GEMINI_MODEL ||
                  process.env.EMERGENCY_FALLBACK_MODEL ||
-                 'gemini-2.5-pro';
+                 'gemini-2.5-flash';
         case 'anthropic':
           return process.env.CLAUDE_MODEL ||
                  process.env.EMERGENCY_FALLBACK_MODEL ||
