@@ -1,0 +1,418 @@
+# CodeQual Cursor AI Rules
+# Based on CLAUDE.md - Project coding standards and architecture
+
+## 🚨 MANDATORY: V9 CANONICAL ARCHITECTURE
+
+**CRITICAL: Read these files FIRST before any V9 work:**
+1. `packages/agents/src/two-branch/docs/next/V9_CRITICAL_KNOWLEDGE_BASE.md` - Critical facts
+2. `V9-SYSTEM-OVERVIEW.md` - Complete system overview
+
+**V9 Infrastructure Already Built - DO NOT RECREATE:**
+- Tool execution → use `V9ToolOrchestrator`
+- Repository management → use `V9RepositoryManager`
+- File selection → use `SmartFileSelector`
+- Container images → use `analyzer:lang-*` from registry
+- Caching → use existing Redis infrastructure
+
+**V9 Flow Requirements (MANDATORY):**
+- Tool Execution: Run on BOTH branches (main + PR)
+- Agent Processing: ALL 5 agents (Security, Quality, Performance, Architecture, Dependency)
+- Orchestrator: Must deduplicate issues
+- Split Services: Send to BOTH Educator AND Comparator in parallel
+- AI Generation: Use AI for fixes, NEVER templates
+- No Alternatives: Do NOT create alternative flows
+
+**FORBIDDEN Patterns:**
+- ❌ Creating new tool execution logic
+- ❌ Creating new file selection algorithms
+- ❌ Using generic Docker images
+- ❌ Creating "enhanced", "proper", "final" versions
+- ❌ Fallback simulations when real execution fails
+- ❌ Template-based fix generation
+- ❌ Single-branch analysis
+
+## Core Philosophy
+
+### KISS & YAGNI
+- Keep it simple, stupid - choose straightforward solutions
+- You aren't gonna need it - implement only what's needed now
+- No speculative features
+
+### Design Principles
+- **Dependency Inversion**: Depend on abstractions, not implementations
+- **Open/Closed**: Open for extension, closed for modification
+- **Single Responsibility**: One clear purpose per function/class/module
+- **Fail Fast**: Check errors early, throw immediately
+
+## Code Structure Limits
+
+### File & Function Constraints
+```typescript
+// NEVER exceed these limits:
+- Max file length: 500 lines
+- Max function length: 50 lines
+- Max class length: 200 lines
+- Max line length: 120 characters
+- Language: Always TypeScript (type safety required)
+```
+
+### Naming Conventions
+```typescript
+// Variables and functions
+const userName = "John";
+function fetchUserData() {}
+
+// Classes and interfaces
+class UserManager {}
+interface UserConfig {}
+
+// Constants
+const MAX_RETRY_ATTEMPTS = 3;
+
+// Private properties
+private _cache: Map<string, any>;
+#privateField: string;
+
+// Type parameters
+<T, U, K> or <TResult, TError>
+
+// File names
+// Utilities: kebab-case.ts
+// Components/Classes: PascalCase.ts
+```
+
+## Testing Requirements
+
+### TDD Workflow
+1. Write test first (define expected behavior)
+2. Watch it fail (ensure test works)
+3. Write minimal code (make test pass)
+4. Refactor (improve while tests green)
+5. Repeat (one test at a time)
+
+### Test Organization
+```typescript
+// Test structure
+describe('ComponentName', () => {
+  let component: ComponentName;
+  let mockDependency: jest.Mocked<Dependency>;
+
+  beforeEach(() => {
+    mockDependency = createMock();
+    component = new ComponentName(mockDependency);
+  });
+
+  describe('methodName', () => {
+    it('should handle success case', async () => {
+      // Arrange
+      mockDependency.method.mockResolvedValue(data);
+
+      // Act
+      const result = await component.method();
+
+      // Assert
+      expect(result).toBeDefined();
+      expect(mockDependency.method).toHaveBeenCalledWith(expected);
+    });
+  });
+});
+```
+
+### Coverage Requirements
+- Target: 80%+ coverage on critical paths
+- Unit tests: Next to code in `__tests__/`
+- Integration tests: `tests/integration/`
+- E2E tests: `tests/e2e/`
+
+## Error Handling
+
+### Custom Errors
+```typescript
+// Create domain-specific errors
+export class ValidationError extends Error {
+  constructor(message: string, public field?: string) {
+    super(message);
+    this.name = 'ValidationError';
+  }
+}
+
+// Use proper try-catch with specific handling
+try {
+  const validated = validateInput(data);
+  return await process(validated);
+} catch (error) {
+  if (error instanceof ValidationError) {
+    logger.warn('Validation failed:', error);
+    throw new BadRequestError(error.message);
+  }
+  logger.error('Unexpected error:', error);
+  throw new InternalServerError();
+}
+```
+
+## Configuration Management
+
+### Environment Variables
+```typescript
+import { z } from 'zod';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+// Define and validate schema
+const envSchema = z.object({
+  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+  DATABASE_URL: z.string().url(),
+  OPENROUTER_API_KEY: z.string(),
+  SUPABASE_URL: z.string().url(),
+  SUPABASE_SERVICE_ROLE_KEY: z.string(),
+});
+
+// Parse and validate
+export const config = envSchema.parse(process.env);
+```
+
+## Database Operations
+
+### Supabase Pattern
+```typescript
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+// Type-safe queries
+export async function getData(id: string) {
+  const { data, error } = await supabase
+    .from('table_name')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error) throw new DatabaseError(error.message);
+  return data;
+}
+```
+
+### Redis Caching
+```typescript
+import Redis from 'ioredis';
+
+const redis = new Redis(process.env.REDIS_URL);
+
+// Cache with TTL
+export async function cacheData(key: string, data: any, ttl = 3600) {
+  await redis.setex(key, ttl, JSON.stringify(data));
+}
+
+// Retrieve from cache
+export async function getCached(key: string) {
+  const cached = await redis.get(key);
+  return cached ? JSON.parse(cached) : null;
+}
+```
+
+## Git Workflow
+
+### Commit Message Format
+```
+<type>(<scope>): <subject>
+
+<body>
+
+<footer>
+```
+
+**Types:** feat, fix, docs, style, refactor, test, chore, perf
+
+**Example:**
+```
+feat(agents): add retry logic for API calls
+
+- Implement exponential backoff strategy
+- Add configurable max retry attempts
+- Log retry attempts for debugging
+
+Closes #456
+```
+
+## Tool Usage
+
+### Prefer Specialized Tools
+```bash
+# ❌ Don't use bash for file operations
+cat file.txt
+grep "pattern" file.txt
+echo "content" > file.txt
+
+# ✅ Use dedicated tools
+# Read tool for reading
+# Grep tool for searching
+# Write tool for creating files
+```
+
+### Security Rules
+- NEVER commit secrets
+- Use environment variables
+- Validate all user input with Zod
+- Use parameterized queries
+- Implement rate limiting
+- Keep dependencies updated
+- Use HTTPS for external APIs
+
+## Model Configuration (CRITICAL)
+
+### Model Diversity (BUG-119 FIXED)
+Each agent role MUST use different model from Supabase:
+```typescript
+// ✅ Correct - Each role gets unique model
+security     → anthropic/claude-opus-4.1
+performance  → deepseek/deepseek-chat-v3.1
+architecture → anthropic/claude-sonnet-4
+codequality  → google/gemini-2.5-flash
+dependency   → qwen/qwen3-coder-30b-a3b-instruct
+```
+
+### Role Name Normalization
+```typescript
+// Handles mapping: 'codequality' → 'code_quality'
+// Already implemented in ModelConfigResolver.normalizeRoleName()
+```
+
+### Emergency Fallback
+```bash
+# Configuration priority (highest to lowest):
+1. GEMINI_MODEL env var
+2. EMERGENCY_FALLBACK_MODEL env var
+3. Default: gemini-2.5-flash (NOT gemini-2.5-pro)
+```
+
+## Performance Optimization
+
+### Guidelines
+- Use streaming for large data
+- Implement proper caching (Redis)
+- Use connection pooling
+- Optimize bundle sizes
+- Implement lazy loading
+- Use worker threads for CPU-intensive tasks
+
+### Avoid Performance Anti-patterns
+```typescript
+// ❌ Bad - synchronous file operations in loop
+for (const file of files) {
+  const content = fs.readFileSync(file);
+  process(content);
+}
+
+// ✅ Good - async with Promise.all
+const contents = await Promise.all(
+  files.map(file => fs.promises.readFile(file))
+);
+contents.forEach(process);
+```
+
+## Documentation Standards
+
+### JSDoc Requirements
+```typescript
+/**
+ * Analyzes a GitHub pull request for code quality issues
+ *
+ * @param repoUrl - The GitHub repository URL
+ * @param prNumber - The pull request number to analyze
+ * @param options - Optional configuration for the analysis
+ * @returns Analysis results including identified issues and metrics
+ * @throws {ValidationError} If the repository URL is invalid
+ *
+ * @example
+ * ```typescript
+ * const results = await analyzePR('https://github.com/org/repo', 123);
+ * ```
+ */
+export async function analyzePR(
+  repoUrl: string,
+  prNumber: number,
+  options?: AnalysisOptions
+): Promise<AnalysisResult> {
+  // Implementation
+}
+```
+
+## Critical References
+
+### Key Files
+- `CLAUDE.md` - This document's source
+- `packages/agents/ALL-BUGS-COMPLETE-2025-10-08.md` - Current bug list
+- `packages/agents/src/two-branch/docs/next/V9_CRITICAL_KNOWLEDGE_BASE.md` - V9 facts
+- `packages/agents/src/two-branch/docs/next/QUICK_START_NEXT_SESSION.md` - Session continuity
+
+### Important Commands
+```bash
+# Development
+npm install
+npm run build
+npm run dev
+npm test
+npm run typecheck
+npm run lint
+npm run lint:fix
+
+# Testing
+npm test -- path/to/test.spec.ts
+npm test -- --coverage
+npm run test:integration
+
+# CodeQual specific
+cd packages/agents
+npx ts-node test-v9-e2e-complete.ts
+```
+
+## Oracle Cloud Infrastructure
+
+### SSH Connection
+```bash
+export SSH_KEY="/Users/alpinro/Code Prjects/codequal/keys/oracle/ssh-key-2025-10-07.key"
+export ORACLE_IP="129.213.49.128"
+ssh -i "$SSH_KEY" opc@${ORACLE_IP}
+```
+
+### Deployment
+```bash
+# Upload changes
+rsync -avz -e "ssh -i \"$SSH_KEY\" -o StrictHostKeyChecking=no" \
+  "/Users/alpinro/Code Prjects/codequal/packages/agents/src/" \
+  "opc@${ORACLE_IP}:~/codequal/packages/agents/src/"
+
+# Run test
+ssh -i "$SSH_KEY" "opc@${ORACLE_IP}" \
+  "cd ~/codequal/packages/agents && npx ts-node test-v9-e2e-complete.ts"
+```
+
+## NEVER Do These
+
+1. ❌ Generate or guess URLs (unless for programming help)
+2. ❌ Use emojis (unless user explicitly requests)
+3. ❌ Create documentation files proactively (wait for user request)
+4. ❌ Assume or guess values for missing parameters
+5. ❌ Use deprecated V7 code (V8+ only, see docs/DEPRECATED_V7_WARNING.md)
+6. ❌ Create files > 500 lines without refactoring
+7. ❌ Skip tests for new features
+8. ❌ Commit secrets or API keys
+9. ❌ Use bash for file operations when tools available
+10. ❌ Modify V9 canonical architecture without approval
+
+## Current Context Awareness
+
+When working on this codebase:
+1. Check `packages/agents/ALL-BUGS-COMPLETE-2025-10-08.md` for current bugs
+2. Reference `packages/agents/src/two-branch/docs/next/QUICK_START_NEXT_SESSION.md` for continuity
+3. Read V9_CRITICAL_KNOWLEDGE_BASE.md before V9 work
+4. Use test-v9-e2e-complete.ts as reference for correct patterns
+5. Verify OpenRouter shows 5 different models (model diversity)
+
+---
+
+**Remember:** Simplicity, type safety, testing, and following existing architecture are paramount.
