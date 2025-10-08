@@ -3,6 +3,13 @@
  *
  * Implements comprehensive severity mapping rules for static analysis tools.
  *
+ * NOTE: PMD severity is now configured natively through custom rulesets!
+ * - Default: pmd-codequal-default.xml with proper priority tuning
+ * - Project-specific: Teams can provide customRuleset path in JavaToolConfig
+ * - Fallback: Rule-specific overrides below (for backward compatibility)
+ *
+ * @see /packages/agents/src/two-branch/tools/java/rulesets/pmd-codequal-default.xml
+ * @see /packages/agents/docs/PMD_CONFIGURATION_GUIDE.md
  * @see /packages/agents/src/two-branch/docs/SEVERITY_MAPPING_RULES.md
  */
 
@@ -68,6 +75,10 @@ export function determineCodeQualSeverity(
 
 /**
  * Map PMD priority + category to CodeQual severity
+ *
+ * NOTE: If using custom PMD rulesets (pmd-codequal-default.xml or project-specific),
+ * the priorities from the ruleset are used FIRST, and these overrides serve as
+ * a fallback for backward compatibility or when standard PMD rulesets are used.
  */
 function mapPMDSeverity(
   priority: number,
@@ -77,7 +88,8 @@ function mapPMDSeverity(
 ): CodeQualSeverity {
 
   // RULE-SPECIFIC OVERRIDES (takes precedence over category/priority)
-  // These are style/best practice issues that should never be HIGH
+  // These are fallback overrides when custom rulesets are not used
+  // Prefer configuring these in pmd-codequal-default.xml instead
   const styleRules: Record<string, CodeQualSeverity> = {
     'loggerisnotstaticfinal': 'medium',           // Logging style issue
     'returnemptycollectionratherthannull': 'medium', // Best practice

@@ -19,6 +19,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import * as path from 'path';
 import * as fs from 'fs/promises';
+import { existsSync } from 'fs';
 import { logger } from '../../utils/logger';
 import { determineCodeQualSeverity } from '../../utils/severity-mapper';
 
@@ -34,6 +35,7 @@ export interface JavaToolConfig {
     enabled: boolean;
     minimumPriority: 1 | 2;        // 1=critical only, 2=critical+high
     rulesets: string[];
+    customRuleset?: string;         // Path to project-specific PMD ruleset XML
     parallel: number;
     threads: number;
     memory: string;
@@ -153,6 +155,7 @@ export const DEFAULT_JAVA_CONFIG: JavaToolConfig = {
       'category/java/errorprone.xml',
       'category/java/bestpractices.xml'
     ],
+    customRuleset: undefined,        // Use default CodeQual ruleset (or project-specific if provided)
     parallel: 2,
     threads: 3,
     memory: '5g'
@@ -398,21 +401,46 @@ export class JavaToolOrchestrator {
     const startTime = Date.now();
 
     try {
-      // FIX #1: Provide default rulesets if config is empty
-      const rulesets = this.config.pmd.rulesets.length > 0
-        ? this.config.pmd.rulesets.join(',')
-        : 'category/java/bestpractices.xml,category/java/codestyle.xml,category/java/design.xml,category/java/errorprone.xml,category/java/performance.xml';
+      // Determine which ruleset to use (priority order):
+      // 1. Project-specific custom ruleset (if provided)
+      // 2. CodeQual default ruleset (pmd-codequal-default.xml)
+      // 3. Standard PMD rulesets from config
+      let rulesetConfig = '';
+      let volumeMount = '';
+
+      if (this.config.pmd.customRuleset) {
+        // Use project-specific custom ruleset
+        const rulesetPath = path.resolve(this.config.pmd.customRuleset);
+        volumeMount = `-v ${rulesetPath}:/pmd-custom-ruleset.xml:ro \\`;
+        rulesetConfig = '/pmd-custom-ruleset.xml';
+        logger.info(`Using project-specific PMD ruleset: ${this.config.pmd.customRuleset}`);
+      } else {
+        // Use CodeQual default ruleset
+        const defaultRuleset = path.join(__dirname, 'rulesets', 'pmd-codequal-default.xml');
+        if (existsSync(defaultRuleset)) {
+          volumeMount = `-v ${defaultRuleset}:/pmd-custom-ruleset.xml:ro \\`;
+          rulesetConfig = '/pmd-custom-ruleset.xml';
+          logger.info('Using CodeQual default PMD ruleset with tuned severity priorities');
+        } else {
+          // Fallback to standard PMD rulesets from config
+          rulesetConfig = this.config.pmd.rulesets.length > 0
+            ? this.config.pmd.rulesets.join(',')
+            : 'category/java/bestpractices.xml,category/java/codestyle.xml,category/java/design.xml,category/java/errorprone.xml,category/java/performance.xml';
+          logger.info('Using standard PMD rulesets (default ruleset not found)');
+        }
+      }
 
       // Note: PMD doesn't support --exclude flag, we filter test files in post-processing
       // Use "pmd pmd" syntax with correct flag format (--flag-name)
       const command = `
         docker run --rm \\
           -v ${repoPath}:/workspace \\
+          ${volumeMount}
           ${this.dockerImage} \\
           -c "pmd pmd \\
             -d /workspace \\
             -f json \\
-            -R ${rulesets} \\
+            -R ${rulesetConfig} \\
             --minimum-priority ${this.config.pmd.minimumPriority} \\
             --threads ${this.config.pmd.threads} \\
             --cache /tmp/pmd-cache \\
