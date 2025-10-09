@@ -213,14 +213,30 @@ export class V9GroupedReportFormatter {
     markdown.push(this.generateExecutiveSummary(issues, groups, metadata));
     markdown.push('');
     
-    // Issue Groups by Severity
-    const criticalHigh = groups.filter(g => g.severity === 'critical' || g.severity === 'high');
+    // Issue Groups by Severity (CRITICAL FIRST, then HIGH)
+    const critical = groups.filter(g => g.severity === 'critical');
+    const high = groups.filter(g => g.severity === 'high');
     const medium = groups.filter(g => g.severity === 'medium');
     const low = groups.filter(g => g.severity === 'low');
     
-    if (criticalHigh.length > 0) {
-      markdown.push('## 🔴 Critical & High Priority Issues\n');
-      for (const group of criticalHigh) {
+    // Critical Issues (highest priority)
+    if (critical.length > 0) {
+      markdown.push('## 🔴 Critical Issues (Immediate Action Required)\n');
+      for (const group of critical) {
+        markdown.push(this.generateGroupSection(group, issues, true));
+        
+        // Generate attachments
+        const { locationAttachment, ideFixFile } = this.generateAttachments(group, issues);
+        attachments.push(locationAttachment);
+        if (ideFixFile) ideFixFiles.push(ideFixFile);
+      }
+      markdown.push('');
+    }
+    
+    // High Priority Issues
+    if (high.length > 0) {
+      markdown.push('## 🟠 High Priority Issues\n');
+      for (const group of high) {
         markdown.push(this.generateGroupSection(group, issues, true));
         
         // Generate attachments
@@ -292,14 +308,33 @@ export class V9GroupedReportFormatter {
     metadata: any
   ): string {
     const bySeverity = this.groupBySeverity(issues);
+    const byCategory = this.groupByCategory(issues);
+    
+    // Calculate blocking issues (NEW + EXISTING_MODIFIED with critical/high severity)
+    const blockingIssues = issues.filter(i => 
+      (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED') &&
+      (i.severity === 'critical' || i.severity === 'high')
+    );
     
     return `## 📊 Executive Summary
 
 **Total Issues**: ${issues.length.toLocaleString()} (${groups.length} unique types)
+
+**By Severity**:
 - 🔴 Critical: ${bySeverity.critical} (${((bySeverity.critical / issues.length) * 100).toFixed(1)}%)
 - 🟠 High: ${bySeverity.high} (${((bySeverity.high / issues.length) * 100).toFixed(1)}%)
 - 🟡 Medium: ${bySeverity.medium} (${((bySeverity.medium / issues.length) * 100).toFixed(1)}%)
 - 🟢 Low: ${bySeverity.low} (${((bySeverity.low / issues.length) * 100).toFixed(1)}%)
+
+**By Category**:
+- 🆕 NEW: ${byCategory.NEW} (introduced in this PR)
+- ⚠️  EXISTING_MODIFIED: ${byCategory.EXISTING_MODIFIED} (pre-existing in modified files)
+- ✅ RESOLVED: ${byCategory.RESOLVED} (fixed by this PR)
+- 📝 EXISTING_REST: ${byCategory.EXISTING_REST} (pre-existing in unchanged files)
+
+**Blocking Decision**:
+- ${blockingIssues.length} blocking issues (NEW or EXISTING_MODIFIED with critical/high severity)
+- ${metadata.decision === 'APPROVED' ? '✅ PR can be merged' : '⛔ PR requires fixes before merge'}
 
 **Analysis Results**:
 - **${groups.length} issue groups** analyzed with AI
@@ -335,7 +370,7 @@ export class V9GroupedReportFormatter {
     section += `**Severity**: ${group.severity.toUpperCase()}  \n`;
     section += `**Tool**: ${group.tool}  \n`;
     section += `**Occurrences**: ${group.count} files  \n`;
-    section += `**Category**: ${group.category}  \n`;
+    section += `**Category**: ${representative?.category || group.category}  \n`;
     
     if (canAutoFix) {
       section += `**IDE Fix**: ✅ One-click fix available ([Download for Cursor](attachments/group-${this.sanitizeGroupId(group)}-cursor-fix.json))  \n`;
@@ -343,15 +378,30 @@ export class V9GroupedReportFormatter {
     
     section += '\n';
     
-    if (expanded && representative?.fixSuggestion) {
-      section += `**Impact**: ${representative.fixSuggestion.explanation}\n\n`;
-      section += `**AI-Generated Fix**:\n`;
+    // Add description (issue message)
+    section += `**Description**: ${representative?.message || group.rule}\n\n`;
+    
+    // Add code snippet from representative issue
+    if (representative?.snippet) {
+      section += `**Code**:\n`;
       section += '```java\n';
-      section += `// ❌ Before\n${representative.snippet || 'N/A'}\n\n`;
-      section += `// ✅ After\n${representative.fixSuggestion.correctedCode}\n`;
-      section += '```\n\n';
+      section += representative.snippet;
+      section += '\n```\n\n';
+    }
+    
+    // Add AI-generated fix suggestion
+    if (expanded && representative?.fixSuggestion) {
+      section += `**AI-Generated Fix**:\n`;
+      section += `${representative.fixSuggestion.fix}\n\n`;
       
-      if (representative.fixSuggestion.bestPractices) {
+      section += `**Corrected Code**:\n`;
+      section += '```java\n';
+      section += representative.fixSuggestion.correctedCode;
+      section += '\n```\n\n';
+      
+      section += `**Explanation**: ${representative.fixSuggestion.explanation}\n\n`;
+      
+      if (representative.fixSuggestion.bestPractices && representative.fixSuggestion.bestPractices.length > 0) {
         section += `**Best Practices**:\n`;
         representative.fixSuggestion.bestPractices.forEach(bp => {
           section += `- ${bp}\n`;
@@ -361,11 +411,15 @@ export class V9GroupedReportFormatter {
     }
     
     section += `**Representative Example**:\n`;
-    section += '```\n';
-    section += `File: ${representative?.file || 'N/A'}\n`;
-    section += `Line: ${representative?.line || 'N/A'}\n`;
-    section += `${representative?.snippet || 'N/A'}\n`;
-    section += '```\n\n';
+    section += `- **File**: ${representative?.file || 'N/A'}\n`;
+    section += `- **Line**: ${representative?.line || 'N/A'}\n`;
+    if (representative?.snippet) {
+      section += `- **Snippet**:\n`;
+      section += '```java\n';
+      section += representative.snippet;
+      section += '\n```\n';
+    }
+    section += '\n';
     
     section += `**All Occurrences**: 📎 [group-${this.sanitizeGroupId(group)}-locations.json](attachments/group-${this.sanitizeGroupId(group)}-locations.json) (${group.count} files)\n\n`;
     
@@ -643,7 +697,12 @@ export class V9GroupedReportFormatter {
   }
   
   private groupByCategory(issues: EnrichedIssue[]): Record<string, number> {
-    const result: Record<string, number> = {};
+    const result: Record<string, number> = {
+      'NEW': 0,
+      'EXISTING_MODIFIED': 0,
+      'RESOLVED': 0,
+      'EXISTING_REST': 0
+    };
     issues.forEach(issue => {
       const cat = issue.category || 'unknown';
       result[cat] = (result[cat] || 0) + 1;
