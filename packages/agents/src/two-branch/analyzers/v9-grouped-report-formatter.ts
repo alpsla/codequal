@@ -378,28 +378,28 @@ export class V9GroupedReportFormatter {
     
     section += '\n';
     
-    // Add description (issue message)
+    // Description
     section += `**Description**: ${representative?.message || group.rule}\n\n`;
     
-    // Add code snippet from representative issue
+    // Example with code snippet
+    section += `**Example**:\n`;
+    section += `- File: \`${representative?.file || 'N/A'}\`\n`;
+    section += `- Line: ${representative?.line || 'N/A'}\n\n`;
     if (representative?.snippet) {
-      section += `**Code**:\n`;
       section += '```java\n';
       section += representative.snippet;
       section += '\n```\n\n';
     }
     
-    // Add AI-generated fix suggestion
+    // AI-generated fix (if available and expanded)
     if (expanded && representative?.fixSuggestion) {
-      section += `**AI-Generated Fix**:\n`;
+      section += `**Fix Recommendation**:\n`;
       section += `${representative.fixSuggestion.fix}\n\n`;
       
-      section += `**Corrected Code**:\n`;
       section += '```java\n';
-      section += representative.fixSuggestion.correctedCode;
-      section += '\n```\n\n';
-      
-      section += `**Explanation**: ${representative.fixSuggestion.explanation}\n\n`;
+      section += `// ❌ Before\n${representative.snippet || 'N/A'}\n\n`;
+      section += `// ✅ After\n${representative.fixSuggestion.correctedCode}\n`;
+      section += '```\n\n';
       
       if (representative.fixSuggestion.bestPractices && representative.fixSuggestion.bestPractices.length > 0) {
         section += `**Best Practices**:\n`;
@@ -409,17 +409,6 @@ export class V9GroupedReportFormatter {
         section += '\n';
       }
     }
-    
-    section += `**Representative Example**:\n`;
-    section += `- **File**: ${representative?.file || 'N/A'}\n`;
-    section += `- **Line**: ${representative?.line || 'N/A'}\n`;
-    if (representative?.snippet) {
-      section += `- **Snippet**:\n`;
-      section += '```java\n';
-      section += representative.snippet;
-      section += '\n```\n';
-    }
-    section += '\n';
     
     section += `**All Occurrences**: 📎 [group-${this.sanitizeGroupId(group)}-locations.json](attachments/group-${this.sanitizeGroupId(group)}-locations.json) (${group.count} files)\n\n`;
     
