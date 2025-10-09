@@ -89,6 +89,41 @@
    - Update current phase with ⏳
    - Add any new phases discovered
 
+4. **RUN END-OF-SESSION CHECKLIST** (MANDATORY before final commit):
+   ```bash
+   # A. Check for build errors
+   cd packages/agents
+   npx tsc --noEmit
+   # Fix any TypeScript errors before committing
+   
+   # B. Check for linting issues
+   npm run lint
+   # Fix any critical lint errors before committing
+   
+   # C. Remove outdated test files (if any created during session)
+   # Check for test-*.ts, test-*.sh files in root that should be in tests/
+   ls -la test-*.ts test-*.sh 2>/dev/null
+   # Move to appropriate directory or delete if outdated
+   
+   # D. Clean up test output files
+   rm -f *.log *-results-*.txt *-results-*.json severity-validation-*/
+   
+   # E. Update QUICK_START_NEXT_SESSION.md with session achievements
+   # (Already covered in step 1 above)
+   
+   # F. Cloud cleanup (if tests were run on Oracle)
+   ssh opc@oracle 'cd ~/codequal/packages/agents && rm -rf /tmp/test-* /tmp/*-pmd.json'
+   ```
+
+5. **FINAL COMMIT CHECKLIST**:
+   - ✅ All code changes committed
+   - ✅ Build passes (tsc --noEmit)
+   - ✅ No critical lint errors
+   - ✅ Outdated files cleaned up
+   - ✅ Test outputs removed
+   - ✅ QUICK_START updated
+   - ✅ Cloud containers cleaned (if used)
+
 ### Session Documentation Rules:
 - ❌ **DO NOT** create `SESSION_YYYY_MM_DD_*.md` files unless user requests
 - ❌ **DO NOT** create `HANDOFF_*.md` files (use QUICK_START instead)
