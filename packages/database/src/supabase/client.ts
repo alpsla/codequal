@@ -119,8 +119,8 @@ export type Database = {
     Tables: {
       [K in keyof Tables]: {
         Row: Tables[K];
-        Insert: Partial<Tables[K]> & Omit<Tables[K], 'id' | 'created_at' | 'updated_at'>;
-        Update: Partial<Tables[K]>;
+        Insert: Omit<Tables[K], 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Omit<Tables[K], 'id' | 'created_at' | 'updated_at'>>;
       };
     };
     Views: {};
