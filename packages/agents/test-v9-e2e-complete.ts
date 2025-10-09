@@ -33,6 +33,7 @@ import type { CompleteMetadata } from "./src/two-branch/analyzers/v9-report-form
 import { ModelConfigResolver } from "./src/standard/orchestrator/model-config-resolver";
 import { RepositorySizeCalculator } from "./src/two-branch/utils/repository-size-calculator";
 import { CodeSnippetExtractor } from "./src/two-branch/utils/code-snippet-extractor";
+import { groupIssues, prioritizeGroups, generateGroupingSummary, applyFixToGroup } from "./src/two-branch/utils/issue-grouping";
 import { execSync } from "child_process";
 import * as fs from "fs";
 
@@ -51,11 +52,14 @@ interface EnrichedIssue extends RawIssue {
   fixSuggestion?: {
     fix: string;
     correctedCode: string;
-    explanation?: string;
+    explanation: string;
     bestPractices?: string[];
   };
   educationalLinks?: string[];
   snippet?: string;
+  isGroupRepresentative?: boolean;
+  isGroupAnalyzed?: boolean;
+  groupSize?: number;
 }
 
 interface V9AnalysisResult {
@@ -278,28 +282,60 @@ async function runV9CompleteE2E(): Promise<V9AnalysisResult> {
   console.log(`   Repository context: ${language}/${repoSize}`);
   console.log(`   Model diversity will be determined by Supabase configs\n`);
 
-  // Map issues to categories for agent processing
-  const issuesByCategory: Record<string, EnrichedIssue[]> = {
-    security: categorizedIssues.filter(i => i.tool === 'semgrep' || i.tool === 'dependency-check'),
-    performance: categorizedIssues.filter(i => i.tool === 'spotbugs'),
-    architecture: categorizedIssues.filter(i => i.category === 'EXISTING_MODIFIED'),
-    codequality: categorizedIssues.filter(i => i.tool === 'pmd' || i.tool === 'checkstyle'),
-    dependency: categorizedIssues.filter(i => i.tool === 'dependency-check')
-  };
+  // BUG-128: Verify Educator and Orchestrator initialization
+  console.log('   Verifying Educator & Orchestrator model initialization...');
+  try {
+    const educatorConfig = await modelConfigResolver.getModelConfiguration('educator', language, repoSize as any);
+    console.log(`   ✅ Educator initialized: ${educatorConfig.primary_model} (${educatorConfig.primary_provider})`);
+    
+    const orchestratorConfig = await modelConfigResolver.getModelConfiguration('orchestrator', language, repoSize as any);
+    console.log(`   ✅ Orchestrator initialized: ${orchestratorConfig.primary_model} (${orchestratorConfig.primary_provider})\n`);
+  } catch (error: any) {
+    console.log(`   ⚠️  Model initialization check failed: ${error.message}\n`);
+  }
 
-  console.log(`   Security issues: ${issuesByCategory.security.length}`);
-  console.log(`   Performance issues: ${issuesByCategory.performance.length}`);
-  console.log(`   Architecture issues: ${issuesByCategory.architecture.length}`);
-  console.log(`   Quality issues: ${issuesByCategory.codequality.length}`);
-  console.log(`   Dependency issues: ${issuesByCategory.dependency.length}\n`);
-
-  // Process top 10 NEW/EXISTING_MODIFIED issues with BUG-119 agents
-  const criticalIssues = categorizedIssues
-    .filter(i => i.category === 'NEW' || i.category === 'EXISTING_MODIFIED')
-    .filter(i => i.severity === 'critical' || i.severity === 'high')
-    .slice(0, 10);
-
-  console.log(`   Processing ${criticalIssues.length} critical/high issues with BUG-119 agents...\n`);
+  // REVOLUTIONARY COST OPTIMIZATION: Issue Grouping Strategy
+  console.log(`   🎯 GROUPING STRATEGY: Analyzing ${categorizedIssues.length} issues...`);
+  
+  // Group issues by rule type - most issues are duplicates with different locations!
+  const groupingResult = groupIssues(categorizedIssues);
+  
+  console.log(generateGroupingSummary(groupingResult));
+  
+  // Prioritize which groups get AI analysis
+  const { analyzed: priorityGroups, deferred: deferredGroups, reasoning } = prioritizeGroups(
+    groupingResult.groups,
+    20  // Analyze top 20 unique issue types
+  );
+  
+  console.log(`\n   📊 Prioritization: ${reasoning}`);
+  console.log(`   ✅ AI Analysis: ${priorityGroups.length} unique issue types`);
+  console.log(`   📋 Deferred: ${deferredGroups.length} types (metadata only)`);
+  
+  const issuesCovered = priorityGroups.reduce((sum, g) => sum + g.count, 0);
+  const issuesDeferred = deferredGroups.reduce((sum, g) => sum + g.count, 0);
+  
+  console.log(`   💰 Coverage: ${issuesCovered} issues analyzed, ${issuesDeferred} deferred`);
+  console.log(`   💵 Cost: $${(priorityGroups.length * 0.003).toFixed(2)} (vs $${groupingResult.costWithoutGrouping.toFixed(2)} without grouping)`);
+  console.log(`   💸 Savings: $${groupingResult.savings.toFixed(2)} (${groupingResult.savingsPercent.toFixed(1)}%)\n`);
+  
+  // Select one representative issue from each priority group for AI analysis
+  const criticalIssues: EnrichedIssue[] = [];
+  for (const group of priorityGroups) {
+    // Find the first actual issue that matches this group
+    const representative = categorizedIssues.find(i => 
+      i.rule === group.rule && i.tool === group.tool && i.severity === group.severity
+    );
+    if (representative) {
+      criticalIssues.push({
+        ...representative,
+        isGroupRepresentative: true,
+        groupSize: group.count
+      } as any);
+    }
+  }
+  
+  console.log(`   🤖 Processing ${criticalIssues.length} representative issues (one per group)...\n`);
 
   const agentModelsUsed = new Map<string, string>();
 
@@ -333,7 +369,11 @@ async function runV9CompleteE2E(): Promise<V9AnalysisResult> {
         repoSize as any
       );
 
-      issue.fixSuggestion = fixSuggestion;
+      // Ensure explanation is always present
+      issue.fixSuggestion = {
+        ...fixSuggestion,
+        explanation: fixSuggestion.explanation || 'Fix suggestion generated by AI agent'
+      };
       issue.agent = issueType.charAt(0).toUpperCase() + issueType.slice(1) + 'Agent';
 
       // Track model usage (will be logged by factory)
@@ -348,7 +388,41 @@ async function runV9CompleteE2E(): Promise<V9AnalysisResult> {
     }
   }
 
-  console.log(`\n   ✅ BUG-119 agent processing complete for ${criticalIssues.length} issues`);
+  console.log(`\n   ✅ AI analysis complete for ${criticalIssues.length} issue types`);
+  
+  // Apply AI-generated fixes to ALL instances of each group
+  console.log(`   🔄 Applying fixes to grouped issues...`);
+  
+  let enrichedCount = 0;
+  for (const analyzedIssue of criticalIssues) {
+    // Find the corresponding group
+    const group = priorityGroups.find(g => 
+      g.rule === analyzedIssue.rule && 
+      g.tool === analyzedIssue.tool && 
+      g.severity === analyzedIssue.severity
+    );
+    
+    if (group && analyzedIssue.fixSuggestion) {
+      // Store the AI fix in the group
+      group.fixSuggestion = analyzedIssue.fixSuggestion;
+      group.aiAnalyzed = true;
+      
+      // Apply this fix to ALL issues in the same group
+      categorizedIssues.forEach(issue => {
+        if (issue.rule === group.rule && issue.tool === group.tool && issue.severity === group.severity) {
+          issue.fixSuggestion = analyzedIssue.fixSuggestion;
+          issue.agent = analyzedIssue.agent;
+          issue.isGroupAnalyzed = true;
+          issue.groupSize = group.count;
+          enrichedCount++;
+        }
+      });
+    }
+  }
+  
+  console.log(`   ✅ Applied AI fixes to ${enrichedCount} issues (from ${criticalIssues.length} analyses)`);
+  console.log(`   💰 Saved ${enrichedCount - criticalIssues.length} redundant AI calls`);
+  console.log(`   💵 Cost avoided: $${((enrichedCount - criticalIssues.length) * 0.003).toFixed(2)}\n`);
   console.log(`   Check logs above for model diversity (each agent → different model)\n`);
 
   // ================================================================
@@ -372,21 +446,24 @@ async function runV9CompleteE2E(): Promise<V9AnalysisResult> {
     console.log(`   ${idx + 1}. ${type}: ${count} occurrences`);
   });
 
-  // Generate educational resources for critical issues
+  // COST OPTIMIZATION: Generate educational resources only for top issue groups
+  // Instead of generating for every issue, generate once per group
   const educator = new V9EducationalResources();
-  const educationalMaterials = [];
+  const educationalMaterials: any[] = [];
 
-  // Generate resources for top 3 issue types
+  console.log(`   💰 Generating educational resources for top 3 issue groups only...`);
+  
+  // Generate resources for top 3 issue groups (not individual issues!)
   for (const issue of criticalIssues.slice(0, 3)) {
     try {
       // Convert EnrichedIssue to Issue for educator
       const issueForEducator: any = {
-        id: `issue-${issue.line}`,
-        category: issue.category === 'NEW' ? 'Security' : 'Quality',
+        id: `issue-group-${issue.rule}`,
+        category: issue.tool === 'semgrep' ? 'Security' : 'Quality',
         severity: issue.severity as any,
         status: 'new' as const,
         title: issue.rule || issue.message,
-        description: issue.message,
+        description: `${issue.message} (applies to ${issue.groupSize || 1} instances)`,
         file: issue.file,
         line: issue.line || 0,
         tool: issue.tool,
@@ -395,8 +472,10 @@ async function runV9CompleteE2E(): Promise<V9AnalysisResult> {
 
       const resources = await educator.getEducationalResources(issueForEducator, 'java');
       educationalMaterials.push(...resources);
+      
+      console.log(`   ✅ Generated resources for ${issue.rule} (covers ${issue.groupSize || 1} instances)`);
     } catch (error: any) {
-      console.log(`   ⚠️  Educational resource generation failed: ${error.message}`);
+      console.log(`   ⚠️  Educational resource generation failed for ${issue.rule}: ${error.message}`);
     }
   }
 
@@ -454,10 +533,12 @@ async function runV9CompleteE2E(): Promise<V9AnalysisResult> {
     }
   };
 
-  // Generate full V9 report with all 34 sections
-  // Convert EnrichedIssues to proper Issue type (ALL issues, not just 100)
-  console.log("   Adding code snippets to issues...");
-  const convertedIssues = await Promise.all(categorizedIssues.map(async (issue, idx): Promise<any> => {
+  // Generate full V9 report - GROUPING OPTIMIZED
+  // Add code snippets only to representative issues (one per group)
+  console.log("   💰 Adding code snippets to group representatives only...");
+  
+  // Convert issues with AI analysis (group representatives)
+  const convertedWithAI = await Promise.all(criticalIssues.map(async (issue, idx): Promise<any> => {
     // Extract code snippet for the issue
     let snippet = issue.snippet || '';
     if (!snippet && issue.file && issue.line) {
@@ -482,10 +563,45 @@ async function runV9CompleteE2E(): Promise<V9AnalysisResult> {
       agent: issue.agent || 'CodeQualityAgent',
       impact: 'Code quality impact',
       businessImpact: 'Potential technical debt',
-      snippet
+      snippet,
+      isFullyAnalyzed: true  // Mark as having AI analysis
     };
   }));
-  console.log(`   ✅ Code snippets added to ${convertedIssues.length} issues\n`);
+
+  // Convert all other issues - they inherit fixes from group representatives
+  const convertedGrouped = categorizedIssues
+    .filter(issue => !criticalIssues.includes(issue as any))
+    .map((issue, idx): any => {
+      return {
+        id: `grouped-${idx}`,
+        category: issue.tool === 'semgrep' ? 'Security' :
+                  issue.tool === 'dependency-check' ? 'Dependency' :
+                  issue.tool === 'spotbugs' ? 'Performance' :
+                  issue.tool === 'checkstyle' ? 'Quality' : 'Architecture',
+        severity: issue.severity as any || 'medium',
+        status: issue.category === 'NEW' ? 'new' :
+                issue.category === 'RESOLVED' ? 'resolved' : 'existing',
+        title: issue.rule || issue.message,
+        description: issue.message,
+        file: issue.file,
+        line: issue.line || 0,
+        tool: issue.tool,
+        agent: issue.agent || 'InheritedFromGroup',
+        impact: issue.fixSuggestion ? 'AI fix inherited from group' : 'See group summary',
+        businessImpact: 'Included in group analysis',
+        snippet: 'Part of group analysis (no individual snippet)',
+        fixSuggestion: issue.fixSuggestion,  // Inherited from group
+        isGroupMember: true,
+        groupSize: issue.groupSize
+      };
+    });
+
+  const convertedIssues = [...convertedWithAI, ...convertedGrouped];
+  
+  console.log(`   ✅ Representatives: ${convertedWithAI.length} issues with full AI + snippets`);
+  console.log(`   📊 Group members: ${convertedGrouped.length} issues with inherited fixes`);
+  console.log(`   💵 Total cost: $${(convertedWithAI.length * 0.003).toFixed(2)}`);
+  console.log(`   💵 Cost saved: $${((convertedGrouped.length) * 0.003).toFixed(2)} (${((convertedGrouped.length / categorizedIssues.length) * 100).toFixed(1)}%)\n`);
 
   // Create proper AnalysisResult
   const analysisResult: any = {
@@ -525,6 +641,15 @@ async function runV9CompleteE2E(): Promise<V9AnalysisResult> {
       totalFiles: 3472,
       analyzedFiles: 3472
     }
+  };
+
+  // Group issues by category for metadata
+  const issuesByCategory = {
+    security: convertedIssues.filter((i: any) => i.category === 'Security'),
+    performance: convertedIssues.filter((i: any) => i.category === 'Performance'),
+    architecture: convertedIssues.filter((i: any) => i.category === 'Architecture'),
+    codequality: convertedIssues.filter((i: any) => i.category === 'Quality'),
+    dependency: convertedIssues.filter((i: any) => i.category === 'Dependency')
   };
 
   // Create proper CompleteMetadata
@@ -579,22 +704,62 @@ async function runV9CompleteE2E(): Promise<V9AnalysisResult> {
     timestamp: new Date().toISOString()
   };
 
-  const formatter = new V9ReportFormatterFinal();
-  const report = await formatter.generateCompleteReport(
-    analysisResult,
-    completeMetadata,
-    'java'
+  // Generate GROUPED report with IDE integration
+  const { V9GroupedReportFormatter } = await import('./src/two-branch/analyzers/v9-grouped-report-formatter');
+  const formatter = new V9GroupedReportFormatter();
+  
+  const groupedReport = await formatter.generateGroupedReport(
+    categorizedIssues,
+    groupingResult.groups,
+    {
+      repository: 'apache/kafka',
+      prNumber: PR_NUMBER,
+      decision,
+      blockingCount: blockingIssues.length,
+      totalFiles: modifiedFiles.size
+    }
   );
 
   const reportGenerationTime = Math.round((Date.now() - reportStart) / 1000);
 
-  const reportPath = path.join(OUTPUT_DIR, `v9-complete-e2e-${Date.now()}.md`);
-  fs.writeFileSync(reportPath, report);
+  // Save main report
+  const reportPath = path.join(OUTPUT_DIR, `v9-grouped-report-${Date.now()}.md`);
+  fs.writeFileSync(reportPath, groupedReport.markdown);
 
-  console.log(`   ✅ Full V9 report generated: ${reportPath}`);
-  console.log(`   Report size: ${Math.round(report.length / 1024)} KB`);
-  console.log(`   Sections: 34 (complete V9 specification)`);
-  console.log(`   Timing: Clone=${cloneTime}s, Analysis=${analysisTime}s, Report=${reportGenerationTime}s\n`);
+  // Save location attachments
+  const attachmentsDir = path.join(OUTPUT_DIR, 'attachments');
+  fs.mkdirSync(attachmentsDir, { recursive: true });
+
+  for (const attachment of groupedReport.attachments) {
+    const attachmentPath = path.join(attachmentsDir, attachment.filename);
+    fs.writeFileSync(
+      attachmentPath,
+      JSON.stringify(attachment.content, null, 2)
+    );
+  }
+
+  // Save IDE fix files (for Cursor integration)
+  for (const ideFile of groupedReport.ideFixFiles) {
+    const ideFilePath = path.join(attachmentsDir, ideFile.filename);
+    fs.writeFileSync(
+      ideFilePath,
+      JSON.stringify(ideFile.content, null, 2)
+    );
+  }
+
+  // Save mapping index
+  const mappingPath = path.join(OUTPUT_DIR, 'issue-groups-map.json');
+  fs.writeFileSync(
+    mappingPath,
+    JSON.stringify(groupedReport.mapping, null, 2)
+  );
+
+  console.log(`   ✅ Grouped report generated:`);
+  console.log(`      Main report: ${reportPath} (${Math.round(groupedReport.markdown.length / 1024)} KB)`);
+  console.log(`      Location attachments: ${groupedReport.attachments.length} files`);
+  console.log(`      IDE fix files: ${groupedReport.ideFixFiles.length} files (${groupedReport.ideFixFiles.reduce((sum, f) => sum + f.content.metadata.total_occurrences, 0)} auto-fixable issues)`);
+  console.log(`      Mapping index: ${mappingPath}`);
+  console.log(`      Timing: Clone=${cloneTime}s, Analysis=${analysisTime}s, Report=${reportGenerationTime}s\n`);
 
   // ================================================================
   // Summary

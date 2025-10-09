@@ -310,11 +310,10 @@ ${rows}
     language: string,
     options?: any
   ): Promise<string> {
-    // BUG-125 FIX: Initialize EducatorAgent with Supabase model config
-    // Determine repository size from metadata
-    const repoSize = this.determineRepoSize(metadata.totalFiles);
-    await this.educatorAgent.initialize(language, repoSize);
-
+    // COST FIX: Don't initialize educator - it's a universal agent (not language/size-specific)
+    // Educational resources are already generated in Step 5 by the test script
+    // Initializing here would trigger Researcher Agent unnecessarily
+    
     const sections: string[] = [];
 
     // Extract tool performance data if available (Option A improvement)

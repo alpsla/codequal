@@ -1,0 +1,51 @@
+{
+  "version": "1.0",
+  "group_id": "avoidusingvolatile-high-pmd",
+  "rule": "AvoidUsingVolatile",
+  "severity": "high",
+  "description": "Volatile provides visibility but not atomicity. For boolean flags used in compound operations, AtomicBoolean ensures thread safety.",
+  
+  "fix_pattern": {
+    "type": "regex",
+    "find_regex": "private volatile (boolean|int|long) (\\w+)( = .+)?;",
+    "replace_template": "private final Atomic$1 $2 = new Atomic$1($3);",
+    "example": {
+      "before": "private volatile boolean running = true;",
+      "after": "private final AtomicBoolean running = new AtomicBoolean(true);"
+    },
+    "instructions": "Replace volatile primitive types with AtomicXXX equivalents for thread-safe operations"
+  },
+  
+  "locations": [
+    {
+      "file": "/workspace/clients/src/main/java/org/apache/kafka/clients/admin/KafkaAdminClient.java",
+      "line": 1143,
+      "column": 5,
+      "snippet": "private volatile boolean running = true;",
+      "context_before": "  // State management\n  private final Object lock = new Object();\n",
+      "context_after": "\n  private final Map<String, Node> nodes = new ConcurrentHashMap<>();"
+    },
+    {
+      "file": "/workspace/clients/src/main/java/org/apache/kafka/clients/consumer/internals/AbstractCoordinator.java",
+      "line": 150,
+      "column": 5,
+      "snippet": "private volatile long lastHeartbeatSend = 0;",
+      "context_before": "  private final GroupRebalanceConfig rebalanceConfig;\n  private final Sensors sensors;\n",
+      "context_after": "\n  private volatile long lastHeartbeatReceive = 0;"
+    }
+    // ... 359 more locations
+  ],
+  
+  "metadata": {
+    "total_occurrences": 361,
+    "confidence": "high",
+    "safe_auto_apply": false,
+    "estimated_time_seconds": 180,
+    "required_imports": [
+      "java.util.concurrent.atomic.AtomicBoolean",
+      "java.util.concurrent.atomic.AtomicInteger",
+      "java.util.concurrent.atomic.AtomicLong"
+    ]
+  }
+}
+

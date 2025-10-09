@@ -6,92 +6,26 @@
                         https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
 
     <description>
-        CodeQual default PMD rules with appropriate severity levels.
-        Projects can override this by providing their own ruleset.
+        CodeQual default PMD rules for PMD 6.x compatibility.
+        Simplified ruleset without exclude/re-include patterns.
     </description>
 
-    <!-- ERROR PRONE RULES - Keep defaults (HIGH/CRITICAL) -->
-    <rule ref="category/java/errorprone.xml">
-        <!-- Downgrade style issues from errorprone -->
-        <exclude name="AvoidBranchingStatementAsLastInLoop"/>
-    </rule>
+    <!-- ERROR PRONE RULES - Critical bugs and potential errors -->
+    <rule ref="category/java/errorprone.xml"/>
 
-    <!-- Style issue - MEDIUM not HIGH -->
-    <rule ref="category/java/errorprone.xml/AvoidBranchingStatementAsLastInLoop">
-        <priority>3</priority> <!-- 3 = MEDIUM in our mapping -->
-    </rule>
+    <!-- BEST PRACTICES RULES - Code quality recommendations -->
+    <rule ref="category/java/bestpractices.xml"/>
 
-    <!-- BEST PRACTICES RULES -->
-    <rule ref="category/java/bestpractices.xml">
-        <!-- Downgrade logging style issues -->
-        <exclude name="LoggerIsNotStaticFinal"/>
-        <exclude name="GuardLogStatement"/>
-    </rule>
+    <!-- DESIGN RULES - Complexity and architecture issues -->
+    <rule ref="category/java/design.xml"/>
 
-    <!-- Logging style - MEDIUM not HIGH -->
-    <rule ref="category/java/bestpractices.xml/LoggerIsNotStaticFinal">
-        <priority>3</priority> <!-- MEDIUM -->
-    </rule>
+    <!-- SECURITY RULES - Security vulnerabilities -->
+    <rule ref="category/java/security.xml"/>
 
-    <rule ref="category/java/bestpractices.xml/GuardLogStatement">
-        <priority>4</priority> <!-- LOW - performance optimization only -->
-    </rule>
+    <!-- PERFORMANCE RULES - Performance optimizations -->
+    <rule ref="category/java/performance.xml"/>
 
-    <!-- CODE STYLE RULES - All should be MEDIUM/LOW -->
-    <rule ref="category/java/codestyle.xml">
-        <priority>3</priority> <!-- Default: MEDIUM -->
-        <exclude name="AtLeastOneConstructor"/>
-        <exclude name="OnlyOneReturn"/>
-        <exclude name="TooManyStaticImports"/>
-        <exclude name="UseLocaleWithCaseConversions"/>
-        <exclude name="CommentSize"/>
-        <exclude name="CommentRequired"/>
-    </rule>
-
-    <!-- Constructor not required - LOW -->
-    <rule ref="category/java/codestyle.xml/AtLeastOneConstructor">
-        <priority>4</priority> <!-- LOW -->
-    </rule>
-
-    <!-- Locale awareness - LOW (i18n is not always required) -->
-    <rule ref="category/java/codestyle.xml/UseLocaleWithCaseConversions">
-        <priority>4</priority> <!-- LOW -->
-    </rule>
-
-    <!-- Documentation style - LOW -->
-    <rule ref="category/java/codestyle.xml/CommentSize">
-        <priority>5</priority> <!-- LOW -->
-    </rule>
-
-    <rule ref="category/java/codestyle.xml/CommentRequired">
-        <priority>5</priority> <!-- LOW -->
-    </rule>
-
-    <!-- DESIGN RULES - Complexity/Architecture -->
-    <rule ref="category/java/design.xml">
-        <priority>2</priority> <!-- Default: HIGH for architecture issues -->
-        <exclude name="LawOfDemeter"/> <!-- Too strict -->
-        <exclude name="LoosePackageCoupling"/> <!-- Too strict -->
-    </rule>
-
-    <!-- SECURITY RULES - Keep HIGH/CRITICAL -->
-    <rule ref="category/java/security.xml">
-        <priority>1</priority> <!-- CRITICAL for security -->
-    </rule>
-
-    <!-- PERFORMANCE RULES - Keep HIGH -->
-    <rule ref="category/java/performance.xml">
-        <priority>2</priority> <!-- HIGH for performance issues -->
-    </rule>
-
-    <!-- MULTITHREADING RULES - Keep HIGH/CRITICAL -->
-    <rule ref="category/java/multithreading.xml">
-        <priority>2</priority> <!-- HIGH for concurrency bugs -->
-    </rule>
-
-    <!-- DOCUMENTATION RULES - All LOW -->
-    <rule ref="category/java/documentation.xml">
-        <priority>4</priority> <!-- LOW - documentation is optional -->
-    </rule>
+    <!-- MULTITHREADING RULES - Concurrency issues -->
+    <rule ref="category/java/multithreading.xml"/>
 
 </ruleset>

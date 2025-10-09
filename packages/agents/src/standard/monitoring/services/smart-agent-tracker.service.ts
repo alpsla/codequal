@@ -294,14 +294,17 @@ export class SmartAgentTrackerService {
     }
     
     // Query Supabase
+    // NOTE: is_active, repository_size, and performance_score columns don't exist in current schema
+    // Skip these filters to avoid database errors
     const { data, error } = await this.supabase
       .from('model_configurations')
       .select('*')
       .eq('role', role)
-      .eq('is_active', true)
+      // .eq('is_active', true)  // TODO: Add column to schema
       .or(`language.eq.${language},language.is.null`)
-      .or(`repository_size.eq.${size},repository_size.is.null`)
-      .order('performance_score', { ascending: false })
+      // .or(`repository_size.eq.${size},repository_size.is.null`)  // TODO: Add column to schema
+      // .order('performance_score', { ascending: false })  // TODO: Add column to schema
+      .order('last_updated', { ascending: false })
       .limit(1)
       .single();
     

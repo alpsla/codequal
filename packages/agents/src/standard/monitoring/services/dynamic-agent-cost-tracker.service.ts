@@ -114,26 +114,32 @@ export class DynamicAgentCostTrackerService {
     
     try {
       // Query Supabase for best matching config
+      // NOTE: is_active column doesn't exist in current schema
+      // Skip this filter to avoid database errors
       let query = this.supabase
         .from('model_configurations')
         .select('*')
-        .eq('role', role)
-        .eq('is_active', true);
+        .eq('role', role);
+        // .eq('is_active', true);  // TODO: Add column to schema
       
       // Add optional filters
       if (language) {
         query = query.or(`language.eq.${language},language.is.null`);
       }
-      if (repositorySize) {
-        query = query.or(`repository_size.eq.${repositorySize},repository_size.is.null`);
-      }
+      // NOTE: repository_size column doesn't exist in current schema
+      // Skip this filter to avoid database errors
+      // TODO: Add repository_size column to model_configurations table
+      // if (repositorySize) {
+      //   query = query.or(`repository_size.eq.${repositorySize},repository_size.is.null`);
+      // }
       if (complexity) {
         query = query.or(`complexity.eq.${complexity},complexity.is.null`);
       }
       
       // Order by specificity and performance
-      query = query.order('performance_score', { ascending: false })
-                   .order('last_updated', { ascending: false })
+      // NOTE: performance_score column doesn't exist in current schema
+      // query = query.order('performance_score', { ascending: false })  // TODO: Add column to schema
+      query = query.order('last_updated', { ascending: false })
                    .limit(1);
       
       const { data, error } = await query.single();
@@ -278,11 +284,17 @@ export class DynamicAgentCostTrackerService {
   
   /**
    * Update model performance based on usage
+   * NOTE: Disabled because performance_score, usage_count, success_count columns don't exist in schema
    */
   private async updateModelPerformance(
     configId: string,
     success: boolean
   ): Promise<void> {
+    // TODO: Re-enable after adding performance tracking columns to model_configurations table
+    // Required columns: performance_score, usage_count, success_count, last_used
+    return;
+    
+    /* DISABLED - Missing schema columns
     try {
       // Get current performance score
       const { data: config } = await this.supabase
@@ -311,6 +323,7 @@ export class DynamicAgentCostTrackerService {
     } catch (error) {
       console.error('Failed to update model performance:', error);
     }
+    */
   }
   
   /**

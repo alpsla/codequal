@@ -31,6 +31,79 @@
 - ❌ Template-based fix generation
 - ❌ Single-branch analysis
 
+## 📋 SESSION CONTINUITY (MANDATORY)
+
+**CRITICAL: Follow This Workflow Every Session**
+
+### At the START of Every Session:
+1. **ALWAYS READ FIRST**: `packages/agents/src/two-branch/docs/next/QUICK_START_NEXT_SESSION.md`
+   - Contains latest project status and priorities
+   - Shows what was completed in previous session
+   - Lists immediate next steps
+   - Includes performance metrics and known issues
+
+2. **Check Current Phase**: Look at "NEXT SESSION PRIORITIES" section
+   - Understand which phase you're in (1-7)
+   - Read the specific tasks for current phase
+   - Note any blockers or dependencies
+
+3. **Review Recent Achievements**: Check top section for context
+   - What bugs were fixed
+   - What features were added
+   - What optimizations were made
+   - Current system status
+
+### At the END of Every Session:
+1. **UPDATE QUICK_START**: Add your session's achievements to the top
+   ```
+   ## 🎉 SESSION YYYY-MM-DD ACHIEVEMENTS
+   
+   ### ✅ Completed This Session
+   - List what was completed
+   - Include metrics (time saved, costs reduced, etc.)
+   - Note any new bugs found
+   - Add any new blockers
+   
+   ### 📊 Performance/Quality Metrics
+   - Before/after comparisons
+   - Test results
+   - Cost savings
+   
+   ### 🚧 Known Issues
+   - What's broken or needs attention
+   - What's partially complete
+   
+   ### 📋 Next Session TODO
+   - Immediate next steps
+   - Quick wins available
+   - Dependencies to resolve
+   ```
+
+2. **DO NOT CREATE NEW SESSION FILES** unless specifically requested
+   - Use QUICK_START_NEXT_SESSION.md as the single source of truth
+   - Only create separate documentation for major architectural decisions
+   - Keep session notes consolidated
+
+3. **Update Phase Status**: If phase completed, update the roadmap
+   - Mark completed phases with ✅
+   - Update current phase with ⏳
+   - Add any new phases discovered
+
+### Session Documentation Rules:
+- ❌ **DO NOT** create `SESSION_YYYY_MM_DD_*.md` files unless user requests
+- ❌ **DO NOT** create `HANDOFF_*.md` files (use QUICK_START instead)
+- ❌ **DO NOT** create `SUMMARY_*.md` files (use QUICK_START instead)
+- ✅ **DO** update QUICK_START_NEXT_SESSION.md at session end
+- ✅ **DO** create incident reports for major bugs/outages
+- ✅ **DO** create architecture docs for major design decisions
+
+### Why This Matters:
+- Reduces file clutter (was creating 3-5 docs per session)
+- Single source of truth for project status
+- Faster onboarding for next session
+- Easier to track progress over time
+- Less confusion about "which doc is current?"
+
 ## Core Philosophy
 
 ### KISS & YAGNI
@@ -264,7 +337,7 @@ echo "content" > file.txt
 
 ## Model Configuration (CRITICAL)
 
-### Model Diversity (BUG-119 FIXED)
+### Model Diversity (BUG-119/126/128 FIXED)
 Each agent role MUST use different model from Supabase:
 ```typescript
 // ✅ Correct - Each role gets unique model
@@ -273,6 +346,33 @@ performance  → deepseek/deepseek-chat-v3.1
 architecture → anthropic/claude-sonnet-4
 codequality  → google/gemini-2.5-flash
 dependency   → qwen/qwen3-coder-30b-a3b-instruct
+educator     → (auto-discovered via Researcher Agent)
+orchestrator → (uses getModelForAgent with Supabase lookup)
+```
+
+### Tool Name Convention (BUG-126 FIXED)
+**CRITICAL:** All tool names MUST be lowercase:
+```typescript
+// ✅ Correct
+tool: 'pmd'
+tool: 'semgrep'
+tool: 'checkstyle'
+tool: 'spotbugs'
+tool: 'dependency-check'
+
+// ❌ Wrong (causes categorization failure)
+tool: 'PMD'
+tool: 'Semgrep'
+```
+
+### Table Names (BUG-128 FIXED)
+**CRITICAL:** Use correct Supabase table names:
+```typescript
+// ✅ Correct
+.from('model_configurations')
+
+// ❌ Wrong
+.from('model_configs')
 ```
 
 ### Role Name Normalization
@@ -343,11 +443,27 @@ export async function analyzePR(
 
 ## Critical References
 
-### Key Files
-- `CLAUDE.md` - This document's source
-- `packages/agents/ALL-BUGS-COMPLETE-2025-10-08.md` - Current bug list
-- `packages/agents/src/two-branch/docs/next/V9_CRITICAL_KNOWLEDGE_BASE.md` - V9 facts
-- `packages/agents/src/two-branch/docs/next/QUICK_START_NEXT_SESSION.md` - Session continuity
+### Key Files (Read in This Order)
+1. **`packages/agents/src/two-branch/docs/next/QUICK_START_NEXT_SESSION.md`** - 🚨 **START HERE**
+   - Single source of truth for project status
+   - Latest achievements and priorities
+   - Current phase and roadmap
+   - Known issues and blockers
+
+2. **`packages/agents/src/two-branch/docs/next/V9_CRITICAL_KNOWLEDGE_BASE.md`** - V9 architecture facts
+   - V9 canonical architecture
+   - Common misconceptions
+   - Tool orchestration patterns
+
+3. **`CLAUDE.md`** - Coding standards and philosophy
+   - KISS & YAGNI principles
+   - TypeScript conventions
+   - Testing requirements
+
+4. **`packages/agents/LATEST_V9_REPORT.md`** - Latest report example
+   - Grouped report format
+   - IDE integration structure
+   - Cost-optimized approach
 
 ### Important Commands
 ```bash
@@ -395,23 +511,80 @@ ssh -i "$SSH_KEY" "opc@${ORACLE_IP}" \
 
 1. ❌ Generate or guess URLs (unless for programming help)
 2. ❌ Use emojis (unless user explicitly requests)
-3. ❌ Create documentation files proactively (wait for user request)
-4. ❌ Assume or guess values for missing parameters
-5. ❌ Use deprecated V7 code (V8+ only, see docs/DEPRECATED_V7_WARNING.md)
-6. ❌ Create files > 500 lines without refactoring
-7. ❌ Skip tests for new features
-8. ❌ Commit secrets or API keys
-9. ❌ Use bash for file operations when tools available
-10. ❌ Modify V9 canonical architecture without approval
+3. ❌ Create new session summary files (update QUICK_START_NEXT_SESSION.md instead)
+4. ❌ Create documentation files proactively (wait for user request)
+5. ❌ Assume or guess values for missing parameters
+6. ❌ Use deprecated V7 code (V8+ only, see docs/DEPRECATED_V7_WARNING.md)
+7. ❌ Create files > 500 lines without refactoring
+8. ❌ Skip tests for new features
+9. ❌ Commit secrets or API keys
+10. ❌ Use bash for file operations when tools available
+11. ❌ Modify V9 canonical architecture without approval
+12. ❌ Use capital case tool names ('PMD' → 'pmd')
+13. ❌ Use wrong table names ('model_configs' → 'model_configurations')
+14. ❌ Start session without reading QUICK_START_NEXT_SESSION.md
+15. ❌ End session without updating QUICK_START_NEXT_SESSION.md
 
 ## Current Context Awareness
 
-When working on this codebase:
-1. Check `packages/agents/ALL-BUGS-COMPLETE-2025-10-08.md` for current bugs
-2. Reference `packages/agents/src/two-branch/docs/next/QUICK_START_NEXT_SESSION.md` for continuity
-3. Read V9_CRITICAL_KNOWLEDGE_BASE.md before V9 work
-4. Use test-v9-e2e-complete.ts as reference for correct patterns
-5. Verify OpenRouter shows 5 different models (model diversity)
+**MANDATORY First Step Every Session:**
+1. **READ FIRST**: `packages/agents/src/two-branch/docs/next/QUICK_START_NEXT_SESSION.md`
+   - Single source of truth for project status
+   - Contains latest achievements and priorities
+   - Shows current phase and next steps
+   - Includes all recent bug fixes and optimizations
+
+**Then Review as Needed:**
+2. Read `V9_CRITICAL_KNOWLEDGE_BASE.md` before V9 work
+3. Use `test-v9-e2e-complete.ts` as reference for correct patterns
+4. Check `LATEST_V9_REPORT.md` for latest report example
+5. Review incident reports for major bugs (e.g., `INCIDENT_*.md`)
+
+## Recent Fixes (October 9, 2025)
+
+### BUG-127: PMD No JSON Output (FIXED ✅)
+- **Problem:** PMD returned 0 issues due to incompatible ruleset patterns with PMD 6.55.0
+- **Impact:** Missing 7,299+ code quality issues
+- **Fix:** Simplified ruleset to use category references only (removed exclude/re-include patterns)
+- **Result:** Now detecting 7,299 PMD issues correctly
+
+### COST OPTIMIZATION: Issue Grouping Strategy (COMPLETE ✅)
+- **Problem:** $28.42 per analysis (9,451 individual AI calls)
+- **Impact:** Unsustainable cost, reports too large (5+ MB)
+- **Fix:** Group issues by rule/tool/severity, analyze only 1 per group
+- **Result:** 99.8% cost reduction ($0.05 per analysis, 17 AI calls)
+
+### FEATURE: Grouped Report Format + IDE Integration (COMPLETE ✅)
+- **Problem:** 5+ MB reports impossible to review, no IDE integration
+- **Impact:** Poor user experience, no automation possible
+- **Fix:** Compact report (22 KB) + JSON attachments + IDE fix files
+- **Result:** 227x smaller reports, 3,807 auto-fixable issues via IDE
+
+### RUNAWAY COST INCIDENT: SimpleOpenRouter Client (FIXED ✅)
+- **Problem:** ResilientAIClient made 21 API calls per issue (retries + key testing)
+- **Impact:** $10+ charges, 4-5 hour hangs
+- **Fix:** Created SimpleOpenRouterClient (1 call per issue, fallback on 401 only)
+- **Result:** Exactly 1 API call per issue, no runaway costs
+
+### HANG FIX: Universal Agents Initialization (FIXED ✅)
+- **Problem:** V9ReportFormatterFinal tried to initialize Educator with language/size
+- **Impact:** False Researcher Agent triggers, infinite hangs
+- **Fix:** Removed initialization (Educator/Orchestrator/Researcher are universal)
+- **Result:** No false triggers, report generation completes in <1s
+
+---
+
+## Previous Session Fixes (October 8, 2025)
+
+### BUG-126: Tool Name Case Mismatch (FIXED)
+- **Problem:** Capital tool names ('Semgrep') vs lowercase expectations ('semgrep')
+- **Impact:** All issues defaulted to single agent/model
+- **Fix:** Standardized to lowercase in java-tool-orchestrator.ts
+
+### BUG-128: Researcher Agent Table Name (FIXED)
+- **Problem:** Querying 'model_configs' (wrong) vs 'model_configurations' (correct)
+- **Impact:** Researcher Agent couldn't store discovered configs
+- **Fix:** Fixed in dynamic-agent-cost-tracker.service.ts
 
 ---
 

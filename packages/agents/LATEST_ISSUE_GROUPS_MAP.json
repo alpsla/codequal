@@ -1,0 +1,186 @@
+{
+  "version": "1.0",
+  "generated_at": "2025-10-09T15:28:25.124Z",
+  "repository": "apache/kafka",
+  "pr_number": 17620,
+  "total_issues": 9451,
+  "total_groups": 17,
+  "groups": [
+    {
+      "id": "avoidthrowingrawexceptiontypes-medium-pmd",
+      "rule": "AvoidThrowingRawExceptionTypes",
+      "tool": "PMD",
+      "severity": "medium",
+      "count": 5326,
+      "category": "NEW",
+      "attachment": "group-avoidthrowingrawexceptiontypes-medium-pmd-locations.json"
+    },
+    {
+      "id": "guardlogstatement-medium-pmd",
+      "rule": "GuardLogStatement",
+      "tool": "PMD",
+      "severity": "medium",
+      "count": 2369,
+      "category": "NEW",
+      "attachment": "group-guardlogstatement-medium-pmd-locations.json",
+      "ide_fix_file": "group-guardlogstatement-medium-pmd-cursor-fix.json"
+    },
+    {
+      "id": "systemprintln-medium-pmd",
+      "rule": "SystemPrintln",
+      "tool": "PMD",
+      "severity": "medium",
+      "count": 741,
+      "category": "NEW",
+      "attachment": "group-systemprintln-medium-pmd-locations.json",
+      "ide_fix_file": "group-systemprintln-medium-pmd-cursor-fix.json"
+    },
+    {
+      "id": "avoidusingvolatile-high-pmd",
+      "rule": "AvoidUsingVolatile",
+      "tool": "PMD",
+      "severity": "high",
+      "count": 361,
+      "category": "NEW",
+      "attachment": "group-avoidusingvolatile-high-pmd-locations.json",
+      "ide_fix_file": "group-avoidusingvolatile-high-pmd-cursor-fix.json"
+    },
+    {
+      "id": "classwithonlyprivateconstructorsshouldbefinal-medium-pmd",
+      "rule": "ClassWithOnlyPrivateConstructorsShouldBeFinal",
+      "tool": "PMD",
+      "severity": "medium",
+      "count": 210,
+      "category": "NEW",
+      "attachment": "group-classwithonlyprivateconstructorsshouldbefinal-medium-pmd-locations.json",
+      "ide_fix_file": "group-classwithonlyprivateconstructorsshouldbefinal-medium-pmd-cursor-fix.json"
+    },
+    {
+      "id": "avoidreassigningparameters-medium-pmd",
+      "rule": "AvoidReassigningParameters",
+      "tool": "PMD",
+      "severity": "medium",
+      "count": 187,
+      "category": "NEW",
+      "attachment": "group-avoidreassigningparameters-medium-pmd-locations.json"
+    },
+    {
+      "id": "returnemptycollectionratherthannull-medium-pmd",
+      "rule": "ReturnEmptyCollectionRatherThanNull",
+      "tool": "PMD",
+      "severity": "medium",
+      "count": 126,
+      "category": "NEW",
+      "attachment": "group-returnemptycollectionratherthannull-medium-pmd-locations.json",
+      "ide_fix_file": "group-returnemptycollectionratherthannull-medium-pmd-cursor-fix.json"
+    },
+    {
+      "id": "constructorcallsoverridablemethod-medium-pmd",
+      "rule": "ConstructorCallsOverridableMethod",
+      "tool": "PMD",
+      "severity": "medium",
+      "count": 58,
+      "category": "NEW",
+      "attachment": "group-constructorcallsoverridablemethod-medium-pmd-locations.json"
+    },
+    {
+      "id": "avoidthrowingnullpointerexception-medium-pmd",
+      "rule": "AvoidThrowingNullPointerException",
+      "tool": "PMD",
+      "severity": "medium",
+      "count": 21,
+      "category": "NEW",
+      "attachment": "group-avoidthrowingnullpointerexception-medium-pmd-locations.json"
+    },
+    {
+      "id": "avoidbranchingstatementaslastinloop-medium-pmd",
+      "rule": "AvoidBranchingStatementAsLastInLoop",
+      "tool": "PMD",
+      "severity": "medium",
+      "count": 13,
+      "category": "NEW",
+      "attachment": "group-avoidbranchingstatementaslastinloop-medium-pmd-locations.json"
+    },
+    {
+      "id": "java-lang-security-audit-unsafe-reflection-unsafe-reflection-high-semgrep",
+      "rule": "java.lang.security.audit.unsafe-reflection.unsafe-reflection",
+      "tool": "semgrep",
+      "severity": "high",
+      "count": 13,
+      "category": "NEW",
+      "attachment": "group-java-lang-security-audit-unsafe-reflection-unsafe-reflection-high-semgrep-locations.json"
+    },
+    {
+      "id": "avoidfilestream-high-pmd",
+      "rule": "AvoidFileStream",
+      "tool": "PMD",
+      "severity": "high",
+      "count": 11,
+      "category": "NEW",
+      "attachment": "group-avoidfilestream-high-pmd-locations.json"
+    },
+    {
+      "id": "morethanonelogger-high-pmd",
+      "rule": "MoreThanOneLogger",
+      "tool": "PMD",
+      "severity": "high",
+      "count": 6,
+      "category": "NEW",
+      "attachment": "group-morethanonelogger-high-pmd-locations.json"
+    },
+    {
+      "id": "singletonclassreturningnewinstance-high-pmd",
+      "rule": "SingletonClassReturningNewInstance",
+      "tool": "PMD",
+      "severity": "high",
+      "count": 4,
+      "category": "NEW",
+      "attachment": "group-singletonclassreturningnewinstance-high-pmd-locations.json"
+    },
+    {
+      "id": "singlemethodsingleton-high-pmd",
+      "rule": "SingleMethodSingleton",
+      "tool": "PMD",
+      "severity": "high",
+      "count": 2,
+      "category": "NEW",
+      "attachment": "group-singlemethodsingleton-high-pmd-locations.json"
+    },
+    {
+      "id": "java-lang-security-audit-command-injection-process-builder-command-injection-process-builder-critical-semgrep",
+      "rule": "java.lang.security.audit.command-injection-process-builder.command-injection-process-builder",
+      "tool": "semgrep",
+      "severity": "critical",
+      "count": 2,
+      "category": "EXISTING_MODIFIED",
+      "attachment": "group-java-lang-security-audit-command-injection-process-builder-command-injection-process-builder-critical-semgrep-locations.json"
+    },
+    {
+      "id": "abstractclasswithoutanymethod-medium-pmd",
+      "rule": "AbstractClassWithoutAnyMethod",
+      "tool": "PMD",
+      "severity": "medium",
+      "count": 1,
+      "category": "NEW",
+      "attachment": "group-abstractclasswithoutanymethod-medium-pmd-locations.json"
+    }
+  ],
+  "statistics": {
+    "by_severity": {
+      "critical": 2,
+      "high": 397,
+      "medium": 9052,
+      "low": 0
+    },
+    "by_category": {
+      "NEW": 1747,
+      "EXISTING_MODIFIED": 3,
+      "RESOLVED": 2139,
+      "EXISTING_REST": 5562
+    },
+    "by_tool": {
+      "PMD": 9436,
+      "semgrep": 15
+    }
+  }
+}
