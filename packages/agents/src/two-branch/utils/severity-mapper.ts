@@ -23,10 +23,15 @@ export type CodeQualSeverity = 'critical' | 'high' | 'medium' | 'low';
  * - Error Prone Priority 1 with runtime impact → CRITICAL
  * - Security Priority 3 → HIGH
  * - Error Prone Priority 2 → HIGH
+ * - Critical concurrency bugs (deadlock, race condition) → HIGH
+ * - Performance Priority 1-2 → MEDIUM (optimizations, not critical)
+ * - Multithreading Priority 1-2 → MEDIUM (best practices, not critical)
  * - Best Practices Priority 1-3 → MEDIUM (maintainability)
+ * - Design Priority 1-3 → MEDIUM (architecture)
  * - Priority 4-5 → LOW
  *
- * Special case: ConstructorCallsOverridableMethod → ALWAYS MEDIUM
+ * Rationale: HIGH severity should mean "causes crashes, data loss, or security issues"
+ * Performance and best practice issues are important but don't break the app → MEDIUM
  */
 export function determineCodeQualSeverity(
   toolName: string,
@@ -88,12 +93,38 @@ function mapPMDSeverity(
 ): CodeQualSeverity {
 
   // RULE-SPECIFIC OVERRIDES (takes precedence over category/priority)
-  // These are fallback overrides when custom rulesets are not used
-  // Prefer configuring these in pmd-codequal-default.xml instead
-  const styleRules: Record<string, CodeQualSeverity> = {
+  // These overrides are based on real-world analysis and user feedback
+  // 
+  // Users have TWO ways to customize severities:
+  // 1. PMD-level: Use `customRuleset` in JavaToolConfig (already supported!)
+  //    - Create custom PMD ruleset XML with adjusted priorities
+  //    - Example: Set AvoidUsingVolatile priority to 3 instead of 2
+  // 
+  // 2. Application-level: Use `severityOverrides` in V9TemplateConfig
+  //    - Override severity AFTER tool execution
+  //    - Works for all tools (PMD, Semgrep, ESLint, etc.)
+  //    - Future: Manageable via Settings UI or API
+  // 
+  // NOTE: These override the category-based logic below
+  // Last updated: 2025-10-09 (User feedback: "doesn't look like high severity")
+  const ruleOverrides: Record<string, CodeQualSeverity> = {
+    // Multithreading Best Practices (was HIGH, now MEDIUM)
+    'avoidusingvolatile': 'medium',               // 361 occurrences - best practice, not critical
+    
+    // Performance Optimizations (was HIGH, now MEDIUM)
+    'avoidfilestream': 'medium',                  // 11 occurrences - NIO vs FileInputStream optimization
+    
+    // Design Patterns (was HIGH, now MEDIUM)
+    'singletonclassreturningnewinstance': 'medium', // 4 occurrences - design pattern violation
+    'singlemethodsingleton': 'medium',            // 2 occurrences - design pattern
+    
+    // Code Style / Best Practices (various)
+    'morethanonelogger': 'medium',                // 6 occurrences - code organization
     'loggerisnotstaticfinal': 'medium',           // Logging style issue
     'returnemptycollectionratherthannull': 'medium', // Best practice
     'avoidbranchingstatementaslastinloop': 'medium', // Code style
+    
+    // Documentation (LOW severity)
     'uselocalewithtouppercase': 'low',            // Locale awareness
     'uselocalewithtolowercase': 'low',            // Locale awareness
     'guidanceontostring': 'low',                  // Documentation
@@ -101,8 +132,8 @@ function mapPMDSeverity(
     'commentrequired': 'low'                      // Documentation requirement
   };
 
-  if (styleRules[ruleId]) {
-    return styleRules[ruleId];
+  if (ruleOverrides[ruleId]) {
+    return ruleOverrides[ruleId];
   }
 
   // CRITICAL: Security priority 1-2 or error prone priority 1 with runtime impact
@@ -117,7 +148,7 @@ function mapPMDSeverity(
     }
   }
 
-  // HIGH: Security priority 3, error prone priority 2, performance/threading priority 1-2
+  // HIGH: Security priority 3, error prone priority 2, CRITICAL concurrency bugs
   if (category.includes('security') && priority === 3) {
     return 'high';
   }
@@ -126,12 +157,30 @@ function mapPMDSeverity(
     return 'high';
   }
 
-  if ((category.includes('performance') || category.includes('multithreading')) && priority <= 2) {
-    return 'high';
+  // HIGH: Only CRITICAL multithreading issues (actual race conditions, deadlocks)
+  // Most multithreading rules are best practices → MEDIUM
+  if (category.includes('multithreading') && priority === 1) {
+    // Check if it's a critical concurrency bug (race condition, deadlock)
+    const criticalConcurrency = [
+      'doublecheckedlocking',
+      'unsynchronizedstaticformatter',
+      'threadwithdefaultuncaughtexceptionhandler'
+    ];
+    if (criticalConcurrency.some(rule => ruleId.includes(rule))) {
+      return 'high';
+    }
+    // Otherwise, multithreading best practices are MEDIUM
+    return 'medium';
   }
 
-  // MEDIUM: Best practices priority 1-3, design priority 1-3
-  if ((category.includes('best practices') || category.includes('bestpractices') || category.includes('design'))
+  // Performance issues are optimizations, not critical bugs → MEDIUM
+  if (category.includes('performance') && priority <= 2) {
+    return 'medium';
+  }
+
+  // MEDIUM: Best practices, design, multithreading best practices
+  if ((category.includes('best practices') || category.includes('bestpractices') || 
+       category.includes('design') || category.includes('multithreading'))
       && priority <= 3) {
     return 'medium';
   }

@@ -10,6 +10,26 @@
  * - EXISTING IN UNMODIFIED: Affect score but never block (technical debt)
  */
 
+/**
+ * Severity Overrides Configuration
+ * 
+ * Allows users to customize severity mappings for specific rules.
+ * These overrides take precedence over default severity mapping logic.
+ * 
+ * Use cases:
+ * - Adjust tool-reported severities to match team standards
+ * - Override specific rules based on project context
+ * - Test and refine severity mappings with real PRs
+ * 
+ * Format: { 'tool:rule': 'severity' }
+ * Example: { 'pmd:AvoidUsingVolatile': 'medium', 'semgrep:unsafe-reflection': 'high' }
+ * 
+ * Future: Users can manage these via Settings UI or API
+ */
+export interface SeverityOverrides {
+  [key: string]: 'critical' | 'high' | 'medium' | 'low';
+}
+
 export interface V9TemplateConfig {
   version: string;
   blockingCriteria: BlockingCriteria;
@@ -17,6 +37,7 @@ export interface V9TemplateConfig {
   reportSections: ReportSection[];
   educationalConfig: EducationalConfig;
   businessImpactConfig: BusinessImpactConfig;
+  severityOverrides?: SeverityOverrides;  // NEW: User-customizable severity mappings
 }
 
 interface BlockingCriteria {
@@ -245,4 +266,40 @@ export function shouldApprove(
   config: V9TemplateConfig = V9_DEFAULT_CONFIG
 ): boolean {
   return !hasBlockingIssues && score >= config.scoringRules.passingScore;
+}
+
+/**
+ * Get severity override for a specific tool:rule combination
+ * 
+ * @param tool - Tool name (e.g., 'pmd', 'semgrep')
+ * @param rule - Rule ID (e.g., 'AvoidUsingVolatile', 'unsafe-reflection')
+ * @param config - V9 template configuration with optional severity overrides
+ * @returns Overridden severity or undefined if no override exists
+ * 
+ * @example
+ * const severity = getSeverityOverride('pmd', 'AvoidUsingVolatile', config);
+ * // Returns 'medium' if configured, undefined otherwise
+ */
+export function getSeverityOverride(
+  tool: string,
+  rule: string,
+  config: V9TemplateConfig = V9_DEFAULT_CONFIG
+): 'critical' | 'high' | 'medium' | 'low' | undefined {
+  if (!config.severityOverrides) {
+    return undefined;
+  }
+  
+  // Try exact match: 'tool:rule'
+  const exactKey = `${tool.toLowerCase()}:${rule.toLowerCase()}`;
+  if (exactKey in config.severityOverrides) {
+    return config.severityOverrides[exactKey];
+  }
+  
+  // Try rule-only match (for backward compatibility)
+  const ruleKey = rule.toLowerCase();
+  if (ruleKey in config.severityOverrides) {
+    return config.severityOverrides[ruleKey];
+  }
+  
+  return undefined;
 }
