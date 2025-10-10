@@ -19,8 +19,11 @@ module.exports = {
     '!src/index.ts',
   ],
   moduleNameMapper: {
+    '@codequal/core$': '<rootDir>/../../packages/core/src/index.ts',
     '@codequal/core/(.*)': '<rootDir>/../../packages/core/src/$1',
+    '@codequal/agents$': '<rootDir>/../../packages/agents/src/index.ts',
     '@codequal/agents/(.*)': '<rootDir>/../../packages/agents/src/$1',
+    '@codequal/database$': '<rootDir>/../../packages/database/src/index.ts',
     '@codequal/database/(.*)': '<rootDir>/../../packages/database/src/$1',
     '@codequal/testing/(.*)': '<rootDir>/../../packages/testing/src/$1',
   },

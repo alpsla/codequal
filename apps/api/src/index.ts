@@ -276,7 +276,9 @@ async function startServer() {
   }
 }
 
-// Start the server
-startServer();
+// Start the server only when not running under tests
+if (process.env.NODE_ENV !== 'test' && !process.env.JEST_WORKER_ID) {
+  startServer();
+}
 
 export default app; 
