@@ -62,3 +62,4 @@ export interface ResearchSchedule {
     status: 'active' | 'paused' | 'completed';
     metadata?: Record<string, any>;
 }
+//# sourceMappingURL=researcher.d.ts.map

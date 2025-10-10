@@ -6,7 +6,7 @@
  */
 
 import { AuthenticatedUser } from '../../utils/types';
-import { AgentRole } from '@codequal/core/dist/config/agent-registry';
+import { AgentRole } from '@codequal/core';
 import { VectorContextService } from '../../multi-agent/vector-context-service';
 import { ResearcherService } from './researcher-service';
 import { EducationalService } from './educational-service';

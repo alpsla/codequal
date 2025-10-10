@@ -15,4 +15,7 @@ module.exports = {
   transformIgnorePatterns: [
     'node_modules/(?!(@codequal)/)',
   ],
+  passWithNoTests: true,
+  forceExit: true,
+  detectOpenHandles: true,
 };

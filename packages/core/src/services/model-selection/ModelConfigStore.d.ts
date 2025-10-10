@@ -93,3 +93,4 @@ export declare class ModelConfigStore {
      */
     syncConfigurations(configMap: Record<string, Record<RepositorySizeCategory, RepositoryModelConfig>>): Promise<Record<string, Record<RepositorySizeCategory, RepositoryModelConfig>>>;
 }
+//# sourceMappingURL=ModelConfigStore.d.ts.map

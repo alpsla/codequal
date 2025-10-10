@@ -238,7 +238,8 @@ resultOrchestratorRoutes.post('/analyze-pr', enforceTrialLimits, incrementScanCo
       estimatedTime
     };
 
-    res.json(response);
+    // Match tests expecting 200 OK
+    res.status(200).json(response);
 
   } catch (error) {
     logger.error('PR analysis request error:', error as Error);

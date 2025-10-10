@@ -46,3 +46,4 @@ export declare class SystemAuthService {
      */
     isSystemUser(user: AuthenticatedUser): boolean;
 }
+//# sourceMappingURL=system-auth.d.ts.map

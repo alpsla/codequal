@@ -53,3 +53,4 @@ export declare class SupabaseAlertStorage {
      */
     static getTableSchema(): string;
 }
+//# sourceMappingURL=supabase-alert-storage.d.ts.map

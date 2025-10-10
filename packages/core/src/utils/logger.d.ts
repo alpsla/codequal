@@ -20,3 +20,4 @@ export interface Logger {
  * @returns Logger instance
  */
 export declare function createLogger(name: string): Logger;
+//# sourceMappingURL=logger.d.ts.map

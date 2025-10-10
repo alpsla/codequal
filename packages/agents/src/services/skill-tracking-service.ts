@@ -1,7 +1,7 @@
 import { createLogger } from '../standard/utils';
-import { SkillModel, DeveloperSkill, SkillHistoryEntry } from '@codequal/database/dist/models/skill';
+import { SkillModel, DeveloperSkill, SkillHistoryEntry } from '@codequal/database';
 import { AuthenticatedUser } from '../multi-agent/types/auth';
-import { getSupabase } from '@codequal/database/dist/supabase/client';
+import { getSupabase } from '@codequal/database';
 
 /**
  * Skill assessment data extracted from PR analysis

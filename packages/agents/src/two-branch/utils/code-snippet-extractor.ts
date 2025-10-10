@@ -16,7 +16,7 @@ export class CodeSnippetExtractor {
   static async extractSnippet(
     filePath: string,
     line: number,
-    contextLines: number = CodeSnippetExtractor.CONTEXT_LINES
+    contextLines = CodeSnippetExtractor.CONTEXT_LINES
   ): Promise<string | null> {
     try {
       // Check if file exists

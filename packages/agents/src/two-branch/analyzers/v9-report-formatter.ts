@@ -1158,7 +1158,7 @@ ${impact.riskMatrix && impact.riskMatrix.length > 0 ?
       dependency: isFirstAnalysis ? 50 : 0
     };
 
-    let skills = {
+    const skills = {
       developer: 'Unknown',
       score: scoreValue, // Use qualityScore directly - matches what was saved
       trend: 'neutral',

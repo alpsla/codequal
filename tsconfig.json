@@ -9,7 +9,6 @@
       "skipLibCheck": true,
       "resolveJsonModule": true,
       "declaration": true,
-      "composite": true,
       "paths": {
         "@codequal/core": ["packages/core/src"],
         "@codequal/core/*": ["packages/core/src/*"],
@@ -22,6 +21,5 @@
         "@codequal/ui": ["packages/ui/src"],
         "@codequal/ui/*": ["packages/ui/src/*"]
     }
-    },
-    "files": []
+    }
   }

@@ -8,7 +8,7 @@
 import { VectorContextService } from '../../multi-agent/vector-context-service';
 import { AuthenticatedUser } from '../../multi-agent/types/auth';
 import { Logger, createLogger } from '../../utils';
-import { ModelVersionSync, ModelVersionInfo, ModelTier } from '@codequal/core/dist/services/model-selection/ModelVersionSync';
+import { ModelVersionSync, ModelVersionInfo, ModelTier } from '@codequal/core';
 
 const RESEARCHER_CONFIG_REPO_ID = '00000000-0000-0000-0000-000000000001';
 
@@ -106,7 +106,7 @@ export async function applyResearcherConfiguration(
       description: `Researcher-optimized model: ${config.reason}`,
       capabilities: config.capabilities,
       pricing: config.pricing,
-      tier: config.tier as ModelTier || ModelTier.STANDARD,
+      tier: (config.tier as ModelTier) || ('standard' as ModelTier),
       preferredFor: config.preferredFor || ['researcher', 'model_research', 'cost_optimization']
     };
 

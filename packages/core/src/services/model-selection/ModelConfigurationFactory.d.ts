@@ -59,3 +59,4 @@ export declare class ModelConfigurationFactory {
      */
     updateStaticModelConfigs(): void;
 }
+//# sourceMappingURL=ModelConfigurationFactory.d.ts.map

@@ -289,3 +289,4 @@ export declare class ModelVersionSync {
  * @returns DeepWiki model configuration
  */
 export declare function createDeepWikiModelConfig(versionInfo: ModelVersionInfo): Record<string, string>;
+//# sourceMappingURL=ModelVersionSync.d.ts.map

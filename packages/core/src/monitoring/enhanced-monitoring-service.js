@@ -3,10 +3,13 @@
  * Enhanced Monitoring Service
  * Integrates with Grafana, supports Loavable embedding, and AI-tool integration
  */
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.defaultMonitoringConfig = exports.EnhancedMonitoringService = void 0;
 const events_1 = require("events");
-const prom_client_1 = require("prom-client");
+const prom_client_1 = __importDefault(require("prom-client"));
 const logger_1 = require("../utils/logger");
 const supabase_alert_storage_1 = require("./supabase-alert-storage");
 // ============================================================================
@@ -904,3 +907,4 @@ exports.defaultMonitoringConfig = {
         }
     ]
 };
+//# sourceMappingURL=enhanced-monitoring-service.js.map

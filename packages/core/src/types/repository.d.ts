@@ -250,3 +250,4 @@ export interface AnalysisResult {
      */
     confidence?: number;
 }
+//# sourceMappingURL=repository.d.ts.map

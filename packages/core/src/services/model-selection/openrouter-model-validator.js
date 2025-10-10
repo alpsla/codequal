@@ -5,10 +5,13 @@
  * Validates and normalizes model names against OpenRouter's available models
  * This ensures that the Researcher agent only stores valid model names in Vector DB
  */
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.openRouterModelValidator = exports.OpenRouterModelValidator = void 0;
 const utils_1 = require("../../utils");
-const axios_1 = require("axios");
+const axios_1 = __importDefault(require("axios"));
 const logger = (0, utils_1.createLogger)('openrouter-model-validator');
 class OpenRouterModelValidator {
     constructor() {
@@ -160,3 +163,4 @@ class OpenRouterModelValidator {
 exports.OpenRouterModelValidator = OpenRouterModelValidator;
 // Export singleton instance
 exports.openRouterModelValidator = OpenRouterModelValidator.getInstance();
+//# sourceMappingURL=openrouter-model-validator.js.map

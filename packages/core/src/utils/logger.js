@@ -29,3 +29,4 @@ function createLogger(name) {
         },
     };
 }
+//# sourceMappingURL=logger.js.map

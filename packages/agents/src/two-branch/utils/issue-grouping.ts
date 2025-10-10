@@ -70,7 +70,7 @@ export function groupIssues<T extends {
   line: number;
   column?: number;
   snippet?: string;
-}>(issues: T[], maxExamplesPerGroup: number = 5): GroupingResult {
+}>(issues: T[], maxExamplesPerGroup = 5): GroupingResult {
   
   const groupMap = new Map<string, IssueGroup>();
   
@@ -144,7 +144,7 @@ export function groupIssues<T extends {
  */
 export function prioritizeGroups(
   groups: IssueGroup[],
-  maxGroups: number = 20
+  maxGroups = 20
 ): {
   analyzed: IssueGroup[];
   deferred: IssueGroup[];
@@ -271,8 +271,8 @@ export function applyFixToGroup<T extends {
  */
 export function estimateGroupingCost(
   issueCount: number,
-  estimatedUniqueTypes: number = 20,
-  costPerAnalysis: number = 0.003
+  estimatedUniqueTypes = 20,
+  costPerAnalysis = 0.003
 ): {
   withoutGrouping: number;
   withGrouping: number;

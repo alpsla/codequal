@@ -10,8 +10,8 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.17.4",
-    "lighthouse": "^11.0.0",
-    "puppeteer": "^21.0.0"
+    "lighthouse": "^12.8.2",
+    "puppeteer": "^24.23.0"
   },
   "devDependencies": {
     "@types/node": "^18.0.0",

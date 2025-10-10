@@ -56,3 +56,4 @@ export declare function initializeMonitoring(app: any, serviceName: string): {
 };
 export declare const metrics: MetricsCollector;
 export {};
+//# sourceMappingURL=production-monitoring.d.ts.map

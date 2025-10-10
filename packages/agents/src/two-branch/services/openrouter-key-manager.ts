@@ -36,7 +36,7 @@ export interface OpenRouterConfig {
 export class OpenRouterKeyManager {
   private config: OpenRouterConfig;
   private keyStatuses: Map<string, KeyStatus>;
-  private currentKeyIndex: number = 0;
+  private currentKeyIndex = 0;
 
   constructor(customConfig?: Partial<OpenRouterConfig>) {
     // Load API keys from environment

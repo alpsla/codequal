@@ -59,3 +59,4 @@ export declare class PRReviewService {
     getUserPRReviews(userId: string): Promise<PRReviewData[]>;
 }
 export {};
+//# sourceMappingURL=pr-review-service.d.ts.map

@@ -42,7 +42,7 @@ export class V9IntegratedAnalyzer {
 
   // BUG-119 FIX: Add ModelConfigResolver and repository context
   private modelConfigResolver: ModelConfigResolver;
-  private detectedLanguage: string = 'unknown';
+  private detectedLanguage = 'unknown';
   private detectedRepoSize: 'small' | 'medium' | 'large' | 'enterprise' = 'medium';
 
   constructor() {

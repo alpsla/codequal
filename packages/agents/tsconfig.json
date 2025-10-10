@@ -5,7 +5,6 @@
     "lib": ["ES2020"],
     "rootDir": "./src",
     "outDir": "./dist",
-    "composite": true,
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
@@ -15,7 +14,16 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "moduleResolution": "node",
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "baseUrl": ".",
+    "paths": {
+      "@codequal/core": ["../core/dist"],
+      "@codequal/core/*": ["../core/dist/*"],
+      "@codequal/database": ["../database/dist"],
+      "@codequal/database/*": ["../database/dist/*"],
+      "@codequal/mcp-hybrid": ["../mcp-hybrid/dist"],
+      "@codequal/mcp-hybrid/*": ["../mcp-hybrid/dist/*"]
+    }
   },
   "include": [
     "src/**/*"
@@ -30,9 +38,5 @@
     "**/deprecated/**",
     "**/_archived/**",
     "**/_archived_supabase_cve/**"
-  ],
-  "references": [
-    { "path": "../core" },
-    { "path": "../database" }
   ]
 }

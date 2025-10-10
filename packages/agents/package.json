@@ -5,7 +5,8 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc --skipLibCheck",
+    "prebuild": "cd ../database && npm run build && cd ../core && npm run build && cd ../mcp-hybrid && npm run build && cd ../agents",
+    "build": "npm run prebuild && tsc --skipLibCheck",
     "clean": "rm -rf dist",
     "test": "echo 'Use integration tests only'",
     "test:v9:full": "ENABLE_SPOTBUGS=true NODE_ENV=test npx ts-node src/two-branch/tests/__tests__/test-v9-full-regression-with-spotbugs.ts",
@@ -21,6 +22,8 @@
     "axios": "^1.6.0",
     "winston": "^3.11.0",
     "dotenv": "^16.3.1",
+    "xml2js": "^0.6.2",
+    "cron": "^3.1.7",
     "node-cron": "^3.0.3",
     "openai": "^4.0.0",
     "@google/generative-ai": "^0.21.0",
@@ -28,6 +31,8 @@
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "@types/xml2js": "^0.4.14",
+    "@types/cron": "^2.4.3"
   }
 }

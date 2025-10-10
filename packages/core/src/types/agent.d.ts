@@ -121,3 +121,4 @@ export interface Resource {
      */
     type: 'article' | 'video' | 'documentation' | 'tutorial' | 'course' | 'book' | 'other';
 }
+//# sourceMappingURL=agent.d.ts.map
