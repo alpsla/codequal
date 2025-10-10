@@ -4,7 +4,7 @@
  */
 
 import OpenAI from 'openai';
-import { createLogger } from '../../../../core/src/utils/logger';
+import { createLogger } from '@codequal/core/utils/logger';
 import { trackModelUsage } from '../utils/model-usage-tracker';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const PQueue = require('p-queue').default;

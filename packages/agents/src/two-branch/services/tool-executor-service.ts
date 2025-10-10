@@ -7,7 +7,7 @@
 import axios from 'axios';
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import { createLogger } from '../../../../core/src/utils/logger';
+import { createLogger } from '@codequal/core/utils/logger';
 
 const execAsync = promisify(exec);
 const logger = createLogger('tool-executor-service');
