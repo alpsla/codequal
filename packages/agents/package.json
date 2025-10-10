@@ -5,7 +5,8 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc --skipLibCheck",
+    "prebuild": "cd ../database && npm run build && cd ../core && npm run build && cd ../mcp-hybrid && npm run build && cd ../agents",
+    "build": "npm run prebuild && tsc --skipLibCheck",
     "clean": "rm -rf dist",
     "test": "echo 'Use integration tests only'",
     "test:v9:full": "ENABLE_SPOTBUGS=true NODE_ENV=test npx ts-node src/two-branch/tests/__tests__/test-v9-full-regression-with-spotbugs.ts",
