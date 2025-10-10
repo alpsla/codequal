@@ -219,7 +219,6 @@ export class EmergencyFallbackProvider {
       const response = await anthropic.messages.create({
         model: this.config.model,
         max_tokens: maxTokens,
-        temperature,
         system: systemPrompt,
         messages: [
           {
