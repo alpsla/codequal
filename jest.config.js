@@ -12,6 +12,11 @@ module.exports = {
     '/dist/',
     '/build/',
     '/.turbo/',
-    '/archive/'
+    '/archive/',
+    '/apps/.*/src/__tests__/integration/',
+    '/apps/.*/src/__tests__/routes/',
+    '/packages/testing/src/integration/',
+    '/packages/core/src/services/.*/__tests__/',
+    '/packages/core/src/services/deepwiki-tools/__tests__/'
   ]
 };
