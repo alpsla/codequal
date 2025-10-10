@@ -113,3 +113,4 @@ exports.PREMIUM_MODELS_BY_PROVIDER = {
     'openrouter': exports.OPENROUTER_MODELS.CLAUDE_3_7_SONNET,
     // Add more providers as needed
 };
+//# sourceMappingURL=model-versions.js.map

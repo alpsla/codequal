@@ -59,3 +59,4 @@ export declare class OpenRouterModelValidator {
 }
 export declare const openRouterModelValidator: OpenRouterModelValidator;
 export {};
+//# sourceMappingURL=openrouter-model-validator.d.ts.map

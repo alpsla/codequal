@@ -118,3 +118,4 @@ export declare const PREMIUM_MODELS_BY_PROVIDER: {
     google: string;
     openrouter: string;
 };
+//# sourceMappingURL=model-versions.d.ts.map

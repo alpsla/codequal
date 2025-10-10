@@ -1,11 +1,14 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.metrics = exports.ErrorTracker = exports.MetricsCollector = void 0;
 exports.requestTracing = requestTracing;
 exports.setupHealthChecks = setupHealthChecks;
 exports.initializeMonitoring = initializeMonitoring;
-const winston_1 = require("winston");
-const prom_client_1 = require("prom-client");
+const winston_1 = __importDefault(require("winston"));
+const prom_client_1 = __importDefault(require("prom-client"));
 const uuid_1 = require("uuid");
 class ProductionLogger {
     constructor(serviceName) {
@@ -330,3 +333,4 @@ function initializeMonitoring(app, serviceName) {
 }
 // Export a singleton instance for metrics
 exports.metrics = new MetricsCollector();
+//# sourceMappingURL=production-monitoring.js.map

@@ -1,0 +1,42 @@
+export { getSupabase, initSupabase } from './supabase/client';
+export type { Tables } from './supabase/client';
+import { PRReviewModel as PRReviewModelImpl, AnalysisMode } from './models/pr-review';
+import { RepositoryModel as RepositoryModelImpl } from './models/repository';
+import { SkillModel as SkillModelImpl } from './models/skill';
+import { RepositoryAnalysisModel as RepositoryAnalysisModelImpl, RepositoryAnalyzer } from './models/repository-analysis';
+import { CalibrationModel as CalibrationModelImpl } from './models/calibration';
+export declare const PRReviewModel: typeof PRReviewModelImpl;
+export declare const RepositoryModel: typeof RepositoryModelImpl;
+export declare const SkillModel: typeof SkillModelImpl;
+export declare const RepositoryAnalysisModel: typeof RepositoryAnalysisModelImpl;
+export declare const CalibrationModel: typeof CalibrationModelImpl;
+export { AnalysisMode, RepositoryAnalyzer };
+export type { PRReview, AnalysisResultRecord } from './models/pr-review';
+export type { Repository } from './models/repository';
+export type { SkillCategory, DeveloperSkill, SkillHistoryEntry } from './models/skill';
+export type { RepositoryAnalysis } from './models/repository-analysis';
+export type { CalibrationRun, CalibrationTestResult } from './models/calibration';
+export { VectorStorageService } from './services/ingestion/vector-storage.service';
+export type { EnhancedChunk, ChunkMetadata, VectorRecord } from './services/ingestion/types';
+export declare class DatabaseService {
+    static findOrCreateRepository(provider: string, name: string, url: string, isPrivate?: boolean): Promise<import("./models/repository").Repository>;
+    static getRepositoryById(id: string): Promise<import("./models/repository").Repository>;
+    static getRepositoriesByProviderAndOwner(provider: string, owner: string): Promise<import("./models/repository").Repository[]>;
+    static createPRReview(prUrl: string, repositoryId: string, userId: string, analysisMode?: AnalysisMode, prTitle?: string, prDescription?: string): Promise<import("./models/pr-review").PRReview>;
+    static getPRReviewById(id: string): Promise<import("./models/pr-review").PRReview>;
+    static getPRReviewsByUserId(userId: string): Promise<import("./models/pr-review").PRReview[]>;
+    static getAllSkillCategories(): Promise<import("./models/skill").SkillCategory[]>;
+    static getSkillCategoryById(id: string): Promise<import("./models/skill").SkillCategory>;
+    static getUserSkills(userId: string): Promise<import("./models/skill").DeveloperSkill[]>;
+    static updateSkill(skillId: string, level: number, evidenceType: string, evidenceId?: string): Promise<import("./models/skill").DeveloperSkill>;
+    static getLatestRepositoryAnalysis(repositoryId: string, analyzer: RepositoryAnalyzer): Promise<import("./models/repository-analysis").RepositoryAnalysis>;
+    static getValidRepositoryAnalysisCache(repositoryId: string, analyzer: RepositoryAnalyzer): Promise<import("./models/repository-analysis").RepositoryAnalysis>;
+    static storeRepositoryAnalysis(repositoryId: string, analyzer: RepositoryAnalyzer, analysisData: Record<string, any>, cacheTTL?: number, metadata?: Record<string, any>, executionTimeMs?: number, tokenCount?: number): Promise<import("./models/repository-analysis").RepositoryAnalysis>;
+    static invalidateRepositoryAnalysisCache(repositoryId: string, analyzer?: RepositoryAnalyzer): Promise<void>;
+    static storeCalibrationRun(runId: string, modelVersions: Record<string, string>, metrics: Record<string, any>[]): Promise<import("./models/calibration").CalibrationRun>;
+    static storeCalibrationTestResult(runId: string, repositoryId: string, size: string, languages: string[], architecture: string, results: Record<string, Record<string, number>>): Promise<import("./models/calibration").CalibrationTestResult>;
+    static getLatestCalibrationRun(): Promise<import("./models/calibration").CalibrationRun>;
+    static getCalibrationRunById(runId: string): Promise<import("./models/calibration").CalibrationRun>;
+    static getCalibrationTestResultsForRun(runId: string): Promise<import("./models/calibration").CalibrationTestResult[]>;
+}
+//# sourceMappingURL=index.d.ts.map

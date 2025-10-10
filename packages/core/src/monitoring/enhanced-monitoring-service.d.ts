@@ -190,3 +190,4 @@ export declare class EnhancedMonitoringService extends EventEmitter {
     destroy(): void;
 }
 export declare const defaultMonitoringConfig: MonitoringConfig;
+//# sourceMappingURL=enhanced-monitoring-service.d.ts.map

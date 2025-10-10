@@ -732,3 +732,4 @@ function createDeepWikiModelConfig(versionInfo) {
         model: versionInfo.model
     };
 }
+//# sourceMappingURL=ModelVersionSync.js.map

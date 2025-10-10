@@ -4,3 +4,4 @@
  * Defines the contract for researcher agents without creating circular dependencies
  */
 Object.defineProperty(exports, "__esModule", { value: true });
+//# sourceMappingURL=researcher.js.map

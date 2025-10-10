@@ -93,3 +93,4 @@ export interface AgentSelection {
  * - Automatic updates with latest AI models and pricing
  * - Context-aware recommendations (language, repo size, complexity)
  */ 
+//# sourceMappingURL=agent-registry.d.ts.map

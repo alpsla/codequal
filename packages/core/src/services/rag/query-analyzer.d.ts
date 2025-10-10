@@ -128,3 +128,4 @@ export declare class QueryAnalyzer {
      */
     private generateRefinementSuggestions;
 }
+//# sourceMappingURL=query-analyzer.d.ts.map

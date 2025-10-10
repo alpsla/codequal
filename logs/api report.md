@@ -1,3 +1,698 @@
-curl -X GET "http://localhost:3001/v1/analysis/analysis_1752246578646_hysnn9jfp/progress" \
-    -H "X-API-Key: ck_5770db79cd967b43273e92bf660d2c07"
-{"analysisId":"analysis_1752246578646_hysnn9jfp","status":"complete","progress":100,"estimatedTimeRemaining":0,"currentStep":"Analysis complete","results":{"analysisId":"analysis_1752246594215_g9d7eu7n1","status":"complete","repository":{"url":"https://github.com/facebook/react","name":"react","primaryLanguage":"javascript"},"pr":{"number":27513,"title":"[Fizz] Don't pop the replay stack if we've already rendered past an element","changedFiles":2},"analysis":{"mode":"quick","agentsUsed":[],"totalFindings":0,"processingTime":15567},"findings":{"security":[],"architecture":[],"performance":[],"codeQuality":[],"dependencies":[]},"recommendations":{"summary":{"totalRecommendations":0,"priorityBreakdown":{"critical":0,"high":0,"medium":0,"low":0},"estimatedTotalEffort":"0 minutes","focusAreas":[]},"recommendations":[],"learningPathGuidance":{"suggestedOrder":[],"parallelizable":[],"dependencies":{}},"metadata":{"generatedAt":"2025-07-11T15:09:52.182Z","basedOnFindings":0,"confidence":0,"generationMethod":"hybrid"}},"educationalContent":[{"summary":"Comprehensive learning path with 0 steps to address identified issues","learningPath":{"id":"learning_path_1","title":"Personalized Learning Path","description":"A learning path customized for your current skill levels across . Prioritizes areas where you can make the most improvement.","difficulty":"beginner","estimatedTime":"0 minutes","steps":[]},"content":{"explanations":[],"tutorials":[{"id":"tutorial-1","title":"Security Issue Resolution Example","description":"","type":"tutorial","content":"","relevance":0.8,"difficulty":"intermediate","tags":[],"relatedTo":[]},{"id":"tutorial-2","title":"Architecture Improvement Example","description":"","type":"tutorial","content":"","relevance":0.8,"difficulty":"intermediate","tags":[],"relatedTo":[]}],"bestPractices":[],"resources":[]},"skillGaps":[],"certifications":[]}],"compiledEducationalData":{"educational":{"learningPath":{"title":"Personalized Skill-Based Learning Path","description":"A learning path customized for your current skill levels across . Prioritizes areas where you can make the most improvement.","totalSteps":0,"estimatedTime":"0 minutes","difficulty":"beginner","steps":[]},"content":{"explanations":[],"tutorials":[{"id":"tutorial-1","title":"Security Issue Resolution Example","category":"security","estimatedTime":"30 minutes","totalSteps":1,"prerequisites":[],"actionableSteps":[{"stepNumber":1,"title":"Example Implementation","description":"","codeExample":"// Example based on compiled security findings\nfunction validateInput(input: string): boolean {\n  // Addresses security findings from analysis\n  if (!input || input.length === 0) return false;\n  return /^[a-zA-Z0-9_]+$/.test(input);\n}"}]},{"id":"tutorial-2","title":"Architecture Improvement Example","category":"architecture","estimatedTime":"30 minutes","totalSteps":1,"prerequisites":[],"actionableSteps":[{"stepNumber":1,"title":"Example Implementation","description":"","codeExample":"// Example based on compiled architecture findings\ninterface Repository<T> {\n  findById(id: string): Promise<T>;\n  save(entity: T): Promise<T>;\n}"}]}],"bestPractices":[],"resources":[]},"insights":{"skillGaps":[],"relatedTopics":[],"nextSteps":[]}},"recommendationMapping":{"totalRecommendations":0,"priorityBreakdown":{"critical":0,"high":0,"medium":0,"low":0},"categoryBreakdown":{},"learningPathMapping":[]},"metadata":{"compiledAt":"2025-07-11T15:09:52.777Z","sourceDataQuality":{"recommendationConfidence":0,"educationalContentCoverage":1,"totalDataPoints":2},"processingInfo":{"recommendationsProcessed":0,"educationalItemsGenerated":2,"compilationMethod":"recommendation-based-compilation"}}},"metrics":{"totalFindings":0,"severity":{"critical":0,"high":0,"medium":0,"low":0},"confidence":0,"coverage":85},"report":{"summary":"Analysis completed successfully.","recommendations":[],"prComment":"No PR comment available","fullReport":{"id":"report_1752246593209_2orv8s4o1","repositoryUrl":"unknown","prNumber":0,"timestamp":"2025-07-11T15:09:53.209Z","overview":{"executiveSummary":"Analysis completed successfully.","analysisScore":100,"riskLevel":"low","totalFindings":0,"totalRecommendations":0,"learningPathAvailable":false,"estimatedRemediationTime":"Minimal effort"},"modules":{"findings":{"summary":"No issues found in the analysis","categories":{"security":{"name":"Security","icon":"🔒","count":0,"findings":[],"summary":"Found 0 security issues: none"},"architecture":{"name":"Architecture","icon":"🏗️","count":0,"findings":[],"summary":"Found 0 architecture issues: none"},"performance":{"name":"Performance","icon":"⚡","count":0,"findings":[],"summary":"Found 0 performance issues: none"},"codeQuality":{"name":"Code Quality","icon":"✨","count":0,"findings":[],"summary":"Found 0 codeQuality issues: none"},"dependencies":{"name":"Dependencies","icon":"📦","count":0,"findings":[],"summary":"Found 0 dependencies issues: none"}},"criticalFindings":[],"totalCount":0},"recommendations":{"summary":"No recommendations available","totalRecommendations":0,"categories":[],"priorityMatrix":{"critical":[],"high":[],"medium":[],"low":[]},"implementationPlan":{"phases":[],"totalEstimatedTime":"Variable","teamSizeRecommendation":2}},"educational":{"summary":"Comprehensive learning path with 0 steps to address identified issues","learningPath":{"id":"learning_path_1","title":"Personalized Learning Path","description":"A learning path customized for your current skill levels across . Prioritizes areas where you can make the most improvement.","difficulty":"beginner","estimatedTime":"0 minutes","steps":[]},"content":{"explanations":[],"tutorials":[{"id":"tutorial-1","title":"Security Issue Resolution Example","description":"","type":"tutorial","content":"","relevance":0.8,"difficulty":"intermediate","tags":[],"relatedTo":[]},{"id":"tutorial-2","title":"Architecture Improvement Example","description":"","type":"tutorial","content":"","relevance":0.8,"difficulty":"intermediate","tags":[],"relatedTo":[]}],"bestPractices":[],"resources":[]},"skillGaps":[],"certifications":[]},"metrics":{"summary":"Overall code quality score: 100/100","scores":{"overall":{"name":"Overall Quality","score":100,"rating":"A","description":"Excellent overall quality with minimal issues","factors":["Code complexity","Test coverage","Documentation","Security practices"]},"security":{"name":"Security","score":100,"rating":"A","description":"Excellent security with minimal issues","factors":["Vulnerability count","Dependency risks","Authentication patterns","Data handling"]},"maintainability":{"name":"Maintainability","score":100,"rating":"A","description":"Excellent maintainability with minimal issues","factors":["Code complexity","Documentation quality","Module structure","Naming conventions"]},"performance":{"name":"Performance","score":100,"rating":"A","description":"Excellent performance with minimal issues","factors":["Algorithm efficiency","Resource usage","Database queries","Caching strategy"]},"reliability":{"name":"Reliability","score":60,"rating":"D","description":"Good reliability with some areas for improvement","factors":["Error handling","Test coverage","Logging practices","Failure recovery"]}},"trends":[{"metric":"Overall Quality","dataPoints":[{"date":"2025-06-11T15:09:53.211Z","value":64},{"date":"2025-06-12T15:09:53.211Z","value":64},{"date":"2025-06-13T15:09:53.211Z","value":66},{"date":"2025-06-14T15:09:53.211Z","value":67},{"date":"2025-06-15T15:09:53.211Z","value":69},{"date":"2025-06-16T15:09:53.211Z","value":68},{"date":"2025-06-17T15:09:53.211Z","value":68},{"date":"2025-06-18T15:09:53.211Z","value":67},{"date":"2025-06-19T15:09:53.211Z","value":66},{"date":"2025-06-20T15:09:53.211Z","value":64},{"date":"2025-06-21T15:09:53.211Z","value":65},{"date":"2025-06-22T15:09:53.211Z","value":64},{"date":"2025-06-23T15:09:53.211Z","value":65},{"date":"2025-06-24T15:09:53.211Z","value":64},{"date":"2025-06-25T15:09:53.211Z","value":66},{"date":"2025-06-26T15:09:53.211Z","value":63},{"date":"2025-06-27T15:09:53.211Z","value":65},{"date":"2025-06-28T15:09:53.211Z","value":65},{"date":"2025-06-29T15:09:53.211Z","value":63},{"date":"2025-06-30T15:09:53.211Z","value":61},{"date":"2025-07-01T15:09:53.211Z","value":62},{"date":"2025-07-02T15:09:53.211Z","value":62},{"date":"2025-07-03T15:09:53.211Z","value":64},{"date":"2025-07-04T15:09:53.211Z","value":65},{"date":"2025-07-05T15:09:53.211Z","value":64},{"date":"2025-07-06T15:09:53.211Z","value":64},{"date":"2025-07-07T15:09:53.211Z","value":66},{"date":"2025-07-08T15:09:53.211Z","value":65},{"date":"2025-07-09T15:09:53.211Z","value":65},{"date":"2025-07-10T15:09:53.211Z","value":64},{"date":"2025-07-11T15:09:53.211Z","value":66}],"trend":"improving"}],"benchmarks":[{"metric":"Overall Quality","yourValue":100,"industryAverage":65,"topPerformers":90,"percentile":95},{"metric":"Security","yourValue":100,"industryAverage":65,"topPerformers":90,"percentile":95},{"metric":"Maintainability","yourValue":100,"industryAverage":65,"topPerformers":90,"percentile":95},{"metric":"Performance","yourValue":100,"industryAverage":65,"topPerformers":90,"percentile":95},{"metric":"Reliability","yourValue":60,"industryAverage":65,"topPerformers":90,"percentile":40}],"improvements":[{"metric":"Reliability","currentValue":60,"targetValue":80,"recommendation":"Focus on reliability improvements","estimatedImpact":"High"}]},"insights":{"summary":"0 key insights identified from the analysis","keyInsights":[],"patterns":[],"predictions":[],"contextualAdvice":[]}},"visualizations":{"severityDistribution":{"type":"pie","title":"Finding Severity Distribution","data":{"labels":["Critical","High","Medium","Low"],"datasets":[{"data":[0,0,0,0],"backgroundColor":["#dc3545","#fd7e14","#ffc107","#28a745"]}]}},"categoryBreakdown":{"type":"bar","title":"Findings by Category","data":{"labels":["security","architecture","performance","codeQuality","dependencies"],"datasets":[{"label":"Number of Findings","data":[0,0,0,0,0]}]}},"learningPathProgress":{"type":"radar","title":"Skill Development Areas","data":{"labels":[],"datasets":[{"label":"Current Level","data":[]},{"label":"Required Level","data":[]}]}}},"exports":{"prComment":"No PR comment available","emailFormat":"# CodeQual Analysis Report\n\n**Repository:** unknown\n**PR #0:** Unknown PR\n**Analysis Date:** 7/11/2025, 11:09:53 AM\n\n## Executive Summary\nAnalysis completed\n\n## Key Findings\n- Total Issues: 0\n- Critical: 0\n- High: 0\n- Medium: 0\n- Low: 0\n\n## Top Recommendations\n\n\n## Learning Path\n0 steps identified for skill development\nEstimated time: 0 minutes\n\nView the full report in your CodeQual dashboard for detailed analysis and interactive visualizations.","slackFormat":"✅ *CodeQual Analysis Complete*\n*Repo:* unknown | *PR:* #0\n\n*Findings:* 0 total\n🔴 Critical: 0 | 🟠 High: 0\n\n*Top Priority:* No critical issues\n\n<#/pull/0|View Full Report>","markdownReport":"# CodeQual Analysis Report\n\n## Repository Information\n- **Repository:** unknown\n- **URL:** unknown\n- **Primary Language:** unknown\n- **PR Number:** #0\n- **PR Title:** Unknown PR\n- **Changed Files:** 0\n\n## Analysis Summary\n- **Mode:** unknown\n- **Processing Time:** 0ms\n- **Agents Used:** \n\n## Findings Overview\n| Severity | Count |\n|----------|-------|\n| Critical | 0 |\n| High     | 0 |\n| Medium   | 0 |\n| Low      | 0 |\n| **Total**| **0** |\n\n## Recommendations\n\n\n## Learning Path\n**Difficulty:** beginner\n**Estimated Time:** 0 minutes\n**Total Steps:** 0\n\n### Learning Steps\n\n\n## Next Steps\n1. Address critical and high-priority issues immediately\n2. Follow the implementation plan for systematic improvements\n3. Utilize the learning path to build necessary skills\n4. Schedule regular code reviews to maintain quality\n\n---\n*Generated by CodeQual on 2025-07-11T15:09:53.214Z*","jsonReport":"{\n  \"analysisResult\": {\n    \"findings\": {\n      \"security\": [],\n      \"architecture\": [],\n      \"performance\": [],\n      \"codeQuality\": [],\n      \"dependencies\": []\n    },\n    \"metrics\": {\n      \"totalFindings\": 0,\n      \"severity\": {\n        \"critical\": 0,\n        \"high\": 0,\n        \"medium\": 0,\n        \"low\": 0\n      },\n      \"confidence\": 0,\n      \"coverage\": 85\n    },\n    \"userSkills\": [],\n    \"skillProgressions\": {},\n    \"skillRecommendations\": []\n  },\n  \"recommendationModule\": {\n    \"summary\": {\n      \"totalRecommendations\": 0,\n      \"priorityBreakdown\": {\n        \"critical\": 0,\n        \"high\": 0,\n        \"medium\": 0,\n        \"low\": 0\n      },\n      \"estimatedTotalEffort\": \"0 minutes\",\n      \"focusAreas\": []\n    },\n    \"recommendations\": [],\n    \"learningPathGuidance\": {\n      \"suggestedOrder\": [],\n      \"parallelizable\": [],\n      \"dependencies\": {}\n    },\n    \"metadata\": {\n      \"generatedAt\": \"2025-07-11T15:09:52.182Z\",\n      \"basedOnFindings\": 0,\n      \"confidence\": 0,\n      \"generationMethod\": \"hybrid\"\n    }\n  },\n  \"educationalData\": {\n    \"educational\": {\n      \"learningPath\": {\n        \"title\": \"Personalized Skill-Based Learning Path\",\n        \"description\": \"A learning path customized for your current skill levels across . Prioritizes areas where you can make the most improvement.\",\n        \"totalSteps\": 0,\n        \"estimatedTime\": \"0 minutes\",\n        \"difficulty\": \"beginner\",\n        \"steps\": []\n      },\n      \"content\": {\n        \"explanations\": [],\n        \"tutorials\": [\n          {\n            \"id\": \"tutorial-1\",\n            \"title\": \"Security Issue Resolution Example\",\n            \"category\": \"security\",\n            \"estimatedTime\": \"30 minutes\",\n            \"totalSteps\": 1,\n            \"prerequisites\": [],\n            \"actionableSteps\": [\n              {\n                \"stepNumber\": 1,\n                \"title\": \"Example Implementation\",\n                \"description\": \"\",\n                \"codeExample\": \"// Example based on compiled security findings\\nfunction validateInput(input: string): boolean {\\n  // Addresses security findings from analysis\\n  if (!input || input.length === 0) return false;\\n  return /^[a-zA-Z0-9_]+$/.test(input);\\n}\"\n              }\n            ]\n          },\n          {\n            \"id\": \"tutorial-2\",\n            \"title\": \"Architecture Improvement Example\",\n            \"category\": \"architecture\",\n            \"estimatedTime\": \"30 minutes\",\n            \"totalSteps\": 1,\n            \"prerequisites\": [],\n            \"actionableSteps\": [\n              {\n                \"stepNumber\": 1,\n                \"title\": \"Example Implementation\",\n                \"description\": \"\",\n                \"codeExample\": \"// Example based on compiled architecture findings\\ninterface Repository<T> {\\n  findById(id: string): Promise<T>;\\n  save(entity: T): Promise<T>;\\n}\"\n              }\n            ]\n          }\n        ],\n        \"bestPractices\": [],\n        \"resources\": []\n      },\n      \"insights\": {\n        \"skillGaps\": [],\n        \"relatedTopics\": [],\n        \"nextSteps\": []\n      }\n    },\n    \"recommendationMapping\": {\n      \"totalRecommendations\": 0,\n      \"priorityBreakdown\": {\n        \"critical\": 0,\n        \"high\": 0,\n        \"medium\": 0,\n        \"low\": 0\n      },\n      \"categoryBreakdown\": {},\n      \"learningPathMapping\": []\n    },\n    \"metadata\": {\n      \"compiledAt\": \"2025-07-11T15:09:52.777Z\",\n      \"sourceDataQuality\": {\n        \"recommendationConfidence\": 0,\n        \"educationalContentCoverage\": 1,\n        \"totalDataPoints\": 2\n      },\n      \"processingInfo\": {\n        \"recommendationsProcessed\": 0,\n        \"educationalItemsGenerated\": 2,\n        \"compilationMethod\": \"recommendation-based-compilation\"\n      }\n    }\n  }\n}"},"metadata":{"analysisMode":"unknown","agentsUsed":[],"toolsExecuted":[],"processingTime":0,"modelVersions":{},"reportVersion":"1.0.0"}},"htmlReportUrl":"http://localhost:3001/api/analysis/report_1752246593209_2orv8s4o1/report?format=html","uiReportUrl":"http://localhost:3000/reports/report_1752246593209_2orv8s4o1","reportId":"report_1752246593209_2orv8s4o1"},"metadata":{"timestamp":"2025-07-11T15:09:54.216Z","modelVersions":{},"processingSteps":["Extracting PR context","Analyzing PR content for agent optimization","Checking repository status","Triggering repository analysis","Selecting optimal models","Retrieving tool analysis results","Coordinating multi-agent analysis","Processing agent results with intelligent merging","Generating recommendation module","Executing educational tools with compiled context","Generating educational content from compiled analysis","Compiling educational data","Retrieving user skill levels and progression","Generating standardized report","Storing report in database","Tracking skill development"],"prContentAnalysis":{"changeTypes":["mixed"],"complexity":"trivial","riskLevel":"low","agentsSkipped":[],"skipReasons":{}}}}}%                                                                   
+FAIL src/__tests__/routes/result-orchestrator.test.ts
+  ● Result Orchestrator Routes › POST /api/analyze-pr › should accept valid PR analysis request
+
+    expected 200 "OK", got 500 "Internal Server Error"
+
+      108 |         .post('/api/analyze-pr')
+      109 |         .send(validRequest)
+    > 110 |         .expect(200);
+          |          ^
+      111 |
+      112 |       expect(response.body).toMatchObject({
+      113 |         analysisId: expect.stringMatching(/^analysis_\d+_[a-z0-9]+$/),
+
+      at Object.<anonymous> (src/__tests__/routes/result-orchestrator.test.ts:110:10)
+      ----
+      at Test._assertStatus (../../node_modules/supertest/lib/test.js:252:14)
+      at ../../node_modules/supertest/lib/test.js:308:13
+      at Test._assertFunction (../../node_modules/supertest/lib/test.js:285:13)
+      at Test.assert (../../node_modules/supertest/lib/test.js:164:23)
+      at Server.localAssert (../../node_modules/supertest/lib/test.js:120:14)
+
+Error: api#test: command (/home/runner/work/codequal/codequal/apps/api) /opt/hostedtoolcache/node/18.20.8/x64/bin/npm run test exited (1)
+  ● Result Orchestrator Routes › POST /api/analyze-pr › should reject invalid request body
+
+    expect(received).toMatchObject(expected)
+
+    - Expected  - 5
+    + Received  + 1
+
+      Object {
+    -   "details": ArrayContaining [
+    -     "repositoryUrl is required",
+    -     "prNumber must be a positive integer",
+    -   ],
+    -   "error": "Invalid request",
+    +   "error": "Repository URL is required",
+      }
+
+      128 |         .expect(400);
+      129 |
+    > 130 |       expect(response.body).toMatchObject({
+          |                             ^
+      131 |         error: 'Invalid request',
+      132 |         details: expect.arrayContaining([
+      133 |           'repositoryUrl is required',
+
+      at Object.<anonymous> (src/__tests__/routes/result-orchestrator.test.ts:130:29)
+
+  ● Result Orchestrator Routes › POST /api/analyze-pr › should reject request for inaccessible repository
+
+    expected 403 "Forbidden", got 500 "Internal Server Error"
+
+      143 |         .post('/api/analyze-pr')
+      144 |         .send(validRequest)
+    > 145 |         .expect(403);
+          |          ^
+      146 |
+      147 |       expect(response.body).toMatchObject({
+      148 |         error: 'Access denied to repository',
+
+      at Object.<anonymous> (src/__tests__/routes/result-orchestrator.test.ts:145:10)
+      ----
+      at Test._assertStatus (../../node_modules/supertest/lib/test.js:252:14)
+      at ../../node_modules/supertest/lib/test.js:308:13
+      at Test._assertFunction (../../node_modules/supertest/lib/test.js:285:13)
+      at Test.assert (../../node_modules/supertest/lib/test.js:164:23)
+      at Server.localAssert (../../node_modules/supertest/lib/test.js:120:14)
+
+  ● Result Orchestrator Routes › POST /api/analyze-pr › should handle different analysis modes
+
+    expected 200 "OK", got 500 "Internal Server Error"
+
+      158 |           .post('/api/analyze-pr')
+      159 |           .send({ ...validRequest, analysisMode: mode })
+    > 160 |           .expect(200);
+          |            ^
+      161 |
+      162 |         expect(response.body.estimatedTime).toBeGreaterThan(0);
+      163 |       }
+
+      at Object.<anonymous> (src/__tests__/routes/result-orchestrator.test.ts:160:12)
+      ----
+      at Test._assertStatus (../../node_modules/supertest/lib/test.js:252:14)
+      at ../../node_modules/supertest/lib/test.js:308:13
+      at Test._assertFunction (../../node_modules/supertest/lib/test.js:285:13)
+      at Test.assert (../../node_modules/supertest/lib/test.js:164:23)
+      at Server.localAssert (../../node_modules/supertest/lib/test.js:120:14)
+
+  ● Result Orchestrator Routes › POST /api/analyze-pr › should include github token when provided
+
+    expected 200 "OK", got 500 "Internal Server Error"
+
+      173 |         .post('/api/analyze-pr')
+      174 |         .send(requestWithToken)
+    > 175 |         .expect(200);
+          |          ^
+      176 |
+      177 |       expect(mockResultOrchestrator.analyzePR).toHaveBeenCalledWith(
+      178 |         expect.objectContaining({
+
+      at Object.<anonymous> (src/__tests__/routes/result-orchestrator.test.ts:175:10)
+      ----
+      at Test._assertStatus (../../node_modules/supertest/lib/test.js:252:14)
+      at ../../node_modules/supertest/lib/test.js:308:13
+      at Test._assertFunction (../../node_modules/supertest/lib/test.js:285:13)
+      at Test.assert (../../node_modules/supertest/lib/test.js:164:23)
+      at Server.localAssert (../../node_modules/supertest/lib/test.js:120:14)
+
+  ● Result Orchestrator Routes › POST /api/analyze-pr › should handle orchestrator errors gracefully
+
+    expected 200 "OK", got 500 "Internal Server Error"
+
+      191 |         .post('/api/analyze-pr')
+      192 |         .send(validRequest)
+    > 193 |         .expect(200);
+          |          ^
+      194 |
+      195 |       expect(response.body).toMatchObject({
+      196 |         analysisId: expect.any(String),
+
+      at Object.<anonymous> (src/__tests__/routes/result-orchestrator.test.ts:193:10)
+      ----
+      at Test._assertStatus (../../node_modules/supertest/lib/test.js:252:14)
+      at ../../node_modules/supertest/lib/test.js:308:13
+      at Test._assertFunction (../../node_modules/supertest/lib/test.js:285:13)
+      at Test.assert (../../node_modules/supertest/lib/test.js:164:23)
+      at Server.localAssert (../../node_modules/supertest/lib/test.js:120:14)
+
+  ● Result Orchestrator Routes › POST /api/analyze-pr › should track analysis progress internally
+
+    expected 200 "OK", got 500 "Internal Server Error"
+
+      222 |         .post('/api/analyze-pr')
+      223 |         .send(validRequest)
+    > 224 |         .expect(200);
+          |          ^
+      225 |
+      226 |       const analysisId = response.body.analysisId;
+      227 |
+
+      at Object.<anonymous> (src/__tests__/routes/result-orchestrator.test.ts:224:10)
+      ----
+      at Test._assertStatus (../../node_modules/supertest/lib/test.js:252:14)
+      at ../../node_modules/supertest/lib/test.js:308:13
+      at Test._assertFunction (../../node_modules/supertest/lib/test.js:285:13)
+      at Test.assert (../../node_modules/supertest/lib/test.js:164:23)
+      at Server.localAssert (../../node_modules/supertest/lib/test.js:120:14)
+
+  ● Result Orchestrator Routes › GET /api/analysis/:id/progress › should return progress for existing analysis
+
+    expected 200 "OK", got 404 "Not Found"
+
+      254 |       const response = await request(app)
+      255 |         .get(`/api/analysis/${analysisId}/progress`)
+    > 256 |         .expect(200);
+          |          ^
+      257 |
+      258 |       expect(response.body).toMatchObject({
+      259 |         analysisId,
+
+      at Object.<anonymous> (src/__tests__/routes/result-orchestrator.test.ts:256:10)
+      ----
+      at Test._assertStatus (../../node_modules/supertest/lib/test.js:252:14)
+      at ../../node_modules/supertest/lib/test.js:308:13
+      at Test._assertFunction (../../node_modules/supertest/lib/test.js:285:13)
+      at Test.assert (../../node_modules/supertest/lib/test.js:164:23)
+      at Server.localAssert (../../node_modules/supertest/lib/test.js:120:14)
+
+  ● Result Orchestrator Routes › GET /api/analysis/:id/progress › should deny access to other users analysis
+
+    expected 403 "Forbidden", got 404 "Not Found"
+
+      316 |       const response = await request(testApp2)
+      317 |         .get(`/api/analysis/${analysisId}/progress`)
+    > 318 |         .expect(403);
+          |          ^
+      319 |
+      320 |       expect(response.body).toMatchObject({
+      321 |         error: 'Access denied to analysis results',
+
+      at Object.<anonymous> (src/__tests__/routes/result-orchestrator.test.ts:318:10)
+      ----
+      at Test._assertStatus (../../node_modules/supertest/lib/test.js:252:14)
+      at ../../node_modules/supertest/lib/test.js:308:13
+      at Test._assertFunction (../../node_modules/supertest/lib/test.js:285:13)
+      at Test.assert (../../node_modules/supertest/lib/test.js:164:23)
+      at Server.localAssert (../../node_modules/supertest/lib/test.js:120:14)
+
+  ● Result Orchestrator Routes › DELETE /api/analysis/:id › should cancel ongoing analysis
+
+    expected 200 "OK", got 404 "Not Found"
+
+      397 |       const response = await request(app)
+      398 |         .delete(`/api/analysis/${analysisId}`)
+    > 399 |         .expect(200);
+          |          ^
+      400 |
+      401 |       expect(response.body).toMatchObject({
+      402 |         message: 'Analysis cancelled successfully',
+
+      at Object.<anonymous> (src/__tests__/routes/result-orchestrator.test.ts:399:10)
+      ----
+      at Test._assertStatus (../../node_modules/supertest/lib/test.js:252:14)
+      at ../../node_modules/supertest/lib/test.js:308:13
+      at Test._assertFunction (../../node_modules/supertest/lib/test.js:285:13)
+      at Test.assert (../../node_modules/supertest/lib/test.js:164:23)
+      at Server.localAssert (../../node_modules/supertest/lib/test.js:120:14)
+
+  ● Result Orchestrator Routes › DELETE /api/analysis/:id › should deny access to other users analysis
+
+    expected 403 "Forbidden", got 404 "Not Found"
+
+      453 |       const response = await request(testApp2)
+      454 |         .delete(`/api/analysis/${analysisId}`)
+    > 455 |         .expect(403);
+          |          ^
+      456 |
+      457 |       expect(response.body).toMatchObject({
+      458 |         error: 'Access denied to analysis',
+
+      at Object.<anonymous> (src/__tests__/routes/result-orchestrator.test.ts:455:10)
+      ----
+      at Test._assertStatus (../../node_modules/supertest/lib/test.js:252:14)
+      at ../../node_modules/supertest/lib/test.js:308:13
+      at Test._assertFunction (../../node_modules/supertest/lib/test.js:285:13)
+      at Test.assert (../../node_modules/supertest/lib/test.js:164:23)
+      at Server.localAssert (../../node_modules/supertest/lib/test.js:120:14)
+
+  ● Result Orchestrator Routes › Error Handling › should handle malformed JSON requests
+
+    expect(received).toBeGreaterThanOrEqual(expected)
+
+    Matcher error: received value must be a number or bigint
+
+    Received has value: undefined
+
+      377 |
+      378 |         if (response2.body.status !== 'complete') {
+    > 379 |           expect(response2.body.progress).toBeGreaterThanOrEqual(response1.body.progress);
+          |                                           ^
+      380 |         }
+      381 |       }, 50);
+      382 |     });
+
+      at Timeout._onTimeout (src/__tests__/routes/result-orchestrator.test.ts:379:43)
+
+  ● Result Orchestrator Routes › Error Handling › should handle internal server errors gracefully
+
+    expected 200 "OK", got 404 "Not Found"
+
+      347 |         const response = await request(app)
+      348 |           .get(`/api/analysis/${analysisId}/progress`)
+    > 349 |           .expect(200);
+          |            ^
+      350 |
+      351 |         if (response.body.status === 'complete') {
+      352 |           expect(response.body.results).toBeDefined();
+
+      at Timeout._onTimeout (src/__tests__/routes/result-orchestrator.test.ts:349:12)
+      ----
+      at Test._assertStatus (../../node_modules/supertest/lib/test.js:252:14)
+      at ../../node_modules/supertest/lib/test.js:308:13
+      at Test._assertFunction (../../node_modules/supertest/lib/test.js:285:13)
+      at Test.assert (../../node_modules/supertest/lib/test.js:164:23)
+      at Server.localAssert (../../node_modules/supertest/lib/test.js:120:14)
+
+  ● Result Orchestrator Routes › Error Handling › should handle internal server errors gracefully
+
+    expect(received).toMatchObject(expected)
+
+    - Expected  - 2
+    + Received  + 1
+
+      Object {
+    -   "error": "Internal server error",
+    -   "message": Any<String>,
+    +   "error": "Failed to check scan permissions",
+      }
+
+      529 |         .expect(500);
+      530 |
+    > 531 |       expect(response.body).toMatchObject({
+          |                             ^
+      532 |         error: 'Internal server error',
+      533 |         message: expect.any(String)
+      534 |       });
+
+      at Object.<anonymous> (src/__tests__/routes/result-orchestrator.test.ts:531:29)
+
+  ● Result Orchestrator Routes › Error Handling › should validate analysis mode values
+
+    expected 400 "Bad Request", got 500 "Internal Server Error"
+
+      548 |           analysisMode: 'invalid-mode'
+      549 |         })
+    > 550 |         .expect(400);
+          |          ^
+      551 |
+      552 |       expect(response.body.details).toContain(
+      553 |         'analysisMode must be one of: quick, comprehensive, deep, auto'
+
+      at Object.<anonymous> (src/__tests__/routes/result-orchestrator.test.ts:550:10)
+      ----
+      at Test._assertStatus (../../node_modules/supertest/lib/test.js:252:14)
+      at ../../node_modules/supertest/lib/test.js:308:13
+      at Test._assertFunction (../../node_modules/supertest/lib/test.js:285:13)
+      at Test.assert (../../node_modules/supertest/lib/test.js:164:23)
+      at Server.localAssert (../../node_modules/supertest/lib/test.js:120:14)
+
+  ● Result Orchestrator Routes › Concurrent Requests › should handle multiple concurrent analysis requests
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      571 |
+      572 |       responses.forEach(response => {
+    > 573 |         expect(response.status).toBe(200);
+          |                                 ^
+      574 |         expect(response.body.analysisId).toBeDefined();
+      575 |       });
+      576 |
+
+      at src/__tests__/routes/result-orchestrator.test.ts:573:33
+          at Array.forEach (<anonymous>)
+      at Object.<anonymous> (src/__tests__/routes/result-orchestrator.test.ts:572:17)
+
+  ● Result Orchestrator Routes › Concurrent Requests › should handle progress checks for multiple analyses
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 404
+
+      604 |
+      605 |       progressResponses.forEach((response, index) => {
+    > 606 |         expect(response.status).toBe(200);
+          |                                 ^
+      607 |         expect(response.body.analysisId).toBe(analysisIds[index]);
+      608 |       });
+      609 |     });
+
+      at src/__tests__/routes/result-orchestrator.test.ts:606:33
+          at Array.forEach (<anonymous>)
+      at Object.<anonymous> (src/__tests__/routes/result-orchestrator.test.ts:605:25)
+
+PASS src/__tests__/services/analysis-trigger-scenarios.test.ts
+FAIL src/__tests__/integration/api-routes.test.ts
+  ● Test suite failed to run
+
+    src/__tests__/integration/api-routes.test.ts:47:21 - error TS1005: ';' expected.
+
+    47   deepWikiApiManager: mockDeepWikiManager
+                           ~
+    src/__tests__/integration/api-routes.test.ts:48:1 - error TS1128: Declaration or statement expected.
+
+    48 }));
+       ~
+    src/__tests__/integration/api-routes.test.ts:48:2 - error TS1128: Declaration or statement expected.
+
+    48 }));
+        ~
+    src/__tests__/integration/api-routes.test.ts:48:3 - error TS1128: Declaration or statement expected.
+
+    48 }));
+         ~
+    src/__tests__/integration/api-routes.test.ts:125:27 - error TS1005: ';' expected.
+
+    125         deepWikiApiManager: mockDeepWikiManager
+                                  ~
+    src/__tests__/integration/api-routes.test.ts:126:9 - error TS1005: ';' expected.
+
+    126       }));
+                ~
+    src/__tests__/integration/api-routes.test.ts:150:3 - error TS1128: Declaration or statement expected.
+
+    150   });
+          ~
+    src/__tests__/integration/api-routes.test.ts:150:4 - error TS1128: Declaration or statement expected.
+
+    150   });
+           ~
+    src/__tests__/integration/api-routes.test.ts:310:1 - error TS1128: Declaration or statement expected.
+
+    310 });
+        ~
+    src/__tests__/integration/api-routes.test.ts:310:2 - error TS1128: Declaration or statement expected.
+
+    310 });
+         ~
+
+FAIL src/__tests__/services/scheduled-analysis.test.ts
+  ● Scheduled Repository Analysis › Schedule Execution › should trigger main branch analysis on schedule
+
+    ReferenceError: WebhookHandlerService is not defined
+
+      141 |     it('should trigger main branch analysis on schedule', async () => {
+      142 |       const repositoryUrl = 'https://github.com/test/repo';
+    > 143 |       const mockWebhookHandler = new WebhookHandlerService({} as any, {} as any, mockLogger);
+          |                                  ^
+      144 |       
+      145 |       webhookHandler.handleScheduledScan.mockResolvedValue({
+      146 |         jobId: 'scheduled-job-123',
+
+      at Object.<anonymous> (src/__tests__/services/scheduled-analysis.test.ts:143:34)
+
+  ● Scheduled Repository Analysis › Schedule Timing and Execution › should calculate next run time correctly
+
+    expect(received).toEqual(expected) // deep equality
+
+    Expected: 2025-02-01T03:00:00.000Z
+    Received: 2025-01-18T03:00:00.000Z
+
+      271 |       // Monthly on 1st at 3 AM UTC
+      272 |       const monthlyNext = getNextRunTime('0 3 1 * *', new Date('2025-01-17T10:00:00Z'));
+    > 273 |       expect(monthlyNext).toEqual(new Date('2025-02-01T03:00:00Z'));
+          |                           ^
+      274 |     });
+      275 |
+      276 |     it('should handle schedule execution errors gracefully', async () => {
+
+      at Object.<anonymous> (src/__tests__/services/scheduled-analysis.test.ts:273:27)
+
+  ● Scheduled Repository Analysis › Schedule Timing and Execution › should handle schedule execution errors gracefully
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: undefined
+
+      290 |       // Schedule should remain active despite failure
+      291 |       const schedule = await schedulerService.getSchedule(repositoryUrl);
+    > 292 |       expect(schedule?.isActive).toBe(true);
+          |                                  ^
+      293 |     });
+      294 |   });
+      295 |
+
+      at Object.<anonymous> (src/__tests__/services/scheduled-analysis.test.ts:292:34)
+
+FAIL src/__tests__/services/analysis-mode-selection.test.ts
+  ● Test suite failed to run
+
+    Configuration error:
+
+    Could not locate module @codequal/agents/multi-agent/enhanced-executor mapped as:
+    /home/runner/work/codequal/codequal/packages/agents/src/$1.
+
+    Please check your configuration for these entries:
+    {
+      "moduleNameMapper": {
+        "/@codequal\/agents\/(.*)/": "/home/runner/work/codequal/codequal/packages/agents/src/$1"
+      },
+      "resolver": undefined
+    }
+
+       5 | // Mock the dependencies
+       6 | jest.mock('@codequal/core/utils');
+    >  7 | jest.mock('@codequal/agents/multi-agent/enhanced-executor');
+         |      ^
+       8 | jest.mock('../../services/pr-context-service');
+       9 |
+      10 | describe('Analysis Mode Selection Logic', () => {
+
+      at createNoMappedModuleFoundError (../../node_modules/jest-resolve/build/resolver.js:759:17)
+      at Object.<anonymous> (src/__tests__/services/analysis-mode-selection.test.ts:7:6)
+
+FAIL src/__tests__/payment-flow.test.ts
+  ● Test suite failed to run
+
+    Cannot find module './services/model-selection/RepositoryCalibrationService' from '../../packages/core/dist/index.js'
+
+    Require stack:
+      /home/runner/work/codequal/codequal/packages/core/dist/index.js
+      src/services/result-orchestrator.ts
+      src/routes/result-orchestrator.ts
+      src/index.ts
+      src/__tests__/payment-flow.test.ts
+
+      57 | // Export model selection services
+      58 | __exportStar(require("./services/model-selection/RepositoryModelSelectionService"), exports);
+    > 59 | __exportStar(require("./services/model-selection/RepositoryCalibrationService"), exports);
+         |              ^
+      60 | __exportStar(require("./services/model-selection/ModelConfigStore"), exports);
+      61 | // Export agent registry types (single export to avoid duplicates)
+      62 | var agent_registry_1 = require("./config/agent-registry");
+
+      at Resolver._throwModNotFoundError (../../node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.<anonymous> (../../packages/core/dist/index.js:59:14)
+      at Object.<anonymous> (src/services/result-orchestrator.ts:116:1)
+      at Object.<anonymous> (src/routes/result-orchestrator.ts:3:1)
+      at Object.<anonymous> (src/index.ts:13:1)
+      at Object.<anonymous> (src/__tests__/payment-flow.test.ts:3:1)
+
+PASS src/__tests__/integration/scheduling-integration.test.ts
+FAIL src/__tests__/monitoring-endpoints.test.ts
+  ● Monitoring API Endpoints › GET /metrics › should return Prometheus metrics without authentication
+
+    TypeError: Router.use() requires a middleware function but got a Object
+
+      208 |     
+      209 |     // Authenticated monitoring routes
+    > 210 |     app.use('/api/monitoring', authMiddleware, monitoringRoutes);
+          |         ^
+      211 |   });
+      212 |
+      213 |   describe('GET /metrics', () => {
+
+      at Function.use (../../node_modules/express/lib/router/index.js:469:13)
+      at Function.<anonymous> (../../node_modules/express/lib/application.js:227:21)
+          at Array.forEach (<anonymous>)
+      at Function.use (../../node_modules/express/lib/application.js:224:7)
+      at Object.<anonymous> (src/__tests__/monitoring-endpoints.test.ts:210:9)
+
+  ● Monitoring API Endpoints › GET /api/monitoring/alerts › should return alert status
+
+    TypeError: Router.use() requires a middleware function but got a Object
+
+      208 |     
+      209 |     // Authenticated monitoring routes
+    > 210 |     app.use('/api/monitoring', authMiddleware, monitoringRoutes);
+          |         ^
+      211 |   });
+      212 |
+      213 |   describe('GET /metrics', () => {
+
+      at Function.use (../../node_modules/express/lib/router/index.js:469:13)
+      at Function.<anonymous> (../../node_modules/express/lib/application.js:227:21)
+          at Array.forEach (<anonymous>)
+      at Function.use (../../node_modules/express/lib/application.js:224:7)
+      at Object.<anonymous> (src/__tests__/monitoring-endpoints.test.ts:210:9)
+
+  ● Monitoring API Endpoints › GET /api/monitoring/health › should return health status
+
+    TypeError: Router.use() requires a middleware function but got a Object
+
+      208 |     
+      209 |     // Authenticated monitoring routes
+    > 210 |     app.use('/api/monitoring', authMiddleware, monitoringRoutes);
+          |         ^
+      211 |   });
+      212 |
+      213 |   describe('GET /metrics', () => {
+
+      at Function.use (../../node_modules/express/lib/router/index.js:469:13)
+      at Function.<anonymous> (../../node_modules/express/lib/application.js:227:21)
+          at Array.forEach (<anonymous>)
+      at Function.use (../../node_modules/express/lib/application.js:224:7)
+      at Object.<anonymous> (src/__tests__/monitoring-endpoints.test.ts:210:9)
+
+  ● Monitoring API Endpoints › Error handling › should handle monitoring service errors gracefully
+
+    TypeError: Router.use() requires a middleware function but got a Object
+
+      208 |     
+      209 |     // Authenticated monitoring routes
+    > 210 |     app.use('/api/monitoring', authMiddleware, monitoringRoutes);
+          |         ^
+      211 |   });
+      212 |
+      213 |   describe('GET /metrics', () => {
+
+      at Function.use (../../node_modules/express/lib/router/index.js:469:13)
+      at Function.<anonymous> (../../node_modules/express/lib/application.js:227:21)
+          at Array.forEach (<anonymous>)
+      at Function.use (../../node_modules/express/lib/application.js:224:7)
+      at Object.<anonymous> (src/__tests__/monitoring-endpoints.test.ts:210:9)
+
+FAIL src/__tests__/repository-monitoring.test.ts
+  ● Repository Storage Monitoring Endpoints › GET /api/monitoring/health › should return health status
+
+    expected 200 "OK", got 500 "Internal Server Error"
+
+      48 |       const response = await request(app)
+      49 |         .get('/api/monitoring/health')
+    > 50 |         .expect(200);
+         |          ^
+      51 |
+      52 |       expect(response.body).toHaveProperty('status');
+      53 |       expect(response.body).toHaveProperty('timestamp');
+
+      at Object.<anonymous> (src/__tests__/repository-monitoring.test.ts:50:10)
+      ----
+      at Test._assertStatus (../../node_modules/supertest/lib/test.js:252:14)
+      at ../../node_modules/supertest/lib/test.js:308:13
+      at Test._assertFunction (../../node_modules/supertest/lib/test.js:285:13)
+      at Test.assert (../../node_modules/supertest/lib/test.js:164:23)
+      at Server.localAssert (../../node_modules/supertest/lib/test.js:120:14)
+
+  ● Repository Storage Monitoring Endpoints › GET /api/monitoring/repository/metrics › should return Prometheus metrics
+
+    expected 200 "OK", got 404 "Not Found"
+
+      61 |       const response = await request(app)
+      62 |         .get('/api/monitoring/repository/metrics')
+    > 63 |         .expect(200);
+         |          ^
+      64 |
+      65 |       expect(response.headers['content-type']).toMatch(/text\/plain/);
+      66 |       expect(response.text).toContain('# HELP');
+
+      at Object.<anonymous> (src/__tests__/repository-monitoring.test.ts:63:10)
+      ----
+      at Test._assertStatus (../../node_modules/supertest/lib/test.js:252:14)
+      at ../../node_modules/supertest/lib/test.js:308:13
+      at Test._assertFunction (../../node_modules/supertest/lib/test.js:285:13)
+      at Test.assert (../../node_modules/supertest/lib/test.js:164:23)
+      at Server.localAssert (../../node_modules/supertest/lib/test.js:120:14)
+
+  ● Repository Storage Monitoring Endpoints › GET /api/monitoring/repository/health › should return repository storage health status
+
+    expected 200 "OK", got 404 "Not Found"
+
+      73 |       const response = await request(app)
+      74 |         .get('/api/monitoring/repository/health')
+    > 75 |         .expect(200);
+         |          ^
+      76 |
+      77 |       expect(response.body).toHaveProperty('status');
+      78 |       expect(response.body.status).toBe('healthy');
+
+      at Object.<anonymous> (src/__tests__/repository-monitoring.test.ts:75:10)
+      ----
+      at Test._assertStatus (../../node_modules/supertest/lib/test.js:252:14)
+      at ../../node_modules/supertest/lib/test.js:308:13
+      at Test._assertFunction (../../node_modules/supertest/lib/test.js:285:13)
+      at Test.assert (../../node_modules/supertest/lib/test.js:164:23)
+      at Server.localAssert (../../node_modules/supertest/lib/test.js:120:14)
+
+  ● Repository Storage Monitoring Endpoints › GET /api/monitoring/repository/metrics.json › should return JSON metrics
+
+    expected 200 "OK", got 404 "Not Found"
+
+      86 |       const response = await request(app)
+      87 |         .get('/api/monitoring/repository/metrics.json')
+    > 88 |         .expect(200);
+         |          ^
+      89 |
+      90 |       expect(response.body).toHaveProperty('timestamp');
+      91 |       expect(response.body).toHaveProperty('disk');
+
+      at Object.<anonymous> (src/__tests__/repository-monitoring.test.ts:88:10)
+      ----
+      at Test._assertStatus (../../node_modules/supertest/lib/test.js:252:14)
+      at ../../node_modules/supertest/lib/test.js:308:13
+      at Test._assertFunction (../../node_modules/supertest/lib/test.js:285:13)
+      at Test.assert (../../node_modules/supertest/lib/test.js:164:23)
+      at Server.localAssert (../../node_modules/supertest/lib/test.js:120:14)
+
+FAIL src/__tests__/payment-flow-simple.test.ts
+  ● Test suite failed to run
+
+    Cannot find module './services/model-selection/RepositoryCalibrationService' from '../../packages/core/dist/index.js'
+
+    Require stack:
+      /home/runner/work/codequal/codequal/packages/core/dist/index.js
+      src/services/result-orchestrator.ts
+      src/routes/result-orchestrator.ts
+      src/index.ts
+      src/__tests__/payment-flow-simple.test.ts
+
+      57 | // Export model selection services
+      58 | __exportStar(require("./services/model-selection/RepositoryModelSelectionService"), exports);
+    > 59 | __exportStar(require("./services/model-selection/RepositoryCalibrationService"), exports);
+         |              ^
+      60 | __exportStar(require("./services/model-selection/ModelConfigStore"), exports);
+      61 | // Export agent registry types (single export to avoid duplicates)
+      62 | var agent_registry_1 = require("./config/agent-registry");
+
+      at Resolver._throwModNotFoundError (../../node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.<anonymous> (../../packages/core/dist/index.js:59:14)
+      at Object.<anonymous> (src/services/result-orchestrator.ts:116:1)
+      at Object.<anonymous> (src/routes/result-orchestrator.ts:3:1)
+      at Object.<anonymous> (src/index.ts:13:1)
+      at Object.<anonymous> (src/__tests__/payment-flow-simple.test.ts:2:1)
+
+Test Suites: 8 failed, 7 passed, 15 total
+Tests:       27 failed, 1 skipped, 161 passed, 189 total
+Snapshots:   0 total
+Time:        3.891 s
+Ran all test suites.
+npm error Lifecycle script `test` failed with error:
+npm error code 1
+npm error path /home/runner/work/codequal/codequal/apps/api
+npm error workspace api@1.0.0
+npm error location /home/runner/work/codequal/codequal/apps/api
+npm error command failed
+npm error command sh -c jest
+Error:  command finished with error: command (/home/runner/work/codequal/codequal/apps/api) /opt/hostedtoolcache/node/18.20.8/x64/bin/npm run test exited (1)
+ ERROR  run failed: command  exited (1)
+
+ Tasks:    3 successful, 4 total
+Cached:    3 cached, 4 total
+  Time:    4.878s 
+Failed:    api#test
+
+Error: Process completed with exit code 1.

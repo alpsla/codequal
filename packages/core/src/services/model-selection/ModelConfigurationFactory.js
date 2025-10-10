@@ -195,3 +195,4 @@ class ModelConfigurationFactory {
     }
 }
 exports.ModelConfigurationFactory = ModelConfigurationFactory;
+//# sourceMappingURL=ModelConfigurationFactory.js.map

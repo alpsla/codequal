@@ -73,3 +73,4 @@ exports.FRAMEWORK_MODEL_PREFERENCES = {
 };
 // Legacy export for backward compatibility
 exports.REPOSITORY_MODEL_CONFIGS = exports.DEFAULT_MODEL_CONFIGS;
+//# sourceMappingURL=repository-model-config.js.map

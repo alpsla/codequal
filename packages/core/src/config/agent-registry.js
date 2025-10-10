@@ -86,3 +86,4 @@ var AgentRole;
  * - Automatic updates with latest AI models and pricing
  * - Context-aware recommendations (language, repo size, complexity)
  */ 
+//# sourceMappingURL=agent-registry.js.map

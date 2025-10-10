@@ -40,3 +40,4 @@ export declare function sleep(ms: number): Promise<void>;
  * @returns Promise that resolves with the function result
  */
 export declare function retry<T>(fn: () => Promise<T>, retries?: number, delay?: number): Promise<T>;
+//# sourceMappingURL=helpers.d.ts.map

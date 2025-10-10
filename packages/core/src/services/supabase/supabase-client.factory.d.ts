@@ -15,3 +15,4 @@ export declare function createSupabaseClient(options?: {
  * Reset the singleton client (useful for testing)
  */
 export declare function resetSupabaseClient(): void;
+//# sourceMappingURL=supabase-client.factory.d.ts.map

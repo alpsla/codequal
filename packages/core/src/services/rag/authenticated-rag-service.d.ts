@@ -112,3 +112,4 @@ export declare class AuthenticatedRAGService {
     getUserRepositories(user: AuthenticatedUser): Promise<UserRepository[]>;
 }
 export declare function createAuthenticatedRAGService(embeddingService: EmbeddingService, supabaseClient?: SupabaseJSClient): AuthenticatedRAGService;
+//# sourceMappingURL=authenticated-rag-service.d.ts.map

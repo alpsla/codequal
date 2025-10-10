@@ -58,3 +58,4 @@ function resetSupabaseClient() {
     supabaseClient = null;
     logger.debug('Supabase client reset');
 }
+//# sourceMappingURL=supabase-client.factory.js.map

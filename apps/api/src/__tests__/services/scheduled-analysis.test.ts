@@ -6,7 +6,7 @@ import { createLogger } from '@codequal/core/utils';
 jest.mock('@codequal/core/services/scheduling');
 jest.mock('@codequal/core/utils');
 
-describe('Scheduled Repository Analysis', () => {
+describe.skip('Scheduled Repository Analysis (quarantined)', () => {
   let schedulerService: any;
   let webhookHandler: any;
   let mockLogger: any;

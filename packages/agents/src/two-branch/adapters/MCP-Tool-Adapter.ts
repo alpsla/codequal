@@ -3,20 +3,20 @@
  * Bridges the Two-Branch system with the MCP-hybrid tool execution
  */
 
-import { ParallelToolExecutor as MCPExecutor } from '@codequal/mcp-hybrid/integration/parallel-tool-executor';
-import { ToolRegistry } from '@codequal/mcp-hybrid/core/registry';
+import { ParallelToolExecutor as MCPExecutor } from '@codequal/mcp-hybrid/dist/integration/parallel-tool-executor';
+import { ToolRegistry } from '@codequal/mcp-hybrid/dist/core/registry';
 import { IndividualToolResponse } from '../types/mcp-types';
 import { ToolName } from '../types';
 import { logger } from '../utils/logger';
 
 // Import actual tool adapters
-import { ESLintDirectAdapter } from '@codequal/mcp-hybrid/adapters/direct/eslint-direct';
-import { SonarJSDirectAdapter } from '@codequal/mcp-hybrid/adapters/direct/sonarjs-direct';
-import { NpmAuditDirectAdapter } from '@codequal/mcp-hybrid/adapters/direct/npm-audit-direct';
-import { MadgeDirectAdapter } from '@codequal/mcp-hybrid/adapters/direct/madge-direct';
-import { DependencyCruiserDirectAdapter } from '@codequal/mcp-hybrid/adapters/direct/dependency-cruiser-direct';
-import { SemgrepMCPAdapter } from '@codequal/mcp-hybrid/adapters/mcp/semgrep-mcp';
-import { SerenaMCPAdapter } from '@codequal/mcp-hybrid/adapters/mcp/serena-mcp';
+import { ESLintDirectAdapter } from '@codequal/mcp-hybrid/dist/adapters/direct/eslint-direct';
+import { SonarJSDirectAdapter } from '@codequal/mcp-hybrid/dist/adapters/direct/sonarjs-direct';
+import { NpmAuditDirectAdapter } from '@codequal/mcp-hybrid/dist/adapters/direct/npm-audit-direct';
+import { MadgeDirectAdapter } from '@codequal/mcp-hybrid/dist/adapters/direct/madge-direct';
+import { DependencyCruiserDirectAdapter } from '@codequal/mcp-hybrid/dist/adapters/direct/dependency-cruiser-direct';
+import { SemgrepMCPAdapter } from '@codequal/mcp-hybrid/dist/adapters/mcp/semgrep-mcp';
+import { SerenaMCPAdapter } from '@codequal/mcp-hybrid/dist/adapters/mcp/serena-mcp';
 
 export class MCPToolAdapter {
   private executor: MCPExecutor;
