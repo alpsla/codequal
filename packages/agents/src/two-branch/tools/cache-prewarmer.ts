@@ -8,7 +8,7 @@
 import axios from 'axios';
 import Redis from 'ioredis';
 import crypto from 'crypto';
-import { createLogger } from '@codequal/core/utils/logger';
+import { createLogger } from '@codequal/core';
 
 const logger = createLogger('cache-prewarmer');
 

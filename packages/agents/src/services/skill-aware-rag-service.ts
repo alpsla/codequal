@@ -1,7 +1,7 @@
 import { createLogger } from '../standard/utils';
 import { SkillTrackingService } from './skill-tracking-service';
 import { AuthenticatedUser } from '../multi-agent/types/auth';
-import { DeveloperSkill } from '@codequal/database/dist/models/skill';
+import { DeveloperSkill } from '@codequal/database';
 
 /**
  * Skill-aware query enhancement

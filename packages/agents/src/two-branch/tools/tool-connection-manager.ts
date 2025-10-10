@@ -6,7 +6,7 @@
  */
 
 import axios from 'axios';
-import { createLogger } from '@codequal/core/utils/logger';
+import { createLogger } from '@codequal/core';
 
 const logger = createLogger('tool-connection-manager');
 
