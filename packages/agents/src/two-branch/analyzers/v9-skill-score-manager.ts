@@ -87,7 +87,7 @@ export class SkillScoreManager {
   async getScoreTrend(
     developerEmail: string,
     repository: string,
-    limit: number = 5
+    limit = 5
   ): Promise<number[]> {
     try {
       const { data, error } = await this.supabase
@@ -328,7 +328,7 @@ export class SkillScoreManager {
   /**
    * Get top N developers (leaderboard)
    */
-  async getLeaderboard(limit: number = 10): Promise<Array<{
+  async getLeaderboard(limit = 10): Promise<Array<{
     email: string;
     name?: string;
     score: number;

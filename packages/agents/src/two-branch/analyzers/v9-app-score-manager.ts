@@ -149,7 +149,7 @@ export class AppScoreManager {
    */
   async getAppTrend(
     repository: string,
-    limit: number = 5
+    limit = 5
   ): Promise<{
     overall: number[];
     security: number[];

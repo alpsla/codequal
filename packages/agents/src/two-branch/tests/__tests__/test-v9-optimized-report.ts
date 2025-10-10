@@ -612,7 +612,7 @@ function categorize(source: ProcessedIssue[], compare: ProcessedIssue[], type: '
  * Get list of files modified between PR branch and main branch
  * Uses shared git-utils for branch detection and file listing
  */
-function getModifiedFiles(repoPath: string, prBranch: string = 'pr-with-checkstyle-violations', mainBranch?: string): string[] {
+function getModifiedFiles(repoPath: string, prBranch = 'pr-with-checkstyle-violations', mainBranch?: string): string[] {
   try {
     // Auto-detect main branch if not provided
     if (!mainBranch) {

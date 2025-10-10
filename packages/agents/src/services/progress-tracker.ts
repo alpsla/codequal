@@ -419,7 +419,7 @@ export class ProgressTracker extends EventEmitter {
   /**
    * Clean up old analyses
    */
-  cleanupOldAnalyses(maxAge: number = 24 * 60 * 60 * 1000): void {
+  cleanupOldAnalyses(maxAge = 24 * 60 * 60 * 1000): void {
     const now = Date.now();
     const toDelete: string[] = [];
     
