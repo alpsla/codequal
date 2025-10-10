@@ -14,6 +14,8 @@ module.exports = {
     '/.turbo/',
     '/archive/',
     '/**/_archive/**',
+    '/backup/',
+    '/apps/api/tests/',
     '/apps/.*/src/__tests__/integration/',
     '/apps/.*/src/__tests__/routes/',
     '/packages/testing/src/integration/',
