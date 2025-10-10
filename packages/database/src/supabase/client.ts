@@ -20,7 +20,7 @@ let supabaseInstance: SupabaseClient | null = null;
  * 
  * @returns Untyped Supabase client (temporary - models need schema alignment)
  */
-export function getSupabase(): SupabaseClient {
+export function getSupabase(): any {
   if (!supabaseInstance) {
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -32,7 +32,7 @@ export function getSupabase(): SupabaseClient {
     supabaseInstance = createClient(supabaseUrl, supabaseKey);
   }
   
-  return supabaseInstance;
+  return supabaseInstance as any;
 }
 
 /**
@@ -43,7 +43,7 @@ export function getSupabase(): SupabaseClient {
  * @param key - Supabase service role key
  * @returns Untyped Supabase client (temporary - models need schema alignment)
  */
-export function initSupabase(url: string, key: string): SupabaseClient {
+export function initSupabase(url: string, key: string): any {
   supabaseInstance = createClient(url, key);
-  return supabaseInstance;
+  return supabaseInstance as any;
 }

@@ -5,6 +5,8 @@
     "rootDir": "./src",
     "composite": true,
     "declaration": true,
+    "skipLibCheck": true,
+    "noImplicitAny": false,
     "paths": {
       "@codequal/database/*": ["./src/*"]
     }
