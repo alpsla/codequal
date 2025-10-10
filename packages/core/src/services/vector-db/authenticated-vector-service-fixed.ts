@@ -293,8 +293,8 @@ export class AuthenticatedVectorService {
       // Calculate statistics
       const stats = {
         totalOperations: data.length,
-        successfulOperations: data.filter(op => op.success).length,
-        failedOperations: data.filter(op => !op.success).length,
+        successfulOperations: data.filter((op: any) => op.success).length,
+        failedOperations: data.filter((op: any) => !op.success).length,
         operationsByType: {} as Record<string, number>,
         successRate: 0
       };
