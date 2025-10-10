@@ -30,6 +30,10 @@ export interface EmergencyFallbackResponse {
  * Handles direct API calls to AI providers when all OpenRouter keys fail.
  * Supports Gemini, Anthropic, and OpenAI with configurable models.
  */
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
+
 export class EmergencyFallbackProvider {
   private config: EmergencyFallbackConfig;
 
@@ -132,8 +136,8 @@ export class EmergencyFallbackProvider {
   async execute(
     systemPrompt: string,
     userPrompt: string,
-    temperature: number = 0.3,
-    maxTokens: number = 1500
+    temperature = 0.3,
+    maxTokens = 1500
   ): Promise<EmergencyFallbackResponse> {
     if (!this.isAvailable()) {
       throw new Error(
@@ -169,8 +173,6 @@ export class EmergencyFallbackProvider {
     maxTokens: number
   ): Promise<EmergencyFallbackResponse> {
     try {
-      const { GoogleGenerativeAI } = require('@google/generative-ai');
-
       const genAI = new GoogleGenerativeAI(this.config.apiKey);
       const model = genAI.getGenerativeModel({
         model: this.config.model,
@@ -210,8 +212,6 @@ export class EmergencyFallbackProvider {
     maxTokens: number
   ): Promise<EmergencyFallbackResponse> {
     try {
-      const Anthropic = require('@anthropic-ai/sdk');
-
       const anthropic = new Anthropic({
         apiKey: this.config.apiKey,
       });
@@ -250,8 +250,6 @@ export class EmergencyFallbackProvider {
     maxTokens: number
   ): Promise<EmergencyFallbackResponse> {
     try {
-      const OpenAI = require('openai');
-
       const openai = new OpenAI({
         apiKey: this.config.apiKey,
       });

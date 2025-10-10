@@ -25,7 +25,9 @@ export class ModelUsageTracker {
   private usageHistory: ModelUsage[] = [];
   private static instance: ModelUsageTracker;
 
-  private constructor() {}
+  private constructor() {
+    // Intentionally empty: singleton initializer has no side effects
+  }
 
   static getInstance(): ModelUsageTracker {
     if (!ModelUsageTracker.instance) {

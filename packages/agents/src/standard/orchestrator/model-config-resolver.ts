@@ -40,7 +40,7 @@ export class ModelConfigResolver {
   private emergencyFallback: EmergencyFallbackProvider;
   private cache: Map<string, ModelConfiguration> = new Map();
   private openrouterKeys: string[] = [];
-  private currentKeyIndex: number = 0;
+  private currentKeyIndex = 0;
   private failedKeys: Set<string> = new Set();
 
   constructor(
@@ -246,8 +246,11 @@ export class ModelConfigResolver {
   }> {
     let lastError: Error | null = null;
 
-    // Try each available OpenRouter key
-    while (true) {
+    // Try each available OpenRouter key at most once
+    let attempts = 0;
+    const maxAttempts = Math.max(1, this.openrouterKeys.length);
+
+    while (attempts < maxAttempts) {
       const apiKey = this.getNextOpenRouterKey();
 
       if (!apiKey) {
@@ -273,6 +276,7 @@ export class ModelConfigResolver {
         return result;
 
       } catch (error: any) {
+        attempts++;
         lastError = error;
         this.log('warn', `Research failed with OpenRouter key #${this.currentKeyIndex}: ${error.message}`);
 
@@ -295,15 +299,6 @@ export class ModelConfigResolver {
         }).catch(err => {
           this.log('error', 'Failed to store Level 1 fallback alert', err);
         });
-
-        // If this was the last key, break and use emergency fallback
-        if (this.failedKeys.size >= this.openrouterKeys.length) {
-          this.log('error', 'All OpenRouter keys have failed');
-          break;
-        }
-
-        // Continue to next key
-        continue;
       }
     }
 
