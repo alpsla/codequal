@@ -13,6 +13,7 @@ module.exports = {
     '/build/',
     '/.turbo/',
     '/archive/',
+    '/**/_archive/**',
     '/apps/.*/src/__tests__/integration/',
     '/apps/.*/src/__tests__/routes/',
     '/packages/testing/src/integration/',
