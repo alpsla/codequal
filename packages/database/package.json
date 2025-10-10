@@ -14,7 +14,7 @@
   "scripts": {
     "build": "tsc --skipLibCheck && node scripts/post-build.js",
     "dev": "tsc -w",
-    "lint": "eslint src",
+    "lint": "eslint src --ext .ts",
     "test": "jest --passWithNoTests --testPathIgnorePatterns=dist/"
   },
   "dependencies": {
