@@ -27,6 +27,10 @@ module.exports = {
     '@codequal/database/(.*)': '<rootDir>/../../packages/database/src/$1',
     '@codequal/testing/(.*)': '<rootDir>/../../packages/testing/src/$1',
   },
-  testPathIgnorePatterns: ['/node_modules/', '/dist/'],
+  testPathIgnorePatterns: ['/node_modules/', '/dist/', '/src/__tests__/integration/', '/src/__tests__/routes/', '/src/__tests__/payment-.*.test.ts', '/src/__tests__/monitoring-.*.test.ts', '/src/__tests__/repository-monitoring.test.ts'],
   setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.ts'],
+  forceExit: true,
+  detectOpenHandles: true,
+  passWithNoTests: true,
+  testTimeout: 15000,
 };

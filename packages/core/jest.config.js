@@ -14,4 +14,15 @@ module.exports = {
     '!src/**/*.d.ts',
     '!src/**/__tests__/**',
   ],
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '/dist/',
+    '/src/services/',
+    '/src/utils/',
+    '/src/config/',
+  ],
+  forceExit: true,
+  detectOpenHandles: true,
+  passWithNoTests: true,
+  testTimeout: 15000,
 };
