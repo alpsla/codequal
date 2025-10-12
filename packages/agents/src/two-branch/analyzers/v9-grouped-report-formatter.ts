@@ -394,12 +394,29 @@ export class V9GroupedReportFormatter {
     // AI-generated fix (if available and expanded)
     if (expanded && representative?.fixSuggestion) {
       section += `**Fix Recommendation**:\n`;
-      section += `${representative.fixSuggestion.fix}\n\n`;
+      // Clean up the fix recommendation (remove internal bug tracker references)
+      const cleanFix = representative.fixSuggestion.fix
+        .replace(/\*\*BUG-\d+.*?:\*\*/g, '') // Remove **BUG-XXX FIX:**
+        .replace(/\(BUG-\d+.*?\)/g, '')      // Remove (BUG-XXX FIX - ...)
+        .trim();
       
-      section += '```java\n';
-      section += `// ❌ Before\n${representative.snippet || 'N/A'}\n\n`;
-      section += `// ✅ After\n${representative.fixSuggestion.correctedCode}\n`;
-      section += '```\n\n';
+      section += `${cleanFix}\n\n`;
+      
+      // Only show code example if we have actual code (not "N/A")
+      const hasValidSnippet = representative.snippet && representative.snippet !== 'N/A' && representative.snippet.trim().length > 0;
+      const hasValidFix = representative.fixSuggestion.correctedCode && representative.fixSuggestion.correctedCode.trim().length > 0;
+      
+      if (hasValidFix) {
+        section += '```java\n';
+        
+        // Only show "Before" if we have actual code
+        if (hasValidSnippet) {
+          section += `// Current code:\n${representative.snippet}\n\n`;
+        }
+        
+        section += `// Recommended fix:\n${representative.fixSuggestion.correctedCode}\n`;
+        section += '```\n\n';
+      }
       
       if (representative.fixSuggestion.bestPractices && representative.fixSuggestion.bestPractices.length > 0) {
         section += `**Best Practices**:\n`;
