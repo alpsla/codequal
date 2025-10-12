@@ -737,6 +737,312 @@ ${scoreInterpretation.emoji} **${qualityResult.score.toFixed(1)}/100** (Grade: *
   }
   
   /**
+   * Detect issue category from rule name, tool, and message
+   * Phase E: Category-specific enhancements
+   */
+  private detectCategory(rule: string, tool: string, message: string): string {
+    const ruleLower = rule.toLowerCase();
+    const messageLower = message.toLowerCase();
+    
+    // Security patterns
+    if (
+      tool === 'semgrep' ||
+      ruleLower.includes('security') ||
+      ruleLower.includes('injection') ||
+      ruleLower.includes('xss') ||
+      ruleLower.includes('csrf') ||
+      ruleLower.includes('auth') ||
+      messageLower.includes('vulnerability') ||
+      messageLower.includes('exploit')
+    ) {
+      return 'Security';
+    }
+    
+    // Performance patterns
+    if (
+      ruleLower.includes('performance') ||
+      ruleLower.includes('optimization') ||
+      ruleLower.includes('cache') ||
+      ruleLower.includes('memory') ||
+      ruleLower.includes('inefficient') ||
+      ruleLower.includes('guard') ||
+      messageLower.includes('performance') ||
+      messageLower.includes('slow')
+    ) {
+      return 'Performance';
+    }
+    
+    // Architecture/Design patterns
+    if (
+      ruleLower.includes('architecture') ||
+      ruleLower.includes('design') ||
+      ruleLower.includes('pattern') ||
+      ruleLower.includes('solid') ||
+      ruleLower.includes('coupling') ||
+      ruleLower.includes('cohesion') ||
+      messageLower.includes('design')
+    ) {
+      return 'Architecture';
+    }
+    
+    // Code Quality/Best Practices
+    if (
+      tool === 'pmd' ||
+      tool === 'checkstyle' ||
+      ruleLower.includes('naming') ||
+      ruleLower.includes('style') ||
+      ruleLower.includes('convention') ||
+      messageLower.includes('best practice')
+    ) {
+      return 'Code Quality';
+    }
+    
+    // Dependency/Vulnerability
+    if (
+      tool === 'dependency-check' ||
+      tool === 'owasp' ||
+      ruleLower.includes('dependency') ||
+      ruleLower.includes('cve') ||
+      messageLower.includes('outdated')
+    ) {
+      return 'Dependencies';
+    }
+    
+    // Bug/Reliability
+    if (
+      tool === 'spotbugs' ||
+      ruleLower.includes('null') ||
+      ruleLower.includes('exception') ||
+      ruleLower.includes('bug') ||
+      messageLower.includes('potential bug')
+    ) {
+      return 'Reliability';
+    }
+    
+    return 'Code Quality'; // Default fallback
+  }
+  
+  /**
+   * Calculate risk level based on category and severity
+   * Phase E: Risk assessment
+   */
+  private calculateRiskLevel(category: string, severity: string): {
+    level: string;
+    color: string;
+    emoji: string;
+    description: string;
+  } {
+    // Risk multipliers by category
+    const categoryRisk: Record<string, number> = {
+      'Security': 2.0,
+      'Dependencies': 1.8,
+      'Reliability': 1.5,
+      'Performance': 1.2,
+      'Architecture': 1.0,
+      'Code Quality': 0.8
+    };
+    
+    // Base risk by severity
+    const severityRisk: Record<string, number> = {
+      'critical': 10,
+      'high': 7,
+      'medium': 4,
+      'low': 2
+    };
+    
+    const baseRisk = severityRisk[severity] || 4;
+    const multiplier = categoryRisk[category] || 1.0;
+    const totalRisk = baseRisk * multiplier;
+    
+    // Determine risk level
+    if (totalRisk >= 12) {
+      return {
+        level: 'CRITICAL RISK',
+        color: '🔴',
+        emoji: '⚠️',
+        description: 'Immediate action required - may lead to security breaches, data loss, or system failures'
+      };
+    } else if (totalRisk >= 8) {
+      return {
+        level: 'HIGH RISK',
+        color: '🟠',
+        emoji: '⚡',
+        description: 'High priority - could cause significant problems in production'
+      };
+    } else if (totalRisk >= 5) {
+      return {
+        level: 'MODERATE RISK',
+        color: '🟡',
+        emoji: '📊',
+        description: 'Should be addressed - may impact system quality or maintainability'
+      };
+    } else {
+      return {
+        level: 'LOW RISK',
+        color: '🟢',
+        emoji: '✨',
+        description: 'Nice to fix - improves code quality and developer experience'
+      };
+    }
+  }
+  
+  /**
+   * Get category-specific context and guidance
+   * Phase E: Category-aware recommendations
+   */
+  private getCategoryContext(category: string, severity: string): {
+    focus: string;
+    businessImpact: string;
+    urgency: string;
+    stakeholders: string[];
+    resources: string[];
+  } {
+    const contexts: Record<string, any> = {
+      'Security': {
+        focus: 'Protecting against attacks, vulnerabilities, and unauthorized access',
+        businessImpact: 'Security breaches can lead to data loss, legal liability, reputation damage, and financial losses. GDPR/HIPAA compliance may be affected.',
+        urgency: severity === 'critical' || severity === 'high' 
+          ? 'Fix immediately - security issues are exploitable' 
+          : 'Address in next sprint - reduces attack surface',
+        stakeholders: ['Security Team', 'Compliance', 'Legal', 'Executive Leadership'],
+        resources: [
+          'OWASP Top 10: https://owasp.org/www-project-top-ten/',
+          'CWE Database: https://cwe.mitre.org/',
+          'NIST Guidelines: https://www.nist.gov/cyberframework'
+        ]
+      },
+      'Performance': {
+        focus: 'Optimizing speed, resource usage, and scalability',
+        businessImpact: 'Performance issues lead to poor user experience, higher infrastructure costs, and potential revenue loss from slow response times.',
+        urgency: severity === 'critical' || severity === 'high'
+          ? 'Address urgently - impacts user experience'
+          : 'Plan for optimization sprint',
+        stakeholders: ['DevOps', 'Product Team', 'Infrastructure', 'End Users'],
+        resources: [
+          'Java Performance Tuning: https://www.oracle.com/technical-resources/',
+          'JVM Performance: https://docs.oracle.com/javase/8/docs/technotes/guides/vm/',
+          'Profiling Tools: JProfiler, YourKit, VisualVM'
+        ]
+      },
+      'Reliability': {
+        focus: 'Preventing bugs, crashes, and unexpected behavior',
+        businessImpact: 'Reliability issues cause system downtime, data corruption, and user frustration. Critical for SLAs and customer trust.',
+        urgency: severity === 'critical' || severity === 'high'
+          ? 'Fix before production - potential crashes'
+          : 'Include in quality improvement cycle',
+        stakeholders: ['QA Team', 'Support Team', 'Product Team', 'End Users'],
+        resources: [
+          'Effective Java by Joshua Bloch',
+          'Java Concurrency in Practice',
+          'Error Handling Best Practices'
+        ]
+      },
+      'Architecture': {
+        focus: 'Improving system design, maintainability, and extensibility',
+        businessImpact: 'Poor architecture increases development costs, slows feature delivery, and makes the system brittle and hard to change.',
+        urgency: severity === 'critical' || severity === 'high'
+          ? 'Refactor in next sprint - technical debt accumulating'
+          : 'Plan for architecture review',
+        stakeholders: ['Architecture Team', 'Engineering Leads', 'Product Team'],
+        resources: [
+          'Clean Architecture by Robert C. Martin',
+          'Design Patterns by Gang of Four',
+          'SOLID Principles'
+        ]
+      },
+      'Dependencies': {
+        focus: 'Managing third-party libraries and known vulnerabilities',
+        businessImpact: 'Outdated dependencies expose the system to known exploits and security vulnerabilities. May violate compliance requirements.',
+        urgency: severity === 'critical' || severity === 'high'
+          ? 'Update immediately - known CVE exploits'
+          : 'Plan dependency update cycle',
+        stakeholders: ['Security Team', 'DevOps', 'Compliance', 'Engineering Leads'],
+        resources: [
+          'National Vulnerability Database: https://nvd.nist.gov/',
+          'Snyk Vulnerability Database: https://snyk.io/vuln/',
+          'OWASP Dependency Check'
+        ]
+      },
+      'Code Quality': {
+        focus: 'Maintaining clean, readable, and maintainable code',
+        businessImpact: 'Code quality issues slow down development, increase bug rates, and make onboarding new developers more difficult.',
+        urgency: severity === 'critical' || severity === 'high'
+          ? 'Address in code review - blocks merge'
+          : 'Continuous improvement opportunity',
+        stakeholders: ['Development Team', 'Code Reviewers', 'Tech Leads'],
+        resources: [
+          'Clean Code by Robert C. Martin',
+          'Refactoring by Martin Fowler',
+          'Team Coding Standards Document'
+        ]
+      }
+    };
+    
+    return contexts[category] || {
+      focus: 'Improving overall code quality and maintainability',
+      businessImpact: 'Impacts development velocity and code maintainability',
+      urgency: 'Address based on severity and team capacity',
+      stakeholders: ['Development Team'],
+      resources: ['Team Documentation', 'Coding Standards']
+    };
+  }
+  
+  /**
+   * Get priority guidance for fixing issues
+   * Phase E: Priority-based action plan
+   */
+  private getPriorityGuidance(
+    category: string,
+    severity: string,
+    count: number,
+    riskLevel: string
+  ): {
+    priority: string;
+    timeframe: string;
+    effort: string;
+    recommendation: string;
+  } {
+    // High impact categories get higher priority
+    const isHighImpactCategory = ['Security', 'Dependencies', 'Reliability'].includes(category);
+    const isHighSeverity = severity === 'critical' || severity === 'high';
+    const isWidespread = count > 50;
+    
+    if (riskLevel === 'CRITICAL RISK') {
+      return {
+        priority: 'P0 - Critical',
+        timeframe: 'Fix immediately (within 24 hours)',
+        effort: isWidespread ? 'High (requires coordinated effort across team)' : 'Medium (focused fix)',
+        recommendation: 'Drop current work. Assemble team. Fix and deploy hotfix. Post-mortem required.'
+      };
+    } else if (riskLevel === 'HIGH RISK') {
+      return {
+        priority: 'P1 - High',
+        timeframe: isHighImpactCategory ? 'Fix in current sprint' : 'Fix within 2 weeks',
+        effort: isWidespread ? 'High (may need refactoring)' : 'Medium (targeted fixes)',
+        recommendation: isWidespread 
+          ? 'Create fix pattern, apply systematically, add automated tests'
+          : 'Fix in next PR, add regression test, update documentation'
+      };
+    } else if (riskLevel === 'MODERATE RISK') {
+      return {
+        priority: 'P2 - Medium',
+        timeframe: 'Plan for next sprint or two',
+        effort: isWidespread ? 'High (batch fix recommended)' : 'Low to Medium',
+        recommendation: isWidespread
+          ? 'Add to backlog, batch fix in refactoring sprint, use linter rules to prevent recurrence'
+          : 'Fix opportunistically during related work, add code review checklist item'
+      };
+    } else {
+      return {
+        priority: 'P3 - Low',
+        timeframe: 'Address in quality improvement cycle',
+        effort: 'Low (good for new contributors)',
+        recommendation: 'Good first issue for onboarding, fix during code cleanup sprints, enable automated formatting/linting'
+      };
+    }
+  }
+  
+  /**
    * Generate comprehensive issue description
    * Phase D: What/Why/Causes/Impact
    */
@@ -868,6 +1174,42 @@ ${scoreInterpretation.emoji} **${qualityResult.score.toFixed(1)}/100** (Grade: *
     
     section += `#### ⚠️ Impact if not fixed:\n\n`;
     section += `${issueDesc.impact}\n\n`;
+    
+    // Phase E: Category-specific enhancements
+    const detectedCategory = this.detectCategory(group.rule, group.tool, representative?.message || group.description);
+    const riskLevel = this.calculateRiskLevel(detectedCategory, group.severity);
+    const categoryContext = this.getCategoryContext(detectedCategory, group.severity);
+    const priorityGuidance = this.getPriorityGuidance(detectedCategory, group.severity, group.count, riskLevel.level);
+    
+    // Phase E: Risk Assessment
+    section += `#### ${riskLevel.emoji} Risk Assessment\n\n`;
+    section += `**Risk Level**: ${riskLevel.color} **${riskLevel.level}**\n\n`;
+    section += `${riskLevel.description}\n\n`;
+    
+    section += `**Category**: ${detectedCategory}  \n`;
+    section += `**Focus**: ${categoryContext.focus}\n\n`;
+    
+    // Phase E: Business Impact
+    section += `#### 💼 Business Impact\n\n`;
+    section += `${categoryContext.businessImpact}\n\n`;
+    section += `**Urgency**: ${categoryContext.urgency}\n\n`;
+    section += `**Key Stakeholders**: ${categoryContext.stakeholders.join(', ')}\n\n`;
+    
+    // Phase E: Action Plan
+    section += `#### 📋 Recommended Action Plan\n\n`;
+    section += `**Priority**: ${priorityGuidance.priority}  \n`;
+    section += `**Timeframe**: ${priorityGuidance.timeframe}  \n`;
+    section += `**Effort**: ${priorityGuidance.effort}  \n\n`;
+    section += `**Recommendation**: ${priorityGuidance.recommendation}\n\n`;
+    
+    // Phase E: Resources (if available)
+    if (categoryContext.resources.length > 0) {
+      section += `**📚 Resources**:\n`;
+      categoryContext.resources.forEach(resource => {
+        section += `- ${resource}\n`;
+      });
+      section += '\n';
+    }
     
     // Phase D: Improved code example section
     if (representative?.file || representative?.snippet) {
