@@ -250,7 +250,7 @@ export class V9GroupedReportFormatter {
     if (medium.length > 0) {
       markdown.push('## 🟡 Medium Priority Issues\n');
       for (const group of medium) {
-        markdown.push(this.generateGroupSection(group, issues, false));
+        markdown.push(this.generateGroupSection(group, issues, true)); // Changed: Show full metadata for ALL severities
         
         const { locationAttachment, ideFixFile } = this.generateAttachments(group, issues);
         attachments.push(locationAttachment);
@@ -262,7 +262,7 @@ export class V9GroupedReportFormatter {
     if (low.length > 0) {
       markdown.push('## 🟢 Low Priority Issues\n');
       for (const group of low) {
-        markdown.push(this.generateGroupSection(group, issues, false));
+        markdown.push(this.generateGroupSection(group, issues, true)); // Changed: Show full metadata for ALL severities
         
         const { locationAttachment, ideFixFile } = this.generateAttachments(group, issues);
         attachments.push(locationAttachment);
