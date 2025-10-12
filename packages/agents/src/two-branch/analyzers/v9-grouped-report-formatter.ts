@@ -482,6 +482,128 @@ export class V9GroupedReportFormatter {
   }
   
   /**
+   * Calculate impact score from issues
+   * Critical: 5 points, High: 3 points, Medium: 1 point, Low: 0.5 points
+   */
+  private calculateImpact(issues: EnrichedIssue[]): number {
+    let impact = 0;
+    issues.forEach(issue => {
+      switch (issue.severity) {
+        case 'critical': impact += 5; break;
+        case 'high': impact += 3; break;
+        case 'medium': impact += 1; break;
+        case 'low': impact += 0.5; break;
+      }
+    });
+    return impact;
+  }
+  
+  /**
+   * Calculate quality score (0-100) based on issues
+   * 
+   * SCORING LOGIC (unified weights):
+   * - ALL existing issues (NEW/EXISTING_MODIFIED/EXISTING_REST): Same deductions
+   *   - Critical: -5 points
+   *   - High: -3 points
+   *   - Medium: -1 point
+   *   - Low: -0.5 points
+   * 
+   * - RESOLVED issues: Same points as bonus (just flip the sign)
+   *   - Critical: +5 points
+   *   - High: +3 points
+   *   - Medium: +1 point
+   *   - Low: +0.5 points
+   * 
+   * NOTE: This is simplified scoring for grouped reports.
+   * Full V9 pipeline uses per-category scoring (Security, Performance, Architecture, Dependency, Quality):
+   * - APP score: Overall = MIN(category scores) - "weakest link" principle
+   * - Skill score: Overall = AVERAGE(category scores)
+   * - See v9-app-score-manager.ts and v9-skill-score-manager.ts for full implementation
+   */
+  private calculateQualityScore(issues: EnrichedIssue[]): { score: number; grade: string; breakdown: any } {
+    const baseScore = 100.0;
+    
+    // Separate issues by category
+    const newIssues = issues.filter(i => i.category === 'NEW');
+    const existingModified = issues.filter(i => i.category === 'EXISTING_MODIFIED');
+    const existingRest = issues.filter(i => i.category === 'EXISTING_REST');
+    const resolvedIssues = issues.filter(i => i.category === 'RESOLVED');
+    
+    // Calculate deductions - SAME weights for ALL issue categories
+    const newIssuesDeduction = this.calculateImpact(newIssues);
+    const existingModifiedDeduction = this.calculateImpact(existingModified);  // Same weight
+    const existingRestDeduction = this.calculateImpact(existingRest);  // Same weight
+    
+    // Calculate bonuses - SAME weights (just positive instead of negative)
+    const resolutionBonus = this.calculateImpact(resolvedIssues);
+    
+    // Calculate final score
+    const totalDeduction = newIssuesDeduction + existingModifiedDeduction + existingRestDeduction;
+    let finalScore = baseScore - totalDeduction + resolutionBonus;
+    
+    // Clamp score between 0 and 100
+    finalScore = Math.max(0, Math.min(100, finalScore));
+    
+    // Determine grade
+    let grade: string;
+    if (finalScore >= 90) grade = 'A';
+    else if (finalScore >= 80) grade = 'B';
+    else if (finalScore >= 70) grade = 'C';
+    else if (finalScore >= 60) grade = 'D';
+    else grade = 'F';
+    
+    return {
+      score: finalScore,
+      grade,
+      breakdown: {
+        baseScore,
+        newIssuesDeduction,
+        existingModifiedDeduction,
+        existingRestDeduction,
+        resolutionBonus,
+        totalDeduction
+      }
+    };
+  }
+  
+  /**
+   * Get quality score interpretation
+   */
+  private getScoreInterpretation(score: number): { emoji: string; label: string; description: string } {
+    if (score >= 90) {
+      return {
+        emoji: '🏆',
+        label: 'Excellent',
+        description: 'Outstanding code quality with minimal issues'
+      };
+    } else if (score >= 80) {
+      return {
+        emoji: '✨',
+        label: 'Good',
+        description: 'High code quality with minor improvements needed'
+      };
+    } else if (score >= 70) {
+      return {
+        emoji: '👍',
+        label: 'Fair',
+        description: 'Acceptable quality but consider addressing issues'
+      };
+    } else if (score >= 60) {
+      return {
+        emoji: '⚠️',
+        label: 'Poor',
+        description: 'Multiple issues need attention'
+      };
+    } else {
+      return {
+        emoji: '❌',
+        label: 'Critical',
+        description: 'Significant quality issues require immediate action'
+      };
+    }
+  }
+  
+  /**
    * Generate executive summary
    */
   private generateExecutiveSummary(
@@ -498,7 +620,37 @@ export class V9GroupedReportFormatter {
       (i.severity === 'critical' || i.severity === 'high')
     );
     
+    // Calculate quality score
+    const qualityResult = this.calculateQualityScore(issues);
+    const scoreInterpretation = this.getScoreInterpretation(qualityResult.score);
+    
+    // Calculate auto-fixable coverage
+    const autoFixableGroups = groups.filter(g => this.canAutoFix(g));
+    const autoFixableIssues = issues.filter(i => 
+      autoFixableGroups.some(g => g.rule === i.rule && g.tool === i.tool && g.severity === i.severity)
+    );
+    const fixCoverage = issues.length > 0 ? (autoFixableIssues.length / issues.length * 100) : 0;
+    
     return `## 📊 Executive Summary
+
+### Quality Score
+
+${scoreInterpretation.emoji} **${qualityResult.score.toFixed(1)}/100** (Grade: **${qualityResult.grade}**) - ${scoreInterpretation.label}
+
+> ${scoreInterpretation.description}
+
+**Score Breakdown**:
+- Base Score: 100.0
+- NEW issues: -${qualityResult.breakdown.newIssuesDeduction.toFixed(1)}
+- EXISTING_MODIFIED issues: -${qualityResult.breakdown.existingModifiedDeduction.toFixed(1)}
+- EXISTING_REST issues: -${qualityResult.breakdown.existingRestDeduction.toFixed(1)}${qualityResult.breakdown.resolutionBonus > 0 ? `
+- RESOLVED issues: +${qualityResult.breakdown.resolutionBonus.toFixed(1)}` : ''}
+
+> All issue categories use the same scoring: Critical=-5, High=-3, Medium=-1, Low=-0.5
+
+---
+
+### Issue Summary
 
 **Total Issues**: ${issues.length.toLocaleString()} (${groups.length} unique types)
 
@@ -514,16 +666,22 @@ export class V9GroupedReportFormatter {
 - ✅ RESOLVED: ${byCategory.RESOLVED} (fixed by this PR)
 - 📝 EXISTING_REST: ${byCategory.EXISTING_REST} (pre-existing in unchanged files)
 
+---
+
+### Decision & Actions
+
 **Blocking Decision**:
 - ${blockingIssues.length} blocking issues (NEW or EXISTING_MODIFIED with critical/high severity)
-- ${metadata.decision === 'APPROVED' ? '✅ PR can be merged' : '⛔ PR requires fixes before merge'}
+- ${metadata.decision === 'APPROVED' ? '✅ **PR CAN BE MERGED**' : '⛔ **PR REQUIRES FIXES BEFORE MERGE**'}
+
+**Fix Coverage**:
+- **${autoFixableGroups.length}/${groups.length} issue groups** support auto-fix (${((autoFixableGroups.length / groups.length) * 100).toFixed(1)}%)
+- **${autoFixableIssues.length.toLocaleString()}/${issues.length.toLocaleString()} issues** can be fixed automatically (${fixCoverage.toFixed(1)}%)
 
 **Analysis Results**:
-- **${groups.length} issue groups** analyzed with AI
-- **Cost savings**: $${((issues.length - groups.length) * 0.003).toFixed(2)} (${(((issues.length - groups.length) / issues.length) * 100).toFixed(1)}%)
-- **Coverage**: 100% of detected issues
-
-**IDE Integration**: ${groups.filter(g => this.canAutoFix(g)).length} groups support one-click fix`;
+- AI-analyzed groups: ${groups.length}
+- Cost-optimized analysis: ${(((issues.length - groups.length) / issues.length) * 100).toFixed(1)}% reduction
+- Coverage: 100% of detected issues`;
   }
   
   /**
