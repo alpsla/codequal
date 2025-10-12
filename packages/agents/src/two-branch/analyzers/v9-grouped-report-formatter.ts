@@ -193,11 +193,40 @@ export class V9GroupedReportFormatter {
     issues: EnrichedIssue[],
     groups: IssueGroup[],
     metadata: {
+      // Repository Information
       repository: string;
+      repoUrl?: string;
       prNumber: number;
+      prTitle?: string;
+      branch?: string;
+      baseBranch?: string;
+      
+      // Author Information
+      prAuthor?: string;
+      prAuthorEmail?: string;
+      organizationName?: string;
+      
+      // Code Statistics
+      totalFiles: number;
+      totalLinesOfCode?: number;
+      filesModified?: number;
+      linesAdded?: number;
+      linesDeleted?: number;
+      languageBreakdown?: Record<string, number>;
+      
+      // Decision & Analysis
       decision: string;
       blockingCount: number;
-      totalFiles: number;
+      
+      // Performance Metrics
+      totalDuration?: number;
+      cloneTime?: number;
+      analysisTime?: number;
+      reportGenerationTime?: number;
+      
+      // Timestamp
+      analyzedAt?: string;
+      analyzerVersion?: string;
     }
   ): Promise<GroupedReportOutput> {
     
@@ -286,17 +315,170 @@ export class V9GroupedReportFormatter {
   }
   
   /**
-   * Generate report header
+   * Generate report header with complete metadata
    */
   private generateHeader(metadata: any): string {
     const icon = metadata.decision === 'APPROVED' ? '✅' : '⛔';
-    return `# Code Quality Analysis Report
+    const analysisDate = this.formatDate(metadata.analyzedAt);
+    
+    // Calculate net change in lines
+    const linesAdded = metadata.linesAdded || 0;
+    const linesDeleted = metadata.linesDeleted || 0;
+    const netChange = linesAdded - linesDeleted;
+    
+    // Format duration
+    const durationDisplay = this.formatDuration(metadata.totalDuration);
+    
+    let header = `# 🔍 Code Quality Analysis Report
 
-**Repository**: ${metadata.repository}  
-**PR**: #${metadata.prNumber}  
-**Decision**: ${icon} ${metadata.decision}${metadata.blockingCount > 0 ? ` (${metadata.blockingCount} blocking issues)` : ''}
+## Repository Information
+
+**Repository:** ${metadata.repoUrl ? `[${metadata.repository}](${metadata.repoUrl})` : metadata.repository}  
+**Pull Request:** #${metadata.prNumber}${metadata.prTitle ? ` - ${metadata.prTitle}` : ''}  `;
+    
+    if (metadata.prAuthor) {
+      header += `\n**Author:** ${metadata.prAuthor}${metadata.prAuthorEmail ? ` (${metadata.prAuthorEmail})` : ''}  `;
+    }
+    
+    if (metadata.organizationName) {
+      header += `\n**Organization:** ${metadata.organizationName}  `;
+    }
+    
+    if (metadata.branch && metadata.baseBranch) {
+      header += `\n**Source Branch:** ${metadata.branch}  
+**Target Branch:** ${metadata.baseBranch}  `;
+    }
+    
+    header += `\n**Analysis Date:** ${analysisDate}  
+**Repository Size:** ${(metadata.totalFiles || 0).toLocaleString()} files`;
+    
+    if (metadata.totalLinesOfCode) {
+      header += ` | ${metadata.totalLinesOfCode.toLocaleString()} lines`;
+    }
+    
+    if (metadata.analyzerVersion) {
+      header += `  
+**Analyzer Version:** ${metadata.analyzerVersion}`;
+    }
+    
+    // Add PR Impact section if data available
+    if (metadata.filesModified || metadata.linesAdded || metadata.linesDeleted) {
+      header += `
+
+## PR Impact
+
+**Files Modified:** ${metadata.filesModified || 0}  `;
+      
+      if (metadata.linesAdded !== undefined || metadata.linesDeleted !== undefined) {
+        header += `
+**Lines Added:** +${linesAdded}  
+**Lines Deleted:** -${linesDeleted}  
+**Net Change:** ${netChange > 0 ? '+' : ''}${netChange} lines  `;
+      }
+    }
+    
+    // Add Analysis Performance section if data available
+    if (metadata.totalDuration) {
+      header += `
+
+## Analysis Performance
+
+**Total Duration:** ${durationDisplay}  `;
+      
+      if (metadata.cloneTime) {
+        header += `
+**Clone Time:** ${this.formatDuration(metadata.cloneTime)}  `;
+      }
+      
+      if (metadata.analysisTime) {
+        header += `
+**Analysis Time:** ${this.formatDuration(metadata.analysisTime)}  `;
+      }
+      
+      if (metadata.reportGenerationTime) {
+        header += `
+**Report Generation:** ${this.formatDuration(metadata.reportGenerationTime)}  `;
+      }
+    }
+    
+    // Add Decision section
+    header += `
+
+## Quality Decision
+
+**Result:** ${icon} **${metadata.decision}**${metadata.blockingCount > 0 ? ` (${metadata.blockingCount} blocking issues)` : ''}
 
 ---`;
+    
+    return header;
+  }
+  
+  /**
+   * Format date for display
+   */
+  private formatDate(dateString?: string): string {
+    if (!dateString) {
+      return new Date().toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZoneName: 'short'
+      });
+    }
+    
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return new Date().toLocaleString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          timeZoneName: 'short'
+        });
+      }
+      return date.toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZoneName: 'short'
+      });
+    } catch {
+      return new Date().toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZoneName: 'short'
+      });
+    }
+  }
+  
+  /**
+   * Format duration in milliseconds to human-readable string
+   */
+  private formatDuration(durationMs?: number): string {
+    if (!durationMs) return '0s';
+    
+    const seconds = Math.floor(durationMs / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    
+    if (hours > 0) {
+      const remainingMinutes = minutes % 60;
+      return `${hours}h ${remainingMinutes}m`;
+    } else if (minutes > 0) {
+      const remainingSeconds = seconds % 60;
+      return `${minutes}m ${remainingSeconds}s`;
+    } else {
+      return `${seconds}s`;
+    }
   }
   
   /**
@@ -381,14 +563,23 @@ export class V9GroupedReportFormatter {
     // Description
     section += `**Description**: ${representative?.message || group.rule}\n\n`;
     
-    // Example with code snippet
-    section += `**Example**:\n`;
-    section += `- File: \`${representative?.file || 'N/A'}\`\n`;
-    section += `- Line: ${representative?.line || 'N/A'}\n\n`;
-    if (representative?.snippet) {
-      section += '```java\n';
-      section += representative.snippet;
-      section += '\n```\n\n';
+    // Example with code snippet (only show if we have valid data)
+    if (representative?.file || representative?.snippet) {
+      section += `**Representative Example**:\n`;
+      
+      if (representative.file) {
+        section += `- File: \`${representative.file}\`\n`;
+        if (representative.line) {
+          section += `- Line: ${representative.line}\n`;
+        }
+        section += '\n';
+      }
+      
+      if (representative.snippet && representative.snippet !== 'N/A' && representative.snippet.trim().length > 0) {
+        section += '```java\n';
+        section += representative.snippet;
+        section += '\n```\n\n';
+      }
     }
     
     // AI-generated fix (if available and expanded)
