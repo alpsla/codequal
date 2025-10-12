@@ -1,9 +1,78 @@
 # QUICK START - NEXT SESSION
-**Last Updated**: 2025-10-10 ✅ **Dependency-Check PostgreSQL Fix + Performance Optimization Complete**
-**Session Progress**: Java core analysis 100% complete + all 5 tools validated + framework-agnostic configuration
-**Status**: 🚀 **PRODUCTION READY** - Java analysis complete, all tools working, performance optimized
-**Latest Achievement**: Dependency-Check 4.8s execution (target: 5s) + PostgreSQL integration complete
-**Critical Achievement**: All 5 Java tools validated across multiple frameworks
+**Last Updated**: 2025-10-12 ✅ **V9 Report Format Enhancement Plan Complete + Documentation Cleanup**
+**Session Progress**: Report analysis complete + incremental plan created + docs cleaned up
+**Status**: 🎯 **PHASE B READY** - Report enhancement roadmap defined, ready to implement
+**Latest Achievement**: V9 report format strategy established + 10 outdated docs archived (53% reduction)
+**Critical Achievement**: Incremental enhancement plan created (8 phases, 5h 35m estimated)
+
+---
+
+## 🎉 SESSION 2025-10-12 ACHIEVEMENTS
+
+### ✅ V9 Report Format Enhancement Plan Complete
+
+**Problem Analyzed:**
+- Grouped report missing 13+ V8 sections (Security, Performance, Quality, etc.)
+- User feedback: Missing header metadata, quality scores, user-friendly titles, code snippets
+- Two formatters exist: `V9GroupedReportFormatter` (grouping, 99.8% cost savings) vs `V9ReportFormatterFinal` (all sections, no grouping)
+
+**Solution Decided:**
+- ✅ **Strategy**: Enhance `V9GroupedReportFormatter` incrementally (Option C)
+- ✅ **Plan Created**: `V9_REPORT_INCREMENTAL_PLAN.md` (8 phases, 5h 35m)
+- ✅ **Approach**: Copy sections from `V9ReportFormatterFinal`, maintain issue grouping
+- ✅ **Benefit**: Keep 99.8% cost savings while adding all V8 sections
+
+**Incremental Plan Phases:**
+- ✅ **Phase A**: Analysis & Strategy (COMPLETE - 1 hour)
+- ⏳ **Phase B**: Header & Metadata (NEXT - 30 min)
+- ⏳ **Phase C**: Quality Score (20 min)
+- ⏳ **Phase D**: Titles & Snippets (45 min)
+- ⏳ **Phase E**: Security Analysis (1 hour)
+- ⏳ **Phase F**: Performance & Quality (1 hour)
+- ⏳ **Phase G**: Action Items & PR Comment (30 min)
+- ⏳ **Phase H**: Conditional Sections (30 min)
+
+**Total Effort**: 5h 35m (1h complete, 4h 35m remaining)
+
+### ✅ Documentation Cleanup Complete
+
+**Problem Solved:**
+- 19 documents in `next/` folder, many outdated and confusing
+- Violates `.cursorrules` (should use QUICK_START as single source of truth)
+- Hard to maintain, hard to onboard new sessions
+
+**Actions Taken:**
+- ✅ Archived 10 outdated docs (166 KB) into `_archive/`
+- ✅ Kept 9 active docs (170 KB)
+- ✅ 53% reduction in file count
+- ✅ Created `DOC_CLEANUP_ANALYSIS.md` with rationale
+
+**Archived Categories:**
+1. **Status Reports** (4): Outdated project status docs
+2. **Completed Work** (4): Historical logs no longer needed
+3. **Migration** (2): Migration complete, consolidated into plan
+
+**Active Docs** (9):
+- QUICK_START_NEXT_SESSION.md (single source of truth)
+- V9_CRITICAL_KNOWLEDGE_BASE.md (critical facts)
+- V9_REPORT_INCREMENTAL_PLAN.md (roadmap)
+- 6 technical reference docs (configurations, strategies)
+
+**Benefits:**
+- Clearer structure for new sessions
+- Easier to maintain (only 3 active docs)
+- Faster onboarding
+- Single source of truth restored
+
+### 📊 Session Metrics
+
+- **Analysis Time**: 1 hour (Phase A)
+- **Planning Time**: 1 hour (incremental plan created)
+- **Cleanup Time**: 30 minutes (10 docs archived)
+- **Documents Created**: 3 (plan, cleanup analysis, session summary)
+- **Code Changes**: 0 (analysis phase only)
+- **Total Commits**: 3 (all documentation)
+- **Token Usage**: 43K/1M (4%, plenty of room)
 
 ---
 
@@ -232,35 +301,33 @@ if (multithreading && isCriticalConcurrency) {
 
 ## 📋 NEXT SESSION PRIORITIES (User-Defined Roadmap)
 
-### Phase 1: Java Core Analysis ✅ COMPLETE + VALIDATED
-**Priority**: 🔴 CRITICAL - Complete Java analysis service (100% complete)
+### Phase 1: V9 Report Format Enhancement (CURRENT - PHASE B)
+**Priority**: 🔴 CRITICAL - Complete V9 report with all V8 sections
 
-**Completed This Session**:
-- ✅ All 5 Java tools validated and working
-- ✅ Dependency-Check PostgreSQL integration complete
-- ✅ Framework-agnostic configuration documented
-- ✅ Dynamic branch detection implemented
-- ✅ Performance optimization complete (4.8s vs 5s target)
-- ✅ **VALIDATED ON ORACLE CLOUD** (All tools working)
+**Current Status**: Phase A complete (analysis + strategy), Phase B next
+**Next Steps**: Add professional header with all metadata (30 min)
 
-**Validation Results (Apache Kafka)**:
-- PMD: 7,739 issues detected (realistic for large codebase)
-- Semgrep: 0 security issues (expected for trunk branch)
-- Dependency-Check: 4.8s execution (target achieved)
-- Checkstyle: Ready for full analysis
-- SpotBugs: Graceful degradation working
+**Phase B Tasks**:
+1. Open `v9-grouped-report-formatter.ts` (line ~291)
+2. Copy header logic from `v9-report-formatter.ts` (line ~414)
+3. Add fields: author, PR title, duration, files changed, lines added/removed
+4. Remove internal metrics: cost savings, IDE integration notes
+5. Test on Oracle with `test-v9-e2e-complete.ts`
+6. Commit and move to Phase C
 
-**Result**: Java core analysis **100% COMPLETE**, all tools working, ready for production
+**Incremental Plan**: See `V9_REPORT_INCREMENTAL_PLAN.md` for full roadmap
+
+**Estimated Completion**: 4h 35m remaining (Phase B-H)
 
 ---
 
-### Phase 2: Multi-Repository Testing (NEXT - CURRENT)
+### Phase 2: Multi-Repository Testing (BLOCKED - After Phase 1)
 **Priority**: 🔴 CRITICAL - Validate across multiple Java frameworks
 
-**Current Status**: Single repository (Apache Kafka) validated
-**Next Steps**: Test across Spring, Quarkus, Micronaut, and plain Java repositories
+**Current Status**: Java core analysis 100% complete, all 5 tools working
+**Blocked By**: Phase 1 (report format must be finalized first)
 
-**Testing Matrix**:
+**Testing Matrix** (Ready When Phase 1 Complete):
 1. **Spring Boot**: Spring Petclinic, Spring Boot samples
 2. **Quarkus**: Quarkus quickstarts, Quarkus examples
 3. **Micronaut**: Micronaut guides, Micronaut examples

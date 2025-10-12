@@ -1,6 +1,33 @@
 # 🧠 V9 CRITICAL KNOWLEDGE BASE
 **IMPORTANT: Start every V9 session by reading this file**
-**Last Updated: October 10, 2025 - Java Core Analysis 100% Complete + Dependency-Check PostgreSQL Integration**
+**Last Updated: October 12, 2025 - V9 Report Format Enhancement Plan + Documentation Cleanup**
+
+---
+
+## 🎉 LATEST BREAKTHROUGH (October 12, 2025)
+
+### V9 Report Format Enhancement Plan Complete ✅
+
+**Status**: Incremental plan created, Phase A complete, ready for Phase B
+
+**Problem Solved:**
+- Grouped report missing 13+ V8 sections
+- User feedback: Missing header metadata, quality scores, user-friendly titles, code snippets
+- Two formatters exist with conflicting strengths
+
+**Solution Decided:**
+- ✅ **Strategy**: Enhance `V9GroupedReportFormatter` incrementally (keeps 99.8% cost savings)
+- ✅ **Plan Created**: `V9_REPORT_INCREMENTAL_PLAN.md` (8 phases, 5h 35m)
+- ✅ **Approach**: Copy sections from `V9ReportFormatterFinal`, maintain issue grouping
+- ✅ **Documentation Cleanup**: Archived 10 outdated docs (53% reduction)
+
+**Key Files:**
+- `V9_REPORT_INCREMENTAL_PLAN.md` - Complete roadmap (READ FIRST for report work)
+- `v9-grouped-report-formatter.ts` (728 lines) - Target for enhancement
+- `v9-report-formatter.ts` (2,264 lines) - Reference for sections
+- `DOC_CLEANUP_ANALYSIS.md` - Cleanup rationale
+
+**Next Session**: Phase B (Header & Metadata - 30 min)
 
 ---
 
@@ -851,6 +878,82 @@ interface IssueDetail {
 - 🎯 **NEXT**: Multi-repository Java testing, then Python language support
 - 🔄 Multi-framework validation in progress (Spring/Quarkus/Micronaut)
 - ⚠️ BUG-105: Educator service needs integration fix (not blocking)
+
+## 📝 V9 REPORT FORMATTERS - CRITICAL UNDERSTANDING (October 2025)
+
+### Two Formatters, Different Purposes
+
+**Status**: Both formatters needed for production
+
+| Formatter | Purpose | Grouping | V8 Sections | Cost Savings | Use Case |
+|-----------|---------|----------|-------------|--------------|----------|
+| **V9GroupedReportFormatter** | Cost-optimized compact reports | ✅ Yes | ❌ Partial | 99.8% | Default production |
+| **V9ReportFormatterFinal** | Comprehensive analysis | ❌ No | ✅ All | 0% | Deep audits |
+
+### V9GroupedReportFormatter (Production Default)
+**File**: `src/two-branch/analyzers/v9-grouped-report-formatter.ts` (728 lines)
+
+**Strengths:**
+- ✅ Issue grouping by `tool-rule-severity` (99.8% cost savings)
+- ✅ Compact reports (22 KB vs 5 MB)
+- ✅ AI calls: 17 instead of 9,451
+- ✅ Cost: $0.05 instead of $28.42
+- ✅ IDE integration files (auto-fixable issues)
+
+**Weaknesses (Being Fixed):**
+- ❌ Missing 13+ V8 sections (Security Analysis, Performance Analysis, etc.)
+- ❌ No quality score calculation
+- ❌ Missing professional header metadata
+- ❌ Rule names instead of user-friendly titles
+
+**Enhancement Plan**: See `V9_REPORT_INCREMENTAL_PLAN.md` (8 phases, 5h 35m)
+
+### V9ReportFormatterFinal (Reference Implementation)
+**File**: `src/two-branch/analyzers/v9-report-formatter.ts` (2,264 lines)
+
+**Strengths:**
+- ✅ ALL V8 sections (Security, Performance, Quality, Architecture, Dependencies, etc.)
+- ✅ Professional header with complete metadata
+- ✅ Quality score calculation
+- ✅ Business impact analysis
+- ✅ Educational insights
+- ✅ PR comment personalization
+
+**Weaknesses:**
+- ❌ NO issue grouping → processes every issue individually
+- ❌ Large reports (5+ MB)
+- ❌ High cost ($28.42 per analysis)
+- ❌ 9,451 AI calls for Apache Kafka
+
+**Use Case**: Deep security audits, compliance reporting, comprehensive reviews
+
+### Strategy: Enhance GroupedFormatter Incrementally
+
+**Decision (October 12, 2025):** Copy sections from `V9ReportFormatterFinal` into `V9GroupedReportFormatter`
+
+**Benefits:**
+- ✅ Keep 99.8% cost savings (grouping preserved)
+- ✅ Add all V8 sections (copy from reference)
+- ✅ Best of both worlds
+- ✅ Lower risk (incremental changes)
+
+**Phases:**
+- Phase A: Analysis ✅ COMPLETE
+- Phase B-H: Implementation (4h 35m) ⏳ PENDING
+
+**Critical Files:**
+- `V9_REPORT_INCREMENTAL_PLAN.md` - Complete roadmap
+- `v9-grouped-report-formatter.ts` - Target for enhancement
+- `v9-report-formatter.ts` - Reference for copying sections
+
+### Common Misconceptions
+
+1. **"We should merge the formatters"** - NO! They serve different purposes
+2. **"GroupedFormatter is incomplete"** - Being enhanced incrementally
+3. **"FinalFormatter is production-ready"** - Too expensive ($28.42 vs $0.05)
+4. **"We need to choose one"** - NO! Keep both, enhance GroupedFormatter
+
+---
 
 ## 📊 Monitoring Service Usage
 
