@@ -29,6 +29,100 @@ const execAsync = promisify(exec);
 // TYPES
 // ============================================================
 
+/**
+ * Analysis Mode - User-selectable depth/time tradeoff
+ * 
+ * This option will be exposed via API/Website for users to choose
+ * their preferred analysis depth based on time budget and priorities.
+ */
+export type AnalysisMode = 
+  | 'fast'        // ~2 min: PMD + Semgrep only (critical/high security issues)
+  | 'standard'    // ~4 min: + Dependency-Check (default, recommended)
+  | 'thorough'    // ~6 min: + Checkstyle (includes style issues)
+  | 'complete';   // ~15 min: + SpotBugs (requires compilation, most comprehensive)
+
+/**
+ * Analysis Mode Configuration
+ * Maps each mode to specific tool enablement and settings
+ */
+export interface AnalysisModeConfig {
+  mode: AnalysisMode;
+  description: string;
+  estimatedTime: string;
+  tools: {
+    pmd: boolean;
+    semgrep: boolean;
+    dependencyCheck: boolean;
+    checkstyle: boolean;
+    spotbugs: boolean;
+  };
+  includeStyleIssues: boolean;
+  includeCompilation: boolean;
+}
+
+/**
+ * Pre-defined analysis mode configurations
+ * These will be exposed to users via API/Website
+ */
+export const ANALYSIS_MODES: Record<AnalysisMode, AnalysisModeConfig> = {
+  fast: {
+    mode: 'fast',
+    description: 'Critical & High security issues only (fastest)',
+    estimatedTime: '~2 minutes',
+    tools: {
+      pmd: true,
+      semgrep: true,
+      dependencyCheck: false,
+      checkstyle: false,
+      spotbugs: false
+    },
+    includeStyleIssues: false,
+    includeCompilation: false
+  },
+  standard: {
+    mode: 'standard',
+    description: 'Security issues + CVE scanning (recommended)',
+    estimatedTime: '~4 minutes',
+    tools: {
+      pmd: true,
+      semgrep: true,
+      dependencyCheck: true,
+      checkstyle: false,
+      spotbugs: false
+    },
+    includeStyleIssues: false,
+    includeCompilation: false
+  },
+  thorough: {
+    mode: 'thorough',
+    description: 'Security + Style issues (comprehensive)',
+    estimatedTime: '~6 minutes',
+    tools: {
+      pmd: true,
+      semgrep: true,
+      dependencyCheck: true,
+      checkstyle: true,
+      spotbugs: false
+    },
+    includeStyleIssues: true,
+    includeCompilation: false
+  },
+  complete: {
+    mode: 'complete',
+    description: 'All tools including SpotBugs (requires compilation)',
+    estimatedTime: '~15 minutes',
+    tools: {
+      pmd: true,
+      semgrep: true,
+      dependencyCheck: true,
+      checkstyle: true,
+      spotbugs: true
+    },
+    includeStyleIssues: true,
+    includeCompilation: true
+  }
+};
+
 export interface JavaToolConfig {
   // REQUIRED TOOLS (Code Quality & Security)
   pmd: {
@@ -232,15 +326,23 @@ export class JavaToolOrchestrator {
     repoPath: string,
     branch: 'base' | 'pr',
     changedFiles?: string[],
-    options?: { includeAllSeverities?: boolean }
+    options?: { 
+      includeAllSeverities?: boolean;
+      analysisMode?: AnalysisMode;  // User-selectable analysis depth (for API/Website)
+    }
   ): Promise<OrchestrationResult> {
     const startTime = Date.now();
     const toolResults: ToolResult[] = [];
     const includeAllSeverities = options?.includeAllSeverities ?? false;
 
+    // Apply analysis mode if specified (for API/Website integration)
+    const analysisMode = options?.analysisMode || 'standard'; // Default to 'standard' mode
+    const modeConfig = ANALYSIS_MODES[analysisMode];
+
     logger.info(`🎯 Starting Java Tool Orchestration (${branch} branch)`);
     logger.info(`📁 Repository: ${repoPath}`);
     logger.info(`🔧 Mode: ${includeAllSeverities ? 'ALL SEVERITIES' : 'CRITICAL/HIGH ONLY'}`);
+    logger.info(`📊 Analysis Mode: ${modeConfig.description} (${modeConfig.estimatedTime})`);
 
     try {
       // FIX #3: Actually checkout the requested branch before analysis
@@ -311,19 +413,26 @@ export class JavaToolOrchestrator {
       }
 
       // ============================================================
-      // CHECKSTYLE DECISION LOGIC
+      // CHECKSTYLE DECISION LOGIC (Respects Analysis Mode)
       // ============================================================
       const criticalHighCount = phase1Results.reduce((sum, r) => 
         sum + r.metadata.severity.critical + r.metadata.severity.high, 0
       );
 
+      // Check if Checkstyle should run based on analysis mode
+      const checkstyleEnabledByMode = modeConfig.tools.checkstyle;
       const shouldRunCheckstyle = 
         this.config.checkstyle.enabled && 
-        (includeAllSeverities || criticalHighCount === 0);
+        checkstyleEnabledByMode &&  // Respect user's analysis mode choice
+        (includeAllSeverities || modeConfig.includeStyleIssues || criticalHighCount === 0);
 
       if (this.config.checkstyle.enabled) {
-        if (shouldRunCheckstyle) {
-          if (includeAllSeverities) {
+        if (!checkstyleEnabledByMode) {
+          logger.info(`\n⏭️  Skipping Checkstyle: Not included in '${analysisMode}' mode (requires 'thorough' or 'complete')`);
+        } else if (shouldRunCheckstyle) {
+          if (modeConfig.includeStyleIssues) {
+            logger.info(`\n📝 Running Checkstyle: User selected '${analysisMode}' mode (includes style issues)`);
+          } else if (includeAllSeverities) {
             logger.info('\n📝 Running Checkstyle: User requested ALL severity levels');
           } else {
             logger.info('\n📝 Running Checkstyle: No critical/high issues found, checking style compliance');
@@ -337,25 +446,30 @@ export class JavaToolOrchestrator {
       }
 
       // ============================================================
-      // OPTIONAL TOOLS (Sequential, if enabled)
+      // OPTIONAL TOOLS (Sequential, if enabled by Analysis Mode)
       // ============================================================
 
-      // SpotBugs (requires compilation)
-      if (this.config.spotbugs?.enabled) {
-        logger.info('\n🐛 Running SpotBugs (optional)...');
+      // SpotBugs (requires compilation) - Only in 'complete' mode
+      if (this.config.spotbugs?.enabled && modeConfig.tools.spotbugs) {
+        logger.info(`\n🐛 Running SpotBugs: User selected '${analysisMode}' mode (includes compilation)...`);
         const spotbugsResult = await this.runSpotBugs(repoPath, branch);
         toolResults.push(spotbugsResult);
         logger.info(`✅ SpotBugs complete: ${spotbugsResult.duration}ms`);
+      } else if (this.config.spotbugs?.enabled && !modeConfig.tools.spotbugs) {
+        logger.info(`\n⏭️  Skipping SpotBugs: Not included in '${analysisMode}' mode (requires 'complete' mode)`);
       }
 
       // Dependency-Check (REQUIRED on BOTH branches for proper two-branch analysis)
       // Run on both branches to properly categorize CVEs as NEW/RESOLVED/EXISTING
-      if (this.config.dependencyCheck?.enabled) {
+      // Only run if enabled in analysis mode ('standard', 'thorough', or 'complete')
+      if (this.config.dependencyCheck?.enabled && modeConfig.tools.dependencyCheck) {
         logger.info(`\n🔐 Running Dependency-Check (${branch} branch - REQUIRED for security)...`);
         const depCheckResult = await this.runDependencyCheck(repoPath, branch);
         toolResults.push(depCheckResult);
         logger.info(`✅ Dependency-Check complete: ${depCheckResult.duration}ms`);
         logger.info(`   Found: ${depCheckResult.metadata.issuesFound} vulnerabilities`);
+      } else if (this.config.dependencyCheck?.enabled && !modeConfig.tools.dependencyCheck) {
+        logger.info(`\n⏭️  Skipping Dependency-Check: Not included in '${analysisMode}' mode (requires 'standard', 'thorough', or 'complete')`);
       }
 
       // ============================================================
@@ -1334,6 +1448,64 @@ export class JavaToolOrchestrator {
       toolsFailed: results.filter(r => !r.success).length
     };
   }
+}
+
+// ============================================================
+// HELPER FUNCTIONS FOR API/WEBSITE INTEGRATION
+// ============================================================
+
+/**
+ * Get available analysis modes for API/Website UI
+ * Use this to populate dropdown/radio options for users
+ * 
+ * @example
+ * ```typescript
+ * // In API endpoint:
+ * app.get('/api/analysis-modes', (req, res) => {
+ *   res.json(getAvailableAnalysisModes());
+ * });
+ * 
+ * // Returns:
+ * // [
+ * //   { mode: 'fast', description: '...', estimatedTime: '~2 minutes', ... },
+ * //   { mode: 'standard', description: '...', estimatedTime: '~4 minutes', ... },
+ * //   ...
+ * // ]
+ * ```
+ */
+export function getAvailableAnalysisModes(): AnalysisModeConfig[] {
+  return Object.values(ANALYSIS_MODES);
+}
+
+/**
+ * Get analysis mode configuration by mode name
+ * Use this to validate user input from API/Website
+ * 
+ * @param mode - The analysis mode selected by user
+ * @returns Mode configuration or undefined if invalid
+ * 
+ * @example
+ * ```typescript
+ * // In API endpoint:
+ * const mode = req.body.analysisMode; // 'thorough'
+ * const config = getAnalysisModeConfig(mode);
+ * if (!config) {
+ *   return res.status(400).json({ error: 'Invalid analysis mode' });
+ * }
+ * ```
+ */
+export function getAnalysisModeConfig(mode: string): AnalysisModeConfig | undefined {
+  return ANALYSIS_MODES[mode as AnalysisMode];
+}
+
+/**
+ * Get default analysis mode
+ * Use this when user doesn't specify a mode
+ * 
+ * @returns Default mode configuration ('standard')
+ */
+export function getDefaultAnalysisMode(): AnalysisModeConfig {
+  return ANALYSIS_MODES.standard;
 }
 
 // ============================================================
