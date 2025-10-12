@@ -14,6 +14,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { IssueGroup } from '../utils/issue-grouping';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { AppScoreManager } from './v9-app-score-manager';
+import { SkillScoreManager } from './v9-skill-score-manager';
 
 // ================================================================
 // Types for Grouped Report
@@ -27,7 +30,8 @@ export interface EnrichedIssue {
   tool: string;
   severity: 'critical' | 'high' | 'medium' | 'low';
   message: string;
-  category: string;
+  category: string;  // Issue type: NEW, EXISTING_MODIFIED, RESOLVED, EXISTING_REST
+  detectedCategory?: string;  // Issue category: Security, Performance, Architecture, Dependencies, Code Quality
   snippet?: string;
   fixSuggestion?: {
     fix: string;
@@ -185,6 +189,28 @@ export interface FixLocation {
 // ================================================================
 
 export class V9GroupedReportFormatter {
+  private supabase: SupabaseClient | null = null;
+  private appScoreManager: AppScoreManager | null = null;
+  private skillScoreManager: SkillScoreManager | null = null;
+  
+  constructor() {
+    // Initialize Supabase if credentials are available
+    try {
+      const supabaseUrl = process.env.SUPABASE_URL;
+      const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      
+      if (supabaseUrl && supabaseKey) {
+        this.supabase = createClient(supabaseUrl, supabaseKey);
+        this.appScoreManager = new AppScoreManager(this.supabase);
+        this.skillScoreManager = new SkillScoreManager(this.supabase);
+        console.log('[V9GroupedReportFormatter] Supabase scoring managers initialized');
+      } else {
+        console.warn('[V9GroupedReportFormatter] Supabase credentials not found - using simplified scoring');
+      }
+    } catch (error) {
+      console.error('[V9GroupedReportFormatter] Failed to initialize Supabase:', error);
+    }
+  }
   
   /**
    * Generate grouped report with attachments
@@ -239,7 +265,7 @@ export class V9GroupedReportFormatter {
     markdown.push('');
     
     // Executive Summary
-    markdown.push(this.generateExecutiveSummary(issues, groups, metadata));
+    markdown.push(await this.generateExecutiveSummary(issues, groups, metadata));
     markdown.push('');
     
     // Issue Groups by Severity (CRITICAL FIRST, then HIGH)
@@ -499,28 +525,170 @@ export class V9GroupedReportFormatter {
   }
   
   /**
-   * Calculate quality score (0-100) based on issues
+   * Calculate quality score (0-100) with full category breakdown
    * 
-   * SCORING LOGIC (unified weights):
-   * - ALL existing issues (NEW/EXISTING_MODIFIED/EXISTING_REST): Same deductions
-   *   - Critical: -5 points
-   *   - High: -3 points
-   *   - Medium: -1 point
-   *   - Low: -0.5 points
-   * 
-   * - RESOLVED issues: Same points as bonus (just flip the sign)
-   *   - Critical: +5 points
-   *   - High: +3 points
-   *   - Medium: +1 point
-   *   - Low: +0.5 points
-   * 
-   * NOTE: This is simplified scoring for grouped reports.
-   * Full V9 pipeline uses per-category scoring (Security, Performance, Architecture, Dependency, Quality):
+   * Uses V9 scoring system with per-category scores:
    * - APP score: Overall = MIN(category scores) - "weakest link" principle
    * - Skill score: Overall = AVERAGE(category scores)
-   * - See v9-app-score-manager.ts and v9-skill-score-manager.ts for full implementation
+   * - Category scores: Security, Performance, Architecture, Dependency, Code Quality
+   * - Baseline tracking via Supabase
+   * 
+   * Falls back to simplified scoring if Supabase is not available.
    */
-  private calculateQualityScore(issues: EnrichedIssue[]): { score: number; grade: string; breakdown: any } {
+  private async calculateQualityScore(
+    issues: EnrichedIssue[],
+    metadata: { repository?: string; prAuthor?: string; prAuthorEmail?: string }
+  ): Promise<{ 
+    score: number; 
+    grade: string; 
+    breakdown: any;
+    categoryScores?: {
+      security: number;
+      performance: number;
+      architecture: number;
+      dependency: number;
+      codeQuality: number;
+    };
+    appScore?: number;
+    skillScore?: number;
+  }> {
+    // Use full V9 scoring if Supabase is available
+    if (this.appScoreManager && this.skillScoreManager && metadata.repository) {
+      return await this.calculateFullV9Score(issues, metadata);
+    }
+    
+    // Fall back to simplified scoring
+    return this.calculateSimplifiedScore(issues);
+  }
+  
+  /**
+   * Full V9 category-based scoring with Supabase persistence
+   */
+  private async calculateFullV9Score(
+    issues: EnrichedIssue[],
+    metadata: { repository?: string; prAuthor?: string; prAuthorEmail?: string }
+  ): Promise<any> {
+    try {
+      // Separate issues by type
+      const newIssues = issues.filter(i => i.category === 'NEW');
+      const existingModified = issues.filter(i => i.category === 'EXISTING_MODIFIED');
+      const existingRest = issues.filter(i => i.category === 'EXISTING_REST');
+      const resolvedIssues = issues.filter(i => i.category === 'RESOLVED');
+      
+      // Group issues by detected category (Security, Performance, etc.)
+      const issuesByCategory = {
+        security: issues.filter(i => i.detectedCategory === 'Security'),
+        performance: issues.filter(i => i.detectedCategory === 'Performance'),
+        architecture: issues.filter(i => i.detectedCategory === 'Architecture'),
+        dependency: issues.filter(i => i.detectedCategory === 'Dependencies'),
+        codeQuality: issues.filter(i => i.detectedCategory === 'Code Quality')
+      };
+      
+      // Calculate per-category scores
+      const categoryScores = {
+        security: this.calculateCategoryScore(issuesByCategory.security),
+        performance: this.calculateCategoryScore(issuesByCategory.performance),
+        architecture: this.calculateCategoryScore(issuesByCategory.architecture),
+        dependency: this.calculateCategoryScore(issuesByCategory.dependency),
+        codeQuality: this.calculateCategoryScore(issuesByCategory.codeQuality)
+      };
+      
+      // Calculate APP score (minimum of categories - weakest link)
+      const appScore = Math.min(
+        categoryScores.security,
+        categoryScores.performance,
+        categoryScores.architecture,
+        categoryScores.dependency,
+        categoryScores.codeQuality
+      );
+      
+      // Calculate Skill score (average of categories)
+      const skillScore = Math.round(
+        (categoryScores.security + 
+         categoryScores.performance + 
+         categoryScores.architecture + 
+         categoryScores.dependency + 
+         categoryScores.codeQuality) / 5
+      );
+      
+      // Save to Supabase
+      if (this.appScoreManager && metadata.repository) {
+        await this.appScoreManager!.saveAppScore({
+          repository: metadata.repository,
+          prNumber: 0, // Will be updated by caller
+          appOverallScore: appScore,
+          appCategoryScores: categoryScores,
+          decision: appScore >= 70 ? 'APPROVED' : 'DECLINED',
+          qualityScore: appScore,
+          issueCounts: {
+            new: newIssues.length,
+            existing: existingModified.length + existingRest.length,
+            resolved: resolvedIssues.length,
+            blocking: newIssues.filter(i => i.severity === 'critical' || i.severity === 'high').length
+          }
+        });
+      }
+      
+      if (this.skillScoreManager && metadata.prAuthorEmail && metadata.repository) {
+        await this.skillScoreManager!.saveSkillScore({
+          developerEmail: metadata.prAuthorEmail,
+          developerName: metadata.prAuthor,
+          repository: metadata.repository,
+          prNumber: 0, // Will be updated by caller
+          overallScore: skillScore,
+          categoryScores: categoryScores,
+          issueCounts: {
+            new: newIssues.length,
+            resolved: resolvedIssues.length,
+            critical: issues.filter(i => i.severity === 'critical').length,
+            high: issues.filter(i => i.severity === 'high').length,
+            medium: issues.filter(i => i.severity === 'medium').length,
+            low: issues.filter(i => i.severity === 'low').length
+          }
+        });
+      }
+      
+      // Determine grade based on appScore
+      let grade: string;
+      if (appScore >= 90) grade = 'A';
+      else if (appScore >= 80) grade = 'B';
+      else if (appScore >= 70) grade = 'C';
+      else if (appScore >= 60) grade = 'D';
+      else grade = 'F';
+      
+      return {
+        score: appScore,
+        grade,
+        categoryScores,
+        appScore,
+        skillScore,
+        breakdown: {
+          baseScore: 100,
+          categoryScores,
+          overallMethod: 'MIN (weakest link)',
+          skillScoreMethod: 'AVERAGE'
+        }
+      };
+    } catch (error) {
+      console.error('[V9GroupedReportFormatter] Error calculating full V9 score:', error);
+      // Fall back to simplified scoring
+      return this.calculateSimplifiedScore(issues);
+    }
+  }
+  
+  /**
+   * Calculate score for a single category
+   */
+  private calculateCategoryScore(categoryIssues: EnrichedIssue[]): number {
+    const baseScore = 100;
+    const deduction = this.calculateImpact(categoryIssues);
+    return Math.max(0, Math.min(100, baseScore - deduction));
+  }
+  
+  /**
+   * Simplified scoring (fallback when Supabase unavailable)
+   */
+  private calculateSimplifiedScore(issues: EnrichedIssue[]): any {
     const baseScore = 100.0;
     
     // Separate issues by category
@@ -531,8 +699,8 @@ export class V9GroupedReportFormatter {
     
     // Calculate deductions - SAME weights for ALL issue categories
     const newIssuesDeduction = this.calculateImpact(newIssues);
-    const existingModifiedDeduction = this.calculateImpact(existingModified);  // Same weight
-    const existingRestDeduction = this.calculateImpact(existingRest);  // Same weight
+    const existingModifiedDeduction = this.calculateImpact(existingModified);
+    const existingRestDeduction = this.calculateImpact(existingRest);
     
     // Calculate bonuses - SAME weights (just positive instead of negative)
     const resolutionBonus = this.calculateImpact(resolvedIssues);
@@ -606,11 +774,11 @@ export class V9GroupedReportFormatter {
   /**
    * Generate executive summary
    */
-  private generateExecutiveSummary(
+  private async generateExecutiveSummary(
     issues: EnrichedIssue[],
     groups: IssueGroup[],
     metadata: any
-  ): string {
+  ): Promise<string> {
     const bySeverity = this.groupBySeverity(issues);
     const byCategory = this.groupByCategory(issues);
     
@@ -620,8 +788,12 @@ export class V9GroupedReportFormatter {
       (i.severity === 'critical' || i.severity === 'high')
     );
     
-    // Calculate quality score
-    const qualityResult = this.calculateQualityScore(issues);
+    // Calculate quality score with full V9 scoring
+    const qualityResult = await this.calculateQualityScore(issues, {
+      repository: metadata.repository,
+      prAuthor: metadata.prAuthor,
+      prAuthorEmail: metadata.prAuthorEmail
+    });
     const scoreInterpretation = this.getScoreInterpretation(qualityResult.score);
     
     // Calculate auto-fixable coverage
@@ -640,13 +812,28 @@ ${scoreInterpretation.emoji} **${qualityResult.score.toFixed(1)}/100** (Grade: *
 > ${scoreInterpretation.description}
 
 **Score Breakdown**:
+${qualityResult.categoryScores ? `
+**Category Scores** (Repository Health):
+- 🔒 Security: ${qualityResult.categoryScores.security}/100
+- ⚡ Performance: ${qualityResult.categoryScores.performance}/100
+- 🏗️  Architecture: ${qualityResult.categoryScores.architecture}/100
+- 📦 Dependencies: ${qualityResult.categoryScores.dependency}/100
+- ✨ Code Quality: ${qualityResult.categoryScores.codeQuality}/100
+
+**Overall Scores**:
+- 📱 **APP Score**: ${qualityResult.appScore}/100 (MIN of categories - "weakest link")
+- 👨‍💻 **Skill Score**: ${qualityResult.skillScore}/100 (AVERAGE of categories)
+
+> Scores saved to Supabase for tracking trends over time
+` : `
 - Base Score: 100.0
-- NEW issues: -${qualityResult.breakdown.newIssuesDeduction.toFixed(1)}
-- EXISTING_MODIFIED issues: -${qualityResult.breakdown.existingModifiedDeduction.toFixed(1)}
-- EXISTING_REST issues: -${qualityResult.breakdown.existingRestDeduction.toFixed(1)}${qualityResult.breakdown.resolutionBonus > 0 ? `
+- NEW issues: -${qualityResult.breakdown.newIssuesDeduction?.toFixed(1) || '0.0'}
+- EXISTING_MODIFIED issues: -${qualityResult.breakdown.existingModifiedDeduction?.toFixed(1) || '0.0'}
+- EXISTING_REST issues: -${qualityResult.breakdown.existingRestDeduction?.toFixed(1) || '0.0'}${qualityResult.breakdown.resolutionBonus > 0 ? `
 - RESOLVED issues: +${qualityResult.breakdown.resolutionBonus.toFixed(1)}` : ''}
 
 > All issue categories use the same scoring: Critical=-5, High=-3, Medium=-1, Low=-0.5
+`}
 
 ---
 
