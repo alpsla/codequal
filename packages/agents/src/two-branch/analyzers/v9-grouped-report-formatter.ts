@@ -1412,7 +1412,8 @@ ${qualityResult.categoryScores ? `
       
       if (representative.snippet && representative.snippet !== 'N/A' && representative.snippet.trim().length > 0) {
         section += `**Code**:\n\n`;
-        section += '```java\n';
+        const language = this.getLanguageFromFile(representative.file);
+        section += `\`\`\`${language}\n`;
         section += representative.snippet;
         section += '\n```\n\n';
       }
@@ -1447,7 +1448,8 @@ ${qualityResult.categoryScores ? `
           section += '\n```\n\n';
         } else {
           section += `**Recommended Code**:\n\n`;
-          section += '```java\n';
+          const language = this.getLanguageFromFile(representative.file);
+          section += `\`\`\`${language}\n`;
           section += representative.fixSuggestion.correctedCode;
           section += '\n```\n\n';
         }
@@ -1631,6 +1633,35 @@ ${qualityResult.categoryScores ? `
     if (group.rule === 'AvoidUsingVolatile') return 'high';
     if (group.rule === 'GuardLogStatement') return 'medium';
     return 'low';
+  }
+  
+  /**
+   * Get programming language from file extension for syntax highlighting
+   */
+  private getLanguageFromFile(file: string): string {
+    if (file.endsWith('.java')) return 'java';
+    if (file.endsWith('.scala')) return 'scala';
+    if (file.endsWith('.gradle')) return 'gradle';
+    if (file.endsWith('.kt') || file.endsWith('.kts')) return 'kotlin';
+    if (file.endsWith('.py')) return 'python';
+    if (file.endsWith('.js')) return 'javascript';
+    if (file.endsWith('.jsx')) return 'jsx';
+    if (file.endsWith('.ts')) return 'typescript';
+    if (file.endsWith('.tsx')) return 'tsx';
+    if (file.endsWith('.go')) return 'go';
+    if (file.endsWith('.rs')) return 'rust';
+    if (file.endsWith('.rb')) return 'ruby';
+    if (file.endsWith('.php')) return 'php';
+    if (file.endsWith('.c')) return 'c';
+    if (file.endsWith('.cpp') || file.endsWith('.cc') || file.endsWith('.cxx')) return 'cpp';
+    if (file.endsWith('.cs')) return 'csharp';
+    if (file.endsWith('.swift')) return 'swift';
+    if (file.endsWith('.sh')) return 'bash';
+    if (file.endsWith('.yml') || file.endsWith('.yaml')) return 'yaml';
+    if (file.endsWith('.json')) return 'json';
+    if (file.endsWith('.xml')) return 'xml';
+    if (file.endsWith('.sql')) return 'sql';
+    return 'text';
   }
   
   /**
