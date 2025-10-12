@@ -1051,14 +1051,20 @@ export class JavaToolOrchestrator {
     try {
       // Semgrep outputs status text BEFORE the JSON (table, metrics, etc.)
       // Find the JSON object by looking for the first opening brace that starts a valid JSON object
-      // The JSON starts after the scan status table with {"errors": [], "paths": {...}, "results": [...]}
+      // The JSON structure can start with either {"errors": ...} or {"results": ...}
 
-      // Strategy: Find the line that starts with '{"errors"' (Semgrep JSON structure)
-      const jsonStartMarker = '{"errors":';
-      const jsonStartIndex = output.indexOf(jsonStartMarker);
+      // Strategy: Try to find either format
+      let jsonStartIndex = output.indexOf('{"errors":');
+      let jsonStartMarker = '{"errors":';
+      
+      if (jsonStartIndex === -1) {
+        // Try alternative format
+        jsonStartIndex = output.indexOf('{"results":');
+        jsonStartMarker = '{"results":';
+      }
 
       if (jsonStartIndex === -1) {
-        logger.warn('No Semgrep JSON found in output');
+        logger.warn('No Semgrep JSON found in output (tried both {"errors": and {"results": formats)');
         return [];
       }
 
@@ -1161,9 +1167,10 @@ export class JavaToolOrchestrator {
 
           // Map SpotBugs priority to severity (1=high, 2=medium, 3=low)
           let severity: 'critical' | 'high' | 'medium' | 'low' = 'medium';
-          if (priority === 1) severity = 'high';
-          else if (priority === 2) severity = 'medium';
-          else severity = 'low';
+          // SpotBugs priority: 1 = Most important, 2 = High, 3 = Medium
+          if (priority === 1) severity = 'critical';
+          else if (priority === 2) severity = 'high';
+          else severity = 'medium';
 
           issues.push({
             tool: 'spotbugs',
