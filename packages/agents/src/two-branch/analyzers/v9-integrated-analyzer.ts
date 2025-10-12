@@ -6,12 +6,14 @@
 import { RedisToolOutputManager, ToolOutput } from '../utils/redis-tool-output-manager';
 import { KubernetesRepositoryManager } from '../utils/kubernetes-repository-manager';
 import { V9ReportFormatterFinal } from './v9-report-formatter';
+import { V9GroupedReportFormatter } from './v9-grouped-report-formatter';  // Phase B+C: Cost-optimized reports
 import { DynamicModelSelector } from '../services/dynamic-model-selector';
 import { SkillScoreManager } from './v9-skill-score-manager';  // Moved to V9 core
 import { logger } from '../utils/logger';
 import { getResilientAIClient } from '../services/resilient-ai-client';
 import { ModelConfigResolver } from '../../standard/orchestrator/model-config-resolver'; // BUG-119 FIX
 import { RepositorySizeCalculator } from '../utils/repository-size-calculator'; // BUG-119 FIX
+import { groupIssues } from '../utils/issue-grouping';  // Phase B+C: Issue grouping
 
 interface AIAnalysisRequest {
   repository: string;
@@ -37,6 +39,7 @@ export class V9IntegratedAnalyzer {
   private redisManager: RedisToolOutputManager;
   private repoManager: KubernetesRepositoryManager;
   private reportFormatter: V9ReportFormatterFinal;
+  private groupedFormatter: V9GroupedReportFormatter;  // Phase B+C: Cost-optimized formatter
   private modelSelector: DynamicModelSelector;
   private aiClient = getResilientAIClient();
 
@@ -44,11 +47,22 @@ export class V9IntegratedAnalyzer {
   private modelConfigResolver: ModelConfigResolver;
   private detectedLanguage = 'unknown';
   private detectedRepoSize: 'small' | 'medium' | 'large' | 'enterprise' = 'medium';
+  
+  // Phase B+C: Report format configuration
+  private useGroupedReport: boolean = true;  // Default to grouped (99.8% cost savings)
 
-  constructor() {
+  constructor(options?: { useGroupedReport?: boolean }) {
     this.redisManager = new RedisToolOutputManager();
     this.repoManager = new KubernetesRepositoryManager();
     this.reportFormatter = new V9ReportFormatterFinal();
+    this.groupedFormatter = new V9GroupedReportFormatter();  // Phase B+C: Initialize grouped formatter
+    
+    // Allow override via options or environment variable
+    if (options?.useGroupedReport !== undefined) {
+      this.useGroupedReport = options.useGroupedReport;
+    } else if (process.env.V9_USE_FULL_REPORT === 'true') {
+      this.useGroupedReport = false;
+    }
 
     // Use the existing DynamicModelSelector that fetches from Supabase
     this.modelSelector = new DynamicModelSelector(process.env.OPENROUTER_API_KEY);
@@ -719,14 +733,70 @@ and actionable recommendations. Focus on business value and team productivity.`;
       timestamp: new Date().toISOString()
     };
 
-    console.log('[V9] Calling V9ReportFormatterFinal.generateCompleteReport() with Option A toolResults...');
-
-    // Use V9ReportFormatterFinal to generate the complete report with all 21 sections
-    const markdown = await this.reportFormatter.generateCompleteReport(
-      analysisResult,
-      completeMetadata,
-      data.language
-    );
+    // Phase B+C: Choose between grouped (cost-optimized) or full (comprehensive) report
+    let markdown: string;
+    let reportAttachments: any = {};
+    
+    if (this.useGroupedReport) {
+      console.log('[V9] Generating GROUPED report (cost-optimized, 99.8% savings)...');
+      
+      // Group issues for cost optimization
+      const allProcessedIssues = [...formattedNewIssues, ...formattedExistingIssues, ...formattedResolvedIssues];
+      const issueGroups = groupIssues(allProcessedIssues);
+      
+      console.log(`[V9] Grouped ${allProcessedIssues.length} issues into ${issueGroups.length} groups`);
+      
+      // Prepare metadata in format expected by grouped formatter
+      const groupedMetadata = {
+        repository: data.repository,
+        repoUrl: `https://github.com/${data.repository}`,
+        prNumber: data.prNumber,
+        prTitle: completeMetadata.prTitle,
+        branch: completeMetadata.branch,
+        baseBranch: completeMetadata.baseBranch,
+        prAuthor: completeMetadata.prAuthor,
+        prAuthorEmail: completeMetadata.prAuthorEmail,
+        organizationName: completeMetadata.organizationName,
+        totalFiles: completeMetadata.totalFiles,
+        totalLinesOfCode: completeMetadata.totalLinesOfCode,
+        filesModified: completeMetadata.filesModified,
+        linesAdded: completeMetadata.linesAdded,
+        linesDeleted: completeMetadata.linesDeleted,
+        decision: analysisResult.decision,
+        blockingCount: blockingIssues.length,
+        totalDuration: completeMetadata.totalDuration,
+        cloneTime: completeMetadata.cloneTime,
+        analysisTime: completeMetadata.analysisTime,
+        reportGenerationTime: completeMetadata.reportGenerationTime,
+        analyzedAt: completeMetadata.timestamp,
+        analyzerVersion: completeMetadata.analyzerVersion
+      };
+      
+      // Generate grouped report with attachments
+      const groupedOutput = await this.groupedFormatter.generateGroupedReport(
+        allProcessedIssues,
+        issueGroups,
+        groupedMetadata
+      );
+      
+      markdown = groupedOutput.markdown;
+      reportAttachments = {
+        locationAttachments: groupedOutput.attachments,
+        ideFixFiles: groupedOutput.ideFixFiles,
+        mapping: groupedOutput.mapping
+      };
+      
+      console.log(`[V9] Grouped report generated: ${issueGroups.length} groups, ${groupedOutput.ideFixFiles.length} IDE fix files`);
+    } else {
+      console.log('[V9] Generating FULL report (comprehensive, all 21+ sections)...');
+      
+      // Use V9ReportFormatterFinal to generate the complete report with all 21 sections
+      markdown = await this.reportFormatter.generateCompleteReport(
+        analysisResult,
+        completeMetadata,
+        data.language
+      );
+    }
 
     // Return structured data with the formatted markdown
     return {
@@ -785,6 +855,7 @@ and actionable recommendations. Focus on business value and team productivity.`;
         parallelExecution: true,
         parallelFixGeneration: true,
         fixGenerationTime: `${(processingTime / 1000).toFixed(2)}s`,
+        reportType: this.useGroupedReport ? 'grouped' : 'full',  // Phase B+C: Track report type
         agentMetrics: Array.from(agentMetrics.entries()).map(([name, metrics]) => ({
           agent: name,
           issues: metrics.issuesProcessed,
@@ -797,6 +868,13 @@ and actionable recommendations. Focus on business value and team productivity.`;
           breakdown: `${metrics.criticalCount}C/${metrics.highCount}H/${metrics.mediumCount}M/${metrics.lowCount}L`
         }))
       },
+
+      // Phase B+C: Include grouped report attachments if available
+      ...(this.useGroupedReport && reportAttachments ? {
+        attachments: reportAttachments.locationAttachments,
+        ideFixFiles: reportAttachments.ideFixFiles,
+        issueGroupMapping: reportAttachments.mapping
+      } : {}),
 
       markdown
     };
