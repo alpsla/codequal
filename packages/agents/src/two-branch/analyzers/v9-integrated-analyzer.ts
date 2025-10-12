@@ -742,9 +742,9 @@ and actionable recommendations. Focus on business value and team productivity.`;
       
       // Group issues for cost optimization
       const allProcessedIssues = [...formattedNewIssues, ...formattedExistingIssues, ...formattedResolvedIssues];
-      const issueGroups = groupIssues(allProcessedIssues);
+      const groupingResult = groupIssues(allProcessedIssues);
       
-      console.log(`[V9] Grouped ${allProcessedIssues.length} issues into ${issueGroups.length} groups`);
+      console.log(`[V9] Grouped ${allProcessedIssues.length} issues into ${groupingResult.groups.length} groups (${groupingResult.savingsPercent.toFixed(1)}% cost savings)`);
       
       // Prepare metadata in format expected by grouped formatter
       const groupedMetadata = {
@@ -775,7 +775,7 @@ and actionable recommendations. Focus on business value and team productivity.`;
       // Generate grouped report with attachments
       const groupedOutput = await this.groupedFormatter.generateGroupedReport(
         allProcessedIssues,
-        issueGroups,
+        groupingResult.groups,
         groupedMetadata
       );
       
@@ -786,7 +786,7 @@ and actionable recommendations. Focus on business value and team productivity.`;
         mapping: groupedOutput.mapping
       };
       
-      console.log(`[V9] Grouped report generated: ${issueGroups.length} groups, ${groupedOutput.ideFixFiles.length} IDE fix files`);
+      console.log(`[V9] Grouped report generated: ${groupingResult.groups.length} groups, ${groupedOutput.ideFixFiles.length} IDE fix files`);
     } else {
       console.log('[V9] Generating FULL report (comprehensive, all 21+ sections)...');
       

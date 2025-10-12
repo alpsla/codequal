@@ -685,7 +685,135 @@ ${scoreInterpretation.emoji} **${qualityResult.score.toFixed(1)}/100** (Grade: *
   }
   
   /**
+   * Convert technical rule name to user-friendly title
+   * Phase D: User-friendly titles
+   */
+  private getUserFriendlyTitle(rule: string, tool: string): string {
+    // Common patterns in rule names
+    const friendlyTitles: Record<string, string> = {
+      // PMD rules
+      'AvoidThrowingRawExceptionTypes': 'Throwing Generic Exception Types',
+      'SystemPrintln': 'Using System.out.println for Logging',
+      'GuardLogStatement': 'Unguarded Log Statements',
+      'AvoidUsingVolatile': 'Using Volatile Variables',
+      'ClassWithOnlyPrivateConstructorsShouldBeFinal': 'Utility Class Not Marked Final',
+      'AvoidReassigningParameters': 'Reassigning Method Parameters',
+      'ReturnEmptyCollectionRatherThanNull': 'Returning Null Instead of Empty Collection',
+      'AvoidThrowingNullPointerException': 'Throwing NullPointerException',
+      'AvoidFileStream': 'Using FileInputStream/FileOutputStream',
+      'ConstructorCallsOverridableMethod': 'Constructor Calls Overridable Method',
+      'MoreThanOneLogger': 'Multiple Logger Declarations',
+      
+      // Semgrep rules
+      'java.lang.security.audit.command-injection': 'Command Injection Vulnerability',
+      'java.lang.security.audit.unsafe-reflection': 'Unsafe Reflection Usage',
+      'java.lang.security.audit.sql-injection': 'SQL Injection Vulnerability',
+      'java.lang.security.audit.xpath-injection': 'XPath Injection Vulnerability',
+      
+      // Checkstyle rules
+      'LineLength': 'Line Too Long',
+      'MagicNumber': 'Magic Numbers in Code',
+      'MissingJavadocMethod': 'Missing Method Documentation',
+      'WhitespaceAround': 'Incorrect Whitespace',
+      
+      // SpotBugs rules
+      'NP_NULL_ON_SOME_PATH': 'Potential Null Pointer Dereference',
+      'RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE': 'Redundant Null Check',
+      'DLS_DEAD_LOCAL_STORE': 'Dead Store to Local Variable'
+    };
+    
+    // Check direct mapping
+    if (friendlyTitles[rule]) {
+      return friendlyTitles[rule];
+    }
+    
+    // Convert CamelCase to Title Case with spaces
+    const titleCase = rule
+      .replace(/([A-Z])/g, ' $1')
+      .replace(/^./, str => str.toUpperCase())
+      .trim();
+    
+    return titleCase;
+  }
+  
+  /**
+   * Generate comprehensive issue description
+   * Phase D: What/Why/Causes/Impact
+   */
+  private getIssueDescription(rule: string, tool: string, severity: string): {
+    what: string;
+    why: string;
+    causes: string[];
+    impact: string;
+  } {
+    // Rule-specific descriptions (can be expanded)
+    const descriptions: Record<string, any> = {
+      'AvoidThrowingRawExceptionTypes': {
+        what: 'Code is throwing generic exception types like Exception, RuntimeException, or Throwable instead of specific exception classes.',
+        why: 'Generic exceptions make it harder to handle errors properly and provide poor debugging information.',
+        causes: [
+          'Quick error handling without proper exception design',
+          'Lack of custom exception classes',
+          'Copy-pasted error handling code'
+        ],
+        impact: 'Makes debugging difficult, poor error handling, and reduces code maintainability.'
+      },
+      'SystemPrintln': {
+        what: 'Using System.out.println() or System.err.println() for output instead of a proper logging framework.',
+        why: 'System.out doesn\'t provide log levels, timestamps, or the ability to control output in production.',
+        causes: [
+          'Debug statements left in production code',
+          'Quick testing without proper logging setup',
+          'Lack of logging framework knowledge'
+        ],
+        impact: 'Poor production monitoring, no log level control, difficult to debug production issues.'
+      },
+      'GuardLogStatement': {
+        what: 'Log statements that perform expensive operations (like string concatenation) without checking if the log level is enabled first.',
+        why: 'Unnecessary string operations impact performance even when logging is disabled.',
+        causes: [
+          'Inline string concatenation in log calls',
+          'Not using parameterized logging',
+          'Lack of awareness of logging performance impact'
+        ],
+        impact: 'Degraded application performance, especially in high-throughput scenarios.'
+      },
+      'AvoidUsingVolatile': {
+        what: 'Using the volatile keyword for thread synchronization.',
+        why: 'Volatile is a low-level primitive that\'s easy to misuse. Modern Java has better concurrency tools.',
+        causes: [
+          'Premature optimization',
+          'Misunderstanding of Java memory model',
+          'Using outdated concurrency patterns'
+        ],
+        impact: 'Potential race conditions, hard-to-debug concurrency bugs, or unnecessary performance overhead.'
+      }
+    };
+    
+    // Return rule-specific description or generic one
+    if (descriptions[rule]) {
+      return descriptions[rule];
+    }
+    
+    // Generic description based on tool and severity
+    const genericWhat = `This issue was detected by ${tool} as a ${severity} severity problem.`;
+    const genericWhy = 'Following best practices helps maintain code quality and prevents potential bugs.';
+    const genericCauses = ['Code patterns that don\'t follow best practices', 'Legacy code that needs refactoring'];
+    const genericImpact = severity === 'critical' || severity === 'high' 
+      ? 'Could lead to bugs, security issues, or maintenance problems.'
+      : 'May reduce code quality and maintainability over time.';
+    
+    return {
+      what: genericWhat,
+      why: genericWhy,
+      causes: genericCauses,
+      impact: genericImpact
+    };
+  }
+  
+  /**
    * Generate group section
+   * Phase D: Enhanced with user-friendly titles and descriptions
    */
   private generateGroupSection(
     group: IssueGroup,
@@ -706,43 +834,65 @@ ${scoreInterpretation.emoji} **${qualityResult.score.toFixed(1)}/100** (Grade: *
     const representative = groupIssues[0];
     const canAutoFix = this.canAutoFix(group);
     
-    let section = `### ${severityIcon} ${group.rule}\n`;
-    section += `**Severity**: ${group.severity.toUpperCase()}  \n`;
-    section += `**Tool**: ${group.tool}  \n`;
-    section += `**Occurrences**: ${group.count} files  \n`;
-    section += `**Category**: ${representative?.category || group.category}  \n`;
+    // Phase D: User-friendly title
+    const friendlyTitle = this.getUserFriendlyTitle(group.rule, group.tool);
+    const issueDesc = this.getIssueDescription(group.rule, group.tool, group.severity);
+    
+    let section = `### ${severityIcon} ${friendlyTitle}\n\n`;
+    
+    // Phase D: Quick metadata bar
+    section += `**Severity**: ${group.severity.toUpperCase()} | `;
+    section += `**Tool**: ${group.tool} | `;
+    section += `**Found in**: ${group.count} files | `;
+    section += `**Category**: ${representative?.category || group.category}`;
     
     if (canAutoFix) {
-      section += `**IDE Fix**: ✅ One-click fix available ([Download for Cursor](attachments/group-${this.sanitizeGroupId(group)}-cursor-fix.json))  \n`;
+      section += ` | **Auto-fix**: ✅ [Available](attachments/group-${this.sanitizeGroupId(group)}-cursor-fix.json)`;
     }
     
+    section += '\n\n';
+    section += '---\n\n';
+    
+    // Phase D: Comprehensive description
+    section += `#### 📋 What is this issue?\n\n`;
+    section += `${issueDesc.what}\n\n`;
+    
+    section += `#### 🎯 Why does it matter?\n\n`;
+    section += `${issueDesc.why}\n\n`;
+    
+    section += `#### 🔍 Common causes:\n\n`;
+    issueDesc.causes.forEach(cause => {
+      section += `- ${cause}\n`;
+    });
     section += '\n';
     
-    // Description
-    section += `**Description**: ${representative?.message || group.rule}\n\n`;
+    section += `#### ⚠️ Impact if not fixed:\n\n`;
+    section += `${issueDesc.impact}\n\n`;
     
-    // Example with code snippet (only show if we have valid data)
+    // Phase D: Improved code example section
     if (representative?.file || representative?.snippet) {
-      section += `**Representative Example**:\n`;
+      section += `#### 📍 Representative Example\n\n`;
       
       if (representative.file) {
-        section += `- File: \`${representative.file}\`\n`;
+        section += `**Location**: \`${representative.file}\``;
         if (representative.line) {
-          section += `- Line: ${representative.line}\n`;
+          section += ` (Line ${representative.line})`;
         }
-        section += '\n';
+        section += '\n\n';
       }
       
       if (representative.snippet && representative.snippet !== 'N/A' && representative.snippet.trim().length > 0) {
+        section += `**Code**:\n\n`;
         section += '```java\n';
         section += representative.snippet;
         section += '\n```\n\n';
       }
     }
     
-    // AI-generated fix (if available and expanded)
+    // Phase D: Improved fix recommendations
     if (expanded && representative?.fixSuggestion) {
-      section += `**Fix Recommendation**:\n`;
+      section += `#### 🔧 How to Fix\n\n`;
+      
       // Clean up the fix recommendation (remove internal bug tracker references)
       const cleanFix = representative.fixSuggestion.fix
         .replace(/\*\*BUG-\d+.*?:\*\*/g, '') // Remove **BUG-XXX FIX:**
@@ -756,19 +906,26 @@ ${scoreInterpretation.emoji} **${qualityResult.score.toFixed(1)}/100** (Grade: *
       const hasValidFix = representative.fixSuggestion.correctedCode && representative.fixSuggestion.correctedCode.trim().length > 0;
       
       if (hasValidFix) {
-        section += '```java\n';
-        
-        // Only show "Before" if we have actual code
+        // Phase D: Show diff-style or single code block based on availability
         if (hasValidSnippet) {
-          section += `// Current code:\n${representative.snippet}\n\n`;
+          section += `**Suggested Change**:\n\n`;
+          section += '```diff\n';
+          section += '- // Before:\n';
+          section += representative.snippet.split('\n').map(line => `- ${line}`).join('\n');
+          section += '\n\n';
+          section += '+ // After:\n';
+          section += representative.fixSuggestion.correctedCode.split('\n').map(line => `+ ${line}`).join('\n');
+          section += '\n```\n\n';
+        } else {
+          section += `**Recommended Code**:\n\n`;
+          section += '```java\n';
+          section += representative.fixSuggestion.correctedCode;
+          section += '\n```\n\n';
         }
-        
-        section += `// Recommended fix:\n${representative.fixSuggestion.correctedCode}\n`;
-        section += '```\n\n';
       }
       
       if (representative.fixSuggestion.bestPractices && representative.fixSuggestion.bestPractices.length > 0) {
-        section += `**Best Practices**:\n`;
+        section += `**Best Practices to Follow**:\n\n`;
         representative.fixSuggestion.bestPractices.forEach(bp => {
           section += `- ${bp}\n`;
         });
@@ -776,9 +933,16 @@ ${scoreInterpretation.emoji} **${qualityResult.score.toFixed(1)}/100** (Grade: *
       }
     }
     
-    section += `**All Occurrences**: 📎 [group-${this.sanitizeGroupId(group)}-locations.json](attachments/group-${this.sanitizeGroupId(group)}-locations.json) (${group.count} files)\n\n`;
+    // Phase D: Improved footer with file count and link
+    section += `#### 📎 All Occurrences\n\n`;
+    section += `This issue appears in **${group.count} ${group.count === 1 ? 'file' : 'files'}** across your codebase.\n\n`;
+    section += `View complete list: [group-${this.sanitizeGroupId(group)}-locations.json](attachments/group-${this.sanitizeGroupId(group)}-locations.json)\n\n`;
     
-    section += '---\n';
+    if (canAutoFix) {
+      section += `> 💡 **Tip**: Download the IDE fix file to resolve all ${group.count} occurrences with one click!\n\n`;
+    }
+    
+    section += '---\n\n';
     
     return section;
   }
