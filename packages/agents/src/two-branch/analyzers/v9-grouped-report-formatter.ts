@@ -326,6 +326,22 @@ export class V9GroupedReportFormatter {
       markdown.push('');
     }
     
+    // Business Impact Analysis (aggregate from issues)
+    markdown.push(this.generateBusinessImpact(issues, groups));
+    markdown.push('');
+    
+    // Educational Resources (aggregate from issues)
+    markdown.push(this.generateEducationalResources(issues));
+    markdown.push('');
+    
+    // Analysis Metadata (performance metrics)
+    markdown.push(this.generateAnalysisMetadata(metadata));
+    markdown.push('');
+    
+    // PR Comment (personalized, ready-to-paste)
+    markdown.push(this.generatePRComment(issues, groups, metadata));
+    markdown.push('');
+    
     // Footer
     markdown.push(this.generateFooter(groups, attachments, ideFixFiles));
     
@@ -1727,6 +1743,256 @@ ${qualityResult.categoryScores ? `
         by_tool: this.groupByTool(issues)
       }
     };
+  }
+  
+  /**
+   * Generate Business Impact Analysis (simplified for grouped report)
+   */
+  private generateBusinessImpact(issues: EnrichedIssue[], groups: IssueGroup[]): string {
+    const critical = issues.filter(i => i.severity === 'critical');
+    const high = issues.filter(i => i.severity === 'high');
+    const blocking = issues.filter(i => 
+      (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED') && 
+      (i.severity === 'critical' || i.severity === 'high')
+    );
+    
+    // Calculate risk by category
+    const securityIssues = issues.filter(i => i.detectedCategory === 'Security');
+    const performanceIssues = issues.filter(i => i.detectedCategory === 'Performance');
+    const reliabilityIssues = issues.filter(i => i.detectedCategory === 'Reliability');
+    
+    const immediateRisk = blocking.length > 0 ? 'High' : 
+                         critical.length > 0 ? 'Moderate' : 'Low';
+    
+    return `## 💼 Business Impact Analysis
+
+### Executive Summary
+This analysis evaluates the business risks and financial implications of the identified code quality issues.
+
+### Risk Assessment
+- **Immediate Risk:** ${immediateRisk} (${blocking.length} blocking issues require attention before deployment)
+- **Future Risk:** ${critical.length + high.length} issues could lead to increased technical debt if not addressed
+
+### Financial Impact
+| Metric | Value | Explanation |
+|--------|-------|-------------|
+| Fix Cost | ${Math.ceil((critical.length * 4 + high.length * 2) / 8)} developer-days | Estimated time to resolve critical and high-severity issues |
+| Potential Exploit Cost | ${securityIssues.length > 0 ? 'High' : 'Low'} | ${this.getExploitCostExplanation(critical.length, high.length, securityIssues.length)} |
+| Return on Investment | ${blocking.length > 0 ? '10-50x' : '5-10x'} | Ratio of prevention cost vs potential exploit/incident cost |
+
+### Risk Matrix by Category
+| Category | Critical | High | Total Issues | Impact |
+|----------|----------|------|--------------|--------|
+| Security | ${securityIssues.filter(i => i.severity === 'critical').length} | ${securityIssues.filter(i => i.severity === 'high').length} | ${securityIssues.length} | ${this.getRiskImpactLevel(securityIssues)} |
+| Performance | ${performanceIssues.filter(i => i.severity === 'critical').length} | ${performanceIssues.filter(i => i.severity === 'high').length} | ${performanceIssues.length} | ${this.getRiskImpactLevel(performanceIssues)} |
+| Reliability | ${reliabilityIssues.filter(i => i.severity === 'critical').length} | ${reliabilityIssues.filter(i => i.severity === 'high').length} | ${reliabilityIssues.length} | ${this.getRiskImpactLevel(reliabilityIssues)} |
+
+**Note:** Each issue group section above includes detailed business impact analysis specific to that issue type.`;
+  }
+  
+  /**
+   * Get exploit cost explanation helper
+   */
+  private getExploitCostExplanation(criticalCount: number, highCount: number, securityCount: number): string {
+    if (criticalCount > 0 && securityCount > 0) {
+      return `${criticalCount} critical security vulnerabilities could lead to data breach, system compromise, or service disruption`;
+    } else if (highCount > 0 && securityCount > 0) {
+      return `${highCount} high-severity security issues could result in security incidents or operational failures`;
+    } else if (criticalCount > 0) {
+      return `${criticalCount} critical issues could cause system instability or reliability problems`;
+    } else {
+      return `Low risk of security incidents; main concerns are code quality and maintainability`;
+    }
+  }
+  
+  /**
+   * Get risk impact level helper
+   */
+  private getRiskImpactLevel(categoryIssues: EnrichedIssue[]): string {
+    const critical = categoryIssues.filter(i => i.severity === 'critical').length;
+    const high = categoryIssues.filter(i => i.severity === 'high').length;
+    
+    if (critical >= 3) return '🔴 Critical';
+    if (critical >= 1 || high >= 5) return '🟠 High';
+    if (high >= 2 || categoryIssues.length >= 10) return '🟡 Medium';
+    if (categoryIssues.length > 0) return '🟢 Low';
+    return '⚪ None';
+  }
+  
+  /**
+   * Generate Educational Resources (aggregate from detected categories)
+   */
+  private generateEducationalResources(issues: EnrichedIssue[]): string {
+    const categories = Array.from(new Set(issues.map(i => i.detectedCategory).filter(Boolean)));
+    
+    if (categories.length === 0) {
+      return `## 📚 Educational Resources
+
+✅ **No specific educational resources needed at this time.**
+
+Your code quality is good! Consider reviewing general best practices to maintain this standard.`;
+    }
+    
+    let content = `## 📚 Educational Resources
+
+**Curated learning materials based on your code analysis:**
+
+`;
+    
+    categories.forEach(category => {
+      const categoryIssues = issues.filter(i => i.detectedCategory === category);
+      content += `### ${category} (${categoryIssues.length} issues)\n\n`;
+      
+      switch (category) {
+        case 'Security':
+          content += `- [📚 OWASP Top 10](https://owasp.org/www-project-top-ten/) - Essential security vulnerabilities\n`;
+          content += `- [🔒 Secure Coding Practices](https://owasp.org/www-project-secure-coding-practices-quick-reference-guide/) - Quick reference guide\n`;
+          content += `- [🎬 Security Fundamentals](https://www.youtube.com/results?search_query=web+application+security+fundamentals) - Video tutorials\n\n`;
+          break;
+        case 'Performance':
+          content += `- [⚡ Performance Best Practices](https://web.dev/performance/) - Web performance guide\n`;
+          content += `- [📖 High Performance Programming](https://pragprog.com/titles/iobgp/high-performance-programming/) - Optimization techniques\n`;
+          content += `- [🔧 Profiling Tools](https://www.baeldung.com/java-profilers) - Performance profiling\n\n`;
+          break;
+        case 'Architecture':
+          content += `- [🏗️  Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html) - Architecture principles\n`;
+          content += `- [📚 Design Patterns](https://refactoring.guru/design-patterns) - Common design patterns\n`;
+          content += `- [🎯 SOLID Principles](https://www.digitalocean.com/community/conceptual_articles/s-o-l-i-d-the-first-five-principles-of-object-oriented-design) - OOD fundamentals\n\n`;
+          break;
+        case 'Dependencies':
+          content += `- [📦 Dependency Management](https://maven.apache.org/guides/introduction/introduction-to-dependency-mechanism.html) - Maven guide\n`;
+          content += `- [🛡️ Security Scanning](https://snyk.io/learn/application-security/) - Vulnerability scanning\n`;
+          content += `- [🔄 Update Strategies](https://semver.org/) - Semantic versioning\n\n`;
+          break;
+        case 'Code Quality':
+        default:
+          content += `- [🧹 Clean Code](https://www.oreilly.com/library/view/clean-code-a/9780136083238/) - Code quality principles\n`;
+          content += `- [📏 Refactoring Guide](https://refactoring.guru/refactoring) - Code improvement techniques\n`;
+          content += `- [✅ Testing Best Practices](https://testingjavascript.com/) - Testing strategies\n\n`;
+          break;
+      }
+    });
+    
+    content += `**💡 Tip:** Resources are also linked in each issue's detailed section above.`;
+    
+    return content;
+  }
+  
+  /**
+   * Generate Analysis Metadata (performance metrics)
+   */
+  private generateAnalysisMetadata(metadata: any): string {
+    const totalDuration = metadata.totalDuration || metadata.analysisTime || 0;
+    const cloneTime = metadata.cloneTime || 0;
+    const analysisTime = metadata.analysisTime || 0;
+    const reportTime = metadata.reportGenerationTime || 0;
+    
+    return `## 📊 Analysis Metadata
+
+### Performance Metrics
+| Metric | Value |
+|--------|-------|
+| Repository Clone | ${(cloneTime / 1000).toFixed(1)}s |
+| Code Analysis | ${(analysisTime / 1000).toFixed(1)}s |
+| Report Generation | ${(reportTime / 1000).toFixed(1)}s |
+| **Total Duration** | **${(totalDuration / 1000).toFixed(1)}s** |
+
+### Analysis Coverage
+| Metric | Value |
+|--------|-------|
+| Total Repository Files | ${(metadata.totalFiles || 0).toLocaleString()} |
+| Lines of Code | ${(metadata.totalLinesOfCode || 0).toLocaleString()} |
+| Files Modified | ${metadata.filesModified || 0} |
+| Lines Changed | ${(metadata.linesAdded || 0) + (metadata.linesDeleted || 0)} (+${metadata.linesAdded || 0}/-${metadata.linesDeleted || 0}) |
+
+### System Information
+- **Analyzer Version:** ${metadata.analyzerVersion || 'V9 Grouped Report Formatter'}
+- **Analysis Date:** ${metadata.analyzedAt ? new Date(metadata.analyzedAt).toLocaleString() : new Date().toLocaleString()}
+- **Report Format:** Grouped (Compact)`;
+  }
+  
+  /**
+   * Generate PR Comment (personalized, ready-to-paste)
+   */
+  private generatePRComment(issues: EnrichedIssue[], groups: IssueGroup[], metadata: any): string {
+    const blocking = issues.filter(i => 
+      (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED') && 
+      (i.severity === 'critical' || i.severity === 'high')
+    );
+    const resolved = issues.filter(i => i.category === 'RESOLVED');
+    
+    const emoji = metadata.decision === 'APPROVED' ? '✅' : '⛔';
+    const decision = metadata.decision || 'PENDING';
+    
+    const greeting = this.getPersonalizedGreeting(metadata.prAuthor);
+    const encouragement = this.getPersonalizedEncouragement(blocking.length, resolved.length);
+    
+    return `## 💬 PR Comment Template
+
+**Ready-to-paste comment for your pull request:**
+
+\`\`\`markdown
+## ${emoji} Code Quality Analysis: ${decision}
+
+${greeting} @${metadata.prAuthor || 'developer'}! I've completed a comprehensive analysis of your PR.
+
+${encouragement}
+
+### Summary
+- **Total Issues:** ${issues.length} (${groups.length} unique types)
+- **Blocking Issues:** ${blocking.length} ${blocking.length > 0 ? '⛔' : '✅'}
+- **Resolved Issues:** ${resolved.length} ${resolved.length > 0 ? '🎉' : ''}
+- **Analysis Time:** ${((metadata.analysisTime || 0) / 1000).toFixed(1)}s
+
+${blocking.length > 0 ? `### ⛔ Blocking Issues
+Please fix these before merge:
+${blocking.slice(0, 5).map(i => `- **${i.rule}** in \`${i.file}\`${i.line ? `:${i.line}` : ''}`).join('\n')}
+${blocking.length > 5 ? `\n... and ${blocking.length - 5} more` : ''}` : '### ✅ No Blocking Issues\nThis PR can be merged once approved by reviewers.'}
+
+### 💡 Quick Stats
+- Auto-fixable: ${groups.filter(g => this.canAutoFix(g)).length}/${groups.length} issue types
+- Critical: ${issues.filter(i => i.severity === 'critical').length}
+- High: ${issues.filter(i => i.severity === 'high').length}
+- Medium: ${issues.filter(i => i.severity === 'medium').length}
+- Low: ${issues.filter(i => i.severity === 'low').length}
+
+---
+*Generated by V9 Code Quality Analyzer | [View Full Report](${metadata.repoUrl || '#'})*
+\`\`\`
+
+**📋 Instructions:**
+1. Copy the markdown content above
+2. Paste it as a comment on your pull request
+3. Customize if needed (greeting, additional context, etc.)`;
+  }
+  
+  /**
+   * Get personalized greeting
+   */
+  private getPersonalizedGreeting(author?: string): string {
+    if (!author) return 'Hello';
+    
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
+  }
+  
+  /**
+   * Get personalized encouragement
+   */
+  private getPersonalizedEncouragement(blockingCount: number, resolvedCount: number): string {
+    if (resolvedCount > 10) {
+      return `🎉 Excellent work! You've resolved ${resolvedCount} existing issues. ${blockingCount === 0 ? 'And no new blocking issues!' : `Just ${blockingCount} items to address before merge.`}`;
+    } else if (blockingCount === 0) {
+      return `✅ Great job! No blocking issues found. ${resolvedCount > 0 ? `Plus you resolved ${resolvedCount} issues!` : 'Clean PR!'}`;
+    } else if (blockingCount === 1) {
+      return `Just one small issue to fix before we can merge. You've got this! 💪`;
+    } else if (blockingCount <= 3) {
+      return `Found a few items that need attention before merge. Nothing major! 👍`;
+    } else {
+      return `There are ${blockingCount} issues that need to be addressed. I've provided detailed fix suggestions for each. Let me know if you need any help! 🚀`;
+    }
   }
   
   /**
