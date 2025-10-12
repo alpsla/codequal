@@ -205,7 +205,8 @@ async function runV9CompleteE2E(): Promise<V9AnalysisResult> {
   console.log("   Analyzing PR branch...");
   const prStep2Start = Date.now();
   execSync("git checkout pr-17620", { cwd: KAFKA_REPO, stdio: "ignore" });
-  const prResult: OrchestrationResult = await orchestrator.orchestrate(KAFKA_REPO, "pr");
+  // Use FULL mode (Mode 2) to include all severity levels and force all tools to run
+  const prResult: OrchestrationResult = await orchestrator.orchestrate(KAFKA_REPO, "pr", { severityFilter: 'all' });
   const prIssues: RawIssue[] = prResult.toolResults.flatMap(t => t.issues);
   console.log(`   ✅ PR analysis complete (${Math.round((Date.now() - prStep2Start) / 1000)}s)`);
   console.log(`      Total issues: ${prIssues.length}`);
@@ -218,7 +219,8 @@ async function runV9CompleteE2E(): Promise<V9AnalysisResult> {
   console.log(`   Analyzing ${mainBranch} branch...`);
   const mainStep2Start = Date.now();
   execSync(`git checkout ${mainBranch}`, { cwd: KAFKA_REPO, stdio: "ignore" });
-  const mainResult: OrchestrationResult = await orchestrator.orchestrate(KAFKA_REPO, "base");
+  // Use FULL mode (Mode 2) to include all severity levels and force all tools to run
+  const mainResult: OrchestrationResult = await orchestrator.orchestrate(KAFKA_REPO, "base", { severityFilter: 'all' });
   const mainIssues: RawIssue[] = mainResult.toolResults.flatMap(t => t.issues);
   console.log(`   ✅ ${mainBranch} analysis complete (${Math.round((Date.now() - mainStep2Start) / 1000)}s)`);
   console.log(`      Total issues: ${mainIssues.length}\n`);

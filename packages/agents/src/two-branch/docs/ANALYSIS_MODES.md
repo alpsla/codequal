@@ -2,7 +2,21 @@
 
 ## Overview
 
-CodeQual offers 4 analysis modes that let users choose their preferred depth of analysis based on time budget and priorities. This feature is designed to be easily exposed through the API and Website UI.
+CodeQual offers 4 **universal** analysis modes that work across **ALL programming languages** (Java, Python, JavaScript, Go, etc.). Users choose their preferred depth of analysis based on time budget and priorities. This feature is designed to be easily exposed through the API and Website UI.
+
+### Universal Design
+
+Analysis modes are **language-agnostic**. Each language maps its specific tools to universal categories:
+
+| Universal Category | Java Tools | Python Tools | JavaScript Tools |
+|--------------------|------------|--------------|------------------|
+| **Code Quality** | PMD | pylint | ESLint |
+| **Security** | Semgrep | Bandit, Semgrep | eslint-plugin-security |
+| **Dependency Scan** | Dependency-Check | Safety, pip-audit | npm-audit, Snyk |
+| **Style/Lint** | Checkstyle | flake8, black | Prettier, ESLint |
+| **Advanced** | SpotBugs | mypy | TypeScript compiler |
+
+**Configuration:** `src/two-branch/config/analysis-modes.ts`
 
 ## Available Modes
 
@@ -50,6 +64,48 @@ orchestrator.orchestrate(repoPath, 'pr', undefined, { analysisMode: 'thorough' }
 
 ```typescript
 orchestrator.orchestrate(repoPath, 'pr', undefined, { analysisMode: 'complete' });
+```
+
+---
+
+## Language-Specific Implementation
+
+### Adding a New Language
+
+When adding support for a new language, register its tool mapping:
+
+```typescript
+import { registerLanguageMapping, ToolCategory } from '../config/analysis-modes';
+
+// Example: Adding Rust support
+registerLanguageMapping({
+  language: 'rust',
+  toolsByCategory: {
+    [ToolCategory.CODE_QUALITY]: ['clippy'],
+    [ToolCategory.SECURITY]: ['cargo-audit'],
+    [ToolCategory.DEPENDENCY_SCAN]: ['cargo-audit'],
+    [ToolCategory.STYLE_LINT]: ['rustfmt'],
+    [ToolCategory.ADVANCED]: ['rust-analyzer']
+  }
+});
+```
+
+### Getting Tools for a Language
+
+```typescript
+import { getToolsForMode } from '../config/analysis-modes';
+
+// Get tools for Java in 'thorough' mode
+const javaTools = getToolsForMode('java', 'thorough');
+// Returns: ['pmd', 'semgrep', 'dependency-check', 'checkstyle']
+
+// Same mode, different language - Python
+const pythonTools = getToolsForMode('python', 'thorough');
+// Returns: ['pylint', 'bandit', 'semgrep', 'safety', 'pip-audit', 'flake8', 'black']
+
+// JavaScript 'fast' mode
+const jsTools = getToolsForMode('javascript', 'fast');
+// Returns: ['eslint', 'eslint-plugin-security', 'semgrep']
 ```
 
 ---

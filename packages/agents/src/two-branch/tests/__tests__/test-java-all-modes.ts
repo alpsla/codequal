@@ -8,9 +8,14 @@
  */
 
 import * as dotenv from 'dotenv';
-dotenv.config({ path: '/Users/alpinro/Code Prjects/codequal/packages/agents/.env' });
+import * as path from 'path';
+
+// Load .env from the correct location (works both locally and on Oracle)
+const envPath = path.resolve(__dirname, '../../../../.env');
+dotenv.config({ path: envPath });
 
 import { V9ToolOrchestrator } from '../../analyzers/v9-tool-orchestrator';
+import { detectDefaultBranch } from '../../utils/git-utils';
 import * as fs from 'fs';
 
 const TEST_REPO = '/tmp/kafka-repo';
@@ -27,6 +32,10 @@ async function testAllModes() {
 
   try {
     const orchestrator = new V9ToolOrchestrator();
+    
+    // Detect the actual default branch (trunk, main, master, etc.)
+    const defaultBranch = detectDefaultBranch(TEST_REPO);
+    console.log(`🔍 Detected default branch: ${defaultBranch}\n`);
 
     // =================================================================
     // MODE 1: Critical-only with automatic fallback
@@ -38,7 +47,7 @@ async function testAllModes() {
     const mode1Start = Date.now();
     const criticalIssues = await orchestrator.orchestrateJavaAnalysis(
       TEST_REPO,
-      'main',
+      'main', // This will be handled by JavaToolOrchestrator's dynamic detection
       undefined,
       { severityFilter: 'critical', enableFallback: true }
     );

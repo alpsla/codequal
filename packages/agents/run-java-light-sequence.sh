@@ -10,8 +10,27 @@ prepare_repo() {
   local url="$1"; local dir="$2"; local pr="${3:-}"
   rm -rf "$dir" && git clone --depth=10 --no-single-branch "$url" "$dir"
   pushd "$dir" >/dev/null
-  git fetch origin main --depth=10 || git fetch origin master --depth=10
-  git checkout -B main origin/main 2>/dev/null || git checkout -B main origin/master
+  
+  # Use the same dynamic branch detection logic as the Java tools
+  # This matches the detectDefaultBranch function in git-utils.ts
+  local default_branch="main"
+  
+  # Try git symbolic-ref first (most reliable)
+  if git symbolic-ref refs/remotes/origin/HEAD >/dev/null 2>&1; then
+    default_branch=$(git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@')
+  else
+    # Fallback: check which common branch exists
+    for branch in trunk main master; do
+      if git rev-parse --verify "$branch" >/dev/null 2>&1; then
+        default_branch="$branch"
+        break
+      fi
+    done
+  fi
+  
+  echo "🔍 Detected default branch: $default_branch"
+  git checkout -B main "origin/$default_branch"
+  
   if [ -n "$pr" ]; then
     git fetch origin "pull/$pr/head:pr" --depth=10 && git checkout pr || {
       echo "PR #$pr not found; creating local 'pr' from main";

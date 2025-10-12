@@ -228,10 +228,10 @@ export class V9ToolOrchestrator {
           timeout: 300,
           postgres: {
             enabled: true,
-            connectionString: process.env.DEPCHECK_DB_URL || 'jdbc:postgresql://localhost:5432/nvd',
-            dbUser: process.env.DEPCHECK_DB_USER || 'depcheck_scanner',
-            dbPassword: process.env.DEPCHECK_DB_PASSWORD || '',
-            dbDriver: process.env.DEPCHECK_JDBC_DRIVER || '/tmp/jdbc-drivers/postgresql-42.7.1.jar'
+            connectionString: process.env.ORACLE_DEPCHECK_DB_URL || 'jdbc:postgresql://localhost:5432/nvd',
+            dbUser: process.env.ORACLE_DEPCHECK_DB_USER || 'depcheck_scanner',
+            dbPassword: process.env.ORACLE_DEPCHECK_DB_PASSWORD || '',
+            dbDriver: process.env.ORACLE_DEPCHECK_JDBC_DRIVER || '/tmp/jdbc-drivers/postgresql-42.7.1.jar'
           }
         }
       };
