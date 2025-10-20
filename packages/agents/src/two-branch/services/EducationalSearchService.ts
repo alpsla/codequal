@@ -60,7 +60,9 @@ export class EducationalSearchService {
           const parsed = JSON.parse(raw) as CacheEntry<RankedResource[]>;
           if (parsed.expiresAt > Date.now()) return parsed.value;
         }
-      } catch {}
+      } catch {
+        // Ignore Redis errors, fall through to memory cache
+      }
     }
 
     // 2) Memory cache
@@ -81,7 +83,9 @@ export class EducationalSearchService {
     if (this.redis) {
       try {
         await this.redis.setex(cacheKey, Math.floor(this.cacheTtlMs / 1000), JSON.stringify(entry));
-      } catch {}
+      } catch {
+        // Ignore Redis write errors, data is still in memory cache
+      }
     }
 
     return ranked;

@@ -42,7 +42,7 @@ export class ModelConfigResolver {
   private openrouterKeys: string[] = [];
   private currentKeyIndex = 0;
   private failedKeys: Set<string> = new Set();
-  private strictNoFallback: boolean = false;
+  private strictNoFallback = false;
 
   constructor(
     private logger?: any

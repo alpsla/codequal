@@ -14,6 +14,8 @@ import { getResilientAIClient } from '../services/resilient-ai-client';
 import { ModelConfigResolver } from '../../standard/orchestrator/model-config-resolver'; // BUG-119 FIX
 import { RepositorySizeCalculator } from '../utils/repository-size-calculator'; // BUG-119 FIX
 import { groupIssues } from '../utils/issue-grouping';  // Phase B+C: Issue grouping
+import { execSync } from 'node:child_process';
+import * as fs from 'node:fs';
 
 interface AIAnalysisRequest {
   repository: string;
@@ -49,7 +51,7 @@ export class V9IntegratedAnalyzer {
   private detectedRepoSize: 'small' | 'medium' | 'large' | 'enterprise' = 'medium';
   
   // Phase B+C: Report format configuration
-  private useGroupedReport: boolean = true;  // Default to grouped (99.8% cost savings)
+  private useGroupedReport = true;  // Default to grouped (99.8% cost savings)
 
   constructor(options?: { useGroupedReport?: boolean }) {
     this.redisManager = new RedisToolOutputManager();
@@ -77,8 +79,6 @@ export class V9IntegratedAnalyzer {
 
   private discoverTeamFromGit(repoPathCandidates: string[] = ['/tmp/kafka-repo']): Array<{ email: string; name?: string; totalPRs?: number }> {
     try {
-      const { execSync } = require('node:child_process');
-      const fs = require('node:fs');
       for (const path of repoPathCandidates) {
         if (fs.existsSync(`${path}/.git`)) {
           const out = execSync(`git -C ${path} log --format=%ae:::%an -n 200`, { stdio: ['ignore', 'pipe', 'ignore'] }).toString();

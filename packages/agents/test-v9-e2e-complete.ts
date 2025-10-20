@@ -237,8 +237,8 @@ async function runV9CompleteE2E(): Promise<V9AnalysisResult> {
   console.log("   Analyzing PR branch...");
   const prStep2Start = Date.now();
   // BUG FIX #27: Clean generated files before analysis to ensure deterministic results
-  // Use -f (force) and only clean build directories, not -x (gitignored files)
-  execSync("find . -type d -name 'build' -o -name 'target' | xargs rm -rf", { cwd: KAFKA_REPO, stdio: "ignore" });
+  // Use -r flag for xargs to prevent error when no directories found
+  execSync("find . -type d \\( -name 'build' -o -name 'target' \\) -exec rm -rf {} + 2>/dev/null || true", { cwd: KAFKA_REPO, stdio: "ignore" });
   execSync("git checkout pr-17620", { cwd: KAFKA_REPO, stdio: "ignore" });
   // Use COMPLETE mode to include SpotBugs + all severity levels
   const prResult: OrchestrationResult = await orchestrator.orchestrate(KAFKA_REPO, "pr", undefined, { 
@@ -257,8 +257,8 @@ async function runV9CompleteE2E(): Promise<V9AnalysisResult> {
   console.log(`   Analyzing ${mainBranch} branch...`);
   const mainStep2Start = Date.now();
   // BUG FIX #27: Clean generated files before analysis to ensure deterministic results
-  // Use -f (force) and only clean build directories, not -x (gitignored files)
-  execSync("find . -type d -name 'build' -o -name 'target' | xargs rm -rf", { cwd: KAFKA_REPO, stdio: "ignore" });
+  // Use -exec with + to prevent error when no directories found
+  execSync("find . -type d \\( -name 'build' -o -name 'target' \\) -exec rm -rf {} + 2>/dev/null || true", { cwd: KAFKA_REPO, stdio: "ignore" });
   execSync(`git checkout ${mainBranch}`, { cwd: KAFKA_REPO, stdio: "ignore" });
   // Use COMPLETE mode to include SpotBugs + all severity levels
   const mainResult: OrchestrationResult = await orchestrator.orchestrate(KAFKA_REPO, "base", undefined, { 
