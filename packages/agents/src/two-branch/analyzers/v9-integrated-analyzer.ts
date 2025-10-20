@@ -75,6 +75,44 @@ export class V9IntegratedAnalyzer {
     logger.info('[BUG-119] Model config cache cleared - will fetch fresh configs from Supabase');
   }
 
+  private discoverTeamFromGit(repoPathCandidates: string[] = ['/tmp/kafka-repo']): Array<{ email: string; name?: string; totalPRs?: number }> {
+    try {
+      const { execSync } = require('node:child_process');
+      const fs = require('node:fs');
+      for (const path of repoPathCandidates) {
+        if (fs.existsSync(`${path}/.git`)) {
+          const out = execSync(`git -C ${path} log --format=%ae:::%an -n 200`, { stdio: ['ignore', 'pipe', 'ignore'] }).toString();
+          const lines = out.split('\n').filter(Boolean);
+          const map = new Map<string, { email: string; name?: string; totalPRs: number }>();
+          for (const line of lines) {
+            const [email, name] = line.split(':::');
+            if (!email) continue;
+            const key = email.trim().toLowerCase();
+            if (!map.has(key)) {
+              map.set(key, { email: key, name: (name || '').trim(), totalPRs: 1 });
+            } else {
+              const v = map.get(key)!;
+              v.totalPRs += 1;
+            }
+          }
+          return Array.from(map.values()).slice(0, 25);
+        }
+      }
+    } catch (_) {
+      // ignore
+    }
+    return [];
+  }
+
+  private mapAgentToRole(agentType: string): string {
+    const n = (agentType || '').toLowerCase();
+    if (n.includes('security')) return 'security';
+    if (n.includes('performance')) return 'performance';
+    if (n.includes('architecture')) return 'architecture';
+    if (n.includes('dependency')) return 'dependency';
+    return 'code_quality';
+  }
+
   /**
    * Run complete analysis with static tools + AI insights
    */
@@ -478,7 +516,7 @@ and actionable recommendations. Focus on business value and team productivity.`;
               agentName: agentType,
               issuesProcessed: 0,
               totalTime: 0,
-              modelUsed: 'google/gemini-2.5-pro',
+              modelUsed: undefined,
               tokensUsed: 0,
               cost: 0
             });
@@ -488,6 +526,19 @@ and actionable recommendations. Focus on business value and team productivity.`;
           metrics.totalTime += Date.now() - agentStartTime;
           metrics.tokensUsed += 500; // Estimate
           metrics.cost += 0.001; // Estimate
+          if (!metrics.modelUsed) {
+            try {
+              const role = this.mapAgentToRole(agentType);
+              const cfg = await this.modelConfigResolver.getModelConfiguration(
+                role,
+                this.detectedLanguage,
+                this.detectedRepoSize
+              );
+              metrics.modelUsed = { provider: cfg.primary_provider, model: cfg.primary_model, temperature: 0.3 };
+            } catch {
+              // leave undefined if resolver fails under strict mode
+            }
+          }
           
           // Track tool metrics
           const tool = item.issue.tool || 'unknown';
@@ -642,6 +693,10 @@ and actionable recommendations. Focus on business value and team productivity.`;
       }
     };
 
+    // Build quick lookup for real tool durations from Redis outputs (ms)
+    const outputsByTool = new Map<string, any>();
+    (data.prOutputs || []).forEach((o: any) => outputsByTool.set(o.tool, o));
+
     // Prepare CompleteMetadata with detailed agent and tool metrics
     const completeMetadata: any = {
       repository: data.repository.split('/').pop(),
@@ -666,7 +721,7 @@ and actionable recommendations. Focus on business value and team productivity.`;
 
       totalDuration: data.executionTime,
       cloneTime: 1000,
-      analysisTime: data.executionTime - 2000,
+      analysisTime: Math.max((data.executionTime || 0) - 2000, 1),
       reportGenerationTime: 1000,
       fixGenerationTime: processingTime,
 
@@ -679,41 +734,45 @@ and actionable recommendations. Focus on business value and team productivity.`;
           this.getAgentType(i.type || i.category) === agent.agentName
         ).map(i => i.file))].length,
         tokensUsed: agent.tokensUsed,
-        modelUsed: {
-          provider: 'google',
-          model: agent.modelUsed,
-          temperature: 0.3
-        },
+        modelUsed: agent.modelUsed || { provider: 'unknown', model: 'unknown', temperature: 0.3 },
         cost: agent.cost,
         status: 'success'
       })),
 
-      // ENHANCED: Detailed per-tool metrics
-      toolsUsed: Array.from(toolMetrics.values()).map(tool => ({
-        toolName: tool.toolName,
-        executionTime: 1000, // Estimated
-        filesScanned: 100,
-        issuesFound: tool.issuesFound,
-        issueBreakdown: {
-          critical: tool.criticalCount,
-          high: tool.highCount,
-          medium: tool.mediumCount,
-          low: tool.lowCount
-        },
-        exitCode: 0,
-        stdout: `Found ${tool.issuesFound} issues`,
-        stderr: ''
-      })),
+      // ENHANCED: Detailed per-tool metrics (use real executionTime when available)
+      toolsUsed: Array.from(toolMetrics.values()).map(tool => {
+        const fromOutput = outputsByTool.get(tool.toolName);
+        const realDuration = fromOutput?.executionTime;
+        return {
+          toolName: tool.toolName,
+          executionTime: realDuration,
+          duration: realDuration, // for grouped formatter consumption
+          filesScanned: 100,
+          issuesFound: tool.issuesFound,
+          issueBreakdown: {
+            critical: tool.criticalCount,
+            high: tool.highCount,
+            medium: tool.mediumCount,
+            low: tool.lowCount
+          },
+          exitCode: fromOutput?.success === false ? 1 : 0,
+          stdout: fromOutput?.rawOutput ? undefined : `Found ${tool.issuesFound} issues`,
+          stderr: fromOutput?.error || ''
+        };
+      }),
 
       // NEW: Option A - Raw tool results for enhanced reporting
-      toolResults: Array.from(toolMetrics.values()).map(tool => ({
-        tool: tool.toolName,
-        duration: 1000, // Estimated execution time in ms
-        issues: prIssues.filter(i => i.tool === tool.toolName),
-        success: true,
-        filesScanned: 100,
-        exitCode: 0
-      })),
+      toolResults: Array.from(toolMetrics.values()).map(tool => {
+        const fromOutput = outputsByTool.get(tool.toolName);
+        return {
+          tool: tool.toolName,
+          duration: fromOutput?.executionTime,
+          issues: prIssues.filter(i => i.tool === tool.toolName),
+          success: fromOutput?.success !== false,
+          filesScanned: 100,
+          exitCode: fromOutput?.success === false ? (fromOutput?.error ? 1 : 2) : 0
+        };
+      }),
 
       totalCost: Array.from(agentMetrics.values()).reduce((sum, a) => sum + a.cost, 0),
       costBreakdown: {
@@ -722,6 +781,9 @@ and actionable recommendations. Focus on business value and team productivity.`;
         tools: 0
       },
       estimatedMonthlyCost: Array.from(agentMetrics.values()).reduce((sum, a) => sum + a.cost, 0) * 30,
+
+      // Expose developer skill score for grouped report
+      skillScore,
 
       analyzer: 'V9IntegratedAnalyzer',
       analyzerVersion: '9.0.0',
@@ -732,6 +794,35 @@ and actionable recommendations. Focus on business value and team productivity.`;
       endTime: new Date().toISOString(),
       timestamp: new Date().toISOString()
     };
+
+    // Enrich with team members from Supabase leaderboard (fallback baseline 50)
+    try {
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabase = createClient(
+        process.env.SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
+      const skillScoreManager = new SkillScoreManager(supabase);
+      const leaderboard = await skillScoreManager.getLeaderboard(10);
+      completeMetadata.teamMembers = (leaderboard || []).map(m => ({
+        email: m.email,
+        name: m.name,
+        totalPRs: m.totalPRs
+      }));
+    } catch {
+      // ignore if Supabase not configured on this runner
+    }
+
+    // Git-based discovery fallback (append unique entries)
+    const gitTeam = this.discoverTeamFromGit(['/tmp/kafka-repo']);
+    if (gitTeam.length > 0) {
+      const existing = new Set((completeMetadata.teamMembers || []).map((m: any) => m.email));
+      const merged = [...(completeMetadata.teamMembers || [])];
+      for (const m of gitTeam) {
+        if (!existing.has(m.email)) merged.push(m);
+      }
+      completeMetadata.teamMembers = merged;
+    }
 
     // Phase B+C: Choose between grouped (cost-optimized) or full (comprehensive) report
     let markdown: string;
@@ -769,7 +860,17 @@ and actionable recommendations. Focus on business value and team productivity.`;
         analysisTime: completeMetadata.analysisTime,
         reportGenerationTime: completeMetadata.reportGenerationTime,
         analyzedAt: completeMetadata.timestamp,
-        analyzerVersion: completeMetadata.analyzerVersion
+        analyzerVersion: completeMetadata.analyzerVersion,
+        // Provide model usage summary for display in metadata section
+        modelsUsed: Array.isArray(completeMetadata.agentsUsed)
+          ? completeMetadata.agentsUsed.map((a: any) => ({
+              agent: a.agentName,
+              model: a.modelUsed?.model || a.modelUsed || 'unknown'
+            }))
+          : undefined,
+        // Optional: pass agent/tool performance and model info to grouped formatter
+        agentPerformance: completeMetadata.agentsUsed,
+        toolPerformance: completeMetadata.toolsUsed
       };
       
       // Generate grouped report with attachments
@@ -1155,20 +1256,37 @@ ${lineNum+1}: // Surrounding code`;
 
       const skillScoreManager = new SkillScoreManager(supabase);
 
-      // Calculate current score
-      const currentScore = this.calculateSkillScore(newIssues, resolvedIssues, existingIssues);
+      // Get baseline from Supabase (defaults to 50 for first-time users)
+      const baseline = await skillScoreManager.getBaselineScore(developerEmail, repository);
+      
+      // Calculate current score starting from baseline
+      const currentScore = this.calculateSkillScoreFromBaseline(baseline, newIssues, resolvedIssues, existingIssues);
 
       // Calculate category scores
+      // BUG FIX: Include EXISTING_MODIFIED issues (files touched by developer)
+      // Filter for NEW + EXISTING_MODIFIED to get developer's responsibility
+      // NOTE: 'category' field should be 'NEW', 'EXISTING_MODIFIED', 'RESOLVED', or 'EXISTING_REST'
+      const developerIssues = allPrIssues.filter((i: any) => {
+        const cat = i.category || i.status;  // Fallback to 'status' if 'category' missing
+        return cat === 'NEW' || cat === 'EXISTING_MODIFIED' || cat === 'new' || cat === 'existing_modified';
+      });
+      
+      console.log(`[V9IntegratedAnalyzer] Category score calculation:`, {
+        totalIssues: allPrIssues.length,
+        developerIssues: developerIssues.length,
+        withDetectedCategory: developerIssues.filter((i: any) => i.detectedCategory).length,
+        sample: developerIssues[0]
+      });
+      
       const categoryScores = {
-        security: this.calculateCategoryScore(newIssues, 'Security'),
-        performance: this.calculateCategoryScore(newIssues, 'Performance'),
-        architecture: this.calculateCategoryScore(newIssues, 'Architecture'),
-        dependency: this.calculateCategoryScore(newIssues, 'Dependency'),
-        codeQuality: this.calculateCategoryScore(newIssues, 'Quality')
+        security: this.calculateCategoryScore(developerIssues, 'Security'),
+        performance: this.calculateCategoryScore(developerIssues, 'Performance'),
+        architecture: this.calculateCategoryScore(developerIssues, 'Architecture'),
+        dependency: this.calculateCategoryScore(developerIssues, 'Dependency'),
+        codeQuality: this.calculateCategoryScore(developerIssues, 'Quality')
       };
 
-      // Get baseline and trend
-      const baseline = await skillScoreManager.getBaselineScore(developerEmail, repository);
+      // Get trend
       const trend = await skillScoreManager.getScoreTrend(developerEmail, repository, 5);
 
       // Generate recommendations
@@ -1229,55 +1347,62 @@ ${lineNum+1}: // Surrounding code`;
   }
 
   /**
-   * Calculate overall skill score based on issues
-   * Formula: 100 - (weighted issue penalties) + (resolved issue bonuses)
-   * IMPORTANT: Penalties and bonuses are EQUAL to incentivize fixing issues
-   *
-   * Note: We ONLY penalize for issues in MODIFIED FILES, not existing issues.
-   * This encourages developers to clean up issues when they work on a file.
+   * Calculate skill score from baseline loaded from Supabase
+   * For first-time users, baseline defaults to 50/100
+   */
+  private calculateSkillScoreFromBaseline(
+    baseline: number,
+    newIssues: any[],
+    resolvedIssues: any[],
+    existingIssues: any[]
+  ): number {
+    let score = baseline; // Start from Supabase baseline (50 for first-time users)
+
+    // Penalties for new issues
+    newIssues.forEach(issue => {
+      switch (issue.severity) {
+        case 'critical': score -= 5; break;
+        case 'high': score -= 3; break;
+        case 'medium': score -= 1; break;
+        case 'low': score -= 0.5; break;
+      }
+    });
+
+    // Bonuses for resolved issues
+    resolvedIssues.forEach(issue => {
+      switch (issue.severity) {
+        case 'critical': score += 5; break;
+        case 'high': score += 3; break;
+        case 'medium': score += 1; break;
+        case 'low': score += 0.5; break;
+      }
+    });
+
+    return Math.max(0, Math.min(100, Math.round(score)));
+  }
+
+  /**
+   * Legacy method kept for fallback when Supabase unavailable
    */
   private calculateSkillScore(
     newIssues: any[],
     resolvedIssues: any[],
     existingIssues: any[]
   ): number {
-    let score = 100;
-
-    // Penalties for new issues introduced (ONLY in modified files)
-    newIssues.forEach(issue => {
-      switch (issue.severity) {
-        case 'critical': score -= 5; break;
-        case 'high': score -= 2; break;
-        case 'medium': score -= 1; break;
-        case 'low': score -= 0.5; break;
-      }
-    });
-
-    // Bonuses for resolved issues (EQUAL to penalties - tested and approved)
-    resolvedIssues.forEach(issue => {
-      switch (issue.severity) {
-        case 'critical': score += 5; break;  // Changed from 3 to 5
-        case 'high': score += 2; break;      // Changed from 1.5 to 2
-        case 'medium': score += 1; break;    // Changed from 0.75 to 1
-        case 'low': score += 0.5; break;     // Changed from 0.25 to 0.5
-      }
-    });
-
-    // NOTE: existingIssues are NOT penalized unless they are in modified files
-    // This is handled by the issue categorization logic (NEW vs EXISTING)
-
-    // Ensure score stays in 0-100 range
-    return Math.max(0, Math.min(100, Math.round(score)));
+    return this.calculateSkillScoreFromBaseline(50, newIssues, resolvedIssues, existingIssues);
   }
 
   /**
    * Calculate category-specific score
    * Score = 100 - (weighted penalties for issues in this category)
+   * BUG FIX: Use detectedCategory if available, fallback to getIssueCategory
    */
   private calculateCategoryScore(issues: any[], category: string): number {
-    const categoryIssues = issues.filter(i =>
-      this.getIssueCategory(i).toLowerCase().includes(category.toLowerCase())
-    );
+    const categoryIssues = issues.filter(i => {
+      // Prefer detectedCategory (explicitly set during categorization)
+      const issueCategory = i.detectedCategory || this.getIssueCategory(i);
+      return issueCategory.toLowerCase().includes(category.toLowerCase());
+    });
 
     let score = 100;
     categoryIssues.forEach(issue => {

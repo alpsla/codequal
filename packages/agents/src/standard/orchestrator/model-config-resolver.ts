@@ -42,6 +42,7 @@ export class ModelConfigResolver {
   private openrouterKeys: string[] = [];
   private currentKeyIndex = 0;
   private failedKeys: Set<string> = new Set();
+  private strictNoFallback: boolean = false;
 
   constructor(
     private logger?: any
@@ -56,6 +57,10 @@ export class ModelConfigResolver {
     this.supabase = createClient(supabaseUrl, supabaseKey);
     this.researcher = new ModelResearcherService();
     this.emergencyFallback = new EmergencyFallbackProvider();
+
+    // Strict mode: disable any emergency/default fallbacks (E2E gate)
+    this.strictNoFallback = (process.env.STRICT_NO_FALLBACK === 'true') ||
+                            (process.env.E2E_DISABLE_EMERGENCY_FALLBACK === 'true');
 
     // Load OpenRouter keys from environment
     this.loadOpenRouterKeys();
@@ -153,16 +158,19 @@ export class ModelConfigResolver {
     this.log('info', `Retrieving model configuration for ${cacheKey} (normalized: ${normalizedRole})`);
 
     // Try to get from Supabase using normalized role name
+    // BUG FIX: Fall back to 'any' size if specific size not found
     const { data, error } = await this.supabase
       .from('model_configurations')
       .select('*')
       .eq('role', normalizedRole)
       .eq('language', language)
-      .eq('size_category', size)
-      .single();
+      .in('size_category', [size, 'any'])  // Match specific size OR 'any'
+      .order('size_category', { ascending: false })  // Prefer specific size (alphabetically last)
+      .limit(1)
+      .maybeSingle();  // Returns null if not found, doesn't throw
 
     if (data && !error) {
-      this.log('info', `Found existing configuration for ${cacheKey}`);
+      this.log('info', `Found existing configuration for ${cacheKey} (size: ${data.size_category || 'any'})`);
       const config = this.transformConfig(data);
       this.cache.set(cacheKey, config);
       return config;
@@ -302,8 +310,11 @@ export class ModelConfigResolver {
       }
     }
 
-    // All keys failed - use emergency fallback
+    // All keys failed
     this.log('error', `All OpenRouter keys failed. Last error: ${lastError?.message}`);
+    if (this.strictNoFallback) {
+      throw new Error('ALERT: All OpenRouter keys failed and STRICT_NO_FALLBACK is enabled. Supabase model configuration or OpenRouter access is required.');
+    }
     return this.getEmergencyResearchResult(role, language, size);
   }
 
@@ -323,6 +334,9 @@ export class ModelConfigResolver {
     reasoning: string[];
     isEmergencyFallback: boolean;
   } {
+    if (this.strictNoFallback) {
+      throw new Error('ALERT: Emergency fallback is disabled by STRICT_NO_FALLBACK. Ensure Supabase model configurations and OpenRouter are accessible.');
+    }
     if (!this.emergencyFallback.isAvailable()) {
       throw new Error(
         'All OpenRouter keys failed and no emergency fallback configured. ' +
@@ -385,6 +399,9 @@ export class ModelConfigResolver {
     language: string,
     size: string
   ): ModelConfiguration {
+    if (this.strictNoFallback) {
+      throw new Error('ALERT: Emergency fallback is disabled by STRICT_NO_FALLBACK. Unable to proceed without Supabase model configuration.');
+    }
     if (!this.emergencyFallback.isAvailable()) {
       throw new Error(
         'Model configuration unavailable and no emergency fallback configured. ' +
@@ -480,10 +497,13 @@ export class ModelConfigResolver {
   private async storeConfiguration(config: ModelConfiguration): Promise<void> {
     this.log('info', `Storing new configuration for ${config.role}/${config.language}/${config.size_category}`);
     
+    // Remove fields not present in the DB schema (e.g., isEmergencyFallback)
+    const { isEmergencyFallback, ...configWithoutFlag } = config as any;
+
     const { error } = await this.supabase
       .from('model_configurations')
       .insert({
-        ...config,
+        ...configWithoutFlag,
         updated_by: 'model-config-resolver',
         last_updated: new Date().toISOString()
       });

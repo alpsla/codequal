@@ -57,15 +57,8 @@ export class ModelResearcherService {
    */
   async getOptimalModelForContext(context: ContextRequest): Promise<string> {
     try {
-      // First, check if we have recent research data
-      const hasRecentResearch = await this.checkResearchFreshness();
-      
-      if (!hasRecentResearch) {
-        console.log('Model research is outdated, triggering new research...');
-        await this.conductQuarterlyResearch();
-      }
-
-      // Query Supabase for best model based on context
+      // Query Supabase for best model based on context (no quarterly check!)
+      // Quarterly research should ONLY run via scheduled cron job, NOT on-demand
       const { data, error } = await this.supabase
         .from('model_research')
         .select('*')
@@ -76,8 +69,8 @@ export class ModelResearcherService {
         .single();
 
       if (error || !data) {
-        // Context not found in research, request specific research
-        console.log('Context not found in cached research, requesting specific research...');
+        // Context not found in research, request SPECIFIC research for this context only
+        console.log(`Context not found: ${context.language}/${context.repo_size}, requesting specific research...`);
         return await this.requestSpecificContextResearch(context);
       }
 
@@ -108,39 +101,50 @@ export class ModelResearcherService {
   /**
    * Conduct quarterly research on all available models
    * This should be scheduled to run every 90 days
+   * 
+   * NO WEB SEARCH - Use OpenRouter catalog as single source of truth
+   * Filter by freshness (<6 months old) to meet user requirements
    */
   async conductQuarterlyResearch(): Promise<void> {
     console.log('🔬 Starting quarterly model research...');
+    console.log('📌 Using OpenRouter as single source of truth (no web search)');
     
     try {
-      // STEP 1: Search the web for latest AI models
-      console.log('🌐 Step 1: Searching web for latest AI models...');
-      const latestModels = await this.searchWebForLatestModels();
+      // STEP 1: Fetch ALL models from OpenRouter (single source of truth)
+      console.log('🔍 Step 1: Fetching all models from OpenRouter...');
+      const allModels = await this.fetchAvailableModels();
+      console.log(`✅ Fetched ${allModels.length} total models from OpenRouter`);
       
-      // STEP 2: Get exact model IDs from OpenRouter
-      console.log('🔍 Step 2: Getting exact syntax from OpenRouter...');
-      const availableModels = await this.fetchAvailableModels();
+      // STEP 2: Filter by freshness (< 6 months old)
+      console.log('📅 Step 2: Filtering by freshness (<6 months old)...');
+      const sixMonthsAgo = new Date();
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
       
-      // STEP 3: Match web findings with OpenRouter availability
-      console.log('🔗 Step 3: Matching web models with OpenRouter catalog...');
-      const verifiedModels = this.matchWebModelsWithOpenRouter(latestModels, availableModels);
+      const freshModels = allModels.filter(model => {
+        if (!model.created) return false;
+        const createdDate = new Date(model.created * 1000);
+        const isFresh = createdDate > sixMonthsAgo;
+        return isFresh;
+      });
+      console.log(`✅ Found ${freshModels.length} models released in last 6 months`);
       
-      // STEP 4: Research each verified model
-      console.log('📊 Step 4: Researching verified models...');
+      // STEP 3: Research each fresh model
+      console.log('📊 Step 3: Researching fresh models...');
       const researchResults: ModelResearchResult[] = [];
       
-      for (const model of verifiedModels) {
+      for (const model of freshModels) {
         const research = await this.researchModel(model);
         researchResults.push(research);
       }
 
-      // STEP 5: Store research results in Supabase
+      // STEP 4: Store research results in Supabase
+      console.log('💾 Step 4: Storing research results...');
       await this.storeResearchResults(researchResults);
       
       // Update metadata
       await this.updateResearchMetadata();
       
-      console.log(`✅ Quarterly research complete. Evaluated ${researchResults.length} models.`);
+      console.log(`✅ Quarterly research complete. Evaluated ${researchResults.length} fresh models.`);
     } catch (error) {
       console.error('Error conducting quarterly research:', error);
       throw error;
@@ -463,12 +467,107 @@ export class ModelResearcherService {
     await this.notifyOrchestrator(researchRequest);
     
     // Conduct immediate research for this specific context
-    const specificModel = await this.researchSpecificContext(context);
+    const models = await this.fetchAvailableModels();
+    const scoredModels = models.map(model => {
+      const contextScore = this.calculateContextSpecificScore(model, context);
+      const qualityScore = this.calculateQualityScore(model);
+      return {
+        model,
+        totalScore: (contextScore * 0.5) + (qualityScore * 0.5)
+      };
+    });
+    
+    // Sort by score and get top 2 models (primary + fallback)
+    scoredModels.sort((a, b) => b.totalScore - a.totalScore);
+    const primaryModel = scoredModels[0].model;
+    const fallbackModel = scoredModels[1]?.model || scoredModels[0].model;
+    
+    const specificModel = await this.researchModel(primaryModel);
     
     // Store the specific research result
     await this.storeSpecificResearch(specificModel, context);
     
+    // CRITICAL: Also create the config entry in model_configurations table
+    await this.createConfigFromResearch(context, primaryModel.id, fallbackModel.id);
+    
     return specificModel.model_id;
+  }
+  
+  /**
+   * Create a model configuration entry from research results
+   */
+  private async createConfigFromResearch(
+    context: ContextRequest,
+    primaryModelId: string,
+    fallbackModelId: string
+  ): Promise<void> {
+    console.log(`💾 Creating config entry: ${context.task_type}/${context.language}`);
+    
+    // Map task_type back to role if needed
+    const role = context.task_type || 'security';
+    
+    // Get weights for this role
+    const weights = this.getRoleWeights(role);
+    
+    const config = {
+      role,
+      language: context.language,
+      size_category: 'any',
+      primary_provider: primaryModelId.split('/')[0],
+      primary_model: primaryModelId,
+      fallback_provider: fallbackModelId.split('/')[0],
+      fallback_model: fallbackModelId,
+      weights: {
+        quality: weights.quality,
+        speed: weights.speed,
+        cost: weights.cost,
+        freshness: 0.0,
+        contextWindow: 0.05
+      },
+      min_requirements: {},
+      reasoning: [
+        `🔍 On-demand research on ${new Date().toISOString()}`,
+        `Context: ${context.language} / ${role}`,
+        `Primary: ${primaryModelId} (researched for specific context)`,
+        `Fallback: ${fallbackModelId}`,
+        `✅ Dynamically generated when config was missing`
+      ],
+      last_updated: new Date().toISOString(),
+      updated_by: 'on-demand-research'
+    };
+    
+    const { error } = await this.supabase
+      .from('model_configurations')
+      .insert([config]);
+    
+    if (error) {
+      console.error('❌ Error creating config entry:', error);
+    } else {
+      console.log(`✅ Config entry created: ${role}/${context.language}`);
+    }
+  }
+  
+  /**
+   * Get role-specific weights for model selection
+   */
+  private getRoleWeights(role: string): { quality: number; speed: number; cost: number; freshness: number } {
+    const weights: Record<string, any> = {
+      security:       { quality: 0.35, speed: 0.30, cost: 0.35, freshness: 0.00 },
+      performance:    { quality: 0.30, speed: 0.35, cost: 0.35, freshness: 0.00 },
+      // CODE QUALITY: Requires deeper code understanding for complex refactoring (PMD, ESLint, etc.)
+      // Gradual increase (0.40→0.60) to improve fix quality while keeping cost meaningful
+      // Can increase to 0.65-0.70 if needed after testing
+      code_quality:   { quality: 0.60, speed: 0.10, cost: 0.30, freshness: 0.00 },
+      dependency:     { quality: 0.40, speed: 0.40, cost: 0.20, freshness: 0.00 },
+      architecture:   { quality: 0.70, speed: 0.20, cost: 0.10, freshness: 0.00 },
+      educator:       { quality: 0.65, speed: 0.25, cost: 0.10, freshness: 0.00 },
+      orchestrator:   { quality: 0.60, speed: 0.30, cost: 0.10, freshness: 0.00 },
+      comparator:     { quality: 0.30, speed: 0.60, cost: 0.10, freshness: 0.00 },
+      location_finder:{ quality: 0.20, speed: 0.70, cost: 0.10, freshness: 0.00 },
+      researcher:     { quality: 0.50, speed: 0.40, cost: 0.10, freshness: 0.00 }
+    };
+    
+    return weights[role] || { quality: 0.50, speed: 0.30, cost: 0.20, freshness: 0.00 };
   }
 
   /**
@@ -501,23 +600,40 @@ export class ModelResearcherService {
   private calculateContextSpecificScore(model: any, context: ContextRequest): number {
     let score = 50;
     const modelLower = model.id.toLowerCase();
-    
-    // Language-specific scoring
-    if (context.language === 'Python' && modelLower.includes('code')) score += 10;
-    if (context.language === 'Rust' && modelLower.includes('opus')) score += 10;
-    
-    // Size-specific scoring
+
+    // Universal, language-agnostic scoring
+    // Size/context signals
     if (context.repo_size === 'large' && model.context_length >= 128000) score += 20;
     if (context.repo_size === 'small' && modelLower.includes('mini')) score += 10;
-    
-    // Framework-specific scoring
-    if (context.framework === 'Machine Learning' && 
-        (modelLower.includes('opus') || modelLower.includes('claude'))) score += 15;
-    
-    // Task-specific scoring
-    if (context.task_type === 'code-analysis' && !modelLower.includes('chat')) score += 10;
-    
-    return Math.min(100, score);
+
+    // Task signal (prefer non-chat models for code analysis)
+    if ((context.task_type || '').includes('code') && !modelLower.includes('chat')) score += 10;
+
+    // Universal cost alignment driven by role weights (no language special cases)
+    const role = context.task_type || 'code_quality';
+    const roleWeights = this.getRoleWeights(role);
+    const costWeight = Math.max(0, Math.min(1, roleWeights.cost || 0));
+
+    // Price-aware penalty (scaled by cost weight)
+    if (model.pricing) {
+      const promptPrice = parseFloat(model.pricing.prompt || '0');
+      const completionPrice = parseFloat(model.pricing.completion || '0');
+      const avgPrice = (promptPrice + completionPrice) / 2;
+      if (avgPrice > 0) {
+        const pricePenalty = Math.min(25, Math.round(avgPrice * 100 * (0.5 + costWeight)));
+        score -= pricePenalty;
+      }
+    }
+
+    // Premium tier penalty unless large-context requirement exists
+    const looksPremium = /(opus|sonnet|pro|large)/.test(modelLower);
+    const requiresLargeContext = context.repo_size === 'large' || model.context_length >= 128000;
+    if (looksPremium && !requiresLargeContext) {
+      const premiumPenalty = Math.round(10 * (0.5 + costWeight));
+      score -= premiumPenalty;
+    }
+
+    return Math.min(100, Math.max(0, score));
   }
 
   /**

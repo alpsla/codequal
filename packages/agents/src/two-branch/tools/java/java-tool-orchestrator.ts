@@ -179,6 +179,7 @@ export interface RawIssue {
   cve?: string;
   externalInfoUrl?: string;  // PMD documentation URL
   ruleset?: string;          // PMD ruleset name
+  autoFixable?: boolean;     // Can this issue be auto-fixed by IDE/tools?
 }
 
 export interface OrchestrationResult {
@@ -488,14 +489,14 @@ export class JavaToolOrchestrator {
       if (this.config.pmd.customRuleset) {
         // Use project-specific custom ruleset
         const rulesetPath = path.resolve(this.config.pmd.customRuleset);
-        volumeMount = `-v ${rulesetPath}:/pmd-custom-ruleset.xml:ro \\`;
+        volumeMount = `-v "${rulesetPath}":/pmd-custom-ruleset.xml:ro \\`;
         rulesetConfig = '/pmd-custom-ruleset.xml';
         logger.info(`Using project-specific PMD ruleset: ${this.config.pmd.customRuleset}`);
       } else {
         // Use CodeQual default ruleset
         const defaultRuleset = path.join(__dirname, 'rulesets', 'pmd-codequal-default.xml');
         if (existsSync(defaultRuleset)) {
-          volumeMount = `-v ${defaultRuleset}:/pmd-custom-ruleset.xml:ro \\`;
+          volumeMount = `-v "${defaultRuleset}":/pmd-custom-ruleset.xml:ro \\`;
           rulesetConfig = '/pmd-custom-ruleset.xml';
           logger.info('Using CodeQual default PMD ruleset with tuned severity priorities');
         } else {
@@ -511,7 +512,7 @@ export class JavaToolOrchestrator {
       // Use "pmd pmd" syntax with correct flag format (--flag-name)
       const command = `
         docker run --rm \\
-          -v ${repoPath}:/workspace \\
+          -v "${repoPath}":/workspace \\
           ${volumeMount}
           ${this.dockerImage} \\
           -c "pmd pmd \\
@@ -574,7 +575,7 @@ export class JavaToolOrchestrator {
       // For large repos, scan in batches to avoid command line length issues
       const command = `
         docker run --rm \\
-          -v ${repoPath}:/workspace \\
+          -v "${repoPath}":/workspace \\
           ${this.dockerImage} \\
           -c "find /workspace -name '*.java' -type f ! -path '*/src/test/*' ! -path '*/src/tests/*' -print0 | \\
               xargs -0 -n 500 checkstyle -c ${this.config.checkstyle.configFile} -f xml 2>&1 > /workspace/checkstyle-results-${branch}.xml || true"
@@ -630,7 +631,7 @@ export class JavaToolOrchestrator {
 
       const command = `
         docker run --rm \\
-          -v ${repoPath}:/workspace \\
+          -v "${repoPath}":/workspace \\
           ${this.dockerImage} \\
           -c "cd /workspace && semgrep \\
             --config ${rulesets} \\
@@ -676,11 +677,13 @@ export class JavaToolOrchestrator {
 
   /**
    * Detect build system and determine if SpotBugs should run
+   * Strategy: Only enable for Gradle/Maven (per SPOTBUGS_STABILITY_STRATEGY.md)
    */
   private async shouldEnableSpotBugs(repoPath: string): Promise<{
     enabled: boolean;
     buildSystem?: string;
     buildCommand?: string;
+    classesPath?: string;
     skipReason?: string;
   }> {
     // User explicitly disabled
@@ -693,88 +696,66 @@ export class JavaToolOrchestrator {
       return {
         enabled: true,
         buildSystem: 'custom',
-        buildCommand: this.config.spotbugs.buildCommand
+        buildCommand: this.config.spotbugs.buildCommand,
+        classesPath: '/workspace/target/classes /workspace/build/classes/java/main'
       };
     }
 
-    // Auto-detect build system (if enabled)
-    if (this.config.spotbugs.autoDetectBuildSystem !== false) {
-      const detection = await this.detectBuildSystem(repoPath);
+    // Auto-detect build system
+    const hasMaven = await this.fileExists(path.join(repoPath, 'pom.xml'));
+    const hasGradle = await this.fileExists(path.join(repoPath, 'build.gradle')) ||
+                      await this.fileExists(path.join(repoPath, 'build.gradle.kts'));
 
-      // Check if supported
-      const supported = this.config.spotbugs.supportedBuildSystems || ['gradle', 'maven'];
-      if (!supported.includes(detection.buildSystem)) {
-        return {
-          enabled: false,
-          buildSystem: detection.buildSystem,
-          skipReason: `build-system-unsupported: ${detection.buildSystem}`
-        };
-      }
-
-      // Supported build system found
+    // Check for Gradle (supported)
+    if (hasGradle) {
+      const hasGradlew = await this.fileExists(path.join(repoPath, 'gradlew'));
+      const gradleCmd = hasGradlew ? './gradlew' : 'gradle';
       return {
         enabled: true,
-        buildSystem: detection.buildSystem,
-        buildCommand: detection.buildCommand
+        buildSystem: 'gradle',
+        buildCommand: `${gradleCmd} compileJava -x test --no-daemon --console=plain 2>&1 || true`,
+        classesPath: '/workspace/build/classes/java/main /workspace/*/build/classes/java/main'
       };
     }
 
-    // No build command and auto-detect disabled
+    // Check for Maven (supported)
+    if (hasMaven) {
+      const hasMvnw = await this.fileExists(path.join(repoPath, 'mvnw'));
+      const mvnCmd = hasMvnw ? './mvnw' : 'mvn';
+      return {
+        enabled: true,
+        buildSystem: 'maven',
+        buildCommand: `${mvnCmd} compile -DskipTests -q 2>&1 || true`,
+        classesPath: '/workspace/target/classes /workspace/*/target/classes'
+      };
+    }
+
+    // Check for other build systems (NOT supported per strategy)
+    const hasAnt = await this.fileExists(path.join(repoPath, 'build.xml'));
+    if (hasAnt) {
+      return {
+        enabled: false,
+        buildSystem: 'ant',
+        skipReason: 'build-system-unsupported (ant)'
+      };
+    }
+
+    const hasBazel = await this.fileExists(path.join(repoPath, 'WORKSPACE')) &&
+                      await this.fileExists(path.join(repoPath, 'BUILD'));
+    if (hasBazel) {
+      return {
+        enabled: false,
+        buildSystem: 'bazel',
+        skipReason: 'build-system-unsupported (bazel)'
+      };
+    }
+
+    // No recognized build system
     return {
       enabled: false,
-      skipReason: 'no-build-command-provided'
+      buildSystem: 'unknown',
+      skipReason: 'no-supported-build-system (gradle/maven required)'
     };
-  }
-
-  /**
-   * Detect build system (Gradle, Maven, Ant, etc.)
-   */
-  private async detectBuildSystem(repoPath: string): Promise<{
-    buildSystem: string;
-    buildCommand?: string;
-  }> {
-    // Check for Gradle (priority: wrapper > gradle)
-    if (await this.fileExists(path.join(repoPath, 'gradlew'))) {
-      return {
-        buildSystem: 'gradle',
-        buildCommand: `cd ${repoPath} && ./gradlew compileJava compileTestJava -x test --no-daemon`
-      };
-    }
-    if (await this.fileExists(path.join(repoPath, 'build.gradle')) ||
-        await this.fileExists(path.join(repoPath, 'build.gradle.kts'))) {
-      return {
-        buildSystem: 'gradle',
-        buildCommand: `cd ${repoPath} && gradle compileJava compileTestJava -x test --no-daemon`
-      };
-    }
-
-    // Check for Maven (priority: wrapper > mvn)
-    if (await this.fileExists(path.join(repoPath, 'mvnw'))) {
-      return {
-        buildSystem: 'maven',
-        buildCommand: `cd ${repoPath} && ./mvnw clean compile -DskipTests`
-      };
-    }
-    if (await this.fileExists(path.join(repoPath, 'pom.xml'))) {
-      return {
-        buildSystem: 'maven',
-        buildCommand: `cd ${repoPath} && mvn clean compile -DskipTests`
-      };
-    }
-
-    // Check for Ant
-    if (await this.fileExists(path.join(repoPath, 'build.xml'))) {
-      return { buildSystem: 'ant' };  // No auto-command (too variable)
-    }
-
-    // Check for Bazel
-    if (await this.fileExists(path.join(repoPath, 'WORKSPACE')) &&
-        await this.fileExists(path.join(repoPath, 'BUILD'))) {
-      return { buildSystem: 'bazel' };
-    }
-
-    // Unknown/custom
-    return { buildSystem: 'unknown' };
   }
 
   /**
@@ -798,48 +779,83 @@ export class JavaToolOrchestrator {
   ): Promise<ToolResult> {
     const startTime = Date.now();
 
-    // FIX #5: Graceful degradation - separate compilation errors from SpotBugs errors
+    // STRATEGY: Only enable SpotBugs for Gradle/Maven (per SPOTBUGS_STABILITY_STRATEGY.md)
+    // Other build systems (Ant, Bazel, custom) are gracefully skipped
     try {
-      // Step 1: Try to compile if build command provided
-      if (this.config.spotbugs?.buildCommand) {
-        logger.info('  Compiling project for SpotBugs...');
-        try {
-          await execAsync(this.config.spotbugs.buildCommand, { cwd: repoPath });
-          logger.info('  ✅ Compilation successful');
-        } catch (compilationError: any) {
-          // GRACEFUL DEGRADATION: Compilation failed, skip SpotBugs but continue other tools
-          logger.warn('⚠️  SpotBugs skipped: Compilation failed');
-          logger.warn(`   Reason: ${compilationError.message.split('\n')[0]}`);
-          logger.info('   Other tools will continue running...');
+      // Step 1: Check if SpotBugs should run (build system detection)
+      const shouldRun = await this.shouldEnableSpotBugs(repoPath);
 
-          return {
-            tool: 'spotbugs',
-            success: false,
-            duration: Date.now() - startTime,
-            issues: [],
-            error: `Compilation failed: ${compilationError.message.split('\n')[0]}`,
-            metadata: {
-              filesScanned: 0,
-              issuesFound: 0,
-              severity: { critical: 0, high: 0, medium: 0, low: 0 },
-              skipped: true,
-              skipReason: 'compilation-failed'
-            }
-          };
+      if (!shouldRun.enabled) {
+        logger.info(`⏭️  SpotBugs skipped: ${shouldRun.skipReason}`);
+        if (shouldRun.buildSystem && shouldRun.buildSystem !== 'gradle' && shouldRun.buildSystem !== 'maven') {
+          logger.info(`   Build system detected: ${shouldRun.buildSystem}`);
+          logger.info(`   💡 SpotBugs only supports Gradle/Maven (see SPOTBUGS_STABILITY_STRATEGY.md)`);
         }
+        return {
+          tool: 'spotbugs',
+          success: true,  // Not a failure, just skipped
+          duration: Date.now() - startTime,
+          issues: [],
+          metadata: {
+            filesScanned: 0,
+            issuesFound: 0,
+            severity: { critical: 0, high: 0, medium: 0, low: 0 },
+            skipped: true,
+            skipReason: shouldRun.skipReason
+          }
+        };
       }
 
-      // Step 2: Run SpotBugs on compiled classes (only if compilation succeeded)
+      // Step 2: Compile project (Gradle or Maven only)
+      logger.info(`  🔨 Compiling ${shouldRun.buildSystem} project for SpotBugs...`);
+      
+      try {
+        // Run compilation inside Docker container
+        const compileCommand = `
+          docker run --rm \\
+            -v "${repoPath}":/workspace \\
+            -w /workspace \\
+            ${this.dockerImage} \\
+            -c "${shouldRun.buildCommand}"
+        `;
+        
+        await execAsync(compileCommand, { timeout: 300000 }); // 5 min timeout
+        logger.info('  ✅ Compilation completed');
+      } catch (compilationError: any) {
+        // GRACEFUL DEGRADATION: Compilation failed, skip SpotBugs but continue other tools
+        logger.warn('⚠️  SpotBugs skipped: Compilation failed');
+        logger.warn(`   Build system: ${shouldRun.buildSystem}`);
+        logger.warn(`   Reason: ${compilationError.message.split('\n')[0]}`);
+        logger.info('   Other tools will continue running...');
+
+        return {
+          tool: 'spotbugs',
+          success: false,
+          duration: Date.now() - startTime,
+          issues: [],
+          error: `Compilation failed (${shouldRun.buildSystem}): ${compilationError.message.split('\n')[0]}`,
+          metadata: {
+            filesScanned: 0,
+            issuesFound: 0,
+            severity: { critical: 0, high: 0, medium: 0, low: 0 },
+            skipped: true,
+            skipReason: 'compilation-failed'
+          }
+        };
+      }
+
+      // Step 3: Run SpotBugs on compiled classes (only if compilation succeeded)
+      logger.info('  🐛 Running SpotBugs analysis...');
       const command = `
         docker run --rm \\
-          -v ${repoPath}:/workspace \\
+          -v "${repoPath}":/workspace \\
           ${this.dockerImage} \\
           -c "spotbugs \\
-            -${this.config.spotbugs?.priority} \\
-            -effort:${this.config.spotbugs?.effort} \\
+            -${this.config.spotbugs?.priority || 'medium'} \\
+            -effort:${this.config.spotbugs?.effort || 'default'} \\
             -xml:withMessages \\
             -output /workspace/spotbugs-results-${branch}.xml \\
-            /workspace/target/classes /workspace/build/classes 2>&1 || true"
+            ${shouldRun.classesPath} 2>&1 || true"
       `;
 
       await execAsync(command);
@@ -913,8 +929,8 @@ export class JavaToolOrchestrator {
 
       const command = `
         docker run --rm \\
-          -v ${repoPath}:/workspace \\
-          -v $(dirname ${pg.dbDriver}):$(dirname ${pg.dbDriver}):ro \\
+          -v "${repoPath}":/workspace \\
+          -v "$(dirname ${pg.dbDriver})":"$(dirname ${pg.dbDriver})":ro \\
           --network host \\
           -e CLASSPATH="/opt/dependency-check/lib/*:${pg.dbDriver}" \\
           ${this.dockerImage} \\
@@ -930,8 +946,30 @@ export class JavaToolOrchestrator {
             --disableYarnAudit"
       `;
 
+      // CRITICAL FIX: Docker needs host-accessible connection string
+      // Docker containers cannot reach "localhost" - they need host IP or special DNS
+      let dbConnectionString = pg.connectionString;
+      
+      // If connection string uses localhost, replace with host IP for Docker access
+      if (dbConnectionString.includes('localhost')) {
+        try {
+          const { stdout: hostIP } = await execAsync("hostname -I | awk '{print $1}'");
+          const resolvedIP = hostIP.trim();
+          if (resolvedIP) {
+            dbConnectionString = dbConnectionString.replace('localhost', resolvedIP);
+            logger.info(`✅ Resolved Docker-accessible database host: ${resolvedIP}`);
+          } else {
+            // Fallback to host.docker.internal (works on Mac/Windows Docker Desktop)
+            dbConnectionString = dbConnectionString.replace('localhost', 'host.docker.internal');
+            logger.info(`✅ Using Docker special DNS: host.docker.internal`);
+          }
+        } catch (error) {
+          logger.warn('⚠️  Could not resolve host IP, using localhost (may fail in Docker)');
+        }
+      }
+
       logger.info(`Running Dependency-Check with PostgreSQL backend...`);
-      logger.info(`Database: ${pg.connectionString}`);
+      logger.info(`Database: ${dbConnectionString}`);
       if (ossIndex?.enabled) {
         logger.info(`OSS Index: Enabled (user: ${ossIndex.username})`);
       }
@@ -1103,15 +1141,19 @@ export class JavaToolOrchestrator {
         const errorMatches = fileContent.matchAll(/<error line="(\d+)" (?:column="(\d+)" )?severity="([^"]+)" message="([^"]+)" source="([^"]+)"\/>/g);
 
         for (const errorMatch of errorMatches) {
+          const ruleName = errorMatch[5] || 'unknown';
+          const isAutoFixable = this.isCheckstyleAutoFixable(ruleName);
+          
           issues.push({
             tool: 'checkstyle',
             file: fileName,
             line: parseInt(errorMatch[1]),
             column: errorMatch[2] ? parseInt(errorMatch[2]) : undefined,
-            severity: this.mapCheckstyleSeverity(errorMatch[3]),
-            category: errorMatch[5] || 'unknown',
-            rule: errorMatch[5] || 'unknown',
-            message: errorMatch[4]
+            severity: this.mapCheckstyleSeverity(errorMatch[3], ruleName),  // Pass ruleName for severity mapping
+            category: ruleName,
+            rule: ruleName,
+            message: errorMatch[4],
+            autoFixable: isAutoFixable
           });
         }
       }
@@ -1289,7 +1331,38 @@ export class JavaToolOrchestrator {
     }
   }
 
-  private mapCheckstyleSeverity(severity: string): 'critical' | 'high' | 'medium' | 'low' {
+  private mapCheckstyleSeverity(severity: string, ruleName?: string): 'critical' | 'high' | 'medium' | 'low' {
+    // Style/formatting rules should be LOW severity (auto-fixable)
+    const STYLE_FORMATTING_RULES = [
+      'Indentation',
+      'LocalVariableName',
+      'ParameterName',
+      'MethodName',
+      'TypeName',
+      'LineLength',
+      'WhitespaceAround',
+      'WhitespaceAfter',
+      'WhitespaceBefore',
+      'EmptyLineSeparator',
+      'ImportOrder',
+      'UnusedImports',
+      'RedundantImport',
+      'AvoidStarImport',
+      'ModifierOrder',
+      'EmptyBlock',
+      'NeedBraces',
+      'LeftCurly',
+      'RightCurly',
+      'ParenPad',
+      'TypecastParenPad'
+    ];
+    
+    // Check if this is a formatting/style rule
+    if (ruleName && STYLE_FORMATTING_RULES.some(r => ruleName.includes(r))) {
+      return 'low';  // All formatting issues are LOW severity
+    }
+    
+    // For non-style rules, use original severity mapping
     switch (severity?.toLowerCase()) {
       case 'error':
         return 'high';
@@ -1300,6 +1373,50 @@ export class JavaToolOrchestrator {
       default:
         return 'medium';
     }
+  }
+
+  /**
+   * Check if a Checkstyle rule is auto-fixable
+   * Formatting/style rules can be fixed automatically by IDEs or tools
+   */
+  private isCheckstyleAutoFixable(ruleName: string): boolean {
+    const AUTO_FIXABLE_RULES = [
+      'Indentation',
+      'LocalVariableName',
+      'ParameterName',
+      'MethodName',
+      'TypeName',
+      'LineLength',
+      'WhitespaceAround',
+      'WhitespaceAfter',
+      'WhitespaceBefore',
+      'EmptyLineSeparator',
+      'ImportOrder',
+      'UnusedImports',
+      'RedundantImport',
+      'AvoidStarImport',
+      'ModifierOrder',
+      'EmptyBlock',
+      'NeedBraces',
+      'LeftCurly',
+      'RightCurly',
+      'ParenPad',
+      'TypecastParenPad',
+      'NoWhitespaceAfter',
+      'NoWhitespaceBefore',
+      'OperatorWrap',
+      'SeparatorWrap',
+      'ArrayTypeStyle',
+      'UpperEll',
+      'EmptyForInitializerPad',
+      'EmptyForIteratorPad',
+      'GenericWhitespace',
+      'MethodParamPad',
+      'NoLineWrap',
+      'SingleSpaceSeparator'
+    ];
+    
+    return AUTO_FIXABLE_RULES.some(rule => ruleName.includes(rule));
   }
 
   private mapSemgrepSeverity(severity?: string): 'critical' | 'high' | 'medium' | 'low' {

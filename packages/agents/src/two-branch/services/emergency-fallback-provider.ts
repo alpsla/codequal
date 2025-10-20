@@ -59,28 +59,25 @@ export class EmergencyFallbackProvider {
       return modelName.replace(/^(google|anthropic|openai)\//i, '');
     };
 
-    // Get provider-specific model from env
+    // Get model for selected provider
+    // Priority: EMERGENCY_FALLBACK_MODEL (global) > Provider-specific env > Provider default
     const getModelForProvider = (providerName: EmergencyProvider): string => {
-      // Priority: Provider-specific env var > EMERGENCY_FALLBACK_MODEL > default
+      const globalFallback = process.env.EMERGENCY_FALLBACK_MODEL;
+      if (globalFallback) return globalFallback;
+
       switch (providerName) {
         case 'gemini':
-          return process.env.GEMINI_MODEL ||
-                 process.env.EMERGENCY_FALLBACK_MODEL ||
-                 'gemini-2.5-flash';
+          return process.env.GEMINI_MODEL || 'gemini-2.5-flash';
         case 'anthropic':
-          return process.env.CLAUDE_MODEL ||
-                 process.env.EMERGENCY_FALLBACK_MODEL ||
-                 'claude-sonnet-4-20250514';
+          return process.env.CLAUDE_MODEL || 'claude-sonnet-4-20250514';
         case 'openai':
-          return process.env.GPT_MODEL ||
-                 process.env.EMERGENCY_FALLBACK_MODEL ||
-                 'gpt-4o';
+          return process.env.GPT_MODEL || 'gpt-4o';
         case 'none':
           return '';
       }
     };
 
-    // Get model for selected provider
+    // Resolve final model with priority rules
     const rawModel = getModelForProvider(provider);
     const model = stripProviderPrefix(rawModel);
 
@@ -103,10 +100,12 @@ export class EmergencyFallbackProvider {
 
     // Log the configuration for transparency
     if (provider !== 'none' && apiKey) {
-      console.log(
-        `[EmergencyFallbackProvider] ✅ Configured: ${provider}/${model} ` +
-        `(from ${process.env.GEMINI_MODEL || process.env.CLAUDE_MODEL || process.env.GPT_MODEL ? 'provider-specific' : process.env.EMERGENCY_FALLBACK_MODEL ? 'EMERGENCY_FALLBACK_MODEL' : 'default'})`
-      );
+      const source = process.env.EMERGENCY_FALLBACK_MODEL
+        ? 'EMERGENCY_FALLBACK_MODEL'
+        : (process.env.GEMINI_MODEL || process.env.CLAUDE_MODEL || process.env.GPT_MODEL)
+          ? 'provider-specific'
+          : 'default';
+      console.log(`[EmergencyFallbackProvider] ✅ Configured: ${provider}/${model} (from ${source})`);
     }
 
     return {
@@ -228,8 +227,23 @@ export class EmergencyFallbackProvider {
         ]
       });
 
+      // Safely extract text from content blocks (handle tool_use, images, etc.)
+      const blocks = (response as any).content as Array<any>;
+      const content = Array.isArray(blocks)
+        ? blocks
+            .map((b: any) => {
+              if (b && typeof b === 'object' && b.type === 'text' && typeof b.text === 'string') {
+                return b.text;
+              }
+              // Ignore non-text blocks but keep placeholders minimal
+              return '';
+            })
+            .filter(Boolean)
+            .join('\n')
+        : '';
+
       return {
-        content: response.content[0].text,
+        content,
         provider: 'anthropic',
         model: this.config.model
       };

@@ -1,10 +1,131 @@
 # 🧠 V9 CRITICAL KNOWLEDGE BASE
 **IMPORTANT: Start every V9 session by reading this file**
-**Last Updated: October 12, 2025 - V9 Report Format Enhancement Plan + Documentation Cleanup**
+**Last Updated: October 14, 2025 - Brave-Powered Educational Insights + E2E Cmds**
 
 ---
 
 ## 🎉 LATEST BREAKTHROUGH (October 12, 2025)
+## 🎉 LATEST BREAKTHROUGH (October 14, 2025)
+
+### Brave-Powered Educational Insights (EDU) ✅ IMPLEMENTED
+
+What changed
+- Educational Insights now support a retrieval-first flow using Brave Search with caching and a minimal AI summarization step.
+- Preserves 99.8% grouping savings; reduces EDU-specific AI calls and latency.
+
+Files
+- `src/two-branch/services/EducationalSearchService.ts` (NEW)
+  - Fetch via Brave (`BRAVE_API_KEY`), normalize/rank, cache (Redis → memory fallback)
+  - Minimal AI summary via `SimpleOpenRouterClient`
+- `src/two-branch/analyzers/v9-grouped-report-formatter.ts`
+  - Uses Brave-based EDU when `EDU_USE_BRAVE=true`, else falls back to legacy EDU
+
+Environment Flags (root `.env`)
+```bash
+# Enable Brave-powered EDU path
+EDU_USE_BRAVE=true
+
+# Brave Search API
+BRAVE_API_KEY=sk-brave-...
+
+# Optional: cache TTL (days), summarization model
+EDU_CACHE_TTL_DAYS=7
+EDU_SUMMARY_MODEL=google/gemini-2.5-flash
+```
+
+Expected Impact
+- Cost: 60–90% reduction for EDU section (fewer AI calls)
+- Latency: 2–5x faster EDU generation per group
+- Freshness: resources reflect current best-practice docs
+
+Failure/Rate-limit Handling
+- If Brave unavailable/rate-limited → falls back to legacy EDU path
+- AI summarization limited by `SimpleOpenRouterClient` rate limiter
+
+Run E2E on Oracle with EDU enabled
+```bash
+ssh -i "/Users/alpinro/Code Prjects/codequal/keys/oracle/ssh-key-2025-10-07.key" opc@129.213.49.128 << 'EOF'
+cd ~/codequal/packages/agents
+export $(grep -v '^#' .env | xargs)
+export EDU_USE_BRAVE=true
+npx ts-node test-v9-e2e-complete.ts 2>&1 | tee /tmp/v9-test.log
+EOF
+
+# Download generated report
+scp -i "/Users/alpinro/Code Prjects/codequal/keys/oracle/ssh-key-2025-10-07.key" \
+  opc@129.213.49.128:/tmp/v9-reports/v9-grouped-report-*.md \
+  ./
+```
+
+### Robust E2E (recommended env sourcing, avoids grep|xargs)
+
+```bash
+ssh -i "/Users/alpinro/Code Prjects/codequal/keys/oracle/ssh-key-2025-10-07.key" opc@129.213.49.128 << 'EOF'
+cd ~/codequal/packages/agents
+# Safely load environment variables from .env without xargs parsing issues
+set -a; [ -f .env ] && . ./.env; set +a
+export EDU_USE_BRAVE=true
+npx ts-node test-v9-e2e-complete.ts 2>&1 | tee /tmp/v9-test.log
+EOF
+
+# Download generated report
+scp -i "/Users/alpinro/Code Prjects/codequal/keys/oracle/ssh-key-2025-10-07.key" \
+  opc@129.213.49.128:/tmp/v9-reports/v9-grouped-report-*.md \
+  ./
+```
+
+### Optional: Background run with PID + log (may vary by remote shell)
+
+```bash
+ssh -i "/Users/alpinro/Code Prjects/codequal/keys/oracle/ssh-key-2025-10-07.key" opc@129.213.49.128 \
+  "cd ~/codequal/packages/agents && \
+   set -a; [ -f .env ] && . ./.env; set +a; \
+   export EDU_USE_BRAVE=true; \
+   nohup npx ts-node test-v9-e2e-complete.ts > /tmp/v9-test.log 2>&1 < /dev/null & \
+   echo $! > /tmp/v9-test.pid && \
+   echo PID:\$(cat /tmp/v9-test.pid) && \
+   tail -n 80 /tmp/v9-test.log"
+```
+
+Note: Some remote shells may not preserve $! reliably in a single one-liner. Prefer the heredoc variant above for live logs and simpler error handling.
+
+### Fresh Run Checklist (Avoid Reusing Old Reports)
+
+Follow this sequence EVERY time you edit the formatter/analyzer to guarantee a new report is produced and fetched:
+
+```bash
+# 1) Clean or rotate logs (optional but recommended)
+ssh -i "/Users/alpinro/Code Prjects/codequal/keys/oracle/ssh-key-2025-10-07.key" opc@129.213.49.128 \
+  'rm -f /tmp/v9-test.log'
+
+# 2) Run E2E interactively via heredoc (reliable)
+ssh -i "/Users/alpinro/Code Prjects/codequal/keys/oracle/ssh-key-2025-10-07.key" opc@129.213.49.128 << 'EOF'
+cd ~/codequal/packages/agents
+set -a; [ -f .env ] && . ./.env; set +a
+export EDU_USE_BRAVE=true
+npx ts-node test-v9-e2e-complete.ts 2>&1 | tee /tmp/v9-test.log
+EOF
+
+# 3) Verify a NEW report exists (pick most recent by mtime)
+ssh -i "/Users/alpinro/Code Prjects/codequal/keys/oracle/ssh-key-2025-10-07.key" opc@129.213.49.128 \
+  'ls -1t /tmp/v9-reports/v9-grouped-report-*.md | head -1'
+
+# 4) Fetch ONLY the newest report (no wildcards that can grab old files)
+latest=$(ssh -i "/Users/alpinro/Code Prjects/codequal/keys/oracle/ssh-key-2025-10-07.key" \
+  opc@129.213.49.128 'ls -1t /tmp/v9-reports/v9-grouped-report-*.md | head -1') && \
+scp -i "/Users/alpinro/Code Prjects/codequal/keys/oracle/ssh-key-2025-10-07.key" \
+  "opc@129.213.49.128:${latest}" \
+  "/Users/alpinro/Code Prjects/codequal/reports/"
+
+# 5) (Optional) Confirm log contains completion banner and the new filename
+ssh -i "/Users/alpinro/Code Prjects/codequal/keys/oracle/ssh-key-2025-10-07.key" opc@129.213.49.128 \
+  'tail -n 120 /tmp/v9-test.log | sed -n "1,200p"'
+```
+
+Rules that prevent stale results:
+- Never scp with a broad wildcard alone (e.g., `v9-grouped-report-*.md`) after edits. Always resolve the newest filename first (step 3/4).
+- Treat an empty or unchanged `/tmp/v9-test.log` as a failed run.
+- Expect a new report filename (timestamp-based). If the name didn’t change, the run likely didn’t execute.
 
 ### V9 Report Format Enhancement Plan Complete ✅
 
@@ -84,13 +205,28 @@
 **Oracle Cloud Details:**
 ```bash
 # SSH Connection
-ssh -i "/Users/alpinro/Code Prjects/codequal/keys/oracle/ssh-key-2025-05-08.key" opc@129.213.49.128
+ssh -i "/Users/alpinro/Code Prjects/codequal/keys/oracle/ssh-key-2025-10-07.key" opc@129.213.49.128
 
 # Infrastructure Available:
 - Redis: 10.116.0.7:6379 ✅
 - PostgreSQL: 129.213.49.128:5432/depcheck ✅
 - Docker Images: analyzer:lang-java-v6.0-arm ✅
 - OSS Index Credentials: Configured ✅
+```
+
+**Run E2E Test on Oracle (RECOMMENDED):**
+```bash
+# Complete E2E test with report generation
+ssh -i "/Users/alpinro/Code Prjects/codequal/keys/oracle/ssh-key-2025-10-07.key" opc@129.213.49.128 << 'EOF'
+cd ~/codequal/packages/agents
+export $(grep -v '^#' .env | xargs)
+npx ts-node test-v9-e2e-complete.ts 2>&1 | tee /tmp/v9-test.log
+EOF
+
+# Download generated report after test
+scp -i "/Users/alpinro/Code Prjects/codequal/keys/oracle/ssh-key-2025-10-07.key" \
+  opc@129.213.49.128:/tmp/v9-reports/v9-grouped-report-*.md \
+  ./
 ```
 
 **Test Scripts on Oracle:**
@@ -452,9 +588,25 @@ cd packages/agents
 npm run build
 npm run typecheck
 npm run lint
+```
 
-# Test V9 with real PR
-npx ts-node src/two-branch/tests/run-v9-java-pr-complete.ts
+### Run V9 E2E Test (Oracle Cloud - RECOMMENDED)
+```bash
+# Complete E2E test with Apache Kafka PR #17620
+ssh -i "/Users/alpinro/Code Prjects/codequal/keys/oracle/ssh-key-2025-10-07.key" opc@129.213.49.128 << 'EOF'
+cd ~/codequal/packages/agents
+export $(grep -v '^#' .env | xargs)
+npx ts-node test-v9-e2e-complete.ts 2>&1 | tee /tmp/v9-test.log
+EOF
+
+# Download generated report
+scp -i "/Users/alpinro/Code Prjects/codequal/keys/oracle/ssh-key-2025-10-07.key" \
+  opc@129.213.49.128:/tmp/v9-reports/v9-grouped-report-*.md \
+  ./
+
+# View test log
+ssh -i "/Users/alpinro/Code Prjects/codequal/keys/oracle/ssh-key-2025-10-07.key" \
+  opc@129.213.49.128 "cat /tmp/v9-test.log"
 ```
 
 ### Trigger Model Research
@@ -761,13 +913,13 @@ graph TD
 - Each agent (Security, Performance, etc.) generates specialized fixes
 
 ### 2. Educational Insights
-**Location:** `packages/agents/src/two-branch/analyzers/v9-educational-resources.ts`
-- Class: `V9EducationalResources`
-- Methods:
-  - `generateResources()` - Creates educational content
-  - `getSecurityResources()` - Security training materials
-  - `getPerformanceResources()` - Performance optimization guides
-  - Validates YouTube/StackOverflow links
+**Locations:**
+- `packages/agents/src/two-branch/analyzers/v9-grouped-report-formatter.ts` (integration)
+- `packages/agents/src/two-branch/services/EducationalSearchService.ts` (Brave retrieval/caching/summary)
+
+**Feature Flag:**
+- `EDU_USE_BRAVE=true` enables Brave-powered retrieval-first EDU
+- Falls back to legacy EDU when disabled or on errors/rate limits
 
 ### 3. Business Risk Analysis
 **Location:** `packages/agents/src/two-branch/analyzers/v9-business-impact.ts`
@@ -1194,36 +1346,34 @@ const config = {
 
 ---
 
-## 🚨 CRITICAL INFRASTRUCTURE LIMITATION (2025-09-19)
+## 🎯 PRODUCTION INFRASTRUCTURE (2025-10-19)
 
-### Storage Access Crisis - DigitalOcean Block Volumes
-**Problem:** DigitalOcean block storage ONLY supports ReadWriteOnce (RWO)
-- Cannot mount PVC to multiple pods simultaneously
-- Prevents true parallel tool execution (5x performance impact)
-- Multi-Attach error even with read-only mounts
-- **Support ticket submitted:** Awaiting response (24hr SLA)
+### Oracle Cloud Infrastructure (Production)
+**Status:** ✅ MIGRATED from DigitalOcean - October 2025
 
-### Current Workaround: EmptyDir with Init Containers
-```yaml
-# Each pod gets its own emptyDir volume
-# Init container copies repo from PVC to emptyDir
-# Adds ~30-60 seconds overhead per tool
-# But allows true parallel execution
-```
+**Oracle A1.Flex ARM64:**
+- Server: 129.213.49.128 (4 OCPUs, 24GB RAM)
+- Native ARM64 execution (no emulation)
+- Cost: Pay-per-use (Free tier not available)
+- Performance: Calibrated and production-ready
 
-### Migration Decision Pending (2025-09-20)
-- **If DO provides solution:** Continue with current infrastructure
-- **If DO cannot solve:** Immediate migration to GKE (2 week timeline)
-- **Cost impact:** +$70/month but 5x performance improvement
-- **Risk:** Low (0 users currently)
+**Services:**
+- Redis: localhost:6379 (operational)
+- PostgreSQL: localhost:5432/depcheck (208K+ CVEs)
+- Docker Registry: registry.digitalocean.com/codequal-registry
+- Storage: Local NVMe (high performance)
 
-### Alternative Providers Evaluated
-| Provider | Solution | Cost/Month | Status |
-|----------|----------|------------|--------|
-| DigitalOcean | None available | $220 | Current (problematic) |
-| Google Cloud (GKE) | Filestore NFS | $290 | Best alternative |
-| AWS (EKS) | EFS | $320 | More expensive |
-| Azure (AKS) | Azure Files | $310 | Good alternative |
+**Why Oracle:**
+- ✅ Native ARM64 (no emulation overhead)
+- ✅ High performance NVMe storage
+- ✅ No RWO storage limitations (DigitalOcean issue resolved)
+- ✅ Pay-per-use pricing (cost-effective for development)
+- ✅ Perfect for production testing and calibration
+
+**Cost Breakdown:**
+- **Infrastructure:** Pay-per-use (Oracle Cloud)
+- **AI Analysis:** $0.01/analysis (OpenRouter API costs)
+- **Total Cost per Analysis:** $0.01 AI + infrastructure overhead
 
 ## 📊 Performance Calibration (2025-09-29 COMPLETE) ✅
 
@@ -1299,11 +1449,12 @@ Each language needs its own performance calibration:
 
 ### Oracle A1.Flex Infrastructure ✅
 - **Server**: 129.213.49.128 (4 OCPUs ARM64, 24GB RAM)
-- **SSH Key**: `/Users/alpinro/Code Prjects/codequal/keys/oracle/ssh-key-2025-05-08.key`
+- **SSH Key**: `/Users/alpinro/Code Prjects/codequal/keys/oracle/ssh-key-2025-10-07.key` (updated October 2025)
 - **Performance**: Calibrated and validated for CodeQual workloads
 - **Native ARM64**: No emulation overhead
 - **Container Registry**: registry.digitalocean.com/codequal-registry (OCIR migration complete)
 - **Redis**: localhost:6379 (validated and operational)
-- **Test Repository**: /tmp/kafka-repo (Apache Kafka, 3,472 files)
+- **PostgreSQL**: localhost:5432/depcheck (Dependency-Check CVE database)
+- **Test Repository**: /tmp/kafka-repo (Apache Kafka, 3,472 files, cached)
 
 ## 🔴 REMEMBER: This is the source of truth for V9 knowledge!

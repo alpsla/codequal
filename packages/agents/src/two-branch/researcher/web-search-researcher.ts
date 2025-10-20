@@ -70,12 +70,12 @@ Focus on finding ANY models that:
   const fullPrompt = searchPrompt + '\n\n' + locationFinderContext;
   
   try {
-    // This would use the ResearcherAgent's own model to search the web
+    // Use a known good model for the research (gemini-2.5-flash is cheap and effective)
     const response = await aiService.call(
       {
-        id: 'dynamic-model',
-        model: 'dynamic', // Will be selected dynamically,
-        provider: 'anthropic'
+        id: 'google/gemini-2.5-flash',
+        model: 'gemini-2.5-flash',
+        provider: 'google'
       },
       {
         systemPrompt: 'You are an AI model researcher with access to web search. Research and discover the latest AI models available in the market.',

@@ -28,6 +28,12 @@ export class SimpleOpenRouterClient {
   private openrouterClient: OpenAI;
   private geminiClient: OpenAI | null = null;
   private useEmergencyFallback = false;
+  
+  // Rate limiting to prevent runaway costs
+  private callCount = 0;
+  private sessionStartTime = Date.now();
+  private readonly MAX_CALLS_PER_SESSION = parseInt(process.env.MAX_AI_CALLS_PER_SESSION || '100');
+  private readonly SESSION_DURATION_MS = 60 * 60 * 1000; // 1 hour
 
   constructor() {
     // Initialize OpenRouter client
@@ -47,23 +53,65 @@ export class SimpleOpenRouterClient {
         baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/'
       } as any);
     }
+    
+    console.log(`[SimpleClient] Rate limit: ${this.MAX_CALLS_PER_SESSION} calls per session`);
+  }
+  
+  /**
+   * Reset call counter (called automatically after session duration)
+   */
+  private resetIfNeeded(): void {
+    const elapsed = Date.now() - this.sessionStartTime;
+    if (elapsed > this.SESSION_DURATION_MS) {
+      console.log(`[SimpleClient] Session expired, resetting counter (was ${this.callCount} calls)`);
+      this.callCount = 0;
+      this.sessionStartTime = Date.now();
+    }
+  }
+  
+  /**
+   * Check rate limit before making API call
+   */
+  private checkRateLimit(): void {
+    this.resetIfNeeded();
+    
+    if (this.callCount >= this.MAX_CALLS_PER_SESSION) {
+      const elapsed = Date.now() - this.sessionStartTime;
+      const remainingMs = this.SESSION_DURATION_MS - elapsed;
+      const remainingMin = Math.ceil(remainingMs / 60000);
+      
+      throw new Error(
+        `🚨 RATE LIMIT EXCEEDED: Made ${this.callCount} API calls in this session. ` +
+        `Maximum allowed: ${this.MAX_CALLS_PER_SESSION}. ` +
+        `Please wait ${remainingMin} minutes or restart the process. ` +
+        `This is a safety measure to prevent runaway costs.`
+      );
+    }
   }
 
   /**
    * Simple chat completion - ONE call, fallback on 401 only
+   * WITH RATE LIMITING to prevent runaway costs
    */
   async chat(request: SimpleAIRequest): Promise<SimpleAIResponse> {
+    // Check rate limit BEFORE making API call
+    this.checkRateLimit();
+    
     const {
       systemPrompt,
       userPrompt,
-      model = 'google/gemini-2.5-flash',
+      model,
       temperature = 0.3,
       maxTokens = 1500
     } = request;
 
+    // Increment call counter
+    this.callCount++;
+    console.log(`[SimpleClient] API call ${this.callCount}/${this.MAX_CALLS_PER_SESSION}`);
+    
     // If already using fallback, go straight to Gemini
-    if (this.useEmergencyFallback && this.geminiClient) {
-      return this.callGemini(systemPrompt, userPrompt, temperature, maxTokens);
+    if (this.useEmergencyFallback && (process.env.STRICT_NO_FALLBACK === 'true' || process.env.E2E_DISABLE_EMERGENCY_FALLBACK === 'true')) {
+      throw new Error('ALERT: Emergency fallback is disabled by STRICT_NO_FALLBACK');
     }
 
     // Try OpenRouter once
@@ -85,21 +133,37 @@ export class SimpleOpenRouterClient {
       };
 
     } catch (error: any) {
-      // On 401 authentication error, switch to emergency fallback
+      // On 401 authentication error
       if (error.status === 401 || error.message?.includes('401') || error.message?.includes('authentication')) {
+        if (process.env.STRICT_NO_FALLBACK === 'true' || process.env.E2E_DISABLE_EMERGENCY_FALLBACK === 'true') {
+          throw new Error('ALERT: OpenRouter authentication failed and STRICT_NO_FALLBACK is enabled');
+        }
         console.warn('[SimpleClient] ⚠️  OpenRouter 401 error - switching to Gemini fallback');
-        
         if (this.geminiClient) {
           this.useEmergencyFallback = true;
           return this.callGemini(systemPrompt, userPrompt, temperature, maxTokens);
         }
-        
         throw new Error('OpenRouter authentication failed and no emergency fallback configured');
       }
 
       // For any other error, throw immediately (no retries)
       throw new Error(`OpenRouter API error: ${error.message}`);
     }
+  }
+
+  /**
+   * Get current rate limit status
+   */
+  getStatus(): { callCount: number; maxCalls: number; resetIn: number } {
+    this.resetIfNeeded();
+    const elapsed = Date.now() - this.sessionStartTime;
+    const remainingMs = this.SESSION_DURATION_MS - elapsed;
+    
+    return {
+      callCount: this.callCount,
+      maxCalls: this.MAX_CALLS_PER_SESSION,
+      resetIn: Math.ceil(remainingMs / 60000) // minutes
+    };
   }
 
   /**
