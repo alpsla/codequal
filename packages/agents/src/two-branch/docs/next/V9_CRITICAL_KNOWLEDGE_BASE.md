@@ -1,11 +1,64 @@
 # 🧠 V9 CRITICAL KNOWLEDGE BASE
 **IMPORTANT: Start every V9 session by reading this file**
-**Last Updated: October 14, 2025 - Brave-Powered Educational Insights + E2E Cmds**
+**Last Updated: October 22, 2025 - User Enhancements + UX Improvements**
 
 ---
 
-## 🎉 LATEST BREAKTHROUGH (October 12, 2025)
-## 🎉 LATEST BREAKTHROUGH (October 14, 2025)
+## 🎉 LATEST BREAKTHROUGH (October 22, 2025)
+
+### User-Driven Enhancements ✅ ALL COMPLETE
+
+**Status**: 3 enhancements implemented, tested, and verified
+
+**What Changed:**
+1. ✅ **GuardLogStatement Risk Level** → Changed from LOW to MEDIUM (1,295 occurrences justify higher priority)
+2. ✅ **Comprehensive Training Materials** → Now includes ALL blocker issues + top 5 critical/high issues (not just top 3)
+3. ✅ **Re-scan Validation Workflow** → Automated re-scan after fixes with before/after comparison
+
+**Impact:**
+- More accurate risk assessment (GuardLogStatement: 5-15% CPU overhead = MEDIUM risk)
+- Better developer education (covers all blocking issues, not just subset)
+- Faster validation (automated re-scan vs manual testing)
+- User satisfaction: Addressed all feedback points
+
+**Files Modified:**
+- `v9-grouped-report-formatter.ts`:
+  - `calculateRiskLevel()` - Rule-specific overrides for GuardLogStatement
+  - `generateEducationalResourcesBrave()` - Enhanced training for all blockers + critical/high
+  - `generateFooter()` - Added re-scan validation workflow to Step 3
+
+**Test Results:**
+- Report: `reports/v9-ALL-3-ENHANCEMENTS-VERIFIED.md`
+- All 3 enhancements working correctly
+- Apache Kafka PR #17620 analysis successful
+- Duration: 24m 9s (expected for 521K+ issues)
+- Cost: $0.01 (verified)
+
+---
+
+## 🎨 UX IMPROVEMENTS BACKLOG (October 22, 2025)
+
+### Status: DEFERRED to UI Layer (Phase 5+)
+
+**Decision**: Markdown report is intermediate format. Most UX issues will be filtered/improved in UI layer (CI/CD, API, Web Dashboard).
+
+**Quick Fixes to Do (Next Session):**
+1. ✅ **Time-of-day greeting** → Change to "Hi @user!" (5 min)
+2. ✅ **Footer link clarity** → Remove confusing "View Full Report" link or clarify (5 min)
+3. ✅ **IDE progress log example** → Show realistic progress updates, not static list (30 min)
+
+**Deferred to UI Layer:**
+- Generic paragraphs repeated ~50 times (filter in presentation)
+- "Impact if not fixed" repeated 43 times (group at category level in UI)
+- Team recommendations based on stats (Phase 4+: Gamification)
+
+**Documentation**: `/tmp/ux-improvements-backlog.md`
+
+---
+
+## 🎉 PREVIOUS BREAKTHROUGHS
+
+### October 14, 2025: Brave-Powered Educational Insights
 
 ### Brave-Powered Educational Insights (EDU) ✅ IMPLEMENTED
 
