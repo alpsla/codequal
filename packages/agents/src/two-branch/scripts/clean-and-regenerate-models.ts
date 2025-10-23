@@ -63,81 +63,82 @@ const CURRENT_MODELS = {
   ]
 };
 
-// Role to model mapping based on requirements
+// Role to model mapping - FRESHNESS REQUIREMENT: ONLY models < 6 months old, PREFER LATEST versions
+// Updated 2025-10-14: Cost + freshness optimized (claude-sonnet-4 NOT 3.5/3.7!)
 const ROLE_MODEL_MAPPING = {
-  // Critical roles - need high quality
+  // Critical roles - balance cost with freshness, REQUIRE LATEST versions
   security: {
-    primary: 'anthropic/claude-3.5-sonnet',
-    fallback: 'anthropic/claude-opus-4.1',
-    reasoning: 'Security analysis requires highest accuracy and comprehensive understanding'
+    primary: 'google/gemini-2.5-flash',  // Latest (2025), fast, cost-effective for pattern-based fixes
+    fallback: 'anthropic/claude-sonnet-4',  // Latest Sonnet (NOT 3.5!), high quality
+    reasoning: 'Security fix generation prioritizes cost + freshness; tools already found issues'
   },
   architecture: {
-    primary: 'anthropic/claude-3.5-sonnet',
+    primary: 'anthropic/claude-sonnet-4',  // Latest Sonnet (NOT 3.5!)
     fallback: 'google/gemini-2.5-pro',
-    reasoning: 'Architecture analysis needs deep understanding of complex systems'
+    reasoning: 'Architecture needs latest model capabilities for deep reasoning'
   },
   
-  // Performance-sensitive roles - need speed
+  // Performance-sensitive roles - speed + freshness + cost
   performance: {
-    primary: 'deepseek/deepseek-chat-v3.1',
-    fallback: 'google/gemini-2.5-flash',
-    reasoning: 'Performance analysis needs fast response with good accuracy'
+    primary: 'google/gemini-2.5-flash',  // Latest, fastest, cheapest
+    fallback: 'deepseek/deepseek-chat-v3.1',  // Latest DeepSeek
+    reasoning: 'Performance fix generation benefits from fast, fresh, cost-effective models'
   },
   comparator: {
     primary: 'google/gemini-2.5-flash',
     fallback: 'deepseek/deepseek-chat-v3.1',
-    reasoning: 'Comparison needs speed for multiple analyses'
+    reasoning: 'Comparison needs speed with latest model improvements'
   },
   location_finder: {
     primary: 'google/gemini-2.5-flash-lite',
-    fallback: 'deepseek/deepseek-chat-v3.1',
-    reasoning: 'Location finding is pattern matching, needs speed over deep analysis'
+    fallback: 'google/gemini-2.5-flash',
+    reasoning: 'Location finding uses fastest fresh model for simple pattern matching'
   },
   
-  // Balanced roles - good quality at reasonable cost
+  // Balanced roles - cost + freshness optimized
   code_quality: {
-    primary: 'google/gemini-2.5-flash',
-    fallback: 'anthropic/claude-3.7-sonnet',
-    reasoning: 'Code quality needs good accuracy with reasonable speed'
+    primary: 'google/gemini-2.5-flash',  // Latest, cost-effective
+    fallback: 'deepseek/deepseek-chat-v3.1',  // Latest, avoid old claude-3.7
+    reasoning: 'Code quality fix generation prioritizes cost with latest linting patterns'
   },
   testing: {
     primary: 'google/gemini-2.5-flash',
     fallback: 'qwen/qwen3-max',
-    reasoning: 'Testing analysis needs balanced performance'
+    reasoning: 'Testing needs balanced performance with latest models'
   },
   documentation: {
     primary: 'google/gemini-2.5-flash',
     fallback: 'meta-llama/llama-3.3-8b-instruct',
-    reasoning: 'Documentation generation needs good language skills at low cost'
+    reasoning: 'Documentation generation needs latest language models'
   },
   
-  // Specialized roles
+  // Specialized roles - quality first, but MUST be fresh
   deepwiki: {
-    primary: 'anthropic/claude-3.5-sonnet',
+    primary: 'anthropic/claude-sonnet-4',  // Latest Sonnet (NOT 3.5!)
     fallback: 'google/gemini-2.5-pro',
-    reasoning: 'DeepWiki needs comprehensive understanding and high quality output'
+    reasoning: 'DeepWiki needs latest comprehensive understanding capabilities'
   },
   dependency: {
     primary: 'qwen/qwen3-coder-30b-a3b-instruct',
     fallback: 'deepseek/deepseek-v3.1-base',
-    reasoning: 'Dependency analysis benefits from coding-specialized models'
+    reasoning: 'Dependency analysis needs latest coding models with fresh CVE knowledge'
   },
   
-  // Meta roles
+  // Meta roles - speed + freshness
   orchestrator: {
     primary: 'google/gemini-2.5-flash',
     fallback: 'deepseek/deepseek-chat-v3.1',
-    reasoning: 'Orchestrator needs fast decision making'
+    reasoning: 'Orchestration needs fast decision making with latest intelligence'
   },
   researcher: {
     primary: 'google/gemini-2.5-flash',
     fallback: 'qwen/qwen-plus-2025-07-28',
-    reasoning: 'Researcher needs good search and synthesis capabilities'
+    reasoning: 'Researcher needs latest search and synthesis capabilities'
   },
   educator: {
     primary: 'google/gemini-2.5-flash',
-    fallback: 'anthropic/claude-3.7-sonnet',
-    reasoning: 'Educator needs clear explanations at reasonable cost'
+    fallback: 'anthropic/claude-sonnet-4',  // Latest Sonnet (NOT 3.7!)
+    reasoning: 'Educator needs latest teaching methodologies and explanations'
   }
 };
 
@@ -286,16 +287,25 @@ async function generateFreshConfigs() {
 
 function getWeightsForRole(role: string, language?: string, size?: string): Record<string, number> {
   const baseWeights: Record<string, Record<string, number>> = {
-    security: { quality: 0.50, speed: 0.10, cost: 0.20, freshness: 0.15, contextWindow: 0.05 },
-    performance: { quality: 0.35, speed: 0.25, cost: 0.25, freshness: 0.05, contextWindow: 0.10 },
-    code_quality: { quality: 0.25, speed: 0.25, cost: 0.35, freshness: 0.05, contextWindow: 0.10 },
+    // Cost-optimized for pattern-based fix generation, but PRIORITIZE FRESHNESS (< 6 months, prefer latest versions)
+    // Security patterns evolve rapidly - newer models have latest vulnerability knowledge
+    security: { quality: 0.25, speed: 0.20, cost: 0.30, freshness: 0.20, contextWindow: 0.05 },
+    // Performance optimizations benefit from latest model improvements
+    performance: { quality: 0.20, speed: 0.25, cost: 0.30, freshness: 0.20, contextWindow: 0.05 },
+    // Code quality benefits from latest linting/style patterns
+    code_quality: { quality: 0.20, speed: 0.25, cost: 0.30, freshness: 0.20, contextWindow: 0.05 },
+    // Dependency checking needs latest CVE databases - freshness is CRITICAL
+    dependency: { quality: 0.30, speed: 0.30, cost: 0.15, freshness: 0.20, contextWindow: 0.05 },
+    
+    // Keep high quality for deep reasoning tasks, but still prioritize freshness
+    architecture: { quality: 0.35, speed: 0.15, cost: 0.20, freshness: 0.15, contextWindow: 0.15 },
+    deepwiki: { quality: 0.40, speed: 0.15, cost: 0.20, freshness: 0.15, contextWindow: 0.10 },
+    
+    // Other roles - maintain existing balance
     testing: { quality: 0.30, speed: 0.20, cost: 0.35, freshness: 0.05, contextWindow: 0.10 },
     documentation: { quality: 0.25, speed: 0.30, cost: 0.30, freshness: 0.05, contextWindow: 0.10 },
-    architecture: { quality: 0.40, speed: 0.15, cost: 0.20, freshness: 0.10, contextWindow: 0.15 },
     comparator: { quality: 0.30, speed: 0.35, cost: 0.25, freshness: 0.05, contextWindow: 0.05 },
     location_finder: { quality: 0.25, speed: 0.40, cost: 0.25, freshness: 0.05, contextWindow: 0.05 },
-    deepwiki: { quality: 0.45, speed: 0.15, cost: 0.20, freshness: 0.10, contextWindow: 0.10 },
-    dependency: { quality: 0.35, speed: 0.20, cost: 0.25, freshness: 0.10, contextWindow: 0.10 },
     orchestrator: { quality: 0.25, speed: 0.40, cost: 0.25, freshness: 0.05, contextWindow: 0.05 },
     researcher: { quality: 0.35, speed: 0.15, cost: 0.15, freshness: 0.25, contextWindow: 0.10 },
     educator: { quality: 0.30, speed: 0.35, cost: 0.20, freshness: 0.05, contextWindow: 0.10 }

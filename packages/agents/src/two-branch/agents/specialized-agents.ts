@@ -63,9 +63,10 @@ abstract class BaseSpecializedAgent {
   async generateFixSuggestion(issue: IssueContext, modelOverride?: string): Promise<FixSuggestion> {
     // BUG-119 FIX: Use provided model override or model from config
     // Priority: modelOverride > modelConfig.primary_model > fallback default
-    const modelToUse = modelOverride ||
-                      this.modelConfig?.primary_model ||
-                      'google/gemini-2.5-flash'; // Last resort fallback
+    const strict = process.env.STRICT_NO_FALLBACK === 'true' || process.env.E2E_DISABLE_EMERGENCY_FALLBACK === 'true';
+    const modelToUse = modelOverride || this.modelConfig?.primary_model || (strict
+      ? (() => { throw new Error('ALERT: No model configured for agent under STRICT_NO_FALLBACK'); })()
+      : 'google/gemini-2.5-flash');
 
     const systemPrompt = this.getSystemPrompt();
     const userPrompt = this.buildPrompt(issue);
@@ -79,13 +80,17 @@ abstract class BaseSpecializedAgent {
         userPrompt,
         model: modelToUse,
         temperature: 0.3,
-        maxTokens: 1500
+        maxTokens: issue.codeSnippet ? 2500 : 1200  // More tokens when code snippet provided
       });
 
       return this.parseAIResponse(response.content, issue);
 
     } catch (error: any) {
-      // For any error, use default fix
+      // Under strict mode, surface the failure to abort the flow
+      const strict = process.env.STRICT_NO_FALLBACK === 'true' || process.env.E2E_DISABLE_EMERGENCY_FALLBACK === 'true';
+      if (strict) {
+        throw error;
+      }
       console.error(`[${this.agentRole}] Error generating fix, using fallback:`, error.message);
       return this.getDefaultFix(issue);
     }
@@ -109,15 +114,45 @@ abstract class BaseSpecializedAgent {
     const paragraphs = fix.split(/\n\n+/);
     const fixDescription = paragraphs[0] || fix;
     
-    // Try to extract code from response
-    const codeMatch = response.match(/```[\w]*\n([\s\S]*?)```/);
+    // Try to extract code from response - be lenient with different formats
+    // Try multiple patterns:
+    // 1. Standard markdown: ```lang\ncode```
+    // 2. Without language: ```\ncode```
+    // 3. Multiple blocks: take the largest one
+    const codeBlockPattern = /```[\w]*\n([\s\S]*?)```/g;
+    const matches = Array.from(response.matchAll(codeBlockPattern));
+    
     let correctedCode = '';
     
-    if (codeMatch && codeMatch[1].trim()) {
-      correctedCode = codeMatch[1].trim();
-    } else {
-      // Generate meaningful code based on issue type
-      correctedCode = this.generateMeaningfulCode(issue);
+    if (matches.length > 0) {
+      // Take the longest code block (likely the actual fix, not example)
+      correctedCode = matches
+        .map(m => m[1].trim())
+        .filter(code => code.length > 10) // Filter out tiny snippets
+        .sort((a, b) => b.length - a.length)[0] || '';
+    }
+    
+    // If still no code, try to extract code-like content without markdown
+    if (!correctedCode && response.includes(issue.file.split('/').pop() || '')) {
+      // Look for indented code blocks (likely code even without markdown)
+      const linesWithCode = response.split('\n').filter(line => 
+        /^\s{2,}/.test(line) && // Indented
+        /[{};()=]/.test(line)    // Has code-like syntax
+      );
+      if (linesWithCode.length > 2) {
+        correctedCode = linesWithCode.join('\n').trim();
+      }
+    }
+    
+    // Last resort: check if there's meaningful content that looks like guidance
+    if (!correctedCode) {
+      // If the response has specific method/class names from the issue, use it as guidance
+      if (response.length > 50 && (response.includes('class ') || response.includes('public ') || response.includes('private '))) {
+        correctedCode = '// Apply this fix to your code:\n' + response.substring(0, 500);
+      } else {
+        // Only then fall back to generic message
+        correctedCode = this.generateMeaningfulCode(issue);
+      }
     }
     
     // Extract best practices if present
@@ -141,25 +176,14 @@ abstract class BaseSpecializedAgent {
     const lineNum = issue.line || 1;
     const fileName = issue.file.split('/').pop() || 'File';
     
-    // Generate more specific code based on issue type
-    if (issue.type.toLowerCase().includes('security')) {
-      return `${lineNum}: // SECURITY FIX: Implement secure coding practice
-${lineNum + 1}: // Validate and sanitize all inputs
-${lineNum + 2}: // Use parameterized queries or prepared statements
-${lineNum + 3}: // Apply principle of least privilege`;
-    } else if (issue.type.toLowerCase().includes('performance')) {
-      return `${lineNum}: // PERFORMANCE FIX: Optimize algorithm/resource usage
-${lineNum + 1}: // Consider caching, lazy loading, or async processing
-${lineNum + 2}: // Profile and measure performance impact`;
-    } else if (issue.type.toLowerCase().includes('quality')) {
-      return `${lineNum}: // CODE QUALITY FIX: Improve readability and maintainability
-${lineNum + 1}: // Follow naming conventions and SOLID principles
-${lineNum + 2}: // Add proper error handling and documentation`;
-    } else {
-      return `${lineNum}: // FIX: Address ${issue.type} issue in ${fileName}
-${lineNum + 1}: // ${issue.description}
-${lineNum + 2}: // Apply appropriate solution based on context`;
-    }
+    // FALLBACK: AI failed to generate code - warn user
+    console.warn(`[${this.agentRole}] AI failed to generate code block for ${issue.type} in ${fileName}:${lineNum}`);
+    
+    // Return a clear "manual review required" message instead of generic placeholders
+    return `${lineNum}: // ⚠️ AI-generated fix not available - Manual review required
+${lineNum + 1}: // Issue: ${issue.description}
+${lineNum + 2}: // See ${issue.type} documentation for fix patterns
+${lineNum + 3}: // Context: ${fileName} line ${lineNum}`;
   }
 
   protected generateDefaultCode(issue: IssueContext): string {
@@ -208,19 +232,120 @@ Be specific and practical.`;
   }
 
   protected buildPrompt(issue: IssueContext): string {
-    return `Security issue: ${issue.description}
-File: ${issue.file}, Line: ${issue.line}
-${issue.codeSnippet ? `Code:\n${issue.codeSnippet}` : ''}
+    const fileName = issue.file.split('/').pop() || '';
+    const className = fileName.replace(/\.\w+$/, '');
+    
+    // Add security-specific guidance
+    const guidance = this.getSecurityGuidance(issue);
+    
+    return `Security vulnerability: ${issue.type}
+File: ${issue.file} (line ${issue.line})
+Description: ${issue.description}
 
-Provide (BUG-108 FIX - Be specific):
-1. One sentence fix description with SPECIFIC class/method names
-2. Required imports (if any) - e.g., "import java.sql.PreparedStatement;"
-3. Corrected code (production-ready) with exact replacements
-4. "Why This Works" - Brief explanation of security improvement
-5. Security impact if not fixed
+${issue.codeSnippet ? `Vulnerable Code:
+\`\`\`java
+${issue.codeSnippet}
+\`\`\`
+` : `⚠️ No code snippet - provide secure implementation template.`}
 
-REQUIRED: Use specific class names, no generic phrases like "apply appropriate solution".
-Be direct and actionable.`;
+${guidance}
+
+REQUIRED OUTPUT FORMAT:
+
+### 1. Fix Description
+[1-2 sentences: WHAT to change and WHY it's a security risk]
+
+### 2. Secure Code
+\`\`\`java
+[Complete, production-ready code with all security validations]
+\`\`\`
+
+### 3. Security Impact
+[OWASP reference + what attackers can do if not fixed]
+
+CRITICAL REQUIREMENTS:
+✅ Code must be DIRECTLY copy-pasteable into ${fileName}
+✅ Use ACTUAL class name "${className}" and methods from context
+✅ Include ALL imports at the top
+✅ Provide COMPLETE implementation, not pseudocode
+✅ Add brief inline comments
+
+❌ DO NOT use generic placeholders like "YourClass" or "// implementation here"
+❌ DO NOT provide incomplete code snippets
+❌ DO NOT skip imports
+
+Be direct - start with the fix description, no pleasantries.`;
+  }
+
+  /**
+   * Provide security-specific guidance with attack examples
+   */
+  private getSecurityGuidance(issue: IssueContext): string {
+    const type = issue.type.toLowerCase();
+    
+    // Command Injection
+    if (type.includes('command') || type.includes('injection') || type.includes('processbuilder')) {
+      return `🚨 CRITICAL: Command Injection Vulnerability
+
+Attack Example:
+\`\`\`bash
+# Attacker input: "file.txt; rm -rf /"
+# Result: Executes BOTH commands!
+\`\`\`
+
+Secure Pattern:
+\`\`\`java
+// ❌ NEVER do this:
+ProcessBuilder pb = new ProcessBuilder(userInput.split(" "));  // UNSAFE!
+
+// ✅ DO THIS instead - Option 1: Whitelist
+private static final Set<String> ALLOWED_COMMANDS = Set.of("gzip", "tar");
+if (!ALLOWED_COMMANDS.contains(cmd)) {
+    throw new SecurityException("Unauthorized command");
+}
+
+// ✅ Option 2: Validate - reject shell metacharacters
+if (input.matches(".*[;&|$\\\`<>\\\\n].*")) {
+    throw new SecurityException("Dangerous characters detected");
+}
+
+// ✅ Option 3: Use command array (NOT split!)
+ProcessBuilder pb = new ProcessBuilder("/usr/bin/gzip", "-9", sanitizedFile);
+\`\`\`
+
+OWASP: A03:2021 - Injection`;
+    }
+    
+    // Unsafe Reflection
+    if (type.includes('reflection') || type.includes('forname')) {
+      return `⚠️ HIGH: Unsafe Reflection/Arbitrary Class Loading
+
+Secure Pattern for Plugin Systems:
+\`\`\`java
+public <T> T loadPlugin(String className, Class<T> expectedInterface) {
+    Class<?> clazz = Class.forName(className);
+    
+    // 1. Verify expected interface
+    if (!expectedInterface.isAssignableFrom(clazz)) {
+        throw new SecurityException("Must implement " + expectedInterface);
+    }
+    
+    // 2. Block dangerous system classes
+    if (clazz.getName().startsWith("java.lang.Process") ||
+        clazz.getName().startsWith("java.lang.Runtime")) {
+        throw new SecurityException("System class not allowed");
+    }
+    
+    return clazz.asSubclass(expectedInterface).getDeclaredConstructor().newInstance();
+}
+\`\`\`
+
+Note: For Kafka plugins, validate against Serializer/Deserializer interfaces.
+
+OWASP: A08:2021 - Software Integrity Failures`;
+    }
+    
+    return ''; // No specific guidance, use AI's general security knowledge
   }
 }
 
@@ -242,19 +367,36 @@ Be practical and specific.`;
   }
 
   protected buildPrompt(issue: IssueContext): string {
-    return `Performance issue: ${issue.description}
-File: ${issue.file}, Line: ${issue.line}
-${issue.codeSnippet ? `Code:\n${issue.codeSnippet}` : ''}
+    const fileName = issue.file.split('/').pop() || '';
+    const className = fileName.replace(/\.\w+$/, '');
+    
+    return `Performance issue in ${issue.file} at line ${issue.line}:
+${issue.description}
+${issue.codeSnippet ? `\nCurrent Code:\n\`\`\`java\n${issue.codeSnippet}\n\`\`\`\n` : ''}
 
-Provide (BUG-108 FIX - Be specific):
-1. Specific optimization with EXACT algorithm/data structure names
-2. Required imports (if any) - e.g., "import java.util.HashMap;"
-3. Optimized code (production-ready) with exact replacements
-4. Complexity improvement (e.g., O(n²) → O(n log n))
-5. "Why This Works" - Brief performance benefit explanation
+Provide a COMPLETE performance optimization:
 
-REQUIRED: Use specific data structures/algorithms, no generic phrases like "optimize appropriately".
-Be direct and actionable.`;
+1. **Optimization Description** (1-2 sentences): Specific improvement using ACTUAL method names
+2. **Optimized Code** with:
+   - ALL necessary imports (e.g., "import java.util.concurrent.ConcurrentHashMap;")
+   - Full optimized implementation
+   - Inline comments explaining performance gains
+   - SPECIFIC algorithm/data structure names
+3. **Performance Analysis**: 
+   - Before complexity: O(?)
+   - After complexity: O(?)
+   - Expected performance gain
+
+CRITICAL REQUIREMENTS:
+✅ Code must be DIRECTLY copy-pasteable into ${fileName}
+✅ Use SPECIFIC data structures (HashMap, ArrayList, ConcurrentHashMap, etc.)
+✅ Provide COMPLETE working code with ALL imports
+✅ Include complexity analysis (Big-O notation)
+
+❌ DO NOT say "optimize appropriately" or use placeholders
+❌ DO NOT provide partial implementations
+
+Be direct and specific.`;
   }
 }
 
@@ -343,19 +485,228 @@ Keep responses short.`;
   }
 
   protected buildPrompt(issue: IssueContext): string {
-    return `Code quality issue: ${issue.description}
-File: ${issue.file}, Line: ${issue.line}
-${issue.codeSnippet ? `Code:\n${issue.codeSnippet}` : ''}
+    const fileName = issue.file.split('/').pop() || '';
+    const className = fileName.replace(/\.\w+$/, '');
+    
+    // Add issue-specific guidance with examples
+    const guidance = this.getIssueSpecificGuidance(issue);
+    
+    return `Code quality issue: ${issue.type}
+File: ${issue.file} (line ${issue.line})
+Description: ${issue.description}
 
-Provide (BUG-108 FIX - Be specific):
-1. Improvement with SPECIFIC method/variable names
-2. Required imports (if any)
-3. Clean code example (production-ready) with exact replacements
-4. "Why This Works" - Brief code quality benefit explanation
-5. Relevant clean code principle (e.g., "Single Responsibility Principle")
+${issue.codeSnippet ? `Current Code:
+\`\`\`java
+${issue.codeSnippet}
+\`\`\`
+` : `⚠️ No code snippet available - provide a realistic fix based on the issue type and file context.`}
 
-REQUIRED: Use specific names, no generic phrases like "improve as needed".
-Be concise and actionable.`;
+${guidance}
+
+REQUIRED OUTPUT FORMAT:
+
+### 1. Improvement Description
+[1-2 sentences explaining WHAT to change and WHY]
+
+### 2. Refactored Code
+\`\`\`java
+[Complete, compilable code that can be directly copy-pasted]
+\`\`\`
+
+### 3. Code Quality Principle
+[Single Responsibility | DRY | SOLID | etc.]
+
+CRITICAL REQUIREMENTS:
+✅ MUST wrap code in triple backticks (\`\`\`java)
+✅ Code must compile without any modifications
+✅ Use ACTUAL variable/method names from the code snippet
+✅ Include ALL necessary imports at the top
+✅ NO placeholders like "// add logic here" or "improve as needed"
+✅ NO generic comments - show ACTUAL implementation
+
+❌ NEVER use generic variable names (foo, bar, temp)
+❌ NEVER skip the code block
+❌ NEVER provide just comments without implementation
+
+If no code snippet: Generate realistic template for ${className} based on issue type.`;
+  }
+
+  /**
+   * Provide issue-specific guidance with concrete examples
+   */
+  private getIssueSpecificGuidance(issue: IssueContext): string {
+    const type = issue.type.toLowerCase();
+    
+    // AvoidThrowingRawExceptionTypes (5,065 occurrences)
+    if (type.includes('avoidthrowingrawexceptiontypes') || type.includes('exception')) {
+      return `Common Pattern for This Issue:
+
+❌ AVOID:
+\`\`\`java
+public void process() throws Exception {  // Generic!
+    throw new Exception("Error");
+}
+\`\`\`
+
+✅ PREFER:
+\`\`\`java
+public void process() throws DataProcessingException {
+    throw new DataProcessingException("Failed to process data", cause);
+}
+\`\`\`
+
+Create a specific exception class or use existing domain-specific exceptions.`;
+    }
+    
+    // GuardLogStatement (1,292 occurrences)
+    if (type.includes('guardlogstatement') || type.includes('log')) {
+      return `Standard Pattern for This Issue:
+
+❌ AVOID:
+\`\`\`java
+log.debug("Value: " + expensiveOperation());
+\`\`\`
+
+✅ PREFER:
+\`\`\`java
+if (log.isDebugEnabled()) {
+    log.debug("Value: {}", expensiveOperation());
+}
+\`\`\`
+
+Guard debug/trace logs to prevent unnecessary computation.`;
+    }
+    
+    // SystemPrintln (335 occurrences)
+    if (type.includes('systemprintln') || type.includes('print')) {
+      return `Standard Pattern for This Issue:
+
+❌ AVOID:
+\`\`\`java
+System.out.println("Config: " + config);
+\`\`\`
+
+✅ PREFER:
+\`\`\`java
+private static final Logger log = LoggerFactory.getLogger(ClassName.class);
+// ...
+log.info("Config: {}", config);
+\`\`\`
+
+Use proper logging framework (SLF4J) with appropriate log level.`;
+    }
+    
+    // AvoidUsingVolatile (217 occurrences)
+    if (type.includes('volatile')) {
+      return `Modern Pattern for This Issue:
+
+❌ AVOID:
+\`\`\`java
+private volatile boolean stopped = false;
+\`\`\`
+
+✅ PREFER:
+\`\`\`java
+private final AtomicBoolean stopped = new AtomicBoolean(false);
+// Usage: stopped.get(), stopped.set(true), stopped.compareAndSet(false, true)
+\`\`\`
+
+Use java.util.concurrent.atomic classes for thread-safe operations.`;
+    }
+    
+    // ClassWithOnlyPrivateConstructorsShouldBeFinal (131 occurrences)
+    if (type.includes('privateconstructor') || type.includes('final')) {
+      return `Simple Pattern for This Issue:
+
+❌ AVOID:
+\`\`\`java
+public class Utilities {
+    private Utilities() {}
+}
+\`\`\`
+
+✅ PREFER:
+\`\`\`java
+public final class Utilities {
+    private Utilities() {}
+}
+\`\`\`
+
+Add 'final' keyword to prevent subclassing.`;
+    }
+    
+    // ReturnEmptyCollectionRatherThanNull (87 occurrences)
+    if (type.includes('emptycollection') || type.includes('null')) {
+      return `Null-Safe Pattern for This Issue:
+
+❌ AVOID:
+\`\`\`java
+public List<String> getItems() {
+    return null;  // Caller must check for null
+}
+\`\`\`
+
+✅ PREFER:
+\`\`\`java
+public List<String> getItems() {
+    return Collections.emptyList();  // Never null
+}
+\`\`\`
+
+Return empty collections instead of null to prevent NullPointerException.`;
+    }
+    
+    // AvoidReassigningParameters (111 occurrences)
+    if (type.includes('parameter') || type.includes('reassign')) {
+      return `Clean Code Pattern for This Issue:
+
+❌ AVOID:
+\`\`\`java
+public void process(String input) {
+    input = input.trim();  // Reassigning parameter
+    // ...
+}
+\`\`\`
+
+✅ PREFER:
+\`\`\`java
+public void process(String input) {
+    String trimmedInput = input.trim();  // Local variable
+    // Use trimmedInput instead
+}
+\`\`\`
+
+Use local variables instead of reassigning parameters.`;
+    }
+    
+    // ConstructorCallsOverridableMethod (29 occurrences)
+    if (type.includes('constructor') || type.includes('overridable')) {
+      return `Safe Initialization Pattern for This Issue:
+
+❌ AVOID:
+\`\`\`java
+public class Base {
+    public Base() {
+        init();  // Can be overridden!
+    }
+    protected void init() { }
+}
+\`\`\`
+
+✅ PREFER:
+\`\`\`java
+public class Base {
+    public Base() {
+        initInternal();  // Private or final
+    }
+    private void initInternal() { }
+}
+\`\`\`
+
+Make initialization methods private or final to prevent issues in subclasses.`;
+    }
+    
+    return ''; // No specific guidance, rely on AI's general knowledge
   }
 }
 

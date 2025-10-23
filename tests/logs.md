@@ -1,154 +1,63 @@
-Executive recommendation
-•  Start with bare Docker on one A1.Flex (4 OCPU, 24GB). It minimizes overhead and maximizes per-core throughput.
-•  Use CPU pinning (--cpuset-cpus) and separate output directories per tool to avoid write contention.
-•  Keep the repo read-only and write tool outputs to separate subfolders to reduce lock thrashing.
-•  Optional high-performance extras: tmpfs for hot reads, or an attached “Higher Performance” Block Volume for sustained I/O.
+A client-server protocol approach could indeed be a good solution for integrating your PR validator with different IDEs. Let me explain the options:
+Common Protocols for IDE Integration
+1. Language Server Protocol (LSP)
 
-After A1.Flex is provisioned and you SSH in as ubuntu
-1) Install Docker and minimal tuning
+Standardized by Microsoft, widely adopted
+Allows a single server implementation to work with multiple IDEs (VS Code, Vim, Emacs, IntelliJ, etc.)
+Good for providing diagnostics, code actions, and real-time feedback
+Your PR validator could run as an LSP server
 
-sudo apt update
-sudo apt install -y docker.io docker-compose-plugin
-sudo usermod -aG docker $USER
-sudo systemctl enable --now docker
-newgrp docker
+2. Custom Agent-Client Protocol
 
-# Smaller logging overhead
-sudo mkdir -p /etc/docker
-cat <<'JSON' | sudo tee /etc/docker/daemon.json
-{
-  "log-driver": "local",
-  "log-opts": { "max-size": "10m", "max-file": "3" }
+You design your own protocol
+More flexible but requires implementing client plugins for each IDE
+Good if you need specific features not covered by LSP
+
+3. Debug Adapter Protocol (DAP)
+
+If your validator needs debugging capabilities
+Less relevant for PR validation
+
+Benefits of the Protocol Approach
+┌─────────┐     Protocol      ┌──────────────┐
+│   IDE   │ ←───────────────→ │ PR Validator │
+│ Client  │                   │    Server    │
+└─────────┘                   └──────────────┘
+
+Write once, integrate everywhere: Single server implementation
+IDE agnostic: Works with any IDE that supports the protocol
+Separation of concerns: Validator logic separate from IDE-specific code
+Easy updates: Update server without touching IDE plugins
+
+Implementation Example (LSP)
+Your PR validator server might:
+json{
+  "diagnostics": [
+    {
+      "range": { "start": { "line": 10 }, "end": { "line": 10 } },
+      "message": "This change violates PR policy X",
+      "severity": "error"
+    }
+  ]
 }
-JSON
-sudo systemctl restart docker
 
-2) Workspace layout and fast paths
-
-sudo mkdir -p /mnt/workspace/repos /mnt/workspace/output
-sudo chown -R $USER:$USER /mnt/workspace
-
-# Optionally: use RAM for hot reads (fits small/medium repos)
-# Mount ~8G tmpfs for repo clone, results still go to disk:
-sudo mount -t tmpfs -o size=8g tmpfs /mnt/workspace/repos
-
-# Clone your PR target repo(s) into the repos area
-git clone --depth=10 https://github.com/<org>/<repo>.git /mnt/workspace/repos/repo
-# Checkout PR branch if desired
-
-3) Registry login and pre-pull analyzers
-docker login registry.digitalocean.com -u {{DO_USERNAME}} -p {{DO_ACCESS_TOKEN}}
-
-docker pull registry.digitalocean.com/codequal/analyzer:lang-java-v5.1
-docker pull registry.digitalocean.com/codequal/analyzer:lang-python-v4.3
-docker pull registry.digitalocean.com/codequal/analyzer:lang-javascript-v4.3
-docker pull registry.digitalocean.com/codequal/analyzer:security-v4.2
-# pull any others you plan to run
-
-4) Run analyzers in parallel, pinning each to a core
-•  Rule of thumb for 4 OCPUs: run 4 “heavy” analyzers at once.
-•  Keep repo read-only; write each tool’s results into its own folder.
-
-# Core 0 — Java
-docker run -d --name analyzer-java \
-  --cpuset-cpus="0" --memory="5g" \
-  -v /mnt/workspace/repos/repo:/workspace/repo:ro \
-  -v /mnt/workspace/output/java:/workspace/output \
-  registry.digitalocean.com/codequal/analyzer:lang-java-v5.1 \
-  /analyze.sh /workspace/repo /workspace/output
-
-# Core 1 — Security
-docker run -d --name analyzer-security \
-  --cpuset-cpus="1" --memory="5g" \
-  -v /mnt/workspace/repos/repo:/workspace/repo:ro \
-  -v /mnt/workspace/output/security:/workspace/output \
-  registry.digitalocean.com/codequal/analyzer:security-v4.2 \
-  /analyze.sh /workspace/repo /workspace/output
-
-# Core 2 — Python
-docker run -d --name analyzer-python \
-  --cpuset-cpus="2" --memory="5g" \
-  -v /mnt/workspace/repos/repo:/workspace/repo:ro \
-  -v /mnt/workspace/output/python:/workspace/output \
-  registry.digitalocean.com/codequal/analyzer:lang-python-v4.3 \
-  /analyze.sh /workspace/repo /workspace/output
-
-# Core 3 — JS/TS
-docker run -d --name analyzer-js \
-  --cpuset-cpus="3" --memory="5g" \
-  -v /mnt/workspace/repos/repo:/workspace/repo:ro \
-  -v /mnt/workspace/output/js:/workspace/output \
-  registry.digitalocean.com/codequal/analyzer:lang-javascript-v4.3 \
-  /analyze.sh /workspace/repo /workspace/output
-
-# Monitor
-docker ps --format 'table {{.Names}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.Status}}'
-docker stats --no-stream
-
-Compose option (cleaner orchestration)
-version: "3.8"
-
-services:
-  analyzer-java:
-    image: registry.digitalocean.com/codequal/analyzer:lang-java-v5.1
-    cpuset: "0"
-    mem_limit: 5g
-    volumes:
-      - /mnt/workspace/repos/repo:/workspace/repo:ro
-      - /mnt/workspace/output/java:/workspace/output
-    command: ["/analyze.sh", "/workspace/repo", "/workspace/output"]
-
-  analyzer-security:
-    image: registry.digitalocean.com/codequal/analyzer:security-v4.2
-    cpuset: "1"
-    mem_limit: 5g
-    volumes:
-      - /mnt/workspace/repos/repo:/workspace/repo:ro
-      - /mnt/workspace/output/security:/workspace/output
-    command: ["/analyze.sh", "/workspace/repo", "/workspace/output"]
-
-  analyzer-python:
-    image: registry.digitalocean.com/codequal/analyzer:lang-python-v4.3
-    cpuset: "2"
-    mem_limit: 5g
-    volumes:
-      - /mnt/workspace/repos/repo:/workspace/repo:ro
-      - /mnt/workspace/output/python:/workspace/output
-    command: ["/analyze.sh", "/workspace/repo", "/workspace/output"]
-
-  analyzer-js:
-    image: registry.digitalocean.com/codequal/analyzer:lang-javascript-v4.3
-    cpuset: "3"
-    mem_limit: 5g
-    volumes:
-      - /mnt/workspace/repos/repo:/workspace/repo:ro
-      - /mnt/workspace/output/js:/workspace/output
-    command: ["/analyze.sh", "/workspace/repo", "/workspace/output"]
-
-    Run it:
-    docker compose up -d
-docker compose ps
-
-5) Where performance really comes from on A1.Flex
-•  CPU: Ampere A1 OCPUs are single hardware threads; pin 1 heavy analyzer per OCPU.
-•  Memory: leave headroom; 4 tools at 5G each + OS is safe on 24G.
-•  I/O:
-◦  Use repo as read-only mount. Each tool writes to its own output dir → no lock contention.
-◦  tmpfs for repo (8–12G) will often outperform block storage by 2–5x on read-heavy tools.
-◦  If you need sustained high I/O, attach a separate Block Volume with “Higher Performance” and bind-mount it:
-▪  Create + attach a Block Volume (once the instance exists); format/mount at /mnt/fast
-▪  Bind-mount: -v /mnt/fast/repos/repo:/workspace/repo:ro and -v /mnt/fast/output/java:/workspace/output
-
-6) Converging this PoC into the V9 framework
-•  Wrap these docker run/compose steps behind your V9ToolOrchestrator runner for “local” backend, keeping the same analyzer images and output schema. That gives you a predictable upgrade path to K8s later without changing tool contracts.
-•  When scaling to multi-user:
-◦  Move to k3s/AKS/GKE/EKS or Nomad once a single node is saturated.
-◦  Replace tmpfs with network storage (NFS/FSS/EFS/Filestore) or per-node warm caches + object storage.
-
-7) Quick checklist for best throughput now
-•  Pre-pull all required images (no cold pulls during the run)
-•  Use tmpfs for repo reads if it fits; otherwise keep repo on separate high-perf volume
-•  Keep repo read-only; isolate tool outputs
-•  Pin heavy analyzers to distinct CPUs
-•  Keep logs small (local log driver with rotation)
-•  Avoid running more than 4 CPU-bound containers at once on a 4 OCPU node
+Zed's Agent Client Protocol for PR reviewer integration
+The Agent Client Protocol (ACP) is an open-source communication standard developed by Zed Industries that standardizes interactions between code editors and AI coding agents. GitHub +3 While innovative for AI integration, ACP is fundamentally designed for AI agent communication rather than PR review functionality, making it unsuitable as the primary protocol for your PR reviewer application.
+What is Zed's Agent Client Protocol and how it works
+Agent Client Protocol serves as the "Language Server Protocol for AI agents," enabling any compatible editor to work with any ACP-compliant AI coding agent without custom integrations. GitHub +2 The protocol operates through JSON-RPC 2.0 messages over standard input/output, with editors launching agents as subprocesses. zedZed Communication follows a structured flow: initialization handshake establishes protocol version 1, optional authentication handles API keys or OAuth, session management creates conversation contexts, and streaming updates provide real-time progress. Agentclientprotocolnpm The protocol includes methods for file system access, multi-buffer editing, and permission-based tool calling. GitHub
+Currently, ACP is implemented in Rust and TypeScript with official SDKs available. crates.io +2 The reference implementation is Google's Gemini CLI, with additional support for Claude Code through adapters. zed +2 The protocol architecture emphasizes local execution for security, with agents running as editor subprocesses rather than remote services, ensuring data privacy and user control over agent permissions. zedZed
+IDE-agnostic design enables cross-editor compatibility
+ACP is explicitly designed to be IDE-agnostic, following the successful model of the Language Server Protocol. The protocol uses standard JSON-RPC communication over stdin/stdout, making it implementable in any editor regardless of programming language or architecture. zed +4 Current adoption includes native support in Zed, implementation in Neovim through the CodeCompanion plugin, and integration in avante.nvim. zedGitHub The protocol's transport-layer simplicity and standardized message format ensure broad compatibility.
+The Apache 2.0 licensing and open governance model encourage widespread adoption. GitHubZed Unlike Zed's WASM-based extension system which is editor-specific, ACP represents Zed's commitment to open standards that benefit the entire development ecosystem. zed The protocol documentation explicitly states its goal to prevent fragmentation where "every new agent-editor combination requires custom work," positioning it as a universal standard similar to LSP's role in language server integration. Agentclientprotocol
+Third-party developers have full access to the protocol
+Third-party developers can freely use and implement ACP without restrictions. The protocol is fully open-source under Apache License 2.0, with comprehensive documentation available at agentclientprotocol.com and source code on GitHub. GitHub +2 Zed Industries maintains structured governance with a transparent contribution process: bug reports require GitHub issues, protocol changes start with discussions, and pull requests must reference existing issues. GitHub +2
+Official SDKs simplify implementation with the agent-client-protocol Rust crate (v0.1.1) and @zed-industries/agent-client-protocol npm package providing complete examples. crates.ioGitHub The Python community has already created unofficial implementations, demonstrating the protocol's accessibility. GitHub Developers can create custom agents that work with any ACP-compatible editor, or implement ACP support in new editors to leverage existing agents. The protocol includes detailed JSON schemas for validation and extensive example implementations in multiple languages. GitHub +2
+ACP versus LSP reveals fundamental purpose differences
+The critical distinction is that ACP and LSP serve entirely different purposes, making direct comparison misleading for PR review applications. LSP excels at language-specific features like code completion, diagnostics, and symbol navigation through standardized server communication. zed +3 It provides semantic code understanding but lacks collaboration primitives, diff capabilities, commenting systems, state management, or UI components necessary for PR review. GitHubWikipedia
+ACP focuses on AI agent integration, providing streaming responses, multi-file editing capabilities, and permission-based tool access. AgentclientprotocolZed Neither protocol directly supports PR review requirements. Successful PR review tools like VS Code's GitHub extension bypass both protocols entirely, using direct platform APIs (GitHub REST/GraphQL), custom extension architectures for UI components, and proprietary diff rendering systems. GitHub +2 For PR review applications, you need a hybrid architecture: custom IDE extension APIs for UI and workflow, direct integration with GitHub/GitLab APIs for PR data, optional LSP for enhanced code intelligence, zed and consideration of Zed's CRDT protocol for real-time collaborative review features.
+Technical specifications and implementation details
+The Agent Client Protocol operates on proven technical foundations with clear specifications. github +2 Transport uses JSON-RPC 2.0 over stdin/stdout with newline-delimited JSON messages, ensuring compatibility with existing tooling. Agentclientprotocol +2 The current protocol version 1 includes core methods: initialize for capability negotiation, authenticate for API key or OAuth flows, session/new and session/load for conversation management, session/prompt for user messages, and session/update for streaming progress notifications. npm
+Advanced features leverage integration with Model Context Protocol (MCP) for extended tool access, reusing JSON representations for data types and tool schemas. AgentclientprotocolZed The security model emphasizes local subprocess execution with granular permission controls, ensuring agents cannot perform unauthorized operations. zedZed Authentication supports both OAuth flows and API key patterns, with the protocol handling token management transparently.
+Implementation requires handling JSON-RPC message framing, managing subprocess lifecycle, implementing streaming response parsing, and building permission request UI. The protocol continues rapid development with focus areas including unsaved file synchronization, concurrent operation handling, and performance optimization through connection multiplexing. GitHub
+Conclusion
+While Zed's Agent Client Protocol represents significant innovation in AI-editor integration and offers excellent cross-IDE potential, it's not suitable as the primary protocol for PR reviewer applications. ACP specifically targets AI coding agents rather than collaborative review workflows. For your PR reviewer application, the optimal approach combines multiple technologies: use custom extension APIs for each target IDE to handle UI and review-specific features, integrate directly with GitHub/GitLab APIs for PR data management, GitHubGraphite optionally leverage LSP for code intelligence features, zed and consider Zed's CRDT protocol for real-time collaborative review sessions. zed The key insight is that successful code review tools are integration-heavy applications requiring multiple protocols and APIs rather than relying on a single standard like ACP or LSP.

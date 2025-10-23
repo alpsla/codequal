@@ -52,14 +52,15 @@ export class DynamicModelSelector extends StandardDynamicModelSelector {
 
     switch (normalizedRole) {
       case 'security':
-        // Security needs highest quality for accurate vulnerability detection
-        // Reasoning is critical, speed is secondary
-        return { quality: 0.85, speed: 0.10, cost: 0.05 };
+        // Security fix generation is pattern-based (tools already found issues)
+        // Prioritize cost since we're templating fixes, not discovering vulnerabilities
+        // Still maintain good quality for critical security patterns
+        return { quality: 0.35, speed: 0.30, cost: 0.35 };
 
       case 'performance':
-        // Performance analysis benefits from faster models
-        // Can trade some quality for speed since issues are measurable
-        return { quality: 0.55, speed: 0.35, cost: 0.10 };
+        // Performance fix generation is also pattern-based
+        // Balance speed and cost while maintaining adequate quality
+        return { quality: 0.30, speed: 0.35, cost: 0.35 };
 
       case 'architecture':
         // Architecture requires deep reasoning about design patterns
@@ -67,13 +68,15 @@ export class DynamicModelSelector extends StandardDynamicModelSelector {
         return { quality: 0.90, speed: 0.05, cost: 0.05 };
 
       case 'codequality':
-        // Code quality is balanced - needs good reasoning but not extreme
-        return { quality: 0.70, speed: 0.20, cost: 0.10 };
+        // Code quality fix generation is pattern-based (PMD/Checkstyle already found issues)
+        // Match security/performance since it's the same workflow: template fixes from tool output
+        // This handles 99.8% of issues, so cost optimization is critical
+        return { quality: 0.30, speed: 0.35, cost: 0.35 };
 
       case 'dependency':
-        // Dependency checking can use faster models
-        // Often checking against databases, less reasoning needed
-        return { quality: 0.50, speed: 0.40, cost: 0.10 };
+        // Dependency checking is mostly database lookups (CVE checking)
+        // Increase cost awareness while maintaining speed for large dependency trees
+        return { quality: 0.40, speed: 0.40, cost: 0.20 };
 
       default:
         // Default balanced weights

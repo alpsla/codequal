@@ -27,6 +27,7 @@ export interface IssueGroup {
   // Metadata
   description: string;           // Rule description
   category: string;              // e.g., "Design", "Security"
+  detectedCategory?: string;     // e.g., "Security", "Performance", "Architecture", "Dependencies", "Code Quality"
   
   // Occurrences
   count: number;                 // Total instances of this issue type
@@ -60,12 +61,25 @@ export interface GroupingResult {
  * Group issues by rule + tool + severity
  * This creates one group per unique issue type
  */
+/**
+ * Helper: Infer detectedCategory from tool name
+ */
+function inferCategoryFromTool(tool: string): string {
+  const t = tool.toLowerCase();
+  if (t === 'semgrep') return 'Security';
+  if (t === 'dependency-check') return 'Dependencies';
+  if (t === 'spotbugs') return 'Performance';
+  if (t === 'checkstyle' || t === 'pmd') return 'Code Quality';
+  return 'Architecture';
+}
+
 export function groupIssues<T extends {
   rule: string;
   tool: string;
   severity: string;
   message: string;
   category?: string;
+  detectedCategory?: string;  // BUG FIX: Support detectedCategory
   file: string;
   line: number;
   column?: number;
@@ -86,6 +100,7 @@ export function groupIssues<T extends {
         severity: issue.severity,
         description: issue.message,
         category: issue.category || 'Unknown',
+        detectedCategory: issue.detectedCategory || inferCategoryFromTool(issue.tool),  // BUG FIX: Preserve detectedCategory
         count: 0,
         examples: [],
         aiAnalyzed: false,
