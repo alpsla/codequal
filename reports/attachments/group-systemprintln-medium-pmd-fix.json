@@ -1,0 +1,310 @@
+{
+  "version": "1.0",
+  "group_id": "systemprintln-medium-pmd",
+  "rule": "SystemPrintln",
+  "severity": "medium",
+  "description": "",
+  "fix_pattern": {
+    "type": "template",
+    "example": {
+      "before": "",
+      "after": ""
+    },
+    "instructions": "Apply the suggested fix"
+  },
+  "locations": [
+    {
+      "file": ".github/RssRegression.java",
+      "line": 43,
+      "column": 13,
+      "snippet": "    40 |     public static void main(String[] args) {\n    41 | \n    42 |         if(args.length != 6){\n>   43 |             System.out.println(args.length);\n    44 |             printUsage();\n    45 |             exit(1);\n    46 |         }",
+      "category": "NEW"
+    },
+    {
+      "file": ".github/RssRegression.java",
+      "line": 56,
+      "column": 9,
+      "snippet": "    53 | \n    54 |         _cosClient = createClient(API_KEY, SERVICE_INSTANCE_ID, ENDPOINT_URL, LOCATION);\n    55 | \n>   56 |         System.out.println(\"Downloading file from storage: \" + bucketFile + \" to local: \" + oldPmapFile);\n    57 |         try{\n    58 |             downloadFile(_cosClient, BUCKET_NAME, bucketFile, oldPmapFile);\n    59 |         } catch (AmazonS3Exception s3Execpetion){",
+      "category": "NEW"
+    },
+    {
+      "file": ".github/RssRegression.java",
+      "line": 60,
+      "column": 13,
+      "snippet": "    57 |         try{\n    58 |             downloadFile(_cosClient, BUCKET_NAME, bucketFile, oldPmapFile);\n    59 |         } catch (AmazonS3Exception s3Execpetion){\n>   60 |             System.out.println(\"Download failed with: \" + s3Execpetion.getMessage());\n    61 |             _cosClient.shutdown();\n    62 |             exit(1);\n    63 |         }",
+      "category": "NEW"
+    },
+    {
+      "file": ".github/RssRegression.java",
+      "line": 70,
+      "column": 13,
+      "snippet": "    67 |         boolean rssRegression = false;\n    68 | \n    69 |         if( oldRss != -1 && newRss != -1) {\n>   70 |             System.out.println(\"Old RSS: \" + oldRss);\n    71 |             System.out.println(\"New RSS: \" + newRss);\n    72 | \n    73 |             rssRegression = newRss > (oldRss * 1.1);",
+      "category": "NEW"
+    },
+    {
+      "file": ".github/RssRegression.java",
+      "line": 71,
+      "column": 13,
+      "snippet": "    68 | \n    69 |         if( oldRss != -1 && newRss != -1) {\n    70 |             System.out.println(\"Old RSS: \" + oldRss);\n>   71 |             System.out.println(\"New RSS: \" + newRss);\n    72 | \n    73 |             rssRegression = newRss > (oldRss * 1.1);\n    74 |             System.out.println(\"Regression: \" + rssRegression);",
+      "category": "NEW"
+    },
+    {
+      "file": ".github/RssRegression.java",
+      "line": 74,
+      "column": 13,
+      "snippet": "    71 |             System.out.println(\"New RSS: \" + newRss);\n    72 | \n    73 |             rssRegression = newRss > (oldRss * 1.1);\n>   74 |             System.out.println(\"Regression: \" + rssRegression);\n    75 | \n    76 |             System.out.println(\"Uploading new pmap file to storage: \" + bucketFile + \" from local: \" + oldPmapFile);\n    77 |             uploadObject(_cosClient, BUCKET_NAME, bucketFile, newPmapFile);",
+      "category": "NEW"
+    },
+    {
+      "file": ".github/RssRegression.java",
+      "line": 76,
+      "column": 13,
+      "snippet": "    73 |             rssRegression = newRss > (oldRss * 1.1);\n    74 |             System.out.println(\"Regression: \" + rssRegression);\n    75 | \n>   76 |             System.out.println(\"Uploading new pmap file to storage: \" + bucketFile + \" from local: \" + oldPmapFile);\n    77 |             uploadObject(_cosClient, BUCKET_NAME, bucketFile, newPmapFile);\n    78 |         }\n    79 | ",
+      "category": "NEW"
+    },
+    {
+      "file": ".github/RssRegression.java",
+      "line": 91,
+      "column": 9,
+      "snippet": "    88 |     }\n    89 | \n    90 |     private static void printUsage() {\n>   91 |         System.out.println(\"Usage: jbang RssRegression BUCKET_NAME API_KEY SERVICE_INSTANCE_ID REMOTE_OBJECT_NAME OLD_PMAP_FILENAME NEW_PMAP_FILENAME\");\n    92 |         System.out.println(\"\");\n    93 |         System.out.println(\"   Where;\");\n    94 |         System.out.println(\"      BUCKET_NAME - name of S3 bucket to contain pmap object\");",
+      "category": "NEW"
+    },
+    {
+      "file": ".github/RssRegression.java",
+      "line": 92,
+      "column": 9,
+      "snippet": "    89 | \n    90 |     private static void printUsage() {\n    91 |         System.out.println(\"Usage: jbang RssRegression BUCKET_NAME API_KEY SERVICE_INSTANCE_ID REMOTE_OBJECT_NAME OLD_PMAP_FILENAME NEW_PMAP_FILENAME\");\n>   92 |         System.out.println(\"\");\n    93 |         System.out.println(\"   Where;\");\n    94 |         System.out.println(\"      BUCKET_NAME - name of S3 bucket to contain pmap object\");\n    95 |         System.out.println(\"      API_KEY - Private API key\");",
+      "category": "NEW"
+    },
+    {
+      "file": ".github/RssRegression.java",
+      "line": 93,
+      "column": 9,
+      "snippet": "    90 |     private static void printUsage() {\n    91 |         System.out.println(\"Usage: jbang RssRegression BUCKET_NAME API_KEY SERVICE_INSTANCE_ID REMOTE_OBJECT_NAME OLD_PMAP_FILENAME NEW_PMAP_FILENAME\");\n    92 |         System.out.println(\"\");\n>   93 |         System.out.println(\"   Where;\");\n    94 |         System.out.println(\"      BUCKET_NAME - name of S3 bucket to contain pmap object\");\n    95 |         System.out.println(\"      API_KEY - Private API key\");\n    96 |         System.out.println(\"      SERVICE_INSTANCE_ID - Cloud Resource Name (CRN) id of S3 bucket\");",
+      "category": "NEW"
+    },
+    {
+      "file": ".github/RssRegression.java",
+      "line": 94,
+      "column": 9,
+      "snippet": "    91 |         System.out.println(\"Usage: jbang RssRegression BUCKET_NAME API_KEY SERVICE_INSTANCE_ID REMOTE_OBJECT_NAME OLD_PMAP_FILENAME NEW_PMAP_FILENAME\");\n    92 |         System.out.println(\"\");\n    93 |         System.out.println(\"   Where;\");\n>   94 |         System.out.println(\"      BUCKET_NAME - name of S3 bucket to contain pmap object\");\n    95 |         System.out.println(\"      API_KEY - Private API key\");\n    96 |         System.out.println(\"      SERVICE_INSTANCE_ID - Cloud Resource Name (CRN) id of S3 bucket\");\n    97 |         System.out.println(\"      REMOTE_OBJECT_NAME - name of S3 object stored in S3 bucket\");",
+      "category": "NEW"
+    },
+    {
+      "file": ".github/RssRegression.java",
+      "line": 95,
+      "column": 9,
+      "snippet": "    92 |         System.out.println(\"\");\n    93 |         System.out.println(\"   Where;\");\n    94 |         System.out.println(\"      BUCKET_NAME - name of S3 bucket to contain pmap object\");\n>   95 |         System.out.println(\"      API_KEY - Private API key\");\n    96 |         System.out.println(\"      SERVICE_INSTANCE_ID - Cloud Resource Name (CRN) id of S3 bucket\");\n    97 |         System.out.println(\"      REMOTE_OBJECT_NAME - name of S3 object stored in S3 bucket\");\n    98 |         System.out.println(\"      OLD_PMAP_FILENAME - local filename of to download previous run pmap file\");",
+      "category": "NEW"
+    },
+    {
+      "file": ".github/RssRegression.java",
+      "line": 96,
+      "column": 9,
+      "snippet": "    93 |         System.out.println(\"   Where;\");\n    94 |         System.out.println(\"      BUCKET_NAME - name of S3 bucket to contain pmap object\");\n    95 |         System.out.println(\"      API_KEY - Private API key\");\n>   96 |         System.out.println(\"      SERVICE_INSTANCE_ID - Cloud Resource Name (CRN) id of S3 bucket\");\n    97 |         System.out.println(\"      REMOTE_OBJECT_NAME - name of S3 object stored in S3 bucket\");\n    98 |         System.out.println(\"      OLD_PMAP_FILENAME - local filename of to download previous run pmap file\");\n    99 |         System.out.println(\"      NEW_PMAP_FILENAME - name of filename for current run pmap file\");",
+      "category": "NEW"
+    },
+    {
+      "file": ".github/RssRegression.java",
+      "line": 97,
+      "column": 9,
+      "snippet": "    94 |         System.out.println(\"      BUCKET_NAME - name of S3 bucket to contain pmap object\");\n    95 |         System.out.println(\"      API_KEY - Private API key\");\n    96 |         System.out.println(\"      SERVICE_INSTANCE_ID - Cloud Resource Name (CRN) id of S3 bucket\");\n>   97 |         System.out.println(\"      REMOTE_OBJECT_NAME - name of S3 object stored in S3 bucket\");\n    98 |         System.out.println(\"      OLD_PMAP_FILENAME - local filename of to download previous run pmap file\");\n    99 |         System.out.println(\"      NEW_PMAP_FILENAME - name of filename for current run pmap file\");\n   100 |     }",
+      "category": "NEW"
+    },
+    {
+      "file": ".github/RssRegression.java",
+      "line": 98,
+      "column": 9,
+      "snippet": "    95 |         System.out.println(\"      API_KEY - Private API key\");\n    96 |         System.out.println(\"      SERVICE_INSTANCE_ID - Cloud Resource Name (CRN) id of S3 bucket\");\n    97 |         System.out.println(\"      REMOTE_OBJECT_NAME - name of S3 object stored in S3 bucket\");\n>   98 |         System.out.println(\"      OLD_PMAP_FILENAME - local filename of to download previous run pmap file\");\n    99 |         System.out.println(\"      NEW_PMAP_FILENAME - name of filename for current run pmap file\");\n   100 |     }\n   101 | ",
+      "category": "NEW"
+    },
+    {
+      "file": ".github/RssRegression.java",
+      "line": 99,
+      "column": 9,
+      "snippet": "    96 |         System.out.println(\"      SERVICE_INSTANCE_ID - Cloud Resource Name (CRN) id of S3 bucket\");\n    97 |         System.out.println(\"      REMOTE_OBJECT_NAME - name of S3 object stored in S3 bucket\");\n    98 |         System.out.println(\"      OLD_PMAP_FILENAME - local filename of to download previous run pmap file\");\n>   99 |         System.out.println(\"      NEW_PMAP_FILENAME - name of filename for current run pmap file\");\n   100 |     }\n   101 | \n   102 |     /**",
+      "category": "NEW"
+    },
+    {
+      "file": ".github/RssRegression.java",
+      "line": 163,
+      "column": 17,
+      "snippet": "   160 |                 while(lastLine.length() != (lastLine = lastLine.replaceAll(\"  \", \" \")).length()){}\n   161 |                 rss = Integer.parseInt(lastLine.split(\" \")[3]);\n   162 |             } else {\n>  163 |                 System.out.println(\"File was empty: \" + filename);;\n   164 |             }\n   165 |         } catch (IOException e) {\n   166 |             System.out.println(\"Read file failed with: \" + e.getMessage());",
+      "category": "NEW"
+    },
+    {
+      "file": ".github/RssRegression.java",
+      "line": 166,
+      "column": 13,
+      "snippet": "   163 |                 System.out.println(\"File was empty: \" + filename);;\n   164 |             }\n   165 |         } catch (IOException e) {\n>  166 |             System.out.println(\"Read file failed with: \" + e.getMessage());\n   167 |         }\n   168 |         return rss;\n   169 | ",
+      "category": "NEW"
+    },
+    {
+      "file": "funqy-quickstarts/funqy-google-cloud-functions-quickstart/src/main/java/org/acme/GreetingFunctions.java",
+      "line": 17,
+      "column": 9,
+      "snippet": "    14 |     @Funq\n    15 |     public void helloPubSubWorld(PubsubMessage pubSubEvent) {\n    16 |         String message = service.hello(pubSubEvent.data);\n>   17 |         System.out.println(pubSubEvent.messageId + \" - \" + message);\n    18 |     }\n    19 | \n    20 |     @Funq",
+      "category": "NEW"
+    },
+    {
+      "file": "funqy-quickstarts/funqy-google-cloud-functions-quickstart/src/main/java/org/acme/GreetingFunctions.java",
+      "line": 23,
+      "column": 9,
+      "snippet": "    20 |     @Funq\n    21 |     public void helloGCSWorld(StorageEvent storageEvent) {\n    22 |         String message = service.hello(\"world\");\n>   23 |         System.out.println(storageEvent.name + \" - \" + message);\n    24 |     }\n    25 | \n    26 | }",
+      "category": "NEW"
+    },
+    {
+      "file": "getting-started-command-mode/src/main/java/org/acme/getting/started/commandmode/GreetingMain.java",
+      "line": 18,
+      "column": 13,
+      "snippet": "    15 |     public int run(String... args) {\n    16 | \n    17 |         if(args.length>0) {\n>   18 |             System.out.println(service.greeting(String.join(\" \", args)));\n    19 |         } else {\n    20 |             System.out.println(service.greeting(\"commando\"));\n    21 |         }",
+      "category": "NEW"
+    },
+    {
+      "file": "getting-started-command-mode/src/main/java/org/acme/getting/started/commandmode/GreetingMain.java",
+      "line": 20,
+      "column": 13,
+      "snippet": "    17 |         if(args.length>0) {\n    18 |             System.out.println(service.greeting(String.join(\" \", args)));\n    19 |         } else {\n>   20 |             System.out.println(service.greeting(\"commando\"));\n    21 |         }\n    22 | \n    23 |         return 0;",
+      "category": "NEW"
+    },
+    {
+      "file": "jms-quickstart/src/main/java/org/acme/jms/PriceConsumer.java",
+      "line": 54,
+      "column": 17,
+      "snippet": "    51 |                     return;\n    52 |                 }\n    53 |                 lastPrice = message.getBody(String.class);\n>   54 |                 System.out.println(\"Got last price: \" + lastPrice);\n    55 |             }\n    56 |         } catch (JMSException e) {\n    57 |             throw new RuntimeException(e);",
+      "category": "NEW"
+    },
+    {
+      "file": "kafka-bare-quickstart/src/main/java/org/acme/kafka/KafkaEndpoint.java",
+      "line": 52,
+      "column": 21,
+      "snippet": "    49 |                 final ConsumerRecords<String, String> consumerRecords = consumer.poll(Duration.ofSeconds(1));\n    50 | \n    51 |                 consumerRecords.forEach(record -> {\n>   52 |                     System.out.printf(\"Polled Record:(%s, %s, %d, %d)\\n\",\n    53 |                             record.key(), record.value(),\n    54 |                             record.partition(), record.offset());\n    55 |                     last = record.key() + \"-\" + record.value();",
+      "category": "NEW"
+    },
+    {
+      "file": "jta-quickstart/src/main/java/org/acme/quickstart/TransactionalResource.java",
+      "line": 123,
+      "column": 9,
+      "snippet": "   120 |     @Transactional\n   121 |     @Path(\"async-with-completion-stage\")\n   122 |     public CompletionStage<Integer> async2() throws SystemException {\n>  123 |         System.out.printf(\"submitting async job ...%n\");\n   124 | \n   125 |         ContextManagerProvider cmp = ContextManagerProvider.INSTANCE.get();\n   126 |         ManagedExecutor me = cmp.getContextManager().newManagedExecutorBuilder()",
+      "category": "NEW"
+    },
+    {
+      "file": "jta-quickstart/src/main/java/org/acme/quickstart/TransactionalResource.java",
+      "line": 153,
+      "column": 9,
+      "snippet": "   150 |     @Transactional\n   151 |     @Path(\"async-6471-reproducer\")\n   152 |     public void asyncIssue6471Reproducer(@Suspended AsyncResponse ar) throws SystemException {\n>  153 |         System.out.printf(\"submitting async job ...%n\");\n   154 |         Transaction txnToPropagate = TransactionManager.transactionManager().getTransaction();\n   155 | \n   156 |         // the transaction should be active (because of the @Transactional annotation)",
+      "category": "NEW"
+    },
+    {
+      "file": "jta-quickstart/src/main/java/org/acme/quickstart/TransactionalResource.java",
+      "line": 168,
+      "column": 13,
+      "snippet": "   165 |                 .build();\n   166 | \n   167 |         me.submit(() -> {\n>  168 |             System.out.printf(\"running async job ...%n\");\n   169 |             try {\n   170 |                 Transaction txn = TransactionManager.transactionManager().getTransaction();\n   171 | ",
+      "category": "NEW"
+    },
+    {
+      "file": "jta-quickstart/src/main/java/org/acme/quickstart/TransactionalResource.java",
+      "line": 179,
+      "column": 17,
+      "snippet": "   176 |                 }\n   177 | \n   178 |                 // execute a long running business activity and resume when done\n>  179 |                 System.out.printf(\"resuming long running async job ...%n\");\n   180 | \n   181 |                 // the transaction started via the @Transactional annotation should still be active\n   182 |                 // but due to Quarkus issue 6471 there is no interceptor for extending the transaction bondary",
+      "category": "NEW"
+    },
+    {
+      "file": "jta-quickstart/src/main/java/org/acme/quickstart/TransactionalResource.java",
+      "line": 186,
+      "column": 17,
+      "snippet": "   183 |                 // (see the issue for further details)\n   184 |                 ar.resume(Response.ok().entity(getTransactionStatus()).build()); // should return Status.STATUS_ACTIVE\n   185 |             } catch (SystemException e) {\n>  186 |                 System.out.printf(\"resuming async job with exception: %s%n\", e.getMessage());\n   187 | \n   188 |                 ar.resume(e);\n   189 |             }",
+      "category": "NEW"
+    },
+    {
+      "file": "kafka-bare-quickstart/src/main/java/org/acme/kafka/VertxKafkaEndpoint.java",
+      "line": 46,
+      "column": 21,
+      "snippet": "    43 |                 .onItem().transformToMulti(x -> consumer.toMulti())\n    44 |                 .subscribe().with(\n    45 |                 record -> {\n>   46 |                     System.out.printf(\"Polled Record:(%s, %s, %d, %d)\\n\",\n    47 |                             record.key(), record.value(),\n    48 |                             record.partition(), record.offset());\n    49 |                     last = record.key() + \"-\" + record.value();",
+      "category": "NEW"
+    },
+    {
+      "file": "mongodb-panache-quickstart/src/main/java/org/acme/mongodb/panache/repository/PersonResource.java",
+      "line": 32,
+      "column": 9,
+      "snippet": "    29 |     @GET\n    30 |     @Path(\"/{id}\")\n    31 |     public Person get(String id) {\n>   32 |         System.out.println(\"get =>\" + id);\n    33 |         return personRepository.findById(new ObjectId(id));\n    34 |     }\n    35 | ",
+      "category": "NEW"
+    },
+    {
+      "file": "mqtt-quickstart/src/main/java/org/acme/mqtt/PriceConverter.java",
+      "line": 24,
+      "column": 9,
+      "snippet": "    21 |     @Broadcast\n    22 |     public double process(byte[] priceRaw) {\n    23 |         int priceInUsd = Integer.parseInt(new String(priceRaw));\n>   24 |         System.out.println(\"Receiving price: \" + priceInUsd);\n    25 |         return priceInUsd * CONVERSION_RATE;\n    26 |     }\n    27 | ",
+      "category": "NEW"
+    },
+    {
+      "file": "mqtt-quickstart/src/main/java/org/acme/mqtt/PriceGenerator.java",
+      "line": 25,
+      "column": 21,
+      "snippet": "    22 |                 .onOverflow().drop()\n    23 |                 .map(tick -> {\n    24 |                     int price = random.nextInt(100);\n>   25 |                     System.out.println(\"Sending price: \" + price);\n    26 |                     return price;\n    27 |                 });\n    28 |     }",
+      "category": "NEW"
+    },
+    {
+      "file": "pulsar-quickstart/pulsar-quickstart-producer/src/main/java/org/acme/pulsar/producer/QuotesResource.java",
+      "line": 30,
+      "column": 35,
+      "snippet": "    27 |     @GET\n    28 |     @Produces(MediaType.SERVER_SENT_EVENTS)\n    29 |     public Multi<Quote> stream() {\n>   30 |         return quotes.invoke(q -> System.out.println(q));\n    31 |     }\n    32 | \n    33 |     /**",
+      "category": "NEW"
+    },
+    {
+      "file": "scheduler-quickstart/src/main/java/org/acme/scheduler/CounterBean.java",
+      "line": 27,
+      "column": 9,
+      "snippet": "    24 |     @Scheduled(cron = \"0 15 10 * * ?\")\n    25 |     void cronJob(ScheduledExecution execution) {\n    26 |         counter.incrementAndGet();\n>   27 |         System.out.println(execution.getScheduledFireTime());\n    28 |     }\n    29 | \n    30 |     @Scheduled(cron = \"{cron.expr}\")",
+      "category": "NEW"
+    },
+    {
+      "file": "scheduler-quickstart/src/main/java/org/acme/scheduler/CounterBean.java",
+      "line": 33,
+      "column": 9,
+      "snippet": "    30 |     @Scheduled(cron = \"{cron.expr}\")\n    31 |     void cronJobWithExpressionInConfig() {\n    32 |         counter.incrementAndGet();\n>   33 |         System.out.println(\"Cron expression configured in application.properties\");\n    34 |     }\n    35 | }\n    36 | ",
+      "category": "NEW"
+    },
+    {
+      "file": "spring-scheduled-quickstart/src/main/java/org/acme/spring/scheduler/CounterBean.java",
+      "line": 20,
+      "column": 9,
+      "snippet": "    17 |     @Scheduled(cron=\"0/1 * * * * ?\")\n    18 |     void cronJob() {\n    19 |         counter.incrementAndGet();\n>   20 |         System.out.println(\"Cron expression hardcoded\");\n    21 |     }\n    22 | \n    23 |     @Scheduled(cron = \"{cron.expr}\")",
+      "category": "NEW"
+    },
+    {
+      "file": "spring-scheduled-quickstart/src/main/java/org/acme/spring/scheduler/CounterBean.java",
+      "line": 26,
+      "column": 9,
+      "snippet": "    23 |     @Scheduled(cron = \"{cron.expr}\")\n    24 |     void cronJobWithExpressionInConfig() {\n    25 |         counter.incrementAndGet();\n>   26 |         System.out.println(\"Cron expression configured in application.properties\");\n    27 |     }\n    28 | \n    29 |     @Scheduled(fixedRate = 1000)",
+      "category": "NEW"
+    },
+    {
+      "file": "spring-scheduled-quickstart/src/main/java/org/acme/spring/scheduler/CounterBean.java",
+      "line": 32,
+      "column": 9,
+      "snippet": "    29 |     @Scheduled(fixedRate = 1000)\n    30 |     void jobAtFixedRate() {\n    31 |         counter.incrementAndGet();\n>   32 |         System.out.println(\"Fixed Rate expression\");\n    33 |     }\n    34 | \n    35 |     @Scheduled(fixedRateString = \"${fixedRate.expr}\")",
+      "category": "NEW"
+    },
+    {
+      "file": "spring-scheduled-quickstart/src/main/java/org/acme/spring/scheduler/CounterBean.java",
+      "line": 38,
+      "column": 9,
+      "snippet": "    35 |     @Scheduled(fixedRateString = \"${fixedRate.expr}\")\n    36 |     void jobAtFixedRateInConfig() {\n    37 |         counter.incrementAndGet();\n>   38 |         System.out.println(\"Fixed Rate expression configured in application.properties\");\n    39 |     }\n    40 | }",
+      "category": "NEW"
+    },
+    {
+      "file": "websockets-quickstart/src/main/java/org/acme/websockets/ChatSocket.java",
+      "line": 56,
+      "column": 21,
+      "snippet": "    53 |         sessions.values().forEach(s -> {\n    54 |             s.getAsyncRemote().sendObject(message, result -> {\n    55 |                 if (result.getException() != null) {\n>   56 |                     System.out.println(\"Unable to send message: \" + result.getException());\n    57 |                 }\n    58 |             });\n    59 |         });",
+      "category": "NEW"
+    }
+  ],
+  "metadata": {
+    "total_occurrences": 41,
+    "confidence": "low",
+    "safe_auto_apply": false,
+    "estimated_time_seconds": 21
+  }
+}

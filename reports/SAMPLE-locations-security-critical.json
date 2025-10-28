@@ -1,0 +1,36 @@
+{
+  "group_id": "java-lang-security-audit-command-injection-process-builder-command-injection-process-builder-critical-semgrep",
+  "rule": "java.lang.security.audit.command-injection-process-builder.command-injection-process-builder",
+  "severity": "critical",
+  "tool": "semgrep",
+  "category": "Security",
+  "total_count": 2,
+  
+  "locations": [
+    {
+      "file": "clients/src/main/java/org/apache/kafka/common/utils/ProcessUtil.java",
+      "line": 45,
+      "column": 12,
+      "snippet": "  public static Process executeCommand(String command) {\n    ProcessBuilder builder = new ProcessBuilder(\"/bin/sh\", \"-c\", command);\n    return builder.start();\n  }",
+      "category": "NEW",
+      "message": "ProcessBuilder with user-controlled input can lead to command injection. Use ProcessBuilder with individual arguments instead of shell interpretation."
+    },
+    {
+      "file": "server/src/main/java/org/apache/kafka/server/utils/ShellExecutor.java",
+      "line": 78,
+      "column": 8,
+      "snippet": "  private void runShellCommand(String cmd) throws IOException {\n    Runtime.getRuntime().exec(cmd);\n    // Security risk: Direct execution of user input\n  }",
+      "category": "NEW",
+      "message": "Runtime.exec() with string argument enables shell injection. Use ProcessBuilder with array of arguments for secure execution."
+    }
+  ],
+  
+  "summary": {
+    "affected_files": 2,
+    "new_issues": 2,
+    "existing_modified": 0,
+    "resolved": 0,
+    "existing_rest": 0
+  }
+}
+

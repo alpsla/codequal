@@ -1,0 +1,37 @@
+{
+  "version": "1.0",
+  "group_id": "java-lang-security-audit-crypto-weak-random-weak-random-high-semgrep",
+  "rule": "java.lang.security.audit.crypto.weak-random.weak-random",
+  "severity": "high",
+  "description": "",
+  "fix_pattern": {
+    "type": "template",
+    "example": {
+      "before": "",
+      "after": ""
+    },
+    "instructions": "Apply the suggested fix"
+  },
+  "locations": [
+    {
+      "file": "microprofile-fault-tolerance-quickstart/src/main/java/org/acme/microprofile/faulttolerance/CoffeeResource.java",
+      "line": 141,
+      "column": 13,
+      "snippet": "   138 | \n   139 |     private void maybeFail(String failureLogMessage) {\n   140 |         // introduce some artificial failures\n>  141 |         if (new Random().nextFloat() < failRatio) {\n   142 |             LOGGER.error(failureLogMessage);\n   143 |             throw new RuntimeException(\"Resource failure.\");\n   144 |         }",
+      "category": "NEW"
+    },
+    {
+      "file": "microprofile-fault-tolerance-quickstart/src/main/java/org/acme/microprofile/faulttolerance/CoffeeResource.java",
+      "line": 149,
+      "column": 22,
+      "snippet": "   146 | \n   147 |     private void randomDelay() throws InterruptedException {\n   148 |         // introduce some artificial delay\n>  149 |         Thread.sleep(new Random().nextInt(500));\n   150 |     }\n   151 | \n   152 |     void setFailRatio(Float failRatio) {",
+      "category": "NEW"
+    }
+  ],
+  "metadata": {
+    "total_occurrences": 2,
+    "confidence": "low",
+    "safe_auto_apply": false,
+    "estimated_time_seconds": 1
+  }
+}

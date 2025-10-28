@@ -110,7 +110,8 @@ export class SectionGenerators {
       const grouped = this.groupBySeverityAndTool(blockingIssues);
       for (const [severity, toolGroups] of Object.entries(grouped)) {
         for (const [tool, toolIssues] of Object.entries(toolGroups as any)) {
-          section += `- **${tool}**: ${toolIssues.length} ${severity} issue(s)\n`;
+          const issueArray = toolIssues as any[];
+          section += `- **${tool}**: ${issueArray.length} ${severity} issue(s)\n`;
         }
       }
       section += '\n';
@@ -119,13 +120,13 @@ export class SectionGenerators {
     // Auto-fixable issues
     const autoFixable = groups.filter(g => this.isAutoFixable(g));
     if (autoFixable.length > 0) {
-      const totalAutoFixable = autoFixable.reduce((sum, g) => sum + g.issues.length, 0);
+      const totalAutoFixable = autoFixable.reduce((sum, g) => sum + g.count, 0);
       section += `### ⚡ Quick Wins (${totalAutoFixable} auto-fixable)\n\n`;
       section += 'These issues can be automatically fixed using IDE tools:\n\n';
       
       for (const group of autoFixable.slice(0, 5)) {
         section += `- **${this.getRuleTitle(group.rule, group.tool)}**: `;
-        section += `${group.issues.length} occurrence(s)\n`;
+        section += `${group.count} occurrence(s)\n`;
       }
       
       if (autoFixable.length > 5) {

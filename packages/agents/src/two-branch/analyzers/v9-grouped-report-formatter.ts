@@ -18,6 +18,53 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { AppScoreManager } from './v9-app-score-manager';
 import { SkillScoreManager } from './v9-skill-score-manager';
 
+// Service Imports for Delegation Pattern
+import {
+  formatDate,
+  formatDuration,
+  cleanAIContent,
+  getUserFriendlyTitle
+} from '../report/formatter-utils';
+import { getCuratedResourcesForRule, enrichIssuesWithAI } from '../report/ai-enrichment';
+import {
+  detectCategory,
+  calculateRiskLevel,
+  getCategoryContext,
+  getPriorityGuidance
+} from '../report/category-detector';
+import {
+  generateEducationalResources,
+  generateEducationalResourcesBrave
+} from '../report/educational-resources';
+import {
+  generateBusinessImpact,
+  getRiskImpactLevel,
+  calculateIssueWeightedSkillScore,
+  getExploitCostExplanation
+} from '../report/business-impact';
+import {
+  generateAnalysisMetadata,
+  generatePRComment,
+  generateFooter,
+  groupBySeverity,
+  groupByCategory,
+  groupByTool
+} from '../report/metadata-footer';
+import {
+  generateHeader,
+  generateKeyFindings,
+  generateCriticalBlockers,
+  generateQuickWins
+} from '../report/header-sections';
+import {
+  calculateQualityScore,
+  checkCachedScoresForCommit,
+  calculateFullV9Score,
+  calculateCategoryScore,
+  calculateSimplifiedScore,
+  getScoreInterpretation
+} from '../report/score-calculator';
+
 // ================================================================
 // Types for Grouped Report
 // ================================================================
@@ -238,31 +285,7 @@ export class V9GroupedReportFormatter {
    * Curated resource fallback for known rules (deterministic, zero-API)
    */
   private getCuratedResourcesForRule(ruleId: string): Array<{ title: string; url: string }> {
-    const map: Record<string, Array<{ title: string; url: string }>> = {
-      'java.lang.security.audit.command-injection-process-builder': [
-        { title: 'OWASP OS Command Injection Defense', url: 'https://cheatsheetseries.owasp.org/cheatsheets/OS_Command_Injection_Defense_Cheat_Sheet.html' },
-        { title: 'ProcessBuilder best practices (Oracle docs)', url: 'https://docs.oracle.com/javase/8/docs/api/java/lang/ProcessBuilder.html' }
-      ],
-      'java.lang.security.audit.unsafe-reflection': [
-        { title: 'CWE-470: Use of Externally-Controlled Input to Select Classes or Code', url: 'https://cwe.mitre.org/data/definitions/470.html' },
-        { title: 'Java Secure Coding Guidelines: Reflection', url: 'https://www.oracle.com/java/technologies/javase/seccodeguide.html' }
-      ],
-      'AvoidThrowingRawExceptionTypes': [
-        { title: 'Effective Java: Exceptions', url: 'https://www.oreilly.com/library/view/effective-java-3rd/9780134686097/' },
-        { title: 'Java Exceptions Best Practices', url: 'https://www.baeldung.com/java-exceptions' }
-      ],
-      'GuardLogStatement': [
-        { title: 'SLF4J Parameterized Logging', url: 'http://www.slf4j.org/faq.html#logging_performance' }
-      ],
-      'SystemPrintln': [
-        { title: 'Why use a logging framework instead of System.out.println', url: 'https://www.baeldung.com/java-system-out-println-vs-logger' }
-      ]
-    };
-    // Normalize known semgrep duplication suffix
-    const normalized = ruleId.endsWith('.command-injection-process-builder')
-      ? 'java.lang.security.audit.command-injection-process-builder'
-      : ruleId;
-    return map[normalized] || [];
+    return getCuratedResourcesForRule(ruleId);
   }
   
   /**
@@ -274,80 +297,13 @@ export class V9GroupedReportFormatter {
     issues: EnrichedIssue[],
     groups: IssueGroup[]
   ): Promise<EnrichedIssue[]> {
-    // Skip if no model config resolver
-    if (!this.modelConfigResolver) {
-      console.log('[AI Enrichment] Skipped - no model config resolver provided');
-      return issues;
-    }
-
-    console.log(`[AI Enrichment] Starting enrichment for ${groups.length} groups...`);
-    const startTime = Date.now();
-
-    try {
-      const { SpecializedAgentFactory } = await import('../agents/specialized-agents');
-      
-      // Process groups in parallel (10 groups × ~600 tokens = 6,000 tokens = $0.003)
-      const enrichmentPromises = groups.map(async (group) => {
-        const groupIssues = issues.filter(i => 
-          i.rule === group.rule && i.tool === group.tool && i.severity === group.severity
-        );
-        
-        if (groupIssues.length === 0) return;
-        
-        // Pick representative issue (first with code snippet)
-        const representative = groupIssues.find(i => i.snippet) || groupIssues[0];
-        
-        try {
-          const issueContext = {
-            title: representative.message || representative.rule,
-            description: representative.message || '',
-            type: representative.detectedCategory || 'Code Quality',
-            severity: representative.severity,
-            file: representative.file,
-            line: representative.line || 1,
-            codeSnippet: representative.snippet,
-            tool: representative.tool
-          };
-          
-          // Call AI agent (uses new two-prompt architecture with compact JSON examples)
-          const fixSuggestion = await SpecializedAgentFactory.generateFixForIssue(
-            issueContext,
-            this.modelConfigResolver,
-            this.detectedLanguage,
-            this.detectedRepoSize
-          );
-          
-          // Apply fix to ALL issues in this group
-          for (const issue of groupIssues) {
-            issue.fixSuggestion = {
-              fix: fixSuggestion.fix,
-              correctedCode: fixSuggestion.correctedCode,
-              explanation: fixSuggestion.explanation || fixSuggestion.fix,  // Ensure explanation is always present
-              bestPractices: fixSuggestion.bestPractices
-            };
-          }
-          
-          console.log(`[AI Enrichment] ✅ ${group.rule}: ${fixSuggestion.fix.substring(0, 60)}...`);
-          
-        } catch (error: any) {
-          console.warn(`[AI Enrichment] ⚠️  Failed for ${group.rule}:`, error.message);
-          // Continue without enrichment (will use generic fallback in report)
-        }
-      });
-      
-      await Promise.all(enrichmentPromises);
-      
-      const duration = Date.now() - startTime;
-      const enrichedCount = issues.filter(i => i.fixSuggestion).length;
-      console.log(`[AI Enrichment] Completed: ${enrichedCount}/${issues.length} issues enriched in ${duration}ms`);
-      
-      return issues;
-      
-    } catch (error: any) {
-      console.error('[AI Enrichment] Fatal error:', error.message);
-      // Return un-enriched issues (generic fallback will be used)
-      return issues;
-    }
+    return enrichIssuesWithAI(
+      issues,
+      groups,
+      this.modelConfigResolver,
+      this.detectedLanguage,
+      this.detectedRepoSize
+    );
   }
   
   /**
@@ -668,6 +624,10 @@ export class V9GroupedReportFormatter {
    * Generate report header with complete metadata
    */
   private generateHeader(metadata: any): string {
+    return generateHeader(metadata, this.SHOW_PERF_SUBMETRICS);
+  }
+
+  private _REMOVED_generateHeader_LEGACY(metadata: any): string {
     // BUG FIX #71: Support both 'APPROVE' and 'APPROVED' (metadata uses 'APPROVE', but some places use 'APPROVED')
     const icon = (metadata.decision === 'APPROVE' || metadata.decision === 'APPROVED') ? '✅' : '⛔';
     const analysisDate = this.formatDate(metadata.analyzedAt);
@@ -768,68 +728,14 @@ export class V9GroupedReportFormatter {
    * Format date for display
    */
   private formatDate(dateString?: string): string {
-    if (!dateString) {
-      return new Date().toLocaleString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        timeZoneName: 'short'
-      });
-    }
-    
-    try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) {
-        return new Date().toLocaleString('en-US', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-          timeZoneName: 'short'
-        });
-      }
-      return date.toLocaleString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        timeZoneName: 'short'
-      });
-    } catch {
-      return new Date().toLocaleString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        timeZoneName: 'short'
-      });
-    }
+    return formatDate(dateString);
   }
   
   /**
    * Format duration in milliseconds to human-readable string
    */
   private formatDuration(durationMs?: number): string {
-    if (!durationMs) return '0s';
-    
-    const seconds = Math.floor(durationMs / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const hours = Math.floor(minutes / 60);
-    
-    if (hours > 0) {
-      const remainingMinutes = minutes % 60;
-      return `${hours}h ${remainingMinutes}m`;
-    } else if (minutes > 0) {
-      const remainingSeconds = seconds % 60;
-      return `${minutes}m ${remainingSeconds}s`;
-    } else {
-      return `${seconds}s`;
-    }
+    return formatDuration(durationMs);
   }
   
   /**
@@ -877,22 +783,7 @@ export class V9GroupedReportFormatter {
     appScore?: number;
     skillScore?: number;
   }> {
-    // Use full V9 scoring if Supabase is available
-    if (this.appScoreManager && this.skillScoreManager && metadata.repository) {
-      // BUG FIX #9: Check for cached scores if commit SHA provided (prevents score decay on re-runs)
-      if (metadata.commitSHA && metadata.prNumber) {
-        const cached = await this.checkCachedScoresForCommit(metadata);
-        if (cached) {
-          console.log(`[V9ReportFormatter] ⚡ Using cached scores for commit ${metadata.commitSHA.slice(0, 7)} - no recalculation needed`);
-          return cached;
-        }
-      }
-      
-      return await this.calculateFullV9Score(issues, metadata);
-    }
-    
-    // Fall back to simplified scoring
-    return this.calculateSimplifiedScore(issues);
+    return calculateQualityScore(issues, metadata, this.appScoreManager, this.skillScoreManager);
   }
   
   /**
@@ -902,6 +793,12 @@ export class V9GroupedReportFormatter {
    * BUG FIX #9: Commit SHA caching
    */
   private async checkCachedScoresForCommit(
+    metadata: { repository?: string; prNumber?: number; commitSHA?: string; prAuthorEmail?: string }
+  ): Promise<any | null> {
+    return checkCachedScoresForCommit(metadata, this.appScoreManager, this.skillScoreManager);
+  }
+
+  private async _REMOVED_checkCachedScoresForCommit_LEGACY(
     metadata: { repository?: string; prNumber?: number; commitSHA?: string; prAuthorEmail?: string }
   ): Promise<any | null> {
     if (!this.appScoreManager || !this.skillScoreManager || !metadata.commitSHA) {
@@ -996,6 +893,13 @@ export class V9GroupedReportFormatter {
    * - #9: Save commit SHA for caching
    */
   private async calculateFullV9Score(
+    issues: EnrichedIssue[],
+    metadata: { repository?: string; prNumber?: number; commitSHA?: string; prAuthor?: string; prAuthorEmail?: string }
+  ): Promise<any> {
+    return calculateFullV9Score(issues, metadata, this.appScoreManager, this.skillScoreManager);
+  }
+
+  private async _REMOVED_calculateFullV9Score_LEGACY(
     issues: EnrichedIssue[],
     metadata: { repository?: string; prNumber?: number; commitSHA?: string; prAuthor?: string; prAuthorEmail?: string }
   ): Promise<any> {
@@ -1141,6 +1045,10 @@ export class V9GroupedReportFormatter {
    * All have same weight (only sign differs)
    */
   private calculateCategoryScore(categoryIssues: EnrichedIssue[]): number {
+    return calculateCategoryScore(categoryIssues);
+  }
+
+  private _REMOVED_calculateCategoryScore_LEGACY(categoryIssues: EnrichedIssue[]): number {
     const BASE = 50;  // BUG FIX #35: Universal baseline 50/100 for all categories (neutral)
     let adjustment = 0;
     
@@ -1168,6 +1076,10 @@ export class V9GroupedReportFormatter {
    * Simplified scoring (fallback when Supabase unavailable)
    */
   private calculateSimplifiedScore(issues: EnrichedIssue[]): any {
+    return calculateSimplifiedScore(issues);
+  }
+
+  private _REMOVED_calculateSimplifiedScore_LEGACY(issues: EnrichedIssue[]): any {
     const baseScore = 100.0;
     let deduction = 0;
     
@@ -1263,6 +1175,10 @@ export class V9GroupedReportFormatter {
    * Get quality score interpretation
    */
   private getScoreInterpretation(score: number): { emoji: string; label: string; description: string } {
+    return getScoreInterpretation(score);
+  }
+
+  private _REMOVED_getScoreInterpretation_LEGACY(score: number): { emoji: string; label: string; description: string } {
     if (score >= 90) {
       return {
         emoji: '🏆',
@@ -1441,6 +1357,10 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
    * Generate key findings for executive summary
    */
   private generateKeyFindings(issues: EnrichedIssue[], groups: IssueGroup[], blockingIssues: EnrichedIssue[]): string {
+    return generateKeyFindings(issues, groups, blockingIssues);
+  }
+
+  private _REMOVED_generateKeyFindings_LEGACY(issues: EnrichedIssue[], groups: IssueGroup[], blockingIssues: EnrichedIssue[]): string {
     const findings: string[] = [];
     
     // Finding 1: Overall quality assessment
@@ -1490,6 +1410,10 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
    * Generate critical blockers section
    */
   private generateCriticalBlockers(groups: IssueGroup[], blockingIssues: EnrichedIssue[]): string {
+    return generateCriticalBlockers(groups, blockingIssues);
+  }
+
+  private _REMOVED_generateCriticalBlockers_LEGACY(groups: IssueGroup[], blockingIssues: EnrichedIssue[]): string {
     if (blockingIssues.length === 0) {
       return `✅ **No critical blockers** - PR can be merged once reviewed\n\nAll identified issues are either low/medium severity or in unchanged code.`;
     }
@@ -1566,6 +1490,10 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
    * Generate quick wins section
    */
   private generateQuickWins(groups: IssueGroup[], autoFixableGroups: IssueGroup[]): string {
+    return generateQuickWins(groups, autoFixableGroups);
+  }
+
+  private _REMOVED_generateQuickWins_LEGACY(groups: IssueGroup[], autoFixableGroups: IssueGroup[]): string {
     if (autoFixableGroups.length === 0) {
       return `No auto-fixable issues identified. Manual fixes required for all issues.`;
     }
@@ -1683,169 +1611,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
    * Phase D: User-friendly titles
    */
   private getUserFriendlyTitle(rule: string, tool: string): string {
-    // Common patterns in rule names
-    const friendlyTitles: Record<string, string> = {
-      // ===== PMD Rules =====
-      // Exception Handling
-      'AvoidThrowingRawExceptionTypes': 'Throwing Generic Exception Types',
-      'AvoidThrowingNullPointerException': 'Throwing NullPointerException',
-      'AvoidCatchingThrowable': 'Catching Throwable or Error',
-      'AvoidCatchingNPE': 'Catching NullPointerException',
-      'ExceptionAsFlowControl': 'Using Exceptions for Flow Control',
-      'AvoidRethrowingException': 'Rethrowing Exception Without Context',
-      'DoNotThrowExceptionInFinally': 'Throwing Exception in Finally Block',
-      
-      // Logging & Debugging
-      'SystemPrintln': 'Using System.out.println for Logging',
-      'GuardLogStatement': 'Unguarded Log Statements',
-      'MoreThanOneLogger': 'Multiple Logger Declarations',
-      'AvoidPrintStackTrace': 'Using printStackTrace()',
-      'ProperLogger': 'Incorrect Logger Declaration',
-      
-      // Concurrency
-      'AvoidUsingVolatile': 'Using Volatile Variables',
-      'AvoidSynchronizedAtMethodLevel': 'Method-Level Synchronization',
-      'UnsynchronizedStaticDateFormatter': 'Unsynchronized Static DateFormat',
-      'UseConcurrentHashMap': 'Using Hashtable Instead of ConcurrentHashMap',
-      'DoubleCheckedLocking': 'Broken Double-Checked Locking',
-      'AvoidThreadGroup': 'Using ThreadGroup',
-      'DontCallThreadRun': 'Calling Thread.run() Instead of start()',
-      
-      // Code Quality
-      'ClassWithOnlyPrivateConstructorsShouldBeFinal': 'Utility Class Not Marked Final',
-      'AvoidReassigningParameters': 'Reassigning Method Parameters',
-      'ReturnEmptyCollectionRatherThanNull': 'Returning Null Instead of Empty Collection',
-      'AvoidFileStream': 'Using FileInputStream/FileOutputStream',
-      'ConstructorCallsOverridableMethod': 'Constructor Calls Overridable Method',
-      'UseProperClassLoader': 'Improper ClassLoader Usage',
-      'SimplifyBooleanReturns': 'Complex Boolean Return Logic',
-      'SimplifyBooleanExpressions': 'Unnecessarily Complex Boolean Expressions',
-      'CollapsibleIfStatements': 'Nested If Statements That Can Be Combined',
-      'AvoidDeeplyNestedIfStmts': 'Deeply Nested If Statements',
-      'SwitchStmtsShouldHaveDefault': 'Switch Statement Missing Default Case',
-      'AvoidBranchingStatementAsLastInLoop': 'Break/Continue as Last Statement in Loop',
-      'ForLoopCanBeForeach': 'For Loop Can Use Enhanced For-Each',
-      
-      // Resource Management
-      'CloseResource': 'Resource Not Properly Closed',
-      'UseProperJDBCClose': 'JDBC Resources Not Properly Closed',
-      'UseTryWithResources': 'Not Using Try-With-Resources',
-      
-      // Performance
-      'UseStringBufferForStringAppends': 'String Concatenation in Loop',
-      'ConsecutiveLiteralAppends': 'Multiple Consecutive String Appends',
-      'InefficientStringBuffering': 'Inefficient StringBuffer Usage',
-      'AppendCharacterWithChar': 'Appending String Instead of Char',
-      'AvoidInstantiatingObjectsInLoops': 'Object Creation in Loops',
-      'UseArraysAsList': 'Not Using Arrays.asList()',
-      'OptimizableToArrayCall': 'Non-Optimized toArray() Call',
-      
-      // ===== Semgrep Security Rules =====
-      'java.lang.security.audit.command-injection': 'Command Injection Vulnerability',
-      'java.lang.security.audit.command-injection-process-builder': 'Command Injection via ProcessBuilder',
-      'java.lang.security.audit.command-injection-process-builder.command-injection-process-builder': 'Command Injection via ProcessBuilder',
-      'java.lang.security.audit.unsafe-reflection': 'Unsafe Reflection Usage',
-      'java.lang.security.audit.sql-injection': 'SQL Injection Vulnerability',
-      'java.lang.security.audit.xpath-injection': 'XPath Injection Vulnerability',
-      'java.lang.security.audit.xxe': 'XML External Entity (XXE) Injection',
-      'java.lang.security.audit.crypto.weak-cipher': 'Weak Cryptographic Cipher',
-      'java.lang.security.audit.crypto.weak-hash': 'Weak Hashing Algorithm',
-      'java.lang.security.audit.crypto.weak-rsa': 'Weak RSA Key Size',
-      'java.lang.security.audit.crypto.insecure-randomness': 'Insecure Random Number Generator',
-      'java.lang.security.audit.path-traversal': 'Path Traversal Vulnerability',
-      'java.lang.security.audit.ldap-injection': 'LDAP Injection Vulnerability',
-      'java.lang.security.audit.deserialization': 'Unsafe Deserialization',
-      'java.lang.security.audit.cookie-missing-httponly': 'Cookie Missing HttpOnly Flag',
-      'java.lang.security.audit.cookie-missing-secure': 'Cookie Missing Secure Flag',
-      'java.lang.security.audit.hardcoded-credentials': 'Hard-Coded Credentials',
-      'java.lang.security.audit.jwt-exposed-credentials': 'JWT Credentials Exposed',
-      
-      // ===== Checkstyle Rules =====
-      'LineLength': 'Line Too Long',
-      'MagicNumber': 'Magic Numbers in Code',
-      'MissingJavadocMethod': 'Missing Method Documentation',
-      'MissingJavadocType': 'Missing Class Documentation',
-      'WhitespaceAround': 'Incorrect Whitespace',
-      'WhitespaceAfter': 'Missing Whitespace After Token',
-      'EmptyBlock': 'Empty Code Block',
-      'NeedBraces': 'Missing Braces Around Code Block',
-      'LeftCurly': 'Incorrect Left Curly Brace Placement',
-      'RightCurly': 'Incorrect Right Curly Brace Placement',
-      'AvoidStarImport': 'Using Wildcard Imports',
-      'UnusedImports': 'Unused Import Statements',
-      'RedundantImport': 'Redundant Import Statements',
-      'IllegalImport': 'Importing Forbidden Package',
-      'ParameterName': 'Parameter Name Convention Violation',
-      'LocalVariableName': 'Local Variable Name Convention Violation',
-      'MemberName': 'Member Variable Name Convention Violation',
-      'MethodName': 'Method Name Convention Violation',
-      'TypeName': 'Class/Interface Name Convention Violation',
-      'PackageName': 'Package Name Convention Violation',
-      'ConstantName': 'Constant Name Convention Violation',
-      
-      // ===== SpotBugs Rules =====
-      'NP_NULL_ON_SOME_PATH': 'Potential Null Pointer Dereference',
-      'NP_ALWAYS_NULL': 'Null Pointer Dereference (Always Null)',
-      'NP_NULL_PARAM_DEREF': 'Null Parameter Passed to Method',
-      'RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE': 'Redundant Null Check',
-      'DLS_DEAD_LOCAL_STORE': 'Dead Store to Local Variable',
-      'UC_USELESS_CONDITION': 'Useless Condition',
-      'UC_USELESS_OBJECT': 'Useless Object Created',
-      'RV_RETURN_VALUE_IGNORED': 'Return Value Ignored',
-      'RV_RETURN_VALUE_IGNORED_BAD_PRACTICE': 'Important Return Value Ignored',
-      'SQL_PREPARED_STATEMENT_GENERATED_FROM_NONCONSTANT_STRING': 'Dynamic SQL Query Construction',
-      'DMI_CONSTANT_DB_PASSWORD': 'Hard-Coded Database Password',
-      'DMI_EMPTY_DB_PASSWORD': 'Empty Database Password',
-      'SE_BAD_FIELD': 'Non-Serializable Field in Serializable Class',
-      'EQ_COMPARETO_USE_OBJECT_EQUALS': 'compareTo() Inconsistent with equals()',
-      'HE_EQUALS_USE_HASHCODE': 'equals() Defined Without hashCode()',
-      'CO_COMPARETO_INCORRECT_FLOATING': 'Incorrect Floating Point Comparison in compareTo()',
-      
-      // ===== Dependency Check Rules =====
-      'CVE': 'Known Security Vulnerability (CVE)',
-      'high-severity-vulnerability': 'High Severity Dependency Vulnerability',
-      'critical-severity-vulnerability': 'Critical Severity Dependency Vulnerability',
-      'outdated-dependency': 'Outdated Dependency Version'
-    };
-    
-    // Normalize rule name - remove duplicate suffix (e.g., "command-injection.command-injection" → "command-injection")
-    let normalizedRule = rule;
-    const parts = rule.split('.');
-    if (parts.length >= 2 && parts[parts.length - 1] === parts[parts.length - 2]) {
-      // Remove duplicate suffix
-      normalizedRule = parts.slice(0, -1).join('.');
-    }
-    
-    // Check direct mapping with normalized rule first
-    if (friendlyTitles[normalizedRule]) {
-      return friendlyTitles[normalizedRule];
-    }
-    
-    // Check direct mapping with original rule
-    if (friendlyTitles[rule]) {
-      return friendlyTitles[rule];
-    }
-    
-    // Try lowercase match for case-insensitive rules (especially Semgrep)
-    const ruleLower = normalizedRule.toLowerCase();
-    const matchingKey = Object.keys(friendlyTitles).find(key => key.toLowerCase() === ruleLower);
-    if (matchingKey) {
-      return friendlyTitles[matchingKey];
-    }
-    
-    // Clean up technical rule names (especially for Semgrep with long prefixes)
-    const cleaned = normalizedRule
-      .replace(/^java\.lang\.security\.audit\./gi, '') // Remove Semgrep Java security prefix
-      .replace(/^java\.lang\./gi, '')                   // Remove Java lang prefix
-      .replace(/\./g, ' ')                              // Replace dots with spaces
-      .replace(/-/g, ' ')                               // Replace hyphens with spaces
-      .replace(/_/g, ' ')                               // Replace underscores with spaces
-      .split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1)) // Title case
-      .join(' ')
-      .trim();
-    
-    return cleaned;
+    return getUserFriendlyTitle(rule, tool);
   }
   
   /**
@@ -1853,85 +1619,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
    * Phase E: Category-specific enhancements
    */
   private detectCategory(rule: string, tool: string, message: string): string {
-    const ruleLower = rule.toLowerCase();
-    const messageLower = message.toLowerCase();
-    
-    // Security patterns
-    if (
-      tool === 'semgrep' ||
-      ruleLower.includes('security') ||
-      ruleLower.includes('injection') ||
-      ruleLower.includes('xss') ||
-      ruleLower.includes('csrf') ||
-      ruleLower.includes('auth') ||
-      messageLower.includes('vulnerability') ||
-      messageLower.includes('exploit')
-    ) {
-      return 'Security';
-    }
-    
-    // Performance patterns
-    if (
-      ruleLower.includes('performance') ||
-      ruleLower.includes('optimization') ||
-      ruleLower.includes('cache') ||
-      ruleLower.includes('memory') ||
-      ruleLower.includes('inefficient') ||
-      ruleLower.includes('guard') ||
-      messageLower.includes('performance') ||
-      messageLower.includes('slow')
-    ) {
-      return 'Performance';
-    }
-    
-    // Architecture/Design patterns
-    if (
-      ruleLower.includes('architecture') ||
-      ruleLower.includes('design') ||
-      ruleLower.includes('pattern') ||
-      ruleLower.includes('solid') ||
-      ruleLower.includes('coupling') ||
-      ruleLower.includes('cohesion') ||
-      messageLower.includes('design')
-    ) {
-      return 'Architecture';
-    }
-    
-    // Code Quality/Best Practices
-    if (
-      tool === 'pmd' ||
-      tool === 'checkstyle' ||
-      ruleLower.includes('naming') ||
-      ruleLower.includes('style') ||
-      ruleLower.includes('convention') ||
-      messageLower.includes('best practice')
-    ) {
-      return 'Code Quality';
-    }
-    
-    // Dependency/Vulnerability
-    if (
-      tool === 'dependency-check' ||
-      tool === 'owasp' ||
-      ruleLower.includes('dependency') ||
-      ruleLower.includes('cve') ||
-      messageLower.includes('outdated')
-    ) {
-      return 'Dependencies';
-    }
-    
-    // Bug/Reliability
-    if (
-      tool === 'spotbugs' ||
-      ruleLower.includes('null') ||
-      ruleLower.includes('exception') ||
-      ruleLower.includes('bug') ||
-      messageLower.includes('potential bug')
-    ) {
-      return 'Reliability';
-    }
-    
-    return 'Code Quality'; // Default fallback
+    return detectCategory(rule, tool, message);
   }
   
   /**
@@ -1945,69 +1633,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
     emoji: string;
     description: string;
   } {
-    // ENHANCEMENT #1: Rule-specific risk overrides (user feedback)
-    // GuardLogStatement: 1,295 occurrences with 5-15% performance impact warrants MEDIUM risk
-    if (rule === 'GuardLogStatement') {
-      return {
-        level: 'MEDIUM RISK',
-        color: '🟡',
-        emoji: '📊',
-        description: 'Can impact performance under load - prioritize fixing in high-throughput systems'
-      };
-    }
-    
-    // Risk multipliers by category
-    const categoryRisk: Record<string, number> = {
-      'Security': 2.0,
-      'Dependencies': 1.8,
-      'Reliability': 1.5,
-      'Performance': 1.2,
-      'Architecture': 1.0,
-      'Code Quality': 0.8
-    };
-    
-    // Base risk by severity
-    const severityRisk: Record<string, number> = {
-      'critical': 10,
-      'high': 7,
-      'medium': 4,
-      'low': 2
-    };
-    
-    const baseRisk = severityRisk[severity] || 4;
-    const multiplier = categoryRisk[category] || 1.0;
-    const totalRisk = baseRisk * multiplier;
-    
-    // Determine risk level
-    if (totalRisk >= 12) {
-      return {
-        level: 'CRITICAL RISK',
-        color: '🔴',
-        emoji: '⚠️',
-        description: 'Immediate action required - may lead to security breaches, data loss, or system failures'
-      };
-    } else if (totalRisk >= 8) {
-      return {
-        level: 'HIGH RISK',
-        color: '🟠',
-        emoji: '⚡',
-        description: 'High priority - could cause significant problems in production'
-      };
-    } else if (totalRisk >= 5) {
-      return {
-        level: 'MODERATE RISK',
-        color: '🟡',
-        emoji: '📊',
-        description: 'Should be addressed - may impact system quality or maintainability'
-      };
-    } else {
-      return {
-        level: 'LOW RISK',
-        color: '🟢',
-        emoji: '✨',
-        description: 'Nice to fix - improves code quality and developer experience'
-      };
-    }
+    return calculateRiskLevel(category, severity, rule);
   }
   
   /**
@@ -2021,94 +1647,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
     stakeholders: string[];
     resources: string[];
   } {
-    const contexts: Record<string, any> = {
-      'Security': {
-        focus: 'Protecting against attacks, vulnerabilities, and unauthorized access',
-        businessImpact: 'Security breaches can lead to data loss, legal liability, reputation damage, and financial losses. GDPR/HIPAA compliance may be affected.',
-        urgency: severity === 'critical' || severity === 'high' 
-          ? 'Fix immediately - security issues are exploitable' 
-          : 'Address in next sprint - reduces attack surface',
-        stakeholders: ['Security Team', 'Compliance', 'Legal', 'Executive Leadership'],
-        resources: [
-          'OWASP Top 10: https://owasp.org/www-project-top-ten/',
-          'CWE Database: https://cwe.mitre.org/',
-          'NIST Guidelines: https://www.nist.gov/cyberframework'
-        ]
-      },
-      'Performance': {
-        focus: 'Optimizing speed, resource usage, and scalability',
-        businessImpact: 'Performance issues lead to poor user experience, higher infrastructure costs, and potential revenue loss from slow response times.',
-        urgency: severity === 'critical' || severity === 'high'
-          ? 'Address urgently - impacts user experience'
-          : 'Plan for optimization sprint',
-        stakeholders: ['DevOps', 'Product Team', 'Infrastructure', 'End Users'],
-        resources: [
-          'Java Performance Tuning: https://www.oracle.com/technical-resources/',
-          'JVM Performance: https://docs.oracle.com/javase/8/docs/technotes/guides/vm/',
-          'Profiling Tools: JProfiler, YourKit, VisualVM'
-        ]
-      },
-      'Reliability': {
-        focus: 'Preventing bugs, crashes, and unexpected behavior',
-        businessImpact: 'Reliability issues cause system downtime, data corruption, and user frustration. Critical for SLAs and customer trust.',
-        urgency: severity === 'critical' || severity === 'high'
-          ? 'Fix before production - potential crashes'
-          : 'Include in quality improvement cycle',
-        stakeholders: ['QA Team', 'Support Team', 'Product Team', 'End Users'],
-        resources: [
-          'Effective Java by Joshua Bloch',
-          'Java Concurrency in Practice',
-          'Error Handling Best Practices'
-        ]
-      },
-      'Architecture': {
-        focus: 'Improving system design, maintainability, and extensibility',
-        businessImpact: 'Poor architecture increases development costs, slows feature delivery, and makes the system brittle and hard to change.',
-        urgency: severity === 'critical' || severity === 'high'
-          ? 'Refactor in next sprint - technical debt accumulating'
-          : 'Plan for architecture review',
-        stakeholders: ['Architecture Team', 'Engineering Leads', 'Product Team'],
-        resources: [
-          'Clean Architecture by Robert C. Martin',
-          'Design Patterns by Gang of Four',
-          'SOLID Principles'
-        ]
-      },
-      'Dependencies': {
-        focus: 'Managing third-party libraries and known vulnerabilities',
-        businessImpact: 'Outdated dependencies expose the system to known exploits and security vulnerabilities. May violate compliance requirements.',
-        urgency: severity === 'critical' || severity === 'high'
-          ? 'Update immediately - known CVE exploits'
-          : 'Plan dependency update cycle',
-        stakeholders: ['Security Team', 'DevOps', 'Compliance', 'Engineering Leads'],
-        resources: [
-          'National Vulnerability Database: https://nvd.nist.gov/',
-          'Snyk Vulnerability Database: https://snyk.io/vuln/',
-          'OWASP Dependency Check'
-        ]
-      },
-      'Code Quality': {
-        focus: 'Maintaining clean, readable, and maintainable code',
-        businessImpact: 'Code quality issues slow down development, increase bug rates, and make onboarding new developers more difficult.',
-        urgency: severity === 'critical' || severity === 'high'
-          ? 'Address in code review - blocks merge'
-          : 'Continuous improvement opportunity',
-        stakeholders: ['Development Team', 'Code Reviewers', 'Tech Leads'],
-        resources: [
-          'Clean Code by Robert C. Martin',
-          'Refactoring by Martin Fowler',
-          'Team Coding Standards Document'
-        ]
-      }
-    };
-    
-    return contexts[category] || {
-      focus: 'Improving overall code quality and maintainability',
-      businessImpact: 'Impacts development velocity and code maintainability',
-      urgency: 'Address based on severity and team capacity',
-      stakeholders: ['Development Team'],
-      resources: ['Team Documentation', 'Coding Standards']
-    };
+    return getCategoryContext(category, severity);
   }
   
   /**
@@ -2126,44 +1665,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
     effort: string;
     recommendation: string;
   } {
-    // High impact categories get higher priority
-    const isHighImpactCategory = ['Security', 'Dependencies', 'Reliability'].includes(category);
-    const isHighSeverity = severity === 'critical' || severity === 'high';
-    const isWidespread = count > 50;
-    
-    if (riskLevel === 'CRITICAL RISK') {
-      return {
-        priority: 'P0 - Critical',
-        timeframe: 'Fix immediately (within 24 hours)',
-        effort: isWidespread ? 'High (requires coordinated effort across team)' : 'Medium (focused fix)',
-        recommendation: 'Drop current work. Assemble team. Fix and deploy hotfix. Post-mortem required.'
-      };
-    } else if (riskLevel === 'HIGH RISK') {
-      return {
-        priority: 'P1 - High',
-        timeframe: isHighImpactCategory ? 'Fix in current sprint' : 'Fix within 2 weeks',
-        effort: isWidespread ? 'High (may need refactoring)' : 'Medium (targeted fixes)',
-        recommendation: isWidespread 
-          ? 'Create fix pattern, apply systematically, add automated tests'
-          : 'Fix in next PR, add regression test, update documentation'
-      };
-    } else if (riskLevel === 'MODERATE RISK') {
-      return {
-        priority: 'P2 - Medium',
-        timeframe: 'Plan for next sprint or two',
-        effort: isWidespread ? 'High (batch fix recommended)' : 'Low to Medium',
-        recommendation: isWidespread
-          ? 'Add to backlog, batch fix in refactoring sprint, use linter rules to prevent recurrence'
-          : 'Fix opportunistically during related work, add code review checklist item'
-      };
-    } else {
-      return {
-        priority: 'P3 - Low',
-        timeframe: 'Address in quality improvement cycle',
-        effort: 'Low (good for new contributors)',
-        recommendation: 'Good first issue for onboarding, fix during code cleanup sprints, enable automated formatting/linting'
-      };
-    }
+    return getPriorityGuidance(category, severity, count, riskLevel);
   }
   
   /**
@@ -3094,35 +2596,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
    * CRITICAL: Be conservative - don't remove legitimate code/comments
    */
   private cleanAIContent(content: string): string {
-    if (!content) return content;
-    
-    let cleaned = content;
-    
-    // Remove <think> blocks (with or without closing tags)
-    cleaned = cleaned.replace(/<think>[\s\S]*?<\/think>/gi, '');    // <think>...</think>
-    cleaned = cleaned.replace(/<think>[\s\S]*?(?=\n\n|$)/gi, '');   // <think>... (no closing tag)
-    
-    // BUG FIX #46 CORRECTED: Only remove VERY specific AI thinking patterns
-    // DO NOT remove generic sentences that could be in code comments!
-    cleaned = cleaned.replace(/^\/\/ Apply this fix to your code:?\s*$/gm, ''); // "// Apply this fix to your code:"
-    cleaned = cleaned.replace(/^First, I need to figure out what the original code is doing\..*$/gm, ''); // Very specific thinking pattern
-    cleaned = cleaned.replace(/^Since the line is using.*?maybe they're using.*$/gm, ''); // Specific incomplete thought
-    
-    // Remove bug tracking references
-    cleaned = cleaned.replace(/\*\*BUG-\d+.*?:\*\*/g, '');          // **BUG-XXX FIX:**
-    cleaned = cleaned.replace(/\(BUG-\d+.*?\)/g, '');                // (BUG-XXX FIX - ...)
-    
-    // Remove AI fallback/helper messages (very specific)
-    cleaned = cleaned.replace(/^\/\/\s*⚠️\s*AI-generated fix not available.*$/gm, '');
-    cleaned = cleaned.replace(/^\/\/\s*Issue: This needs manual review.*$/gm, '');
-    
-    // Remove standalone line numbers
-    cleaned = cleaned.replace(/^\s*\d+:\s*$/gm, '');
-    
-    // Remove empty lines caused by removals (but keep intentional spacing)
-    cleaned = cleaned.replace(/\n\n\n+/g, '\n\n');
-    
-    return cleaned.trim();
+    return cleanAIContent(content);
   }
 
   /**
@@ -3489,6 +2963,10 @@ mvn spotless:check  # Verify (use in CI)
    * Generate Business Impact Analysis with real financial calculations
    */
   private generateBusinessImpact(issues: EnrichedIssue[], groups: IssueGroup[]): string {
+    return generateBusinessImpact(issues, groups);
+  }
+
+  private _REMOVED_legacyGenerateBusinessImpact(issues: EnrichedIssue[], groups: IssueGroup[]): string {
     // BLOCKERS ONLY: NEW/EXISTING_MODIFIED + critical/high
     const blocking = issues.filter(i =>
       (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED') &&
@@ -3632,15 +3110,7 @@ ${blocking.length > 0 ? `
    * Get exploit cost explanation helper
    */
   private getExploitCostExplanation(criticalCount: number, highCount: number, securityCount: number): string {
-    if (criticalCount > 0 && securityCount > 0) {
-      return `${criticalCount} critical security vulnerabilities could lead to data breach, system compromise, or service disruption`;
-    } else if (highCount > 0 && securityCount > 0) {
-      return `${highCount} high-severity security issues could result in security incidents or operational failures`;
-    } else if (criticalCount > 0) {
-      return `${criticalCount} critical issues could cause system instability or reliability problems`;
-    } else {
-      return `Low risk of security incidents; main concerns are code quality and maintainability`;
-    }
+    return getExploitCostExplanation(criticalCount, highCount, securityCount);
   }
   
   /**
@@ -3648,34 +3118,7 @@ ${blocking.length > 0 ? `
    * BUG FIX #75: Consider blocking status and severity for accurate risk assessment
    */
   private getRiskImpactLevel(categoryIssues: EnrichedIssue[]): string {
-    if (categoryIssues.length === 0) return '⚪ None';
-    
-    // Count blocking issues (NEW/EXISTING_MODIFIED + critical/high)
-    const blockingCritical = categoryIssues.filter(i => 
-      (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED') && 
-      i.severity === 'critical'
-    ).length;
-    
-    const blockingHigh = categoryIssues.filter(i => 
-      (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED') && 
-      i.severity === 'high'
-    ).length;
-    
-    const totalBlocking = blockingCritical + blockingHigh;
-    
-    // BUG FIX #75: Any blocking HIGH/CRITICAL issues = HIGH RISK (not Medium)
-    if (blockingCritical > 0) return '🔴 Critical';
-    if (blockingHigh > 0) return '🔴 High';
-    
-    // No blocking issues - assess by backlog severity
-    const critical = categoryIssues.filter(i => i.severity === 'critical').length;
-    const high = categoryIssues.filter(i => i.severity === 'high').length;
-    const medium = categoryIssues.filter(i => i.severity === 'medium').length;
-    
-    if (critical >= 3) return '🟠 High';
-    if (critical >= 1 || high >= 5) return '🟡 Medium';
-    if (high >= 2 || medium >= 20) return '🟡 Medium';
-    return '🟢 Low';
+    return getRiskImpactLevel(categoryIssues);
   }
 
   /**
@@ -3683,22 +3126,7 @@ ${blocking.length > 0 ? `
    * by severity weights, add resolved by same weights. Clamp to 0..100.
    */
   private calculateIssueWeightedSkillScore(issues: EnrichedIssue[]): number {
-    const weight = (severity: string): number => ({
-      critical: 5.0,
-      high: 3.0,
-      medium: 1.0,
-      low: 0.5
-    } as any)[severity] || 1.0;
-
-    let deductions = 0;
-    let additions = 0;
-    for (const i of issues) {
-      const w = weight(i.severity);
-      if (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED') deductions += w;
-      if (i.category === 'RESOLVED') additions += w;
-    }
-    const score = 50 - deductions + additions;
-    return Math.max(0, Math.min(100, Math.round(score)));
+    return calculateIssueWeightedSkillScore(issues);
   }
   
   /**
@@ -3820,134 +3248,11 @@ Continue following best practices and consider integrating static analysis into 
     });
     }
     
-    // Add recommended learning path
-    content += `### 📈 Recommended Learning Path\n\n`;
-    content += `**Week 1-2:** Focus on immediate priority areas identified above\n`;
-    content += `**Week 3-4:** Deep dive into specific patterns and advanced techniques\n`;
-    content += `**Ongoing:** Integrate static analysis into CI/CD, establish code review standards\n\n`;
-    
-    content += `### 🎓 Additional Resources\n\n`;
-    content += `- [📺 Pluralsight](https://www.pluralsight.com/) - Video courses on all topics\n`;
-    content += `- [📚 Baeldung](https://www.baeldung.com/) - Comprehensive Java tutorials\n`;
-    content += `- [🎯 Java Code Geeks](https://www.javacodegeeks.com/) - Java best practices\n`;
-    content += `- [🔬 DZone Java Zone](https://dzone.com/java-jdk-development-tutorials-tools-news) - Articles and guides\n\n`;
-    
-    content += `**💡 Tip:** Detailed issue-specific resources are linked in each section above.`;
-    
-    return content;
+    return generateEducationalResources(issues);
   }
 
   private async generateEducationalResourcesBrave(issues: EnrichedIssue[]): Promise<string> {
-    // ENHANCEMENT #2: Training for ALL blockers + ALL critical/high issues (user feedback)
-    // Blockers: NEW/EXISTING_MODIFIED + critical/high (must fix before merge)
-    const blockerIssues = issues.filter(i =>
-      (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED') && 
-      (i.severity === 'critical' || i.severity === 'high')
-    );
-    // Rest critical/high: EXISTING_REST + critical/high (not blockers but still important)
-    const restCriticalHighIssues = issues.filter(i =>
-      i.category === 'EXISTING_REST' && 
-      (i.severity === 'critical' || i.severity === 'high')
-    );
-    
-    const mod = await import('../services/EducationalSearchService');
-    const svc = new mod.EducationalSearchService();
-    if (!svc.isEnabled()) {
-      return this.generateEducationalResources(issues);
-    }
-
-    let content = `## 📚 Phased Educational Plan\n\n`;
-
-    // Phase 1: Blocker Issues (MUST FIX BEFORE MERGE) - ALL blocker types
-    if (blockerIssues.length > 0) {
-      content += `### 📚 Phase 1: Blocker Issues Training (MUST FIX BEFORE MERGE)\n`;
-      content += `**Quick Learning:** 30-60 min per issue type | **Deep Dive:** 1-2 weeks\n\n`;
-      
-      // Get all unique rules from blockers (not just top 3)
-      const blockerFreq = new Map<string, number>();
-      for (const i of blockerIssues) blockerFreq.set(i.rule, (blockerFreq.get(i.rule) || 0) + 1);
-      const blockerRules = Array.from(blockerFreq.entries())
-        .sort((a,b)=>b[1]-a[1]) // Sort by frequency
-        .map(([r]) => r);
-
-      for (const ruleId of blockerRules) {
-        const sample = blockerIssues.find(i => i.rule === ruleId);
-        const title = this.getUserFriendlyTitle(ruleId, sample ? sample.tool : '');
-        const language = (sample && (sample as any).language) ? (sample as any).language as string : 'Java';
-        const count = blockerFreq.get(ruleId) || 0;
-        
-        content += `**${title}** (${count} occurrence${count > 1 ? 's' : ''}):\n`;
-        
-        // Add curated YouTube channel/playlist
-        const youtubeQuery = `${language} ${title.toLowerCase()}`.replace(/[^\w\s]/g, ' ').trim();
-        content += `- [🎥 YouTube Tutorial](https://www.youtube.com/results?search_query=${encodeURIComponent(youtubeQuery + ' tutorial')})\n`;
-        
-        // Add curated documentation
-        const curated = this.getCuratedResourcesForRule(ruleId);
-        if (curated.length > 0) {
-          for (const r of curated.slice(0, 2)) {
-            content += `- [📚 ${r.title}](${r.url})\n`;
-          }
-        }
-        content += `\n`;
-      }
-    }
-    
-    // Phase 1.5: Rest Critical/High Issues (Not blockers, but still important)
-    if (restCriticalHighIssues.length > 0) {
-      content += `### 📚 Phase 1.5: Additional Critical/High Issues Training (Not Blockers)\n`;
-      content += `**These issues exist in unchanged files but should be addressed soon.**\n\n`;
-      
-      // Get all unique rules from rest critical/high (limit to top 5 to avoid overwhelming)
-      const restFreq = new Map<string, number>();
-      for (const i of restCriticalHighIssues) restFreq.set(i.rule, (restFreq.get(i.rule) || 0) + 1);
-      const restRules = Array.from(restFreq.entries())
-        .sort((a,b)=>b[1]-a[1])
-        .slice(0, 5) // Limit to top 5 most frequent
-        .map(([r]) => r);
-
-      for (const ruleId of restRules) {
-        const sample = restCriticalHighIssues.find(i => i.rule === ruleId);
-        const title = this.getUserFriendlyTitle(ruleId, sample ? sample.tool : '');
-        const language = (sample && (sample as any).language) ? (sample as any).language as string : 'Java';
-        const count = restFreq.get(ruleId) || 0;
-        
-        content += `**${title}** (${count} occurrence${count > 1 ? 's' : ''}):\n`;
-        
-        // Add curated YouTube channel/playlist
-        const youtubeQuery = `${language} ${title.toLowerCase()}`.replace(/[^\w\s]/g, ' ').trim();
-        content += `- [🎥 YouTube Tutorial](https://www.youtube.com/results?search_query=${encodeURIComponent(youtubeQuery + ' tutorial')})\n`;
-        
-        // Add curated documentation
-        const curated = this.getCuratedResourcesForRule(ruleId);
-        if (curated.length > 0) {
-          for (const r of curated.slice(0, 2)) {
-            content += `- [📚 ${r.title}](${r.url})\n`;
-          }
-        }
-        content += `\n`;
-      }
-    }
-
-    // BUG FIX #31: Phase 2 - Remove duplicate OWASP links (already in Phase 1)
-    content += `### 📚 Phase 2: Comprehensive Training (Long-term)\n\n`;
-    content += `**Security (Week 1-2):**\n`;
-    content += `- [📚 SEI CERT Java Coding Standard](https://wiki.sei.cmu.edu/confluence/display/java/SEI+CERT+Oracle+Coding+Standard+for+Java)\n`;
-    content += `- [🎓 PortSwigger Web Security Academy](https://portswigger.net/web-security)\n\n`;
-    content += `**Performance (Week 3-4):**\n`;
-    content += `- [📚 Java Concurrency - Oracle](https://docs.oracle.com/javase/tutorial/essential/concurrency/)\n`;
-    content += `- [📖 Java Concurrency in Practice](https://jcip.net/)\n\n`;
-    content += `**Code Quality (Month 2):**\n`;
-    content += `- [📖 Clean Code Principles](https://martinfowler.com/bliki/CleanCode.html)\n`;
-    content += `- [📚 Google Java Style Guide](https://google.github.io/styleguide/javaguide.html)\n`;
-    content += `\n> 💡 **Note**: OWASP Top 10 and security-specific resources are covered in Phase 1 Security section above.\n`;
-
-    // ENHANCEMENT #2: Return fallback if no blockers or critical/high issues
-    if (blockerIssues.length === 0 && restCriticalHighIssues.length === 0) {
-      return this.generateEducationalResources(issues);
-    }
-
-    return content.trim();
+    return generateEducationalResourcesBrave(issues);
   }
   
   /**
@@ -4175,6 +3480,16 @@ Continue following best practices and consider integrating static analysis into 
    * Generate Analysis Metadata with complete performance details
    */
   private generateAnalysisMetadata(metadata: any): string {
+    return generateAnalysisMetadata(
+      metadata,
+      this.SHOW_AGENT_PERFORMANCE,
+      this.SHOW_TOOL_PERFORMANCE,
+      this.SHOW_EFFICIENCY_ANALYSIS,
+      this.SHOW_SYSTEM_INFO
+    );
+  }
+
+  private _REMOVED_generateAnalysisMetadata_LEGACY(metadata: any): string {
     const totalDuration = Math.max(metadata.totalDuration || metadata.analysisTime || 0, 0);
     const cloneTime = Math.max(metadata.cloneTime || 0, 0);
     const analysisTime = Math.max(metadata.analysisTime || 0, 0);
@@ -4342,6 +3657,10 @@ Continue following best practices and consider integrating static analysis into 
    * Generate PR Comment (personalized, ready-to-paste)
    */
   private generatePRComment(issues: EnrichedIssue[], groups: IssueGroup[], metadata: any): string {
+    return generatePRComment(issues, groups, metadata);
+  }
+
+  private _REMOVED_generatePRComment_LEGACY(issues: EnrichedIssue[], groups: IssueGroup[], metadata: any): string {
     const blocking = issues.filter(i => 
       (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED') && 
       (i.severity === 'critical' || i.severity === 'high')
@@ -4420,6 +3739,13 @@ ${blocking.length > 5 ? `\n... and ${blocking.length - 5} more` : ''}` : '### �
    * Generate footer
    */
   private generateFooter(
+    groups: IssueGroup[],
+    ideFixFiles: IDEFixFile[]
+  ): string {
+    return generateFooter(groups, ideFixFiles);
+  }
+
+  private _REMOVED_generateFooter_LEGACY(
     groups: IssueGroup[],
     ideFixFiles: IDEFixFile[]
   ): string {
@@ -4540,34 +3866,15 @@ ${blocking.length > 5 ? `\n... and ${blocking.length - 5} more` : ''}` : '### �
   }
   
   private groupBySeverity(issues: EnrichedIssue[]): Record<string, number> {
-    return {
-      critical: issues.filter(i => i.severity === 'critical').length,
-      high: issues.filter(i => i.severity === 'high').length,
-      medium: issues.filter(i => i.severity === 'medium').length,
-      low: issues.filter(i => i.severity === 'low').length
-    };
+    return groupBySeverity(issues);
   }
   
   private groupByCategory(issues: EnrichedIssue[]): Record<string, number> {
-    const result: Record<string, number> = {
-      'NEW': 0,
-      'EXISTING_MODIFIED': 0,
-      'RESOLVED': 0,
-      'EXISTING_REST': 0
-    };
-    issues.forEach(issue => {
-      const cat = issue.category || 'unknown';
-      result[cat] = (result[cat] || 0) + 1;
-    });
-    return result;
+    return groupByCategory(issues);
   }
   
   private groupByTool(issues: EnrichedIssue[]): Record<string, number> {
-    const result: Record<string, number> = {};
-    issues.forEach(issue => {
-      result[issue.tool] = (result[issue.tool] || 0) + 1;
-    });
-    return result;
+    return groupByTool(issues);
   }
 }
 

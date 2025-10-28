@@ -326,9 +326,12 @@ export class SkillScoreManager {
   }
 
   /**
-   * Get top N developers (leaderboard)
+   * Get top N developers (leaderboard) for a specific repository
+   * 
+   * BUG FIX #57: Added repository parameter to prevent cross-repo contamination
+   * Now queries skill_scores table (has repo_name) instead of developer_metrics (global)
    */
-  async getLeaderboard(limit = 10): Promise<Array<{
+  async getLeaderboard(limit = 10, repository?: string): Promise<Array<{
     email: string;
     name?: string;
     score: number;
@@ -336,24 +339,73 @@ export class SkillScoreManager {
     totalPRs: number;
   }>> {
     try {
-      const { data, error } = await this.supabase
-        .from('developer_metrics')
-        .select('developer_email, developer_name, current_score, average_score, total_prs_analyzed')
-        .order('current_score', { ascending: false })
-        .limit(limit);
+      if (repository) {
+        // BUG FIX #57: Repository-specific leaderboard using skill_scores table
+        const { data, error } = await this.supabase
+          .from('skill_scores')
+          .select('developer_email, developer_name, overall_score, repo_name')
+          .eq('repo_name', repository)
+          .order('analyzed_at', { ascending: false });
 
-      if (error) {
-        console.warn('[SkillScoreManager] Error fetching leaderboard:', error.message);
-        return [];
+        if (error) {
+          console.warn(`[SkillScoreManager] Error fetching repo-specific leaderboard for ${repository}:`, error.message);
+          return [];
+        }
+
+        // Group by developer and calculate stats
+        const developerStats = new Map<string, {
+          email: string;
+          name?: string;
+          scores: number[];
+        }>();
+
+        for (const record of data || []) {
+          if (!developerStats.has(record.developer_email)) {
+            developerStats.set(record.developer_email, {
+              email: record.developer_email,
+              name: record.developer_name,
+              scores: []
+            });
+          }
+          developerStats.get(record.developer_email)!.scores.push(record.overall_score);
+        }
+
+        // Calculate averages and format
+        const leaderboard = Array.from(developerStats.values()).map(dev => ({
+          email: dev.email,
+          name: dev.name,
+          score: dev.scores[0] || 0,  // Latest score
+          avgScore: Math.round(dev.scores.reduce((sum, s) => sum + s, 0) / dev.scores.length),
+          totalPRs: dev.scores.length
+        }));
+
+        // Sort by current score (descending) and take top N
+        return leaderboard
+          .sort((a, b) => b.score - a.score)
+          .slice(0, limit);
+
+      } else {
+        // Fallback: Global leaderboard from developer_metrics (for backward compatibility)
+        console.warn('[SkillScoreManager] No repository provided - returning global leaderboard (may mix repos!)');
+        const { data, error } = await this.supabase
+          .from('developer_metrics')
+          .select('developer_email, developer_name, current_score, average_score, total_prs_analyzed')
+          .order('current_score', { ascending: false })
+          .limit(limit);
+
+        if (error) {
+          console.warn('[SkillScoreManager] Error fetching leaderboard:', error.message);
+          return [];
+        }
+
+        return (data || []).map(d => ({
+          email: d.developer_email,
+          name: d.developer_name,
+          score: d.current_score,
+          avgScore: d.average_score,
+          totalPRs: d.total_prs_analyzed
+        }));
       }
-
-      return (data || []).map(d => ({
-        email: d.developer_email,
-        name: d.developer_name,
-        score: d.current_score,
-        avgScore: d.average_score,
-        totalPRs: d.total_prs_analyzed
-      }));
     } catch (error) {
       console.error('[SkillScoreManager] Unexpected error fetching leaderboard:', error);
       return [];

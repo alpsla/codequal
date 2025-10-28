@@ -52,28 +52,28 @@ export class IDEIntegrationGenerator {
     };
 
     for (const group of groups) {
-      const representative = group.issues[0];
-      const locations = await this.extractLocations(group.issues);
+      const groupId = `${group.rule}-${group.severity}-${group.tool}`.toLowerCase().replace(/[^a-z0-9-]/g, '-');
+      const representative = group.examples[0];
 
       manifest.groups.push({
-        id: group.id,
+        id: groupId,
         rule: group.rule,
         tool: group.tool,
         severity: group.severity,
         category: group.category || 'Code Quality',
-        total_occurrences: group.issues.length,
+        total_occurrences: group.count,
         representative: {
           file: representative.file,
           line: representative.line || 0,
           snippet: representative.snippet || 'N/A'
         },
-        ai_fix: representative.fixSuggestion ? {
-          fix: representative.fixSuggestion.fix,
-          corrected_code: representative.fixSuggestion.correctedCode,
-          explanation: representative.fixSuggestion.explanation,
-          best_practices: representative.fixSuggestion.bestPractices || []
+        ai_fix: group.fixSuggestion ? {
+          fix: group.fixSuggestion.fix,
+          corrected_code: group.fixSuggestion.correctedCode,
+          explanation: group.fixSuggestion.explanation,
+          best_practices: group.fixSuggestion.bestPractices || []
         } : null,
-        locations_file: `issue-locations-${group.id}.json`
+        locations_file: `issue-locations-${groupId}.json`
       });
     }
 
@@ -91,21 +91,21 @@ export class IDEIntegrationGenerator {
     const diagnostics: any[] = [];
 
     for (const group of groups) {
-      for (const issue of group.issues) {
+      for (const example of group.examples) {
         diagnostics.push({
-          file: issue.file,
-          line: issue.line || 1,
-          column: issue.column || 1,
-          severity: this.mapSeverityToVSCode(issue.severity),
-          message: issue.message,
-          source: issue.tool,
-          code: issue.rule,
-          codeActions: issue.fixSuggestion ? [{
-            title: `Fix: ${issue.fixSuggestion.fix}`,
+          file: example.file,
+          line: example.line || 1,
+          column: example.column || 1,
+          severity: this.mapSeverityToVSCode(group.severity),
+          message: group.description,
+          source: group.tool,
+          code: group.rule,
+          codeActions: group.fixSuggestion ? [{
+            title: `Fix: ${group.fixSuggestion.fix}`,
             kind: 'quickfix',
             edit: {
               changes: [{
-                newText: issue.fixSuggestion.correctedCode
+                newText: group.fixSuggestion.correctedCode
               }]
             }
           }] : []
@@ -127,17 +127,17 @@ export class IDEIntegrationGenerator {
     const inspections: any[] = [];
 
     for (const group of groups) {
-      for (const issue of group.issues) {
+      for (const example of group.examples) {
         inspections.push({
-          file: issue.file,
-          line: issue.line || 1,
-          type: this.mapSeverityToJetBrains(issue.severity),
-          description: issue.message,
-          category: issue.detectedCategory || 'Code Quality',
-          tool: issue.tool,
-          quickFix: issue.fixSuggestion ? {
-            description: issue.fixSuggestion.fix,
-            replacement: issue.fixSuggestion.correctedCode
+          file: example.file,
+          line: example.line || 1,
+          type: this.mapSeverityToJetBrains(group.severity),
+          description: group.description,
+          category: group.detectedCategory || 'Code Quality',
+          tool: group.tool,
+          quickFix: group.fixSuggestion ? {
+            description: group.fixSuggestion.fix,
+            replacement: group.fixSuggestion.correctedCode
           } : null
         });
       }
@@ -161,22 +161,31 @@ export class IDEIntegrationGenerator {
     const attachments: Array<{ groupId: string; filename: string; content: any }> = [];
 
     for (const group of groups) {
-      const locations = await this.extractLocations(group.issues);
+      const groupId = `${group.rule}-${group.severity}-${group.tool}`.toLowerCase().replace(/[^a-z0-9-]/g, '-');
+      
+      // Convert examples to simple location objects for the attachment
+      const locations = group.examples.map(ex => ({
+        file: ex.file,
+        line: ex.line || 1,
+        column: ex.column,
+        snippet: ex.snippet
+      }));
       
       const content = {
-        group_id: group.id,
+        group_id: groupId,
         rule: group.rule,
         tool: group.tool,
         severity: group.severity,
         category: group.category || 'Code Quality',
-        total_occurrences: group.issues.length,
+        total_occurrences: group.count,
         locations,
-        statistics: this.calculateGroupStatistics(group.issues)
+        description: group.description,
+        fix_suggestion: group.fixSuggestion
       };
 
       attachments.push({
-        groupId: group.id,
-        filename: `issue-locations-${group.id}.json`,
+        groupId: groupId,
+        filename: `issue-locations-${groupId}.json`,
         content
       });
     }

@@ -64,6 +64,11 @@ export function determineCodeQualSeverity(
     return mapSemgrepSeverity(toolPriority as string, normalizedCategory);
   }
 
+  // BUG FIX #45: SpotBugs-specific mapping
+  if (toolName.toLowerCase() === 'spotbugs') {
+    return mapSpotBugsSeverity(toolPriority as string, normalizedRule, description);
+  }
+
   // ESLint-specific mapping
   if (toolName.toLowerCase() === 'eslint') {
     return mapESLintSeverity(toolPriority as string, normalizedCategory);
@@ -247,6 +252,106 @@ function mapCVSSSeverity(cvssScore: number): CodeQualSeverity {
   if (cvssScore >= 7.0) return 'high';
   if (cvssScore >= 4.0) return 'medium';
   return 'low';
+}
+
+/**
+ * BUG FIX #45: Map SpotBugs priority + bug pattern to CodeQual severity
+ * 
+ * SpotBugs uses priority levels (High/Medium/Low) and bug pattern types:
+ * - Correctness: Bugs that will likely cause incorrect behavior
+ * - Bad Practice: Violations of recommended coding practices
+ * - Performance: Code that may lead to inefficiencies
+ * - Dodgy Code: Confusing, anomalous, or written in a way that leads to errors
+ * - Security: Potential security vulnerabilities
+ * - Multithreaded Correctness: Flaws with concurrent code
+ * 
+ * Approved mappings (User feedback 2025-10-18):
+ * - DLS_DEAD_LOCAL_STORE → LOW (dead code, no impact)
+ * - MS_MUTABLE_ARRAY → MEDIUM (mutability issue)
+ * - RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT → MEDIUM (code smell)
+ * - NM_SAME_SIMPLE_NAME_AS_SUPERCLASS → LOW (naming only)
+ * - STCAL_INVOKE_ON_STATIC_DATE_FORMAT_INSTANCE → HIGH (thread-safety)
+ */
+function mapSpotBugsSeverity(
+  priority: string,
+  ruleId: string,
+  description?: string
+): CodeQualSeverity {
+  const normalizedPriority = (priority || '').toLowerCase();
+  const normalizedRule = ruleId.toLowerCase();
+
+  // RULE-SPECIFIC OVERRIDES (User-approved severity mappings)
+  const ruleOverrides: Record<string, CodeQualSeverity> = {
+    // LOW: Dead code, naming issues (no runtime impact)
+    'dls_dead_local_store': 'low',                              // Dead local variable
+    'dls_dead_store_of_class_literal': 'low',                  // Dead store of class literal
+    'nm_same_simple_name_as_superclass': 'low',                // Name confusion
+    'nm_same_simple_name_as_interface': 'low',                 // Name confusion
+    'nm_confusing': 'low',                                     // Confusing naming
+    
+    // MEDIUM: Code smells, mutability issues, design patterns
+    'ms_mutable_array': 'medium',                              // Mutable array field
+    'ms_mutable_collection': 'medium',                         // Mutable collection field
+    'ms_pkgprotect': 'medium',                                 // Mutable field should be package protected
+    'rv_return_value_ignored_no_side_effect': 'medium',        // Return value ignored
+    'rv_return_value_ignored': 'medium',                       // Return value ignored (general)
+    'uc_useless_condition': 'medium',                          // Useless condition
+    'uc_useless_object': 'medium',                             // Useless object created
+    
+    // HIGH: Thread-safety issues (can cause crashes in concurrent apps)
+    'stcal_invoke_on_static_date_format_instance': 'high',     // SimpleDateFormat thread-safety
+    'stcal_static_calendar_instance': 'high',                  // Calendar thread-safety
+    'dc_doublecheck': 'high',                                  // Double-checked locking
+    'ml_sync_on_updated_field': 'high',                        // Synchronization on updated field
+    'wa_await_not_in_loop': 'high',                            // wait() not in loop
+    'nn_naked_notify': 'high',                                 // Naked notify
+    
+    // CRITICAL: Security vulnerabilities, null pointer dereferences
+    'sql_injection': 'critical',                                // SQL injection
+    'command_injection': 'critical',                            // Command injection
+    'path_traversal': 'critical',                               // Path traversal
+    'xxe': 'critical',                                          // XML External Entity
+    'np_null_on_some_path': 'critical',                        // Null pointer dereference (confirmed crash)
+  };
+
+  if (ruleOverrides[normalizedRule]) {
+    return ruleOverrides[normalizedRule];
+  }
+
+  // CATEGORY-BASED FALLBACK (when specific rule not in overrides)
+  
+  // CRITICAL: Security vulnerabilities + High priority
+  if (normalizedPriority === 'high' || normalizedPriority === '1') {
+    // Security issues at high priority are critical
+    if (description && (
+      description.toLowerCase().includes('security') ||
+      description.toLowerCase().includes('injection') ||
+      description.toLowerCase().includes('exploit')
+    )) {
+      return 'critical';
+    }
+    
+    // Null pointer dereferences are critical (confirmed crashes)
+    if (normalizedRule.startsWith('np_') && description?.toLowerCase().includes('null')) {
+      return 'critical';
+    }
+    
+    // Other high-priority issues → HIGH (not critical unless proven)
+    return 'high';
+  }
+
+  // MEDIUM: Medium priority or code quality issues
+  if (normalizedPriority === 'medium' || normalizedPriority === '2') {
+    return 'medium';
+  }
+
+  // LOW: Low priority or style/naming issues
+  if (normalizedPriority === 'low' || normalizedPriority === '3') {
+    return 'low';
+  }
+
+  // Default: MEDIUM (safety fallback)
+  return 'medium';
 }
 
 /**
