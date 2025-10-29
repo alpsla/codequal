@@ -20,11 +20,18 @@ export async function calculateQualityScore(
   metadata: { repository?: string; prNumber?: number; commitSHA?: string; prAuthor?: string; prAuthorEmail?: string },
   appScoreManager: any,
   skillScoreManager: any
-): Promise<{ 
-  score: number; 
-  grade: string; 
+): Promise<{
+  score: number;
+  grade: string;
   breakdown: any;
   categoryScores?: {
+    security: number;
+    performance: number;
+    architecture: number;
+    dependency: number;
+    codeQuality: number;
+  };
+  skillCategoryScores?: {
     security: number;
     performance: number;
     architecture: number;
@@ -100,14 +107,15 @@ export async function checkCachedScoresForCommit(
     if (appScore && skillScore) {
       console.log(`[ScoreCalculator] ✅ Found cached scores - APP: ${appScore.overall_score}, Skill: ${skillScore.overall_score}`);
       
-      // BUG FIX #10, #50: Reconstruct categoryScores from individual columns
+      // BUG FIX #10, #50, SESSION_13_FIX#1: Reconstruct categoryScores from individual columns
       // Use nullish coalescing to allow 0 scores (not falsy fallback)
+      // SESSION 13 FIX: Categories without issues should show 100/100 (perfect score), not 50/100
       const categoryScores = {
-        security: appScore.security_score ?? 50,
-        performance: appScore.performance_score ?? 50,
-        architecture: appScore.architecture_score ?? 50,
-        dependency: appScore.dependency_score ?? 50,
-        codeQuality: appScore.code_quality_score ?? 50
+        security: appScore.security_score ?? 100,
+        performance: appScore.performance_score ?? 100,
+        architecture: appScore.architecture_score ?? 100,
+        dependency: appScore.dependency_score ?? 100,
+        codeQuality: appScore.code_quality_score ?? 100
       };
       
       // Determine grade
@@ -176,34 +184,53 @@ export async function calculateFullV9Score(
       codeQuality: issues.filter(i => i.detectedCategory === 'Code Quality')
     };
     
-    // Calculate per-category scores
-    const categoryScores = {
-      security: calculateCategoryScore(issuesByCategory.security),
-      performance: calculateCategoryScore(issuesByCategory.performance),
-      architecture: calculateCategoryScore(issuesByCategory.architecture),
-      dependency: calculateCategoryScore(issuesByCategory.dependency),
-      codeQuality: calculateCategoryScore(issuesByCategory.codeQuality)
+    // SESSION 13 FIX: Calculate category scores for APP (base=100)
+    const appCategoryScores = {
+      security: calculateCategoryScore(issuesByCategory.security, 100),
+      performance: calculateCategoryScore(issuesByCategory.performance, 100),
+      architecture: calculateCategoryScore(issuesByCategory.architecture, 100),
+      dependency: calculateCategoryScore(issuesByCategory.dependency, 100),
+      codeQuality: calculateCategoryScore(issuesByCategory.codeQuality, 100)
     };
-    
+
+    // SESSION 13 FIX: Calculate category scores for Skill (base=50)
+    const skillCategoryScores = {
+      security: calculateCategoryScore(issuesByCategory.security, 50),
+      performance: calculateCategoryScore(issuesByCategory.performance, 50),
+      architecture: calculateCategoryScore(issuesByCategory.architecture, 50),
+      dependency: calculateCategoryScore(issuesByCategory.dependency, 50),
+      codeQuality: calculateCategoryScore(issuesByCategory.codeQuality, 50)
+    };
+
     // BUG FIX #44: Calculate APP score (minimum of categories - weakest link)
     const appScore = Math.min(
-      categoryScores.security,
-      categoryScores.performance,
-      categoryScores.architecture,
-      categoryScores.dependency,
-      categoryScores.codeQuality
+      appCategoryScores.security,
+      appCategoryScores.performance,
+      appCategoryScores.architecture,
+      appCategoryScores.dependency,
+      appCategoryScores.codeQuality
     );
-    
-    // BUG FIX #44: Calculate Skill score (AVERAGE of category scores)
+
+    // SESSION 13 FIX: Calculate Skill score with base=50 categories
     const skillScore = Math.round(
-      (categoryScores.security + categoryScores.performance + categoryScores.architecture + 
-       categoryScores.dependency + categoryScores.codeQuality) / 5
+      (skillCategoryScores.security + skillCategoryScores.performance +
+       skillCategoryScores.architecture + skillCategoryScores.dependency +
+       skillCategoryScores.codeQuality) / 5
     );
-    
+
+    // Use appCategoryScores for saving to database (repository health)
+    const categoryScores = appCategoryScores;
+
+    // FIX BUG #2: Calculate blocking issues (NEW + EXISTING_MODIFIED with CRITICAL/HIGH)
+    const blockingIssuesCount = issues.filter(i =>
+      (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED') &&
+      (i.severity === 'critical' || i.severity === 'high')
+    ).length;
+
     // Save to Supabase with commit SHA for caching (BUG FIXES #7, #8, #9, #10)
     if (appScoreManager && metadata.repository) {
       console.log(`[ScoreCalculator] 💾 Saving APP score: ${appScore}/100 for ${metadata.repository} PR #${metadata.prNumber || 0} (commit: ${metadata.commitSHA?.slice(0, 7) || 'unknown'})`);
-      
+
       const supabase = (appScoreManager as any).supabase;
       const { error } = await supabase.from('app_scores').insert({
         repo_name: metadata.repository,
@@ -216,13 +243,15 @@ export async function calculateFullV9Score(
         architecture_score: categoryScores.architecture,
         dependency_score: categoryScores.dependency,
         code_quality_score: categoryScores.codeQuality,
-        decision: appScore >= 70 ? 'APPROVED' : 'DECLINED',
+        // FIX BUG #2: Decision based on blocking issues, not score
+        decision: blockingIssuesCount > 0 ? 'DECLINED' : 'APPROVED',
         quality_score: appScore,
         analyzed_at: new Date().toISOString(),
         new_issues_count: newIssues.length,
         existing_issues_count: existingModified.length + existingRest.length,
         resolved_issues_count: resolvedIssues.length,
-        blocking_issues_count: newIssues.filter(i => i.severity === 'critical' || i.severity === 'high').length
+        // FIX BUG #2: Use correct blocking issues count
+        blocking_issues_count: blockingIssuesCount
       });
       
       if (error) {
@@ -277,11 +306,13 @@ export async function calculateFullV9Score(
       score: appScore,
       grade,
       categoryScores,
+      skillCategoryScores,
       appScore,
       skillScore,
       breakdown: {
         baseScore: 100,
         categoryScores,
+        skillCategoryScores,
         overallMethod: 'APP = MIN(categories) - weakest link',
         skillScoreMethod: 'Skill = AVG(categories)'
       }
@@ -301,28 +332,30 @@ export async function calculateFullV9Score(
  * Counts ALL issues: NEW, EXISTING_MODIFIED, EXISTING_REST, RESOLVED
  * All have same weight (only sign differs)
  */
-export function calculateCategoryScore(categoryIssues: EnrichedIssue[]): number {
-  const BASE = 50;  // BUG FIX #35: Universal baseline 50/100 for all categories (neutral)
-  let adjustment = 0;
+export function calculateCategoryScore(categoryIssues: EnrichedIssue[], baseScore = 100): number {
+  // SESSION 13 FIX: Use provided baseScore (100 for APP, 50 for Skill)
+  let score = baseScore;
   
   categoryIssues.forEach(issue => {
-    const weight = {
-      critical: 5.0,
-      high: 3.0,
-      medium: 1.0,
-      low: 0.5
+    // User-specified deduction values
+    const deduction = {
+      critical: 5.0,    // -5 points
+      high: 3.0,        // -3 points
+      medium: 1.0,      // -1 point
+      low: 0.5          // -0.5 points
     }[issue.severity] || 1.0;
     
-    // Simple logic: All issues affect app health equally
+    // Handle RESOLVED issues (bonus) vs other issues (penalty)
     if (issue.category === 'RESOLVED') {
-      adjustment += weight;  // Bonus for fixes
+      score += deduction;  // Bonus for fixes
     } else {
-      // NEW, EXISTING_MODIFIED, EXISTING_REST all get -weight
-      adjustment -= weight;
+      // NEW, EXISTING_MODIFIED, EXISTING_REST all deduct
+      score -= deduction;
     }
   });
   
-  return Math.max(0, Math.min(100, Math.round(BASE + adjustment)));
+  // Ensure score stays within 0-100 range
+  return Math.max(0, Math.min(100, Math.round(score)));
 }
 
 /**
@@ -344,7 +377,8 @@ export function calculateSimplifiedScore(issues: EnrichedIssue[]): any {
     (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED')
   );
   
-  // Apply severity and category weights to calculate deduction
+  // Apply severity weights to calculate deduction
+  // All categories have equal weight (100%) - only blocking decision differs
   issues.forEach(issue => {
     // Severity weight
     const severityWeight = {
@@ -353,15 +387,10 @@ export function calculateSimplifiedScore(issues: EnrichedIssue[]): any {
       medium: 1.0,
       low: 0.5
     }[issue.severity] || 1.0;
-    
-    // Category weight - NEW issues get full deduction, existing get reduced impact
-    const categoryWeight = {
-      'NEW': 1.0,                    // Full deduction (introduced in this PR)
-      'EXISTING_MODIFIED': 0.5,      // 50% deduction (existing but touched)
-      'EXISTING_REST': 0.1           // 10% deduction (existing, untouched)
-    }[issue.category] || 0.1;
-    
-    deduction += severityWeight * categoryWeight;
+
+    // All categories count equally toward score - no category multiplier
+    // Only difference: NEW and EXISTING_MODIFIED can block PR (decision logic)
+    deduction += severityWeight;
   });
   
   // Extra penalty for blocking issues
@@ -389,20 +418,64 @@ export function calculateSimplifiedScore(issues: EnrichedIssue[]): any {
   else grade = 'F';
   
   // Calculate individual category deductions for breakdown
+  // All categories use 100% weight (equal impact on score)
   const newIssuesDeduction = newIssues.reduce((sum, i) => {
     const weight = { critical: 5, high: 3, medium: 1, low: 0.5 }[i.severity] || 1;
-    return sum + (weight * 1.0);
+    return sum + weight;
   }, 0);
-  
+
   const existingModifiedDeduction = existingModified.reduce((sum, i) => {
     const weight = { critical: 5, high: 3, medium: 1, low: 0.5 }[i.severity] || 1;
-    return sum + (weight * 0.5);
+    return sum + weight;
   }, 0);
-  
+
   const existingRestDeduction = existingRest.reduce((sum, i) => {
     const weight = { critical: 5, high: 3, medium: 1, low: 0.5 }[i.severity] || 1;
-    return sum + (weight * 0.1);
+    return sum + weight;
   }, 0);
+  
+  // P0 FIX: Calculate category scores even without Supabase
+  // Group issues by detectedCategory (Security, Performance, etc.)
+  const issuesByCategory: Record<string, EnrichedIssue[]> = {
+    security: issues.filter(i => i.detectedCategory === 'Security'),
+    performance: issues.filter(i => i.detectedCategory === 'Performance'),
+    architecture: issues.filter(i => i.detectedCategory === 'Architecture'),
+    dependency: issues.filter(i => i.detectedCategory === 'Dependency' || i.detectedCategory === 'Dependencies'),
+    codeQuality: issues.filter(i => i.detectedCategory === 'Code Quality')
+  };
+  
+  // Calculate score for each category with base=100 (for APP Score)
+  const categoryScores = {
+    security: calculateCategoryScore(issuesByCategory.security, 100),
+    performance: calculateCategoryScore(issuesByCategory.performance, 100),
+    architecture: calculateCategoryScore(issuesByCategory.architecture, 100),
+    dependency: calculateCategoryScore(issuesByCategory.dependency, 100),
+    codeQuality: calculateCategoryScore(issuesByCategory.codeQuality, 100)
+  };
+
+  // Calculate skill category scores with base=50 (for Skill Score)
+  const skillCategoryScores = {
+    security: calculateCategoryScore(issuesByCategory.security, 50),
+    performance: calculateCategoryScore(issuesByCategory.performance, 50),
+    architecture: calculateCategoryScore(issuesByCategory.architecture, 50),
+    dependency: calculateCategoryScore(issuesByCategory.dependency, 50),
+    codeQuality: calculateCategoryScore(issuesByCategory.codeQuality, 50)
+  };
+
+  // APP Score = MIN of all categories (weakest link)
+  const appScore = Math.min(
+    categoryScores.security,
+    categoryScores.performance,
+    categoryScores.architecture,
+    categoryScores.dependency,
+    categoryScores.codeQuality
+  );
+
+  // Skill Score = AVG of skill category scores (base=50)
+  const skillScore = Math.round(
+    (skillCategoryScores.security + skillCategoryScores.performance + skillCategoryScores.architecture +
+     skillCategoryScores.dependency + skillCategoryScores.codeQuality) / 5
+  );
   
   return {
     score: Math.round(finalScore * 10) / 10,  // Round to 1 decimal
@@ -416,7 +489,12 @@ export function calculateSimplifiedScore(issues: EnrichedIssue[]): any {
       resolutionBonus: bonus,
       totalDeduction: -deduction,
       finalScore: Math.round(finalScore * 10) / 10
-    }
+    },
+    // P0 FIX: Include category scores even without Supabase
+    categoryScores,      // APP Score uses base=100
+    skillCategoryScores, // Skill Score uses base=50
+    appScore,
+    skillScore
   };
 }
 

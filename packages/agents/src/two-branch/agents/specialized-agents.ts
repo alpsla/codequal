@@ -29,7 +29,14 @@ interface IssueContext {
 interface FixSuggestion {
   fix: string;
   correctedCode: string;
-  explanation?: string;
+  explanation?: string; // Keep for backward compatibility
+  // BUG #89 FIX: Add structured description for rule-specific, actionable information
+  issueDescription?: {
+    what: string;        // What is this issue? (2-3 sentences, rule-specific)
+    why: string;         // Why does it matter? (2-3 sentences with real consequences)
+    causes: string[];    // Common causes (3-5 specific bullet points)
+    impact: string;      // Impact if not fixed (2-3 sentences with business/security context)
+  };
   bestPractices?: string[];
 }
 
@@ -212,11 +219,22 @@ Provide JSON response following system prompt structure.`;
                 // Found complete JSON
                 const jsonStr = response.substring(jsonStart, i + 1);
                 const parsed = JSON.parse(jsonStr);
+
+                // BUG #89 DEBUG: Log what AI actually returned
+                console.log(`[BUG #89 parseAIResponse] AI JSON parsed:`, {
+                  hasFix: !!parsed.fix,
+                  hasCorrectedCode: !!parsed.correctedCode,
+                  hasIssueDescription: !!parsed.issueDescription,
+                  issueDescriptionKeys: parsed.issueDescription ? Object.keys(parsed.issueDescription) : []
+                });
+
                 if (parsed.fix && parsed.correctedCode) {
                   return {
                     fix: parsed.fix,
                     correctedCode: parsed.correctedCode,
                     explanation: parsed.fix,
+                    // BUG #89 FIX: Copy issueDescription from AI response
+                    issueDescription: parsed.issueDescription,
                     bestPractices: parsed.bestPractices || []
                   };
                 }
@@ -240,6 +258,8 @@ Provide JSON response following system prompt structure.`;
             fix: parsed.fix,
             correctedCode: parsed.correctedCode,
             explanation: parsed.fix,
+            // BUG #89 FIX: Copy issueDescription from AI response
+            issueDescription: parsed.issueDescription,
             bestPractices: parsed.bestPractices || []
           };
         }
@@ -258,6 +278,8 @@ Provide JSON response following system prompt structure.`;
             fix: parsed.fix,
             correctedCode: parsed.correctedCode,
             explanation: parsed.fix,
+            // BUG #89 FIX: Copy issueDescription from AI response
+            issueDescription: parsed.issueDescription,
             bestPractices: parsed.bestPractices || []
           };
         }
@@ -388,21 +410,21 @@ export class SecurityAgent extends BaseSpecializedAgent {
 
 ⚠️ CRITICAL: Output ONLY the JSON response. NO thinking process, NO reasoning, NO "First, I...", NO "Let me...". Start DIRECTLY with JSON.
 
-IMPORTANT: The problem description is already shown to the user. Focus ONLY on the solution:
-- Step-by-step fix instructions
-- Code example (before/after if possible)
-- Best practices to prevent recurrence
-
-DO NOT repeat problem description (what/why/causes/impact) - user already sees it!
-
 Output ONLY this JSON (nothing else):
 {
-  "fix": "Step-by-step solution with OWASP references (focus on HOW to fix, not repeating problem)",
+  "severity": "critical|high|medium|low",
+  "issueDescription": {
+    "what": "RULE-SPECIFIC description (2-3 sentences). NOT generic. Explain THIS EXACT vulnerability/rule",
+    "why": "SPECIFIC consequences with real attack scenarios (2-3 sentences)",
+    "causes": ["Specific cause 1 for THIS rule", "Specific cause 2", "Specific cause 3"],
+    "impact": "CONCRETE business/security impact for THIS vulnerability (2-3 sentences). Include compliance if relevant"
+  },
+  "fix": "Step-by-step solution with security references (focus on HOW to fix)",
   "correctedCode": "Working code snippet showing before/after with security validations",
-  "bestPractices": ["practice1", "practice2", "practice3"]
+  "bestPractices": ["Best practice 1", "Best practice 2", "Best practice 3"]
 }
 
-Be specific, actionable, security-focused. NO pleasantries, NO thinking process, NO repeating problem.`;
+CRITICAL: Be RULE-SPECIFIC. NO generic boilerplate. Reference the EXACT vulnerability type, tool, and rule name.`;
   }
 
   protected buildPrompt(issue: IssueContext): string {
@@ -497,21 +519,21 @@ export class PerformanceAgent extends BaseSpecializedAgent {
 
 ⚠️ CRITICAL: Output ONLY the JSON response. NO thinking process, NO reasoning, NO "First, I...", NO "Let me...". Start DIRECTLY with JSON.
 
-IMPORTANT: The problem description is already shown to the user. Focus ONLY on the solution:
-- Optimization steps with Big-O complexity analysis
-- Code example showing optimized version
-- Best practices for performance
-
-DO NOT repeat problem description (what/why/causes/impact) - user already sees it!
-
 Output ONLY this JSON (nothing else):
 {
-  "fix": "Optimization steps with Big-O analysis (focus on HOW to optimize, not repeating problem)",
-  "correctedCode": "Optimized code showing before/after with specific data structures",
-  "bestPractices": ["practice1", "practice2", "practice3"]
+  "severity": "critical|high|medium|low",
+  "issueDescription": {
+    "what": "RULE-SPECIFIC description (2-3 sentences). NOT generic. Explain THIS EXACT performance issue/rule",
+    "why": "SPECIFIC consequences with real performance impacts (2-3 sentences)",
+    "causes": ["Specific cause 1 for THIS rule", "Specific cause 2", "Specific cause 3"],
+    "impact": "CONCRETE business/performance impact for THIS issue (2-3 sentences). Include scalability concerns"
+  },
+  "fix": "Step-by-step optimization with Big-O complexity analysis (focus on HOW to optimize)",
+  "correctedCode": "Optimized code showing before/after with specific data structures and complexity gains",
+  "bestPractices": ["Best practice 1", "Best practice 2", "Best practice 3"]
 }
 
-Be specific, measurable, performance-focused. Include complexity analysis. NO repeating problem.`;
+CRITICAL: Be RULE-SPECIFIC. NO generic boilerplate. Reference the EXACT performance issue type, tool, and rule name.`;
   }
 
   protected buildPrompt(issue: IssueContext): string {
@@ -535,21 +557,21 @@ export class ArchitectureAgent extends BaseSpecializedAgent {
 
 ⚠️ CRITICAL: Output ONLY the JSON response. NO thinking process, NO reasoning, NO "First, I...", NO "Let me...". Start DIRECTLY with JSON.
 
-IMPORTANT: The problem description is already shown to the user. Focus ONLY on the solution:
-- Refactoring steps with SOLID principles and design patterns
-- Code example showing new structure
-- Best practices for maintainability
-
-DO NOT repeat problem description (what/why/causes/impact) - user already sees it!
-
 Output ONLY this JSON (nothing else):
 {
-  "fix": "Refactoring steps with specific class/interface names (focus on HOW to refactor, not repeating problem)",
-  "correctedCode": "Refactored code showing before/after with new structure",
-  "bestPractices": ["practice1", "practice2", "practice3"]
+  "severity": "critical|high|medium|low",
+  "issueDescription": {
+    "what": "RULE-SPECIFIC description (2-3 sentences). NOT generic. Explain THIS EXACT architectural issue/rule",
+    "why": "SPECIFIC consequences with real maintainability impacts (2-3 sentences)",
+    "causes": ["Specific cause 1 for THIS rule", "Specific cause 2", "Specific cause 3"],
+    "impact": "CONCRETE business/technical debt impact for THIS issue (2-3 sentences). Include maintainability concerns"
+  },
+  "fix": "Step-by-step refactoring with SOLID principles and specific class/interface names (focus on HOW to refactor)",
+  "correctedCode": "Refactored code showing before/after with new structure and design pattern application",
+  "bestPractices": ["Best practice 1", "Best practice 2", "Best practice 3"]
 }
 
-Be specific about class names, interfaces, design patterns. NO generic phrases, NO repeating problem.`;
+CRITICAL: Be RULE-SPECIFIC. NO generic boilerplate. Reference the EXACT architectural issue type, tool, and rule name.`;
   }
 
   protected buildPrompt(issue: IssueContext): string {
@@ -601,21 +623,21 @@ export class CodeQualityAgent extends BaseSpecializedAgent {
 
 ⚠️ CRITICAL: Output ONLY the JSON response. NO thinking process, NO reasoning, NO "First, I...", NO "Let me...". Start DIRECTLY with JSON.
 
-IMPORTANT: The problem description is already shown to the user. Focus ONLY on the solution:
-- Clean code refactoring steps
-- Code example following best practices
-- Best practices for readability and maintainability
-
-DO NOT repeat problem description (what/why/causes/impact) - user already sees it!
-
 Output ONLY this JSON (nothing else):
 {
-  "fix": "Refactoring steps for clean code (focus on HOW to fix, not repeating problem)",
-  "correctedCode": "Clean, readable code showing before/after following conventions",
-  "bestPractices": ["practice1", "practice2", "practice3"]
+  "severity": "critical|high|medium|low",
+  "issueDescription": {
+    "what": "RULE-SPECIFIC description (2-3 sentences). NOT generic. Explain THIS EXACT code quality issue/rule",
+    "why": "SPECIFIC consequences with real readability/maintainability impacts (2-3 sentences)",
+    "causes": ["Specific cause 1 for THIS rule", "Specific cause 2", "Specific cause 3"],
+    "impact": "CONCRETE team/maintainability impact for THIS issue (2-3 sentences). Include technical debt concerns"
+  },
+  "fix": "Step-by-step refactoring for clean code (focus on HOW to fix)",
+  "correctedCode": "Clean, readable code showing before/after following conventions and best practices",
+  "bestPractices": ["Best practice 1", "Best practice 2", "Best practice 3"]
 }
 
-Be specific, practical, focus on readability. NO generic phrases, NO repeating problem.`;
+CRITICAL: Be RULE-SPECIFIC. NO generic boilerplate. Reference the EXACT code quality issue type, tool, and rule name.`;
   }
 
   protected buildPrompt(issue: IssueContext): string {
@@ -865,21 +887,21 @@ export class DependencyAgent extends BaseSpecializedAgent {
 
 ⚠️ CRITICAL: Output ONLY the JSON response. NO thinking process, NO reasoning, NO "First, I...", NO "Let me...". Start DIRECTLY with JSON.
 
-IMPORTANT: The problem description is already shown to the user. Focus ONLY on the solution:
-- Exact version update steps with migration guidance
-- Configuration example (pom.xml, package.json, etc.)
-- Best practices for dependency management
-
-DO NOT repeat problem description (what/why/causes/impact) - user already sees it!
-
 Output ONLY this JSON (nothing else):
 {
-  "fix": "Exact version update steps with package name and version numbers (focus on HOW to update, not repeating problem)",
-  "correctedCode": "Updated dependency configuration showing before/after (pom.xml, package.json, etc.)",
-  "bestPractices": ["practice1", "practice2", "practice3"]
+  "severity": "critical|high|medium|low",
+  "issueDescription": {
+    "what": "RULE-SPECIFIC description (2-3 sentences). NOT generic. Explain THIS EXACT dependency issue/vulnerability",
+    "why": "SPECIFIC consequences with real security/stability impacts (2-3 sentences)",
+    "causes": ["Specific cause 1 for THIS rule", "Specific cause 2", "Specific cause 3"],
+    "impact": "CONCRETE security/business impact for THIS vulnerability (2-3 sentences). Include CVE details if applicable"
+  },
+  "fix": "Exact version update steps with package name and version numbers (focus on HOW to update with migration notes)",
+  "correctedCode": "Updated dependency configuration showing before/after (pom.xml, package.json, etc.) with exact versions",
+  "bestPractices": ["Best practice 1", "Best practice 2", "Best practice 3"]
 }
 
-Be specific with exact versions. NO generic phrases like "update to latest", NO repeating problem.`;
+CRITICAL: Be RULE-SPECIFIC. NO generic boilerplate. Reference the EXACT dependency/vulnerability, tool, and rule name. Use specific version numbers.`;
   }
 
   protected buildPrompt(issue: IssueContext): string {

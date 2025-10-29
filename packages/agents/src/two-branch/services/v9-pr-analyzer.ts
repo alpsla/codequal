@@ -150,7 +150,7 @@ export class V9PRAnalyzer {
    * Extract repository name from URL
    */
   private extractRepoName(url: string): string {
-    const match = url.match(/\/([^\/]+)\.git$/) || url.match(/\/([^\/]+)$/);
+    const match = url.match(/\/([^/]+)\.git$/) || url.match(/\/([^/]+)$/);
     return match ? match[1].toLowerCase() : 'repo';
   }
 

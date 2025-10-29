@@ -55,9 +55,9 @@ export class SkillScoreManager {
         .from('skill_scores')
         .select('overall_score')
         .eq('developer_email', developerEmail)
-        .eq('repo_name', repository)  // Fixed: use 'repo_name' column
+        .eq('repo_name', repository)
         .order('analyzed_at', { ascending: false })
-        .limit(5);
+        .limit(1);  // FIX: Get only the LATEST score, not last 5
 
       if (error) {
         console.warn('[SkillScoreManager] Error fetching baseline:', error.message);
@@ -69,10 +69,11 @@ export class SkillScoreManager {
         return 50; // First analysis - default baseline
       }
 
-      const avgScore = data.reduce((sum, r) => sum + r.overall_score, 0) / data.length;
-      const baseline = Math.round(avgScore);
+      // FIX: Return LATEST score only (not average of last 5)
+      // Latest score becomes baseline for next scan
+      const baseline = data[0].overall_score;
 
-      console.log(`[SkillScoreManager] Baseline for ${developerEmail}: ${baseline} (from ${data.length} previous PRs)`);
+      console.log(`[SkillScoreManager] Baseline for ${developerEmail}: ${baseline} (latest score)`);
       return baseline;
     } catch (error) {
       console.error('[SkillScoreManager] Unexpected error fetching baseline:', error);

@@ -94,6 +94,101 @@ export class SectionGenerators {
   }
 
   /**
+   * SESSION 13 FIX: Generate category breakdown section
+   * Shows issues grouped by detected category (Security, Performance, etc.) with severity counts
+   */
+  generateCategoryBreakdown(issues: EnrichedIssue[], score: ScoreBreakdown): string {
+    let section = '## 📊 Issues by Category and Severity\n\n';
+    section += '*This table shows how issues are distributed across quality categories and their impact on scores.*\n\n';
+
+    // Group issues by detected category
+    const byDetectedCategory: Record<string, EnrichedIssue[]> = {
+      'Security': [],
+      'Performance': [],
+      'Architecture': [],
+      'Dependencies': [],
+      'Code Quality': []
+    };
+
+    for (const issue of issues) {
+      const category = issue.detectedCategory || 'Code Quality';
+      if (byDetectedCategory[category]) {
+        byDetectedCategory[category].push(issue);
+      } else {
+        // Fallback for any unexpected categories
+        byDetectedCategory['Code Quality'].push(issue);
+      }
+    }
+
+    // Calculate severity counts per category
+    const categoryData: Array<{
+      emoji: string;
+      name: string;
+      critical: number;
+      high: number;
+      medium: number;
+      low: number;
+      total: number;
+      score: number;
+    }> = [];
+
+    const categoryMap = {
+      'Security': { emoji: '🔒', score: score.security },
+      'Performance': { emoji: '⚡', score: score.performance },
+      'Architecture': { emoji: '🏗️', score: score.architecture },
+      'Dependencies': { emoji: '📦', score: score.dependencies },
+      'Code Quality': { emoji: '✨', score: score.quality }
+    };
+
+    for (const [categoryName, categoryIssues] of Object.entries(byDetectedCategory)) {
+      const critical = categoryIssues.filter(i => i.severity === 'critical').length;
+      const high = categoryIssues.filter(i => i.severity === 'high').length;
+      const medium = categoryIssues.filter(i => i.severity === 'medium').length;
+      const low = categoryIssues.filter(i => i.severity === 'low').length;
+      const total = categoryIssues.length;
+
+      const meta = categoryMap[categoryName as keyof typeof categoryMap];
+
+      categoryData.push({
+        emoji: meta.emoji,
+        name: categoryName,
+        critical,
+        high,
+        medium,
+        low,
+        total,
+        score: meta.score
+      });
+    }
+
+    // Generate markdown table
+    section += '| Category | Critical | High | Medium | Low | Total | Score |\n';
+    section += '|----------|----------|------|--------|-----|-------|-------|\n';
+
+    for (const data of categoryData) {
+      section += `| ${data.emoji} ${data.name} | `;
+      section += `${data.critical} | `;
+      section += `${data.high} | `;
+      section += `${data.medium} | `;
+      section += `${data.low} | `;
+      section += `**${data.total}** | `;
+      section += `**${data.score}/100** |\n`;
+    }
+
+    section += '\n';
+
+    // Add calculation explanation
+    section += '**Score Calculation:**\n\n';
+    section += '- **APP Score (Repository Health)**: Categories start at 100/100, deduct based on severity\n';
+    section += '- **Skill Score (Developer Competency)**: Categories start at 50/100, deduct based on severity\n';
+    section += '- **Deduction rates**: Critical (-5), High (-3), Medium (-1), Low (-0.5)\n';
+    section += '- **APP Score** = MIN of all categories (weakest link)\n';
+    section += '- **Skill Score** = AVG of all categories\n\n';
+
+    return section;
+  }
+
+  /**
    * Generate key findings section
    */
   generateKeyFindings(
@@ -175,7 +270,7 @@ export class SectionGenerators {
   // ================================================================
 
   private extractRepoName(url: string): string {
-    const match = url.match(/\/([^\/]+)(\.git)?$/);
+    const match = url.match(/\/([^/]+)(\.git)?$/);
     return match ? match[1] : 'repository';
   }
 

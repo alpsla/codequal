@@ -1,6 +1,6 @@
 /**
  * V9 Lite E2E Test
- * 
+ *
  * Tests the complete V9 analysis flow using the NEW REFACTORED ARCHITECTURE:
  * - BaseToolOrchestrator (universal foundation)
  * - JavaToolOrchestrator (extends base, language-specific)
@@ -8,12 +8,16 @@
  * - Universal tool configuration
  * - V9 Report Compiler service
  * - Grouped report formatter
- * 
+ *
  * Key Difference from test-v9-e2e-complete.ts:
  * - Uses refactored components instead of embedded logic
  * - Cleaner, more maintainable test structure
  * - Demonstrates the power of delegation pattern
  */
+
+// Load environment variables FIRST (fixes OpenRouter 401 errors)
+import dotenv from 'dotenv';
+dotenv.config();
 
 import { JavaToolOrchestrator } from './src/two-branch/tools/java/java-tool-orchestrator';
 import { createFrameworkDetector } from './src/two-branch/utils/framework-detector';
@@ -181,19 +185,38 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
     // STEP 5: Issue Grouping (Cost Optimization)
     // ========================================================================
     console.log('\n💰 Step 5: Grouping issues for cost optimization...');
-    const formattedIssues = allPrIssues.map(issue => ({
-      id: `${issue.tool}-${issue.file}-${issue.line}`,
-      rule: issue.rule || 'unknown-rule',
-      category: 'Quality' as const,
-      severity: issue.severity || 'medium',
-      title: issue.message || 'Code quality issue',
-      file: issue.file || 'unknown',
-      line: issue.line || 0,
-      tool: issue.tool || 'unknown',
-      message: issue.message || '',
-      codeSnippet: undefined,
-      suggestedFix: undefined
-    }));
+
+    // Helper function to detect issue category from tool/rule
+    const detectIssueCategory = (tool: string, rule: string): string => {
+      if (tool === 'semgrep' || tool === 'dependency-check') return 'Security';
+      if (tool === 'spotbugs' && rule.toLowerCase().includes('performance')) return 'Performance';
+      if (tool === 'checkstyle' || tool === 'pmd') return 'Code Quality';
+      return 'Code Quality';
+    };
+
+    const formattedIssues = allPrIssues.map(issue => {
+      // Determine lifecycle category (NEW vs EXISTING)
+      const isNew = newIssues.some(n =>
+        n.file === issue.file && n.line === issue.line
+      );
+
+      return {
+        id: `${issue.tool}-${issue.file}-${issue.line}`,
+        rule: issue.rule || 'unknown-rule',
+        // FIX: Set lifecycle category (NEW, EXISTING_MODIFIED, EXISTING_REST, RESOLVED)
+        category: isNew ? 'NEW' : 'EXISTING_REST',
+        // Set detected category (Security, Performance, Code Quality, etc.)
+        detectedCategory: detectIssueCategory(issue.tool, issue.rule || ''),
+        severity: issue.severity || 'medium',
+        title: issue.message || 'Code quality issue',
+        file: issue.file || 'unknown',
+        line: issue.line || 0,
+        tool: issue.tool || 'unknown',
+        message: issue.message || '',
+        codeSnippet: undefined,
+        suggestedFix: undefined
+      };
+    });
 
     const groupingResult = groupIssues(formattedIssues);
     console.log(`   ✅ Grouped ${formattedIssues.length} issues into ${groupingResult.groups.length} groups`);
@@ -205,20 +228,9 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
     // ========================================================================
     console.log('\n📝 Step 6: Generating report...');
     
-    // Try to initialize ModelConfigResolver, use mock if Supabase not configured
-    let modelConfigResolver;
-    try {
-      modelConfigResolver = new ModelConfigResolver();
-      console.log('   ✅ Using Supabase model configuration');
-    } catch (error) {
-      console.log('   ⚠️  Supabase not configured, using mock resolver');
-      // Create a mock resolver for testing
-      modelConfigResolver = {
-        async getModelForAgent(agentType: string) {
-          return 'gemini-2.0-flash-exp';
-        }
-      } as any;
-    }
+    // Initialize ModelConfigResolver - let errors surface (no mock fallback)
+    const modelConfigResolver = new ModelConfigResolver();
+    console.log('   ✅ Using Supabase model configuration');
     
     const formatter = new V9GroupedReportFormatter(
       modelConfigResolver,
@@ -229,6 +241,7 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
     const metadata = {
       repository: scenario.repoUrl.split('/').slice(-2).join('/'),
       repoUrl: scenario.repoUrl,
+      repoPath: repoPath,  // Add repoPath for code snippet extraction
       prNumber: scenario.prNumber,
       prTitle: `PR #${scenario.prNumber}`,
       branch: `pr-${scenario.prNumber}`,
@@ -241,7 +254,7 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
       filesModified: new Set(allPrIssues.map(i => i.file)).size,
       linesAdded: 500,
       linesDeleted: 200,
-      decision: newIssues.filter(i => i.severity === 'critical').length > 0 ? 'DECLINED' : 'APPROVED',
+      decision: newIssues.filter(i => i.severity === 'critical' || i.severity === 'high').length > 0 ? 'DECLINED' : 'APPROVED',
       blockingCount: newIssues.filter(i => i.severity === 'critical' || i.severity === 'high').length,
       totalDuration: Date.now() - startTime,
       cloneTime: 5000,

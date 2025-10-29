@@ -62,6 +62,11 @@ export async function compileV9Report(
   data: CompileReportInput,
   options: CompileReportOptions = {}
 ): Promise<CompiledReport> {
+  console.log(`\n[DEBUG-PR#] ====== compileV9Report ENTRY ======`);
+  console.log(`[DEBUG-PR#] data.prNumber: ${data.prNumber} (type: ${typeof data.prNumber})`);
+  console.log(`[DEBUG-PR#] data.repository: ${data.repository}`);
+  console.log(`[DEBUG-PR#] ======================================\n`);
+
   const {
     useGroupedReport = true,
     modelConfigResolver,
@@ -330,6 +335,10 @@ export async function compileV9Report(
   const outputsByTool = new Map<string, any>();
   (data.prOutputs || []).forEach((o: any) => outputsByTool.set(o.tool, o));
 
+  console.log(`\n[DEBUG-PR#] ====== Building completeMetadata ======`);
+  console.log(`[DEBUG-PR#] Using data.prNumber: ${data.prNumber}`);
+  console.log(`[DEBUG-PR#] ========================================\n`);
+
   const completeMetadata: any = {
     repository: data.repository.split('/').pop(),
     repoUrl: data.repository,
@@ -385,14 +394,20 @@ export async function compileV9Report(
   if (useGroupedReport) {
     const allProcessedIssues = [...formattedNewIssues, ...formattedExistingIssues, ...formattedResolvedIssues];
     const groupingResult = groupIssues(allProcessedIssues);
-    
+
     const groupedFormatter = new V9GroupedReportFormatter(
       modelConfigResolver,
       detectedLanguage,
       detectedRepoSize
     );
-    
+
     const groupedMetadata = { ...completeMetadata, decision: analysisResult.decision };
+
+    console.log(`\n[DEBUG-PR#] ====== Before generateGroupedReport ======`);
+    console.log(`[DEBUG-PR#] groupedMetadata.prNumber: ${groupedMetadata.prNumber} (type: ${typeof groupedMetadata.prNumber})`);
+    console.log(`[DEBUG-PR#] groupedMetadata.repository: ${groupedMetadata.repository}`);
+    console.log(`[DEBUG-PR#] ============================================\n`);
+
     const result = await groupedFormatter.generateGroupedReport(allProcessedIssues, groupingResult.groups, groupedMetadata);
     
     markdown = result.markdown;

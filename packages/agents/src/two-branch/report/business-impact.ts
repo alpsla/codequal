@@ -190,33 +190,53 @@ export function generateBusinessImpact(issues: EnrichedIssue[], groups: IssueGro
   }
   
   const roi = Math.round(minExploitCost / Math.max(totalFixCost, 1));
-  
+
   const immediateRisk = blocking.length > 0 ? '🔴 High' : '🟢 Low';
-  
+
+  // SESSION 13 FIX #3: Detect if most/all blocking issues are auto-fixable
+  const blockingAutoFixableGroups = autoFixableGroups.filter(g =>
+    blocking.some(i => i.rule === g.rule && i.tool === g.tool && i.severity === g.severity)
+  );
+  const autoFixableBlockingCount = blockingAutoFixableGroups.reduce((sum, g) => sum + g.count, 0);
+  const autoFixPercentage = blocking.length > 0 ? (autoFixableBlockingCount / blocking.length) * 100 : 0;
+  const mostlyAutoFixable = autoFixPercentage >= 70; // 70%+ of blocking issues are auto-fixable
+
   return `## 💼 Business Impact Analysis
 
 ### Executive Summary
-${blocking.length > 0 
-  ? `⚠️ **Critical attention required:** ${blocking.length} blocking issue${blocking.length > 1 ? 's' : ''} must be resolved before deployment to avoid security vulnerabilities or system failures.` 
-  : blockingCritical.length > 0 
+${blocking.length > 0
+  ? `⚠️ **Critical attention required:** ${blocking.length} blocking issue${blocking.length > 1 ? 's' : ''} must be resolved before deployment to avoid security vulnerabilities or system failures.`
+  : blockingCritical.length > 0
     ? `🟡 **Action recommended:** ${blockingCritical.length} critical issue${blockingCritical.length > 1 ? 's' : ''} should be addressed to maintain code quality and prevent future problems.`
     : `✅ **Acceptable quality:** Issues identified are manageable and can be addressed systematically through normal development cycles.`
 }
 
 ### Financial Impact
 ${blocking.length > 0
-  ? `| Metric | Value |
+  ? mostlyAutoFixable
+    ? `**🟢 Auto-Fix Available**
+${autoFixableBlockingCount} of ${blocking.length} blocking issues (${autoFixPercentage.toFixed(0)}%) can be automatically fixed using IDE tools or linters.
+
+| Metric | Value |
 |--------|-------|
-| **Fix Cost** | **$${totalFixCost.toLocaleString()}** (${baseFixHours.toFixed(1)} hours, ~${fixDays} developer-days at $${developerRate}/hour) |
+| **Manual Fix Cost** | **$${totalFixCost.toLocaleString()}** (${baseFixHours.toFixed(1)} hours - minimal, mostly for review/testing) |
+| **Auto-Fix Coverage** | **${autoFixPercentage.toFixed(0)}%** of blocking issues |
+| **Recommendation** | Run IDE auto-fix + code formatter, then review changes |
+
+**Note:** Most issues are auto-fixable (LineLength, MissingJavadoc, Whitespace). The cost shown reflects review time, not manual coding.`
+    : `| Metric | Value |
+|--------|-------|
+| **Total Fix Cost** | **$${totalFixCost.toLocaleString()}** (${baseFixHours.toFixed(1)} hours, ~${fixDays} developer-days at $${developerRate}/hour) |
+${autoFixableBlockingCount > 0 ? `| **Cost Breakdown** | ${autoFixableBlockingCount} auto-fixable (${autoFixPercentage.toFixed(0)}%, ~${(autoFixableBlockingCount * 0.1).toFixed(1)}h) + ${blocking.length - autoFixableBlockingCount} manual (~${((blocking.length - autoFixableBlockingCount) * 1.75).toFixed(1)}h) |` : ''}
 | **Potential Exploit Cost** | **$${minExploitCost.toLocaleString()} - $${maxExploitCost.toLocaleString()}** |
-| **Cost Breakdown** | ${exploitDesc} |
+| **Security Risk** | ${exploitDesc} |
 | **Return on Investment** | **${roi}x minimum return** by preventing issues now vs. fixing in production |
-| **Risk-Adjusted Savings** | $${(minExploitCost - totalFixCost).toLocaleString()} minimum (prevention vs. remediation) |`
-  : `**💚 Low Financial Risk**  
+| **Risk-Adjusted Savings** | $${(minExploitCost - totalFixCost).toLocaleString()} minimum (prevention vs. remediation) |${autoFixableBlockingCount > 0 ? `\n\n**💡 Tip:** ${autoFixableBlockingCount} issue${autoFixableBlockingCount > 1 ? 's' : ''} can be auto-fixed with IDE tools (Checkstyle, Spotless, ESLint) in ~${Math.ceil(autoFixableBlockingCount / 60)} minute${Math.ceil(autoFixableBlockingCount / 60) > 1 ? 's' : ''}` : ''}`
+  : `**💚 Low Financial Risk**
 No critical or high-severity issues detected. All identified issues are related to code quality and maintainability (tabs, formatting, documentation).
 
-**Cost to fix:** Minimal - most issues are auto-fixable via IDE tools or linters.  
-**Impact if not fixed:** Gradual technical debt accumulation, slower code reviews, minor maintainability concerns.  
+**Cost to fix:** Minimal - most issues are auto-fixable via IDE tools or linters.
+**Impact if not fixed:** Gradual technical debt accumulation, slower code reviews, minor maintainability concerns.
 **Recommendation:** Address during regular refactoring cycles or enable pre-commit hooks (CheckStyle, Spotless).`
 }
 
