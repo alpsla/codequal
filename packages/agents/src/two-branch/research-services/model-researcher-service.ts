@@ -924,7 +924,15 @@ export class ModelResearcherService {
     console.log('🔒 Unchanged: Meta roles (researcher, orchestrator, educator, comparator, location_finder)\n');
 
     const analysisRoles = ['security', 'performance', 'code_quality', 'architecture', 'dependency'];
-    const languages = ['java', 'python', 'typescript', 'javascript', 'go'];
+
+    // Dynamically fetch ALL languages from existing configurations
+    console.log('🌐 Fetching all configured languages from database...');
+    const { data: languageData } = await this.supabase
+      .from('model_configurations')
+      .select('language');
+
+    const allLanguages = [...new Set(languageData?.map(d => d.language as string) || [])].sort() as string[];
+    console.log(`✅ Found ${allLanguages.length} languages: ${allLanguages.join(', ')}\n`);
 
     // Fetch fresh models from OpenRouter
     console.log('📊 Fetching latest models from OpenRouter...');
@@ -952,7 +960,7 @@ export class ModelResearcherService {
       console.log(`   🥈 Fallback: ${fallbackModel.id}`);
 
       // Update ALL languages and sizes for this role
-      for (const language of languages) {
+      for (const language of allLanguages) {
         console.log(`\n   📝 Updating ${role}/${language}...`);
 
         // Get existing configs for this role/language
@@ -989,9 +997,86 @@ export class ModelResearcherService {
     console.log(`\n📊 Summary:`);
     console.log(`   Updated: ${updated} configurations`);
     console.log(`   Skipped: ${skipped} (meta roles preserved)`);
+    console.log(`   Languages covered: ${allLanguages.length} (${allLanguages.join(', ')})`);
     console.log(`\n✅ Analysis role configurations updated successfully!`);
-    console.log('   All 5 analysis roles now use consistent, cost-effective models\n');
+    console.log('   All 5 analysis roles now use consistent, cost-effective models across ALL languages\n');
   }
+
+
+  /**
+   * Update meta role configurations with preserved weights
+   *
+   * ONLY updates these 5 meta roles:
+   * - researcher, orchestrator, educator, comparator, location_finder
+   *
+   * Preserves existing quality-focused weights, just checks for newer models
+   */
+  async updateMetaRoleConfigurations(): Promise<void> {
+    console.log('\n🔄 Updating Meta Role Configurations');
+    console.log('='.repeat(80));
+    console.log('✅ Policy-compliant: Using researcher service for updates');
+    console.log('🎯 Target: 5 meta roles (researcher, orchestrator, educator, comparator, location_finder)');
+    console.log('🔒 Weights preserved: Using existing quality-focused weights\n');
+
+    const metaRoles = ['researcher', 'orchestrator', 'educator', 'comparator', 'location_finder'];
+
+    // Meta roles are language-independent, use 'java' as the canonical config
+    const canonicalLanguage = 'java';
+
+    // Fetch fresh models from OpenRouter
+    console.log('📊 Fetching latest models from OpenRouter...');
+    const allModels = await this.fetchAvailableModels();
+    console.log(`✅ Found ${allModels.length} fresh models\n`);
+
+    let updated = 0;
+
+    for (const role of metaRoles) {
+      console.log(`\n🔍 Processing role: ${role.toUpperCase()}`);
+      const weights = this.getRoleWeights(role);
+      console.log(`   Weights: quality=${weights.quality}, speed=${weights.speed}, cost=${weights.cost}`);
+
+      // Score all models for this role with preserved weights
+      const scoredModels = allModels.map(model => ({
+        model,
+        score: this.calculateRoleSpecificScore(model, role, weights)
+      })).sort((a, b) => b.score - a.score);
+
+      const primaryModel = scoredModels[0].model;
+      const fallbackModel = scoredModels[1]?.model || scoredModels[0].model;
+
+      console.log(`   🥇 Best model: ${primaryModel.id} (score: ${scoredModels[0].score.toFixed(1)})`);
+      console.log(`   🥈 Fallback: ${fallbackModel.id}`);
+
+      // Get existing config for this role
+      const { data: existingConfig } = await this.supabase
+        .from('model_configurations')
+        .select('*')
+        .eq('role', role)
+        .eq('language', canonicalLanguage)
+        .maybeSingle();
+
+      // Update config with best available models
+      await this.createOrUpdateConfig(
+        role,
+        canonicalLanguage,
+        existingConfig?.size_category || 'any',
+        primaryModel.id,
+        fallbackModel.id,
+        weights
+      );
+      updated++;
+      console.log(`      ✅ Updated: ${role}/${canonicalLanguage}`);
+    }
+
+    console.log('\n' + '='.repeat(80));
+    console.log(`\n📊 Summary:`);
+    console.log(`   Updated: ${updated} meta role configurations`);
+    console.log(`   Weights preserved: Original quality-focused weights maintained`);
+    console.log(`   Models refreshed: Using latest available models from OpenRouter`);
+    console.log(`\n✅ Meta role configurations updated successfully!`);
+    console.log('   All 5 meta roles now use latest optimal models with preserved weights\n');
+  }
+
 
   /**
    * Calculate role-specific score for a model
