@@ -25,7 +25,7 @@ import {
   cleanAIContent,
   getUserFriendlyTitle
 } from '../report/formatter-utils';
-import { getCuratedResourcesForRule, enrichIssuesWithAI } from '../report/ai-enrichment';
+import { getCuratedResourcesForRule, enrichIssuesWithAI, enrichIssuesWithSeverityClassification } from '../report/ai-enrichment';
 import {
   detectCategory,
   calculateRiskLevel,
@@ -359,27 +359,91 @@ export class V9GroupedReportFormatter {
     
     const markdown: string[] = [];
     const ideFixFiles: IDEFixFile[] = [];  // BUG FIX #33: Removed separate location attachments
-    
+
+    console.log(`\n[DEBUG-PR#] ====== generateGroupedReport ENTRY ======`);
+    console.log(`[DEBUG-PR#] metadata.prNumber: ${metadata.prNumber} (type: ${typeof metadata.prNumber})`);
+    console.log(`[DEBUG-PR#] metadata.repository: ${metadata.repository}`);
+    console.log(`[DEBUG-PR#] ==========================================\n`);
+
     // Store repoPath for snippet extraction
     this.repoPath = metadata.repoPath || null;
-    
+
+    // SESSION 13 FIX #2 (MANDATORY): AI-powered severity classification FIRST
+    // This re-classifies severity intelligently (e.g., Javadoc HIGH → LOW)
+    // Cost: ~150 tokens per group = ~$0.0001 per group = ~$0.002 per PR
+    // This is a CORE FEATURE - always enabled for consistent, high-quality results
+    // If AI fails, gracefully falls back to original severity (handled in catch blocks)
+    // SESSION 13 FIX #3 (CONFIG-BASED): Pass modelConfigResolver for config-based Qwen model
+    const severityClassifiedIssues = await enrichIssuesWithSeverityClassification(issues, groups, this.modelConfigResolver);
+
+    // SESSION 13 FIX #4 (BUG-87): Update group severities based on AI-classified issues
+    // After AI classification updates individual issue severities, we need to update
+    // each group's severity to reflect the AI-classified issues (not original severities)
+    // Match issues to groups by rule + tool (not severity, since it changed)
+    const updatedGroups = groups.map(group => {
+      // Find all issues in this group (match by rule + tool, not severity)
+      const groupIssues = severityClassifiedIssues.filter(issue =>
+        issue.rule === group.rule && issue.tool === group.tool
+      );
+
+      if (groupIssues.length === 0) {
+        return group; // No issues, keep original
+      }
+
+      // Determine the highest severity among AI-classified issues
+      const severities = groupIssues.map(issue => issue.severity);
+      const hasCritical = severities.includes('critical');
+      const hasHigh = severities.includes('high');
+      const hasMedium = severities.includes('medium');
+
+      // Update group severity to highest severity found
+      const aiSeverity = hasCritical ? 'critical' :
+                         hasHigh ? 'high' :
+                         hasMedium ? 'medium' : 'low';
+
+      return {
+        ...group,
+        severity: aiSeverity as 'critical' | 'high' | 'medium' | 'low'
+      };
+    });
+
+    // SESSION 13 FIX #5 (BUG-88): Recalculate blockingCount after AI severity classification
+    // The original blockingCount was calculated before AI changed severities (high → low)
+    // Now we need to count blocking issues using AI-classified severities
+    const updatedBlockingCount = severityClassifiedIssues.filter(i =>
+      (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED') &&
+      (i.severity === 'critical' || i.severity === 'high')
+    ).length;
+
+    // Update metadata with correct blocking count
+    metadata.blockingCount = updatedBlockingCount;
+
+    // Also update decision based on updated blocking count
+    metadata.decision = updatedBlockingCount > 0 ? 'DECLINED' : 'APPROVED';
+
     // BUG-76: AI-enrich issues BEFORE generating report sections
     // This runs in parallel and adds fixSuggestion to each issue
-    const enrichedIssues = await this.enrichIssuesWithAI(issues, groups);
-    
+    const enrichedIssues = await this.enrichIssuesWithAI(severityClassifiedIssues, updatedGroups);
+
+    console.log(`\n[DEBUG-PR#] ====== Before generateHeader ======`);
+    console.log(`[DEBUG-PR#] Passing metadata.prNumber: ${metadata.prNumber}`);
+    console.log(`[DEBUG-PR#] ====================================\n`);
+
     // Header
     markdown.push(this.generateHeader(metadata));
     markdown.push('');
     
     // Executive Summary
-    markdown.push(await this.generateExecutiveSummary(enrichedIssues, groups, metadata));
+    // SESSION 13 FIX #4 (BUG-87): Use updatedGroups with AI-classified severities
+    markdown.push(await this.generateExecutiveSummary(enrichedIssues, updatedGroups, metadata));
     markdown.push('');
-    
+
     // Issue Groups by Severity (CRITICAL FIRST, then HIGH)
-    const critical = groups.filter(g => g.severity === 'critical');
-    const high = groups.filter(g => g.severity === 'high');
-    const medium = groups.filter(g => g.severity === 'medium');
-    const low = groups.filter(g => g.severity === 'low');
+    // SESSION 13 FIX #4 (BUG-87): Filter by AI-classified severities (updatedGroups)
+    const critical = updatedGroups.filter(g => g.severity === 'critical');
+    const high = updatedGroups.filter(g => g.severity === 'high');
+    const medium = updatedGroups.filter(g => g.severity === 'medium');
+    const low = updatedGroups.filter(g => g.severity === 'low');
     
     // Critical Issues (highest priority)
     if (critical.length > 0) {
@@ -769,11 +833,18 @@ export class V9GroupedReportFormatter {
   private async calculateQualityScore(
     issues: EnrichedIssue[],
     metadata: { repository?: string; prNumber?: number; commitSHA?: string; prAuthor?: string; prAuthorEmail?: string }
-  ): Promise<{ 
-    score: number; 
-    grade: string; 
+  ): Promise<{
+    score: number;
+    grade: string;
     breakdown: any;
     categoryScores?: {
+      security: number;
+      performance: number;
+      architecture: number;
+      dependency: number;
+      codeQuality: number;
+    };
+    skillCategoryScores?: {
       security: number;
       performance: number;
       architecture: number;
@@ -939,10 +1010,16 @@ export class V9GroupedReportFormatter {
       
       // BUG FIX #44: Calculate Skill score (AVERAGE of category scores)
       const skillScore = Math.round(
-        (categoryScores.security + categoryScores.performance + categoryScores.architecture + 
+        (categoryScores.security + categoryScores.performance + categoryScores.architecture +
          categoryScores.dependency + categoryScores.codeQuality) / 5
       );
-      
+
+      // FIX BUG #2: Calculate blocking issues (NEW + EXISTING_MODIFIED with CRITICAL/HIGH)
+      const blockingIssuesCount = issues.filter(i =>
+        (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED') &&
+        (i.severity === 'critical' || i.severity === 'high')
+      ).length;
+
       // Save to Supabase with commit SHA for caching (BUG FIXES #7, #8, #9, #10)
       if (this.appScoreManager && metadata.repository) {
         console.log(`[V9ReportFormatter] 💾 Saving APP score: ${appScore}/100 for ${metadata.repository} PR #${metadata.prNumber || 0} (commit: ${metadata.commitSHA?.slice(0, 7) || 'unknown'})`);
@@ -959,13 +1036,15 @@ export class V9GroupedReportFormatter {
           architecture_score: categoryScores.architecture,
           dependency_score: categoryScores.dependency,
           code_quality_score: categoryScores.codeQuality,
-          decision: appScore >= 70 ? 'APPROVED' : 'DECLINED',
+          // FIX BUG #2: Decision based on blocking issues, not score
+          decision: blockingIssuesCount > 0 ? 'DECLINED' : 'APPROVED',
           quality_score: appScore,
           analyzed_at: new Date().toISOString(),
           new_issues_count: newIssues.length,
           existing_issues_count: existingModified.length + existingRest.length,
           resolved_issues_count: resolvedIssues.length,
-          blocking_issues_count: newIssues.filter(i => i.severity === 'critical' || i.severity === 'high').length
+          // FIX BUG #2: Count blocking issues from NEW + EXISTING_MODIFIED with CRITICAL/HIGH severity
+          blocking_issues_count: blockingIssuesCount
         });
         
         if (error) {
@@ -1282,14 +1361,31 @@ ${(() => {
 })()}
 ` : `
 - Base Score: 100.0
-- NEW issues: ${qualityResult.breakdown.newIssuesDeduction?.toFixed(1) || '0.0'} (${issues.filter(i => i.category === 'NEW').length} issues, full weight)
-- EXISTING_MODIFIED issues: ${qualityResult.breakdown.existingModifiedDeduction?.toFixed(1) || '0.0'} (${issues.filter(i => i.category === 'EXISTING_MODIFIED').length} issues, 50% weight)
-- EXISTING_REST issues: ${qualityResult.breakdown.existingRestDeduction?.toFixed(1) || '0.0'} (${issues.filter(i => i.category === 'EXISTING_REST').length} issues, 10% weight)${qualityResult.breakdown.blockingPenalty !== undefined && qualityResult.breakdown.blockingPenalty !== 0 ? `
-- Blocking issues penalty: ${qualityResult.breakdown.blockingPenalty.toFixed(1)} (${blockingIssues.length} critical/high in PR)` : ''}${qualityResult.breakdown.resolutionBonus > 0 ? `
-- RESOLVED issues bonus: +${qualityResult.breakdown.resolutionBonus.toFixed(1)} (${issues.filter(i => i.category === 'RESOLVED').length} fixed)` : ''}
-- **Final Score: ${qualityResult.breakdown.finalScore}**
 
-> Severity weights: Critical=-5.0, High=-3.0, Medium=-1.0, Low=-0.5
+**Issue Deductions by Category:**
+- NEW issues: ${qualityResult.breakdown.newIssuesDeduction?.toFixed(1) || '0.0'} (${issues.filter(i => i.category === 'NEW').length} issues)
+  _→ Issues introduced in this PR_
+
+- EXISTING_MODIFIED issues: ${qualityResult.breakdown.existingModifiedDeduction?.toFixed(1) || '0.0'} (${issues.filter(i => i.category === 'EXISTING_MODIFIED').length} issues)
+  _→ Pre-existing issues in modified files_
+
+- EXISTING_REST issues: ${qualityResult.breakdown.existingRestDeduction?.toFixed(1) || '0.0'} (${issues.filter(i => i.category === 'EXISTING_REST').length} issues)
+  _→ Pre-existing issues in unchanged files_
+${qualityResult.breakdown.resolutionBonus > 0 ? `
+**Bonus:**
+- RESOLVED issues bonus: +${qualityResult.breakdown.resolutionBonus.toFixed(1)} (${issues.filter(i => i.category === 'RESOLVED').length} fixed)
+  _→ Fixing pre-existing issues earns bonus points_
+` : ''}${qualityResult.breakdown.blockingPenalty !== undefined && qualityResult.breakdown.blockingPenalty !== 0 ? `
+**Additional Penalties:**
+- Blocking issues: ${qualityResult.breakdown.blockingPenalty.toFixed(1)} (${blockingIssues.length} critical/high severity in NEW/EXISTING_MODIFIED)
+  _→ Extra penalty for unresolved blocking issues_
+` : ''}
+**Final Score: ${qualityResult.breakdown.finalScore}/100**
+
+> **Severity Weights:** Critical=-5.0, High=-3.0, Medium=-1.0, Low=-0.5
+>
+> **All categories have equal weight (100%)** - every issue impacts the score equally regardless of category.
+> Only the PR decision logic differs: NEW and EXISTING_MODIFIED issues with critical/high severity can block the PR.
 `}
 
 ---
@@ -1304,11 +1400,66 @@ ${(() => {
 - 🟡 Medium: ${bySeverity.medium} (${((bySeverity.medium / issues.length) * 100).toFixed(1)}%)
 - 🟢 Low: ${bySeverity.low} (${((bySeverity.low / issues.length) * 100).toFixed(1)}%)
 
-**By Category**:
-- 🆕 NEW: ${byCategory.NEW} (introduced in this PR)
-- ⚠️  EXISTING_MODIFIED: ${byCategory.EXISTING_MODIFIED} (pre-existing in modified files)
-- ✅ RESOLVED: ${byCategory.RESOLVED} (fixed by this PR)
-- 📝 EXISTING_REST: ${byCategory.EXISTING_REST} (pre-existing in unchanged files)
+**By Category & Severity**:
+
+${(() => {
+  // Calculate severity breakdown per category
+  const categorySeverity = {
+    NEW: { critical: 0, high: 0, medium: 0, low: 0 },
+    EXISTING_MODIFIED: { critical: 0, high: 0, medium: 0, low: 0 },
+    RESOLVED: { critical: 0, high: 0, medium: 0, low: 0 },
+    EXISTING_REST: { critical: 0, high: 0, medium: 0, low: 0 }
+  };
+
+  issues.forEach(issue => {
+    const cat = issue.category as keyof typeof categorySeverity;
+    const sev = issue.severity;
+    if (categorySeverity[cat]) {
+      categorySeverity[cat][sev] = (categorySeverity[cat][sev] || 0) + 1;
+    }
+  });
+
+  return `| Category | Critical | High | Medium | Low | Total |
+|----------|----------|------|--------|-----|-------|
+| 🆕 NEW | ${categorySeverity.NEW.critical} | ${categorySeverity.NEW.high} | ${categorySeverity.NEW.medium} | ${categorySeverity.NEW.low} | **${byCategory.NEW}** |
+| ⚠️ EXISTING_MODIFIED | ${categorySeverity.EXISTING_MODIFIED.critical} | ${categorySeverity.EXISTING_MODIFIED.high} | ${categorySeverity.EXISTING_MODIFIED.medium} | ${categorySeverity.EXISTING_MODIFIED.low} | **${byCategory.EXISTING_MODIFIED}** |
+| ✅ RESOLVED | ${categorySeverity.RESOLVED.critical} | ${categorySeverity.RESOLVED.high} | ${categorySeverity.RESOLVED.medium} | ${categorySeverity.RESOLVED.low} | **${byCategory.RESOLVED}** |
+| 📝 EXISTING_REST | ${categorySeverity.EXISTING_REST.critical} | ${categorySeverity.EXISTING_REST.high} | ${categorySeverity.EXISTING_REST.medium} | ${categorySeverity.EXISTING_REST.low} | **${byCategory.EXISTING_REST}** |
+| **TOTAL** | **${bySeverity.critical}** | **${bySeverity.high}** | **${bySeverity.medium}** | **${bySeverity.low}** | **${issues.length}** |`;
+})()}
+
+**By Detected Category** (for scoring):
+
+${(() => {
+  // SESSION 13 FIX: Group issues by detectedCategory (Security, Performance, etc.)
+  const byDetectedCategory: Record<string, {critical: number, high: number, medium: number, low: number, total: number}> = {
+    'Security': { critical: 0, high: 0, medium: 0, low: 0, total: 0 },
+    'Performance': { critical: 0, high: 0, medium: 0, low: 0, total: 0 },
+    'Architecture': { critical: 0, high: 0, medium: 0, low: 0, total: 0 },
+    'Dependencies': { critical: 0, high: 0, medium: 0, low: 0, total: 0 },
+    'Code Quality': { critical: 0, high: 0, medium: 0, low: 0, total: 0 }
+  };
+
+  issues.forEach(issue => {
+    const cat = issue.detectedCategory || 'Code Quality';
+    if (byDetectedCategory[cat]) {
+      const sev = issue.severity;
+      byDetectedCategory[cat][sev] = (byDetectedCategory[cat][sev] || 0) + 1;
+      byDetectedCategory[cat].total += 1;
+    }
+  });
+
+  return `| Category | Critical | High | Medium | Low | Total | Score |
+|----------|----------|------|--------|-----|-------|-------|
+| 🔒 Security | ${byDetectedCategory['Security'].critical} | ${byDetectedCategory['Security'].high} | ${byDetectedCategory['Security'].medium} | ${byDetectedCategory['Security'].low} | **${byDetectedCategory['Security'].total}** | **${qualityResult.breakdown?.skillCategoryScores?.security ?? qualityResult.skillCategoryScores?.security ?? 'N/A'}/100** |
+| ⚡ Performance | ${byDetectedCategory['Performance'].critical} | ${byDetectedCategory['Performance'].high} | ${byDetectedCategory['Performance'].medium} | ${byDetectedCategory['Performance'].low} | **${byDetectedCategory['Performance'].total}** | **${qualityResult.breakdown?.skillCategoryScores?.performance ?? qualityResult.skillCategoryScores?.performance ?? 'N/A'}/100** |
+| 🏗️ Architecture | ${byDetectedCategory['Architecture'].critical} | ${byDetectedCategory['Architecture'].high} | ${byDetectedCategory['Architecture'].medium} | ${byDetectedCategory['Architecture'].low} | **${byDetectedCategory['Architecture'].total}** | **${qualityResult.breakdown?.skillCategoryScores?.architecture ?? qualityResult.skillCategoryScores?.architecture ?? 'N/A'}/100** |
+| 📦 Dependencies | ${byDetectedCategory['Dependencies'].critical} | ${byDetectedCategory['Dependencies'].high} | ${byDetectedCategory['Dependencies'].medium} | ${byDetectedCategory['Dependencies'].low} | **${byDetectedCategory['Dependencies'].total}** | **${qualityResult.breakdown?.skillCategoryScores?.dependency ?? qualityResult.skillCategoryScores?.dependency ?? 'N/A'}/100** |
+| ✨ Code Quality | ${byDetectedCategory['Code Quality'].critical} | ${byDetectedCategory['Code Quality'].high} | ${byDetectedCategory['Code Quality'].medium} | ${byDetectedCategory['Code Quality'].low} | **${byDetectedCategory['Code Quality'].total}** | **${qualityResult.breakdown?.skillCategoryScores?.codeQuality ?? qualityResult.skillCategoryScores?.codeQuality ?? 'N/A'}/100** |
+| **TOTAL** | **${bySeverity.critical}** | **${bySeverity.high}** | **${bySeverity.medium}** | **${bySeverity.low}** | **${issues.length}** | - |`;
+})()}
+
+> **Score Calculation:** Categories start at base score (APP=100, Skill=50), then deduct: Critical (-5), High (-3), Medium (-1), Low (-0.5). APP Score = MIN(all categories), Skill Score = AVG(all categories).
 
 ---
 
@@ -1338,7 +1489,7 @@ ${this.generateKeyFindings(issues, groups, blockingIssues)}
 
 ### ⚡ Critical Blockers
 
-${this.generateCriticalBlockers(groups, blockingIssues)}
+${await this.generateCriticalBlockers(groups, blockingIssues, metadata.repoPath)}
 
 ---
 
@@ -1409,8 +1560,12 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
   /**
    * Generate critical blockers section
    */
-  private generateCriticalBlockers(groups: IssueGroup[], blockingIssues: EnrichedIssue[]): string {
-    return generateCriticalBlockers(groups, blockingIssues);
+  private async generateCriticalBlockers(
+    groups: IssueGroup[],
+    blockingIssues: EnrichedIssue[],
+    repoPath?: string
+  ): Promise<string> {
+    return await generateCriticalBlockers(groups, blockingIssues, repoPath);
   }
 
   private _REMOVED_generateCriticalBlockers_LEGACY(groups: IssueGroup[], blockingIssues: EnrichedIssue[]): string {
@@ -2498,7 +2653,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
         section += `\`\`\`${language}\n`;
         section += snippet;
         section += '\n```\n\n';
-      } else if (representative?.fixSuggestion?.correctedCode) {
+      } else if (representative?.fixSuggestion?.correctedCode && typeof representative.fixSuggestion.correctedCode === 'string') {
         // BUG FIX #47 CORRECTED: Show AI code when snippet unavailable, but with minimal cleaning
         const aiCode = representative.fixSuggestion.correctedCode.trim();
         // Only remove <think> tags, keep everything else
@@ -2526,7 +2681,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
       // BUG FIX #69: Only show AI-generated code examples if they exist
       // The fix guidance (generic or AI) is already shown above
       const hasValidSnippet = representative?.snippet && representative.snippet !== 'N/A' && representative.snippet.trim().length > 0;
-      const hasValidFix = representative?.fixSuggestion?.correctedCode && representative.fixSuggestion.correctedCode.trim().length > 0;
+      const hasValidFix = representative?.fixSuggestion?.correctedCode && typeof representative.fixSuggestion.correctedCode === 'string' && representative.fixSuggestion.correctedCode.trim().length > 0;
       
       if (representative?.fixSuggestion) {
         // AI-enriched fix available
@@ -2909,9 +3064,10 @@ mvn spotless:check  # Verify (use in CI)
    * Extract required imports from fix
    */
   private extractRequiredImports(representative: EnrichedIssue): string[] | undefined {
-    const fix = representative.fixSuggestion?.correctedCode || '';
+    const correctedCode = representative.fixSuggestion?.correctedCode;
+    const fix = (typeof correctedCode === 'string') ? correctedCode : '';
     const imports: string[] = [];
-    
+
     if (fix.includes('AtomicBoolean')) imports.push('java.util.concurrent.atomic.AtomicBoolean');
     if (fix.includes('AtomicInteger')) imports.push('java.util.concurrent.atomic.AtomicInteger');
     if (fix.includes('AtomicLong')) imports.push('java.util.concurrent.atomic.AtomicLong');
