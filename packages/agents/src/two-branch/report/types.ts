@@ -19,11 +19,21 @@ export interface EnrichedIssue {
     fix: string;
     correctedCode: string;
     explanation: string;
+    // BUG #89 FIX: Add structured description matching specialized-agents.ts
+    issueDescription?: {
+      what: string;
+      why: string;
+      causes: string[];
+      impact: string;
+    };
     bestPractices?: string[];
   };
   educationalLinks?: string[];
   isGroupRepresentative?: boolean;
   groupSize?: number;
+  // BUG #87 FIX: AI severity classification metadata
+  severityReasoning?: string;
+  severityConfidence?: 'high' | 'medium' | 'low';  // Matches ai-severity-classifier.ts output
 }
 
 export interface GroupedReportOutput {

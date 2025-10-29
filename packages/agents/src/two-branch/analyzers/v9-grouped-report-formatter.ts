@@ -84,11 +84,21 @@ export interface EnrichedIssue {
     fix: string;
     correctedCode: string;
     explanation: string;
+    // BUG #89 FIX: Add structured description matching specialized-agents.ts
+    issueDescription?: {
+      what: string;
+      why: string;
+      causes: string[];
+      impact: string;
+    };
     bestPractices?: string[];
   };
   educationalLinks?: string[];
   isGroupRepresentative?: boolean;
   groupSize?: number;
+  // BUG #87 FIX: AI severity classification metadata
+  severityReasoning?: string;
+  severityConfidence?: 'high' | 'medium' | 'low';  // Matches ai-severity-classifier.ts output
 }
 
 export interface GroupedReportOutput {
@@ -2522,11 +2532,25 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
     
     const representative = groupIssues[0];
     const canAutoFix = this.canAutoFix(group);
-    
+
     // Phase D: User-friendly title
     const friendlyTitle = this.getUserFriendlyTitle(group.rule, group.tool);
-    const issueDesc = this.getIssueDescription(group.rule, group.tool, group.severity);
-    
+
+    // BUG #89 FIX: Use AI-enriched structured description when available
+    // Try to find an issue with AI-enriched issueDescription (prefer issues with code snippets)
+    const representativeWithAI = groupIssues.find(i => i.fixSuggestion?.issueDescription) || representative;
+    let issueDesc: { what: string; why: string; causes: string[]; impact: string };
+
+    if (representativeWithAI?.fixSuggestion?.issueDescription) {
+      // Use AI-generated structured description
+      issueDesc = representativeWithAI.fixSuggestion.issueDescription;
+      console.log(`[BUG #89] Using AI-enriched description for ${group.rule}`);
+    } else {
+      // Fallback to hardcoded database
+      issueDesc = this.getIssueDescription(group.rule, group.tool, group.severity);
+      console.log(`[BUG #89] Using fallback description for ${group.rule}`);
+    }
+
     let section = `### ${severityIcon} ${friendlyTitle}\n\n`;
     
     // Phase D: Quick metadata bar
