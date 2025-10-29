@@ -12,3 +12,6 @@ echo "Test completed. Check /tmp/v9-test-output.log on Oracle for full output."
 
 
 
+
+
+

@@ -1,0 +1,80 @@
+{
+  "version": "1.0",
+  "metadata": {
+    "repository": "https://github.com/micronaut-projects/micronaut-guides",
+    "total_issues": 67,
+    "total_fix_files": 9,
+    "generated_at": "2025-10-24T14:51:50.808Z"
+  },
+  "files": {
+    "critical": [],
+    "high": [
+      {
+        "filename": "group-java-lang-security-audit-crypto-weak-random-weak-random-high-semgrep-fix.json",
+        "url": "attachments/group-java-lang-security-audit-crypto-weak-random-weak-random-high-semgrep-fix.json",
+        "severity": "high",
+        "rule": "java.lang.security.audit.crypto.weak-random.weak-random",
+        "occurrences": 2
+      }
+    ],
+    "medium": [
+      {
+        "filename": "group-guardlogstatement-medium-pmd-fix.json",
+        "url": "attachments/group-guardlogstatement-medium-pmd-fix.json",
+        "severity": "medium",
+        "rule": "GuardLogStatement",
+        "occurrences": 31
+      },
+      {
+        "filename": "group-classwithonlyprivateconstructorsshouldbefinal-medium-pmd-fix.json",
+        "url": "attachments/group-classwithonlyprivateconstructorsshouldbefinal-medium-pmd-fix.json",
+        "severity": "medium",
+        "rule": "ClassWithOnlyPrivateConstructorsShouldBeFinal",
+        "occurrences": 11
+      },
+      {
+        "filename": "group-avoidreassigningparameters-medium-pmd-fix.json",
+        "url": "attachments/group-avoidreassigningparameters-medium-pmd-fix.json",
+        "severity": "medium",
+        "rule": "AvoidReassigningParameters",
+        "occurrences": 9
+      },
+      {
+        "filename": "group-systemprintln-medium-pmd-fix.json",
+        "url": "attachments/group-systemprintln-medium-pmd-fix.json",
+        "severity": "medium",
+        "rule": "SystemPrintln",
+        "occurrences": 5
+      },
+      {
+        "filename": "group-avoidfilestream-medium-pmd-fix.json",
+        "url": "attachments/group-avoidfilestream-medium-pmd-fix.json",
+        "severity": "medium",
+        "rule": "AvoidFileStream",
+        "occurrences": 4
+      },
+      {
+        "filename": "group-returnemptycollectionratherthannull-medium-pmd-fix.json",
+        "url": "attachments/group-returnemptycollectionratherthannull-medium-pmd-fix.json",
+        "severity": "medium",
+        "rule": "ReturnEmptyCollectionRatherThanNull",
+        "occurrences": 3
+      },
+      {
+        "filename": "group-avoidthrowingnullpointerexception-medium-pmd-fix.json",
+        "url": "attachments/group-avoidthrowingnullpointerexception-medium-pmd-fix.json",
+        "severity": "medium",
+        "rule": "AvoidThrowingNullPointerException",
+        "occurrences": 1
+      },
+      {
+        "filename": "group-constructorcallsoverridablemethod-medium-pmd-fix.json",
+        "url": "attachments/group-constructorcallsoverridablemethod-medium-pmd-fix.json",
+        "severity": "medium",
+        "rule": "ConstructorCallsOverridableMethod",
+        "occurrences": 1
+      }
+    ],
+    "low": []
+  }
+}

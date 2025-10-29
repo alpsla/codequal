@@ -32,6 +32,32 @@ import {
 import { LinkValidator } from '../utils/link-validator';
 import axios from 'axios';
 
+// ============================================================
+// SERVICE IMPORTS FOR DELEGATION PATTERN
+// ============================================================
+import {
+  formatDate,
+  formatDuration,
+  cleanAIContent,
+  getUserFriendlyTitle
+} from '../report/formatter-utils';
+import {
+  generateAnalysisMetadata,
+  generatePRComment,
+  generateFooter
+} from '../report/metadata-footer';
+import {
+  generateHeader
+} from '../report/header-sections';
+import {
+  generateBusinessImpact,
+  getRiskImpactLevel
+} from '../report/business-impact';
+import {
+  generateEducationalResources,
+  generateEducationalResourcesBrave
+} from '../report/educational-resources';
+
 export interface CompleteMetadata {
   // Repository Information
   repository: string;
@@ -412,64 +438,11 @@ ${rows}
   }
   
   private generateHeader(metadata: CompleteMetadata): string {
-    const analysisDate = this.formatDate(metadata.analyzedAt || metadata.timestamp || new Date().toISOString());
-    return `# 🔍 V9 Code Quality Analysis Report
-
-## Repository Information
-
-**Repository:** [${metadata.repository}](${metadata.repoUrl})
-**Pull Request:** #${metadata.prNumber} - ${metadata.prTitle}
-**Author:** ${metadata.prAuthor} (${metadata.prAuthorEmail})
-**Organization:** ${metadata.organizationName}
-**Source Branch:** ${metadata.branch}
-**Target Branch:** ${metadata.baseBranch}
-**Analysis Date:** ${analysisDate}
-**Repository Size:** ${(metadata.totalFiles || 0).toLocaleString()} files
-**Analyzer Version:** ${metadata.analyzerVersion}`;
+    return generateHeader(metadata);
   }
 
   private formatDate(dateString: string | undefined): string {
-    if (!dateString) {
-      return new Date().toLocaleString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        timeZoneName: 'short'
-      });
-    }
-
-    try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) {
-        return new Date().toLocaleString('en-US', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-          timeZoneName: 'short'
-        });
-      }
-      return date.toLocaleString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        timeZoneName: 'short'
-      });
-    } catch {
-      return new Date().toLocaleString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        timeZoneName: 'short'
-      });
-    }
+    return formatDate(dateString);
   }
   
   private generateExecutiveSummary(result: AnalysisResult, metadata: CompleteMetadata): string {

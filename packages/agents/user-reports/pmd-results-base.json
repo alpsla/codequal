@@ -1,0 +1,53 @@
+{
+  "formatVersion": 0,
+  "pmdVersion": "6.55.0",
+  "timestamp": "2025-10-27T19:20:38.062Z",
+  "files": [
+    {
+      "filename": "/workspace/qute-quickstart/src/main/java/org/acme/qute/ItemResource.java",
+      "violations": [
+        {
+          "beginline": 29,
+          "begincolumn": 28,
+          "endline": 29,
+          "endcolumn": 45,
+          "description": "Dont create instances of already existing BigInteger and BigDecimal (ZERO, ONE, TEN)",
+          "rule": "BigIntegerInstantiation",
+          "ruleset": "Performance",
+          "priority": 3,
+          "externalInfoUrl": "https://pmd.github.io/pmd-6.55.0/pmd_rules_java_performance.html#bigintegerinstantiation"
+        }
+      ]
+    },
+    {
+      "filename": "/workspace/stork-dns-quickstart/src/main/java/org/acme/services/Registration.java",
+      "violations": [
+        {
+          "beginline": 33,
+          "begincolumn": 62,
+          "endline": 33,
+          "endcolumn": 72,
+          "description": "Do not hard code the IP address ",
+          "rule": "AvoidUsingHardCodedIP",
+          "ruleset": "Best Practices",
+          "priority": 3,
+          "externalInfoUrl": "https://pmd.github.io/pmd-6.55.0/pmd_rules_java_bestpractices.html#avoidusinghardcodedip"
+        },
+        {
+          "beginline": 36,
+          "begincolumn": 63,
+          "endline": 36,
+          "endcolumn": 73,
+          "description": "Do not hard code the IP address ",
+          "rule": "AvoidUsingHardCodedIP",
+          "ruleset": "Best Practices",
+          "priority": 3,
+          "externalInfoUrl": "https://pmd.github.io/pmd-6.55.0/pmd_rules_java_bestpractices.html#avoidusinghardcodedip"
+        }
+      ]
+    }
+  ],
+  "suppressedViolations": [],
+  "processingErrors": [],
+  "configurationErrors": []
+}

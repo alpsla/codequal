@@ -1,6 +1,11 @@
 /**
  * Specialized agents for generating fix suggestions based on issue context
  * Each agent is responsible for a specific domain and uses AI to generate contextual fixes
+ * 
+ * BUG #76 FIX: Two-prompt architecture with compact JSON examples
+ * - System Prompt: Defines role and output structure (reusable)
+ * - User Prompt: Issue details + 2 compact JSON examples (per-issue)
+ * - Cost: ~600 tokens per issue (fits $0.01 budget)
  */
 
 import OpenAI from 'openai';
@@ -8,6 +13,7 @@ import { DynamicModelSelector } from '../services/dynamic-model-selector';
 import { getResilientAIClient } from '../services/resilient-ai-client';
 import { getSimpleOpenRouterClient } from '../services/simple-openrouter-client';
 import { ModelConfiguration } from '../../standard/orchestrator/model-config-resolver';
+import { getExamplesForCategory, type FixExample } from './examples-database';
 
 interface IssueContext {
   title: string;
@@ -30,14 +36,17 @@ interface FixSuggestion {
 /**
  * Base class for all specialized agents
  * BUG-119 FIX: Accepts ModelConfiguration from orchestrator instead of creating own selector
+ * BUG-76 FIX: Supports category-based examples for few-shot learning
  */
 abstract class BaseSpecializedAgent {
   protected openRouter: OpenAI;
   protected modelConfig: ModelConfiguration | null = null;
   protected agentRole: string;
+  protected category: string; // BUG-76: Category for example selection
 
   constructor(role: string, modelConfig?: ModelConfiguration) {
     this.agentRole = role;
+    this.category = this.getCategoryFromRole(role); // BUG-76: Map role to category
     this.modelConfig = modelConfig || null; // BUG-119 FIX: Accept config from orchestrator
 
     const openRouterConfig: any = {
@@ -53,6 +62,18 @@ abstract class BaseSpecializedAgent {
     }
 
     this.openRouter = new OpenAI(openRouterConfig);
+  }
+
+  /**
+   * BUG-76: Map agent role to category for example selection
+   */
+  protected getCategoryFromRole(role: string): string {
+    const normalized = role.toLowerCase();
+    if (normalized.includes('security')) return 'Security';
+    if (normalized.includes('performance')) return 'Performance';
+    if (normalized.includes('architecture')) return 'Architecture';
+    if (normalized.includes('dependency') || normalized.includes('dependen')) return 'Dependencies';
+    return 'Code Quality'; // Default for CodeQuality and others
   }
 
   /**
@@ -83,7 +104,9 @@ abstract class BaseSpecializedAgent {
         maxTokens: issue.codeSnippet ? 2500 : 1200  // More tokens when code snippet provided
       });
 
-      return this.parseAIResponse(response.content, issue);
+      // BUG-76 FIX: Clean <think> tags and AI reasoning BEFORE parsing
+      const cleanedResponse = this.cleanAIContent(response.content);
+      return this.parseAIResponse(cleanedResponse, issue);
 
     } catch (error: any) {
       // Under strict mode, surface the failure to abort the flow
@@ -99,18 +122,154 @@ abstract class BaseSpecializedAgent {
   protected abstract getSystemPrompt(): string;
   protected abstract buildPrompt(issue: IssueContext): string;
 
+  /**
+   * BUG-76: Helper to build prompt with compact JSON examples
+   * Agents can call this or implement their own buildPrompt()
+   */
+  protected buildPromptWithExamples(issue: IssueContext): string {
+    // Get 2 examples for this category
+    const examples = getExamplesForCategory(this.category, 2);
+    
+    return `EXAMPLES (${this.category} fixes):
+${JSON.stringify(examples, null, 2)}
+
+ANALYZE THIS:
+{
+  "title": ${JSON.stringify(issue.title)},
+  "severity": "${issue.severity}",
+  "tool": "${issue.tool || 'unknown'}",
+  "file": "${issue.file}",
+  "line": ${issue.line},
+  "code": ${JSON.stringify(issue.codeSnippet || '')}
+}
+
+Provide JSON response following system prompt structure.`;
+  }
+
+  /**
+   * BUG-76 FIX: Clean AI response BEFORE parsing
+   * Removes <think> tags, AI reasoning patterns, and generic preambles
+   * CRITICAL: Must run BEFORE parseAIResponse to prevent parsing failures
+   */
+  protected cleanAIContent(content: string): string {
+    if (!content) return content;
+    
+    let cleaned = content;
+    
+    // PRIORITY 1: Remove <think> tags (MOST CRITICAL - causes 50% failure rate)
+    cleaned = cleaned.replace(/<think>[\s\S]*?<\/think>/gi, '');    // <think>...</think>
+    cleaned = cleaned.replace(/<think>[\s\S]*?(?=\n\n|$)/gi, '');   // <think>... (no closing tag)
+    
+    // PRIORITY 2: Remove AI reasoning patterns at start of response
+    cleaned = cleaned.replace(/^(First,|Okay,|Alright,|So,|Let me|I need to|I'll|What's)\s+[\s\S]*?\n\n/i, '');
+    
+    // PRIORITY 3: Remove generic AI preambles
+    cleaned = cleaned.replace(/^(Of course\.|Certainly\.|Sure\.|I'll help|As a[\s\S]*?engineer,?)\s*/i, '');
+    
+    // PRIORITY 4: Remove "Here's the fix:" type intros
+    cleaned = cleaned.replace(/^[\s\S]*?(\*\*Fix:\*\*|\*\*Solution:\*\*|Here's the fix:|The fix is:)\s*/i, '');
+    
+    // Remove empty lines at start/end
+    cleaned = cleaned.trim();
+    
+    return cleaned;
+  }
+
   protected parseAIResponse(response: string, issue: IssueContext): FixSuggestion {
-    // Handle different response formats from AI
-    // Look for structured markers or take the first actionable part
+    // BUG-76 FIX: Try JSON extraction FIRST (highest priority)
     
-    // Try to extract just the fix description (first paragraph or sentence)
-    let fix = response;
+    // PATTERN 0: Brace-counting JSON extraction (most robust - handles newlines in strings)
+    const jsonStart = response.indexOf('{');
+    if (jsonStart !== -1 && response.includes('"fix"') && response.includes('"correctedCode"')) {
+      try {
+        let braceCount = 0;
+        let inString = false;
+        let escaped = false;
+        
+        for (let i = jsonStart; i < response.length; i++) {
+          const char = response[i];
+          
+          if (escaped) {
+            escaped = false;
+            continue;
+          }
+          
+          if (char === '\\') {
+            escaped = true;
+            continue;
+          }
+          
+          if (char === '"') {
+            inString = !inString;
+            continue;
+          }
+          
+          if (!inString) {
+            if (char === '{') braceCount++;
+            if (char === '}') {
+              braceCount--;
+              if (braceCount === 0) {
+                // Found complete JSON
+                const jsonStr = response.substring(jsonStart, i + 1);
+                const parsed = JSON.parse(jsonStr);
+                if (parsed.fix && parsed.correctedCode) {
+                  return {
+                    fix: parsed.fix,
+                    correctedCode: parsed.correctedCode,
+                    explanation: parsed.fix,
+                    bestPractices: parsed.bestPractices || []
+                  };
+                }
+                break;
+              }
+            }
+          }
+        }
+      } catch (e) {
+        // Brace-counting or JSON parsing failed, continue with other methods
+      }
+    }
     
-    // Remove common AI preambles
-    fix = fix.replace(/^(Of course\.|Certainly\.|Sure\.|I'll help|As a[\s\S]*?engineer,?|Let me analyze[\s\S]*?:)\s*/i, '');
-    fix = fix.replace(/^[\s\S]*?(\*\*Fix:\*\*|\*\*Solution:\*\*|Here's the fix:|The fix is:)\s*/i, '');
+    // Pattern 1: JSON in markdown block
+    const jsonBlockMatch = response.match(/```json\s*\n([\s\S]*?)\n```/);
+    if (jsonBlockMatch) {
+      try {
+        const parsed = JSON.parse(jsonBlockMatch[1]);
+        if (parsed.fix && parsed.correctedCode) {
+          return {
+            fix: parsed.fix,
+            correctedCode: parsed.correctedCode,
+            explanation: parsed.fix,
+            bestPractices: parsed.bestPractices || []
+          };
+        }
+      } catch (e) {
+        // JSON parsing failed, continue with other methods
+      }
+    }
     
-    // Extract first meaningful paragraph
+    // Pattern 2: JSON in generic code block
+    const codeBlockJsonMatch = response.match(/```\s*\n(\{[\s\S]*?"fix"[\s\S]*?\})\s*\n```/);
+    if (codeBlockJsonMatch) {
+      try {
+        const parsed = JSON.parse(codeBlockJsonMatch[1]);
+        if (parsed.fix && parsed.correctedCode) {
+          return {
+            fix: parsed.fix,
+            correctedCode: parsed.correctedCode,
+            explanation: parsed.fix,
+            bestPractices: parsed.bestPractices || []
+          };
+        }
+      } catch (e) {
+        // JSON parsing failed, continue with other methods
+      }
+    }
+    
+    // Fallback: Extract text and code separately
+    const fix = response;
+    
+    // Extract first meaningful paragraph as fix description
     const paragraphs = fix.split(/\n\n+/);
     const fixDescription = paragraphs[0] || fix;
     
@@ -217,6 +376,7 @@ ${lineNum + 3}: // Context: ${fileName} line ${lineNum}`;
 /**
  * Security Agent - Handles security vulnerabilities and threats
  * BUG-119 FIX: Accepts ModelConfiguration from factory
+ * BUG-76 FIX: Compact system prompt + JSON examples
  */
 export class SecurityAgent extends BaseSpecializedAgent {
   constructor(modelConfig?: ModelConfiguration) {
@@ -224,57 +384,30 @@ export class SecurityAgent extends BaseSpecializedAgent {
   }
 
   protected getSystemPrompt(): string {
-    return `You are a security expert. Provide ONLY concise, actionable fixes.
-DO NOT include pleasantries or introductions.
-START directly with the fix.
-Format: One paragraph fix description, then code example.
-Be specific and practical.`;
+    return `You are a SECURITY EXPERT for code vulnerabilities.
+
+⚠️ CRITICAL: Output ONLY the JSON response. NO thinking process, NO reasoning, NO "First, I...", NO "Let me...". Start DIRECTLY with JSON.
+
+IMPORTANT: The problem description is already shown to the user. Focus ONLY on the solution:
+- Step-by-step fix instructions
+- Code example (before/after if possible)
+- Best practices to prevent recurrence
+
+DO NOT repeat problem description (what/why/causes/impact) - user already sees it!
+
+Output ONLY this JSON (nothing else):
+{
+  "fix": "Step-by-step solution with OWASP references (focus on HOW to fix, not repeating problem)",
+  "correctedCode": "Working code snippet showing before/after with security validations",
+  "bestPractices": ["practice1", "practice2", "practice3"]
+}
+
+Be specific, actionable, security-focused. NO pleasantries, NO thinking process, NO repeating problem.`;
   }
 
   protected buildPrompt(issue: IssueContext): string {
-    const fileName = issue.file.split('/').pop() || '';
-    const className = fileName.replace(/\.\w+$/, '');
-    
-    // Add security-specific guidance
-    const guidance = this.getSecurityGuidance(issue);
-    
-    return `Security vulnerability: ${issue.type}
-File: ${issue.file} (line ${issue.line})
-Description: ${issue.description}
-
-${issue.codeSnippet ? `Vulnerable Code:
-\`\`\`java
-${issue.codeSnippet}
-\`\`\`
-` : `⚠️ No code snippet - provide secure implementation template.`}
-
-${guidance}
-
-REQUIRED OUTPUT FORMAT:
-
-### 1. Fix Description
-[1-2 sentences: WHAT to change and WHY it's a security risk]
-
-### 2. Secure Code
-\`\`\`java
-[Complete, production-ready code with all security validations]
-\`\`\`
-
-### 3. Security Impact
-[OWASP reference + what attackers can do if not fixed]
-
-CRITICAL REQUIREMENTS:
-✅ Code must be DIRECTLY copy-pasteable into ${fileName}
-✅ Use ACTUAL class name "${className}" and methods from context
-✅ Include ALL imports at the top
-✅ Provide COMPLETE implementation, not pseudocode
-✅ Add brief inline comments
-
-❌ DO NOT use generic placeholders like "YourClass" or "// implementation here"
-❌ DO NOT provide incomplete code snippets
-❌ DO NOT skip imports
-
-Be direct - start with the fix description, no pleasantries.`;
+    // BUG-76: Use compact JSON examples
+    return this.buildPromptWithExamples(issue);
   }
 
   /**
@@ -352,6 +485,7 @@ OWASP: A08:2021 - Software Integrity Failures`;
 /**
  * Performance Agent - Handles performance optimizations
  * BUG-119 FIX: Accepts ModelConfiguration from factory
+ * BUG-76 FIX: Compact system prompt + JSON examples
  */
 export class PerformanceAgent extends BaseSpecializedAgent {
   constructor(modelConfig?: ModelConfiguration) {
@@ -359,50 +493,37 @@ export class PerformanceAgent extends BaseSpecializedAgent {
   }
 
   protected getSystemPrompt(): string {
-    return `You are a performance expert. Provide ONLY actionable optimizations.
-NO introductions or pleasantries.
-START with the fix.
-Include complexity analysis (O notation) where relevant.
-Be practical and specific.`;
+    return `You are a PERFORMANCE EXPERT for code optimization.
+
+⚠️ CRITICAL: Output ONLY the JSON response. NO thinking process, NO reasoning, NO "First, I...", NO "Let me...". Start DIRECTLY with JSON.
+
+IMPORTANT: The problem description is already shown to the user. Focus ONLY on the solution:
+- Optimization steps with Big-O complexity analysis
+- Code example showing optimized version
+- Best practices for performance
+
+DO NOT repeat problem description (what/why/causes/impact) - user already sees it!
+
+Output ONLY this JSON (nothing else):
+{
+  "fix": "Optimization steps with Big-O analysis (focus on HOW to optimize, not repeating problem)",
+  "correctedCode": "Optimized code showing before/after with specific data structures",
+  "bestPractices": ["practice1", "practice2", "practice3"]
+}
+
+Be specific, measurable, performance-focused. Include complexity analysis. NO repeating problem.`;
   }
 
   protected buildPrompt(issue: IssueContext): string {
-    const fileName = issue.file.split('/').pop() || '';
-    const className = fileName.replace(/\.\w+$/, '');
-    
-    return `Performance issue in ${issue.file} at line ${issue.line}:
-${issue.description}
-${issue.codeSnippet ? `\nCurrent Code:\n\`\`\`java\n${issue.codeSnippet}\n\`\`\`\n` : ''}
-
-Provide a COMPLETE performance optimization:
-
-1. **Optimization Description** (1-2 sentences): Specific improvement using ACTUAL method names
-2. **Optimized Code** with:
-   - ALL necessary imports (e.g., "import java.util.concurrent.ConcurrentHashMap;")
-   - Full optimized implementation
-   - Inline comments explaining performance gains
-   - SPECIFIC algorithm/data structure names
-3. **Performance Analysis**: 
-   - Before complexity: O(?)
-   - After complexity: O(?)
-   - Expected performance gain
-
-CRITICAL REQUIREMENTS:
-✅ Code must be DIRECTLY copy-pasteable into ${fileName}
-✅ Use SPECIFIC data structures (HashMap, ArrayList, ConcurrentHashMap, etc.)
-✅ Provide COMPLETE working code with ALL imports
-✅ Include complexity analysis (Big-O notation)
-
-❌ DO NOT say "optimize appropriately" or use placeholders
-❌ DO NOT provide partial implementations
-
-Be direct and specific.`;
+    // BUG-76: Use compact JSON examples
+    return this.buildPromptWithExamples(issue);
   }
 }
 
 /**
  * Architecture Agent - Handles design patterns and structural issues
  * BUG-119 FIX: Accepts ModelConfiguration from factory
+ * BUG-76 FIX: Compact system prompt + JSON examples
  */
 export class ArchitectureAgent extends BaseSpecializedAgent {
   constructor(modelConfig?: ModelConfiguration) {
@@ -410,32 +531,30 @@ export class ArchitectureAgent extends BaseSpecializedAgent {
   }
 
   protected getSystemPrompt(): string {
-    return `You are an architect. Provide ONLY design improvements.
-NO introductions.
-Focus on SOLID principles and design patterns.
-Be specific about refactoring steps.
-Keep it practical.`;
+    return `You are an ARCHITECTURE EXPERT for software design.
+
+⚠️ CRITICAL: Output ONLY the JSON response. NO thinking process, NO reasoning, NO "First, I...", NO "Let me...". Start DIRECTLY with JSON.
+
+IMPORTANT: The problem description is already shown to the user. Focus ONLY on the solution:
+- Refactoring steps with SOLID principles and design patterns
+- Code example showing new structure
+- Best practices for maintainability
+
+DO NOT repeat problem description (what/why/causes/impact) - user already sees it!
+
+Output ONLY this JSON (nothing else):
+{
+  "fix": "Refactoring steps with specific class/interface names (focus on HOW to refactor, not repeating problem)",
+  "correctedCode": "Refactored code showing before/after with new structure",
+  "bestPractices": ["practice1", "practice2", "practice3"]
+}
+
+Be specific about class names, interfaces, design patterns. NO generic phrases, NO repeating problem.`;
   }
 
   protected buildPrompt(issue: IssueContext): string {
-    // BUG-124 FIX: Add specific guidance for common architectural issues
-    const specificGuidance = this.getSpecificGuidanceForIssue(issue);
-
-    return `Architecture issue: ${issue.description}
-File: ${issue.file}
-${issue.codeSnippet ? `Code:\n${issue.codeSnippet}` : ''}
-
-${specificGuidance}
-
-Provide (BUG-108 & BUG-124 FIX - Be VERY specific):
-1. Concrete refactoring steps with EXACT class/interface names (e.g., "Extract UserRepository, EmailService, FileService")
-2. Required imports (if any)
-3. Refactored code showing NEW class structure (not comments, actual code)
-4. Design pattern name (e.g., "Single Responsibility Principle", "Dependency Injection")
-5. "Why This Works" - Explain architectural improvement
-
-CRITICAL: NO generic phrases like "apply appropriate solution" or "refactor as needed".
-Show ACTUAL refactored code with specific names.`;
+    // BUG-76: Use compact JSON examples
+    return this.buildPromptWithExamples(issue);
   }
 
   /**
@@ -470,6 +589,7 @@ Show concrete refactoring with actual class and interface names.`;
 /**
  * Code Quality Agent - Handles code style, readability, and maintainability
  * BUG-119 FIX: Accepts ModelConfiguration from factory
+ * BUG-76 FIX: Compact system prompt + JSON examples
  */
 export class CodeQualityAgent extends BaseSpecializedAgent {
   constructor(modelConfig?: ModelConfiguration) {
@@ -477,14 +597,34 @@ export class CodeQualityAgent extends BaseSpecializedAgent {
   }
 
   protected getSystemPrompt(): string {
-    return `You are a code quality expert. Provide ONLY clean code improvements.
-NO pleasantries.
-Focus on readability and maintainability.
-Be specific and practical.
-Keep responses short.`;
+    return `You are a CODE QUALITY EXPERT for best practices.
+
+⚠️ CRITICAL: Output ONLY the JSON response. NO thinking process, NO reasoning, NO "First, I...", NO "Let me...". Start DIRECTLY with JSON.
+
+IMPORTANT: The problem description is already shown to the user. Focus ONLY on the solution:
+- Clean code refactoring steps
+- Code example following best practices
+- Best practices for readability and maintainability
+
+DO NOT repeat problem description (what/why/causes/impact) - user already sees it!
+
+Output ONLY this JSON (nothing else):
+{
+  "fix": "Refactoring steps for clean code (focus on HOW to fix, not repeating problem)",
+  "correctedCode": "Clean, readable code showing before/after following conventions",
+  "bestPractices": ["practice1", "practice2", "practice3"]
+}
+
+Be specific, practical, focus on readability. NO generic phrases, NO repeating problem.`;
   }
 
   protected buildPrompt(issue: IssueContext): string {
+    // BUG-76: Use compact JSON examples
+    return this.buildPromptWithExamples(issue);
+  }
+
+  // Old implementation removed - using compact JSON examples now
+  private _oldBuildPrompt(issue: IssueContext): string {
     const fileName = issue.file.split('/').pop() || '';
     const className = fileName.replace(/\.\w+$/, '');
     
@@ -713,6 +853,7 @@ Make initialization methods private or final to prevent issues in subclasses.`;
 /**
  * Dependency Agent - Handles dependency issues and package management
  * BUG-119 FIX: Accepts ModelConfiguration from factory
+ * BUG-76 FIX: Compact system prompt + JSON examples
  */
 export class DependencyAgent extends BaseSpecializedAgent {
   constructor(modelConfig?: ModelConfiguration) {
@@ -720,27 +861,30 @@ export class DependencyAgent extends BaseSpecializedAgent {
   }
 
   protected getSystemPrompt(): string {
-    return `You are a dependency expert. Provide ONLY dependency fixes.
-NO introductions.
-Focus on version updates and security patches.
-Suggest alternatives when needed.
-Be direct.`;
+    return `You are a DEPENDENCY EXPERT for package management.
+
+⚠️ CRITICAL: Output ONLY the JSON response. NO thinking process, NO reasoning, NO "First, I...", NO "Let me...". Start DIRECTLY with JSON.
+
+IMPORTANT: The problem description is already shown to the user. Focus ONLY on the solution:
+- Exact version update steps with migration guidance
+- Configuration example (pom.xml, package.json, etc.)
+- Best practices for dependency management
+
+DO NOT repeat problem description (what/why/causes/impact) - user already sees it!
+
+Output ONLY this JSON (nothing else):
+{
+  "fix": "Exact version update steps with package name and version numbers (focus on HOW to update, not repeating problem)",
+  "correctedCode": "Updated dependency configuration showing before/after (pom.xml, package.json, etc.)",
+  "bestPractices": ["practice1", "practice2", "practice3"]
+}
+
+Be specific with exact versions. NO generic phrases like "update to latest", NO repeating problem.`;
   }
 
   protected buildPrompt(issue: IssueContext): string {
-    return `Dependency issue: ${issue.description}
-File: ${issue.file}
-${issue.codeSnippet ? `Context:\n${issue.codeSnippet}` : ''}
-
-Provide (BUG-108 FIX - Be specific):
-1. Fix action with EXACT dependency name and version (e.g., "Update log4j from 2.14.0 to 2.17.1")
-2. Correct configuration (production-ready) with exact syntax
-3. Alternative library if replacement needed (with specific version)
-4. "Why This Works" - Brief security/compatibility benefit
-5. Migration steps if breaking changes exist
-
-REQUIRED: Use exact package names and versions, no phrases like "update to latest version".
-Be specific and actionable.`;
+    // BUG-76: Use compact JSON examples
+    return this.buildPromptWithExamples(issue);
   }
 }
 

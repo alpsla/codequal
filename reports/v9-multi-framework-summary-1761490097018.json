@@ -1,0 +1,39 @@
+{
+  "timestamp": "2025-10-26T14:48:17.018Z",
+  "totalFrameworks": 5,
+  "passed": 2,
+  "failed": 3,
+  "totalDuration": 2400.127,
+  "results": [
+    {
+      "framework": "Spring Boot PetClinic",
+      "status": "FAILED",
+      "duration": 3.97,
+      "error": "Command failed: timeout 900 npx ts-node /home/opc/codequal/packages/agents/test-v9-e2e-complete.ts\nfatal: not a git repository (or any of the parent directories): .git\n❌ Test failed: Error: Command failed: git remote add origin https://github.com/spring-projects/spring-petclinic.git\n    at genericNodeError (node:internal/errors:984:15)\n    at wrappedFn (node:internal/errors:538:14)\n    at checkExecSyncError (node:child_process:891:11)\n    at execSync (node:child_process:963:15)\n    at runV9CompleteE2E (/home/opc/codequal/packages/agents/test-v9-e2e-complete.ts:122:13)\n    at Object.<anonymous> (/home/opc/codequal/packages/agents/test-v9-e2e-complete.ts:1219:3)\n    at Module._compile (node:internal/modules/cjs/loader:1521:14)\n    at Module.m._compile (/home/opc/codequal/node_modules/ts-node/src/index.ts:1618:23)\n    at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)\n    at Object.require.extensions.<computed> [as .ts] (/home/opc/codequal/node_modules/ts-node/src/index.ts:1621:12) {\n  status: 128,\n  signal: null,\n  output: [ null, null, null ],\n  pid: 2727231,\n  stdout: null,\n  stderr: null\n}\n"
+    },
+    {
+      "framework": "Quarkus Quickstarts",
+      "status": "FAILED",
+      "duration": 433.442,
+      "error": "Command failed: timeout 1200 npx ts-node /home/opc/codequal/packages/agents/test-v9-e2e-complete.ts\nCloning into '/tmp/quarkus-quickstarts-repo'...\nFrom https://github.com/quarkusio/quarkus-quickstarts\n * [new ref]             refs/pull/1551/head -> pr-1551\n❌ Test failed: TypeError: representative.fixSuggestion.correctedCode.trim is not a function\n    at V9GroupedReportFormatter.generateGroupSection (/home/opc/codequal/packages/agents/src/two-branch/analyzers/v9-grouped-report-formatter.ts:3027:118)\n    at processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async V9GroupedReportFormatter.generateGroupedReport (/home/opc/codequal/packages/agents/src/two-branch/analyzers/v9-grouped-report-formatter.ts:445:23)\n    at async runV9CompleteE2E (/home/opc/codequal/packages/agents/test-v9-e2e-complete.ts:850:25)\n"
+    },
+    {
+      "framework": "Micronaut Core",
+      "status": "FAILED",
+      "duration": 497.203,
+      "error": "Command failed: timeout 1500 npx ts-node /home/opc/codequal/packages/agents/test-v9-e2e-complete.ts\nCloning into '/tmp/micronaut-core-repo'...\nFrom https://github.com/micronaut-projects/micronaut-core\n * [new ref]               refs/pull/10950/head -> pr-10950\n❌ Test failed: TypeError: representative.fixSuggestion.correctedCode.trim is not a function\n    at V9GroupedReportFormatter.generateGroupSection (/home/opc/codequal/packages/agents/src/two-branch/analyzers/v9-grouped-report-formatter.ts:3027:118)\n    at processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async V9GroupedReportFormatter.generateGroupedReport (/home/opc/codequal/packages/agents/src/two-branch/analyzers/v9-grouped-report-formatter.ts:457:23)\n    at async runV9CompleteE2E (/home/opc/codequal/packages/agents/test-v9-e2e-complete.ts:850:25)\n"
+    },
+    {
+      "framework": "Apache Kafka",
+      "status": "SUCCESS",
+      "duration": 1230.481,
+      "reportPath": "/home/opc/codequal/reports/v9-apache-kafka-pr20515.md"
+    },
+    {
+      "framework": "WebGoat",
+      "status": "SUCCESS",
+      "duration": 233.93,
+      "reportPath": "/home/opc/codequal/reports/v9-webgoat-pr1950.md"
+    }
+  ]
+}

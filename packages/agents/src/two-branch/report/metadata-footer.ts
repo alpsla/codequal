@@ -1,0 +1,462 @@
+/**
+ * Metadata and Footer Generation Service
+ * 
+ * Handles generation of analysis metadata, PR comments, and report footers.
+ * Extracted from v9-grouped-report-formatter.ts for better modularity.
+ */
+
+import { EnrichedIssue } from './types';
+import { IssueGroup } from '../utils/issue-grouping';
+
+// IDEFixFile is defined in the main formatter file
+// This is just a helper type for the generateFooter function
+interface IDEFixFileContent {
+  severity: string;
+  rule?: string;
+  tool?: string;
+  locations?: any[];
+  metadata?: {
+    total_occurrences?: number;
+  };
+}
+
+export interface IDEFixFile {
+  filename: string;
+  groupId: string;
+  content: IDEFixFileContent;
+}
+
+/**
+ * Check if a group can be auto-fixed by IDE tools
+ */
+function canAutoFix(group: IssueGroup | { rule: string; tool: string; severity: string }): boolean {
+  const autoFixableRules = [
+    'SystemPrintln',
+    'GuardLogStatement',
+    'LineLength',
+    'WhitespaceAround',
+    'WhitespaceAfter',
+    'AvoidStarImport',
+    'UnusedImports',
+    'RedundantImport',
+    'SimplifyBooleanReturns',
+    'SimplifyBooleanExpressions',
+    'ForLoopCanBeForeach',
+    'UseStringBufferForStringAppends',
+    'ConsecutiveLiteralAppends',
+    'MissingJavadocMethod',
+    'MissingJavadocType'
+  ];
+  
+  return autoFixableRules.includes(group.rule) || 
+         (group.tool === 'checkstyle' && group.rule.toLowerCase().includes('whitespace'));
+}
+
+/**
+ * Generate analysis metadata section
+ * Includes coverage, agent/tool performance, and system information
+ */
+export function generateAnalysisMetadata(
+  metadata: any,
+  showAgentPerformance = true,
+  showToolPerformance = true,
+  showEfficiencyAnalysis = true,
+  showSystemInfo = true
+): string {
+  const totalDuration = Math.max(metadata.totalDuration || metadata.analysisTime || 0, 0);
+  const cloneTime = Math.max(metadata.cloneTime || 0, 0);
+  const analysisTime = Math.max(metadata.analysisTime || 0, 0);
+  const reportTime = Math.max(metadata.reportGenerationTime || 0, 0);
+  
+  const cachedNote = (cloneTime === 0) ? ' (cached)' : '';
+  // BUG FIX #17: Removed duplicate "Performance Metrics" section (already shown at top of report)
+  let content = `## 📊 Analysis Metadata
+
+### Analysis Coverage
+| Metric | Value |
+|--------|-------|
+| Total Repository Files | ${(metadata.totalFiles || 0).toLocaleString()} |
+| Lines of Code | ${(metadata.totalLinesOfCode || 0).toLocaleString()} |
+| Files Modified | ${Math.min(metadata.filesModified || 0, metadata.totalFiles || (metadata.filesModified || 0))} |
+| Note | Files Modified is clamped to Total Repository Files to avoid overcount (renames/moves) |
+| Lines Changed | ${(metadata.linesAdded || 0) + (metadata.linesDeleted || 0)} (+${metadata.linesAdded || 0}/-${metadata.linesDeleted || 0}) |
+`;
+
+  // Add Agent Performance if available (optional)
+  if (showAgentPerformance && metadata.agentPerformance && Array.isArray(metadata.agentPerformance) && metadata.agentPerformance.length > 0) {
+    content += `\n### Agent Performance
+| Agent | Files Analyzed | Issues Found | Time | Cost |
+|-------|----------------|--------------|------|------|
+`;
+    metadata.agentPerformance.forEach((agent: any) => {
+      const issues = agent.issuesFound || agent.issues || 0;
+      const time = agent.duration ? (agent.duration / 1000).toFixed(1) + 's' : 'N/A';
+      const cost = agent.cost ? '$' + agent.cost.toFixed(4) : (issues === 0 ? 'N/A' : '$0.0000');
+      content += `| ${agent.name || agent.agent} | ${agent.filesAnalyzed || agent.files || 'N/A'} | ${issues} | ${time} | ${cost} |\n`;
+    });
+  }
+
+  // Add Tool Performance if available (optional)
+  if (showToolPerformance && metadata.toolPerformance && Array.isArray(metadata.toolPerformance) && metadata.toolPerformance.length > 0) {
+    content += `\n### Tool Performance
+| Tool | Files Scanned | Issues Found | Duration |
+|------|---------------|--------------|----------|
+`;
+    metadata.toolPerformance.forEach((tool: any) => {
+      const duration = tool.duration ? (tool.duration / 1000).toFixed(1) + 's' : 'N/A';
+      content += `| ${tool.tool || tool.name} | ${tool.filesScanned || tool.files || 'N/A'} | ${tool.issuesFound || tool.issues || 0} | ${duration} |\n`;
+    });
+  }
+
+  // Add Cost & Efficiency Analysis (optional)
+  if (showEfficiencyAnalysis && metadata.agentPerformance && Array.isArray(metadata.agentPerformance) && metadata.agentPerformance.length > 0) {
+    content += `\n### Cost & Efficiency Analysis
+`;
+    
+    // Calculate totals
+    const totalCost = metadata.agentPerformance.reduce((sum: number, agent: any) => sum + (agent.cost || 0), 0);
+    const totalIssues = metadata.agentPerformance.reduce((sum: number, agent: any) => sum + (agent.issuesFound || agent.issues || 0), 0);
+    const totalTime = metadata.agentPerformance.reduce((sum: number, agent: any) => sum + (agent.duration || 0), 0);
+    
+    content += `\n**Overall Efficiency:**\n`;
+    content += `- Total Cost: $${totalCost.toFixed(4)}\n`;
+    content += `- Cost per Issue: $${totalIssues > 0 ? (totalCost / totalIssues).toFixed(6) : '0.000000'}\n`;
+    content += `- Issues per Second: ${totalTime > 0 ? ((totalIssues / totalTime) * 1000).toFixed(2) : '0.00'}\n`;
+    content += `- Cost per Second: $${totalTime > 0 ? ((totalCost / totalTime) * 1000).toFixed(6) : '0.000000'}/s\n\n`;
+    
+    // Performance recommendations
+    content += `**Agent Efficiency Ranking:**\n\n`;
+    const agentEfficiency = metadata.agentPerformance
+      .map((agent: any) => {
+        const issues = agent.issuesFound || agent.issues || 0;
+        const cost = agent.cost || 0;
+        const time = agent.duration || 1;
+        const costPerIssue = issues > 0 ? cost / issues : Number.POSITIVE_INFINITY;
+        const issuesPerSec = (issues / time) * 1000;
+        return {
+          name: agent.name || agent.agent,
+          issues,
+          cost,
+          costPerIssue,
+          issuesPerSec,
+          efficiency: issues > 0 ? (issues / (cost * 1000 + 1)) : 0 // Issues per $1000 spent
+        };
+      })
+      .sort((a: any, b: any) => b.efficiency - a.efficiency);
+    
+    agentEfficiency.forEach((agent: any, idx: number) => {
+      const rank = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}.`;
+      const badge = !isFinite(agent.costPerIssue)
+        ? 'N/A'
+        : agent.costPerIssue < 0.001 ? '⚡ Excellent'
+        : agent.costPerIssue < 0.01 ? '✅ Good'
+        : agent.costPerIssue < 0.1 ? '⚠️ Average' : '🔴 Expensive';
+      const costPerIssueStr = isFinite(agent.costPerIssue) ? `$${agent.costPerIssue.toFixed(6)}/issue` : 'N/A cost/issue';
+      content += `${rank} **${agent.name}**: ${agent.issues} issues @ ${costPerIssueStr} ${badge}\n`;
+    });
+    
+    // Replacement recommendations
+    const expensiveAgents = agentEfficiency.filter((a: any) => a.costPerIssue > 0.05);
+    if (expensiveAgents.length > 0) {
+      content += `\n**💡 Optimization Opportunities:**\n`;
+      expensiveAgents.forEach((agent: any) => {
+        content += `- Consider optimizing **${agent.name}** (high cost/issue: $${agent.costPerIssue.toFixed(4)})\n`;
+      });
+    }
+  }
+  
+  // Add Tool Efficiency Analysis
+  if (metadata.toolPerformance && Array.isArray(metadata.toolPerformance) && metadata.toolPerformance.length > 0) {
+    content += `\n### Tool Efficiency Analysis
+`;
+    
+    const toolEfficiency = metadata.toolPerformance
+      .map((tool: any) => {
+        const issues = tool.issuesFound || tool.issues || 0;
+        const time = tool.duration || 1;
+        const issuesPerSec = (issues / time) * 1000;
+        return {
+          name: tool.tool || tool.name,
+          issues,
+          time,
+          issuesPerSec,
+          efficiency: issuesPerSec
+        };
+      })
+      .sort((a: any, b: any) => b.efficiency - a.efficiency);
+    
+    content += `\n**Tool Performance Ranking:**\n\n`;
+    toolEfficiency.forEach((tool: any, idx: number) => {
+      const rank = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}.`;
+      const speed = tool.issuesPerSec > 10 ? '⚡ Fast' : 
+                   tool.issuesPerSec > 1 ? '✅ Good' : 
+                   tool.issuesPerSec > 0.1 ? '⚠️ Slow' : '🐌 Very Slow';
+      content += `${rank} **${tool.name}**: ${tool.issues} issues in ${(tool.time / 1000).toFixed(1)}s (${tool.issuesPerSec.toFixed(2)}/s) ${speed}\n`;
+    });
+    
+    // BUG FIX #18: Removed "Performance Concerns" section
+    // Can't compare tools with different purposes (CheckStyle finds 498K style issues, Semgrep finds 11 security issues)
+    // Each tool has its own nature - execution time varies by codebase size and tool purpose
+  }
+
+  // Add Models Used if available
+  if (metadata.modelsUsed && (Array.isArray(metadata.modelsUsed) || typeof metadata.modelsUsed === 'object')) {
+    content += `\n### Models Used
+`;
+    if (Array.isArray(metadata.modelsUsed)) {
+      metadata.modelsUsed.forEach((model: any) => {
+        content += `- **${model.agent || model.role}:** ${model.model || model.modelName || 'default'}\n`;
+      });
+    } else {
+      // Object format: { SecurityAnalyzer: 'claude-opus-4', ... }
+      Object.entries(metadata.modelsUsed).forEach(([agent, model]) => {
+        content += `- **${agent}:** ${model}\n`;
+      });
+    }
+  }
+
+  if (showSystemInfo) {
+    content += `\n### System Information
+- **Analyzer Version:** ${metadata.analyzerVersion || 'V9 Grouped Report Formatter'}
+- **Analysis Date:** ${metadata.analyzedAt ? new Date(metadata.analyzedAt).toLocaleString() : new Date().toLocaleString()}
+- **Report Format:** Grouped (Compact with 99.8% cost reduction)
+- **Issue Grouping:** ${metadata.totalGroups || 'Enabled'} unique issue types`;
+  }
+  
+  return content;
+}
+
+/**
+ * Get personalized greeting based on time of day
+ */
+function getPersonalizedGreeting(author?: string): string {
+  if (!author) return 'Hello';
+  
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 18) return 'Good afternoon';
+  return 'Good evening';
+}
+
+/**
+ * Get personalized encouragement based on issue counts
+ */
+function getPersonalizedEncouragement(blockingCount: number, resolvedCount: number): string {
+  if (resolvedCount > 10) {
+    return `🎉 Excellent work! You've resolved ${resolvedCount} existing issues. ${blockingCount === 0 ? 'And no new blocking issues!' : `Just ${blockingCount} items to address before merge.`}`;
+  } else if (blockingCount === 0) {
+    return `✅ Great job! No blocking issues found. ${resolvedCount > 0 ? `Plus you resolved ${resolvedCount} issues!` : 'Clean PR!'}`;
+  } else if (blockingCount === 1) {
+    return `Just one small issue to fix before we can merge. You've got this! 💪`;
+  } else if (blockingCount <= 3) {
+    return `Found a few items that need attention before merge. Nothing major! 👍`;
+  } else {
+    return `There are ${blockingCount} issues that need to be addressed. I've provided detailed fix suggestions for each. Let me know if you need any help! 🚀`;
+  }
+}
+
+/**
+ * Generate PR comment template
+ * Creates a ready-to-paste comment for pull requests
+ */
+export function generatePRComment(issues: EnrichedIssue[], groups: IssueGroup[], metadata: any): string {
+  const blocking = issues.filter(i => 
+    (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED') && 
+    (i.severity === 'critical' || i.severity === 'high')
+  );
+  const resolved = issues.filter(i => i.category === 'RESOLVED');
+  
+  const emoji = metadata.decision === 'APPROVED' ? '✅' : '⛔';
+  const decision = metadata.decision || 'PENDING';
+  
+  const greeting = getPersonalizedGreeting(metadata.prAuthor);
+  const encouragement = getPersonalizedEncouragement(blocking.length, resolved.length);
+  
+  return `## 💬 PR Comment Template
+
+**Ready-to-paste comment for your pull request:**
+
+\`\`\`markdown
+## ${emoji} Code Quality Analysis: ${decision}
+
+${greeting} @${metadata.prAuthor || 'developer'}! I've completed a comprehensive analysis of your PR.
+
+${encouragement}
+
+### Summary
+- **Total Issues:** ${issues.length} (${groups.length} unique types)
+- **Blocking Issues:** ${blocking.length} ${blocking.length > 0 ? '⛔' : '✅'}
+- **Resolved Issues:** ${resolved.length} ${resolved.length > 0 ? '🎉' : ''}
+- **Analysis Time:** ${((metadata.analysisTime || 0) / 1000).toFixed(1)}s
+
+${blocking.length > 0 ? `### ⛔ Blocking Issues
+Please fix these before merge:
+${blocking.slice(0, 5).map(i => `- **${i.rule}** in \`${i.file}\`${i.line ? `:${i.line}` : ''}`).join('\n')}
+${blocking.length > 5 ? `\n... and ${blocking.length - 5} more` : ''}` : '### ✅ No Blocking Issues\nThis PR can be merged once approved by reviewers.'}
+
+### 💡 Quick Stats
+- Auto-fixable: ${issues.filter(i => canAutoFix({ rule: i.rule, tool: i.tool, severity: i.severity } as any)).length}/${issues.length} issues (${groups.filter(g => canAutoFix(g)).length}/${groups.length} types)
+- Critical: ${issues.filter(i => i.severity === 'critical').length}
+- High: ${issues.filter(i => i.severity === 'high').length}
+- Medium: ${issues.filter(i => i.severity === 'medium').length}
+- Low: ${issues.filter(i => i.severity === 'low').length}
+\`\`\`
+
+> 💡 **Tip**: Copy the markdown above and paste it as a comment on your pull request.`;
+}
+
+/**
+ * Generate footer with IDE integration instructions
+ * Includes lazy loading architecture explanation
+ */
+export function generateFooter(groups: IssueGroup[], ideFixFiles: IDEFixFile[]): string {
+  // BUG FIX #48, #49, #70: Updated footer for Bug #34 lazy loading architecture
+  // ENHANCEMENT #3: Removed Issue Groups Mapping (not useful for end users)
+  // BUG FIX #70: Don't show empty "Attachments" header - combine with IDE Fix Files section
+  let footer = '';
+  
+  if (ideFixFiles.length > 0) {
+    footer += `## 🔗 Attachments\n\n`;
+    footer += `### 🛠️ IDE Fix Files (Lazy Loading)\n\n`;
+    
+    // BUG FIX #48: Explain Bug #34 lazy loading architecture
+    footer += `**🚀 Instant-start IDE integration** with lazy loading:\n\n`;
+    footer += `📦 **1 manifest file** to load in your IDE:\n`;
+    footer += `- [all-issues-manifest.json](attachments/all-issues-manifest.json) - **Load this file first!**\n\n`;
+    footer += `**What you get**:\n`;
+    footer += `- ✅ **Critical issues** embedded (instant access, zero wait time)\n`;
+    footer += `- ⬇️  **High/Medium/Low issues** lazy loaded in background\n`;
+    footer += `- 🎯 **Priority-based download** (critical → high → medium → low)\n`;
+    footer += `- 📊 **Progress tracking** while you fix issues\n\n`;
+    
+    // BUG FIX: Filter out manifest file (groupId='all-issues') and use optional chaining
+    const issueFiles = ideFixFiles.filter(f => f.groupId !== 'all-issues');
+    const totalFixable = issueFiles.reduce((sum, f) => sum + (f.content.metadata?.total_occurrences || 0), 0);
+    const criticalCount = issueFiles.filter(f => f.content.severity === 'critical').reduce((sum, f) => sum + (f.content.metadata?.total_occurrences || 0), 0);
+    const highCount = issueFiles.filter(f => f.content.severity === 'high').reduce((sum, f) => sum + (f.content.metadata?.total_occurrences || 0), 0);
+    const mediumCount = issueFiles.filter(f => f.content.severity === 'medium').reduce((sum, f) => sum + (f.content.metadata?.total_occurrences || 0), 0);
+    const lowCount = issueFiles.filter(f => f.content.severity === 'low').reduce((sum, f) => sum + (f.content.metadata?.total_occurrences || 0), 0);
+    
+    footer += `**Total auto-fixable issues**: ${totalFixable.toLocaleString()}\n`;
+    footer += `- 🔴 Critical: ${criticalCount} (embedded, instant access)\n`;
+    if (highCount > 0) footer += `- 🟠 High: ${highCount} (lazy loaded after critical)\n`;
+    if (mediumCount > 0) footer += `- 🟡 Medium: ${mediumCount} (lazy loaded after high)\n`;
+    if (lowCount > 0) footer += `- 🟢 Low: ${lowCount} (lazy loaded after medium)\n`;
+    
+    // ENHANCEMENT #4: Universal IDE instructions with prompt examples
+    footer += `\n**How to use** (Universal IDE Integration):\n\n`;
+    footer += `**For Any IDE** (Cursor, VS Code, IntelliJ, Windsurf, etc.):\n\n`;
+    
+    footer += `**Step 1: Load the Manifest**\n`;
+    footer += `1. Download \`all-issues-manifest.json\` from \`attachments/\` directory\n`;
+    footer += `2. Open your IDE\n`;
+    footer += `3. Load/import the JSON file (method varies by IDE)\n\n`;
+    
+    footer += `**Step 2: Fix Issues with Single Command**\n\n`;
+    footer += `**Simple prompt** (one command does everything):\n`;
+    footer += `\`\`\`\n`;
+    footer += `👤 You: "Create a todo list and fix all issues divided by severity groups,\n`;
+    footer += `        starting from critical and ending with low, with constant progress updates"\n\n`;
+    footer += `🤖 IDE: [Creates structured todo list]\n`;
+    footer += `        ✅ Critical issues (${criticalCount}) - Starting...\n`;
+    if (highCount > 0) {
+      footer += `        ⏳ High issues (${highCount}) - Waiting...\n`;
+    }
+    if (mediumCount > 0) {
+      footer += `        ⏳ Medium issues (${mediumCount.toLocaleString()}) - Waiting...\n`;
+    }
+    if (lowCount > 0) {
+      footer += `        ⏳ Low issues (${lowCount.toLocaleString()}) - Waiting...\n`;
+    }
+    footer += `\n`;
+    footer += `        [Applies fixes with real-time progress]\n`;
+    footer += `        ✅ Critical: 2/2 fixed (100%)\n`;
+    if (highCount > 0) {
+      footer += `        🔄 High: 5/${highCount} fixed (${Math.round((5/highCount)*100)}%)...\n`;
+    }
+    footer += `        ⏳ Medium: Waiting for high to complete...\n`;
+    footer += `\`\`\`\n\n`;
+    footer += `**That's it!** The IDE handles everything:\n`;
+    footer += `- Loads the manifest automatically\n`;
+    footer += `- Creates a prioritized todo list\n`;
+    footer += `- Fixes issues in severity order (critical → high → medium → low)\n`;
+    footer += `- Shows live progress updates\n`;
+    footer += `- Downloads next priority issues in background\n\n`;
+    
+    // BUG FIX #64: Updated validation workflow (CodeQual re-scan, not IDE)
+    footer += `**Step 3: Validate Your Fixes with CodeQual**\n\n`;
+    footer += `After committing your fixes, CodeQual will automatically re-analyze your PR to confirm the issues are resolved:\n\n`;
+    footer += `\`\`\`bash\n`;
+    footer += `# Commit your fixes\n`;
+    footer += `git add .\n`;
+    footer += `git commit -m "fix: resolve ${criticalCount + highCount} security issues"\n\n`;
+    footer += `# Push to PR branch\n`;
+    footer += `git push origin your-branch\n\n`;
+    footer += `# CodeQual automatically triggers:\n`;
+    footer += `🤖 CodeQual: [Running analysis on new commit...]\n`;
+    footer += `             ✅ Before: ${criticalCount} critical, ${highCount} high\n`;
+    footer += `             ✅ After:  0 critical, 0 high\n`;
+    footer += `             🎉 All blockers resolved! PR approved.\n`;
+    footer += `\`\`\`\n\n`;
+    footer += `**Why CodeQual re-scan?**\n`;
+    footer += `- ✅ Automated validation on every commit\n`;
+    footer += `- 📊 Compare before/after results objectively\n`;
+    footer += `- 🎯 Catch any regressions or incomplete fixes\n`;
+    footer += `- 🏆 Earn "First Clean PR" achievement\n\n`;
+    
+    footer += `**Why this works**:\n`;
+    footer += `- ⚡ **Zero wait time** - critical issues embedded for instant access\n`;
+    footer += `- 🎯 **Priority-first** - most important issues available immediately\n`;
+    footer += `- 📦 **Efficient** - high/medium/low issues lazy-loaded in background\n`;
+    footer += `- 🤖 **Universal format** - works with any AI-powered IDE\n`;
+    footer += `- 🛡️  **Human-in-the-loop** - you review before applying for safety\n`;
+    footer += `- 🔄 **Validation workflow** - automated before/after comparison\n`;
+  }
+  
+  footer += `\n---\n\n`;
+  footer += `*Generated by CodeQual V9 - Grouped Report Format (Bug #34 Lazy Loading)*  \n`;
+  footer += `*${new Date().toISOString()}*`;
+  
+  return footer;
+}
+
+/**
+ * Helper: Group issues by severity
+ */
+export function groupBySeverity(issues: EnrichedIssue[]): Record<string, number> {
+  return {
+    critical: issues.filter(i => i.severity === 'critical').length,
+    high: issues.filter(i => i.severity === 'high').length,
+    medium: issues.filter(i => i.severity === 'medium').length,
+    low: issues.filter(i => i.severity === 'low').length
+  };
+}
+
+/**
+ * Helper: Group issues by category
+ */
+export function groupByCategory(issues: EnrichedIssue[]): Record<string, number> {
+  const result: Record<string, number> = {
+    'NEW': 0,
+    'EXISTING_MODIFIED': 0,
+    'RESOLVED': 0,
+    'EXISTING_REST': 0
+  };
+  issues.forEach(issue => {
+    const cat = issue.category || 'unknown';
+    result[cat] = (result[cat] || 0) + 1;
+  });
+  return result;
+}
+
+/**
+ * Helper: Group issues by tool
+ */
+export function groupByTool(issues: EnrichedIssue[]): Record<string, number> {
+  const result: Record<string, number> = {};
+  issues.forEach(issue => {
+    result[issue.tool] = (result[issue.tool] || 0) + 1;
+  });
+  return result;
+}
+

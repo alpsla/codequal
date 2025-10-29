@@ -94,3 +94,6 @@ async function checkSupabaseModels() {
 checkSupabaseModels().catch(console.error);
 
 
+
+
+

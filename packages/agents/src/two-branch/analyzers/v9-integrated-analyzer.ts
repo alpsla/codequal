@@ -14,6 +14,7 @@ import { getResilientAIClient } from '../services/resilient-ai-client';
 import { ModelConfigResolver } from '../../standard/orchestrator/model-config-resolver'; // BUG-119 FIX
 import { RepositorySizeCalculator } from '../utils/repository-size-calculator'; // BUG-119 FIX
 import { groupIssues } from '../utils/issue-grouping';  // Phase B+C: Issue grouping
+import { compileV9Report } from '../services/v9-report-compiler';  // DELEGATION: Extract 608-line compileReport method
 import { execSync } from 'node:child_process';
 import * as fs from 'node:fs';
 
@@ -382,571 +383,77 @@ and actionable recommendations. Focus on business value and team productivity.`;
    * Compile comprehensive report
    */
   private async compileReport(data: any): Promise<any> {
-    const mainIssues = data.mainOutputs.flatMap(o => o.parsedIssues || []);
-    const prIssues = data.prOutputs.flatMap(o => o.parsedIssues || []);
-
-    // Helper function to format issues for V9ReportFormatterFinal
-    const formatIssue = async (issue: any, status?: string) => {
-      const formattedIssue = {
-        id: `${issue.tool}-${issue.file}-${issue.line}`,
-        category: this.getIssueCategory(issue),
-        severity: issue.severity || 'medium',
-        status: status || 'existing',
-        title: issue.message || 'Code quality issue',
-        description: issue.message || 'Issue detected by static analysis',
-        file: issue.file || 'unknown',
-        line: issue.line || 0,
-        tool: issue.tool || 'unknown',
-        agent: 'V9IntegratedAnalyzer',
-        impact: 'Code quality impact',
-        businessImpact: 'Potential technical debt',
-        codeSnippet: undefined as string | undefined,
-        suggestedFix: undefined as string | undefined,
-        suggestedCodeSnippet: undefined as string | undefined,
-        inModifiedFile: false
-      };
-
-      // Use tool-provided suggestions first, then enhance with agent intelligence
-      if (issue.file && issue.line) {
-        // Check if tool already provided code snippet and fix
-        if (issue.codeSnippet) {
-          formattedIssue.codeSnippet = issue.codeSnippet;
-        } else {
-          // Generate code snippet if not provided by tool
-          const fileExt = issue.file.split('.').pop();
-          if (fileExt === 'java') {
-            formattedIssue.codeSnippet = this.generateJavaCodeSnippet(issue);
-          }
-        }
-
-        // Use tool's suggestion or enhance with agent intelligence
-        if (issue.suggestedFix) {
-          formattedIssue.suggestedFix = issue.suggestedFix;
-          formattedIssue.suggestedCodeSnippet = issue.suggestedCodeSnippet;
-        } else {
-          // Agent enhances with best practices if tool didn't provide fix
-          const suggestion = await this.generateEnhancedFixSuggestion(issue);
-          formattedIssue.suggestedFix = suggestion.fix;
-          formattedIssue.suggestedCodeSnippet = suggestion.code;
-        }
-      }
-
-      return formattedIssue;
-    };
-
-    // FIXED: More realistic categorization
-    // In real scenarios, most issues are existing (found in both branches)
-    // Only a small portion are new (introduced in PR) or resolved (fixed in PR)
+    // ==============================================================================
+    // DELEGATED TO: src/two-branch/services/v9-report-compiler.ts (451 lines)
+    // Before delegation: 598 lines in this method
+    // After delegation: ~100 lines (wrapper + result adaptation)
+    // ==============================================================================
     
-    // For simulation: assume 70% of PR issues also exist in main (existing)
-    // 20% are new (only in PR), 10% from main are resolved (only in main)
-    const simulatedMainIssues = mainIssues.length > 10 ? mainIssues : 
-      prIssues.slice(0, Math.floor(prIssues.length * 0.7)); // Simulate 70% overlap
-
-    const newIssues = prIssues.filter(pr =>
-      !simulatedMainIssues.some(main => 
-        main.file === pr.file && 
-        main.line === pr.line && 
-        main.message === pr.message)
-    );
-    
-    const resolvedIssues = simulatedMainIssues.filter(main =>
-      !prIssues.some(pr => 
-        pr.file === main.file && 
-        pr.line === main.line && 
-        pr.message === main.message)
-    ).slice(0, 5); // Limit resolved issues for realism
-    
-    const existingIssues = prIssues.filter(pr =>
-      simulatedMainIssues.some(main => 
-        main.file === pr.file && 
-        main.line === pr.line && 
-        main.message === pr.message)
-    );
-    
-    const blockingIssues = prIssues.filter(i => i.severity === 'critical' || i.severity === 'high');
-    const backlogIssues = prIssues.filter(i => i.severity === 'medium' || i.severity === 'low');
-
-    console.log(`[V9] Issue categorization: ${newIssues.length} new, ${existingIssues.length} existing, ${resolvedIssues.length} resolved`);
-    console.log(`[V9] Processing ${prIssues.length} issues with parallel agent fix generation...`);
-    const startTime = Date.now();
-
-    // Track agent usage for metadata
-    const agentMetrics = new Map<string, any>();
-    const toolMetrics = new Map<string, any>();
-
-    // Process all issues in parallel for maximum performance
-    const allIssuesToProcess = [
-      ...newIssues.map(i => ({ issue: i, status: 'new' })),
-      ...existingIssues.map(i => ({ issue: i, status: 'existing' })),
-      ...resolvedIssues.map(i => ({ issue: i, status: 'resolved' })),
-      ...blockingIssues.map(i => ({ issue: i, status: 'blocking' })),
-      ...backlogIssues.map(i => ({ issue: i, status: 'backlog' }))
-    ];
-
-    // Remove duplicates based on issue id
-    const uniqueIssuesMap = new Map();
-    allIssuesToProcess.forEach(item => {
-      const key = `${item.issue.tool}-${item.issue.file}-${item.issue.line}`;
-      if (!uniqueIssuesMap.has(key)) {
-        uniqueIssuesMap.set(key, item);
-      }
-    });
-
-    // Process all unique issues in parallel
-    const uniqueIssuesToProcess = Array.from(uniqueIssuesMap.values());
-    console.log(`[V9] Processing ${uniqueIssuesToProcess.length} unique issues in parallel...`);
-
-    const processedIssuesMap = new Map();
-    const batchSize = 10; // Process in batches to avoid overwhelming the API
-    
-    for (let i = 0; i < uniqueIssuesToProcess.length; i += batchSize) {
-      const batch = uniqueIssuesToProcess.slice(i, Math.min(i + batchSize, uniqueIssuesToProcess.length));
-      const batchStartTime = Date.now();
-      
-      const batchResults = await Promise.all(
-        batch.map(async item => {
-          const agentStartTime = Date.now();
-          const formatted = await formatIssue(item.issue, item.status);
-          
-          // Track agent metrics
-          const agentType = this.getAgentType(item.issue.type || item.issue.category);
-          if (!agentMetrics.has(agentType)) {
-            agentMetrics.set(agentType, {
-              agentName: agentType,
-              issuesProcessed: 0,
-              totalTime: 0,
-              modelUsed: undefined,
-              tokensUsed: 0,
-              cost: 0
-            });
-          }
-          const metrics = agentMetrics.get(agentType);
-          metrics.issuesProcessed++;
-          metrics.totalTime += Date.now() - agentStartTime;
-          metrics.tokensUsed += 500; // Estimate
-          metrics.cost += 0.001; // Estimate
-          if (!metrics.modelUsed) {
-            try {
-              const role = this.mapAgentToRole(agentType);
-              const cfg = await this.modelConfigResolver.getModelConfiguration(
-                role,
-                this.detectedLanguage,
-                this.detectedRepoSize
-              );
-              metrics.modelUsed = { provider: cfg.primary_provider, model: cfg.primary_model, temperature: 0.3 };
-            } catch {
-              // leave undefined if resolver fails under strict mode
-            }
-          }
-          
-          // Track tool metrics
-          const tool = item.issue.tool || 'unknown';
-          if (!toolMetrics.has(tool)) {
-            toolMetrics.set(tool, {
-              toolName: tool,
-              issuesFound: 0,
-              criticalCount: 0,
-              highCount: 0,
-              mediumCount: 0,
-              lowCount: 0
-            });
-          }
-          const toolMetric = toolMetrics.get(tool);
-          toolMetric.issuesFound++;
-          
-          // Count by severity
-          switch(item.issue.severity) {
-            case 'critical': toolMetric.criticalCount++; break;
-            case 'high': toolMetric.highCount++; break;
-            case 'medium': toolMetric.mediumCount++; break;
-            case 'low': toolMetric.lowCount++; break;
-          }
-          
-          const key = `${item.issue.tool}-${item.issue.file}-${item.issue.line}`;
-          return { key, formatted };
-        })
-      );
-      
-      batchResults.forEach(({ key, formatted }) => {
-        processedIssuesMap.set(key, formatted);
-      });
-      
-      const batchTime = Date.now() - batchStartTime;
-      console.log(`[V9] Processed batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(uniqueIssuesToProcess.length / batchSize)} in ${batchTime}ms`);
-    }
-
-    const processingTime = Date.now() - startTime;
-    console.log(`[V9] Fix generation completed in ${(processingTime / 1000).toFixed(2)}s`);
-
-    // Build categorized arrays from processed issues
-    const formattedNewIssues = newIssues.map(i => {
-      const key = `${i.tool}-${i.file}-${i.line}`;
-      return processedIssuesMap.get(key) || formatIssue(i, 'new');
-    });
-
-    const formattedExistingIssues = existingIssues.map(i => {
-      const key = `${i.tool}-${i.file}-${i.line}`;
-      return processedIssuesMap.get(key) || formatIssue(i, 'existing');
-    });
-
-    const formattedResolvedIssues = resolvedIssues.map(i => {
-      const key = `${i.tool}-${i.file}-${i.line}`;
-      return processedIssuesMap.get(key) || formatIssue(i, 'resolved');
-    });
-
-    const formattedBlockingIssues = blockingIssues.map(i => {
-      const key = `${i.tool}-${i.file}-${i.line}`;
-      return processedIssuesMap.get(key) || formatIssue(i, 'blocking');
-    });
-
-    const formattedBacklogIssues = backlogIssues.map(i => {
-      const key = `${i.tool}-${i.file}-${i.line}`;
-      return processedIssuesMap.get(key) || formatIssue(i, 'backlog');
-    });
-
-    // Calculate category scores for Risk Matrix Impact column
-    const categoryScores: Record<string, number> = {};
-    const categories = ['Security', 'Performance', 'Architecture', 'Dependency', 'Quality'];
-    categories.forEach(category => {
-      const categoryIssues = prIssues.filter(i =>
-        this.getIssueCategory(i).toLowerCase().includes(category.toLowerCase())
-      );
-      categoryScores[category] = Math.max(0, 100 - (categoryIssues.length * 2));
-    });
-
-    // Calculate quality score (needed for skill tracking)
-    const qualityScore = Math.max(0, 100 - (prIssues.length * 2));
-
-    // Calculate skill score with database persistence
-    const skillScore = await this.calculateAndSaveSkillScore(
-      data.repository,
-      data.prNumber,
-      data.prAuthor || 'unknown@example.com',
-      newIssues,
-      resolvedIssues,
-      existingIssues,
-      prIssues,
-      data.language,
-      processingTime,
-      qualityScore
-    );
-
-    // Prepare AnalysisResult in the format expected by V9ReportFormatterFinal
-    const analysisResult: any = {
-      decision: prIssues.filter(i => i.severity === 'critical').length > 0 ? 'DECLINED' : 'APPROVED',
-      confidence: 0.85,
-      reason: prIssues.filter(i => i.severity === 'critical').length > 0
-        ? 'Critical issues found that must be addressed'
-        : 'No blocking issues found',
-      qualityScore,
-      grade: prIssues.length === 0 ? 'A' : prIssues.length < 10 ? 'B' : prIssues.length < 30 ? 'C' : 'D',
-
-      // Categorized issues - properly formatted with all required fields
-      newIssues: formattedNewIssues,
-      existingIssues: formattedExistingIssues,
-      resolvedIssues: formattedResolvedIssues,
-      blockingIssues: formattedBlockingIssues,
-      backlogIssues: formattedBacklogIssues,
-
-      modifiedFiles: [...new Set(prIssues.map(i => i.file))],
-
-      // NEW: Category-specific scores for Risk Matrix Impact
-      categoryScores,
-
-      // Business impact
-      businessImpact: {
-        summary: data.aiInsights.businessImpact || 'Moderate impact on code quality',
-        immediateRisk: 'Low to moderate',
-        futureRisk: 'Technical debt accumulation',
-        financialImpact: {
-          fixCost: data.aiInsights.estimatedEffort || '2-4 hours',
-          exploitCost: 'N/A',
-          roi: 'High - preventive maintenance'
-        },
-        riskMatrix: [
-          { category: 'Security', blockingRisk: 0, backlogRisk: 2, score: 'Low' },
-          { category: 'Performance', blockingRisk: 0, backlogRisk: 30, score: 'Medium' },
-          { category: 'Quality', blockingRisk: 0, backlogRisk: 36, score: 'Medium' }
-        ]
-      },
-
-      // Skill tracking - Real calculation with database persistence
-      skillScore,
-
-      metadata: {
+    // Delegate report compilation to extracted service
+    const result = await compileV9Report(
+      {
         repository: data.repository,
         prNumber: data.prNumber,
-        branch: 'pr-branch',
+        prAuthor: data.prAuthor,
         language: data.language,
-        totalFiles: 100,
-        modifiedFiles: [...new Set(prIssues.map(i => i.file))].length,
-        analysisTime: data.executionTime,
-        tools: data.prOutputs.map(o => o.tool),
-        timestamp: new Date().toISOString(),
-        analyzedAt: new Date().toISOString(),
-        analyzer: 'V9IntegratedAnalyzer',
-        repoUrl: data.repository,
         executionTime: data.executionTime,
-        model: data.aiInsights.model,
-        fixGenerationTime: processingTime
-      }
-    };
-
-    // Build quick lookup for real tool durations from Redis outputs (ms)
-    const outputsByTool = new Map<string, any>();
-    (data.prOutputs || []).forEach((o: any) => outputsByTool.set(o.tool, o));
-
-    // Prepare CompleteMetadata with detailed agent and tool metrics
-    const completeMetadata: any = {
-      repository: data.repository.split('/').pop(),
-      repoUrl: data.repository,
-      prNumber: data.prNumber,
-      prTitle: `PR #${data.prNumber}`,
-      branch: 'pr-branch',
-      baseBranch: 'main',
-
-      prAuthor: 'Developer',
-      prAuthorEmail: 'dev@example.com',
-      repoOwner: data.repository.split('/')[3] || 'apache',
-      organizationName: data.repository.split('/')[3] || 'apache',
-
-      totalLinesOfCode: 10000,
-      linesAdded: 500,
-      linesDeleted: 200,
-      linesModified: 300,
-      filesModified: [...new Set(prIssues.map(i => i.file))].length,
-      totalFiles: 100,
-      languageBreakdown: { [data.language]: 100 },
-
-      totalDuration: data.executionTime,
-      cloneTime: 1000,
-      analysisTime: Math.max((data.executionTime || 0) - 2000, 1),
-      reportGenerationTime: 1000,
-      fixGenerationTime: processingTime,
-
-      // ENHANCED: Detailed per-agent metrics
-      agentsUsed: Array.from(agentMetrics.values()).map(agent => ({
-        agentName: agent.agentName,
-        executionTime: agent.totalTime,
-        issuesFound: agent.issuesProcessed,
-        filesAnalyzed: [...new Set(prIssues.filter(i => 
-          this.getAgentType(i.type || i.category) === agent.agentName
-        ).map(i => i.file))].length,
-        tokensUsed: agent.tokensUsed,
-        modelUsed: agent.modelUsed || { provider: 'unknown', model: 'unknown', temperature: 0.3 },
-        cost: agent.cost,
-        status: 'success'
-      })),
-
-      // ENHANCED: Detailed per-tool metrics (use real executionTime when available)
-      toolsUsed: Array.from(toolMetrics.values()).map(tool => {
-        const fromOutput = outputsByTool.get(tool.toolName);
-        const realDuration = fromOutput?.executionTime;
-        return {
-          toolName: tool.toolName,
-          executionTime: realDuration,
-          duration: realDuration, // for grouped formatter consumption
-          filesScanned: 100,
-          issuesFound: tool.issuesFound,
-          issueBreakdown: {
-            critical: tool.criticalCount,
-            high: tool.highCount,
-            medium: tool.mediumCount,
-            low: tool.lowCount
-          },
-          exitCode: fromOutput?.success === false ? 1 : 0,
-          stdout: fromOutput?.rawOutput ? undefined : `Found ${tool.issuesFound} issues`,
-          stderr: fromOutput?.error || ''
-        };
-      }),
-
-      // NEW: Option A - Raw tool results for enhanced reporting
-      toolResults: Array.from(toolMetrics.values()).map(tool => {
-        const fromOutput = outputsByTool.get(tool.toolName);
-        return {
-          tool: tool.toolName,
-          duration: fromOutput?.executionTime,
-          issues: prIssues.filter(i => i.tool === tool.toolName),
-          success: fromOutput?.success !== false,
-          filesScanned: 100,
-          exitCode: fromOutput?.success === false ? (fromOutput?.error ? 1 : 2) : 0
-        };
-      }),
-
-      totalCost: Array.from(agentMetrics.values()).reduce((sum, a) => sum + a.cost, 0),
-      costBreakdown: {
-        aiModels: Array.from(agentMetrics.values()).reduce((sum, a) => sum + a.cost, 0),
-        infrastructure: 0.001,
-        tools: 0
+        mainOutputs: data.mainOutputs,
+        prOutputs: data.prOutputs,
+        aiInsights: data.aiInsights
       },
-      estimatedMonthlyCost: Array.from(agentMetrics.values()).reduce((sum, a) => sum + a.cost, 0) * 30,
-
-      // Expose developer skill score for grouped report
-      skillScore,
-
-      analyzer: 'V9IntegratedAnalyzer',
-      analyzerVersion: '9.0.0',
-      smartFileSelection: true,
-      maxFilesAnalyzed: 100,
-
-      startTime: new Date(Date.now() - data.executionTime).toISOString(),
-      endTime: new Date().toISOString(),
-      timestamp: new Date().toISOString()
-    };
-
-    // Enrich with team members from Supabase leaderboard (fallback baseline 50)
-    try {
-      const { createClient } = await import('@supabase/supabase-js');
-      const supabase = createClient(
-        process.env.SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-      );
-      const skillScoreManager = new SkillScoreManager(supabase);
-      const leaderboard = await skillScoreManager.getLeaderboard(10);
-      completeMetadata.teamMembers = (leaderboard || []).map(m => ({
-        email: m.email,
-        name: m.name,
-        totalPRs: m.totalPRs
-      }));
-    } catch {
-      // ignore if Supabase not configured on this runner
-    }
-
-    // Git-based discovery fallback (append unique entries)
-    const gitTeam = this.discoverTeamFromGit(['/tmp/kafka-repo']);
-    if (gitTeam.length > 0) {
-      const existing = new Set((completeMetadata.teamMembers || []).map((m: any) => m.email));
-      const merged = [...(completeMetadata.teamMembers || [])];
-      for (const m of gitTeam) {
-        if (!existing.has(m.email)) merged.push(m);
+      {
+        useGroupedReport: this.useGroupedReport,
+        modelConfigResolver: this.modelConfigResolver,
+        detectedLanguage: this.detectedLanguage,
+        detectedRepoSize: this.detectedRepoSize,
+        generateJavaCodeSnippet: this.generateJavaCodeSnippet.bind(this),
+        generateEnhancedFixSuggestion: this.generateEnhancedFixSuggestion.bind(this),
+        getIssueCategory: this.getIssueCategory.bind(this),
+        getAgentType: this.getAgentType.bind(this),
+        mapAgentToRole: this.mapAgentToRole.bind(this),
+        discoverTeamFromGit: this.discoverTeamFromGit.bind(this)
       }
-      completeMetadata.teamMembers = merged;
-    }
-
-    // Phase B+C: Choose between grouped (cost-optimized) or full (comprehensive) report
-    let markdown: string;
-    let reportAttachments: any = {};
+    );
     
-    if (this.useGroupedReport) {
-      console.log('[V9] Generating GROUPED report (cost-optimized, 99.8% savings)...');
-      
-      // Group issues for cost optimization
-      const allProcessedIssues = [...formattedNewIssues, ...formattedExistingIssues, ...formattedResolvedIssues];
-      const groupingResult = groupIssues(allProcessedIssues);
-      
-      console.log(`[V9] Grouped ${allProcessedIssues.length} issues into ${groupingResult.groups.length} groups (${groupingResult.savingsPercent.toFixed(1)}% cost savings)`);
-      
-      // Prepare metadata in format expected by grouped formatter
-      const groupedMetadata = {
-        repository: data.repository,
-        repoUrl: `https://github.com/${data.repository}`,
-        prNumber: data.prNumber,
-        prTitle: completeMetadata.prTitle,
-        branch: completeMetadata.branch,
-        baseBranch: completeMetadata.baseBranch,
-        prAuthor: completeMetadata.prAuthor,
-        prAuthorEmail: completeMetadata.prAuthorEmail,
-        organizationName: completeMetadata.organizationName,
-        totalFiles: completeMetadata.totalFiles,
-        totalLinesOfCode: completeMetadata.totalLinesOfCode,
-        filesModified: completeMetadata.filesModified,
-        linesAdded: completeMetadata.linesAdded,
-        linesDeleted: completeMetadata.linesDeleted,
-        decision: analysisResult.decision,
-        blockingCount: blockingIssues.length,
-        totalDuration: completeMetadata.totalDuration,
-        cloneTime: completeMetadata.cloneTime,
-        analysisTime: completeMetadata.analysisTime,
-        reportGenerationTime: completeMetadata.reportGenerationTime,
-        analyzedAt: completeMetadata.timestamp,
-        analyzerVersion: completeMetadata.analyzerVersion,
-        // Provide model usage summary for display in metadata section
-        modelsUsed: Array.isArray(completeMetadata.agentsUsed)
-          ? completeMetadata.agentsUsed.map((a: any) => ({
-              agent: a.agentName,
-              model: a.modelUsed?.model || a.modelUsed || 'unknown'
-            }))
-          : undefined,
-        // Optional: pass agent/tool performance and model info to grouped formatter
-        agentPerformance: completeMetadata.agentsUsed,
-        toolPerformance: completeMetadata.toolsUsed
-      };
-      
-      // Generate grouped report with attachments
-      const groupedOutput = await this.groupedFormatter.generateGroupedReport(
-        allProcessedIssues,
-        groupingResult.groups,
-        groupedMetadata
-      );
-      
-      markdown = groupedOutput.markdown;
-      reportAttachments = {
-        locationAttachments: groupedOutput.attachments,
-        ideFixFiles: groupedOutput.ideFixFiles,
-        mapping: groupedOutput.mapping
-      };
-      
-      console.log(`[V9] Grouped report generated: ${groupingResult.groups.length} groups, ${groupedOutput.ideFixFiles.length} IDE fix files`);
-    } else {
-      console.log('[V9] Generating FULL report (comprehensive, all 21+ sections)...');
-      
-      // Use V9ReportFormatterFinal to generate the complete report with all 21 sections
-      markdown = await this.reportFormatter.generateCompleteReport(
-        analysisResult,
-        completeMetadata,
-        data.language
-      );
-    }
-
-    // Return structured data with the formatted markdown
+    // ==============================================================================
+    // ADAPT service result to expected return format
+    // ==============================================================================
+    const allPrIssues = [...result.analysisResult.newIssues, ...result.analysisResult.existingIssues];
+    
+    // Return adapted result in expected format
     return {
       version: 'V9.0',
       repository: data.repository,
       prNumber: data.prNumber,
       language: data.language,
       timestamp: new Date().toISOString(),
-
+      
       executiveSummary: {
-        totalIssues: prIssues.length,
-        newIssues: newIssues.length,
-        existingIssues: existingIssues.length,
-        resolvedIssues: resolvedIssues.length,
-        criticalIssues: prIssues.filter(i => i.severity === 'critical').length,
+        totalIssues: allPrIssues.length,
+        newIssues: result.analysisResult.newIssues.length,
+        existingIssues: result.analysisResult.existingIssues.length,
+        resolvedIssues: result.analysisResult.resolvedIssues.length,
+        criticalIssues: result.analysisResult.blockingIssues.filter((i: any) => i.severity === 'critical').length,
         executionTime: data.executionTime,
-        fixGenerationTime: processingTime,
+        fixGenerationTime: result.completeMetadata.fixGenerationTime,
         aiInsights: data.aiInsights.summary
       },
-
-      // ENHANCED: Per-tool results
-      toolResults: Array.from(toolMetrics.values()).map(tool => ({
-        tool: tool.toolName,
-        success: true,
-        executionTime: 1000,
-        issuesFound: tool.issuesFound,
-        issueBreakdown: {
-          critical: tool.criticalCount,
-          high: tool.highCount,
-          medium: tool.mediumCount,
-          low: tool.lowCount
-        },
-        issues: prIssues.filter(i => i.tool === tool.toolName)
-      })),
-
+      
+      toolResults: result.completeMetadata.toolResults || [],
       aiAnalysis: data.aiInsights,
-
+      
       issueBreakdown: {
-        bySeverity: this.groupBySeverity(prIssues),
-        byCategory: this.groupByCategory(prIssues),
-        byTool: this.groupByTool(prIssues)
+        bySeverity: this.groupBySeverity(allPrIssues),
+        byCategory: this.groupByCategory(allPrIssues),
+        byTool: this.groupByTool(allPrIssues)
       },
-
+      
       recommendations: {
-        immediate: data.aiInsights.recommendations.slice(0, 3),
-        shortTerm: data.aiInsights.recommendations.slice(3, 5),
+        immediate: data.aiInsights.recommendations?.slice(0, 3) || [],
+        shortTerm: data.aiInsights.recommendations?.slice(3, 5) || [],
         longTerm: ['Consider architectural improvements', 'Implement automated quality gates']
       },
-
+      
       metadata: {
         analysisId: `analysis-${Date.now()}`,
         workspace: data.workspace || 'default',
@@ -955,32 +462,30 @@ and actionable recommendations. Focus on business value and team productivity.`;
         aiModel: data.aiInsights.model || 'dynamic',
         parallelExecution: true,
         parallelFixGeneration: true,
-        fixGenerationTime: `${(processingTime / 1000).toFixed(2)}s`,
-        reportType: this.useGroupedReport ? 'grouped' : 'full',  // Phase B+C: Track report type
-        agentMetrics: Array.from(agentMetrics.entries()).map(([name, metrics]) => ({
-          agent: name,
-          issues: metrics.issuesProcessed,
-          avgTime: `${(metrics.totalTime / metrics.issuesProcessed / 1000).toFixed(2)}s`,
-          cost: `$${metrics.cost.toFixed(3)}`
+        fixGenerationTime: `${(result.completeMetadata.fixGenerationTime / 1000).toFixed(2)}s`,
+        reportType: this.useGroupedReport ? 'grouped' : 'full',
+        agentMetrics: (result.completeMetadata.agentsUsed || []).map((a: any) => ({
+          agent: a.agentName,
+          issues: a.issuesFound,
+          avgTime: `${((a.executionTime || 0) / Math.max(a.issuesFound, 1) / 1000).toFixed(2)}s`,
+          cost: `$${(a.cost || 0).toFixed(3)}`
         })),
-        toolMetrics: Array.from(toolMetrics.entries()).map(([name, metrics]) => ({
-          tool: name,
-          issues: metrics.issuesFound,
-          breakdown: `${metrics.criticalCount}C/${metrics.highCount}H/${metrics.mediumCount}M/${metrics.lowCount}L`
+        toolMetrics: (result.completeMetadata.toolsUsed || []).map((t: any) => ({
+          tool: t.toolName,
+          issues: t.issuesFound,
+          breakdown: `${t.issueBreakdown?.critical || 0}C/${t.issueBreakdown?.high || 0}H/${t.issueBreakdown?.medium || 0}M/${t.issueBreakdown?.low || 0}L`
         }))
       },
-
-      // Phase B+C: Include grouped report attachments if available
-      ...(this.useGroupedReport && reportAttachments ? {
-        attachments: reportAttachments.locationAttachments,
-        ideFixFiles: reportAttachments.ideFixFiles,
-        issueGroupMapping: reportAttachments.mapping
+      
+      ...(this.useGroupedReport && result.attachments ? {
+        attachments: result.attachments.locationAttachments,
+        ideFixFiles: result.attachments.ideFixFiles,
+        issueGroupMapping: result.attachments.mapping
       } : {}),
-
-      markdown
+      
+      markdown: result.markdown
     };
   }
-  
   private getAgentType(category: string): string {
     const cat = (category || 'quality').toLowerCase();
     if (cat.includes('security') || cat.includes('vulnerability')) return 'SecurityAgent';

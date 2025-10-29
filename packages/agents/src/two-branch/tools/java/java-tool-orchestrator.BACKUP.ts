@@ -1,0 +1,1567 @@
+/**
+ * Java Tool Orchestrator for V9
+ *
+ * Implements the 4-tool REQUIRED orchestration strategy:
+ * - PMD: Code quality analysis (critical + high priority)
+ * - Semgrep: Security vulnerability detection
+ * - Checkstyle: Code style compliance (optional for critical-only mode)
+ * - Dependency-Check: CVE scanning (REQUIRED, PR-only to save resources)
+ *
+ * Optional tools:
+ * - SpotBugs: Additional bug detection (requires compilation)
+ *
+ * Performance: ~50s per branch (all tools parallel)
+ *
+ * @see /packages/agents/src/two-branch/docs/dependency_check/FINAL_JAVA_V9_COMPLETE.md
+ */
+
+import { exec } from 'child_process';
+import { promisify } from 'util';
+import * as path from 'path';
+import * as fs from 'fs/promises';
+import { existsSync } from 'fs';
+import { logger } from '../../utils/logger';
+import { determineCodeQualSeverity } from '../../utils/severity-mapper';
+
+const execAsync = promisify(exec);
+
+// ============================================================
+// TYPES
+// ============================================================
+
+/**
+ * Analysis Mode - User-selectable depth/time tradeoff
+ * 
+ * This option will be exposed via API/Website for users to choose
+ * their preferred analysis depth based on time budget and priorities.
+ * 
+ * IMPORTANT: These modes are UNIVERSAL across all languages.
+ * Import from ../../config/analysis-modes.ts for consistency.
+ */
+import type { AnalysisMode } from '../../config/analysis-modes';
+import { 
+  UNIVERSAL_ANALYSIS_MODES, 
+  ToolCategory,
+  getToolsForMode 
+} from '../../config/analysis-modes';
+
+/**
+ * Java-Specific Tool Mapping to Universal Categories
+ * Maps Java tools to universal tool categories for mode selection
+ */
+const JAVA_TOOL_CATEGORIES = {
+  pmd: ToolCategory.CODE_QUALITY,
+  semgrep: ToolCategory.SECURITY,
+  'dependency-check': ToolCategory.DEPENDENCY_SCAN,
+  checkstyle: ToolCategory.STYLE_LINT,
+  spotbugs: ToolCategory.ADVANCED
+};
+
+/**
+ * Check if a Java tool should run based on analysis mode
+ */
+function shouldJavaToolRun(toolName: string, mode: AnalysisMode): boolean {
+  const modeConfig = UNIVERSAL_ANALYSIS_MODES[mode];
+  const toolCategory = JAVA_TOOL_CATEGORIES[toolName as keyof typeof JAVA_TOOL_CATEGORIES];
+  
+  if (!toolCategory) {
+    return false; // Unknown tool
+  }
+  
+  switch (toolCategory) {
+    case ToolCategory.CODE_QUALITY:
+      return modeConfig.toolCategories.codeQuality;
+    case ToolCategory.SECURITY:
+      return modeConfig.toolCategories.security;
+    case ToolCategory.DEPENDENCY_SCAN:
+      return modeConfig.toolCategories.dependencyScan;
+    case ToolCategory.STYLE_LINT:
+      return modeConfig.toolCategories.styleLint;
+    case ToolCategory.ADVANCED:
+      return modeConfig.toolCategories.advanced;
+    default:
+      return false;
+  }
+}
+
+export interface JavaToolConfig {
+  // REQUIRED TOOLS (Code Quality & Security)
+  pmd: {
+    enabled: boolean;
+    minimumPriority: 1 | 2;        // 1=critical only, 2=critical+high
+    rulesets: string[];
+    customRuleset?: string;         // Path to project-specific PMD ruleset XML
+    parallel: number;
+    threads: number;
+    memory: string;
+  };
+  semgrep: {
+    enabled: boolean;
+    rulesets: string[];
+    parallel: number;
+    smartSelection: boolean;
+    memory: string;
+  };
+  dependencyCheck: {
+    enabled: boolean;               // REQUIRED (not optional!)
+    failOnCVSS: number;             // e.g., 7.0 for HIGH and above
+    suppressionFile?: string;
+    timeout: number;
+    // PostgreSQL backend configuration (v6.0+)
+    postgres?: {
+      enabled: boolean;
+      connectionString: string;     // jdbc:postgresql://host:port/database
+      dbUser: string;               // depcheck_scanner (read-only)
+      dbPassword: string;
+      dbDriver: string;              // /tmp/jdbc-drivers/postgresql-42.7.1.jar
+    };
+    // OSS Index configuration (Sonatype vulnerability database)
+    ossIndex?: {
+      enabled: boolean;
+      username: string;               // OSS Index account email
+      apiToken: string;               // OSS Index API token
+    };
+  };
+
+  // OPTIONAL TOOLS (Can be disabled)
+  checkstyle: {
+    enabled: boolean;
+    configFile: string;             // google_checks.xml
+    parallel: number;
+    memory: string;
+    changedFilesOnly: boolean;
+  };
+  spotbugs?: {
+    enabled: boolean;
+    priority: 'high' | 'medium' | 'low';
+    effort: 'min' | 'default' | 'max';
+    buildCommand?: string;          // Custom build command (optional)
+    autoDetectBuildSystem?: boolean; // Auto-detect Gradle/Maven (default: true)
+    supportedBuildSystems?: string[]; // e.g., ['gradle', 'maven'] (default)
+    memory: string;
+  };
+}
+
+export interface ToolResult {
+  tool: string;
+  success: boolean;
+  duration: number;
+  issues: RawIssue[];
+  rawOutput?: string;
+  error?: string;
+  metadata: {
+    filesScanned: number;
+    issuesFound: number;
+    severity: {
+      critical: number;
+      high: number;
+      medium: number;
+      low: number;
+    };
+    skipped?: boolean;
+    skipReason?: string;
+  };
+}
+
+export interface RawIssue {
+  tool: string;
+  file: string;
+  line: number;
+  endLine?: number;
+  column?: number;
+  endColumn?: number;
+  severity: 'critical' | 'high' | 'medium' | 'low';
+  category: string;
+  rule: string;
+  message: string;
+  priority?: number;
+  cvssScore?: number;
+  cve?: string;
+  externalInfoUrl?: string;  // PMD documentation URL
+  ruleset?: string;          // PMD ruleset name
+  autoFixable?: boolean;     // Can this issue be auto-fixed by IDE/tools?
+}
+
+export interface OrchestrationResult {
+  success: boolean;
+  duration: number;
+  toolResults: ToolResult[];
+  summary: {
+    totalIssues: number;
+    criticalIssues: number;
+    highIssues: number;
+    mediumIssues: number;
+    lowIssues: number;
+    blockingIssues: number;
+    toolsExecuted: number;
+    toolsFailed: number;
+  };
+}
+
+// ============================================================
+// DEFAULT CONFIGURATION (From Calibration)
+// ============================================================
+
+export const DEFAULT_JAVA_CONFIG: JavaToolConfig = {
+  // REQUIRED TOOLS
+  pmd: {
+    enabled: true,
+    minimumPriority: 2,              // Critical + High
+    rulesets: [
+      'category/java/errorprone.xml',
+      'category/java/bestpractices.xml'
+    ],
+    customRuleset: undefined,        // Use default CodeQual ruleset (or project-specific if provided)
+    parallel: 2,
+    threads: 3,
+    memory: '5g'
+  },
+  semgrep: {
+    enabled: true,
+    rulesets: ['p/security-audit', 'p/java'],
+    parallel: 4,
+    smartSelection: true,            // Only security-critical files
+    memory: '2g'
+  },
+  dependencyCheck: {
+    enabled: true,                   // REQUIRED (not optional!) - PR-only execution
+    failOnCVSS: 7.0,                // Block only HIGH and CRITICAL (CVSS >= 7.0)
+    timeout: 300,                   // 5 minutes timeout
+    postgres: {
+      enabled: true,                 // Use PostgreSQL backend (v6.0+) - Oracle Cloud
+      connectionString: process.env.ORACLE_DEPCHECK_DB_URL || 'jdbc:postgresql://localhost:5432/depcheck',
+      dbUser: process.env.ORACLE_DEPCHECK_DB_USER || 'depcheck_scanner',
+      dbPassword: process.env.ORACLE_DEPCHECK_DB_PASSWORD || 'postgres123',
+      dbDriver: process.env.ORACLE_DEPCHECK_JDBC_DRIVER || '/tmp/jdbc-drivers/postgresql-42.7.1.jar'
+    },
+    ossIndex: {
+      enabled: true,                 // Use Sonatype OSS Index for additional vulnerability data
+      username: process.env.OSS_INDEX_USERNAME || '',
+      apiToken: process.env.OSS_INDEX_API_TOKEN || ''
+    }
+  },
+
+  // OPTIONAL TOOLS
+  checkstyle: {
+    enabled: false,                  // Optional - disabled for critical-only mode
+    configFile: '/sun_checks.xml',   // Use sun_checks.xml (google_checks.xml has version compatibility issues)
+    parallel: 2,
+    memory: '3g',
+    changedFilesOnly: true           // Only analyze changed files in PR context
+  },
+  spotbugs: {
+    enabled: false,                   // Optional - requires compilation
+    priority: 'high',
+    effort: 'default',
+    autoDetectBuildSystem: true,      // Auto-detect Gradle/Maven
+    supportedBuildSystems: ['gradle', 'maven'], // Only enable for stable build systems
+    memory: '4g'
+  }
+};
+
+// ============================================================
+// MAIN ORCHESTRATOR CLASS
+// ============================================================
+
+export class JavaToolOrchestrator {
+  private config: JavaToolConfig;
+  private dockerImage: string;
+  private workspaceDir: string;
+
+  constructor(
+    config: Partial<JavaToolConfig> = {},
+    dockerImage = 'iad.ocir.io/idzaw9ddo1h5/codequal/analyzer:lang-java-v6.0-arm'
+  ) {
+    this.config = { ...DEFAULT_JAVA_CONFIG, ...config };
+    this.dockerImage = dockerImage;
+    this.workspaceDir = '/workspace';
+  }
+
+  /**
+   * Main orchestration method - implements 2-stage pipeline
+   *
+   * Stage 1: Semgrep (security scan, 48s)
+   * Stage 2: PMD + Checkstyle in parallel (91s)
+   * Total: 139s (24% faster than sequential 183s)
+   */
+  async orchestrate(
+    repoPath: string,
+    branch: 'base' | 'pr',
+    changedFiles?: string[],
+    options?: { 
+      includeAllSeverities?: boolean;
+      analysisMode?: AnalysisMode;  // User-selectable analysis depth (for API/Website)
+    }
+  ): Promise<OrchestrationResult> {
+    const startTime = Date.now();
+    const toolResults: ToolResult[] = [];
+    const includeAllSeverities = options?.includeAllSeverities ?? false;
+
+    // Apply analysis mode if specified (for API/Website integration)
+    const analysisMode = options?.analysisMode || 'standard'; // Default to 'standard' mode
+    const modeConfig = UNIVERSAL_ANALYSIS_MODES[analysisMode];
+
+    logger.info(`🎯 Starting Java Tool Orchestration (${branch} branch)`);
+    logger.info(`📁 Repository: ${repoPath}`);
+    logger.info(`🔧 Mode: ${includeAllSeverities ? 'ALL SEVERITIES' : 'CRITICAL/HIGH ONLY'}`);
+    logger.info(`📊 Analysis Mode: ${modeConfig.description} (${modeConfig.estimatedTime})`);
+
+    try {
+      // FIX #3: Actually checkout the requested branch before analysis
+      // Get current branch for validation
+      const { stdout: currentBranch } = await execAsync(`git -C ${repoPath} branch --show-current`);
+      const currentBranchName = currentBranch.trim();
+
+      logger.info(`📍 Current branch: ${currentBranchName}`);
+
+      // Determine target branch name
+      let targetBranch: string;
+      if (branch === 'base') {
+        // Dynamically detect the default branch (trunk, main, master, etc.)
+        const { detectDefaultBranch } = await import('../../utils/git-utils');
+        targetBranch = detectDefaultBranch(repoPath);
+        logger.info(`🔍 Detected default branch: ${targetBranch}`);
+      } else {
+        // For PR, detect the actual PR branch (could be pr-with-checkstyle-violations, feature/xyz, etc.)
+        // Assume caller has already set up the repo with the correct PR branch checked out
+        // We'll validate it's NOT a default branch
+        const { detectDefaultBranch } = await import('../../utils/git-utils');
+        const defaultBranch = detectDefaultBranch(repoPath);
+
+        if (currentBranchName === defaultBranch) {
+          throw new Error(
+            `Branch parameter is 'pr' but repository is on ${currentBranchName} (default branch). ` +
+            `Please checkout PR branch before calling orchestrate()`
+          );
+        }
+        targetBranch = currentBranchName;
+      }
+
+      // Checkout target branch if not already there
+      if (currentBranchName !== targetBranch) {
+        logger.info(`🔄 Checking out ${targetBranch}...`);
+        await execAsync(`git -C ${repoPath} checkout ${targetBranch}`);
+        logger.info(`✅ Checked out ${targetBranch}`);
+      } else {
+        logger.info(`✅ Already on ${targetBranch}`);
+      }
+
+
+      // ============================================================
+      // PHASE 1: REQUIRED TOOLS (Parallel: PMD + Semgrep)
+      // ============================================================
+      logger.info('\n🚀 Phase 1: Running REQUIRED tools (PMD + Semgrep) in parallel...');
+
+      const phase1Promises: Promise<ToolResult>[] = [];
+
+      // PMD - Code quality
+      if (this.config.pmd.enabled) {
+        phase1Promises.push(this.runPMD(repoPath, branch));
+      }
+
+      // Semgrep - Security scan
+      if (this.config.semgrep.enabled) {
+        phase1Promises.push(this.runSemgrep(repoPath, branch));
+      }
+
+      // Wait for Phase 1 completion
+      const phase1Results = await Promise.all(phase1Promises);
+      toolResults.push(...phase1Results);
+
+      // Log Phase 1 results
+      logger.info('\n📊 Phase 1 Results:');
+      for (const result of phase1Results) {
+        logger.info(`✅ ${result.tool}: ${result.duration}ms, ${result.metadata.issuesFound} issues`);
+      }
+
+      // ============================================================
+      // CHECKSTYLE DECISION LOGIC (Respects Analysis Mode)
+      // ============================================================
+      const criticalHighCount = phase1Results.reduce((sum, r) => 
+        sum + r.metadata.severity.critical + r.metadata.severity.high, 0
+      );
+
+      // Check if Checkstyle should run based on analysis mode (universal config)
+      const checkstyleEnabledByMode = shouldJavaToolRun('checkstyle', analysisMode);
+      const shouldRunCheckstyle = 
+        this.config.checkstyle.enabled && 
+        checkstyleEnabledByMode &&  // Respect user's analysis mode choice
+        (includeAllSeverities || modeConfig.includeStyleIssues || criticalHighCount === 0);
+
+      if (this.config.checkstyle.enabled) {
+        if (!checkstyleEnabledByMode) {
+          logger.info(`\n⏭️  Skipping Checkstyle: Not included in '${analysisMode}' mode (requires 'thorough' or 'complete')`);
+        } else if (shouldRunCheckstyle) {
+          if (modeConfig.includeStyleIssues) {
+            logger.info(`\n📝 Running Checkstyle: User selected '${analysisMode}' mode (includes style issues)`);
+          } else if (includeAllSeverities) {
+            logger.info('\n📝 Running Checkstyle: User requested ALL severity levels');
+          } else {
+            logger.info('\n📝 Running Checkstyle: No critical/high issues found, checking style compliance');
+          }
+          const checkstyleResult = await this.runCheckstyle(repoPath, branch, changedFiles);
+          toolResults.push(checkstyleResult);
+          logger.info(`✅ Checkstyle complete: ${checkstyleResult.duration}ms, ${checkstyleResult.metadata.issuesFound} issues`);
+        } else {
+          logger.info(`\n⏭️  Skipping Checkstyle: Found ${criticalHighCount} critical/high issues (style check not needed)`);
+        }
+      }
+
+      // ============================================================
+      // OPTIONAL TOOLS (Sequential, if enabled by Analysis Mode)
+      // ============================================================
+
+      // SpotBugs (requires compilation) - Only in 'complete' mode (universal config)
+      const spotbugsEnabledByMode = shouldJavaToolRun('spotbugs', analysisMode);
+      if (this.config.spotbugs?.enabled && spotbugsEnabledByMode) {
+        logger.info(`\n🐛 Running SpotBugs: User selected '${analysisMode}' mode (includes compilation)...`);
+        const spotbugsResult = await this.runSpotBugs(repoPath, branch);
+        toolResults.push(spotbugsResult);
+        logger.info(`✅ SpotBugs complete: ${spotbugsResult.duration}ms`);
+      } else if (this.config.spotbugs?.enabled && !spotbugsEnabledByMode) {
+        logger.info(`\n⏭️  Skipping SpotBugs: Not included in '${analysisMode}' mode (requires 'complete' mode)`);
+      }
+
+      // Dependency-Check (REQUIRED on BOTH branches for proper two-branch analysis)
+      // Run on both branches to properly categorize CVEs as NEW/RESOLVED/EXISTING
+      // Only run if enabled in analysis mode ('standard', 'thorough', or 'complete') - universal config
+      const depCheckEnabledByMode = shouldJavaToolRun('dependency-check', analysisMode);
+      if (this.config.dependencyCheck?.enabled && depCheckEnabledByMode) {
+        logger.info(`\n🔐 Running Dependency-Check (${branch} branch - REQUIRED for security)...`);
+        const depCheckResult = await this.runDependencyCheck(repoPath, branch);
+        toolResults.push(depCheckResult);
+        logger.info(`✅ Dependency-Check complete: ${depCheckResult.duration}ms`);
+        logger.info(`   Found: ${depCheckResult.metadata.issuesFound} vulnerabilities`);
+      } else if (this.config.dependencyCheck?.enabled && !depCheckEnabledByMode) {
+        logger.info(`\n⏭️  Skipping Dependency-Check: Not included in '${analysisMode}' mode (requires 'standard', 'thorough', or 'complete')`);
+      }
+
+      // ============================================================
+      // AGGREGATE RESULTS
+      // ============================================================
+      const duration = Date.now() - startTime;
+      const summary = this.aggregateResults(toolResults);
+
+      logger.info(`\n✅ Orchestration complete in ${duration}ms`);
+      logger.info(`📊 Total issues found: ${summary.totalIssues}`);
+      logger.info(`🚨 Blocking issues (critical): ${summary.blockingIssues}`);
+
+      return {
+        success: true,
+        duration,
+        toolResults,
+        summary
+      };
+
+    } catch (error: any) {
+      logger.error('❌ Orchestration failed:', error);
+      return {
+        success: false,
+        duration: Date.now() - startTime,
+        toolResults,
+        summary: this.aggregateResults(toolResults)
+      };
+    }
+  }
+
+  // ============================================================
+  // TOOL EXECUTION METHODS
+  // ============================================================
+
+  /**
+   * Run PMD with severity filtering
+   * Calibrated settings: Priority 1-2 only (138 critical, 2,245 high)
+   */
+  private async runPMD(
+    repoPath: string,
+    branch: string
+  ): Promise<ToolResult> {
+    const startTime = Date.now();
+
+    try {
+      // Determine which ruleset to use (priority order):
+      // 1. Project-specific custom ruleset (if provided)
+      // 2. CodeQual default ruleset (pmd-codequal-default.xml)
+      // 3. Standard PMD rulesets from config
+      let rulesetConfig = '';
+      let volumeMount = '';
+
+      if (this.config.pmd.customRuleset) {
+        // Use project-specific custom ruleset
+        const rulesetPath = path.resolve(this.config.pmd.customRuleset);
+        volumeMount = `-v "${rulesetPath}":/pmd-custom-ruleset.xml:ro \\`;
+        rulesetConfig = '/pmd-custom-ruleset.xml';
+        logger.info(`Using project-specific PMD ruleset: ${this.config.pmd.customRuleset}`);
+      } else {
+        // Use CodeQual default ruleset
+        const defaultRuleset = path.join(__dirname, 'rulesets', 'pmd-codequal-default.xml');
+        if (existsSync(defaultRuleset)) {
+          volumeMount = `-v "${defaultRuleset}":/pmd-custom-ruleset.xml:ro \\`;
+          rulesetConfig = '/pmd-custom-ruleset.xml';
+          logger.info('Using CodeQual default PMD ruleset with tuned severity priorities');
+        } else {
+          // Fallback to standard PMD rulesets from config
+          rulesetConfig = this.config.pmd.rulesets.length > 0
+            ? this.config.pmd.rulesets.join(',')
+            : 'category/java/bestpractices.xml,category/java/codestyle.xml,category/java/design.xml,category/java/errorprone.xml,category/java/performance.xml';
+          logger.info('Using standard PMD rulesets (default ruleset not found)');
+        }
+      }
+
+      // Note: PMD doesn't support --exclude flag, we filter test files in post-processing
+      // Use "pmd pmd" syntax with correct flag format (--flag-name)
+      const command = `
+        docker run --rm \\
+          -v "${repoPath}":/workspace \\
+          ${volumeMount}
+          ${this.dockerImage} \\
+          -c "pmd pmd \\
+            -d /workspace \\
+            -f json \\
+            -R ${rulesetConfig} \\
+            --minimum-priority ${this.config.pmd.minimumPriority} \\
+            --threads ${this.config.pmd.threads} \\
+            --cache /tmp/pmd-cache \\
+            > /workspace/pmd-results-${branch}.json 2>/workspace/pmd-errors-${branch}.log || true"
+      `;
+
+      await execAsync(command);
+
+      // Parse results
+      const resultPath = path.join(repoPath, `pmd-results-${branch}.json`);
+      const rawOutput = await fs.readFile(resultPath, 'utf-8');
+      const issues = this.parsePMDOutput(rawOutput);
+
+      return {
+        tool: 'pmd',
+        success: true,
+        duration: Date.now() - startTime,
+        issues,
+        rawOutput,
+        metadata: this.calculateMetadata(issues)
+      };
+
+    } catch (error: any) {
+      logger.error('PMD execution failed:', error);
+      return {
+        tool: 'pmd',
+        success: false,
+        duration: Date.now() - startTime,
+        issues: [],
+        error: error.message,
+        metadata: {
+          filesScanned: 0,
+          issuesFound: 0,
+          severity: { critical: 0, high: 0, medium: 0, low: 0 }
+        }
+      };
+    }
+  }
+
+  /**
+   * Run Checkstyle on changed files only (PR context)
+   * Note: All Checkstyle violations are "warning" severity (0 errors)
+   */
+  private async runCheckstyle(
+    repoPath: string,
+    branch: string,
+    changedFiles?: string[]
+  ): Promise<ToolResult> {
+    const startTime = Date.now();
+
+    try {
+      // FIX #2: Use less aggressive test file exclusion - only exclude src/test directories
+      // Old pattern excluded files with "Test" in the name, missing violations in test examples
+      // For large repos, scan in batches to avoid command line length issues
+      const command = `
+        docker run --rm \\
+          -v "${repoPath}":/workspace \\
+          ${this.dockerImage} \\
+          -c "find /workspace -name '*.java' -type f ! -path '*/src/test/*' ! -path '*/src/tests/*' -print0 | \\
+              xargs -0 -n 500 checkstyle -c ${this.config.checkstyle.configFile} -f xml 2>&1 > /workspace/checkstyle-results-${branch}.xml || true"
+      `;
+
+      await execAsync(command);
+
+      // Parse results
+      const resultPath = path.join(repoPath, `checkstyle-results-${branch}.xml`);
+      const rawOutput = await fs.readFile(resultPath, 'utf-8');
+      const issues = this.parseCheckstyleOutput(rawOutput);
+
+      return {
+        tool: 'checkstyle',
+        success: true,
+        duration: Date.now() - startTime,
+        issues,
+        rawOutput,
+        metadata: this.calculateMetadata(issues)
+      };
+
+    } catch (error: any) {
+      logger.error('Checkstyle execution failed:', error);
+      return {
+        tool: 'checkstyle',
+        success: false,
+        duration: Date.now() - startTime,
+        issues: [],
+        error: error.message,
+        metadata: {
+          filesScanned: 0,
+          issuesFound: 0,
+          severity: { critical: 0, high: 0, medium: 0, low: 0 }
+        }
+      };
+    }
+  }
+
+  /**
+   * Run Semgrep with smart file selection
+   * Calibrated settings: Only security-critical files (74% faster)
+   */
+  private async runSemgrep(
+    repoPath: string,
+    branch: string
+  ): Promise<ToolResult> {
+    const startTime = Date.now();
+
+    try {
+      // For two-branch analysis, scan ALL Java files (no smart selection)
+      // Smart selection is for single-repo performance optimization only
+      const rulesets = this.config.semgrep.rulesets.join(' --config ');
+
+      const command = `
+        docker run --rm \\
+          -v "${repoPath}":/workspace \\
+          ${this.dockerImage} \\
+          -c "cd /workspace && semgrep \\
+            --config ${rulesets} \\
+            --json \\
+            --include '*.java' \\
+            --exclude '**/test/**' --exclude '**/tests/**' --exclude '**/*Test.java' --exclude '**/*Tests.java' \\
+            . \\
+            > semgrep-results-${branch}.json 2>&1 || true"
+      `;
+
+      await execAsync(command);
+
+      // Parse results
+      const resultPath = path.join(repoPath, `semgrep-results-${branch}.json`);
+      const rawOutput = await fs.readFile(resultPath, 'utf-8');
+      const issues = this.parseSemgrepOutput(rawOutput);
+
+      return {
+        tool: 'semgrep',
+        success: true,
+        duration: Date.now() - startTime,
+        issues,
+        rawOutput,
+        metadata: this.calculateMetadata(issues)
+      };
+
+    } catch (error: any) {
+      logger.error('Semgrep execution failed:', error);
+      return {
+        tool: 'semgrep',
+        success: false,
+        duration: Date.now() - startTime,
+        issues: [],
+        error: error.message,
+        metadata: {
+          filesScanned: 0,
+          issuesFound: 0,
+          severity: { critical: 0, high: 0, medium: 0, low: 0 }
+        }
+      };
+    }
+  }
+
+  /**
+   * Detect build system and determine if SpotBugs should run
+   * Strategy: Only enable for Gradle/Maven (per SPOTBUGS_STABILITY_STRATEGY.md)
+   */
+  private async shouldEnableSpotBugs(repoPath: string): Promise<{
+    enabled: boolean;
+    buildSystem?: string;
+    buildCommand?: string;
+    classesPath?: string;
+    skipReason?: string;
+  }> {
+    // User explicitly disabled
+    if (!this.config.spotbugs?.enabled) {
+      return { enabled: false, skipReason: 'disabled-by-config' };
+    }
+
+    // User provided custom build command (trust them)
+    if (this.config.spotbugs.buildCommand) {
+      return {
+        enabled: true,
+        buildSystem: 'custom',
+        buildCommand: this.config.spotbugs.buildCommand,
+        classesPath: '/workspace/target/classes /workspace/build/classes/java/main'
+      };
+    }
+
+    // Auto-detect build system
+    const hasMaven = await this.fileExists(path.join(repoPath, 'pom.xml'));
+    const hasGradle = await this.fileExists(path.join(repoPath, 'build.gradle')) ||
+                      await this.fileExists(path.join(repoPath, 'build.gradle.kts'));
+
+    // Check for Gradle (supported)
+    if (hasGradle) {
+      const hasGradlew = await this.fileExists(path.join(repoPath, 'gradlew'));
+      const gradleCmd = hasGradlew ? './gradlew' : 'gradle';
+      return {
+        enabled: true,
+        buildSystem: 'gradle',
+        buildCommand: `${gradleCmd} compileJava -x test --no-daemon --console=plain 2>&1 || true`,
+        classesPath: '/workspace/build/classes/java/main /workspace/*/build/classes/java/main'
+      };
+    }
+
+    // Check for Maven (supported)
+    if (hasMaven) {
+      const hasMvnw = await this.fileExists(path.join(repoPath, 'mvnw'));
+      const mvnCmd = hasMvnw ? './mvnw' : 'mvn';
+      return {
+        enabled: true,
+        buildSystem: 'maven',
+        buildCommand: `${mvnCmd} compile -DskipTests -q 2>&1 || true`,
+        classesPath: '/workspace/target/classes /workspace/*/target/classes'
+      };
+    }
+
+    // Check for other build systems (NOT supported per strategy)
+    const hasAnt = await this.fileExists(path.join(repoPath, 'build.xml'));
+    if (hasAnt) {
+      return {
+        enabled: false,
+        buildSystem: 'ant',
+        skipReason: 'build-system-unsupported (ant)'
+      };
+    }
+
+    const hasBazel = await this.fileExists(path.join(repoPath, 'WORKSPACE')) &&
+                      await this.fileExists(path.join(repoPath, 'BUILD'));
+    if (hasBazel) {
+      return {
+        enabled: false,
+        buildSystem: 'bazel',
+        skipReason: 'build-system-unsupported (bazel)'
+      };
+    }
+
+    // No recognized build system
+    return {
+      enabled: false,
+      buildSystem: 'unknown',
+      skipReason: 'no-supported-build-system (gradle/maven required)'
+    };
+  }
+
+  /**
+   * Helper: Check if file exists
+   */
+  private async fileExists(filePath: string): Promise<boolean> {
+    try {
+      await fs.access(filePath);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Run SpotBugs (optional - requires compilation)
+   */
+  private async runSpotBugs(
+    repoPath: string,
+    branch: string
+  ): Promise<ToolResult> {
+    const startTime = Date.now();
+
+    // STRATEGY: Only enable SpotBugs for Gradle/Maven (per SPOTBUGS_STABILITY_STRATEGY.md)
+    // Other build systems (Ant, Bazel, custom) are gracefully skipped
+    try {
+      // Step 1: Check if SpotBugs should run (build system detection)
+      const shouldRun = await this.shouldEnableSpotBugs(repoPath);
+
+      if (!shouldRun.enabled) {
+        logger.info(`⏭️  SpotBugs skipped: ${shouldRun.skipReason}`);
+        if (shouldRun.buildSystem && shouldRun.buildSystem !== 'gradle' && shouldRun.buildSystem !== 'maven') {
+          logger.info(`   Build system detected: ${shouldRun.buildSystem}`);
+          logger.info(`   💡 SpotBugs only supports Gradle/Maven (see SPOTBUGS_STABILITY_STRATEGY.md)`);
+        }
+        return {
+          tool: 'spotbugs',
+          success: true,  // Not a failure, just skipped
+          duration: Date.now() - startTime,
+          issues: [],
+          metadata: {
+            filesScanned: 0,
+            issuesFound: 0,
+            severity: { critical: 0, high: 0, medium: 0, low: 0 },
+            skipped: true,
+            skipReason: shouldRun.skipReason
+          }
+        };
+      }
+
+      // Step 2: Compile project (Gradle or Maven only)
+      logger.info(`  🔨 Compiling ${shouldRun.buildSystem} project for SpotBugs...`);
+      
+      try {
+        // Run compilation inside Docker container
+        const compileCommand = `
+          docker run --rm \\
+            -v "${repoPath}":/workspace \\
+            -w /workspace \\
+            ${this.dockerImage} \\
+            -c "${shouldRun.buildCommand}"
+        `;
+        
+        await execAsync(compileCommand, { timeout: 300000 }); // 5 min timeout
+        logger.info('  ✅ Compilation completed');
+      } catch (compilationError: any) {
+        // GRACEFUL DEGRADATION: Compilation failed, skip SpotBugs but continue other tools
+        logger.warn('⚠️  SpotBugs skipped: Compilation failed');
+        logger.warn(`   Build system: ${shouldRun.buildSystem}`);
+        logger.warn(`   Reason: ${compilationError.message.split('\n')[0]}`);
+        logger.info('   Other tools will continue running...');
+
+        return {
+          tool: 'spotbugs',
+          success: false,
+          duration: Date.now() - startTime,
+          issues: [],
+          error: `Compilation failed (${shouldRun.buildSystem}): ${compilationError.message.split('\n')[0]}`,
+          metadata: {
+            filesScanned: 0,
+            issuesFound: 0,
+            severity: { critical: 0, high: 0, medium: 0, low: 0 },
+            skipped: true,
+            skipReason: 'compilation-failed'
+          }
+        };
+      }
+
+      // Step 3: Run SpotBugs on compiled classes (only if compilation succeeded)
+      logger.info('  🐛 Running SpotBugs analysis...');
+      const command = `
+        docker run --rm \\
+          -v "${repoPath}":/workspace \\
+          ${this.dockerImage} \\
+          -c "spotbugs \\
+            -${this.config.spotbugs?.priority || 'medium'} \\
+            -effort:${this.config.spotbugs?.effort || 'default'} \\
+            -xml:withMessages \\
+            -output /workspace/spotbugs-results-${branch}.xml \\
+            ${shouldRun.classesPath} 2>&1 || true"
+      `;
+
+      await execAsync(command);
+
+      // Parse results
+      const resultPath = path.join(repoPath, `spotbugs-results-${branch}.xml`);
+      const rawOutput = await fs.readFile(resultPath, 'utf-8');
+      const issues = this.parseSpotBugsOutput(rawOutput);
+
+      return {
+        tool: 'spotbugs',
+        success: true,
+        duration: Date.now() - startTime,
+        issues,
+        rawOutput,
+        metadata: this.calculateMetadata(issues)
+      };
+
+    } catch (error: any) {
+      // SpotBugs execution error (not compilation)
+      logger.error('SpotBugs execution failed:', error);
+      return {
+        tool: 'spotbugs',
+        success: false,
+        duration: Date.now() - startTime,
+        issues: [],
+        error: error.message,
+        metadata: {
+          filesScanned: 0,
+          issuesFound: 0,
+          severity: { critical: 0, high: 0, medium: 0, low: 0 }
+        }
+      };
+    }
+  }
+
+  /**
+   * Run Dependency-Check (optional - requires NVD API key)
+   */
+  /**
+   * Run Dependency-Check with PostgreSQL backend (v6.0)
+   * Uses preloaded CVE database (208K+ CVEs, 2018-2025)
+   */
+  private async runDependencyCheck(
+    repoPath: string,
+    branch: string
+  ): Promise<ToolResult> {
+    const startTime = Date.now();
+
+    try {
+      const pg = this.config.dependencyCheck?.postgres;
+      if (!pg?.enabled) {
+        throw new Error('PostgreSQL backend is required for Dependency-Check v6.0');
+      }
+
+      // Build PostgreSQL connection parameters for JDBC
+      const jdbcParams = [
+        `--connectionString "${pg.connectionString}"`,
+        `--dbUser "${pg.dbUser}"`,
+        pg.dbPassword ? `--dbPassword "${pg.dbPassword}"` : '',
+        `--dbDriverName org.postgresql.Driver`,
+        `--dbDriverPath "${pg.dbDriver}"`
+      ].filter(p => p).join(' ');
+
+      // Build OSS Index parameters (if enabled)
+      const ossIndex = this.config.dependencyCheck?.ossIndex;
+      const ossIndexParams = ossIndex?.enabled ? [
+        `--ossIndexUsername "${ossIndex.username}"`,
+        `--ossIndexPassword "${ossIndex.apiToken}"`
+      ].join(' ') : '';
+
+      const command = `
+        docker run --rm \\
+          -v "${repoPath}":/workspace \\
+          -v "$(dirname ${pg.dbDriver})":"$(dirname ${pg.dbDriver})":ro \\
+          --network host \\
+          -e CLASSPATH="/opt/dependency-check/lib/*:${pg.dbDriver}" \\
+          ${this.dockerImage} \\
+          -c "dependency-check \\
+            --scan /workspace \\
+            --format JSON \\
+            --out /workspace/dependency-check-results-${branch} \\
+            --project 'CodeQual-${branch}' \\
+            ${jdbcParams} \\
+            ${ossIndexParams} \\
+            --failOnCVSS ${this.config.dependencyCheck.failOnCVSS} \\
+            --disableNodeAudit \\
+            --disableYarnAudit"
+      `;
+
+      // CRITICAL FIX: Docker needs host-accessible connection string
+      // Docker containers cannot reach "localhost" - they need host IP or special DNS
+      let dbConnectionString = pg.connectionString;
+      
+      // If connection string uses localhost, replace with host IP for Docker access
+      if (dbConnectionString.includes('localhost')) {
+        try {
+          const { stdout: hostIP } = await execAsync("hostname -I | awk '{print $1}'");
+          const resolvedIP = hostIP.trim();
+          if (resolvedIP) {
+            dbConnectionString = dbConnectionString.replace('localhost', resolvedIP);
+            logger.info(`✅ Resolved Docker-accessible database host: ${resolvedIP}`);
+          } else {
+            // Fallback to host.docker.internal (works on Mac/Windows Docker Desktop)
+            dbConnectionString = dbConnectionString.replace('localhost', 'host.docker.internal');
+            logger.info(`✅ Using Docker special DNS: host.docker.internal`);
+          }
+        } catch (error) {
+          logger.warn('⚠️  Could not resolve host IP, using localhost (may fail in Docker)');
+        }
+      }
+
+      logger.info(`Running Dependency-Check with PostgreSQL backend...`);
+      logger.info(`Database: ${dbConnectionString}`);
+      if (ossIndex?.enabled) {
+        logger.info(`OSS Index: Enabled (user: ${ossIndex.username})`);
+      }
+
+      let exitCode = 0;
+      try {
+        await execAsync(command, {
+          timeout: this.config.dependencyCheck.timeout * 1000
+        });
+      } catch (error: any) {
+        exitCode = error.code || 0;
+        // Exit code 13: Analysis failed (fatal error, no output generated)
+        // Exit code 14: Analysis encountered non-fatal errors (output may be generated)
+        // Exit code 0: Success, no vulnerabilities
+        if (exitCode === 13) {
+          // Exit code 13 means analysis failed completely - no output file generated
+          logger.error(`Dependency-Check analysis failed (exit code 13): ${error.message}`);
+          throw new Error(`Dependency-Check analysis failed. This usually means:\n` +
+            `1. Database connection issue\n` +
+            `2. Invalid configuration\n` +
+            `3. OSS Index authentication failed\n` +
+            `Original error: ${error.message}`);
+        } else if (exitCode === 14) {
+          // Exit code 14 is acceptable (non-fatal errors, output should still exist)
+          logger.warn(`Dependency-Check completed with exit code 14 (non-fatal errors)`);
+        } else if (exitCode !== 0) {
+          throw error; // Re-throw unexpected exit codes
+        }
+      }
+
+      // Parse results
+      const resultPath = path.join(
+        repoPath,
+        `dependency-check-results-${branch}`,
+        'dependency-check-report.json'
+      );
+
+      // Check if output file exists
+      try {
+        await fs.access(resultPath);
+      } catch {
+        logger.error(`Dependency-Check output file not found: ${resultPath}`);
+        throw new Error(`Dependency-Check failed to generate output file (exit code: ${exitCode})`);
+      }
+
+      const rawOutput = await fs.readFile(resultPath, 'utf-8');
+      const issues = this.parseDependencyCheckOutput(rawOutput);
+
+      return {
+        tool: 'dependency-check',
+        success: true,
+        duration: Date.now() - startTime,
+        issues,
+        rawOutput,
+        metadata: this.calculateMetadata(issues)
+      };
+
+    } catch (error: any) {
+      logger.error('Dependency-Check execution failed:', error);
+      return {
+        tool: 'dependency-check',
+        success: false,
+        duration: Date.now() - startTime,
+        issues: [],
+        error: error.message,
+        metadata: {
+          filesScanned: 0,
+          issuesFound: 0,
+          severity: { critical: 0, high: 0, medium: 0, low: 0 }
+        }
+      };
+    }
+  }
+
+  // ============================================================
+  // PARSING METHODS (Placeholders - implement based on actual output formats)
+  // ============================================================
+
+  private parsePMDOutput(output: string): RawIssue[] {
+    try {
+      // PMD may have error messages after JSON - extract just the JSON part
+      const jsonStart = output.indexOf('{');
+      const jsonEnd = output.lastIndexOf('}') + 1;
+
+      if (jsonStart === -1 || jsonEnd === 0) {
+        logger.warn('No JSON found in PMD output');
+        return [];
+      }
+
+      let jsonStr = output.substring(jsonStart, jsonEnd);
+
+      // PMD injects log messages INSIDE the JSON (between violation objects)
+      // Example: }Oct 02, 2025 2:10:03 AM net.sourceforge.pmd.cache.FileAnalysisCache persist\nINFO: Analysis cache created\n  ],
+      // Remove these log lines that appear between JSON elements
+      jsonStr = jsonStr.replace(/\}[A-Z][a-z]{2} \d{2}, \d{4}[^\n]*\n[A-Z]+:[^\n]*\n\s+/g, '}\n');
+
+      const pmdResult = JSON.parse(jsonStr);
+      const issues: RawIssue[] = [];
+
+      if (!pmdResult.files) {
+        logger.warn('No files in PMD output');
+        return [];
+      }
+
+      for (const file of pmdResult.files) {
+        if (!file.violations) continue;
+
+        // Skip test files
+        const filename = file.filename || '';
+        if (filename.includes('/test/') || filename.includes('/tests/') ||
+            filename.endsWith('Test.java') || filename.endsWith('Tests.java')) {
+          continue;
+        }
+
+        for (const violation of file.violations) {
+          // Use enhanced severity mapping considering priority, category, and rule ID
+          const severity = determineCodeQualSeverity(
+            'PMD',
+            violation.priority,
+            violation.ruleset || 'unknown',
+            violation.rule,
+            violation.description || violation.message
+          );
+
+          issues.push({
+            tool: 'PMD',
+            file: file.filename,
+            line: violation.beginline,
+            endLine: violation.endline,
+            column: violation.begincolumn,
+            endColumn: violation.endcolumn,
+            severity,
+            category: violation.ruleset || 'unknown',
+            rule: violation.rule,
+            message: violation.description || violation.message,
+            priority: violation.priority,
+            externalInfoUrl: violation.externalInfoUrl,
+            ruleset: violation.ruleset
+          });
+        }
+      }
+
+      logger.info(`Parsed ${issues.length} PMD issues`);
+      return issues;
+    } catch (error: any) {
+      logger.error('Failed to parse PMD JSON output:', error.message);
+      return [];
+    }
+  }
+
+  private parseCheckstyleOutput(output: string): RawIssue[] {
+    try {
+      const issues: RawIssue[] = [];
+
+      // Simple XML parsing - extract file and error elements
+      const fileMatches = output.matchAll(/<file name="([^"]+)">(.*?)<\/file>/gs);
+
+      for (const fileMatch of fileMatches) {
+        const fileName = fileMatch[1];
+        const fileContent = fileMatch[2];
+
+        // Skip test files
+        if (fileName.includes('/test/') || fileName.includes('/tests/') ||
+            fileName.endsWith('Test.java') || fileName.endsWith('Tests.java')) {
+          continue;
+        }
+
+        // Extract errors within this file
+        const errorMatches = fileContent.matchAll(/<error line="(\d+)" (?:column="(\d+)" )?severity="([^"]+)" message="([^"]+)" source="([^"]+)"\/>/g);
+
+        for (const errorMatch of errorMatches) {
+          const ruleName = errorMatch[5] || 'unknown';
+          const isAutoFixable = this.isCheckstyleAutoFixable(ruleName);
+          
+          issues.push({
+            tool: 'checkstyle',
+            file: fileName,
+            line: parseInt(errorMatch[1]),
+            column: errorMatch[2] ? parseInt(errorMatch[2]) : undefined,
+            severity: this.mapCheckstyleSeverity(errorMatch[3], ruleName),  // Pass ruleName for severity mapping
+            category: ruleName,
+            rule: ruleName,
+            message: errorMatch[4],
+            autoFixable: isAutoFixable
+          });
+        }
+      }
+
+      logger.info(`Parsed ${issues.length} Checkstyle issues`);
+      return issues;
+    } catch (error: any) {
+      logger.error('Failed to parse Checkstyle XML output:', error.message);
+      return [];
+    }
+  }
+
+  private parseSemgrepOutput(output: string): RawIssue[] {
+    try {
+      // Semgrep outputs status text BEFORE the JSON (table, metrics, etc.)
+      // Find the JSON object by looking for the first opening brace that starts a valid JSON object
+      // The JSON structure can start with either {"errors": ...} or {"results": ...}
+
+      // Strategy: Try to find either format
+      let jsonStartIndex = output.indexOf('{"errors":');
+      let jsonStartMarker = '{"errors":';
+      
+      if (jsonStartIndex === -1) {
+        // Try alternative format
+        jsonStartIndex = output.indexOf('{"results":');
+        jsonStartMarker = '{"results":';
+      }
+
+      if (jsonStartIndex === -1) {
+        logger.warn('No Semgrep JSON found in output (tried both {"errors": and {"results": formats)');
+        return [];
+      }
+
+      // Extract from that point to the end
+      const jsonPortion = output.substring(jsonStartIndex);
+
+      // JSON might have trailing text after it, so we need to find the actual JSON bounds
+      // Try parsing progressively shorter substrings until we get valid JSON
+      let jsonStr = jsonPortion;
+      let semgrepResult: any;
+
+      // Try to parse, removing trailing characters if needed
+      for (let i = 0; i < 1000; i++) {
+        try {
+          semgrepResult = JSON.parse(jsonStr);
+          break; // Success!
+        } catch (e) {
+          // Try removing last character and retry
+          if (jsonStr.length > jsonStartMarker.length) {
+            jsonStr = jsonStr.substring(0, jsonStr.length - 1);
+          } else {
+            throw new Error('Could not parse Semgrep JSON even after trimming');
+          }
+        }
+      }
+
+      if (!semgrepResult) {
+        logger.warn('Failed to parse Semgrep JSON after retries');
+        return [];
+      }
+
+      const issues: RawIssue[] = [];
+
+      if (!semgrepResult.results || semgrepResult.results.length === 0) {
+        logger.info('No results in Semgrep output (no security issues found)');
+        return [];
+      }
+
+      // Skip test files during parsing
+      for (const result of semgrepResult.results) {
+        const filePath = result.path || '';
+        if (filePath.includes('/test/') || filePath.includes('/tests/') ||
+            filePath.endsWith('Test.java') || filePath.endsWith('Tests.java')) {
+          continue;
+        }
+
+        issues.push({
+          tool: 'semgrep',
+          file: result.path,
+          line: result.start?.line || 1,
+          endLine: result.end?.line,
+          column: result.start?.col || 0,
+          endColumn: result.end?.col,
+          severity: this.mapSemgrepSeverity(result.extra?.severity),
+          category: result.check_id || 'unknown',
+          rule: result.check_id,
+          message: result.extra?.message || result.check_id
+        });
+      }
+
+      logger.info(`Parsed ${issues.length} Semgrep issues`);
+      return issues;
+    } catch (error: any) {
+      logger.error('Failed to parse Semgrep JSON output:', error.message);
+      return [];
+    }
+  }
+
+  private parseSpotBugsOutput(output: string): RawIssue[] {
+    try {
+      const issues: RawIssue[] = [];
+
+      // SpotBugs XML format:
+      // <BugInstance type="TYPE" priority="1|2|3" category="CATEGORY">
+      //   <Class classname="com.example.Foo">
+      //     <SourceLine classname="..." start="15" end="77" sourcefile="Foo.java" sourcepath="..." />
+      //   </Class>
+      //   OR just: <SourceLine classname="..." start="123" end="125" sourcefile="Foo.java" ... />
+      // </BugInstance>
+
+      // Extract bug instances
+      const bugInstanceRegex = /<BugInstance[^>]+type="([^"]+)"[^>]+priority="(\d)"[^>]+category="([^"]+)"[^>]*>([\s\S]*?)<\/BugInstance>/g;
+
+      let match;
+      while ((match = bugInstanceRegex.exec(output)) !== null) {
+        const bugType = match[1];
+        const priority = parseInt(match[2]);
+        const category = match[3];
+        const bugContent = match[4];
+
+        // Find SourceLine with both sourcefile and start attributes
+        // Look for: sourcefile="..." start="..."  OR  start="..." ... sourcefile="..."
+        const sourceLineRegex = /<SourceLine[^>]*?(?:sourcefile="([^"]+)"[^>]*?start="(\d+)"|start="(\d+)"[^>]*?sourcefile="([^"]+)")[^>]*?\/>/;
+        const sourceLineMatch = bugContent.match(sourceLineRegex);
+
+        if (sourceLineMatch) {
+          // Handle both attribute orders
+          const file = sourceLineMatch[1] || sourceLineMatch[4];
+          const line = parseInt(sourceLineMatch[2] || sourceLineMatch[3]);
+
+          // BUG FIX #45 + #54: Use enhanced severity mapping for SpotBugs
+          // BUG FIX #54: Convert priority to string (mapSpotBugsSeverity expects string, not number)
+          const severity = determineCodeQualSeverity(
+            'SpotBugs',
+            priority.toString(),  // Convert number to string for SpotBugs mapper
+            category || '',
+            bugType || '',
+            bugContent  // Pass full XML content for description parsing
+          );
+
+          issues.push({
+            tool: 'spotbugs',
+            file,
+            line,
+            severity,
+            category: category.toLowerCase(),
+            rule: bugType,
+            message: bugType.replace(/_/g, ' ') // Convert DM_DEFAULT_ENCODING to "DM DEFAULT ENCODING"
+          });
+        }
+      }
+
+      logger.info(`Parsed ${issues.length} SpotBugs issues from XML`);
+      return issues;
+
+    } catch (error: any) {
+      logger.error('Failed to parse SpotBugs XML output:', error.message);
+      return [];
+    }
+  }
+
+  // Severity mapping helpers
+  /**
+   * @deprecated Use determineCodeQualSeverity from severity-mapper.ts instead
+   * This method only considers priority, not category or rule ID.
+   * Kept for backward compatibility with non-PMD tools.
+   */
+  private mapPMDPriority(priority: number): 'critical' | 'high' | 'medium' | 'low' {
+    switch (priority) {
+      case 1:
+        return 'critical';
+      case 2:
+        return 'high';
+      case 3:
+        return 'medium';
+      default:
+        return 'low';
+    }
+  }
+
+  private mapCheckstyleSeverity(severity: string, ruleName?: string): 'critical' | 'high' | 'medium' | 'low' {
+    // Style/formatting rules should be LOW severity (auto-fixable)
+    const STYLE_FORMATTING_RULES = [
+      'Indentation',
+      'LocalVariableName',
+      'ParameterName',
+      'MethodName',
+      'TypeName',
+      'LineLength',
+      'WhitespaceAround',
+      'WhitespaceAfter',
+      'WhitespaceBefore',
+      'EmptyLineSeparator',
+      'ImportOrder',
+      'UnusedImports',
+      'RedundantImport',
+      'AvoidStarImport',
+      'ModifierOrder',
+      'EmptyBlock',
+      'NeedBraces',
+      'LeftCurly',
+      'RightCurly',
+      'ParenPad',
+      'TypecastParenPad'
+    ];
+    
+    // Check if this is a formatting/style rule
+    if (ruleName && STYLE_FORMATTING_RULES.some(r => ruleName.includes(r))) {
+      return 'low';  // All formatting issues are LOW severity
+    }
+    
+    // For non-style rules, use original severity mapping
+    switch (severity?.toLowerCase()) {
+      case 'error':
+        return 'high';
+      case 'warning':
+        return 'medium';
+      case 'info':
+        return 'low';
+      default:
+        return 'medium';
+    }
+  }
+
+  /**
+   * Check if a Checkstyle rule is auto-fixable
+   * Formatting/style rules can be fixed automatically by IDEs or tools
+   */
+  private isCheckstyleAutoFixable(ruleName: string): boolean {
+    const AUTO_FIXABLE_RULES = [
+      'Indentation',
+      'LocalVariableName',
+      'ParameterName',
+      'MethodName',
+      'TypeName',
+      'LineLength',
+      'WhitespaceAround',
+      'WhitespaceAfter',
+      'WhitespaceBefore',
+      'EmptyLineSeparator',
+      'ImportOrder',
+      'UnusedImports',
+      'RedundantImport',
+      'AvoidStarImport',
+      'ModifierOrder',
+      'EmptyBlock',
+      'NeedBraces',
+      'LeftCurly',
+      'RightCurly',
+      'ParenPad',
+      'TypecastParenPad',
+      'NoWhitespaceAfter',
+      'NoWhitespaceBefore',
+      'OperatorWrap',
+      'SeparatorWrap',
+      'ArrayTypeStyle',
+      'UpperEll',
+      'EmptyForInitializerPad',
+      'EmptyForIteratorPad',
+      'GenericWhitespace',
+      'MethodParamPad',
+      'NoLineWrap',
+      'SingleSpaceSeparator'
+    ];
+    
+    return AUTO_FIXABLE_RULES.some(rule => ruleName.includes(rule));
+  }
+
+  private mapSemgrepSeverity(severity?: string): 'critical' | 'high' | 'medium' | 'low' {
+    switch (severity?.toUpperCase()) {
+      case 'ERROR':
+        return 'critical';
+      case 'WARNING':
+        return 'high';
+      case 'INFO':
+        return 'low';
+      default:
+        return 'medium';
+    }
+  }
+
+  /**
+   * Parse Dependency-Check JSON report
+   * Format: { dependencies: [ { fileName, vulnerabilities: [ { name, severity, cvssv3, description } ] } ] }
+   */
+  private parseDependencyCheckOutput(output: string): RawIssue[] {
+    try {
+      const report = JSON.parse(output);
+      const issues: RawIssue[] = [];
+
+      if (!report.dependencies || !Array.isArray(report.dependencies)) {
+        logger.warn('No dependencies found in Dependency-Check report');
+        return [];
+      }
+
+      for (const dependency of report.dependencies) {
+        if (!dependency.vulnerabilities || dependency.vulnerabilities.length === 0) {
+          continue;
+        }
+
+        for (const vuln of dependency.vulnerabilities) {
+          // Map CVSS score to severity
+          const cvssScore = vuln.cvssv3?.baseScore || vuln.cvssv2?.score || 0;
+          let severity: 'critical' | 'high' | 'medium' | 'low' = 'low';
+
+          if (cvssScore >= 9.0) severity = 'critical';
+          else if (cvssScore >= 7.0) severity = 'high';
+          else if (cvssScore >= 4.0) severity = 'medium';
+
+          issues.push({
+            tool: 'dependency-check',
+            file: dependency.fileName || 'pom.xml',
+            line: 0, // Dependency issues don't have line numbers
+            severity,
+            category: 'dependency-vulnerability',
+            rule: vuln.name || 'UNKNOWN-CVE',
+            message: vuln.description || `Vulnerability in ${dependency.fileName}`,
+            cvssScore,
+            cve: vuln.name
+          });
+        }
+      }
+
+      logger.info(`Parsed ${issues.length} CVE issues from Dependency-Check report`);
+      return issues;
+
+    } catch (error: any) {
+      logger.error('Failed to parse Dependency-Check output:', error);
+      return [];
+    }
+  }
+
+  // ============================================================
+  // HELPER METHODS
+  // ============================================================
+
+  private getEnabledTools(): string[] {
+    const tools: string[] = [];
+    if (this.config.pmd.enabled) tools.push('PMD');
+    if (this.config.checkstyle.enabled) tools.push('Checkstyle');
+    if (this.config.semgrep.enabled) tools.push('Semgrep');
+    if (this.config.spotbugs?.enabled) tools.push('SpotBugs');
+    if (this.config.dependencyCheck?.enabled) tools.push('Dependency-Check');
+    return tools;
+  }
+
+  private calculateMetadata(issues: RawIssue[]) {
+    const severity = {
+      critical: issues.filter(i => i.severity === 'critical').length,
+      high: issues.filter(i => i.severity === 'high').length,
+      medium: issues.filter(i => i.severity === 'medium').length,
+      low: issues.filter(i => i.severity === 'low').length
+    };
+
+    return {
+      filesScanned: new Set(issues.map(i => i.file)).size,
+      issuesFound: issues.length,
+      severity
+    };
+  }
+
+  private aggregateResults(results: ToolResult[]) {
+    const allIssues = results.flatMap(r => r.issues);
+
+    return {
+      totalIssues: allIssues.length,
+      criticalIssues: allIssues.filter(i => i.severity === 'critical').length,
+      highIssues: allIssues.filter(i => i.severity === 'high').length,
+      mediumIssues: allIssues.filter(i => i.severity === 'medium').length,
+      lowIssues: allIssues.filter(i => i.severity === 'low').length,
+      blockingIssues: allIssues.filter(i =>
+        i.severity === 'critical' || i.severity === 'high'
+      ).length,
+      toolsExecuted: results.filter(r => r.success).length,
+      toolsFailed: results.filter(r => !r.success).length
+    };
+  }
+}
+
+// ============================================================
+// HELPER FUNCTIONS FOR API/WEBSITE INTEGRATION
+// ============================================================
+
+/**
+ * DEPRECATED: Use getAvailableAnalysisModes from ../../config/analysis-modes.ts
+ * 
+ * These functions are now in the universal config module for consistency
+ * across all languages (Java, Python, JavaScript, Go, etc.)
+ * 
+ * @example
+ * ```typescript
+ * import { 
+ *   getAvailableAnalysisModes, 
+ *   getAnalysisModeConfig, 
+ *   getDefaultAnalysisMode 
+ * } from '../../config/analysis-modes';
+ * ```
+ */
+
+// Re-export from universal config for backward compatibility
+export { 
+  getAvailableAnalysisModes, 
+  getAnalysisModeConfig, 
+  getDefaultAnalysisMode 
+} from '../../config/analysis-modes';
+
+// ============================================================
+// EXPORTS
+// ============================================================
+
+export default JavaToolOrchestrator;
