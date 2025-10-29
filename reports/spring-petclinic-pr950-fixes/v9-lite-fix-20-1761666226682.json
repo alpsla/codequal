@@ -1,0 +1,40 @@
+{
+  "groupId": "yaml-docker-compose-security-writable-filesystem-service-writable-filesystem-service-high-semgrep",
+  "filename": "group-yaml-docker-compose-security-writable-filesystem-service-writable-filesystem-service-high-semgrep-fix.json",
+  "content": {
+    "version": "1.0",
+    "group_id": "yaml-docker-compose-security-writable-filesystem-service-writable-filesystem-service-high-semgrep",
+    "rule": "yaml.docker-compose.security.writable-filesystem-service.writable-filesystem-service",
+    "tool": "semgrep",
+    "severity": "high",
+    "description": "1. Set the container's filesystem to read-only by adding 'read_only: true' to the service configuration in docker-compose.yml. 2. Use tmpfs for any temporary files that need to be written. Refer to OWASP's Docker Security Cheat Sheet for container hardening practices.",
+    "fix_pattern": {
+      "type": "template",
+      "example": {
+        "before": "",
+        "after": "Before:\n  mysql:\n    image: mysql\n    ports:\n      - '3306:3306'\n\nAfter:\n  mysql:\n    image: mysql\n    ports:\n      - '3306:3306'\n    read_only: true\n    tmpfs:\n      - /tmp"
+      },
+      "instructions": "1. Set the container's filesystem to read-only by adding 'read_only: true' to the service configuration in docker-compose.yml. 2. Use tmpfs for any temporary files that need to be written. Refer to OWASP's Docker Security Cheat Sheet for container hardening practices."
+    },
+    "locations": [
+      {
+        "file": "docker-compose.yml",
+        "line": 4,
+        "snippet": "     1 | version: \"2.2\"\n     2 | \n     3 | services:\n>    4 |   mysql:\n     5 |     image: mysql:5.7\n     6 |     ports:\n     7 |       - \"3306:3306\"",
+        "category": "NEW"
+      },
+      {
+        "file": "docker-compose.yml",
+        "line": 16,
+        "snippet": "    13 |       - MYSQL_DATABASE=petclinic\n    14 |     volumes:\n    15 |       - \"./conf.d:/etc/mysql/conf.d:ro\"\n>   16 |   postgres:\n    17 |     image: postgres:14.1\n    18 |     ports:\n    19 |       - \"5432:5432\"",
+        "category": "NEW"
+      }
+    ],
+    "metadata": {
+      "total_occurrences": 2,
+      "confidence": "low",
+      "safe_auto_apply": false,
+      "estimated_time_seconds": 1
+    }
+  }
+}

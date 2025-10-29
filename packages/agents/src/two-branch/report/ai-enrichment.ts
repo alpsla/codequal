@@ -173,7 +173,7 @@ export async function enrichIssuesWithAI(
   issues: EnrichedIssue[],
   groups: IssueGroup[],
   modelConfigResolver: any | null,
-  detectedLanguage: string = 'java',
+  detectedLanguage = 'java',
   detectedRepoSize: 'small' | 'medium' | 'large' | 'enterprise' = 'medium'
 ): Promise<EnrichedIssue[]> {
   // Skip if no model config resolver

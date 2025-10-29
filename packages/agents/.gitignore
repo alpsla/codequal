@@ -11,3 +11,35 @@ validated-report-*.json
 validation-report-*.md
 structured-analysis-report.json
 
+
+# Session documentation (may contain sensitive data)
+SESSION_*.md
+*_COMPLETE.md
+*_SUMMARY.md
+*_PROGRESS.md
+*_STATUS.md
+*_RESULTS.md
+*_VERIFICATION*.md
+*_FIXES*.md
+*_IMPLEMENTATION*.md
+*_GUIDE.md
+DEBUG_*.md
+OPENROUTER_*.md
+KEY_*.md
+BUG_*.md
+BLOCKERS_*.md
+REMAINING_*.md
+USER_FEEDBACK*.md
+AI_ENRICHMENT*.md
+
+# Test debug files
+test-debug-*.ts
+test-key-*.ts
+test-bug*.ts
+
+# User reports validation (may contain API keys)
+user-reports-validation/
+
+# Oracle test scripts (may contain IPs/keys)
+oracle-*.sh
+

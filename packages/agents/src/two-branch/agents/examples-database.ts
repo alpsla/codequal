@@ -133,7 +133,7 @@ export const CODE_QUALITY_EXAMPLES: FixExample[] = [
  */
 export function getExamplesForCategory(
   category: string,
-  limit: number = 2
+  limit = 2
 ): FixExample[] {
   const normalizedCategory = category.toLowerCase().replace(/[_\s]+/g, ' ').trim();
   

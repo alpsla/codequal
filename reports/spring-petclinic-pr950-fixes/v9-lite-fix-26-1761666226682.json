@@ -1,0 +1,37 @@
+{
+  "groupId": "com-puppycrawl-tools-checkstyle-checks-newlineatendoffilecheck-high-checkstyle",
+  "filename": "group-com-puppycrawl-tools-checkstyle-checks-newlineatendoffilecheck-high-checkstyle-fix.json",
+  "content": {
+    "version": "1.0",
+    "group_id": "com-puppycrawl-tools-checkstyle-checks-newlineatendoffilecheck-high-checkstyle",
+    "rule": "com.puppycrawl.tools.checkstyle.checks.NewlineAtEndOfFileCheck",
+    "tool": "checkstyle",
+    "severity": "high",
+    "description": "Ensure the file ends with a newline character by adding an empty line at the end of the file.",
+    "fix_pattern": {
+      "type": "template",
+      "example": {
+        "before": "",
+        "after": {
+          "before": "key1=value1\nkey2=value2",
+          "after": "key1=value1\nkey2=value2\n"
+        }
+      },
+      "instructions": "Ensure the file ends with a newline character by adding an empty line at the end of the file."
+    },
+    "locations": [
+      {
+        "file": "src/main/resources/messages/messages_en.properties",
+        "line": 1,
+        "snippet": ">    1 | # This file is intentionally empty. Message look-ups will fall back to the default \"messages.properties\" file.",
+        "category": "EXISTING_REST"
+      }
+    ],
+    "metadata": {
+      "total_occurrences": 1,
+      "confidence": "low",
+      "safe_auto_apply": false,
+      "estimated_time_seconds": 1
+    }
+  }
+}

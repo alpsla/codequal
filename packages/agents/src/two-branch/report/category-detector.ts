@@ -7,8 +7,9 @@
 
 /**
  * Detect issue category from rule name, tool, and message
- * 
- * Categories: Security, Performance, Reliability, Architecture, Dependencies, Code Quality
+ *
+ * SESSION 13 FIX: Removed "Reliability" category (was causing scoring issues)
+ * Categories: Security, Performance, Architecture, Dependencies, Code Quality
  */
 export function detectCategory(rule: string, tool: string, message: string): string {
   const ruleLower = rule.toLowerCase();
@@ -78,7 +79,8 @@ export function detectCategory(rule: string, tool: string, message: string): str
     return 'Dependencies';
   }
   
-  // Bug/Reliability
+  // SESSION 13 FIX: Removed "Reliability" category - map SpotBugs to Code Quality
+  // SpotBugs issues (bugs, null checks, exceptions) are code quality issues
   if (
     tool === 'spotbugs' ||
     ruleLower.includes('null') ||
@@ -86,9 +88,9 @@ export function detectCategory(rule: string, tool: string, message: string): str
     ruleLower.includes('bug') ||
     messageLower.includes('potential bug')
   ) {
-    return 'Reliability';
+    return 'Code Quality';
   }
-  
+
   return 'Code Quality'; // Default fallback
 }
 

@@ -1,0 +1,256 @@
+{
+  "groupId": "com-puppycrawl-tools-checkstyle-checks-design-designforextensioncheck-high-checkstyle",
+  "filename": "group-com-puppycrawl-tools-checkstyle-checks-design-designforextensioncheck-high-checkstyle-fix.json",
+  "content": {
+    "version": "1.0",
+    "group_id": "com-puppycrawl-tools-checkstyle-checks-design-designforextensioncheck-high-checkstyle",
+    "rule": "com.puppycrawl.tools.checkstyle.checks.design.DesignForExtensionCheck",
+    "tool": "checkstyle",
+    "severity": "high",
+    "description": "Add Javadoc to the 'getId' method explaining how to safely extend 'BaseEntity'. Alternatively, if 'BaseEntity' is not designed for extension, make the class final or modify the 'getId' method to be static, final, abstract, or empty.",
+    "fix_pattern": {
+      "type": "template",
+      "example": {
+        "before": "",
+        "after": "Before:\npublic Long getId() {\n    return id;\n}\n\nAfter:\n/**\n * Returns the ID of the entity.\n * This method is intended to be overridden in subclasses to provide a unique identifier.\n * Ensure that any overridden method maintains consistency and immutability of the ID.\n */\npublic Long getId() {\n    return id;\n}"
+      },
+      "instructions": "Add Javadoc to the 'getId' method explaining how to safely extend 'BaseEntity'. Alternatively, if 'BaseEntity' is not designed for extension, make the class final or modify the 'getId' method to be static, final, abstract, or empty."
+    },
+    "locations": [
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/model/BaseEntity.java",
+        "line": 39,
+        "snippet": "    36 | \t@GeneratedValue(strategy = GenerationType.IDENTITY)\n    37 | \tprivate Integer id;\n    38 | \n>   39 | \tpublic Integer getId() {\n    40 | \t\treturn id;\n    41 | \t}\n    42 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/model/BaseEntity.java",
+        "line": 43,
+        "snippet": "    40 | \t\treturn id;\n    41 | \t}\n    42 | \n>   43 | \tpublic void setId(Integer id) {\n    44 | \t\tthis.id = id;\n    45 | \t}\n    46 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/model/BaseEntity.java",
+        "line": 47,
+        "snippet": "    44 | \t\tthis.id = id;\n    45 | \t}\n    46 | \n>   47 | \tpublic boolean isNew() {\n    48 | \t\treturn this.id == null;\n    49 | \t}\n    50 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/model/NamedEntity.java",
+        "line": 34,
+        "snippet": "    31 | \t@Column(name = \"name\")\n    32 | \tprivate String name;\n    33 | \n>   34 | \tpublic String getName() {\n    35 | \t\treturn this.name;\n    36 | \t}\n    37 | ",
+        "category": "EXISTING_REST"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/model/NamedEntity.java",
+        "line": 38,
+        "snippet": "    35 | \t\treturn this.name;\n    36 | \t}\n    37 | \n>   38 | \tpublic void setName(String name) {\n    39 | \t\tthis.name = name;\n    40 | \t}\n    41 | ",
+        "category": "EXISTING_REST"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/model/NamedEntity.java",
+        "line": 42,
+        "snippet": "    39 | \t\tthis.name = name;\n    40 | \t}\n    41 | \n>   42 | \t@Override\n    43 | \tpublic String toString() {\n    44 | \t\treturn this.getName();\n    45 | \t}",
+        "category": "EXISTING_REST"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/model/Person.java",
+        "line": 38,
+        "snippet": "    35 | \t@NotEmpty\n    36 | \tprivate String lastName;\n    37 | \n>   38 | \tpublic String getFirstName() {\n    39 | \t\treturn this.firstName;\n    40 | \t}\n    41 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/model/Person.java",
+        "line": 42,
+        "snippet": "    39 | \t\treturn this.firstName;\n    40 | \t}\n    41 | \n>   42 | \tpublic void setFirstName(String firstName) {\n    43 | \t\tthis.firstName = firstName;\n    44 | \t}\n    45 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/model/Person.java",
+        "line": 46,
+        "snippet": "    43 | \t\tthis.firstName = firstName;\n    44 | \t}\n    45 | \n>   46 | \tpublic String getLastName() {\n    47 | \t\treturn this.lastName;\n    48 | \t}\n    49 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/model/Person.java",
+        "line": 50,
+        "snippet": "    47 | \t\treturn this.lastName;\n    48 | \t}\n    49 | \n>   50 | \tpublic void setLastName(String lastName) {\n    51 | \t\tthis.lastName = lastName;\n    52 | \t}\n    53 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/Owner.java",
+        "line": 67,
+        "snippet": "    64 | \t@OrderBy(\"name\")\n    65 | \tprivate List<Pet> pets = new ArrayList<>();\n    66 | \n>   67 | \tpublic String getAddress() {\n    68 | \t\treturn this.address;\n    69 | \t}\n    70 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/Owner.java",
+        "line": 71,
+        "snippet": "    68 | \t\treturn this.address;\n    69 | \t}\n    70 | \n>   71 | \tpublic void setAddress(String address) {\n    72 | \t\tthis.address = address;\n    73 | \t}\n    74 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/Owner.java",
+        "line": 75,
+        "snippet": "    72 | \t\tthis.address = address;\n    73 | \t}\n    74 | \n>   75 | \tpublic String getCity() {\n    76 | \t\treturn this.city;\n    77 | \t}\n    78 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/Owner.java",
+        "line": 79,
+        "snippet": "    76 | \t\treturn this.city;\n    77 | \t}\n    78 | \n>   79 | \tpublic void setCity(String city) {\n    80 | \t\tthis.city = city;\n    81 | \t}\n    82 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/Owner.java",
+        "line": 83,
+        "snippet": "    80 | \t\tthis.city = city;\n    81 | \t}\n    82 | \n>   83 | \tpublic String getTelephone() {\n    84 | \t\treturn this.telephone;\n    85 | \t}\n    86 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/Owner.java",
+        "line": 87,
+        "snippet": "    84 | \t\treturn this.telephone;\n    85 | \t}\n    86 | \n>   87 | \tpublic void setTelephone(String telephone) {\n    88 | \t\tthis.telephone = telephone;\n    89 | \t}\n    90 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/Owner.java",
+        "line": 91,
+        "snippet": "    88 | \t\tthis.telephone = telephone;\n    89 | \t}\n    90 | \n>   91 | \tpublic List<Pet> getPets() {\n    92 | \t\treturn this.pets;\n    93 | \t}\n    94 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/Owner.java",
+        "line": 95,
+        "snippet": "    92 | \t\treturn this.pets;\n    93 | \t}\n    94 | \n>   95 | \tpublic void addPet(Pet pet) {\n    96 | \t\tif (pet.isNew()) {\n    97 | \t\t\tgetPets().add(pet);\n    98 | \t\t}",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/Owner.java",
+        "line": 146,
+        "snippet": "   143 | \t\treturn null;\n   144 | \t}\n   145 | \n>  146 | \t@Override\n   147 | \tpublic String toString() {\n   148 | \t\treturn new ToStringCreator(this).append(\"id\", this.getId()).append(\"new\", this.isNew())\n   149 | \t\t\t\t.append(\"lastName\", this.getLastName()).append(\"firstName\", this.getFirstName())",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/Pet.java",
+        "line": 60,
+        "snippet": "    57 | \t@OrderBy(\"visit_date ASC\")\n    58 | \tprivate Set<Visit> visits = new LinkedHashSet<>();\n    59 | \n>   60 | \tpublic void setBirthDate(LocalDate birthDate) {\n    61 | \t\tthis.birthDate = birthDate;\n    62 | \t}\n    63 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/Pet.java",
+        "line": 64,
+        "snippet": "    61 | \t\tthis.birthDate = birthDate;\n    62 | \t}\n    63 | \n>   64 | \tpublic LocalDate getBirthDate() {\n    65 | \t\treturn this.birthDate;\n    66 | \t}\n    67 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/Pet.java",
+        "line": 68,
+        "snippet": "    65 | \t\treturn this.birthDate;\n    66 | \t}\n    67 | \n>   68 | \tpublic PetType getType() {\n    69 | \t\treturn this.type;\n    70 | \t}\n    71 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/Pet.java",
+        "line": 72,
+        "snippet": "    69 | \t\treturn this.type;\n    70 | \t}\n    71 | \n>   72 | \tpublic void setType(PetType type) {\n    73 | \t\tthis.type = type;\n    74 | \t}\n    75 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/Pet.java",
+        "line": 76,
+        "snippet": "    73 | \t\tthis.type = type;\n    74 | \t}\n    75 | \n>   76 | \tpublic Collection<Visit> getVisits() {\n    77 | \t\treturn this.visits;\n    78 | \t}\n    79 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/Pet.java",
+        "line": 80,
+        "snippet": "    77 | \t\treturn this.visits;\n    78 | \t}\n    79 | \n>   80 | \tpublic void addVisit(Visit visit) {\n    81 | \t\tgetVisits().add(visit);\n    82 | \t}\n    83 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/PetTypeFormatter.java",
+        "line": 46,
+        "snippet": "    43 | \t\tthis.owners = owners;\n    44 | \t}\n    45 | \n>   46 | \t@Override\n    47 | \tpublic String print(PetType petType, Locale locale) {\n    48 | \t\treturn petType.getName();\n    49 | \t}",
+        "category": "EXISTING_REST"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/PetTypeFormatter.java",
+        "line": 51,
+        "snippet": "    48 | \t\treturn petType.getName();\n    49 | \t}\n    50 | \n>   51 | \t@Override\n    52 | \tpublic PetType parse(String text, Locale locale) throws ParseException {\n    53 | \t\tCollection<PetType> findPetTypes = this.owners.findPetTypes();\n    54 | \t\tfor (PetType type : findPetTypes) {",
+        "category": "EXISTING_REST"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/PetValidator.java",
+        "line": 36,
+        "snippet": "    33 | \n    34 | \tprivate static final String REQUIRED = \"required\";\n    35 | \n>   36 | \t@Override\n    37 | \tpublic void validate(Object obj, Errors errors) {\n    38 | \t\tPet pet = (Pet) obj;\n    39 | \t\tString name = pet.getName();",
+        "category": "EXISTING_REST"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/Visit.java",
+        "line": 52,
+        "snippet": "    49 | \t\tthis.date = LocalDate.now();\n    50 | \t}\n    51 | \n>   52 | \tpublic LocalDate getDate() {\n    53 | \t\treturn this.date;\n    54 | \t}\n    55 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/Visit.java",
+        "line": 56,
+        "snippet": "    53 | \t\treturn this.date;\n    54 | \t}\n    55 | \n>   56 | \tpublic void setDate(LocalDate date) {\n    57 | \t\tthis.date = date;\n    58 | \t}\n    59 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/Visit.java",
+        "line": 60,
+        "snippet": "    57 | \t\tthis.date = date;\n    58 | \t}\n    59 | \n>   60 | \tpublic String getDescription() {\n    61 | \t\treturn this.description;\n    62 | \t}\n    63 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/Visit.java",
+        "line": 64,
+        "snippet": "    61 | \t\treturn this.description;\n    62 | \t}\n    63 | \n>   64 | \tpublic void setDescription(String description) {\n    65 | \t\tthis.description = description;\n    66 | \t}\n    67 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/vet/Vet.java",
+        "line": 53,
+        "snippet": "    50 | \t\t\tinverseJoinColumns = @JoinColumn(name = \"specialty_id\"))\n    51 | \tprivate Set<Specialty> specialties;\n    52 | \n>   53 | \tprotected Set<Specialty> getSpecialtiesInternal() {\n    54 | \t\tif (this.specialties == null) {\n    55 | \t\t\tthis.specialties = new HashSet<>();\n    56 | \t\t}",
+        "category": "EXISTING_REST"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/vet/Vet.java",
+        "line": 60,
+        "snippet": "    57 | \t\treturn this.specialties;\n    58 | \t}\n    59 | \n>   60 | \tprotected void setSpecialtiesInternal(Set<Specialty> specialties) {\n    61 | \t\tthis.specialties = specialties;\n    62 | \t}\n    63 | ",
+        "category": "EXISTING_REST"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/vet/Vet.java",
+        "line": 64,
+        "snippet": "    61 | \t\tthis.specialties = specialties;\n    62 | \t}\n    63 | \n>   64 | \t@XmlElement\n    65 | \tpublic List<Specialty> getSpecialties() {\n    66 | \t\tList<Specialty> sortedSpecs = new ArrayList<>(getSpecialtiesInternal());\n    67 | \t\tPropertyComparator.sort(sortedSpecs, new MutableSortDefinition(\"name\", true, true));",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/vet/Vet.java",
+        "line": 71,
+        "snippet": "    68 | \t\treturn Collections.unmodifiableList(sortedSpecs);\n    69 | \t}\n    70 | \n>   71 | \tpublic int getNrOfSpecialties() {\n    72 | \t\treturn getSpecialtiesInternal().size();\n    73 | \t}\n    74 | ",
+        "category": "EXISTING_REST"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/vet/Vet.java",
+        "line": 75,
+        "snippet": "    72 | \t\treturn getSpecialtiesInternal().size();\n    73 | \t}\n    74 | \n>   75 | \tpublic void addSpecialty(Specialty specialty) {\n    76 | \t\tgetSpecialtiesInternal().add(specialty);\n    77 | \t}\n    78 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/vet/Vets.java",
+        "line": 34,
+        "snippet": "    31 | \n    32 | \tprivate List<Vet> vets;\n    33 | \n>   34 | \t@XmlElement\n    35 | \tpublic List<Vet> getVetList() {\n    36 | \t\tif (vets == null) {\n    37 | \t\t\tvets = new ArrayList<>();",
+        "category": "EXISTING_REST"
+      }
+    ],
+    "metadata": {
+      "total_occurrences": 38,
+      "confidence": "low",
+      "safe_auto_apply": false,
+      "estimated_time_seconds": 19
+    }
+  }
+}

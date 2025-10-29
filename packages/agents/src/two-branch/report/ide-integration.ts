@@ -217,7 +217,7 @@ export class IDEIntegrationGenerator {
   /**
    * Extract code snippet from file
    */
-  private async extractSnippet(file: string, line: number, contextLines: number = 3): Promise<string> {
+  private async extractSnippet(file: string, line: number, contextLines = 3): Promise<string> {
     try {
       const fullPath = path.join(this.repositoryPath, file);
       if (!fs.existsSync(fullPath)) {

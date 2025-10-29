@@ -1,6 +1,6 @@
 /**
  * Header and Key Sections Generation Service
- * 
+ *
  * Handles generation of report header, key findings, critical blockers, and quick wins.
  * Extracted from v9-grouped-report-formatter.ts for better modularity.
  */
@@ -8,6 +8,9 @@
 import { EnrichedIssue } from './types';
 import { IssueGroup } from '../utils/issue-grouping';
 import { formatDate, formatDuration, getUserFriendlyTitle } from './formatter-utils';
+import { getRuleDescription, guessLanguage } from '../config/rule-descriptions';
+import * as fs from 'fs/promises';
+import * as path from 'path';
 
 /**
  * Check if a group can be auto-fixed
@@ -42,6 +45,12 @@ export function generateHeader(
   metadata: any,
   showPerfSubmetrics = true
 ): string {
+  console.log(`\n[DEBUG-PR#] ====== generateHeader ENTRY ======`);
+  console.log(`[DEBUG-PR#] metadata.prNumber: ${metadata.prNumber} (type: ${typeof metadata.prNumber})`);
+  console.log(`[DEBUG-PR#] metadata.repository: ${metadata.repository}`);
+  console.log(`[DEBUG-PR#] About to render: **Pull Request:** #${metadata.prNumber}`);
+  console.log(`[DEBUG-PR#] ======================================\n`);
+
   // BUG FIX #71: Support both 'APPROVE' and 'APPROVED' (metadata uses 'APPROVE', but some places use 'APPROVED')
   const icon = (metadata.decision === 'APPROVE' || metadata.decision === 'APPROVED') ? '✅' : '⛔';
   const analysisDate = formatDate(metadata.analyzedAt);
@@ -193,17 +202,46 @@ export function generateKeyFindings(
 }
 
 /**
+ * Extract code snippet from a file with line numbers and context
+ */
+async function extractCodeSnippet(
+  filePath: string,
+  line: number,
+  contextLines = 2
+): Promise<string> {
+  try {
+    const content = await fs.readFile(filePath, 'utf-8');
+    const lines = content.split('\n');
+
+    const start = Math.max(0, line - contextLines - 1);
+    const end = Math.min(lines.length, line + contextLines);
+
+    let snippet = '';
+    for (let i = start; i < end; i++) {
+      const lineNum = i + 1;
+      const marker = lineNum === line ? '>' : ' ';
+      snippet += `${marker} ${lineNum.toString().padStart(4)} | ${lines[i]}\n`;
+    }
+
+    return snippet;
+  } catch (error) {
+    return `// Could not extract code snippet: ${error instanceof Error ? error.message : String(error)}`;
+  }
+}
+
+/**
  * Generate critical blockers section
  * Lists issues that must be fixed before merge, prioritized by severity and impact
  */
-export function generateCriticalBlockers(
+export async function generateCriticalBlockers(
   groups: IssueGroup[],
-  blockingIssues: EnrichedIssue[]
-): string {
+  blockingIssues: EnrichedIssue[],
+  repoPath?: string
+): Promise<string> {
   if (blockingIssues.length === 0) {
     return `✅ **No critical blockers** - PR can be merged once reviewed\n\nAll identified issues are either low/medium severity or in unchanged code.`;
   }
-  
+
   // Group blockers by rule and compute priority score (severity > category > spread)
   const severityWeight = (sev: string) => sev === 'critical' ? 100 : sev === 'high' ? 60 : 0;
   const categoryWeight = (cat?: string) => {
@@ -224,27 +262,67 @@ export function generateCriticalBlockers(
       return { group: g, matches, filesSpread, score };
     })
     .sort((a, b) => b.score - a.score);
-  
+
   let content = `⛔ **${blockingIssues.length} issues must be fixed before merge**\n\n`;
   content += `**Fix Order (highest priority first):**\n\n`;
-  
-  blockerGroups.forEach((entry, idx) => {
+
+  // Show top 10 groups with detailed examples
+  const topGroups = blockerGroups.slice(0, 10);
+
+  for (const [idx, entry] of topGroups.entries()) {
     const { group, matches, filesSpread, score } = entry;
     const icon = group.severity === 'critical' ? '🔴' : '🟠';
-    content += `${idx + 1}. ${icon} **${getUserFriendlyTitle(group.rule, group.tool)}**\n`;
+    const ruleDesc = getRuleDescription(group.rule, group.tool);
+
+    content += `${idx + 1}. ${icon} **${ruleDesc.title}** (${group.rule})\n`;
     content += `   - Severity: ${group.severity.toUpperCase()}\n`;
-    content += `   - Category: ${group.detectedCategory || 'Code Quality'}\n`;
-  content += `   - Occurrences: ${group.count} (in ${filesSpread} files)\n`;
-  content += `   - Priority Score: ${score}\n`;
-  content += `     *(Priority = Severity[${severityWeight(group.severity)}] + Category[${categoryWeight(group.detectedCategory)}] + File Spread[log₂(${filesSpread})×10])*\n`;
-  // Include all example locations for clarity (may be long for large spreads)
-    const examples = matches.map(i => `${i.file}:${i.line || 0}`);
-    if (examples.length > 0) {
-      content += `   - Examples:\n`;
-      examples.forEach(ex => { content += `     • ${ex}\n`; });
+    content += `   - Category: ${ruleDesc.category}\n`;
+    content += `   - Occurrences: ${group.count} issues across ${filesSpread} files\n`;
+    content += `   - Priority Score: ${score}\n\n`;
+
+    // What's wrong section
+    content += `**What's Wrong:**\n`;
+    content += `${ruleDesc.description}\n\n`;
+
+    // Show 1 example with code snippet
+    const example = matches[0];
+    if (example) {
+      content += `**Example (${example.file}:${example.line || 0}):**\n`;
+
+      // Try to extract code snippet if repoPath provided
+      if (repoPath && example.file && example.line) {
+        const fullPath = path.join(repoPath, example.file);
+        const snippet = await extractCodeSnippet(fullPath, example.line);
+        const lang = guessLanguage(example.file);
+        content += `\`\`\`${lang}\n${snippet}\`\`\`\n\n`;
+      } else {
+        content += `\`\`\`\nLine ${example.line || 0}: ${example.message || 'Issue detected'}\n\`\`\`\n\n`;
+      }
+
+      // AI Recommendation
+      content += `**AI Recommendation:**\n`;
+      if (example.fixSuggestion?.fix) {
+        content += `${example.fixSuggestion.fix}\n\n`;
+      } else if (ruleDesc.fix) {
+        content += `${ruleDesc.fix}\n\n`;
+      } else {
+        content += `Review and address this ${ruleDesc.category.toLowerCase()} issue. ${ruleDesc.why}\n\n`;
+      }
+
+      // Reference total occurrences across all files
+      content += `\n**Total Occurrences:**\n`;
+      content += `This issue appears in **${filesSpread} file${filesSpread > 1 ? 's' : ''}** with **${group.count} total occurrence${group.count > 1 ? 's' : ''}** across your codebase.\n\n`;
+      content += `📥 **[Download IDE auto-fix for all ${group.count} occurrences →](#ide-fixes)**\n`;
     }
-    content += `\n`;
-  });
+
+    content += `\n---\n\n`;
+  }
+
+  if (blockerGroups.length > 10) {
+    content += `... and ${blockerGroups.length - 10} more issue groups\n\n`;
+  }
+
+  content += `📥 **[Download complete fix manifest for all ${blockingIssues.length} issues →](#ide-fixes)**\n\n`;
   
   // BUG FIX #29: Add detailed Priority Score explanation footnote
   content += `\n---\n\n`;

@@ -1,0 +1,136 @@
+{
+  "groupId": "com-puppycrawl-tools-checkstyle-checks-coding-magicnumbercheck-high-checkstyle",
+  "filename": "group-com-puppycrawl-tools-checkstyle-checks-coding-magicnumbercheck-high-checkstyle-fix.json",
+  "content": {
+    "version": "1.0",
+    "group_id": "com-puppycrawl-tools-checkstyle-checks-coding-magicnumbercheck-high-checkstyle",
+    "rule": "com.puppycrawl.tools.checkstyle.checks.coding.MagicNumberCheck",
+    "tool": "checkstyle",
+    "severity": "high",
+    "description": "Replace the magic number '10' with a named constant to improve readability and maintainability.",
+    "fix_pattern": {
+      "type": "template",
+      "example": {
+        "before": "",
+        "after": "Before:\nint limit = 10;\n\nAfter:\nprivate static final int DEFAULT_LIMIT = 10;\nint limit = DEFAULT_LIMIT;"
+      },
+      "instructions": "Replace the magic number '10' with a named constant to improve readability and maintainability."
+    },
+    "locations": [
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/Owner.java",
+        "line": 59,
+        "snippet": "    56 | \n    57 | \t@Column(name = \"telephone\")\n    58 | \t@NotEmpty\n>   59 | \t@Digits(fraction = 0, integer = 10)\n    60 | \tprivate String telephone;\n    61 | \n    62 | \t@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java",
+        "line": 124,
+        "snippet": "   121 | \n   122 | \tprivate Page<Owner> findPaginatedForOwnersLastName(int page, String lastname) {\n   123 | \n>  124 | \t\tint pageSize = 5;\n   125 | \t\tPageable pageable = PageRequest.of(page - 1, pageSize);\n   126 | \t\treturn owners.findByLastName(lastname, pageable);\n   127 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/vet/VetController.java",
+        "line": 65,
+        "snippet": "    62 | \t}\n    63 | \n    64 | \tprivate Page<Vet> findPaginated(int page) {\n>   65 | \t\tint pageSize = 5;\n    66 | \t\tPageable pageable = PageRequest.of(page - 1, pageSize);\n    67 | \t\treturn vets.findAll(pageable);\n    68 | \t}",
+        "category": "NEW"
+      },
+      {
+        "file": "src/test/java/org/springframework/samples/petclinic/owner/PetControllerTests.java",
+        "line": 56,
+        "snippet": "    53 | \t@BeforeEach\n    54 | \tvoid setup() {\n    55 | \t\tPetType cat = new PetType();\n>   56 | \t\tcat.setId(3);\n    57 | \t\tcat.setName(\"hamster\");\n    58 | \t\tgiven(this.owners.findPetTypes()).willReturn(Lists.newArrayList(cat));\n    59 | \t\tOwner owner = new Owner();",
+        "category": "EXISTING_REST"
+      },
+      {
+        "file": "src/test/java/org/springframework/samples/petclinic/service/ClinicServiceTests.java",
+        "line": 141,
+        "snippet": "   138 | \n   139 | \t\tPetType petType1 = EntityUtils.getById(petTypes, PetType.class, 1);\n   140 | \t\tassertThat(petType1.getName()).isEqualTo(\"cat\");\n>  141 | \t\tPetType petType4 = EntityUtils.getById(petTypes, PetType.class, 4);\n   142 | \t\tassertThat(petType4.getName()).isEqualTo(\"snake\");\n   143 | \t}\n   144 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/test/java/org/springframework/samples/petclinic/service/ClinicServiceTests.java",
+        "line": 148,
+        "snippet": "   145 | \t@Test\n   146 | \t@Transactional\n   147 | \tvoid shouldInsertPetIntoDatabaseAndGenerateId() {\n>  148 | \t\tOwner owner6 = this.owners.findById(6);\n   149 | \t\tint found = owner6.getPets().size();\n   150 | \n   151 | \t\tPet pet = new Pet();",
+        "category": "NEW"
+      },
+      {
+        "file": "src/test/java/org/springframework/samples/petclinic/service/ClinicServiceTests.java",
+        "line": 161,
+        "snippet": "   158 | \n   159 | \t\tthis.owners.save(owner6);\n   160 | \n>  161 | \t\towner6 = this.owners.findById(6);\n   162 | \t\tassertThat(owner6.getPets().size()).isEqualTo(found + 1);\n   163 | \t\t// checks that id has been generated\n   164 | \t\tpet = owner6.getPet(\"bowser\");",
+        "category": "NEW"
+      },
+      {
+        "file": "src/test/java/org/springframework/samples/petclinic/service/ClinicServiceTests.java",
+        "line": 171,
+        "snippet": "   168 | \t@Test\n   169 | \t@Transactional\n   170 | \tvoid shouldUpdatePetName() throws Exception {\n>  171 | \t\tOwner owner6 = this.owners.findById(6);\n   172 | \t\tPet pet7 = owner6.getPet(7);\n   173 | \t\tString oldName = pet7.getName();\n   174 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/test/java/org/springframework/samples/petclinic/service/ClinicServiceTests.java",
+        "line": 172,
+        "snippet": "   169 | \t@Transactional\n   170 | \tvoid shouldUpdatePetName() throws Exception {\n   171 | \t\tOwner owner6 = this.owners.findById(6);\n>  172 | \t\tPet pet7 = owner6.getPet(7);\n   173 | \t\tString oldName = pet7.getName();\n   174 | \n   175 | \t\tString newName = oldName + \"X\";",
+        "category": "NEW"
+      },
+      {
+        "file": "src/test/java/org/springframework/samples/petclinic/service/ClinicServiceTests.java",
+        "line": 179,
+        "snippet": "   176 | \t\tpet7.setName(newName);\n   177 | \t\tthis.owners.save(owner6);\n   178 | \n>  179 | \t\towner6 = this.owners.findById(6);\n   180 | \t\tpet7 = owner6.getPet(7);\n   181 | \t\tassertThat(pet7.getName()).isEqualTo(newName);\n   182 | \t}",
+        "category": "NEW"
+      },
+      {
+        "file": "src/test/java/org/springframework/samples/petclinic/service/ClinicServiceTests.java",
+        "line": 180,
+        "snippet": "   177 | \t\tthis.owners.save(owner6);\n   178 | \n   179 | \t\towner6 = this.owners.findById(6);\n>  180 | \t\tpet7 = owner6.getPet(7);\n   181 | \t\tassertThat(pet7.getName()).isEqualTo(newName);\n   182 | \t}\n   183 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/test/java/org/springframework/samples/petclinic/service/ClinicServiceTests.java",
+        "line": 188,
+        "snippet": "   185 | \tvoid shouldFindVets() {\n   186 | \t\tCollection<Vet> vets = this.vets.findAll();\n   187 | \n>  188 | \t\tVet vet = EntityUtils.getById(vets, Vet.class, 3);\n   189 | \t\tassertThat(vet.getLastName()).isEqualTo(\"Douglas\");\n   190 | \t\tassertThat(vet.getNrOfSpecialties()).isEqualTo(2);\n   191 | \t\tassertThat(vet.getSpecialties().get(0).getName()).isEqualTo(\"dentistry\");",
+        "category": "NEW"
+      },
+      {
+        "file": "src/test/java/org/springframework/samples/petclinic/service/ClinicServiceTests.java",
+        "line": 198,
+        "snippet": "   195 | \t@Test\n   196 | \t@Transactional\n   197 | \tvoid shouldAddNewVisitForPet() {\n>  198 | \t\tOwner owner6 = this.owners.findById(6);\n   199 | \t\tPet pet7 = owner6.getPet(7);\n   200 | \t\tint found = pet7.getVisits().size();\n   201 | \t\tVisit visit = new Visit();",
+        "category": "NEW"
+      },
+      {
+        "file": "src/test/java/org/springframework/samples/petclinic/service/ClinicServiceTests.java",
+        "line": 199,
+        "snippet": "   196 | \t@Transactional\n   197 | \tvoid shouldAddNewVisitForPet() {\n   198 | \t\tOwner owner6 = this.owners.findById(6);\n>  199 | \t\tPet pet7 = owner6.getPet(7);\n   200 | \t\tint found = pet7.getVisits().size();\n   201 | \t\tVisit visit = new Visit();\n   202 | \t\tvisit.setDescription(\"test\");",
+        "category": "NEW"
+      },
+      {
+        "file": "src/test/java/org/springframework/samples/petclinic/service/ClinicServiceTests.java",
+        "line": 207,
+        "snippet": "   204 | \t\towner6.addVisit(pet7.getId(), visit);\n   205 | \t\tthis.owners.save(owner6);\n   206 | \n>  207 | \t\towner6 = this.owners.findById(6);\n   208 | \n   209 | \t\tassertThat(pet7.getVisits()) //\n   210 | \t\t\t\t.hasSize(found + 1) //",
+        "category": "NEW"
+      },
+      {
+        "file": "src/test/java/org/springframework/samples/petclinic/service/ClinicServiceTests.java",
+        "line": 216,
+        "snippet": "   213 | \n   214 | \t@Test\n   215 | \tvoid shouldFindVisitsByPetId() throws Exception {\n>  216 | \t\tOwner owner6 = this.owners.findById(6);\n   217 | \t\tPet pet7 = owner6.getPet(7);\n   218 | \t\tCollection<Visit> visits = pet7.getVisits();\n   219 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/test/java/org/springframework/samples/petclinic/service/ClinicServiceTests.java",
+        "line": 217,
+        "snippet": "   214 | \t@Test\n   215 | \tvoid shouldFindVisitsByPetId() throws Exception {\n   216 | \t\tOwner owner6 = this.owners.findById(6);\n>  217 | \t\tPet pet7 = owner6.getPet(7);\n   218 | \t\tCollection<Visit> visits = pet7.getVisits();\n   219 | \n   220 | \t\tassertThat(visits) //",
+        "category": "NEW"
+      },
+      {
+        "file": "src/test/java/org/springframework/samples/petclinic/vet/VetTests.java",
+        "line": 33,
+        "snippet": "    30 | \t\tVet vet = new Vet();\n    31 | \t\tvet.setFirstName(\"Zaphod\");\n    32 | \t\tvet.setLastName(\"Beeblebrox\");\n>   33 | \t\tvet.setId(123);\n    34 | \t\tVet other = (Vet) SerializationUtils.deserialize(SerializationUtils.serialize(vet));\n    35 | \t\tassertThat(other.getFirstName()).isEqualTo(vet.getFirstName());\n    36 | \t\tassertThat(other.getLastName()).isEqualTo(vet.getLastName());",
+        "category": "EXISTING_REST"
+      }
+    ],
+    "metadata": {
+      "total_occurrences": 18,
+      "confidence": "low",
+      "safe_auto_apply": false,
+      "estimated_time_seconds": 9
+    }
+  }
+}

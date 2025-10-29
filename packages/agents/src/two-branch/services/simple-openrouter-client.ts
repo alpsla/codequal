@@ -28,7 +28,12 @@ export class SimpleOpenRouterClient {
   private openrouterClient: OpenAI;
   private geminiClient: OpenAI | null = null;
   private useEmergencyFallback = false;
-  
+
+  // Key rotation support (matching ModelConfigResolver)
+  private openrouterKeys: string[] = [];
+  private currentKeyIndex = 0;
+  private failedKeys: Set<string> = new Set();
+
   // Rate limiting to prevent runaway costs
   private callCount = 0;
   private sessionStartTime = Date.now();
@@ -36,9 +41,13 @@ export class SimpleOpenRouterClient {
   private readonly SESSION_DURATION_MS = 60 * 60 * 1000; // 1 hour
 
   constructor() {
-    // Initialize OpenRouter client
+    // Load OpenRouter API keys (supports multiple keys via OPENROUTER_API_KEYS)
+    this.loadOpenRouterKeys();
+
+    // Initialize OpenRouter client with first available key
+    const initialKey = this.getNextOpenRouterKey() || process.env.OPENROUTER_API_KEY || '';
     this.openrouterClient = new OpenAI({
-      apiKey: process.env.OPENROUTER_API_KEY || '',
+      apiKey: initialKey,
       baseURL: 'https://openrouter.ai/api/v1',
       defaultHeaders: {
         'HTTP-Referer': 'https://codequal.com',
@@ -53,8 +62,82 @@ export class SimpleOpenRouterClient {
         baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/'
       } as any);
     }
-    
+
     console.log(`[SimpleClient] Rate limit: ${this.MAX_CALLS_PER_SESSION} calls per session`);
+    console.log(`[SimpleClient] Loaded ${this.openrouterKeys.length} OpenRouter API key(s)`);
+  }
+
+  /**
+   * Load OpenRouter API keys from environment variables
+   * Supports both single key (OPENROUTER_API_KEY) and multiple keys (OPENROUTER_API_KEYS)
+   */
+  private loadOpenRouterKeys(): void {
+    const keysString = process.env.OPENROUTER_API_KEYS || process.env.OPENROUTER_API_KEY || '';
+
+    if (keysString) {
+      // Split by comma, semicolon, or newline and filter empty strings
+      this.openrouterKeys = keysString
+        .split(/[,;\n]/)
+        .map(key => key.trim())
+        .filter(key => key.length > 0);
+    }
+  }
+
+  /**
+   * Get the next available OpenRouter API key
+   * Rotates through available keys, skipping failed ones
+   */
+  private getNextOpenRouterKey(): string | null {
+    if (this.openrouterKeys.length === 0) {
+      return null;
+    }
+
+    // Try all keys once
+    const startIndex = this.currentKeyIndex;
+    do {
+      const key = this.openrouterKeys[this.currentKeyIndex];
+
+      // Move to next key for subsequent calls
+      this.currentKeyIndex = (this.currentKeyIndex + 1) % this.openrouterKeys.length;
+
+      // Skip if this key has failed
+      if (!this.failedKeys.has(key)) {
+        return key;
+      }
+
+    } while (this.currentKeyIndex !== startIndex);
+
+    // All keys have failed
+    return null;
+  }
+
+  /**
+   * Mark an OpenRouter key as failed and rotate to next key
+   */
+  private markKeyAsFailedAndRotate(): boolean {
+    const currentKey = (this.openrouterClient as any).apiKey;
+    if (currentKey) {
+      this.failedKeys.add(currentKey);
+      console.warn(`[SimpleClient] ⚠️  Marked OpenRouter key as failed (${this.failedKeys.size}/${this.openrouterKeys.length} failed)`);
+    }
+
+    // Try to get next available key
+    const nextKey = this.getNextOpenRouterKey();
+    if (nextKey) {
+      console.log(`[SimpleClient] 🔄 Rotating to next OpenRouter key`);
+      // Update the client with new key
+      this.openrouterClient = new OpenAI({
+        apiKey: nextKey,
+        baseURL: 'https://openrouter.ai/api/v1',
+        defaultHeaders: {
+          'HTTP-Referer': 'https://codequal.com',
+          'X-Title': 'CodeQual Test'
+        }
+      } as any);
+      return true; // Successfully rotated
+    }
+
+    return false; // No more keys available
   }
   
   /**
@@ -90,13 +173,13 @@ export class SimpleOpenRouterClient {
   }
 
   /**
-   * Simple chat completion - ONE call, fallback on 401 only
+   * Simple chat completion - WITH KEY ROTATION on 401 errors
    * WITH RATE LIMITING to prevent runaway costs
    */
   async chat(request: SimpleAIRequest): Promise<SimpleAIResponse> {
     // Check rate limit BEFORE making API call
     this.checkRateLimit();
-    
+
     const {
       systemPrompt,
       userPrompt,
@@ -108,13 +191,13 @@ export class SimpleOpenRouterClient {
     // Increment call counter
     this.callCount++;
     console.log(`[SimpleClient] API call ${this.callCount}/${this.MAX_CALLS_PER_SESSION}`);
-    
+
     // If already using fallback, go straight to Gemini
     if (this.useEmergencyFallback && (process.env.STRICT_NO_FALLBACK === 'true' || process.env.E2E_DISABLE_EMERGENCY_FALLBACK === 'true')) {
       throw new Error('ALERT: Emergency fallback is disabled by STRICT_NO_FALLBACK');
     }
 
-    // Try OpenRouter once
+    // Try OpenRouter with current key
     try {
       const response = await this.openrouterClient.chat.completions.create({
         model,
@@ -133,17 +216,29 @@ export class SimpleOpenRouterClient {
       };
 
     } catch (error: any) {
-      // On 401 authentication error
+      // On 401 authentication error, try key rotation
       if (error.status === 401 || error.message?.includes('401') || error.message?.includes('authentication')) {
-        if (process.env.STRICT_NO_FALLBACK === 'true' || process.env.E2E_DISABLE_EMERGENCY_FALLBACK === 'true') {
-          throw new Error('ALERT: OpenRouter authentication failed and STRICT_NO_FALLBACK is enabled');
+        console.warn('[SimpleClient] ⚠️  OpenRouter 401 error - attempting key rotation');
+
+        // Try to rotate to next available key
+        if (this.markKeyAsFailedAndRotate()) {
+          console.log('[SimpleClient] 🔄 Retrying with rotated key...');
+          // Retry the request with new key (recursive call)
+          return this.chat(request);
         }
-        console.warn('[SimpleClient] ⚠️  OpenRouter 401 error - switching to Gemini fallback');
+
+        // All keys failed, check if fallback is allowed
+        if (process.env.STRICT_NO_FALLBACK === 'true' || process.env.E2E_DISABLE_EMERGENCY_FALLBACK === 'true') {
+          throw new Error('ALERT: All OpenRouter keys failed and STRICT_NO_FALLBACK is enabled');
+        }
+
+        // Fall back to Gemini if available
+        console.warn('[SimpleClient] ⚠️  All OpenRouter keys exhausted - switching to Gemini fallback');
         if (this.geminiClient) {
           this.useEmergencyFallback = true;
           return this.callGemini(systemPrompt, userPrompt, temperature, maxTokens);
         }
-        throw new Error('OpenRouter authentication failed and no emergency fallback configured');
+        throw new Error('All OpenRouter keys failed and no emergency fallback configured');
       }
 
       // For any other error, throw immediately (no retries)

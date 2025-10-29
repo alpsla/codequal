@@ -7,6 +7,7 @@
 
 import { EnrichedIssue, IssueLocation } from './types';
 import * as path from 'path';
+import { execSync } from 'child_process';
 
 /**
  * Find full path for a file basename in the repository
@@ -22,7 +23,6 @@ export async function findFullPath(basename: string, repoPath: string | null): P
   }
   
   try {
-    const { execSync } = require('child_process');
     const result = execSync(
       `find "${repoPath}" -type f -name "${basename}" | grep -v "/\\.git/" | head -1`,
       { encoding: 'utf-8' }

@@ -332,7 +332,7 @@ export async function calculateFullV9Score(
  * Counts ALL issues: NEW, EXISTING_MODIFIED, EXISTING_REST, RESOLVED
  * All have same weight (only sign differs)
  */
-export function calculateCategoryScore(categoryIssues: EnrichedIssue[], baseScore: number = 100): number {
+export function calculateCategoryScore(categoryIssues: EnrichedIssue[], baseScore = 100): number {
   // SESSION 13 FIX: Use provided baseScore (100 for APP, 50 for Skill)
   let score = baseScore;
   
@@ -444,7 +444,7 @@ export function calculateSimplifiedScore(issues: EnrichedIssue[]): any {
     codeQuality: issues.filter(i => i.detectedCategory === 'Code Quality')
   };
   
-  // Calculate score for each category (same logic as calculateFullV9Score)
+  // Calculate score for each category with base=100 (for APP Score)
   const categoryScores = {
     security: calculateCategoryScore(issuesByCategory.security, 100),
     performance: calculateCategoryScore(issuesByCategory.performance, 100),
@@ -452,7 +452,16 @@ export function calculateSimplifiedScore(issues: EnrichedIssue[]): any {
     dependency: calculateCategoryScore(issuesByCategory.dependency, 100),
     codeQuality: calculateCategoryScore(issuesByCategory.codeQuality, 100)
   };
-  
+
+  // Calculate skill category scores with base=50 (for Skill Score)
+  const skillCategoryScores = {
+    security: calculateCategoryScore(issuesByCategory.security, 50),
+    performance: calculateCategoryScore(issuesByCategory.performance, 50),
+    architecture: calculateCategoryScore(issuesByCategory.architecture, 50),
+    dependency: calculateCategoryScore(issuesByCategory.dependency, 50),
+    codeQuality: calculateCategoryScore(issuesByCategory.codeQuality, 50)
+  };
+
   // APP Score = MIN of all categories (weakest link)
   const appScore = Math.min(
     categoryScores.security,
@@ -461,11 +470,11 @@ export function calculateSimplifiedScore(issues: EnrichedIssue[]): any {
     categoryScores.dependency,
     categoryScores.codeQuality
   );
-  
-  // Skill Score = AVG of all categories
+
+  // Skill Score = AVG of skill category scores (base=50)
   const skillScore = Math.round(
-    (categoryScores.security + categoryScores.performance + categoryScores.architecture + 
-     categoryScores.dependency + categoryScores.codeQuality) / 5
+    (skillCategoryScores.security + skillCategoryScores.performance + skillCategoryScores.architecture +
+     skillCategoryScores.dependency + skillCategoryScores.codeQuality) / 5
   );
   
   return {
@@ -482,8 +491,8 @@ export function calculateSimplifiedScore(issues: EnrichedIssue[]): any {
       finalScore: Math.round(finalScore * 10) / 10
     },
     // P0 FIX: Include category scores even without Supabase
-    categoryScores,
-    skillCategoryScores: categoryScores,  // Same as categoryScores for simplified mode
+    categoryScores,      // APP Score uses base=100
+    skillCategoryScores, // Skill Score uses base=50
     appScore,
     skillScore
   };

@@ -1,0 +1,40 @@
+{
+  "groupId": "yaml-docker-compose-security-no-new-privileges-no-new-privileges-high-semgrep",
+  "filename": "group-yaml-docker-compose-security-no-new-privileges-no-new-privileges-high-semgrep-fix.json",
+  "content": {
+    "version": "1.0",
+    "group_id": "yaml-docker-compose-security-no-new-privileges-no-new-privileges-high-semgrep",
+    "rule": "yaml.docker-compose.security.no-new-privileges.no-new-privileges",
+    "tool": "semgrep",
+    "severity": "high",
+    "description": "1. Open the 'docker-compose.yml' file.\n2. Locate the 'mysql' service configuration.\n3. Add 'security_opt' with 'no-new-privileges:true' under the 'mysql' service to prevent privilege escalation via setuid or setgid binaries. Reference OWASP Docker Top 10 (D1 - Insecure Configuration).",
+    "fix_pattern": {
+      "type": "template",
+      "example": {
+        "before": "",
+        "after": "before:\n  mysql:\n    image: mysql\n    ports:\n      - '3306:3306'\n\nafter:\n  mysql:\n    image: mysql\n    ports:\n      - '3306:3306'\n    security_opt:\n      - no-new-privileges:true"
+      },
+      "instructions": "1. Open the 'docker-compose.yml' file.\n2. Locate the 'mysql' service configuration.\n3. Add 'security_opt' with 'no-new-privileges:true' under the 'mysql' service to prevent privilege escalation via setuid or setgid binaries. Reference OWASP Docker Top 10 (D1 - Insecure Configuration)."
+    },
+    "locations": [
+      {
+        "file": "docker-compose.yml",
+        "line": 4,
+        "snippet": "     1 | version: \"2.2\"\n     2 | \n     3 | services:\n>    4 |   mysql:\n     5 |     image: mysql:5.7\n     6 |     ports:\n     7 |       - \"3306:3306\"",
+        "category": "NEW"
+      },
+      {
+        "file": "docker-compose.yml",
+        "line": 16,
+        "snippet": "    13 |       - MYSQL_DATABASE=petclinic\n    14 |     volumes:\n    15 |       - \"./conf.d:/etc/mysql/conf.d:ro\"\n>   16 |   postgres:\n    17 |     image: postgres:14.1\n    18 |     ports:\n    19 |       - \"5432:5432\"",
+        "category": "NEW"
+      }
+    ],
+    "metadata": {
+      "total_occurrences": 2,
+      "confidence": "low",
+      "safe_auto_apply": false,
+      "estimated_time_seconds": 1
+    }
+  }
+}

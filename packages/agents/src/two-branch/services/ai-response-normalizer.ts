@@ -108,7 +108,7 @@ export class AIResponseNormalizer {
   /**
    * Extract string from various formats
    */
-  private extractString(value: any, defaultValue: string = ''): string {
+  private extractString(value: any, defaultValue = ''): string {
     if (typeof value === 'string') {
       return value;
     }
@@ -207,7 +207,7 @@ export class AIResponseNormalizer {
     return content
       .replace(/^```[\w]*\n/, '') // Remove opening code fence
       .replace(/\n```$/, '') // Remove closing code fence
-      .replace(/^\s*[\*\-\+]\s*/gm, '') // Remove bullet points
+      .replace(/^\s*[*\-+]\s*/gm, '') // Remove bullet points
       .trim();
   }
 

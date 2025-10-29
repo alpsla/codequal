@@ -1,0 +1,598 @@
+{
+  "groupId": "com-puppycrawl-tools-checkstyle-checks-finalparameterscheck-high-checkstyle",
+  "filename": "group-com-puppycrawl-tools-checkstyle-checks-finalparameterscheck-high-checkstyle-fix.json",
+  "content": {
+    "version": "1.0",
+    "group_id": "com-puppycrawl-tools-checkstyle-checks-finalparameterscheck-high-checkstyle",
+    "rule": "com.puppycrawl.tools.checkstyle.checks.FinalParametersCheck",
+    "tool": "checkstyle",
+    "severity": "high",
+    "description": "Mark the 'args' parameter as final to prevent unintended reassignment and ensure code clarity.",
+    "fix_pattern": {
+      "type": "template",
+      "example": {
+        "before": "",
+        "after": "Before: public static void main(String[] args) { ... }\nAfter: public static void main(final String[] args) { ... }"
+      },
+      "instructions": "Mark the 'args' parameter as final to prevent unintended reassignment and ensure code clarity."
+    },
+    "locations": [
+      {
+        "file": ".mvn/wrapper/MavenWrapperDownloader.java",
+        "line": 48,
+        "snippet": "    45 |      */\n    46 |     private static final String PROPERTY_NAME_WRAPPER_URL = \"wrapperUrl\";\n    47 | \n>   48 |     public static void main(String args[]) {\n    49 |         System.out.println(\"- Downloader started\");\n    50 |         File baseDirectory = new File(args[0]);\n    51 |         System.out.println(\"- Using base directory: \" + baseDirectory.getAbsolutePath());",
+        "category": "NEW"
+      },
+      {
+        "file": ".mvn/wrapper/MavenWrapperDownloader.java",
+        "line": 97,
+        "snippet": "    94 |         }\n    95 |     }\n    96 | \n>   97 |     private static void downloadFileFromURL(String urlString, File destination) throws Exception {\n    98 |         if (System.getenv(\"MVNW_USERNAME\") != null && System.getenv(\"MVNW_PASSWORD\") != null) {\n    99 |             String username = System.getenv(\"MVNW_USERNAME\");\n   100 |             char[] password = System.getenv(\"MVNW_PASSWORD\").toCharArray();",
+        "category": "NEW"
+      },
+      {
+        "file": ".mvn/wrapper/MavenWrapperDownloader.java",
+        "line": 97,
+        "snippet": "    94 |         }\n    95 |     }\n    96 | \n>   97 |     private static void downloadFileFromURL(String urlString, File destination) throws Exception {\n    98 |         if (System.getenv(\"MVNW_USERNAME\") != null && System.getenv(\"MVNW_PASSWORD\") != null) {\n    99 |             String username = System.getenv(\"MVNW_USERNAME\");\n   100 |             char[] password = System.getenv(\"MVNW_PASSWORD\").toCharArray();",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/model/BaseEntity.java",
+        "line": 43,
+        "snippet": "    40 | \t\treturn id;\n    41 | \t}\n    42 | \n>   43 | \tpublic void setId(Integer id) {\n    44 | \t\tthis.id = id;\n    45 | \t}\n    46 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/model/NamedEntity.java",
+        "line": 38,
+        "snippet": "    35 | \t\treturn this.name;\n    36 | \t}\n    37 | \n>   38 | \tpublic void setName(String name) {\n    39 | \t\tthis.name = name;\n    40 | \t}\n    41 | ",
+        "category": "EXISTING_REST"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/model/Person.java",
+        "line": 42,
+        "snippet": "    39 | \t\treturn this.firstName;\n    40 | \t}\n    41 | \n>   42 | \tpublic void setFirstName(String firstName) {\n    43 | \t\tthis.firstName = firstName;\n    44 | \t}\n    45 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/model/Person.java",
+        "line": 50,
+        "snippet": "    47 | \t\treturn this.lastName;\n    48 | \t}\n    49 | \n>   50 | \tpublic void setLastName(String lastName) {\n    51 | \t\tthis.lastName = lastName;\n    52 | \t}\n    53 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/Owner.java",
+        "line": 71,
+        "snippet": "    68 | \t\treturn this.address;\n    69 | \t}\n    70 | \n>   71 | \tpublic void setAddress(String address) {\n    72 | \t\tthis.address = address;\n    73 | \t}\n    74 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/Owner.java",
+        "line": 79,
+        "snippet": "    76 | \t\treturn this.city;\n    77 | \t}\n    78 | \n>   79 | \tpublic void setCity(String city) {\n    80 | \t\tthis.city = city;\n    81 | \t}\n    82 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/Owner.java",
+        "line": 87,
+        "snippet": "    84 | \t\treturn this.telephone;\n    85 | \t}\n    86 | \n>   87 | \tpublic void setTelephone(String telephone) {\n    88 | \t\tthis.telephone = telephone;\n    89 | \t}\n    90 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/Owner.java",
+        "line": 95,
+        "snippet": "    92 | \t\treturn this.pets;\n    93 | \t}\n    94 | \n>   95 | \tpublic void addPet(Pet pet) {\n    96 | \t\tif (pet.isNew()) {\n    97 | \t\t\tgetPets().add(pet);\n    98 | \t\t}",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/Owner.java",
+        "line": 106,
+        "snippet": "   103 | \t * @param name to test\n   104 | \t * @return true if pet name is already in use\n   105 | \t */\n>  106 | \tpublic Pet getPet(String name) {\n   107 | \t\treturn getPet(name, false);\n   108 | \t}\n   109 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/Owner.java",
+        "line": 115,
+        "snippet": "   112 | \t * @param name to test\n   113 | \t * @return a pet if pet id is already in use\n   114 | \t */\n>  115 | \tpublic Pet getPet(Integer id) {\n   116 | \t\tfor (Pet pet : getPets()) {\n   117 | \t\t\tif (!pet.isNew()) {\n   118 | \t\t\t\tInteger compId = pet.getId();",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/Owner.java",
+        "line": 132,
+        "snippet": "   129 | \t * @param name to test\n   130 | \t * @return true if pet name is already in use\n   131 | \t */\n>  132 | \tpublic Pet getPet(String name, boolean ignoreNew) {\n   133 | \t\tname = name.toLowerCase();\n   134 | \t\tfor (Pet pet : getPets()) {\n   135 | \t\t\tif (!ignoreNew || !pet.isNew()) {",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/Owner.java",
+        "line": 132,
+        "snippet": "   129 | \t * @param name to test\n   130 | \t * @return true if pet name is already in use\n   131 | \t */\n>  132 | \tpublic Pet getPet(String name, boolean ignoreNew) {\n   133 | \t\tname = name.toLowerCase();\n   134 | \t\tfor (Pet pet : getPets()) {\n   135 | \t\t\tif (!ignoreNew || !pet.isNew()) {",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/Owner.java",
+        "line": 159,
+        "snippet": "   156 | \t * @param petId the identifier of the {@link Pet}, must not be {@literal null}.\n   157 | \t * @param visit the visit to add, must not be {@literal null}.\n   158 | \t */\n>  159 | \tpublic Owner addVisit(Integer petId, Visit visit) {\n   160 | \n   161 | \t\tAssert.notNull(petId, \"Pet identifier must not be null!\");\n   162 | \t\tAssert.notNull(visit, \"Visit must not be null!\");",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/Owner.java",
+        "line": 159,
+        "snippet": "   156 | \t * @param petId the identifier of the {@link Pet}, must not be {@literal null}.\n   157 | \t * @param visit the visit to add, must not be {@literal null}.\n   158 | \t */\n>  159 | \tpublic Owner addVisit(Integer petId, Visit visit) {\n   160 | \n   161 | \t\tAssert.notNull(petId, \"Pet identifier must not be null!\");\n   162 | \t\tAssert.notNull(visit, \"Visit must not be null!\");",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java",
+        "line": 50,
+        "snippet": "    47 | \n    48 | \tprivate final OwnerRepository owners;\n    49 | \n>   50 | \tpublic OwnerController(OwnerRepository clinicService) {\n    51 | \t\tthis.owners = clinicService;\n    52 | \t}\n    53 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java",
+        "line": 55,
+        "snippet": "    52 | \t}\n    53 | \n    54 | \t@InitBinder\n>   55 | \tpublic void setAllowedFields(WebDataBinder dataBinder) {\n    56 | \t\tdataBinder.setDisallowedFields(\"id\");\n    57 | \t}\n    58 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java",
+        "line": 60,
+        "snippet": "    57 | \t}\n    58 | \n    59 | \t@GetMapping(\"/owners/new\")\n>   60 | \tpublic String initCreationForm(Map<String, Object> model) {\n    61 | \t\tOwner owner = new Owner();\n    62 | \t\tmodel.put(\"owner\", owner);\n    63 | \t\treturn VIEWS_OWNER_CREATE_OR_UPDATE_FORM;",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java",
+        "line": 67,
+        "snippet": "    64 | \t}\n    65 | \n    66 | \t@PostMapping(\"/owners/new\")\n>   67 | \tpublic String processCreationForm(@Valid Owner owner, BindingResult result) {\n    68 | \t\tif (result.hasErrors()) {\n    69 | \t\t\treturn VIEWS_OWNER_CREATE_OR_UPDATE_FORM;\n    70 | \t\t}",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java",
+        "line": 67,
+        "snippet": "    64 | \t}\n    65 | \n    66 | \t@PostMapping(\"/owners/new\")\n>   67 | \tpublic String processCreationForm(@Valid Owner owner, BindingResult result) {\n    68 | \t\tif (result.hasErrors()) {\n    69 | \t\t\treturn VIEWS_OWNER_CREATE_OR_UPDATE_FORM;\n    70 | \t\t}",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java",
+        "line": 78,
+        "snippet": "    75 | \t}\n    76 | \n    77 | \t@GetMapping(\"/owners/find\")\n>   78 | \tpublic String initFindForm(Map<String, Object> model) {\n    79 | \t\tmodel.put(\"owner\", new Owner());\n    80 | \t\treturn \"owners/findOwners\";\n    81 | \t}",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java",
+        "line": 84,
+        "snippet": "    81 | \t}\n    82 | \n    83 | \t@GetMapping(\"/owners\")\n>   84 | \tpublic String processFindForm(@RequestParam(defaultValue = \"1\") int page, Owner owner, BindingResult result,\n    85 | \t\t\tModel model) {\n    86 | \n    87 | \t\t// allow parameterless GET request for /owners to return all records",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java",
+        "line": 84,
+        "snippet": "    81 | \t}\n    82 | \n    83 | \t@GetMapping(\"/owners\")\n>   84 | \tpublic String processFindForm(@RequestParam(defaultValue = \"1\") int page, Owner owner, BindingResult result,\n    85 | \t\t\tModel model) {\n    86 | \n    87 | \t\t// allow parameterless GET request for /owners to return all records",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java",
+        "line": 84,
+        "snippet": "    81 | \t}\n    82 | \n    83 | \t@GetMapping(\"/owners\")\n>   84 | \tpublic String processFindForm(@RequestParam(defaultValue = \"1\") int page, Owner owner, BindingResult result,\n    85 | \t\t\tModel model) {\n    86 | \n    87 | \t\t// allow parameterless GET request for /owners to return all records",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java",
+        "line": 85,
+        "snippet": "    82 | \n    83 | \t@GetMapping(\"/owners\")\n    84 | \tpublic String processFindForm(@RequestParam(defaultValue = \"1\") int page, Owner owner, BindingResult result,\n>   85 | \t\t\tModel model) {\n    86 | \n    87 | \t\t// allow parameterless GET request for /owners to return all records\n    88 | \t\tif (owner.getLastName() == null) {",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java",
+        "line": 112,
+        "snippet": "   109 | \t\t}\n   110 | \t}\n   111 | \n>  112 | \tprivate String addPaginationModel(int page, Model model, String lastName, Page<Owner> paginated) {\n   113 | \t\tmodel.addAttribute(\"listOwners\", paginated);\n   114 | \t\tList<Owner> listOwners = paginated.getContent();\n   115 | \t\tmodel.addAttribute(\"currentPage\", page);",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java",
+        "line": 112,
+        "snippet": "   109 | \t\t}\n   110 | \t}\n   111 | \n>  112 | \tprivate String addPaginationModel(int page, Model model, String lastName, Page<Owner> paginated) {\n   113 | \t\tmodel.addAttribute(\"listOwners\", paginated);\n   114 | \t\tList<Owner> listOwners = paginated.getContent();\n   115 | \t\tmodel.addAttribute(\"currentPage\", page);",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java",
+        "line": 112,
+        "snippet": "   109 | \t\t}\n   110 | \t}\n   111 | \n>  112 | \tprivate String addPaginationModel(int page, Model model, String lastName, Page<Owner> paginated) {\n   113 | \t\tmodel.addAttribute(\"listOwners\", paginated);\n   114 | \t\tList<Owner> listOwners = paginated.getContent();\n   115 | \t\tmodel.addAttribute(\"currentPage\", page);",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java",
+        "line": 112,
+        "snippet": "   109 | \t\t}\n   110 | \t}\n   111 | \n>  112 | \tprivate String addPaginationModel(int page, Model model, String lastName, Page<Owner> paginated) {\n   113 | \t\tmodel.addAttribute(\"listOwners\", paginated);\n   114 | \t\tList<Owner> listOwners = paginated.getContent();\n   115 | \t\tmodel.addAttribute(\"currentPage\", page);",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java",
+        "line": 122,
+        "snippet": "   119 | \t\treturn \"owners/ownersList\";\n   120 | \t}\n   121 | \n>  122 | \tprivate Page<Owner> findPaginatedForOwnersLastName(int page, String lastname) {\n   123 | \n   124 | \t\tint pageSize = 5;\n   125 | \t\tPageable pageable = PageRequest.of(page - 1, pageSize);",
+        "category": "EXISTING_REST"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java",
+        "line": 122,
+        "snippet": "   119 | \t\treturn \"owners/ownersList\";\n   120 | \t}\n   121 | \n>  122 | \tprivate Page<Owner> findPaginatedForOwnersLastName(int page, String lastname) {\n   123 | \n   124 | \t\tint pageSize = 5;\n   125 | \t\tPageable pageable = PageRequest.of(page - 1, pageSize);",
+        "category": "EXISTING_REST"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java",
+        "line": 131,
+        "snippet": "   128 | \t}\n   129 | \n   130 | \t@GetMapping(\"/owners/{ownerId}/edit\")\n>  131 | \tpublic String initUpdateOwnerForm(@PathVariable(\"ownerId\") int ownerId, Model model) {\n   132 | \t\tOwner owner = this.owners.findById(ownerId);\n   133 | \t\tmodel.addAttribute(owner);\n   134 | \t\treturn VIEWS_OWNER_CREATE_OR_UPDATE_FORM;",
+        "category": "EXISTING_REST"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java",
+        "line": 131,
+        "snippet": "   128 | \t}\n   129 | \n   130 | \t@GetMapping(\"/owners/{ownerId}/edit\")\n>  131 | \tpublic String initUpdateOwnerForm(@PathVariable(\"ownerId\") int ownerId, Model model) {\n   132 | \t\tOwner owner = this.owners.findById(ownerId);\n   133 | \t\tmodel.addAttribute(owner);\n   134 | \t\treturn VIEWS_OWNER_CREATE_OR_UPDATE_FORM;",
+        "category": "EXISTING_REST"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java",
+        "line": 138,
+        "snippet": "   135 | \t}\n   136 | \n   137 | \t@PostMapping(\"/owners/{ownerId}/edit\")\n>  138 | \tpublic String processUpdateOwnerForm(@Valid Owner owner, BindingResult result,\n   139 | \t\t\t@PathVariable(\"ownerId\") int ownerId) {\n   140 | \t\tif (result.hasErrors()) {\n   141 | \t\t\treturn VIEWS_OWNER_CREATE_OR_UPDATE_FORM;",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java",
+        "line": 138,
+        "snippet": "   135 | \t}\n   136 | \n   137 | \t@PostMapping(\"/owners/{ownerId}/edit\")\n>  138 | \tpublic String processUpdateOwnerForm(@Valid Owner owner, BindingResult result,\n   139 | \t\t\t@PathVariable(\"ownerId\") int ownerId) {\n   140 | \t\tif (result.hasErrors()) {\n   141 | \t\t\treturn VIEWS_OWNER_CREATE_OR_UPDATE_FORM;",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java",
+        "line": 139,
+        "snippet": "   136 | \n   137 | \t@PostMapping(\"/owners/{ownerId}/edit\")\n   138 | \tpublic String processUpdateOwnerForm(@Valid Owner owner, BindingResult result,\n>  139 | \t\t\t@PathVariable(\"ownerId\") int ownerId) {\n   140 | \t\tif (result.hasErrors()) {\n   141 | \t\t\treturn VIEWS_OWNER_CREATE_OR_UPDATE_FORM;\n   142 | \t\t}",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java",
+        "line": 156,
+        "snippet": "   153 | \t * @return a ModelMap with the model attributes for the view\n   154 | \t */\n   155 | \t@GetMapping(\"/owners/{ownerId}\")\n>  156 | \tpublic ModelAndView showOwner(@PathVariable(\"ownerId\") int ownerId) {\n   157 | \t\tModelAndView mav = new ModelAndView(\"owners/ownerDetails\");\n   158 | \t\tOwner owner = this.owners.findById(ownerId);\n   159 | \t\tmav.addObject(owner);",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/Pet.java",
+        "line": 60,
+        "snippet": "    57 | \t@OrderBy(\"visit_date ASC\")\n    58 | \tprivate Set<Visit> visits = new LinkedHashSet<>();\n    59 | \n>   60 | \tpublic void setBirthDate(LocalDate birthDate) {\n    61 | \t\tthis.birthDate = birthDate;\n    62 | \t}\n    63 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/Pet.java",
+        "line": 72,
+        "snippet": "    69 | \t\treturn this.type;\n    70 | \t}\n    71 | \n>   72 | \tpublic void setType(PetType type) {\n    73 | \t\tthis.type = type;\n    74 | \t}\n    75 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/Pet.java",
+        "line": 80,
+        "snippet": "    77 | \t\treturn this.visits;\n    78 | \t}\n    79 | \n>   80 | \tpublic void addVisit(Visit visit) {\n    81 | \t\tgetVisits().add(visit);\n    82 | \t}\n    83 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/PetController.java",
+        "line": 41,
+        "snippet": "    38 | \n    39 | \tprivate final OwnerRepository owners;\n    40 | \n>   41 | \tpublic PetController(OwnerRepository owners) {\n    42 | \t\tthis.owners = owners;\n    43 | \t}\n    44 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/PetController.java",
+        "line": 51,
+        "snippet": "    48 | \t}\n    49 | \n    50 | \t@ModelAttribute(\"owner\")\n>   51 | \tpublic Owner findOwner(@PathVariable(\"ownerId\") int ownerId) {\n    52 | \t\treturn this.owners.findById(ownerId);\n    53 | \t}\n    54 | ",
+        "category": "EXISTING_REST"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/PetController.java",
+        "line": 56,
+        "snippet": "    53 | \t}\n    54 | \n    55 | \t@InitBinder(\"owner\")\n>   56 | \tpublic void initOwnerBinder(WebDataBinder dataBinder) {\n    57 | \t\tdataBinder.setDisallowedFields(\"id\");\n    58 | \t}\n    59 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/PetController.java",
+        "line": 61,
+        "snippet": "    58 | \t}\n    59 | \n    60 | \t@InitBinder(\"pet\")\n>   61 | \tpublic void initPetBinder(WebDataBinder dataBinder) {\n    62 | \t\tdataBinder.setValidator(new PetValidator());\n    63 | \t}\n    64 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/PetController.java",
+        "line": 66,
+        "snippet": "    63 | \t}\n    64 | \n    65 | \t@GetMapping(\"/pets/new\")\n>   66 | \tpublic String initCreationForm(Owner owner, ModelMap model) {\n    67 | \t\tPet pet = new Pet();\n    68 | \t\towner.addPet(pet);\n    69 | \t\tmodel.put(\"pet\", pet);",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/PetController.java",
+        "line": 66,
+        "snippet": "    63 | \t}\n    64 | \n    65 | \t@GetMapping(\"/pets/new\")\n>   66 | \tpublic String initCreationForm(Owner owner, ModelMap model) {\n    67 | \t\tPet pet = new Pet();\n    68 | \t\towner.addPet(pet);\n    69 | \t\tmodel.put(\"pet\", pet);",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/PetController.java",
+        "line": 74,
+        "snippet": "    71 | \t}\n    72 | \n    73 | \t@PostMapping(\"/pets/new\")\n>   74 | \tpublic String processCreationForm(Owner owner, @Valid Pet pet, BindingResult result, ModelMap model) {\n    75 | \t\tif (StringUtils.hasLength(pet.getName()) && pet.isNew() && owner.getPet(pet.getName(), true) != null) {\n    76 | \t\t\tresult.rejectValue(\"name\", \"duplicate\", \"already exists\");\n    77 | \t\t}",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/PetController.java",
+        "line": 74,
+        "snippet": "    71 | \t}\n    72 | \n    73 | \t@PostMapping(\"/pets/new\")\n>   74 | \tpublic String processCreationForm(Owner owner, @Valid Pet pet, BindingResult result, ModelMap model) {\n    75 | \t\tif (StringUtils.hasLength(pet.getName()) && pet.isNew() && owner.getPet(pet.getName(), true) != null) {\n    76 | \t\t\tresult.rejectValue(\"name\", \"duplicate\", \"already exists\");\n    77 | \t\t}",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/PetController.java",
+        "line": 74,
+        "snippet": "    71 | \t}\n    72 | \n    73 | \t@PostMapping(\"/pets/new\")\n>   74 | \tpublic String processCreationForm(Owner owner, @Valid Pet pet, BindingResult result, ModelMap model) {\n    75 | \t\tif (StringUtils.hasLength(pet.getName()) && pet.isNew() && owner.getPet(pet.getName(), true) != null) {\n    76 | \t\t\tresult.rejectValue(\"name\", \"duplicate\", \"already exists\");\n    77 | \t\t}",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/PetController.java",
+        "line": 74,
+        "snippet": "    71 | \t}\n    72 | \n    73 | \t@PostMapping(\"/pets/new\")\n>   74 | \tpublic String processCreationForm(Owner owner, @Valid Pet pet, BindingResult result, ModelMap model) {\n    75 | \t\tif (StringUtils.hasLength(pet.getName()) && pet.isNew() && owner.getPet(pet.getName(), true) != null) {\n    76 | \t\t\tresult.rejectValue(\"name\", \"duplicate\", \"already exists\");\n    77 | \t\t}",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/PetController.java",
+        "line": 90,
+        "snippet": "    87 | \t}\n    88 | \n    89 | \t@GetMapping(\"/pets/{petId}/edit\")\n>   90 | \tpublic String initUpdateForm(Owner owner, @PathVariable(\"petId\") int petId, ModelMap model) {\n    91 | \t\tPet pet = owner.getPet(petId);\n    92 | \t\tmodel.put(\"pet\", pet);\n    93 | \t\treturn VIEWS_PETS_CREATE_OR_UPDATE_FORM;",
+        "category": "EXISTING_REST"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/PetController.java",
+        "line": 90,
+        "snippet": "    87 | \t}\n    88 | \n    89 | \t@GetMapping(\"/pets/{petId}/edit\")\n>   90 | \tpublic String initUpdateForm(Owner owner, @PathVariable(\"petId\") int petId, ModelMap model) {\n    91 | \t\tPet pet = owner.getPet(petId);\n    92 | \t\tmodel.put(\"pet\", pet);\n    93 | \t\treturn VIEWS_PETS_CREATE_OR_UPDATE_FORM;",
+        "category": "EXISTING_REST"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/PetController.java",
+        "line": 90,
+        "snippet": "    87 | \t}\n    88 | \n    89 | \t@GetMapping(\"/pets/{petId}/edit\")\n>   90 | \tpublic String initUpdateForm(Owner owner, @PathVariable(\"petId\") int petId, ModelMap model) {\n    91 | \t\tPet pet = owner.getPet(petId);\n    92 | \t\tmodel.put(\"pet\", pet);\n    93 | \t\treturn VIEWS_PETS_CREATE_OR_UPDATE_FORM;",
+        "category": "EXISTING_REST"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/PetController.java",
+        "line": 97,
+        "snippet": "    94 | \t}\n    95 | \n    96 | \t@PostMapping(\"/pets/{petId}/edit\")\n>   97 | \tpublic String processUpdateForm(@Valid Pet pet, BindingResult result, Owner owner, ModelMap model) {\n    98 | \t\tif (result.hasErrors()) {\n    99 | \t\t\tmodel.put(\"pet\", pet);\n   100 | \t\t\treturn VIEWS_PETS_CREATE_OR_UPDATE_FORM;",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/PetController.java",
+        "line": 97,
+        "snippet": "    94 | \t}\n    95 | \n    96 | \t@PostMapping(\"/pets/{petId}/edit\")\n>   97 | \tpublic String processUpdateForm(@Valid Pet pet, BindingResult result, Owner owner, ModelMap model) {\n    98 | \t\tif (result.hasErrors()) {\n    99 | \t\t\tmodel.put(\"pet\", pet);\n   100 | \t\t\treturn VIEWS_PETS_CREATE_OR_UPDATE_FORM;",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/PetController.java",
+        "line": 97,
+        "snippet": "    94 | \t}\n    95 | \n    96 | \t@PostMapping(\"/pets/{petId}/edit\")\n>   97 | \tpublic String processUpdateForm(@Valid Pet pet, BindingResult result, Owner owner, ModelMap model) {\n    98 | \t\tif (result.hasErrors()) {\n    99 | \t\t\tmodel.put(\"pet\", pet);\n   100 | \t\t\treturn VIEWS_PETS_CREATE_OR_UPDATE_FORM;",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/PetController.java",
+        "line": 97,
+        "snippet": "    94 | \t}\n    95 | \n    96 | \t@PostMapping(\"/pets/{petId}/edit\")\n>   97 | \tpublic String processUpdateForm(@Valid Pet pet, BindingResult result, Owner owner, ModelMap model) {\n    98 | \t\tif (result.hasErrors()) {\n    99 | \t\t\tmodel.put(\"pet\", pet);\n   100 | \t\t\treturn VIEWS_PETS_CREATE_OR_UPDATE_FORM;",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/PetTypeFormatter.java",
+        "line": 42,
+        "snippet": "    39 | \tprivate final OwnerRepository owners;\n    40 | \n    41 | \t@Autowired\n>   42 | \tpublic PetTypeFormatter(OwnerRepository owners) {\n    43 | \t\tthis.owners = owners;\n    44 | \t}\n    45 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/PetTypeFormatter.java",
+        "line": 47,
+        "snippet": "    44 | \t}\n    45 | \n    46 | \t@Override\n>   47 | \tpublic String print(PetType petType, Locale locale) {\n    48 | \t\treturn petType.getName();\n    49 | \t}\n    50 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/PetTypeFormatter.java",
+        "line": 47,
+        "snippet": "    44 | \t}\n    45 | \n    46 | \t@Override\n>   47 | \tpublic String print(PetType petType, Locale locale) {\n    48 | \t\treturn petType.getName();\n    49 | \t}\n    50 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/PetTypeFormatter.java",
+        "line": 52,
+        "snippet": "    49 | \t}\n    50 | \n    51 | \t@Override\n>   52 | \tpublic PetType parse(String text, Locale locale) throws ParseException {\n    53 | \t\tCollection<PetType> findPetTypes = this.owners.findPetTypes();\n    54 | \t\tfor (PetType type : findPetTypes) {\n    55 | \t\t\tif (type.getName().equals(text)) {",
+        "category": "EXISTING_REST"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/PetTypeFormatter.java",
+        "line": 52,
+        "snippet": "    49 | \t}\n    50 | \n    51 | \t@Override\n>   52 | \tpublic PetType parse(String text, Locale locale) throws ParseException {\n    53 | \t\tCollection<PetType> findPetTypes = this.owners.findPetTypes();\n    54 | \t\tfor (PetType type : findPetTypes) {\n    55 | \t\t\tif (type.getName().equals(text)) {",
+        "category": "EXISTING_REST"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/PetValidator.java",
+        "line": 37,
+        "snippet": "    34 | \tprivate static final String REQUIRED = \"required\";\n    35 | \n    36 | \t@Override\n>   37 | \tpublic void validate(Object obj, Errors errors) {\n    38 | \t\tPet pet = (Pet) obj;\n    39 | \t\tString name = pet.getName();\n    40 | \t\t// name validation",
+        "category": "EXISTING_REST"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/PetValidator.java",
+        "line": 37,
+        "snippet": "    34 | \tprivate static final String REQUIRED = \"required\";\n    35 | \n    36 | \t@Override\n>   37 | \tpublic void validate(Object obj, Errors errors) {\n    38 | \t\tPet pet = (Pet) obj;\n    39 | \t\tString name = pet.getName();\n    40 | \t\t// name validation",
+        "category": "EXISTING_REST"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/PetValidator.java",
+        "line": 60,
+        "snippet": "    57 | \t * This Validator validates *just* Pet instances\n    58 | \t */\n    59 | \t@Override\n>   60 | \tpublic boolean supports(Class<?> clazz) {\n    61 | \t\treturn Pet.class.isAssignableFrom(clazz);\n    62 | \t}\n    63 | ",
+        "category": "EXISTING_REST"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/Visit.java",
+        "line": 56,
+        "snippet": "    53 | \t\treturn this.date;\n    54 | \t}\n    55 | \n>   56 | \tpublic void setDate(LocalDate date) {\n    57 | \t\tthis.date = date;\n    58 | \t}\n    59 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/Visit.java",
+        "line": 64,
+        "snippet": "    61 | \t\treturn this.description;\n    62 | \t}\n    63 | \n>   64 | \tpublic void setDescription(String description) {\n    65 | \t\tthis.description = description;\n    66 | \t}\n    67 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/VisitController.java",
+        "line": 43,
+        "snippet": "    40 | \n    41 | \tprivate final OwnerRepository owners;\n    42 | \n>   43 | \tpublic VisitController(OwnerRepository owners) {\n    44 | \t\tthis.owners = owners;\n    45 | \t}\n    46 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/VisitController.java",
+        "line": 48,
+        "snippet": "    45 | \t}\n    46 | \n    47 | \t@InitBinder\n>   48 | \tpublic void setAllowedFields(WebDataBinder dataBinder) {\n    49 | \t\tdataBinder.setDisallowedFields(\"id\");\n    50 | \t}\n    51 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/VisitController.java",
+        "line": 60,
+        "snippet": "    57 | \t * @return Pet\n    58 | \t */\n    59 | \t@ModelAttribute(\"visit\")\n>   60 | \tpublic Visit loadPetWithVisit(@PathVariable(\"ownerId\") int ownerId, @PathVariable(\"petId\") int petId,\n    61 | \t\t\tMap<String, Object> model) {\n    62 | \t\tOwner owner = this.owners.findById(ownerId);\n    63 | \t\tPet pet = owner.getPet(petId);",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/VisitController.java",
+        "line": 60,
+        "snippet": "    57 | \t * @return Pet\n    58 | \t */\n    59 | \t@ModelAttribute(\"visit\")\n>   60 | \tpublic Visit loadPetWithVisit(@PathVariable(\"ownerId\") int ownerId, @PathVariable(\"petId\") int petId,\n    61 | \t\t\tMap<String, Object> model) {\n    62 | \t\tOwner owner = this.owners.findById(ownerId);\n    63 | \t\tPet pet = owner.getPet(petId);",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/VisitController.java",
+        "line": 61,
+        "snippet": "    58 | \t */\n    59 | \t@ModelAttribute(\"visit\")\n    60 | \tpublic Visit loadPetWithVisit(@PathVariable(\"ownerId\") int ownerId, @PathVariable(\"petId\") int petId,\n>   61 | \t\t\tMap<String, Object> model) {\n    62 | \t\tOwner owner = this.owners.findById(ownerId);\n    63 | \t\tPet pet = owner.getPet(petId);\n    64 | \t\tmodel.put(\"pet\", pet);",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/VisitController.java",
+        "line": 74,
+        "snippet": "    71 | \t// Spring MVC calls method loadPetWithVisit(...) before initNewVisitForm is\n    72 | \t// called\n    73 | \t@GetMapping(\"/owners/{ownerId}/pets/{petId}/visits/new\")\n>   74 | \tpublic String initNewVisitForm(@PathVariable(\"petId\") int petId, Map<String, Object> model) {\n    75 | \t\treturn \"pets/createOrUpdateVisitForm\";\n    76 | \t}\n    77 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/VisitController.java",
+        "line": 74,
+        "snippet": "    71 | \t// Spring MVC calls method loadPetWithVisit(...) before initNewVisitForm is\n    72 | \t// called\n    73 | \t@GetMapping(\"/owners/{ownerId}/pets/{petId}/visits/new\")\n>   74 | \tpublic String initNewVisitForm(@PathVariable(\"petId\") int petId, Map<String, Object> model) {\n    75 | \t\treturn \"pets/createOrUpdateVisitForm\";\n    76 | \t}\n    77 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/VisitController.java",
+        "line": 81,
+        "snippet": "    78 | \t// Spring MVC calls method loadPetWithVisit(...) before processNewVisitForm is\n    79 | \t// called\n    80 | \t@PostMapping(\"/owners/{ownerId}/pets/{petId}/visits/new\")\n>   81 | \tpublic String processNewVisitForm(@ModelAttribute Owner owner, @PathVariable int petId, @Valid Visit visit,\n    82 | \t\t\tBindingResult result) {\n    83 | \t\tif (result.hasErrors()) {\n    84 | \t\t\treturn \"pets/createOrUpdateVisitForm\";",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/VisitController.java",
+        "line": 81,
+        "snippet": "    78 | \t// Spring MVC calls method loadPetWithVisit(...) before processNewVisitForm is\n    79 | \t// called\n    80 | \t@PostMapping(\"/owners/{ownerId}/pets/{petId}/visits/new\")\n>   81 | \tpublic String processNewVisitForm(@ModelAttribute Owner owner, @PathVariable int petId, @Valid Visit visit,\n    82 | \t\t\tBindingResult result) {\n    83 | \t\tif (result.hasErrors()) {\n    84 | \t\t\treturn \"pets/createOrUpdateVisitForm\";",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/VisitController.java",
+        "line": 81,
+        "snippet": "    78 | \t// Spring MVC calls method loadPetWithVisit(...) before processNewVisitForm is\n    79 | \t// called\n    80 | \t@PostMapping(\"/owners/{ownerId}/pets/{petId}/visits/new\")\n>   81 | \tpublic String processNewVisitForm(@ModelAttribute Owner owner, @PathVariable int petId, @Valid Visit visit,\n    82 | \t\t\tBindingResult result) {\n    83 | \t\tif (result.hasErrors()) {\n    84 | \t\t\treturn \"pets/createOrUpdateVisitForm\";",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/VisitController.java",
+        "line": 82,
+        "snippet": "    79 | \t// called\n    80 | \t@PostMapping(\"/owners/{ownerId}/pets/{petId}/visits/new\")\n    81 | \tpublic String processNewVisitForm(@ModelAttribute Owner owner, @PathVariable int petId, @Valid Visit visit,\n>   82 | \t\t\tBindingResult result) {\n    83 | \t\tif (result.hasErrors()) {\n    84 | \t\t\treturn \"pets/createOrUpdateVisitForm\";\n    85 | \t\t}",
+        "category": "EXISTING_REST"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/vet/Vet.java",
+        "line": 60,
+        "snippet": "    57 | \t\treturn this.specialties;\n    58 | \t}\n    59 | \n>   60 | \tprotected void setSpecialtiesInternal(Set<Specialty> specialties) {\n    61 | \t\tthis.specialties = specialties;\n    62 | \t}\n    63 | ",
+        "category": "EXISTING_REST"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/vet/Vet.java",
+        "line": 75,
+        "snippet": "    72 | \t\treturn getSpecialtiesInternal().size();\n    73 | \t}\n    74 | \n>   75 | \tpublic void addSpecialty(Specialty specialty) {\n    76 | \t\tgetSpecialtiesInternal().add(specialty);\n    77 | \t}\n    78 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/vet/VetController.java",
+        "line": 40,
+        "snippet": "    37 | \n    38 | \tprivate final VetRepository vets;\n    39 | \n>   40 | \tpublic VetController(VetRepository clinicService) {\n    41 | \t\tthis.vets = clinicService;\n    42 | \t}\n    43 | ",
+        "category": "EXISTING_REST"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/vet/VetController.java",
+        "line": 45,
+        "snippet": "    42 | \t}\n    43 | \n    44 | \t@GetMapping(\"/vets.html\")\n>   45 | \tpublic String showVetList(@RequestParam(defaultValue = \"1\") int page, Model model) {\n    46 | \t\t// Here we are returning an object of type 'Vets' rather than a collection of Vet\n    47 | \t\t// objects so it is simpler for Object-Xml mapping\n    48 | \t\tVets vets = new Vets();",
+        "category": "EXISTING_REST"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/vet/VetController.java",
+        "line": 45,
+        "snippet": "    42 | \t}\n    43 | \n    44 | \t@GetMapping(\"/vets.html\")\n>   45 | \tpublic String showVetList(@RequestParam(defaultValue = \"1\") int page, Model model) {\n    46 | \t\t// Here we are returning an object of type 'Vets' rather than a collection of Vet\n    47 | \t\t// objects so it is simpler for Object-Xml mapping\n    48 | \t\tVets vets = new Vets();",
+        "category": "EXISTING_REST"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/vet/VetController.java",
+        "line": 55,
+        "snippet": "    52 | \n    53 | \t}\n    54 | \n>   55 | \tprivate String addPaginationModel(int page, Page<Vet> paginated, Model model) {\n    56 | \t\tList<Vet> listVets = paginated.getContent();\n    57 | \t\tmodel.addAttribute(\"currentPage\", page);\n    58 | \t\tmodel.addAttribute(\"totalPages\", paginated.getTotalPages());",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/vet/VetController.java",
+        "line": 55,
+        "snippet": "    52 | \n    53 | \t}\n    54 | \n>   55 | \tprivate String addPaginationModel(int page, Page<Vet> paginated, Model model) {\n    56 | \t\tList<Vet> listVets = paginated.getContent();\n    57 | \t\tmodel.addAttribute(\"currentPage\", page);\n    58 | \t\tmodel.addAttribute(\"totalPages\", paginated.getTotalPages());",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/vet/VetController.java",
+        "line": 55,
+        "snippet": "    52 | \n    53 | \t}\n    54 | \n>   55 | \tprivate String addPaginationModel(int page, Page<Vet> paginated, Model model) {\n    56 | \t\tList<Vet> listVets = paginated.getContent();\n    57 | \t\tmodel.addAttribute(\"currentPage\", page);\n    58 | \t\tmodel.addAttribute(\"totalPages\", paginated.getTotalPages());",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/vet/VetController.java",
+        "line": 64,
+        "snippet": "    61 | \t\treturn \"vets/vetList\";\n    62 | \t}\n    63 | \n>   64 | \tprivate Page<Vet> findPaginated(int page) {\n    65 | \t\tint pageSize = 5;\n    66 | \t\tPageable pageable = PageRequest.of(page - 1, pageSize);\n    67 | \t\treturn vets.findAll(pageable);",
+        "category": "EXISTING_REST"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/PetClinicApplication.java",
+        "line": 31,
+        "snippet": "    28 | @SpringBootApplication\n    29 | public class PetClinicApplication {\n    30 | \n>   31 | \tpublic static void main(String[] args) {\n    32 | \t\tSpringApplication.run(PetClinicApplication.class, args);\n    33 | \t}\n    34 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/test/java/org/springframework/samples/petclinic/owner/OwnerControllerTests.java",
+        "line": 198,
+        "snippet": "   195 | \t\t\t\t.andExpect(model().attribute(\"owner\", hasProperty(\"pets\", new BaseMatcher<List<Pet>>() {\n   196 | \n   197 | \t\t\t\t\t@Override\n>  198 | \t\t\t\t\tpublic boolean matches(Object item) {\n   199 | \t\t\t\t\t\t@SuppressWarnings(\"unchecked\")\n   200 | \t\t\t\t\t\tList<Pet> pets = (List<Pet>) item;\n   201 | \t\t\t\t\t\tPet pet = pets.get(0);",
+        "category": "NEW"
+      },
+      {
+        "file": "src/test/java/org/springframework/samples/petclinic/owner/OwnerControllerTests.java",
+        "line": 209,
+        "snippet": "   206 | \t\t\t\t\t}\n   207 | \n   208 | \t\t\t\t\t@Override\n>  209 | \t\t\t\t\tpublic void describeTo(Description description) {\n   210 | \t\t\t\t\t\tdescription.appendText(\"Max did not have any visits\");\n   211 | \t\t\t\t\t}\n   212 | \t\t\t\t}))).andExpect(view().name(\"owners/ownerDetails\"));",
+        "category": "NEW"
+      },
+      {
+        "file": "src/test/java/org/springframework/samples/petclinic/service/EntityUtils.java",
+        "line": 43,
+        "snippet": "    40 | \t * @return the found entity\n    41 | \t * @throws ObjectRetrievalFailureException if the entity was not found\n    42 | \t */\n>   43 | \tpublic static <T extends BaseEntity> T getById(Collection<T> entities, Class<T> entityClass, int entityId)\n    44 | \t\t\tthrows ObjectRetrievalFailureException {\n    45 | \t\tfor (T entity : entities) {\n    46 | \t\t\tif (entity.getId() == entityId && entityClass.isInstance(entity)) {",
+        "category": "EXISTING_REST"
+      },
+      {
+        "file": "src/test/java/org/springframework/samples/petclinic/service/EntityUtils.java",
+        "line": 43,
+        "snippet": "    40 | \t * @return the found entity\n    41 | \t * @throws ObjectRetrievalFailureException if the entity was not found\n    42 | \t */\n>   43 | \tpublic static <T extends BaseEntity> T getById(Collection<T> entities, Class<T> entityClass, int entityId)\n    44 | \t\t\tthrows ObjectRetrievalFailureException {\n    45 | \t\tfor (T entity : entities) {\n    46 | \t\t\tif (entity.getId() == entityId && entityClass.isInstance(entity)) {",
+        "category": "EXISTING_REST"
+      },
+      {
+        "file": "src/test/java/org/springframework/samples/petclinic/service/EntityUtils.java",
+        "line": 43,
+        "snippet": "    40 | \t * @return the found entity\n    41 | \t * @throws ObjectRetrievalFailureException if the entity was not found\n    42 | \t */\n>   43 | \tpublic static <T extends BaseEntity> T getById(Collection<T> entities, Class<T> entityClass, int entityId)\n    44 | \t\t\tthrows ObjectRetrievalFailureException {\n    45 | \t\tfor (T entity : entities) {\n    46 | \t\t\tif (entity.getId() == entityId && entityClass.isInstance(entity)) {",
+        "category": "EXISTING_REST"
+      }
+    ],
+    "metadata": {
+      "total_occurrences": 95,
+      "confidence": "low",
+      "safe_auto_apply": false,
+      "estimated_time_seconds": 48
+    }
+  }
+}

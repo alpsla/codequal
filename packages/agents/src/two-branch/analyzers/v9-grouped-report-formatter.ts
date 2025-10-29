@@ -13,6 +13,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { execSync } from 'child_process';
 import { IssueGroup } from '../utils/issue-grouping';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { AppScoreManager } from './v9-app-score-manager';
@@ -607,7 +608,6 @@ export class V9GroupedReportFormatter {
     }
     
     try {
-      const { execSync } = require('child_process');
       const result = execSync(
         `find "${this.repoPath}" -type f -name "${basename}" | grep -v "/\\.git/" | head -1`,
         { encoding: 'utf-8' }
@@ -3441,8 +3441,6 @@ Continue following best practices and consider integrating static analysis into 
    */
   private discoverTeamFromGit(repoPath: string): Array<{ email: string; name?: string; totalPRs?: number }> {
     try {
-      const { execSync } = require('child_process');
-      const fs = require('fs');
       
       if (!fs.existsSync(`${repoPath}/.git`)) {
         return [];

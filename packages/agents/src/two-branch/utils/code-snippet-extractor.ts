@@ -34,20 +34,27 @@ export class CodeSnippetExtractor {
       
       // Extract snippet
       const snippet: string[] = [];
-      
+
       for (let i = startLine; i < endLine; i++) {
         const lineNum = i + 1;
         const lineContent = lines[i];
-        const truncated = lineContent.length > this.MAX_LINE_LENGTH 
+        const truncated = lineContent.length > this.MAX_LINE_LENGTH
           ? lineContent.substring(0, this.MAX_LINE_LENGTH) + '...'
           : lineContent;
-        
+
         // Mark the problematic line
         const marker = lineNum === line ? '>' : ' ';
         snippet.push(`${marker} ${lineNum.toString().padStart(4)} | ${truncated}`);
       }
-      
-      return snippet.join('\n');
+
+      const result = snippet.join('\n');
+
+      // If snippet is empty or contains only whitespace, provide a fallback message
+      if (!result || result.trim().length === 0) {
+        return `// Line ${line} in ${path.basename(filePath)}\n// (empty line or configuration file - no code to display)`;
+      }
+
+      return result;
     } catch (error) {
       console.error(`Failed to extract snippet from ${filePath}:${line}`, error);
       return null;

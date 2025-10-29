@@ -126,6 +126,11 @@ export class V9IntegratedAnalyzer {
     const workspace = options?.workspace || `pr-${prNumber}-${Date.now()}`;
 
     try {
+      console.log(`\n[DEBUG-PR#] ====== analyzeRepository ENTRY ======`);
+      console.log(`[DEBUG-PR#] Received prNumber: ${prNumber} (type: ${typeof prNumber})`);
+      console.log(`[DEBUG-PR#] Repository: ${repoUrl}`);
+      console.log(`[DEBUG-PR#] ==========================================\n`);
+
       logger.info(`🚀 Starting V9 integrated analysis for PR #${prNumber}`);
 
       // Step 1: Detect repository context (language and size)
@@ -160,6 +165,11 @@ export class V9IntegratedAnalyzer {
 
       // Step 4: Compile comprehensive report
       logger.info('📄 Generating comprehensive V9 report...');
+
+      console.log(`\n[DEBUG-PR#] ====== Before compileReport ======`);
+      console.log(`[DEBUG-PR#] Passing prNumber to compileReport: ${prNumber}`);
+      console.log(`[DEBUG-PR#] =====================================\n`);
+
       const report = await this.compileReport({
         repository: repoUrl,
         prNumber,
@@ -388,7 +398,12 @@ and actionable recommendations. Focus on business value and team productivity.`;
     // Before delegation: 598 lines in this method
     // After delegation: ~100 lines (wrapper + result adaptation)
     // ==============================================================================
-    
+
+    console.log(`\n[DEBUG-PR#] ====== compileReport ENTRY ======`);
+    console.log(`[DEBUG-PR#] data.prNumber: ${data.prNumber} (type: ${typeof data.prNumber})`);
+    console.log(`[DEBUG-PR#] data.repository: ${data.repository}`);
+    console.log(`[DEBUG-PR#] =====================================\n`);
+
     // Delegate report compilation to extracted service
     const result = await compileV9Report(
       {
@@ -909,13 +924,15 @@ ${lineNum+1}: // Surrounding code`;
       return issueCategory.toLowerCase().includes(category.toLowerCase());
     });
 
+    // START at 100/100 - CORRECT scoring logic
     let score = 100;
+    
     categoryIssues.forEach(issue => {
       switch (issue.severity) {
-        case 'critical': score -= 10; break;
-        case 'high': score -= 5; break;
-        case 'medium': score -= 2; break;
-        case 'low': score -= 1; break;
+        case 'critical': score -= 5; break;   // FIX: was -10, should be -5
+        case 'high': score -= 3; break;       // FIX: was -5, should be -3
+        case 'medium': score -= 1; break;     // FIX: was -2, should be -1
+        case 'low': score -= 0.5; break;      // FIX: was -1, should be -0.5
       }
     });
 
