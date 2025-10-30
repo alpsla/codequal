@@ -238,116 +238,44 @@ export async function generateCriticalBlockers(
   blockingIssues: EnrichedIssue[],
   repoPath?: string
 ): Promise<string> {
+  // BUG #92 FIX: Changed from detailed issue listing to summary-only to eliminate duplication
+  // All blocking issues are shown in detail in the "Critical Issues" and "High Priority Issues" sections
+  
   if (blockingIssues.length === 0) {
     return `✅ **No critical blockers** - PR can be merged once reviewed\n\nAll identified issues are either low/medium severity or in unchanged code.`;
   }
 
-  // Group blockers by rule and compute priority score (severity > category > spread)
-  const severityWeight = (sev: string) => sev === 'critical' ? 100 : sev === 'high' ? 60 : 0;
-  const categoryWeight = (cat?: string) => {
-    const c = (cat || '').toLowerCase();
-    if (c === 'security') return 30;
-    if (c === 'performance') return 15;
-    if (c === 'architecture') return 10;
-    return 5; // quality/dependency
-  };
+  // Count by severity
+  const criticalCount = blockingIssues.filter(i => i.severity === 'critical').length;
+  const highCount = blockingIssues.filter(i => i.severity === 'high').length;
 
-  const blockerGroups = groups
-    .filter(g => (g.severity === 'critical' || g.severity === 'high'))
-    .filter(g => blockingIssues.some(i => i.rule === g.rule && i.tool === g.tool && i.severity === g.severity))
-    .map(g => {
-      const matches = blockingIssues.filter(i => i.rule === g.rule && i.tool === g.tool && i.severity === g.severity);
-      const filesSpread = new Set(matches.map(i => i.file)).size;
-      const score = severityWeight(g.severity) + categoryWeight(g.detectedCategory) + Math.min(20, Math.round(Math.log2(Math.max(1, filesSpread)) * 10));
-      return { group: g, matches, filesSpread, score };
-    })
-    .sort((a, b) => b.score - a.score);
+  // Count by category
+  const byCategory = blockingIssues.reduce((acc, i) => {
+    const cat = i.detectedCategory || 'Code Quality';
+    acc[cat] = (acc[cat] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
 
-  let content = `⛔ **${blockingIssues.length} issues must be fixed before merge**\n\n`;
-  content += `**Fix Order (highest priority first):**\n\n`;
+  const topCategories = Object.entries(byCategory)
+    .sort(([,a], [,b]) => b - a)
+    .slice(0, 3)
+    .map(([cat, count]) => `${count} ${cat.toLowerCase()}`)
+    .join(', ');
 
-  // Show top 10 groups with detailed examples
-  const topGroups = blockerGroups.slice(0, 10);
+  return `⛔ **${blockingIssues.length} issues must be fixed before merge**
 
-  for (const [idx, entry] of topGroups.entries()) {
-    const { group, matches, filesSpread, score } = entry;
-    const icon = group.severity === 'critical' ? '🔴' : '🟠';
-    const ruleDesc = getRuleDescription(group.rule, group.tool);
+**Breakdown:**
+${criticalCount > 0 ? `- 🔴 Critical: ${criticalCount} issue${criticalCount > 1 ? 's' : ''}\n` : ''}${highCount > 0 ? `- 🟠 High: ${highCount} issue${highCount > 1 ? 's' : ''}\n` : ''}
+**Primary Focus Areas:** ${topCategories}
 
-    content += `${idx + 1}. ${icon} **${ruleDesc.title}** (${group.rule})\n`;
-    content += `   - Severity: ${group.severity.toUpperCase()}\n`;
-    content += `   - Category: ${ruleDesc.category}\n`;
-    content += `   - Occurrences: ${group.count} issues across ${filesSpread} files\n`;
-    content += `   - Priority Score: ${score}\n\n`;
+**Action Required:**
+All blocking issues are detailed in the "Critical Issues" and "High Priority Issues" sections below with:
+- ✅ Full AI analysis and explanations
+- ✅ Code examples and fix recommendations  
+- ✅ IDE integration files for automated fixes
 
-    // What's wrong section
-    content += `**What's Wrong:**\n`;
-    content += `${ruleDesc.description}\n\n`;
-
-    // Show 1 example with code snippet
-    const example = matches[0];
-    if (example) {
-      content += `**Example (${example.file}:${example.line || 0}):**\n`;
-
-      // Try to extract code snippet if repoPath provided
-      if (repoPath && example.file && example.line) {
-        const fullPath = path.join(repoPath, example.file);
-        const snippet = await extractCodeSnippet(fullPath, example.line);
-        const lang = guessLanguage(example.file);
-        content += `\`\`\`${lang}\n${snippet}\`\`\`\n\n`;
-      } else {
-        content += `\`\`\`\nLine ${example.line || 0}: ${example.message || 'Issue detected'}\n\`\`\`\n\n`;
-      }
-
-      // AI Recommendation
-      content += `**AI Recommendation:**\n`;
-      if (example.fixSuggestion?.fix) {
-        content += `${example.fixSuggestion.fix}\n\n`;
-      } else if (ruleDesc.fix) {
-        content += `${ruleDesc.fix}\n\n`;
-      } else {
-        content += `Review and address this ${ruleDesc.category.toLowerCase()} issue. ${ruleDesc.why}\n\n`;
-      }
-
-      // Reference total occurrences across all files
-      content += `\n**Total Occurrences:**\n`;
-      content += `This issue appears in **${filesSpread} file${filesSpread > 1 ? 's' : ''}** with **${group.count} total occurrence${group.count > 1 ? 's' : ''}** across your codebase.\n\n`;
-      content += `📥 **[Download IDE auto-fix for all ${group.count} occurrences →](#ide-fixes)**\n`;
-    }
-
-    content += `\n---\n\n`;
-  }
-
-  if (blockerGroups.length > 10) {
-    content += `... and ${blockerGroups.length - 10} more issue groups\n\n`;
-  }
-
-  content += `📥 **[Download complete fix manifest for all ${blockingIssues.length} issues →](#ide-fixes)**\n\n`;
-  
-  // BUG FIX #29: Add detailed Priority Score explanation footnote
-  content += `\n---\n\n`;
-  content += `**📘 Priority Score Calculation**\n\n`;
-  content += `The Priority Score helps you focus on the most impactful issues first. It combines three factors:\n\n`;
-  content += `1. **Severity Weight** (0-100 points):\n`;
-  content += `   - Critical: 100 points (security vulnerabilities, system crashes)\n`;
-  content += `   - High: 60 points (data loss, performance degradation)\n`;
-  content += `   - Medium: 0 points (not blocking)\n`;
-  content += `   - Low: 0 points (not blocking)\n\n`;
-  content += `2. **Category Weight** (0-30 points):\n`;
-  content += `   - Security: +30 points (highest risk)\n`;
-  content += `   - Performance: +15 points (affects UX)\n`;
-  content += `   - Architecture: +10 points (technical debt)\n`;
-  content += `   - Code Quality/Dependencies: +5 points (maintainability)\n\n`;
-  content += `3. **File Spread** (0-20 points):\n`;
-  content += `   - log₂(files) × 10 (capped at 20)\n`;
-  content += `   - 1 file = 0 points\n`;
-  content += `   - 2 files = 10 points\n`;
-  content += `   - 4 files = 20 points (max)\n`;
-  content += `   - Rationale: Issues spread across many files require more effort to fix\n\n`;
-  content += `**Formula**: \`Priority = Severity + Category + File Spread\`\n\n`;
-  content += `**Example**: A critical security issue in 4 files = 100 + 30 + 20 = **150 points**\n`;
-  
-  return content;
+**Priority:**
+Review critical issues first, then tackle high-priority issues by category to maximize impact.`;
 }
 
 /**

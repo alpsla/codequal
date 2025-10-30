@@ -261,10 +261,10 @@ export class V9GroupedReportFormatter {
   private readonly SHOW_FIX_COVERAGE: boolean = false;
   private readonly SHOW_QUICK_WINS: boolean = false;
   private readonly SHOW_SYSTEM_INFO: boolean = false;
-  private readonly SHOW_AGENT_PERFORMANCE: boolean = false;
-  private readonly SHOW_TOOL_PERFORMANCE: boolean = false;
-  private readonly SHOW_EFFICIENCY_ANALYSIS: boolean = false;
-  
+  private readonly SHOW_AGENT_PERFORMANCE: boolean = true;  // BUG #9 FIX: Enable AI performance tracking
+  private readonly SHOW_TOOL_PERFORMANCE: boolean = true;   // BUG #8 FIX: Enable tool performance tracking
+  private readonly SHOW_EFFICIENCY_ANALYSIS: boolean = true; // BUG #10 FIX: Enable cost analysis
+
   constructor(
     modelConfigResolver?: any,
     language?: string,
