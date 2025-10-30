@@ -1136,7 +1136,10 @@ export class V9GroupedReportFormatter {
    * All have same weight (only sign differs)
    */
   private calculateCategoryScore(categoryIssues: EnrichedIssue[]): number {
-    return calculateCategoryScore(categoryIssues);
+    // BUG #4 FIX: Skills Tracking should use baseScore=100 (starts perfect, deducts for issues)
+    // This provides better UX: 0 issues = 100/100, not 50/100
+    // User feedback: "4 critical + 4 high should be 68/100, not 18/100"
+    return calculateCategoryScore(categoryIssues, 100);
   }
 
   private _REMOVED_calculateCategoryScore_LEGACY(categoryIssues: EnrichedIssue[]): number {
