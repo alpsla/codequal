@@ -9,18 +9,23 @@
 4. **24 Bugs Fixed**: All critical bugs resolved across 2 sessions
    - Session 1 (Bugs #1-10): Foundation fixes
    - Session 2 (Bugs #11-24): Scoring logic, UX improvements
-5. **3 User Enhancements**: All implemented and verified
+5. **Bug #6 Fixed**: Auto-fix percentage accuracy (v9-grouped-report-formatter.ts:3986-3994)
+   - Now calculates actual auto-fixable count from manifest data
+   - Reports show accurate 98% for Spring Boot PetClinic (569/578)
+   - Previously showed 100% when reality was 98.4%
+6. **3 User Enhancements**: All implemented and verified
    - GuardLogStatement risk level (LOW → MEDIUM)
    - Comprehensive training (all blockers + critical/high)
    - Re-scan validation workflow (automated)
-6. **Scoring System**: Simplified formula validated (base 50/100)
-7. **Cloud Cleanup**: Automatic cleanup implemented, 38 GB freed
-8. **CheckStyle Guide**: Auto-fix documentation (4 methods)
-9. **Competitive Position**: 9/10 strength confirmed (extremely competitive)
-10. **Unit Economics**: 98%+ margins validated ($0.01 cost, $8-10 revenue)
-11. **Manifest v2.0**: Enriched with 8 metadata fields (6KB, 97% network savings)
-12. **AI Duplication Fix**: Removed redundant problem descriptions (16-40% report reduction)
-13. **NaN Bug Fix**: All metrics display correctly
+7. **Scoring System**: Simplified formula validated (base 50/100)
+8. **Cloud Cleanup**: Automatic cleanup implemented, 38 GB freed
+9. **CheckStyle Guide**: Auto-fix documentation (4 methods)
+10. **Competitive Position**: 9/10 strength confirmed (extremely competitive)
+11. **Unit Economics**: 98%+ margins validated ($0.01 cost, $8-10 revenue)
+12. **Manifest v2.0**: Enriched with 8 metadata fields (6KB, 97% network savings)
+13. **AI Duplication Fix**: Removed redundant problem descriptions (16-40% report reduction)
+14. **NaN Bug Fix**: All metrics display correctly
+15. **Multi-Framework Validation**: Spring Boot, Quarkus, Micronaut tested and working
 
 ### 🎯 Current Phase: Foundation & Validation (Week 1)
 
@@ -65,38 +70,54 @@
 - ✅ Storage <20 GB
 - ✅ Ready for multi-language work
 
-### 🚧 Next Phases (Weeks 2-11) - REVISED PRAGMATIC ROADMAP
+### 🚧 Next Phases (Weeks 1-10) - OPTIMIZED ROADMAP FOR SOLO FOUNDER
 
-**Week 1-2: Multi-Framework Testing** 🔴 CURRENT
-- Spring Boot validation (PetClinic)
-- Quarkus validation (quickstarts)
-- Micronaut validation (core)
-- Validate scoring across all frameworks
-- Document framework-specific issues
-- **Goal:** Confirm all 24 bug fixes work universally
+**REVISED APPROACH: API-First Architecture + Marketing Preparation**
 
-**Week 3-4: Multi-Language Integration** 🌍
+This roadmap is optimized for a solo founder with 10 weeks to public launch, prioritizing:
+1. ✅ Multi-framework validation already completed
+2. 🧹 Project cleanup before scaling
+3. 🌍 Language extension (6+ languages = 80%+ GitHub/GitLab coverage)
+4. 🔌 API service BEFORE CI/CD (simplifies all integrations)
+5. 📢 Dedicated marketing preparation time
+6. 🚀 Realistic alpha → beta → public launch timeline
+
+---
+
+**Week 1-2: Validation + Cleanup + Language Extension** 🔴 CURRENT
+
+**Week 1, Days 1-2: Final Control Check**
+- ✅ Multi-framework testing already completed (Spring Boot, Quarkus, Micronaut)
+- 🔄 Run final control check with Bug #6 fix applied
+- Validate auto-fix percentage accuracy (98% expected)
+- Document any framework-specific issues
+- **Goal:** Confirm all 24 bug fixes + Bug #6 work universally
+
+**Week 1, Days 2-3: Project Cleanup** 🧹
+- Remove 100+ outdated test files
+- Archive deprecated docs (keep last 2 sessions only)
+- Clean old reports (keep latest 3 per language)
+- Remove duplicate code files
+- Update .gitignore
+- **Goal:** 40% cleaner codebase, easier to maintain
+
+**Week 1, Day 4 - Week 2: Multi-Language Integration** 🌍
 - **TypeScript/JavaScript** (2 days):
   - ESLint + typescript-eslint integration
   - npm audit for dependencies
   - Semgrep security rules
   - Dogfooding on CodeQual codebase
-- **Python** (2 days):
+- **Python** (1 day):
   - pylint, flake8, bandit integration
   - pip-audit for dependencies
-  - Performance optimization
 - **Go** (1 day):
   - golangci-lint integration
   - gosec for security
-  - Performance optimization
 - **PHP** (1 day):
   - phpcs, phpstan integration
-  - Performance optimization
 - **Ruby** (1 day):
   - rubocop integration
   - bundler-audit
-  - Performance optimization
-- **Goal:** 5+ languages production-ready, validate multi-language architecture
 
 **Note:** Docker images already exist on Oracle Cloud. Main work is:
 1. Integration with V9 orchestrator
@@ -104,61 +125,222 @@
 3. Performance optimization (parallel execution, optional/skippable tools)
 4. Report validation
 
-**Week 5-6: CI/CD Integration + Report UI** 🚀 **PRODUCTION LAUNCH**
-- **Production Environment Setup** (2 days):
-  - Direct execution (no Docker) for cost optimization
-  - Oracle Cloud deployment
-  - Hardware scaling strategies
-- **GitHub App** (3 days):
-  - PR status checks (pass/fail)
-  - PR comments with report
+**Goal:** 6+ languages production-ready = 80%+ GitHub/GitLab coverage
+
+---
+
+**Week 3-4: Auth & Billing + API Service (API-First Architecture)** 🔌
+
+**Week 3, Days 1-2: Auth & Billing Integration**
+- Refresh existing auth service
+- Integrate auth with V9 system
+- Connect Stripe billing service
+- Test subscription handling
+- **Goal:** Users can authenticate and subscribe
+
+**Week 3, Days 3-5 + Week 4, Days 1-3: API Service Foundation** 🔑
+**CRITICAL ARCHITECTURAL DECISION: Build API service BEFORE CI/CD and Web Dashboard**
+
+**Why API-First:**
+- ✅ Single source of truth for analysis logic
+- ✅ CI/CD becomes simple: webhook → API call → comment (50 lines)
+- ✅ Web Dashboard becomes simple: UI → API calls → display (200 lines)
+- ✅ No duplication of analysis logic
+- ✅ Easier to test, maintain, and scale
+- ✅ RESTful endpoints can support future mobile apps, IDE plugins, etc.
+
+**API Endpoints to Build:**
+```
+POST   /api/v1/analyze          - Submit PR for analysis
+GET    /api/v1/status/{jobId}   - Check job status
+GET    /api/v1/report/{jobId}   - Get analysis report (markdown + JSON)
+GET    /api/v1/health           - Service health
+POST   /api/v1/webhooks/github  - GitHub webhook handler (Week 5)
+POST   /api/v1/webhooks/gitlab  - GitLab webhook handler (Week 5)
+```
+
+**Implementation:**
+- Express/Fastify API server
+- Job queue with Bull/BullMQ
+- WebSocket for real-time progress
+- Authentication middleware
+- Rate limiting
+- Error handling
+- OpenAPI documentation
+
+**Goal:** RESTful API ready to power all integrations
+
+**Week 4, Days 4-5: Production Environment Setup**
+- Setup separate production environment (Oracle Cloud)
+- Direct execution (no Docker) for cost optimization
+- Hardware scaling strategies
+- Monitoring setup (Prometheus/Grafana)
+- Backup strategies
+- **Goal:** Production infrastructure ready
+
+---
+
+**Week 5-6: CI/CD + Web Dashboard (Both Consume API)** 🚀
+
+**Week 5: CI/CD Integration (Simplified by API)**
+- **GitHub App** (2 days):
+  - Webhook → API endpoint
+  - PR status checks (pass/fail) from API response
+  - PR comments with report from API
   - Repository settings
+  - **Implementation:** ~50 lines (webhook handler + formatter)
+
 - **GitLab Integration** (2 days):
-  - MR comments
+  - Webhook → API endpoint
+  - MR comments from API response
   - Pipeline integration
-- **Web Dashboard** (4 days):
-  - View reports
+  - **Implementation:** ~50 lines (webhook handler + formatter)
+
+- **Testing & Refinement** (1 day):
+  - Test with multiple repositories
+  - Validate comment formatting
+  - Error handling
+
+**Goal:** GitHub + GitLab integrations working, powered by API
+
+**Week 6: Web Dashboard (Simplified by API)** 🖥️
+- **UI Components** (3 days):
+  - PR submission form (calls API)
+  - Real-time progress tracking (WebSocket from API)
+  - Report visualization (render API response)
+  - Historical analysis view
+  - **Implementation:** ~200 lines (UI layer only)
+
+- **Additional Features** (2 days):
   - Filter/search issues
   - Team leaderboard
   - Trends over time
-- **Auth + Billing Integration** (2 days):
-  - Connect existing auth to V9
-  - Stripe subscription handling
-- **Goal:** SHIP TO PRODUCTION - Users can actually use it!
+  - Mobile responsive design
 
-**Week 7: Final Polish** (BEFORE BETA)
-- **V9 Report Enhancement (Phases F-I)** (4-5 hours):
-  - Complete remaining report sections from V9_REPORT_INCREMENTAL_PLAN.md
-  - Performance & Quality sections
-  - Action Items & PR Comment
-  - Conditional sections
-  - **Goal:** Production-ready reports with all 34 sections
-- **Final Testing** (2 days):
-  - Multi-framework validation (Spring, Quarkus, Micronaut)
-  - Multi-language smoke tests
-  - Performance optimization
-  - **Goal:** Zero bugs, ready for beta users
+**Tech Stack:**
+- Next.js 14
+- Tailwind CSS
+- React Query (API calls)
+- WebSocket for real-time updates
 
-**Week 8-9: Beta Testing**
-- Invite 10-20 early adopters
-- Monitor usage
-- Collect feedback
-- Fix bugs
-- Testimonials for VC pitch
+**Goal:** Web dashboard live, consuming API
+
+---
+
+**Week 7: Marketing Preparation + Alpha Testing** 📢 **NEW PHASE**
+
+**CRITICAL FOR SOLO FOUNDER: Dedicated marketing time BEFORE beta testing**
+
+**Week 7, Days 1-3: Marketing Content Creation**
+- **Blog Posts** (3-4 articles):
+  - "How We Built CodeQual: 99.8% Cost Reduction Story"
+  - "The State of Code Quality Tools in 2025"
+  - "Auto-fixing 98% of Issues: The Future of Code Review"
+  - "Building a Product-Led Growth SaaS as a Solo Founder"
+
+- **Social Media Content** (30+ posts):
+  - LinkedIn posts (10 posts scheduled)
+  - Twitter/X threads (10 threads scheduled)
+  - Dev.to articles (3 articles)
+  - Reddit r/programming, r/coding posts (planned)
+
+- **Visual Content**:
+  - Demo video (3-5 minutes)
+  - Screenshot gallery (10-15 screenshots)
+  - GIFs for social media (5-8 GIFs)
+  - Comparison tables vs. competitors
+
+**Week 7, Days 4-5: Launch Materials Preparation**
+- ProductHunt launch page (complete draft)
+- Hacker News launch post (refined pitch)
+- Email campaign templates
+- Landing page optimization
+- Referral program setup
+- Analytics tracking (Google Analytics, Mixpanel)
+
+**Week 7, Days 6-7: Alpha Testing (3-5 users)**
+- Invite 3-5 trusted developers
+- Monitor usage patterns
+- Collect initial feedback
+- Fix critical bugs discovered
+- Refine onboarding flow
+
+**Goal:** Marketing materials ready, alpha validation complete
+
+---
+
+**Week 8-9: Beta Testing** 🧪
+
+**Week 8: Expand Beta Testing**
+- Invite 20-50 early adopters
+- Post on dev communities with beta access
+- Monitor usage metrics:
+  - Activation rate
+  - Time to first value
+  - Retention (7-day, 14-day)
+  - Feature usage
+- Collect feedback systematically
 - **Goal:** Validate product-market fit
 
-**Week 10-11: Configuration System** ⚠️ **CONDITIONAL - ONLY IF USERS REQUEST**
-- Simple `.codequal.yml` support (YAML only, no DB yet)
-- Category-based exclusions (not tool-specific)
-- Path exclusions
-- Test with 5-10 users who requested it
-- **Goal:** Solve actual user pain points (not speculative)
+**Week 9: Bug Fixes + Testimonials**
+- Fix bugs reported during beta
+- Performance optimization based on real usage
+- Collect testimonials from happy users
+- Prepare case studies (2-3 detailed stories)
+- Refine pricing based on feedback
+- Prepare VC pitch materials (if seeking investment)
+- **Goal:** Production-ready, testimonials secured
 
-**Week 12: Public Launch**
-- Fix critical beta feedback
-- Marketing push (ProductHunt, HN)
-- Handle initial surge
-- **Goal:** Go viral on dev communities
+---
+
+**Week 10: Public Launch** 🎉
+
+**Week 10, Days 1-2: Final Pre-Launch Checklist**
+- Final security audit
+- Load testing (simulate 100+ concurrent users)
+- Backup verification
+- Support documentation complete
+- FAQ page updated
+- Billing flow tested end-to-end
+
+**Week 10, Days 3-4: Launch Day**
+- ProductHunt launch (Tuesday/Wednesday optimal)
+- Hacker News post
+- Social media blitz (LinkedIn, Twitter, Dev.to, Reddit)
+- Email campaign to waitlist
+- Monitor launch metrics in real-time
+
+**Week 10, Days 5-7: Post-Launch Support**
+- Respond to all feedback and comments
+- Fix critical bugs immediately
+- Monitor server performance
+- Engage with community
+- Prepare follow-up content based on feedback
+
+**Goal:** Successful public launch, handle initial surge, build momentum
+
+---
+
+**Success Criteria by Week 10:**
+- ✅ 6+ languages supported (80%+ GitHub/GitLab coverage)
+- ✅ GitHub + GitLab integrations live
+- ✅ Web dashboard functional
+- ✅ 50-100 beta users tested
+- ✅ 10+ testimonials collected
+- ✅ Marketing materials published
+- ✅ ProductHunt launch completed
+- ✅ 20-30% week-over-week user growth
+- ✅ Unit economics validated ($0.01 cost, $8-10 revenue)
+
+---
+
+**Post-Week 10: Future Enhancements** (AS NEEDED)
+- **Week 11+**: Configuration system (`.codequal.yml`) if users request
+- **Month 4+**: Additional languages (C/C++, Rust, Kotlin, Swift, C#)
+- **Month 4+**: Skills Development & Gamification
+- **Month 4+**: Enterprise features (Database layer, Config UI)
+- **Month 6+**: IDE plugins (VS Code, IntelliJ)
+- **Month 6+**: Mobile apps
 
 ---
 
@@ -439,23 +621,36 @@ severity_overrides:
   - C# (2 days)
   - **Goal:** Cover 95%+ of GitHub/GitLab
 
-### 🎯 Strategic Direction
+### 🎯 Strategic Direction (Revised October 2025)
 
-**Goal:** Attract VC investment with product-led growth strategy
+**Goal:** Product-led growth to public launch in 10 weeks (solo founder timeline)
 
-**Why This Revised Approach is Better:**
-1. ✅ **Ship Core Value First**: Users see value (reports in PRs) immediately
-2. ✅ **Learn Before Building**: Collect feedback before building speculative features
-3. ✅ **Lower Risk**: Configuration system deferred until users request it
-4. ✅ **Realistic Growth**: 10-50 early adopters in 3 months (not 1000)
-5. ✅ **Database Migration is Low-Risk**: Can add DB layer later without pain
+**Why This API-First Approach is Better:**
+1. ✅ **API-First Architecture**: Single source of truth, CI/CD and Web become thin clients
+2. ✅ **Simplified Integrations**: GitHub App (50 lines), GitLab (50 lines), Web UI (200 lines)
+3. ✅ **Marketing Preparation**: Dedicated Week 7 for content creation before beta
+4. ✅ **Realistic Timeline**: 10 weeks to public launch with proper marketing preparation
+5. ✅ **Solo Founder Optimized**: Acknowledges time needed for content, social media, launch materials
+6. ✅ **Learn Before Building**: Configuration system deferred until users request it
+7. ✅ **Lower Risk**: Validate product-market fit before building speculative features
 
-**Key Metrics for VCs:**
+**Key Architectural Decisions:**
+1. **API Service BEFORE CI/CD**: Prevents code duplication, simplifies all integrations
+2. **Project Cleanup Early**: Clean codebase before scaling to 6 languages
+3. **Marketing Week**: Dedicated time for blog posts, social media, demo videos
+4. **Alpha → Beta → Public**: Proper validation at each stage
+
+**Key Metrics for Growth:**
 1. **Viral Growth**: GitHub App installs per week (target: 20-30% week-over-week)
-2. **Fast Revenue**: Paying customers within 6 weeks (target: 10+ paying users)
+2. **Fast Revenue**: Paying customers within 8 weeks (target: 10+ paying users)
 3. **Unit Economics**: $0.01 cost, $8-10/user revenue (800x-1000x margin)
 4. **Market Coverage**: 6 languages (Java, TypeScript, Python, Go, PHP, Ruby) = **80%+ of GitHub/GitLab**
-5. **Competitive Advantage**: 20-40% cheaper than competitors + better UX + more languages
+5. **Competitive Advantage**:
+   - 20-40% cheaper than competitors
+   - 98% auto-fix rate (vs 60-70% industry average)
+   - Better UX with educational content
+   - More languages supported
+   - $0.01 per analysis (99.8% cost reduction)
 
 **Language Coverage Strategy:**
 - ✅ Docker images already built and on Oracle Cloud
@@ -463,14 +658,46 @@ severity_overrides:
 - ✅ After Java validation, adding languages is FAST (1-2 days each)
 - ✅ Focus: Parallel tool execution + identifying optional/skippable tools per language
 
-**Pragmatic Timeline:**
-- **Week 6**: Production environment + CI/CD ready
-- **Week 7**: Final polish + V9 report enhancements (Phases F-I)
-- **Week 9**: 10-20 beta users with feedback
-- **Week 12**: Public launch
+**Pragmatic Timeline (10 Weeks):**
+- **Week 1-2**: Control check + Cleanup + 6 languages
+- **Week 3-4**: Auth/Billing + API Service + Production environment
+- **Week 5-6**: CI/CD + Web Dashboard (both consume API)
+- **Week 7**: Marketing preparation + Alpha testing (3-5 users)
+- **Week 8-9**: Beta testing (20-50 users) + Testimonials
+- **Week 10**: Public launch (ProductHunt, HN, social media)
 - **Month 4+**: Enterprise features (when actually needed)
 
-**See also:** `docs/marketing/marketing-plan.md` for complete go-to-market strategy
+**API-First Benefits:**
+```
+Traditional Approach:          API-First Approach:
+┌─────────────────┐           ┌─────────────────┐
+│  CI/CD Service  │           │   API Service   │ ← Single source
+│  (analysis)     │           │   (analysis)    │    of truth
+└─────────────────┘           └────────┬────────┘
+                                       │
+┌─────────────────┐                   ├────────────────────┐
+│  Web Dashboard  │                   │                    │
+│  (analysis)     │              ┌────▼────┐          ┌────▼────┐
+└─────────────────┘              │ CI/CD   │          │   Web   │
+                                 │ (50 LOC)│          │(200 LOC)│
+❌ Code duplication              └─────────┘          └─────────┘
+❌ Maintenance burden
+❌ Hard to scale                 ✅ No duplication
+                                 ✅ Easy maintenance
+                                 ✅ Easy to scale
+```
+
+**Success Criteria by Week 10:**
+- ✅ 6+ languages production-ready
+- ✅ 50-100 beta users validated product
+- ✅ 10+ testimonials collected
+- ✅ Blog posts published (3-4 articles)
+- ✅ Social media content ready (30+ posts scheduled)
+- ✅ ProductHunt launch completed
+- ✅ 20-30% week-over-week growth initiated
+- ✅ Unit economics validated in production
+
+**See also:** `docs/marketing/marketing-plan.md` for complete go-to-market strategy (to be created Week 7)
 
 ## Phase-Based Implementation
 
