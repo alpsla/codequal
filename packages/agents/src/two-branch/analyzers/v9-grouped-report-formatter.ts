@@ -1443,10 +1443,11 @@ ${(() => {
 | **TOTAL** | **${bySeverity.critical}** | **${bySeverity.high}** | **${bySeverity.medium}** | **${bySeverity.low}** | **${issues.length}** |`;
 })()}
 
-**By Detected Category** (for scoring):
+**App Health Score by Category**:
 
 ${(() => {
-  // SESSION 13 FIX: Group issues by detectedCategory (Security, Performance, etc.)
+  // BUG #4 FIX: Show APP scores (baseScore=100) for clarity
+  // Developer Skill scores (baseScore=50) are shown in "Skills Growth Tracker" section
   const byDetectedCategory: Record<string, {critical: number, high: number, medium: number, low: number, total: number}> = {
     'Security': { critical: 0, high: 0, medium: 0, low: 0, total: 0 },
     'Performance': { critical: 0, high: 0, medium: 0, low: 0, total: 0 },
@@ -1466,15 +1467,15 @@ ${(() => {
 
   return `| Category | Critical | High | Medium | Low | Total | Score |
 |----------|----------|------|--------|-----|-------|-------|
-| 🔒 Security | ${byDetectedCategory['Security'].critical} | ${byDetectedCategory['Security'].high} | ${byDetectedCategory['Security'].medium} | ${byDetectedCategory['Security'].low} | **${byDetectedCategory['Security'].total}** | **${qualityResult.breakdown?.skillCategoryScores?.security ?? qualityResult.skillCategoryScores?.security ?? 'N/A'}/100** |
-| ⚡ Performance | ${byDetectedCategory['Performance'].critical} | ${byDetectedCategory['Performance'].high} | ${byDetectedCategory['Performance'].medium} | ${byDetectedCategory['Performance'].low} | **${byDetectedCategory['Performance'].total}** | **${qualityResult.breakdown?.skillCategoryScores?.performance ?? qualityResult.skillCategoryScores?.performance ?? 'N/A'}/100** |
-| 🏗️ Architecture | ${byDetectedCategory['Architecture'].critical} | ${byDetectedCategory['Architecture'].high} | ${byDetectedCategory['Architecture'].medium} | ${byDetectedCategory['Architecture'].low} | **${byDetectedCategory['Architecture'].total}** | **${qualityResult.breakdown?.skillCategoryScores?.architecture ?? qualityResult.skillCategoryScores?.architecture ?? 'N/A'}/100** |
-| 📦 Dependencies | ${byDetectedCategory['Dependencies'].critical} | ${byDetectedCategory['Dependencies'].high} | ${byDetectedCategory['Dependencies'].medium} | ${byDetectedCategory['Dependencies'].low} | **${byDetectedCategory['Dependencies'].total}** | **${qualityResult.breakdown?.skillCategoryScores?.dependency ?? qualityResult.skillCategoryScores?.dependency ?? 'N/A'}/100** |
-| ✨ Code Quality | ${byDetectedCategory['Code Quality'].critical} | ${byDetectedCategory['Code Quality'].high} | ${byDetectedCategory['Code Quality'].medium} | ${byDetectedCategory['Code Quality'].low} | **${byDetectedCategory['Code Quality'].total}** | **${qualityResult.breakdown?.skillCategoryScores?.codeQuality ?? qualityResult.skillCategoryScores?.codeQuality ?? 'N/A'}/100** |
+| 🔒 Security | ${byDetectedCategory['Security'].critical} | ${byDetectedCategory['Security'].high} | ${byDetectedCategory['Security'].medium} | ${byDetectedCategory['Security'].low} | **${byDetectedCategory['Security'].total}** | **${qualityResult.breakdown?.categoryScores?.security ?? qualityResult.categoryScores?.security ?? 'N/A'}/100** |
+| ⚡ Performance | ${byDetectedCategory['Performance'].critical} | ${byDetectedCategory['Performance'].high} | ${byDetectedCategory['Performance'].medium} | ${byDetectedCategory['Performance'].low} | **${byDetectedCategory['Performance'].total}** | **${qualityResult.breakdown?.categoryScores?.performance ?? qualityResult.categoryScores?.performance ?? 'N/A'}/100** |
+| 🏗️ Architecture | ${byDetectedCategory['Architecture'].critical} | ${byDetectedCategory['Architecture'].high} | ${byDetectedCategory['Architecture'].medium} | ${byDetectedCategory['Architecture'].low} | **${byDetectedCategory['Architecture'].total}** | **${qualityResult.breakdown?.categoryScores?.architecture ?? qualityResult.categoryScores?.architecture ?? 'N/A'}/100** |
+| 📦 Dependencies | ${byDetectedCategory['Dependencies'].critical} | ${byDetectedCategory['Dependencies'].high} | ${byDetectedCategory['Dependencies'].medium} | ${byDetectedCategory['Dependencies'].low} | **${byDetectedCategory['Dependencies'].total}** | **${qualityResult.breakdown?.categoryScores?.dependency ?? qualityResult.categoryScores?.dependency ?? 'N/A'}/100** |
+| ✨ Code Quality | ${byDetectedCategory['Code Quality'].critical} | ${byDetectedCategory['Code Quality'].high} | ${byDetectedCategory['Code Quality'].medium} | ${byDetectedCategory['Code Quality'].low} | **${byDetectedCategory['Code Quality'].total}** | **${qualityResult.breakdown?.categoryScores?.codeQuality ?? qualityResult.categoryScores?.codeQuality ?? 'N/A'}/100** |
 | **TOTAL** | **${bySeverity.critical}** | **${bySeverity.high}** | **${bySeverity.medium}** | **${bySeverity.low}** | **${issues.length}** | - |`;
 })()}
 
-> **Score Calculation:** Categories start at base score (APP=100, Skill=50), then deduct: Critical (-5), High (-3), Medium (-1), Low (-0.5). APP Score = MIN(all categories), Skill Score = AVG(all categories).
+> **Score Calculation:** Each category starts at 100 (perfect health), then deducts: Critical (-5), High (-3), Medium (-1), Low (-0.5). Overall APP Score = MIN(all categories). *Note: Developer skill scores (baseScore=50) are shown in the "Skills Growth Tracker" section.*
 
 ---
 
