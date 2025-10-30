@@ -163,21 +163,13 @@ export async function generateEducationalResourcesBrave(issues: EnrichedIssue[])
   );
   // Rest critical/high: EXISTING_REST + critical/high (not blockers but still important)
   const restCriticalHighIssues = issues.filter(i =>
-    i.category === 'EXISTING_REST' && 
+    i.category === 'EXISTING_REST' &&
     (i.severity === 'critical' || i.severity === 'high')
   );
-  
-  // Try to load EducationalSearchService (optional dependency)
-  try {
-    const mod = await import('../services/EducationalSearchService');
-    const svc = new mod.EducationalSearchService();
-    if (!svc.isEnabled()) {
-      return generateEducationalResources(issues);
-    }
-  } catch (error) {
-    // Service not available, fall back to standard resources
-    return generateEducationalResources(issues);
-  }
+
+  // BUG FIX: Remove EducationalSearchService check - YouTube links don't need Brave API
+  // The Brave version generates YouTube search URLs which work without any API key
+  // This aligns with the default behavior set in v9-grouped-report-formatter.ts
 
   let content = `## 📚 Phased Educational Plan\n\n`;
 
