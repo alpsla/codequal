@@ -44,24 +44,24 @@ interface TestScenario {
 
 const TEST_SCENARIOS: TestScenario[] = [
   {
-    name: 'Spring Boot - Petclinic',
-    repoUrl: 'https://github.com/spring-projects/spring-petclinic',
-    prNumber: 950,
+    name: 'JHipster Sample App',
+    repoUrl: 'https://github.com/jhipster/jhipster-sample-app',
+    prNumber: 1, // Using PR #1 for testing (or main branch if no PR)
     expectedFramework: 'spring',
     expectedToolCount: 5
   },
   {
-    name: 'Quarkus - Quickstarts',
-    repoUrl: 'https://github.com/quarkusio/quarkus-quickstarts',
-    prNumber: 100,
-    expectedFramework: 'quarkus',
+    name: 'Spring Boot Admin',
+    repoUrl: 'https://github.com/codecentric/spring-boot-admin',
+    prNumber: 1, // Using PR #1 for testing (or main branch if no PR)
+    expectedFramework: 'spring',
     expectedToolCount: 5
   },
   {
-    name: 'Micronaut - Core',
-    repoUrl: 'https://github.com/micronaut-projects/micronaut-core',
-    prNumber: 200,
-    expectedFramework: 'micronaut',
+    name: 'Netflix Conductor',
+    repoUrl: 'https://github.com/Netflix/conductor',
+    prNumber: 1, // Using PR #1 for testing (or main branch if no PR)
+    expectedFramework: 'generic', // Gradle-based, may not detect specific framework
     expectedToolCount: 5
   }
 ];

@@ -121,7 +121,7 @@ export const DEFAULT_JAVA_CONFIG: JavaToolConfig = {
     formats: ['JSON'],
     caching: {
       enabled: true,
-      location: '/workspace/.dependency-check-cache'
+      location: process.env.DEPENDENCY_CHECK_CACHE || `${process.env.HOME}/.dependency-check-cache`
     }
   },
   docker: {
@@ -459,25 +459,48 @@ export class JavaToolOrchestrator extends BaseToolOrchestrator {
     branch: 'base' | 'pr'
   ): Promise<ToolResult> {
     const startTime = Date.now();
-    
+
     try {
       logger.info(`🐛 Running SpotBugs analysis (requires compilation)...`);
-      
+
       // SpotBugs requires compilation - check if compiled classes exist
       const compiledClasses = await fs.readdir(repoPath).catch(() => []);
-      const hasCompiledClasses = compiledClasses.some(file => 
+      const hasCompiledClasses = compiledClasses.some(file =>
         file.endsWith('.class') || file === 'target' || file === 'build'
       );
-      
+
       if (!hasCompiledClasses) {
-        logger.warn(`⚠️  SpotBugs skipped: No compiled classes found (requires compilation)`);
-        return {
-          tool: 'spotbugs',
-          success: true,
-          duration: Date.now() - startTime,
-          issues: [],
-          metadata: this.calculateMetadata([])
-        };
+        // Auto-compile if no compiled classes found
+        logger.info(`🔨 No compiled classes found. Attempting auto-compilation...`);
+
+        const { detectBuildTools, compileRepository } = await import('../build-tool-detector');
+        const buildInfo = await detectBuildTools(repoPath);
+
+        if (buildInfo.compilationRequired) {
+          const compileResult = await compileRepository(repoPath, buildInfo);
+
+          if (!compileResult.success) {
+            logger.warn(`⚠️  SpotBugs skipped: Compilation failed - ${compileResult.error}`);
+            return {
+              tool: 'spotbugs',
+              success: true,
+              duration: Date.now() - startTime,
+              issues: [],
+              metadata: this.calculateMetadata([])
+            };
+          }
+
+          logger.info(`✅ Compilation successful, proceeding with SpotBugs...`);
+        } else {
+          logger.warn(`⚠️  SpotBugs skipped: No build system detected`);
+          return {
+            tool: 'spotbugs',
+            success: true,
+            duration: Date.now() - startTime,
+            issues: [],
+            metadata: this.calculateMetadata([])
+          };
+        }
       }
 
       // Run SpotBugs on compiled classes
