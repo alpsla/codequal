@@ -4045,14 +4045,22 @@ ${blocking.length > 5 ? `\n... and ${blocking.length - 5} more` : ''}` : '### �
       footer += `# CodeQual automatically triggers:\n`;
       footer += `🤖 CodeQual: [Running analysis on new commit...]\n`;
       footer += `             ✅ Before: ${criticalCount} critical, ${highCount} high\n`;
-      footer += `             ✅ After:  0 critical, 0 high\n`;
-      footer += `             🎉 All blockers resolved! PR approved.\n`;
+      // BUG #6 FIX: Show realistic scenario - auto-fix handles most but not necessarily all issues
+      if (autoFixableCount === totalFixable) {
+        footer += `             ✅ After:  0 critical, 0 high\n`;
+        footer += `             🎉 All blockers resolved! PR approved.\n`;
+      } else {
+        const remainingPercent = Math.round(((totalFixable - autoFixableCount) / totalFixable) * 100);
+        footer += `             ✅ After:  ${Math.ceil((criticalCount + highCount) * remainingPercent / 100)} issues remaining (${remainingPercent}% require manual review)\n`;
+        footer += `             🎯 Significant progress! Review remaining issues.\n`;
+      }
       footer += `\`\`\`\n\n`;
       footer += `**Why CodeQual re-scan?**\n`;
       footer += `- ✅ Automated validation on every commit\n`;
       footer += `- 📊 Compare before/after results objectively\n`;
       footer += `- 🎯 Catch any regressions or incomplete fixes\n`;
       footer += `- 🏆 Earn "First Clean PR" achievement\n\n`;
+      footer += `> **Note:** Auto-fix tools can resolve most style and formatting issues (${Math.round((autoFixableCount / totalFixable) * 100)}% in this PR), but complex security or logic issues may require manual review.\n\n`;
       
       footer += `**Why this works**:\n`;
       footer += `- ⚡ **Zero wait time** - critical issues embedded for instant access\n`;
