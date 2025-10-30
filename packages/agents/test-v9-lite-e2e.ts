@@ -245,7 +245,7 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
     // Extract tool performance from orchestrator results
     const toolPerformance = prResults.map(toolResult => ({
       tool: toolResult.tool || 'unknown',
-      filesScanned: toolResult.metadata?.filesAnalyzed || 0,
+      filesScanned: toolResult.metadata?.filesScanned || 0,
       issuesFound: toolResult.issues?.length || 0,
       duration: toolResult.duration || 0
     }));
@@ -263,11 +263,11 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
       const agentTools = prResults.filter(r => toolNames.includes(r.tool || ''));
       const totalIssues = agentTools.reduce((sum, t) => sum + (t.issues?.length || 0), 0);
       const totalDuration = agentTools.reduce((sum, t) => sum + (t.duration || 0), 0);
-      const filesAnalyzed = agentTools.reduce((sum, t) => sum + (t.metadata?.filesAnalyzed || 0), 0);
+      const filesScanned = agentTools.reduce((sum, t) => sum + (t.metadata?.filesScanned || 0), 0);
 
       return {
         name: `${agentName} Agent`,
-        filesAnalyzed: filesAnalyzed || 50, // fallback estimate
+        filesAnalyzed: filesScanned || 50, // fallback estimate
         issuesFound: totalIssues,
         duration: totalDuration,
         cost: 0.00  // FREE models - no cost
