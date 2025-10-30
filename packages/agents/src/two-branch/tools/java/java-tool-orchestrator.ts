@@ -534,9 +534,10 @@ export class JavaToolOrchestrator extends BaseToolOrchestrator {
 
       await execAsync(dockerCommand, { maxBuffer: 50 * 1024 * 1024 });
 
-      // Parse results
+      // Parse XML results
       const resultContent = await fs.readFile(outputFile, 'utf-8');
-      const spotbugsResult = JSON.parse(resultContent);
+      const { parseStringPromise } = await import('xml2js');
+      const spotbugsResult = await parseStringPromise(resultContent);
       
       const issues: RawIssue[] = [];
       if (spotbugsResult.BugCollection?.BugInstance) {
