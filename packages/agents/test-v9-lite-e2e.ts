@@ -239,40 +239,9 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
     );
 
     // ========================================================================
-    // CAPTURE REAL PERFORMANCE DATA (BUG #8, #9, #10 FIX)
+    // USE PERFORMANCE DATA FROM ORCHESTRATOR (BUG #8, #9, #10 FIX)
+    // Business logic moved to V9 engine classes per architectural requirements
     // ========================================================================
-
-    // Extract tool performance from orchestrator results
-    const toolPerformance = prResults.map(toolResult => ({
-      tool: toolResult.tool || 'unknown',
-      filesScanned: toolResult.metadata?.filesScanned || 0,
-      issuesFound: toolResult.issues?.length || 0,
-      duration: toolResult.duration || 0
-    }));
-
-    // Calculate agent performance (group tools by category)
-    const agentCategories = {
-      'Security': ['semgrep', 'dependency-check'],
-      'Code Quality': ['pmd', 'checkstyle'],
-      'Performance': ['spotbugs'],
-      'Architecture': [],
-      'Dependencies': ['dependency-check']
-    };
-
-    const agentPerformance = Object.entries(agentCategories).map(([agentName, toolNames]) => {
-      const agentTools = prResults.filter(r => toolNames.includes(r.tool || ''));
-      const totalIssues = agentTools.reduce((sum, t) => sum + (t.issues?.length || 0), 0);
-      const totalDuration = agentTools.reduce((sum, t) => sum + (t.duration || 0), 0);
-      const filesScanned = agentTools.reduce((sum, t) => sum + (t.metadata?.filesScanned || 0), 0);
-
-      return {
-        name: `${agentName} Agent`,
-        filesAnalyzed: filesScanned || 50, // fallback estimate
-        issuesFound: totalIssues,
-        duration: totalDuration,
-        cost: 0.00  // FREE models - no cost
-      };
-    }).filter(agent => agent.duration > 0 || agent.issuesFound > 0); // Only include agents that ran
 
     const metadata = {
       repository: scenario.repoUrl.split('/').slice(-2).join('/'),
@@ -299,9 +268,9 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
       analyzedAt: new Date().toISOString(),
       analyzerVersion: '9.0.0',
 
-      // ⭐ REAL PERFORMANCE DATA (BUG #8, #9, #10 FIX)
-      toolPerformance,      // Real tool execution data
-      agentPerformance      // Calculated from tools
+      // ⭐ PERFORMANCE DATA FROM ORCHESTRATOR (BUG #8, #9, #10 FIX)
+      toolPerformance: prResult.toolPerformance,      // From orchestrator
+      agentPerformance: prResult.agentPerformance     // From orchestrator
     };
 
     const result = await formatter.generateGroupedReport(
