@@ -9,6 +9,7 @@
 import { createLogger, Logger } from '../utils';
 import { ModelVersionSync, ModelPricing } from '../utils/model-types';
 import { VectorStorageService } from '@codequal/database';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 // Import TokenUsage from token-usage-extractor to avoid duplicate export
 import { TokenUsage } from './token-usage-extractor';
@@ -79,12 +80,26 @@ export class ModelTokenTracker {
   private readonly logger: Logger;
   private records: Map<string, TokenTrackingRecord[]> = new Map();
   private modelPricingCache: Map<string, ModelPricing> = new Map();
-  
+  private supabase?: SupabaseClient;
+
   constructor(
     private modelVersionSync: ModelVersionSync,
-    private vectorStorage?: VectorStorageService
+    private vectorStorage?: VectorStorageService,
+    supabaseClient?: SupabaseClient
   ) {
     this.logger = createLogger('ModelTokenTracker');
+
+    // Initialize Supabase client if not provided
+    if (supabaseClient) {
+      this.supabase = supabaseClient;
+    } else if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      this.supabase = createClient(
+        process.env.SUPABASE_URL,
+        process.env.SUPABASE_SERVICE_ROLE_KEY
+      );
+    } else {
+      this.logger.warn('No Supabase client provided - pricing will use defaults');
+    }
   }
   
   /**
@@ -166,7 +181,10 @@ export class ModelTokenTracker {
   }
   
   /**
-   * Get model pricing from Vector DB or cache
+   * Get model pricing from Supabase model_research table or cache
+   * Fetches real pricing data stored in metadata.pricing from OpenRouter
+   *
+   * @throws Error if Supabase is unavailable or model not found
    */
   private async getModelPricing(model: string): Promise<ModelPricing> {
     // Check cache first
@@ -174,33 +192,124 @@ export class ModelTokenTracker {
     if (cached) {
       return cached;
     }
-    
+
+    // CRITICAL: Supabase must be available
+    if (!this.supabase) {
+      const error = new Error('CRITICAL: Supabase is not available - cannot fetch model pricing');
+      this.logger.error(error.message, { model });
+      throw error;
+    }
+
     try {
-      // Try to get from Vector DB via ModelVersionSync
-      const canonicalVersion = this.modelVersionSync.getCanonicalVersion(model);
-      
-      // For now, return default pricing since getCanonicalVersion returns a string
-      // TODO: Implement proper pricing lookup based on canonical version
-      
-      // Fallback to default pricing if not found
-      const defaultPricing: ModelPricing = {
-        input: 2.0, // $2 per 1M tokens
-        output: 6.0 // $6 per 1M tokens
-      };
-      
-      this.logger.warn('Using default pricing for model', { model });
-      return defaultPricing;
+      // Fetch pricing from model_research table
+      const { data, error } = await this.supabase
+        .from('model_research')
+        .select('metadata')
+        .eq('model_id', model)
+        .single();
+
+      if (error || !data) {
+        // Try with canonical version
+        const canonicalVersion = this.modelVersionSync.getCanonicalVersion(model);
+        const { data: canonicalData, error: canonicalError } = await this.supabase
+          .from('model_research')
+          .select('metadata')
+          .eq('model_id', canonicalVersion)
+          .single();
+
+        if (canonicalError || !canonicalData) {
+          const notFoundError = new Error(
+            `CRITICAL: Model '${model}' not found in model_research table. ` +
+            `All models must be synced from OpenRouter. Run discover-openrouter-models.ts`
+          );
+          this.logger.error(notFoundError.message, {
+            model,
+            canonicalVersion,
+            supabaseError: canonicalError?.message
+          });
+          throw notFoundError;
+        }
+
+        // Extract pricing from metadata
+        const metadata = canonicalData.metadata as any;
+        const pricing = this.extractPricing(metadata, model);
+        this.modelPricingCache.set(model, pricing);
+        return pricing;
+      }
+
+      // Extract pricing from metadata
+      const metadata = data.metadata as any;
+      const pricing = this.extractPricing(metadata, model);
+      this.modelPricingCache.set(model, pricing);
+      return pricing;
+
     } catch (error) {
-      this.logger.error('Failed to get model pricing', {
-        model,
-        error: error instanceof Error ? error.message : error
-      });
-      
-      // Return conservative default pricing
-      return {
-        input: 3.0,
-        output: 9.0
+      // If it's already our error, rethrow it
+      if (error instanceof Error && error.message.includes('CRITICAL')) {
+        throw error;
+      }
+
+      // Otherwise, it's a Supabase connection error
+      const connectionError = new Error(
+        `CRITICAL: Failed to connect to Supabase for model pricing lookup. ` +
+        `Original error: ${error instanceof Error ? error.message : String(error)}`
+      );
+      this.logger.error(connectionError.message, { model, originalError: error });
+      throw connectionError;
+    }
+  }
+
+  /**
+   * Extract pricing from metadata object
+   * Converts OpenRouter pricing strings to numbers (per 1M tokens)
+   *
+   * @throws Error if pricing data is invalid or missing
+   */
+  private extractPricing(metadata: any, model: string): ModelPricing {
+    if (!metadata || !metadata.pricing) {
+      const error = new Error(
+        `CRITICAL: Model '${model}' has no pricing data in metadata. ` +
+        `The model_research table entry is corrupted. Re-run discover-openrouter-models.ts`
+      );
+      this.logger.error(error.message, { model, metadata });
+      throw error;
+    }
+
+    try {
+      // OpenRouter returns pricing as strings like "0.000002" (per token)
+      // Promotional models have "0" for both prompt and completion
+      const promptPrice = parseFloat(metadata.pricing.prompt || '0');
+      const completionPrice = parseFloat(metadata.pricing.completion || '0');
+
+      if (isNaN(promptPrice) || isNaN(completionPrice)) {
+        throw new Error(`Invalid pricing values: prompt=${metadata.pricing.prompt}, completion=${metadata.pricing.completion}`);
+      }
+
+      // Convert from per-token to per-1M-tokens
+      const pricing: ModelPricing = {
+        input: promptPrice * 1_000_000,
+        output: completionPrice * 1_000_000
       };
+
+      // Log pricing (including promotional $0 models)
+      if (pricing.input === 0 && pricing.output === 0) {
+        this.logger.info('Promotional FREE model pricing', { model });
+      } else {
+        this.logger.debug('Extracted pricing', {
+          model,
+          input: `$${pricing.input.toFixed(2)}/1M`,
+          output: `$${pricing.output.toFixed(2)}/1M`
+        });
+      }
+
+      return pricing;
+    } catch (error) {
+      const parseError = new Error(
+        `CRITICAL: Failed to parse pricing from metadata for model '${model}'. ` +
+        `Error: ${error instanceof Error ? error.message : String(error)}`
+      );
+      this.logger.error(parseError.message, { model, metadata, originalError: error });
+      throw parseError;
     }
   }
   

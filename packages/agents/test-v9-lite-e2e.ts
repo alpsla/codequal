@@ -238,6 +238,11 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
       'medium'
     );
 
+    // ========================================================================
+    // USE PERFORMANCE DATA FROM ORCHESTRATOR (BUG #8, #9, #10 FIX)
+    // Business logic moved to V9 engine classes per architectural requirements
+    // ========================================================================
+
     const metadata = {
       repository: scenario.repoUrl.split('/').slice(-2).join('/'),
       repoUrl: scenario.repoUrl,
@@ -261,7 +266,11 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
       analysisTime: Date.now() - startTime - 5000,
       reportGenerationTime: 1000,
       analyzedAt: new Date().toISOString(),
-      analyzerVersion: '9.0.0'
+      analyzerVersion: '9.0.0',
+
+      // ⭐ PERFORMANCE DATA FROM ORCHESTRATOR (BUG #8, #9, #10 FIX)
+      toolPerformance: prResult.toolPerformance,      // From orchestrator
+      agentPerformance: prResult.agentPerformance     // From orchestrator
     };
 
     const result = await formatter.generateGroupedReport(

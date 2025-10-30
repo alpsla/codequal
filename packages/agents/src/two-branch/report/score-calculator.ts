@@ -272,12 +272,12 @@ export async function calculateFullV9Score(
         pr_number: metadata.prNumber || 0,
         commit_sha: metadata.commitSHA || null,
         overall_score: skillScore,
-        // BUG FIX #10: Map categoryScores to individual columns (not JSONB)
-        security_score: categoryScores.security,
-        performance_score: categoryScores.performance,
-        architecture_score: categoryScores.architecture,
-        dependency_score: categoryScores.dependency,
-        code_quality_score: categoryScores.codeQuality,
+        // BUG FIX #90: Use skillCategoryScores (base=50) for skill_scores table
+        security_score: skillCategoryScores.security,
+        performance_score: skillCategoryScores.performance,
+        architecture_score: skillCategoryScores.architecture,
+        dependency_score: skillCategoryScores.dependency,
+        code_quality_score: skillCategoryScores.codeQuality,
         analyzed_at: new Date().toISOString(),
         new_issues_count: newIssues.length,
         resolved_issues_count: resolvedIssues.length,

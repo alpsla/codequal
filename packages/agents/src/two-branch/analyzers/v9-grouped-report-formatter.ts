@@ -261,10 +261,10 @@ export class V9GroupedReportFormatter {
   private readonly SHOW_FIX_COVERAGE: boolean = false;
   private readonly SHOW_QUICK_WINS: boolean = false;
   private readonly SHOW_SYSTEM_INFO: boolean = false;
-  private readonly SHOW_AGENT_PERFORMANCE: boolean = false;
-  private readonly SHOW_TOOL_PERFORMANCE: boolean = false;
-  private readonly SHOW_EFFICIENCY_ANALYSIS: boolean = false;
-  
+  private readonly SHOW_AGENT_PERFORMANCE: boolean = true;  // BUG #9 FIX: Enable AI performance tracking
+  private readonly SHOW_TOOL_PERFORMANCE: boolean = true;   // BUG #8 FIX: Enable tool performance tracking
+  private readonly SHOW_EFFICIENCY_ANALYSIS: boolean = true; // BUG #10 FIX: Enable cost analysis
+
   constructor(
     modelConfigResolver?: any,
     language?: string,
@@ -3491,11 +3491,27 @@ Continue following best practices and consider integrating static analysis into 
       const history = await this.skillScoreManager.getScoreTrend(metadata.prAuthorEmail, metadata.repository);
       
       // Calculate current category scores from this PR
-      const security = issues.filter(i => i.detectedCategory === 'Security');
-      const performance = issues.filter(i => i.detectedCategory === 'Performance');
-      const architecture = issues.filter(i => i.detectedCategory === 'Architecture');
-      const dependencies = issues.filter(i => i.detectedCategory === 'Dependencies');
-      const codeQuality = issues.filter(i => i.detectedCategory === 'Code Quality');
+      // BUG FIX: Only count NEW + EXISTING_MODIFIED issues (exclude EXISTING_REST)
+      const security = issues.filter(i =>
+        i.detectedCategory === 'Security' &&
+        (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED')
+      );
+      const performance = issues.filter(i =>
+        i.detectedCategory === 'Performance' &&
+        (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED')
+      );
+      const architecture = issues.filter(i =>
+        i.detectedCategory === 'Architecture' &&
+        (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED')
+      );
+      const dependencies = issues.filter(i =>
+        i.detectedCategory === 'Dependencies' &&
+        (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED')
+      );
+      const codeQuality = issues.filter(i =>
+        i.detectedCategory === 'Code Quality' &&
+        (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED')
+      );
       
       const categoryScores = {
         security: this.calculateCategoryScore(security),
@@ -3696,7 +3712,9 @@ Continue following best practices and consider integrating static analysis into 
       metadata.agentPerformance.forEach((agent: any) => {
         const issues = agent.issuesFound || agent.issues || 0;
         const time = agent.duration ? (agent.duration / 1000).toFixed(1) + 's' : 'N/A';
-        const cost = agent.cost ? '$' + agent.cost.toFixed(4) : (issues === 0 ? 'N/A' : '$0.0000');
+        const costValue = agent.cost || 0;
+        // Check for zero cost (including 0, 0.0, 0.00, etc.) or very small values
+        const cost = (costValue === 0 || costValue < 0.0001) ? 'FREE' : '$' + costValue.toFixed(4);
         content += `| ${agent.name || agent.agent} | ${agent.filesAnalyzed || agent.files || 'N/A'} | ${issues} | ${time} | ${cost} |\n`;
       });
     }
@@ -3724,10 +3742,10 @@ Continue following best practices and consider integrating static analysis into 
       const totalTime = metadata.agentPerformance.reduce((sum: number, agent: any) => sum + (agent.duration || 0), 0);
       
       content += `\n**Overall Efficiency:**\n`;
-      content += `- Total Cost: $${totalCost.toFixed(4)}\n`;
-      content += `- Cost per Issue: $${totalIssues > 0 ? (totalCost / totalIssues).toFixed(6) : '0.000000'}\n`;
+      content += `- Total Cost: ${(totalCost === 0 || totalCost < 0.0001) ? 'FREE' : '$' + totalCost.toFixed(4)}\n`;
+      content += `- Cost per Issue: ${(totalCost === 0 || totalCost < 0.0001) ? 'FREE' : '$' + (totalIssues > 0 ? (totalCost / totalIssues).toFixed(6) : '0.000000')}\n`;
       content += `- Issues per Second: ${totalTime > 0 ? ((totalIssues / totalTime) * 1000).toFixed(2) : '0.00'}\n`;
-      content += `- Cost per Second: $${totalTime > 0 ? ((totalCost / totalTime) * 1000).toFixed(6) : '0.000000'}/s\n\n`;
+      content += `- Cost per Second: ${(totalCost === 0 || totalCost < 0.0001) ? 'FREE' : '$' + (totalTime > 0 ? ((totalCost / totalTime) * 1000).toFixed(6) : '0.000000') + '/s'}\n\n`;
       
       // Performance recommendations
       content += `**Agent Efficiency Ranking:**\n\n`;
@@ -3751,22 +3769,30 @@ Continue following best practices and consider integrating static analysis into 
       
       agentEfficiency.forEach((agent: any, idx: number) => {
         const rank = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}.`;
-        const badge = !isFinite(agent.costPerIssue)
+        const isFree = agent.cost === 0 || agent.cost < 0.0001;
+        const badge = isFree
+          ? '🎁 FREE'
+          : !isFinite(agent.costPerIssue)
           ? 'N/A'
           : agent.costPerIssue < 0.001 ? '⚡ Excellent'
           : agent.costPerIssue < 0.01 ? '✅ Good'
           : agent.costPerIssue < 0.1 ? '⚠️ Average' : '🔴 Expensive';
-        const costPerIssueStr = isFinite(agent.costPerIssue) ? `$${agent.costPerIssue.toFixed(6)}/issue` : 'N/A cost/issue';
+        const costPerIssueStr = isFree
+          ? 'FREE/issue'
+          : isFinite(agent.costPerIssue) ? `$${agent.costPerIssue.toFixed(6)}/issue` : 'N/A cost/issue';
         content += `${rank} **${agent.name}**: ${agent.issues} issues @ ${costPerIssueStr} ${badge}\n`;
       });
       
-      // Replacement recommendations
-      const expensiveAgents = agentEfficiency.filter((a: any) => a.costPerIssue > 0.05);
+      // Replacement recommendations (only for paid models)
+      const expensiveAgents = agentEfficiency.filter((a: any) => a.cost >= 0.0001 && a.costPerIssue > 0.05);
       if (expensiveAgents.length > 0) {
         content += `\n**💡 Optimization Opportunities:**\n`;
         expensiveAgents.forEach((agent: any) => {
           content += `- Consider optimizing **${agent.name}** (high cost/issue: $${agent.costPerIssue.toFixed(4)})\n`;
         });
+      } else if (agentEfficiency.every((a: any) => a.cost === 0 || a.cost < 0.0001)) {
+        content += `\n**💡 Cost Optimization:**\n`;
+        content += `- All agents using FREE models - excellent cost efficiency! 🎉\n`;
       }
     }
     

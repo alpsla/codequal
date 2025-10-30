@@ -71,6 +71,27 @@ export interface RawIssue {
 }
 
 /**
+ * Tool performance metrics for reporting
+ */
+export interface ToolPerformanceMetrics {
+  tool: string;
+  filesScanned: number;
+  issuesFound: number;
+  duration: number;
+}
+
+/**
+ * Agent performance metrics for reporting
+ */
+export interface AgentPerformanceMetrics {
+  name: string;
+  filesAnalyzed: number;
+  issuesFound: number;
+  duration: number;
+  cost: number;
+}
+
+/**
  * Final orchestration result - same for all languages
  */
 export interface OrchestrationResult {
@@ -87,6 +108,9 @@ export interface OrchestrationResult {
     toolsExecuted: number;
     toolsFailed: number;
   };
+  // Performance metrics for metadata sections (BUG #8, #9, #10)
+  toolPerformance: ToolPerformanceMetrics[];
+  agentPerformance: AgentPerformanceMetrics[];
 }
 
 /**
@@ -156,6 +180,77 @@ export abstract class BaseToolOrchestrator {
   ): Promise<ToolResult>;
 
   // ============================================================
+  // PERFORMANCE METRICS (Can be overridden by language-specific orchestrators)
+  // ============================================================
+
+  /**
+   * Get agent to tool mapping for performance tracking
+   * Language-specific orchestrators can override to provide custom mappings
+   *
+   * Default mapping covers common categories:
+   * - Security: semgrep, dependency-check, snyk
+   * - Code Quality: pmd, eslint, pylint, checkstyle
+   * - Performance: spotbugs, performance-analyzer
+   * - Architecture: arch-unit, dependency-analyzer
+   * - Dependencies: dependency-check, npm-audit, pip-audit
+   */
+  protected getAgentToolCategories(): Record<string, string[]> {
+    return {
+      'Security': ['semgrep', 'dependency-check', 'snyk', 'bandit', 'gosec'],
+      'Code Quality': ['pmd', 'checkstyle', 'eslint', 'pylint', 'golangci-lint'],
+      'Performance': ['spotbugs', 'performance-analyzer'],
+      'Architecture': ['arch-unit', 'dependency-analyzer'],
+      'Dependencies': ['dependency-check', 'npm-audit', 'pip-audit']
+    };
+  }
+
+  /**
+   * Calculate performance metrics from tool results
+   * Extracts both tool-level and agent-level performance data
+   */
+  protected calculatePerformanceMetrics(toolResults: ToolResult[]): {
+    toolPerformance: ToolPerformanceMetrics[];
+    agentPerformance: AgentPerformanceMetrics[];
+  } {
+    // Extract tool performance (straightforward mapping)
+    const toolPerformance: ToolPerformanceMetrics[] = toolResults.map(result => ({
+      tool: result.tool,
+      filesScanned: result.metadata.filesScanned,
+      issuesFound: result.metadata.issuesFound,
+      duration: result.duration
+    }));
+
+    // Calculate agent performance (group tools by agent category)
+    const agentCategories = this.getAgentToolCategories();
+    const agentPerformance: AgentPerformanceMetrics[] = [];
+
+    for (const [agentName, toolNames] of Object.entries(agentCategories)) {
+      // Find all tools that belong to this agent
+      const agentTools = toolResults.filter(r => toolNames.includes(r.tool));
+
+      // Skip agents that didn't run any tools
+      if (agentTools.length === 0) {
+        continue;
+      }
+
+      // Aggregate metrics
+      const totalIssues = agentTools.reduce((sum, t) => sum + t.metadata.issuesFound, 0);
+      const totalDuration = agentTools.reduce((sum, t) => sum + t.duration, 0);
+      const filesScanned = agentTools.reduce((sum, t) => sum + t.metadata.filesScanned, 0);
+
+      agentPerformance.push({
+        name: `${agentName} Agent`,
+        filesAnalyzed: filesScanned,
+        issuesFound: totalIssues,
+        duration: totalDuration,
+        cost: 0.00  // Cost will be calculated by ModelTokenTracker during AI analysis
+      });
+    }
+
+    return { toolPerformance, agentPerformance };
+  }
+
+  // ============================================================
   // UNIVERSAL METHODS (Inherited by all languages)
   // ============================================================
 
@@ -201,6 +296,9 @@ export abstract class BaseToolOrchestrator {
       const summary = this.aggregateResults(toolResults);
       const duration = Date.now() - startTime;
 
+      // Step 5: Calculate performance metrics (BUG #8, #9, #10)
+      const { toolPerformance, agentPerformance } = this.calculatePerformanceMetrics(toolResults);
+
       logger.info(`✅ Orchestration complete in ${(duration / 1000).toFixed(1)}s`);
       logger.info(`📊 Total issues: ${summary.totalIssues} (${summary.blockingIssues} blocking)`);
 
@@ -208,7 +306,9 @@ export abstract class BaseToolOrchestrator {
         success: true,
         duration,
         toolResults,
-        summary
+        summary,
+        toolPerformance,
+        agentPerformance
       };
 
     } catch (error: any) {
@@ -228,7 +328,9 @@ export abstract class BaseToolOrchestrator {
           blockingIssues: 0,
           toolsExecuted: 0,
           toolsFailed: 0
-        }
+        },
+        toolPerformance: [],
+        agentPerformance: []
       };
     }
   }

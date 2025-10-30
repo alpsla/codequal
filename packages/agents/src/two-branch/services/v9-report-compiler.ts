@@ -58,6 +58,25 @@ export interface CompiledReport {
 /**
  * Compile a complete V9 analysis report from raw tool outputs
  */
+/**
+ * BUG #91 FIX: Convert lifecycle status to category format
+ *
+ * This helper ensures proper categorization of issues:
+ * - new → NEW
+ * - existing + modified file → EXISTING_MODIFIED
+ * - existing + not modified → EXISTING_REST
+ * - resolved → RESOLVED
+ */
+function determineLifecycleCategory(status: string, inModifiedFile: boolean): string {
+  if (status === 'new') return 'NEW';
+  if (status === 'resolved') return 'RESOLVED';
+  if (status === 'existing') {
+    return inModifiedFile ? 'EXISTING_MODIFIED' : 'EXISTING_REST';
+  }
+  // Fallback for any other status
+  return 'EXISTING_REST';
+}
+
 export async function compileV9Report(
   data: CompileReportInput,
   options: CompileReportOptions = {}
@@ -83,16 +102,44 @@ export async function compileV9Report(
   const mainIssues = data.mainOutputs.flatMap(o => o.parsedIssues || []);
   const prIssues = data.prOutputs.flatMap(o => o.parsedIssues || []);
 
+  // BUG #91 FIX: Get list of modified files from PR outputs
+  // This is needed to distinguish EXISTING_MODIFIED from EXISTING_REST
+  // Note: modifiedFiles may not be available in all outputs, so we use optional chaining
+  const modifiedFiles = new Set<string>(
+    data.prOutputs.flatMap((o: any) => o.modifiedFiles || [])
+  );
+
+  console.log(`[BUG #91 FIX] Detected ${modifiedFiles.size} modified files in PR`);
+  if (modifiedFiles.size === 0) {
+    console.log(`[BUG #91 FIX] ⚠️  No modified files detected - all EXISTING issues will be EXISTING_REST`);
+  }
+
   // Helper function to format issues
   const formatIssue = async (issue: any, status?: string) => {
+    // BUG #91 FIX: Determine if issue is in a modified file
+    const issueFile = issue.file || 'unknown';
+    const inModifiedFile = modifiedFiles.has(issueFile);
+
+    // BUG #91 FIX: Convert status to proper lifecycle category
+    const lifecycleStatus = status || 'existing';
+    const lifecycleCategory = determineLifecycleCategory(lifecycleStatus, inModifiedFile);
+
     const formattedIssue = {
       id: `${issue.tool}-${issue.file}-${issue.line}`,
-      category: getIssueCategory(issue),
+
+      // BUG #91 FIX: Renamed field to avoid collision
+      // This is the DOMAIN category (Security, Performance, Architecture, etc.)
+      detectedCategory: getIssueCategory(issue),
+
+      // BUG #91 FIX: This is the LIFECYCLE category (NEW, EXISTING_MODIFIED, EXISTING_REST, RESOLVED)
+      // Formatter expects this field for filtering issues by lifecycle status
+      category: lifecycleCategory,
+
       severity: issue.severity || 'medium',
-      status: status || 'existing',
+      status: lifecycleStatus,  // Keep for backwards compatibility
       title: issue.message || 'Code quality issue',
       description: issue.message || 'Issue detected by static analysis',
-      file: issue.file || 'unknown',
+      file: issueFile,
       line: issue.line || 0,
       tool: issue.tool || 'unknown',
       agent: 'V9IntegratedAnalyzer',
@@ -101,7 +148,9 @@ export async function compileV9Report(
       codeSnippet: undefined as string | undefined,
       suggestedFix: undefined as string | undefined,
       suggestedCodeSnippet: undefined as string | undefined,
-      inModifiedFile: false
+
+      // BUG #91 FIX: Calculate correctly instead of hardcoding to false
+      inModifiedFile
     };
 
     // Generate code snippet and fix suggestion
