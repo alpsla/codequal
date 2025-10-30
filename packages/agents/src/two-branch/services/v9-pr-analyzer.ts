@@ -23,6 +23,7 @@
 
 import { V9RepositoryManager } from './v9-repository-manager';
 import { AIResponseNormalizer, type NormalizedIssue } from './ai-response-normalizer';
+import { V9CleanupService, type CleanupConfig } from './v9-cleanup-service';
 
 export interface PRAnalysisRequest {
   repositoryUrl: string;
@@ -32,6 +33,11 @@ export interface PRAnalysisRequest {
   language?: 'java' | 'typescript' | 'python' | 'go';
   outputDir?: string;
   skipCache?: boolean;
+  /**
+   * Cleanup configuration for post-analysis cleanup
+   * @default { cleanupAfterDelivery: true, cleanupDelaySeconds: 300 }
+   */
+  cleanupConfig?: Partial<CleanupConfig>;
 }
 
 export interface PRAnalysisResult {
@@ -59,10 +65,12 @@ export interface IssueCategory {
 export class V9PRAnalyzer {
   private repoManager: V9RepositoryManager;
   private aiNormalizer: AIResponseNormalizer;
+  private cleanupService: V9CleanupService;
 
-  constructor() {
+  constructor(cleanupConfig?: Partial<CleanupConfig>) {
     this.repoManager = new V9RepositoryManager();
     this.aiNormalizer = new AIResponseNormalizer();
+    this.cleanupService = new V9CleanupService(cleanupConfig);
   }
 
   /**
@@ -70,12 +78,19 @@ export class V9PRAnalyzer {
    */
   async analyzePR(request: PRAnalysisRequest): Promise<PRAnalysisResult> {
     const startTime = Date.now();
+    const analysisId = `${request.repositoryUrl.split('/').pop()}-pr${request.prNumber}-${Date.now()}`;
+
     console.log(`\n${'='.repeat(80)}`);
     console.log(`🚀 V9 PR Analysis Started`);
+    console.log(`   Analysis ID: ${analysisId}`);
     console.log(`   Repository: ${request.repositoryUrl}`);
     console.log(`   PR: #${request.prNumber}`);
     console.log(`   Language: ${request.language || 'auto-detect'}`);
     console.log(`${'='.repeat(80)}\n`);
+
+    const repoName = this.extractRepoName(request.repositoryUrl);
+    const repoPath = `/tmp/${repoName}-repo`;
+    const outputDir = request.outputDir || `/tmp/v9-reports/${repoName}`;
 
     try {
       // Step 1: Prepare repository
@@ -86,9 +101,18 @@ export class V9PRAnalyzer {
       // delegated to language-specific analyzers
       throw new Error('Analysis implementation pending - use test-v9-e2e-complete.ts for now');
 
+      // NOTE: When analysis is complete, cleanup will be scheduled automatically
+      // See scheduleCleanupAfterDelivery() method
+
     } catch (error: any) {
       const duration = this.formatDuration(Date.now() - startTime);
       console.error(`\n❌ Analysis failed: ${error.message}`);
+
+      // Schedule cleanup even on failure
+      this.scheduleCleanupAfterDelivery(analysisId, {
+        repository: repoPath,
+        outputDir
+      });
 
       return {
         success: false,
@@ -104,6 +128,21 @@ export class V9PRAnalyzer {
         error: error.message
       };
     }
+  }
+
+  /**
+   * Schedule cleanup after report delivery
+   * Called automatically after analysis completes
+   */
+  private scheduleCleanupAfterDelivery(analysisId: string, targets: {
+    repository: string;
+    outputDir: string;
+  }): void {
+    this.cleanupService.scheduleCleanup(analysisId, {
+      repository: targets.repository,
+      outputDir: targets.outputDir,
+      ideFixFilesDir: targets.outputDir // IDE fix files are in same directory
+    });
   }
 
   /**
