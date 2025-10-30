@@ -564,10 +564,12 @@ export class V9GroupedReportFormatter {
     markdown.push('');
     
     // Educational Resources (aggregate from enrichedIssues)
-    if ((process.env.EDU_USE_BRAVE || '').toLowerCase() === 'true') {
-      markdown.push(await this.generateEducationalResourcesBrave(enrichedIssues));
-    } else {
+    // Use issue-specific training with YouTube links by default (better UX)
+    // Falls back to generic if EDU_USE_GENERIC=true
+    if ((process.env.EDU_USE_GENERIC || '').toLowerCase() === 'true') {
       markdown.push(this.generateEducationalResources(enrichedIssues));
+    } else {
+      markdown.push(await this.generateEducationalResourcesBrave(enrichedIssues));
     }
     markdown.push('');
     
