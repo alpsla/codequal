@@ -3491,11 +3491,27 @@ Continue following best practices and consider integrating static analysis into 
       const history = await this.skillScoreManager.getScoreTrend(metadata.prAuthorEmail, metadata.repository);
       
       // Calculate current category scores from this PR
-      const security = issues.filter(i => i.detectedCategory === 'Security');
-      const performance = issues.filter(i => i.detectedCategory === 'Performance');
-      const architecture = issues.filter(i => i.detectedCategory === 'Architecture');
-      const dependencies = issues.filter(i => i.detectedCategory === 'Dependencies');
-      const codeQuality = issues.filter(i => i.detectedCategory === 'Code Quality');
+      // BUG FIX: Only count NEW + EXISTING_MODIFIED issues (exclude EXISTING_REST)
+      const security = issues.filter(i =>
+        i.detectedCategory === 'Security' &&
+        (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED')
+      );
+      const performance = issues.filter(i =>
+        i.detectedCategory === 'Performance' &&
+        (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED')
+      );
+      const architecture = issues.filter(i =>
+        i.detectedCategory === 'Architecture' &&
+        (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED')
+      );
+      const dependencies = issues.filter(i =>
+        i.detectedCategory === 'Dependencies' &&
+        (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED')
+      );
+      const codeQuality = issues.filter(i =>
+        i.detectedCategory === 'Code Quality' &&
+        (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED')
+      );
       
       const categoryScores = {
         security: this.calculateCategoryScore(security),

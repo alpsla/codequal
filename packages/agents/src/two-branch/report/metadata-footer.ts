@@ -28,28 +28,24 @@ export interface IDEFixFile {
 
 /**
  * Check if a group can be auto-fixed by IDE tools
+ * BUG FIX: CheckStyle issues are 100% auto-fixable with IDE formatters
  */
 function canAutoFix(group: IssueGroup | { rule: string; tool: string; severity: string }): boolean {
-  const autoFixableRules = [
-    'SystemPrintln',
+  // CheckStyle issues are 100% auto-fixable with IDE formatters (google-java-format, IntelliJ, etc.)
+  if (group.tool === 'checkstyle') {
+    return true;
+  }
+
+  // PMD rules that support automated fixing
+  const autoFixablePMDRules = [
+    'AvoidUsingVolatile',
     'GuardLogStatement',
-    'LineLength',
-    'WhitespaceAround',
-    'WhitespaceAfter',
-    'AvoidStarImport',
-    'UnusedImports',
-    'RedundantImport',
-    'SimplifyBooleanReturns',
-    'SimplifyBooleanExpressions',
-    'ForLoopCanBeForeach',
-    'UseStringBufferForStringAppends',
-    'ConsecutiveLiteralAppends',
-    'MissingJavadocMethod',
-    'MissingJavadocType'
+    'SystemPrintln',
+    'ClassWithOnlyPrivateConstructorsShouldBeFinal',
+    'ReturnEmptyCollectionRatherThanNull'
   ];
-  
-  return autoFixableRules.includes(group.rule) || 
-         (group.tool === 'checkstyle' && group.rule.toLowerCase().includes('whitespace'));
+
+  return autoFixablePMDRules.includes(group.rule);
 }
 
 /**
