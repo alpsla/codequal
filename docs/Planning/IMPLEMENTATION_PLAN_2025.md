@@ -151,12 +151,14 @@ This roadmap is optimized for a solo founder with 10 weeks to public launch, pri
 
 **API Endpoints to Build:**
 ```
-POST   /api/v1/analyze          - Submit PR for analysis
+POST   /api/v1/analyze          - Submit PR for analysis (with optional tool config)
 GET    /api/v1/status/{jobId}   - Check job status
 GET    /api/v1/report/{jobId}   - Get analysis report (markdown + JSON)
 GET    /api/v1/health           - Service health
 POST   /api/v1/webhooks/github  - GitHub webhook handler (Week 5)
 POST   /api/v1/webhooks/gitlab  - GitLab webhook handler (Week 5)
+GET    /api/v1/config/{repo}    - Get tool configuration for repository (Week 6)
+PUT    /api/v1/config/{repo}    - Update tool configuration (Week 6)
 ```
 
 **Implementation:**
@@ -203,13 +205,25 @@ POST   /api/v1/webhooks/gitlab  - GitLab webhook handler (Week 5)
 
 **Goal:** GitHub + GitLab integrations working, powered by API
 
-**Week 6: Web Dashboard (Simplified by API)** 🖥️
-- **UI Components** (3 days):
+**Week 6: Web Dashboard + Minimalistic Tool Configuration** 🖥️
+- **UI Components** (2 days):
   - PR submission form (calls API)
   - Real-time progress tracking (WebSocket from API)
   - Report visualization (render API response)
   - Historical analysis view
   - **Implementation:** ~200 lines (UI layer only)
+
+- **Minimalistic Tool Configuration** (1 day): 🔧 **NEW FEATURE**
+  - Simple toggle interface for each tool
+  - Mark heavy tools as "optional" (e.g., SpotBugs - takes 5+ minutes)
+  - Disable low-priority tools (e.g., CheckStyle - mostly style issues)
+  - Saved per repository or per organization
+  - **Implementation:** ~100 lines (UI + API endpoint)
+  - **Benefits:**
+    - Faster analysis times (skip SpotBugs = save 5-10 minutes)
+    - Focus on high-priority issues only
+    - User control without complexity
+  - **Post-Launch Enhancement:** Detailed configuration can be added in Month 4+
 
 - **Additional Features** (2 days):
   - Filter/search issues
@@ -223,7 +237,7 @@ POST   /api/v1/webhooks/gitlab  - GitLab webhook handler (Week 5)
 - React Query (API calls)
 - WebSocket for real-time updates
 
-**Goal:** Web dashboard live, consuming API
+**Goal:** Web dashboard live with tool configuration, consuming API
 
 ---
 
@@ -335,10 +349,12 @@ POST   /api/v1/webhooks/gitlab  - GitLab webhook handler (Week 5)
 ---
 
 **Post-Week 10: Future Enhancements** (AS NEEDED)
-- **Week 11+**: Configuration system (`.codequal.yml`) if users request
+- **Week 11+**: Advanced configuration (`.codequal.yml`, severity overrides, path exclusions)
+  - Note: Minimalistic tool enable/disable already in Week 6
+  - Advanced config only if users request it during beta
 - **Month 4+**: Additional languages (C/C++, Rust, Kotlin, Swift, C#)
 - **Month 4+**: Skills Development & Gamification
-- **Month 4+**: Enterprise features (Database layer, Config UI)
+- **Month 4+**: Enterprise features (Organization policies, Team management)
 - **Month 6+**: IDE plugins (VS Code, IntelliJ)
 - **Month 6+**: Mobile apps
 
@@ -689,13 +705,16 @@ Traditional Approach:          API-First Approach:
 
 **Success Criteria by Week 10:**
 - ✅ 6+ languages production-ready
+- ✅ GitHub + GitLab integrations live
+- ✅ Web dashboard functional
+- ✅ Minimalistic tool configuration (enable/disable tools per repo)
 - ✅ 50-100 beta users validated product
 - ✅ 10+ testimonials collected
 - ✅ Blog posts published (3-4 articles)
 - ✅ Social media content ready (30+ posts scheduled)
 - ✅ ProductHunt launch completed
 - ✅ 20-30% week-over-week growth initiated
-- ✅ Unit economics validated in production
+- ✅ Unit economics validated in production ($0.01 cost, $8-10 revenue)
 
 **See also:** `docs/marketing/marketing-plan.md` for complete go-to-market strategy (to be created Week 7)
 
