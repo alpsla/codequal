@@ -3982,6 +3982,7 @@ ${blocking.length > 5 ? `\n... and ${blocking.length - 5} more` : ''}` : '### âœ
       // BUG FIX: Filter out manifest file (groupId='all-issues') and use optional chaining
       const issueFiles = ideFixFiles.filter(f => f.groupId !== 'all-issues');
       const totalFixable = issueFiles.reduce((sum, f) => sum + (f.content.metadata?.total_occurrences || 0), 0);
+      const autoFixableCount = totalFixable; // All IDE fix files represent auto-fixable issues
       const criticalCount = issueFiles.filter(f => f.content.severity === 'critical').reduce((sum, f) => sum + (f.content.metadata?.total_occurrences || 0), 0);
       const highCount = issueFiles.filter(f => f.content.severity === 'high').reduce((sum, f) => sum + (f.content.metadata?.total_occurrences || 0), 0);
       const mediumCount = issueFiles.filter(f => f.content.severity === 'medium').reduce((sum, f) => sum + (f.content.metadata?.total_occurrences || 0), 0);
