@@ -505,7 +505,9 @@ export class JavaToolOrchestrator extends BaseToolOrchestrator {
           const failureContext = {
             tool: 'spotbugs',
             reason: 'no_build_system',
-            detectedFiles: buildInfo.detectedFiles,
+            language: buildInfo.language,
+            buildTool: buildInfo.buildTool.tool,
+            compilationRequired: buildInfo.compilationRequired,
             repoPath
           };
           logger.error(`❌ SPOTBUGS FAILURE: No build system detected`, failureContext);
