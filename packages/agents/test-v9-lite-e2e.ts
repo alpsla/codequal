@@ -192,9 +192,9 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
     console.log('\n💰 Step 5: Grouping issues for cost optimization...');
 
     // Helper function to detect issue category from tool/rule
-    const detectIssueCategory = (tool: string, rule: string): string => {
+    const detectIssueCategory = (tool: string, rule: string | null | undefined): string => {
       if (tool === 'semgrep' || tool === 'dependency-check') return 'Security';
-      if (tool === 'spotbugs' && rule.toLowerCase().includes('performance')) return 'Performance';
+      if (tool === 'spotbugs' && rule && rule.toLowerCase().includes('performance')) return 'Performance';
       if (tool === 'checkstyle' || tool === 'pmd') return 'Code Quality';
       return 'Code Quality';
     };
