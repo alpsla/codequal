@@ -22,6 +22,10 @@ import * as path from "path";
 // Load environment variables from local .env
 dotenv.config({ path: pathModule.join(__dirname, '.env') });
 
+// E2E Test Configuration: Higher rate limit for comprehensive testing
+// Default is 100 calls/session, but E2E tests need more for multiple scenarios
+process.env.MAX_AI_CALLS_PER_SESSION = process.env.MAX_AI_CALLS_PER_SESSION || '500';
+
 import { JavaToolOrchestrator } from "./src/two-branch/tools/java/java-tool-orchestrator";
 import type { OrchestrationResult, RawIssue } from "./src/two-branch/tools/java/java-tool-orchestrator";
 import { detectDefaultBranch, getModifiedFilesBetweenBranches } from "./src/two-branch/utils/git-utils";

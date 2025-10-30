@@ -8,6 +8,10 @@ const { V9PRAnalyzer } = require('./src/two-branch/services/v9-pr-analyzer');
 
 dotenv.config({ path: pathModule.join(__dirname, '.env') });
 
+// E2E Test Configuration: Higher rate limit for comprehensive testing
+// Default is 100 calls/session, but multi-framework tests need more
+process.env.MAX_AI_CALLS_PER_SESSION = process.env.MAX_AI_CALLS_PER_SESSION || '500';
+
 /**
  * V9 Multi-Framework Java Test Suite
  * 

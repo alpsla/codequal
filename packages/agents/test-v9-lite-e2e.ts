@@ -19,6 +19,10 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
+// E2E Test Configuration: Higher rate limit for comprehensive testing
+// Default is 100 calls/session, but E2E tests need more for multiple scenarios
+process.env.MAX_AI_CALLS_PER_SESSION = process.env.MAX_AI_CALLS_PER_SESSION || '500';
+
 import { JavaToolOrchestrator } from './src/two-branch/tools/java/java-tool-orchestrator';
 import { createFrameworkDetector } from './src/two-branch/utils/framework-detector';
 import { createToolConfigResolver } from './src/two-branch/config/universal-tool-config';
