@@ -328,8 +328,17 @@ export function generateFooter(groups: IssueGroup[], ideFixFiles: IDEFixFile[]):
     // BUG FIX: Filter out manifest file (groupId='all-issues') and use optional chaining
     const issueFiles = ideFixFiles.filter(f => f.groupId !== 'all-issues');
     const totalFixable = issueFiles.reduce((sum, f) => sum + (f.content.metadata?.total_occurrences || 0), 0);
-    const autoFixableCount = totalFixable; // All IDE fix files represent auto-fixable issues
-    const totalCount = totalFixable; // Alias for Bug #6 fix compatibility
+
+    // BUG #6 FIX: Calculate actual auto-fixable count from manifest data
+    const manifestFile = ideFixFiles.find(f => f.groupId === 'all-issues');
+    let autoFixableCount = totalFixable;
+    if (manifestFile && (manifestFile.content as any).files) {
+      const filesObj = (manifestFile.content as any).files;
+      autoFixableCount = (Object.values(filesObj).flat().reduce((sum: number, entry: any) =>
+        sum + (entry.autoFixable ? entry.occurrences : 0), 0
+      ) as number);
+    }
+    const totalCount = totalFixable; // Total count remains all fixable issues
     const criticalCount = issueFiles.filter(f => f.content.severity === 'critical').reduce((sum, f) => sum + (f.content.metadata?.total_occurrences || 0), 0);
     const highCount = issueFiles.filter(f => f.content.severity === 'high').reduce((sum, f) => sum + (f.content.metadata?.total_occurrences || 0), 0);
     const mediumCount = issueFiles.filter(f => f.content.severity === 'medium').reduce((sum, f) => sum + (f.content.metadata?.total_occurrences || 0), 0);
