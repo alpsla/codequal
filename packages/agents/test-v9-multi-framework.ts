@@ -20,9 +20,10 @@ import { execSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 
-// E2E Test Configuration: Higher rate limit for comprehensive testing
-// Default is 100 calls/session, but multi-framework tests need more
-process.env.MAX_AI_CALLS_PER_SESSION = process.env.MAX_AI_CALLS_PER_SESSION || '500';
+// E2E Test Configuration: Disable rate limiting for multi-framework tests
+// Production: 100 calls/PR is correct ✅
+// Multi-framework tests: 5 PRs sequentially = needs debug mode
+process.env.DEBUG_MODE = process.env.DEBUG_MODE || 'true';
 
 interface FrameworkConfig {
   name: string;

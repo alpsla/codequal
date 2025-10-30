@@ -22,9 +22,10 @@ import * as path from "path";
 // Load environment variables from local .env
 dotenv.config({ path: pathModule.join(__dirname, '.env') });
 
-// E2E Test Configuration: Higher rate limit for comprehensive testing
-// Default is 100 calls/session, but E2E tests need more for multiple scenarios
-process.env.MAX_AI_CALLS_PER_SESSION = process.env.MAX_AI_CALLS_PER_SESSION || '500';
+// E2E Test Configuration: Disable rate limiting for multi-PR test scenarios
+// Production: 100 calls/PR is correct ✅
+// E2E Tests: Multiple PRs sequentially = needs debug mode to disable limit
+process.env.DEBUG_MODE = process.env.DEBUG_MODE || 'true';
 
 import { JavaToolOrchestrator } from "./src/two-branch/tools/java/java-tool-orchestrator";
 import type { OrchestrationResult, RawIssue } from "./src/two-branch/tools/java/java-tool-orchestrator";
