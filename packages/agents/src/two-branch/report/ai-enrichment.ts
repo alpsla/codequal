@@ -4,22 +4,15 @@
  * Handles AI-powered issue enrichment with fix suggestions AND severity classification.
  * Extracted from v9-grouped-report-formatter.ts for better modularity.
  *
- * Strategy: 1 AI call per group (cost-optimized)
- * Cost: ~600 tokens per group = $0.0003 per group
- *
- * SESSION 13 FIX #2 (PROPER): Integrated AI Severity Classifier
- * - Severity classification happens PER GROUP (not per issue)
- * - Uses cheap models for classification (~150 tokens per group)
- * - Total cost: ~29 groups × 150 tokens = ~4,350 tokens = ~$0.002
+ * OPTIMIZATION: Severity classification integrated into specialized agents
+ * - Each agent classifies severity AS PART of generating fix suggestions
+ * - 1 AI call per group (was 2 before: classify + enrich)
+ * - Cost: ~600 tokens per group = $0.0003 per group = ~$0.009 per PR
+ * - Savings: ~150 tokens per group (was ~$0.011, now ~$0.009)
  */
 
 import { EnrichedIssue } from './types';
 import { IssueGroup } from '../utils/issue-grouping';
-import {
-  classifyIssueSeverity,
-  type Severity,
-  type SeverityClassificationInput
-} from '../services/ai-severity-classifier';
 
 /**
  * Get curated educational resources for specific rules
@@ -52,108 +45,6 @@ export function getCuratedResourcesForRule(ruleId: string): Array<{ title: strin
     : ruleId;
     
   return map[normalized] || [];
-}
-
-/**
- * SESSION 13 FIX #2 (PROPER): AI-powered severity classification
- *
- * Re-classifies issue severity intelligently using AI, per group.
- * This replaces the hardcoded severity mapping approach.
- *
- * Strategy:
- * - Classify ONE representative issue per group
- * - Apply the classified severity to ALL issues in that group
- * - Cost-optimized: ~150 tokens per group = ~$0.0001 per group
- *
- * @param issues - All issues to re-classify
- * @param groups - Issue groups for efficient processing
- * @param modelConfigResolver - Model configuration resolver (from Supabase)
- * @returns Issues with AI-classified severity
- */
-export async function enrichIssuesWithSeverityClassification(
-  issues: EnrichedIssue[],
-  groups: IssueGroup[],
-  modelConfigResolver: any | null
-): Promise<EnrichedIssue[]> {
-  // SESSION 13 FIX #2 (MANDATORY): AI severity classification is now always enabled
-  // This is a core feature that provides intelligent severity analysis
-  // If AI fails, we gracefully fall back to original severity (handled in catch blocks)
-
-  console.log(`[AI Severity] Starting severity classification for ${groups.length} groups...`);
-  const startTime = Date.now();
-
-  try {
-    // Process groups in parallel (29 groups × ~150 tokens = ~4,350 tokens = ~$0.002)
-    const classificationPromises = groups.map(async (group) => {
-      const groupIssues = issues.filter(i =>
-        i.rule === group.rule && i.tool === group.tool && i.severity === group.severity
-      );
-
-      if (groupIssues.length === 0) return;
-
-      // Pick representative issue (first with code snippet)
-      const representative = groupIssues.find(i => i.snippet) || groupIssues[0];
-
-      // Save original severity for comparison
-      const originalSeverity = representative.severity as Severity;
-
-      try {
-        const classificationInput: SeverityClassificationInput = {
-          tool: representative.tool,
-          rule: representative.rule,
-          originalSeverity,
-          title: representative.message || representative.rule,
-          description: representative.message || '',
-          codeSnippet: representative.snippet
-        };
-
-        // Get model from config resolver (uses Qwen via OpenRouter)
-        // SESSION 13 FIX #3 (CONFIG-BASED): Use config resolver to get model configuration
-        // Severity classification doesn't need a specific role, use code_quality as default
-        let model: string | undefined;
-        if (modelConfigResolver) {
-          const modelConfig = await modelConfigResolver.getModelConfiguration(
-            'code_quality', // Severity classification uses code quality role
-            'java',        // Default to java (works for all languages)
-            'medium'       // Default to medium repo size
-          );
-          model = modelConfig.primary_model;
-        }
-
-        // Call AI Severity Classifier with config-based model
-        const classification = await classifyIssueSeverity(classificationInput, model);
-
-        // Apply classified severity to ALL issues in this group
-        for (const issue of groupIssues) {
-          issue.severity = classification.severity;
-          issue.severityReasoning = classification.reasoning;
-          issue.severityConfidence = classification.confidence;
-        }
-
-        // Log severity changes
-        if (classification.severity !== originalSeverity) {
-          console.log(`[AI Severity] ✅ ${group.rule}: ${originalSeverity} → ${classification.severity} (${classification.confidence} confidence)`);
-        }
-
-      } catch (error: any) {
-        console.warn(`[AI Severity] ⚠️  Failed for ${group.rule}:`, error.message);
-        // Keep original severity on error
-      }
-    });
-
-    await Promise.all(classificationPromises);
-
-    const duration = Date.now() - startTime;
-    const reclassifiedCount = issues.filter(i => i.severityReasoning).length;
-    console.log(`[AI Severity] Completed: ${reclassifiedCount}/${issues.length} issues re-classified in ${duration}ms`);
-
-    return issues;
-
-  } catch (error: any) {
-    console.error('[AI Severity] Fatal error:', error.message);
-    // Return issues with original severity
-    return issues;
-  }
 }
 
 /**

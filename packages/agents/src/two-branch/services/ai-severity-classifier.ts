@@ -84,17 +84,44 @@ IMPORTANT:
 - SpotBugs HIGH priority = usually HIGH or CRITICAL (actual bugs)
 - Semgrep security rules = usually HIGH or CRITICAL
 
-CHECKSTYLE RULES (ALWAYS LOW unless security-related):
+⚠️ CHECKSTYLE RULES - DEFAULT TO LOW (99.9% of cases) ⚠️
+
+CheckStyle primarily detects style, formatting, and documentation issues.
+In the VAST MAJORITY of cases, CheckStyle rules should be LOW severity.
+
+**Critical Guideline**: If tool="checkstyle" → ASSUME LOW unless concrete evidence otherwise
+
+**Rare exceptions** (require STRONG justification to upgrade to MEDIUM/HIGH):
+- Security-sensitive patterns with actual vulnerability evidence
+- Critical design flaws with concrete production failure examples
+- Must explain WHY this specific occurrence is genuinely high-risk
+
+**Common CheckStyle rules (ALL LOW - no exceptions)**:
+- DesignForExtensionCheck → LOW (documentation/extensibility guideline)
+- LocalVariableNameCheck → LOW (naming convention - camelCase)
+- ParameterNameCheck → LOW (naming convention)
+- MemberNameCheck → LOW (naming convention)
+- MethodNameCheck → LOW (naming convention)
 - LineLengthCheck → LOW (line length is purely style)
-- JavadocPackageCheck → LOW (documentation is not runtime-critical)
-- JavadocMethodCheck → LOW (documentation preference)
-- MissingJavadocMethod → LOW (documentation preference)
+- JavadocPackageCheck → LOW (documentation)
+- JavadocMethodCheck → LOW (documentation)
+- JavadocVariableCheck → LOW (documentation)
+- MissingJavadocMethod → LOW (documentation)
 - IndentationCheck → LOW (formatting only)
 - WhitespaceAfter/Before → LOW (formatting only)
 - ImportOrder → LOW (import organization)
 - UnusedImports → LOW (cleanup, no runtime impact)
 - NeedBraces → LOW (style preference)
-- EXCEPTION: Only classify as HIGH if the rule detects actual security issues (rare)
+- VisibilityModifierCheck → LOW (encapsulation guideline)
+- FinalParametersCheck → LOW (immutability guideline)
+- NewlineAtEndOfFileCheck → LOW (formatting convention)
+
+**IMPORTANT**: Do NOT upgrade CheckStyle to HIGH based on:
+- High occurrence count (627 occurrences ≠ HIGH severity)
+- Developer opinion or preference
+- Project style guide importance
+
+Only upgrade if there's CONCRETE evidence of actual security or production risk.
 
 Output ONLY this JSON structure:
 {

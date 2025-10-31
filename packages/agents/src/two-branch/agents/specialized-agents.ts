@@ -410,6 +410,12 @@ export class SecurityAgent extends BaseSpecializedAgent {
 
 ⚠️ CRITICAL: Output ONLY the JSON response. NO thinking process, NO reasoning, NO "First, I...", NO "Let me...". Start DIRECTLY with JSON.
 
+SEVERITY CLASSIFICATION:
+🔴 CRITICAL: SQL injection, command injection, RCE, auth bypass, hardcoded credentials, data loss
+🟠 HIGH: Potential bugs (NPE, resource leaks), security weaknesses, crypto issues
+🟡 MEDIUM: Code smells, maintainability issues, moderate complexity
+🟢 LOW: Style/formatting/documentation (checkstyle=LOW 99.9% of cases)
+
 Output ONLY this JSON (nothing else):
 {
   "severity": "critical|high|medium|low",
@@ -519,6 +525,12 @@ export class PerformanceAgent extends BaseSpecializedAgent {
 
 ⚠️ CRITICAL: Output ONLY the JSON response. NO thinking process, NO reasoning, NO "First, I...", NO "Let me...". Start DIRECTLY with JSON.
 
+SEVERITY CLASSIFICATION:
+🔴 CRITICAL: System crashes, memory leaks causing outages, infinite loops
+🟠 HIGH: N² algorithms in hot paths, significant resource waste, scalability blockers
+🟡 MEDIUM: Suboptimal algorithms, minor inefficiencies
+🟢 LOW: Style/formatting/documentation (checkstyle=LOW 99.9% of cases)
+
 Output ONLY this JSON (nothing else):
 {
   "severity": "critical|high|medium|low",
@@ -556,6 +568,12 @@ export class ArchitectureAgent extends BaseSpecializedAgent {
     return `You are an ARCHITECTURE EXPERT for software design.
 
 ⚠️ CRITICAL: Output ONLY the JSON response. NO thinking process, NO reasoning, NO "First, I...", NO "Let me...". Start DIRECTLY with JSON.
+
+SEVERITY CLASSIFICATION:
+🔴 CRITICAL: Circular dependencies breaking builds, major SOLID violations causing outages
+🟠 HIGH: God classes (1000+ lines), tight coupling blocking features
+🟡 MEDIUM: Minor design smells, moderate complexity
+🟢 LOW: Style/formatting/documentation (checkstyle=LOW 99.9% of cases)
 
 Output ONLY this JSON (nothing else):
 {
@@ -622,6 +640,14 @@ export class CodeQualityAgent extends BaseSpecializedAgent {
     return `You are a CODE QUALITY EXPERT for best practices.
 
 ⚠️ CRITICAL: Output ONLY the JSON response. NO thinking process, NO reasoning, NO "First, I...", NO "Let me...". Start DIRECTLY with JSON.
+
+SEVERITY CLASSIFICATION (CRITICAL for CodeQuality):
+🔴 CRITICAL: Never for code quality (reserved for security/crashes)
+🟠 HIGH: Logic bugs, potential NPE, incorrect exception handling
+🟡 MEDIUM: Complexity warnings, code duplication, refactoring candidates
+🟢 LOW: Style/formatting/documentation/naming (checkstyle/PMD naming rules = LOW)
+
+⚠️ CHECKSTYLE = LOW (99.9%): DesignForExtensionCheck, naming conventions, line length, imports, Javadoc
 
 Output ONLY this JSON (nothing else):
 {
@@ -886,6 +912,12 @@ export class DependencyAgent extends BaseSpecializedAgent {
     return `You are a DEPENDENCY EXPERT for package management.
 
 ⚠️ CRITICAL: Output ONLY the JSON response. NO thinking process, NO reasoning, NO "First, I...", NO "Let me...". Start DIRECTLY with JSON.
+
+SEVERITY CLASSIFICATION:
+🔴 CRITICAL: Known CVE with exploit code, RCE vulnerabilities, authentication bypass
+🟠 HIGH: CVEs without public exploit, deprecated packages, security weaknesses
+🟡 MEDIUM: Outdated dependencies, minor vulnerabilities
+🟢 LOW: Style/formatting/documentation (checkstyle=LOW 99.9% of cases)
 
 Output ONLY this JSON (nothing else):
 {

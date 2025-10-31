@@ -219,11 +219,12 @@ ${autoFixableBlockingCount} of ${blocking.length} blocking issues (${autoFixPerc
 
 | Metric | Value |
 |--------|-------|
-| **Manual Fix Cost** | **$${totalFixCost.toLocaleString()}** (${baseFixHours.toFixed(1)} hours - minimal, mostly for review/testing) |
+| **Auto-Fix Time** | **${Math.ceil(autoFixableBlockingCount / 100)} minutes** (run formatters + linters) |
+| **Review Time** | **${baseFixHours.toFixed(1)} hours** (${baseFixHours.toFixed(1)}h × $${developerRate}/h = $${totalFixCost.toLocaleString()}) |
 | **Auto-Fix Coverage** | **${autoFixPercentage.toFixed(0)}%** of blocking issues |
-| **Recommendation** | Run IDE auto-fix + code formatter, then review changes |
+| **Recommendation** | Run IDE auto-fix + code formatter, then code review changes |
 
-**Note:** Most issues are auto-fixable (LineLength, MissingJavadoc, Whitespace). The cost shown reflects review time, not manual coding.`
+**Note:** Auto-fix takes minutes to run. Review time ($${totalFixCost.toLocaleString()}) covers code review of auto-generated changes, NOT manual coding.`
     : `| Metric | Value |
 |--------|-------|
 | **Total Fix Cost** | **$${totalFixCost.toLocaleString()}** (${baseFixHours.toFixed(1)} hours, ~${fixDays} developer-days at $${developerRate}/hour) |
