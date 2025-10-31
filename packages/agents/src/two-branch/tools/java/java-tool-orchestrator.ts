@@ -646,12 +646,28 @@ export class JavaToolOrchestrator extends BaseToolOrchestrator {
       const duration = Date.now() - startTime;
       logger.info(`✅ Dependency-Check complete: ${issues.length} CVEs found in ${duration}ms`);
 
+      // BUG #4 FIX: Count actual dependencies scanned, not just files with issues
+      // dependency-check scans ALL dependencies regardless of whether CVEs are found
+      // Using dependencies.length gives accurate count of scanned files
+      const filesScanned = depCheckResult.dependencies?.length || 0;
+      
+      const severity = {
+        critical: issues.filter(i => i.severity === 'critical').length,
+        high: issues.filter(i => i.severity === 'high').length,
+        medium: issues.filter(i => i.severity === 'medium').length,
+        low: issues.filter(i => i.severity === 'low').length
+      };
+
       return {
         tool: 'dependency-check',
         success: true,
         duration,
         issues,
-        metadata: this.calculateMetadata(issues)
+        metadata: {
+          filesScanned,
+          issuesFound: issues.length,
+          severity
+        }
       };
 
     } catch (error: any) {
@@ -695,17 +711,30 @@ export class JavaToolOrchestrator extends BaseToolOrchestrator {
     }
   }
 
+  /**
+   * Map Checkstyle severity to CodeQual severity
+   *
+   * CRITICAL FIX: Checkstyle is a style/formatting linter (line length, naming, Javadoc)
+   * ALL Checkstyle issues should be 'low' severity - they have NO runtime impact
+   *
+   * Previous mapping (WRONG):
+   * - error → high (caused 1000+ issues to show as "High Priority" blocking PRs)
+   * - warning → medium
+   *
+   * Correct mapping:
+   * - ALL → low (style/formatting only, no functional impact)
+   *
+   * Rationale:
+   * - Checkstyle checks code style (line length, Javadoc, naming conventions)
+   * - These issues don't cause crashes, data loss, or security vulnerabilities
+   * - They improve maintainability but are not critical/high priority
+   * - Users expect style issues to be low severity and hidden by default
+   *
+   * User feedback: "LineLengthCheck showing as High Priority - this is wrong"
+   */
   private mapCheckstyleSeverity(severity?: string): 'critical' | 'high' | 'medium' | 'low' {
-    switch (severity?.toLowerCase()) {
-      case 'error':
-        return 'high';
-      case 'warning':
-        return 'medium';
-      case 'info':
-        return 'low';
-      default:
-        return 'low';
-    }
+    // ALL Checkstyle issues are style/formatting → always 'low'
+    return 'low';
   }
 
   private mapSpotBugsSeverity(priority?: string): 'critical' | 'high' | 'medium' | 'low' {

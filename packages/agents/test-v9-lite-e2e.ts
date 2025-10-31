@@ -194,7 +194,7 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
     // Helper function to detect issue category from tool/rule
     const detectIssueCategory = (tool: string, rule: string | null | undefined): string => {
       if (tool === 'semgrep' || tool === 'dependency-check') return 'Security';
-      if (tool === 'spotbugs' && rule && rule.toLowerCase().includes('performance')) return 'Performance';
+      if (tool === 'spotbugs' && rule && typeof rule === 'string' && rule.toLowerCase().includes('performance')) return 'Performance';
       if (tool === 'checkstyle' || tool === 'pmd') return 'Code Quality';
       return 'Code Quality';
     };
@@ -207,11 +207,11 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
 
       return {
         id: `${issue.tool}-${issue.file}-${issue.line}`,
-        rule: issue.rule || 'unknown-rule',
+        rule: issue.rule ? String(issue.rule) : 'unknown-rule',
         // FIX: Set lifecycle category (NEW, EXISTING_MODIFIED, EXISTING_REST, RESOLVED)
         category: isNew ? 'NEW' : 'EXISTING_REST',
         // Set detected category (Security, Performance, Code Quality, etc.)
-        detectedCategory: detectIssueCategory(issue.tool, issue.rule || ''),
+        detectedCategory: detectIssueCategory(issue.tool, issue.rule ? String(issue.rule) : ''),
         severity: issue.severity || 'medium',
         title: issue.message || 'Code quality issue',
         file: issue.file || 'unknown',

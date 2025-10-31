@@ -25,6 +25,3 @@ export type { TypeScriptIssue, TypeScriptToolResult } from './typescript-tool-pa
 
 export { default as GoToolParser } from './go-tool-parser';
 export type { GoIssue, GoToolResult } from './go-tool-parser';
-
-export { default as JavaToolParser } from './java-tool-parser';
-export type { JavaIssue, JavaToolResult } from './java-tool-parser';
