@@ -25,6 +25,15 @@ This directory contains the core scripts for the CodeQual project.
   - Usage: `./Scripts/clean-install.sh`
   - Removes node_modules and reinstalls all dependencies
 
+- **run-cleanup.sh**: Development environment cleanup
+  - Usage: `./scripts/run-cleanup.sh` or `../cleanup-dev-environment.sh`
+  - Kills stale test processes (npx ts-node test-v9*)
+  - Removes temporary test logs from /tmp
+  - Cleans old test outputs (keeps last 10 of each type)
+  - Removes cache directories (.mypy_cache, .ruff_cache, etc.)
+  - Removes .DS_Store files
+  - Run this periodically to avoid clutter and noise from background processes
+
 ## Output Reports
 
 Reports are generated in the `/reports` directory with timestamps for each run.

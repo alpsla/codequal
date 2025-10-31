@@ -1021,14 +1021,15 @@ ${decision === 'DECLINED' ? `
  */
 function cleanupOldFiles() {
   console.log('\n🧹 Cleaning up old test files...');
-  
+
   try {
+    // Quick immediate cleanup (keep test-specific files minimal)
     // Keep only the 2 most recent test logs
     const logFiles = execSync('ls -t /tmp/test-*.log 2>/dev/null || true', { encoding: 'utf-8' })
       .trim()
       .split('\n')
       .filter(f => f);
-    
+
     if (logFiles.length > 2) {
       const oldLogs = logFiles.slice(2);
       oldLogs.forEach(log => {
@@ -1038,7 +1039,7 @@ function cleanupOldFiles() {
         } catch (e) { /* ignore */ }
       });
     }
-    
+
     // Keep only the most recent V9 report
     const reportDir = '/tmp/v9-reports';
     if (fs.existsSync(reportDir)) {
@@ -1046,7 +1047,7 @@ function cleanupOldFiles() {
         .trim()
         .split('\n')
         .filter(f => f);
-      
+
       if (reports.length > 1) {
         const oldReports = reports.slice(1);
         oldReports.forEach(report => {
@@ -1056,7 +1057,7 @@ function cleanupOldFiles() {
           } catch (e) { /* ignore */ }
         });
       }
-      
+
       // Remove all attachments (they're already in the report markdown)
       const attachmentsDir = path.join(reportDir, 'attachments');
       if (fs.existsSync(attachmentsDir)) {
@@ -1065,11 +1066,24 @@ function cleanupOldFiles() {
         console.log(`   Removed attachments directory (${attachmentSize})`);
       }
     }
-    
+
     // Remove old AI cache files (older than 1 day)
     execSync('find /tmp -name "ai_responses_cache_*" -mtime +1 -delete 2>/dev/null || true');
-    
-    console.log('✅ Cleanup complete\n');
+
+    console.log('✅ Immediate cleanup complete');
+
+    // Schedule comprehensive cleanup after a delay (runs in background)
+    // This handles stale processes, old test outputs, cache dirs, etc.
+    console.log('📅 Scheduling comprehensive cleanup (10 second delay)...\n');
+    setTimeout(() => {
+      try {
+        const cleanupScript = '/Users/alpinro/Code\\ Prjects/codequal/cleanup-dev-environment.sh';
+        execSync(`bash "${cleanupScript}" > /dev/null 2>&1 &`, { stdio: 'ignore' });
+      } catch (e) {
+        // Silent fail - cleanup script is optional
+      }
+    }, 10000);
+
   } catch (error: any) {
     console.warn(`   ⚠️  Cleanup failed: ${error.message}`);
   }
