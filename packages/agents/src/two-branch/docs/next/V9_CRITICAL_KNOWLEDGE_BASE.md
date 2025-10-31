@@ -262,6 +262,15 @@ BRAVE_API_KEY=sk-brave-...
 # Optional: cache TTL (days), summarization model
 EDU_CACHE_TTL_DAYS=7
 EDU_SUMMARY_MODEL=google/gemini-2.5-flash
+
+# V9 Automatic Cleanup Configuration
+# Cleanup delay in seconds (default: 600 = 10 minutes)
+# Allows time for users to download reports before cleanup
+V9_CLEANUP_DELAY=600
+
+# Enable/disable automatic cleanup (default: true)
+# Set to false to disable cleanup in development
+V9_CLEANUP_ENABLED=true
 ```
 
 Expected Impact
@@ -581,6 +590,172 @@ await orchestrator.orchestrate(repoPath, 'pr');
 - **PostgreSQL Setup**: `src/two-branch/docs/dependency_check/POSTGRESQL_SETUP_GUIDE.md`
 - **Quick Reference**: `src/two-branch/docs/dependency_check/QUICK_REFERENCE.md`
 - **Test Script**: `test-dependency-check-fix.ts`
+
+## 🧹 V9 Automatic Cleanup Service (October 2025)
+
+### ✅ PRODUCTION READY: Automated Cleanup After Analysis
+
+**Status:** Integrated into V9IntegratedAnalyzer - Automatic cleanup with configurable delay - **PRODUCTION READY**
+
+**What It Does:**
+The V9CleanupService automatically cleans up all analysis artifacts after report delivery, ensuring no data persists unnecessarily on servers.
+
+### How It Works
+
+1. **Integrated into V9IntegratedAnalyzer**: Cleanup service is initialized in the V9 engine constructor
+2. **Non-Blocking Background Execution**: Uses `scheduleCleanup()` for delayed cleanup that doesn't block API responses
+3. **Configurable Delay**: Default 10-minute delay allows users time to download reports and files
+4. **Comprehensive Cleanup**: Removes repositories, reports, IDE fix files, and temp directories
+
+### Configuration (via Environment Variables)
+
+**Production defaults (optimized for cloud deployment):**
+
+```bash
+# Cleanup delay in seconds (default: 600 = 10 minutes)
+# Allows time for users to download reports before cleanup
+V9_CLEANUP_DELAY=600
+
+# Enable/disable automatic cleanup (default: true)
+# Set to false to disable cleanup in development
+V9_CLEANUP_ENABLED=true
+```
+
+**For different deployment scenarios:**
+
+```bash
+# Development (keep files longer for debugging)
+V9_CLEANUP_DELAY=3600    # 1 hour
+V9_CLEANUP_ENABLED=false # Disable for manual cleanup
+
+# Staging (moderate delay)
+V9_CLEANUP_DELAY=900     # 15 minutes
+V9_CLEANUP_ENABLED=true
+
+# Production (recommended)
+V9_CLEANUP_DELAY=600     # 10 minutes (optimal balance)
+V9_CLEANUP_ENABLED=true
+```
+
+### What Gets Cleaned Up
+
+- **Repository Files**: Cloned git repositories (via V9RepositoryManager)
+- **Report Artifacts**: Markdown reports (`.md`), JSON manifests (`.json`)
+- **Temp Directories**: Temporary working directories created during analysis
+- **Redis Cache**: Already cleared immediately (not part of delayed cleanup)
+
+**Note:** CodeQual uses a manifest-based approach (not direct IDE integration). Users download the manifest file, open their preferred IDE, and apply fixes manually. The manifest contains issue locations and metadata for guidance.
+
+### Integration Points
+
+**File:** `packages/agents/src/two-branch/analyzers/v9-integrated-analyzer.ts`
+
+```typescript
+// Cleanup service initialized in constructor (lines 82-95)
+this.cleanupService = new V9CleanupService({
+  cleanupAfterDelivery: cleanupEnabled,
+  cleanupDelaySeconds: cleanupDelay,
+  keepSuccessfulReports: false,
+  maxReportAge: 3600
+});
+
+// Cleanup scheduled in finally block (lines 219-229)
+this.cleanupService.scheduleCleanup(workspace, {
+  repository: `/tmp/v9-repos/${workspace}`,
+  outputDir: process.cwd() + `/test-outputs/${workspace}`,
+  tempDir: `/tmp/v9-temp-${workspace}`
+});
+```
+
+### Benefits
+
+- ✅ **No Manual Intervention**: Cleanup happens automatically
+- ✅ **Non-Blocking**: API returns immediately, cleanup runs in background
+- ✅ **User-Friendly**: 10-minute delay allows downloads before cleanup
+- ✅ **Configurable**: Easy to adjust delay and enable/disable per environment
+- ✅ **Comprehensive**: Cleans all analysis artifacts, not just reports
+- ✅ **Production Safe**: Validated paths, safe deletion with proper checks
+
+### Common Configurations
+
+| Environment | Delay | Enabled | Use Case |
+|------------|-------|---------|----------|
+| Development | 3600s (1h) | false | Manual debugging, keep all files |
+| Staging | 900s (15m) | true | Testing with moderate cleanup |
+| Production | 600s (10m) | true | **RECOMMENDED** - Optimal balance |
+| CI/CD | 300s (5m) | true | Fast cleanup for automated tests |
+
+### Documentation
+
+- **Service Implementation**: `src/two-branch/services/v9-cleanup-service.ts`
+- **Integration Point**: `src/two-branch/analyzers/v9-integrated-analyzer.ts` (lines 82-95, 219-231)
+- **Environment Template**: See "Environment Flags" section above
+
+### ⚠️ High-Scale Considerations (1000+ Concurrent Analyses)
+
+**Current Architecture (setTimeout-based):**
+- ✅ Suitable for: 1-100 concurrent analyses
+- ✅ Zero infrastructure overhead
+- ⚠️ Memory considerations at very high scale
+
+**For Production Scale > 1000 concurrent:**
+
+If you anticipate more than 1000 concurrent analyses, consider upgrading to a queue-based system:
+
+**Option 1: Job Queue (Recommended)**
+```typescript
+// Use Bull, BullMQ, or similar
+import Bull from 'bull';
+
+const cleanupQueue = new Bull('v9-cleanup', process.env.REDIS_URL);
+
+// In finally block:
+cleanupQueue.add('cleanup', { workspace }, {
+  delay: cleanupDelay * 1000,
+  removeOnComplete: true
+});
+
+// Processor (separate worker):
+cleanupQueue.process('cleanup', async (job) => {
+  await cleanupService.cleanupAfterReport(job.data.workspace, targets);
+});
+```
+
+**Benefits:**
+- ✅ Persistent across restarts
+- ✅ Better memory management
+- ✅ Monitoring and retry logic
+- ✅ Distributed processing
+
+**Option 2: Cron-Based Cleanup**
+```typescript
+// Periodic sweep of old directories
+import cron from 'node-cron';
+
+cron.schedule('*/5 * * * *', async () => {
+  const oldWorkspaces = await findWorkspacesOlderThan(cleanupDelay);
+  for (const workspace of oldWorkspaces) {
+    await cleanupService.cleanupAfterReport(workspace, targets);
+  }
+});
+```
+
+**Option 3: External Cleanup Service**
+```typescript
+// Separate microservice for cleanup
+// API call instead of local setTimeout
+await fetch('http://cleanup-service/schedule', {
+  method: 'POST',
+  body: JSON.stringify({ workspace, delay: cleanupDelay })
+});
+```
+
+**When to upgrade:**
+- Monitor memory usage with 100+ concurrent analyses
+- If Node.js process grows > 2GB, consider queue-based cleanup
+- If timers exceed 10,000 active, migrate to queue system
+
+**Note:** For most deployments (< 1000 concurrent), the current setTimeout-based approach is optimal.
 
 ## 📁 V9 System Architecture
 

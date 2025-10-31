@@ -20,6 +20,13 @@
    - Clean delegation pattern applied to v9-grouped-report-formatter.ts
    - Zero TypeScript errors, production-ready
 
+4. **Automatic Cleanup Service** (`services/v9-cleanup-service.ts`):
+   - Integrated into V9IntegratedAnalyzer for production use
+   - Non-blocking background cleanup with configurable delay (default: 10 minutes)
+   - Comprehensive cleanup: repositories, reports, IDE fixes, temp directories
+   - Configurable via `V9_CLEANUP_DELAY` and `V9_CLEANUP_ENABLED` environment variables
+   - Production-ready with safe deletion and proper validation
+
 ### ❌ What Needs Refactoring
 
 1. **Language-Specific Orchestrators** (1,566 lines):
