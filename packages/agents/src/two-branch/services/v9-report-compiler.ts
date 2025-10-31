@@ -19,6 +19,7 @@ import { SkillScoreManager } from '../analyzers/v9-skill-score-manager';
 import { V9GroupedReportFormatter } from '../analyzers/v9-grouped-report-formatter';
 import { V9ReportFormatterFinal } from '../analyzers/v9-report-formatter';
 import { ModelConfigResolver } from '../../standard/orchestrator/model-config-resolver';
+import { enrichIssuesWithAI } from '../report/ai-enrichment';
 
 export interface CompileReportInput {
   repository: string;
@@ -224,11 +225,50 @@ export async function compileV9Report(
   });
 
   const uniqueIssuesToProcess = Array.from(uniqueIssuesMap.values());
+
+  // 🚨 CRITICAL: AI ENRICHMENT PIPELINE (BUG #89)
+  // Extract just the issues for enrichment
+  const issuesForEnrichment = uniqueIssuesToProcess.map(item => item.issue);
+
+  // Group issues for efficient AI processing (1 call per group)
+  const issueGroups = groupIssues(issuesForEnrichment);
+
+  console.log(`\n[AI Enrichment Pipeline] Starting AI enrichment for ${issueGroups.groups.length} groups...`);
+
+  // Enrich issues with AI-generated descriptions and fixes
+  let enrichedIssues = issuesForEnrichment;
+  try {
+    if (modelConfigResolver) {
+      enrichedIssues = await enrichIssuesWithAI(
+        issuesForEnrichment,
+        issueGroups.groups,
+        modelConfigResolver,
+        detectedLanguage,
+        detectedRepoSize
+      );
+      console.log(`[AI Enrichment Pipeline] ✅ AI enrichment completed successfully`);
+    } else {
+      console.error(`[AI Enrichment Pipeline] 🚨 CRITICAL: modelConfigResolver is null - AI enrichment SKIPPED`);
+      console.error(`[AI Enrichment Pipeline] 🚨 This is a P0 issue - reports will use fallback descriptions only`);
+    }
+  } catch (error: any) {
+    console.error(`[AI Enrichment Pipeline] 🚨 CRITICAL ERROR: AI enrichment failed - ${error.message}`);
+    console.error(`[AI Enrichment Pipeline] 🚨 Stack trace:`, error.stack);
+    console.error(`[AI Enrichment Pipeline] 🚨 This is a P0 blocker - fix immediately`);
+    // Continue with un-enriched issues (fallback will be used in formatter)
+  }
+
+  // Rebuild uniqueIssuesToProcess with enriched issues
+  const enrichedProcessingList = uniqueIssuesToProcess.map((item, idx) => ({
+    ...item,
+    issue: enrichedIssues[idx]
+  }));
+
   const processedIssuesMap = new Map();
   const batchSize = 10;
-  
-  for (let i = 0; i < uniqueIssuesToProcess.length; i += batchSize) {
-    const batch = uniqueIssuesToProcess.slice(i, Math.min(i + batchSize, uniqueIssuesToProcess.length));
+
+  for (let i = 0; i < enrichedProcessingList.length; i += batchSize) {
+    const batch = enrichedProcessingList.slice(i, Math.min(i + batchSize, enrichedProcessingList.length));
     
     const batchResults = await Promise.all(
       batch.map(async item => {
