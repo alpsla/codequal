@@ -993,18 +993,19 @@ export class JavaToolParser {
 
   /**
    * Map Checkstyle severity
+   *
+   * SEVERITY FIX (2025-10-30): ALL Checkstyle issues are style/formatting, therefore LOW severity
+   * Checkstyle checks code style (line length, Javadoc, naming conventions, etc.)
+   * These do NOT affect runtime behavior - always classify as 'low'
+   *
+   * Reference: SEVERITY_FILTERING_STRATEGY.md
+   * - Checkstyle warnings: Hidden by default (style only)
+   * - No runtime impact, just formatting/documentation
    */
   private mapCheckstyleSeverity(severity: string): JavaIssue['severity'] {
-    switch (severity?.toLowerCase()) {
-      case 'error':
-        return 'high';
-      case 'warning':
-        return 'medium';
-      case 'info':
-        return 'low';
-      default:
-        return 'medium';
-    }
+    // ALL Checkstyle issues are style/formatting - always 'low' severity
+    // (line length, Javadoc, naming conventions, import organization, etc.)
+    return 'low';
   }
 
   /**
