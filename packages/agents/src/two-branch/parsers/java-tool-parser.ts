@@ -992,20 +992,23 @@ export class JavaToolParser {
   }
 
   /**
-   * Map Checkstyle severity
+   * Map Checkstyle severity to initial severity
    *
-   * SEVERITY FIX (2025-10-30): ALL Checkstyle issues are style/formatting, therefore LOW severity
-   * Checkstyle checks code style (line length, Javadoc, naming conventions, etc.)
-   * These do NOT affect runtime behavior - always classify as 'low'
-   *
-   * Reference: SEVERITY_FILTERING_STRATEGY.md
-   * - Checkstyle warnings: Hidden by default (style only)
-   * - No runtime impact, just formatting/documentation
+   * NOTE: This provides the INITIAL severity from the tool.
+   * The AI severity classifier will re-classify based on actual impact.
+   * This ensures we don't miss critical issues that Checkstyle might flag.
    */
   private mapCheckstyleSeverity(severity: string): JavaIssue['severity'] {
-    // ALL Checkstyle issues are style/formatting - always 'low' severity
-    // (line length, Javadoc, naming conventions, import organization, etc.)
-    return 'low';
+    switch (severity?.toLowerCase()) {
+      case 'error':
+        return 'high';  // Initial mapping - AI will downgrade if just style
+      case 'warning':
+        return 'medium';  // Initial mapping - AI will downgrade if just style
+      case 'info':
+        return 'low';
+      default:
+        return 'medium';
+    }
   }
 
   /**
