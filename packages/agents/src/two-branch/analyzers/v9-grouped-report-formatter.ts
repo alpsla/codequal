@@ -3711,10 +3711,11 @@ Continue following best practices and consider integrating static analysis into 
 `;
 
     // Add Agent Performance if available (optional)
+    // MODEL NAME BUG FIX (2025-10-30): Added "Model" column to show which AI model was used
     if (this.SHOW_AGENT_PERFORMANCE && metadata.agentPerformance && Array.isArray(metadata.agentPerformance) && metadata.agentPerformance.length > 0) {
       content += `\n### Agent Performance
-| Agent | Files Analyzed | Issues Found | Time | Cost |
-|-------|----------------|--------------|------|------|
+| Agent | Model | Files Analyzed | Issues Found | Time | Cost |
+|-------|-------|----------------|--------------|------|------|
 `;
       metadata.agentPerformance.forEach((agent: any) => {
         const issues = agent.issuesFound || agent.issues || 0;
@@ -3722,7 +3723,8 @@ Continue following best practices and consider integrating static analysis into 
         const costValue = agent.cost || 0;
         // Check for zero cost (including 0, 0.0, 0.00, etc.) or very small values
         const cost = (costValue === 0 || costValue < 0.0001) ? 'FREE' : '$' + costValue.toFixed(4);
-        content += `| ${agent.name || agent.agent} | ${agent.filesAnalyzed || agent.files || 'N/A'} | ${issues} | ${time} | ${cost} |\n`;
+        const model = agent.model || 'N/A';
+        content += `| ${agent.name || agent.agent} | ${model} | ${agent.filesAnalyzed || agent.files || 'N/A'} | ${issues} | ${time} | ${cost} |\n`;
       });
     }
 
@@ -3755,6 +3757,7 @@ Continue following best practices and consider integrating static analysis into 
       content += `- Cost per Second: ${(totalCost === 0 || totalCost < 0.0001) ? 'FREE' : '$' + (totalTime > 0 ? ((totalCost / totalTime) * 1000).toFixed(6) : '0.000000') + '/s'}\n\n`;
       
       // Performance recommendations
+      // MODEL NAME BUG FIX (2025-10-30): Include model in efficiency ranking
       content += `**Agent Efficiency Ranking:**\n\n`;
       const agentEfficiency = metadata.agentPerformance
         .map((agent: any) => {
@@ -3765,6 +3768,7 @@ Continue following best practices and consider integrating static analysis into 
           const issuesPerSec = (issues / time) * 1000;
           return {
             name: agent.name || agent.agent,
+            model: agent.model || 'N/A',
             issues,
             cost,
             costPerIssue,
@@ -3773,7 +3777,7 @@ Continue following best practices and consider integrating static analysis into 
           };
         })
         .sort((a: any, b: any) => b.efficiency - a.efficiency);
-      
+
       agentEfficiency.forEach((agent: any, idx: number) => {
         const rank = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}.`;
         const isFree = agent.cost === 0 || agent.cost < 0.0001;
@@ -3787,7 +3791,8 @@ Continue following best practices and consider integrating static analysis into 
         const costPerIssueStr = isFree
           ? 'FREE/issue'
           : isFinite(agent.costPerIssue) ? `$${agent.costPerIssue.toFixed(6)}/issue` : 'N/A cost/issue';
-        content += `${rank} **${agent.name}**: ${agent.issues} issues @ ${costPerIssueStr} ${badge}\n`;
+        const modelInfo = agent.model !== 'N/A' ? ` (${agent.model})` : '';
+        content += `${rank} **${agent.name}**${modelInfo}: ${agent.issues} issues @ ${costPerIssueStr} ${badge}\n`;
       });
       
       // Replacement recommendations (only for paid models)
