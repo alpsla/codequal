@@ -193,7 +193,11 @@ export function generateBusinessImpact(issues: EnrichedIssue[], groups: IssueGro
 
   const immediateRisk = blocking.length > 0 ? '🔴 High' : '🟢 Low';
 
-  // SESSION 13 FIX #3: Detect if most/all blocking issues are auto-fixable
+  // SESSION 13 FIX #3 + BUG #2 FIX: Detect if most/all blocking issues are auto-fixable
+  // This accounts for CheckStyle HIGH issues that are actually auto-fixable
+  // Note: totalFixCost (line 156) already includes auto-fix adjustments (lines 137-153)
+  // After fixing BUG #1 (severity classifier), most CheckStyle issues will be LOW,
+  // which eliminates the contradiction between "100% auto-fixable" and "high manual cost"
   const blockingAutoFixableGroups = autoFixableGroups.filter(g =>
     blocking.some(i => i.rule === g.rule && i.tool === g.tool && i.severity === g.severity)
   );

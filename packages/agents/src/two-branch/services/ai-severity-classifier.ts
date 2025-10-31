@@ -84,17 +84,36 @@ IMPORTANT:
 - SpotBugs HIGH priority = usually HIGH or CRITICAL (actual bugs)
 - Semgrep security rules = usually HIGH or CRITICAL
 
-CHECKSTYLE RULES (ALWAYS LOW unless security-related):
+⚠️ CRITICAL: CHECKSTYLE RULES ARE ALWAYS LOW - NO EXCEPTIONS ⚠️
+
+ALL CheckStyle rules MUST be classified as LOW severity.
+CheckStyle ONLY detects style, formatting, and documentation issues.
+CheckStyle CANNOT detect security vulnerabilities or runtime bugs.
+
+DO NOT upgrade CheckStyle rules to HIGH/CRITICAL under ANY circumstances.
+If you see tool="checkstyle", ALWAYS return severity="low".
+
+Common CheckStyle rules (ALL LOW):
+- DesignForExtensionCheck → LOW (documentation/design guideline for extension)
+- LocalVariableNameCheck → LOW (naming convention - camelCase)
+- ParameterNameCheck → LOW (naming convention)
+- MemberNameCheck → LOW (naming convention)
+- MethodNameCheck → LOW (naming convention)
 - LineLengthCheck → LOW (line length is purely style)
 - JavadocPackageCheck → LOW (documentation is not runtime-critical)
 - JavadocMethodCheck → LOW (documentation preference)
+- JavadocVariableCheck → LOW (documentation preference)
 - MissingJavadocMethod → LOW (documentation preference)
 - IndentationCheck → LOW (formatting only)
 - WhitespaceAfter/Before → LOW (formatting only)
 - ImportOrder → LOW (import organization)
 - UnusedImports → LOW (cleanup, no runtime impact)
 - NeedBraces → LOW (style preference)
-- EXCEPTION: Only classify as HIGH if the rule detects actual security issues (rare)
+- VisibilityModifierCheck → LOW (encapsulation guideline)
+- FinalParametersCheck → LOW (immutability guideline)
+- NewlineAtEndOfFileCheck → LOW (formatting convention)
+
+EXCEPTION: Only classify as HIGH if the rule detects actual security issues (rare)
 
 Output ONLY this JSON structure:
 {
@@ -114,6 +133,16 @@ export async function classifyIssueSeverity(
   input: SeverityClassificationInput,
   modelOverride?: string
 ): Promise<SeverityClassificationResult> {
+
+  // BUG #1 FIX: FORCE CheckStyle to LOW - no AI classification needed
+  // CheckStyle ONLY detects style/formatting/documentation - never security or bugs
+  if (input.tool.toLowerCase() === 'checkstyle') {
+    return {
+      severity: 'low',
+      reasoning: 'CheckStyle only detects style, formatting, and documentation issues (not runtime bugs or security vulnerabilities)',
+      confidence: 'high'
+    };
+  }
 
   // Build user prompt with issue details
   const userPrompt = buildClassificationPrompt(input);

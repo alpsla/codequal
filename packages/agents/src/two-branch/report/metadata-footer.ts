@@ -81,14 +81,15 @@ export function generateAnalysisMetadata(
   // Add Agent Performance if available (optional)
   if (showAgentPerformance && metadata.agentPerformance && Array.isArray(metadata.agentPerformance) && metadata.agentPerformance.length > 0) {
     content += `\n### Agent Performance
-| Agent | Files Analyzed | Issues Found | Time | Cost |
-|-------|----------------|--------------|------|------|
+| Agent | Files Analyzed | Issues Found | Time | Cost | Model |
+|-------|----------------|--------------|------|------|-------|
 `;
     metadata.agentPerformance.forEach((agent: any) => {
       const issues = agent.issuesFound || agent.issues || 0;
       const time = agent.duration ? (agent.duration / 1000).toFixed(1) + 's' : 'N/A';
       const cost = agent.cost ? '$' + agent.cost.toFixed(4) : (issues === 0 ? 'N/A' : '$0.0000');
-      content += `| ${agent.name || agent.agent} | ${agent.filesAnalyzed || agent.files || 'N/A'} | ${issues} | ${time} | ${cost} |\n`;
+      const model = agent.model || agent.modelName || 'N/A';
+      content += `| ${agent.name || agent.agent} | ${agent.filesAnalyzed || agent.files || 'N/A'} | ${issues} | ${time} | ${cost} | ${model} |\n`;
     });
   }
 

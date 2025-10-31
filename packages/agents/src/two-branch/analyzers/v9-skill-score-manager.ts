@@ -18,6 +18,7 @@ export interface SkillScoreData {
   repository: string;  // Will be stored as 'repo_name' in database
   prNumber: number;
   branch?: string;
+  commitHash?: string;  // BUG #4 FIX: Track commit to prevent duplicate trend entries
   overallScore: number;
   qualityScore?: number;
   categoryScores: {
@@ -93,11 +94,11 @@ export class SkillScoreManager {
     try {
       const { data, error } = await this.supabase
         .from('skill_scores')
-        .select('overall_score')
+        .select('overall_score, commit_hash')  // BUG #4 FIX: Fetch commit_hash too
         .eq('developer_email', developerEmail)
         .eq('repo_name', repository)  // Fixed: use 'repo_name' column
         .order('analyzed_at', { ascending: true })
-        .limit(limit);
+        .limit(limit * 2);  // Fetch more to account for duplicates
 
       if (error) {
         console.warn('[SkillScoreManager] Error fetching trend:', error.message);
@@ -108,8 +109,21 @@ export class SkillScoreManager {
         return [];
       }
 
-      const trend = data.map(r => r.overall_score);
-      console.log(`[SkillScoreManager] Trend for ${developerEmail}: [${trend.join(', ')}]`);
+      // BUG #4 FIX: Remove duplicate commits, keep only latest analysis per commit
+      const seenCommits = new Set<string>();
+      const uniqueScores: number[] = [];
+
+      for (const record of data) {
+        const commitHash = record.commit_hash || `pr-${Math.random()}`; // Fallback for old records
+        if (!seenCommits.has(commitHash)) {
+          seenCommits.add(commitHash);
+          uniqueScores.push(record.overall_score);
+          if (uniqueScores.length >= limit) break;
+        }
+      }
+
+      const trend = uniqueScores.slice(0, limit);
+      console.log(`[SkillScoreManager] Trend for ${developerEmail}: [${trend.join(', ')}] (${seenCommits.size} unique commits)`);
       return trend;
     } catch (error) {
       console.error('[SkillScoreManager] Unexpected error fetching trend:', error);
@@ -131,6 +145,7 @@ export class SkillScoreManager {
         repo_name: scoreData.repository,  // Fixed: use 'repo_name' column
         pr_number: scoreData.prNumber,
         branch: scoreData.branch,
+        commit_hash: scoreData.commitHash,  // BUG #4 FIX: Store commit hash
         overall_score: scoreData.overallScore,
         quality_score: scoreData.qualityScore,
         security_score: scoreData.categoryScores.security,
