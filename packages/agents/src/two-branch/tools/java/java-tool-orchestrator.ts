@@ -121,7 +121,7 @@ export const DEFAULT_JAVA_CONFIG: JavaToolConfig = {
     formats: ['JSON'],
     caching: {
       enabled: true,
-      location: '/workspace/.dependency-check-cache'
+      location: process.env.DEPENDENCY_CHECK_CACHE || `${process.env.HOME}/.dependency-check-cache`
     }
   },
   docker: {
@@ -459,25 +459,67 @@ export class JavaToolOrchestrator extends BaseToolOrchestrator {
     branch: 'base' | 'pr'
   ): Promise<ToolResult> {
     const startTime = Date.now();
-    
+
     try {
       logger.info(`🐛 Running SpotBugs analysis (requires compilation)...`);
-      
+
       // SpotBugs requires compilation - check if compiled classes exist
       const compiledClasses = await fs.readdir(repoPath).catch(() => []);
-      const hasCompiledClasses = compiledClasses.some(file => 
+      const hasCompiledClasses = compiledClasses.some(file =>
         file.endsWith('.class') || file === 'target' || file === 'build'
       );
-      
+
       if (!hasCompiledClasses) {
-        logger.warn(`⚠️  SpotBugs skipped: No compiled classes found (requires compilation)`);
-        return {
-          tool: 'spotbugs',
-          success: true,
-          duration: Date.now() - startTime,
-          issues: [],
-          metadata: this.calculateMetadata([])
-        };
+        // Auto-compile if no compiled classes found
+        logger.info(`🔨 No compiled classes found. Attempting auto-compilation...`);
+
+        const { detectBuildTools, compileRepository } = await import('../build-tool-detector');
+        const buildInfo = await detectBuildTools(repoPath);
+
+        if (buildInfo.compilationRequired) {
+          const compileResult = await compileRepository(repoPath, buildInfo);
+
+          if (!compileResult.success) {
+            const failureContext = {
+              tool: 'spotbugs',
+              reason: 'compilation_failed',
+              buildSystem: buildInfo.buildTool.tool,
+              compileCommand: buildInfo.buildTool.compileCommand,
+              error: compileResult.error,
+              duration: compileResult.duration,
+              repoPath
+            };
+            logger.error(`❌ SPOTBUGS FAILURE: Compilation failed`, failureContext);
+            logger.warn(`⚠️  SpotBugs skipped: Compilation failed - ${compileResult.error}`);
+            return {
+              tool: 'spotbugs',
+              success: true,
+              duration: Date.now() - startTime,
+              issues: [],
+              metadata: this.calculateMetadata([])
+            };
+          }
+
+          logger.info(`✅ Compilation successful (${compileResult.duration}ms), proceeding with SpotBugs...`);
+        } else {
+          const failureContext = {
+            tool: 'spotbugs',
+            reason: 'no_build_system',
+            language: buildInfo.language,
+            buildTool: buildInfo.buildTool.tool,
+            compilationRequired: buildInfo.compilationRequired,
+            repoPath
+          };
+          logger.error(`❌ SPOTBUGS FAILURE: No build system detected`, failureContext);
+          logger.warn(`⚠️  SpotBugs skipped: No build system detected`);
+          return {
+            tool: 'spotbugs',
+            success: true,
+            duration: Date.now() - startTime,
+            issues: [],
+            metadata: this.calculateMetadata([])
+          };
+        }
       }
 
       // Run SpotBugs on compiled classes
@@ -492,9 +534,10 @@ export class JavaToolOrchestrator extends BaseToolOrchestrator {
 
       await execAsync(dockerCommand, { maxBuffer: 50 * 1024 * 1024 });
 
-      // Parse results
+      // Parse XML results
       const resultContent = await fs.readFile(outputFile, 'utf-8');
-      const spotbugsResult = JSON.parse(resultContent);
+      const { parseStringPromise } = await import('xml2js');
+      const spotbugsResult = await parseStringPromise(resultContent);
       
       const issues: RawIssue[] = [];
       if (spotbugsResult.BugCollection?.BugInstance) {
@@ -529,6 +572,16 @@ export class JavaToolOrchestrator extends BaseToolOrchestrator {
       };
 
     } catch (error: any) {
+      const failureContext = {
+        tool: 'spotbugs',
+        reason: 'execution_failed',
+        error: error.message,
+        stack: error.stack,
+        dockerImage: this.dockerImage,
+        duration: Date.now() - startTime,
+        repoPath
+      };
+      logger.error(`❌ SPOTBUGS FAILURE: Execution failed`, failureContext);
       logger.error(`❌ SpotBugs failed: ${error.message}`);
       return this.createFailedResult('spotbugs', error.message);
     }
@@ -602,6 +655,24 @@ export class JavaToolOrchestrator extends BaseToolOrchestrator {
       };
 
     } catch (error: any) {
+      const failureContext = {
+        tool: 'dependency-check',
+        reason: 'execution_failed',
+        error: error.message,
+        stack: error.stack,
+        dockerImage: this.dockerImage,
+        cacheLocation: this.config.dependencyCheck!.caching.location,
+        duration: Date.now() - startTime,
+        repoPath,
+        // Common failure modes to check:
+        possibleCauses: [
+          'Docker mount denied (cache path not shared)',
+          'CVE database not updated (check daily cron)',
+          'NVD API rate limit exceeded',
+          'Network connectivity issue'
+        ]
+      };
+      logger.error(`❌ DEPENDENCY-CHECK FAILURE: Execution failed`, failureContext);
       logger.error(`❌ Dependency-Check failed: ${error.message}`);
       return this.createFailedResult('dependency-check', error.message);
     }

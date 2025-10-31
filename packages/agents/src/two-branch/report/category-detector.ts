@@ -9,11 +9,17 @@
  * Detect issue category from rule name, tool, and message
  *
  * SESSION 13 FIX: Removed "Reliability" category (was causing scoring issues)
+ * CRITICAL BUG FIX (2025-10-30): Added null/undefined handling for rule parameter
+ *
+ * Some tools (like Dependency-Check) may return issues with null/undefined rule fields.
+ * This function now handles those cases gracefully by falling back to tool/message-based detection.
+ *
  * Categories: Security, Performance, Architecture, Dependencies, Code Quality
  */
-export function detectCategory(rule: string, tool: string, message: string): string {
-  const ruleLower = rule.toLowerCase();
-  const messageLower = message.toLowerCase();
+export function detectCategory(rule: string | null | undefined, tool: string, message: string): string {
+  // CRITICAL: Handle null/undefined rule to prevent crashes
+  const ruleLower = rule?.toLowerCase() || '';
+  const messageLower = message?.toLowerCase() || '';
   
   // Security patterns
   if (

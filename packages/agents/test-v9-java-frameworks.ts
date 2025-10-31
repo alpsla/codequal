@@ -8,6 +8,11 @@ const { V9PRAnalyzer } = require('./src/two-branch/services/v9-pr-analyzer');
 
 dotenv.config({ path: pathModule.join(__dirname, '.env') });
 
+// E2E Test Configuration: Disable rate limiting for multi-framework tests
+// Production: 100 calls/PR is correct ✅
+// Multi-framework tests: Multiple PRs sequentially = needs debug mode
+process.env.DEBUG_MODE = process.env.DEBUG_MODE || 'true';
+
 /**
  * V9 Multi-Framework Java Test Suite
  * 

@@ -564,10 +564,12 @@ export class V9GroupedReportFormatter {
     markdown.push('');
     
     // Educational Resources (aggregate from enrichedIssues)
-    if ((process.env.EDU_USE_BRAVE || '').toLowerCase() === 'true') {
-      markdown.push(await this.generateEducationalResourcesBrave(enrichedIssues));
-    } else {
+    // Use issue-specific training with YouTube links by default (better UX)
+    // Falls back to generic if EDU_USE_GENERIC=true
+    if ((process.env.EDU_USE_GENERIC || '').toLowerCase() === 'true') {
       markdown.push(this.generateEducationalResources(enrichedIssues));
+    } else {
+      markdown.push(await this.generateEducationalResourcesBrave(enrichedIssues));
     }
     markdown.push('');
     
@@ -1133,8 +1135,11 @@ export class V9GroupedReportFormatter {
    * Counts ALL issues: NEW, EXISTING_MODIFIED, EXISTING_REST, RESOLVED
    * All have same weight (only sign differs)
    */
-  private calculateCategoryScore(categoryIssues: EnrichedIssue[]): number {
-    return calculateCategoryScore(categoryIssues);
+  private calculateCategoryScore(categoryIssues: EnrichedIssue[], baseScore = 100): number {
+    // BUG #5 FIX: Accept baseScore as parameter
+    // - App Health Score by Category: uses 100 (default)
+    // - Skills Tracking: must explicitly pass 50
+    return calculateCategoryScore(categoryIssues, baseScore);
   }
 
   private _REMOVED_calculateCategoryScore_LEGACY(categoryIssues: EnrichedIssue[]): number {
@@ -1438,10 +1443,11 @@ ${(() => {
 | **TOTAL** | **${bySeverity.critical}** | **${bySeverity.high}** | **${bySeverity.medium}** | **${bySeverity.low}** | **${issues.length}** |`;
 })()}
 
-**By Detected Category** (for scoring):
+**App Health Score by Category**:
 
 ${(() => {
-  // SESSION 13 FIX: Group issues by detectedCategory (Security, Performance, etc.)
+  // BUG #4 FIX: Show APP scores (baseScore=100) for clarity
+  // Developer Skill scores (baseScore=50) are shown in "Skills Growth Tracker" section
   const byDetectedCategory: Record<string, {critical: number, high: number, medium: number, low: number, total: number}> = {
     'Security': { critical: 0, high: 0, medium: 0, low: 0, total: 0 },
     'Performance': { critical: 0, high: 0, medium: 0, low: 0, total: 0 },
@@ -1461,15 +1467,15 @@ ${(() => {
 
   return `| Category | Critical | High | Medium | Low | Total | Score |
 |----------|----------|------|--------|-----|-------|-------|
-| 🔒 Security | ${byDetectedCategory['Security'].critical} | ${byDetectedCategory['Security'].high} | ${byDetectedCategory['Security'].medium} | ${byDetectedCategory['Security'].low} | **${byDetectedCategory['Security'].total}** | **${qualityResult.breakdown?.skillCategoryScores?.security ?? qualityResult.skillCategoryScores?.security ?? 'N/A'}/100** |
-| ⚡ Performance | ${byDetectedCategory['Performance'].critical} | ${byDetectedCategory['Performance'].high} | ${byDetectedCategory['Performance'].medium} | ${byDetectedCategory['Performance'].low} | **${byDetectedCategory['Performance'].total}** | **${qualityResult.breakdown?.skillCategoryScores?.performance ?? qualityResult.skillCategoryScores?.performance ?? 'N/A'}/100** |
-| 🏗️ Architecture | ${byDetectedCategory['Architecture'].critical} | ${byDetectedCategory['Architecture'].high} | ${byDetectedCategory['Architecture'].medium} | ${byDetectedCategory['Architecture'].low} | **${byDetectedCategory['Architecture'].total}** | **${qualityResult.breakdown?.skillCategoryScores?.architecture ?? qualityResult.skillCategoryScores?.architecture ?? 'N/A'}/100** |
-| 📦 Dependencies | ${byDetectedCategory['Dependencies'].critical} | ${byDetectedCategory['Dependencies'].high} | ${byDetectedCategory['Dependencies'].medium} | ${byDetectedCategory['Dependencies'].low} | **${byDetectedCategory['Dependencies'].total}** | **${qualityResult.breakdown?.skillCategoryScores?.dependency ?? qualityResult.skillCategoryScores?.dependency ?? 'N/A'}/100** |
-| ✨ Code Quality | ${byDetectedCategory['Code Quality'].critical} | ${byDetectedCategory['Code Quality'].high} | ${byDetectedCategory['Code Quality'].medium} | ${byDetectedCategory['Code Quality'].low} | **${byDetectedCategory['Code Quality'].total}** | **${qualityResult.breakdown?.skillCategoryScores?.codeQuality ?? qualityResult.skillCategoryScores?.codeQuality ?? 'N/A'}/100** |
+| 🔒 Security | ${byDetectedCategory['Security'].critical} | ${byDetectedCategory['Security'].high} | ${byDetectedCategory['Security'].medium} | ${byDetectedCategory['Security'].low} | **${byDetectedCategory['Security'].total}** | **${qualityResult.breakdown?.categoryScores?.security ?? qualityResult.categoryScores?.security ?? 'N/A'}/100** |
+| ⚡ Performance | ${byDetectedCategory['Performance'].critical} | ${byDetectedCategory['Performance'].high} | ${byDetectedCategory['Performance'].medium} | ${byDetectedCategory['Performance'].low} | **${byDetectedCategory['Performance'].total}** | **${qualityResult.breakdown?.categoryScores?.performance ?? qualityResult.categoryScores?.performance ?? 'N/A'}/100** |
+| 🏗️ Architecture | ${byDetectedCategory['Architecture'].critical} | ${byDetectedCategory['Architecture'].high} | ${byDetectedCategory['Architecture'].medium} | ${byDetectedCategory['Architecture'].low} | **${byDetectedCategory['Architecture'].total}** | **${qualityResult.breakdown?.categoryScores?.architecture ?? qualityResult.categoryScores?.architecture ?? 'N/A'}/100** |
+| 📦 Dependencies | ${byDetectedCategory['Dependencies'].critical} | ${byDetectedCategory['Dependencies'].high} | ${byDetectedCategory['Dependencies'].medium} | ${byDetectedCategory['Dependencies'].low} | **${byDetectedCategory['Dependencies'].total}** | **${qualityResult.breakdown?.categoryScores?.dependency ?? qualityResult.categoryScores?.dependency ?? 'N/A'}/100** |
+| ✨ Code Quality | ${byDetectedCategory['Code Quality'].critical} | ${byDetectedCategory['Code Quality'].high} | ${byDetectedCategory['Code Quality'].medium} | ${byDetectedCategory['Code Quality'].low} | **${byDetectedCategory['Code Quality'].total}** | **${qualityResult.breakdown?.categoryScores?.codeQuality ?? qualityResult.categoryScores?.codeQuality ?? 'N/A'}/100** |
 | **TOTAL** | **${bySeverity.critical}** | **${bySeverity.high}** | **${bySeverity.medium}** | **${bySeverity.low}** | **${issues.length}** | - |`;
 })()}
 
-> **Score Calculation:** Categories start at base score (APP=100, Skill=50), then deduct: Critical (-5), High (-3), Medium (-1), Low (-0.5). APP Score = MIN(all categories), Skill Score = AVG(all categories).
+> **Score Calculation:** Each category starts at 100 (perfect health), then deducts: Critical (-5), High (-3), Medium (-1), Low (-0.5). Overall APP Score = MIN(all categories). *Note: Developer skill scores (baseScore=50) are shown in the "Skills Growth Tracker" section.*
 
 ---
 
@@ -3513,12 +3519,13 @@ Continue following best practices and consider integrating static analysis into 
         (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED')
       );
       
+      // BUG #5 FIX: Skills Tracking uses baseScore=50 (developer performance baseline)
       const categoryScores = {
-        security: this.calculateCategoryScore(security),
-        performance: this.calculateCategoryScore(performance),
-        architecture: this.calculateCategoryScore(architecture),
-        dependencies: this.calculateCategoryScore(dependencies),
-        codeQuality: this.calculateCategoryScore(codeQuality)
+        security: this.calculateCategoryScore(security, 50),
+        performance: this.calculateCategoryScore(performance, 50),
+        architecture: this.calculateCategoryScore(architecture, 50),
+        dependencies: this.calculateCategoryScore(dependencies, 50),
+        codeQuality: this.calculateCategoryScore(codeQuality, 50)
       };
       
       // BUG FIX #44: Skill score = AVERAGE of category scores
@@ -3704,10 +3711,11 @@ Continue following best practices and consider integrating static analysis into 
 `;
 
     // Add Agent Performance if available (optional)
+    // MODEL NAME BUG FIX (2025-10-30): Added "Model" column to show which AI model was used
     if (this.SHOW_AGENT_PERFORMANCE && metadata.agentPerformance && Array.isArray(metadata.agentPerformance) && metadata.agentPerformance.length > 0) {
       content += `\n### Agent Performance
-| Agent | Files Analyzed | Issues Found | Time | Cost |
-|-------|----------------|--------------|------|------|
+| Agent | Model | Files Analyzed | Issues Found | Time | Cost |
+|-------|-------|----------------|--------------|------|------|
 `;
       metadata.agentPerformance.forEach((agent: any) => {
         const issues = agent.issuesFound || agent.issues || 0;
@@ -3715,7 +3723,8 @@ Continue following best practices and consider integrating static analysis into 
         const costValue = agent.cost || 0;
         // Check for zero cost (including 0, 0.0, 0.00, etc.) or very small values
         const cost = (costValue === 0 || costValue < 0.0001) ? 'FREE' : '$' + costValue.toFixed(4);
-        content += `| ${agent.name || agent.agent} | ${agent.filesAnalyzed || agent.files || 'N/A'} | ${issues} | ${time} | ${cost} |\n`;
+        const model = agent.model || 'N/A';
+        content += `| ${agent.name || agent.agent} | ${model} | ${agent.filesAnalyzed || agent.files || 'N/A'} | ${issues} | ${time} | ${cost} |\n`;
       });
     }
 
@@ -3748,6 +3757,7 @@ Continue following best practices and consider integrating static analysis into 
       content += `- Cost per Second: ${(totalCost === 0 || totalCost < 0.0001) ? 'FREE' : '$' + (totalTime > 0 ? ((totalCost / totalTime) * 1000).toFixed(6) : '0.000000') + '/s'}\n\n`;
       
       // Performance recommendations
+      // MODEL NAME BUG FIX (2025-10-30): Include model in efficiency ranking
       content += `**Agent Efficiency Ranking:**\n\n`;
       const agentEfficiency = metadata.agentPerformance
         .map((agent: any) => {
@@ -3758,6 +3768,7 @@ Continue following best practices and consider integrating static analysis into 
           const issuesPerSec = (issues / time) * 1000;
           return {
             name: agent.name || agent.agent,
+            model: agent.model || 'N/A',
             issues,
             cost,
             costPerIssue,
@@ -3766,7 +3777,7 @@ Continue following best practices and consider integrating static analysis into 
           };
         })
         .sort((a: any, b: any) => b.efficiency - a.efficiency);
-      
+
       agentEfficiency.forEach((agent: any, idx: number) => {
         const rank = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}.`;
         const isFree = agent.cost === 0 || agent.cost < 0.0001;
@@ -3780,7 +3791,8 @@ Continue following best practices and consider integrating static analysis into 
         const costPerIssueStr = isFree
           ? 'FREE/issue'
           : isFinite(agent.costPerIssue) ? `$${agent.costPerIssue.toFixed(6)}/issue` : 'N/A cost/issue';
-        content += `${rank} **${agent.name}**: ${agent.issues} issues @ ${costPerIssueStr} ${badge}\n`;
+        const modelInfo = agent.model !== 'N/A' ? ` (${agent.model})` : '';
+        content += `${rank} **${agent.name}**${modelInfo}: ${agent.issues} issues @ ${costPerIssueStr} ${badge}\n`;
       });
       
       // Replacement recommendations (only for paid models)
@@ -3912,14 +3924,14 @@ ${blocking.length > 5 ? `\n... and ${blocking.length - 5} more` : ''}` : '### �
   
   /**
    * Get personalized greeting
+   *
+   * GREETING FIX (2025-10-30): Use time-neutral greeting
+   * User feedback: "We don't know when user reads the report"
+   * Changed from time-based (Good morning/afternoon/evening) to simple "Hi"
    */
   private getPersonalizedGreeting(author?: string): string {
-    if (!author) return 'Hello';
-    
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 18) return 'Good afternoon';
-    return 'Good evening';
+    // Always use time-neutral greeting (user may read report hours/days later)
+    return 'Hi';
   }
   
   /**
@@ -3975,12 +3987,24 @@ ${blocking.length > 5 ? `\n... and ${blocking.length - 5} more` : ''}` : '### �
       // BUG FIX: Filter out manifest file (groupId='all-issues') and use optional chaining
       const issueFiles = ideFixFiles.filter(f => f.groupId !== 'all-issues');
       const totalFixable = issueFiles.reduce((sum, f) => sum + (f.content.metadata?.total_occurrences || 0), 0);
+
+      // BUG #6 FIX: Calculate actual auto-fixable count from manifest data
+      const manifestFile = ideFixFiles.find(f => f.groupId === 'all-issues');
+      let autoFixableCount = totalFixable;
+      if (manifestFile && (manifestFile.content as any).files) {
+        const filesObj = (manifestFile.content as any).files;
+        autoFixableCount = (Object.values(filesObj).flat().reduce((sum: number, entry: any) =>
+          sum + (entry.autoFixable ? entry.occurrences : 0), 0
+        ) as number);
+      }
       const criticalCount = issueFiles.filter(f => f.content.severity === 'critical').reduce((sum, f) => sum + (f.content.metadata?.total_occurrences || 0), 0);
       const highCount = issueFiles.filter(f => f.content.severity === 'high').reduce((sum, f) => sum + (f.content.metadata?.total_occurrences || 0), 0);
       const mediumCount = issueFiles.filter(f => f.content.severity === 'medium').reduce((sum, f) => sum + (f.content.metadata?.total_occurrences || 0), 0);
       const lowCount = issueFiles.filter(f => f.content.severity === 'low').reduce((sum, f) => sum + (f.content.metadata?.total_occurrences || 0), 0);
-      
-      footer += `**Total auto-fixable issues**: ${totalFixable.toLocaleString()}\n`;
+
+      // AUTO-FIX COUNT BUG FIX (2025-10-30): Use autoFixableCount (not totalFixable)
+      // totalFixable includes ALL issues, autoFixableCount includes ONLY auto-fixable ones
+      footer += `**Total auto-fixable issues**: ${autoFixableCount.toLocaleString()}\n`;
       footer += `- 🔴 Critical: ${criticalCount} (embedded, instant access)\n`;
       if (highCount > 0) footer += `- 🟠 High: ${highCount} (lazy loaded after critical)\n`;
       if (mediumCount > 0) footer += `- 🟡 Medium: ${mediumCount} (lazy loaded after high)\n`;
@@ -4038,14 +4062,22 @@ ${blocking.length > 5 ? `\n... and ${blocking.length - 5} more` : ''}` : '### �
       footer += `# CodeQual automatically triggers:\n`;
       footer += `🤖 CodeQual: [Running analysis on new commit...]\n`;
       footer += `             ✅ Before: ${criticalCount} critical, ${highCount} high\n`;
-      footer += `             ✅ After:  0 critical, 0 high\n`;
-      footer += `             🎉 All blockers resolved! PR approved.\n`;
+      // BUG #6 FIX: Show realistic scenario - auto-fix handles most but not necessarily all issues
+      if (autoFixableCount === totalFixable) {
+        footer += `             ✅ After:  0 critical, 0 high\n`;
+        footer += `             🎉 All blockers resolved! PR approved.\n`;
+      } else {
+        const remainingPercent = Math.round(((totalFixable - autoFixableCount) / totalFixable) * 100);
+        footer += `             ✅ After:  ${Math.ceil((criticalCount + highCount) * remainingPercent / 100)} issues remaining (${remainingPercent}% require manual review)\n`;
+        footer += `             🎯 Significant progress! Review remaining issues.\n`;
+      }
       footer += `\`\`\`\n\n`;
       footer += `**Why CodeQual re-scan?**\n`;
       footer += `- ✅ Automated validation on every commit\n`;
       footer += `- 📊 Compare before/after results objectively\n`;
       footer += `- 🎯 Catch any regressions or incomplete fixes\n`;
       footer += `- 🏆 Earn "First Clean PR" achievement\n\n`;
+      footer += `> **Note:** Auto-fix tools can resolve most style and formatting issues (${Math.round((autoFixableCount / totalFixable) * 100)}% in this PR), but complex security or logic issues may require manual review.\n\n`;
       
       footer += `**Why this works**:\n`;
       footer += `- ⚡ **Zero wait time** - critical issues embedded for instant access\n`;

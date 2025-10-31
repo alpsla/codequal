@@ -328,6 +328,17 @@ export function generateFooter(groups: IssueGroup[], ideFixFiles: IDEFixFile[]):
     // BUG FIX: Filter out manifest file (groupId='all-issues') and use optional chaining
     const issueFiles = ideFixFiles.filter(f => f.groupId !== 'all-issues');
     const totalFixable = issueFiles.reduce((sum, f) => sum + (f.content.metadata?.total_occurrences || 0), 0);
+
+    // BUG #6 FIX: Calculate actual auto-fixable count from manifest data
+    const manifestFile = ideFixFiles.find(f => f.groupId === 'all-issues');
+    let autoFixableCount = totalFixable;
+    if (manifestFile && (manifestFile.content as any).files) {
+      const filesObj = (manifestFile.content as any).files;
+      autoFixableCount = (Object.values(filesObj).flat().reduce((sum: number, entry: any) =>
+        sum + (entry.autoFixable ? entry.occurrences : 0), 0
+      ) as number);
+    }
+    const totalCount = totalFixable; // Total count remains all fixable issues
     const criticalCount = issueFiles.filter(f => f.content.severity === 'critical').reduce((sum, f) => sum + (f.content.metadata?.total_occurrences || 0), 0);
     const highCount = issueFiles.filter(f => f.content.severity === 'high').reduce((sum, f) => sum + (f.content.metadata?.total_occurrences || 0), 0);
     const mediumCount = issueFiles.filter(f => f.content.severity === 'medium').reduce((sum, f) => sum + (f.content.metadata?.total_occurrences || 0), 0);
@@ -391,14 +402,22 @@ export function generateFooter(groups: IssueGroup[], ideFixFiles: IDEFixFile[]):
     footer += `# CodeQual automatically triggers:\n`;
     footer += `🤖 CodeQual: [Running analysis on new commit...]\n`;
     footer += `             ✅ Before: ${criticalCount} critical, ${highCount} high\n`;
-    footer += `             ✅ After:  0 critical, 0 high\n`;
-    footer += `             🎉 All blockers resolved! PR approved.\n`;
+    // BUG #6 FIX: Show realistic scenario - auto-fix handles most but not necessarily all issues
+    if (autoFixableCount === totalCount) {
+      footer += `             ✅ After:  0 critical, 0 high\n`;
+      footer += `             🎉 All blockers resolved! PR approved.\n`;
+    } else {
+      const remainingPercent = Math.round(((totalCount - autoFixableCount) / totalCount) * 100);
+      footer += `             ✅ After:  ${Math.ceil((criticalCount + highCount) * remainingPercent / 100)} issues remaining (${remainingPercent}% require manual review)\n`;
+      footer += `             🎯 Significant progress! Review remaining issues.\n`;
+    }
     footer += `\`\`\`\n\n`;
     footer += `**Why CodeQual re-scan?**\n`;
     footer += `- ✅ Automated validation on every commit\n`;
     footer += `- 📊 Compare before/after results objectively\n`;
     footer += `- 🎯 Catch any regressions or incomplete fixes\n`;
     footer += `- 🏆 Earn "First Clean PR" achievement\n\n`;
+    footer += `> **Note:** Auto-fix tools can resolve most style and formatting issues (${Math.round((autoFixableCount / totalCount) * 100)}% in this PR), but complex security or logic issues may require manual review.\n\n`;
     
     footer += `**Why this works**:\n`;
     footer += `- ⚡ **Zero wait time** - critical issues embedded for instant access\n`;

@@ -193,7 +193,10 @@ export async function calculateFullV9Score(
       codeQuality: calculateCategoryScore(issuesByCategory.codeQuality, 100)
     };
 
-    // SESSION 13 FIX: Calculate category scores for Skill (base=50)
+    // SKILL SCORE FIX (2025-10-30): Calculate category scores for Skill (base=50)
+    // User requirement: Developer with issues should score <50 (below passing threshold)
+    // base=50 means: 0 issues = 50/100, with issues < 50 (clear signal of problems)
+    // This distinguishes good developers (>50) from those needing improvement (<50)
     const skillCategoryScores = {
       security: calculateCategoryScore(issuesByCategory.security, 50),
       performance: calculateCategoryScore(issuesByCategory.performance, 50),
@@ -453,13 +456,14 @@ export function calculateSimplifiedScore(issues: EnrichedIssue[]): any {
     codeQuality: calculateCategoryScore(issuesByCategory.codeQuality, 100)
   };
 
-  // Calculate skill category scores with base=50 (for Skill Score)
+  // BUG #4 FIX: Calculate skill category scores with base=100 (for Skill Score)
+  // Changed from base=50 to base=100 for better UX (0 issues = 100/100, not 50/100)
   const skillCategoryScores = {
-    security: calculateCategoryScore(issuesByCategory.security, 50),
-    performance: calculateCategoryScore(issuesByCategory.performance, 50),
-    architecture: calculateCategoryScore(issuesByCategory.architecture, 50),
-    dependency: calculateCategoryScore(issuesByCategory.dependency, 50),
-    codeQuality: calculateCategoryScore(issuesByCategory.codeQuality, 50)
+    security: calculateCategoryScore(issuesByCategory.security, 100),
+    performance: calculateCategoryScore(issuesByCategory.performance, 100),
+    architecture: calculateCategoryScore(issuesByCategory.architecture, 100),
+    dependency: calculateCategoryScore(issuesByCategory.dependency, 100),
+    codeQuality: calculateCategoryScore(issuesByCategory.codeQuality, 100)
   };
 
   // APP Score = MIN of all categories (weakest link)

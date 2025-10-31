@@ -84,6 +84,18 @@ IMPORTANT:
 - SpotBugs HIGH priority = usually HIGH or CRITICAL (actual bugs)
 - Semgrep security rules = usually HIGH or CRITICAL
 
+CHECKSTYLE RULES (ALWAYS LOW unless security-related):
+- LineLengthCheck → LOW (line length is purely style)
+- JavadocPackageCheck → LOW (documentation is not runtime-critical)
+- JavadocMethodCheck → LOW (documentation preference)
+- MissingJavadocMethod → LOW (documentation preference)
+- IndentationCheck → LOW (formatting only)
+- WhitespaceAfter/Before → LOW (formatting only)
+- ImportOrder → LOW (import organization)
+- UnusedImports → LOW (cleanup, no runtime impact)
+- NeedBraces → LOW (style preference)
+- EXCEPTION: Only classify as HIGH if the rule detects actual security issues (rare)
+
 Output ONLY this JSON structure:
 {
   "severity": "critical|high|medium|low",

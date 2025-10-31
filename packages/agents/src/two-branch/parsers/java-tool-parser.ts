@@ -992,14 +992,18 @@ export class JavaToolParser {
   }
 
   /**
-   * Map Checkstyle severity
+   * Map Checkstyle severity to initial severity
+   *
+   * NOTE: This provides the INITIAL severity from the tool.
+   * The AI severity classifier will re-classify based on actual impact.
+   * This ensures we don't miss critical issues that Checkstyle might flag.
    */
   private mapCheckstyleSeverity(severity: string): JavaIssue['severity'] {
     switch (severity?.toLowerCase()) {
       case 'error':
-        return 'high';
+        return 'high';  // Initial mapping - AI will downgrade if just style
       case 'warning':
-        return 'medium';
+        return 'medium';  // Initial mapping - AI will downgrade if just style
       case 'info':
         return 'low';
       default:

@@ -10,6 +10,33 @@ import { getUserFriendlyTitle } from './formatter-utils';
 import { getCuratedResourcesForRule } from './ai-enrichment';
 
 /**
+ * Extract CVE ID from rule, title, or description
+ * CVE format: CVE-YYYY-NNNNN (e.g., CVE-2021-44228)
+ *
+ * CVE EDUCATION LINK BUG FIX (2025-10-30):
+ * Detects CVE IDs to generate proper NVD/MITRE links instead of generic YouTube searches
+ */
+function extractCVEId(ruleId: string, title: string, description?: string): string | null {
+  const cvePattern = /CVE-\d{4}-\d{4,}/i;
+
+  // Check rule ID first
+  const ruleMatch = ruleId.match(cvePattern);
+  if (ruleMatch) return ruleMatch[0].toUpperCase();
+
+  // Check title
+  const titleMatch = title.match(cvePattern);
+  if (titleMatch) return titleMatch[0].toUpperCase();
+
+  // Check description if available
+  if (description) {
+    const descMatch = description.match(cvePattern);
+    if (descMatch) return descMatch[0].toUpperCase();
+  }
+
+  return null;
+}
+
+/**
  * Generate educational resources for detected issues
  * 
  * Provides priority-based learning paths with curated resources
@@ -163,21 +190,13 @@ export async function generateEducationalResourcesBrave(issues: EnrichedIssue[])
   );
   // Rest critical/high: EXISTING_REST + critical/high (not blockers but still important)
   const restCriticalHighIssues = issues.filter(i =>
-    i.category === 'EXISTING_REST' && 
+    i.category === 'EXISTING_REST' &&
     (i.severity === 'critical' || i.severity === 'high')
   );
-  
-  // Try to load EducationalSearchService (optional dependency)
-  try {
-    const mod = await import('../services/EducationalSearchService');
-    const svc = new mod.EducationalSearchService();
-    if (!svc.isEnabled()) {
-      return generateEducationalResources(issues);
-    }
-  } catch (error) {
-    // Service not available, fall back to standard resources
-    return generateEducationalResources(issues);
-  }
+
+  // BUG FIX: Remove EducationalSearchService check - YouTube links don't need Brave API
+  // The Brave version generates YouTube search URLs which work without any API key
+  // This aligns with the default behavior set in v9-grouped-report-formatter.ts
 
   let content = `## 📚 Phased Educational Plan\n\n`;
 
@@ -198,13 +217,24 @@ export async function generateEducationalResourcesBrave(issues: EnrichedIssue[])
       const title = getUserFriendlyTitle(ruleId, sample ? sample.tool : '');
       const language = (sample && (sample as any).language) ? (sample as any).language as string : 'Java';
       const count = blockerFreq.get(ruleId) || 0;
-      
+      const description = (sample && (sample as any).description) ? (sample as any).description : undefined;
+
       content += `**${title}** (${count} occurrence${count > 1 ? 's' : ''}):\n`;
-      
-      // Add curated YouTube channel/playlist
-      const youtubeQuery = `${language} ${title.toLowerCase()}`.replace(/[^\w\s]/g, ' ').trim();
-      content += `- [🎥 YouTube Tutorial](https://www.youtube.com/results?search_query=${encodeURIComponent(youtubeQuery + ' tutorial')})\n`;
-      
+
+      // CVE EDUCATION LINK BUG FIX (2025-10-30): Check if this is a CVE issue
+      const cveId = extractCVEId(ruleId, title, description);
+
+      if (cveId) {
+        // For CVE issues: Link to authoritative sources (NVD, MITRE)
+        content += `- [🔒 NVD Database](https://nvd.nist.gov/vuln/detail/${cveId}) - NIST National Vulnerability Database\n`;
+        content += `- [📋 MITRE CVE](https://cve.mitre.org/cgi-bin/cvename.cgi?name=${cveId}) - Official CVE details\n`;
+        content += `- [🛡️ CISA Known Exploited Vulnerabilities](https://www.cisa.gov/known-exploited-vulnerabilities-catalog) - Check if actively exploited\n`;
+      } else {
+        // For non-CVE issues: Use YouTube tutorial search
+        const youtubeQuery = `${language} ${title.toLowerCase()}`.replace(/[^\w\s]/g, ' ').trim();
+        content += `- [🎥 YouTube Tutorial](https://www.youtube.com/results?search_query=${encodeURIComponent(youtubeQuery + ' tutorial')})\n`;
+      }
+
       // Add curated documentation
       const curated = getCuratedResourcesForRule(ruleId);
       if (curated.length > 0) {
@@ -234,13 +264,24 @@ export async function generateEducationalResourcesBrave(issues: EnrichedIssue[])
       const title = getUserFriendlyTitle(ruleId, sample ? sample.tool : '');
       const language = (sample && (sample as any).language) ? (sample as any).language as string : 'Java';
       const count = restFreq.get(ruleId) || 0;
-      
+      const description = (sample && (sample as any).description) ? (sample as any).description : undefined;
+
       content += `**${title}** (${count} occurrence${count > 1 ? 's' : ''}):\n`;
-      
-      // Add curated YouTube channel/playlist
-      const youtubeQuery = `${language} ${title.toLowerCase()}`.replace(/[^\w\s]/g, ' ').trim();
-      content += `- [🎥 YouTube Tutorial](https://www.youtube.com/results?search_query=${encodeURIComponent(youtubeQuery + ' tutorial')})\n`;
-      
+
+      // CVE EDUCATION LINK BUG FIX (2025-10-30): Check if this is a CVE issue
+      const cveId = extractCVEId(ruleId, title, description);
+
+      if (cveId) {
+        // For CVE issues: Link to authoritative sources (NVD, MITRE)
+        content += `- [🔒 NVD Database](https://nvd.nist.gov/vuln/detail/${cveId}) - NIST National Vulnerability Database\n`;
+        content += `- [📋 MITRE CVE](https://cve.mitre.org/cgi-bin/cvename.cgi?name=${cveId}) - Official CVE details\n`;
+        content += `- [🛡️ CISA Known Exploited Vulnerabilities](https://www.cisa.gov/known-exploited-vulnerabilities-catalog) - Check if actively exploited\n`;
+      } else {
+        // For non-CVE issues: Use YouTube tutorial search
+        const youtubeQuery = `${language} ${title.toLowerCase()}`.replace(/[^\w\s]/g, ' ').trim();
+        content += `- [🎥 YouTube Tutorial](https://www.youtube.com/results?search_query=${encodeURIComponent(youtubeQuery + ' tutorial')})\n`;
+      }
+
       // Add curated documentation
       const curated = getCuratedResourcesForRule(ruleId);
       if (curated.length > 0) {

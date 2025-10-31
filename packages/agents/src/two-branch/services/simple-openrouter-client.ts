@@ -39,6 +39,7 @@ export class SimpleOpenRouterClient {
   private sessionStartTime = Date.now();
   private readonly MAX_CALLS_PER_SESSION = parseInt(process.env.MAX_AI_CALLS_PER_SESSION || '100');
   private readonly SESSION_DURATION_MS = 60 * 60 * 1000; // 1 hour
+  private readonly DEBUG_MODE = (process.env.DEBUG_MODE || process.env.DISABLE_RATE_LIMIT || '').toLowerCase() === 'true';
 
   constructor() {
     // Load OpenRouter API keys (supports multiple keys via OPENROUTER_API_KEYS)
@@ -63,7 +64,11 @@ export class SimpleOpenRouterClient {
       } as any);
     }
 
-    console.log(`[SimpleClient] Rate limit: ${this.MAX_CALLS_PER_SESSION} calls per session`);
+    if (this.DEBUG_MODE) {
+      console.log(`[SimpleClient] DEBUG_MODE: Rate limiting DISABLED`);
+    } else {
+      console.log(`[SimpleClient] Rate limit: ${this.MAX_CALLS_PER_SESSION} calls per session`);
+    }
     console.log(`[SimpleClient] Loaded ${this.openrouterKeys.length} OpenRouter API key(s)`);
   }
 
@@ -154,15 +159,21 @@ export class SimpleOpenRouterClient {
   
   /**
    * Check rate limit before making API call
+   * Skipped when DEBUG_MODE=true (for E2E tests running multiple PR analyses)
    */
   private checkRateLimit(): void {
+    // Skip rate limit checks in debug mode (E2E tests, development)
+    if (this.DEBUG_MODE) {
+      return;
+    }
+
     this.resetIfNeeded();
-    
+
     if (this.callCount >= this.MAX_CALLS_PER_SESSION) {
       const elapsed = Date.now() - this.sessionStartTime;
       const remainingMs = this.SESSION_DURATION_MS - elapsed;
       const remainingMin = Math.ceil(remainingMs / 60000);
-      
+
       throw new Error(
         `🚨 RATE LIMIT EXCEEDED: Made ${this.callCount} API calls in this session. ` +
         `Maximum allowed: ${this.MAX_CALLS_PER_SESSION}. ` +

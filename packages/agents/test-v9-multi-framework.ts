@@ -20,6 +20,11 @@ import { execSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 
+// E2E Test Configuration: Disable rate limiting for multi-framework tests
+// Production: 100 calls/PR is correct ✅
+// Multi-framework tests: 5 PRs sequentially = needs debug mode
+process.env.DEBUG_MODE = process.env.DEBUG_MODE || 'true';
+
 interface FrameworkConfig {
   name: string;
   repositoryUrl: string;
