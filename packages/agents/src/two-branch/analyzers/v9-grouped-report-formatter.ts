@@ -1135,7 +1135,7 @@ export class V9GroupedReportFormatter {
    * Counts ALL issues: NEW, EXISTING_MODIFIED, EXISTING_REST, RESOLVED
    * All have same weight (only sign differs)
    */
-  private calculateCategoryScore(categoryIssues: EnrichedIssue[], baseScore: number = 100): number {
+  private calculateCategoryScore(categoryIssues: EnrichedIssue[], baseScore = 100): number {
     // BUG #5 FIX: Accept baseScore as parameter
     // - App Health Score by Category: uses 100 (default)
     // - Skills Tracking: must explicitly pass 50
