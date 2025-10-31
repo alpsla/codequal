@@ -3717,7 +3717,29 @@ Continue following best practices and consider integrating static analysis into 
         const costValue = agent.cost || 0;
         // Check for zero cost (including 0, 0.0, 0.00, etc.) or very small values
         const cost = (costValue === 0 || costValue < 0.0001) ? 'FREE' : '$' + costValue.toFixed(4);
-        const model = agent.model || 'N/A';
+
+        // BUG #6 FIX: Lookup model dynamically if not provided in metadata
+        let model = agent.model || 'N/A';
+        if (model === 'N/A' && this.modelConfigResolver) {
+          // Extract role from agent name (e.g., "Security Agent" → "security")
+          const agentName = (agent.name || agent.agent || '').toLowerCase();
+          let role = 'code_quality';  // default
+          if (agentName.includes('security')) role = 'security';
+          else if (agentName.includes('performance')) role = 'performance';
+          else if (agentName.includes('architecture')) role = 'architecture';
+          else if (agentName.includes('dependencies') || agentName.includes('dependency')) role = 'dependency';
+
+          try {
+            // Synchronously get cached model config (avoid await in forEach)
+            const modelConfig = this.modelConfigResolver.getCachedConfiguration?.(role, this.detectedLanguage, this.detectedRepoSize);
+            if (modelConfig?.primary_model) {
+              model = modelConfig.primary_model;
+            }
+          } catch (e) {
+            // Silently fall back to N/A if lookup fails
+          }
+        }
+
         content += `| ${agent.name || agent.agent} | ${model} | ${agent.filesAnalyzed || agent.files || 'N/A'} | ${issues} | ${time} | ${cost} |\n`;
       });
     }
@@ -3760,9 +3782,30 @@ Continue following best practices and consider integrating static analysis into 
           const time = agent.duration || 1;
           const costPerIssue = issues > 0 ? cost / issues : Number.POSITIVE_INFINITY;
           const issuesPerSec = (issues / time) * 1000;
+
+          // BUG #6 FIX: Lookup model dynamically if not provided in metadata
+          let model = agent.model || 'N/A';
+          if (model === 'N/A' && this.modelConfigResolver) {
+            const agentName = (agent.name || agent.agent || '').toLowerCase();
+            let role = 'code_quality';
+            if (agentName.includes('security')) role = 'security';
+            else if (agentName.includes('performance')) role = 'performance';
+            else if (agentName.includes('architecture')) role = 'architecture';
+            else if (agentName.includes('dependencies') || agentName.includes('dependency')) role = 'dependency';
+
+            try {
+              const modelConfig = this.modelConfigResolver.getCachedConfiguration?.(role, this.detectedLanguage, this.detectedRepoSize);
+              if (modelConfig?.primary_model) {
+                model = modelConfig.primary_model;
+              }
+            } catch (e) {
+              // Silently fall back to N/A
+            }
+          }
+
           return {
             name: agent.name || agent.agent,
-            model: agent.model || 'N/A',
+            model,
             issues,
             cost,
             costPerIssue,
