@@ -26,7 +26,7 @@ import {
   cleanAIContent,
   getUserFriendlyTitle
 } from '../report/formatter-utils';
-import { getCuratedResourcesForRule, enrichIssuesWithAI, enrichIssuesWithSeverityClassification } from '../report/ai-enrichment';
+import { getCuratedResourcesForRule, enrichIssuesWithAI } from '../report/ai-enrichment';
 import {
   detectCategory,
   calculateRiskLevel,
@@ -379,21 +379,19 @@ export class V9GroupedReportFormatter {
     // Store repoPath for snippet extraction
     this.repoPath = metadata.repoPath || null;
 
-    // SESSION 13 FIX #2 (MANDATORY): AI-powered severity classification FIRST
-    // This re-classifies severity intelligently (e.g., Javadoc HIGH → LOW)
-    // Cost: ~150 tokens per group = ~$0.0001 per group = ~$0.002 per PR
-    // This is a CORE FEATURE - always enabled for consistent, high-quality results
-    // If AI fails, gracefully falls back to original severity (handled in catch blocks)
-    // SESSION 13 FIX #3 (CONFIG-BASED): Pass modelConfigResolver for config-based Qwen model
-    const severityClassifiedIssues = await enrichIssuesWithSeverityClassification(issues, groups, this.modelConfigResolver);
+    // OPTIMIZATION: Severity classification now integrated into specialized agents (saves ~150 tokens per group)
+    // Each agent classifies severity AS PART of generating fix suggestions (1 AI call instead of 2)
+    // Cost: ~600 tokens per group = ~$0.0003 per group = ~$0.009 per PR (was ~$0.011 before)
 
-    // SESSION 13 FIX #4 (BUG-87): Update group severities based on AI-classified issues
+    // BUG-76: AI-enrich issues (includes severity classification + fix generation in 1 call)
+    const enrichedIssues = await this.enrichIssuesWithAI(issues, groups);
+
+    // Update group severities based on AI-classified issues
     // After AI classification updates individual issue severities, we need to update
     // each group's severity to reflect the AI-classified issues (not original severities)
-    // Match issues to groups by rule + tool (not severity, since it changed)
     const updatedGroups = groups.map(group => {
-      // Find all issues in this group (match by rule + tool, not severity)
-      const groupIssues = severityClassifiedIssues.filter(issue =>
+      // Find all issues in this group (match by rule + tool, not severity, since it changed)
+      const groupIssues = enrichedIssues.filter(issue =>
         issue.rule === group.rule && issue.tool === group.tool
       );
 
@@ -418,10 +416,10 @@ export class V9GroupedReportFormatter {
       };
     });
 
-    // SESSION 13 FIX #5 (BUG-88): Recalculate blockingCount after AI severity classification
+    // Recalculate blockingCount after AI severity classification
     // The original blockingCount was calculated before AI changed severities (high → low)
     // Now we need to count blocking issues using AI-classified severities
-    const updatedBlockingCount = severityClassifiedIssues.filter(i =>
+    const updatedBlockingCount = enrichedIssues.filter(i =>
       (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED') &&
       (i.severity === 'critical' || i.severity === 'high')
     ).length;
@@ -431,10 +429,6 @@ export class V9GroupedReportFormatter {
 
     // Also update decision based on updated blocking count
     metadata.decision = updatedBlockingCount > 0 ? 'DECLINED' : 'APPROVED';
-
-    // BUG-76: AI-enrich issues BEFORE generating report sections
-    // This runs in parallel and adds fixSuggestion to each issue
-    const enrichedIssues = await this.enrichIssuesWithAI(severityClassifiedIssues, updatedGroups);
 
     console.log(`\n[DEBUG-PR#] ====== Before generateHeader ======`);
     console.log(`[DEBUG-PR#] Passing metadata.prNumber: ${metadata.prNumber}`);
