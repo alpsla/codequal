@@ -79,15 +79,18 @@ export function generateAnalysisMetadata(
 `;
 
   // Add Agent Performance if available (optional)
+  // FIXED: Model column should be 2nd (after Agent name) for consistency
   if (showAgentPerformance && metadata.agentPerformance && Array.isArray(metadata.agentPerformance) && metadata.agentPerformance.length > 0) {
     content += `\n### Agent Performance
-| Agent | Files Analyzed | Issues Found | Time | Cost | Model |
-|-------|----------------|--------------|------|------|-------|
+| Agent | Model | Files Analyzed | Issues Found | Time | Cost |
+|-------|-------|----------------|--------------|------|------|
 `;
     metadata.agentPerformance.forEach((agent: any) => {
       const issues = agent.issuesFound || agent.issues || 0;
       const time = agent.duration ? (agent.duration / 1000).toFixed(1) + 's' : 'N/A';
-      const cost = agent.cost ? '$' + agent.cost.toFixed(4) : (issues === 0 ? 'N/A' : '$0.0000');
+      const costValue = agent.cost || 0;
+      // Check for zero cost (including 0, 0.0, 0.00, etc.) or very small values
+      const cost = (costValue === 0 || costValue < 0.0001) ? 'FREE' : '$' + costValue.toFixed(4);
       // BUG #3 FIX: Extract model name from modelUsed object or fallback to direct properties
       let model = 'N/A';
       if (agent.modelUsed) {
@@ -98,7 +101,7 @@ export function generateAnalysisMetadata(
       } else if (agent.modelName) {
         model = agent.modelName;
       }
-      content += `| ${agent.name || agent.agent} | ${agent.filesAnalyzed || agent.files || 'N/A'} | ${issues} | ${time} | ${cost} | ${model} |\n`;
+      content += `| ${agent.name || agent.agent} | ${model} | ${agent.filesAnalyzed || agent.files || 'N/A'} | ${issues} | ${time} | ${cost} |\n`;
     });
   }
 
@@ -235,13 +238,15 @@ export function generateAnalysisMetadata(
 /**
  * Get personalized greeting based on time of day
  */
+/**
+ * Get neutral greeting for reports
+ *
+ * FIXED: Use neutral "Hi" instead of time-based greeting
+ * Rationale: Reports are read at unpredictable times (user may read hours/days later)
+ * User feedback: "Good afternoon is wrong when I read it in the morning"
+ */
 function getPersonalizedGreeting(author?: string): string {
-  if (!author) return 'Hello';
-  
-  const hour = new Date().getHours();
-  if (hour < 12) return 'Good morning';
-  if (hour < 18) return 'Good afternoon';
-  return 'Good evening';
+  return 'Hi';
 }
 
 /**

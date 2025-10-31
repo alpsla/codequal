@@ -1532,11 +1532,15 @@ The risk matrix evaluates issues across categories to identify areas of concern.
   /**
    * Get personalized greeting based on context
    */
+  /**
+   * Get neutral greeting for reports
+   *
+   * FIXED: Use neutral "Hi" instead of time-based greeting
+   * Rationale: Reports are read at unpredictable times (user may read hours/days later)
+   * User feedback: "Good afternoon is wrong when I read it in the morning"
+   */
   private getPersonalizedGreeting(author: string): string {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
+    return 'Hi';
   }
 
   /**
