@@ -9,6 +9,7 @@ import { V9ReportFormatterFinal } from './v9-report-formatter';
 import { V9GroupedReportFormatter } from './v9-grouped-report-formatter';  // Phase B+C: Cost-optimized reports
 import { DynamicModelSelector } from '../services/dynamic-model-selector';
 import { SkillScoreManager } from './v9-skill-score-manager';  // Moved to V9 core
+import { V9CleanupService } from '../services/v9-cleanup-service';  // Automatic cleanup after analysis
 import { logger } from '../utils/logger';
 import { getResilientAIClient } from '../services/resilient-ai-client';
 import { ModelConfigResolver } from '../../standard/orchestrator/model-config-resolver'; // BUG-119 FIX
@@ -44,13 +45,14 @@ export class V9IntegratedAnalyzer {
   private reportFormatter: V9ReportFormatterFinal;
   private groupedFormatter: V9GroupedReportFormatter;  // Phase B+C: Cost-optimized formatter
   private modelSelector: DynamicModelSelector;
+  private cleanupService: V9CleanupService;  // Automatic cleanup service
   private aiClient = getResilientAIClient();
 
   // BUG-119 FIX: Add ModelConfigResolver and repository context
   private modelConfigResolver: ModelConfigResolver;
   private detectedLanguage = 'unknown';
   private detectedRepoSize: 'small' | 'medium' | 'large' | 'enterprise' = 'medium';
-  
+
   // Phase B+C: Report format configuration
   private useGroupedReport = true;  // Default to grouped (99.8% cost savings)
 
@@ -76,6 +78,21 @@ export class V9IntegratedAnalyzer {
     // BUG-119 FIX: Clear cache to force fresh Supabase lookups (removes memorized gemini-2.5-pro)
     this.modelConfigResolver.clearCache();
     logger.info('[BUG-119] Model config cache cleared - will fetch fresh configs from Supabase');
+
+    // Initialize V9CleanupService with configurable delay
+    // Env: V9_CLEANUP_DELAY (seconds, default: 600 = 10 minutes)
+    // Env: V9_CLEANUP_ENABLED (boolean, default: true)
+    const cleanupDelay = parseInt(process.env.V9_CLEANUP_DELAY || '600', 10);
+    const cleanupEnabled = process.env.V9_CLEANUP_ENABLED !== 'false';
+
+    this.cleanupService = new V9CleanupService({
+      cleanupAfterDelivery: cleanupEnabled,
+      cleanupDelaySeconds: cleanupDelay,
+      keepSuccessfulReports: false,  // Clean all reports after delay
+      maxReportAge: 3600  // Also clean reports older than 1 hour
+    });
+
+    logger.info(`[V9-CLEANUP] Cleanup service initialized: enabled=${cleanupEnabled}, delay=${cleanupDelay}s`);
   }
 
   private discoverTeamFromGit(repoPathCandidates: string[] = ['/tmp/kafka-repo']): Array<{ email: string; name?: string; totalPRs?: number }> {
@@ -190,8 +207,28 @@ export class V9IntegratedAnalyzer {
       logger.error(`❌ Analysis failed: ${error.message}`);
       throw error;
     } finally {
-      // Cleanup
+      // Clear Redis cache immediately
       await this.redisManager.clearWorkspaceOutputs(workspace);
+
+      // Schedule background cleanup (non-blocking)
+      // ⏱️ IMPORTANT: Cleanup scheduled AFTER analysis completion (not from start!)
+      // Timeline: Analysis completes → User has V9_CLEANUP_DELAY seconds to download → Cleanup runs
+      // Example: 15min analysis + 10min delay = files available for 25min total from start
+      // Cleanup includes: repository files, report artifacts, IDE fix files, temp directories
+      // Configuration: V9_CLEANUP_DELAY env var (default: 600s = 10 minutes)
+      this.cleanupService.scheduleCleanup(workspace, {
+        // Repository path (workspace-isolated)
+        repository: `/tmp/v9-repos/${workspace}`,
+
+        // Report output directory (workspace-isolated for multi-tenant safety)
+        // Contains: report.md, manifest.json, and all analysis artifacts
+        outputDir: process.cwd() + `/test-outputs/${workspace}`,
+
+        // Temporary working directory (workspace-isolated)
+        tempDir: `/tmp/v9-temp-${workspace}`
+      });
+
+      logger.info(`[V9-CLEANUP] Background cleanup scheduled for workspace: ${workspace}`);
     }
   }
 
