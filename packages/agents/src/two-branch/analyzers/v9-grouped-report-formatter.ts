@@ -3996,8 +3996,10 @@ ${blocking.length > 5 ? `\n... and ${blocking.length - 5} more` : ''}` : '### �
       const highCount = issueFiles.filter(f => f.content.severity === 'high').reduce((sum, f) => sum + (f.content.metadata?.total_occurrences || 0), 0);
       const mediumCount = issueFiles.filter(f => f.content.severity === 'medium').reduce((sum, f) => sum + (f.content.metadata?.total_occurrences || 0), 0);
       const lowCount = issueFiles.filter(f => f.content.severity === 'low').reduce((sum, f) => sum + (f.content.metadata?.total_occurrences || 0), 0);
-      
-      footer += `**Total auto-fixable issues**: ${totalFixable.toLocaleString()}\n`;
+
+      // AUTO-FIX COUNT BUG FIX (2025-10-30): Use autoFixableCount (not totalFixable)
+      // totalFixable includes ALL issues, autoFixableCount includes ONLY auto-fixable ones
+      footer += `**Total auto-fixable issues**: ${autoFixableCount.toLocaleString()}\n`;
       footer += `- 🔴 Critical: ${criticalCount} (embedded, instant access)\n`;
       if (highCount > 0) footer += `- 🟠 High: ${highCount} (lazy loaded after critical)\n`;
       if (mediumCount > 0) footer += `- 🟡 Medium: ${mediumCount} (lazy loaded after high)\n`;
