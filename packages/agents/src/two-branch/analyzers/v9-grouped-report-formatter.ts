@@ -1370,8 +1370,7 @@ ${(() => {
   const autoFixPercent = issues.length > 0 ? Math.round((autoFixableCount / issues.length) * 100) : 0;
   
   if (autoFixableCount > 0) {
-    return `\n> 🚀 **Quick Win**: ${autoFixableCount.toLocaleString()} issues (${autoFixPercent}%) can be automatically fixed using IDE tools!
-> ⚠️  **Note**: While all issues have automated fixes available, we recommend manually reviewing critical (${issues.filter(i => i.severity === 'critical').length}) and high (${issues.filter(i => i.severity === 'high').length}) severity issues before applying fixes.\n`;
+    return `\n> 🚀 **Quick Win**: ${autoFixableCount.toLocaleString()} issues (${autoFixPercent}%) can be automatically fixed using the attached manifest file!\n`;
   }
   return '';
 })()}
