@@ -89,7 +89,7 @@ async function main() {
     console.log(`Testing Key #${i + 1}...`);
     const result = await testKey(keys[i], i + 1);
     results.push(result);
-    console.log(`  ${result.keyPreview}`);
+    // Security: Don't log key preview to avoid exposing sensitive data
     console.log(`  ${result.message}\n`);
 
     // Small delay to avoid rate limiting
