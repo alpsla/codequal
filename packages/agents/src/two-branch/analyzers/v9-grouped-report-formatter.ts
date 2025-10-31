@@ -3919,14 +3919,14 @@ ${blocking.length > 5 ? `\n... and ${blocking.length - 5} more` : ''}` : '### âœ
   
   /**
    * Get personalized greeting
+   *
+   * GREETING FIX (2025-10-30): Use time-neutral greeting
+   * User feedback: "We don't know when user reads the report"
+   * Changed from time-based (Good morning/afternoon/evening) to simple "Hi"
    */
   private getPersonalizedGreeting(author?: string): string {
-    if (!author) return 'Hello';
-    
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 18) return 'Good afternoon';
-    return 'Good evening';
+    // Always use time-neutral greeting (user may read report hours/days later)
+    return 'Hi';
   }
   
   /**
