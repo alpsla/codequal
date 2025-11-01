@@ -38,6 +38,8 @@ interface FixSuggestion {
     impact: string;      // Impact if not fixed (2-3 sentences with business/security context)
   };
   bestPractices?: string[];
+  // BUG #6 FIX: Track which model was used for generating this fix
+  model?: string;
 }
 
 /**
@@ -113,7 +115,11 @@ abstract class BaseSpecializedAgent {
 
       // BUG-76 FIX: Clean <think> tags and AI reasoning BEFORE parsing
       const cleanedResponse = this.cleanAIContent(response.content);
-      return this.parseAIResponse(cleanedResponse, issue);
+      const result = this.parseAIResponse(cleanedResponse, issue);
+
+      // BUG #6 FIX: Add model information to fix suggestion
+      result.model = modelToUse;
+      return result;
 
     } catch (error: any) {
       // Under strict mode, surface the failure to abort the flow
@@ -122,7 +128,9 @@ abstract class BaseSpecializedAgent {
         throw error;
       }
       console.error(`[${this.agentRole}] Error generating fix, using fallback:`, error.message);
-      return this.getDefaultFix(issue);
+      const fallbackFix = this.getDefaultFix(issue);
+      fallbackFix.model = 'fallback';  // BUG #6 FIX: Mark fallback fixes
+      return fallbackFix;
     }
   }
 

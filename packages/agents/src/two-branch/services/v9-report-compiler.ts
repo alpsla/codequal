@@ -237,16 +237,21 @@ export async function compileV9Report(
 
   // Enrich issues with AI-generated descriptions and fixes
   let enrichedIssues = issuesForEnrichment;
+  let modelsByAgent: Record<string, string> = {}; // BUG #6 FIX: Track models by agent
   try {
     if (modelConfigResolver) {
-      enrichedIssues = await enrichIssuesWithAI(
+      // BUG #6 FIX: Destructure to get both enriched issues and model tracking
+      const result = await enrichIssuesWithAI(
         issuesForEnrichment,
         issueGroups.groups,
         modelConfigResolver,
         detectedLanguage,
         detectedRepoSize
       );
+      enrichedIssues = result.enrichedIssues;
+      modelsByAgent = result.modelsByAgent;
       console.log(`[AI Enrichment Pipeline] ✅ AI enrichment completed successfully`);
+      console.log(`[BUG #6] Models by agent:`, JSON.stringify(modelsByAgent));
     } else {
       console.error(`[AI Enrichment Pipeline] 🚨 CRITICAL: modelConfigResolver is null - AI enrichment SKIPPED`);
       console.error(`[AI Enrichment Pipeline] 🚨 This is a P0 issue - reports will use fallback descriptions only`);
@@ -292,8 +297,12 @@ export async function compileV9Report(
         metrics.totalTime += Date.now() - agentStartTime;
         metrics.tokensUsed += 500;
         metrics.cost += 0.001;
-        
-        if (!metrics.modelUsed && modelConfigResolver) {
+
+        // BUG #6 FIX: Use tracked model from AI enrichment instead of async lookup
+        if (!metrics.modelUsed && modelsByAgent[agentType]) {
+          metrics.modelUsed = modelsByAgent[agentType];
+          console.log(`[BUG #6] Set model for ${agentType}: ${metrics.modelUsed}`);
+        } else if (!metrics.modelUsed && modelConfigResolver) {
           try {
             const role = mapAgentToRole(agentType);
             const cfg = await modelConfigResolver.getModelConfiguration(

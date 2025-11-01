@@ -303,11 +303,13 @@ export class V9GroupedReportFormatter {
    * BUG-76: Enrich issues with AI-generated fix suggestions
    * Strategy: 1 AI call per group (cost-optimized)
    * Cost: ~600 tokens per group = $0.0003 per group
+   *
+   * BUG #6 FIX: Now returns both enriched issues AND model tracking
    */
   private async enrichIssuesWithAI(
     issues: EnrichedIssue[],
     groups: IssueGroup[]
-  ): Promise<EnrichedIssue[]> {
+  ): Promise<{ enrichedIssues: EnrichedIssue[]; modelsByAgent: Record<string, string> }> {
     return enrichIssuesWithAI(
       issues,
       groups,
@@ -384,7 +386,28 @@ export class V9GroupedReportFormatter {
     // Cost: ~600 tokens per group = ~$0.0003 per group = ~$0.009 per PR (was ~$0.011 before)
 
     // BUG-76: AI-enrich issues (includes severity classification + fix generation in 1 call)
-    const enrichedIssues = await this.enrichIssuesWithAI(issues, groups);
+    // BUG #6 FIX: Destructure to get both enriched issues AND model tracking
+    const { enrichedIssues, modelsByAgent } = await this.enrichIssuesWithAI(issues, groups);
+
+    // BUG #6 FIX: Enhance agentPerformance metadata with model information
+    if (metadata.agentPerformance && Array.isArray(metadata.agentPerformance)) {
+      console.log('[BUG #6] Enhancing agentPerformance with model information...');
+      console.log('[BUG #6] Models by agent:', JSON.stringify(modelsByAgent));
+
+      metadata.agentPerformance.forEach((agent: any) => {
+        // Extract agent category from name (e.g., "Security Agent" → "Security")
+        const agentName = agent.name || '';
+        const agentCategory = agentName.replace(' Agent', '').trim();
+
+        // Look up model for this agent category
+        if (modelsByAgent[agentCategory]) {
+          agent.model = modelsByAgent[agentCategory];
+          console.log(`[BUG #6] ✅ Set model for ${agentName}: ${agent.model}`);
+        } else {
+          console.log(`[BUG #6] ⚠️  No model found for ${agentName} (category: ${agentCategory})`);
+        }
+      });
+    }
 
     // Update group severities based on AI-classified issues
     // After AI classification updates individual issue severities, we need to update
