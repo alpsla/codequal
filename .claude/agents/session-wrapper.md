@@ -277,8 +277,8 @@ When updating QUICK_START_NEXT_SESSION.md for V9:
 ## 🚀 IMMEDIATE START COMMANDS (UPDATED)
 
 \```bash
-# 1. Navigate to project root
-cd /Users/alpinro/Code\ Prjects/codequal
+# 1. Ensure you're in project root (${CODEQUAL_ROOT} or /home/user/codequal)
+# If not, navigate there first
 
 # 2. ALWAYS verify system status first
 node test-v9-simple-verification.js

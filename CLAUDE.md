@@ -2,22 +2,30 @@
 
 This file provides comprehensive guidance to Claude Code when working with the CodeQual codebase.
 
-## 🚨 MANDATORY: V9 CANONICAL ARCHITECTURE
+## 🚨 MANDATORY: V9 PRODUCTION ARCHITECTURE (Current Version)
 
-**⚠️ STOP! Before doing ANYTHING with V9:**
+**⚠️ CRITICAL: V9 is the ONLY production-ready architecture - V8 and V7 are DEPRECATED**
+
+**Before doing ANYTHING with PR analysis:**
 1. **FIRST READ:** `packages/agents/src/two-branch/docs/next/V9_CRITICAL_KNOWLEDGE_BASE.md` - Contains ALL critical V9 facts, terminology, and recent fixes
-2. **THEN READ:** `/V9-SYSTEM-OVERVIEW.md` - Complete system overview
+2. **THEN READ:** `V9-SYSTEM-OVERVIEW.md` - Complete system overview
+3. **THEN READ:** `packages/agents/V9_PRODUCTION_ARCHITECTURE.md` - Production service architecture
 
-The V9 infrastructure is ALREADY BUILT. Do NOT recreate:
-- Tool execution logic → use `V9ToolOrchestrator`
-- Repository management → use `V9RepositoryManager`
-- File selection → use `SmartFileSelector`
-- Container images → use `analyzer:lang-*` from our registry
-- Caching → use existing Redis infrastructure
+### V9 Production Service (October 2025)
+The V9 infrastructure is COMPLETE and production-ready. Use these components:
+- **PR Analyzer Service:** `V9PRAnalyzer` in `src/two-branch/services/v9-pr-analyzer.ts`
+- **Main Test:** `test-v9-e2e-complete.ts` (Grade: A+, 9/9 success criteria)
+- **API Endpoint:** `src/two-branch/api/analyze-pr-endpoint.ts`
+- **Repository Management:** `V9RepositoryManager`
+- **File Selection:** `SmartFileSelector`
+- **Tool Orchestration:** `V9ToolOrchestrator`
+- **Container Images:** `analyzer:lang-*` from our registry
+- **Caching:** Existing Redis infrastructure
 
 **CRITICAL**: ALL PR analysis MUST follow the V9 Canonical Architecture documented in:
-- `packages/agents/src/two-branch/docs/next/V9_CRITICAL_KNOWLEDGE_BASE.md` - **START HERE** - Critical facts and common misconceptions
-- `/V9-SYSTEM-OVERVIEW.md` - Complete system overview
+- `packages/agents/src/two-branch/docs/next/V9_CRITICAL_KNOWLEDGE_BASE.md` - **START HERE** - Critical facts and recent changes
+- `V9-SYSTEM-OVERVIEW.md` - Complete system overview
+- `packages/agents/V9_PRODUCTION_ARCHITECTURE.md` - Service architecture guide
 - `packages/agents/V9_CANONICAL_ARCHITECTURE.md` - The ONLY approved flow
 - `packages/agents/DEPRECATED_FLOWS_DO_NOT_USE.md` - Patterns to AVOID
 
@@ -673,45 +681,311 @@ npm run lint:fix
 - **Test your code** - No feature is complete without tests
 - **Check Redis connection** before running cache-dependent features
 - **Validate environment variables** on application startup
-- **USE V8 REPORT GENERATOR ONLY** - V7 is deprecated, see `docs/DEPRECATED_V7_WARNING.md`
-- **Reference test-v8-final.ts** as the working implementation for reports
-- **Check docs/CODE_HEALTH_STATUS.md** before using any code to verify it's not deprecated
+- **USE V9 PRODUCTION ARCHITECTURE ONLY** - V8 and V7 are deprecated
+- **Reference test-v9-e2e-complete.ts** as the production test implementation
+- **Use V9PRAnalyzer service** for all PR analysis workflows
+- **Check V9_CRITICAL_KNOWLEDGE_BASE.md** for the latest V9 updates and fixes
 
 ## 🔍 Search Command Requirements
 
-**CRITICAL**: Always use the Grep tool or `rg` (ripgrep) instead of traditional `grep` and `find` commands:
+**CRITICAL**: Use the right tool for the job:
+
+### Direct Tools (Quick, Specific Searches)
+Use these when you know EXACTLY what you're looking for:
+- **Grep tool**: When you know the exact pattern/keyword to search for
+- **Glob tool**: When you know the file name pattern
+- **Read tool**: When you know the exact file path
+
+Always use the Grep tool or `rg` (ripgrep) instead of traditional `grep` and `find` commands:
 
 ```bash
 # ❌ Don't use grep
 grep -r "pattern" .
 
-# ✅ Use rg instead
+# ✅ Use Grep tool or rg instead
 rg "pattern"
 
 # ❌ Don't use find with name
 find . -name "*.ts"
 
-# ✅ Use rg with file filtering
+# ✅ Use Glob tool or rg with file filtering
 rg --files -g "*.ts"
 ```
 
+### Explore Agent (Complex, Multi-Step Searches)
+Use the **Explore agent** when:
+- Answering "how does X work?" questions
+- Finding implementation patterns across codebase
+- Discovering architecture/data flow
+- Multiple search attempts expected
+- Need context from multiple files
+- Understanding relationships between components
+
+**Examples:**
+```bash
+# ❌ Don't manually run multiple Grep/Glob commands for exploratory questions
+# "Where are client errors handled?"
+# "How does authentication work in this codebase?"
+
+# ✅ Use Explore agent instead
+# Specify thoroughness: "quick" | "medium" | "very thorough"
+```
+
+**Explore Agent Thoroughness Levels:**
+- **quick**: Basic searches, single pattern (< 30 seconds)
+- **medium**: Moderate exploration, 2-3 search rounds (< 2 minutes)
+- **very thorough**: Comprehensive analysis, multiple locations and patterns (< 5 minutes)
+
 ## 📊 Report Generation Testing
 
-### Verified Working Test
-The ONLY verified working implementation for V8 reports:
+### V9 Production Testing (Current)
+The ONLY verified working implementation for V9 PR analysis:
+
+**Main Production Test:**
 ```bash
-cd /Users/alpinro/Code\ Prjects/codequal/packages/agents
-npx ts-node test-v8-final.ts
+# From project root
+cd packages/agents
+npx ts-node test-v9-e2e-complete.ts
+```
+
+**Test Results (Spring PetClinic PR #950):**
+- Grade: A+ (9/9 success criteria)
+- Duration: 2m 35s
+- Cost: $0.07
+- Auto-fix Coverage: 100% (1,204/1,209 issues)
+
+**Production Service Usage:**
+```typescript
+import { V9PRAnalyzer } from './src/two-branch/services/v9-pr-analyzer';
+
+const analyzer = new V9PRAnalyzer();
+
+const result = await analyzer.analyzePR({
+  repositoryUrl: 'https://github.com/owner/repo.git',
+  prNumber: 123,
+  language: 'java',  // or 'typescript', 'python', 'go'
+  analysisMode: 'complete'
+});
+
+console.log(result.decision);        // 'APPROVED' | 'DECLINED'
+console.log(result.report.markdown); // Full 34-section report
 ```
 
 ### Testing with Real PRs
 ```bash
+# From packages/agents directory
+cd packages/agents
+
+# Manual PR validation
 npx ts-node src/standard/tests/regression/manual-pr-validator.ts <PR_URL>
+
+# With specific language
+USE_LANGUAGE=java npx ts-node test-v9-e2e-complete.ts
 ```
 
 ### Important Testing Notes
-- **Reference test-v8-final.ts** for correct data structures
-- **V7 generators are deprecated** - Do not use or fix them
+- **Reference test-v9-e2e-complete.ts** for production implementation
+- **Use V9PRAnalyzer service** for all new code
+- **V8 and V7 are deprecated** - Do not use or reference them
+- **Check V9_CRITICAL_KNOWLEDGE_BASE.md** before starting work
+
+## 🤖 Claude Code CLI Agents & Autonomous Workflows
+
+### Specialized Agents Available
+
+Claude Code provides specialized agents for complex workflows. These agents run autonomously and handle multi-step tasks:
+
+#### **Project-Specific Agents** (in `.claude/agents/`)
+1. **codequal-session-starter** (Model: Opus)
+   - Prepares development environment
+   - Checks Redis, services, build status
+   - Loads previous session context
+   - Provides copy-paste ready commands
+   - **Use when**: Starting any CodeQual work session
+
+2. **smart-commit-manager**
+   - Comprehensive change detection (staged, unstaged, untracked)
+   - Identifies temporary files and dead code
+   - Resolves competing implementations
+   - Creates atomic, well-structured commits
+   - **Use when**: Ready to commit complex multi-file changes
+
+3. **bug-tracker**
+   - Creates formatted bug reports with IDs
+   - Updates production-ready-state-test.ts
+   - Optional GitHub issue creation
+   - Tracks bug lifecycle
+   - **Use when**: Discovering issues that need formal tracking
+
+4. **test-coverage-generator**
+   - Generates unit tests, integration tests, edge cases
+   - Creates security-focused test scenarios
+   - Covers error handling and boundaries
+   - **Use when**: After implementing features or before PRs
+
+5. **build-ci-fixer**
+   - Fixes build failures, ESLint violations
+   - Resolves failing tests and CI pipeline issues
+   - **Use when**: CI/CD pipeline failures occur
+
+6. **progress-doc-manager**
+   - Updates session summaries and architecture docs
+   - Maintains implementation plans
+   - **Use when**: After code commits or at session end
+
+7. **session-wrapper**
+   - Wraps up coding sessions
+   - Fixes issues, creates commits, updates docs
+   - Preserves state for next session
+   - **Use when**: Ending a development session
+
+#### **Built-in Agents**
+- **Explore**: Fast codebase exploration (specify thoroughness: quick/medium/very thorough)
+- **general-purpose**: Complex multi-step tasks and code searching
+
+### When to Use Agents vs Direct Tools
+
+**Use Direct Tools when:**
+- Reading specific known files
+- Searching for exact patterns/classes
+- Single-step operations
+- Quick, targeted actions
+
+**Use Agents when:**
+- Multi-step complex workflows
+- Exploratory questions ("how does X work?")
+- Need autonomous decision-making
+- Multiple rounds of analysis required
+
+### Running Agents in Parallel
+
+Launch multiple independent agents simultaneously for maximum efficiency:
+
+```typescript
+// Example: Explore codebase + Generate tests + Update docs in parallel
+// Send all Task tool calls in a single message
+```
+
+## 📋 Task Planning & Tracking with TodoWrite
+
+### When to Use TodoWrite
+
+For complex tasks (3+ steps), use TodoWrite to:
+- Break down work into trackable items
+- Give visibility into progress
+- Ensure no steps are forgotten
+- Track blocking issues
+
+**Always use TodoWrite for:**
+- Complex multi-file implementations
+- Debugging sessions with multiple fixes
+- Feature additions requiring testing + documentation
+- Refactoring with verification steps
+- Any task with 3 or more distinct steps
+
+### TodoWrite Best Practices
+
+```typescript
+// 1. Create todos at task start with both forms
+{
+  content: "Run the build",           // Imperative form
+  activeForm: "Running the build",    // Present continuous
+  status: "pending"
+}
+
+// 2. Only ONE task in_progress at a time
+// 3. Mark completed IMMEDIATELY after finishing (don't batch)
+// 4. Update status in real-time as you work
+```
+
+**Task States:**
+- `pending`: Not yet started
+- `in_progress`: Currently working (ONLY ONE at a time)
+- `completed`: Finished successfully
+
+**Important:**
+- Mark tasks completed immediately, don't batch up multiple tasks
+- If blocked/errors occur, keep as in_progress and create new task for resolution
+- Never mark partial work as completed
+
+## ⚡ Performance: Parallel Tool Execution
+
+Claude Code can execute multiple independent operations simultaneously:
+
+### When to Use Parallel Execution
+- Multiple file reads that don't depend on each other
+- Independent git commands (status, log, diff)
+- Running tests while checking build status
+- Multiple agent launches for different tasks
+- Searching multiple patterns simultaneously
+
+### Pattern Examples
+```typescript
+// ✅ Parallel - All at once (no dependencies)
+Read('file1.ts'), Read('file2.ts'), Read('file3.ts')
+Grep('pattern1'), Grep('pattern2'), Grep('pattern3')
+git status && git log && git diff (in single Bash call)
+
+// ✅ Sequential - When dependent
+Read('config.ts') → parse config → then Read(configuredFile)
+Write('file.ts') → then git add → then git commit
+
+// ❌ Don't use placeholders for missing values
+// Wait for previous results before calling dependent tools
+```
+
+### Agent Parallelization
+```bash
+# Launch multiple agents simultaneously in a single message
+# Example: Explore + TestCoverage + DocumentationUpdate
+# Results come back individually as each completes
+```
+
+## 🌐 Web Research Capabilities
+
+### WebSearch
+- Search for latest documentation, libraries, solutions
+- Check current best practices (account for current date)
+- Find GitHub repos, Stack Overflow answers
+- Research APIs, frameworks, tools
+
+### WebFetch
+- Retrieve and analyze web content
+- Read documentation pages (converts HTML to markdown)
+- Parse GitHub issues/PRs
+- Extract specific information from URLs
+
+**Note:** Always prefer MCP web tools (mcp__*) if available, as they may have fewer restrictions.
+
+## 🔄 Background Processes
+
+### Long-Running Commands
+
+For commands that take >2 minutes, use background execution:
+
+```bash
+# Run in background
+Bash(command, { run_in_background: true }) → returns shell_id
+
+# Monitor output periodically
+BashOutput(shell_id) → check progress
+
+# Kill if needed
+KillShell(shell_id)
+```
+
+**Use Cases:**
+- Long-running tests (> 2 minutes)
+- Build processes
+- Docker container startup
+- Database migrations
+- Port forwarding (keep alive)
+- Development servers
+
+**Benefits:**
+- Continue working while command runs
+- No timeout issues for long operations
+- Monitor progress incrementally
 
 ## 🐛 Known Issues and Debugging
 
