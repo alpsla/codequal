@@ -43,3 +43,6 @@ user-reports-validation/
 # Oracle test scripts (may contain IPs/keys)
 oracle-*.sh
 
+user-reports/
+test-results/
+*.log
