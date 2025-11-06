@@ -192,8 +192,10 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
     console.log('\n💰 Step 5: Grouping issues for cost optimization...');
 
     // Helper function to detect issue category from tool/rule
+    // BUG FIX: dependency-check should be 'Dependencies', not 'Security'
     const detectIssueCategory = (tool: string, rule: string | null | undefined): string => {
-      if (tool === 'semgrep' || tool === 'dependency-check') return 'Security';
+      if (tool === 'semgrep') return 'Security';
+      if (tool === 'dependency-check') return 'Dependencies';  // FIX: Was incorrectly categorized as 'Security'
       if (tool === 'spotbugs' && rule && typeof rule === 'string' && rule.toLowerCase().includes('performance')) return 'Performance';
       if (tool === 'checkstyle' || tool === 'pmd') return 'Code Quality';
       return 'Code Quality';
