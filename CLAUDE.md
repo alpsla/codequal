@@ -4,7 +4,7 @@ This file provides comprehensive guidance to Claude Code when working with the C
 
 ## 🚨 MANDATORY: V9 PRODUCTION ARCHITECTURE (Current Version)
 
-**⚠️ CRITICAL: V9 is the ONLY production-ready architecture - V8 and V7 are DEPRECATED**
+**⚠️ CRITICAL: V9 is the ONLY production-ready architecture**
 
 **Before doing ANYTHING with PR analysis:**
 1. **FIRST READ:** `packages/agents/src/two-branch/docs/next/V9_CRITICAL_KNOWLEDGE_BASE.md` - Contains ALL critical V9 facts, terminology, and recent fixes
@@ -34,7 +34,7 @@ The V9 infrastructure is COMPLETE and production-ready. Use these components:
 2. **Smart File Selection**: < 10k files = 100% coverage, > 10k = smart selection of ~500 files
 3. **Tool Containers**: `analyzer:lang-java-v5.1`, `analyzer:lang-python-v4.3`, etc. in our registry
 4. **Kubernetes Setup**: PVC `codequal-workspace`, namespace `codequal-dev`
-5. **Working Test**: `packages/agents/test-v8-final.ts` - reference implementation
+5. **Working Tests**: `packages/agents/test-v9-lite-e2e.ts`, `test-v9-e2e-complete.ts` - reference implementations
 
 ### V9 Flow Requirements (MANDATORY)
 1. **Tool Execution**: Always run on BOTH branches (main + PR)
@@ -681,8 +681,8 @@ npm run lint:fix
 - **Test your code** - No feature is complete without tests
 - **Check Redis connection** before running cache-dependent features
 - **Validate environment variables** on application startup
-- **USE V9 PRODUCTION ARCHITECTURE ONLY** - V8 and V7 are deprecated
-- **Reference test-v9-e2e-complete.ts** as the production test implementation
+- **USE V9 PRODUCTION ARCHITECTURE ONLY**
+- **Reference test-v9-lite-e2e.ts and test-v9-e2e-complete.ts** as production test implementations
 - **Use V9PRAnalyzer service** for all PR analysis workflows
 - **Check V9_CRITICAL_KNOWLEDGE_BASE.md** for the latest V9 updates and fixes
 
@@ -784,9 +784,8 @@ USE_LANGUAGE=java npx ts-node test-v9-e2e-complete.ts
 ```
 
 ### Important Testing Notes
-- **Reference test-v9-e2e-complete.ts** for production implementation
+- **Reference test-v9-lite-e2e.ts and test-v9-e2e-complete.ts** for production implementations
 - **Use V9PRAnalyzer service** for all new code
-- **V8 and V7 are deprecated** - Do not use or reference them
 - **Check V9_CRITICAL_KNOWLEDGE_BASE.md** before starting work
 
 ## 🤖 Claude Code CLI Agents & Autonomous Workflows

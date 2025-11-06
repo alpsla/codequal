@@ -78,12 +78,6 @@ export const openapiSpecification = {
             options: {
               type: 'object',
               properties: {
-                depth: {
-                  type: 'string',
-                  enum: ['basic', 'standard', 'comprehensive'],
-                  default: 'standard',
-                  description: 'Analysis depth level'
-                },
                 includeTests: {
                   type: 'boolean',
                   default: true,
@@ -98,6 +92,14 @@ export const openapiSpecification = {
                   type: 'boolean',
                   default: true,
                   description: 'Include performance impact analysis'
+                },
+                languages: {
+                  type: 'array',
+                  items: {
+                    type: 'string',
+                    enum: ['java', 'python', 'javascript', 'typescript', 'go', 'rust', 'ruby', 'php', 'csharp', 'kotlin', 'swift']
+                  },
+                  description: 'Specific languages to analyze (auto-detected if not specified)'
                 }
               }
             }
@@ -655,9 +657,12 @@ export const openapiSpecification = {
                     type: 'string',
                     format: 'uri'
                   },
-                  type: {
-                    type: 'string',
-                    enum: ['quick', 'comprehensive', 'deep']
+                  languages: {
+                    type: 'array',
+                    items: {
+                      type: 'string'
+                    },
+                    description: 'Languages being analyzed'
                   },
                   sizeMB: {
                     type: 'number',

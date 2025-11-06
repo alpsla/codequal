@@ -1,13 +1,13 @@
 # Project Cleanup Documentation
 
-**Period**: November 4, 2025
-**Status**: ✅ Complete (Phases 2A-2E, Phase 3)
+**Period**: November 4-5, 2025
+**Status**: ✅ Complete (Phases 2A-2F, Phase 3)
 
 ---
 
 ## 📋 Overview
 
-This directory contains comprehensive documentation for the project cleanup initiative, which removed obsolete code, archives, scripts, organized documentation for RAG chatbot optimization, and is organizing configuration files for better maintainability.
+This directory contains comprehensive documentation for the project cleanup initiative, which removed obsolete code, archives, scripts, organized documentation for RAG chatbot optimization, and organized configuration files for better maintainability.
 
 ---
 
@@ -20,7 +20,8 @@ This directory contains comprehensive documentation for the project cleanup init
 | **2C** | Obsolete scripts | 57 deleted | ~400 KB | ✅ Complete |
 | **2D** | Documentation organization | 1 deleted + 3 dirs merged | Minor | ✅ Complete |
 | **2E** | Root directory cleanup | 48 deleted + 38 organized | ~200 KB | ✅ Complete |
-| **Phase 2 Total** | **Complete cleanup** | **2,876 deleted** | **~31 MB** | ✅ Complete |
+| **2F** | Documentation subdirectories cleanup | 46 deleted + 3 dirs removed | ~180 KB | ✅ Complete |
+| **Phase 2 Total** | **Complete cleanup** | **2,922 deleted + 3 moved** | **~31.5 MB** | ✅ Complete |
 | **3** | Configuration organization | 7 files moved | 0 (reorganization) | ✅ Complete |
 
 ---
@@ -134,6 +135,41 @@ This directory contains comprehensive documentation for the project cleanup init
 
 ---
 
+### Phase 2F: Documentation Subdirectories Cleanup
+**Date**: November 5, 2025
+**Focus**: Systematic cleanup of 20 docs/ subdirectories
+**Results**: 46 files + 3 directories deleted, ~180 KB freed
+
+**Directories Deleted** (3 directories, 17 files):
+- ✅ docs/hardware/ (8 files) - DigitalOcean registry references (migrated to Oracle OCIR)
+- ✅ docs/maintenance/ (1 file) - DeepWiki maintenance guide (framework dropped)
+- ✅ docs/migration/ (8 files) - ARM migration docs with outdated registry paths
+
+**Individual Files Deleted** (29 files):
+- ✅ docs/api/ (4 files) - Test outputs, one-time fixes, DeepWiki references
+- ✅ docs/architecture/ (16 files) - V3/V5 architecture, DeepWiki components
+- ✅ docs/development/ (2 files) - Redundant module resolution docs
+- ✅ docs/implementation-guides/ (2 files) - Non-existent ReporterAgent, test summaries
+- ✅ docs/monitoring/ (3 files) - DeepWiki dashboards
+- ✅ docs/research/ (2 files) - DeepWiki research prompts
+
+**What Was Kept**:
+- ✅ Current V9/V4 architecture (Oct 25, 2025)
+- ✅ Active implementation guides (educational-agent, process-tools)
+- ✅ Marketing materials (updated Nov 5, 2025)
+- ✅ Security documentation
+- ✅ Planned functionality (GitLab OAuth)
+- ✅ Current monitoring (model-selection)
+
+**Cleanup Rationale**:
+- Superseded architecture versions removed
+- DeepWiki framework completely removed
+- DigitalOcean infrastructure docs removed (migrated to Oracle OCIR)
+- One-time setup/migration scripts removed
+- Redundant documentation consolidated
+
+---
+
 ### Phase 2: Initial Analysis
 **File**: [`PHASE_2_CLEANUP_ANALYSIS.md`](PHASE_2_CLEANUP_ANALYSIS.md)
 **Purpose**: Initial cleanup roadmap and analysis
@@ -194,16 +230,16 @@ This directory contains comprehensive documentation for the project cleanup init
 - ✅ **RAG-optimized docs** (Phase 2B + 2D organization)
 
 ### Code Quality
-- ✅ **2,826 files deleted** (~30 MB freed)
+- ✅ **2,922 files deleted** (~31.5 MB freed)
 - ✅ **Clean repository structure** (no confusing archives)
 - ✅ **Clear infrastructure focus** (Oracle only)
 - ✅ **Improved maintainability** (organized documentation)
 
 ### Documentation Quality
-- ✅ **RAG chatbot ready** (37 core docs + 35 subdirectories)
+- ✅ **RAG chatbot ready** (clean docs structure)
 - ✅ **Organized by category** (cleanup, security, architecture)
 - ✅ **Easy navigation** (README indexes)
-- ✅ **Zero noise** (no old archives, duplicates removed)
+- ✅ **Zero noise** (no DeepWiki, no DigitalOcean, no superseded architecture)
 
 ---
 
@@ -285,15 +321,16 @@ All major cleanup objectives achieved:
 | `54c0d2ce` | Phase 2C: Scripts cleanup | 57 deleted |
 | `6dde9f04` | Phase 2D: Documentation organization | 3 deleted, 3 dirs merged |
 | `5b2d533c` | Phase 2E: Root directory cleanup | 98 files (48 deleted + 38 organized) |
-| (pending) | Phase 3: Configuration organization | 7 files moved |
+| `57e08573` | Phase 2F: Documentation subdirectories cleanup | 46 deleted + 3 dirs removed |
+| `19e6f156` | Phase 3: Configuration organization | 7 files moved |
 
 ---
 
-**Total Time**: ~4.5 hours across all phases
+**Total Time**: ~6 hours across all phases (Nov 4-5, 2025)
 **Risk Level**: ZERO (all git-tracked, easy rollback)
 **Status**: ✅ **ALL CLEANUP PHASES COMPLETE**
 
 ---
 
-_Phase 2 Cleanup Initiative - November 4, 2025_
+_Phase 2 Cleanup Initiative - November 4-5, 2025_
 _Organized by Claude Code for RAG Chatbot Optimization_
