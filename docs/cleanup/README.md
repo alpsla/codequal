@@ -1,7 +1,7 @@
 # Project Cleanup Documentation
 
 **Period**: November 4-5, 2025
-**Status**: ✅ Complete (Phases 2A-2F, 2H, Phase 3)
+**Status**: ✅ Complete (Phases 2A-2H, Phase 3)
 
 ---
 
@@ -21,8 +21,9 @@ This directory contains comprehensive documentation for the project cleanup init
 | **2D** | Documentation organization | 1 deleted + 3 dirs merged | Minor | ✅ Complete |
 | **2E** | Root directory cleanup | 48 deleted + 38 organized | ~200 KB | ✅ Complete |
 | **2F** | Documentation subdirectories cleanup | 46 deleted + 3 dirs removed | ~180 KB | ✅ Complete |
+| **2G** | Documentation root files cleanup | 17 deleted | ~250 KB | ✅ Complete |
 | **2H** | Standard directory cleanup | 105 deleted | ~2.65 MB | ✅ Complete |
-| **Phase 2 Total** | **Complete cleanup** | **3,027 deleted + 3 moved** | **~34.15 MB** | ✅ Complete |
+| **Phase 2 Total** | **Complete cleanup** | **3,044 deleted + 3 moved** | **~34.4 MB** | ✅ Complete |
 | **3** | Configuration organization | 7 files moved | 0 (reorganization) | ✅ Complete |
 
 ---
@@ -171,6 +172,20 @@ This directory contains comprehensive documentation for the project cleanup init
 
 ---
 
+### Phase 2G: Documentation Root Files Cleanup
+**Date**: November 5, 2025
+**Focus**: Cleaned up obsolete documentation files from /docs root directory
+**Results**: 17 files deleted, ~250 KB freed
+
+**What Was Deleted**:
+- ✅ DeepWiki-related docs (10 files) - Framework dropped
+- ✅ Session summaries (3 files) - Historical only
+- ✅ One-time implementation summaries (4 files) - Superseded
+
+**Files Kept**: 14 current documentation files (production flow, API docs, testing guides)
+
+---
+
 ### Phase 2H: Standard Directory Cleanup
 **Files**:
 - [`PHASE_2H_SCRIPTS_AND_DUPLICATION_CLEANUP.md`](PHASE_2H_SCRIPTS_AND_DUPLICATION_CLEANUP.md) - Complete cleanup results
@@ -272,7 +287,7 @@ This directory contains comprehensive documentation for the project cleanup init
 - ✅ **RAG-optimized docs** (Phase 2B + 2D organization)
 
 ### Code Quality
-- ✅ **3,027 files deleted** (~34.15 MB freed)
+- ✅ **3,044 files deleted** (~34.4 MB freed)
 - ✅ **Zero duplication** (fix-suggestion, update scripts)
 - ✅ **Clean repository structure** (no confusing archives)
 - ✅ **Clear infrastructure focus** (Oracle only)
@@ -365,14 +380,15 @@ All major cleanup objectives achieved:
 | `6dde9f04` | Phase 2D: Documentation organization | 3 deleted, 3 dirs merged |
 | `5b2d533c` | Phase 2E: Root directory cleanup | 98 files (48 deleted + 38 organized) |
 | `57e08573` | Phase 2F: Documentation subdirectories cleanup | 46 deleted + 3 dirs removed |
+| `347b4aef` | Phase 2G: Documentation root files cleanup | 17 deleted |
 | `87080556` | Phase 2H-1: Standard directory cleanup | 93 files deleted |
 | `66001073` | Phase 2H-2: Scripts duplication cleanup | 12 files deleted |
 | `19e6f156` | Phase 3: Configuration organization | 7 files moved |
 
 ---
 
-**Total Time**: ~7 hours across all phases (Nov 4-5, 2025)
-**Risk Level**: ZERO (all git-tracked, easy rollback)
+**Total Time**: ~8 hours across all phases (Nov 4-5, 2025)
+**Risk Level**: ZERO (all git-tracked, dependency-verified, easy rollback)
 **Status**: ✅ **ALL CLEANUP PHASES COMPLETE (2A-2H + Phase 3)**
 
 ---
