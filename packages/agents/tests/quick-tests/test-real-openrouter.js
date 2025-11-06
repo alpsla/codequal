@@ -17,13 +17,14 @@ async function testOpenRouterAPI() {
   console.log('=' .repeat(60));
   
   const apiKey = process.env.OPENROUTER_API_KEY;
-  
+
   if (!apiKey) {
     console.error('❌ OPENROUTER_API_KEY not set in .env');
     process.exit(1);
   }
-  
-  console.log(`✅ API Key found: ${apiKey.substring(0, 10)}...${apiKey.substring(apiKey.length - 4)}`);
+
+  console.log('✅ API Key found');
+  // Security: Removed API key logging to prevent information leakage
   
   // Step 1: Check current balance
   console.log('\n1️⃣ Checking current balance...');

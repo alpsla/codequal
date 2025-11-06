@@ -4,8 +4,7 @@ require('dotenv').config();
 const apiKey = process.env.OPENROUTER_API_KEY;
 
 console.log('API Key present:', !!apiKey);
-console.log('API Key prefix:', apiKey?.substring(0, 10) + '...');
-console.log('API Key length:', apiKey?.length);
+// Security: Removed API key logging to prevent information leakage
 
 const openRouter = new OpenAI({
   apiKey: apiKey,
