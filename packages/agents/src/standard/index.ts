@@ -2,10 +2,10 @@
  * Standard Framework Exports
  * 
  * Main entry point for the Standard framework components
+ * NOTE: Many legacy components have been removed. Use V9 architecture instead.
  */
 
-// Orchestrator
-export { ComparisonOrchestrator } from './orchestrator/comparison-orchestrator';
+// NOTE: ComparisonOrchestrator has been removed - use V9PRAnalyzer instead
 
 // Services
 // The codebase uses MCP tools and the two-branch analysis system
@@ -13,21 +13,19 @@ export { ComparisonOrchestrator } from './orchestrator/comparison-orchestrator';
 // Model Research Service
 export { ModelResearcherService } from '../two-branch/research-services/model-researcher-service';
 
-// Factory
+// Factory (many methods deprecated - see factory.ts)
 export { 
   StandardAgentFactory,
-  createTestOrchestrator,
   MockConfigProvider,
   MockSkillProvider,
   MockDataStore
 } from './infrastructure/factory';
 
-// Comparison Agent
-export { ComparisonAgent } from './comparison/comparison-agent';
+// Note: createTestOrchestrator is deprecated and no longer exported
 
-// V8 is the current report generator
-export { ReportGeneratorV8Final as ReportGenerator } from './comparison/report-generator-v8-final';
-export { ReportGeneratorV8Final } from './comparison/report-generator-v8-final';
+// NOTE: ComparisonAgent has been removed - use V9 architecture
+
+// NOTE: ReportGeneratorV8Final has been removed - use V9 report generation
 
 // V7 generators have been removed - use V8 only
 

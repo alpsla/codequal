@@ -2,9 +2,10 @@
  * Test Factory for Integration Tests
  * 
  * Creates test instances of orchestrator and related services with mock implementations
+ * NOTE: ComparisonOrchestrator has been removed - this factory is deprecated
  */
 
-import { ComparisonOrchestrator } from '../orchestrator/comparison-orchestrator';
+// import { ComparisonOrchestrator } from '../orchestrator/comparison-orchestrator'; // REMOVED
 import { IConfigProvider, AnalysisConfig, ModelSelection } from '../orchestrator/interfaces/config-provider.interface';
 import { ISkillProvider, DeveloperSkills, SkillUpdate, TeamSkills, HistoryParams, SkillHistory, CategoryScores } from '../orchestrator/interfaces/skill-provider.interface';
 import { IDataStore, AnalysisReport } from '../services/interfaces/data-store.interface';
@@ -284,31 +285,19 @@ class MockResearcherAgent extends ResearcherAgent {
 
 /**
  * Create a test orchestrator with all mock dependencies
+ * NOTE: ComparisonOrchestrator has been removed - this function is deprecated
  */
-export async function createTestOrchestrator(): Promise<ComparisonOrchestrator> {
-  const configProvider = new MockConfigProvider();
-  const skillProvider = new MockSkillProvider();
-  const dataStore = new MockDataStore();
-  const researcherAgent = new MockResearcherAgent();
-  
-  const orchestrator = new ComparisonOrchestrator(
-    configProvider,
-    skillProvider,
-    dataStore,
-    researcherAgent,
-    undefined, // No educator agent for this test
-    console    // Simple console logger
-  );
-
-  return orchestrator;
+export async function createTestOrchestrator(): Promise<any> {
+  throw new Error('createTestOrchestrator is deprecated - ComparisonOrchestrator has been removed. Use V9PRAnalyzer instead.');
 }
 
 /**
  * Standard Agent Factory for creating production and test orchestrators
+ * NOTE: Many methods are deprecated as components have been removed
  */
 export class StandardAgentFactory {
-  static async createTestOrchestrator(): Promise<ComparisonOrchestrator> {
-    return createTestOrchestrator();
+  static async createTestOrchestrator(): Promise<any> {
+    throw new Error('createTestOrchestrator is deprecated - use V9PRAnalyzer instead');
   }
   
   static createMockConfigProvider(): MockConfigProvider {
