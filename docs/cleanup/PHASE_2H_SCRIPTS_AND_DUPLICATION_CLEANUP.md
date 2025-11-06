@@ -2,18 +2,19 @@
 
 **Date**: November 5, 2025
 **Branch**: `cleanup/phase-2h-standard`
-**Status**: ✅ **COMPLETE - Phase 2 of 2**
+**Status**: ✅ **COMPLETE - Phase 2 of 2** (corrected)
 
 ---
 
 ## 📊 Summary
 
-**Total deleted**: 12 files, ~154 KB
-**Zero dependencies verified**: ✅ All files confirmed orphaned
+**Total deleted**: 11 files, ~116 KB (corrected from initial 12)
+**Restored**: 1 file (fix-suggestion-agent-v2 - required by production)
+**Net deletion**: 11 files
 
 ### Breakdown
 - **Option A Scripts**: 6 files, ~58 KB (superseded model config scripts)
-- **Fix-Suggestion Chain**: 6 files, ~96 KB (orphaned V7/V8 architecture)
+- **Fix-Suggestion Chain**: 5 files, ~58 KB (orphaned files, v2 restored)
 
 ---
 
@@ -139,27 +140,33 @@ $ rg "from.*standard.*fix-suggestion" packages/agents/src --type ts
 
 ---
 
-### Fix-Suggestion-Agent Chain (6 files, ~96 KB)
+### Fix-Suggestion-Agent Chain (5 files deleted, 1 restored)
 
-**All versions orphaned** (3 files):
+**Deleted - orphaned versions** (2 files):
 ```bash
 ✅ packages/agents/src/standard/services/fix-suggestion-agent.ts (9.8K) - v1
-✅ packages/agents/src/standard/services/fix-suggestion-agent-v2.ts (38K) - v2
 ✅ packages/agents/src/standard/services/fix-suggestion-agent-v3.ts (15K) - v3
 ```
 
-**Dependent files with zero external imports** (3 files):
+**RESTORED** (1 file):
+```bash
+🔄 packages/agents/src/standard/services/fix-suggestion-agent-v2.ts (38K) - v2
+   REASON: Required by report-generator-v8-final.ts (production code)
+   Used by: ComparisonAgent, comparison-agent-production.ts
+   Build was failing without this file
+```
+
+**Deleted - dependent files** (3 files):
 ```bash
 ✅ packages/agents/src/standard/services/function-fix-generator.ts (20K)
 ✅ packages/agents/src/standard/comparison/report-generator-v8-final-enhanced.ts
 ✅ packages/agents/src/standard/tests/integration/production-ready-state-test.ts
 ```
 
-**Why safe to delete**:
+**Why v1 and v3 safe to delete**:
 - Two-branch has its own FixSuggestion interfaces (ai-response-normalizer.ts, specialized-agents.ts)
-- Zero imports from two-branch to any standard/ fix-suggestion files
-- production-ready-state-test.ts only referenced as default file path (not imported)
-- Entire chain is isolated to old standard/ architecture (pre-V9)
+- v1 and v3 have zero imports
+- v2 is actively used by report-generator-v8-final (must keep)
 
 ---
 
@@ -237,10 +244,11 @@ standard/tests/integration/
 
 ## 🎯 Results
 
-### Cleanup Summary
-- **12 files deleted**: 6 scripts + 6 fix-suggestion chain
-- **~154 KB freed**: 58 KB scripts + 96 KB fix-suggestion
-- **Zero dependencies**: All files confirmed orphaned
+### Cleanup Summary (Corrected)
+- **11 files deleted**: 6 scripts + 5 fix-suggestion files
+- **1 file restored**: fix-suggestion-agent-v2 (required by production)
+- **~116 KB freed**: 58 KB scripts + 58 KB fix-suggestion
+- **Build fixed**: Restored v2 after CI failure
 - **Safe deletion**: Two-branch unaffected (has own implementations)
 
 ### Scripts Cleanup (Option A)
