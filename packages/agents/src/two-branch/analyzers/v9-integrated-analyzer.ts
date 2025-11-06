@@ -668,7 +668,7 @@ and actionable recommendations. Focus on business value and team productivity.`;
   /**
    * Get issue category based on tool or issue type
    */
-  private getIssueCategory(issue: any): 'Security' | 'Performance' | 'Architecture' | 'Dependency' | 'Quality' {
+  private getIssueCategory(issue: any): 'Security' | 'Performance' | 'Architecture' | 'Dependencies' | 'Quality' {
     const message = (issue.message || '').toLowerCase();
     const tool = (issue.tool || '').toLowerCase();
 
@@ -690,7 +690,7 @@ and actionable recommendations. Focus on business value and team productivity.`;
 
     if (message.includes('dependency') || message.includes('package') || message.includes('version') ||
         message.includes('outdated') || message.includes('vulnerable')) {
-      return 'Dependency';
+      return 'Dependencies';  // BUG FIX: Match category-detector.ts convention (plural)
     }
 
     // Default to Quality for code quality issues
