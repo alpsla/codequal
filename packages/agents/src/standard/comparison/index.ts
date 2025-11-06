@@ -2,14 +2,11 @@
  * Comparison Module Exports
  */
 
-export { ComparisonAgent } from './comparison-agent';
-export { ComparisonAgentProduction } from './comparison-agent-production';
+// NOTE: ComparisonAgent, ComparisonAgentProduction, and ReportGeneratorV8Final have been removed
+// These were part of the deprecated Standard framework
+// Use V9 production architecture instead
 
-// V8 is the current report generator
-export { ReportGeneratorV8Final as ReportGenerator } from './report-generator-v8-final';
-
-// V7 generators have been removed - use V8 only
-// Files archived to archived/v7-deprecated/
+// Skill calculator still available
 export { SkillCalculator } from './skill-calculator';
 export type {
   IComparisonAgent,

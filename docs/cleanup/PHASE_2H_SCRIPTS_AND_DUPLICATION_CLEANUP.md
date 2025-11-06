@@ -2,19 +2,22 @@
 
 **Date**: November 5, 2025
 **Branch**: `cleanup/phase-2h-standard`
-**Status**: ✅ **COMPLETE - Phase 2 of 2** (corrected)
+**Status**: ✅ **COMPLETE - Phase 3 of 3** (final)
 
 ---
 
 ## 📊 Summary
 
-**Total deleted**: 11 files, ~116 KB (corrected from initial 12)
+**Total deleted**: 13 files, ~126 KB (final count)
 **Restored**: 1 file (fix-suggestion-agent-v2 - required by production)
-**Net deletion**: 11 files
+**Net deletion**: 13 files
 
 ### Breakdown
-- **Option A Scripts**: 6 files, ~58 KB (superseded model config scripts)
-- **Fix-Suggestion Chain**: 5 files, ~58 KB (orphaned files, v2 restored)
+- **Phase 1**: 93 files (compiled artifacts, historical content, DeepWiki, deprecated code)
+- **Phase 2**: 11 files (scripts duplication, fix-suggestion chain)
+- **Phase 3**: 2 files (broken ModelResearcher components - BUG-120 resolution)
+
+**Phase 2H Total**: 106 files deleted, ~2.63 MB freed
 
 ---
 
@@ -322,24 +325,69 @@ Phase 2H total: 105 files deleted, 2.65 MB freed
 
 ---
 
-## 🚀 Next Steps
+## 📋 Phase 3: Delete Broken ModelResearcher Components
 
-**Phase 2H Complete**: 105 total files deleted (93 + 12)
-- Phase 1: 93 files (compiled artifacts, historical content, DeepWiki, deprecated code)
-- Phase 2: 12 files (scripts duplication, fix-suggestion chain)
+**Date**: November 5, 2025
+**Trigger**: BUG-120 investigation revealed components are unused
 
-**Remaining standard/ directory**: Clean, no duplication, actively-used files only
+### Files Deleted (2 files, ~10 KB)
 
-**Next task** (user requested): Investigate research-prompts missing file issue
-- 4 files import research-prompts but file doesn't exist
-- Check how ModelResearcher currently handles this
+```bash
+✅ packages/agents/src/standard/scripts/update-with-real-models.ts (4.9K)
+✅ packages/agents/src/two-branch/research-services/model-researcher.ts (5.4K)
+```
+
+### Why Safe to Delete
+
+**Investigation findings**:
+- Script has never been successfully used in production
+- ModelResearcher.ts class ONLY used by the broken script
+- Production uses TWO different working flows:
+  1. Scheduled updates: `model-update-scheduler.ts` → `generate-model-configs.ts`
+  2. On-demand: `model-researcher-service.ts` (completely different service!)
+
+**Dependency verification**:
+```bash
+# Zero imports of deleted components
+rg "from.*model-researcher['\"]" packages/agents/src --type ts
+# Result: Only imports of ModelResearcherService (different file, still exists)
+```
+
+**User confirmation**: "yes, we can work on bug-121 later, it is not critical for now. let's keep going"
+
+### Resolution
+
+- ✅ BUG-120: **RESOLVED** by deletion (broken components removed)
+- ✅ Production unaffected (uses different components)
+- ✅ System continues working with scheduler + on-demand flows
+
+---
+
+## 🎯 Phase 2H Final Results
+
+**Status**: ✅ **COMPLETE - All 3 Phases**
+
+**Total Impact**:
+- **106 files deleted** (~2.63 MB freed)
+- **1 file restored** (fix-suggestion-agent-v2 - required by production)
+- **Net deletion**: 106 files
+- **Zero dependencies broken**
+
+### Breakdown by Phase
+1. **Phase 1** (93 files): Compiled artifacts, historical content, DeepWiki, deprecated code
+2. **Phase 2** (11 files): Scripts duplication, fix-suggestion chain (v2 restored)
+3. **Phase 3** (2 files): Broken ModelResearcher components (BUG-120 resolution)
+
+### Bugs Resolved
+- ✅ **BUG-120**: ModelResearcher provider field - **RESOLVED** by deleting unused components
+- 📋 **BUG-121**: Refactor V9 to replace V8 final - **Documented for later** (not critical)
 
 ---
 
 **Status**: ✅ **COMPLETE**
-**Total Impact**: 105 files deleted, ~2.65 MB freed, zero dependencies broken
+**Total Impact**: 106 files deleted, ~2.63 MB freed, zero dependencies broken, 1 bug resolved
 
 ---
 
 _Phase 2H Scripts and Duplication Cleanup - November 5, 2025_
-_Final cleanup of standard/ directory duplication_
+_Final cleanup of standard/ directory including broken ModelResearcher components_

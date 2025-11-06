@@ -22,8 +22,8 @@ This directory contains comprehensive documentation for the project cleanup init
 | **2E** | Root directory cleanup | 48 deleted + 38 organized | ~200 KB | ✅ Complete |
 | **2F** | Documentation subdirectories cleanup | 46 deleted + 3 dirs removed | ~180 KB | ✅ Complete |
 | **2G** | Documentation root files cleanup | 17 deleted | ~250 KB | ✅ Complete |
-| **2H** | Standard directory cleanup | 104 deleted | ~2.6 MB | ✅ Complete |
-| **Phase 2 Total** | **Complete cleanup** | **3,043 deleted + 3 moved** | **~34.35 MB** | ✅ Complete |
+| **2H** | Standard directory cleanup | 106 deleted (+ BUG-120 resolution) | ~2.63 MB | ✅ Complete |
+| **Phase 2 Total** | **Complete cleanup** | **3,045 deleted + 3 moved** | **~34.36 MB** | ✅ Complete |
 | **3** | Configuration organization | 7 files moved | 0 (reorganization) | ✅ Complete |
 
 ---
@@ -195,7 +195,7 @@ This directory contains comprehensive documentation for the project cleanup init
 
 **Date**: November 5, 2025
 **Focus**: Cleaned standard/ directory (pre-V9 architecture)
-**Results**: 104 files deleted in 2 phases, ~2.6 MB freed (corrected)
+**Results**: 106 files deleted in 3 phases, ~2.63 MB freed (final)
 
 **Phase 1** (93 files, ~2.5 MB):
 - ✅ Compiled artifacts (.js, .d.ts) - 59 files
@@ -204,9 +204,9 @@ This directory contains comprehensive documentation for the project cleanup init
 - ✅ Old documentation (bugs, planning, testing) - 11 files
 - ✅ Deprecated code (v7/v8 iterations) - 2 files
 
-**Phase 2** (11 files, ~116 KB - corrected):
+**Phase 2** (11 files, ~116 KB):
 - ✅ Option A Scripts cleanup - 6 files
-  - Duplicate update scripts (superseded by update-with-real-models + ModelResearcher)
+  - Duplicate update scripts (superseded by ModelResearcher)
   - One-time migration script
   - Superseded OpenRouter discovery
 - ✅ Fix-suggestion-agent chain - 5 files (v2 restored)
@@ -214,16 +214,26 @@ This directory contains comprehensive documentation for the project cleanup init
   - fix-suggestion-agent-v2 RESTORED (required by report-generator-v8-final)
   - function-fix-generator, v8-final-enhanced, production-ready-state-test deleted
 
+**Phase 3** (2 files, ~10 KB - BUG-120 resolution):
+- ✅ Broken ModelResearcher components deleted
+  - update-with-real-models.ts (broken script, never used in production)
+  - model-researcher.ts (broken class, only used by broken script)
+- ✅ BUG-120 resolved: Production uses different working flows (scheduler + on-demand)
+
 **Why Safe to Delete**:
 - Two-branch (V9) has own FixSuggestion implementations
-- ModelResearcher handles model discovery
-- Zero imports verified for all 105 files
+- Production uses ModelResearcherService (not broken ModelResearcher class)
+- Zero imports verified for all 106 files
 - Protected 28 active imports from two-branch
 
 **What Was Protected**:
 - ✅ monitoring-dashboard.ts - imported by session-state-manager
-- ✅ update-with-real-models.ts - uses ModelResearcher
+- ✅ model-researcher-service.ts - working on-demand config creation (different from deleted model-researcher.ts)
 - ✅ All 28 files imported by two-branch (verified)
+
+**Bug Resolution**:
+- ✅ BUG-120: ModelResearcher provider field - RESOLVED by deleting broken components
+- 📋 BUG-121: Refactor V9 to replace V8 final - Documented for later (not critical)
 
 ---
 
@@ -283,16 +293,18 @@ This directory contains comprehensive documentation for the project cleanup init
 - ✅ **0 npm vulnerabilities** (Phase 2A security fixes)
 - ✅ **0 archive directories** (Phase 2B cleanup)
 - ✅ **30% scripts reduction** (Phase 2C - 108 → 75 scripts)
-- ✅ **Clean standard/ directory** (Phase 2H - 104 files removed)
+- ✅ **Clean standard/ directory** (Phase 2H - 106 files removed)
 - ✅ **Clean git history** (all phases committed separately)
 - ✅ **RAG-optimized docs** (Phase 2B + 2D organization)
+- ✅ **Bug resolved** (BUG-120 - broken components deleted)
 
 ### Code Quality
-- ✅ **3,043 files deleted** (~34.35 MB freed)
-- ✅ **Zero duplication** (fix-suggestion v1/v3, update scripts)
+- ✅ **3,045 files deleted** (~34.36 MB freed)
+- ✅ **Zero duplication** (fix-suggestion v1/v3, update scripts, broken ModelResearcher)
 - ✅ **Clean repository structure** (no confusing archives)
 - ✅ **Clear infrastructure focus** (Oracle only)
 - ✅ **Improved maintainability** (organized documentation)
+- ✅ **No broken code** (BUG-120 resolved by deletion)
 
 ### Documentation Quality
 - ✅ **RAG chatbot ready** (clean docs structure)

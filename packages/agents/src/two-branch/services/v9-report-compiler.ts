@@ -546,8 +546,8 @@ async function defaultGenerateEnhancedFixSuggestion(issue: any): Promise<{ fix: 
   };
 }
 
-function defaultGetIssueCategory(issue: any): 'Security' | 'Performance' | 'Architecture' | 'Dependency' | 'Quality' {
-  return 'Quality';
+function defaultGetIssueCategory(issue: any): 'Security' | 'Performance' | 'Architecture' | 'Dependencies' | 'Quality' {
+  return 'Quality';  // BUG FIX: Changed 'Dependency' to 'Dependencies' to match category-detector.ts convention
 }
 
 function defaultGetAgentType(category: string): string {
