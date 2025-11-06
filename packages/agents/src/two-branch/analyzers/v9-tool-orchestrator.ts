@@ -18,6 +18,7 @@ import { UnifiedLocationService } from '../../standard/services/unified-location
 import { KubernetesCodeFetcher } from '../utils/kubernetes-code-fetcher';
 import { JavaToolOrchestrator, JavaToolConfig } from '../tools/java/java-tool-orchestrator';
 import { ToolResult as JavaToolResult, RawIssue } from '../tools/base-tool-orchestrator';
+import { ModelConfigResolver } from '../../standard/orchestrator/model-config-resolver';
 
 const execAsync = promisify(exec);
 
@@ -55,6 +56,7 @@ export class V9ToolOrchestrator {
   private locationService: UnifiedLocationService;
   private k8sCodeFetcher: KubernetesCodeFetcher;
   private useKubernetes: boolean;
+  private modelConfigResolver: ModelConfigResolver;
 
   constructor() {
     this.supabase = createClient(
@@ -69,6 +71,7 @@ export class V9ToolOrchestrator {
     });
     this.k8sCodeFetcher = new KubernetesCodeFetcher();
     this.useKubernetes = !process.env.CLOUD_API_URL || process.env.USE_KUBERNETES !== 'false';
+    this.modelConfigResolver = new ModelConfigResolver(logger);
   }
 
   /**
@@ -1079,6 +1082,9 @@ export class V9ToolOrchestrator {
         logger.info(`✅ Researcher Agent discovered optimal model for ${agent}/${language}: ${optimalModel}`);
         
         // Store the discovered configuration for future use
+        // Get proper fallback from ModelConfigResolver
+        const fallbackConfig = await this.modelConfigResolver.getModelConfiguration(role, language, repoSize);
+
         const { error: insertError } = await this.supabase
           .from('model_configurations')
           .insert({
@@ -1086,7 +1092,7 @@ export class V9ToolOrchestrator {
             language,
             repository_size: repoSize,
             primary_model: optimalModel,
-            fallback_model: 'openai/gpt-3.5-turbo', // Default fallback
+            fallback_model: fallbackConfig.fallback_model, // Use ModelConfigResolver fallback
             temperature: 0.3,
             max_tokens: 4000,
             last_updated: new Date().toISOString(),
@@ -1104,28 +1110,25 @@ export class V9ToolOrchestrator {
         
       } catch (researchError: any) {
         logger.error(`Researcher Agent failed to discover model:`, researchError);
-        
-        // Last resort: Use a sensible default based on role
-        const fallbackModels: Record<string, string> = {
-          'analyzer': 'openai/gpt-4o-mini',
-          'security': 'anthropic/claude-3-haiku',
-          'performance': 'openai/gpt-3.5-turbo',
-          'quality': 'openai/gpt-3.5-turbo',
-          'architecture': 'openai/gpt-4o-mini',
-          'dependency': 'openai/gpt-3.5-turbo'
-        };
-        
-        const defaultModel = fallbackModels[role] || 'openai/gpt-3.5-turbo';
-        logger.warn(`Using fallback model for ${agent}: ${defaultModel}`);
-        
-        return defaultModel;
+
+        // BUG-077 FIX: Use ModelConfigResolver emergency fallback instead of hardcoded values
+        try {
+          const emergencyConfig = await this.modelConfigResolver.getModelConfiguration(role, language, 'medium');
+          logger.warn(`Using emergency fallback model for ${agent}: ${emergencyConfig.primary_model}`);
+          return emergencyConfig.primary_model;
+        } catch (emergencyError: any) {
+          logger.error(`Emergency fallback failed:`, emergencyError);
+          // If even emergency fallback fails, throw - don't use hardcoded models
+          throw new Error(`Unable to get model configuration for ${agent}/${language}. All fallback methods failed.`);
+        }
       }
     } catch (error: any) {
       logger.error(`Failed to get model for ${agent}:`, error);
       logger.error('Full error stack:', error.stack);
-      
-      // Return a default model instead of throwing
-      return 'openai/gpt-3.5-turbo';
+
+      // BUG-077 FIX: Throw instead of returning hardcoded model
+      // The caller should handle this error appropriately
+      throw new Error(`Critical failure: Unable to determine model for ${agent}. All configuration methods failed.`);
     }
   }
 
