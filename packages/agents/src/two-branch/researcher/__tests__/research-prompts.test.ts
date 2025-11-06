@@ -5,7 +5,7 @@
  * Educational and Reporting agents.
  */
 
-import { RESEARCH_PROMPTS } from '../../standard/research-prompts';
+import { RESEARCH_PROMPTS } from '../research-prompts';
 
 describe('Research Prompts', () => {
   describe('Educational Agent Research Prompt', () => {
