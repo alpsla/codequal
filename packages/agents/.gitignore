@@ -40,6 +40,11 @@ test-bug*.ts
 # User reports validation (may contain API keys)
 user-reports-validation/
 
-# Oracle test scripts (may contain IPs/keys)
-oracle-*.sh
+# Root-level test scripts only (organized scripts in scripts/testing/ are tracked)
+/oracle-*.sh
+/test-*.sh
 
+# Test artifacts and logs
+user-reports/
+test-results/
+*.log
