@@ -1,7 +1,7 @@
 # Project Cleanup Documentation
 
 **Period**: November 4-5, 2025
-**Status**: ✅ Complete (Phases 2A-2F, Phase 3)
+**Status**: ✅ Complete (Phases 2A-2H, Phase 3)
 
 ---
 
@@ -21,7 +21,9 @@ This directory contains comprehensive documentation for the project cleanup init
 | **2D** | Documentation organization | 1 deleted + 3 dirs merged | Minor | ✅ Complete |
 | **2E** | Root directory cleanup | 48 deleted + 38 organized | ~200 KB | ✅ Complete |
 | **2F** | Documentation subdirectories cleanup | 46 deleted + 3 dirs removed | ~180 KB | ✅ Complete |
-| **Phase 2 Total** | **Complete cleanup** | **2,922 deleted + 3 moved** | **~31.5 MB** | ✅ Complete |
+| **2G** | Documentation root files cleanup | 17 deleted | ~250 KB | ✅ Complete |
+| **2H** | Standard directory cleanup | 93 deleted | ~2.5 MB | ✅ Complete |
+| **Phase 2 Total** | **Complete cleanup** | **3,032 deleted + 3 moved** | **~34 MB** | ✅ Complete |
 | **3** | Configuration organization | 7 files moved | 0 (reorganization) | ✅ Complete |
 
 ---
@@ -167,6 +169,60 @@ This directory contains comprehensive documentation for the project cleanup init
 - DigitalOcean infrastructure docs removed (migrated to Oracle OCIR)
 - One-time setup/migration scripts removed
 - Redundant documentation consolidated
+
+---
+
+### Phase 2G: Documentation Root Files Cleanup
+**Date**: November 5, 2025
+**Focus**: Cleaned up obsolete documentation files from /docs root directory
+**Results**: 17 files deleted, ~250 KB freed
+
+**What Was Deleted**:
+- ✅ DeepWiki-related docs (10 files) - Framework dropped
+- ✅ Session summaries (3 files) - Historical only
+- ✅ One-time implementation summaries (4 files) - Superseded
+
+**Files Kept**: 14 current documentation files (production flow, API docs, testing guides)
+
+---
+
+### Phase 2H: Standard Directory Cleanup
+**Files**:
+- [`PHASE_2H_DEPENDENCY_VERIFIED_PLAN.md`](PHASE_2H_DEPENDENCY_VERIFIED_PLAN.md) - Dependency verification
+- [`PHASE_2H_COMPREHENSIVE_ANALYSIS.md`](PHASE_2H_COMPREHENSIVE_ANALYSIS.md) - Complete analysis
+- [`PHASE_2H_STANDARD_CLEANUP_PLAN.md`](PHASE_2H_STANDARD_CLEANUP_PLAN.md) - Original plan
+
+**Date**: November 5, 2025
+**Focus**: Cleaned up packages/agents/src/standard/ (previous implementation before V9/two-branch)
+**Results**: 93 files deleted, ~2.5 MB freed, **100% zero-dependency verified**
+
+**What Was Deleted**:
+1. **Compiled Artifacts** (59 files, ~2MB) - All .js and .d.ts files from src/
+2. **Historical Test Reports** (14 files, 124K) - August 2025 test outputs
+3. **DeepWiki Content** (7 files, 44K) - Framework completely dropped
+4. **Old Planning & Bug Docs** (7 files, 56K) - Historical documentation
+5. **Old Testing & Dev State** (4 files, 40K) - Superseded workflows
+6. **Deprecated Code Files** (2 files, ~15K) - Superseded report generators
+
+**What Was Protected**:
+- ✅ 28 active imports from two-branch (verified and kept)
+- ✅ All dependencies for actively-used files
+- ✅ Core services: model-config-resolver, dynamic-model-selector, unified-location-service
+- ✅ Monitoring services, educator agent, infrastructure
+
+**Verification Process**:
+- ✅ Traced all 28 external imports to standard/ directory
+- ✅ Verified deleted files have ZERO imports
+- ✅ Used ripgrep to confirm zero usage
+- ✅ 100% dependency-verified before deletion
+
+**Impact**:
+- Before: 250 files, 3.0MB
+- After: 157 files, ~500KB
+- Removed: 93 files (37% reduction), ~2.5MB freed
+- Risk: ZERO - all deletions dependency-verified
+
+**Follow-up Task**: Investigate missing research-prompts file (imported but doesn't exist)
 
 ---
 
@@ -322,13 +378,15 @@ All major cleanup objectives achieved:
 | `6dde9f04` | Phase 2D: Documentation organization | 3 deleted, 3 dirs merged |
 | `5b2d533c` | Phase 2E: Root directory cleanup | 98 files (48 deleted + 38 organized) |
 | `57e08573` | Phase 2F: Documentation subdirectories cleanup | 46 deleted + 3 dirs removed |
+| `347b4aef` | Phase 2G: Documentation root files cleanup | 17 deleted |
+| `87080556` | Phase 2H: Standard directory cleanup | 93 deleted |
 | `19e6f156` | Phase 3: Configuration organization | 7 files moved |
 
 ---
 
-**Total Time**: ~6 hours across all phases (Nov 4-5, 2025)
-**Risk Level**: ZERO (all git-tracked, easy rollback)
-**Status**: ✅ **ALL CLEANUP PHASES COMPLETE**
+**Total Time**: ~8 hours across all phases (Nov 4-5, 2025)
+**Risk Level**: ZERO (all git-tracked, dependency-verified, easy rollback)
+**Status**: ✅ **ALL CLEANUP PHASES COMPLETE (2A-2H + Phase 3)**
 
 ---
 
