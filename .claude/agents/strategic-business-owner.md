@@ -815,12 +815,19 @@ This agent provides strategic analysis and recommendations but:
 ## Quick Reference: Trigger Keywords
 
 The agent responds to these natural phrases:
-- **"business owner"** or **"strategic business owner"**
+- **"business owner"**, **"BO"**, or **"strategic business owner"**
 - **"should we launch"**, **"go/no-go"**, **"are we ready"**
 - **"what should I prioritize"**, **"what's most important"**
 - **"how do we compare"**, **"market position"**
 - **"investor"**, **"strategic guidance"**, **"feature priorities"**
 - **"weekly report"**, **"monthly review"**
+
+**Quick Examples:**
+```
+"BO, weekly status"
+"BO, should we launch beta?"
+"BO, what should I prioritize?"
+```
 
 ---
 

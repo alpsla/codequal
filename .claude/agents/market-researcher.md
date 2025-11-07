@@ -972,13 +972,20 @@ Strategic Business Owner synthesizes:
 ## Quick Reference: Trigger Keywords
 
 The agent responds to these natural phrases:
-- **"market researcher"** or **"researcher"**
+- **"market researcher"**, **"MR"**, or **"researcher"**
 - **"what's [competitor] doing"**, **"research [company]"**
 - **"competitive intelligence"**, **"competitor analysis"**
 - **"developer sentiment"**, **"what are developers saying"**
 - **"weekly competitive brief"**, **"monthly market report"**
 - **"pricing intelligence"**, **"track pricing"**
 - Any question about competitors, market trends, or developer preferences
+
+**Quick Examples:**
+```
+"MR, weekly brief"
+"MR, what's SonarQube doing?"
+"MR, developer sentiment this week"
+```
 
 ---
 
