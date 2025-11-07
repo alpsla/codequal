@@ -90,11 +90,12 @@ export class UniversalDependencyCheckRunner extends UniversalToolBase {
     });
     
     // PostgreSQL connection configuration
+    // Oracle Cloud PostgreSQL (verified working Nov 7, 2025)
     this.pgHost = process.env.DEPCHECK_DB_HOST || 'localhost';
     this.pgPort = parseInt(process.env.DEPCHECK_DB_PORT || '5432');
-    this.pgDatabase = process.env.DEPCHECK_DB_NAME || 'cvedb';
-    this.pgUser = process.env.DEPCHECK_DB_USER || 'depscan';
-    this.pgPassword = process.env.DEPCHECK_DB_PASSWORD || '';
+    this.pgDatabase = process.env.DEPCHECK_DB_NAME || 'depcheck';
+    this.pgUser = process.env.DEPCHECK_DB_USER || 'depcheck_scanner';
+    this.pgPassword = process.env.DEPCHECK_DB_PASSWORD || 'depcheck123';
   }
   
   /**
