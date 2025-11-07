@@ -102,14 +102,18 @@ export class UniversalSemgrepRunner extends UniversalToolBase {
   protected buildCommand(): string {
     const { outputFile, workspacePath } = this.config;
     
-    // Use Semgrep's "auto" config (curated security rules)
+    // Use multiple Semgrep rulesets for comprehensive coverage
+    // (can't use --config=auto with --metrics=off)
+    // p/security-audit: General security rules
+    // p/owasp-top-ten: OWASP Top 10 vulnerabilities
     // --json for structured output
     // --quiet to suppress progress bars
     // --no-git-ignore to scan all files
     // --metrics=off to disable telemetry
     
     return `semgrep \
-      --config=auto \
+      --config=p/security-audit \
+      --config=p/owasp-top-ten \
       --json \
       --quiet \
       --no-git-ignore \

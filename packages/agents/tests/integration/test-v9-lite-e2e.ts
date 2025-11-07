@@ -24,12 +24,12 @@ dotenv.config();
 // E2E Tests: 3 PRs sequentially = needs debug mode to disable limit
 process.env.DEBUG_MODE = process.env.DEBUG_MODE || 'true';
 
-import { JavaToolOrchestrator } from './src/two-branch/tools/java/java-tool-orchestrator';
-import { createFrameworkDetector } from './src/two-branch/utils/framework-detector';
-import { createToolConfigResolver } from './src/two-branch/config/universal-tool-config';
-import { V9GroupedReportFormatter } from './src/two-branch/analyzers/v9-grouped-report-formatter';
-import { ModelConfigResolver } from './src/standard/orchestrator/model-config-resolver';
-import { groupIssues } from './src/two-branch/utils/issue-grouping';
+import { JavaToolOrchestrator } from '../../src/two-branch/tools/java/java-tool-orchestrator';
+import { createFrameworkDetector } from '../../src/two-branch/utils/framework-detector';
+import { createToolConfigResolver } from '../../src/two-branch/config/universal-tool-config';
+import { V9GroupedReportFormatter } from '../../src/two-branch/analyzers/v9-grouped-report-formatter';
+import { ModelConfigResolver } from '../../src/standard/orchestrator/model-config-resolver';
+import { groupIssues } from '../../src/two-branch/utils/issue-grouping';
 import { execSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';

@@ -454,12 +454,12 @@ export abstract class BaseToolOrchestrator {
         tool: toolName,
         file: issue.file,
         line: issue.line,
-        column: issue.column,
+        column: undefined, // v9-types Issue doesn't have column
         severity: issue.severity,
-        message: issue.message,
-        rule: issue.source?.ruleId || 'unknown',
+        message: issue.title || issue.description, // v9-types uses 'title' and 'description'
+        rule: issue.tool || 'unknown',
         category: issue.category,
-        cwe: issue.source?.cweId,
+        cwe: issue.impact, // Best approximation from available fields
         autoFixable: false // Universal tools don't provide auto-fixes
       }));
 

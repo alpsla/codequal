@@ -315,42 +315,8 @@ export class PythonToolOrchestrator extends BaseToolOrchestrator {
     }
   }
 
-  /**
-   * Run Semgrep security analysis using Universal Runner
-   * This ensures consistent Semgrep execution across all languages
-   */
-  private async runSemgrep(repoPath: string, branch: 'base' | 'pr'): Promise<ToolResult> {
-    const startTime = Date.now();
-    
-    try {
-      logger.info(`🔍 Running Semgrep on ${branch} branch...`);
-      
-      // Use Universal Semgrep Runner (tries all strategies)
-      const result = await UniversalSemgrepRunner.run({
-        repoPath,
-        branch,
-        languageDockerImage: this.dockerImage,  // Try our Python image first
-        workspaceDir: this.workspaceDir
-      });
-      
-      if (!result.success) {
-        return this.createFailedResult('semgrep', result.error || 'Semgrep execution failed');
-      }
-      
-      return {
-        tool: 'semgrep',
-        success: true,
-        duration: result.duration,
-        issues: result.issues,
-        metadata: this.calculateMetadata(result.issues)
-      };
-      
-    } catch (error: any) {
-      const duration = Date.now() - startTime;
-      logger.error(`❌ Semgrep failed: ${error.message}`);
-      return this.createFailedResult('semgrep', error.message);
-    }
-  }
+  // runSemgrep() removed - Semgrep now handled by base class executeUniversalTool()
+  // See executeTool() method which routes universal tools to the base class
 
   // ============================================================
   // HELPER METHODS
