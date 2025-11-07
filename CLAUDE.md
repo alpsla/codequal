@@ -838,6 +838,23 @@ Claude Code provides specialized agents for complex workflows. These agents run 
    - Preserves state for next session
    - **Use when**: Ending a development session
 
+8. **strategic-business-owner** (Model: Opus)
+   - CEO-level strategic oversight and business analysis
+   - Analyzes session summaries, planning docs, market research
+   - Monitors development progress and alpha/beta testing
+   - Provides investor relations support and metrics tracking
+   - Compares market position vs competitors (SonarQube, Snyk, etc.)
+   - Coordinates with market-researcher agent for intelligence
+   - **Use when**: Need strategic business decisions, investor updates, go/no-go decisions, market positioning analysis
+
+9. **market-researcher** (Model: Sonnet)
+   - Competitive intelligence and market monitoring
+   - Tracks competitor pricing, features, and positioning
+   - Monitors developer sentiment across social media and communities
+   - Analyzes industry trends and emerging technologies
+   - Provides weekly competitive briefs and monthly market reports
+   - **Use when**: Need competitor analysis, market research, developer sentiment tracking, pricing intelligence
+
 #### **Built-in Agents**
 - **Explore**: Fast codebase exploration (specify thoroughness: quick/medium/very thorough)
 - **general-purpose**: Complex multi-step tasks and code searching
