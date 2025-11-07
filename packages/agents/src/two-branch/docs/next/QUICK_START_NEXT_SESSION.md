@@ -138,11 +138,23 @@ protected async executeTool(toolName, repoPath, branch, options) {
 ### 📋 Next Session TODO
 
 **PRIORITY 1: Dependency-Check Infrastructure** (30-60 min)
-1. Install Dependency-Check on Oracle host
+1. Install Dependency-Check 12.1.5 on Oracle host
+   - Download: `wget https://github.com/jeremylong/DependencyCheck/releases/download/v12.1.5/dependency-check-12.1.5-release.zip`
+   - Extract to ~/dependency-check/
+   - Add to PATH: `export PATH="$HOME/dependency-check/bin:$PATH"`
+   - Note: Attempted in Session 17 but hit download issues - retry in Session 18
 2. Set up PostgreSQL container for CVE database
+   - Container: postgres:16-alpine
+   - Database: cvedb, User: depscan
+   - Port: 5432
 3. Run initial database population (15 min one-time)
+   - Use dependency-check.sh --updateonly with NVD API key
+   - Populates ~208,612 CVEs
 4. Configure daily cron for updates (2 AM UTC)
+   - Script: src/two-branch/scripts/daily-cve-update.sh
 5. Test Java Dependency-Check with Spring PetClinic
+   - Should find CVE vulnerabilities
+   - Verify JSON output parsing
 6. Verify 5-second query time with PostgreSQL backend
 
 **PRIORITY 2: Python Testing** (15 min)
