@@ -155,11 +155,11 @@ export class UniversalDependencyCheckRunner extends UniversalToolBase {
       --format JSON \
       --out "${outputFile}" \
       --connectionString "${jdbcUrl}" \
+      --dbDriverName org.postgresql.Driver \
       --dbUser ${this.pgUser} \
       --dbPassword ${this.pgPassword} \
       --disableAssembly \
-      --enableExperimental \
-      --log /tmp/dependency-check-${Date.now()}.log \
+      --project dependency-check-${this.config.language} \
       2>&1 || true`;
   }
   
