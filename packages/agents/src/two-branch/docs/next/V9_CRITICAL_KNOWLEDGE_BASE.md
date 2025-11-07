@@ -1,10 +1,86 @@
 # 🧠 V9 CRITICAL KNOWLEDGE BASE
 **IMPORTANT: Start every V9 session by reading this file**
-**Last Updated: October 25, 2025 - Production Service Architecture + Test Cleanup**
+**Last Updated: November 7, 2025 - Universal Tools Architecture**
 
 ---
 
-## 🎉 LATEST BREAKTHROUGH (October 25, 2025)
+## 🎉 LATEST BREAKTHROUGH (November 7, 2025)
+
+### Universal Tools Architecture ✅ COMPLETE
+
+**Status**: Multi-language tool infrastructure implemented and ready for testing
+
+**What Changed:**
+1. ✅ **Universal Tool Identification** → Analyzed all tools, identified 2 universal tools
+2. ✅ **Semgrep Runner** → Security scanning for ALL languages (Java, TypeScript, Python, Go, Ruby, PHP, C++, Rust, Kotlin)
+3. ✅ **Dependency-Check Runner** → CVE scanning for 7 languages with PostgreSQL backend
+4. ✅ **BaseToolOrchestrator Enhanced** → Automatic routing to universal vs language-specific tools
+5. ✅ **All Orchestrators Updated** → Java, TypeScript, Python now use universal runners
+
+**Impact:**
+- **Consistency**: Same Semgrep/Dependency-Check behavior across ALL languages
+- **Performance**: 360× faster Dependency-Check (5s vs 30min via PostgreSQL)
+- **Scalability**: Add new languages without rebuilding tool infrastructure
+- **Cost**: No repeated 3GB downloads, daily cron updates shared database
+- **Container Size**: TypeScript 424MB (vs 1GB+ if tools bundled)
+
+**Key Files:**
+- `src/two-branch/tools/universal/semgrep-runner.ts` - **NEW** - Universal Semgrep executor
+- `src/two-branch/tools/universal/dependency-check-runner.ts` - **NEW** - Universal Dependency-Check with PostgreSQL
+- `src/two-branch/tools/universal/universal-tool-base.ts` - **NEW** - Base class for universal tools
+- `src/two-branch/tools/base-tool-orchestrator.ts` - **UPDATED** - Universal tool routing (+80 lines)
+- `src/two-branch/docs/multi-language/UNIVERSAL_TOOLS_MATRIX.md` - **NEW** - Complete tool analysis
+
+**Architecture Pattern:**
+```typescript
+// All orchestrators (Java, TypeScript, Python) now follow this pattern:
+protected async executeTool(toolName, repoPath, branch, options) {
+  // Route universal tools to shared runners
+  if (this.isUniversalTool(toolName)) {
+    return this.executeUniversalTool(toolName, repoPath, branch, options);
+  }
+  
+  // Language-specific tools use local implementations
+  switch (toolName) {
+    case 'pmd': return this.runPMD(repoPath, branch);           // Java only
+    case 'eslint': return this.runESLint(repoPath, branch);     // TypeScript only
+    case 'pylint': return this.runPylint(repoPath, branch);     // Python only
+  }
+}
+```
+
+**Universal Tools:**
+1. **Semgrep** (ALL languages)
+   - Security scanning with language-specific rules
+   - Auto-detects language from file extensions
+   - Same JSON output format across all languages
+   - Version: 1.45.0 (host installation)
+
+2. **Dependency-Check** (7 languages: Java, JavaScript, Python, Ruby, PHP, .NET, C++)
+   - CVE vulnerability scanning
+   - **PostgreSQL Backend** (Critical Architecture):
+     - Database: `cvedb` on Oracle Cloud (208,612+ CVEs)
+     - Daily updates: 2 AM UTC via cron
+     - Query time: 5 seconds per branch
+     - vs OLD: 30 minutes download per analysis
+     - **360× performance improvement**
+   - Auto-detects project type (pom.xml, package.json, requirements.txt)
+   - Version: 12.1.5 (Oracle Cloud installation)
+
+**Testing Phase:**
+- ⏳ **Test #1**: Java regression (ensure no breaking changes)
+- ⏳ **Test #2**: TypeScript with Semgrep (should fix "output file not found" issue)
+- ⏳ **Test #3**: Python with Semgrep (validate universal runner)
+
+**User Insight** (Critical):
+> "We install a database which should update daily by cron and tool's responsibility 
+> to run the validation against the stored db in Postgres and it takes 5 seconds per branch"
+
+This architectural insight enabled 360× performance improvement for Dependency-Check!
+
+---
+
+## 🎉 PREVIOUS BREAKTHROUGH (October 25, 2025)
 
 ### Production Service Architecture ✅ COMPLETE
 

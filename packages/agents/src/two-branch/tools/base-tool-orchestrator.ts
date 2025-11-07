@@ -23,6 +23,10 @@ import { promisify } from 'util';
 import { logger } from '../utils/logger';
 import type { AnalysisMode } from '../config/analysis-modes';
 import { UNIVERSAL_ANALYSIS_MODES } from '../config/analysis-modes';
+import { isUniversalTool } from './universal';
+import { UniversalSemgrepRunner } from './universal/semgrep-runner';
+import { UniversalDependencyCheckRunner } from './universal/dependency-check-runner';
+import { Issue } from '../analyzers/v9-types';
 
 const execAsync = promisify(exec);
 
@@ -171,6 +175,9 @@ export abstract class BaseToolOrchestrator {
   /**
    * Execute a specific tool and return results
    * Each language implements their tool execution logic
+   * 
+   * NOTE: Language-specific orchestrators should check isUniversalTool()
+   * and route to executeUniversalTool() for universal tools (semgrep, dependency-check)
    */
   protected abstract executeTool(
     toolName: string,
@@ -383,6 +390,97 @@ export abstract class BaseToolOrchestrator {
       logger.info(`✅ Checked out ${targetBranch}`);
     } else {
       logger.info(`✅ Already on ${targetBranch}`);
+    }
+  }
+
+  // ============================================================
+  // UNIVERSAL TOOLS (Semgrep, Dependency-Check)
+  // ============================================================
+
+  /**
+   * Check if a tool should use universal runners
+   * 
+   * Universal tools work across multiple languages:
+   * - Semgrep: Security scanning for ALL languages
+   * - Dependency-Check: CVE scanning for 7 languages (with PostgreSQL backend)
+   */
+  protected isUniversalTool(toolName: string): boolean {
+    return isUniversalTool(toolName);
+  }
+
+  /**
+   * Execute a universal tool (Semgrep or Dependency-Check)
+   * 
+   * These tools use shared runners that work across all languages.
+   * Language-specific orchestrators should call this method for universal tools.
+   * 
+   * @param toolName - 'semgrep' or 'dependency-check'
+   * @param repoPath - Path to repository
+   * @param branch - 'base' or 'pr'
+   * @param options - Orchestration options
+   */
+  protected async executeUniversalTool(
+    toolName: string,
+    repoPath: string,
+    branch: 'base' | 'pr',
+    options: OrchestrationOptions
+  ): Promise<ToolResult> {
+    const startTime = Date.now();
+    const language = this.getLanguageName();
+
+    try {
+      logger.info(`📦 Executing Universal tool: ${toolName}`);
+
+      let issues: Issue[] = [];
+
+      // Route to appropriate universal runner
+      switch (toolName.toLowerCase()) {
+        case 'semgrep':
+          const semgrepRunner = new UniversalSemgrepRunner(repoPath, language);
+          issues = await semgrepRunner.execute();
+          break;
+
+        case 'dependency-check':
+          const depCheckRunner = new UniversalDependencyCheckRunner(repoPath, language);
+          issues = await depCheckRunner.execute();
+          break;
+
+        default:
+          throw new Error(`Unknown universal tool: ${toolName}`);
+      }
+
+      // Convert V9 Issue[] to RawIssue[] for BaseToolOrchestrator
+      const rawIssues: RawIssue[] = issues.map(issue => ({
+        tool: toolName,
+        file: issue.file,
+        line: issue.line,
+        column: issue.column,
+        severity: issue.severity,
+        message: issue.message,
+        rule: issue.source?.ruleId || 'unknown',
+        category: issue.category,
+        cwe: issue.source?.cweId,
+        autoFixable: false // Universal tools don't provide auto-fixes
+      }));
+
+      const duration = Date.now() - startTime;
+      const metadata = this.calculateMetadata(rawIssues);
+
+      logger.info(`✅ ${toolName} completed: ${rawIssues.length} issues in ${(duration / 1000).toFixed(1)}s`);
+
+      return {
+        tool: toolName,
+        success: true,
+        duration,
+        issues: rawIssues,
+        metadata
+      };
+
+    } catch (error: any) {
+      const duration = Date.now() - startTime;
+      logger.error(`❌ Universal tool ${toolName} failed: ${error.message}`);
+
+      return this.createFailedResult(toolName, error.message);
     }
   }
 

@@ -239,6 +239,9 @@ export class JavaToolOrchestrator extends BaseToolOrchestrator {
   /**
    * Execute a specific Java tool (required by base)
    * Dispatches to appropriate tool-specific method
+   * 
+   * UPDATED: Now routes universal tools (Semgrep, Dependency-Check) 
+   * to shared runners for consistency across all languages
    */
   protected async executeTool(
     toolName: string,
@@ -248,21 +251,23 @@ export class JavaToolOrchestrator extends BaseToolOrchestrator {
   ): Promise<ToolResult> {
     logger.info(`📦 Executing Java tool: ${toolName}`);
     
+    // UNIVERSAL TOOLS: Route to shared runners
+    // This ensures same Semgrep/Dependency-Check behavior across Java, TypeScript, Python, etc.
+    if (this.isUniversalTool(toolName)) {
+      logger.info(`🌐 Routing ${toolName} to universal runner`);
+      return this.executeUniversalTool(toolName, repoPath, branch, options);
+    }
+    
+    // LANGUAGE-SPECIFIC TOOLS: Use Java-specific implementations
     switch (toolName) {
       case 'pmd':
         return this.runPMD(repoPath, branch);
-      
-      case 'semgrep':
-        return this.runSemgrep(repoPath, branch);
       
       case 'checkstyle':
         return this.runCheckstyle(repoPath, branch, options.changedFiles);
       
       case 'spotbugs':
         return this.runSpotBugs(repoPath, branch);
-      
-      case 'dependency-check':
-        return this.runDependencyCheck(repoPath, branch);
       
       default:
         throw new Error(`Unknown Java tool: ${toolName}`);

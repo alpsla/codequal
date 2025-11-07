@@ -1,12 +1,12 @@
 # CodeQual Architecture v4: Two-Branch Full Repository Analysis
 
-*Version: 4.1*  
-*Date: October 25, 2025*  
-*Status: Production Service Architecture*
+*Version: 4.2*  
+*Date: November 7, 2025*  
+*Status: Production Service Architecture + Universal Tools*
 
 ## Executive Summary
 
-This document describes the production-ready architecture for CodeQual V9, featuring a service-based design that provides real, actionable code analysis results through a reusable V9PRAnalyzer service. The architecture supports multi-language analysis (Java, TypeScript, Python, Go) and can be deployed via API, CLI, webhooks, or direct service integration.
+This document describes the production-ready architecture for CodeQual V9, featuring a service-based design with universal tool infrastructure that provides real, actionable code analysis results through a reusable V9PRAnalyzer service. The architecture supports multi-language analysis (Java, TypeScript, Python, Go) with shared tool runners for consistency and performance, and can be deployed via API, CLI, webhooks, or direct service integration.
 
 ## Core Problem Statement
 
@@ -24,9 +24,58 @@ This document describes the production-ready architecture for CodeQual V9, featu
 - **Language-Agnostic**: Easy to add TypeScript, Python, Go (1 method update)
 - **LLM Enhancement**: Use AI for synthesis and recommendations, not raw analysis
 
-## Recent Updates (2025-10-25)
+## Recent Updates (2025-11-07)
 
-### Production Service Architecture ✅ COMPLETE
+### Universal Tools Architecture ✅ COMPLETE
+
+**What Changed:**
+1. ✅ **Universal Tool Infrastructure** → Shared runners for tools used across multiple languages
+2. ✅ **Semgrep Universal Runner** → Security scanning for ALL languages
+3. ✅ **Dependency-Check Universal Runner** → CVE scanning for 7 languages with PostgreSQL backend
+4. ✅ **BaseToolOrchestrator Enhanced** → Automatic routing to universal vs language-specific tools
+5. ✅ **Performance Optimization** → 360× faster Dependency-Check (5s vs 30min via PostgreSQL)
+
+**Key Benefits:**
+- **Consistency**: Same Semgrep/Dependency-Check behavior across Java, TypeScript, Python, Go, etc.
+- **Performance**: Shared PostgreSQL CVE database (208,612+ CVEs) with daily cron updates
+- **Scalability**: Add new languages without rebuilding tool infrastructure
+- **Container Size**: Smaller language images (TypeScript 424MB vs 1GB+ with bundled tools)
+- **Maintainability**: Update 1 universal runner → affects all languages
+
+**Architecture Pattern:**
+```typescript
+// Universal vs Language-Specific Tool Routing
+protected async executeTool(toolName: string, repoPath: string, branch: string) {
+  // Universal tools (Semgrep, Dependency-Check) → shared runners
+  if (this.isUniversalTool(toolName)) {
+    return this.executeUniversalTool(toolName, repoPath, branch);
+  }
+  
+  // Language-specific tools → local implementations
+  switch (toolName) {
+    case 'pmd': return this.runPMD(repoPath, branch);           // Java only
+    case 'eslint': return this.runESLint(repoPath, branch);     // TypeScript only
+    case 'pylint': return this.runPylint(repoPath, branch);     // Python only
+  }
+}
+```
+
+**Universal Tools:**
+- **Semgrep**: Security scanning for ALL languages (Java, TypeScript, Python, Go, Ruby, PHP, C++, Rust, Kotlin)
+- **Dependency-Check**: CVE scanning for 7 languages (Java, JavaScript, Python, Ruby, PHP, .NET, C++)
+  - **PostgreSQL Backend**: 208,612+ CVEs, daily cron updates at 2 AM UTC
+  - **Query Time**: 5 seconds per branch (vs 30 minutes download)
+  - **Performance**: 360× improvement
+
+**Files:**
+- `src/two-branch/tools/universal/semgrep-runner.ts` - Universal Semgrep executor
+- `src/two-branch/tools/universal/dependency-check-runner.ts` - Universal Dependency-Check with PostgreSQL
+- `src/two-branch/tools/base-tool-orchestrator.ts` - Universal tool routing
+- `src/two-branch/docs/multi-language/UNIVERSAL_TOOLS_MATRIX.md` - Complete tool analysis
+
+---
+
+### Production Service Architecture ✅ COMPLETE (October 2025)
 
 **What Changed:**
 1. ✅ **V9PRAnalyzer Service** → Extracted 1,200+ lines from test into reusable production service

@@ -1,0 +1,203 @@
+/**
+ * Universal Tool Base Class
+ * 
+ * Provides common functionality for tools that work across multiple languages:
+ * - Semgrep (all languages)
+ * - Dependency-Check (7 languages)
+ * 
+ * This base class handles:
+ * - Command execution
+ * - Error handling
+ * - Issue standardization
+ * - Logging
+ */
+
+import { exec } from 'child_process';
+import { promisify } from 'util';
+import * as path from 'path';
+import { Issue, IssueCategory } from '../../analyzers/v9-types';
+
+const execAsync = promisify(exec);
+
+export interface UniversalToolConfig {
+  name: string;
+  language: string;
+  workspacePath: string;
+  outputFile?: string;
+  timeout?: number; // milliseconds
+}
+
+export abstract class UniversalToolBase {
+  protected config: UniversalToolConfig;
+  
+  constructor(config: UniversalToolConfig) {
+    this.config = config;
+  }
+  
+  /**
+   * Execute the tool and return standardized issues
+   */
+  abstract execute(): Promise<Issue[]>;
+  
+  /**
+   * Build the command to execute
+   */
+  protected abstract buildCommand(): string;
+  
+  /**
+   * Parse tool output into standardized issues
+   */
+  protected abstract parseOutput(output: string): Issue[];
+  
+  /**
+   * Execute a shell command with timeout and error handling
+   */
+  protected async runCommand(command: string): Promise<{ stdout: string; stderr: string }> {
+    const startTime = Date.now();
+    const timeout = this.config.timeout || 300000; // 5 minutes default
+    
+    try {
+      console.log(`[Universal ${this.config.name}] 🚀 Executing: ${command.substring(0, 100)}...`);
+      
+      const result = await execAsync(command, {
+        cwd: this.config.workspacePath,
+        maxBuffer: 50 * 1024 * 1024, // 50MB buffer
+        timeout,
+        env: {
+          ...process.env,
+          // Ensure tools can find their configs
+          HOME: process.env.HOME,
+          PATH: process.env.PATH
+        }
+      });
+      
+      const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+      console.log(`[Universal ${this.config.name}] ✅ Completed in ${duration}s`);
+      
+      return result;
+      
+    } catch (error: any) {
+      const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+      
+      // Check if timeout
+      if (error.killed && error.signal === 'SIGTERM') {
+        console.error(`[Universal ${this.config.name}] ⏱️ Timeout after ${duration}s`);
+        throw new Error(`${this.config.name} timed out after ${timeout}ms`);
+      }
+      
+      // Many tools exit with non-zero even on success with findings
+      // Return stdout/stderr so parser can handle it
+      console.log(`[Universal ${this.config.name}] ⚠️ Non-zero exit (${error.code}) after ${duration}s - may be normal`);
+      
+      return {
+        stdout: error.stdout || '',
+        stderr: error.stderr || ''
+      };
+    }
+  }
+  
+  /**
+   * Standardize issue from tool-specific format to V9 Issue format
+   */
+  protected createIssue(params: {
+    tool: string;
+    category: IssueCategory;
+    severity: 'critical' | 'high' | 'medium' | 'low';
+    file: string;
+    line: number;
+    column?: number;
+    message: string;
+    description?: string;
+    cweId?: string;
+    cveId?: string;
+    ruleId?: string;
+  }): Issue {
+    return {
+      id: `${params.tool}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      category: params.category,
+      severity: params.severity,
+      status: 'new',
+      detectedInBranch: 'unknown', // Will be set by orchestrator
+      file: params.file,
+      line: params.line,
+      column: params.column,
+      message: params.message,
+      description: params.description,
+      source: {
+        tool: params.tool,
+        agent: this.getCategoryAgent(params.category),
+        ruleId: params.ruleId,
+        cweId: params.cweId,
+        cveId: params.cveId
+      }
+    };
+  }
+  
+  /**
+   * Map issue category to agent role
+   */
+  protected getCategoryAgent(category: IssueCategory): string {
+    switch (category) {
+      case 'Security':
+        return 'SecurityAnalyzer';
+      case 'Quality':
+        return 'QualityAnalyzer';
+      case 'Performance':
+        return 'PerformanceAnalyzer';
+      case 'Architecture':
+        return 'ArchitectureAnalyzer';
+      case 'Dependency':
+        return 'DependencyAnalyzer';
+      default:
+        return 'QualityAnalyzer';
+    }
+  }
+  
+  /**
+   * Determine severity from CVSS score or similar metrics
+   */
+  protected determineSeverity(score: number): 'critical' | 'high' | 'medium' | 'low' {
+    if (score >= 9.0) return 'critical';
+    if (score >= 7.0) return 'high';
+    if (score >= 4.0) return 'medium';
+    return 'low';
+  }
+  
+  /**
+   * Clean file paths to be relative to workspace
+   */
+  protected cleanFilePath(filePath: string): string {
+    // Remove workspace path prefix if present
+    if (filePath.startsWith(this.config.workspacePath)) {
+      return filePath.substring(this.config.workspacePath.length + 1);
+    }
+    
+    // Remove leading ./
+    if (filePath.startsWith('./')) {
+      return filePath.substring(2);
+    }
+    
+    return filePath;
+  }
+  
+  /**
+   * Log execution summary
+   */
+  protected logSummary(issues: Issue[], duration: number): void {
+    const severityCounts = {
+      critical: issues.filter(i => i.severity === 'critical').length,
+      high: issues.filter(i => i.severity === 'high').length,
+      medium: issues.filter(i => i.severity === 'medium').length,
+      low: issues.filter(i => i.severity === 'low').length
+    };
+    
+    console.log(`[Universal ${this.config.name}] 📊 Summary:`);
+    console.log(`  Total issues: ${issues.length}`);
+    console.log(`  Critical: ${severityCounts.critical}`);
+    console.log(`  High: ${severityCounts.high}`);
+    console.log(`  Medium: ${severityCounts.medium}`);
+    console.log(`  Low: ${severityCounts.low}`);
+    console.log(`  Duration: ${duration.toFixed(1)}s`);
+  }
+}
+
