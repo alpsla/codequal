@@ -1,0 +1,3551 @@
+[
+  {
+    "id": "cf1becd5-9706-4f81-82d8-b2d0228497aa",
+    "role": "security",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-4o-mini-search-preview",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.0-flash-exp:free",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.35,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:07.968Z",
+      "Role: security (analysis role with consistent weights)",
+      "Language: csharp, Size: any",
+      "Primary: openai/gpt-4o-mini-search-preview",
+      "Fallback: google/gemini-2.0-flash-exp:free",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:08.161121+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "b79fb4e3-9cca-404c-9c7d-a5c65b2de856",
+    "role": "security",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-4o-mini-search-preview",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.0-flash-exp:free",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.35,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:10.440Z",
+      "Role: security (analysis role with consistent weights)",
+      "Language: rust, Size: any",
+      "Primary: openai/gpt-4o-mini-search-preview",
+      "Fallback: google/gemini-2.0-flash-exp:free",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:10.62284+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "b2172660-5736-471b-a367-dbb3331c72af",
+    "role": "security",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-4o-mini-search-preview",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.0-flash-exp:free",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.35,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:09.517Z",
+      "Role: security (analysis role with consistent weights)",
+      "Language: php, Size: any",
+      "Primary: openai/gpt-4o-mini-search-preview",
+      "Fallback: google/gemini-2.0-flash-exp:free",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:09.695326+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "47443dfa-0fdc-43d8-a3c4-22e33760c67a",
+    "role": "security",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-4o-mini-search-preview",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.0-flash-exp:free",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.35,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:09.858Z",
+      "Role: security (analysis role with consistent weights)",
+      "Language: python, Size: any",
+      "Primary: openai/gpt-4o-mini-search-preview",
+      "Fallback: google/gemini-2.0-flash-exp:free",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:10.026466+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "d5086395-3c69-4a7b-b7cc-736bc7e75bb0",
+    "role": "security",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-4o-mini-search-preview",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.0-flash-exp:free",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.35,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:08.279Z",
+      "Role: security (analysis role with consistent weights)",
+      "Language: go, Size: any",
+      "Primary: openai/gpt-4o-mini-search-preview",
+      "Fallback: google/gemini-2.0-flash-exp:free",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:08.462079+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "5d5c8465-e062-416b-a9a6-f1a85f724369",
+    "role": "security",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-4o-mini-search-preview",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.0-flash-exp:free",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.35,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:10.147Z",
+      "Role: security (analysis role with consistent weights)",
+      "Language: ruby, Size: any",
+      "Primary: openai/gpt-4o-mini-search-preview",
+      "Fallback: google/gemini-2.0-flash-exp:free",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:10.321076+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "522b15ed-5fd2-4c22-857c-444245ff8361",
+    "role": "security",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-4o-mini-search-preview",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.0-flash-exp:free",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.35,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:08.909Z",
+      "Role: security (analysis role with consistent weights)",
+      "Language: javascript, Size: any",
+      "Primary: openai/gpt-4o-mini-search-preview",
+      "Fallback: google/gemini-2.0-flash-exp:free",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:09.078921+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "6a88debb-d32a-4523-8ee3-7790fbd6a9be",
+    "role": "security",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-4o-mini-search-preview",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.0-flash-exp:free",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.35,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:09.203Z",
+      "Role: security (analysis role with consistent weights)",
+      "Language: kotlin, Size: any",
+      "Primary: openai/gpt-4o-mini-search-preview",
+      "Fallback: google/gemini-2.0-flash-exp:free",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:09.386365+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "bca32b95-2dc4-48ff-8fc6-624fc3ccbbc7",
+    "role": "security",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-4o-mini-search-preview",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.0-flash-exp:free",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.35,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:07.618Z",
+      "Role: security (analysis role with consistent weights)",
+      "Language: cpp, Size: any",
+      "Primary: openai/gpt-4o-mini-search-preview",
+      "Fallback: google/gemini-2.0-flash-exp:free",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:07.796608+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "9c9d1bcd-8454-42b4-a649-85237a86cac5",
+    "role": "performance",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.0-flash-exp:free",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-4o-mini-search-preview",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.35,
+      "quality": 0.3,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:12.639Z",
+      "Role: performance (analysis role with consistent weights)",
+      "Language: javascript, Size: any",
+      "Primary: google/gemini-2.0-flash-exp:free",
+      "Fallback: openai/gpt-4o-mini-search-preview",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:12.806954+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "a75f92a4-d72a-4875-a77e-07601a420393",
+    "role": "performance",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.0-flash-exp:free",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-4o-mini-search-preview",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.35,
+      "quality": 0.3,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:13.242Z",
+      "Role: performance (analysis role with consistent weights)",
+      "Language: php, Size: any",
+      "Primary: google/gemini-2.0-flash-exp:free",
+      "Fallback: openai/gpt-4o-mini-search-preview",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:13.412955+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "67e6463f-a387-4ba3-956f-7b985be22453",
+    "role": "performance",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.0-flash-exp:free",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-4o-mini-search-preview",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.35,
+      "quality": 0.3,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:13.536Z",
+      "Role: performance (analysis role with consistent weights)",
+      "Language: python, Size: any",
+      "Primary: google/gemini-2.0-flash-exp:free",
+      "Fallback: openai/gpt-4o-mini-search-preview",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:13.706417+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "5e377a70-672d-49cb-892d-bbe5daa3dd5d",
+    "role": "performance",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.0-flash-exp:free",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-4o-mini-search-preview",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.35,
+      "quality": 0.3,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:14.136Z",
+      "Role: performance (analysis role with consistent weights)",
+      "Language: rust, Size: any",
+      "Primary: google/gemini-2.0-flash-exp:free",
+      "Fallback: openai/gpt-4o-mini-search-preview",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:14.3299+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "7d8202b3-3c55-4794-b169-6f1a866e8a43",
+    "role": "security",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-4o-mini-search-preview",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.0-flash-exp:free",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.35,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:10.755Z",
+      "Role: security (analysis role with consistent weights)",
+      "Language: swift, Size: any",
+      "Primary: openai/gpt-4o-mini-search-preview",
+      "Fallback: google/gemini-2.0-flash-exp:free",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:10.932803+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "f4153f25-8f23-4438-b472-081fa78f8b2e",
+    "role": "performance",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.0-flash-exp:free",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-4o-mini-search-preview",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.35,
+      "quality": 0.3,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:11.355Z",
+      "Role: performance (analysis role with consistent weights)",
+      "Language: cpp, Size: any",
+      "Primary: google/gemini-2.0-flash-exp:free",
+      "Fallback: openai/gpt-4o-mini-search-preview",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:11.520722+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "d8e347d9-e51a-4448-834e-61af821df907",
+    "role": "performance",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.0-flash-exp:free",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-4o-mini-search-preview",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.35,
+      "quality": 0.3,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:11.639Z",
+      "Role: performance (analysis role with consistent weights)",
+      "Language: csharp, Size: any",
+      "Primary: google/gemini-2.0-flash-exp:free",
+      "Fallback: openai/gpt-4o-mini-search-preview",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:11.822528+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "50fd24e0-7e07-4590-bebf-31f0d76ed527",
+    "role": "performance",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.0-flash-exp:free",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-4o-mini-search-preview",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.35,
+      "quality": 0.3,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:12.055Z",
+      "Role: performance (analysis role with consistent weights)",
+      "Language: go, Size: any",
+      "Primary: google/gemini-2.0-flash-exp:free",
+      "Fallback: openai/gpt-4o-mini-search-preview",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:12.226733+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "0185ebba-c256-4d19-9f75-e3b1d597d1d7",
+    "role": "performance",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.0-flash-exp:free",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-4o-mini-search-preview",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.35,
+      "quality": 0.3,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:14.747Z",
+      "Role: performance (analysis role with consistent weights)",
+      "Language: typescript, Size: any",
+      "Primary: google/gemini-2.0-flash-exp:free",
+      "Fallback: openai/gpt-4o-mini-search-preview",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:14.938571+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "f7a3b797-39ec-4d14-92ec-8cc1f2593d20",
+    "role": "performance",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.0-flash-exp:free",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-4o-mini-search-preview",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.35,
+      "quality": 0.3,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:13.837Z",
+      "Role: performance (analysis role with consistent weights)",
+      "Language: ruby, Size: any",
+      "Primary: google/gemini-2.0-flash-exp:free",
+      "Fallback: openai/gpt-4o-mini-search-preview",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:14.00981+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "9d8d10a8-73c7-4ebb-94d3-fb41a4e03e0d",
+    "role": "performance",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.0-flash-exp:free",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-4o-mini-search-preview",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.35,
+      "quality": 0.3,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:14.450Z",
+      "Role: performance (analysis role with consistent weights)",
+      "Language: swift, Size: any",
+      "Primary: google/gemini-2.0-flash-exp:free",
+      "Fallback: openai/gpt-4o-mini-search-preview",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:14.622944+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "f6838cd4-ac31-4323-b7fd-cd54c813f14e",
+    "role": "code_quality",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-4o-mini-search-preview",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.0-flash-exp:free",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.35,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:15.713Z",
+      "Role: code_quality (analysis role with consistent weights)",
+      "Language: go, Size: any",
+      "Primary: openai/gpt-4o-mini-search-preview",
+      "Fallback: google/gemini-2.0-flash-exp:free",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:15.88968+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "c18fd8f2-bb02-482d-aec5-4fd308bc85c4",
+    "role": "code_quality",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-4o-mini-search-preview",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.0-flash-exp:free",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.35,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:17.393Z",
+      "Role: code_quality (analysis role with consistent weights)",
+      "Language: python, Size: any",
+      "Primary: openai/gpt-4o-mini-search-preview",
+      "Fallback: google/gemini-2.0-flash-exp:free",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:17.561784+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "4a6cbec5-0dd4-490e-91f6-e71210255391",
+    "role": "code_quality",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-4o-mini-search-preview",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.0-flash-exp:free",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.35,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:16.507Z",
+      "Role: code_quality (analysis role with consistent weights)",
+      "Language: javascript, Size: any",
+      "Primary: openai/gpt-4o-mini-search-preview",
+      "Fallback: google/gemini-2.0-flash-exp:free",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:16.68574+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "02dfffe6-ce8a-4ca0-9452-9becbc000cce",
+    "role": "code_quality",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-4o-mini-search-preview",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.0-flash-exp:free",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.35,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:18.006Z",
+      "Role: code_quality (analysis role with consistent weights)",
+      "Language: rust, Size: any",
+      "Primary: openai/gpt-4o-mini-search-preview",
+      "Fallback: google/gemini-2.0-flash-exp:free",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:18.186546+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "ff84cdac-7058-44de-8937-66865feb8bad",
+    "role": "performance",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.0-flash-exp:free",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-4o-mini-search-preview",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.35,
+      "quality": 0.3,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:12.939Z",
+      "Role: performance (analysis role with consistent weights)",
+      "Language: kotlin, Size: any",
+      "Primary: google/gemini-2.0-flash-exp:free",
+      "Fallback: openai/gpt-4o-mini-search-preview",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:13.11288+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "bda8c31a-8c0f-4bb6-abb3-37be204a5da6",
+    "role": "code_quality",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-4o-mini-search-preview",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.0-flash-exp:free",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.35,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:15.072Z",
+      "Role: code_quality (analysis role with consistent weights)",
+      "Language: cpp, Size: any",
+      "Primary: openai/gpt-4o-mini-search-preview",
+      "Fallback: google/gemini-2.0-flash-exp:free",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:15.256319+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "cd9a260b-1314-40c5-a9ce-05ca07173e74",
+    "role": "code_quality",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-4o-mini-search-preview",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.0-flash-exp:free",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.35,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:15.403Z",
+      "Role: code_quality (analysis role with consistent weights)",
+      "Language: csharp, Size: any",
+      "Primary: openai/gpt-4o-mini-search-preview",
+      "Fallback: google/gemini-2.0-flash-exp:free",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:15.581916+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "fc7d4229-8bab-44e6-baf4-2404ed958aad",
+    "role": "code_quality",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-4o-mini-search-preview",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.0-flash-exp:free",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.35,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:18.631Z",
+      "Role: code_quality (analysis role with consistent weights)",
+      "Language: typescript, Size: any",
+      "Primary: openai/gpt-4o-mini-search-preview",
+      "Fallback: google/gemini-2.0-flash-exp:free",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:18.846594+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "586f6aa3-d704-4e4e-b479-11c0aa033207",
+    "role": "code_quality",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-4o-mini-search-preview",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.0-flash-exp:free",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.35,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:17.702Z",
+      "Role: code_quality (analysis role with consistent weights)",
+      "Language: ruby, Size: any",
+      "Primary: openai/gpt-4o-mini-search-preview",
+      "Fallback: google/gemini-2.0-flash-exp:free",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:17.880143+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "e8561c75-da1b-478e-99c9-c642f49dfb0f",
+    "role": "architecture",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-4o-mini-search-preview",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.0-flash-exp:free",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.35,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:20.171Z",
+      "Role: architecture (analysis role with consistent weights)",
+      "Language: javascript, Size: any",
+      "Primary: openai/gpt-4o-mini-search-preview",
+      "Fallback: google/gemini-2.0-flash-exp:free",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:20.353097+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "671139b1-43ac-46ae-97b6-d5cb63fbaeb4",
+    "role": "architecture",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-4o-mini-search-preview",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.0-flash-exp:free",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.35,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:19.276Z",
+      "Role: architecture (analysis role with consistent weights)",
+      "Language: csharp, Size: any",
+      "Primary: openai/gpt-4o-mini-search-preview",
+      "Fallback: google/gemini-2.0-flash-exp:free",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:19.44511+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "6b34e47d-c167-4256-a951-341764efa51c",
+    "role": "code_quality",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-4o-mini-search-preview",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.0-flash-exp:free",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.35,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:18.301Z",
+      "Role: code_quality (analysis role with consistent weights)",
+      "Language: swift, Size: any",
+      "Primary: openai/gpt-4o-mini-search-preview",
+      "Fallback: google/gemini-2.0-flash-exp:free",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:18.475753+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "4c672999-85c7-4991-93dd-25c3dc236a9d",
+    "role": "architecture",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-4o-mini-search-preview",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.0-flash-exp:free",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.35,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:18.963Z",
+      "Role: architecture (analysis role with consistent weights)",
+      "Language: cpp, Size: any",
+      "Primary: openai/gpt-4o-mini-search-preview",
+      "Fallback: google/gemini-2.0-flash-exp:free",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:19.142902+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "7c91e8ba-517b-4329-955e-9f9840d4cbcb",
+    "role": "architecture",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-4o-mini-search-preview",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.0-flash-exp:free",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.35,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:21.058Z",
+      "Role: architecture (analysis role with consistent weights)",
+      "Language: python, Size: any",
+      "Primary: openai/gpt-4o-mini-search-preview",
+      "Fallback: google/gemini-2.0-flash-exp:free",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:21.225806+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "eeda6cad-2392-4c48-a9f1-15d133473ffa",
+    "role": "architecture",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-4o-mini-search-preview",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.0-flash-exp:free",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.35,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:21.650Z",
+      "Role: architecture (analysis role with consistent weights)",
+      "Language: rust, Size: any",
+      "Primary: openai/gpt-4o-mini-search-preview",
+      "Fallback: google/gemini-2.0-flash-exp:free",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:21.831911+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "694fa812-ce1d-4648-8f47-ef7f7007db64",
+    "role": "architecture",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-4o-mini-search-preview",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.0-flash-exp:free",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.35,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:22.257Z",
+      "Role: architecture (analysis role with consistent weights)",
+      "Language: typescript, Size: any",
+      "Primary: openai/gpt-4o-mini-search-preview",
+      "Fallback: google/gemini-2.0-flash-exp:free",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:22.44107+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "ff1d00ce-47f2-4b94-9d8a-fb41aee131c4",
+    "role": "code_quality",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-4o-mini-search-preview",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.0-flash-exp:free",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.35,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:16.806Z",
+      "Role: code_quality (analysis role with consistent weights)",
+      "Language: kotlin, Size: any",
+      "Primary: openai/gpt-4o-mini-search-preview",
+      "Fallback: google/gemini-2.0-flash-exp:free",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:16.974898+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "83fd10cb-e81d-4e4b-9816-602f0b84e78b",
+    "role": "architecture",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-4o-mini-search-preview",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.0-flash-exp:free",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.35,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:19.569Z",
+      "Role: architecture (analysis role with consistent weights)",
+      "Language: go, Size: any",
+      "Primary: openai/gpt-4o-mini-search-preview",
+      "Fallback: google/gemini-2.0-flash-exp:free",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:19.738478+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "3b788d4d-4850-41bc-b027-c94573c89d69",
+    "role": "code_quality",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-4o-mini-search-preview",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.0-flash-exp:free",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.35,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:17.103Z",
+      "Role: code_quality (analysis role with consistent weights)",
+      "Language: php, Size: any",
+      "Primary: openai/gpt-4o-mini-search-preview",
+      "Fallback: google/gemini-2.0-flash-exp:free",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:17.265308+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "f64b7566-bf59-41d1-a288-d8c9b6df042f",
+    "role": "dependency",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.0-flash-exp:free",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-4o-mini-search-preview",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.35,
+      "quality": 0.3,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:22.853Z",
+      "Role: dependency (analysis role with consistent weights)",
+      "Language: csharp, Size: any",
+      "Primary: google/gemini-2.0-flash-exp:free",
+      "Fallback: openai/gpt-4o-mini-search-preview",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:23.060262+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "4fb72082-e8b7-41b2-8c22-33f92d0a2726",
+    "role": "architecture",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-4o-mini-search-preview",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.0-flash-exp:free",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.35,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:21.348Z",
+      "Role: architecture (analysis role with consistent weights)",
+      "Language: ruby, Size: any",
+      "Primary: openai/gpt-4o-mini-search-preview",
+      "Fallback: google/gemini-2.0-flash-exp:free",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:21.520457+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "f80f19b4-f908-4f9a-af3e-96ac4bf1741e",
+    "role": "dependency",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.0-flash-exp:free",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-4o-mini-search-preview",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.35,
+      "quality": 0.3,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:23.790Z",
+      "Role: dependency (analysis role with consistent weights)",
+      "Language: javascript, Size: any",
+      "Primary: google/gemini-2.0-flash-exp:free",
+      "Fallback: openai/gpt-4o-mini-search-preview",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:23.956575+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "7c15cf0b-fcde-4fe4-bb4c-1613808d61a3",
+    "role": "architecture",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-4o-mini-search-preview",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.0-flash-exp:free",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.35,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:21.949Z",
+      "Role: architecture (analysis role with consistent weights)",
+      "Language: swift, Size: any",
+      "Primary: openai/gpt-4o-mini-search-preview",
+      "Fallback: google/gemini-2.0-flash-exp:free",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:22.11982+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "981514bd-3f7d-44bd-bfc4-342ca7def472",
+    "role": "dependency",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.0-flash-exp:free",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-4o-mini-search-preview",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.35,
+      "quality": 0.3,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:24.688Z",
+      "Role: dependency (analysis role with consistent weights)",
+      "Language: python, Size: any",
+      "Primary: google/gemini-2.0-flash-exp:free",
+      "Fallback: openai/gpt-4o-mini-search-preview",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:24.863122+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "9438f1d5-3849-4417-a71e-f3b95b04a8d6",
+    "role": "dependency",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.0-flash-exp:free",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-4o-mini-search-preview",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.35,
+      "quality": 0.3,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:25.280Z",
+      "Role: dependency (analysis role with consistent weights)",
+      "Language: rust, Size: any",
+      "Primary: google/gemini-2.0-flash-exp:free",
+      "Fallback: openai/gpt-4o-mini-search-preview",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:25.468413+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "a84e77ba-1b6e-4912-b017-e67c52d96500",
+    "role": "architecture",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-4o-mini-search-preview",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.0-flash-exp:free",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.35,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:20.483Z",
+      "Role: architecture (analysis role with consistent weights)",
+      "Language: kotlin, Size: any",
+      "Primary: openai/gpt-4o-mini-search-preview",
+      "Fallback: google/gemini-2.0-flash-exp:free",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:20.651314+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "3163e98e-3f0e-4cf2-b4d2-6ec6a896efe8",
+    "role": "architecture",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-4o-mini-search-preview",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.0-flash-exp:free",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.35,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:20.770Z",
+      "Role: architecture (analysis role with consistent weights)",
+      "Language: php, Size: any",
+      "Primary: openai/gpt-4o-mini-search-preview",
+      "Fallback: google/gemini-2.0-flash-exp:free",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:20.945913+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "2e47082f-8a1f-40b9-833d-1c8c591dca9c",
+    "role": "dependency",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.0-flash-exp:free",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-4o-mini-search-preview",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.35,
+      "quality": 0.3,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:23.177Z",
+      "Role: dependency (analysis role with consistent weights)",
+      "Language: go, Size: any",
+      "Primary: google/gemini-2.0-flash-exp:free",
+      "Fallback: openai/gpt-4o-mini-search-preview",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:23.36986+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "1abdf2a1-ef8a-4a1d-9e58-069e96d4e904",
+    "role": "dependency",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.0-flash-exp:free",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-4o-mini-search-preview",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.35,
+      "quality": 0.3,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:25.883Z",
+      "Role: dependency (analysis role with consistent weights)",
+      "Language: typescript, Size: any",
+      "Primary: google/gemini-2.0-flash-exp:free",
+      "Fallback: openai/gpt-4o-mini-search-preview",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:26.055955+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "9352c018-7723-4491-a6dd-d73de584d5e3",
+    "role": "educator",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "anthropic",
+    "primary_model": "anthropic/claude-sonnet-4.5",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.25,
+      "quality": 0.65,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:22:11.826Z",
+      "Context: python / educator",
+      "Search-based: Weight-tailored queries (quality=0.65, cost=0.1)",
+      "Primary: anthropic/claude-sonnet-4.5 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:22:11.826+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "6f2c063e-fa4f-4ffc-898b-6d112a04be51",
+    "role": "educator",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "anthropic",
+    "primary_model": "anthropic/claude-sonnet-4.5",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-pro",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.25,
+      "quality": 0.65,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:22:16.774Z",
+      "Context: javascript / educator",
+      "Search-based: Weight-tailored queries (quality=0.65, cost=0.1)",
+      "Primary: anthropic/claude-sonnet-4.5 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-pro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:22:16.774+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "ce2ab891-f436-4830-8b9e-db092183b899",
+    "role": "educator",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash",
+    "fallback_provider": "anthropic",
+    "fallback_model": "anthropic/claude-sonnet-4.5",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.25,
+      "quality": 0.65,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:22:18.841Z",
+      "Context: go / educator",
+      "Search-based: Weight-tailored queries (quality=0.65, cost=0.1)",
+      "Primary: google/gemini-2.5-flash (validated on OpenRouter)",
+      "Fallback: anthropic/claude-sonnet-4.5",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:22:18.841+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "18e6dcf0-18b2-4b85-bf8f-087650886906",
+    "role": "educator",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "meta-llama",
+    "primary_model": "meta-llama/llama-3.3-8b-instruct:free",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-4o-audio-preview",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.25,
+      "quality": 0.65,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:22:21.268Z",
+      "Context: rust / educator",
+      "Search-based: Weight-tailored queries (quality=0.65, cost=0.1)",
+      "Primary: meta-llama/llama-3.3-8b-instruct:free (validated on OpenRouter)",
+      "Fallback: openai/gpt-4o-audio-preview",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:22:21.268+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "a0bcee32-8a4d-4374-958d-aaf63622cc3f",
+    "role": "dependency",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.0-flash-exp:free",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-4o-mini-search-preview",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.35,
+      "quality": 0.3,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:24.985Z",
+      "Role: dependency (analysis role with consistent weights)",
+      "Language: ruby, Size: any",
+      "Primary: google/gemini-2.0-flash-exp:free",
+      "Fallback: openai/gpt-4o-mini-search-preview",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:25.159728+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "61b20b91-65cd-4399-9446-8f649bf315f8",
+    "role": "dependency",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.0-flash-exp:free",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-4o-mini-search-preview",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.35,
+      "quality": 0.3,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:22.562Z",
+      "Role: dependency (analysis role with consistent weights)",
+      "Language: cpp, Size: any",
+      "Primary: google/gemini-2.0-flash-exp:free",
+      "Fallback: openai/gpt-4o-mini-search-preview",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:22.736068+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "c33becc1-3810-4ed8-94f8-3b2fdec763b1",
+    "role": "dependency",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.0-flash-exp:free",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-4o-mini-search-preview",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.35,
+      "quality": 0.3,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:24.085Z",
+      "Role: dependency (analysis role with consistent weights)",
+      "Language: kotlin, Size: any",
+      "Primary: google/gemini-2.0-flash-exp:free",
+      "Fallback: openai/gpt-4o-mini-search-preview",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:24.260992+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "3eb76814-51a3-47cb-aa06-d79c1d587a58",
+    "role": "educator",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-4o-mini-search-preview",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-4o-mini",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.25,
+      "quality": 0.65,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-10-29T17:50:47.497Z",
+      "Role: educator (analysis role with consistent weights)",
+      "Language: java, Size: any",
+      "Primary: openai/gpt-4o-mini-search-preview",
+      "Fallback: openai/gpt-4o-mini",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-10-29T17:50:47.717722+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "8d523afd-bc89-41ab-99a9-c7012dc8c332",
+    "role": "dependency",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.0-flash-exp:free",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-4o-mini-search-preview",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.35,
+      "quality": 0.3,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:25.582Z",
+      "Role: dependency (analysis role with consistent weights)",
+      "Language: swift, Size: any",
+      "Primary: google/gemini-2.0-flash-exp:free",
+      "Fallback: openai/gpt-4o-mini-search-preview",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:25.766749+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "8dbf40e0-0ff4-40cc-b5f0-0363de84c44a",
+    "role": "dependency",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.0-flash-exp:free",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-4o-mini-search-preview",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.35,
+      "quality": 0.3,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:24.393Z",
+      "Role: dependency (analysis role with consistent weights)",
+      "Language: php, Size: any",
+      "Primary: google/gemini-2.0-flash-exp:free",
+      "Fallback: openai/gpt-4o-mini-search-preview",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:24.570323+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "332d1179-9c8f-424c-9ffe-ccc54b65dfeb",
+    "role": "educator",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "deepseek",
+    "primary_model": "deepseek/deepseek-chat-v3.1",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-pro",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.25,
+      "quality": 0.65,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:22:23.503Z",
+      "Context: csharp / educator",
+      "Search-based: Weight-tailored queries (quality=0.65, cost=0.1)",
+      "Primary: deepseek/deepseek-chat-v3.1 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-pro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:22:23.503+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "b49f8973-5014-4811-aed4-3c05defb51f3",
+    "role": "educator",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "deepseek",
+    "primary_model": "deepseek/deepseek-chat-v3.1",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-pro",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.25,
+      "quality": 0.65,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:22:26.279Z",
+      "Context: cpp / educator",
+      "Search-based: Weight-tailored queries (quality=0.65, cost=0.1)",
+      "Primary: deepseek/deepseek-chat-v3.1 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-pro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:22:26.279+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "0e369051-5354-4a68-9f78-f3792c982acd",
+    "role": "educator",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash",
+    "fallback_provider": "anthropic",
+    "fallback_model": "anthropic/claude-sonnet-4.5",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.25,
+      "quality": 0.65,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:22:28.418Z",
+      "Context: ruby / educator",
+      "Search-based: Weight-tailored queries (quality=0.65, cost=0.1)",
+      "Primary: google/gemini-2.5-flash (validated on OpenRouter)",
+      "Fallback: anthropic/claude-sonnet-4.5",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:22:28.418+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "fa850ed9-e5d9-4c56-90bb-c3552ef78df9",
+    "role": "educator",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-pro",
+    "fallback_provider": "deepseek",
+    "fallback_model": "deepseek/deepseek-v3.2-exp",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.25,
+      "quality": 0.65,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:22:30.360Z",
+      "Context: php / educator",
+      "Search-based: Weight-tailored queries (quality=0.65, cost=0.1)",
+      "Primary: google/gemini-2.5-pro (validated on OpenRouter)",
+      "Fallback: deepseek/deepseek-v3.2-exp",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:22:30.36+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "2ec5c868-8a25-429a-9ccd-2433af621bf1",
+    "role": "educator",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "anthropic",
+    "primary_model": "anthropic/claude-sonnet-4.5",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-pro",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.25,
+      "quality": 0.65,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:22:32.745Z",
+      "Context: kotlin / educator",
+      "Search-based: Weight-tailored queries (quality=0.65, cost=0.1)",
+      "Primary: anthropic/claude-sonnet-4.5 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-pro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:22:32.745+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "6647ae87-446c-45b3-a429-1ce2c3adf711",
+    "role": "educator",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "anthropic",
+    "primary_model": "anthropic/claude-sonnet-4.5",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-pro",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.25,
+      "quality": 0.65,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:22:35.042Z",
+      "Context: swift / educator",
+      "Search-based: Weight-tailored queries (quality=0.65, cost=0.1)",
+      "Primary: anthropic/claude-sonnet-4.5 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-pro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:22:35.042+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "d41c6222-b993-497d-b59b-71fd184d3695",
+    "role": "orchestrator",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "qwen",
+    "primary_model": "qwen/qwen3-max",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-pro",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.3,
+      "quality": 0.6,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:22:39.360Z",
+      "Context: python / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.6, cost=0.1)",
+      "Primary: qwen/qwen3-max (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-pro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:22:39.36+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "4f9431ef-e55e-4741-a4d0-6aa50b9bfb19",
+    "role": "orchestrator",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "meta-llama",
+    "primary_model": "meta-llama/llama-3.3-8b-instruct:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-pro",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.3,
+      "quality": 0.6,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:22:44.202Z",
+      "Context: javascript / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.6, cost=0.1)",
+      "Primary: meta-llama/llama-3.3-8b-instruct:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-pro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:22:44.202+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "8959ecb8-1c88-4524-b5f0-59a25eb39d5f",
+    "role": "orchestrator",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-4o-audio-preview",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.3,
+      "quality": 0.6,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:22:46.712Z",
+      "Context: go / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.6, cost=0.1)",
+      "Primary: google/gemini-2.5-flash (validated on OpenRouter)",
+      "Fallback: openai/gpt-4o-audio-preview",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:22:46.712+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "49e29c37-0d29-42d9-9c1a-938497904ca5",
+    "role": "orchestrator",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-4o-mini-search-preview",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-4o-mini",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.3,
+      "quality": 0.6,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-10-29T17:50:47.121Z",
+      "Role: orchestrator (analysis role with consistent weights)",
+      "Language: java, Size: any",
+      "Primary: openai/gpt-4o-mini-search-preview",
+      "Fallback: openai/gpt-4o-mini",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-10-29T17:50:47.315033+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "c3847df7-b7eb-4021-bf95-e13023073c0a",
+    "role": "orchestrator",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-pro",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.3,
+      "quality": 0.6,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:22:49.112Z",
+      "Context: rust / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.6, cost=0.1)",
+      "Primary: openai/gpt-5 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-pro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:22:49.112+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "a15bbdb4-8134-4a13-8ebd-57ea197c2c0b",
+    "role": "orchestrator",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash",
+    "fallback_provider": "anthropic",
+    "fallback_model": "anthropic/claude-opus-4.1",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.3,
+      "quality": 0.6,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:22:51.354Z",
+      "Context: csharp / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.6, cost=0.1)",
+      "Primary: google/gemini-2.5-flash (validated on OpenRouter)",
+      "Fallback: anthropic/claude-opus-4.1",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:22:51.354+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "ba7cd320-56f8-4a1a-817a-e783b2ada830",
+    "role": "orchestrator",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash",
+    "fallback_provider": "meta-llama",
+    "fallback_model": "meta-llama/llama-3.3-8b-instruct:free",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.3,
+      "quality": 0.6,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:22:53.543Z",
+      "Context: cpp / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.6, cost=0.1)",
+      "Primary: google/gemini-2.5-flash (validated on OpenRouter)",
+      "Fallback: meta-llama/llama-3.3-8b-instruct:free",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:22:53.543+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "21dcbf48-6c14-48eb-a18f-ac72d9e3fe35",
+    "role": "orchestrator",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash",
+    "fallback_provider": "meta-llama",
+    "fallback_model": "meta-llama/llama-3.3-8b-instruct:free",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.3,
+      "quality": 0.6,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:22:55.954Z",
+      "Context: ruby / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.6, cost=0.1)",
+      "Primary: google/gemini-2.5-flash (validated on OpenRouter)",
+      "Fallback: meta-llama/llama-3.3-8b-instruct:free",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:22:55.954+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "11668646-af29-44d3-ad96-dcaf56b3c159",
+    "role": "orchestrator",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash",
+    "fallback_provider": "meta-llama",
+    "fallback_model": "meta-llama/llama-3.3-8b-instruct:free",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.3,
+      "quality": 0.6,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:22:58.401Z",
+      "Context: php / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.6, cost=0.1)",
+      "Primary: google/gemini-2.5-flash (validated on OpenRouter)",
+      "Fallback: meta-llama/llama-3.3-8b-instruct:free",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:22:58.401+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "997d6be1-726f-47be-ad53-dff6ba81623c",
+    "role": "orchestrator",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-pro",
+    "fallback_provider": "anthropic",
+    "fallback_model": "anthropic/claude-sonnet-4.5",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.3,
+      "quality": 0.6,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:23:01.072Z",
+      "Context: kotlin / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.6, cost=0.1)",
+      "Primary: google/gemini-2.5-pro (validated on OpenRouter)",
+      "Fallback: anthropic/claude-sonnet-4.5",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:23:01.073+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "406d239c-8d77-4f2a-8b84-55004f9dd879",
+    "role": "orchestrator",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash",
+    "fallback_provider": "anthropic",
+    "fallback_model": "anthropic/claude-sonnet-4.5",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.3,
+      "quality": 0.6,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:23:03.418Z",
+      "Context: swift / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.6, cost=0.1)",
+      "Primary: google/gemini-2.5-flash (validated on OpenRouter)",
+      "Fallback: anthropic/claude-sonnet-4.5",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:23:03.418+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "4dc1a041-e12b-4399-9c3e-48bc07f29d35",
+    "role": "comparator",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.6,
+      "quality": 0.3,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:23:07.638Z",
+      "Context: python / comparator",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.1)",
+      "Primary: openai/gpt-5 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:23:07.638+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "746d8b7c-db8a-4320-b59a-6ae6bad6a8f9",
+    "role": "comparator",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-pro",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.6,
+      "quality": 0.3,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:23:09.889Z",
+      "Context: typescript / comparator",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.1)",
+      "Primary: openai/gpt-5 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-pro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:23:09.889+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "1b92002f-10b0-4166-9f01-5e6561c7aa43",
+    "role": "comparator",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-pro",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-5",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.6,
+      "quality": 0.3,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:23:11.902Z",
+      "Context: javascript / comparator",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.1)",
+      "Primary: google/gemini-2.5-pro (validated on OpenRouter)",
+      "Fallback: openai/gpt-5",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:23:11.902+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "85c51105-da05-4e41-b796-f10e837c27b1",
+    "role": "comparator",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "anthropic",
+    "primary_model": "anthropic/claude-sonnet-4.5",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-pro",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.6,
+      "quality": 0.3,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:23:14.644Z",
+      "Context: go / comparator",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.1)",
+      "Primary: anthropic/claude-sonnet-4.5 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-pro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:23:14.644+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "0900ecc7-a575-4909-b1dd-999a161b41a9",
+    "role": "comparator",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash",
+    "fallback_provider": "anthropic",
+    "fallback_model": "anthropic/claude-sonnet-4.5",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.6,
+      "quality": 0.3,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:23:16.537Z",
+      "Context: rust / comparator",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.1)",
+      "Primary: google/gemini-2.5-flash (validated on OpenRouter)",
+      "Fallback: anthropic/claude-sonnet-4.5",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:23:16.537+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "ef406ce9-0323-4fa2-879d-b8ff207de915",
+    "role": "comparator",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-pro",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-5",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.6,
+      "quality": 0.3,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:23:18.193Z",
+      "Context: csharp / comparator",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.1)",
+      "Primary: google/gemini-2.5-pro (validated on OpenRouter)",
+      "Fallback: openai/gpt-5",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:23:18.193+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "c969ae5b-9fa2-46c9-a258-21950f96c6fb",
+    "role": "comparator",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "anthropic",
+    "primary_model": "anthropic/claude-sonnet-4.5",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-5",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.6,
+      "quality": 0.3,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:23:20.407Z",
+      "Context: cpp / comparator",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.1)",
+      "Primary: anthropic/claude-sonnet-4.5 (validated on OpenRouter)",
+      "Fallback: openai/gpt-5",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:23:20.407+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "d0c52bdf-52d2-4dab-b2a6-5d75dd95996e",
+    "role": "comparator",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "anthropic",
+    "primary_model": "anthropic/claude-sonnet-4.5",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.6,
+      "quality": 0.3,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:23:22.331Z",
+      "Context: ruby / comparator",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.1)",
+      "Primary: anthropic/claude-sonnet-4.5 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:23:22.331+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "9010f6ed-cbc5-4cb8-b9b6-9b47c125e100",
+    "role": "comparator",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.6,
+      "quality": 0.3,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:23:24.036Z",
+      "Context: php / comparator",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.1)",
+      "Primary: openai/gpt-5 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:23:24.036+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "0888a8b1-4791-477c-9dfe-f0dbcd792490",
+    "role": "comparator",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "anthropic",
+    "primary_model": "anthropic/claude-sonnet-4.5",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-pro",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.6,
+      "quality": 0.3,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:23:26.247Z",
+      "Context: kotlin / comparator",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.1)",
+      "Primary: anthropic/claude-sonnet-4.5 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-pro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:23:26.247+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "3f0e20fd-459e-48c2-b199-96d782343659",
+    "role": "comparator",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5",
+    "fallback_provider": "anthropic",
+    "fallback_model": "anthropic/claude-opus-4.1",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.6,
+      "quality": 0.3,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:23:28.403Z",
+      "Context: swift / comparator",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.1)",
+      "Primary: openai/gpt-5 (validated on OpenRouter)",
+      "Fallback: anthropic/claude-opus-4.1",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:23:28.403+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "91b69323-5c31-40b5-94aa-91f09a90993e",
+    "role": "location_finder",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "anthropic",
+    "primary_model": "anthropic/claude-sonnet-4.5",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-pro",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.7,
+      "quality": 0.2,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:23:33.184Z",
+      "Context: python / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.2, cost=0.1)",
+      "Primary: anthropic/claude-sonnet-4.5 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-pro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:23:33.184+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "2501a319-5a4c-4da3-a21e-e43a28d34120",
+    "role": "location_finder",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-4o-audio-preview",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.7,
+      "quality": 0.2,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:23:36.016Z",
+      "Context: typescript / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.2, cost=0.1)",
+      "Primary: openai/gpt-4o-audio-preview (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:23:36.016+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "7e7b09a7-514c-462a-a235-06c610156b4e",
+    "role": "location_finder",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash",
+    "fallback_provider": "deepseek",
+    "fallback_model": "deepseek/deepseek-v3.2-exp",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.7,
+      "quality": 0.2,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:23:38.083Z",
+      "Context: javascript / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.2, cost=0.1)",
+      "Primary: google/gemini-2.5-flash (validated on OpenRouter)",
+      "Fallback: deepseek/deepseek-v3.2-exp",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:23:38.084+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "3de3b5e5-56e1-4002-b52a-32de847f4847",
+    "role": "location_finder",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-max",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.7,
+      "quality": 0.2,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:23:40.610Z",
+      "Context: go / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.2, cost=0.1)",
+      "Primary: google/gemini-2.5-flash (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-max",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:23:40.61+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "efd7cbe4-683c-4a44-aa01-4bb643bad30c",
+    "role": "location_finder",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "deepseek",
+    "primary_model": "deepseek/deepseek-v3.2-exp",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.7,
+      "quality": 0.2,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:23:42.764Z",
+      "Context: rust / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.2, cost=0.1)",
+      "Primary: deepseek/deepseek-v3.2-exp (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:23:42.764+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "2acf2ebc-5f9e-4360-9945-f30c201062c0",
+    "role": "location_finder",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash",
+    "fallback_provider": "deepseek",
+    "fallback_model": "deepseek/deepseek-v3.2-exp",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.7,
+      "quality": 0.2,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:23:44.957Z",
+      "Context: csharp / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.2, cost=0.1)",
+      "Primary: google/gemini-2.5-flash (validated on OpenRouter)",
+      "Fallback: deepseek/deepseek-v3.2-exp",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:23:44.957+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "9a1ca453-1e8c-4c47-84bb-028ee09ca5a6",
+    "role": "location_finder",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash",
+    "fallback_provider": "deepseek",
+    "fallback_model": "deepseek/deepseek-v3.2-exp",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.7,
+      "quality": 0.2,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:23:47.146Z",
+      "Context: cpp / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.2, cost=0.1)",
+      "Primary: google/gemini-2.5-flash (validated on OpenRouter)",
+      "Fallback: deepseek/deepseek-v3.2-exp",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:23:47.146+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "86a8a72c-3085-4219-8e4b-8d94abb39c7d",
+    "role": "location_finder",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash",
+    "fallback_provider": "deepseek",
+    "fallback_model": "deepseek/deepseek-v3.2-exp",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.7,
+      "quality": 0.2,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:23:49.359Z",
+      "Context: ruby / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.2, cost=0.1)",
+      "Primary: google/gemini-2.5-flash (validated on OpenRouter)",
+      "Fallback: deepseek/deepseek-v3.2-exp",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:23:49.359+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "22134bd9-a6cc-463d-a30d-7588166124d6",
+    "role": "location_finder",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash",
+    "fallback_provider": "deepseek",
+    "fallback_model": "deepseek/deepseek-v3.2-exp",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.7,
+      "quality": 0.2,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:23:51.702Z",
+      "Context: php / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.2, cost=0.1)",
+      "Primary: google/gemini-2.5-flash (validated on OpenRouter)",
+      "Fallback: deepseek/deepseek-v3.2-exp",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:23:51.702+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "d765314d-ead6-4088-b511-7da9b0c12eb5",
+    "role": "location_finder",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "anthropic",
+    "primary_model": "anthropic/claude-sonnet-4.5",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.7,
+      "quality": 0.2,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:23:53.927Z",
+      "Context: kotlin / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.2, cost=0.1)",
+      "Primary: anthropic/claude-sonnet-4.5 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:23:53.927+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "d112eaf5-a41e-4d76-9887-8c39d45076a4",
+    "role": "location_finder",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5-pro",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-pro",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.7,
+      "quality": 0.2,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:23:56.036Z",
+      "Context: swift / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.2, cost=0.1)",
+      "Primary: openai/gpt-5-pro (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-pro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:23:56.036+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "792c38a2-92dd-4f6e-80b1-609342a72503",
+    "role": "researcher",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "anthropic",
+    "primary_model": "anthropic/claude-sonnet-4.5",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-5",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.4,
+      "quality": 0.5,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:24:00.062Z",
+      "Context: python / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.1)",
+      "Primary: anthropic/claude-sonnet-4.5 (validated on OpenRouter)",
+      "Fallback: openai/gpt-5",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:24:00.062+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "aa82ef42-84d0-477a-b432-846716ed8ee1",
+    "role": "researcher",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.4,
+      "quality": 0.5,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:24:00.826Z",
+      "Context: typescript / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.1)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:24:00.826+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "ac919693-42e1-44de-bd04-b27e3cc53262",
+    "role": "researcher",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.4,
+      "quality": 0.5,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:24:01.134Z",
+      "Context: javascript / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.1)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:24:01.134+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "766e6c00-a843-410b-924d-bd54097b6f7a",
+    "role": "researcher",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "nvidia",
+    "primary_model": "nvidia/llama-3.3-nemotron-super-49b-v1.5",
+    "fallback_provider": "anthropic",
+    "fallback_model": "anthropic/claude-sonnet-4.5",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.4,
+      "quality": 0.5,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:24:03.215Z",
+      "Context: go / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.1)",
+      "Primary: nvidia/llama-3.3-nemotron-super-49b-v1.5 (validated on OpenRouter)",
+      "Fallback: anthropic/claude-sonnet-4.5",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:24:03.215+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "36814fb3-11f8-41b0-a314-e3749580efca",
+    "role": "researcher",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5-pro",
+    "fallback_provider": "anthropic",
+    "fallback_model": "anthropic/claude-opus-4.1",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.4,
+      "quality": 0.5,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:24:05.522Z",
+      "Context: rust / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.1)",
+      "Primary: openai/gpt-5-pro (validated on OpenRouter)",
+      "Fallback: anthropic/claude-opus-4.1",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:24:05.522+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "aa130d32-556b-4f94-b470-21161ad90ed3",
+    "role": "researcher",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "nvidia",
+    "primary_model": "nvidia/llama-3.3-nemotron-super-49b-v1.5",
+    "fallback_provider": "meta-llama",
+    "fallback_model": "meta-llama/llama-3.3-8b-instruct:free",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.4,
+      "quality": 0.5,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:24:07.747Z",
+      "Context: csharp / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.1)",
+      "Primary: nvidia/llama-3.3-nemotron-super-49b-v1.5 (validated on OpenRouter)",
+      "Fallback: meta-llama/llama-3.3-8b-instruct:free",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:24:07.747+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "41811cea-c6dc-4247-a7e6-02d23a0678b4",
+    "role": "researcher",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "qwen",
+    "primary_model": "qwen/qwen3-max",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen2.5-coder-7b-instruct",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.4,
+      "quality": 0.5,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:24:09.830Z",
+      "Context: cpp / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.1)",
+      "Primary: qwen/qwen3-max (validated on OpenRouter)",
+      "Fallback: qwen/qwen2.5-coder-7b-instruct",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:24:09.83+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "b4fe92ec-cc08-4266-8dea-5e00483747c2",
+    "role": "researcher",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5-pro",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-5-chat",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.4,
+      "quality": 0.5,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:24:11.625Z",
+      "Context: ruby / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.1)",
+      "Primary: openai/gpt-5-pro (validated on OpenRouter)",
+      "Fallback: openai/gpt-5-chat",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:24:11.625+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "e9aacdc0-2c46-452e-a578-cc4e945b2e30",
+    "role": "researcher",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "nvidia",
+    "primary_model": "nvidia/llama-3.3-nemotron-super-49b-v1.5",
+    "fallback_provider": "meta-llama",
+    "fallback_model": "meta-llama/llama-3.3-8b-instruct:free",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.4,
+      "quality": 0.5,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:24:13.988Z",
+      "Context: php / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.1)",
+      "Primary: nvidia/llama-3.3-nemotron-super-49b-v1.5 (validated on OpenRouter)",
+      "Fallback: meta-llama/llama-3.3-8b-instruct:free",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:24:13.988+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "a3e4a3d9-ad69-4bee-b183-817ad80d229f",
+    "role": "researcher",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.4,
+      "quality": 0.5,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:24:14.689Z",
+      "Context: kotlin / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.1)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:24:14.689+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "6ad4688b-c653-48f5-bb4d-cbdaa4fd8d63",
+    "role": "researcher",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.4,
+      "quality": 0.5,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:24:14.991Z",
+      "Context: swift / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.1)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-14T02:24:14.991+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "e1c16eda-6bef-4c7d-bfb2-bdb79f8a9d8a",
+    "role": "security-analyst",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "anthropic",
+    "primary_model": "anthropic/claude-opus-4.1",
+    "fallback_provider": "anthropic",
+    "fallback_model": "anthropic/claude-opus-4",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔍 On-demand research on 2025-10-29T13:01:01.708Z",
+      "Context: java / security-analyst",
+      "Primary: anthropic/claude-opus-4.1 (researched for specific context)",
+      "Fallback: anthropic/claude-opus-4",
+      "✅ Dynamically generated when config was missing"
+    ],
+    "last_updated": "2025-10-29T13:01:01.708+00:00",
+    "updated_by": "on-demand-research"
+  },
+  {
+    "id": "b6fdb304-a0a2-46bb-aa64-fa71291ff56b",
+    "role": "security-analyst",
+    "language": "java",
+    "size_category": "medium",
+    "primary_provider": "anthropic",
+    "primary_model": "anthropic/claude-opus-4.1",
+    "fallback_provider": "anthropic",
+    "fallback_model": "anthropic/anthropic/claude-opus-4",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.2,
+      "quality": 0.5,
+      "freshness": 0.1,
+      "contextWindow": 0
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "Researched optimal models for java medium repositories",
+      "Role security-analyst requires balanced priority",
+      "Model selected based on context-specific research",
+      "Configuration auto-generated via fallback research"
+    ],
+    "last_updated": "2025-10-29T13:01:02.031+00:00",
+    "updated_by": "model-config-resolver"
+  },
+  {
+    "id": "f50a69df-2f17-4cb8-895f-3b91665c1915",
+    "role": "security",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-4o-mini-search-preview",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.0-flash-exp:free",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.35,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:11.050Z",
+      "Role: security (analysis role with consistent weights)",
+      "Language: typescript, Size: any",
+      "Primary: openai/gpt-4o-mini-search-preview",
+      "Fallback: google/gemini-2.0-flash-exp:free",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:11.231458+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "abc6f2f3-13ca-4d47-a21f-037a8e1c0c65",
+    "role": "educator",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "deepseek",
+    "primary_model": "deepseek/deepseek-v3.2-exp",
+    "fallback_provider": "anthropic",
+    "fallback_model": "google/gemini-2.5-flash",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.25,
+      "quality": 0.65,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:22:14.639Z",
+      "Context: typescript / educator",
+      "Search-based: Weight-tailored queries (quality=0.65, cost=0.1)",
+      "Primary: deepseek/deepseek-v3.2-exp (validated on OpenRouter)",
+      "Fallback: anthropic/claude-sonnet-4.5",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-29T16:42:40.974461+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "e2369628-0e58-443c-bf39-85a080d3c175",
+    "role": "orchestrator",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash",
+    "fallback_provider": "anthropic",
+    "fallback_model": "google/gemini-2.5-flash",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.3,
+      "quality": 0.6,
+      "freshness": 0.2,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-10-14T02:22:41.978Z",
+      "Context: typescript / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.6, cost=0.1)",
+      "Primary: google/gemini-2.5-flash (validated on OpenRouter)",
+      "Fallback: anthropic/claude-sonnet-4.5",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-10-29T16:42:41.117882+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "0696d72a-9ba6-4fc9-a505-aecc4cfa240b",
+    "role": "architecture",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-4o-mini-search-preview",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.0-flash-exp:free",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.35,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:19.865Z",
+      "Role: architecture (analysis role with consistent weights)",
+      "Language: java, Size: any",
+      "Primary: openai/gpt-4o-mini-search-preview",
+      "Fallback: google/gemini-2.0-flash-exp:free",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:20.043831+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "b4cb5150-ac68-4428-8cf0-24d400ebff0c",
+    "role": "dependency",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.0-flash-exp:free",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-4o-mini-search-preview",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.35,
+      "quality": 0.3,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:23.499Z",
+      "Role: dependency (analysis role with consistent weights)",
+      "Language: java, Size: any",
+      "Primary: google/gemini-2.0-flash-exp:free",
+      "Fallback: openai/gpt-4o-mini-search-preview",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:23.670694+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "5d087dd7-e5ec-445f-ae6d-e0791ea15546",
+    "role": "security",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-4o-mini-search-preview",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.0-flash-exp:free",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.35,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:08.587Z",
+      "Role: security (analysis role with consistent weights)",
+      "Language: java, Size: any",
+      "Primary: openai/gpt-4o-mini-search-preview",
+      "Fallback: google/gemini-2.0-flash-exp:free",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:08.773059+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "bd5b1189-946e-4c43-93a9-7b70889bdd02",
+    "role": "performance",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.0-flash-exp:free",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-4o-mini-search-preview",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.35,
+      "quality": 0.3,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:12.345Z",
+      "Role: performance (analysis role with consistent weights)",
+      "Language: java, Size: any",
+      "Primary: google/gemini-2.0-flash-exp:free",
+      "Fallback: openai/gpt-4o-mini-search-preview",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:12.515341+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "2a22516d-7a99-4b99-b709-1dbb74448d17",
+    "role": "code_quality",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-4o-mini-search-preview",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.0-flash-exp:free",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.35,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:16.004Z",
+      "Role: code_quality (analysis role with consistent weights)",
+      "Language: java, Size: any",
+      "Primary: openai/gpt-4o-mini-search-preview",
+      "Fallback: google/gemini-2.0-flash-exp:free",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:16.18151+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "e0a42327-c37e-4c7c-b373-79265d000dc7",
+    "role": "code_quality",
+    "language": "java",
+    "size_category": "medium",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-4o-mini-search-preview",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.0-flash-exp:free",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.35,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-11-07T17:48:16.206Z",
+      "Role: code_quality (analysis role with consistent weights)",
+      "Language: java, Size: medium",
+      "Primary: openai/gpt-4o-mini-search-preview",
+      "Fallback: google/gemini-2.0-flash-exp:free",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-11-07T17:48:16.384909+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "ef31cb28-6a3f-49b0-b28a-002cd7cb7173",
+    "role": "researcher",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-4o-mini-search-preview",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-4o-mini",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.4,
+      "quality": 0.5,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-10-29T17:50:46.740Z",
+      "Role: researcher (analysis role with consistent weights)",
+      "Language: java, Size: any",
+      "Primary: openai/gpt-4o-mini-search-preview",
+      "Fallback: openai/gpt-4o-mini",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-10-29T17:50:46.927021+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "1d0db255-aac8-4b1b-96f2-33e9c35e04d2",
+    "role": "comparator",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-4o-mini-search-preview",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-4o-mini",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.6,
+      "quality": 0.3,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-10-29T17:50:47.947Z",
+      "Role: comparator (analysis role with consistent weights)",
+      "Language: java, Size: any",
+      "Primary: openai/gpt-4o-mini-search-preview",
+      "Fallback: openai/gpt-4o-mini",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-10-29T17:50:48.145715+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "48b2fad1-1c56-40a4-8b9d-5e016cac8e1d",
+    "role": "location_finder",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-4o-mini-search-preview",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-4o-mini",
+    "weights": {
+      "cost": 0.1,
+      "speed": 0.7,
+      "quality": 0.2,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔬 Quarterly research update on 2025-10-29T17:50:48.340Z",
+      "Role: location_finder (analysis role with consistent weights)",
+      "Language: java, Size: any",
+      "Primary: openai/gpt-4o-mini-search-preview",
+      "Fallback: openai/gpt-4o-mini",
+      "✅ Research-based selection using role-specific weights"
+    ],
+    "last_updated": "2025-10-29T17:50:48.537121+00:00",
+    "updated_by": "model-researcher-service"
+  },
+  {
+    "id": "564acc25-3a9f-424b-a5eb-551d29a607d0",
+    "role": "codequality",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "anthropic",
+    "primary_model": "anthropic/claude-opus-4.1",
+    "fallback_provider": "anthropic",
+    "fallback_model": "anthropic/claude-opus-4",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🔍 On-demand research on 2025-10-31T15:52:21.272Z",
+      "Context: java / codequality",
+      "Primary: anthropic/claude-opus-4.1 (researched for specific context)",
+      "Fallback: anthropic/claude-opus-4",
+      "✅ Dynamically generated when config was missing"
+    ],
+    "last_updated": "2025-10-31T15:52:21.272+00:00",
+    "updated_by": "on-demand-research"
+  },
+  {
+    "id": "f8788b6c-e5d4-4d27-b281-7c20f72157cd",
+    "role": "codequality",
+    "language": "java",
+    "size_category": "medium",
+    "primary_provider": "anthropic",
+    "primary_model": "anthropic/claude-opus-4.1",
+    "fallback_provider": "anthropic",
+    "fallback_model": "anthropic/anthropic/claude-opus-4",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.2,
+      "quality": 0.5,
+      "freshness": 0.1,
+      "contextWindow": 0
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "Researched optimal models for java medium repositories",
+      "Role codequality requires balanced priority",
+      "Model selected based on context-specific research",
+      "Configuration auto-generated via fallback research"
+    ],
+    "last_updated": "2025-10-31T15:52:21.529+00:00",
+    "updated_by": "model-config-resolver"
+  }
+]

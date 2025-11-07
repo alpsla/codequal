@@ -41,26 +41,28 @@ const LANGUAGES = [
 // Agent only sees individual code snippets, not entire codebase
 
 // Role-specific weights for model selection
+// UPDATED Nov 7, 2025: Maximize cost savings (analysis is async, speed less critical)
 function getWeightsForRole(role: string): { quality: number; speed: number; cost: number; freshness: number } {
   const baseWeights = {
-    // Cost-optimized roles (tools already found issues, just need fix generation)
-    security: { quality: 0.35, speed: 0.30, cost: 0.35, freshness: 0.20 },
-    performance: { quality: 0.30, speed: 0.35, cost: 0.35, freshness: 0.20 },
-    code_quality: { quality: 0.30, speed: 0.35, cost: 0.35, freshness: 0.20 },
-    dependency: { quality: 0.40, speed: 0.40, cost: 0.20, freshness: 0.20 },
+    // ANALYSIS ROLES: Cost-FIRST (30% quality, 55% cost, 15% speed, 0% freshness)
+    // Rationale: Tools (PMD, Semgrep, ESLint) do heavy lifting → Agents just compile & suggest fixes
+    // Analysis is ASYNC → Speed doesn't matter → MAXIMIZE cost savings
+    // Freshness = 0%: All models < 6 months old already, cheapest matters more than newest
+    security: { quality: 0.30, speed: 0.15, cost: 0.55, freshness: 0.00 },
+    performance: { quality: 0.30, speed: 0.15, cost: 0.55, freshness: 0.00 },
+    code_quality: { quality: 0.30, speed: 0.15, cost: 0.55, freshness: 0.00 },
+    architecture: { quality: 0.30, speed: 0.15, cost: 0.55, freshness: 0.00 },
+    dependency: { quality: 0.30, speed: 0.15, cost: 0.55, freshness: 0.00 },
     
-    // Quality-focused roles (complex reasoning required)
-    architecture: { quality: 0.70, speed: 0.20, cost: 0.10, freshness: 0.20 },
-    educator: { quality: 0.65, speed: 0.25, cost: 0.10, freshness: 0.20 },
-    orchestrator: { quality: 0.60, speed: 0.30, cost: 0.10, freshness: 0.20 },
-    
-    // Speed-focused roles (simple pattern matching)
-    comparator: { quality: 0.30, speed: 0.60, cost: 0.10, freshness: 0.20 },
-    location_finder: { quality: 0.20, speed: 0.70, cost: 0.10, freshness: 0.20 },
-    researcher: { quality: 0.50, speed: 0.40, cost: 0.10, freshness: 0.20 }
+    // META ROLES: Keep higher quality (these don't run per-issue, so cost less important)
+    educator: { quality: 0.50, speed: 0.25, cost: 0.20, freshness: 0.05 },
+    orchestrator: { quality: 0.50, speed: 0.30, cost: 0.15, freshness: 0.05 },
+    comparator: { quality: 0.40, speed: 0.35, cost: 0.20, freshness: 0.05 },
+    location_finder: { quality: 0.30, speed: 0.50, cost: 0.15, freshness: 0.05 },
+    researcher: { quality: 0.50, speed: 0.30, cost: 0.15, freshness: 0.05 }
   };
 
-  return baseWeights[role as keyof typeof baseWeights] || { quality: 0.50, speed: 0.30, cost: 0.20, freshness: 0.20 };
+  return baseWeights[role as keyof typeof baseWeights] || { quality: 0.30, speed: 0.30, cost: 0.35, freshness: 0.05 };
 }
 
 /**
@@ -88,6 +90,7 @@ async function fetchAllModels(): Promise<any[]> {
 
 /**
  * Filter models by freshness (<6 months old) AND deduplicate to LATEST versions only
+ * ALSO filter out non-code models (safety, moderation, image, audio, etc.)
  */
 function filterByFreshness(models: any[]): any[] {
   console.log('📅 Step 1: Filtering by freshness (<6 months old)...');
@@ -103,77 +106,65 @@ function filterByFreshness(models: any[]): any[] {
   
   console.log(`✅ Found ${freshModels.length} fresh models (< 6 months old)`);
   
-  // Step 2: Group by family and keep ONLY latest version
-  console.log('🔄 Step 2: Deduplicating to LATEST version per family...');
+  // Filter out non-code models
+  console.log('🔍 Step 1.5: Filtering out non-code models (safety, moderation, image, audio)...');
   
-  const familyMap = new Map<string, any[]>();
+  const excludePatterns = ['safeguard', 'moderation', 'shield', 'guard', 'vision', 'audio', 'whisper', 'dall-e', 'midjourney', 'stable-diffusion'];
   
-  for (const model of freshModels) {
-    // Extract family: "anthropic/claude-sonnet-4.5" → "anthropic/claude-sonnet"
-    const parts = model.id.split('/');
-    const provider = parts[0];
-    const modelName = parts[1] || '';
+  const codeModels = freshModels.filter(model => {
+    const modelId = model.id.toLowerCase();
+    const desc = (model.description || '').toLowerCase();
     
-    // Remove version numbers and special suffixes to get family
-    const family = `${provider}/${modelName
-      .replace(/[-:]?\d+(\.\d+)*[-:]?/g, '') // Remove all version numbers
-      .replace(/-(pro|flash|lite|opus|sonnet|haiku|thinking|free|base|instruct).*$/i, '-$1') // Keep model tier
-      .replace(/--+/g, '-') // Clean up double dashes
-      .replace(/-$/, '')}` // Remove trailing dash
-      .toLowerCase();
-    
-    if (!familyMap.has(family)) {
-      familyMap.set(family, []);
+    // Exclude if matches non-code patterns
+    for (const pattern of excludePatterns) {
+      if (modelId.includes(pattern) || desc.includes(pattern)) {
+        return false;
+      }
     }
-    familyMap.get(family)!.push(model);
-  }
+    return true;
+  });
   
-  // For each family, keep ONLY the model with highest version number
-  const latestModels: any[] = [];
+  console.log(`✅ Filtered to ${codeModels.length} code-suitable models`);
   
-  for (const [family, members] of familyMap.entries()) {
-    if (members.length === 1) {
-      latestModels.push(members[0]);
-      continue;
-    }
-    
-    // Sort by created date (newest first)
-    members.sort((a, b) => (b.created || 0) - (a.created || 0));
-    
-    // Pick the newest one
-    latestModels.push(members[0]);
-    
-    if (members.length > 1) {
-      console.log(`  ${family}: ${members.length} versions → keeping ${members[0].id} (newest)`);
-    }
-  }
+  // Step 2: SKIP deduplication - keep all models and let scoring decide
+  // UPDATED Nov 7, 2025: Deduplication was discarding cheap models like qwen3-coder-30b
+  console.log('🔄 Step 2: Keeping ALL fresh models (no deduplication - scoring will pick best)...');
   
-  console.log(`✅ Deduplicated to ${latestModels.length} LATEST versions only`);
+  // Keep ALL fresh code models - let scoring decide the best
+  const latestModels = codeModels;
+  
+  console.log(`✅ Kept all ${latestModels.length} fresh code models (scoring will select optimal)`);
   return latestModels;
 }
 
 /**
- * Score a model for quality (based on context length, pricing tier, architecture)
+ * Score a model for quality (based on context length, coding specialization, architecture)
+ * UPDATED Nov 7, 2025: Heavily favor coding-specialized models (qwen-coder, deepseek-coder, etc.)
  */
 function scoreQuality(model: any): number {
   let score = 50; // Base score
   
-  // Context length (larger = better for complex tasks)
-  if (model.context_length >= 128000) score += 25;
-  else if (model.context_length >= 64000) score += 15;
-  else if (model.context_length >= 32000) score += 10;
-  else if (model.context_length >= 8000) score += 5;
-  
-  // Pricing (higher price often correlates with quality)
-  const promptPrice = model.pricing?.prompt ? parseFloat(model.pricing.prompt) : 0;
-  if (promptPrice > 0.00001) score += 15; // Premium models
-  else if (promptPrice > 0.000005) score += 10;
-  else if (promptPrice > 0.000001) score += 5;
-  
-  // Architecture hints (opus > sonnet > haiku, pro > flash)
   const id = model.id.toLowerCase();
-  if (id.includes('opus') || id.includes('pro')) score += 10;
-  else if (id.includes('sonnet')) score += 5;
+  const desc = (model.description || '').toLowerCase();
+  
+  // CODING SPECIALIZATION (MOST IMPORTANT for our use case)
+  if (id.includes('coder') || id.includes('code')) score += 30; // Coding-specialized models
+  else if (desc.includes('code generation') || desc.includes('repository-scale')) score += 25;
+  else if (desc.includes('coding') || desc.includes('programming')) score += 15;
+  
+  // Context length (larger = better for complex tasks)
+  if (model.context_length >= 256000) score += 15;
+  else if (model.context_length >= 128000) score += 10;
+  else if (model.context_length >= 64000) score += 5;
+  
+  // Well-known high-quality providers
+  if (id.includes('anthropic/claude') || id.includes('openai/gpt-4') || id.includes('google/gemini-2.5')) {
+    score += 10;
+  }
+  
+  // Tier hints (within same family)
+  if (id.includes('opus')) score += 5;
+  else if (id.includes('sonnet')) score += 3;
   
   return Math.min(100, score);
 }
@@ -204,19 +195,23 @@ function scoreSpeed(model: any): number {
 
 /**
  * Score a model for cost (lower price = better score)
+ * 
+ * UPDATED Nov 7, 2025: Maximize savings - favor ultra-cheap models heavily
+ * 50% cost weight means this is THE most important factor
  */
 function scoreCost(model: any): number {
   const promptPrice = model.pricing?.prompt ? parseFloat(model.pricing.prompt) : 0;
   
-  // Normalize price to 0-100 score (lower price = higher score)
-  if (promptPrice === 0) return 100; // Free models
-  if (promptPrice < 0.0000001) return 95;
-  if (promptPrice < 0.0000005) return 90;
-  if (promptPrice < 0.000001) return 80;
-  if (promptPrice < 0.000005) return 60;
-  if (promptPrice < 0.00001) return 40;
-  if (promptPrice < 0.00005) return 20;
-  return 10;
+  // Normalize price to 0-100 score (exponential preference for cheaper)
+  // Ultra-cheap models (Qwen, DeepSeek) should score HIGHEST
+  if (promptPrice === 0) return 85;  // Free models - good but may have limits
+  if (promptPrice < 0.0000001) return 100;  // Ultra cheap (< $0.10 per 1M) - BEST!
+  if (promptPrice < 0.0000005) return 95;   // Very cheap (< $0.50 per 1M)
+  if (promptPrice < 0.000001) return 85;    // Cheap (< $1 per 1M)
+  if (promptPrice < 0.000005) return 60;    // Moderate (< $5 per 1M)
+  if (promptPrice < 0.00001) return 30;     // Expensive
+  if (promptPrice < 0.00005) return 10;     // Very expensive
+  return 5;  // Ultra expensive
 }
 
 /**
@@ -405,29 +400,36 @@ ${modelList}
 }
 
 /**
- * Select optimal model for a specific context using AI-powered search
+ * Select optimal model for a specific context
+ * 
+ * UPDATED Nov 7, 2025: Use weight-based scoring directly from OpenRouter catalog
+ * - Skip Brave Search for analysis roles (rate limits + not needed)
+ * - Only use Brave Search for Educator role (teaching methodologies benefit from web research)
  */
 async function selectOptimalModel(
   models: any[],
   role: string,
   language: string
 ): Promise<{ primary: string; fallback: string }> {
-  // Step 1: Ask AI for recommendations based on role/language
-  const aiRecommended = await searchBestModelsForContext(role, language, models);
   
-  // Step 2: Validate recommendations exist in our fresh models
-  const validRecommendations = aiRecommended.filter(id => 
-    models.some(m => m.id === id)
-  );
+  // EDUCATOR ONLY: Use Brave Search for teaching methodology insights
+  const useSearchForEducator = role === 'educator';
   
-  if (validRecommendations.length >= 2) {
-    return {
-      primary: validRecommendations[0],
-      fallback: validRecommendations[1]
-    };
+  if (useSearchForEducator) {
+    const aiRecommended = await searchBestModelsForContext(role, language, models);
+    const validRecommendations = aiRecommended.filter(id => 
+      models.some(m => m.id === id)
+    );
+    
+    if (validRecommendations.length >= 2) {
+      return {
+        primary: validRecommendations[0],
+        fallback: validRecommendations[1]
+      };
+    }
   }
   
-  // Step 3: Fallback to scoring if AI recommendations insufficient
+  // ALL OTHER ROLES: Direct weight-based scoring from OpenRouter catalog
   const weights = getWeightsForRole(role);
   
   const scoredModels = models.map(model => {
@@ -444,11 +446,20 @@ async function selectOptimalModel(
     
     return {
       model,
-      score: totalScore
+      score: totalScore,
+      breakdown: { quality: qualityScore, speed: speedScore, cost: costScore, freshness: freshnessScore }
     };
   });
   
   scoredModels.sort((a, b) => b.score - a.score);
+  
+  // DEBUG: Log top 3 for analysis roles
+  if (['security', 'performance', 'code_quality', 'architecture', 'dependency'].includes(role) && language === 'java') {
+    console.log(`\n   🔍 DEBUG Top 3 scores for ${role}/java:`);
+    scoredModels.slice(0, 3).forEach((s, idx) => {
+      console.log(`      ${idx + 1}. ${s.model.id}: ${s.score.toFixed(1)} (Q:${s.breakdown.quality} C:${s.breakdown.cost} S:${s.breakdown.speed} F:${s.breakdown.freshness})`);
+    });
+  }
   
   return {
     primary: scoredModels[0]?.model.id || 'google/gemini-2.5-flash',
@@ -516,12 +527,14 @@ async function generateConfigurations(freshModels: any[]): Promise<void> {
   
   for (const role of ROLES) {
     console.log(`\n🔧 Role: ${role}`);
+    const weights = getWeightsForRole(role);
+    console.log(`   Weights: Q=${(weights.quality*100).toFixed(0)}% S=${(weights.speed*100).toFixed(0)}% C=${(weights.cost*100).toFixed(0)}%`);
+    console.log(`   Selection: ${role === 'educator' ? 'Brave Search + Scoring' : 'Direct Scoring (no web search)'}`);
     
     for (const language of LANGUAGES) {
       count++;
       
       const { primary, fallback } = await selectOptimalModel(freshModels, role, language);
-      const weights = getWeightsForRole(role);
       
       configurations.push({
         role,

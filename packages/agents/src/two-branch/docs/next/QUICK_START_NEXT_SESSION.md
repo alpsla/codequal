@@ -12,6 +12,18 @@
 
 **🌐 CRITICAL ARCHITECTURE: Universal Tools for Multi-Language Support**
 
+**5. Model Configuration Update (CRITICAL COST OPTIMIZATION)** ⚡ **NEW!**
+   - ✅ Replaced minimax/minimax-m2:free (no longer free as of Nov 7, 2025)
+   - ✅ Selected qwen/qwen3-coder-30b-a3b-instruct for ALL 60 analysis role configs
+   - ✅ Updated weights: Quality 30%, Cost 55%, Speed 15%, Freshness 0%
+   - ✅ Rationale: Analysis is async → Cost matters most, speed less critical
+   - ✅ Comparison: Qwen 50% cheaper + coding-specialized vs MiniMax
+   - ✅ Cost: $0.105 per analysis (vs $0.21 MiniMax, $0.90 Gemini)
+   - ✅ Savings: $10.50/month per 100 analyses
+   - ✅ Script: `clean-and-regenerate-models-v2.ts` (100% dynamic, no hardcoded models)
+
+**🌐 CRITICAL ARCHITECTURE: Universal Tools for Multi-Language Support**
+
 **1. Universal Tools Identified & Analyzed (2 Tools)**
    - ✅ **Semgrep**: Security scanning for ALL languages (Java, TypeScript, Python, Go, Ruby, PHP, C++, Rust, Kotlin)
    - ✅ **Dependency-Check**: CVE scanning for 7 languages with PostgreSQL backend
