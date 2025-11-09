@@ -89,14 +89,8 @@ export class UniversalDependencyCheckRunner extends UniversalToolBase {
       timeout: 300000 // 5 minutes - SESSION 19 FIX: Increased for PostgreSQL queries
     });
     
-    // SESSION 24 FIX: Load .env FIRST, always
-    try {
-      require('dotenv').config({ path: path.join(__dirname, '../../../../.env') });
-    } catch (e) {
-      // Ignore - might already be loaded
-    }
-    
     // PostgreSQL connection configuration
+    // Note: Environment variables should be loaded by the test file via dotenv.config()
     // Oracle Cloud PostgreSQL (verified working Nov 7, 2025)
     this.pgHost = process.env.DEPCHECK_DB_HOST || 'localhost';
     this.pgPort = parseInt(process.env.DEPCHECK_DB_PORT || '5432');

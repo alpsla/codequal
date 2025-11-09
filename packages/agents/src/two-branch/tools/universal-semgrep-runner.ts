@@ -213,7 +213,9 @@ export class UniversalSemgrepRunner {
       logger.info(`✅ Semgrep completed: ${issues.length} security issues in ${(duration / 1000).toFixed(1)}s`);
       
       // Cleanup
-      await fs.unlink(outputFile).catch(() => {});
+      await fs.unlink(outputFile).catch(() => {
+        // Ignore cleanup errors
+      });
       
       return {
         success: true,
