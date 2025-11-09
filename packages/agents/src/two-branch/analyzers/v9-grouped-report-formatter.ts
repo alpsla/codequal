@@ -387,7 +387,12 @@ export class V9GroupedReportFormatter {
 
     // BUG-76: AI-enrich issues (includes severity classification + fix generation in 1 call)
     // BUG #6 FIX: Destructure to get enriched issues, model tracking, AND cost tracking
-    const enrichmentResult = await this.enrichIssuesWithAI(issues, groups);
+    const enrichmentResult = await this.enrichIssuesWithAI(issues, groups) as {
+      enrichedIssues: EnrichedIssue[];
+      modelsByAgent: Record<string, string>;
+      costByAgent?: Record<string, number>;
+      tokensByAgent?: Record<string, number>;
+    };
     const { enrichedIssues, modelsByAgent } = enrichmentResult;
     const costByAgent = enrichmentResult.costByAgent || {};
     const tokensByAgent = enrichmentResult.tokensByAgent || {};
