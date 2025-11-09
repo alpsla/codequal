@@ -435,15 +435,17 @@ export abstract class BaseToolOrchestrator {
 
       // Route to appropriate universal runner
       switch (toolName.toLowerCase()) {
-        case 'semgrep':
+        case 'semgrep': {
           const semgrepRunner = new UniversalSemgrepRunner(repoPath, language);
           issues = await semgrepRunner.execute();
           break;
+        }
 
-        case 'dependency-check':
+        case 'dependency-check': {
           const depCheckRunner = new UniversalDependencyCheckRunner(repoPath, language);
           issues = await depCheckRunner.execute();
           break;
+        }
 
         default:
           throw new Error(`Unknown universal tool: ${toolName}`);
