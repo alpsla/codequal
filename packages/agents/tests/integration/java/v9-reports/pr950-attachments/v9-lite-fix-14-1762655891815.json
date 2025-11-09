@@ -1,0 +1,76 @@
+{
+  "groupId": "com-puppycrawl-tools-checkstyle-checks-translationcheck-low-checkstyle",
+  "filename": "group-com-puppycrawl-tools-checkstyle-checks-translationcheck-low-checkstyle-fix.json",
+  "content": {
+    "version": "1.0",
+    "group_id": "com-puppycrawl-tools-checkstyle-checks-translationcheck-low-checkstyle",
+    "rule": "com.puppycrawl.tools.checkstyle.checks.TranslationCheck",
+    "tool": "checkstyle",
+    "severity": "low",
+    "description": "Add the missing 'duplicate' key with an appropriate localized message value to the properties file.",
+    "fix_pattern": {
+      "type": "template",
+      "example": {
+        "before": "",
+        "after": "duplicate=This entry already exists. Please choose a different value."
+      },
+      "instructions": "Add the missing 'duplicate' key with an appropriate localized message value to the properties file."
+    },
+    "locations": [
+      {
+        "file": "src/main/resources/messages/messages_en.properties",
+        "line": 1,
+        "snippet": ">    1 | # This file is intentionally empty. Message look-ups will fall back to the default \"messages.properties\" file.",
+        "category": "EXISTING_REST"
+      },
+      {
+        "file": "src/main/resources/messages/messages_en.properties",
+        "line": 1,
+        "snippet": ">    1 | # This file is intentionally empty. Message look-ups will fall back to the default \"messages.properties\" file.",
+        "category": "EXISTING_REST"
+      },
+      {
+        "file": "src/main/resources/messages/messages_en.properties",
+        "line": 1,
+        "snippet": ">    1 | # This file is intentionally empty. Message look-ups will fall back to the default \"messages.properties\" file.",
+        "category": "EXISTING_REST"
+      },
+      {
+        "file": "src/main/resources/messages/messages_en.properties",
+        "line": 1,
+        "snippet": ">    1 | # This file is intentionally empty. Message look-ups will fall back to the default \"messages.properties\" file.",
+        "category": "EXISTING_REST"
+      },
+      {
+        "file": "src/main/resources/messages/messages_en.properties",
+        "line": 1,
+        "snippet": ">    1 | # This file is intentionally empty. Message look-ups will fall back to the default \"messages.properties\" file.",
+        "category": "EXISTING_REST"
+      },
+      {
+        "file": "src/main/resources/messages/messages_en.properties",
+        "line": 1,
+        "snippet": ">    1 | # This file is intentionally empty. Message look-ups will fall back to the default \"messages.properties\" file.",
+        "category": "EXISTING_REST"
+      },
+      {
+        "file": "src/main/resources/messages/messages_en.properties",
+        "line": 1,
+        "snippet": ">    1 | # This file is intentionally empty. Message look-ups will fall back to the default \"messages.properties\" file.",
+        "category": "EXISTING_REST"
+      },
+      {
+        "file": "src/main/resources/messages/messages_en.properties",
+        "line": 1,
+        "snippet": ">    1 | # This file is intentionally empty. Message look-ups will fall back to the default \"messages.properties\" file.",
+        "category": "EXISTING_REST"
+      }
+    ],
+    "metadata": {
+      "total_occurrences": 8,
+      "confidence": "low",
+      "safe_auto_apply": false,
+      "estimated_time_seconds": 4
+    }
+  }
+}

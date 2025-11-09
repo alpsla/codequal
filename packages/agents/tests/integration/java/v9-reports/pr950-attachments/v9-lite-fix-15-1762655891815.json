@@ -1,0 +1,70 @@
+{
+  "groupId": "com-puppycrawl-tools-checkstyle-checks-imports-avoidstarimportcheck-low-checkstyle",
+  "filename": "group-com-puppycrawl-tools-checkstyle-checks-imports-avoidstarimportcheck-low-checkstyle-fix.json",
+  "content": {
+    "version": "1.0",
+    "group_id": "com-puppycrawl-tools-checkstyle-checks-imports-avoidstarimportcheck-low-checkstyle",
+    "rule": "com.puppycrawl.tools.checkstyle.checks.imports.AvoidStarImportCheck",
+    "tool": "checkstyle",
+    "severity": "low",
+    "description": "Replace the wildcard import with explicit imports of only the classes that are actually used in the file. Identify which specific classes from java.net are needed and import them individually.",
+    "fix_pattern": {
+      "type": "template",
+      "example": {
+        "before": "",
+        "after": "import java.io.IOException;\nimport java.io.InputStream;\nimport java.net.URL;\nimport java.nio.file.Files;\nimport java.nio.file.Path;\nimport java.nio.file.Paths;\nimport java.nio.file.StandardCopyOption;"
+      },
+      "instructions": "Replace the wildcard import with explicit imports of only the classes that are actually used in the file. Identify which specific classes from java.net are needed and import them individually."
+    },
+    "locations": [
+      {
+        "file": ".mvn/wrapper/MavenWrapperDownloader.java",
+        "line": 16,
+        "snippet": "    13 |  * See the License for the specific language governing permissions and\n    14 |  * limitations under the License.\n    15 |  */\n>   16 | import java.net.*;\n    17 | import java.io.*;\n    18 | import java.nio.channels.*;\n    19 | import java.util.Properties;",
+        "category": "NEW"
+      },
+      {
+        "file": ".mvn/wrapper/MavenWrapperDownloader.java",
+        "line": 17,
+        "snippet": "    14 |  * limitations under the License.\n    15 |  */\n    16 | import java.net.*;\n>   17 | import java.io.*;\n    18 | import java.nio.channels.*;\n    19 | import java.util.Properties;\n    20 | ",
+        "category": "NEW"
+      },
+      {
+        "file": ".mvn/wrapper/MavenWrapperDownloader.java",
+        "line": 18,
+        "snippet": "    15 |  */\n    16 | import java.net.*;\n    17 | import java.io.*;\n>   18 | import java.nio.channels.*;\n    19 | import java.util.Properties;\n    20 | \n    21 | public class MavenWrapperDownloader {",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/PetController.java",
+        "line": 23,
+        "snippet": "    20 | import org.springframework.util.StringUtils;\n    21 | import org.springframework.validation.BindingResult;\n    22 | import org.springframework.web.bind.WebDataBinder;\n>   23 | import org.springframework.web.bind.annotation.*;\n    24 | \n    25 | import javax.validation.Valid;\n    26 | import java.util.Collection;",
+        "category": "NEW"
+      },
+      {
+        "file": "src/test/java/org/springframework/samples/petclinic/owner/PetControllerTests.java",
+        "line": 32,
+        "snippet": "    29 | import static org.mockito.BDDMockito.given;\n    30 | import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;\n    31 | import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;\n>   32 | import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;\n    33 | \n    34 | /**\n    35 |  * Test class for the {@link PetController}",
+        "category": "NEW"
+      },
+      {
+        "file": "src/test/java/org/springframework/samples/petclinic/system/CrashControllerTests.java",
+        "line": 26,
+        "snippet": "    23 | import org.springframework.test.web.servlet.MockMvc;\n    24 | \n    25 | import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;\n>   26 | import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;\n    27 | \n    28 | /**\n    29 |  * Test class for {@link CrashController}",
+        "category": "NEW"
+      },
+      {
+        "file": "src/test/java/org/springframework/samples/petclinic/vet/VetControllerTests.java",
+        "line": 35,
+        "snippet": "    32 | import static org.mockito.ArgumentMatchers.any;\n    33 | import static org.mockito.BDDMockito.given;\n    34 | import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;\n>   35 | import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;\n    36 | \n    37 | /**\n    38 |  * Test class for the {@link VetController}",
+        "category": "NEW"
+      }
+    ],
+    "metadata": {
+      "total_occurrences": 7,
+      "confidence": "low",
+      "safe_auto_apply": false,
+      "estimated_time_seconds": 4
+    }
+  }
+}

@@ -27,6 +27,9 @@ export interface Issue {
   suggestedFix?: string;
   suggestedCodeSnippet?: string;
   inModifiedFile?: boolean;
+  // SESSION 19 FIX: Add rule and cwe fields for compatibility with RawIssue
+  rule?: string;  // Specific rule ID (e.g., "java.lang.security.audit.sql-injection")
+  cwe?: string;   // CWE identifier
 }
 
 // Tool configuration

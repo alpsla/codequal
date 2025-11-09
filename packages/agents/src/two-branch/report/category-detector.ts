@@ -144,15 +144,16 @@ export function calculateRiskLevel(category: string, severity: string, rule?: st
   const multiplier = categoryRisk[category] || 1.0;
   const totalRisk = baseRisk * multiplier;
   
-  // Determine risk level
-  if (totalRisk >= 12) {
+  // SESSION 21 FIX: Adjust thresholds to match severity more clearly
+  // Don't inflate HIGH severity to CRITICAL RISK just because it's Security
+  if (totalRisk >= 15) {  // Was 12 - now requires actual CRITICAL severity for CRITICAL RISK
     return {
       level: 'CRITICAL RISK',
       color: '🔴',
       emoji: '⚠️',
       description: 'Immediate action required - may lead to security breaches, data loss, or system failures'
     };
-  } else if (totalRisk >= 8) {
+  } else if (totalRisk >= 10) {  // Was 8 - HIGH security gets HIGH RISK (not CRITICAL)
     return {
       level: 'HIGH RISK',
       color: '🟠',

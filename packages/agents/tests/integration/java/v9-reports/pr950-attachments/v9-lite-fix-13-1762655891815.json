@@ -1,0 +1,94 @@
+{
+  "groupId": "com-puppycrawl-tools-checkstyle-checks-javadoc-javadocpackagecheck-low-checkstyle",
+  "filename": "group-com-puppycrawl-tools-checkstyle-checks-javadoc-javadocpackagecheck-low-checkstyle-fix.json",
+  "content": {
+    "version": "1.0",
+    "group_id": "com-puppycrawl-tools-checkstyle-checks-javadoc-javadocpackagecheck-low-checkstyle",
+    "rule": "com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocPackageCheck",
+    "tool": "checkstyle",
+    "severity": "low",
+    "description": "Create a package-info.java file in the package directory (e.g., .mvn/wrapper/) and add appropriate package-level annotations or documentation if needed.",
+    "fix_pattern": {
+      "type": "template",
+      "example": {
+        "before": "",
+        "after": "// package-info.java\n/**\n * Package containing Maven wrapper downloader utility.\n */\npackage .mvn.wrapper;\n\n// Add any package-level annotations or documentation here\n// Example: @NonNullByDefault\n"
+      },
+      "instructions": "Create a package-info.java file in the package directory (e.g., .mvn/wrapper/) and add appropriate package-level annotations or documentation if needed."
+    },
+    "locations": [
+      {
+        "file": ".mvn/wrapper/MavenWrapperDownloader.java",
+        "line": 1,
+        "snippet": ">    1 | /*\n     2 |  * Copyright 2007-present the original author or authors.\n     3 |  *\n     4 |  * Licensed under the Apache License, Version 2.0 (the \"License\");",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/Owner.java",
+        "line": 1,
+        "snippet": ">    1 | /*\n     2 |  * Copyright 2012-2019 the original author or authors.\n     3 |  *\n     4 |  * Licensed under the Apache License, Version 2.0 (the \"License\");",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/system/CacheConfiguration.java",
+        "line": 1,
+        "snippet": ">    1 | /*\n     2 |  * Copyright 2012-2019 the original author or authors.\n     3 |  *\n     4 |  * Licensed under the Apache License, Version 2.0 (the \"License\");",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/vet/Specialty.java",
+        "line": 1,
+        "snippet": ">    1 | /*\n     2 |  * Copyright 2012-2019 the original author or authors.\n     3 |  *\n     4 |  * Licensed under the Apache License, Version 2.0 (the \"License\");",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/PetClinicApplication.java",
+        "line": 1,
+        "snippet": ">    1 | /*\n     2 |  * Copyright 2012-2019 the original author or authors.\n     3 |  *\n     4 |  * Licensed under the Apache License, Version 2.0 (the \"License\");",
+        "category": "NEW"
+      },
+      {
+        "file": "src/test/java/org/springframework/samples/petclinic/model/ValidatorTests.java",
+        "line": 1,
+        "snippet": ">    1 | /*\n     2 |  * Copyright 2012-2019 the original author or authors.\n     3 |  *\n     4 |  * Licensed under the Apache License, Version 2.0 (the \"License\");",
+        "category": "EXISTING_REST"
+      },
+      {
+        "file": "src/test/java/org/springframework/samples/petclinic/owner/OwnerControllerTests.java",
+        "line": 1,
+        "snippet": ">    1 | /*\n     2 |  * Copyright 2012-2019 the original author or authors.\n     3 |  *\n     4 |  * Licensed under the Apache License, Version 2.0 (the \"License\");",
+        "category": "EXISTING_REST"
+      },
+      {
+        "file": "src/test/java/org/springframework/samples/petclinic/service/ClinicServiceTests.java",
+        "line": 1,
+        "snippet": ">    1 | /*\n     2 |  * Copyright 2012-2019 the original author or authors.\n     3 |  *\n     4 |  * Licensed under the Apache License, Version 2.0 (the \"License\");",
+        "category": "EXISTING_REST"
+      },
+      {
+        "file": "src/test/java/org/springframework/samples/petclinic/system/CrashControllerTests.java",
+        "line": 1,
+        "snippet": ">    1 | /*\n     2 |  * Copyright 2012-2019 the original author or authors.\n     3 |  *\n     4 |  * Licensed under the Apache License, Version 2.0 (the \"License\");",
+        "category": "NEW"
+      },
+      {
+        "file": "src/test/java/org/springframework/samples/petclinic/vet/VetControllerTests.java",
+        "line": 1,
+        "snippet": ">    1 | /*\n     2 |  * Copyright 2012-2019 the original author or authors.\n     3 |  *\n     4 |  * Licensed under the Apache License, Version 2.0 (the \"License\");",
+        "category": "EXISTING_REST"
+      },
+      {
+        "file": "src/test/java/org/springframework/samples/petclinic/PetClinicIntegrationTests.java",
+        "line": 1,
+        "snippet": ">    1 | /*\n     2 |  * Copyright 2012-2019 the original author or authors.\n     3 |  *\n     4 |  * Licensed under the Apache License, Version 2.0 (the \"License\");",
+        "category": "NEW"
+      }
+    ],
+    "metadata": {
+      "total_occurrences": 11,
+      "confidence": "low",
+      "safe_auto_apply": false,
+      "estimated_time_seconds": 6
+    }
+  }
+}

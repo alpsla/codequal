@@ -68,11 +68,16 @@ export async function enrichIssuesWithAI(
   modelConfigResolver: any | null,
   detectedLanguage = 'java',
   detectedRepoSize: 'small' | 'medium' | 'large' | 'enterprise' = 'medium'
-): Promise<{ enrichedIssues: EnrichedIssue[]; modelsByAgent: Record<string, string> }> {
+): Promise<{ 
+  enrichedIssues: EnrichedIssue[]; 
+  modelsByAgent: Record<string, string>;
+  costByAgent?: Record<string, number>;  // SESSION 21 FIX
+  tokensByAgent?: Record<string, number>;  // SESSION 21 FIX
+}> {
   // Skip if no model config resolver
   if (!modelConfigResolver) {
     console.log('[AI Enrichment] Skipped - no model config resolver provided');
-    return { enrichedIssues: issues, modelsByAgent: {} };
+    return { enrichedIssues: issues, modelsByAgent: {}, costByAgent: {}, tokensByAgent: {} };
   }
 
   console.log(`[AI Enrichment] Starting enrichment for ${groups.length} groups...`);
@@ -80,6 +85,9 @@ export async function enrichIssuesWithAI(
 
   // BUG #6 FIX: Track which models are used by each agent role
   const modelsByAgent: Record<string, string> = {};
+  // SESSION 21 FIX: Track costs by agent category
+  const costByAgent: Record<string, number> = {};
+  const tokensByAgent: Record<string, number> = {};
 
   try {
     const { SpecializedAgentFactory } = await import('../agents/specialized-agents');
@@ -130,9 +138,17 @@ export async function enrichIssuesWithAI(
         console.log(`[BUG #89 DEBUG]   - bestPractices: ${fixSuggestion.bestPractices ? `${fixSuggestion.bestPractices.length} items` : 'NO'}`);
 
         // BUG #6 FIX: Track model usage by agent category
+        const agentRole = representative.detectedCategory || 'Code Quality';
         if (fixSuggestion.model) {
-          const agentRole = representative.detectedCategory || 'Code Quality';
           modelsByAgent[agentRole] = fixSuggestion.model;
+        }
+        
+        // SESSION 21 FIX: Track cost by agent category
+        if (fixSuggestion.cost) {
+          costByAgent[agentRole] = (costByAgent[agentRole] || 0) + fixSuggestion.cost;
+        }
+        if (fixSuggestion.usage) {
+          tokensByAgent[agentRole] = (tokensByAgent[agentRole] || 0) + fixSuggestion.usage.totalTokens;
         }
 
         // Apply fix to ALL issues in this group
@@ -184,15 +200,22 @@ export async function enrichIssuesWithAI(
 
     const duration = Date.now() - startTime;
     const enrichedCount = issues.filter(i => i.fixSuggestion).length;
+    const totalCost = Object.values(costByAgent).reduce((sum, cost) => sum + cost, 0);
+    const totalTokens = Object.values(tokensByAgent).reduce((sum, tokens) => sum + tokens, 0);
+    
     console.log(`[AI Enrichment] Completed: ${enrichedCount}/${issues.length} issues enriched in ${duration}ms`);
     console.log(`[AI Enrichment] Models used: ${JSON.stringify(modelsByAgent)}`);
+    console.log(`[AI Enrichment] Total cost: $${totalCost.toFixed(4)}`);
+    console.log(`[AI Enrichment] Total tokens: ${totalTokens.toLocaleString()}`);
+    console.log(`[AI Enrichment] Cost by agent: ${JSON.stringify(Object.fromEntries(Object.entries(costByAgent).map(([k,v]) => [k, `$${v.toFixed(4)}`])))}`);
 
-    return { enrichedIssues: issues, modelsByAgent };
+    return { enrichedIssues: issues, modelsByAgent, costByAgent, tokensByAgent };
 
   } catch (error: any) {
     console.error('[AI Enrichment] Fatal error:', error.message);
     // Return un-enriched issues (generic fallback will be used)
-    return { enrichedIssues: issues, modelsByAgent: {} };
+    return { enrichedIssues: issues, modelsByAgent: {}, costByAgent: {}, tokensByAgent: {} };
   }
 }
+
 

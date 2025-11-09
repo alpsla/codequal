@@ -1,51 +1,72 @@
 /**
- * V9 Python Analyzer
- * Language-specific analyzer for Python repositories
+ * V9 Python Analyzer - Language-specific implementation
+ * 
+ * This class extends the V9BaseAnalyzer and provides Python-specific configurations:
+ * - Tool configurations (Pylint, Bandit, mypy, Safety, etc.)
+ * - Tool output parsers (using existing PythonToolParser)
+ * - Python-specific suggested fixes
+ * 
+ * Follows the proven pattern from V9JavaAnalyzer and V9TypeScriptAnalyzer
  */
 
 import { V9BaseAnalyzer } from './v9-base-analyzer';
 import { LanguageConfig, Issue, IssueCategory } from './v9-types';
+import { PythonToolParser, PythonIssue } from '../parsers/python-tool-parser';
+import { PythonToolOrchestrator } from '../tools/python/python-tool-orchestrator';
 
 export class V9PythonAnalyzer extends V9BaseAnalyzer {
+  private parser: PythonToolParser;
+  private orchestrator: PythonToolOrchestrator;
+  
+  constructor() {
+    super();
+    this.parser = new PythonToolParser();
+    this.orchestrator = new PythonToolOrchestrator();
+  }
   
   /**
-   * Python-specific configuration with actual tools
+   * Python-specific configuration
    */
   getLanguageConfig(): LanguageConfig {
     return {
       name: 'Python',
-      fileExtensions: ['.py', '.pyw', '.pyx', '.pyd', 'requirements.txt', 'setup.py', 'pyproject.toml'],
+      fileExtensions: ['.py', '.pyw', '.pyx'],
       tools: [
+        // NOTE: These tools are deployed in cloud pods
+        
+        // Pylint - Code Quality
+        {
+          name: 'pylint',
+          command: 'python -m pylint --output-format=json . 2>&1 || true',
+          agent: 'QualityAnalyzer',
+          parser: this.parsePylintOutput.bind(this)
+        },
+
+        // Bandit - Security Scanner
         {
           name: 'bandit',
           command: 'bandit -r . -f json 2>&1 || true',
           agent: 'SecurityAnalyzer',
           parser: this.parseBanditOutput.bind(this)
         },
-        {
-          name: 'pylint',
-          command: 'pylint **/*.py --output-format=json 2>&1 || true',
-          agent: 'QualityAnalyzer',
-          parser: this.parsePylintOutput.bind(this)
-        },
-        {
-          name: 'flake8',
-          command: 'flake8 . --format=json 2>&1 || true',
-          agent: 'QualityAnalyzer',
-          parser: this.parseFlake8Output.bind(this)
-        },
+
+        // mypy - Type Checking
         {
           name: 'mypy',
-          command: 'mypy . --json-report mypy-report 2>&1 || true',
+          command: 'mypy . --no-error-summary 2>&1 || true',
           agent: 'QualityAnalyzer',
           parser: this.parseMypyOutput.bind(this)
         },
+
+        // Safety - Dependency Vulnerabilities
         {
           name: 'safety',
           command: 'safety check --json 2>&1 || true',
           agent: 'DependencyAnalyzer',
           parser: this.parseSafetyOutput.bind(this)
         },
+
+        // Semgrep - Security Analysis (language-agnostic)
         {
           name: 'semgrep',
           command: 'semgrep --config=auto --json . 2>&1 || true',
@@ -55,304 +76,328 @@ export class V9PythonAnalyzer extends V9BaseAnalyzer {
       ],
       suggestedFixPatterns: {
         'sql injection': `# Use parameterized queries
-from psycopg2 import sql
-
-cursor.execute(
-    sql.SQL("SELECT * FROM users WHERE username = %s"),
-    [username]
-)`,
+cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
+# Or use ORM
+user = User.query.filter_by(username=username).first()`,
         
-        'hardcoded': `# Use environment variables
+        'hardcoded secret': `# Use environment variables
 import os
-from dotenv import load_dotenv
-
-load_dotenv()
-api_key = os.getenv('API_KEY')`,
+api_key = os.getenv('API_KEY')
+if not api_key:
+    raise ValueError('API_KEY environment variable not set')`,
         
-        'type hint': `# Add type hints
-from typing import List, Optional, Dict
-
-def process_data(items: List[str]) -> Dict[str, int]:
-    return {item: len(item) for item in items}`,
+        'command injection': `# Use subprocess with list arguments (not shell=True)
+import subprocess
+result = subprocess.run(['ls', directory], capture_output=True)
+# Never: subprocess.run(f"ls {directory}", shell=True)`,
         
-        'exception': `# Use specific exception handling
+        'undefined variable': `# Check if variable exists
+if hasattr(obj, 'attribute'):
+    value = obj.attribute
+# Or use getattr with default
+value = getattr(obj, 'attribute', default_value)`,
+        
+        'type': `# Add type hints
+def process_data(items: list[dict]) -> dict:
+    result: dict[str, int] = {}
+    return result`,
+        
+        'null check': `# Use None checks
+if value is not None:
+    process(value)
+# Or use Optional
+from typing import Optional
+def get_user(id: int) -> Optional[User]:
+    return User.query.get(id)`,
+        
+        'exception': `# Use specific exceptions and proper handling
 try:
-    result = risky_operation()
+    process_data()
 except ValueError as e:
-    logger.error(f"Invalid value: {e}")
+    logger.error(f"Validation error: {e}")
     raise
 except Exception as e:
     logger.error(f"Unexpected error: {e}")
-    # Handle or re-raise`,
+    raise`,
         
-        'resource': `# Use context managers
-with open('file.txt', 'r') as f:
-    content = f.read()
-# File automatically closed`,
-        
-        'import': `# Use absolute imports
-from myproject.utils import helper
-# Not: from ..utils import helper`
+        'unused import': `# Remove unused imports or use __all__
+# Run: pip install autoflake
+# autoflake --remove-all-unused-imports --in-place file.py`,
+
+        'complexity': `# Reduce cyclomatic complexity
+# Break into smaller functions
+def process_item(item):
+    validate(item)
+    transform(item)
+    save(item)
+
+def process_all(items):
+    for item in items:
+        process_item(item)`
       }
     };
   }
-
-  /**
-   * Parse Bandit security output
-   */
-  private async parseBanditOutput(output: string, workspacePath: string): Promise<Issue[]> {
-    const issues: Issue[] = [];
-    try {
-      const data = JSON.parse(output);
-      if (data.results) {
-        for (const result of data.results) {
-          issues.push({
-            id: `bandit-${result.test_id}-${Date.now()}`,
-            category: 'Security' as IssueCategory,
-            severity: this.mapBanditSeverity(result.issue_severity),
-            status: 'new',
-            title: result.issue_text,
-            description: `${result.issue_text}. Confidence: ${result.issue_confidence}`,
-            file: result.filename,
-            line: result.line_number,
-            tool: 'bandit',
-            agent: 'SecurityAnalyzer',
-            impact: 'Potential security vulnerability',
-            businessImpact: this.getSecurityBusinessImpact(result.issue_severity),
-            codeSnippet: result.code,
-            suggestedFix: this.getSuggestedFix(result.test_id)
-          });
-        }
-      }
-    } catch (e) {
-      // Fallback to text parsing if JSON fails
-    }
-    return issues;
-  }
-
+  
   /**
    * Parse Pylint output
+   * Adapter method: PythonIssue → V9 Issue
    */
   private async parsePylintOutput(output: string, workspacePath: string): Promise<Issue[]> {
-    const issues: Issue[] = [];
     try {
-      const data = JSON.parse(output);
-      if (Array.isArray(data)) {
-        for (const msg of data) {
-          issues.push({
-            id: `pylint-${msg['message-id']}-${Date.now()}`,
-            category: 'Quality' as IssueCategory,
-            severity: this.mapPylintSeverity(msg.type),
-            status: 'new',
-            title: msg.message,
-            description: `${msg.message} (${msg.symbol})`,
-            file: msg.path,
-            line: msg.line,
-            tool: 'pylint',
-            agent: 'QualityAnalyzer',
-            impact: 'Code quality issue',
-            businessImpact: 'May affect maintainability',
-            suggestedFix: this.getSuggestedFix(msg.symbol)
-          });
-        }
-      }
-    } catch (e) {
-      // Fallback to text parsing
+      const result = await this.parser.runPylint(workspacePath);
+      return result.issues.map(pyIssue => this.convertToV9Issue(pyIssue, workspacePath, 'QualityAnalyzer'));
+    } catch (error: any) {
+      this.logger.warn('Pylint parsing failed:', error.message);
+      return [];
     }
-    return issues;
   }
-
+  
   /**
-   * Parse Flake8 output
+   * Parse Bandit output
+   * Adapter method: PythonIssue → V9 Issue
    */
-  private async parseFlake8Output(output: string, workspacePath: string): Promise<Issue[]> {
-    const issues: Issue[] = [];
-    // Flake8 JSON parsing implementation
-    return issues;
+  private async parseBanditOutput(output: string, workspacePath: string): Promise<Issue[]> {
+    try {
+      const result = await this.parser.runBandit(workspacePath);
+      return result.issues.map(pyIssue => this.convertToV9Issue(pyIssue, workspacePath, 'SecurityAnalyzer'));
+    } catch (error: any) {
+      this.logger.warn('Bandit parsing failed:', error.message);
+      return [];
+    }
   }
-
+  
   /**
-   * Parse Mypy output
+   * Parse mypy output
+   * Adapter method: PythonIssue → V9 Issue
    */
   private async parseMypyOutput(output: string, workspacePath: string): Promise<Issue[]> {
-    const issues: Issue[] = [];
-    // Mypy JSON parsing implementation
-    return issues;
+    try {
+      const result = await this.parser.runMypy(workspacePath);
+      return result.issues.map(pyIssue => this.convertToV9Issue(pyIssue, workspacePath, 'QualityAnalyzer'));
+    } catch (error: any) {
+      this.logger.warn('mypy parsing failed:', error.message);
+      return [];
+    }
   }
-
+  
   /**
-   * Parse Safety dependency check output
+   * Parse Safety output
+   * Adapter method: PythonIssue → V9 Issue
    */
   private async parseSafetyOutput(output: string, workspacePath: string): Promise<Issue[]> {
-    const issues: Issue[] = [];
     try {
-      const data = JSON.parse(output);
-      if (data.vulnerabilities) {
-        for (const vuln of data.vulnerabilities) {
-          issues.push({
-            id: `safety-${vuln.cve || vuln.id}-${Date.now()}`,
-            category: 'Dependency' as IssueCategory,
-            severity: 'high',
-            status: 'new',
-            title: `Vulnerable dependency: ${vuln.package}`,
-            description: vuln.description,
-            file: 'requirements.txt',
-            line: 0,
-            tool: 'safety',
-            agent: 'DependencyAnalyzer',
-            impact: 'Security vulnerability in dependency',
-            businessImpact: 'Potential security breach',
-            suggestedFix: `Update ${vuln.package} to version ${vuln.safe_version || 'latest safe version'}`
-          });
-        }
-      }
-    } catch (e) {
-      // Fallback
+      const result = await this.parser.runSafety(workspacePath);
+      return result.issues.map(pyIssue => this.convertToV9Issue(pyIssue, workspacePath, 'DependencyAnalyzer'));
+    } catch (error: any) {
+      this.logger.warn('Safety parsing failed:', error.message);
+      return [];
     }
-    return issues;
   }
-
+  
   /**
-   * Parse Semgrep output
+   * Parse Semgrep output (same as TypeScript)
    */
   private async parseSemgrepOutput(output: string, workspacePath: string): Promise<Issue[]> {
     const issues: Issue[] = [];
+    
     try {
-      const data = JSON.parse(output);
-      if (data.results) {
-        for (const result of data.results) {
-          issues.push({
-            id: `semgrep-${result.check_id}-${Date.now()}`,
-            category: 'Security' as IssueCategory,
-            severity: this.mapSemgrepSeverity(result.extra.severity),
-            status: 'new',
-            title: result.extra.message,
-            description: `${result.extra.message}. Rule: ${result.check_id}`,
-            file: result.path,
-            line: result.start.line,
-            tool: 'semgrep',
-            agent: 'SecurityAnalyzer',
-            impact: result.extra.metadata?.impact || 'Potential security issue',
-            businessImpact: this.getSecurityBusinessImpact(result.extra.severity),
-            codeSnippet: result.extra.lines,
-            suggestedFix: result.extra.fix || this.getSuggestedFix(result.check_id)
-          });
+      const jsonMatch = output.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const data = JSON.parse(jsonMatch[0]);
+        
+        if (data.results) {
+          for (const result of data.results) {
+            let severity: 'critical' | 'high' | 'medium' | 'low' = 'medium';
+            if (result.extra?.severity) {
+              severity = result.extra.severity.toLowerCase() as any;
+            }
+            
+            issues.push({
+              id: `SEM-${result.check_id}`,
+              category: 'Security',
+              severity,
+              status: 'new',
+              title: result.extra?.message || 'Security issue detected',
+              description: result.extra?.metadata?.description || result.check_id,
+              file: result.path.replace(workspacePath + '/', ''),
+              line: result.start.line,
+              tool: 'semgrep',
+              agent: 'SecurityAnalyzer',
+              impact: result.extra?.metadata?.impact || 'Security vulnerability',
+              businessImpact: this.getBusinessImpact('Security', severity),
+              suggestedFix: result.extra?.fix || 'Review and fix security issue'
+            });
+          }
         }
       }
     } catch (e) {
-      // Fallback
+      this.logger.warn('Semgrep parsing failed:', e);
     }
+    
     return issues;
   }
-
+  
   /**
-   * Map severity levels
+   * Convert PythonIssue to V9 Issue format
    */
-  private mapBanditSeverity(severity: string): 'critical' | 'high' | 'medium' | 'low' {
-    switch (severity?.toUpperCase()) {
-      case 'HIGH': return 'high';
-      case 'MEDIUM': return 'medium';
-      case 'LOW': return 'low';
-      default: return 'low';
-    }
+  private convertToV9Issue(
+    pyIssue: PythonIssue, 
+    workspacePath: string, 
+    defaultAgent: string
+  ): Issue {
+    return {
+      id: pyIssue.id,
+      category: this.mapPythonTypeToCategory(pyIssue.type),
+      severity: pyIssue.severity,
+      status: 'new',
+      title: this.extractTitle(pyIssue.message),
+      description: pyIssue.message,
+      file: pyIssue.file.replace(workspacePath + '/', ''),
+      line: pyIssue.line,
+      tool: pyIssue.tool,
+      agent: this.mapToolToAgent(pyIssue.tool, pyIssue.type) || defaultAgent,
+      impact: this.getImpact(this.mapPythonTypeToCategory(pyIssue.type), pyIssue.severity),
+      businessImpact: this.getBusinessImpact(this.mapPythonTypeToCategory(pyIssue.type), pyIssue.severity),
+      suggestedFix: pyIssue.suggestion || this.getSuggestedFix(pyIssue.message)
+    };
   }
-
-  private mapPylintSeverity(type: string): 'critical' | 'high' | 'medium' | 'low' {
-    switch (type?.toUpperCase()) {
-      case 'ERROR': return 'high';
-      case 'WARNING': return 'medium';
-      case 'CONVENTION': return 'low';
-      case 'REFACTOR': return 'low';
-      default: return 'low';
-    }
+  
+  /**
+   * Map Python issue type to V9 category
+   */
+  private mapPythonTypeToCategory(type: string): IssueCategory {
+    const mapping: Record<string, IssueCategory> = {
+      'security': 'Security',
+      'performance': 'Performance',
+      'quality': 'Quality',
+      'bug': 'Quality',
+      'style': 'Quality',
+      'type-error': 'Quality'
+    };
+    return mapping[type] || 'Quality';
   }
-
-  private mapSemgrepSeverity(severity: string): 'critical' | 'high' | 'medium' | 'low' {
-    switch (severity?.toUpperCase()) {
-      case 'ERROR': return 'critical';
-      case 'WARNING': return 'high';
-      case 'INFO': return 'medium';
-      default: return 'low';
+  
+  /**
+   * Map tool + type to appropriate agent
+   */
+  private mapToolToAgent(tool: string, type: string): string {
+    if (tool === 'bandit' || tool === 'semgrep' || type === 'security') {
+      return 'SecurityAnalyzer';
     }
-  }
-
-  private getSecurityBusinessImpact(severity: string): string {
-    switch (severity?.toUpperCase()) {
-      case 'CRITICAL':
-      case 'HIGH':
-        return 'High risk of security breach, potential data loss or system compromise';
-      case 'MEDIUM':
-        return 'Moderate security risk, should be addressed soon';
-      default:
-        return 'Low security impact, best practice violation';
+    if (tool === 'safety') {
+      return 'DependencyAnalyzer';
     }
+    if (type === 'performance') {
+      return 'PerformanceAnalyzer';
+    }
+    return 'QualityAnalyzer';
   }
-
-  private getSuggestedFix(issueType: string): string {
-    // Return specific fixes based on issue type
-    const fixes = this.getLanguageConfig().suggestedFixPatterns;
+  
+  // Helper methods (same as TypeScript)
+  
+  private extractTitle(description: string): string {
+    const title = description.substring(0, 60).trim();
+    return title.charAt(0).toUpperCase() + title.slice(1);
+  }
+  
+  private getImpact(category: IssueCategory, severity: string): string {
+    const impacts = {
+      Security: {
+        critical: 'Allows remote code execution or data breach',
+        high: 'Allows unauthorized access or injection attacks',
+        medium: 'Security weakness requiring specific conditions',
+        low: 'Minor security improvement needed'
+      },
+      Performance: {
+        critical: 'Application hang or excessive memory usage',
+        high: 'Severe performance degradation',
+        medium: 'Noticeable slowdown under load',
+        low: 'Minor performance optimization opportunity'
+      },
+      Dependency: {
+        critical: 'Critical CVE with active exploits',
+        high: 'High severity CVE in dependency',
+        medium: 'Medium severity vulnerability',
+        low: 'Low risk or informational'
+      },
+      Architecture: {
+        critical: 'Major architectural flaw',
+        high: 'Significant design issue',
+        medium: 'Design improvement needed',
+        low: 'Minor refactoring opportunity'
+      },
+      Quality: {
+        critical: 'Code won\'t run or crashes',
+        high: 'Likely to cause bugs or type errors',
+        medium: 'Code maintainability issue',
+        low: 'Style or convention violation'
+      }
+    };
+    
+    return impacts[category]?.[severity as keyof typeof impacts.Security] || 'Impact under assessment';
+  }
+  
+  private getBusinessImpact(category: IssueCategory, severity: string): string {
+    const impacts = {
+      Security: {
+        critical: '$100K-$500K breach cost, regulatory fines',
+        high: '$50K-$100K incident response cost',
+        medium: '$10K-$50K remediation cost',
+        low: '$1K-$10K security review cost'
+      },
+      Performance: {
+        critical: 'Service outage, customer churn',
+        high: 'User complaints, support load increase',
+        medium: 'Reduced user satisfaction',
+        low: 'Minor UX impact'
+      },
+      Dependency: {
+        critical: 'Emergency patch deployment required',
+        high: 'Urgent update in current sprint',
+        medium: 'Plan update for next release',
+        low: 'Update when convenient'
+      },
+      Architecture: {
+        critical: '6+ month refactor project',
+        high: '2-3 month improvement project',
+        medium: '2-4 week refactoring',
+        low: '1-2 day improvement'
+      },
+      Quality: {
+        critical: 'Release blocked, deployment failed',
+        high: 'High bug probability, QA escalation',
+        medium: 'Maintenance cost increase',
+        low: 'Minor technical debt'
+      }
+    };
+    
+    return impacts[category]?.[severity as keyof typeof impacts.Security] || 'Business impact pending';
+  }
+  
+  private getSuggestedFix(description: string): string {
+    const fixes: Record<string, string> = {
+      'sql': 'Use parameterized queries or ORM',
+      'injection': 'Sanitize input, use safe APIs',
+      'hardcoded': 'Use environment variables',
+      'type': 'Add type hints',
+      'none': 'Add None checks',
+      'exception': 'Use specific exception handling',
+      'import': 'Remove unused imports',
+      'complexity': 'Reduce cyclomatic complexity',
+      'format': 'Run black formatter',
+      'naming': 'Follow PEP 8 naming conventions'
+    };
+    
+    const descLower = description.toLowerCase();
     for (const [key, fix] of Object.entries(fixes)) {
-      if (issueType.toLowerCase().includes(key)) {
+      if (descLower.includes(key)) {
         return fix;
       }
     }
-    return 'Review and fix the identified issue';
-  }
-
-  private createDefaultAnalysisResult(repoPath: string, analyzerName: string): any {
-    const timestamp = new Date().toISOString();
     
-    return {
-      decision: 'APPROVED' as const,
-      confidence: 95,
-      reason: 'No critical issues found in Python analysis',
-      qualityScore: 100,
-      grade: 'A',
-      newIssues: [],
-      existingIssues: [],
-      resolvedIssues: [],
-      blockingIssues: [],
-      backlogIssues: [],
-      modifiedFiles: [],
-      businessImpact: {
-        summary: 'No significant business impact',
-        immediateRisk: 'Low',
-        futureRisk: 'Low',
-        financialImpact: {
-          fixCost: '$0',
-          exploitCost: 'N/A',
-          roi: 'N/A'
-        },
-        riskMatrix: []
-      },
-      skillScore: {
-        developer: 'unknown',
-        score: 85,
-        trend: [85],
-        categories: {
-          security: 85,
-          performance: 85,
-          architecture: 85,
-          dependency: 85,
-          quality: 85
-        },
-        recommendations: []
-      },
-      metadata: {
-        repository: repoPath,
-        prNumber: 0,
-        branch: 'main',
-        language: 'python',
-        totalFiles: 0,
-        modifiedFiles: 0,
-        analysisTime: 0,
-        tools: [],
-        timestamp,
-        analyzedAt: timestamp,
-        analyzer: analyzerName,
-        repoUrl: repoPath,
-        executionTime: 0
-      }
-    };
+    return 'Apply Python best practices (PEP 8)';
   }
 }
+
+// Export for direct usage
+export default V9PythonAnalyzer;

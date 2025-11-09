@@ -1,0 +1,3482 @@
+[
+  {
+    "id": "b5ed18b6-6f52-4449-adc3-3c5b7a055a09",
+    "role": "security",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.225Z",
+      "Context: java / security",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.225+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "b3c9249e-24fd-43d6-8308-9bb6a566204b",
+    "role": "security",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.226Z",
+      "Context: python / security",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.226+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "b1420845-0e77-4e89-bf68-e0528a115bc6",
+    "role": "security",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.226Z",
+      "Context: typescript / security",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.226+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "3bbe15ea-a360-4d55-8adb-18ea55f42f32",
+    "role": "security",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.227Z",
+      "Context: javascript / security",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.227+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "f3f0721a-6277-4d3f-a60b-fce6a9bbc2fa",
+    "role": "security",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.227Z",
+      "Context: go / security",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.227+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "030a3785-d3cf-4061-b897-9fc55bcb72b9",
+    "role": "security",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.228Z",
+      "Context: rust / security",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.228+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "fc9fc5d9-eaee-4f10-868c-844a8876010b",
+    "role": "security",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.229Z",
+      "Context: csharp / security",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.229+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "e60cb2ca-de43-4cb2-8ddb-5a499d5bc6a4",
+    "role": "security",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.229Z",
+      "Context: cpp / security",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.229+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "5f70f456-44f2-4cca-9a93-b62e1b835876",
+    "role": "security",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.230Z",
+      "Context: ruby / security",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.23+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "999b63b5-e531-44f6-9e44-27581d77b1c6",
+    "role": "security",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.230Z",
+      "Context: php / security",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.23+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "e8678026-d8b7-4447-b391-45cd43560cc7",
+    "role": "security",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.231Z",
+      "Context: kotlin / security",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.231+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "e4070c05-89a8-4ead-9fc7-2b61fe3c29bb",
+    "role": "security",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.231Z",
+      "Context: swift / security",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.231+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "cf9a5c4f-7065-46fc-9d3f-40a61a7ae299",
+    "role": "performance",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.232Z",
+      "Context: java / performance",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.232+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "55985ffb-01b3-4caf-a066-b4831a4906cf",
+    "role": "performance",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.232Z",
+      "Context: python / performance",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.232+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "4f8f34dc-3f39-43d8-8da5-2935361cb288",
+    "role": "performance",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.233Z",
+      "Context: typescript / performance",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.233+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "903af573-e270-4e87-99fc-68e7121875c9",
+    "role": "performance",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.233Z",
+      "Context: javascript / performance",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.233+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "13997703-f2ba-4b53-aa29-7448cfc358cb",
+    "role": "performance",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.234Z",
+      "Context: go / performance",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.234+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "ffff154a-d1aa-4386-9ce9-f8e7d15f130f",
+    "role": "performance",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.234Z",
+      "Context: rust / performance",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.234+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "38fb988d-050d-49ea-9a74-69325025dd51",
+    "role": "performance",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.235Z",
+      "Context: csharp / performance",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.235+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "32710006-961a-40f4-8dce-957a81f048bc",
+    "role": "performance",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.235Z",
+      "Context: cpp / performance",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.235+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "f7883a42-a792-4b80-9e43-c95f325ae7b6",
+    "role": "performance",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.236Z",
+      "Context: ruby / performance",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.236+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "f37c40c7-c705-4f05-8bd7-98c4d4a43266",
+    "role": "performance",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.236Z",
+      "Context: php / performance",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.236+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "fa5859bc-1fa8-4835-b849-72998296a467",
+    "role": "performance",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.237Z",
+      "Context: kotlin / performance",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.237+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "9b208113-6df8-4b92-990c-30a141e0ae75",
+    "role": "performance",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.237Z",
+      "Context: swift / performance",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.237+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "90c4df1f-2f64-4488-b920-a4a24f6438e7",
+    "role": "code_quality",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.238Z",
+      "Context: java / code_quality",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.238+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "e33fda70-b3d0-4a46-b2c1-56dd55d8f8a3",
+    "role": "code_quality",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.238Z",
+      "Context: python / code_quality",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.238+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "8d329890-727e-4739-aae1-83e00a43acfd",
+    "role": "code_quality",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.239Z",
+      "Context: typescript / code_quality",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.239+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "f27e6fa8-b45d-4aa3-88f8-b0900bc80e07",
+    "role": "code_quality",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.239Z",
+      "Context: javascript / code_quality",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.239+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "d6e0645f-b294-4be7-b33d-b25eae091e6e",
+    "role": "code_quality",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.239Z",
+      "Context: go / code_quality",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.239+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "1a8416ca-1e4e-4a8d-b641-6e2e84ad60d8",
+    "role": "code_quality",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.240Z",
+      "Context: rust / code_quality",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.24+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "c2c6484e-64a2-4dd3-8585-3917035ea23a",
+    "role": "code_quality",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.240Z",
+      "Context: csharp / code_quality",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.24+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "f4805c5a-f47d-468e-84aa-ec40251540c6",
+    "role": "code_quality",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.241Z",
+      "Context: cpp / code_quality",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.241+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "c2802eaa-1b40-4ce6-a6ed-d8e504ab8024",
+    "role": "code_quality",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.241Z",
+      "Context: ruby / code_quality",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.241+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "a8acddbd-a669-4a9d-b3a6-d5f07a9621d3",
+    "role": "code_quality",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.241Z",
+      "Context: php / code_quality",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.241+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "0ea8b19f-f7f7-46ea-a90a-223fbc0fac5f",
+    "role": "code_quality",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.242Z",
+      "Context: kotlin / code_quality",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.242+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "87b07a23-27e4-4cfb-8e0f-56fe15523ef5",
+    "role": "code_quality",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.242Z",
+      "Context: swift / code_quality",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.242+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "e7f89b79-9a22-4f26-b8eb-5f90686aa39f",
+    "role": "architecture",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.242Z",
+      "Context: java / architecture",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.243+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "9d99bcde-b12e-4e80-a5ae-cb2ed694e151",
+    "role": "architecture",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.243Z",
+      "Context: python / architecture",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.243+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "d9eaf672-e572-4a9d-baf1-63a4b87aa397",
+    "role": "architecture",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.243Z",
+      "Context: typescript / architecture",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.243+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "244ed26e-2806-4e46-bfd7-22820d24db27",
+    "role": "architecture",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.244Z",
+      "Context: javascript / architecture",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.244+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "86d1314f-f595-442a-b574-7ac514e0bc17",
+    "role": "architecture",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.244Z",
+      "Context: go / architecture",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.244+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "5f67a8ea-dba3-4ef3-a5dc-377fecdddca5",
+    "role": "architecture",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.244Z",
+      "Context: rust / architecture",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.244+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "5d3d861d-1bd5-4f40-8179-7645b6ab2e0d",
+    "role": "architecture",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.247Z",
+      "Context: csharp / architecture",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.247+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "76eb0aac-338c-4c37-9018-1f38ac857a3c",
+    "role": "architecture",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.247Z",
+      "Context: cpp / architecture",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.247+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "84e51578-5056-4b21-bc1b-14bfe639550f",
+    "role": "architecture",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.248Z",
+      "Context: ruby / architecture",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.248+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "d1f651f8-bb1c-4a5d-a051-f3b2cbd9aa31",
+    "role": "architecture",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.248Z",
+      "Context: php / architecture",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.248+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "351d6b89-3005-4e3f-8415-39cf27b5c4ea",
+    "role": "architecture",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.248Z",
+      "Context: kotlin / architecture",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.248+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "7f7ac782-41cb-4933-bf05-464ffb096f50",
+    "role": "architecture",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.249Z",
+      "Context: swift / architecture",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.249+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "ba4954cb-80b6-46ff-a49c-68818631ff61",
+    "role": "dependency",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.249Z",
+      "Context: java / dependency",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.249+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "45377d3c-1978-46f9-9d68-096c5983d551",
+    "role": "dependency",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.249Z",
+      "Context: python / dependency",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.249+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "a74812db-afec-44bf-969a-5d38fb110c4b",
+    "role": "dependency",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.250Z",
+      "Context: typescript / dependency",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.25+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "fe0b3e8d-8f71-4671-b2c2-0d2b3d1cbb00",
+    "role": "dependency",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.250Z",
+      "Context: javascript / dependency",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.25+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "9523578d-6063-4066-be80-052d71b443e4",
+    "role": "dependency",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.250Z",
+      "Context: go / dependency",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.25+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "b1f3e5a6-f505-45e5-80ec-0417814695cf",
+    "role": "dependency",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.251Z",
+      "Context: rust / dependency",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.251+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "8ece7082-fc5e-458c-8886-2e92c38d7085",
+    "role": "dependency",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.251Z",
+      "Context: csharp / dependency",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.251+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "5764bcc6-772f-4b1c-b324-21643c8998af",
+    "role": "dependency",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.251Z",
+      "Context: cpp / dependency",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.251+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "4c1c165e-2c97-466d-ad1b-a0b357734371",
+    "role": "dependency",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.252Z",
+      "Context: ruby / dependency",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.252+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "953849fe-0e86-4482-b9a0-c72deb5f5c2c",
+    "role": "dependency",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.252Z",
+      "Context: php / dependency",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.252+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "d289cb9d-7492-4e54-ae1d-01347432010c",
+    "role": "dependency",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.252Z",
+      "Context: kotlin / dependency",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.252+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "671d1983-be66-48ee-a8b1-e77af1420abe",
+    "role": "dependency",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:22.253Z",
+      "Context: swift / dependency",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:22.253+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "6cf46f90-dc80-4ae5-a4de-6247894c5e51",
+    "role": "educator",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-pro",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.25,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:23.612Z",
+      "Context: java / educator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.2)",
+      "Primary: openai/gpt-5 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-pro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:23.612+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "79f3dc97-64e8-4082-a2ae-42aa6e8fb6ce",
+    "role": "educator",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "deepcogito",
+    "primary_model": "deepcogito/cogito-v2-preview-llama-405b",
+    "fallback_provider": "nvidia",
+    "fallback_model": "nvidia/llama-3.3-nemotron-super-49b-v1.5",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.25,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:25.379Z",
+      "Context: python / educator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.2)",
+      "Primary: deepcogito/cogito-v2-preview-llama-405b (validated on OpenRouter)",
+      "Fallback: nvidia/llama-3.3-nemotron-super-49b-v1.5",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:25.379+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "34dadb9e-42dc-4958-adc6-0d9186ec358f",
+    "role": "educator",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5-chat",
+    "fallback_provider": "anthropic",
+    "fallback_model": "anthropic/claude-opus-4",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.25,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:29.637Z",
+      "Context: typescript / educator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.2)",
+      "Primary: openai/gpt-5-chat (validated on OpenRouter)",
+      "Fallback: anthropic/claude-opus-4",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:29.637+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "3fee5d30-02ad-4bab-9a3e-bf98ff674375",
+    "role": "educator",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-pro",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.25,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:31.079Z",
+      "Context: javascript / educator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.2)",
+      "Primary: openai/gpt-5 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-pro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:31.079+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "6da8fcfa-3c51-4672-bc48-b413ad8b357a",
+    "role": "educator",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-5-chat",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.25,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:32.810Z",
+      "Context: go / educator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.2)",
+      "Primary: openai/gpt-5 (validated on OpenRouter)",
+      "Fallback: openai/gpt-5-chat",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:32.81+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "07605524-f224-4f9e-a277-72de275335c8",
+    "role": "educator",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "anthropic",
+    "primary_model": "anthropic/claude-opus-4.1",
+    "fallback_provider": "deepseek",
+    "fallback_model": "deepseek/deepseek-chat-v3.1",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.25,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:34.383Z",
+      "Context: rust / educator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.2)",
+      "Primary: anthropic/claude-opus-4.1 (validated on OpenRouter)",
+      "Fallback: deepseek/deepseek-chat-v3.1",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:34.383+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "a905fb8b-9b13-4995-93c1-fcd7c71312a7",
+    "role": "educator",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-5-chat",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.25,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:36.097Z",
+      "Context: csharp / educator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.2)",
+      "Primary: openai/gpt-5 (validated on OpenRouter)",
+      "Fallback: openai/gpt-5-chat",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:36.097+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "8709c620-9cb5-41ff-8a41-7db42b0ebb89",
+    "role": "educator",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5-pro",
+    "fallback_provider": "anthropic",
+    "fallback_model": "anthropic/claude-sonnet-4.5",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.25,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:37.645Z",
+      "Context: cpp / educator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.2)",
+      "Primary: openai/gpt-5-pro (validated on OpenRouter)",
+      "Fallback: anthropic/claude-sonnet-4.5",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:37.645+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "0bb376a5-2733-48f4-b17c-fcdd9b7cc3ac",
+    "role": "educator",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.25,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:37.890Z",
+      "Context: ruby / educator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.2)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:37.89+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "419cb6cd-e49c-4747-a285-320e11440a9b",
+    "role": "educator",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.25,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.172Z",
+      "Context: php / educator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.2)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.172+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "7a2917fd-96d2-4486-adcf-ac32e3380f44",
+    "role": "educator",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.25,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.319Z",
+      "Context: kotlin / educator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.2)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.319+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "252fd6d5-af29-4b8d-9570-aed224447051",
+    "role": "educator",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.25,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.538Z",
+      "Context: swift / educator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.2)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.538+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "c2351a1a-0060-4eb7-831c-89db12e10d4d",
+    "role": "orchestrator",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.539Z",
+      "Context: java / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.539+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "06943587-c9fb-4591-8869-2ff4643b58c3",
+    "role": "orchestrator",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.539Z",
+      "Context: python / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.539+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "04795ea9-e663-45cd-999f-15686c7f8d9f",
+    "role": "orchestrator",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.540Z",
+      "Context: typescript / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.54+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "382e0fcb-7b6a-46ed-9dcf-acbb6ddf445b",
+    "role": "orchestrator",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.540Z",
+      "Context: javascript / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.54+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "5139bac3-9606-4042-b31c-f1b80ad1aa57",
+    "role": "orchestrator",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.541Z",
+      "Context: go / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.541+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "8b205625-464f-42c3-a1f1-68fb55ddd54b",
+    "role": "orchestrator",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.541Z",
+      "Context: rust / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.541+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "b076f4c8-5aa8-48e9-b6e0-535bd9510737",
+    "role": "orchestrator",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.541Z",
+      "Context: csharp / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.541+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "20c164be-2413-4fa5-973b-f141fb7deeb1",
+    "role": "orchestrator",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.542Z",
+      "Context: cpp / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.542+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "851adcdd-38cc-4064-b3e0-e563a761e65c",
+    "role": "orchestrator",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.543Z",
+      "Context: ruby / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.543+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "6bc7ba96-6028-4cac-bdef-274bde5d6391",
+    "role": "orchestrator",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.543Z",
+      "Context: php / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.543+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "050f5304-17e1-4372-b0b1-6a9217c17911",
+    "role": "orchestrator",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.543Z",
+      "Context: kotlin / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.543+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "c462365c-6c84-4c09-a1b1-afd19312665c",
+    "role": "orchestrator",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.544Z",
+      "Context: swift / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.544+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "0beaa5ba-f161-4120-895b-e3857f1e7740",
+    "role": "comparator",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.35,
+      "quality": 0.4,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.544Z",
+      "Context: java / comparator",
+      "Search-based: Weight-tailored queries (quality=0.4, cost=0.2)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.544+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "db0224fa-a9fc-4b1a-a377-96aa1a178cb9",
+    "role": "comparator",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.35,
+      "quality": 0.4,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.545Z",
+      "Context: python / comparator",
+      "Search-based: Weight-tailored queries (quality=0.4, cost=0.2)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.545+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "965dca9c-3226-4248-b751-fe84bc6af71f",
+    "role": "comparator",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.35,
+      "quality": 0.4,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.545Z",
+      "Context: typescript / comparator",
+      "Search-based: Weight-tailored queries (quality=0.4, cost=0.2)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.545+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "e0829003-a68b-4026-8e8e-3e2a84d6f074",
+    "role": "comparator",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.35,
+      "quality": 0.4,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.545Z",
+      "Context: javascript / comparator",
+      "Search-based: Weight-tailored queries (quality=0.4, cost=0.2)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.545+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "fe51488b-eb6e-4ee8-ad19-9db5af02ad36",
+    "role": "comparator",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.35,
+      "quality": 0.4,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.545Z",
+      "Context: go / comparator",
+      "Search-based: Weight-tailored queries (quality=0.4, cost=0.2)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.546+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "9b525261-98f5-4bca-ad43-11c6de45097c",
+    "role": "comparator",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.35,
+      "quality": 0.4,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.546Z",
+      "Context: rust / comparator",
+      "Search-based: Weight-tailored queries (quality=0.4, cost=0.2)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.546+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "156807ff-73e2-4430-a721-92cc1b939ea1",
+    "role": "comparator",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.35,
+      "quality": 0.4,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.546Z",
+      "Context: csharp / comparator",
+      "Search-based: Weight-tailored queries (quality=0.4, cost=0.2)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.546+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "6e691221-f076-43d1-b851-3b30a6027627",
+    "role": "comparator",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.35,
+      "quality": 0.4,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.547Z",
+      "Context: cpp / comparator",
+      "Search-based: Weight-tailored queries (quality=0.4, cost=0.2)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.547+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "f8c6a64b-4499-4996-80a2-a33254d19543",
+    "role": "comparator",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.35,
+      "quality": 0.4,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.547Z",
+      "Context: ruby / comparator",
+      "Search-based: Weight-tailored queries (quality=0.4, cost=0.2)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.547+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "600f1e30-a479-4968-b598-225148747cbf",
+    "role": "comparator",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.35,
+      "quality": 0.4,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.547Z",
+      "Context: php / comparator",
+      "Search-based: Weight-tailored queries (quality=0.4, cost=0.2)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.547+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "dd150343-5b27-4166-80cc-596207e8ce5b",
+    "role": "comparator",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.35,
+      "quality": 0.4,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.548Z",
+      "Context: kotlin / comparator",
+      "Search-based: Weight-tailored queries (quality=0.4, cost=0.2)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.548+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "f4e6c4a1-80e7-45c0-b406-d930f7da558f",
+    "role": "comparator",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.35,
+      "quality": 0.4,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.548Z",
+      "Context: swift / comparator",
+      "Search-based: Weight-tailored queries (quality=0.4, cost=0.2)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.548+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "68907a5e-6560-4c77-92c3-bbff850715d6",
+    "role": "location_finder",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.5,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.549Z",
+      "Context: java / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.549+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "bcc327d2-3d50-4833-a242-31c2b8633f2e",
+    "role": "location_finder",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.5,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.549Z",
+      "Context: python / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.549+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "1e6ef13e-c0ed-40a8-bb05-159e04a35ee7",
+    "role": "location_finder",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.5,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.549Z",
+      "Context: typescript / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.549+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "81fba94b-9594-40b7-9d6d-1edf60353613",
+    "role": "location_finder",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.5,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.550Z",
+      "Context: javascript / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.55+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "76820928-8b92-4f87-a493-d20abfab27e9",
+    "role": "location_finder",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.5,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.550Z",
+      "Context: go / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.55+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "48d491e6-e552-4612-96dd-df83f52f6602",
+    "role": "location_finder",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.5,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.550Z",
+      "Context: rust / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.55+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "8f26a621-f392-4e4b-aec5-40729afdb37a",
+    "role": "location_finder",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.5,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.551Z",
+      "Context: csharp / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.551+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "ef8a09fa-5f8e-4373-8d50-61ff0fee139b",
+    "role": "location_finder",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.5,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.551Z",
+      "Context: cpp / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.551+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "e127b76d-21ca-4667-a8a3-83a9effc25fe",
+    "role": "location_finder",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.5,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.551Z",
+      "Context: ruby / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.551+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "1d3f890e-c50b-4baa-9078-2127ff45ced3",
+    "role": "location_finder",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.5,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.552Z",
+      "Context: php / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.552+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "7bc3d06d-4775-448e-a84a-9276745354dd",
+    "role": "location_finder",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.5,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.552Z",
+      "Context: kotlin / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.552+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "3d431afd-eeb7-4106-a445-8cdf8a1893d1",
+    "role": "location_finder",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.5,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.552Z",
+      "Context: swift / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.552+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "91604608-67e0-4140-971a-1a0fcbf3631c",
+    "role": "researcher",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.553Z",
+      "Context: java / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.553+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "42776cb4-5d8d-40ca-b3ba-c9663f44ad02",
+    "role": "researcher",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.553Z",
+      "Context: python / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.553+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "820bcd85-81b9-451b-82fe-034a0c334015",
+    "role": "researcher",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.553Z",
+      "Context: typescript / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.553+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "74557d9e-e9dc-4832-a815-14f6823498dd",
+    "role": "researcher",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.554Z",
+      "Context: javascript / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.554+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "0091f35e-533e-4ad5-b7d4-ad226e33e587",
+    "role": "researcher",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.554Z",
+      "Context: go / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.554+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "d97255e9-b560-47af-9bee-5763ef051819",
+    "role": "researcher",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.554Z",
+      "Context: rust / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.554+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "b5822eb3-0cff-4789-b5a9-53062868f314",
+    "role": "researcher",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.555Z",
+      "Context: csharp / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.555+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "642dfdef-83f0-42bb-9afa-f1e1d175c7a6",
+    "role": "researcher",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.555Z",
+      "Context: cpp / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.555+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "04a1eccf-c671-4f5c-8b24-5503b7b93cd1",
+    "role": "researcher",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.555Z",
+      "Context: ruby / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.555+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "8d58a4b1-21b1-4953-9e58-6613e79df8ad",
+    "role": "researcher",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.556Z",
+      "Context: php / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.556+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "4cba69c1-4c7c-4664-a51b-5d5fca90a693",
+    "role": "researcher",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.556Z",
+      "Context: kotlin / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.556+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "38b486f1-258f-4171-82db-e990c3da4332",
+    "role": "researcher",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder-flash",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:48:38.556Z",
+      "Context: swift / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder-flash",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:48:38.556+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  }
+]

@@ -14,14 +14,18 @@ import * as path from 'path';
 
 /**
  * Check if a group can be auto-fixed
+ * SESSION 19 FIX: Include all tools - AI generates IDE-applicable fixes
  */
 function canAutoFix(group: IssueGroup): boolean {
-  const autoFixableRules = [
+  // CheckStyle: All rules auto-fixable with IDE formatters
+  if (group.tool === 'checkstyle') {
+    return true;
+  }
+  
+  // PMD: Common auto-fixable rules
+  const autoFixablePMDRules = [
     'SystemPrintln',
     'GuardLogStatement',
-    'LineLength',
-    'WhitespaceAround',
-    'WhitespaceAfter',
     'AvoidStarImport',
     'UnusedImports',
     'RedundantImport',
@@ -30,12 +34,33 @@ function canAutoFix(group: IssueGroup): boolean {
     'ForLoopCanBeForeach',
     'UseStringBufferForStringAppends',
     'ConsecutiveLiteralAppends',
+    'AvoidUsingVolatile',
+    'ClassWithOnlyPrivateConstructorsShouldBeFinal',
+    'ReturnEmptyCollectionRatherThanNull',
     'MissingJavadocMethod',
     'MissingJavadocType'
   ];
   
-  return autoFixableRules.includes(group.rule) || 
-         (group.tool === 'checkstyle' && group.rule.toLowerCase().includes('whitespace'));
+  if (autoFixablePMDRules.includes(group.rule)) {
+    return true;
+  }
+  
+  // Semgrep: AI-generated security fixes are IDE-applicable
+  if (group.tool === 'semgrep') {
+    return true;
+  }
+  
+  // Dependency-Check: IDEs can update dependencies
+  if (group.tool === 'dependency-check') {
+    return true;
+  }
+  
+  // SpotBugs: Many rules have clear fixes
+  if (group.tool === 'spotbugs') {
+    return true;
+  }
+  
+  return false;
 }
 
 /**

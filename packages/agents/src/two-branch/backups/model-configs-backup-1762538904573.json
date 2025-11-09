@@ -1,0 +1,3482 @@
+[
+  {
+    "id": "1251ebc8-df39-4a1c-b60f-21c8669e6673",
+    "role": "security",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.102Z",
+      "Context: java / security",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.102+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "9aa611c7-7154-4ee5-9fb9-92334de3d39c",
+    "role": "security",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.102Z",
+      "Context: python / security",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.102+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "19d9d16b-3676-4c1f-8657-a2468fc835e6",
+    "role": "security",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.103Z",
+      "Context: typescript / security",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.103+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "6441e761-dc33-4ec1-b19a-20be26e54ffb",
+    "role": "security",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.103Z",
+      "Context: javascript / security",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.103+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "a546220f-97c1-4d0b-a400-776f41cc85e4",
+    "role": "security",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.103Z",
+      "Context: go / security",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.103+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "82150741-8a8f-4514-81fd-b813da331a39",
+    "role": "security",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.103Z",
+      "Context: rust / security",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.103+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "76c76206-7107-49f3-b562-93e041f1bf7c",
+    "role": "security",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.104Z",
+      "Context: csharp / security",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.104+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "4e5a0a8f-8aa5-48cc-93f5-e16035730be6",
+    "role": "security",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.104Z",
+      "Context: cpp / security",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.104+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "4be82632-9b29-49f4-88bb-a8b5f0d84c95",
+    "role": "security",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.104Z",
+      "Context: ruby / security",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.104+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "9d1c8962-712c-47b3-a499-195b421b5ebc",
+    "role": "security",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.104Z",
+      "Context: php / security",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.104+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "5c04f483-5b35-4e77-ba6c-fb1d6d5e258d",
+    "role": "security",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.105Z",
+      "Context: kotlin / security",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.105+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "a0f2f0c7-9a9b-430a-86e8-53021cdce43e",
+    "role": "security",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.105Z",
+      "Context: swift / security",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.105+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "0fe298e2-aaaa-493e-b409-dc5337955aa2",
+    "role": "performance",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.105Z",
+      "Context: java / performance",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.105+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "a1b4c849-e5ef-4d46-b05d-9a590acec29e",
+    "role": "performance",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.105Z",
+      "Context: python / performance",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.105+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "1a46ed4d-acfd-4791-b058-668131e9be84",
+    "role": "performance",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.105Z",
+      "Context: typescript / performance",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.105+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "c3138b46-6aa5-447f-9a59-9360567c5702",
+    "role": "performance",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.105Z",
+      "Context: javascript / performance",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.105+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "01a03216-dd1e-4c2e-809d-858e71ce7c31",
+    "role": "performance",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.105Z",
+      "Context: go / performance",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.105+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "2ce6747d-73f9-48eb-9570-8b76ae7c6f7e",
+    "role": "performance",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.106Z",
+      "Context: rust / performance",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.106+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "bbd41a5c-f797-439f-a56d-fe7cbcac486d",
+    "role": "performance",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.106Z",
+      "Context: csharp / performance",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.106+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "5182ccd7-de76-4b78-a0bf-a88571e3def1",
+    "role": "performance",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.106Z",
+      "Context: cpp / performance",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.106+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "a4321f6e-81ce-405e-815f-3ad0add67344",
+    "role": "performance",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.106Z",
+      "Context: ruby / performance",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.106+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "1844cf00-626b-4d11-bc6f-3fe089ead6f0",
+    "role": "performance",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.106Z",
+      "Context: php / performance",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.106+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "f478669e-f586-44e8-9196-2f58c5028e47",
+    "role": "performance",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.107Z",
+      "Context: kotlin / performance",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.107+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "df821d0f-e551-4b5c-98bf-e826b00f2f84",
+    "role": "performance",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.107Z",
+      "Context: swift / performance",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.107+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "00339ac9-1e8b-4dcd-aab8-05b160497593",
+    "role": "code_quality",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.107Z",
+      "Context: java / code_quality",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.107+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "b5c177a0-d5f3-42e0-a000-24f0228e9027",
+    "role": "code_quality",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.107Z",
+      "Context: python / code_quality",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.107+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "80a377ef-2547-405a-855d-dc436a3b8c3b",
+    "role": "code_quality",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.107Z",
+      "Context: typescript / code_quality",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.107+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "422983b9-b423-46d2-a6ba-7ba72366acd8",
+    "role": "code_quality",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.107Z",
+      "Context: javascript / code_quality",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.107+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "29497f2a-b852-43b5-abd7-77ed92b52887",
+    "role": "code_quality",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.108Z",
+      "Context: go / code_quality",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.108+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "94a4bf93-9bd2-4dc6-b5ac-fadb1ccbd8a6",
+    "role": "code_quality",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.108Z",
+      "Context: rust / code_quality",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.108+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "07cd7b0d-6122-43e4-a7c4-34f1e8a466e9",
+    "role": "code_quality",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.108Z",
+      "Context: csharp / code_quality",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.108+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "7bad07f6-9a0d-4190-83bb-8a887869132a",
+    "role": "code_quality",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.108Z",
+      "Context: cpp / code_quality",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.108+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "a0b2ae6d-bd13-44e3-a064-b91782fbd1ca",
+    "role": "code_quality",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.108Z",
+      "Context: ruby / code_quality",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.108+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "a9cdd66e-cdee-4338-ac5d-6b69c03d9059",
+    "role": "code_quality",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.108Z",
+      "Context: php / code_quality",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.108+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "9a9af502-8ffe-4644-bc7d-d5eeebc72589",
+    "role": "code_quality",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.108Z",
+      "Context: kotlin / code_quality",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.108+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "abe744f7-b38f-4924-a487-8c62c681f74f",
+    "role": "code_quality",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.108Z",
+      "Context: swift / code_quality",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.108+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "cf00a8f9-3a04-4af0-9521-c281c3345c32",
+    "role": "architecture",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.109Z",
+      "Context: java / architecture",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.109+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "631c56af-a41c-434d-83dc-3811bf78767d",
+    "role": "architecture",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.109Z",
+      "Context: python / architecture",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.109+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "dd181476-6522-409b-aeff-bf53b5931fad",
+    "role": "architecture",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.109Z",
+      "Context: typescript / architecture",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.109+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "d53aa962-8ce1-4c05-b8ec-4671f2ca9a42",
+    "role": "architecture",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.109Z",
+      "Context: javascript / architecture",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.109+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "e69e1bbf-8891-4fda-9d2c-7f53b4d63a07",
+    "role": "architecture",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.109Z",
+      "Context: go / architecture",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.109+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "e0960a25-f96e-42d8-bcae-b2aa5a0001b1",
+    "role": "architecture",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.109Z",
+      "Context: rust / architecture",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.109+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "d76c2085-3dfe-45b2-a4f7-e9ced9769300",
+    "role": "architecture",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.110Z",
+      "Context: csharp / architecture",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.11+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "d3747910-b967-43f6-a3ec-49192527906d",
+    "role": "architecture",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.110Z",
+      "Context: cpp / architecture",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.11+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "aa6f3cf7-673c-4582-89c7-41a8ab7b8186",
+    "role": "architecture",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.110Z",
+      "Context: ruby / architecture",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.11+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "d577a1ef-c338-4925-bc82-85191cfe750d",
+    "role": "architecture",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.110Z",
+      "Context: php / architecture",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.11+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "c045ffd4-f0c3-41c3-a5f6-5964c8d9ffe9",
+    "role": "architecture",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.110Z",
+      "Context: kotlin / architecture",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.11+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "73606565-f7f1-41cc-843c-b5cc012bd219",
+    "role": "architecture",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.110Z",
+      "Context: swift / architecture",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.11+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "a2db8360-a119-4972-a9c4-2ad82318318c",
+    "role": "dependency",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.110Z",
+      "Context: java / dependency",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.11+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "a4d10c40-524b-48fe-9f71-fa99998b454e",
+    "role": "dependency",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.110Z",
+      "Context: python / dependency",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.11+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "6e216f00-0cc4-4955-8528-9a3632e5aa80",
+    "role": "dependency",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.110Z",
+      "Context: typescript / dependency",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.11+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "8cbab8f0-e566-4c6a-aeca-a888b3332613",
+    "role": "dependency",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.111Z",
+      "Context: javascript / dependency",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.111+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "df670c14-4b1c-462f-974a-9a3adb09a10a",
+    "role": "dependency",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.111Z",
+      "Context: go / dependency",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.111+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "18710be8-0632-4f10-a1de-bf245c4e7299",
+    "role": "dependency",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.111Z",
+      "Context: rust / dependency",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.111+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "38551a48-9b8b-4e6f-8aef-a7a2414518ab",
+    "role": "dependency",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.111Z",
+      "Context: csharp / dependency",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.111+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "1ce68778-c505-454b-8cac-7d80d3c4e049",
+    "role": "dependency",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.111Z",
+      "Context: cpp / dependency",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.111+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "71c99316-93e7-40bf-ac1e-c62ae780b091",
+    "role": "dependency",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.111Z",
+      "Context: ruby / dependency",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.111+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "fb563520-0025-4cf9-9cd1-71ba4eadf0b5",
+    "role": "dependency",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.111Z",
+      "Context: php / dependency",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.111+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "7dbd96af-d24e-4a13-94b6-d28aaa99789c",
+    "role": "dependency",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.112Z",
+      "Context: kotlin / dependency",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.112+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "ddba87db-c1d4-434a-a62a-badb2232a9f5",
+    "role": "dependency",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:37.112Z",
+      "Context: swift / dependency",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:37.112+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "59b8cc50-01cc-435c-8444-890f9e741b6e",
+    "role": "educator",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-pro",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.25,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:39.097Z",
+      "Context: java / educator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.2)",
+      "Primary: openai/gpt-5 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-pro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:39.097+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "a3a0def2-3f63-4713-93c4-dfd8ad3f5b96",
+    "role": "educator",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "deepcogito",
+    "primary_model": "deepcogito/cogito-v2-preview-llama-405b",
+    "fallback_provider": "nvidia",
+    "fallback_model": "nvidia/llama-3.3-nemotron-super-49b-v1.5",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.25,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:40.947Z",
+      "Context: python / educator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.2)",
+      "Primary: deepcogito/cogito-v2-preview-llama-405b (validated on OpenRouter)",
+      "Fallback: nvidia/llama-3.3-nemotron-super-49b-v1.5",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:40.947+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "8fb0d29e-e7d1-4579-8b6b-1d1c2179f216",
+    "role": "educator",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5-chat",
+    "fallback_provider": "anthropic",
+    "fallback_model": "anthropic/claude-sonnet-4.5",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.25,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:42.210Z",
+      "Context: typescript / educator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.2)",
+      "Primary: openai/gpt-5-chat (validated on OpenRouter)",
+      "Fallback: anthropic/claude-sonnet-4.5",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:42.21+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "0dda8e46-23ce-4c52-b7e4-b6b39edb3b8b",
+    "role": "educator",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-pro",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.25,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:43.494Z",
+      "Context: javascript / educator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.2)",
+      "Primary: openai/gpt-5 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-pro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:43.494+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "d2ffc176-86f5-44ca-a6fb-cc0ab2f772ec",
+    "role": "educator",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-5-chat",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.25,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:44.869Z",
+      "Context: go / educator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.2)",
+      "Primary: openai/gpt-5 (validated on OpenRouter)",
+      "Fallback: openai/gpt-5-chat",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:44.869+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "fd91ffed-1736-41c7-bfa8-8091b660b3f1",
+    "role": "educator",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "anthropic",
+    "primary_model": "anthropic/claude-opus-4.1",
+    "fallback_provider": "deepseek",
+    "fallback_model": "deepseek/deepseek-v3.2-exp",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.25,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:46.075Z",
+      "Context: rust / educator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.2)",
+      "Primary: anthropic/claude-opus-4.1 (validated on OpenRouter)",
+      "Fallback: deepseek/deepseek-v3.2-exp",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:46.075+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "64b93a90-aecc-4e7a-b409-706d82e4c736",
+    "role": "educator",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-5-chat",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.25,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:47.348Z",
+      "Context: csharp / educator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.2)",
+      "Primary: openai/gpt-5 (validated on OpenRouter)",
+      "Fallback: openai/gpt-5-chat",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:47.348+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "87ba3dfd-7d8e-42db-bec2-269b7745a104",
+    "role": "educator",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5",
+    "fallback_provider": "anthropic",
+    "fallback_model": "anthropic/claude-sonnet-4.5",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.25,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:48.493Z",
+      "Context: cpp / educator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.2)",
+      "Primary: openai/gpt-5 (validated on OpenRouter)",
+      "Fallback: anthropic/claude-sonnet-4.5",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:48.493+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "dd5a3d72-bb93-4bf1-935d-c8f17c09b1ec",
+    "role": "educator",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.25,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:48.760Z",
+      "Context: ruby / educator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.2)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:48.76+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "736c6885-d34c-4b27-8d77-363aa6c108c2",
+    "role": "educator",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.25,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.037Z",
+      "Context: php / educator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.2)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.037+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "28fc68f9-bd02-4578-b7b0-3ce37fa19e10",
+    "role": "educator",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.25,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.180Z",
+      "Context: kotlin / educator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.2)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.18+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "f366ff38-c6fa-492a-b26a-0890cde2c994",
+    "role": "educator",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.25,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.325Z",
+      "Context: swift / educator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.2)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.325+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "b09aa07a-7501-488a-9d02-3730906cd69c",
+    "role": "orchestrator",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.325Z",
+      "Context: java / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.325+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "004c4283-7d5d-4c67-93f0-2e26f48481b7",
+    "role": "orchestrator",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.326Z",
+      "Context: python / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.326+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "057b0831-0296-4de2-a568-918e34535f9b",
+    "role": "orchestrator",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.326Z",
+      "Context: typescript / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.326+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "f2871d51-ce6b-4f70-b3f6-b069427ae7ee",
+    "role": "orchestrator",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.326Z",
+      "Context: javascript / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.326+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "da7541d7-15fe-486f-b90e-b0a63ec83996",
+    "role": "orchestrator",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.326Z",
+      "Context: go / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.326+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "f6ae03ce-b428-4ae9-9d6a-edb6db0827e4",
+    "role": "orchestrator",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.326Z",
+      "Context: rust / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.326+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "36156e40-c7fc-4d1d-b4f5-278af8d5bd3d",
+    "role": "orchestrator",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.326Z",
+      "Context: csharp / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.326+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "d74209fc-c6e5-457b-8873-0f8e4d4ee226",
+    "role": "orchestrator",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.326Z",
+      "Context: cpp / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.326+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "8143847b-f7b9-4ec8-a2d4-faecd27db14f",
+    "role": "orchestrator",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.326Z",
+      "Context: ruby / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.326+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "1852a5a6-2091-4451-bd81-3490746507b0",
+    "role": "orchestrator",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.326Z",
+      "Context: php / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.326+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "8e3d7b28-1844-4127-8032-7b0dd9941fcf",
+    "role": "orchestrator",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.326Z",
+      "Context: kotlin / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.326+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "4a7a84f8-1e88-47fa-bc7f-6bacc704338b",
+    "role": "orchestrator",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.326Z",
+      "Context: swift / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.326+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "cdcdc14b-593c-4119-a411-6d627dfac87c",
+    "role": "comparator",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.35,
+      "quality": 0.4,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.327Z",
+      "Context: java / comparator",
+      "Search-based: Weight-tailored queries (quality=0.4, cost=0.2)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.327+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "ead52493-e0c5-4857-bc86-6bd93d3ff7f8",
+    "role": "comparator",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.35,
+      "quality": 0.4,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.327Z",
+      "Context: python / comparator",
+      "Search-based: Weight-tailored queries (quality=0.4, cost=0.2)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.327+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "447382a1-7716-4e7c-8a6d-19b5b0d32b2c",
+    "role": "comparator",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.35,
+      "quality": 0.4,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.327Z",
+      "Context: typescript / comparator",
+      "Search-based: Weight-tailored queries (quality=0.4, cost=0.2)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.327+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "d9970fbd-8067-44db-bda2-ab30b1c8ba9e",
+    "role": "comparator",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.35,
+      "quality": 0.4,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.327Z",
+      "Context: javascript / comparator",
+      "Search-based: Weight-tailored queries (quality=0.4, cost=0.2)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.327+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "74d1d32d-6f6c-4161-99f5-2fdbcb329c11",
+    "role": "comparator",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.35,
+      "quality": 0.4,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.327Z",
+      "Context: go / comparator",
+      "Search-based: Weight-tailored queries (quality=0.4, cost=0.2)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.327+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "7a3ee245-4a6c-493c-ab93-0353896351cd",
+    "role": "comparator",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.35,
+      "quality": 0.4,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.327Z",
+      "Context: rust / comparator",
+      "Search-based: Weight-tailored queries (quality=0.4, cost=0.2)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.327+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "c359e61a-6e35-4b38-9510-bdb8ecc36920",
+    "role": "comparator",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.35,
+      "quality": 0.4,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.327Z",
+      "Context: csharp / comparator",
+      "Search-based: Weight-tailored queries (quality=0.4, cost=0.2)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.327+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "4e8f5fda-f889-4285-a369-5318b7accb2f",
+    "role": "comparator",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.35,
+      "quality": 0.4,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.328Z",
+      "Context: cpp / comparator",
+      "Search-based: Weight-tailored queries (quality=0.4, cost=0.2)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.328+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "8752317c-0f73-4d67-af34-f5303eece862",
+    "role": "comparator",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.35,
+      "quality": 0.4,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.328Z",
+      "Context: ruby / comparator",
+      "Search-based: Weight-tailored queries (quality=0.4, cost=0.2)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.328+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "dd1c8838-6147-4025-ac66-3aff1ec4d1c0",
+    "role": "comparator",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.35,
+      "quality": 0.4,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.328Z",
+      "Context: php / comparator",
+      "Search-based: Weight-tailored queries (quality=0.4, cost=0.2)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.328+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "17bbf8f9-0bd9-4b46-86d3-68ce4b31a46d",
+    "role": "comparator",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.35,
+      "quality": 0.4,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.328Z",
+      "Context: kotlin / comparator",
+      "Search-based: Weight-tailored queries (quality=0.4, cost=0.2)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.328+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "78bbbce5-f68b-4979-a1d1-5e2dbc4aa833",
+    "role": "comparator",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.35,
+      "quality": 0.4,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.328Z",
+      "Context: swift / comparator",
+      "Search-based: Weight-tailored queries (quality=0.4, cost=0.2)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.328+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "a3c1a7de-4200-41e7-9521-e314880a3569",
+    "role": "location_finder",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.5,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.328Z",
+      "Context: java / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.328+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "b9adb6f5-6033-4af1-8483-4d81ca19c243",
+    "role": "location_finder",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.5,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.328Z",
+      "Context: python / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.328+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "f662c9d9-593a-4e21-9aea-76f08e7debb0",
+    "role": "location_finder",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.5,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.328Z",
+      "Context: typescript / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.328+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "420d9b7a-65be-4427-9a97-2ba2e8e752e3",
+    "role": "location_finder",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.5,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.328Z",
+      "Context: javascript / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.328+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "8644f308-f6ef-4a3a-bb79-14c19b3b131f",
+    "role": "location_finder",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.5,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.328Z",
+      "Context: go / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.328+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "dc128d51-340d-49af-9916-6e9c8cadf449",
+    "role": "location_finder",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.5,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.328Z",
+      "Context: rust / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.328+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "01779994-cfef-4660-bc92-f7cafa037cb7",
+    "role": "location_finder",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.5,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.328Z",
+      "Context: csharp / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.328+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "74118210-2392-469d-8f09-66cb6e8498f1",
+    "role": "location_finder",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.5,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.328Z",
+      "Context: cpp / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.328+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "185f0485-a5d7-43ba-9df0-75304f46f1d8",
+    "role": "location_finder",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.5,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.329Z",
+      "Context: ruby / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.329+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "b0ef1e2f-d2ef-49fb-b722-4944a4aeb46b",
+    "role": "location_finder",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.5,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.329Z",
+      "Context: php / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.329+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "e34d56c3-4fd0-4dc9-b412-bd3ee27eebe5",
+    "role": "location_finder",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.5,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.329Z",
+      "Context: kotlin / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.329+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "09663a85-1d08-4960-af30-e5759cf51046",
+    "role": "location_finder",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.5,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.329Z",
+      "Context: swift / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.329+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "51153168-caf7-4933-9817-92d246f0f34f",
+    "role": "researcher",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.329Z",
+      "Context: java / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.329+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "bcb7ea8d-a0de-4a08-a867-c39af9923006",
+    "role": "researcher",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.329Z",
+      "Context: python / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.329+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "88b89968-9c88-4df6-832c-3a7c7b07a144",
+    "role": "researcher",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.329Z",
+      "Context: typescript / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.329+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "50245f5d-6905-4251-b3ad-efc4e3744249",
+    "role": "researcher",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.329Z",
+      "Context: javascript / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.329+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "a0f6b799-0378-4990-a501-88ee0a1cb601",
+    "role": "researcher",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.329Z",
+      "Context: go / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.329+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "605cb950-12b1-4506-b196-0c19f7c2b7ef",
+    "role": "researcher",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.329Z",
+      "Context: rust / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.329+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "73d4a687-8f5a-42a9-b60e-e82a651f1267",
+    "role": "researcher",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.329Z",
+      "Context: csharp / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.329+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "75736ef6-5d12-42f8-b028-c453c9bb8d1a",
+    "role": "researcher",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.330Z",
+      "Context: cpp / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.33+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "5644a898-e3bb-4cb8-9c5e-1472b6a6d5ef",
+    "role": "researcher",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.330Z",
+      "Context: ruby / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.33+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "0768b820-2143-4b56-9faf-695b9431dbe2",
+    "role": "researcher",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.330Z",
+      "Context: php / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.33+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "584d9d09-4023-418f-b1e1-792604b3233d",
+    "role": "researcher",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.330Z",
+      "Context: kotlin / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.33+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "a480af11-de3b-4433-ab55-ff9229a8b423",
+    "role": "researcher",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:07:49.330Z",
+      "Context: swift / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:07:49.33+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  }
+]

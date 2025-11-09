@@ -1,0 +1,52 @@
+{
+  "groupId": "com-puppycrawl-tools-checkstyle-checks-design-visibilitymodifiercheck-low-checkstyle",
+  "filename": "group-com-puppycrawl-tools-checkstyle-checks-design-visibilitymodifiercheck-low-checkstyle-fix.json",
+  "content": {
+    "version": "1.0",
+    "group_id": "com-puppycrawl-tools-checkstyle-checks-design-visibilitymodifiercheck-low-checkstyle",
+    "rule": "com.puppycrawl.tools.checkstyle.checks.design.VisibilityModifierCheck",
+    "tool": "checkstyle",
+    "severity": "low",
+    "description": "1. Change the visibility of 'owners' field from package-private/public to private. 2. Add appropriate getter and setter methods with proper naming conventions. 3. Ensure the field is accessed only through these methods.",
+    "fix_pattern": {
+      "type": "template",
+      "example": {
+        "before": "",
+        "after": "private Map<String, Owner> owners;\n\npublic Map<String, Owner> getOwners() {\n    return owners;\n}\n\npublic void setOwners(Map<String, Owner> owners) {\n    this.owners = owners;\n}"
+      },
+      "instructions": "1. Change the visibility of 'owners' field from package-private/public to private. 2. Add appropriate getter and setter methods with proper naming conventions. 3. Ensure the field is accessed only through these methods."
+    },
+    "locations": [
+      {
+        "file": "src/test/java/org/springframework/samples/petclinic/service/ClinicServiceTests.java",
+        "line": 76,
+        "snippet": "    73 | class ClinicServiceTests {\n    74 | \n    75 | \t@Autowired\n>   76 | \tprotected OwnerRepository owners;\n    77 | \n    78 | \t@Autowired\n    79 | \tprotected VetRepository vets;",
+        "category": "EXISTING_REST"
+      },
+      {
+        "file": "src/test/java/org/springframework/samples/petclinic/service/ClinicServiceTests.java",
+        "line": 79,
+        "snippet": "    76 | \tprotected OwnerRepository owners;\n    77 | \n    78 | \t@Autowired\n>   79 | \tprotected VetRepository vets;\n    80 | \n    81 | \tPageable pageable;\n    82 | ",
+        "category": "EXISTING_REST"
+      },
+      {
+        "file": "src/test/java/org/springframework/samples/petclinic/service/ClinicServiceTests.java",
+        "line": 81,
+        "snippet": "    78 | \t@Autowired\n    79 | \tprotected VetRepository vets;\n    80 | \n>   81 | \tPageable pageable;\n    82 | \n    83 | \t@Test\n    84 | \tvoid shouldFindOwnersByLastName() {",
+        "category": "NEW"
+      },
+      {
+        "file": "src/test/java/org/springframework/samples/petclinic/PetClinicIntegrationTests.java",
+        "line": 37,
+        "snippet": "    34 | class PetClinicIntegrationTests {\n    35 | \n    36 | \t@LocalServerPort\n>   37 | \tint port;\n    38 | \n    39 | \t@Autowired\n    40 | \tprivate VetRepository vets;",
+        "category": "EXISTING_REST"
+      }
+    ],
+    "metadata": {
+      "total_occurrences": 4,
+      "confidence": "low",
+      "safe_auto_apply": false,
+      "estimated_time_seconds": 2
+    }
+  }
+}

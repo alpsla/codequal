@@ -13,7 +13,9 @@
     "test:v9:quick": "npx ts-node src/two-branch/tests/__tests__/test-v9-optimized-report.ts",
     "test:v9:integration": "ENABLE_SPOTBUGS=true NODE_ENV=test npx ts-node src/two-branch/tests/__tests__/test-v9-complete-integration.ts",
     "lint": "eslint src --ext .ts",
-    "lint:fix": "eslint src --ext .ts --fix"
+    "lint:fix": "eslint src --ext .ts --fix",
+    "single-test": "npx ts-node scripts/run-single-test.ts",
+    "download-reports": "npx ts-node scripts/download-v9-reports.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",

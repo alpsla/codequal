@@ -40,9 +40,11 @@ import type { CloudRepositoryManager } from '../utils/cloud-repository-manager';
 import type { OracleRepositoryManager } from '../utils/oracle-repository-manager';
 import type { SmartFileSelector, SelectedFiles } from '../utils/smart-file-selector';
 import { ModelConfigResolver } from '../../standard/orchestrator/model-config-resolver';
+import { OptimizedRepoManager } from '../utils/optimized-repo-manager';
 
 export abstract class V9BaseAnalyzer {
   protected repoManager: CloudRepositoryManager | OracleRepositoryManager;
+  protected optimizedRepoManager: OptimizedRepoManager; // Single clone with git fetch
   protected modelConfigResolver: ModelConfigResolver;
   protected fileSelector: SmartFileSelector;
   protected supabase: any;
@@ -69,6 +71,7 @@ export abstract class V9BaseAnalyzer {
   constructor() {
     // Initialize utilities using factory
     this.repoManager = getRepoManager();
+    this.optimizedRepoManager = new OptimizedRepoManager(); // FIXED: Single clone + fetch
     this.modelConfigResolver = new ModelConfigResolver(console);
     this.fileSelector = getFileSelector();
     
@@ -312,30 +315,48 @@ export abstract class V9BaseAnalyzer {
   
   /**
    * Prepare repositories for analysis
+   * FIXED: Single clone with git fetch (depth=10) instead of double clone
    */
   protected async prepareRepositories(
     repoUrl: string, 
     prNumber: number
   ): Promise<{ mainPath: string; prPath: string; modifiedFiles: string[] }> {
+    this.logger.log('🔧 [PERFORMANCE FIX] Using single clone + git fetch (depth=10)');
+    
     // Parse GitHub URL
     const urlParts = repoUrl.replace('https://github.com/', '').split('/');
     const owner = urlParts[0];
     const repo = urlParts[1].replace('.git', '');
     
-    // Setup repository in cloud
-    const mainWorkspace = await this.repoManager.setupRepository(repoUrl, 'main');
-
-    // Create PR workspace in cloud
-    const prWorkspace = await this.repoManager.createPRWorkspace(repoUrl, prNumber);
-
-    // For cloud/kubernetes workspaces, we use workspace IDs instead of local paths
-    const mainPath = 'cloudPath' in mainWorkspace ? mainWorkspace.cloudPath : mainWorkspace.workspaceId;
-    const prPath = 'cloudPath' in prWorkspace ? prWorkspace.cloudPath : prWorkspace.workspaceId;
-
-    // Get list of modified files
-    const modifiedFiles = prWorkspace.modifiedFiles || [];
+    // Step 1: Setup cached repository (clone ONCE with depth=10)
+    this.logger.log(`📦 Step 1: Clone/update cached repository (depth=10)`);
+    const cloneMetrics = await this.optimizedRepoManager.setupRepo({
+      owner,
+      repo,
+      baseUrl: 'https://github.com',
+      defaultBranch: 'main',
+      shallowDepth: 10  // Git depth 10 as specified
+    });
     
-    return { mainPath, prPath, modifiedFiles };
+    this.logger.log(`   ✅ Repository cached in ${cloneMetrics.cloneTime}ms`);
+    this.logger.log(`   📊 Size: ${cloneMetrics.repoSize} bytes, Commits: ${cloneMetrics.commitCount}`);
+    
+    // Step 2: Create PR workspace (git fetch PR branch, NO second clone)
+    this.logger.log(`🔀 Step 2: Fetch PR branch #${prNumber} (no clone)`);
+    const workspace = await this.optimizedRepoManager.createPRWorkspace(
+      owner,
+      repo,
+      prNumber,
+      'main'  // baseBranch
+    );
+    
+    this.logger.log(`   ✅ PR workspace ready: ${workspace.changedFiles.length} files changed`);
+    
+    return {
+      mainPath: workspace.path,  // Use workspace.path as both main and base
+      prPath: workspace.path,     // Same path, different git checkout
+      modifiedFiles: workspace.changedFiles
+    };
   }
   
   /**

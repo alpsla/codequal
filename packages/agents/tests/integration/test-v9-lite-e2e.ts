@@ -17,51 +17,74 @@
 
 // Load environment variables FIRST (fixes OpenRouter 401 errors)
 import dotenv from 'dotenv';
-dotenv.config();
+import * as path from 'path';
+dotenv.config({ path: path.join(__dirname, '../../.env') });  // SESSION 22 FIX: Explicit path
 
 // E2E Test Configuration: Disable rate limiting for multi-PR test scenarios
 // Production: 100 calls/PR is correct ✅
 // E2E Tests: 3 PRs sequentially = needs debug mode to disable limit
 process.env.DEBUG_MODE = process.env.DEBUG_MODE || 'true';
 
-import { JavaToolOrchestrator } from './src/two-branch/tools/java/java-tool-orchestrator';
-import { createFrameworkDetector } from './src/two-branch/utils/framework-detector';
-import { createToolConfigResolver } from './src/two-branch/config/universal-tool-config';
-import { V9GroupedReportFormatter } from './src/two-branch/analyzers/v9-grouped-report-formatter';
-import { ModelConfigResolver } from './src/standard/orchestrator/model-config-resolver';
-import { groupIssues } from './src/two-branch/utils/issue-grouping';
+import { JavaToolOrchestrator } from '../../src/two-branch/tools/java/java-tool-orchestrator';
+import { createFrameworkDetector } from '../../src/two-branch/utils/framework-detector';
+import { createToolConfigResolver } from '../../src/two-branch/config/universal-tool-config';
+import { V9GroupedReportFormatter } from '../../src/two-branch/analyzers/v9-grouped-report-formatter';
+import { ModelConfigResolver } from '../../src/standard/orchestrator/model-config-resolver';
+import { groupIssues } from '../../src/two-branch/utils/issue-grouping';
 import { execSync } from 'child_process';
 import * as fs from 'fs';
-import * as path from 'path';
+// path already imported above for dotenv.config
 
 interface TestScenario {
   name: string;
   repoUrl: string;
-  prNumber: number;
+  prNumber?: number;  // Optional - only for PR review mode
+  testMode: 'baseline' | 'pr-review';  // SESSION 20 FIX: Separate baseline from PR testing
   expectedFramework?: string;
   expectedToolCount?: number;
 }
 
 const TEST_SCENARIOS: TestScenario[] = [
+  // SESSION 21: Test with REAL PRs to validate complete business flow
+  // Business Goal: Analyze user PRs, identify NEW blockers, provide APPROVED/DECLINED decision
+  
+  // Test 1: Spring PetClinic (Verified working)
   {
-    name: 'JHipster Sample App',
+    name: 'Spring PetClinic PR #950',
+    repoUrl: 'https://github.com/spring-projects/spring-petclinic',
+    testMode: 'pr-review',
+    prNumber: 950,
+    expectedFramework: 'spring',
+    expectedToolCount: 5
+  },
+  
+  // Test 2: JHipster (Using recent merged PR)
+  {
+    name: 'JHipster PR #100',
     repoUrl: 'https://github.com/jhipster/jhipster-sample-app',
-    prNumber: 1, // Using PR #1 for testing (or main branch if no PR)
+    testMode: 'pr-review',
+    prNumber: 100,  // Test with recent PR
     expectedFramework: 'spring',
     expectedToolCount: 5
   },
+  
+  // Test 3: Spring Boot Admin (Using recent merged PR)
   {
-    name: 'Spring Boot Admin',
+    name: 'Spring Boot Admin PR #100',
     repoUrl: 'https://github.com/codecentric/spring-boot-admin',
-    prNumber: 1, // Using PR #1 for testing (or main branch if no PR)
+    testMode: 'pr-review',
+    prNumber: 100,  // Test with recent PR
     expectedFramework: 'spring',
     expectedToolCount: 5
   },
+  
+  // Test 4: Netflix Conductor (Using recent merged PR)
   {
-    name: 'Netflix Conductor',
+    name: 'Netflix Conductor PR #1000',
     repoUrl: 'https://github.com/Netflix/conductor',
-    prNumber: 1, // Using PR #1 for testing (or main branch if no PR)
-    expectedFramework: 'generic', // Gradle-based, may not detect specific framework
+    testMode: 'pr-review',
+    prNumber: 1000,  // Test with recent PR
+    expectedFramework: 'generic',
     expectedToolCount: 5
   }
 ];
@@ -84,6 +107,46 @@ function cloneRepository(repoUrl: string, targetPath: string): void {
   });
   
   console.log(`   ✅ Repository cloned to ${targetPath}`);
+}
+
+/**
+ * SESSION 22 FIX: Fetch real PR author from GitHub API
+ */
+async function fetchPRAuthor(repoUrl: string, prNumber: number): Promise<{ author: string; authorEmail: string }> {
+  try {
+    // Extract owner/repo from URL
+    const match = repoUrl.match(/github\.com\/([^\/]+)\/([^\/]+)/);
+    if (!match) {
+      return { author: 'test-user', authorEmail: 'test@example.com' };
+    }
+    
+    const [, owner, repo] = match;
+    const apiUrl = `https://api.github.com/repos/${owner}/${repo}/pulls/${prNumber}`;
+    
+    // Fetch PR metadata (no auth needed for public repos)
+    const https = await import('https');
+    const response = await new Promise<string>((resolve, reject) => {
+      https.get(apiUrl, {
+        headers: {
+          'User-Agent': 'CodeQual-Test',
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      }, (res) => {
+        let data = '';
+        res.on('data', chunk => data += chunk);
+        res.on('end', () => resolve(data));
+      }).on('error', reject);
+    });
+    
+    const prData = JSON.parse(response);
+    return {
+      author: prData.user?.login || 'test-user',
+      authorEmail: `${prData.user?.login || 'test-user'}@users.noreply.github.com`
+    };
+  } catch (error) {
+    console.warn(`   ⚠️  Could not fetch PR author: ${error}`);
+    return { author: 'test-user', authorEmail: 'test@example.com' };
+  }
 }
 
 async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
@@ -139,52 +202,76 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
     console.log('\n🚀 Step 3: Running tool orchestration...');
     const orchestrator = new JavaToolOrchestrator();
     
-    // Run tools on main/base branch
-    console.log('   📊 Analyzing main branch...');
-    const mainResult = await orchestrator.orchestrate(repoPath, 'base', { analysisMode: 'complete' });
+    let allIssues: any[];
+    let newIssues: any[];
+    let orchestrationResult: any;  // Store for performance data
     
-    // Checkout PR branch for comparison
-    console.log(`   🔀 Checking out PR #${scenario.prNumber}...`);
-    try {
-      execSync(`git -C ${repoPath} fetch origin pull/${scenario.prNumber}/head:pr-${scenario.prNumber}`, { stdio: 'pipe' });
-      execSync(`git -C ${repoPath} checkout pr-${scenario.prNumber}`, { stdio: 'pipe' });
-      console.log(`   ✅ Checked out PR branch`);
-    } catch (error) {
-      console.log(`   ⚠️  Could not checkout PR #${scenario.prNumber}, using main branch`);
-    }
-    
-    // Run tools on PR branch
-    console.log('   📊 Analyzing PR branch...');
-    const prResult = await orchestrator.orchestrate(repoPath, 'pr', { analysisMode: 'complete' });
-    
-    const mainResults = mainResult.toolResults;
-    const prResults = prResult.toolResults;
-    
-    console.log(`   ✅ Main branch: ${mainResults.length} tools executed`);
-    console.log(`   ✅ PR branch: ${prResults.length} tools executed`);
+    if (scenario.testMode === 'baseline') {
+      // SESSION 20 FIX: Baseline mode - analyze main branch only
+      console.log('   📊 Repository Baseline Analysis (main branch only)...');
+      orchestrationResult = await orchestrator.orchestrate(repoPath, 'base', { analysisMode: 'complete' });
+      
+      allIssues = orchestrationResult.toolResults.flatMap(r => r.issues || []);
+      newIssues = [];  // No NEW issues in baseline mode
+      
+      console.log(`   ✅ Tools executed: ${orchestrationResult.toolResults.length}`);
+      console.log(`   📊 Total issues found: ${allIssues.length}`);
+      console.log(`   ℹ️  All issues marked as EXISTING_REST (baseline)`);
+      
+    } else {
+      // SESSION 20 FIX: PR review mode - two-branch comparison
+      console.log('   📊 PR Review Mode - Two-branch comparison...');
+      
+      // Run tools on main/base branch
+      console.log('   📊 Analyzing main branch...');
+      const mainResult = await orchestrator.orchestrate(repoPath, 'base', { analysisMode: 'complete' });
+      
+      // Checkout PR branch for comparison
+      console.log(`   🔀 Checking out PR #${scenario.prNumber}...`);
+      try {
+        execSync(`git -C ${repoPath} fetch origin pull/${scenario.prNumber}/head:pr-${scenario.prNumber}`, { stdio: 'pipe' });
+        execSync(`git -C ${repoPath} checkout pr-${scenario.prNumber}`, { stdio: 'pipe' });
+        console.log(`   ✅ Checked out PR branch`);
+      } catch (error) {
+        console.log(`   ❌ Could not checkout PR #${scenario.prNumber} - skipping this scenario`);
+        return;
+      }
+      
+      // Run tools on PR branch
+      console.log('   📊 Analyzing PR branch...');
+      orchestrationResult = await orchestrator.orchestrate(repoPath, 'pr', { analysisMode: 'complete' });
+      
+      const mainResults = mainResult.toolResults;
+      const prResults = orchestrationResult.toolResults;
+      
+      console.log(`   ✅ Main branch: ${mainResults.length} tools executed`);
+      console.log(`   ✅ PR branch: ${prResults.length} tools executed`);
 
-    const totalIssuesMain = mainResults.reduce((sum, r) => sum + (r.issues?.length || 0), 0);
-    const totalIssuesPr = prResults.reduce((sum, r) => sum + (r.issues?.length || 0), 0);
-    
-    console.log(`   📊 Main branch issues: ${totalIssuesMain}`);
-    console.log(`   📊 PR branch issues: ${totalIssuesPr}`);
+      const totalIssuesMain = mainResults.reduce((sum, r) => sum + (r.issues?.length || 0), 0);
+      const totalIssuesPr = prResults.reduce((sum, r) => sum + (r.issues?.length || 0), 0);
+      
+      console.log(`   📊 Main branch issues: ${totalIssuesMain}`);
+      console.log(`   📊 PR branch issues: ${totalIssuesPr}`);
+
+      // Categorize: NEW issues
+      allIssues = prResults.flatMap(r => r.issues || []);
+      newIssues = allIssues.filter(issue => 
+        !mainResults.some(m => 
+          (m.issues || []).some(mainIssue => 
+            mainIssue.file === issue.file && 
+            mainIssue.line === issue.line
+          )
+        )
+      );
+
+      console.log(`   ✅ New issues (introduced in PR): ${newIssues.length}`);
+      console.log(`   ✅ Existing issues: ${allIssues.length - newIssues.length}`);
+    }
 
     // ========================================================================
     // STEP 4: Issue Categorization
     // ========================================================================
     console.log('\n📂 Step 4: Categorizing issues...');
-    const allPrIssues = prResults.flatMap(r => r.issues || []);
-    const newIssues = allPrIssues.filter(issue => 
-      !mainResults.some(m => 
-        (m.issues || []).some(mainIssue => 
-          mainIssue.file === issue.file && 
-          mainIssue.line === issue.line
-        )
-      )
-    );
-
-    console.log(`   ✅ New issues (introduced in PR): ${newIssues.length}`);
-    console.log(`   ✅ Existing issues: ${allPrIssues.length - newIssues.length}`);
 
     // ========================================================================
     // STEP 5: Issue Grouping (Cost Optimization)
@@ -201,17 +288,26 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
       return 'Code Quality';
     };
 
-    const formattedIssues = allPrIssues.map(issue => {
-      // Determine lifecycle category (NEW vs EXISTING)
-      const isNew = newIssues.some(n =>
-        n.file === issue.file && n.line === issue.line
-      );
+    const formattedIssues = allIssues.map(issue => {
+      // SESSION 20 FIX: Determine lifecycle category based on test mode
+      let lifecycleCategory: string;
+      
+      if (scenario.testMode === 'baseline') {
+        // Baseline mode: All issues are EXISTING_REST
+        lifecycleCategory = 'EXISTING_REST';
+      } else {
+        // PR review mode: Categorize as NEW or EXISTING
+        const isNew = newIssues.some(n =>
+          n.file === issue.file && n.line === issue.line
+        );
+        lifecycleCategory = isNew ? 'NEW' : 'EXISTING_REST';
+      }
 
       return {
         id: `${issue.tool}-${issue.file}-${issue.line}`,
         rule: issue.rule ? String(issue.rule) : 'unknown-rule',
-        // FIX: Set lifecycle category (NEW, EXISTING_MODIFIED, EXISTING_REST, RESOLVED)
-        category: isNew ? 'NEW' : 'EXISTING_REST',
+        // Set lifecycle category (NEW, EXISTING_MODIFIED, EXISTING_REST, RESOLVED)
+        category: lifecycleCategory,
         // Set detected category (Security, Performance, Code Quality, etc.)
         detectedCategory: detectIssueCategory(issue.tool, issue.rule ? String(issue.rule) : ''),
         severity: issue.severity || 'medium',
@@ -250,6 +346,13 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
     // Business logic moved to V9 engine classes per architectural requirements
     // ========================================================================
 
+    // SESSION 22 FIX: Fetch real PR author for pr-review mode
+    const prAuthorInfo = scenario.testMode === 'pr-review' && scenario.prNumber
+      ? await fetchPRAuthor(scenario.repoUrl, scenario.prNumber)
+      : { author: 'test-user', authorEmail: 'test@example.com' };
+    
+    console.log(`   👤 PR Author: ${prAuthorInfo.author}`);
+
     const metadata = {
       repository: scenario.repoUrl.split('/').slice(-2).join('/'),
       repoUrl: scenario.repoUrl,
@@ -258,16 +361,18 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
       prTitle: `PR #${scenario.prNumber}`,
       branch: `pr-${scenario.prNumber}`,
       baseBranch: 'main',
-      prAuthor: 'test-user',
-      prAuthorEmail: 'test@example.com',
+      prAuthor: prAuthorInfo.author,
+      prAuthorEmail: prAuthorInfo.authorEmail,
       organizationName: scenario.repoUrl.split('/')[3],
       totalFiles: 100,
       totalLinesOfCode: 10000,
-      filesModified: new Set(allPrIssues.map(i => i.file)).size,
-      linesAdded: 500,
-      linesDeleted: 200,
-      decision: newIssues.filter(i => i.severity === 'critical' || i.severity === 'high').length > 0 ? 'DECLINED' : 'APPROVED',
-      blockingCount: newIssues.filter(i => i.severity === 'critical' || i.severity === 'high').length,
+      filesModified: new Set(allIssues.map(i => i.file)).size,
+      linesAdded: scenario.testMode === 'baseline' ? 0 : 500,
+      linesDeleted: scenario.testMode === 'baseline' ? 0 : 200,
+      decision: scenario.testMode === 'baseline' 
+        ? 'INFORMATIONAL'  // Baseline - no approval decision
+        : (newIssues.filter(i => i.severity === 'critical' || i.severity === 'high').length > 0 ? 'DECLINED' : 'APPROVED'),
+      blockingCount: scenario.testMode === 'baseline' ? 0 : newIssues.filter(i => i.severity === 'critical' || i.severity === 'high').length,
       totalDuration: Date.now() - startTime,
       cloneTime: 5000,
       analysisTime: Date.now() - startTime - 5000,
@@ -276,8 +381,8 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
       analyzerVersion: '9.0.0',
 
       // ⭐ PERFORMANCE DATA FROM ORCHESTRATOR (BUG #8, #9, #10 FIX)
-      toolPerformance: prResult.toolPerformance,      // From orchestrator
-      agentPerformance: prResult.agentPerformance     // From orchestrator
+      toolPerformance: orchestrationResult.toolPerformance || [],
+      agentPerformance: orchestrationResult.agentPerformance || []
     };
 
     const result = await formatter.generateGroupedReport(
@@ -304,12 +409,31 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
     fs.writeFileSync(reportPath, result.markdown);
     console.log(`   ✅ Report saved: ${reportPath}`);
 
-    // Save IDE fix files
-    result.ideFixFiles.forEach((file, idx) => {
-      const fixPath = path.join(outputDir, `v9-lite-fix-${idx}-${timestamp}.json`);
-      fs.writeFileSync(fixPath, JSON.stringify(file, null, 2));
+    // Save IDE fix files and manifest
+    // SESSION 21 FIX: Save manifest separately with proper naming
+    const manifestFile = result.ideFixFiles.find(f => f.groupId === 'all-issues');
+    const otherFiles = result.ideFixFiles.filter(f => f.groupId !== 'all-issues');
+    
+    // Save the all-issues-manifest.json separately for easy access
+    if (manifestFile) {
+      const manifestPath = path.join(outputDir, `${scenario.name.toLowerCase().replace(/\s+/g, '-')}-manifest.json`);
+      fs.writeFileSync(manifestPath, JSON.stringify(manifestFile.content, null, 2));
+      console.log(`   ✅ Manifest saved: ${manifestPath}`);
+    }
+    
+    // Save individual fix files to attachments directory
+    const attachmentsDir = path.join(outputDir, 'attachments');
+    if (!fs.existsSync(attachmentsDir)) {
+      fs.mkdirSync(attachmentsDir, { recursive: true });
+    }
+    
+    otherFiles.forEach((file) => {
+      const fixPath = path.join(attachmentsDir, file.filename);
+      fs.writeFileSync(fixPath, JSON.stringify(file.content, null, 2));
     });
-    console.log(`   ✅ IDE fix files saved: ${result.ideFixFiles.length} files`);
+    
+    console.log(`   ✅ IDE fix files saved: ${otherFiles.length} files in attachments/`);
+    console.log(`   ✅ Total: 1 manifest + ${otherFiles.length} fix files`);
 
     // ========================================================================
     // SUMMARY
@@ -321,7 +445,7 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
     console.log(`📊 Total execution time: ${(totalTime / 1000).toFixed(2)}s`);
     console.log(`📊 Framework detected: ${frameworkInfo.primaryFramework}`);
     console.log(`📊 Tools executed: ${tools.length}`);
-    console.log(`📊 Issues found: ${allPrIssues.length}`);
+    console.log(`📊 Issues found: ${allIssues.length}`);
     console.log(`📊 New issues: ${newIssues.length}`);
     console.log(`📊 Issue groups: ${groupingResult.groups.length}`);
     console.log(`📊 Cost savings: ${groupingResult.savingsPercent.toFixed(1)}%`);

@@ -1,0 +1,3482 @@
+[
+  {
+    "id": "96d138af-4931-43ea-8eab-6b9237a54012",
+    "role": "security",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.643Z",
+      "Context: java / security",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.643+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "29c783cc-ffb0-465b-a0ea-809cfffb0361",
+    "role": "security",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.643Z",
+      "Context: python / security",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.643+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "a65a26a3-eceb-4329-9f16-a6a4d1160aa3",
+    "role": "security",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.643Z",
+      "Context: typescript / security",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.643+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "d4e51778-6b1a-4460-849a-de0a7a93dd7b",
+    "role": "security",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.644Z",
+      "Context: javascript / security",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.644+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "84c941a2-c9cf-49d1-b2c0-9e5bdfec49df",
+    "role": "security",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.644Z",
+      "Context: go / security",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.644+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "8db6ba70-3902-4a46-9dac-b1f4305b4b41",
+    "role": "security",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.644Z",
+      "Context: rust / security",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.644+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "a26c2f8a-171a-49bb-909c-1eafa1e8ffae",
+    "role": "security",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.645Z",
+      "Context: csharp / security",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.645+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "da2a0fba-00a5-48b5-baa0-542327b6ed8a",
+    "role": "security",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.645Z",
+      "Context: cpp / security",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.645+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "0ea55fc5-b2ea-4dd5-8129-dbe6add7d3a6",
+    "role": "security",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.645Z",
+      "Context: ruby / security",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.645+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "1bd4c810-0367-4210-a1cf-351436b6fd02",
+    "role": "security",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.645Z",
+      "Context: php / security",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.645+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "f212ad7a-6b0e-4aa2-ba59-275e8ea50e09",
+    "role": "security",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.645Z",
+      "Context: kotlin / security",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.645+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "821c0dfe-6695-4241-ab0c-2019f480608b",
+    "role": "security",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.645Z",
+      "Context: swift / security",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.645+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "3b015353-7896-49f8-a043-57529124224c",
+    "role": "performance",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.646Z",
+      "Context: java / performance",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.646+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "d73bf9c8-399a-4c0f-858a-f66530410957",
+    "role": "performance",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.646Z",
+      "Context: python / performance",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.646+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "1a61137a-29c4-4339-85f4-d81bec8843b9",
+    "role": "performance",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.646Z",
+      "Context: typescript / performance",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.646+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "2290626a-bdaf-47d8-a55c-b0213b2d9cd2",
+    "role": "performance",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.646Z",
+      "Context: javascript / performance",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.646+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "02bec2e0-d542-47fa-b5f4-7b432089c113",
+    "role": "performance",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.646Z",
+      "Context: go / performance",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.646+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "cb9fc4ed-c8c5-4c02-befb-98e32142735e",
+    "role": "performance",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.646Z",
+      "Context: rust / performance",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.646+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "2def3e6f-acff-413a-8ef3-fbfa896f5797",
+    "role": "performance",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.646Z",
+      "Context: csharp / performance",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.646+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "4dfdf923-d16b-4028-8d2c-860e54d68b06",
+    "role": "performance",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.647Z",
+      "Context: cpp / performance",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.647+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "d3b08429-fade-47a0-85aa-607f214f0861",
+    "role": "performance",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.647Z",
+      "Context: ruby / performance",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.647+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "d2eb2a85-a377-4b7d-890b-999b93af7a29",
+    "role": "performance",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.647Z",
+      "Context: php / performance",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.647+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "bc028b79-c307-4fe8-b4ce-43190f012e12",
+    "role": "performance",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.648Z",
+      "Context: kotlin / performance",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.648+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "58eb513f-e061-4461-b64c-02f9abb52918",
+    "role": "performance",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.648Z",
+      "Context: swift / performance",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.648+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "16712a0f-1fe6-4135-a24d-140f01da386a",
+    "role": "code_quality",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.648Z",
+      "Context: java / code_quality",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.648+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "2f2700bd-4fa4-4e08-87f0-54e2e0893520",
+    "role": "code_quality",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.648Z",
+      "Context: python / code_quality",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.648+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "c68777b2-ac36-4caa-9514-a81812383699",
+    "role": "code_quality",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.648Z",
+      "Context: typescript / code_quality",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.648+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "7e931fd6-77e6-46b9-9ffc-ebec96cec463",
+    "role": "code_quality",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.648Z",
+      "Context: javascript / code_quality",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.648+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "44f83268-3251-4f28-9b34-4a9cf88adea1",
+    "role": "code_quality",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.649Z",
+      "Context: go / code_quality",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.649+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "b5e118cb-d50f-4655-9390-fa3e5d61c336",
+    "role": "code_quality",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.649Z",
+      "Context: rust / code_quality",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.649+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "12dd441f-5e75-45b7-93af-8e8f3edcdca7",
+    "role": "code_quality",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.649Z",
+      "Context: csharp / code_quality",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.649+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "6cf1665c-4e96-4f85-91ca-db8fcca453f6",
+    "role": "code_quality",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.649Z",
+      "Context: cpp / code_quality",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.649+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "6f7a04b8-6b51-4810-93b9-95afec7f7aa8",
+    "role": "code_quality",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.649Z",
+      "Context: ruby / code_quality",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.649+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "12e26a2f-b406-4f43-ac7c-b37eb253a035",
+    "role": "code_quality",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.649Z",
+      "Context: php / code_quality",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.649+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "12a95bfe-dfec-4c91-ad67-9640c2f259fa",
+    "role": "code_quality",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.649Z",
+      "Context: kotlin / code_quality",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.649+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "04f1af1e-731d-4b3c-961b-42989fff3efc",
+    "role": "code_quality",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.649Z",
+      "Context: swift / code_quality",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.649+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "9fdfdd76-51da-414a-814d-d91e6e27bfc0",
+    "role": "architecture",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.650Z",
+      "Context: java / architecture",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.65+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "95963d8e-7cce-4f1f-9341-ff8fa9af1486",
+    "role": "architecture",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.650Z",
+      "Context: python / architecture",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.65+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "7feb24eb-8229-4c80-8b3b-4f89f366442e",
+    "role": "architecture",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.650Z",
+      "Context: typescript / architecture",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.65+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "928d8c50-e4c5-4d2f-9dba-f594100e39f0",
+    "role": "architecture",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.650Z",
+      "Context: javascript / architecture",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.65+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "4446a8ab-d6b2-4a6b-ae25-60d7b1467067",
+    "role": "architecture",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.650Z",
+      "Context: go / architecture",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.65+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "ed8f6bae-e664-4f46-ad3f-d8f76f71b1c9",
+    "role": "architecture",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.650Z",
+      "Context: rust / architecture",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.65+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "cbee52d6-76cd-4d40-bb29-d3b68cec2592",
+    "role": "architecture",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.651Z",
+      "Context: csharp / architecture",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.651+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "1271d31b-cf53-44b1-9c56-dac32fd9e62e",
+    "role": "architecture",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.651Z",
+      "Context: cpp / architecture",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.651+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "cc5895a7-c009-45ec-8cfd-f424a34ae252",
+    "role": "architecture",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.651Z",
+      "Context: ruby / architecture",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.651+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "6a71bde8-5eb7-4d75-a119-6390d4c9f95c",
+    "role": "architecture",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.651Z",
+      "Context: php / architecture",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.651+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "fb99fa4e-ab89-4f7f-a4cb-ef539aac3922",
+    "role": "architecture",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.651Z",
+      "Context: kotlin / architecture",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.651+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "0e8fefa7-60e7-4335-9eee-afb053e8ab2e",
+    "role": "architecture",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.651Z",
+      "Context: swift / architecture",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.651+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "3b6c5a87-116e-4b1a-8ffc-962348b8a8af",
+    "role": "dependency",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.652Z",
+      "Context: java / dependency",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.652+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "25555453-d1a9-4258-92c7-44238acd4bc3",
+    "role": "dependency",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.652Z",
+      "Context: python / dependency",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.652+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "ed201c46-1c5a-4f0b-a368-5621efe4080d",
+    "role": "dependency",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.652Z",
+      "Context: typescript / dependency",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.652+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "60b3bb44-02ce-40d8-a68f-7155f01a789b",
+    "role": "dependency",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.652Z",
+      "Context: javascript / dependency",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.652+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "b79cc59e-4637-415b-b938-7075eb51a0eb",
+    "role": "dependency",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.652Z",
+      "Context: go / dependency",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.652+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "88dc6ace-0efa-4cd0-8197-b152f79e9b64",
+    "role": "dependency",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.652Z",
+      "Context: rust / dependency",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.652+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "90ff6699-7771-4439-ab81-df19b52a78ce",
+    "role": "dependency",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.653Z",
+      "Context: csharp / dependency",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.653+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "85bc5734-38b1-4a65-b687-13d21c0a5558",
+    "role": "dependency",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.653Z",
+      "Context: cpp / dependency",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.653+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "8d3d2cdf-45d0-4add-93a8-8b35e7e91c93",
+    "role": "dependency",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.653Z",
+      "Context: ruby / dependency",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.653+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "1e854402-63a1-4f45-b9c8-148a34277dd5",
+    "role": "dependency",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.653Z",
+      "Context: php / dependency",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.653+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "531db92d-e0af-4503-8a1d-5d585f4ff054",
+    "role": "dependency",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.653Z",
+      "Context: kotlin / dependency",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.653+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "f6559845-2e53-4b0e-96e6-86dc60a4b115",
+    "role": "dependency",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-oss-safeguard-20b",
+    "fallback_provider": "ibm-granite",
+    "fallback_model": "ibm-granite/granite-4.0-h-micro",
+    "weights": {
+      "cost": 0.5,
+      "speed": 0.15,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:19.653Z",
+      "Context: swift / dependency",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.5)",
+      "Primary: openai/gpt-oss-safeguard-20b (validated on OpenRouter)",
+      "Fallback: ibm-granite/granite-4.0-h-micro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:19.653+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "e0402192-b761-42ed-a361-9a6e78fddaf5",
+    "role": "educator",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-pro",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.25,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:21.761Z",
+      "Context: java / educator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.2)",
+      "Primary: openai/gpt-5 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-pro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:21.761+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "d0eaa028-ba74-49ed-9fbb-7629755e6b3c",
+    "role": "educator",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "deepcogito",
+    "primary_model": "deepcogito/cogito-v2-preview-llama-405b",
+    "fallback_provider": "nvidia",
+    "fallback_model": "nvidia/llama-3.3-nemotron-super-49b-v1.5",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.25,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:23.705Z",
+      "Context: python / educator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.2)",
+      "Primary: deepcogito/cogito-v2-preview-llama-405b (validated on OpenRouter)",
+      "Fallback: nvidia/llama-3.3-nemotron-super-49b-v1.5",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:23.705+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "069d8f91-2932-40d7-9cf5-17e27813b5c5",
+    "role": "educator",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5-chat",
+    "fallback_provider": "anthropic",
+    "fallback_model": "anthropic/claude-sonnet-4.5",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.25,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:25.464Z",
+      "Context: typescript / educator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.2)",
+      "Primary: openai/gpt-5-chat (validated on OpenRouter)",
+      "Fallback: anthropic/claude-sonnet-4.5",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:25.464+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "ff35005f-15c6-4932-85e3-d2a4d243dc7e",
+    "role": "educator",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-pro",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.25,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:27.427Z",
+      "Context: javascript / educator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.2)",
+      "Primary: openai/gpt-5 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-pro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:27.427+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "1d536036-11b9-41ad-9155-5360b2890809",
+    "role": "educator",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5-pro",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-5-chat",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.25,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:29.236Z",
+      "Context: go / educator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.2)",
+      "Primary: openai/gpt-5-pro (validated on OpenRouter)",
+      "Fallback: openai/gpt-5-chat",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:29.236+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "a11e4bce-a23a-4dbb-b64a-ffacfaf35dc2",
+    "role": "educator",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "anthropic",
+    "primary_model": "anthropic/claude-opus-4.1",
+    "fallback_provider": "deepseek",
+    "fallback_model": "deepseek/deepseek-chat-v3.1",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.25,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:31.128Z",
+      "Context: rust / educator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.2)",
+      "Primary: anthropic/claude-opus-4.1 (validated on OpenRouter)",
+      "Fallback: deepseek/deepseek-chat-v3.1",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:31.128+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "2213c3fa-dcdd-4034-9060-cfd7da5d1b7c",
+    "role": "educator",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5-pro",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-5-chat",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.25,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:33.017Z",
+      "Context: csharp / educator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.2)",
+      "Primary: openai/gpt-5-pro (validated on OpenRouter)",
+      "Fallback: openai/gpt-5-chat",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:33.017+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "25ec9373-0d42-420f-b6b5-6878a1593372",
+    "role": "educator",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5",
+    "fallback_provider": "anthropic",
+    "fallback_model": "anthropic/claude-sonnet-4.5",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.25,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:34.568Z",
+      "Context: cpp / educator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.2)",
+      "Primary: openai/gpt-5 (validated on OpenRouter)",
+      "Fallback: anthropic/claude-sonnet-4.5",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:34.568+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "9d8676b1-59bc-4911-ba7d-1baec66de120",
+    "role": "educator",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.25,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:35.156Z",
+      "Context: ruby / educator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.2)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:35.156+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "f941111a-0ff1-4a17-8580-032a4a5e6576",
+    "role": "educator",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.25,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:35.430Z",
+      "Context: php / educator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.2)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:35.43+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "9a0c41b7-c485-4e78-a172-4cad112a0068",
+    "role": "educator",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.25,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:35.574Z",
+      "Context: kotlin / educator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.2)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:35.574+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "73153445-6695-42ec-be1f-7aed5c01d9fb",
+    "role": "educator",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-5-chat",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.25,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:37.247Z",
+      "Context: swift / educator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.2)",
+      "Primary: openai/gpt-5 (validated on OpenRouter)",
+      "Fallback: openai/gpt-5-chat",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:37.247+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "5a5038ce-c50d-47af-86cc-05130a0bba25",
+    "role": "orchestrator",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:37.248Z",
+      "Context: java / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:37.248+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "0cf47afc-70ff-443a-b224-6096ebfc0d5d",
+    "role": "orchestrator",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:37.248Z",
+      "Context: python / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:37.248+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "3ded0a99-64b7-4bed-888b-5d9a9fef789b",
+    "role": "orchestrator",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:37.248Z",
+      "Context: typescript / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:37.248+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "6b220f50-3ce7-409f-a5bf-6307975fc1c1",
+    "role": "orchestrator",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:37.248Z",
+      "Context: javascript / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:37.248+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "f962c558-09eb-4fd7-b142-29bd3895d023",
+    "role": "orchestrator",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:37.248Z",
+      "Context: go / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:37.248+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "71113712-c3ed-414f-a6d2-9c6964604793",
+    "role": "orchestrator",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:37.248Z",
+      "Context: rust / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:37.248+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "c508228b-f69e-4681-8093-67bfdc333e5e",
+    "role": "orchestrator",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:37.249Z",
+      "Context: csharp / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:37.249+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "7caf06ad-b468-4820-8dda-c0086c05710f",
+    "role": "orchestrator",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:37.249Z",
+      "Context: cpp / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:37.249+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "a5b43b97-1bb7-4472-8674-0672a05b2763",
+    "role": "orchestrator",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:37.249Z",
+      "Context: ruby / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:37.249+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "5e34fe6a-c6f8-41b7-b69a-9edeb6c0b749",
+    "role": "orchestrator",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:37.249Z",
+      "Context: php / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:37.249+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "ba02ac5e-6965-4bd1-9b69-b76da35bbafa",
+    "role": "orchestrator",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:37.249Z",
+      "Context: kotlin / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:37.249+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "d59969d6-dd04-49c3-ab9c-0b580a47bdd3",
+    "role": "orchestrator",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:37.250Z",
+      "Context: swift / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:37.25+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "70a5a115-a97f-40dc-9a2b-1580512c8283",
+    "role": "comparator",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.35,
+      "quality": 0.4,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:37.250Z",
+      "Context: java / comparator",
+      "Search-based: Weight-tailored queries (quality=0.4, cost=0.2)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:37.25+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "0a88be6a-5779-4736-83f6-2395d760b418",
+    "role": "comparator",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.35,
+      "quality": 0.4,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:37.250Z",
+      "Context: python / comparator",
+      "Search-based: Weight-tailored queries (quality=0.4, cost=0.2)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:37.25+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "8f021b8f-60d2-42fc-99e2-d4639c277d27",
+    "role": "comparator",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.35,
+      "quality": 0.4,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:37.250Z",
+      "Context: typescript / comparator",
+      "Search-based: Weight-tailored queries (quality=0.4, cost=0.2)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:37.25+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "1f9758e7-b2b4-413b-97f4-1c7e582d2b83",
+    "role": "comparator",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.35,
+      "quality": 0.4,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:37.250Z",
+      "Context: javascript / comparator",
+      "Search-based: Weight-tailored queries (quality=0.4, cost=0.2)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:37.25+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "a0f27e8b-0137-4232-8509-8a719d764e08",
+    "role": "comparator",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.35,
+      "quality": 0.4,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:37.250Z",
+      "Context: go / comparator",
+      "Search-based: Weight-tailored queries (quality=0.4, cost=0.2)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:37.25+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "e9b6160a-766e-4670-b406-9b9316d23d9f",
+    "role": "comparator",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.35,
+      "quality": 0.4,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:37.250Z",
+      "Context: rust / comparator",
+      "Search-based: Weight-tailored queries (quality=0.4, cost=0.2)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:37.25+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "0ab3fdab-6aa8-4bc0-b4f4-d5b892421da7",
+    "role": "comparator",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.35,
+      "quality": 0.4,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:37.250Z",
+      "Context: csharp / comparator",
+      "Search-based: Weight-tailored queries (quality=0.4, cost=0.2)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:37.25+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "f8c14a1d-66e8-4e77-96ae-c7fa775b86c6",
+    "role": "comparator",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.35,
+      "quality": 0.4,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:37.250Z",
+      "Context: cpp / comparator",
+      "Search-based: Weight-tailored queries (quality=0.4, cost=0.2)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:37.25+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "fe4a9556-7ee9-4337-855c-6e0c764f1aae",
+    "role": "comparator",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.35,
+      "quality": 0.4,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:37.251Z",
+      "Context: ruby / comparator",
+      "Search-based: Weight-tailored queries (quality=0.4, cost=0.2)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:37.251+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "e91328bf-6ac5-4d1b-8e43-02a6f36f92bb",
+    "role": "comparator",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.35,
+      "quality": 0.4,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:37.251Z",
+      "Context: php / comparator",
+      "Search-based: Weight-tailored queries (quality=0.4, cost=0.2)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:37.251+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "aafa0afd-2bf6-44fc-b8e0-5452e2b775c7",
+    "role": "comparator",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.35,
+      "quality": 0.4,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:37.251Z",
+      "Context: kotlin / comparator",
+      "Search-based: Weight-tailored queries (quality=0.4, cost=0.2)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:37.251+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "865711db-da00-45e1-a382-1b8bec087bba",
+    "role": "comparator",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.35,
+      "quality": 0.4,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:37.251Z",
+      "Context: swift / comparator",
+      "Search-based: Weight-tailored queries (quality=0.4, cost=0.2)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:37.251+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "1e14c260-dfbd-42d4-942a-5936acea89e0",
+    "role": "location_finder",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.5,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:37.251Z",
+      "Context: java / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:37.251+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "43160210-6b43-4a15-9a78-632b3094482d",
+    "role": "location_finder",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.5,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:37.251Z",
+      "Context: python / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:37.251+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "04051259-27c5-4ee2-9d72-422ef74243f5",
+    "role": "location_finder",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.5,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:37.251Z",
+      "Context: typescript / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:37.251+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "e2ceac80-b9f5-4712-8f46-4a6471b89cc2",
+    "role": "location_finder",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.5,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:37.251Z",
+      "Context: javascript / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:37.251+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "b428b9af-b10b-48dc-a777-155d9916a81f",
+    "role": "location_finder",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.5,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:37.251Z",
+      "Context: go / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:37.251+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "a71d8005-9dd0-448d-b6ad-fd6daf8a43e1",
+    "role": "location_finder",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.5,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:37.251Z",
+      "Context: rust / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:37.251+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "2c730e15-8ab4-4e33-b53a-d20828baa882",
+    "role": "location_finder",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.5,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:37.252Z",
+      "Context: csharp / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:37.252+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "dd903e48-3be3-4ee6-8243-667c8f05a6e8",
+    "role": "location_finder",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.5,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:37.252Z",
+      "Context: cpp / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:37.252+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "b391ad99-dc79-4392-8cf0-9b3a1130fce2",
+    "role": "location_finder",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.5,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:37.252Z",
+      "Context: ruby / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:37.252+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "7b1437b7-3292-466d-8c4d-11868b4d9e61",
+    "role": "location_finder",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.5,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:37.252Z",
+      "Context: php / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:37.252+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "854fbda7-c136-4125-9963-557ebb4ee812",
+    "role": "location_finder",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.5,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:37.252Z",
+      "Context: kotlin / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:37.252+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "053fa044-fd06-4461-900c-d3bc6e0dedb3",
+    "role": "location_finder",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.5,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:37.252Z",
+      "Context: swift / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:37.252+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "207f2215-48be-45b4-b70d-8ced8bbdd517",
+    "role": "researcher",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:37.252Z",
+      "Context: java / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:37.252+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "bd69598c-dff7-4c23-a694-a8488883174d",
+    "role": "researcher",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:37.252Z",
+      "Context: python / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:37.252+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "df4cafbc-d83b-4cd2-9ecb-e93e7a3d3f69",
+    "role": "researcher",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:37.252Z",
+      "Context: typescript / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:37.252+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "7d007007-af55-4725-bb25-149233ce210e",
+    "role": "researcher",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:37.252Z",
+      "Context: javascript / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:37.252+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "709a29e7-0001-4f63-aed3-bb4a76d5087f",
+    "role": "researcher",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:37.252Z",
+      "Context: go / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:37.252+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "1b22cca6-86ed-4ef3-b367-0dec8637f3b6",
+    "role": "researcher",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:37.253Z",
+      "Context: rust / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:37.253+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "eb65be3a-f373-4ed0-aa8e-727de25d9a28",
+    "role": "researcher",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:37.253Z",
+      "Context: csharp / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:37.253+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "9d086c1e-4484-4d80-8053-493d933d4905",
+    "role": "researcher",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:37.253Z",
+      "Context: cpp / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:37.253+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "9ff30587-0dbd-40d1-afe0-4c5d8099e764",
+    "role": "researcher",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:37.253Z",
+      "Context: ruby / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:37.253+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "9438a20d-189e-48fe-a469-fb83afdfd121",
+    "role": "researcher",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:37.253Z",
+      "Context: php / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:37.253+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "20d05ab6-23af-4d10-9213-0ddfa46beb19",
+    "role": "researcher",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:37.253Z",
+      "Context: kotlin / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:37.253+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "1fbd979d-a501-4eae-b662-5fb68ddd057a",
+    "role": "researcher",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-flash-preview-09-2025",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:43:37.253Z",
+      "Context: swift / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: google/gemini-2.5-flash-preview-09-2025 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-lite-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:43:37.253+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  }
+]

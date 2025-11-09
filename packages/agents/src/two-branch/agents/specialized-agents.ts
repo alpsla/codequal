@@ -40,6 +40,13 @@ interface FixSuggestion {
   bestPractices?: string[];
   // BUG #6 FIX: Track which model was used for generating this fix
   model?: string;
+  // SESSION 21 FIX: Track actual cost from OpenRouter
+  cost?: number;
+  usage?: {
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+  };
 }
 
 /**
@@ -119,6 +126,11 @@ abstract class BaseSpecializedAgent {
 
       // BUG #6 FIX: Add model information to fix suggestion
       result.model = modelToUse;
+      
+      // SESSION 21 FIX: Add cost and usage from OpenRouter response
+      result.cost = response.cost || 0;
+      result.usage = response.usage;
+      
       return result;
 
     } catch (error: any) {

@@ -1,0 +1,3482 @@
+[
+  {
+    "id": "726fbc39-0e27-40ab-9ae6-e925e8b5a2ea",
+    "role": "security",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-4o-audio-preview",
+    "fallback_provider": "meta-llama",
+    "fallback_model": "meta-llama/llama-3.3-8b-instruct:free",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:03:09.688Z",
+      "Context: java / security",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: openai/gpt-4o-audio-preview (validated on OpenRouter)",
+      "Fallback: meta-llama/llama-3.3-8b-instruct:free",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:03:09.688+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "a125d0ae-e863-4e12-b7d4-ec93be2160dd",
+    "role": "security",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5",
+    "fallback_provider": "nvidia",
+    "fallback_model": "nvidia/llama-3.3-nemotron-super-49b-v1.5",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:03:11.038Z",
+      "Context: python / security",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: openai/gpt-5 (validated on OpenRouter)",
+      "Fallback: nvidia/llama-3.3-nemotron-super-49b-v1.5",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:03:11.038+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "b8732ffa-b386-4088-8366-1c0bf7e01830",
+    "role": "security",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "anthropic",
+    "primary_model": "anthropic/claude-opus-4.1",
+    "fallback_provider": "anthropic",
+    "fallback_model": "anthropic/claude-sonnet-4.5",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:03:12.540Z",
+      "Context: typescript / security",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: anthropic/claude-opus-4.1 (validated on OpenRouter)",
+      "Fallback: anthropic/claude-sonnet-4.5",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:03:12.54+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "6ef86229-38be-42a3-9452-d8071ae71dae",
+    "role": "security",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "meta-llama",
+    "primary_model": "meta-llama/llama-3.3-8b-instruct:free",
+    "fallback_provider": "nvidia",
+    "fallback_model": "nvidia/llama-3.3-nemotron-super-49b-v1.5",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:03:14.289Z",
+      "Context: javascript / security",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meta-llama/llama-3.3-8b-instruct:free (validated on OpenRouter)",
+      "Fallback: nvidia/llama-3.3-nemotron-super-49b-v1.5",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:03:14.289+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "bf0c5138-08ec-48b1-a122-5a9268a145eb",
+    "role": "security",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "anthropic",
+    "primary_model": "anthropic/claude-opus-4.1",
+    "fallback_provider": "anthropic",
+    "fallback_model": "anthropic/claude-sonnet-4.5",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:03:15.532Z",
+      "Context: go / security",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: anthropic/claude-opus-4.1 (validated on OpenRouter)",
+      "Fallback: anthropic/claude-sonnet-4.5",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:03:15.532+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "baf26f6c-2890-4f4b-a766-54aa16be7497",
+    "role": "security",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "anthropic",
+    "primary_model": "anthropic/claude-opus-4.1",
+    "fallback_provider": "thedrummer",
+    "fallback_model": "thedrummer/cydonia-24b-v4.1",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:03:17.030Z",
+      "Context: rust / security",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: anthropic/claude-opus-4.1 (validated on OpenRouter)",
+      "Fallback: thedrummer/cydonia-24b-v4.1",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:03:17.03+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "6726cdd1-ee67-4a91-9937-2730312c70bd",
+    "role": "security",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "anthropic",
+    "primary_model": "anthropic/claude-sonnet-4.5",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-pro",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:03:18.557Z",
+      "Context: csharp / security",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: anthropic/claude-sonnet-4.5 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-pro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:03:18.557+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "aaaf08fd-82e5-4003-a31e-aee91b238405",
+    "role": "security",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5",
+    "fallback_provider": "meta-llama",
+    "fallback_model": "meta-llama/llama-3.3-8b-instruct:free",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:03:19.863Z",
+      "Context: cpp / security",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: openai/gpt-5 (validated on OpenRouter)",
+      "Fallback: meta-llama/llama-3.3-8b-instruct:free",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:03:19.863+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "5bb9874b-c9a2-49b9-870b-5a7690cbd3cd",
+    "role": "security",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "anthropic",
+    "primary_model": "anthropic/claude-sonnet-4.5",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-5-pro",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:03:21.880Z",
+      "Context: ruby / security",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: anthropic/claude-sonnet-4.5 (validated on OpenRouter)",
+      "Fallback: openai/gpt-5-pro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:03:21.88+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "187f5958-9ec3-4826-ba44-90b23ef49866",
+    "role": "security",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-5-chat",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:03:23.329Z",
+      "Context: php / security",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: openai/gpt-5 (validated on OpenRouter)",
+      "Fallback: openai/gpt-5-chat",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:03:23.329+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "5af205ba-42bb-4e5c-8a36-b24f19413847",
+    "role": "security",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:03:23.662Z",
+      "Context: kotlin / security",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:03:23.662+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "58bc3114-55b7-467d-9281-c55f1cceb998",
+    "role": "security",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:03:23.882Z",
+      "Context: swift / security",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:03:23.882+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "8a3d0997-8e5e-4e1d-acac-374811774314",
+    "role": "performance",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:03:24.106Z",
+      "Context: java / performance",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:03:24.106+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "24bcf4ed-8a35-45b6-b9e1-3364b9182e21",
+    "role": "performance",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:03:24.327Z",
+      "Context: python / performance",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:03:24.327+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "ba47aae4-c7bf-4d07-9bd5-56a009d23f78",
+    "role": "performance",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "anthropic",
+    "primary_model": "anthropic/claude-sonnet-4.5",
+    "fallback_provider": "deepseek",
+    "fallback_model": "deepseek/deepseek-v3.1-terminus",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:03:26.517Z",
+      "Context: typescript / performance",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: anthropic/claude-sonnet-4.5 (validated on OpenRouter)",
+      "Fallback: deepseek/deepseek-v3.1-terminus",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:03:26.517+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "f05a3149-36d8-4206-ba17-e792837f3d69",
+    "role": "performance",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "deepseek",
+    "primary_model": "deepseek/deepseek-v3.2-exp",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-pro",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:03:28.247Z",
+      "Context: javascript / performance",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: deepseek/deepseek-v3.2-exp (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-pro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:03:28.247+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "7564c55c-3504-476f-b3bd-9355405f4971",
+    "role": "performance",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "google",
+    "primary_model": "google/gemini-2.5-pro",
+    "fallback_provider": "deepseek",
+    "fallback_model": "deepseek/deepseek-v3.2-exp",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:03:29.676Z",
+      "Context: go / performance",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: google/gemini-2.5-pro (validated on OpenRouter)",
+      "Fallback: deepseek/deepseek-v3.2-exp",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:03:29.676+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "437e9791-cfb0-4126-b3d2-5bcc46cb09ff",
+    "role": "performance",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "anthropic",
+    "primary_model": "anthropic/claude-opus-4.1",
+    "fallback_provider": "deepseek",
+    "fallback_model": "deepseek/deepseek-v3.2-exp",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:03:31.226Z",
+      "Context: rust / performance",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: anthropic/claude-opus-4.1 (validated on OpenRouter)",
+      "Fallback: deepseek/deepseek-v3.2-exp",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:03:31.226+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "181aeab9-82cf-4805-bae8-1eda10fbefe6",
+    "role": "performance",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5",
+    "fallback_provider": "anthropic",
+    "fallback_model": "anthropic/claude-opus-4.1",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:03:32.379Z",
+      "Context: csharp / performance",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: openai/gpt-5 (validated on OpenRouter)",
+      "Fallback: anthropic/claude-opus-4.1",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:03:32.379+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "e6e60a3e-a096-447e-98de-f4964e0ce22c",
+    "role": "performance",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "deepseek",
+    "primary_model": "deepseek/deepseek-v3.2-exp",
+    "fallback_provider": "anthropic",
+    "fallback_model": "anthropic/claude-sonnet-4.5",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:03:33.874Z",
+      "Context: cpp / performance",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: deepseek/deepseek-v3.2-exp (validated on OpenRouter)",
+      "Fallback: anthropic/claude-sonnet-4.5",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:03:33.874+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "7618e740-8c74-4d0a-babd-b1e7f34e1997",
+    "role": "performance",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "anthropic",
+    "primary_model": "anthropic/claude-sonnet-4.5",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-5-pro",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:03:35.621Z",
+      "Context: ruby / performance",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: anthropic/claude-sonnet-4.5 (validated on OpenRouter)",
+      "Fallback: openai/gpt-5-pro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:03:35.621+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "fb50bd07-1863-4676-bbac-91135eaddb18",
+    "role": "performance",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "anthropic",
+    "primary_model": "anthropic/claude-sonnet-4.5",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-5",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:03:37.330Z",
+      "Context: php / performance",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: anthropic/claude-sonnet-4.5 (validated on OpenRouter)",
+      "Fallback: openai/gpt-5",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:03:37.33+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "a20522aa-9afb-47c2-ae0e-df9fc18b4f0b",
+    "role": "performance",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "qwen",
+    "primary_model": "qwen/qwen3-max",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-coder",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:03:38.751Z",
+      "Context: kotlin / performance",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: qwen/qwen3-max (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-coder",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:03:38.751+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "3fad7f62-b4b1-40c4-99c2-4b8e4f916d7f",
+    "role": "performance",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "deepseek",
+    "primary_model": "deepseek/deepseek-chat-v3.1",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-5",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:03:40.144Z",
+      "Context: swift / performance",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: deepseek/deepseek-chat-v3.1 (validated on OpenRouter)",
+      "Fallback: openai/gpt-5",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:03:40.144+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "3e3b07d0-aa16-4ddc-8f25-fa759133789f",
+    "role": "code_quality",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-pro",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:03:41.321Z",
+      "Context: java / code_quality",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: openai/gpt-5 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-pro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:03:41.321+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "fa1a6416-9792-409a-97af-a0889f863a38",
+    "role": "code_quality",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-4o-audio-preview",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:03:42.981Z",
+      "Context: python / code_quality",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: openai/gpt-5 (validated on OpenRouter)",
+      "Fallback: openai/gpt-4o-audio-preview",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:03:42.981+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "685c0201-d05a-472b-b090-b91b7d633570",
+    "role": "code_quality",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-pro",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:03:44.258Z",
+      "Context: typescript / code_quality",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: openai/gpt-5 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-pro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:03:44.258+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "6aa951bf-0bcb-4dc7-8ce9-276ea35380f6",
+    "role": "code_quality",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-pro",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:03:45.740Z",
+      "Context: javascript / code_quality",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: openai/gpt-5 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-pro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:03:45.74+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "fd0e856d-49fb-42b1-befe-043d044c4ce3",
+    "role": "code_quality",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-pro",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:03:47.096Z",
+      "Context: go / code_quality",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: openai/gpt-5 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-pro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:03:47.096+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "58604173-96f0-4e18-8b55-49fe165446c3",
+    "role": "code_quality",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "anthropic",
+    "primary_model": "anthropic/claude-opus-4.1",
+    "fallback_provider": "deepseek",
+    "fallback_model": "deepseek/deepseek-chat-v3.1",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:03:48.623Z",
+      "Context: rust / code_quality",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: anthropic/claude-opus-4.1 (validated on OpenRouter)",
+      "Fallback: deepseek/deepseek-chat-v3.1",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:03:48.623+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "93469ea8-b7e1-4895-952d-96a6058c39dd",
+    "role": "code_quality",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-pro",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:03:50.341Z",
+      "Context: csharp / code_quality",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: openai/gpt-5 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-pro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:03:50.341+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "cfac591b-99ba-4951-8ce7-f806ee2389c4",
+    "role": "code_quality",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-pro",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:03:51.684Z",
+      "Context: cpp / code_quality",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: openai/gpt-5 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-pro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:03:51.684+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "40f6e545-3d7a-434c-81fd-efcf16480e5f",
+    "role": "code_quality",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:03:52.651Z",
+      "Context: ruby / code_quality",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:03:52.651+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "6ee3c568-4e4a-4666-b92f-a779b2bad0f6",
+    "role": "code_quality",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:03:53.479Z",
+      "Context: php / code_quality",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:03:53.479+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "ed6a0660-b92d-4de8-b70b-cde34d0265c7",
+    "role": "code_quality",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:03:53.699Z",
+      "Context: kotlin / code_quality",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:03:53.699+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "8788383b-466c-47de-8267-05df4ee6b435",
+    "role": "code_quality",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:03:54.559Z",
+      "Context: swift / code_quality",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:03:54.559+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "3b33304b-ceca-408b-8a25-3fd3b29db5d6",
+    "role": "architecture",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:03:54.783Z",
+      "Context: java / architecture",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:03:54.783+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "68d699c5-0021-4e6e-8d2b-b58c917078d9",
+    "role": "architecture",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5",
+    "fallback_provider": "nvidia",
+    "fallback_model": "nvidia/llama-3.3-nemotron-super-49b-v1.5",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:03:56.749Z",
+      "Context: python / architecture",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: openai/gpt-5 (validated on OpenRouter)",
+      "Fallback: nvidia/llama-3.3-nemotron-super-49b-v1.5",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:03:56.749+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "dc6010e8-9025-4fef-b45c-1e52569261e9",
+    "role": "architecture",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "anthropic",
+    "primary_model": "anthropic/claude-opus-4.1",
+    "fallback_provider": "anthropic",
+    "fallback_model": "anthropic/claude-sonnet-4.5",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:03:58.623Z",
+      "Context: typescript / architecture",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: anthropic/claude-opus-4.1 (validated on OpenRouter)",
+      "Fallback: anthropic/claude-sonnet-4.5",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:03:58.623+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "9bcc4caf-ba92-4e17-afef-03af696f61b4",
+    "role": "architecture",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "anthropic",
+    "primary_model": "anthropic/claude-opus-4.1",
+    "fallback_provider": "anthropic",
+    "fallback_model": "anthropic/claude-sonnet-4.5",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:04:00.345Z",
+      "Context: javascript / architecture",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: anthropic/claude-opus-4.1 (validated on OpenRouter)",
+      "Fallback: anthropic/claude-sonnet-4.5",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:04:00.345+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "2b29d7e2-653c-40e9-8d0f-a5d950a729ff",
+    "role": "architecture",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "deepseek",
+    "primary_model": "deepseek/deepseek-chat-v3.1",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-pro",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:04:02.845Z",
+      "Context: go / architecture",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: deepseek/deepseek-chat-v3.1 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-pro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:04:02.845+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "468f462d-99a4-4c72-849c-1837d65345b4",
+    "role": "architecture",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "anthropic",
+    "primary_model": "anthropic/claude-opus-4.1",
+    "fallback_provider": "deepseek",
+    "fallback_model": "deepseek/deepseek-v3.2-exp",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:04:04.788Z",
+      "Context: rust / architecture",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: anthropic/claude-opus-4.1 (validated on OpenRouter)",
+      "Fallback: deepseek/deepseek-v3.2-exp",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:04:04.788+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "e6c0f0c1-b140-48ff-a736-b77bd8317cb7",
+    "role": "architecture",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "qwen",
+    "primary_model": "qwen/qwen3-max",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen-plus-2025-07-28",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:04:06.628Z",
+      "Context: csharp / architecture",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: qwen/qwen3-max (validated on OpenRouter)",
+      "Fallback: qwen/qwen-plus-2025-07-28",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:04:06.628+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "7abbc9ab-72e1-4db5-ab12-2ad1f84cb96b",
+    "role": "architecture",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "qwen",
+    "primary_model": "qwen/qwen3-max",
+    "fallback_provider": "anthropic",
+    "fallback_model": "anthropic/claude-sonnet-4.5",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:04:09.035Z",
+      "Context: cpp / architecture",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: qwen/qwen3-max (validated on OpenRouter)",
+      "Fallback: anthropic/claude-sonnet-4.5",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:04:09.035+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "8f50841b-0717-42cf-a0f2-3fd8ac3dfd1c",
+    "role": "architecture",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "anthropic",
+    "primary_model": "anthropic/claude-opus-4.1",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-pro",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:04:10.800Z",
+      "Context: ruby / architecture",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: anthropic/claude-opus-4.1 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-pro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:04:10.8+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "a7d77969-b354-4d30-bae0-65faed943090",
+    "role": "architecture",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "anthropic",
+    "primary_model": "anthropic/claude-sonnet-4.5",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-max",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:04:12.779Z",
+      "Context: php / architecture",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: anthropic/claude-sonnet-4.5 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-max",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:04:12.779+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "2058dd45-f798-4c58-a7fc-de5aa55213cb",
+    "role": "architecture",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "meta-llama",
+    "primary_model": "meta-llama/llama-3.3-8b-instruct:free",
+    "fallback_provider": "nvidia",
+    "fallback_model": "nvidia/llama-3.3-nemotron-super-49b-v1.5",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:04:15.191Z",
+      "Context: kotlin / architecture",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meta-llama/llama-3.3-8b-instruct:free (validated on OpenRouter)",
+      "Fallback: nvidia/llama-3.3-nemotron-super-49b-v1.5",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:04:15.191+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "02e8e895-cf4c-4b3a-b95d-ad9685b98f18",
+    "role": "architecture",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "anthropic",
+    "primary_model": "anthropic/claude-sonnet-4.5",
+    "fallback_provider": "deepcogito",
+    "fallback_model": "deepcogito/cogito-v2-preview-llama-405b",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:04:17.284Z",
+      "Context: swift / architecture",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: anthropic/claude-sonnet-4.5 (validated on OpenRouter)",
+      "Fallback: deepcogito/cogito-v2-preview-llama-405b",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:04:17.284+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "e2340930-acd1-4826-b79a-1ff22a23a87d",
+    "role": "dependency",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5-mini",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-5-pro",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:04:19.286Z",
+      "Context: java / dependency",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: openai/gpt-5-mini (validated on OpenRouter)",
+      "Fallback: openai/gpt-5-pro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:04:19.286+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "1e5a7987-8a68-4749-b31c-ff9f90a0b1f4",
+    "role": "dependency",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "nvidia",
+    "primary_model": "nvidia/llama-3.3-nemotron-super-49b-v1.5",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-5",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:04:21.384Z",
+      "Context: python / dependency",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: nvidia/llama-3.3-nemotron-super-49b-v1.5 (validated on OpenRouter)",
+      "Fallback: openai/gpt-5",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:04:21.384+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "ef39d9cf-ddd4-4ab1-95ff-1e106dd9e09e",
+    "role": "dependency",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "anthropic",
+    "primary_model": "anthropic/claude-opus-4.1",
+    "fallback_provider": "anthropic",
+    "fallback_model": "anthropic/claude-sonnet-4.5",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:04:23.269Z",
+      "Context: typescript / dependency",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: anthropic/claude-opus-4.1 (validated on OpenRouter)",
+      "Fallback: anthropic/claude-sonnet-4.5",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:04:23.269+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "fc45093a-6ae3-46f1-a5f7-df7a5e1b17a5",
+    "role": "dependency",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5-pro",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-pro",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:04:25.169Z",
+      "Context: javascript / dependency",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: openai/gpt-5-pro (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-pro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:04:25.169+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "056564f9-df13-46be-af10-d0eab48f89a5",
+    "role": "dependency",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "anthropic",
+    "primary_model": "anthropic/claude-sonnet-4.5",
+    "fallback_provider": "anthropic",
+    "fallback_model": "anthropic/claude-haiku-4.5",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:04:27.129Z",
+      "Context: go / dependency",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: anthropic/claude-sonnet-4.5 (validated on OpenRouter)",
+      "Fallback: anthropic/claude-haiku-4.5",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:04:27.129+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "42c63022-c88f-4488-996f-9832c0b31d4b",
+    "role": "dependency",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "anthropic",
+    "primary_model": "anthropic/claude-opus-4.1",
+    "fallback_provider": "deepseek",
+    "fallback_model": "deepseek/deepseek-chat-v3.1",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:04:28.909Z",
+      "Context: rust / dependency",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: anthropic/claude-opus-4.1 (validated on OpenRouter)",
+      "Fallback: deepseek/deepseek-chat-v3.1",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:04:28.909+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "f8523db8-a007-4f02-8d91-b68c7270a1c3",
+    "role": "dependency",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "nvidia",
+    "primary_model": "nvidia/llama-3.3-nemotron-super-49b-v1.5",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-5-pro",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:04:30.739Z",
+      "Context: csharp / dependency",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: nvidia/llama-3.3-nemotron-super-49b-v1.5 (validated on OpenRouter)",
+      "Fallback: openai/gpt-5-pro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:04:30.739+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "0167f28d-1b25-4d98-910e-4ae462a5e511",
+    "role": "dependency",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "anthropic",
+    "primary_model": "anthropic/claude-sonnet-4.5",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-5",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:04:32.377Z",
+      "Context: cpp / dependency",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: anthropic/claude-sonnet-4.5 (validated on OpenRouter)",
+      "Fallback: openai/gpt-5",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:04:32.377+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "fb07cb8e-e561-4fdf-8fe6-f0c9f09a904d",
+    "role": "dependency",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:04:33.102Z",
+      "Context: ruby / dependency",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:04:33.102+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "2f45db04-1a52-47ee-a31e-4e564acbb954",
+    "role": "dependency",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:04:33.320Z",
+      "Context: php / dependency",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:04:33.32+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "77e9e4bf-1649-446e-b74b-93a49d308030",
+    "role": "dependency",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5",
+    "fallback_provider": "anthropic",
+    "fallback_model": "anthropic/claude-sonnet-4.5",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:04:35.022Z",
+      "Context: kotlin / dependency",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: openai/gpt-5 (validated on OpenRouter)",
+      "Fallback: anthropic/claude-sonnet-4.5",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:04:35.022+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "bbc65ed2-4670-4f94-af56-872b4e4abdc8",
+    "role": "dependency",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.35,
+      "speed": 0.3,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:04:35.865Z",
+      "Context: swift / dependency",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.35)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:04:35.865+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "3447862c-c8f8-42be-97a0-b39b053f6077",
+    "role": "educator",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.25,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:04:36.008Z",
+      "Context: java / educator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.2)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:04:36.008+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "e5495400-8849-4273-8ca4-c80ea7c2c02b",
+    "role": "educator",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-5-pro",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.25,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:04:37.658Z",
+      "Context: python / educator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.2)",
+      "Primary: openai/gpt-5 (validated on OpenRouter)",
+      "Fallback: openai/gpt-5-pro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:04:37.658+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "f58bb036-289d-42fe-9803-ed52c4f41c41",
+    "role": "educator",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5-chat",
+    "fallback_provider": "anthropic",
+    "fallback_model": "anthropic/claude-sonnet-4.5",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.25,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:04:39.427Z",
+      "Context: typescript / educator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.2)",
+      "Primary: openai/gpt-5-chat (validated on OpenRouter)",
+      "Fallback: anthropic/claude-sonnet-4.5",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:04:39.427+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "7855c661-feb7-4022-87f6-3cfeb37a633c",
+    "role": "educator",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-pro",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.25,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:04:41.180Z",
+      "Context: javascript / educator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.2)",
+      "Primary: openai/gpt-5 (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-pro",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:04:41.18+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "aa08e415-5fee-43c5-965e-e177e0391186",
+    "role": "educator",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-5-chat",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.25,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:04:43.231Z",
+      "Context: go / educator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.2)",
+      "Primary: openai/gpt-5 (validated on OpenRouter)",
+      "Fallback: openai/gpt-5-chat",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:04:43.231+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "62b589ec-67e1-44fd-a25c-0e94aeb8e595",
+    "role": "educator",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "anthropic",
+    "primary_model": "anthropic/claude-opus-4.1",
+    "fallback_provider": "deepseek",
+    "fallback_model": "deepseek/deepseek-v3.2-exp",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.25,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:04:44.896Z",
+      "Context: rust / educator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.2)",
+      "Primary: anthropic/claude-opus-4.1 (validated on OpenRouter)",
+      "Fallback: deepseek/deepseek-v3.2-exp",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:04:44.896+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "96b715f6-cd92-4ca6-b4d4-3a641f087a72",
+    "role": "educator",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-5-chat",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.25,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:04:46.543Z",
+      "Context: csharp / educator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.2)",
+      "Primary: openai/gpt-5 (validated on OpenRouter)",
+      "Fallback: openai/gpt-5-chat",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:04:46.543+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "50782be5-34cb-47c2-bdb1-cede89ce49cf",
+    "role": "educator",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5",
+    "fallback_provider": "anthropic",
+    "fallback_model": "anthropic/claude-sonnet-4.5",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.25,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:04:48.155Z",
+      "Context: cpp / educator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.2)",
+      "Primary: openai/gpt-5 (validated on OpenRouter)",
+      "Fallback: anthropic/claude-sonnet-4.5",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:04:48.155+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "833d1f60-c214-4ffd-839b-6ea4451ddc79",
+    "role": "educator",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.25,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:04:48.720Z",
+      "Context: ruby / educator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.2)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:04:48.72+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "35700e50-9f39-4bae-adc6-cd7ec06e455f",
+    "role": "educator",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.25,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:04:49.003Z",
+      "Context: php / educator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.2)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:04:49.003+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "a091ff8a-3b60-44e7-a314-5e16ec4702f2",
+    "role": "educator",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.25,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:04:49.153Z",
+      "Context: kotlin / educator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.2)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:04:49.153+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "cba64c51-809f-426c-b318-46e00b78148d",
+    "role": "educator",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.25,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:04:49.996Z",
+      "Context: swift / educator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.2)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:04:49.996+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "cfe7db92-f52f-4b45-b112-46d468dea2db",
+    "role": "orchestrator",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:04:50.144Z",
+      "Context: java / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:04:50.144+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "7f24e210-22f9-4b83-84ea-74fc094b09ee",
+    "role": "orchestrator",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:04:50.291Z",
+      "Context: python / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:04:50.291+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "a028febd-1ab3-4fad-889d-b3b9f3837d64",
+    "role": "orchestrator",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "anthropic",
+    "primary_model": "anthropic/claude-sonnet-4.5",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-max",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:04:52.141Z",
+      "Context: typescript / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: anthropic/claude-sonnet-4.5 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-max",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:04:52.141+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "7b3002eb-c7d1-45a5-888c-104a3144a0ef",
+    "role": "orchestrator",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "anthropic",
+    "primary_model": "anthropic/claude-opus-4.1",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-max",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:04:53.779Z",
+      "Context: javascript / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: anthropic/claude-opus-4.1 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-max",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:04:53.779+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "5f169458-6e51-45e9-a8a2-8f959e0dceba",
+    "role": "orchestrator",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "anthropic",
+    "primary_model": "anthropic/claude-opus-4.1",
+    "fallback_provider": "qwen",
+    "fallback_model": "qwen/qwen3-max",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:04:55.955Z",
+      "Context: go / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: anthropic/claude-opus-4.1 (validated on OpenRouter)",
+      "Fallback: qwen/qwen3-max",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:04:55.955+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "12caa828-66da-4022-a379-06a82e246dae",
+    "role": "orchestrator",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "anthropic",
+    "primary_model": "anthropic/claude-opus-4.1",
+    "fallback_provider": "deepseek",
+    "fallback_model": "deepseek/deepseek-v3.2-exp",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:04:57.730Z",
+      "Context: rust / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: anthropic/claude-opus-4.1 (validated on OpenRouter)",
+      "Fallback: deepseek/deepseek-v3.2-exp",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:04:57.73+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "355c1024-cd8f-4190-9018-2c0ad1ee4dbe",
+    "role": "orchestrator",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-4o-audio-preview",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:04:59.267Z",
+      "Context: csharp / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: openai/gpt-5 (validated on OpenRouter)",
+      "Fallback: openai/gpt-4o-audio-preview",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:04:59.267+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "b8d2fd91-91ae-4ca2-b188-65b68da2a02c",
+    "role": "orchestrator",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "nvidia",
+    "primary_model": "nvidia/llama-3.3-nemotron-super-49b-v1.5",
+    "fallback_provider": "anthropic",
+    "fallback_model": "anthropic/claude-opus-4.1",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:05:01.301Z",
+      "Context: cpp / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: nvidia/llama-3.3-nemotron-super-49b-v1.5 (validated on OpenRouter)",
+      "Fallback: anthropic/claude-opus-4.1",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:05:01.301+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "bc0c225f-3719-4f59-af81-26f978bf6ccb",
+    "role": "orchestrator",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:05:02.004Z",
+      "Context: ruby / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:05:02.004+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "b9951079-6a94-4a39-bc3e-5a14a0ccf343",
+    "role": "orchestrator",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:05:02.276Z",
+      "Context: php / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:05:02.276+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "b4f3c4f0-6e0c-4246-908b-8eef7e499f3a",
+    "role": "orchestrator",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:05:03.162Z",
+      "Context: kotlin / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:05:03.162+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "dae94b66-a8ba-4536-ab21-00317f29b305",
+    "role": "orchestrator",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:05:03.308Z",
+      "Context: swift / orchestrator",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:05:03.308+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "9eab0708-dca5-49dd-97f8-bb47887a3587",
+    "role": "comparator",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.35,
+      "quality": 0.4,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:05:04.085Z",
+      "Context: java / comparator",
+      "Search-based: Weight-tailored queries (quality=0.4, cost=0.2)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:05:04.085+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "8cd0e569-2966-43ba-a7b4-44643801c21b",
+    "role": "comparator",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.35,
+      "quality": 0.4,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:05:04.237Z",
+      "Context: python / comparator",
+      "Search-based: Weight-tailored queries (quality=0.4, cost=0.2)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:05:04.237+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "75d6ffa1-3259-47f3-8c15-da3cce28504b",
+    "role": "comparator",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.35,
+      "quality": 0.4,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:05:04.378Z",
+      "Context: typescript / comparator",
+      "Search-based: Weight-tailored queries (quality=0.4, cost=0.2)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:05:04.378+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "85638563-1e2d-4b1d-bc58-6799f9cce81e",
+    "role": "comparator",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-5-mini",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.35,
+      "quality": 0.4,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:05:06.436Z",
+      "Context: javascript / comparator",
+      "Search-based: Weight-tailored queries (quality=0.4, cost=0.2)",
+      "Primary: openai/gpt-5 (validated on OpenRouter)",
+      "Fallback: openai/gpt-5-mini",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:05:06.436+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "c0f0972c-8f64-4d56-a73f-44e744f00af6",
+    "role": "comparator",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "anthropic",
+    "primary_model": "anthropic/claude-opus-4.1",
+    "fallback_provider": "nvidia",
+    "fallback_model": "nvidia/llama-3.3-nemotron-super-49b-v1.5",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.35,
+      "quality": 0.4,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:05:08.423Z",
+      "Context: go / comparator",
+      "Search-based: Weight-tailored queries (quality=0.4, cost=0.2)",
+      "Primary: anthropic/claude-opus-4.1 (validated on OpenRouter)",
+      "Fallback: nvidia/llama-3.3-nemotron-super-49b-v1.5",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:05:08.423+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "3b41cb04-de16-4e0e-b9ee-68eecb7d99a7",
+    "role": "comparator",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "anthropic",
+    "primary_model": "anthropic/claude-opus-4.1",
+    "fallback_provider": "deepseek",
+    "fallback_model": "deepseek/deepseek-v3.1-terminus",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.35,
+      "quality": 0.4,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:05:10.246Z",
+      "Context: rust / comparator",
+      "Search-based: Weight-tailored queries (quality=0.4, cost=0.2)",
+      "Primary: anthropic/claude-opus-4.1 (validated on OpenRouter)",
+      "Fallback: deepseek/deepseek-v3.1-terminus",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:05:10.246+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "10eb7787-be1d-4887-b335-19ff478cdcd3",
+    "role": "comparator",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "anthropic",
+    "primary_model": "anthropic/claude-opus-4.1",
+    "fallback_provider": "thedrummer",
+    "fallback_model": "thedrummer/cydonia-24b-v4.1",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.35,
+      "quality": 0.4,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:05:12.553Z",
+      "Context: csharp / comparator",
+      "Search-based: Weight-tailored queries (quality=0.4, cost=0.2)",
+      "Primary: anthropic/claude-opus-4.1 (validated on OpenRouter)",
+      "Fallback: thedrummer/cydonia-24b-v4.1",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:05:12.553+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "0a6026ad-eacb-4b97-9246-26b0b566623f",
+    "role": "comparator",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5-pro",
+    "fallback_provider": "anthropic",
+    "fallback_model": "anthropic/claude-opus-4.1",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.35,
+      "quality": 0.4,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:05:14.334Z",
+      "Context: cpp / comparator",
+      "Search-based: Weight-tailored queries (quality=0.4, cost=0.2)",
+      "Primary: openai/gpt-5-pro (validated on OpenRouter)",
+      "Fallback: anthropic/claude-opus-4.1",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:05:14.334+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "2df53991-1582-47e5-819b-f0e72581f896",
+    "role": "comparator",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "openai",
+    "primary_model": "openai/gpt-5",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-5-chat",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.35,
+      "quality": 0.4,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:05:15.957Z",
+      "Context: ruby / comparator",
+      "Search-based: Weight-tailored queries (quality=0.4, cost=0.2)",
+      "Primary: openai/gpt-5 (validated on OpenRouter)",
+      "Fallback: openai/gpt-5-chat",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:05:15.957+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "671c0aa1-5a39-405b-9eaa-7bb23cc41ff7",
+    "role": "comparator",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "qwen",
+    "primary_model": "qwen/qwen3-max",
+    "fallback_provider": "openai",
+    "fallback_model": "openai/gpt-5",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.35,
+      "quality": 0.4,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:05:17.945Z",
+      "Context: php / comparator",
+      "Search-based: Weight-tailored queries (quality=0.4, cost=0.2)",
+      "Primary: qwen/qwen3-max (validated on OpenRouter)",
+      "Fallback: openai/gpt-5",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:05:17.945+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "db24e17a-197b-4671-be2f-d77010b494a0",
+    "role": "comparator",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.35,
+      "quality": 0.4,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:05:18.628Z",
+      "Context: kotlin / comparator",
+      "Search-based: Weight-tailored queries (quality=0.4, cost=0.2)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:05:18.628+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "c680d1b4-dd76-4f2e-a15c-3bc666677418",
+    "role": "comparator",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.2,
+      "speed": 0.35,
+      "quality": 0.4,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:05:18.895Z",
+      "Context: swift / comparator",
+      "Search-based: Weight-tailored queries (quality=0.4, cost=0.2)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:05:18.895+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "798a9609-de42-4311-8ddb-75064bce4998",
+    "role": "location_finder",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.5,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:05:19.692Z",
+      "Context: java / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:05:19.692+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "eb207037-d5ff-403d-b118-bf0a79e2f000",
+    "role": "location_finder",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.5,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:05:19.843Z",
+      "Context: python / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:05:19.843+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "52d49483-431f-4c62-accb-11fbe91d5a82",
+    "role": "location_finder",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.5,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:05:19.993Z",
+      "Context: typescript / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:05:19.993+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "a0a63488-ca2c-4195-9fe1-12da86749653",
+    "role": "location_finder",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "qwen",
+    "primary_model": "qwen/qwen3-max",
+    "fallback_provider": "deepseek",
+    "fallback_model": "deepseek/deepseek-v3.2-exp",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.5,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:05:22.141Z",
+      "Context: javascript / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.15)",
+      "Primary: qwen/qwen3-max (validated on OpenRouter)",
+      "Fallback: deepseek/deepseek-v3.2-exp",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:05:22.141+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "cc7289ce-11d7-4266-a044-189d7269d764",
+    "role": "location_finder",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.5,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:05:22.960Z",
+      "Context: go / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:05:22.96+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "3c0b3159-138b-427a-8f74-0827fd89b9b8",
+    "role": "location_finder",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.5,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:05:23.104Z",
+      "Context: rust / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:05:23.104+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "35bb9676-0da1-4106-b4b6-62d58f1383c7",
+    "role": "location_finder",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.5,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:05:23.831Z",
+      "Context: csharp / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:05:23.831+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "6db12563-809a-4a71-90e3-92019e03f6bf",
+    "role": "location_finder",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.5,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:05:23.982Z",
+      "Context: cpp / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:05:23.982+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "ed685779-81f9-47da-85cc-7ba466df7d47",
+    "role": "location_finder",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.5,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:05:24.124Z",
+      "Context: ruby / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:05:24.124+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "56464256-30b3-43ff-af18-0cc3b8f8e9fe",
+    "role": "location_finder",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.5,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:05:24.932Z",
+      "Context: php / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:05:24.932+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "700a8801-dd00-4fdc-bfcf-8dc9931d06fd",
+    "role": "location_finder",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.5,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:05:25.079Z",
+      "Context: kotlin / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:05:25.079+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "9df902be-a6c9-4a6d-8d3b-d24b906f8592",
+    "role": "location_finder",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.5,
+      "quality": 0.3,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:05:25.226Z",
+      "Context: swift / location_finder",
+      "Search-based: Weight-tailored queries (quality=0.3, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:05:25.226+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "73a77087-53f7-46f7-bc61-086483739eab",
+    "role": "researcher",
+    "language": "java",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:05:25.987Z",
+      "Context: java / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:05:25.987+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "0cf35955-1bfa-4fa5-b918-5d55114f4550",
+    "role": "researcher",
+    "language": "python",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:05:26.130Z",
+      "Context: python / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:05:26.131+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "c0e35064-94af-4f0e-80e9-77ddbfff9dab",
+    "role": "researcher",
+    "language": "typescript",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:05:26.273Z",
+      "Context: typescript / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:05:26.273+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "eb1514e1-10e2-436a-a1f8-64fe5b58317f",
+    "role": "researcher",
+    "language": "javascript",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:05:26.992Z",
+      "Context: javascript / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:05:26.992+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "ddcdf6fa-24ee-46ea-8d55-a6d378782168",
+    "role": "researcher",
+    "language": "go",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:05:27.136Z",
+      "Context: go / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:05:27.136+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "50d2864e-94c7-4716-80d0-88e0cf040609",
+    "role": "researcher",
+    "language": "rust",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:05:27.282Z",
+      "Context: rust / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:05:27.282+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "c55314d9-e9b3-4d30-a85a-c0dcd84363d2",
+    "role": "researcher",
+    "language": "csharp",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:05:28.028Z",
+      "Context: csharp / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:05:28.028+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "09806095-d951-49d9-b8be-68d345c1bf0f",
+    "role": "researcher",
+    "language": "cpp",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:05:28.176Z",
+      "Context: cpp / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:05:28.176+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "546be175-6298-41c3-b900-7fefb877554e",
+    "role": "researcher",
+    "language": "ruby",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:05:28.321Z",
+      "Context: ruby / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:05:28.321+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "5e355a70-064d-4772-98ce-445ae28fc60a",
+    "role": "researcher",
+    "language": "php",
+    "size_category": "any",
+    "primary_provider": "deepseek",
+    "primary_model": "deepseek/deepseek-v3.2-exp",
+    "fallback_provider": "deepseek",
+    "fallback_model": "deepseek/deepseek-v3.1-terminus",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:05:30.328Z",
+      "Context: php / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: deepseek/deepseek-v3.2-exp (validated on OpenRouter)",
+      "Fallback: deepseek/deepseek-v3.1-terminus",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:05:30.328+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "c70eaf06-bdc5-472e-89d3-3373b7bb8f4c",
+    "role": "researcher",
+    "language": "kotlin",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:05:31.089Z",
+      "Context: kotlin / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:05:31.09+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  },
+  {
+    "id": "00ed9084-0c28-486b-9f3f-1d4a3c0e5718",
+    "role": "researcher",
+    "language": "swift",
+    "size_category": "any",
+    "primary_provider": "meituan",
+    "primary_model": "meituan/longcat-flash-chat:free",
+    "fallback_provider": "google",
+    "fallback_model": "google/gemini-2.5-flash-preview-09-2025",
+    "weights": {
+      "cost": 0.15,
+      "speed": 0.3,
+      "quality": 0.5,
+      "freshness": 0.05,
+      "contextWindow": 0.05
+    },
+    "min_requirements": {},
+    "reasoning": [
+      "🤖 Generated via Brave Search + AI on 2025-11-07T18:05:31.235Z",
+      "Context: swift / researcher",
+      "Search-based: Weight-tailored queries (quality=0.5, cost=0.15)",
+      "Primary: meituan/longcat-flash-chat:free (validated on OpenRouter)",
+      "Fallback: google/gemini-2.5-flash-preview-09-2025",
+      "✅ ZERO hardcoded models - 100% dynamic discovery",
+      "✅ Freshness enforced: < 6 months old"
+    ],
+    "last_updated": "2025-11-07T18:05:31.235+00:00",
+    "updated_by": "clean-and-regenerate-v2-brave"
+  }
+]

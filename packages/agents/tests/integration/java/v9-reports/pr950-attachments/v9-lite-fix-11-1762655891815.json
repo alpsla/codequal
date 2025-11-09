@@ -1,0 +1,100 @@
+{
+  "groupId": "com-puppycrawl-tools-checkstyle-checks-javadoc-javadocmethodcheck-low-checkstyle",
+  "filename": "group-com-puppycrawl-tools-checkstyle-checks-javadoc-javadocmethodcheck-low-checkstyle-fix.json",
+  "content": {
+    "version": "1.0",
+    "group_id": "com-puppycrawl-tools-checkstyle-checks-javadoc-javadocmethodcheck-low-checkstyle",
+    "rule": "com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocMethodCheck",
+    "tool": "checkstyle",
+    "severity": "low",
+    "description": "Remove the unused @param tag for 'name' from the Javadoc comment, ensuring all documented parameters match the actual method signature.",
+    "fix_pattern": {
+      "type": "template",
+      "example": {
+        "before": "",
+        "after": "Before:\n/**\n * Creates a new Owner with the given name.\n * @param name the name of the owner\n * @param address the address of the owner\n * @param city the city of the owner\n * @param telephone the telephone of the owner\n */\npublic Owner(String name, String address, String city, String telephone) {\n    // constructor implementation\n}\n\nAfter:\n/**\n * Creates a new Owner with the given address, city, and telephone.\n * @param address the address of the owner\n * @param city the city of the owner\n * @param telephone the telephone of the owner\n */\npublic Owner(String name, String address, String city, String telephone) {\n    // constructor implementation\n}"
+      },
+      "instructions": "Remove the unused @param tag for 'name' from the Javadoc comment, ensuring all documented parameters match the actual method signature."
+    },
+    "locations": [
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/Owner.java",
+        "line": 112,
+        "snippet": "   109 | \n   110 | \t/**\n   111 | \t * Return the Pet with the given id, or null if none found for this Owner.\n>  112 | \t * @param name to test\n   113 | \t * @return a pet if pet id is already in use\n   114 | \t */\n   115 | \tpublic Pet getPet(Integer id) {",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/Owner.java",
+        "line": 115,
+        "snippet": "   112 | \t * @param name to test\n   113 | \t * @return a pet if pet id is already in use\n   114 | \t */\n>  115 | \tpublic Pet getPet(Integer id) {\n   116 | \t\tfor (Pet pet : getPets()) {\n   117 | \t\t\tif (!pet.isNew()) {\n   118 | \t\t\t\tInteger compId = pet.getId();",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/Owner.java",
+        "line": 132,
+        "snippet": "   129 | \t * @param name to test\n   130 | \t * @return true if pet name is already in use\n   131 | \t */\n>  132 | \tpublic Pet getPet(String name, boolean ignoreNew) {\n   133 | \t\tname = name.toLowerCase();\n   134 | \t\tfor (Pet pet : getPets()) {\n   135 | \t\t\tif (!ignoreNew || !pet.isNew()) {",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/Owner.java",
+        "line": 159,
+        "snippet": "   156 | \t * @param petId the identifier of the {@link Pet}, must not be {@literal null}.\n   157 | \t * @param visit the visit to add, must not be {@literal null}.\n   158 | \t */\n>  159 | \tpublic Owner addVisit(Integer petId, Visit visit) {\n   160 | \n   161 | \t\tAssert.notNull(petId, \"Pet identifier must not be null!\");\n   162 | \t\tAssert.notNull(visit, \"Visit must not be null!\");",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/OwnerRepository.java",
+        "line": 58,
+        "snippet": "    55 | \n    56 | \t@Query(\"SELECT DISTINCT owner FROM Owner owner left join  owner.pets WHERE owner.lastName LIKE :lastName% \")\n    57 | \t@Transactional(readOnly = true)\n>   58 | \tPage<Owner> findByLastName(@Param(\"lastName\") String lastName, Pageable pageable);\n    59 | \n    60 | \t/**\n    61 | \t * Retrieve an {@link Owner} from the data store by id.",
+        "category": "EXISTING_REST"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/OwnerRepository.java",
+        "line": 78,
+        "snippet": "    75 | \t/**\n    76 | \t * Returnes all the owners from data store\n    77 | \t **/\n>   78 | \t@Query(\"SELECT owner FROM Owner owner\")\n    79 | \t@Transactional(readOnly = true)\n    80 | \tPage<Owner> findAll(Pageable pageable);\n    81 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/OwnerRepository.java",
+        "line": 80,
+        "snippet": "    77 | \t **/\n    78 | \t@Query(\"SELECT owner FROM Owner owner\")\n    79 | \t@Transactional(readOnly = true)\n>   80 | \tPage<Owner> findAll(Pageable pageable);\n    81 | \n    82 | }\n    83 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/VisitController.java",
+        "line": 60,
+        "snippet": "    57 | \t * @return Pet\n    58 | \t */\n    59 | \t@ModelAttribute(\"visit\")\n>   60 | \tpublic Visit loadPetWithVisit(@PathVariable(\"ownerId\") int ownerId, @PathVariable(\"petId\") int petId,\n    61 | \t\t\tMap<String, Object> model) {\n    62 | \t\tOwner owner = this.owners.findById(ownerId);\n    63 | \t\tPet pet = owner.getPet(petId);",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/VisitController.java",
+        "line": 61,
+        "snippet": "    58 | \t */\n    59 | \t@ModelAttribute(\"visit\")\n    60 | \tpublic Visit loadPetWithVisit(@PathVariable(\"ownerId\") int ownerId, @PathVariable(\"petId\") int petId,\n>   61 | \t\t\tMap<String, Object> model) {\n    62 | \t\tOwner owner = this.owners.findById(ownerId);\n    63 | \t\tPet pet = owner.getPet(petId);\n    64 | \t\tmodel.put(\"pet\", pet);",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/system/CacheConfiguration.java",
+        "line": 51,
+        "snippet": "    48 | \t * configuration options (like the size limit) must be set via a configuration\n    49 | \t * mechanism that is provided by the selected JCache implementation.\n    50 | \t */\n>   51 | \tprivate javax.cache.configuration.Configuration<Object, Object> cacheConfiguration() {\n    52 | \t\treturn new MutableConfiguration<>().setStatisticsEnabled(true);\n    53 | \t}\n    54 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/vet/VetRepository.java",
+        "line": 54,
+        "snippet": "    51 | \t * @return\n    52 | \t * @throws DataAccessException\n    53 | \t */\n>   54 | \t@Transactional(readOnly = true)\n    55 | \t@Cacheable(\"vets\")\n    56 | \tPage<Vet> findAll(Pageable pageable) throws DataAccessException;\n    57 | ",
+        "category": "EXISTING_REST"
+      },
+      {
+        "file": "src/test/java/org/springframework/samples/petclinic/service/EntityUtils.java",
+        "line": 43,
+        "snippet": "    40 | \t * @return the found entity\n    41 | \t * @throws ObjectRetrievalFailureException if the entity was not found\n    42 | \t */\n>   43 | \tpublic static <T extends BaseEntity> T getById(Collection<T> entities, Class<T> entityClass, int entityId)\n    44 | \t\t\tthrows ObjectRetrievalFailureException {\n    45 | \t\tfor (T entity : entities) {\n    46 | \t\t\tif (entity.getId() == entityId && entityClass.isInstance(entity)) {",
+        "category": "EXISTING_REST"
+      }
+    ],
+    "metadata": {
+      "total_occurrences": 12,
+      "confidence": "low",
+      "safe_auto_apply": false,
+      "estimated_time_seconds": 6
+    }
+  }
+}

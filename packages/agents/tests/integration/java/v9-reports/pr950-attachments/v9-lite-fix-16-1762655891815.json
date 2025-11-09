@@ -1,0 +1,70 @@
+{
+  "groupId": "com-puppycrawl-tools-checkstyle-checks-blocks-rightcurlycheck-low-checkstyle",
+  "filename": "group-com-puppycrawl-tools-checkstyle-checks-blocks-rightcurlycheck-low-checkstyle-fix.json",
+  "content": {
+    "version": "1.0",
+    "group_id": "com-puppycrawl-tools-checkstyle-checks-blocks-rightcurlycheck-low-checkstyle",
+    "rule": "com.puppycrawl.tools.checkstyle.checks.blocks.RightCurlyCheck",
+    "tool": "checkstyle",
+    "severity": "low",
+    "description": "Move the closing brace '}' to the same line as the next part of the multi-block statement, ensuring proper alignment and consistent formatting.",
+    "fix_pattern": {
+      "type": "template",
+      "example": {
+        "before": "",
+        "after": "if (condition) {\n    // code block\n} else if (anotherCondition) {\n    // another code block\n} else {\n    // final code block\n}"
+      },
+      "instructions": "Move the closing brace '}' to the same line as the next part of the multi-block statement, ensuring proper alignment and consistent formatting."
+    },
+    "locations": [
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java",
+        "line": 70,
+        "snippet": "    67 | \tpublic String processCreationForm(@Valid Owner owner, BindingResult result) {\n    68 | \t\tif (result.hasErrors()) {\n    69 | \t\t\treturn VIEWS_OWNER_CREATE_OR_UPDATE_FORM;\n>   70 | \t\t}\n    71 | \t\telse {\n    72 | \t\t\tthis.owners.save(owner);\n    73 | \t\t\treturn \"redirect:/owners/\" + owner.getId();",
+        "category": "EXISTING_REST"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java",
+        "line": 99,
+        "snippet": "    96 | \t\t\t// no owners found\n    97 | \t\t\tresult.rejectValue(\"lastName\", \"notFound\", \"not found\");\n    98 | \t\t\treturn \"owners/findOwners\";\n>   99 | \t\t}\n   100 | \t\telse if (ownersResults.getTotalElements() == 1) {\n   101 | \t\t\t// 1 owner found\n   102 | \t\t\towner = ownersResults.iterator().next();",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java",
+        "line": 104,
+        "snippet": "   101 | \t\t\t// 1 owner found\n   102 | \t\t\towner = ownersResults.iterator().next();\n   103 | \t\t\treturn \"redirect:/owners/\" + owner.getId();\n>  104 | \t\t}\n   105 | \t\telse {\n   106 | \t\t\t// multiple owners found\n   107 | \t\t\tlastName = owner.getLastName();",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java",
+        "line": 142,
+        "snippet": "   139 | \t\t\t@PathVariable(\"ownerId\") int ownerId) {\n   140 | \t\tif (result.hasErrors()) {\n   141 | \t\t\treturn VIEWS_OWNER_CREATE_OR_UPDATE_FORM;\n>  142 | \t\t}\n   143 | \t\telse {\n   144 | \t\t\towner.setId(ownerId);\n   145 | \t\t\tthis.owners.save(owner);",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/PetController.java",
+        "line": 82,
+        "snippet": "    79 | \t\tif (result.hasErrors()) {\n    80 | \t\t\tmodel.put(\"pet\", pet);\n    81 | \t\t\treturn VIEWS_PETS_CREATE_OR_UPDATE_FORM;\n>   82 | \t\t}\n    83 | \t\telse {\n    84 | \t\t\tthis.owners.save(owner);\n    85 | \t\t\treturn \"redirect:/owners/{ownerId}\";",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/PetController.java",
+        "line": 101,
+        "snippet": "    98 | \t\tif (result.hasErrors()) {\n    99 | \t\t\tmodel.put(\"pet\", pet);\n   100 | \t\t\treturn VIEWS_PETS_CREATE_OR_UPDATE_FORM;\n>  101 | \t\t}\n   102 | \t\telse {\n   103 | \t\t\towner.addPet(pet);\n   104 | \t\t\tthis.owners.save(owner);",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/VisitController.java",
+        "line": 85,
+        "snippet": "    82 | \t\t\tBindingResult result) {\n    83 | \t\tif (result.hasErrors()) {\n    84 | \t\t\treturn \"pets/createOrUpdateVisitForm\";\n>   85 | \t\t}\n    86 | \t\telse {\n    87 | \t\t\towner.addVisit(petId, visit);\n    88 | \t\t\tthis.owners.save(owner);",
+        "category": "NEW"
+      }
+    ],
+    "metadata": {
+      "total_occurrences": 7,
+      "confidence": "low",
+      "safe_auto_apply": false,
+      "estimated_time_seconds": 4
+    }
+  }
+}

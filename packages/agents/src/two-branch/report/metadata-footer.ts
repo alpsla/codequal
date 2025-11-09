@@ -29,6 +29,7 @@ export interface IDEFixFile {
 /**
  * Check if a group can be auto-fixed by IDE tools
  * BUG FIX: CheckStyle issues are 100% auto-fixable with IDE formatters
+ * SESSION 19 FIX: Security and Dependency issues with clear fixes are also auto-fixable
  */
 function canAutoFix(group: IssueGroup | { rule: string; tool: string; severity: string }): boolean {
   // CheckStyle issues are 100% auto-fixable with IDE formatters (google-java-format, IntelliJ, etc.)
@@ -42,10 +43,34 @@ function canAutoFix(group: IssueGroup | { rule: string; tool: string; severity: 
     'GuardLogStatement',
     'SystemPrintln',
     'ClassWithOnlyPrivateConstructorsShouldBeFinal',
-    'ReturnEmptyCollectionRatherThanNull'
+    'ReturnEmptyCollectionRatherThanNull',
+    'UnusedImports',
+    'AvoidStarImport',
+    'SimplifyBooleanReturns',
+    'SimplifyBooleanExpressions'
   ];
 
-  return autoFixablePMDRules.includes(group.rule);
+  if (autoFixablePMDRules.includes(group.rule)) {
+    return true;
+  }
+
+  // Semgrep security issues: Many have clear, automatable fixes
+  // IDE can apply when the fix is a simple code pattern replacement
+  if (group.tool === 'semgrep') {
+    return true;  // AI generates specific fix code that IDE can apply
+  }
+
+  // Dependency-Check: IDE can update dependency versions automatically
+  if (group.tool === 'dependency-check') {
+    return true;  // IDEs have dependency management tools
+  }
+
+  // SESSION 22 FIX: SpotBugs issues are auto-fixable
+  if (group.tool === 'spotbugs') {
+    return true;  // Many bug patterns have clear fixes
+  }
+
+  return false;
 }
 
 /**
@@ -140,7 +165,8 @@ export function generateAnalysisMetadata(
         const issues = agent.issuesFound || agent.issues || 0;
         const cost = agent.cost || 0;
         const time = agent.duration || 1;
-        const costPerIssue = issues > 0 ? cost / issues : Number.POSITIVE_INFINITY;
+        // FIX: Show "N/A" instead of Infinity for agents with 0 issues
+        const costPerIssue = issues > 0 ? cost / issues : 0;
         const issuesPerSec = (issues / time) * 1000;
         return {
           name: agent.name || agent.agent,
@@ -155,17 +181,18 @@ export function generateAnalysisMetadata(
     
     agentEfficiency.forEach((agent: any, idx: number) => {
       const rank = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}.`;
-      const badge = !isFinite(agent.costPerIssue)
-        ? 'N/A'
+      // Display appropriate badge for agents with 0 issues
+      const badge = agent.issues === 0
+        ? '⏭️ No issues found'
         : agent.costPerIssue < 0.001 ? '⚡ Excellent'
         : agent.costPerIssue < 0.01 ? '✅ Good'
         : agent.costPerIssue < 0.1 ? '⚠️ Average' : '🔴 Expensive';
-      const costPerIssueStr = isFinite(agent.costPerIssue) ? `$${agent.costPerIssue.toFixed(6)}/issue` : 'N/A cost/issue';
+      const costPerIssueStr = agent.issues > 0 ? `$${agent.costPerIssue.toFixed(6)}/issue` : 'N/A (no issues)';
       content += `${rank} **${agent.name}**: ${agent.issues} issues @ ${costPerIssueStr} ${badge}\n`;
     });
     
-    // Replacement recommendations
-    const expensiveAgents = agentEfficiency.filter((a: any) => a.costPerIssue > 0.05);
+    // Replacement recommendations (only for agents that found issues)
+    const expensiveAgents = agentEfficiency.filter((a: any) => a.issues > 0 && a.costPerIssue > 0.05);
     if (expensiveAgents.length > 0) {
       content += `\n**💡 Optimization Opportunities:**\n`;
       expensiveAgents.forEach((agent: any) => {
@@ -311,6 +338,8 @@ ${blocking.length > 5 ? `\n... and ${blocking.length - 5} more` : ''}` : '### �
 - High: ${issues.filter(i => i.severity === 'high').length}
 - Medium: ${issues.filter(i => i.severity === 'medium').length}
 - Low: ${issues.filter(i => i.severity === 'low').length}
+
+> 💡 **Note**: Auto-fixable count is based on IDE capabilities. See manifest file for exact fixable status per issue.
 \`\`\`
 
 > 💡 **Tip**: Copy the markdown above and paste it as a comment on your pull request.`;
@@ -365,14 +394,20 @@ export function generateFooter(groups: IssueGroup[], ideFixFiles: IDEFixFile[]):
     if (mediumCount > 0) footer += `- 🟡 Medium: ${mediumCount} (lazy loaded after high)\n`;
     if (lowCount > 0) footer += `- 🟢 Low: ${lowCount} (lazy loaded after medium)\n`;
     
+    // Add manual review disclaimer for critical/high severity issues
+    if (criticalCount > 0 || highCount > 0) {
+      footer += `\n> ⚠️ **Important**: Critical and high-severity auto-fixes require manual code review before applying. Auto-generated fixes are suggestions that should be validated by a developer to ensure they don't introduce regressions or break business logic.\n`;
+    }
+    
     // ENHANCEMENT #4: Universal IDE instructions with prompt examples
     footer += `\n**How to use** (Universal IDE Integration):\n\n`;
     footer += `**For Any IDE** (Cursor, VS Code, IntelliJ, Windsurf, etc.):\n\n`;
     
     footer += `**Step 1: Load the Manifest**\n`;
-    footer += `1. Download \`all-issues-manifest.json\` from \`attachments/\` directory\n`;
+    footer += `1. Download \`all-issues-manifest.json\` from the analysis output\n`;
     footer += `2. Open your IDE\n`;
     footer += `3. Load/import the JSON file (method varies by IDE)\n\n`;
+    footer += `   *Note: The manifest file lists all ${ideFixFiles.length} fix files. Individual fix files are in the \`attachments/\` directory.*\n\n`;
     
     footer += `**Step 2: Fix Issues with Single Command**\n\n`;
     footer += `**Simple prompt** (one command does everything):\n`;

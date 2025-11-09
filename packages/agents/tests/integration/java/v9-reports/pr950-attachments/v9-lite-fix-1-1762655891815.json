@@ -1,0 +1,34 @@
+{
+  "groupId": "collapsibleifstatements-medium-pmd",
+  "filename": "group-collapsibleifstatements-medium-pmd-fix.json",
+  "content": {
+    "version": "1.0",
+    "group_id": "collapsibleifstatements-medium-pmd",
+    "rule": "CollapsibleIfStatements",
+    "tool": "pmd",
+    "severity": "medium",
+    "description": "Replace the nested if statements with a single if statement that combines the conditions using logical AND (&&) or OR (||) operators. Consider extracting complex conditions into descriptive boolean variables for improved readability.",
+    "fix_pattern": {
+      "type": "template",
+      "example": {
+        "before": "",
+        "after": "Before:\nif (condition1) {\n    if (condition2) {\n        // do something\n    }\n}\n\nAfter:\nif (condition1 && condition2) {\n    // do something\n}"
+      },
+      "instructions": "Replace the nested if statements with a single if statement that combines the conditions using logical AND (&&) or OR (||) operators. Consider extracting complex conditions into descriptive boolean variables for improved readability."
+    },
+    "locations": [
+      {
+        "file": ".mvn/wrapper/MavenWrapperDownloader.java",
+        "line": 80,
+        "snippet": "    77 | \n    78 |         File outputFile = new File(baseDirectory.getAbsolutePath(), MAVEN_WRAPPER_JAR_PATH);\n    79 |         if(!outputFile.getParentFile().exists()) {\n>   80 |             if(!outputFile.getParentFile().mkdirs()) {\n    81 |                 System.out.println(\n    82 |                         \"- ERROR creating output directory '\" + outputFile.getParentFile().getAbsolutePath() + \"'\");\n    83 |             }",
+        "category": "NEW"
+      }
+    ],
+    "metadata": {
+      "total_occurrences": 1,
+      "confidence": "low",
+      "safe_auto_apply": false,
+      "estimated_time_seconds": 1
+    }
+  }
+}

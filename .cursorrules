@@ -30,6 +30,34 @@
 - ❌ Fallback simulations when real execution fails
 - ❌ Template-based fix generation
 - ❌ Single-branch analysis
+- ❌ Creating new test runners (Session 19 Rule)
+
+## 🧪 CANONICAL TESTS ONLY (Session 19 Rule)
+
+**CRITICAL**: NEVER create new test runners. Use existing canonical tests!
+
+**Java Testing - CANONICAL TEST**:
+- ✅ **USE ONLY**: `packages/agents/tests/integration/test-v9-lite-e2e.ts`
+- ✅ Verified working with proper two-branch comparison
+- ✅ Correct issue categorization (NEW/RESOLVED/EXISTING_MODIFIED/EXISTING_REST)
+- ❌ **NEVER** create: `run-single-repo-test.ts`, `test-java-*.ts`, or any new test files
+
+**Why This Rule**:
+- Session 19: Created `run-single-repo-test.ts` → 6 hours wasted
+- Wrong categorization: 1,051 false "NEW" issues
+- Canonical test already existed and worked
+- **ALWAYS check for existing tests FIRST**
+
+**To Add New Repositories**:
+```typescript
+// Edit test-v9-lite-e2e.ts
+const TEST_SCENARIOS = [
+  { name: 'New Repo', repoUrl: '...', prNumber: 1 },
+  // Add here, don't create new test file
+];
+```
+
+**Exception**: Only create new canonical test for new languages (TypeScript, Python) following EXACT pattern from Java test
 
 ## 📋 SESSION CONTINUITY (MANDATORY)
 
@@ -84,6 +112,34 @@
    - Only create separate documentation for major architectural decisions
    - Keep session notes consolidated
 
+3. **FILE ORGANIZATION RULES** (MANDATORY):
+   ```
+   NEVER create files in project root or packages/agents root!
+   Always use appropriate subdirectories:
+   
+   ✅ Session achievements   → UPDATE packages/agents/src/two-branch/docs/next/QUICK_START_NEXT_SESSION.md (NO separate files!)
+   ✅ Build scripts          → packages/agents/src/two-branch/docs/infrastructure/scripts/
+   ✅ Deploy scripts         → packages/agents/src/two-branch/docs/infrastructure/scripts/
+   ✅ Test files (E2E)       → packages/agents/tests/integration/<language>/
+   ✅ Test files (unit)      → packages/agents/tests/unit/<language>/
+   ✅ Validation scripts     → packages/agents/tests/integration/<language>/
+   ✅ Infrastructure docs    → packages/agents/src/two-branch/docs/infrastructure/
+   ✅ Multi-language docs    → packages/agents/src/two-branch/docs/multi-language/
+   ✅ Analysis docs          → packages/agents/src/two-branch/docs/planning/
+   ✅ Comparison docs        → packages/agents/src/two-branch/docs/infrastructure/
+   ✅ Temporary test outputs → packages/agents/test-outputs/ (cleanup at session end)
+   
+   ❌ NEVER: packages/agents/SESSION_*.md (use QUICK_START_NEXT_SESSION.md!)
+   ❌ NEVER: packages/agents/SUMMARY_*.md (use QUICK_START_NEXT_SESSION.md!)
+   ❌ NEVER: packages/agents/HANDOFF_*.md (use QUICK_START_NEXT_SESSION.md!)
+   ❌ NEVER: packages/agents/test-*.ts (use tests/integration/)
+   ❌ NEVER: packages/agents/build-*.sh (use docs/infrastructure/scripts/)
+   ❌ NEVER: packages/agents/*_ANALYSIS.md (use docs/multi-language/ or docs/planning/)
+   ❌ NEVER: Root-level temporary files
+   
+   🌟 GOLDEN RULE: Update QUICK_START_NEXT_SESSION.md at session end, don't create SESSION files!
+   ```
+
 3. **Update Phase Status**: If phase completed, update the roadmap
    - Mark completed phases with ✅
    - Update current phase with ⏳
@@ -91,53 +147,79 @@
 
 4. **RUN END-OF-SESSION CHECKLIST** (MANDATORY before final commit):
    ```bash
-   # A. Check for build errors
+   # A. Organize files into proper directories (NEW!)
    cd packages/agents
+   
+   # Check for misplaced files in root
+   ls -la SESSION_*.md test-*.ts test-*.sh build-*.sh deploy-*.sh *_ANALYSIS.md 2>/dev/null
+   
+   # Move to appropriate locations:
+   # - SESSION_*.md → DELETE! (use QUICK_START_NEXT_SESSION.md instead)
+   # - SUMMARY_*.md → DELETE! (use QUICK_START_NEXT_SESSION.md instead)
+   # - HANDOFF_*.md → DELETE! (use QUICK_START_NEXT_SESSION.md instead)
+   # - test-*.ts → tests/integration/<language>/
+   # - build-*.sh, deploy-*.sh → src/two-branch/docs/infrastructure/scripts/
+   # - *_ANALYSIS.md → src/two-branch/docs/multi-language/ or docs/planning/
+   
+   # B. Check for build errors
    npx tsc --noEmit
    # Fix any TypeScript errors before committing
    
-   # B. Check for linting issues
+   # C. Check for linting issues
    npm run lint
    # Fix any critical lint errors before committing
    
-   # C. Remove outdated test files (if any created during session)
-   # Check for test-*.ts, test-*.sh files in root that should be in tests/
-   ls -la test-*.ts test-*.sh 2>/dev/null
-   # Move to appropriate directory or delete if outdated
-   
    # D. Clean up test output files
    rm -f *.log *-results-*.txt *-results-*.json severity-validation-*/
+   rm -rf test-outputs/ 2>/dev/null || true
    
    # E. Update QUICK_START_NEXT_SESSION.md with session achievements
    # (Already covered in step 1 above)
+   
+   # G. Verify NO session files in root (NEW!)
+   if ls SESSION_*.md SUMMARY_*.md HANDOFF_*.md 2>/dev/null; then
+     echo "❌ ERROR: Session files found in root! Delete them and update QUICK_START instead."
+     exit 1
+   fi
    
    # F. Cloud cleanup (if tests were run on Oracle)
    ssh opc@oracle 'cd ~/codequal/packages/agents && rm -rf /tmp/test-* /tmp/*-pmd.json'
    ```
 
 5. **FINAL COMMIT CHECKLIST**:
+   - ✅ All files organized in proper directories (NO root-level files!)
+   - ✅ QUICK_START_NEXT_SESSION.md updated (PRIMARY documentation)
+   - ✅ NO SESSION_*.md files (deleted, achievements in QUICK_START)
    - ✅ All code changes committed
    - ✅ Build passes (tsc --noEmit)
    - ✅ No critical lint errors
-   - ✅ Outdated files cleaned up
    - ✅ Test outputs removed
-   - ✅ QUICK_START updated
    - ✅ Cloud containers cleaned (if used)
+   - ✅ No test-*.ts or build-*.sh in packages/agents root
 
 ### Session Documentation Rules:
-- ❌ **DO NOT** create `SESSION_YYYY_MM_DD_*.md` files unless user requests
+- ❌ **DO NOT** create `SESSION_*.md` files (use QUICK_START_NEXT_SESSION.md instead!)
 - ❌ **DO NOT** create `HANDOFF_*.md` files (use QUICK_START instead)
 - ❌ **DO NOT** create `SUMMARY_*.md` files (use QUICK_START instead)
-- ✅ **DO** update QUICK_START_NEXT_SESSION.md at session end
-- ✅ **DO** create incident reports for major bugs/outages
-- ✅ **DO** create architecture docs for major design decisions
+- ❌ **DO NOT** create root-level analysis docs (use docs/multi-language/ or docs/planning/)
+- ❌ **DO NOT** create root-level test files (use tests/integration/<language>/)
+- ❌ **DO NOT** create root-level scripts (use docs/infrastructure/scripts/)
+- ✅ **DO** update QUICK_START_NEXT_SESSION.md at session end (THIS IS PRIMARY!)
+- ✅ **DO** add session achievements to TOP of QUICK_START (latest first)
+- ✅ **DO** create dedicated docs ONLY for major milestones/incidents:
+  - Major milestones (rare): `docs/infrastructure/MILESTONE_*.md`
+  - Critical incidents: `docs/archive/bugs/INCIDENT_*.md`
+  - Architecture migrations: `docs/infrastructure/MIGRATION_*.md`
 
-### Why This Matters:
-- Reduces file clutter (was creating 3-5 docs per session)
-- Single source of truth for project status
-- Faster onboarding for next session
-- Easier to track progress over time
-- Less confusion about "which doc is current?"
+### Why QUICK_START is Superior:
+- ✅ **Single source of truth** - no "which doc is current?" confusion
+- ✅ **Latest on top** - immediate context for next session
+- ✅ **History preserved** - scroll down for previous sessions
+- ✅ **No clutter** - 1 file vs 3-5 files per session (was 50+ total)
+- ✅ **Easier maintenance** - update one place
+- ✅ **Faster onboarding** - everything in one doc
+- ✅ **Living document** - evolves with project
+- ❌ **Session files** - created but never referenced again (deleted anyway)
 
 ## Core Philosophy
 
@@ -559,6 +641,7 @@ ssh -i "$SSH_KEY" "opc@${ORACLE_IP}" \
 13. ❌ Use wrong table names ('model_configs' → 'model_configurations')
 14. ❌ Start session without reading QUICK_START_NEXT_SESSION.md
 15. ❌ End session without updating QUICK_START_NEXT_SESSION.md
+16. ❌ Create new test runners (use canonical tests: test-v9-lite-e2e.ts)
 
 ## Current Context Awareness
 
