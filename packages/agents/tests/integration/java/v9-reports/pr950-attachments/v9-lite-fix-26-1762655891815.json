@@ -1,0 +1,34 @@
+{
+  "groupId": "com-puppycrawl-tools-checkstyle-checks-imports-unusedimportscheck-low-checkstyle",
+  "filename": "group-com-puppycrawl-tools-checkstyle-checks-imports-unusedimportscheck-low-checkstyle-fix.json",
+  "content": {
+    "version": "1.0",
+    "group_id": "com-puppycrawl-tools-checkstyle-checks-imports-unusedimportscheck-low-checkstyle",
+    "rule": "com.puppycrawl.tools.checkstyle.checks.imports.UnusedImportsCheck",
+    "tool": "checkstyle",
+    "severity": "low",
+    "description": "Remove the unused import statement 'java.util.Collection' from the imports section of the file.",
+    "fix_pattern": {
+      "type": "template",
+      "example": {
+        "before": "",
+        "after": "Before:\nimport java.util.Collection;\n// other imports\n\nAfter:\n// other imports (without java.util.Collection)"
+      },
+      "instructions": "Remove the unused import statement 'java.util.Collection' from the imports section of the file."
+    },
+    "locations": [
+      {
+        "file": "src/test/java/org/springframework/samples/petclinic/owner/PetTypeFormatterTests.java",
+        "line": 24,
+        "snippet": "    21 | \n    22 | import java.text.ParseException;\n    23 | import java.util.ArrayList;\n>   24 | import java.util.Collection;\n    25 | import java.util.List;\n    26 | import java.util.Locale;\n    27 | ",
+        "category": "EXISTING_REST"
+      }
+    ],
+    "metadata": {
+      "total_occurrences": 1,
+      "confidence": "low",
+      "safe_auto_apply": false,
+      "estimated_time_seconds": 1
+    }
+  }
+}

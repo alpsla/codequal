@@ -1,0 +1,34 @@
+{
+  "groupId": "java-spring-security-audit-spring-actuator-fully-enabled-spring-actuator-fully-enabled-high-semgrep",
+  "filename": "group-java-spring-security-audit-spring-actuator-fully-enabled-spring-actuator-fully-enabled-high-semgrep-fix.json",
+  "content": {
+    "version": "1.0",
+    "group_id": "java-spring-security-audit-spring-actuator-fully-enabled-spring-actuator-fully-enabled-high-semgrep",
+    "rule": "java.spring.security.audit.spring-actuator-fully-enabled.spring-actuator-fully-enabled",
+    "tool": "semgrep",
+    "severity": "high",
+    "description": "1. Disable unnecessary Actuator endpoints by setting management.endpoints.web.exposure.exclude=env,logfile,heapdump,metrics\n2. Enable Spring Security and configure authentication for Actuator endpoints\n3. Use management.endpoints.web.exposure.include=health,info to only expose essential endpoints\n4. Implement proper access control using Spring Security with role-based access control",
+    "fix_pattern": {
+      "type": "template",
+      "example": {
+        "before": "",
+        "after": "management.endpoints.web.exposure.exclude=env,logfile,heapdump,metrics\nmanagement.endpoints.web.exposure.include=health,info\n# Or with security:\nmanagement.endpoints.web.exposure.include=health,info\nmanagement.endpoints.web.base-path=/actuator\nmanagement.endpoints.web.path-mapping.health=health\nmanagement.endpoints.web.path-mapping.info=info"
+      },
+      "instructions": "1. Disable unnecessary Actuator endpoints by setting management.endpoints.web.exposure.exclude=env,logfile,heapdump,metrics\n2. Enable Spring Security and configure authentication for Actuator endpoints\n3. Use management.endpoints.web.exposure.include=health,info to only expose essential endpoints\n4. Implement proper access control using Spring Security with role-based access control"
+    },
+    "locations": [
+      {
+        "file": "src/main/resources/application.properties",
+        "line": 17,
+        "snippet": "    14 | spring.messages.basename=messages/messages\n    15 | \n    16 | # Actuator\n>   17 | management.endpoints.web.exposure.include=*\n    18 | \n    19 | # Logging\n    20 | logging.level.org.springframework=INFO",
+        "category": "EXISTING_REST"
+      }
+    ],
+    "metadata": {
+      "total_occurrences": 1,
+      "confidence": "low",
+      "safe_auto_apply": false,
+      "estimated_time_seconds": 1
+    }
+  }
+}

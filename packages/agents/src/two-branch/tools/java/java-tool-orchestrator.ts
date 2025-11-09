@@ -325,7 +325,7 @@ export class JavaToolOrchestrator extends BaseToolOrchestrator {
               ),
               message: violation.description || 'No description',
               rule: violation.rule || 'Unknown',
-              category: violation.ruleset,
+              category: 'Code Quality',  // SESSION 19 FIX: Match agent category name
               autoFixable: false
             });
           }
@@ -559,7 +559,7 @@ export class JavaToolOrchestrator extends BaseToolOrchestrator {
             severity: this.mapSpotBugsSeverity(bug.Priority),
             message: bug.LongMessage || bug.ShortMessage || 'SpotBugs issue detected',
             rule: bug.Type || 'Unknown',
-            category: 'Quality',
+            category: 'Performance',  // SESSION 22 FIX: Match agent category (was 'Quality')
             autoFixable: false
           });
         }
@@ -796,7 +796,7 @@ export class JavaToolOrchestrator extends BaseToolOrchestrator {
                 severity: this.mapCheckstyleSeverity(severityMatch?.[1]),
                 message: messageMatch?.[1] || 'Checkstyle issue detected',
                 rule: sourceMatch?.[1] || 'Unknown',
-                category: 'Style',
+                category: 'Code Quality',  // SESSION 19 FIX: Match agent category name
                 autoFixable: false
               });
             }

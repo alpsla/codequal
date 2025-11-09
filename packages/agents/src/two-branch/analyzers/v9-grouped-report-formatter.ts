@@ -386,13 +386,20 @@ export class V9GroupedReportFormatter {
     // Cost: ~600 tokens per group = ~$0.0003 per group = ~$0.009 per PR (was ~$0.011 before)
 
     // BUG-76: AI-enrich issues (includes severity classification + fix generation in 1 call)
-    // BUG #6 FIX: Destructure to get both enriched issues AND model tracking
-    const { enrichedIssues, modelsByAgent } = await this.enrichIssuesWithAI(issues, groups);
+    // BUG #6 FIX: Destructure to get enriched issues, model tracking, AND cost tracking
+    const { enrichedIssues, modelsByAgent, costByAgent, tokensByAgent } = await this.enrichIssuesWithAI(issues, groups);
 
-    // BUG #6 FIX: Enhance agentPerformance metadata with model information
+    // BUG #6 + SESSION 21 FIX: Enhance agentPerformance with model AND cost information
     if (metadata.agentPerformance && Array.isArray(metadata.agentPerformance)) {
-      console.log('[BUG #6] Enhancing agentPerformance with model information...');
-      console.log('[BUG #6] Models by agent:', JSON.stringify(modelsByAgent));
+      console.log('[BUG #6] Enhancing agentPerformance with model and cost information...');
+      console.log('[BUG #6] Models by agent:', JSON.stringify(modelsByAgent || {}));
+      
+      // SESSION 22 FIX: Safely handle optional costByAgent
+      const costs = costByAgent || {};
+      const tokens = tokensByAgent || {};
+      if (Object.keys(costs).length > 0) {
+        console.log('[SESSION 21] Costs by agent:', JSON.stringify(Object.fromEntries(Object.entries(costs).map(([k,v]) => [k, `$${v.toFixed(4)}`]))));
+      }
 
       metadata.agentPerformance.forEach((agent: any) => {
         // Extract agent category from name (e.g., "Security Agent" → "Security")
@@ -400,11 +407,22 @@ export class V9GroupedReportFormatter {
         const agentCategory = agentName.replace(' Agent', '').trim();
 
         // Look up model for this agent category
-        if (modelsByAgent[agentCategory]) {
+        if (modelsByAgent && modelsByAgent[agentCategory]) {
           agent.model = modelsByAgent[agentCategory];
           console.log(`[BUG #6] ✅ Set model for ${agentName}: ${agent.model}`);
         } else {
           console.log(`[BUG #6] ⚠️  No model found for ${agentName} (category: ${agentCategory})`);
+        }
+        
+        // SESSION 21 FIX: Add actual cost from OpenRouter
+        if (costs[agentCategory]) {
+          agent.cost = costs[agentCategory];
+          console.log(`[SESSION 21] ✅ Set cost for ${agentName}: $${agent.cost.toFixed(4)}`);
+        }
+        
+        // Add token usage
+        if (tokens[agentCategory]) {
+          agent.tokensUsed = tokens[agentCategory];
         }
       });
     }
@@ -542,7 +560,13 @@ export class V9GroupedReportFormatter {
             this.getCategoryFromTool(f.content.tool),
             f.content.locations?.length || 0
           ),
-          tool: f.content.tool
+          tool: f.content.tool,
+          // SESSION 19 FIX: Include file locations in manifest for IDE quick access
+          locations: f.content.locations?.map(loc => ({
+            file: loc.file,
+            line: loc.line,
+            column: loc.column
+          })) || []
         };
       };
 
@@ -2977,23 +3001,47 @@ mvn spotless:check  # Verify (use in CI)
   /**
    * Determine if group can be auto-fixed
    * BUG FIX #13: Include all CheckStyle rules (100% auto-fixable with IDE formatters)
+   * SESSION 19 FIX: Include Semgrep, Dependency-Check, SpotBugs
    */
   private canAutoFix(group: IssueGroup): boolean {
-    // CheckStyle issues are 100% auto-fixable with IDE formatters (google-java-format, IntelliJ, etc.)
+    // CheckStyle: All rules auto-fixable with IDE formatters
     if (group.tool === 'checkstyle') {
       return true;
     }
     
-    // PMD rules that support automated fixing
+    // PMD: Common auto-fixable rules
     const autoFixablePMDRules = [
       'AvoidUsingVolatile',
       'GuardLogStatement',
       'SystemPrintln',
       'ClassWithOnlyPrivateConstructorsShouldBeFinal',
-      'ReturnEmptyCollectionRatherThanNull'
+      'ReturnEmptyCollectionRatherThanNull',
+      'UnusedImports',
+      'AvoidStarImport',
+      'SimplifyBooleanReturns',
+      'SimplifyBooleanExpressions'
     ];
     
-    return autoFixablePMDRules.includes(group.rule);
+    if (autoFixablePMDRules.includes(group.rule)) {
+      return true;
+    }
+    
+    // Semgrep: AI-generated security fixes are IDE-applicable
+    if (group.tool === 'semgrep') {
+      return true;
+    }
+    
+    // Dependency-Check: IDEs can update dependencies
+    if (group.tool === 'dependency-check') {
+      return true;
+    }
+    
+    // SpotBugs: Many rules have clear fixes
+    if (group.tool === 'spotbugs') {
+      return true;
+    }
+    
+    return false;
   }
   
   /**

@@ -1,0 +1,52 @@
+{
+  "groupId": "com-puppycrawl-tools-checkstyle-checks-modifier-redundantmodifiercheck-low-checkstyle",
+  "filename": "group-com-puppycrawl-tools-checkstyle-checks-modifier-redundantmodifiercheck-low-checkstyle-fix.json",
+  "content": {
+    "version": "1.0",
+    "group_id": "com-puppycrawl-tools-checkstyle-checks-modifier-redundantmodifiercheck-low-checkstyle",
+    "rule": "com.puppycrawl.tools.checkstyle.checks.modifier.RedundantModifierCheck",
+    "tool": "checkstyle",
+    "severity": "low",
+    "description": "Remove the redundant 'public' keyword from the method declaration, allowing it to remain implicitly public.",
+    "fix_pattern": {
+      "type": "template",
+      "example": {
+        "before": "",
+        "after": "Before: public void saveOwner(Owner owner) { ... }\nAfter:  void saveOwner(Owner owner) { ... }"
+      },
+      "instructions": "Remove the redundant 'public' keyword from the method declaration, allowing it to remain implicitly public."
+    },
+    "locations": [
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java",
+        "line": 50,
+        "snippet": "    47 | \n    48 | \tprivate final OwnerRepository owners;\n    49 | \n>   50 | \tpublic OwnerController(OwnerRepository clinicService) {\n    51 | \t\tthis.owners = clinicService;\n    52 | \t}\n    53 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/PetController.java",
+        "line": 41,
+        "snippet": "    38 | \n    39 | \tprivate final OwnerRepository owners;\n    40 | \n>   41 | \tpublic PetController(OwnerRepository owners) {\n    42 | \t\tthis.owners = owners;\n    43 | \t}\n    44 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/VisitController.java",
+        "line": 43,
+        "snippet": "    40 | \n    41 | \tprivate final OwnerRepository owners;\n    42 | \n>   43 | \tpublic VisitController(OwnerRepository owners) {\n    44 | \t\tthis.owners = owners;\n    45 | \t}\n    46 | ",
+        "category": "NEW"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/vet/VetController.java",
+        "line": 40,
+        "snippet": "    37 | \n    38 | \tprivate final VetRepository vets;\n    39 | \n>   40 | \tpublic VetController(VetRepository clinicService) {\n    41 | \t\tthis.vets = clinicService;\n    42 | \t}\n    43 | ",
+        "category": "EXISTING_REST"
+      }
+    ],
+    "metadata": {
+      "total_occurrences": 4,
+      "confidence": "low",
+      "safe_auto_apply": false,
+      "estimated_time_seconds": 2
+    }
+  }
+}

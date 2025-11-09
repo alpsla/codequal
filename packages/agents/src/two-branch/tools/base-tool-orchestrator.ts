@@ -457,9 +457,9 @@ export abstract class BaseToolOrchestrator {
         column: undefined, // v9-types Issue doesn't have column
         severity: issue.severity,
         message: issue.title || issue.description, // v9-types uses 'title' and 'description'
-        rule: issue.tool || 'unknown',
+        rule: issue.rule || toolName, // SESSION 19 FIX: Use specific rule ID from issue
         category: issue.category,
-        cwe: issue.impact, // Best approximation from available fields
+        cwe: issue.cwe || issue.impact, // SESSION 19 FIX: Use cwe field if available
         autoFixable: false // Universal tools don't provide auto-fixes
       }));
 

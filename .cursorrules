@@ -30,6 +30,34 @@
 - ❌ Fallback simulations when real execution fails
 - ❌ Template-based fix generation
 - ❌ Single-branch analysis
+- ❌ Creating new test runners (Session 19 Rule)
+
+## 🧪 CANONICAL TESTS ONLY (Session 19 Rule)
+
+**CRITICAL**: NEVER create new test runners. Use existing canonical tests!
+
+**Java Testing - CANONICAL TEST**:
+- ✅ **USE ONLY**: `packages/agents/tests/integration/test-v9-lite-e2e.ts`
+- ✅ Verified working with proper two-branch comparison
+- ✅ Correct issue categorization (NEW/RESOLVED/EXISTING_MODIFIED/EXISTING_REST)
+- ❌ **NEVER** create: `run-single-repo-test.ts`, `test-java-*.ts`, or any new test files
+
+**Why This Rule**:
+- Session 19: Created `run-single-repo-test.ts` → 6 hours wasted
+- Wrong categorization: 1,051 false "NEW" issues
+- Canonical test already existed and worked
+- **ALWAYS check for existing tests FIRST**
+
+**To Add New Repositories**:
+```typescript
+// Edit test-v9-lite-e2e.ts
+const TEST_SCENARIOS = [
+  { name: 'New Repo', repoUrl: '...', prNumber: 1 },
+  // Add here, don't create new test file
+];
+```
+
+**Exception**: Only create new canonical test for new languages (TypeScript, Python) following EXACT pattern from Java test
 
 ## 📋 SESSION CONTINUITY (MANDATORY)
 
@@ -613,6 +641,7 @@ ssh -i "$SSH_KEY" "opc@${ORACLE_IP}" \
 13. ❌ Use wrong table names ('model_configs' → 'model_configurations')
 14. ❌ Start session without reading QUICK_START_NEXT_SESSION.md
 15. ❌ End session without updating QUICK_START_NEXT_SESSION.md
+16. ❌ Create new test runners (use canonical tests: test-v9-lite-e2e.ts)
 
 ## Current Context Awareness
 

@@ -129,7 +129,7 @@ function filterByFreshness(models: any[]): any[] {
   // Step 2: SKIP deduplication - keep all models and let scoring decide
   // UPDATED Nov 7, 2025: Deduplication was discarding cheap models like qwen3-coder-30b
   console.log('🔄 Step 2: Keeping ALL fresh models (no deduplication - scoring will pick best)...');
-  
+    
   // Keep ALL fresh code models - let scoring decide the best
   const latestModels = codeModels;
   
@@ -417,15 +417,15 @@ async function selectOptimalModel(
   
   if (useSearchForEducator) {
     const aiRecommended = await searchBestModelsForContext(role, language, models);
-    const validRecommendations = aiRecommended.filter(id => 
-      models.some(m => m.id === id)
-    );
-    
-    if (validRecommendations.length >= 2) {
-      return {
-        primary: validRecommendations[0],
-        fallback: validRecommendations[1]
-      };
+  const validRecommendations = aiRecommended.filter(id => 
+    models.some(m => m.id === id)
+  );
+  
+  if (validRecommendations.length >= 2) {
+    return {
+      primary: validRecommendations[0],
+      fallback: validRecommendations[1]
+    };
     }
   }
   

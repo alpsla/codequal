@@ -53,6 +53,37 @@ The V9 infrastructure is COMPLETE and production-ready. Use these components:
 - ❌ Template-based fix generation
 - ❌ Bypassing any step in the canonical flow
 - ❌ Single-branch analysis
+- ❌ Creating new test runners (use canonical tests only)
+
+### CANONICAL TESTS - USE THESE ONLY (Session 19 Rule)
+
+**CRITICAL**: Always use existing working tests. DO NOT create new test runners!
+
+**Java Testing**:
+- ✅ **USE**: `packages/agents/tests/integration/test-v9-lite-e2e.ts` (CANONICAL)
+- ✅ Proper two-branch comparison
+- ✅ Correct issue categorization
+- ✅ Multi-repository support
+- ❌ **DO NOT** create `run-single-repo-test.ts` or similar
+
+**Why This Rule Exists**:
+- Session 19: Created new test runner → wrong categorization → 1,051 false "NEW" issues
+- Wasted 6 hours debugging broken logic
+- Canonical test already existed and worked correctly
+- **Lesson**: Check for existing tests FIRST, extend them, don't recreate
+
+**If You Need to Add Repositories**:
+```typescript
+// Add to TEST_SCENARIOS in test-v9-lite-e2e.ts
+const TEST_SCENARIOS: TestScenario[] = [
+  { name: 'New Repo', repoUrl: '...', prNumber: 1 }
+];
+```
+
+**If You Need TypeScript/Python**:
+- Create similar canonical tests: `test-v9-typescript-lite-e2e.ts`, `test-v9-python-lite-e2e.ts`
+- Follow the EXACT pattern from Java canonical test
+- DO NOT try to "simplify" or "improve" the logic
 
 ## Core Development Philosophy
 

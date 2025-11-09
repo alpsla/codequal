@@ -1,0 +1,34 @@
+{
+  "groupId": "com-puppycrawl-tools-checkstyle-checks-whitespace-nowhitespacebeforecheck-low-checkstyle",
+  "filename": "group-com-puppycrawl-tools-checkstyle-checks-whitespace-nowhitespacebeforecheck-low-checkstyle-fix.json",
+  "content": {
+    "version": "1.0",
+    "group_id": "com-puppycrawl-tools-checkstyle-checks-whitespace-nowhitespacebeforecheck-low-checkstyle",
+    "rule": "com.puppycrawl.tools.checkstyle.checks.whitespace.NoWhitespaceBeforeCheck",
+    "tool": "checkstyle",
+    "severity": "low",
+    "description": "Remove the whitespace preceding the semicolon by ensuring proper spacing around all separators. This can be done by running a code formatter like Checkstyle or Spotless plugin, or manually removing the space.",
+    "fix_pattern": {
+      "type": "template",
+      "example": {
+        "before": "",
+        "after": "No specific code example provided as the issue is about whitespace around a semicolon which is not visible in the provided code snippet."
+      },
+      "instructions": "Remove the whitespace preceding the semicolon by ensuring proper spacing around all separators. This can be done by running a code formatter like Checkstyle or Spotless plugin, or manually removing the space."
+    },
+    "locations": [
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/vet/VetRepository.java",
+        "line": 58,
+        "snippet": "    55 | \t@Cacheable(\"vets\")\n    56 | \tPage<Vet> findAll(Pageable pageable) throws DataAccessException;\n    57 | \n>   58 | \t;\n    59 | \n    60 | }\n    61 | ",
+        "category": "NEW"
+      }
+    ],
+    "metadata": {
+      "total_occurrences": 1,
+      "confidence": "low",
+      "safe_auto_apply": false,
+      "estimated_time_seconds": 1
+    }
+  }
+}

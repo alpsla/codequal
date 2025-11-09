@@ -10,14 +10,18 @@ import { IssueGroup } from '../utils/issue-grouping';
 
 /**
  * Check if a group can be auto-fixed by IDE tools
+ * SESSION 19 FIX: Include Semgrep and Dependency-Check
  */
 function canAutoFix(group: IssueGroup): boolean {
-  const autoFixableRules = [
+  // CheckStyle: All rules auto-fixable with IDE formatters
+  if (group.tool === 'checkstyle') {
+    return true;
+  }
+  
+  // PMD: Common auto-fixable rules
+  const autoFixablePMDRules = [
     'SystemPrintln',
     'GuardLogStatement',
-    'LineLength',
-    'WhitespaceAround',
-    'WhitespaceAfter',
     'AvoidStarImport',
     'UnusedImports',
     'RedundantImport',
@@ -26,12 +30,26 @@ function canAutoFix(group: IssueGroup): boolean {
     'ForLoopCanBeForeach',
     'UseStringBufferForStringAppends',
     'ConsecutiveLiteralAppends',
-    'MissingJavadocMethod',
-    'MissingJavadocType'
+    'AvoidUsingVolatile',
+    'ClassWithOnlyPrivateConstructorsShouldBeFinal',
+    'ReturnEmptyCollectionRatherThanNull'
   ];
   
-  return autoFixableRules.includes(group.rule) || 
-         group.tool === 'checkstyle' && group.rule.toLowerCase().includes('whitespace');
+  if (autoFixablePMDRules.includes(group.rule)) {
+    return true;
+  }
+  
+  // Semgrep: AI-generated fixes are IDE-applicable
+  if (group.tool === 'semgrep') {
+    return true;
+  }
+  
+  // Dependency-Check: IDEs have dependency management tools
+  if (group.tool === 'dependency-check') {
+    return true;
+  }
+  
+  return false;
 }
 
 /**

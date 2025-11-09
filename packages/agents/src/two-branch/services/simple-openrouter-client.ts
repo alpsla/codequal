@@ -22,6 +22,12 @@ export interface SimpleAIResponse {
   content: string;
   provider: 'openrouter' | 'gemini';
   model: string;
+  usage?: {  // SESSION 21 FIX: Add usage tracking
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+  };
+  cost?: number;  // SESSION 21 FIX: Add cost from OpenRouter
 }
 
 export class SimpleOpenRouterClient {
@@ -220,10 +226,28 @@ export class SimpleOpenRouterClient {
         max_tokens: maxTokens
       });
 
+      // SESSION 21 FIX: Extract cost from OpenRouter response
+      const usage = (response as any).usage || {};
+      const cost = usage.total_cost || 0;  // OpenRouter includes total_cost in usage
+      
+      // SESSION 24 DEBUG: Log cost extraction
+      console.log(`[OpenRouter] Response usage:`, {
+        prompt_tokens: usage.prompt_tokens,
+        completion_tokens: usage.completion_tokens,
+        total_cost: usage.total_cost
+      });
+      console.log(`[OpenRouter] Extracted cost: $${cost}`);
+      
       return {
         content: response.choices[0]?.message?.content || '',
         provider: 'openrouter',
-        model
+        model,
+        usage: {
+          promptTokens: usage.prompt_tokens || 0,
+          completionTokens: usage.completion_tokens || 0,
+          totalTokens: usage.total_tokens || 0
+        },
+        cost  // SESSION 21 FIX: Include actual cost from OpenRouter
       };
 
     } catch (error: any) {
