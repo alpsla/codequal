@@ -347,6 +347,116 @@ async function checkTableSizes() {
   }
 }
 
+async function checkCachePerformance() {
+  console.log('\n📋 Checking Cache Performance (Grafana Alert)...');
+
+  try {
+    // Check if cache_performance view exists
+    const { data: viewData, error: viewError } = await supabase
+      .from('cache_performance')
+      .select('*')
+      .limit(1);
+
+    if (viewError) {
+      logResult({
+        name: 'Cache Performance View',
+        status: 'warn',
+        message: 'Cache monitoring view not found - run cache optimization migration',
+        details: { error: viewError.message }
+      });
+      return;
+    }
+
+    const cacheData = viewData[0];
+    const overallRatio = cacheData?.overall_cache_hit_ratio_percent || 0;
+    const indexRatio = cacheData?.index_cache_hit_ratio_percent || 0;
+
+    // Overall cache hit ratio
+    if (overallRatio >= 95) {
+      logResult({
+        name: 'Overall Cache Hit Ratio',
+        status: 'pass',
+        message: `${overallRatio}% (Excellent - target: ≥95%)`,
+        details: { ratio: overallRatio, diskReads: cacheData?.total_heap_blocks_read_from_disk }
+      });
+    } else if (overallRatio >= 90) {
+      logResult({
+        name: 'Overall Cache Hit Ratio',
+        status: 'warn',
+        message: `${overallRatio}% (Good - target: ≥95%)`,
+        details: { ratio: overallRatio, recommendation: 'Run optimize_cache_performance()' }
+      });
+    } else if (overallRatio >= 85) {
+      logResult({
+        name: 'Overall Cache Hit Ratio',
+        status: 'warn',
+        message: `${overallRatio}% (Poor - target: ≥95%)`,
+        details: {
+          ratio: overallRatio,
+          recommendation: 'Run VACUUM ANALYZE, consider contacting Supabase support'
+        }
+      });
+    } else {
+      logResult({
+        name: 'Overall Cache Hit Ratio',
+        status: 'fail',
+        message: `${overallRatio}% (Critical - target: ≥95%)`,
+        details: {
+          ratio: overallRatio,
+          recommendation: 'Contact Supabase support to increase shared_buffers'
+        }
+      });
+    }
+
+    // Index cache hit ratio
+    if (indexRatio >= 95) {
+      logResult({
+        name: 'Index Cache Hit Ratio',
+        status: 'pass',
+        message: `${indexRatio}% (Excellent)`,
+        details: { ratio: indexRatio }
+      });
+    } else if (indexRatio >= 90) {
+      logResult({
+        name: 'Index Cache Hit Ratio',
+        status: 'warn',
+        message: `${indexRatio}% (Needs improvement)`,
+        details: { ratio: indexRatio, recommendation: 'Check index usage with pg_stat_user_indexes' }
+      });
+    } else {
+      logResult({
+        name: 'Index Cache Hit Ratio',
+        status: 'fail',
+        message: `${indexRatio}% (Poor)`,
+        details: { ratio: indexRatio, recommendation: 'Verify indexes are being used' }
+      });
+    }
+
+    // Check for monitoring functions
+    try {
+      const { data: recommendations, error: recError } = await supabase.rpc('get_cache_recommendations');
+
+      if (!recError && recommendations && recommendations.length > 0) {
+        logResult({
+          name: 'Cache Recommendations',
+          status: 'warn',
+          message: `${recommendations.length} recommendations available`,
+          details: { recommendations: recommendations.slice(0, 3) }
+        });
+      }
+    } catch (error) {
+      // Recommendations function may not exist yet
+    }
+  } catch (error) {
+    logResult({
+      name: 'Cache Performance',
+      status: 'warn',
+      message: 'Could not check cache performance',
+      details: { error: String(error) }
+    });
+  }
+}
+
 async function generateReport() {
   console.log('\n' + '='.repeat(80));
   console.log('📊 VERIFICATION SUMMARY');
@@ -398,6 +508,7 @@ async function main() {
     await testQueryPerformance();
     await checkMaterializedView();
     await checkTableSizes();
+    await checkCachePerformance();
 
     const success = await generateReport();
     process.exit(success ? 0 : 1);
