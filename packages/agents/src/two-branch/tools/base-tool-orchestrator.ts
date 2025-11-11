@@ -292,12 +292,35 @@ export abstract class BaseToolOrchestrator {
       logger.info(`🔧 Tools to run: ${toolsToRun.join(', ')}`);
 
       // Step 3: Execute tools in parallel (Universal pattern)
-      const toolResults = await this.executeToolsInParallel(
+      const rawToolResults = await this.executeToolsInParallel(
         toolsToRun,
         repoPath,
         branch,
         options
       );
+
+      // SESSION 25 FIX: Filter invalid issues from ALL tool results (universal for all languages)
+      const toolResults = rawToolResults.map(result => ({
+        ...result,
+        issues: result.issues.filter(issue => {
+          // Filter out issues with unknown file
+          if (issue.file === 'unknown' || !issue.file) {
+            return false;
+          }
+          // Filter out suspicious line 1 issues with very short filenames
+          if (issue.line === 1 && issue.file.length < 5) {
+            return false;
+          }
+          return true;
+        })
+      }));
+      
+      // Count filtered issues
+      const totalRaw = rawToolResults.reduce((sum, r) => sum + r.issues.length, 0);
+      const totalValid = toolResults.reduce((sum, r) => sum + r.issues.length, 0);
+      if (totalRaw !== totalValid) {
+        logger.info(`📊 Universal filter removed ${totalRaw - totalValid} invalid issues across all tools`);
+      }
 
       // Step 4: Aggregate results (Universal)
       const summary = this.aggregateResults(toolResults);
@@ -545,6 +568,7 @@ export abstract class BaseToolOrchestrator {
   /**
    * Aggregate results from all tools
    * Universal pattern - same for all languages
+   * SESSION 25: Issues are already filtered in orchestrate() method
    */
   protected aggregateResults(results: ToolResult[]) {
     const allIssues = results.flatMap(r => r.issues);
