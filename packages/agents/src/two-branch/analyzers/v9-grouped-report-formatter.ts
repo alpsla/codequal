@@ -614,14 +614,24 @@ export class V9GroupedReportFormatter {
       }
     }
     
-    // BUG FIX #73: Generate manifest file BEFORE upload so it gets a Supabase URL too
-    // ENHANCEMENT: Add descriptions, category, priority for better IDE UX
+    // SESSION 25 FIX: Upload fix files FIRST (without manifest) to get public URLs
+    // Then create manifest with public URLs, then upload manifest
     if (ideFixFiles.length > 0) {
+      // Step 1: Upload all fix files (excluding manifest) to get public URLs
+      const fixFilesOnly = ideFixFiles.filter(f => f.filename !== 'all-issues-manifest.json');
+      const uploadedFixFiles = await this.uploadAttachmentsToSupabase(fixFilesOnly, metadata);
+      
+      // Step 2: Create manifest with public URLs from uploaded files
       const enrichManifestEntry = (f: IDEFixFile) => {
+        const uploadedFile = uploadedFixFiles.find(uf => uf.filename === f.filename);
+        const publicUrl = uploadedFile && (uploadedFile as any).publicUrl 
+          ? (uploadedFile as any).publicUrl 
+          : `attachments/${f.filename}`; // Fallback to relative path
+        
         const issueDesc = this.getIssueDescription(f.content.rule, f.content.tool, f.content.severity);
         return {
           filename: f.filename,
-          url: `attachments/${f.filename}`, // Will be updated with public URL after upload
+          url: publicUrl, // Use public URL if available
           fallback_path: `attachments/${f.filename}`,
           severity: f.content.severity,
           category: this.getCategoryFromTool(f.content.tool),
@@ -654,35 +664,16 @@ export class V9GroupedReportFormatter {
           }
         } as any
       };
-      ideFixFiles.push(manifestFile);
-    }
-    
-    // SESSION 24: Upload attachments to Supabase to get public URLs
-    ideFixFiles = await this.uploadAttachmentsToSupabase(ideFixFiles, metadata);
-    
-    // Update manifest entries with public URLs after upload
-    const manifestFile = ideFixFiles.find(f => f.filename === 'all-issues-manifest.json');
-    if (manifestFile && (manifestFile.content as any).files) {
-      const files = (manifestFile.content as any).files;
-      let updatedCount = 0;
-      let missingCount = 0;
       
-      for (const severity of ['critical', 'high', 'medium', 'low']) {
-        if (files[severity]) {
-          files[severity].forEach((entry: any) => {
-            const fixFile = ideFixFiles.find(f => f.filename === entry.filename);
-            if (fixFile && (fixFile as any).publicUrl) {
-              entry.url = (fixFile as any).publicUrl;
-              updatedCount++;
-            } else {
-              console.log(`[Manifest] ⚠️  No public URL found for ${entry.filename}`);
-              missingCount++;
-            }
-          });
-        }
-      }
+      // Step 3: Upload manifest file to Supabase
+      const uploadedManifest = await this.uploadAttachmentsToSupabase([manifestFile], metadata);
       
-      console.log(`[Manifest] Updated ${updatedCount} entries with Supabase URLs, ${missingCount} remain with relative paths`);
+      // Step 4: Combine uploaded fix files with uploaded manifest
+      ideFixFiles = [...uploadedFixFiles, ...uploadedManifest];
+      
+      // Log summary
+      const totalWithUrls = ideFixFiles.filter(f => (f as any).publicUrl).length;
+      console.log(`[Manifest] ✅ Created manifest with ${totalWithUrls}/${ideFixFiles.length} files having Supabase URLs`);
     }
     
     // SESSION 24: Now generate markdown with public URLs
