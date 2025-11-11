@@ -135,16 +135,40 @@ This roadmap is optimized for a solo founder with 10 weeks to public launch, pri
 
 ---
 
-**Week 3-4: Auth & Billing + API Service (API-First Architecture)** 🔌
+**Week 3: Direct Website + Self-Hosted GitHub App (Multi-Channel Distribution)** 🌐 **REVISED NOV 11, 2025**
 
-**Week 3, Days 1-2: Auth & Billing Integration**
-- Refresh existing auth service
-- Integrate auth with V9 system
-- Connect Stripe billing service
-- Test subscription handling
+**STRATEGIC PIVOT:** Shift from Marketplace-first to Direct Website-first distribution to minimize platform dependency and emphasize educational differentiation.
+
+**Week 3, Days 1-2: Direct Website Development** (PRIMARY CHANNEL - 60% target)
+- Landing page with educational focus ("Learn WHY, not just fix WHAT")
+- Stripe payment integration (subscribe → instant access)
+- User dashboard (submit PRs, view history)
+- Pricing page: $6-12/user vs. competitor comparison
+- Educational content hub (blog placeholder)
+- **Distribution Target:** 60% of revenue from direct subscriptions
+- **Goal:** Platform-independent primary channel
+
+**Week 3, Days 3-4: Self-Hosted GitHub App** 🔒 (25% target)
+- GitHub App manifest (self-hosted, user-controlled)
+- Installation flow (user's server, not Marketplace)
+- Webhook handlers (PR events)
+- OAuth for authentication
+- **Distribution Target:** 25% of revenue from self-hosted licenses
+- **Key Benefits:**
+  * No competitive use waiver (GitHub can't analyze our code)
+  * No platform dependency (<20% from any single channel)
+  * User owns their installation
+
+**Week 3, Day 5: Auth & Billing Integration**
+- Connect Stripe subscriptions to analysis credits
+- Implement credit tracking
+- Test payment flows (Free → Team → Pro)
+- Free plan limits (30 days, 50 analyses/month)
 - **Goal:** Users can authenticate and subscribe
 
-**Week 3, Days 3-5 + Week 4, Days 1-3: API Service Foundation** 🔑
+---
+
+**Week 4: API Service + Proprietary Feature Protection** 🔑🔒 **CRITICAL SECURITY**
 **CRITICAL ARCHITECTURAL DECISION: Build API service BEFORE CI/CD and Web Dashboard**
 
 **Why API-First:**
@@ -178,25 +202,61 @@ PUT    /api/v1/config/{repo}    - Update tool configuration (Week 6)
 
 **Goal:** RESTful API ready to power all integrations
 
-**Week 4, Days 4-5: Production Environment Setup**
+**Week 4, Days 3-5: Proprietary Feature Protection** 🔒 **NEW CRITICAL TASK**
+**Problem:** GitHub App code visible to GitHub → Marketplace competitive use waiver → GitHub can analyze our algorithms for free
+
+**Server-Side Only (Protect These):**
+- ✅ Issue grouping algorithm (99.8% cost savings) → Server-side API
+- ✅ Educational content generation logic → Server-side processing
+- ✅ Multi-model orchestration strategy → Server config, not client code
+
+**Implementation Pattern:**
+```typescript
+// ❌ OLD: Expose algorithm in GitHub App code
+export class IssueGrouper {
+  public groupIssues(issues: Issue[]): Group[] {
+    // Algorithm visible to GitHub
+  }
+}
+
+// ✅ NEW: Server-side API only
+// GitHub App code:
+const response = await fetch('https://api.codequal.com/v1/analyze', {
+  body: { issues }
+});
+const groups = response.groups;  // Receive results, not algorithm
+```
+
+**Audit Checklist:**
+- [ ] Review all client-side code for proprietary algorithms
+- [ ] Move issue grouping to server-side API
+- [ ] Move educational engine to server-side processing
+- [ ] Move model orchestration config to server environment
+- [ ] Test functionality after migration
+- [ ] Document API contracts
+
+**Production Environment Setup** (Remaining time)
 - Setup separate production environment (Oracle Cloud)
 - Direct execution (no Docker) for cost optimization
 - Hardware scaling strategies
 - Monitoring setup (Prometheus/Grafana)
 - Backup strategies
-- **Goal:** Production infrastructure ready
+- **Goal:** Production infrastructure ready + Proprietary features protected
 
 ---
 
-**Week 5-6: CI/CD + Web Dashboard (Both Consume API)** 🚀
+**Week 5-6: GitHub/GitLab Marketplace (OPTIONAL) + Web Dashboard** 🚀
 
-**Week 5: CI/CD Integration (Simplified by API)**
-- **GitHub App** (2 days):
-  - Webhook → API endpoint
-  - PR status checks (pass/fail) from API response
-  - PR comments with report from API
-  - Repository settings
-  - **Implementation:** ~50 lines (webhook handler + formatter)
+**STRATEGIC CHANGE (Nov 11, 2025):** Marketplace is now optional secondary channel (10% target), not primary distribution
+
+**Week 5: GitHub/GitLab Marketplace (Optional Listing)** - 10% target
+- **GitHub Marketplace** (2 days):
+  - Minimal listing (screenshots, description)
+  - 15% marketplace fee accounted for
+  - PR comment template with educational focus
+  - Monitor installation rate
+  - **Goal:** Brand visibility, NOT primary distribution
+  - **Risk Mitigation:** Track for >20% dependency
 
 - **GitLab Integration** (2 days):
   - Webhook → API endpoint
@@ -204,12 +264,12 @@ PUT    /api/v1/config/{repo}    - Update tool configuration (Week 6)
   - Pipeline integration
   - **Implementation:** ~50 lines (webhook handler + formatter)
 
-- **Testing & Refinement** (1 day):
-  - Test with multiple repositories
-  - Validate comment formatting
-  - Error handling
+- **Distribution Health Monitoring** (1 day):
+  - Dashboard to track revenue by channel
+  - Alert if any channel exceeds 20%
+  - Weekly distribution report
 
-**Goal:** GitHub + GitLab integrations working, powered by API
+**Goal:** Marketplace listed as optional channel, distribution health tracked
 
 **Week 6: Web Dashboard + Minimalistic Tool Configuration** 🖥️
 - **UI Components** (2 days):
@@ -247,110 +307,158 @@ PUT    /api/v1/config/{repo}    - Update tool configuration (Week 6)
 
 ---
 
-**Week 7: Marketing Preparation + Alpha Testing** 📢 **NEW PHASE**
+**Week 7: Marketing Preparation + Alpha Testing** 📢 **NEW PHASE (ADDED NOV 11, 2025)**
 
 **CRITICAL FOR SOLO FOUNDER: Dedicated marketing time BEFORE beta testing**
 
-**Week 7, Days 1-3: Marketing Content Creation**
-- **Blog Posts** (3-4 articles):
-  - "How We Built CodeQual: 99.8% Cost Reduction Story"
-  - "The State of Code Quality Tools in 2025"
-  - "Auto-fixing 98% of Issues: The Future of Code Review"
-  - "Building a Product-Led Growth SaaS as a Solo Founder"
+**STRATEGIC FOCUS:** Educational differentiation messaging vs. GitHub Copilot
 
-- **Social Media Content** (30+ posts):
-  - LinkedIn posts (10 posts scheduled)
-  - Twitter/X threads (10 threads scheduled)
-  - Dev.to articles (3 articles)
-  - Reddit r/programming, r/coding posts (planned)
+**Week 7, Days 1-3: Marketing Content Creation (Educational Focus)**
+- **Blog Posts** (3-4 articles):
+  * "How We Built CodeQual: 99.8% Cost Reduction Story"
+  * "The State of Code Quality Tools in 2025"
+  * **"Learning-First Code Review vs. Fix-First AI"** (Copilot comparison)
+  * **"Why GitHub Marketplace is a Platform Trap"** (independence story)
+
+- **Social Media Content** (30+ posts, EDUCATIONAL ANGLE):
+  * LinkedIn posts (10 posts, junior developer focus)
+  * Twitter/X threads (10 threads, educational differentiation)
+  * Dev.to articles (3 articles, bootcamp audience)
+  * Reddit r/cscareerquestions, r/learnprogramming posts
 
 - **Visual Content**:
-  - Demo video (3-5 minutes)
-  - Screenshot gallery (10-15 screenshots)
-  - GIFs for social media (5-8 GIFs)
-  - Comparison tables vs. competitors
+  * Demo video (3-5 minutes, **educational angle**)
+  * Screenshot gallery (10-15 screenshots)
+  * GIFs for social media (5-8 GIFs)
+  * **Comparison:** CodeQual vs. Copilot vs. SonarQube (educational focus)
 
 **Week 7, Days 4-5: Launch Materials Preparation**
-- ProductHunt launch page (complete draft)
-- Hacker News launch post (refined pitch)
-- Email campaign templates
-- Landing page optimization
+- ProductHunt launch page (**educational angle**: "Code review that teaches")
+- Hacker News launch post (founder story, platform independence)
+- Email campaign templates (educational value prop)
+- Landing page optimization ($6-12/user pricing)
 - Referral program setup
 - Analytics tracking (Google Analytics, Mixpanel)
+- **Distribution health dashboard** (monitor <20% from any platform)
 
 **Week 7, Days 6-7: Alpha Testing (3-5 users)**
-- Invite 3-5 trusted developers
-- Monitor usage patterns
+- Invite 3-5 trusted developers (preferably juniors)
+- Monitor usage patterns (educational content engagement)
 - Collect initial feedback
 - Fix critical bugs discovered
 - Refine onboarding flow
+- Test direct website + self-hosted GitHub App
 
-**Goal:** Marketing materials ready, alpha validation complete
+**Goal:** Marketing materials ready (educational focus), alpha validation complete, distribution channels tested
 
 ---
 
-**Week 8-9: Beta Testing** 🧪
+**Week 8-9: Beta Testing** 🧪 **EDUCATIONAL FOCUS (REVISED NOV 11, 2025)**
 
-**Week 8: Expand Beta Testing**
-- Invite 20-50 early adopters
-- Post on dev communities with beta access
-- Monitor usage metrics:
-  - Activation rate
-  - Time to first value
-  - Retention (7-day, 14-day)
-  - Feature usage
-- Collect feedback systematically
-- **Goal:** Validate product-market fit
+**Week 8: Expand Beta Testing (20-50 users, EDUCATIONAL TARGET)**
+- **Target Audience (SHIFTED):**
+  * 20 Junior Developers (bootcamp grads, self-taught, first job)
+  * 10 Bootcamp Instructors (teaching assistants, code review instructors)
+  * 20 Open Source Maintainers (educational-minded)
+- **Recruitment Channels:**
+  * Dev.to, freeCodeCamp, Codecademy forums
+  * Direct outreach to bootcamps
+  * Twitter DMs, LinkedIn (educational angle)
+- **Monitor Usage Metrics:**
+  * Activation rate
+  * Time to first value (how fast they "get it")
+  * Retention (7-day, 14-day)
+  * **Educational content engagement** (primary metric)
+  * "Learning value" rating (new metric)
+- **Collect Feedback:**
+  * "Did you finally understand X?"
+  * "How much did you learn?" (1-5 scale)
+  * Testimonial requests (educational angle)
+- **Distribution Health:**
+  * Monitor revenue by channel (target: <20% from any platform)
+  * Track direct website vs. self-hosted vs. Marketplace split
+- **Goal:** Validate product-market fit with juniors and educators
 
-**Week 9: Bug Fixes + Testimonials**
+**Week 9: Bug Fixes + Testimonials (ACCELERATED PREP)**
 - Fix bugs reported during beta
 - Performance optimization based on real usage
-- Collect testimonials from happy users
-- Prepare case studies (2-3 detailed stories)
-- Refine pricing based on feedback
-- Prepare VC pitch materials (if seeking investment)
-- **Goal:** Production-ready, testimonials secured
+- **Collect Educational Testimonials:**
+  * "I finally understand SQL injection"
+  * "Went from bootcamp to confident in 3 weeks"
+  * "My students love the explanations"
+- Prepare case studies (2-3 detailed stories, educational angle)
+- Refine pricing based on feedback ($6-12/user sweet spot)
+- **Distribution health check:** Ensure <20% from Marketplace
+- **Goal:** Production-ready, educational testimonials secured, ready for Week 9 launch
 
 ---
 
-**Week 10: Public Launch** 🎉
+**Week 9: Public Launch** 🎉 **ACCELERATED (MOVED FROM WEEK 10)**
 
-**Week 10, Days 1-2: Final Pre-Launch Checklist**
+**STRATEGIC CHANGE (Nov 11, 2025):** Launch Week 9 instead of Week 10 to move faster before GitHub Copilot awareness spreads
+
+**Week 9, Days 1-2: Final Pre-Launch Checklist**
 - Final security audit
 - Load testing (simulate 100+ concurrent users)
 - Backup verification
-- Support documentation complete
-- FAQ page updated
+- Support documentation complete (educational FAQs)
+- Pricing page polished ($6-12/user)
+- **Distribution health dashboard** ready
 - Billing flow tested end-to-end
 
-**Week 10, Days 3-4: Launch Day**
-- ProductHunt launch (Tuesday/Wednesday optimal)
-- Hacker News post
-- Social media blitz (LinkedIn, Twitter, Dev.to, Reddit)
-- Email campaign to waitlist
-- Monitor launch metrics in real-time
+**Week 9, Days 3-4: Launch Day (EDUCATIONAL ANGLE)**
+- **ProductHunt:**
+  * Title: "CodeQual - Code review that teaches, not just fixes"
+  * Tagline: "While AI tools fix your code, CodeQual teaches you WHY"
+  * First comment: Copilot comparison story
+  * Live demo: Educational report walkthrough
+  * Target: Top 5 product of the day
 
-**Week 10, Days 5-7: Post-Launch Support**
-- Respond to all feedback and comments
+- **Hacker News:**
+  * Title: "Show HN: I built a code review tool that teaches WHY issues matter"
+  * Story: Solo founder, educational differentiation, platform independence
+  * Emphasize: 99.8% cost reduction + no GitHub lock-in
+
+- **Social Media Blitz:**
+  * LinkedIn post: Educational differentiation story
+  * Twitter/X thread: Copilot vs. CodeQual comparison
+  * Dev.to article: "Building an Educational Code Review Tool"
+  * Reddit r/programming, r/cscareerquestions: "Learning-first code review"
+
+- **Email Campaign:**
+  * Waitlist: Launch announcement
+  * Beta users: Thank you + launch invite
+  * Bootcamp instructors: Educational use case
+
+**Week 9, Days 5-7: Post-Launch Support**
+- Respond to ALL feedback and comments (0-12 hour SLA)
 - Fix critical bugs immediately
 - Monitor server performance
-- Engage with community
+- **Track distribution health:** Ensure <20% from Marketplace
+- Engage with community (AMA style)
 - Prepare follow-up content based on feedback
+- **Monitor metrics:** Educational content engagement, "aha moments"
 
-**Goal:** Successful public launch, handle initial surge, build momentum
+**Goal:** Successful public launch (educational angle), 100+ signups on launch day, distribution health maintained (<20% from any platform)
 
 ---
 
-**Success Criteria by Week 10:**
+**Success Criteria by Week 9 (REVISED NOV 11, 2025):**
 - ✅ 6+ languages supported (80%+ GitHub/GitLab coverage)
-- ✅ GitHub + GitLab integrations live
+- ✅ **Direct website live** with Stripe integration (PRIMARY - 60% target)
+- ✅ **Self-hosted GitHub App** ready (platform-independent, 25% target)
+- ✅ **GitHub Marketplace listed** (optional, <10% target)
+- ✅ GitLab integration working
 - ✅ Web dashboard functional
-- ✅ 50-100 beta users tested
-- ✅ 10+ testimonials collected
-- ✅ Marketing materials published
-- ✅ ProductHunt launch completed
+- ✅ **Proprietary algorithms protected** (server-side APIs only)
+- ✅ 20-50 beta users tested (juniors, bootcamp grads, educators)
+- ✅ 5+ **educational testimonials** collected ("I finally understand X")
+- ✅ **Marketing materials published** (educational differentiation angle)
+- ✅ ProductHunt launch completed (Week 9, accelerated)
+- ✅ **Distribution health:** <20% from any single platform ✅
 - ✅ 20-30% week-over-week user growth
-- ✅ Unit economics validated ($0.01 cost, $8-10 revenue)
+- ✅ Unit economics validated ($0.01 cost, $6-12 revenue)
+- ✅ **Educational content engagement:** >60% of users engage with "why" explanations
 
 ---
 
@@ -643,33 +751,49 @@ severity_overrides:
   - C# (2 days)
   - **Goal:** Cover 95%+ of GitHub/GitLab
 
-### 🎯 Strategic Direction (Revised October 2025)
+### 🎯 Strategic Direction (Revised November 11, 2025)
 
-**Goal:** Product-led growth to public launch in 10 weeks (solo founder timeline)
+**Goal:** Product-led growth to public launch in 9 weeks (accelerated timeline)
 
-**Why This API-First Approach is Better:**
-1. ✅ **API-First Architecture**: Single source of truth, CI/CD and Web become thin clients
-2. ✅ **Simplified Integrations**: GitHub App (50 lines), GitLab (50 lines), Web UI (200 lines)
-3. ✅ **Marketing Preparation**: Dedicated Week 7 for content creation before beta
-4. ✅ **Realistic Timeline**: 10 weeks to public launch with proper marketing preparation
-5. ✅ **Solo Founder Optimized**: Acknowledges time needed for content, social media, launch materials
-6. ✅ **Learn Before Building**: Configuration system deferred until users request it
-7. ✅ **Lower Risk**: Validate product-market fit before building speculative features
+**STRATEGIC PIVOT (November 11, 2025):**
+After discovering GitHub Copilot's October 28 launch and assessing GitHub Marketplace risks, we're shifting from Marketplace-first to Direct Website-first distribution with educational differentiation.
 
-**Key Architectural Decisions:**
-1. **API Service BEFORE CI/CD**: Prevents code duplication, simplifies all integrations
-2. **Project Cleanup Early**: Clean codebase before scaling to 6 languages
-3. **Marketing Week**: Dedicated time for blog posts, social media, demo videos
-4. **Alpha → Beta → Public**: Proper validation at each stage
+**Why This Revised Approach is Better:**
+1. ✅ **Educational Differentiation (Primary Moat)**: "Learning-first" vs. Copilot's "fix-first"
+2. ✅ **Platform Independence**: Direct website (60%) + self-hosted (25%) = 85% independent
+3. ✅ **Multi-Channel Resilience**: <20% dependency on any single platform
+4. ✅ **Proprietary Protection**: Server-side APIs hide secret algorithms from GitHub
+5. ✅ **API-First Architecture**: Single source of truth, thin clients
+6. ✅ **Target Audience Shift**: Enterprise → Juniors/educators (better fit for educational angle)
+7. ✅ **Accelerated Timeline**: Week 9 launch (vs Week 10) to move before Copilot awareness spreads
+8. ✅ **Marketing Preparation**: Dedicated Week 7 for educational content
+9. ✅ **Lower Risk**: Multi-channel distribution, platform-independent
 
-**Key Metrics for Growth:**
-1. **Viral Growth**: GitHub App installs per week (target: 20-30% week-over-week)
-2. **Fast Revenue**: Paying customers within 8 weeks (target: 10+ paying users)
-3. **Unit Economics**: $0.01 cost, $8-10/user revenue (800x-1000x margin)
-4. **Market Coverage**: 6 languages (Java, TypeScript, Python, Go, PHP, Ruby) = **80%+ of GitHub/GitLab**
-5. **Competitive Advantage**:
-   - 20-40% cheaper than competitors
+**Key Strategic Decisions:**
+1. **Direct Website First**: Primary channel (60% target), platform-independent
+2. **Self-Hosted GitHub App**: User-controlled, no competitive use waiver (25% target)
+3. **Marketplace Optional**: Brand visibility only (<10% target)
+4. **Proprietary Feature Protection**: Server-side APIs, no algorithm exposure
+5. **Educational Differentiation**: "Learn WHY" vs. Copilot's "Fix WHAT"
+6. **Target Audience**: Junior developers, bootcamp grads, educators
+7. **Accelerated Launch**: Week 9 (vs Week 10) to seize market window
+
+**Key Metrics for Growth (Revised November 11, 2025):**
+1. **Distribution Health**: <20% from any single platform (PRIMARY METRIC)
+   - Direct website: 60% target
+   - Self-hosted GitHub App: 25% target
+   - GitHub Marketplace: <10% target
+   - Other platforms: 5% target
+2. **Educational Engagement**: >60% of users engage with "why" explanations
+3. **Fast Revenue**: Paying customers within 8 weeks (target: 10+ paying users)
+4. **Unit Economics**: $0.01 cost, $6-12/user revenue (600x-1200x margin)
+5. **Market Coverage**: 6 languages (Java, TypeScript, Python, Go, PHP, Ruby) = **80%+ of GitHub/GitLab**
+6. **Competitive Advantage** (Educational Moat):
+   - **"Learn WHY, not just fix WHAT"** (primary differentiation)
+   - **Platform-independent** (85% non-Marketplace distribution)
+   - **40-50% cheaper** than SonarQube ($6-12 vs $12-24)
    - 98% auto-fix rate (vs 60-70% industry average)
+   - **Proprietary algorithms protected** (server-side APIs)
    - Better UX with educational content
    - More languages supported
    - $0.01 per analysis (99.8% cost reduction)
@@ -680,14 +804,23 @@ severity_overrides:
 - ✅ After Java validation, adding languages is FAST (1-2 days each)
 - ✅ Focus: Parallel tool execution + identifying optional/skippable tools per language
 
-**Pragmatic Timeline (10 Weeks):**
+**Pragmatic Timeline (9 Weeks - ACCELERATED):**
 - **Week 1-2**: Control check + Cleanup + 6 languages
-- **Week 3-4**: Auth/Billing + API Service + Production environment
-- **Week 5-6**: CI/CD + Web Dashboard (both consume API)
-- **Week 7**: Marketing preparation + Alpha testing (3-5 users)
-- **Week 8-9**: Beta testing (20-50 users) + Testimonials
-- **Week 10**: Public launch (ProductHunt, HN, social media)
+- **Week 3**: **Direct website** + **Self-hosted GitHub App** + Auth/Billing (MULTI-CHANNEL)
+- **Week 4**: API Service + **Proprietary feature protection** + Production environment (SECURITY)
+- **Week 5-6**: **Marketplace (optional)** + Web Dashboard (REDUCED EMPHASIS)
+- **Week 7**: **Marketing preparation** + Alpha testing (EDUCATIONAL FOCUS)
+- **Week 8-9**: Beta testing (juniors/educators) + Testimonials
+- **Week 9**: **Public launch (ACCELERATED)** - ProductHunt, HN, social media
 - **Month 4+**: Enterprise features (when actually needed)
+
+**Key Changes (November 11, 2025):**
+1. **Week 3 Shift**: Marketplace → Direct website + self-hosted app
+2. **Week 4 Addition**: Proprietary feature protection (server-side APIs)
+3. **Week 7 Addition**: Marketing preparation (educational content)
+4. **Week 9 Acceleration**: Launch Week 9 (vs Week 10)
+5. **Target Audience**: Enterprise → Juniors/educators
+6. **Distribution**: 60% direct, 25% self-hosted, <10% Marketplace
 
 **API-First Benefits:**
 ```
