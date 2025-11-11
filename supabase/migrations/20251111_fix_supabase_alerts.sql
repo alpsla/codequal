@@ -28,9 +28,11 @@ ON model_configurations(role, language, size_category);
 CREATE INDEX IF NOT EXISTS idx_model_config_role_lang
 ON model_configurations(role, language);
 
-CREATE INDEX IF NOT EXISTS idx_model_config_active
-ON model_configurations(is_active)
-WHERE is_active = true;
+-- Note: Skipping is_active index as column may not exist in all deployments
+-- If your schema has is_active column, uncomment:
+-- CREATE INDEX IF NOT EXISTS idx_model_config_active
+-- ON model_configurations(is_active)
+-- WHERE is_active = true;
 
 -- Enable RLS for security compliance
 ALTER TABLE model_configurations ENABLE ROW LEVEL SECURITY;
