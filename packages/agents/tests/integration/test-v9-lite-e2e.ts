@@ -103,15 +103,48 @@ const TEST_SCENARIOS: TestScenario[] = [
   // TYPESCRIPT TESTS (SESSION 25+)
   // ========================================================================
   
-  // Test 5: Our own CodeQual repo (smaller, faster to test)
+  // Test 5: Next.js Framework - CodeQual (Next.js app)
   {
     name: 'CodeQual PR #50',
     repoUrl: 'https://github.com/alpsla/codequal',
     testMode: 'pr-review',
-    prNumber: 50,  // Test with real PR
+    prNumber: 50,
     language: 'typescript',
-    expectedFramework: 'typescript',
-    expectedToolCount: 3  // eslint, semgrep, dependency-check (skip tsc for speed)
+    expectedFramework: 'next',
+    expectedToolCount: 3  // eslint, semgrep, dependency-check
+  },
+  
+  // Test 6: React Framework - React itself
+  {
+    name: 'React PR #28000',
+    repoUrl: 'https://github.com/facebook/react',
+    testMode: 'pr-review',
+    prNumber: 28000,  // Recent merged PR
+    language: 'typescript',
+    expectedFramework: 'react',
+    expectedToolCount: 3
+  },
+  
+  // Test 7: Express Framework - Express itself
+  {
+    name: 'Express PR #5400',
+    repoUrl: 'https://github.com/expressjs/express',
+    testMode: 'pr-review',
+    prNumber: 5400,  // Recent merged PR
+    language: 'typescript',
+    expectedFramework: 'express',
+    expectedToolCount: 3
+  },
+  
+  // Test 8: NestJS Framework - Nest
+  {
+    name: 'Nest PR #12000',
+    repoUrl: 'https://github.com/nestjs/nest',
+    testMode: 'pr-review',
+    prNumber: 12000,  // Recent merged PR
+    language: 'typescript',
+    expectedFramework: 'nestjs',
+    expectedToolCount: 3
   }
 ];
 
