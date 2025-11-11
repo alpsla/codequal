@@ -14,10 +14,14 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { execSync } from 'child_process';
+import * as dotenv from 'dotenv';
 import { IssueGroup } from '../utils/issue-grouping';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { AppScoreManager } from './v9-app-score-manager';
 import { SkillScoreManager } from './v9-skill-score-manager';
+
+// Load environment variables
+dotenv.config();
 
 // Service Imports for Delegation Pattern
 import {
@@ -293,6 +297,74 @@ export class V9GroupedReportFormatter {
   }
 
   /**
+   * SESSION 24: Upload attachments to Supabase Storage and get public URLs
+   * @param ideFixFiles Array of IDE fix files to upload
+   * @param metadata Report metadata for generating unique analysis ID
+   * @returns Updated ideFixFiles with public URLs
+   */
+  private async uploadAttachmentsToSupabase(
+    ideFixFiles: IDEFixFile[],
+    metadata: any
+  ): Promise<IDEFixFile[]> {
+    if (!this.supabase || ideFixFiles.length === 0) {
+      console.log('[Supabase Upload] Skipped - no Supabase client or no files');
+      return ideFixFiles;
+    }
+
+    // Generate unique analysis ID
+    const timestamp = Date.now();
+    const repoName = metadata.repository?.split('/').pop() || 'unknown';
+    const analysisId = `${repoName}-pr${metadata.prNumber || 0}-${timestamp}`;
+    
+    console.log(`[Supabase Upload] Starting upload for ${ideFixFiles.length} files to analysis: ${analysisId}`);
+
+    // Upload each file
+    const uploadPromises = ideFixFiles.map(async (file) => {
+      try {
+        const filePath = `${analysisId}/${file.filename}`;
+        const fileContent = JSON.stringify(file.content, null, 2);
+        
+        // Upload to Supabase Storage
+        const { data, error } = await this.supabase!.storage
+          .from('v9-attachments')
+          .upload(filePath, fileContent, {
+            contentType: 'application/json',
+            cacheControl: '3600',
+            upsert: false
+          });
+
+        if (error) {
+          console.error(`[Supabase Upload] Failed to upload ${file.filename}:`, error);
+          return file; // Return original file on error
+        }
+
+        // Get public URL
+        const { data: urlData } = this.supabase!.storage
+          .from('v9-attachments')
+          .getPublicUrl(filePath);
+
+        // Update file with public URL
+        const updatedFile = { ...file };
+        (updatedFile as any).publicUrl = urlData.publicUrl;
+        console.log(`[Supabase Upload] ✅ Uploaded ${file.filename} → ${urlData.publicUrl}`);
+        
+        return updatedFile;
+      } catch (error) {
+        console.error(`[Supabase Upload] Error uploading ${file.filename}:`, error);
+        return file; // Return original file on error
+      }
+    });
+
+    // Wait for all uploads
+    const updatedFiles = await Promise.all(uploadPromises);
+    
+    const successCount = updatedFiles.filter(f => (f as any).publicUrl).length;
+    console.log(`[Supabase Upload] Completed: ${successCount}/${ideFixFiles.length} files uploaded successfully`);
+    
+    return updatedFiles;
+  }
+
+  /**
    * Curated resource fallback for known rules (deterministic, zero-API)
    */
   private getCuratedResourcesForRule(ruleId: string): Array<{ title: string; url: string }> {
@@ -371,7 +443,7 @@ export class V9GroupedReportFormatter {
   ): Promise<GroupedReportOutput> {
     
     const markdown: string[] = [];
-    const ideFixFiles: IDEFixFile[] = [];  // BUG FIX #33: Removed separate location attachments
+    let ideFixFiles: IDEFixFile[] = [];  // BUG FIX #33: Removed separate location attachments
 
     console.log(`\n[DEBUG-PR#] ====== generateGroupedReport ENTRY ======`);
     console.log(`[DEBUG-PR#] metadata.prNumber: ${metadata.prNumber} (type: ${typeof metadata.prNumber})`);
@@ -512,69 +584,46 @@ export class V9GroupedReportFormatter {
       markdown.push('');
     }
     
-    // High Priority Issues
+    // SESSION 24: First generate all IDE fix files
     if (high.length > 0) {
-      markdown.push('## 🟠 High Priority Issues\n');
       for (const group of high) {
-        markdown.push(await this.generateGroupSection(group, enrichedIssues, true));
-        
-        // Generate IDE fix file (BUG FIX #33: Simplified)
         const ideFixFile = await this.generateIDEFixFile(group, enrichedIssues);
         if (ideFixFile) ideFixFiles.push(ideFixFile);
       }
-      markdown.push('');
     }
     
     if (medium.length > 0) {
-      markdown.push('## 🟡 Medium Priority Issues\n');
       for (const group of medium) {
-        markdown.push(await this.generateGroupSection(group, enrichedIssues, true)); // Changed: Show full metadata for ALL severities
-        
-        const ideFixFile = await this.generateIDEFixFile(group, enrichedIssues); // BUG FIX #33: Simplified
+        const ideFixFile = await this.generateIDEFixFile(group, enrichedIssues);
         if (ideFixFile) ideFixFiles.push(ideFixFile);
       }
-      markdown.push('');
     }
     
     if (low.length > 0) {
-      markdown.push('## 🟢 Low Priority Issues\n');
       for (const group of low) {
-        markdown.push(await this.generateGroupSection(group, enrichedIssues, true)); // Changed: Show full metadata for ALL severities
-        
-        const ideFixFile = await this.generateIDEFixFile(group, enrichedIssues); // BUG FIX #33: Simplified
+        const ideFixFile = await this.generateIDEFixFile(group, enrichedIssues);
         if (ideFixFile) ideFixFiles.push(ideFixFile);
       }
-      markdown.push('');
     }
     
-    // BUG FIX #73: Generate manifest file for IDE lazy loading
+    // BUG FIX #73: Generate manifest file BEFORE upload so it gets a Supabase URL too
     // ENHANCEMENT: Add descriptions, category, priority for better IDE UX
     if (ideFixFiles.length > 0) {
       const enrichManifestEntry = (f: IDEFixFile) => {
         const issueDesc = this.getIssueDescription(f.content.rule, f.content.tool, f.content.severity);
         return {
           filename: f.filename,
-          url: `attachments/${f.filename}`,
+          url: `attachments/${f.filename}`, // Will be updated with public URL after upload
+          fallback_path: `attachments/${f.filename}`,
           severity: f.content.severity,
           category: this.getCategoryFromTool(f.content.tool),
           rule: f.content.rule,
           title: this.formatRuleTitle(f.content.rule),
           description: issueDesc.what.substring(0, 150) + (issueDesc.what.length > 150 ? '...' : ''),
           impact: this.getImpactSummary(f.content.rule, f.content.tool, f.content.severity),
-          occurrences: f.content.metadata?.total_occurrences || 0,
-          autoFixable: this.canAutoFix({ rule: f.content.rule, tool: f.content.tool, severity: f.content.severity } as any),
-          priority: this.calculatePriority(
-            f.content.severity,
-            this.getCategoryFromTool(f.content.tool),
-            f.content.locations?.length || 0
-          ),
-          tool: f.content.tool,
-          // SESSION 19 FIX: Include file locations in manifest for IDE quick access
-          locations: f.content.locations?.map(loc => ({
-            file: loc.file,
-            line: loc.line,
-            column: loc.column
-          })) || []
+          priority: this.getPriority(f.content.severity),
+          occurrences: f.content.metadata?.total_occurrences || f.content.locations?.length || 0,
+          autoFixable: this.canAutoFix({ tool: f.content.tool } as IssueGroup)
         };
       };
 
@@ -582,7 +631,7 @@ export class V9GroupedReportFormatter {
         groupId: 'all-issues',
         filename: 'all-issues-manifest.json',
         content: {
-          version: "2.0",  // Version bump for enhanced manifest
+          version: "2.0",
           metadata: {
             repository: metadata.repository || 'unknown',
             total_issues: enrichedIssues.length,
@@ -599,6 +648,52 @@ export class V9GroupedReportFormatter {
       };
       ideFixFiles.push(manifestFile);
     }
+    
+    // SESSION 24: Upload attachments to Supabase to get public URLs
+    ideFixFiles = await this.uploadAttachmentsToSupabase(ideFixFiles, metadata);
+    
+    // Update manifest entries with public URLs after upload
+    const manifestFile = ideFixFiles.find(f => f.filename === 'all-issues-manifest.json');
+    if (manifestFile && (manifestFile.content as any).files) {
+      const files = (manifestFile.content as any).files;
+      for (const severity of ['critical', 'high', 'medium', 'low']) {
+        if (files[severity]) {
+          files[severity].forEach((entry: any) => {
+            const fixFile = ideFixFiles.find(f => f.filename === entry.filename);
+            if (fixFile && (fixFile as any).publicUrl) {
+              entry.url = (fixFile as any).publicUrl;
+            }
+          });
+        }
+      }
+    }
+    
+    // SESSION 24: Now generate markdown with public URLs
+    if (high.length > 0) {
+      markdown.push('## 🟠 High Priority Issues\n');
+      for (const group of high) {
+        markdown.push(await this.generateGroupSection(group, enrichedIssues, true, ideFixFiles));
+      }
+      markdown.push('');
+    }
+    
+    if (medium.length > 0) {
+      markdown.push('## 🟡 Medium Priority Issues\n');
+      for (const group of medium) {
+        markdown.push(await this.generateGroupSection(group, enrichedIssues, true, ideFixFiles));
+      }
+      markdown.push('');
+    }
+    
+    if (low.length > 0) {
+      markdown.push('## 🟢 Low Priority Issues\n');
+      for (const group of low) {
+        markdown.push(await this.generateGroupSection(group, enrichedIssues, true, ideFixFiles));
+      }
+      markdown.push('');
+    }
+    
+    // Manifest already created and uploaded above with public URLs
     
     // BUG FIX #19: Add CheckStyle auto-fix guidance if CheckStyle issues found
     const checkstyleGroups = groups.filter(g => g.tool === 'checkstyle');
@@ -2572,7 +2667,8 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
   private async generateGroupSection(
     group: IssueGroup,
     allIssues: EnrichedIssue[],
-    expanded: boolean
+    expanded: boolean,
+    ideFixFiles?: IDEFixFile[]
   ): Promise<string> {
     const severityIcon = {
       critical: '🔴',
@@ -2614,9 +2710,8 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
     section += `**Found in**: ${group.count} files | `;
     section += `**Category**: ${representative?.category || group.category}`;
     
-    if (canAutoFix) {
-      section += ` | **Auto-fix**: ✅ [Available](attachments/group-${this.sanitizeGroupId(group)}-cursor-fix.json)`;
-    }
+    // SESSION 24: Remove individual auto-fix links to emphasize 1-click solution
+    // Auto-fix availability is shown in the IDE Integration section at the end
     
     section += '\n\n';
     section += '---\n\n';
@@ -2813,10 +2908,9 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
     // Phase D: Improved footer with file count and link
     section += `#### 📎 All Occurrences\n\n`;
     section += `This issue appears in **${group.count} ${group.count === 1 ? 'file' : 'files'}** across your codebase.\n\n`;
-    section += `View complete list: [group-${this.sanitizeGroupId(group)}-locations.json](attachments/group-${this.sanitizeGroupId(group)}-locations.json)\n\n`;
     
     if (canAutoFix) {
-      section += `> 💡 **Tip**: Download the IDE fix file to resolve all ${group.count} occurrences with one click!\n\n`;
+      section += `> 💡 **Auto-fixable**: This issue can be resolved using the 1-click solution in the IDE Integration section below.\n\n`;
     }
     
     section += '---\n\n';
@@ -3081,6 +3175,16 @@ mvn spotless:check  # Verify (use in CI)
   /**
    * ENHANCEMENT: Get short impact summary for manifest
    */
+  private getPriority(severity: string): number {
+    switch (severity) {
+      case 'critical': return 1;
+      case 'high': return 2;
+      case 'medium': return 3;
+      case 'low': return 4;
+      default: return 5;
+    }
+  }
+
   private getImpactSummary(rule: string, tool: string, severity: string): string {
     const fullDescription = this.getIssueDescription(rule, tool, severity);
     const whatText = fullDescription.what;
@@ -3629,9 +3733,20 @@ Continue following best practices and consider integrating static analysis into 
       // For Git teammates not in Supabase, add them with baseline 50/100 score
       const teamLeaderboard = [...supabaseLeaderboard];
       
+      // BUG FIX: Use normalized email comparison to prevent duplicates
+      const normalizeEmailForDedup = (email: string) => {
+        if (!email) return '';
+        const noreplyMatch = email.match(/(?:\d+\+)?([^@]+)@users\.noreply\.github\.com/i);
+        if (noreplyMatch) {
+          return noreplyMatch[1].toLowerCase();
+        }
+        return email.toLowerCase();
+      };
+      
       for (const gitDev of gitTeammates) {
+        const normalizedGitEmail = normalizeEmailForDedup(gitDev.email);
         const existsInSupabase = teamLeaderboard.some((dev: any) => 
-          dev.email && dev.email.toLowerCase() === gitDev.email.toLowerCase()
+          normalizeEmailForDedup(dev.email) === normalizedGitEmail
         );
         
         if (!existsInSupabase) {
@@ -3647,12 +3762,40 @@ Continue following best practices and consider integrating static analysis into 
       }
       
       // Update or add current developer with current PR score
-      const currentDevIndex = teamLeaderboard.findIndex((d: any) => d.email === metadata.prAuthorEmail);
+      console.log(`[Skills] DEBUG: currentPRScore calculated as ${currentPRScore}`);
+      console.log(`[Skills] DEBUG: Looking for ${metadata.prAuthorEmail} in leaderboard of ${teamLeaderboard.length} devs`);
+      
+      // BUG FIX: Normalize email comparison to handle GitHub's different email formats
+      // GitHub uses: username@users.noreply.github.com OR userid+username@users.noreply.github.com
+      const normalizeEmail = (email: string) => {
+        if (!email) return '';
+        // Extract username from GitHub noreply emails
+        const noreplyMatch = email.match(/(?:\d+\+)?([^@]+)@users\.noreply\.github\.com/i);
+        if (noreplyMatch) {
+          return noreplyMatch[1].toLowerCase(); // Return just the username part
+        }
+        return email.toLowerCase();
+      };
+      
+      const normalizedAuthorEmail = normalizeEmail(metadata.prAuthorEmail);
+      console.log(`[Skills] DEBUG: Normalized email: ${normalizedAuthorEmail}`);
+      
+      const currentDevIndex = teamLeaderboard.findIndex((d: any) => 
+        normalizeEmail(d.email) === normalizedAuthorEmail
+      );
+      console.log(`[Skills] DEBUG: Found at index ${currentDevIndex}`);
+      
       if (currentDevIndex >= 0) {
         // Update existing entry with current PR score
+        const oldScore = teamLeaderboard[currentDevIndex].score;
+        console.log(`[Skills] Updating ${metadata.prAuthor} score from ${oldScore} to ${currentPRScore}`);
         teamLeaderboard[currentDevIndex].score = currentPRScore;
+        // Also update avgScore to reflect the current calculated score
+        teamLeaderboard[currentDevIndex].avgScore = currentPRScore;
+        console.log(`[Skills] DEBUG: After update, score is now ${teamLeaderboard[currentDevIndex].score}`);
       } else {
         // Add current developer
+        console.log(`[Skills] Adding ${metadata.prAuthor} with score ${currentPRScore}`);
         teamLeaderboard.push({
           name: metadata.prAuthor,
           email: metadata.prAuthorEmail,
@@ -3663,16 +3806,38 @@ Continue following best practices and consider integrating static analysis into 
       }
       
       // Sort by score (descending) to get correct ranking
+      console.log(`[Skills] DEBUG: Before sort, ${metadata.prAuthor} score is ${teamLeaderboard.find((d: any) => normalizeEmail(d.email) === normalizedAuthorEmail)?.score}`);
+      console.log(`[Skills] DEBUG: Before sort, all entries with matching normalized email:`);
+      teamLeaderboard.forEach((d: any, idx: number) => {
+        if (normalizeEmail(d.email) === normalizedAuthorEmail) {
+          console.log(`[Skills] DEBUG:   [${idx}] ${d.email}: score=${d.score}, avgScore=${d.avgScore}`);
+        }
+      });
+      
       teamLeaderboard.sort((a: any, b: any) => b.score - a.score);
       
-      // Calculate rank (position in sorted leaderboard)
-      const rank = teamLeaderboard.findIndex((d: any) => d.email === metadata.prAuthorEmail) + 1;
+      console.log(`[Skills] DEBUG: After sort, ${metadata.prAuthor} score is ${teamLeaderboard.find((d: any) => normalizeEmail(d.email) === normalizedAuthorEmail)?.score}`);
+      console.log(`[Skills] DEBUG: After sort, all entries with matching normalized email:`);
+      teamLeaderboard.forEach((d: any, idx: number) => {
+        if (normalizeEmail(d.email) === normalizedAuthorEmail) {
+          console.log(`[Skills] DEBUG:   [${idx}] ${d.email}: score=${d.score}, avgScore=${d.avgScore}`);
+        }
+      });
+      
+      // Calculate rank (position in sorted leaderboard) - use normalized email
+      const rank = teamLeaderboard.findIndex((d: any) => normalizeEmail(d.email) === normalizedAuthorEmail) + 1;
       const totalDevelopers = teamLeaderboard.length;
       
       // Team average from cleaned leaderboard
       const teamAvg = teamLeaderboard.length > 0
         ? Math.round(teamLeaderboard.reduce((sum: number, dev: any) => sum + dev.score, 0) / teamLeaderboard.length)
         : 50;
+      
+      // SESSION 25 DEBUG: Show full leaderboard to understand ranking
+      console.log(`[Skills] DEBUG: Full leaderboard (sorted by score):`);
+      teamLeaderboard.forEach((dev: any, idx: number) => {
+        console.log(`[Skills] DEBUG:   [${idx}] ${dev.name || dev.email}: ${dev.score}/100`);
+      });
       
       let content = `## 👥 Skills Tracking\n\n`;
       
@@ -3726,8 +3891,15 @@ Continue following best practices and consider integrating static analysis into 
         content += `### 🏆 Top Performers\n\n`;
         content += `| Rank | Developer | Score | PRs Analyzed |\n`;
         content += `|------|-----------|-------|-------------|\n`;
+        
+        // Debug: Log the top 5 performers
+        console.log(`[Skills] Top 5 performers:`);
         teamLeaderboard.slice(0, 5).forEach((dev: any, idx: number) => {
-          const isCurrent = dev.email === metadata.prAuthorEmail;
+          console.log(`[Skills] ${idx + 1}. ${dev.name} (${dev.email}): ${dev.score}/100`);
+        });
+        
+        teamLeaderboard.slice(0, 5).forEach((dev: any, idx: number) => {
+          const isCurrent = normalizeEmail(dev.email) === normalizeEmail(metadata.prAuthorEmail);
           const highlight = isCurrent ? '**' : '';
           content += `| ${idx + 1} | ${highlight}${dev.name || dev.email}${highlight} | ${highlight}${dev.score}/100${highlight} | ${highlight}${dev.totalPRs || 1}${highlight} |\n`;
         });

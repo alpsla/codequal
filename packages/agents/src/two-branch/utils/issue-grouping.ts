@@ -68,7 +68,7 @@ function inferCategoryFromTool(tool: string): string {
   const t = tool.toLowerCase();
   if (t === 'semgrep') return 'Security';
   if (t === 'dependency-check') return 'Dependencies';
-  if (t === 'spotbugs') return 'Performance';
+  if (t === 'spotbugs') return 'Code Quality';
   if (t === 'checkstyle' || t === 'pmd') return 'Code Quality';
   return 'Architecture';
 }

@@ -115,8 +115,8 @@ export class UniversalDependencyCheckRunner extends UniversalToolBase {
       // Check prerequisites
       await this.checkPrerequisites();
       
-      // SESSION 22 FIX: Test PostgreSQL connection before running
-      await this.testPostgreSQLConnection();
+      // SESSION 24 FIX: Skip PostgreSQL connection test (causes 300s timeout)
+      // The dependency-check.sh command handles its own connection testing
       
       // Build and run command
       const command = this.buildCommand();
@@ -293,17 +293,11 @@ export class UniversalDependencyCheckRunner extends UniversalToolBase {
       );
     }
     
-    // Check PostgreSQL connection
-    try {
-      // Simple check: see if psql can connect
-      await this.runCommand(
-        `psql -h ${this.pgHost} -p ${this.pgPort} -U ${this.pgUser} -d ${this.pgDatabase} -c "SELECT 1" 2>&1 || echo "OK"`
-      );
-      console.log(`[Universal Dependency-Check] ✅ PostgreSQL database is accessible`);
-    } catch (error) {
-      console.warn(`[Universal Dependency-Check] ⚠️ Could not verify PostgreSQL connection`);
-      // Don't fail - Dependency-Check will handle connection errors
-    }
+    // SESSION 24 FIX: Skip PostgreSQL connection test
+    // The psql command hangs waiting for password, causing 300s timeout
+    // dependency-check.sh will test the connection itself
+    console.log(`[Universal Dependency-Check] ⏭️  Skipping PostgreSQL connection test`);
+    console.log(`[Universal Dependency-Check] 🔗 Using PostgreSQL: ${this.pgHost}:${this.pgPort}/${this.pgDatabase}`);
   }
   
   /**

@@ -107,8 +107,8 @@ export function generateAnalysisMetadata(
   // FIXED: Model column should be 2nd (after Agent name) for consistency
   if (showAgentPerformance && metadata.agentPerformance && Array.isArray(metadata.agentPerformance) && metadata.agentPerformance.length > 0) {
     content += `\n### Agent Performance
-| Agent | Model | Files Analyzed | Issues Found | Time | Cost |
-|-------|-------|----------------|--------------|------|------|
+| Agent | Model | Issues Found | Time | Cost |
+|-------|-------|--------------|------|------|
 `;
     metadata.agentPerformance.forEach((agent: any) => {
       const issues = agent.issuesFound || agent.issues || 0;
@@ -126,19 +126,19 @@ export function generateAnalysisMetadata(
       } else if (agent.modelName) {
         model = agent.modelName;
       }
-      content += `| ${agent.name || agent.agent} | ${model} | ${agent.filesAnalyzed || agent.files || 'N/A'} | ${issues} | ${time} | ${cost} |\n`;
+      content += `| ${agent.name || agent.agent} | ${model} | ${issues} | ${time} | ${cost} |\n`;
     });
   }
 
   // Add Tool Performance if available (optional)
   if (showToolPerformance && metadata.toolPerformance && Array.isArray(metadata.toolPerformance) && metadata.toolPerformance.length > 0) {
     content += `\n### Tool Performance
-| Tool | Files Scanned | Issues Found | Duration |
-|------|---------------|--------------|----------|
+| Tool | Issues Found | Duration |
+|------|--------------|----------|
 `;
     metadata.toolPerformance.forEach((tool: any) => {
       const duration = tool.duration ? (tool.duration / 1000).toFixed(1) + 's' : 'N/A';
-      content += `| ${tool.tool || tool.name} | ${tool.filesScanned || tool.files || 'N/A'} | ${tool.issuesFound || tool.issues || 0} | ${duration} |\n`;
+      content += `| ${tool.tool || tool.name} | ${tool.issuesFound || tool.issues || 0} | ${duration} |\n`;
     });
   }
 
@@ -361,8 +361,19 @@ export function generateFooter(groups: IssueGroup[], ideFixFiles: IDEFixFile[]):
     
     // BUG FIX #48: Explain Bug #34 lazy loading architecture
     footer += `**🚀 Instant-start IDE integration** with lazy loading:\n\n`;
-    footer += `📦 **1 manifest file** to load in your IDE:\n`;
-    footer += `- [all-issues-manifest.json](attachments/all-issues-manifest.json) - **Load this file first!**\n\n`;
+    
+    // SESSION 24: Extract manifest public URL
+    const manifestFile = ideFixFiles.find(f => f.filename === 'all-issues-manifest.json');
+    const manifestUrl = manifestFile ? (manifestFile as any).publicUrl : null;
+    
+    footer += `📦 **Manifest file** (contains all fix data):\n`;
+    if (manifestUrl) {
+      footer += `- Download: [all-issues-manifest.json](${manifestUrl})\n`;
+      footer += `- Contains: All ${ideFixFiles.length - 1} auto-fixable issues with fix patterns\n\n`;
+    } else {
+      footer += `- File: \`all-issues-manifest.json\`\n`;
+      footer += `- Location: Available in your CI/CD artifacts or analysis output\n\n`;
+    }
     footer += `**What you get**:\n`;
     footer += `- ✅ **Critical issues** embedded (instant access, zero wait time)\n`;
     footer += `- ⬇️  **High/Medium/Low issues** lazy loaded in background\n`;
@@ -374,7 +385,7 @@ export function generateFooter(groups: IssueGroup[], ideFixFiles: IDEFixFile[]):
     const totalFixable = issueFiles.reduce((sum, f) => sum + (f.content.metadata?.total_occurrences || 0), 0);
 
     // BUG #6 FIX: Calculate actual auto-fixable count from manifest data
-    const manifestFile = ideFixFiles.find(f => f.groupId === 'all-issues');
+    // Note: manifestFile already declared above
     let autoFixableCount = totalFixable;
     if (manifestFile && (manifestFile.content as any).files) {
       const filesObj = (manifestFile.content as any).files;
@@ -404,10 +415,17 @@ export function generateFooter(groups: IssueGroup[], ideFixFiles: IDEFixFile[]):
     footer += `**For Any IDE** (Cursor, VS Code, IntelliJ, Windsurf, etc.):\n\n`;
     
     footer += `**Step 1: Load the Manifest**\n`;
-    footer += `1. Download \`all-issues-manifest.json\` from the analysis output\n`;
-    footer += `2. Open your IDE\n`;
-    footer += `3. Load/import the JSON file (method varies by IDE)\n\n`;
-    footer += `   *Note: The manifest file lists all ${ideFixFiles.length} fix files. Individual fix files are in the \`attachments/\` directory.*\n\n`;
+    if (manifestUrl) {
+      footer += `1. Download the manifest: [all-issues-manifest.json](${manifestUrl})\n`;
+      footer += `2. Open your IDE (Cursor, VS Code, IntelliJ, Windsurf, etc.)\n`;
+      footer += `3. Load/import the JSON file using your IDE's AI assistant or fix command\n\n`;
+    } else {
+      footer += `1. Download the complete manifest file:\n`;
+      footer += `   - File: \`all-issues-manifest.json\` (contains all ${ideFixFiles.length} auto-fixable issues)\n`;
+      footer += `   - Location: Available in your CI/CD pipeline artifacts or analysis output directory\n`;
+      footer += `2. Open your IDE (Cursor, VS Code, IntelliJ, Windsurf, etc.)\n`;
+      footer += `3. Load/import the JSON file using your IDE's AI assistant or fix command\n\n`;
+    }
     
     footer += `**Step 2: Fix Issues with Single Command**\n\n`;
     footer += `**Simple prompt** (one command does everything):\n`;

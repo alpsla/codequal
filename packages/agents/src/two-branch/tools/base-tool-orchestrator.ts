@@ -197,15 +197,15 @@ export abstract class BaseToolOrchestrator {
    * Default mapping covers common categories:
    * - Security: semgrep, dependency-check, snyk
    * - Code Quality: pmd, eslint, pylint, checkstyle
-   * - Performance: spotbugs, performance-analyzer
+   * - Performance: performance-analyzer
    * - Architecture: arch-unit, dependency-analyzer
    * - Dependencies: dependency-check, npm-audit, pip-audit
    */
   protected getAgentToolCategories(): Record<string, string[]> {
     return {
       'Security': ['semgrep', 'dependency-check', 'snyk', 'bandit', 'gosec'],
-      'Code Quality': ['pmd', 'checkstyle', 'eslint', 'pylint', 'golangci-lint'],
-      'Performance': ['spotbugs', 'performance-analyzer'],
+      'Code Quality': ['pmd', 'checkstyle', 'eslint', 'pylint', 'golangci-lint', 'spotbugs'],
+      'Performance': ['performance-analyzer'],
       'Architecture': ['arch-unit', 'dependency-analyzer'],
       'Dependencies': ['dependency-check', 'npm-audit', 'pip-audit']
     };

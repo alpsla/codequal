@@ -176,12 +176,23 @@ export async function calculateFullV9Score(
     const resolvedIssues = issues.filter(i => i.category === 'RESOLVED');
     
     // Group issues by detected category (Security, Performance, etc.)
+    // APP Score: Uses ALL issues (repository health)
     const issuesByCategory = {
       security: issues.filter(i => i.detectedCategory === 'Security'),
       performance: issues.filter(i => i.detectedCategory === 'Performance'),
       architecture: issues.filter(i => i.detectedCategory === 'Architecture'),
       dependency: issues.filter(i => i.detectedCategory === 'Dependencies'),
       codeQuality: issues.filter(i => i.detectedCategory === 'Code Quality')
+    };
+    
+    // SKILL Score: Only issues developer is responsible for (fair scoring)
+    const developerIssues = issues.filter(i => i.category === 'NEW' || i.category === 'EXISTING_MODIFIED');
+    const developerIssuesByCategory = {
+      security: developerIssues.filter(i => i.detectedCategory === 'Security'),
+      performance: developerIssues.filter(i => i.detectedCategory === 'Performance'),
+      architecture: developerIssues.filter(i => i.detectedCategory === 'Architecture'),
+      dependency: developerIssues.filter(i => i.detectedCategory === 'Dependencies'),
+      codeQuality: developerIssues.filter(i => i.detectedCategory === 'Code Quality')
     };
     
     // SESSION 13 FIX: Calculate category scores for APP (base=100)
@@ -193,16 +204,14 @@ export async function calculateFullV9Score(
       codeQuality: calculateCategoryScore(issuesByCategory.codeQuality, 100)
     };
 
-    // SKILL SCORE FIX (2025-10-30): Calculate category scores for Skill (base=50)
-    // User requirement: Developer with issues should score <50 (below passing threshold)
-    // base=50 means: 0 issues = 50/100, with issues < 50 (clear signal of problems)
-    // This distinguishes good developers (>50) from those needing improvement (<50)
+    // SKILL SCORE FIX: Use developer-responsible issues only (NEW + EXISTING_MODIFIED)
+    // This ensures developers are only penalized for issues they can control
     const skillCategoryScores = {
-      security: calculateCategoryScore(issuesByCategory.security, 50),
-      performance: calculateCategoryScore(issuesByCategory.performance, 50),
-      architecture: calculateCategoryScore(issuesByCategory.architecture, 50),
-      dependency: calculateCategoryScore(issuesByCategory.dependency, 50),
-      codeQuality: calculateCategoryScore(issuesByCategory.codeQuality, 50)
+      security: calculateCategoryScore(developerIssuesByCategory.security, 50),
+      performance: calculateCategoryScore(developerIssuesByCategory.performance, 50),
+      architecture: calculateCategoryScore(developerIssuesByCategory.architecture, 50),
+      dependency: calculateCategoryScore(developerIssuesByCategory.dependency, 50),
+      codeQuality: calculateCategoryScore(developerIssuesByCategory.codeQuality, 50)
     };
 
     // BUG FIX #44: Calculate APP score (minimum of categories - weakest link)
