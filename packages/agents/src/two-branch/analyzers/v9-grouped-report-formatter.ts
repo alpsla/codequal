@@ -323,18 +323,26 @@ export class V9GroupedReportFormatter {
       try {
         const filePath = `${analysisId}/${file.filename}`;
         const fileContent = JSON.stringify(file.content, null, 2);
+        const fileSizeKB = Math.round(fileContent.length / 1024);
+        
+        // SESSION 25: Check file size (Supabase free tier has 50MB limit per file)
+        if (fileSizeKB > 10000) {  // 10MB warning threshold
+          console.warn(`[Supabase Upload] Large file: ${file.filename} (${fileSizeKB}KB)`);
+        }
         
         // Upload to Supabase Storage
+        // SESSION 25 FIX: Use upsert: true to overwrite existing files from previous test runs
         const { data, error } = await this.supabase!.storage
           .from('v9-attachments')
           .upload(filePath, fileContent, {
             contentType: 'application/json',
             cacheControl: '3600',
-            upsert: false
+            upsert: true  // Allow overwriting existing files
           });
 
         if (error) {
-          console.error(`[Supabase Upload] Failed to upload ${file.filename}:`, error);
+          console.error(`[Supabase Upload] Failed to upload ${file.filename}:`, error.message || error);
+          console.error(`[Supabase Upload] Error details:`, JSON.stringify(error, null, 2));
           return file; // Return original file on error
         }
 
@@ -656,16 +664,25 @@ export class V9GroupedReportFormatter {
     const manifestFile = ideFixFiles.find(f => f.filename === 'all-issues-manifest.json');
     if (manifestFile && (manifestFile.content as any).files) {
       const files = (manifestFile.content as any).files;
+      let updatedCount = 0;
+      let missingCount = 0;
+      
       for (const severity of ['critical', 'high', 'medium', 'low']) {
         if (files[severity]) {
           files[severity].forEach((entry: any) => {
             const fixFile = ideFixFiles.find(f => f.filename === entry.filename);
             if (fixFile && (fixFile as any).publicUrl) {
               entry.url = (fixFile as any).publicUrl;
+              updatedCount++;
+            } else {
+              console.log(`[Manifest] ⚠️  No public URL found for ${entry.filename}`);
+              missingCount++;
             }
           });
         }
       }
+      
+      console.log(`[Manifest] Updated ${updatedCount} entries with Supabase URLs, ${missingCount} remain with relative paths`);
     }
     
     // SESSION 24: Now generate markdown with public URLs
