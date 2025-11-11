@@ -551,10 +551,19 @@ export class JavaToolOrchestrator extends BaseToolOrchestrator {
           : [spotbugsResult.BugCollection.BugInstance];
         
         for (const bug of bugInstances) {
+          const file = bug.SourceLine?.SourcePath?.replace(this.workspaceDir + '/', '') || 'unknown';
+          const line = parseInt(bug.SourceLine?.Start || '1');
+          
+          // SESSION 25 FIX: Filter out invalid issues (unknown file or line 1 with no real location)
+          if (file === 'unknown' || (line === 1 && !bug.SourceLine?.SourcePath)) {
+            logger.warn(`⚠️  Skipping SpotBugs issue with invalid location: file=${file}, line=${line}`);
+            continue;
+          }
+          
           issues.push({
             tool: 'spotbugs',
-            file: bug.SourceLine?.SourcePath?.replace(this.workspaceDir + '/', '') || 'unknown',
-            line: parseInt(bug.SourceLine?.Start || '1'),
+            file,
+            line,
             column: parseInt(bug.SourceLine?.Start || '1'),
             severity: this.mapSpotBugsSeverity(bug.Priority),
             message: bug.LongMessage || bug.ShortMessage || 'SpotBugs issue detected',

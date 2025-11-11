@@ -85,10 +85,13 @@ export function detectCategory(rule: string | null | undefined, tool: string, me
     return 'Dependencies';
   }
   
-  // SESSION 13 FIX: Removed "Reliability" category - map SpotBugs to Code Quality
-  // SpotBugs issues (bugs, null checks, exceptions) are code quality issues
+  // SpotBugs does bytecode analysis to find bugs and code quality issues
+  if (tool === 'spotbugs') {
+    return 'Code Quality';
+  }
+  
+  // Other bug patterns still map to Code Quality
   if (
-    tool === 'spotbugs' ||
     ruleLower.includes('null') ||
     ruleLower.includes('exception') ||
     ruleLower.includes('bug') ||

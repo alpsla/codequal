@@ -1,6 +1,40 @@
 # 🧠 V9 CRITICAL KNOWLEDGE BASE
 **IMPORTANT: Start every V9 session by reading this file**
-**Last Updated: November 7, 2025 - Universal Tools Architecture**
+**Last Updated: November 11, 2025 - Session 25: Score Consistency Fixes**
+
+---
+
+## 🎉 LATEST FIXES (November 11, 2025 - Session 25)
+
+### Skill Score Consistency ✅ COMPLETE
+
+**Critical Bug Fixed:** Top Performers showed wrong scores (50 instead of 40)
+
+**Root Causes:**
+1. **Duplicate Developer Entries**: Different GitHub email formats created separate entries
+   - `username@users.noreply.github.com` (from PR API)
+   - `userid+username@users.noreply.github.com` (from Git commits)
+2. **Inconsistent Issue Filtering**: Executive Summary used ALL issues, Skills Tracking used only NEW+EXISTING_MODIFIED
+
+**The Fix:**
+```typescript
+// Email normalization to prevent duplicates
+const normalizeEmail = (email: string) => {
+  const match = email.match(/(?:\d+\+)?([^@]+)@users\.noreply\.github\.com/i);
+  return match ? match[1].toLowerCase() : email.toLowerCase();
+};
+
+// Skill scores now use only developer-responsible issues
+const developerIssues = issues.filter(i => 
+  i.category === 'NEW' || i.category === 'EXISTING_MODIFIED'
+);
+```
+
+**Files Changed:**
+- `v9-grouped-report-formatter.ts` - Email normalization, duplicate prevention
+- `score-calculator.ts` - Fair skill scoring with developer-responsible issues only
+
+**Result:** All score references now consistent at 40/100 ✅
 
 ---
 
