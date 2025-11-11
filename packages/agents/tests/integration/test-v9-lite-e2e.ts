@@ -26,6 +26,8 @@ dotenv.config({ path: path.join(__dirname, '../../.env') });  // SESSION 22 FIX:
 process.env.DEBUG_MODE = process.env.DEBUG_MODE || 'true';
 
 import { JavaToolOrchestrator } from '../../src/two-branch/tools/java/java-tool-orchestrator';
+import { TypeScriptToolOrchestrator } from '../../src/two-branch/tools/typescript/typescript-tool-orchestrator';
+import { PythonToolOrchestrator } from '../../src/two-branch/tools/python/python-tool-orchestrator';
 import { createFrameworkDetector } from '../../src/two-branch/utils/framework-detector';
 import { createToolConfigResolver } from '../../src/two-branch/config/universal-tool-config';
 import { V9GroupedReportFormatter } from '../../src/two-branch/analyzers/v9-grouped-report-formatter';
@@ -40,11 +42,16 @@ interface TestScenario {
   repoUrl: string;
   prNumber?: number;  // Optional - only for PR review mode
   testMode: 'baseline' | 'pr-review';  // SESSION 20 FIX: Separate baseline from PR testing
+  language: 'java' | 'typescript' | 'python';  // SESSION 25: Multi-language support
   expectedFramework?: string;
   expectedToolCount?: number;
 }
 
 const TEST_SCENARIOS: TestScenario[] = [
+  // ========================================================================
+  // JAVA TESTS
+  // ========================================================================
+  
   // SESSION 21: Test with REAL PRs to validate complete business flow
   // Business Goal: Analyze user PRs, identify NEW blockers, provide APPROVED/DECLINED decision
   
@@ -54,6 +61,7 @@ const TEST_SCENARIOS: TestScenario[] = [
     repoUrl: 'https://github.com/spring-projects/spring-petclinic',
     testMode: 'pr-review',
     prNumber: 950,
+    language: 'java',
     expectedFramework: 'spring',
     expectedToolCount: 5
   },
@@ -64,6 +72,7 @@ const TEST_SCENARIOS: TestScenario[] = [
     repoUrl: 'https://github.com/jhipster/jhipster-sample-app',
     testMode: 'pr-review',
     prNumber: 100,  // Test with recent PR
+    language: 'java',
     expectedFramework: 'spring',
     expectedToolCount: 5
   },
@@ -74,6 +83,7 @@ const TEST_SCENARIOS: TestScenario[] = [
     repoUrl: 'https://github.com/codecentric/spring-boot-admin',
     testMode: 'pr-review',
     prNumber: 100,  // Test with recent PR
+    language: 'java',
     expectedFramework: 'spring',
     expectedToolCount: 5
   },
@@ -84,8 +94,24 @@ const TEST_SCENARIOS: TestScenario[] = [
     repoUrl: 'https://github.com/Netflix/conductor',
     testMode: 'pr-review',
     prNumber: 1000,  // Test with recent PR
+    language: 'java',
     expectedFramework: 'generic',
     expectedToolCount: 5
+  },
+  
+  // ========================================================================
+  // TYPESCRIPT TESTS (SESSION 25+)
+  // ========================================================================
+  
+  // Test 5: Our own CodeQual repo (smaller, faster to test)
+  {
+    name: 'CodeQual PR #50',
+    repoUrl: 'https://github.com/alpsla/codequal',
+    testMode: 'pr-review',
+    prNumber: 50,  // Test with real PR
+    language: 'typescript',
+    expectedFramework: 'typescript',
+    expectedToolCount: 3  // eslint, semgrep, dependency-check (skip tsc for speed)
   }
 ];
 
@@ -185,9 +211,9 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
     // ========================================================================
     console.log('\n🔧 Step 2: Configuring tools...');
     const toolResolver = createToolConfigResolver();
-    const tools = toolResolver.getToolsForLanguage('java');
+    const tools = toolResolver.getToolsForLanguage(scenario.language);
     
-    console.log(`   ✅ Configured ${tools.length} tools`);
+    console.log(`   ✅ Configured ${tools.length} tools for ${scenario.language}`);
     tools.forEach(tool => {
       console.log(`      - ${tool.name} (${tool.category})`);
     });
@@ -197,10 +223,14 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
     }
 
     // ========================================================================
-    // STEP 3: Tool Orchestration (BaseToolOrchestrator + JavaToolOrchestrator)
+    // STEP 3: Tool Orchestration (SESSION 25: Multi-language support)
     // ========================================================================
     console.log('\n🚀 Step 3: Running tool orchestration...');
-    const orchestrator = new JavaToolOrchestrator();
+    
+    // Create language-specific orchestrator
+    const orchestrator = scenario.language === 'java' ? new JavaToolOrchestrator() :
+                         scenario.language === 'typescript' ? new TypeScriptToolOrchestrator() :
+                         new PythonToolOrchestrator();
     
     let allIssues: any[];
     let newIssues: any[];
@@ -337,7 +367,7 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
     
     const formatter = new V9GroupedReportFormatter(
       modelConfigResolver,
-      'java',
+      scenario.language,
       'medium'
     );
 
