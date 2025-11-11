@@ -1,6 +1,60 @@
 # 🧠 V9 CRITICAL KNOWLEDGE BASE
 **IMPORTANT: Start every V9 session by reading this file**
-**Last Updated: November 11, 2025 - Session 25: Score Consistency Fixes**
+**Last Updated: November 11, 2025 - Session 25: Score Consistency + API-First Strategy**
+
+---
+
+## 🚀 CRITICAL STRATEGIC SHIFT (November 11, 2025)
+
+### API-First Architecture + Server-Side Security
+
+**MAJOR CHANGE**: Moving core V9 logic to server-side API (protect IP from GitHub/GitLab)
+
+**Why This Matters**:
+1. ✅ **IP Protection**: GitHub can't copy our algorithms (issue grouping, educational content, AI orchestration)
+2. ✅ **Platform Independence**: Single API serves GitHub, GitLab, Bitbucket, IDEs, self-hosted
+3. ✅ **No Code Duplication**: One codebase, multiple thin clients
+4. ✅ **Security First**: Core logic never exposed to client-side
+
+**Architecture Pattern**:
+```
+Client-Side (Thin, <50 LOC, OK to open-source):
+├── GitHub App       → Webhook receiver → API call → PR comment
+├── GitLab App       → Webhook receiver → API call → MR comment
+├── VS Code Ext      → File watcher → API call → Inline diagnostics
+└── IntelliJ Plugin  → Editor listener → API call → Inspections
+
+Server-Side (Private, NEVER exposed):
+├── v9-pr-analyzer.ts          # Two-branch analysis (SECRET)
+├── tool-orchestrator.ts       # 5 static + 5 AI agents (SECRET)
+├── issue-grouping.ts          # 99.8% cost reduction (PATENT-ABLE)
+├── educational-content.ts     # Brave Search integration (SECRET)
+├── ai-fix-generator.ts        # 100% auto-fix (SECRET)
+└── skill-score-manager.ts     # Gamification (SECRET)
+```
+
+**Roadmap to Server-Side** (See `API_FIRST_IMPLEMENTATION_PLAN.md` for details):
+- **Week 1-4**: API Service foundation (RESTful endpoints, job queue, WebSocket)
+- **Week 5-6**: GitLab + GitHub thin clients (consume API, <50 LOC each)
+- **Week 7-8**: Website dashboard (consumes API)
+- **Week 9-12**: IDE extensions (consume API)
+
+**What Goes on GitHub/GitLab** (SAFE):
+- Webhook handlers (receive events)
+- Comment formatters (render output)
+- API clients (POST to our server)
+
+**What NEVER Leaves Our Server** (SECRET):
+- V9 analysis algorithms
+- Issue grouping logic (99.8% cost reduction)
+- Educational content generation
+- AI fix generation
+- Skill scoring algorithms
+
+**Implementation Status**:
+- 🔄 Week 4 API Service (in planning)
+- 🔄 Week 5-6 Thin Clients (in planning)
+- ✅ V9 Core Logic (production-ready, ready to move server-side)
 
 ---
 
