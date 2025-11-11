@@ -103,22 +103,58 @@
 
 ---
 
-## 🎯 Auto-Fix Feature Requirements
+## 🎯 Auto-Fix Feature Requirements (UPDATED - Session 25)
 
-For the "1-click auto-fix" to work, users need:
+**⚠️ PREVIOUS APPROACH FAILED**: Our custom JSON format doesn't work with Cursor
 
-### Option A: Supabase URLs (Recommended)
-1. Click manifest download link in report
-2. Save `all-issues-manifest.json`
-3. Open in IDE (Cursor, VS Code, etc.)
-4. IDE fetches fixes from Supabase URLs
-5. Apply fixes with 1 command
+**✅ NEW APPROACH**: Generate IDE-compatible formats (LSP + SARIF)
 
-### Option B: Local Attachments (Fallback)
-1. Download entire attachments directory
-2. Place next to manifest file
-3. IDE reads local files
-4. Apply fixes
+### Three Output Formats
+
+1. **CodeQual Manifest** (`all-issues-manifest.json`)
+   - Human-readable index
+   - Links to individual fix files
+   - ❌ Not directly usable by IDEs
+
+2. **LSP Code Actions** (`codequal-lsp-actions.json`) - NEW ✅
+   - For Cursor/VSCode Quick Fix menu
+   - Exact text replacements with line/column positions
+   - ✅ Directly executable by IDEs
+
+3. **SARIF Report** (`codequal-sarif-report.json`) - NEW ✅
+   - Industry standard format
+   - Compatible with all major IDEs
+   - GitHub Code Scanning integration
+
+### How to Use LSP Format in Cursor
+
+1. **Download LSP file from Supabase**:
+   ```bash
+   curl -O https://ftjhmbbcuqjqmmbaymqb.supabase.co/.../codequal-lsp-actions.json
+   ```
+
+2. **Open file with issues in Cursor**
+
+3. **Position cursor on problematic line**
+
+4. **Press `Cmd+.` (Quick Fix menu)**
+   - Should see: "Fix: [Issue Name]"
+   - Click to apply the fix
+
+5. **Repeat for each issue** or use SARIF batch import
+
+### How to Use SARIF Format
+
+1. **Install SARIF Viewer extension** in VSCode/Cursor
+
+2. **Import SARIF file**:
+   - Command Palette (Cmd+Shift+P)
+   - "SARIF: Open SARIF File"
+   - Select `codequal-sarif-report.json`
+
+3. **View issues in Problems panel**
+
+4. **Apply fixes** from problem context menu
 
 ---
 

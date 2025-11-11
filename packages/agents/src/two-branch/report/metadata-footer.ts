@@ -410,22 +410,40 @@ export function generateFooter(groups: IssueGroup[], ideFixFiles: IDEFixFile[]):
       footer += `\n> ⚠️ **Important**: Critical and high-severity auto-fixes require manual code review before applying. Auto-generated fixes are suggestions that should be validated by a developer to ensure they don't introduce regressions or break business logic.\n`;
     }
     
-    // ENHANCEMENT #4: Universal IDE instructions with prompt examples
-    footer += `\n**How to use** (Universal IDE Integration):\n\n`;
-    footer += `**For Any IDE** (Cursor, VS Code, IntelliJ, Windsurf, etc.):\n\n`;
+    // SESSION 25: Updated IDE instructions with LSP/SARIF formats
+    footer += `\n**How to use** (IDE Auto-Fix Integration):\n\n`;
+    footer += `**Choose your preferred format**:\n\n`;
     
-    footer += `**Step 1: Load the Manifest**\n`;
+    footer += `### 🎯 Quick Fix Method (Recommended)\n`;
+    footer += `**Download**: \`codequal-lsp-actions.json\` from analysis output\n\n`;
+    footer += `**Steps**:\n`;
+    footer += `1. Open file with issues in Cursor/VSCode\n`;
+    footer += `2. Position cursor on problematic line\n`;
+    footer += `3. Press \`Cmd+.\` (or \`Ctrl+.\` on Windows/Linux)\n`;
+    footer += `4. Select "Fix: [Issue Name]" from Quick Fix menu\n`;
+    footer += `5. Review and apply the fix\n\n`;
+    footer += `> ✨ **New in V9**: LSP Code Actions enable native IDE Quick Fix integration!\n\n`;
+    
+    footer += `### 📋 SARIF Method (Industry Standard)\n`;
+    footer += `**Download**: \`codequal-sarif-report.json\` from analysis output\n\n`;
+    footer += `**Steps**:\n`;
+    footer += `1. Install SARIF Viewer extension in VSCode/Cursor\n`;
+    footer += `2. Open Command Palette (\`Cmd+Shift+P\`)\n`;
+    footer += `3. Run: "SARIF: Open SARIF File"\n`;
+    footer += `4. Select \`codequal-sarif-report.json\`\n`;
+    footer += `5. View issues in Problems panel with one-click fixes\n\n`;
+    footer += `> 🏆 **Best for**: Batch applying multiple fixes, CI/CD integration, GitHub Code Scanning\n\n`;
+    
+    footer += `### 🤖 AI Assistant Method (Legacy)\n`;
     if (manifestUrl) {
-      footer += `1. Download the manifest: [all-issues-manifest.json](${manifestUrl})\n`;
-      footer += `2. Open your IDE (Cursor, VS Code, IntelliJ, Windsurf, etc.)\n`;
-      footer += `3. Load/import the JSON file using your IDE's AI assistant or fix command\n\n`;
+      footer += `**Download**: [all-issues-manifest.json](${manifestUrl})\n\n`;
     } else {
-      footer += `1. Download the complete manifest file:\n`;
-      footer += `   - File: \`all-issues-manifest.json\` (contains all ${ideFixFiles.length} auto-fixable issues)\n`;
-      footer += `   - Location: Available in your CI/CD pipeline artifacts or analysis output directory\n`;
-      footer += `2. Open your IDE (Cursor, VS Code, IntelliJ, Windsurf, etc.)\n`;
-      footer += `3. Load/import the JSON file using your IDE's AI assistant or fix command\n\n`;
+      footer += `**Download**: \`all-issues-manifest.json\` from analysis output\n\n`;
     }
+    footer += `**Steps**:\n`;
+    footer += `1. Open your IDE's AI assistant (Cursor Chat, GitHub Copilot, etc.)\n`;
+    footer += `2. Attach the manifest file\n`;
+    footer += `3. Use the prompt below\n\n`;
     
     footer += `**Step 2: Fix Issues with Single Command**\n\n`;
     footer += `**Simple prompt** (one command does everything):\n`;

@@ -19,6 +19,7 @@ import { IssueGroup } from '../utils/issue-grouping';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { AppScoreManager } from './v9-app-score-manager';
 import { SkillScoreManager } from './v9-skill-score-manager';
+import { LSPSARIFConverter } from './lsp-sarif-converter';
 
 // Load environment variables
 dotenv.config();
@@ -674,6 +675,9 @@ export class V9GroupedReportFormatter {
       // Log summary
       const totalWithUrls = ideFixFiles.filter(f => (f as any).publicUrl).length;
       console.log(`[Manifest] ✅ Created manifest with ${totalWithUrls}/${ideFixFiles.length} files having Supabase URLs`);
+      
+      // SESSION 25: Generate LSP and SARIF formats for IDE integration
+      await this.generateLSPAndSARIFFormats(enrichedIssues, updatedGroups, metadata);
     }
     
     // SESSION 24: Now generate markdown with public URLs
@@ -3075,6 +3079,83 @@ mvn spotless:check  # Verify (use in CI)
         required_imports: this.extractRequiredImports(representative)
       }
     };
+  }
+  
+  /**
+   * SESSION 25: Generate LSP and SARIF formats for IDE integration
+   * These formats enable Cursor and other IDEs to apply fixes automatically
+   */
+  private async generateLSPAndSARIFFormats(
+    enrichedIssues: EnrichedIssue[],
+    groups: IssueGroup[],
+    metadata: any
+  ): Promise<void> {
+    try {
+      const converter = new LSPSARIFConverter();
+      const workspaceRoot = this.repoPath || process.cwd();
+      
+      // Generate LSP Code Actions
+      console.log('[LSP/SARIF] Generating LSP Code Actions...');
+      const lspCodeActions = converter.generateLSPCodeActions(enrichedIssues, workspaceRoot);
+      
+      // Generate SARIF Report
+      console.log('[LSP/SARIF] Generating SARIF 2.1.0 report...');
+      const sarifReport = converter.generateSARIFReport(enrichedIssues, groups, {
+        repository: metadata.repository || 'unknown',
+        version: metadata.analyzerVersion || '9.0.0',
+        analyzedAt: metadata.analyzedAt || new Date().toISOString()
+      });
+      
+      // Note: LSP and SARIF files are uploaded to Supabase only
+      // They are not saved locally to avoid clutter
+      console.log(`[LSP/SARIF] Generated ${lspCodeActions.length} LSP Code Actions`);
+      console.log(`[LSP/SARIF] Generated SARIF report with ${sarifReport.runs[0].results.length} results`);
+      
+      // Upload to Supabase if available
+      if (this.supabase) {
+        const timestamp = Date.now();
+        const repoName = metadata.repository?.split('/').pop() || 'unknown';
+        const analysisId = `${repoName}-pr${metadata.prNumber || 0}-${timestamp}`;
+        
+        // Upload LSP file
+        const lspContent = JSON.stringify(lspCodeActions, null, 2);
+        const { data: lspData, error: lspError } = await this.supabase.storage
+          .from('v9-attachments')
+          .upload(`${analysisId}/${lspFilename}`, lspContent, {
+            contentType: 'application/json',
+            cacheControl: '3600',
+            upsert: true
+          });
+        
+        if (!lspError) {
+          const { data: lspUrlData } = this.supabase.storage
+            .from('v9-attachments')
+            .getPublicUrl(`${analysisId}/${lspFilename}`);
+          console.log(`[LSP/SARIF] ✅ LSP uploaded: ${lspUrlData.publicUrl}`);
+        }
+        
+        // Upload SARIF file
+        const sarifContent = JSON.stringify(sarifReport, null, 2);
+        const { data: sarifData, error: sarifError } = await this.supabase.storage
+          .from('v9-attachments')
+          .upload(`${analysisId}/${sarifFilename}`, sarifContent, {
+            contentType: 'application/json',
+            cacheControl: '3600',
+            upsert: true
+          });
+        
+        if (!sarifError) {
+          const { data: sarifUrlData } = this.supabase.storage
+            .from('v9-attachments')
+            .getPublicUrl(`${analysisId}/${sarifFilename}`);
+          console.log(`[LSP/SARIF] ✅ SARIF uploaded: ${sarifUrlData.publicUrl}`);
+        }
+      }
+      
+    } catch (error) {
+      console.error('[LSP/SARIF] Error generating formats:', error);
+      // Don't fail the entire report generation if LSP/SARIF fails
+    }
   }
   
   /**
