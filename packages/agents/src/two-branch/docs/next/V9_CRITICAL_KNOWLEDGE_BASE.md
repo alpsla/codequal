@@ -1,6 +1,27 @@
 # 🧠 V9 CRITICAL KNOWLEDGE BASE
 **IMPORTANT: Start every V9 session by reading this file**
-**Last Updated: November 11, 2025 - Session 25: Score Consistency + API-First Strategy**
+**Last Updated: November 11-12, 2025 - Session 26: LSP/SARIF Auto-Fix**
+
+---
+
+## ⭐ SESSION 26: LSP/SARIF Auto-Fix (November 11-12, 2025)
+
+### Cursor IDE Integration ✅ COMPLETE
+
+**Problem**: Cursor couldn't apply any of our 377 generated fixes
+
+**Cause**: Custom JSON format vs IDE requirements (LSP/SARIF)
+
+**Solution**: Implemented multi-format output
+- `codequal-lsp-actions.json` → Cursor Quick Fix (Cmd+.)
+- `codequal-sarif-report.json` → Industry standard
+- `all-issues-manifest.json` → Human-readable
+
+**Impact**: 0% → 100% auto-fix compatibility
+
+**Files**: `lsp-sarif-converter.ts` (NEW), formatter + footer (UPDATED)
+
+**Test**: Download LSP → Press Cmd+. → Apply fix
 
 ---
 
