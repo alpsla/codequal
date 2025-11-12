@@ -60,7 +60,10 @@ const sampleGroups: IssueGroup[] = [
     severity: 'high',
     count: 1,
     description: 'Detected use of child_process.exec()',
-    category: 'Security'
+    category: 'Security',
+    examples: [],
+    aiAnalyzed: false,
+    costSaved: 0
   },
   {
     rule: 'typescript.lang.correctness.no-implicit-any.no-implicit-any',
@@ -68,7 +71,10 @@ const sampleGroups: IssueGroup[] = [
     severity: 'medium',
     count: 1,
     description: 'Variable has implicit any type',
-    category: 'Code Quality'
+    category: 'Code Quality',
+    examples: [],
+    aiAnalyzed: false,
+    costSaved: 0
   }
 ];
 

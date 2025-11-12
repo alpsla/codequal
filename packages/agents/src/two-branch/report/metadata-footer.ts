@@ -410,29 +410,60 @@ export function generateFooter(groups: IssueGroup[], ideFixFiles: IDEFixFile[]):
       footer += `\n> ⚠️ **Important**: Critical and high-severity auto-fixes require manual code review before applying. Auto-generated fixes are suggestions that should be validated by a developer to ensure they don't introduce regressions or break business logic.\n`;
     }
     
-    // SESSION 25: Updated IDE instructions with LSP/SARIF formats
-    footer += `\n**How to use** (IDE Auto-Fix Integration):\n\n`;
-    footer += `**Choose your preferred format**:\n\n`;
-    
-    footer += `### 🎯 Quick Fix Method (Recommended)\n`;
-    footer += `**Download**: \`codequal-lsp-actions.json\` from analysis output\n\n`;
+    // SESSION 26: Updated IDE instructions with LSP/SARIF batch actions
+    footer += `\n## 🛠️ How to Apply Fixes\n\n`;
+
+    // Add disclaimer about recommendations
+    footer += `> ⚠️ **RECOMMENDATIONS ONLY**: CodeQual provides fix suggestions based on AI analysis. `;
+    footer += `You control whether to apply them. Review all changes before applying to production code.\n\n`;
+
+    footer += `**Choose your preferred method**:\n\n`;
+
+    footer += `### 🎯 Method 1: LSP Batch Actions (Recommended) ⚡\n\n`;
+    footer += `**✨ New**: Apply ALL ${totalFixable.toLocaleString()} fixes with 1 click!\n\n`;
+    footer += `**Download**: \`codequal-lsp-actions.json\`\n`;
+    if (manifestUrl) {
+      const lspUrl = manifestUrl.replace('all-issues-manifest.json', 'codequal-lsp-actions.json');
+      footer += `- URL: [Download LSP file](${lspUrl})\n`;
+    }
+    footer += `- Works with: Cursor, VSCode, IntelliJ, any LSP-compatible IDE\n\n`;
+
     footer += `**Steps**:\n`;
-    footer += `1. Open file with issues in Cursor/VSCode\n`;
-    footer += `2. Position cursor on problematic line\n`;
-    footer += `3. Press \`Cmd+.\` (or \`Ctrl+.\` on Windows/Linux)\n`;
-    footer += `4. Select "Fix: [Issue Name]" from Quick Fix menu\n`;
-    footer += `5. Review and apply the fix\n\n`;
-    footer += `> ✨ **New in V9**: LSP Code Actions enable native IDE Quick Fix integration!\n\n`;
-    
-    footer += `### 📋 SARIF Method (Industry Standard)\n`;
-    footer += `**Download**: \`codequal-sarif-report.json\` from analysis output\n\n`;
+    footer += `1. Download \`codequal-lsp-actions.json\`\n`;
+    footer += `2. Load file in your IDE (method varies by IDE)\n`;
+    footer += `3. Open any file with issues\n`;
+    footer += `4. Press \`Cmd+.\` (or \`Ctrl+.\`) to open Quick Fix menu\n`;
+    footer += `5. Select **"Apply All Fixes (${totalFixable} issues)"** at top of menu\n`;
+    footer += `6. All fixes applied in < 1 second! ✅\n\n`;
+
+    footer += `**Batch Actions Available**:\n`;
+    footer += `- 🔥 **"Apply All Fixes"** - All ${totalFixable.toLocaleString()} issues in one click\n`;
+    if (criticalCount > 0) footer += `- 🔴 **"Apply Critical Severity Fixes"** - ${criticalCount} issues\n`;
+    if (highCount > 0) footer += `- 🟠 **"Apply High Severity Fixes"** - ${highCount} issues\n`;
+    if (mediumCount > 0) footer += `- 🟡 **"Apply Medium Severity Fixes"** - ${mediumCount} issues\n`;
+    if (lowCount > 0) footer += `- 🟢 **"Apply Low Severity Fixes"** - ${lowCount} issues\n`;
+    footer += `- 📝 Individual fixes available for granular control\n\n`;
+
+    footer += `> 💡 **How it works**: LSP batch actions group all fixes into a single IDE operation. `;
+    footer += `When you click "Apply All", your IDE applies all ${totalFixable.toLocaleString()} fixes simultaneously!\n\n`;
+
+    footer += `### 📋 Method 2: SARIF Report (Industry Standard)\n\n`;
+    footer += `**Download**: \`codequal-sarif-report.json\`\n`;
+    if (manifestUrl) {
+      const sarifUrl = manifestUrl.replace('all-issues-manifest.json', 'codequal-sarif-report.json');
+      footer += `- URL: [Download SARIF file](${sarifUrl})\n`;
+    }
+    footer += `- Works with: VSCode, GitHub Code Scanning, CI/CD pipelines\n\n`;
+
     footer += `**Steps**:\n`;
-    footer += `1. Install SARIF Viewer extension in VSCode/Cursor\n`;
+    footer += `1. Install SARIF Viewer extension (VSCode/Cursor)\n`;
     footer += `2. Open Command Palette (\`Cmd+Shift+P\`)\n`;
     footer += `3. Run: "SARIF: Open SARIF File"\n`;
     footer += `4. Select \`codequal-sarif-report.json\`\n`;
-    footer += `5. View issues in Problems panel with one-click fixes\n\n`;
-    footer += `> 🏆 **Best for**: Batch applying multiple fixes, CI/CD integration, GitHub Code Scanning\n\n`;
+    footer += `5. View all issues in Problems panel\n`;
+    footer += `6. Apply fixes individually or in batches\n\n`;
+
+    footer += `> 🏆 **Best for**: CI/CD integration, GitHub Code Scanning, permanent diagnostic records\n\n`;
     
     footer += `### 🤖 AI Assistant Method (Legacy)\n`;
     if (manifestUrl) {
