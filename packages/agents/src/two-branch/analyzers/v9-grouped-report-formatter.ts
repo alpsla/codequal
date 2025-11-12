@@ -3117,6 +3117,10 @@ mvn spotless:check  # Verify (use in CI)
         const repoName = metadata.repository?.split('/').pop() || 'unknown';
         const analysisId = `${repoName}-pr${metadata.prNumber || 0}-${timestamp}`;
         
+        // Define filenames
+        const lspFilename = 'codequal-lsp-actions.json';
+        const sarifFilename = 'codequal-sarif-report.json';
+        
         // Upload LSP file
         const lspContent = JSON.stringify(lspCodeActions, null, 2);
         const { data: lspData, error: lspError } = await this.supabase.storage

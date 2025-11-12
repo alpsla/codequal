@@ -250,13 +250,18 @@ export class LSPSARIFConverter {
   }
   
   private createSARIFRule(group: IssueGroup): SARIFRule {
+    // Extract fix suggestion text (handle both string and object formats)
+    const fixText = typeof group.fixSuggestion === 'string' 
+      ? group.fixSuggestion 
+      : group.fixSuggestion?.explanation || 'No fix suggestion available';
+    
     return {
       id: group.rule,
       shortDescription: { text: group.rule },
       fullDescription: { text: group.description || group.rule },
       help: {
-        text: group.fixSuggestion || 'No fix suggestion available',
-        markdown: group.fixSuggestion ? `## How to Fix\n\n${group.fixSuggestion}` : undefined
+        text: fixText,
+        markdown: fixText !== 'No fix suggestion available' ? `## How to Fix\n\n${fixText}` : undefined
       },
       defaultConfiguration: {
         level: this.mapSeverityToSARIF(group.severity)
