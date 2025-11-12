@@ -65,6 +65,11 @@ function canAutoFix(group: IssueGroup | { rule: string; tool: string; severity: 
     return true;  // IDEs have dependency management tools
   }
 
+  // npm-audit: IDEs can update npm dependencies automatically
+  if (group.tool === 'npm-audit') {
+    return true;  // IDEs have npm dependency management tools
+  }
+
   // SESSION 22 FIX: SpotBugs issues are auto-fixable
   if (group.tool === 'spotbugs') {
     return true;  // Many bug patterns have clear fixes
@@ -452,8 +457,19 @@ export function generateFooter(groups: IssueGroup[], ideFixFiles: IDEFixFile[], 
     footer += `When you click "Apply All", your IDE applies all ${totalFixable.toLocaleString()} fixes simultaneously!\n\n`;
 
     // SESSION 27: Hybrid fix approach explanation
+    // Calculate dynamic time estimate based on issue count
+    // Prescriptive fixes: < 1ms each (95% of cases)
+    // AI-generated fixes: 2-5 seconds each (5% of cases)
+    // For small counts (< 10), most are prescriptive, so estimate is < 1 second
+    // For larger counts, estimate: Math.max(1, Math.ceil(totalFixable * 0.01)) seconds
+    const estimatedSeconds = totalFixable < 10 
+      ? '< 1 second' 
+      : totalFixable < 100
+        ? `~${Math.ceil(totalFixable * 0.01)} seconds`
+        : `~${Math.ceil(totalFixable * 0.005)} seconds`;
+    
     footer += `**Three Ways to Use Batch Actions**:\n\n`;
-    footer += `1. **🚀 Apply All (Fastest)** - 1 click for all ${totalFixable.toLocaleString()} fixes (~5 seconds)\n`;
+    footer += `1. **🚀 Apply All (Fastest)** - 1 click for all ${totalFixable.toLocaleString()} fixes (${estimatedSeconds})\n`;
     footer += `2. **🎯 Severity Batches** - E.g., "Apply All Low Severity" for safe bulk fixes\n`;
     footer += `3. **👁️ Individual Review** - Review each fix before applying (${totalFixable.toLocaleString()} clicks)\n\n`;
 
@@ -493,29 +509,27 @@ export function generateFooter(groups: IssueGroup[], ideFixFiles: IDEFixFile[], 
     footer += `> 💡 **Pro Tip**: For instant fixes, apply soon after analysis. For flexibility with ongoing edits, AI adapts automatically!\n\n`;
     footer += `---\n\n`;
 
-    footer += `### 📋 Method 2: SARIF Report (Industry Standard)\n\n`;
-    footer += `**Download**: \`codequal-sarif-report.json\`\n`;
-    // SESSION 26: Use actual SARIF URL from metadata (uploaded separately with different timestamp)
+    // SESSION 27: Only show SARIF section if sarifUrl exists (upload successful)
+    // Fixes: Footer showing broken SARIF URLs when upload fails
     if (metadata?.sarifUrl) {
+      footer += `### 📋 Method 2: SARIF Report (Industry Standard)\n\n`;
+      footer += `**Download**: \`codequal-sarif-report.json\`\n`;
       footer += `- URL: [Download SARIF file](${metadata.sarifUrl})\n`;
-    } else if (manifestUrl) {
-      // Fallback to string replacement if sarifUrl not in metadata
-      const sarifUrl = manifestUrl.replace('all-issues-manifest.json', 'codequal-sarif-report.json');
-      footer += `- URL: [Download SARIF file](${sarifUrl})\n`;
+      footer += `- Works with: VSCode, GitHub Code Scanning, CI/CD pipelines\n\n`;
+
+      footer += `**Steps**:\n`;
+      footer += `1. Install SARIF Viewer extension (VSCode/Cursor)\n`;
+      footer += `2. Open Command Palette (\`Cmd+Shift+P\`)\n`;
+      footer += `3. Run: "SARIF: Open SARIF File"\n`;
+      footer += `4. Select \`codequal-sarif-report.json\`\n`;
+      footer += `5. View all issues in Problems panel\n`;
+      footer += `6. Apply fixes individually or in batches\n\n`;
+
+      footer += `> 🏆 **Best for**: CI/CD integration, GitHub Code Scanning, permanent diagnostic records\n\n`;
     }
-    footer += `- Works with: VSCode, GitHub Code Scanning, CI/CD pipelines\n\n`;
-
-    footer += `**Steps**:\n`;
-    footer += `1. Install SARIF Viewer extension (VSCode/Cursor)\n`;
-    footer += `2. Open Command Palette (\`Cmd+Shift+P\`)\n`;
-    footer += `3. Run: "SARIF: Open SARIF File"\n`;
-    footer += `4. Select \`codequal-sarif-report.json\`\n`;
-    footer += `5. View all issues in Problems panel\n`;
-    footer += `6. Apply fixes individually or in batches\n\n`;
-
-    footer += `> 🏆 **Best for**: CI/CD integration, GitHub Code Scanning, permanent diagnostic records\n\n`;
     
-    footer += `### 🤖 AI Assistant Method (Legacy)\n`;
+    footer += `### 🤖 Method 3: AI Assistant with Manifest (Alternative)\n\n`;
+    footer += `> 💡 **Note**: LSP batch actions (Method 1) are recommended for fastest fixes. This method is an alternative if your IDE doesn't support LSP.\n\n`;
     if (manifestUrl) {
       footer += `**Download**: [all-issues-manifest.json](${manifestUrl})\n\n`;
     } else {
@@ -524,14 +538,12 @@ export function generateFooter(groups: IssueGroup[], ideFixFiles: IDEFixFile[], 
     footer += `**Steps**:\n`;
     footer += `1. Open your IDE's AI assistant (Cursor Chat, GitHub Copilot, etc.)\n`;
     footer += `2. Attach the manifest file\n`;
-    footer += `3. Use the prompt below\n\n`;
+    footer += `3. Use this prompt:\n\n`;
     
-    footer += `**Step 2: Fix Issues with Single Command**\n\n`;
-    footer += `**Simple prompt** (one command does everything):\n`;
     footer += `\`\`\`\n`;
     footer += `👤 You: "Create a todo list and fix all issues divided by severity groups,\n`;
     footer += `        starting from critical and ending with low, with constant progress updates"\n\n`;
-    footer += `🤖 IDE: [Creates structured todo list]\n`;
+    footer += `🤖 IDE: [Creates structured todo list and applies fixes]\n`;
     footer += `        ✅ Critical issues (${criticalCount}) - Starting...\n`;
     if (highCount > 0) {
       footer += `        ⏳ High issues (${highCount}) - Waiting...\n`;
@@ -542,20 +554,11 @@ export function generateFooter(groups: IssueGroup[], ideFixFiles: IDEFixFile[], 
     if (lowCount > 0) {
       footer += `        ⏳ Low issues (${lowCount.toLocaleString()}) - Waiting...\n`;
     }
-    footer += `\n`;
-    footer += `        [Applies fixes with real-time progress]\n`;
-    footer += `        ✅ Critical: 2/2 fixed (100%)\n`;
-    if (highCount > 0) {
-      footer += `        🔄 High: 5/${highCount} fixed (${Math.round((5/highCount)*100)}%)...\n`;
-    }
-    footer += `        ⏳ Medium: Waiting for high to complete...\n`;
     footer += `\`\`\`\n\n`;
-    footer += `**That's it!** The IDE handles everything:\n`;
-    footer += `- Loads the manifest automatically\n`;
-    footer += `- Creates a prioritized todo list\n`;
-    footer += `- Fixes issues in severity order (critical → high → medium → low)\n`;
-    footer += `- Shows live progress updates\n`;
-    footer += `- Downloads next priority issues in background\n\n`;
+    footer += `**When to use this method**:\n`;
+    footer += `- Your IDE doesn't support LSP Code Actions\n`;
+    footer += `- You prefer AI-assisted fixes over prescriptive fixes\n`;
+    footer += `- You want to review each fix before applying\n\n`;
     
     // BUG FIX #64: Updated validation workflow (CodeQual re-scan, not IDE)
     footer += `**Step 3: Validate Your Fixes with CodeQual**\n\n`;
