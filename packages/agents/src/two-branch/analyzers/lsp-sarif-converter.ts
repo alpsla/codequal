@@ -135,6 +135,10 @@ export class LSPSARIFConverter {
   /**
    * Convert CodeQual issues to LSP Code Actions
    * Cursor/VSCode will show these in Quick Fix menu (Ctrl+.)
+   * 
+   * Returns:
+   * - Individual code actions (one per issue) for granular control
+   * - Batch actions (Apply All, Apply by Severity) for one-click fixes
    */
   public generateLSPCodeActions(
     issues: EnrichedIssue[],
@@ -142,13 +146,71 @@ export class LSPSARIFConverter {
   ): LSPCodeAction[] {
     const codeActions: LSPCodeAction[] = [];
     
+    // Filter issues with fixes
+    const fixableIssues = issues.filter(issue => issue.fixSuggestion?.correctedCode);
+    
+    // ========================================================================
+    // BATCH ACTIONS (One-click fixes) - ADDED FIRST so they appear at top
+    // ========================================================================
+    
+    // 1. Apply All Fixes (377 issues)
+    if (fixableIssues.length > 0) {
+      const allFixesAction = this.createBatchCodeAction(
+        `Apply All Fixes (${fixableIssues.length} issues)`,
+        fixableIssues,
+        workspaceRoot
+      );
+      if (allFixesAction) codeActions.push(allFixesAction);
+    }
+    
+    // 2. Apply by Severity Groups
+    const issuesBySeverity = this.groupIssuesBySeverity(fixableIssues);
+    
+    if (issuesBySeverity.critical.length > 0) {
+      const criticalAction = this.createBatchCodeAction(
+        `Apply Critical Fixes (${issuesBySeverity.critical.length} issues)`,
+        issuesBySeverity.critical,
+        workspaceRoot
+      );
+      if (criticalAction) codeActions.push(criticalAction);
+    }
+    
+    if (issuesBySeverity.high.length > 0) {
+      const highAction = this.createBatchCodeAction(
+        `Apply High Severity Fixes (${issuesBySeverity.high.length} issues)`,
+        issuesBySeverity.high,
+        workspaceRoot
+      );
+      if (highAction) codeActions.push(highAction);
+    }
+    
+    if (issuesBySeverity.medium.length > 0) {
+      const mediumAction = this.createBatchCodeAction(
+        `Apply Medium Severity Fixes (${issuesBySeverity.medium.length} issues)`,
+        issuesBySeverity.medium,
+        workspaceRoot
+      );
+      if (mediumAction) codeActions.push(mediumAction);
+    }
+    
+    if (issuesBySeverity.low.length > 0) {
+      const lowAction = this.createBatchCodeAction(
+        `Apply Low Severity Fixes (${issuesBySeverity.low.length} issues)`,
+        issuesBySeverity.low,
+        workspaceRoot
+      );
+      if (lowAction) codeActions.push(lowAction);
+    }
+    
+    // ========================================================================
+    // INDIVIDUAL ACTIONS (Per-issue fixes) - For granular control
+    // ========================================================================
+    
     // Group issues by file for efficient processing
-    const issuesByFile = this.groupIssuesByFile(issues);
+    const issuesByFile = this.groupIssuesByFile(fixableIssues);
     
     for (const [file, fileIssues] of Object.entries(issuesByFile)) {
       for (const issue of fileIssues) {
-        if (!issue.fixSuggestion?.correctedCode) continue;
-        
         const fileUri = this.toFileUri(file, workspaceRoot);
         const codeAction = this.createLSPCodeAction(issue, fileUri);
         if (codeAction) codeActions.push(codeAction);
@@ -184,6 +246,66 @@ export class LSPSARIFConverter {
   // ==========================================================================
   // Private Helper Methods - LSP
   // ==========================================================================
+  
+  /**
+   * Create a batch code action that applies multiple fixes across multiple files
+   * This enables "Apply All Fixes" and "Apply by Severity" one-click actions
+   */
+  private createBatchCodeAction(
+    title: string,
+    issues: EnrichedIssue[],
+    workspaceRoot: string
+  ): LSPCodeAction | null {
+    if (issues.length === 0) return null;
+    
+    // Group issues by file URI
+    const changesByFile: Record<string, LSPTextEdit[]> = {};
+    const diagnostics: LSPDiagnostic[] = [];
+    
+    for (const issue of issues) {
+      if (!issue.fixSuggestion?.correctedCode || !issue.file) continue;
+      
+      const fileUri = this.toFileUri(issue.file, workspaceRoot);
+      const line = (issue.line || 1) - 1; // Convert to 0-based
+      const endLine = line + this.countLines(issue.fixSuggestion.correctedCode);
+      
+      // Add text edit for this issue
+      if (!changesByFile[fileUri]) {
+        changesByFile[fileUri] = [];
+      }
+      
+      changesByFile[fileUri].push({
+        range: {
+          start: { line, character: 0 },
+          end: { line: endLine, character: 0 }
+        },
+        newText: issue.fixSuggestion.correctedCode
+      });
+      
+      // Add diagnostic for this issue
+      diagnostics.push({
+        range: {
+          start: { line, character: 0 },
+          end: { line: line + 1, character: 0 }
+        },
+        severity: this.mapSeverityToLSP(issue.severity),
+        code: issue.rule,
+        source: `codequal-${issue.tool}`,
+        message: issue.message
+      });
+    }
+    
+    if (Object.keys(changesByFile).length === 0) return null;
+    
+    return {
+      title,
+      kind: 'quickfix',
+      edit: {
+        changes: changesByFile
+      },
+      diagnostics
+    };
+  }
   
   private createLSPCodeAction(
     issue: EnrichedIssue,
@@ -336,6 +458,35 @@ export class LSPSARIFConverter {
       if (!grouped[issue.file]) grouped[issue.file] = [];
       grouped[issue.file].push(issue);
     }
+    return grouped;
+  }
+  
+  private groupIssuesBySeverity(issues: EnrichedIssue[]): {
+    critical: EnrichedIssue[];
+    high: EnrichedIssue[];
+    medium: EnrichedIssue[];
+    low: EnrichedIssue[];
+  } {
+    const grouped = {
+      critical: [] as EnrichedIssue[],
+      high: [] as EnrichedIssue[],
+      medium: [] as EnrichedIssue[],
+      low: [] as EnrichedIssue[]
+    };
+    
+    for (const issue of issues) {
+      const severity = (issue.severity || 'low').toLowerCase();
+      if (severity === 'critical') {
+        grouped.critical.push(issue);
+      } else if (severity === 'high') {
+        grouped.high.push(issue);
+      } else if (severity === 'medium') {
+        grouped.medium.push(issue);
+      } else {
+        grouped.low.push(issue);
+      }
+    }
+    
     return grouped;
   }
   

@@ -25,13 +25,23 @@
 - Updated report instructions in `metadata-footer.ts`
 - Added comprehensive tests + docs
 
-**Impact**: 377 issues → ALL available via Cmd+. Quick Fix in Cursor
+**Impact**: 377 issues → ALL available via **ONE-CLICK** batch actions in Cursor
+
+**Batch Actions Added** (NEW):
+- ✅ **"Apply All Fixes (377 issues)"** - One click fixes everything
+- ✅ **"Apply Critical Fixes (X issues)"** - Fix only critical
+- ✅ **"Apply High Severity Fixes (X issues)"** - Fix only high
+- ✅ **"Apply Medium Severity Fixes (X issues)"** - Fix only medium
+- ✅ **"Apply Low Severity Fixes (X issues)"** - Fix only low
+- ✅ Individual per-issue actions still available for granular control
 
 **Next Session Must Test**:
 1. Generate LSP/SARIF on Oracle Cloud
 2. Download files from Supabase
 3. Test Cmd+. Quick Fix menu in Cursor
-4. Verify fixes apply correctly
+4. **VERIFY**: "Apply All Fixes" appears at top of menu
+5. **VERIFY**: One click applies all 377 fixes
+6. **VERIFY**: Severity-grouped batch actions work
 
 **Docs**: See `CURSOR_AUTOFIX_IMPLEMENTATION.md` for complete guide
 

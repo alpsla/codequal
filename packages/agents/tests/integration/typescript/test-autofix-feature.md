@@ -133,15 +133,24 @@
    curl -O https://ftjhmbbcuqjqmmbaymqb.supabase.co/.../codequal-lsp-actions.json
    ```
 
-2. **Open file with issues in Cursor**
+2. **Load LSP file in Cursor** (method depends on Cursor version):
+   - **Option A**: Command Palette → "Load Code Actions" → Select LSP file
+   - **Option B**: Open LSP file → Cursor AI reads it automatically
+   - **Option C**: Install CodeQual extension (if available)
 
-3. **Position cursor on problematic line**
+3. **Open Quick Fix menu** (`Cmd+.` anywhere in workspace)
 
-4. **Press `Cmd+.` (Quick Fix menu)**
-   - Should see: "Fix: [Issue Name]"
-   - Click to apply the fix
+4. **You'll see batch actions at the top**:
+   - ✅ **"Apply All Fixes (377 issues)"** ← **ONE CLICK FIXES EVERYTHING**
+   - ✅ **"Apply Critical Fixes (X issues)"**
+   - ✅ **"Apply High Severity Fixes (X issues)"**
+   - ✅ **"Apply Medium Severity Fixes (X issues)"**
+   - ✅ **"Apply Low Severity Fixes (X issues)"**
+   - Individual per-issue actions below (for granular control)
 
-5. **Repeat for each issue** or use SARIF batch import
+5. **Click "Apply All Fixes"** → All 377 fixes applied in one action! 🎉
+
+**Alternative**: Use individual actions for per-issue control
 
 ### How to Use SARIF Format
 
