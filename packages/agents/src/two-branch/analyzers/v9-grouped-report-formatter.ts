@@ -675,9 +675,13 @@ export class V9GroupedReportFormatter {
       // Log summary
       const totalWithUrls = ideFixFiles.filter(f => (f as any).publicUrl).length;
       console.log(`[Manifest] ✅ Created manifest with ${totalWithUrls}/${ideFixFiles.length} files having Supabase URLs`);
-      
+
       // SESSION 25: Generate LSP and SARIF formats for IDE integration
-      await this.generateLSPAndSARIFFormats(enrichedIssues, updatedGroups, metadata);
+      const { lspUrl, sarifUrl } = await this.generateLSPAndSARIFFormats(enrichedIssues, updatedGroups, metadata);
+
+      // SESSION 26: Store URLs for metadata footer (type assertion needed for dynamic properties)
+      if (lspUrl) (metadata as any).lspUrl = lspUrl;
+      if (sarifUrl) (metadata as any).sarifUrl = sarifUrl;
     }
     
     // SESSION 24: Now generate markdown with public URLs
@@ -742,7 +746,7 @@ export class V9GroupedReportFormatter {
     markdown.push('');
     
     // Footer (BUG FIX #33: Only IDE fix files now, no separate location attachments)
-    markdown.push(this.generateFooter(groups, ideFixFiles));
+    markdown.push(this.generateFooter(groups, ideFixFiles, metadata));
     
     // Generate mapping index (BUG FIX #33: Only IDE fix files)
     const mapping = this.generateMapping(enrichedIssues, groups, metadata, ideFixFiles);
@@ -3089,15 +3093,15 @@ mvn spotless:check  # Verify (use in CI)
     enrichedIssues: EnrichedIssue[],
     groups: IssueGroup[],
     metadata: any
-  ): Promise<void> {
+  ): Promise<{ lspUrl?: string; sarifUrl?: string }> {
     try {
       const converter = new LSPSARIFConverter();
       const workspaceRoot = this.repoPath || process.cwd();
-      
+
       // Generate LSP Code Actions
       console.log('[LSP/SARIF] Generating LSP Code Actions...');
       const lspCodeActions = converter.generateLSPCodeActions(enrichedIssues, workspaceRoot);
-      
+
       // Generate SARIF Report
       console.log('[LSP/SARIF] Generating SARIF 2.1.0 report...');
       const sarifReport = converter.generateSARIFReport(enrichedIssues, groups, {
@@ -3105,22 +3109,26 @@ mvn spotless:check  # Verify (use in CI)
         version: metadata.analyzerVersion || '9.0.0',
         analyzedAt: metadata.analyzedAt || new Date().toISOString()
       });
-      
+
       // Note: LSP and SARIF files are uploaded to Supabase only
       // They are not saved locally to avoid clutter
       console.log(`[LSP/SARIF] Generated ${lspCodeActions.length} LSP Code Actions`);
       console.log(`[LSP/SARIF] Generated SARIF report with ${sarifReport.runs[0].results.length} results`);
-      
+
+      // Initialize URLs
+      let lspUrl: string | undefined;
+      let sarifUrl: string | undefined;
+
       // Upload to Supabase if available
       if (this.supabase) {
         const timestamp = Date.now();
         const repoName = metadata.repository?.split('/').pop() || 'unknown';
         const analysisId = `${repoName}-pr${metadata.prNumber || 0}-${timestamp}`;
-        
+
         // Define filenames
         const lspFilename = 'codequal-lsp-actions.json';
         const sarifFilename = 'codequal-sarif-report.json';
-        
+
         // Upload LSP file
         const lspContent = JSON.stringify(lspCodeActions, null, 2);
         console.log(`[LSP/SARIF] Uploading LSP to: ${analysisId}/${lspFilename}`);
@@ -3141,17 +3149,18 @@ mvn spotless:check  # Verify (use in CI)
           const { data: lspUrlData } = this.supabase.storage
             .from('v9-attachments')
             .getPublicUrl(`${analysisId}/${lspFilename}`);
-          console.log(`[LSP/SARIF] ✅ LSP URL: ${lspUrlData.publicUrl}`);
+          lspUrl = lspUrlData.publicUrl;
+          console.log(`[LSP/SARIF] ✅ LSP uploaded: ${lspUrl}`);
         } else {
           console.error(`[LSP/SARIF] ❌ LSP upload: No data and no error (unexpected state)`);
         }
-        
+
         // Upload SARIF file
         const sarifContent = JSON.stringify(sarifReport, null, 2);
         console.log(`[LSP/SARIF] Uploading SARIF to: ${analysisId}/${sarifFilename}`);
         console.log(`[LSP/SARIF] SARIF content size: ${sarifContent.length} bytes`);
 
-        const { data: sarifData, error: sarifError } = await this.supabase.storage
+        const { data: sarifData, error: sarifError} = await this.supabase.storage
           .from('v9-attachments')
           .upload(`${analysisId}/${sarifFilename}`, sarifContent, {
             contentType: 'application/json',
@@ -3166,15 +3175,19 @@ mvn spotless:check  # Verify (use in CI)
           const { data: sarifUrlData } = this.supabase.storage
             .from('v9-attachments')
             .getPublicUrl(`${analysisId}/${sarifFilename}`);
-          console.log(`[LSP/SARIF] ✅ SARIF URL: ${sarifUrlData.publicUrl}`);
+          sarifUrl = sarifUrlData.publicUrl;
+          console.log(`[LSP/SARIF] ✅ SARIF uploaded: ${sarifUrl}`);
         } else {
           console.error(`[LSP/SARIF] ❌ SARIF upload: No data and no error (unexpected state)`);
         }
       }
-      
+
+      return { lspUrl, sarifUrl };
+
     } catch (error) {
       console.error('[LSP/SARIF] Error generating formats:', error);
       // Don't fail the entire report generation if LSP/SARIF fails
+      return {};
     }
   }
   
@@ -4353,9 +4366,10 @@ ${blocking.length > 5 ? `\n... and ${blocking.length - 5} more` : ''}` : '### �
    */
   private generateFooter(
     groups: IssueGroup[],
-    ideFixFiles: IDEFixFile[]
+    ideFixFiles: IDEFixFile[],
+    metadata: any
   ): string {
-    return generateFooter(groups, ideFixFiles);
+    return generateFooter(groups, ideFixFiles, metadata);
   }
 
   private _REMOVED_generateFooter_LEGACY(

@@ -20,6 +20,7 @@
  */
 
 import Redis from 'ioredis';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 export interface CachedAnalysisForComparison {
   // Identifiers
@@ -89,6 +90,7 @@ const DEFAULT_TTL_DAYS = 180;  // 6 months for slow PRs
 
 export class FixValidationCache {
   private redis: Redis;
+  private supabase: SupabaseClient;
   private ttlSeconds: number;
 
   constructor(redisUrl?: string, ttlDays = DEFAULT_TTL_DAYS) {
@@ -103,6 +105,19 @@ export class FixValidationCache {
     this.redis.on('connect', () => {
       console.log('[FixValidationCache] ✅ Connected to Redis');
     });
+
+    // Initialize Supabase for telemetry storage
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseKey) {
+      console.warn('[FixValidationCache] ⚠️  Supabase credentials not found - telemetry storage disabled');
+      // Create a mock client that won't fail but won't store data
+      this.supabase = null as any;
+    } else {
+      this.supabase = createClient(supabaseUrl, supabaseKey);
+      console.log('[FixValidationCache] ✅ Connected to Supabase for telemetry');
+    }
   }
 
   /**
@@ -345,6 +360,72 @@ export class FixValidationCache {
         totalEntries: 0,
         keys: [],
       };
+    }
+  }
+
+  /**
+   * Store telemetry data in Supabase after comparison
+   */
+  async storeTelemetry(
+    comparison: FixComparisonResult,
+    metadata: {
+      repositoryUrl: string;
+      prNumber: number;
+      commitShaPrevious: string;
+      commitShaCurrent: string;
+      language?: string;
+      toolsUsed?: string[];
+      analysisDurationPrevious?: string;
+      analysisDurationCurrent?: string;
+    }
+  ): Promise<void> {
+    if (!this.supabase) {
+      console.log('[FixValidation] ⚠️  Telemetry storage disabled (no Supabase connection)');
+      return;
+    }
+
+    try {
+      console.log('[FixValidation] 💾 Storing telemetry in Supabase...');
+
+      const { data, error } = await this.supabase
+        .from('fix_telemetry')
+        .insert({
+          repository_url: metadata.repositoryUrl,
+          pr_number: metadata.prNumber,
+          commit_sha_previous: metadata.commitShaPrevious,
+          commit_sha_current: metadata.commitShaCurrent,
+
+          total_issues_previous: comparison.totalIssuesInPrevious,
+          total_issues_current: comparison.totalIssuesInCurrent,
+          issues_resolved: comparison.issuesResolved,
+          issues_new: comparison.issuesNew,
+          issues_remaining: comparison.issuesRemaining,
+
+          fixes_exact: comparison.fixAdoption.exact,
+          fixes_modified: comparison.fixAdoption.modified,
+          fixes_different: comparison.fixAdoption.different,
+          fixes_not_fixed: comparison.fixAdoption.notFixed,
+
+          language: metadata.language,
+          tools_used: metadata.toolsUsed,
+
+          analysis_duration_previous: metadata.analysisDurationPrevious,
+          analysis_duration_current: metadata.analysisDurationCurrent,
+        })
+        .select();
+
+      if (error) {
+        console.error('[FixValidation] ❌ Error storing telemetry:', error);
+        return;
+      }
+
+      console.log('[FixValidation] ✅ Telemetry stored successfully');
+      console.log(`[FixValidation]   • Record ID: ${data[0]?.id}`);
+      console.log(`[FixValidation]   • Fix adoption rate: ${data[0]?.fix_adoption_rate}%`);
+      console.log(`[FixValidation]   • Resolution rate: ${data[0]?.resolution_rate}%`);
+
+    } catch (err) {
+      console.error('[FixValidation] ❌ Unexpected error storing telemetry:', err);
     }
   }
 

@@ -349,7 +349,7 @@ ${blocking.length > 5 ? `\n... and ${blocking.length - 5} more` : ''}` : '### �
  * Generate footer with IDE integration instructions
  * Includes lazy loading architecture explanation
  */
-export function generateFooter(groups: IssueGroup[], ideFixFiles: IDEFixFile[]): string {
+export function generateFooter(groups: IssueGroup[], ideFixFiles: IDEFixFile[], metadata?: any): string {
   // BUG FIX #48, #49, #70: Updated footer for Bug #34 lazy loading architecture
   // ENHANCEMENT #3: Removed Issue Groups Mapping (not useful for end users)
   // BUG FIX #70: Don't show empty "Attachments" header - combine with IDE Fix Files section
@@ -422,7 +422,11 @@ export function generateFooter(groups: IssueGroup[], ideFixFiles: IDEFixFile[]):
     footer += `### 🎯 Method 1: LSP Batch Actions (Recommended) ⚡\n\n`;
     footer += `**✨ New**: Apply ALL ${totalFixable.toLocaleString()} fixes with 1 click!\n\n`;
     footer += `**Download**: \`codequal-lsp-actions.json\`\n`;
-    if (manifestUrl) {
+    // SESSION 26: Use actual LSP URL from metadata (uploaded separately with different timestamp)
+    if (metadata?.lspUrl) {
+      footer += `- URL: [Download LSP file](${metadata.lspUrl})\n`;
+    } else if (manifestUrl) {
+      // Fallback to string replacement if lspUrl not in metadata
       const lspUrl = manifestUrl.replace('all-issues-manifest.json', 'codequal-lsp-actions.json');
       footer += `- URL: [Download LSP file](${lspUrl})\n`;
     }
@@ -447,9 +451,55 @@ export function generateFooter(groups: IssueGroup[], ideFixFiles: IDEFixFile[]):
     footer += `> 💡 **How it works**: LSP batch actions group all fixes into a single IDE operation. `;
     footer += `When you click "Apply All", your IDE applies all ${totalFixable.toLocaleString()} fixes simultaneously!\n\n`;
 
+    // SESSION 27: Hybrid fix approach explanation
+    footer += `**Three Ways to Use Batch Actions**:\n\n`;
+    footer += `1. **🚀 Apply All (Fastest)** - 1 click for all ${totalFixable.toLocaleString()} fixes (~5 seconds)\n`;
+    footer += `2. **🎯 Severity Batches** - E.g., "Apply All Low Severity" for safe bulk fixes\n`;
+    footer += `3. **👁️ Individual Review** - Review each fix before applying (${totalFixable.toLocaleString()} clicks)\n\n`;
+
+    footer += `---\n\n`;
+    footer += `### 🔄 How CodeQual Fixes Work (Hybrid Approach)\n\n`;
+    footer += `**Two Fix Strategies for Maximum Reliability**:\n\n`;
+
+    footer += `**⚡ Prescriptive Fixes (Primary)**\n`;
+    footer += `- Applied when code unchanged since analysis (~95% of fixes)\n`;
+    footer += `- Speed: Instant (< 1ms per fix)\n`;
+    footer += `- Cost: Free (no API calls)\n`;
+    footer += `- Your IDE applies our exact validated code\n\n`;
+
+    footer += `**🤖 AI-Generated Fixes (Intelligent Fallback)**\n`;
+    footer += `- Applied when code changed after analysis (~5% of fixes)\n`;
+    footer += `- Speed: 2-5 seconds per fix\n`;
+    footer += `- Cost: Free to you (uses your IDE's AI subscription)\n`;
+    footer += `- IDE's AI adapts fix to your code changes\n\n`;
+
+    footer += `**Example Scenarios**:\n`;
+    footer += `\`\`\`\n`;
+    footer += `Scenario A (Act Immediately):\n`;
+    footer += `- Monday: Analysis finds null pointer at line 45\n`;
+    footer += `- Monday: You click "Apply Fix" → Prescriptive applies instantly ✅\n\n`;
+    footer += `Scenario B (Act After Edits):\n`;
+    footer += `- Monday: Analysis finds null pointer at line 45\n`;
+    footer += `- Tuesday-Friday: You make other edits (lines shift, variables renamed)\n`;
+    footer += `- Friday: You click "Apply Fix" → AI generates adapted fix ✅\n`;
+    footer += `\`\`\`\n\n`;
+
+    footer += `**Why Trust Batch Apply?**\n`;
+    footer += `✅ All fixes tested against your actual code\n`;
+    footer += `✅ Only safe, non-breaking changes included\n`;
+    footer += `✅ AI fallback handles code changes automatically\n`;
+    footer += `✅ Can undo with Cmd+Z if needed\n\n`;
+
+    footer += `> 💡 **Pro Tip**: For instant fixes, apply soon after analysis. For flexibility with ongoing edits, AI adapts automatically!\n\n`;
+    footer += `---\n\n`;
+
     footer += `### 📋 Method 2: SARIF Report (Industry Standard)\n\n`;
     footer += `**Download**: \`codequal-sarif-report.json\`\n`;
-    if (manifestUrl) {
+    // SESSION 26: Use actual SARIF URL from metadata (uploaded separately with different timestamp)
+    if (metadata?.sarifUrl) {
+      footer += `- URL: [Download SARIF file](${metadata.sarifUrl})\n`;
+    } else if (manifestUrl) {
+      // Fallback to string replacement if sarifUrl not in metadata
       const sarifUrl = manifestUrl.replace('all-issues-manifest.json', 'codequal-sarif-report.json');
       footer += `- URL: [Download SARIF file](${sarifUrl})\n`;
     }
