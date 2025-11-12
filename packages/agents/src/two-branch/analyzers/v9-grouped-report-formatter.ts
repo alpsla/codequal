@@ -3123,6 +3123,9 @@ mvn spotless:check  # Verify (use in CI)
         
         // Upload LSP file
         const lspContent = JSON.stringify(lspCodeActions, null, 2);
+        console.log(`[LSP/SARIF] Uploading LSP to: ${analysisId}/${lspFilename}`);
+        console.log(`[LSP/SARIF] LSP content size: ${lspContent.length} bytes`);
+
         const { data: lspData, error: lspError } = await this.supabase.storage
           .from('v9-attachments')
           .upload(`${analysisId}/${lspFilename}`, lspContent, {
@@ -3130,16 +3133,24 @@ mvn spotless:check  # Verify (use in CI)
             cacheControl: '3600',
             upsert: true
           });
-        
-        if (!lspError) {
+
+        if (lspError) {
+          console.error(`[LSP/SARIF] ❌ LSP upload failed:`, lspError);
+        } else if (lspData) {
+          console.log(`[LSP/SARIF] ✅ LSP upload successful, path: ${lspData.path}`);
           const { data: lspUrlData } = this.supabase.storage
             .from('v9-attachments')
             .getPublicUrl(`${analysisId}/${lspFilename}`);
-          console.log(`[LSP/SARIF] ✅ LSP uploaded: ${lspUrlData.publicUrl}`);
+          console.log(`[LSP/SARIF] ✅ LSP URL: ${lspUrlData.publicUrl}`);
+        } else {
+          console.error(`[LSP/SARIF] ❌ LSP upload: No data and no error (unexpected state)`);
         }
         
         // Upload SARIF file
         const sarifContent = JSON.stringify(sarifReport, null, 2);
+        console.log(`[LSP/SARIF] Uploading SARIF to: ${analysisId}/${sarifFilename}`);
+        console.log(`[LSP/SARIF] SARIF content size: ${sarifContent.length} bytes`);
+
         const { data: sarifData, error: sarifError } = await this.supabase.storage
           .from('v9-attachments')
           .upload(`${analysisId}/${sarifFilename}`, sarifContent, {
@@ -3147,12 +3158,17 @@ mvn spotless:check  # Verify (use in CI)
             cacheControl: '3600',
             upsert: true
           });
-        
-        if (!sarifError) {
+
+        if (sarifError) {
+          console.error(`[LSP/SARIF] ❌ SARIF upload failed:`, sarifError);
+        } else if (sarifData) {
+          console.log(`[LSP/SARIF] ✅ SARIF upload successful, path: ${sarifData.path}`);
           const { data: sarifUrlData } = this.supabase.storage
             .from('v9-attachments')
             .getPublicUrl(`${analysisId}/${sarifFilename}`);
-          console.log(`[LSP/SARIF] ✅ SARIF uploaded: ${sarifUrlData.publicUrl}`);
+          console.log(`[LSP/SARIF] ✅ SARIF URL: ${sarifUrlData.publicUrl}`);
+        } else {
+          console.error(`[LSP/SARIF] ❌ SARIF upload: No data and no error (unexpected state)`);
         }
       }
       
