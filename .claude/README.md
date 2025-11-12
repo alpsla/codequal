@@ -14,10 +14,12 @@ This directory contains custom configuration for Claude Code CLI when working on
 │   ├── bug-tracker.md
 │   ├── build-ci-fixer.md
 │   ├── codequal-session-starter.md
+│   ├── market-researcher.md           # NEW: Market intelligence agent
 │   ├── mcp-tool-scout.md
 │   ├── progress-doc-manager.md
 │   ├── session-wrapper.md
 │   ├── smart-commit-manager.md
+│   ├── strategic-business-owner.md    # NEW: CEO/Strategy agent
 │   └── test-coverage-generator.md
 └── commands/                     # Custom slash commands
     ├── enhanced-dev-cycle.md
@@ -60,6 +62,10 @@ Claude Code will automatically detect and use agents in `.claude/agents/`. Key a
 
 **Documentation:**
 - `progress-doc-manager` - Update session summaries and architecture docs
+
+**Strategic & Business:**
+- `strategic-business-owner` - CEO-level strategic analysis and business oversight (Opus)
+- `market-researcher` - Competitive intelligence and market monitoring (Sonnet)
 
 ### 3. Use Custom Slash Commands
 
@@ -188,6 +194,43 @@ MCP server configuration (also used by Claude Desktop if present).
 ```
 "wrap up the session"
 "end session"
+```
+
+### strategic-business-owner (Model: Opus)
+**When to use:** Need strategic business decisions, investor updates, market positioning
+
+**What it does:**
+- CEO-level strategic oversight and business analysis
+- Analyzes session summaries, planning docs, market research
+- Monitors development progress and alpha/beta testing
+- Provides investor relations support and metrics tracking
+- Compares market position vs competitors
+- Coordinates with market-researcher agent for intelligence
+
+**Usage:**
+```
+"Evaluate our go-to-market strategy"
+"Should we pivot based on GitHub Copilot launch?"
+"Prepare investor update with current metrics"
+"Analyze competitive positioning vs SonarQube"
+```
+
+### market-researcher (Model: Sonnet)
+**When to use:** Need competitor analysis, market research, pricing intelligence
+
+**What it does:**
+- Competitive intelligence and market monitoring
+- Tracks competitor pricing, features, and positioning
+- Monitors developer sentiment across social media
+- Analyzes industry trends and emerging technologies
+- Provides weekly competitive briefs and monthly reports
+
+**Usage:**
+```
+"Research GitHub Copilot's new code quality features"
+"What's GitLab's current market share?"
+"Track competitor pricing changes"
+"Analyze developer sentiment about AI code tools"
 ```
 
 ## 🔍 Path Configuration
