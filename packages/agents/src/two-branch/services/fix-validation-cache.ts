@@ -227,7 +227,7 @@ export class FixValidationCache {
         result.issuesResolved++;
 
         // Determine how it was fixed
-        const fixApproach = this.determineFix Approach(prevIssue);
+        const fixApproach = this.determineFixApproach(prevIssue);
 
         if (fixApproach) {
           result.fixAdoption[fixApproach]++;
@@ -285,7 +285,7 @@ export class FixValidationCache {
    * Determine how an issue was fixed (if we have the fix suggestion)
    * Returns null if we can't determine (no fix suggestion was provided)
    */
-  private determineFix Approach(
+  private determineFixApproach(
     issue: CachedAnalysisForComparison['issues'][0]
   ): 'exact' | 'modified' | 'different' | null {
     // If we didn't provide a fix suggestion, we can't determine the approach
