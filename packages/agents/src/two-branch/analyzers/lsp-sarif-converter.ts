@@ -411,14 +411,14 @@ export class LSPSARIFConverter {
           }
         },
         context: {
-          originalCode: issue.codeSnippet || '',
+          originalCode: issue.snippet || '',
           fileType: fileExtension,
           language
         },
         aiPrompt: this.generateAIPrompt(issue, language),
         codequalFix: {
-          confidence: issue.fixSuggestion?.confidence || 0.8,
-          source: issue.fixSuggestion?.source || 'ai_generated',
+          confidence: (issue.fixSuggestion as any)?.confidence || 0.8,
+          source: (issue.fixSuggestion as any)?.source || 'ai_generated',
           verified: false // Will be updated based on user feedback
         },
         telemetry: {
@@ -690,7 +690,7 @@ export class LSPSARIFConverter {
       prompt += `- Impact: ${explanation.impact}\n\n`;
     }
 
-    prompt += `Original code:\n${issue.codeSnippet || '(no snippet available)'}\n\n`;
+    prompt += `Original code:\n${issue.snippet || '(no snippet available)'}\n\n`;
     prompt += `Please provide a fixed version of this code that resolves the issue while:\n`;
     prompt += `1. Maintaining the original functionality\n`;
     prompt += `2. Following ${language} best practices\n`;
