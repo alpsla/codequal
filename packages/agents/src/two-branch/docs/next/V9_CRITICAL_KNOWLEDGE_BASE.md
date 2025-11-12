@@ -1,6 +1,72 @@
 # 🧠 V9 CRITICAL KNOWLEDGE BASE
 **IMPORTANT: Start every V9 session by reading this file**
-**Last Updated: November 11-12, 2025 - Session 26: LSP/SARIF Auto-Fix**
+**Last Updated: November 12, 2025 - Session 27: Fix Validation + Hybrid Documentation**
+
+---
+
+## ⭐ SESSION 27: Fix Validation Telemetry + Hybrid Auto-Fix Documentation (November 12, 2025)
+
+### Fix Validation System ✅ COMPLETE
+
+**Goal**: Track which fixes users actually apply (prescriptive vs AI-generated)
+
+**Implementation**: Redis-based cache + Supabase telemetry
+- Redis stores LAST PR analysis (180-day TTL)
+- User re-analyzes → Compare with cached → Store metrics → Replace cache
+- No extra storage cost (uses existing Redis + Supabase)
+
+**How It Works**:
+```
+Analysis #1 (Monday):
+└─ Analyze PR #123 → 400 issues → Store in Redis
+
+User fixes issues (Tuesday-Friday)
+
+Analysis #2 (Saturday):
+├─ Analyze PR #123 → 200 issues
+├─ Compare with cached (400 issues)
+├─ Telemetry: 200 resolved, X used our fixes
+└─ Replace cache with new analysis
+```
+
+**Database**: `fix_telemetry` table with auto-calculated metrics
+- `fix_adoption_rate`: % of resolved issues using our recommendations
+- `resolution_rate`: % of previous issues resolved
+- Analytics functions ready for future dashboard
+
+**Files**:
+- `fix-validation-cache.ts`: Redis cache + Supabase telemetry
+- `004_create_fix_telemetry_table.sql`: Complete schema + analytics
+- **Guide**: `FIX_VALIDATION_REDIS_GUIDE.md` (comprehensive documentation)
+
+**Critical Bug Fixed**: LSP/SARIF URL Mismatch 🐛
+- Manifest uploaded → timestamp `1762914141752`
+- LSP/SARIF uploaded later → timestamp `1762914141979`
+- Footer used string replacement → wrong URLs (HTTP 400)
+- **Fix**: Capture actual Supabase URLs after upload
+- **Verification**: Both URLs now return HTTP 200 ✅
+
+### Hybrid Auto-Fix Documentation ✅ COMPLETE
+
+**Problem**: Users confused about batch fix workflow
+
+**Solution**: Added clear explanation in report footer
+
+**Three Ways to Use Batch Actions**:
+1. **Apply All (Fastest)** - 1 click, all fixes, ~5 seconds
+2. **Severity Batches** - E.g., "Apply All Low Severity" for safe bulk fixes
+3. **Individual Review** - Review each fix before applying
+
+**How Fixes Work** (Transparent to User):
+- **Prescriptive Fixes (95%)**: Instant (< 1ms), when code unchanged
+- **AI-Generated Fixes (5%)**: 2-5s, when code changed after analysis
+- IDE decides automatically based on code state
+
+**Key Message**: Trust batch apply - tested, safe, AI fallback handles changes
+
+**Files Modified**:
+- `metadata-footer.ts`: Added hybrid approach explanation
+- `v9-grouped-report-formatter.ts`: URL capture logic
 
 ---
 
