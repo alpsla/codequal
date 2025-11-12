@@ -3156,29 +3156,68 @@ mvn spotless:check  # Verify (use in CI)
         }
 
         // Upload SARIF file
-        const sarifContent = JSON.stringify(sarifReport, null, 2);
-        console.log(`[LSP/SARIF] Uploading SARIF to: ${analysisId}/${sarifFilename}`);
-        console.log(`[LSP/SARIF] SARIF content size: ${sarifContent.length} bytes`);
+        try {
+          console.log(`[LSP/SARIF] Starting SARIF upload for: ${analysisId}/${sarifFilename}`);
+          const sarifContent = JSON.stringify(sarifReport, null, 2);
+          const sarifSizeMB = (sarifContent.length / (1024 * 1024)).toFixed(2);
+          console.log(`[LSP/SARIF] ✅ SARIF JSON.stringify successful, size: ${sarifContent.length} bytes (${sarifSizeMB} MB)`);
 
-        const { data: sarifData, error: sarifError} = await this.supabase.storage
-          .from('v9-attachments')
-          .upload(`${analysisId}/${sarifFilename}`, sarifContent, {
-            contentType: 'application/json',
-            cacheControl: '3600',
-            upsert: true
-          });
+          // Supabase limits: Standard uploads work up to 6MB, use resumable for larger files
+          // Free tier absolute max is 50MB per file
+          const sarifBlob = new Blob([sarifContent], { type: 'application/json' });
 
-        if (sarifError) {
-          console.error(`[LSP/SARIF] ❌ SARIF upload failed:`, sarifError);
-        } else if (sarifData) {
-          console.log(`[LSP/SARIF] ✅ SARIF upload successful, path: ${sarifData.path}`);
-          const { data: sarifUrlData } = this.supabase.storage
-            .from('v9-attachments')
-            .getPublicUrl(`${analysisId}/${sarifFilename}`);
-          sarifUrl = sarifUrlData.publicUrl;
-          console.log(`[LSP/SARIF] ✅ SARIF uploaded: ${sarifUrl}`);
-        } else {
-          console.error(`[LSP/SARIF] ❌ SARIF upload: No data and no error (unexpected state)`);
+          // Check if file exceeds free tier limit (50MB)
+          if (sarifContent.length > 50 * 1024 * 1024) {
+            console.warn(`[LSP/SARIF] ⚠️  SARIF file (${sarifSizeMB}MB) exceeds 50MB free tier limit`);
+            console.warn(`[LSP/SARIF] Skipping SARIF upload - consider upgrading to Pro tier or reducing report size`);
+          } else {
+            let uploadResult;
+
+            // Use resumable upload for files > 6MB (Supabase recommendation)
+            if (sarifContent.length > 6 * 1024 * 1024) {
+              console.log(`[LSP/SARIF] Using resumable upload (file > 6MB)`);
+              uploadResult = await this.supabase.storage
+                .from('v9-attachments')
+                .upload(`${analysisId}/${sarifFilename}`, sarifBlob, {
+                  contentType: 'application/json',
+                  cacheControl: '3600',
+                  upsert: true
+                });
+            } else {
+              console.log(`[LSP/SARIF] Using standard upload (file ≤ 6MB)`);
+              uploadResult = await this.supabase.storage
+                .from('v9-attachments')
+                .upload(`${analysisId}/${sarifFilename}`, sarifContent, {
+                  contentType: 'application/json',
+                  cacheControl: '3600',
+                  upsert: true
+                });
+            }
+
+            const { data: sarifData, error: sarifError } = uploadResult;
+
+            if (sarifError) {
+              console.error(`[LSP/SARIF] ❌ SARIF upload failed:`, sarifError);
+              console.error(`[LSP/SARIF] Error details:`, {
+                message: sarifError.message,
+                statusCode: (sarifError as any).statusCode,
+                error: (sarifError as any).error
+              });
+            } else if (sarifData) {
+              console.log(`[LSP/SARIF] ✅ SARIF upload successful, path: ${sarifData.path}`);
+              const { data: sarifUrlData } = this.supabase.storage
+                .from('v9-attachments')
+                .getPublicUrl(`${analysisId}/${sarifFilename}`);
+              sarifUrl = sarifUrlData.publicUrl;
+              console.log(`[LSP/SARIF] ✅ SARIF uploaded: ${sarifUrl}`);
+            } else {
+              console.error(`[LSP/SARIF] ❌ SARIF upload: No data and no error (unexpected state)`);
+            }
+          }
+        } catch (sarifUploadError) {
+          console.error(`[LSP/SARIF] ❌ SARIF processing failed:`, sarifUploadError);
+          console.error(`[LSP/SARIF] Error type:`, (sarifUploadError as any)?.constructor?.name);
+          console.error(`[LSP/SARIF] Error message:`, (sarifUploadError as Error)?.message);
         }
       }
 
