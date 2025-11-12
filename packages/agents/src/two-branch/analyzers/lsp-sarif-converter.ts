@@ -36,11 +36,57 @@ export interface LSPWorkspaceEdit {
   };
 }
 
+// Enhanced metadata for IDE AI generation (hybrid approach)
+export interface LSPCodeActionData {
+  // Issue context
+  issue: {
+    type: 'code_quality' | 'security' | 'performance' | 'architecture' | 'dependency';
+    rule: string;
+    severity: 'critical' | 'high' | 'medium' | 'low';
+    category: string;
+    description: string;
+    explanation: {
+      what: string;
+      why: string;
+      impact: string;
+    };
+  };
+
+  // Code context for AI
+  context: {
+    originalCode: string;
+    surroundingLines?: string[];
+    fileType: string;
+    framework?: string;
+    language?: string;
+  };
+
+  // AI prompt (if IDE wants to use it)
+  aiPrompt?: string;
+
+  // Validation metadata
+  codequalFix: {
+    confidence: number;      // 0.0 - 1.0
+    source: 'ai_generated' | 'rule_based' | 'template';
+    verified: boolean;       // Has this type of fix been validated?
+  };
+
+  // Telemetry (for tracking)
+  telemetry?: {
+    ruleId: string;
+    toolName: string;
+    issueCount: number;      // How many issues of this type in the PR
+  };
+}
+
 export interface LSPCodeAction {
   title: string;
   kind: 'quickfix' | 'refactor' | 'source';
   edit: LSPWorkspaceEdit;
   diagnostics?: LSPDiagnostic[];
+
+  // NEW: Enhanced metadata for IDE AI (hybrid approach)
+  data?: LSPCodeActionData;
 }
 
 export interface LSPDiagnostic {
@@ -312,10 +358,17 @@ export class LSPSARIFConverter {
     fileUri: string
   ): LSPCodeAction | null {
     if (!issue.fixSuggestion?.correctedCode) return null;
-    
+
     const line = (issue.line || 1) - 1; // Convert to 0-based
     const endLine = line + this.countLines(issue.fixSuggestion.correctedCode);
-    
+
+    // Determine issue type from tool/category
+    const issueType = this.determineIssueType(issue);
+
+    // Extract file extension for language detection
+    const fileExtension = fileUri.split('.').pop() || '';
+    const language = this.getLanguageFromExtension(fileExtension);
+
     return {
       title: `Fix: ${this.getTitleFromRule(issue.rule)}`,
       kind: 'quickfix',
@@ -339,7 +392,41 @@ export class LSPSARIFConverter {
         code: issue.rule,
         source: `codequal-${issue.tool}`,
         message: issue.message
-      }]
+      }],
+
+      // Enhanced metadata for IDE AI (hybrid approach)
+      data: {
+        issue: {
+          type: issueType,
+          rule: issue.rule,
+          severity: issue.severity,
+          category: issue.category || 'code_quality',
+          description: issue.message,
+          explanation: {
+            what: issue.fixSuggestion?.issueDescription?.what || issue.message,
+            why: issue.fixSuggestion?.issueDescription?.why ||
+                 `This violates the ${issue.rule} rule`,
+            impact: issue.fixSuggestion?.issueDescription?.impact ||
+                   `${issue.severity} severity: affects code quality`
+          }
+        },
+        context: {
+          originalCode: issue.codeSnippet || '',
+          fileType: fileExtension,
+          language
+        },
+        aiPrompt: this.generateAIPrompt(issue, language),
+        codequalFix: {
+          confidence: issue.fixSuggestion?.confidence || 0.8,
+          source: issue.fixSuggestion?.source || 'ai_generated',
+          verified: false // Will be updated based on user feedback
+        },
+        telemetry: {
+          ruleId: issue.rule,
+          toolName: issue.tool,
+          issueCount: 1
+        }
+      }
     };
   }
   
@@ -522,6 +609,96 @@ export class LSPSARIFConverter {
   
   private countLines(text: string): number {
     return (text.match(/\n/g) || []).length + 1;
+  }
+
+  /**
+   * Determine issue type from tool and category
+   */
+  private determineIssueType(issue: EnrichedIssue): 'code_quality' | 'security' | 'performance' | 'architecture' | 'dependency' {
+    const tool = issue.tool?.toLowerCase() || '';
+    const category = issue.category?.toLowerCase() || '';
+
+    // Security tools
+    if (tool.includes('semgrep') || tool.includes('snyk') || tool.includes('dependency-check') ||
+        category.includes('security') || category.includes('vulnerability')) {
+      return 'security';
+    }
+
+    // Dependency tools
+    if (tool.includes('dependency') || tool.includes('ossindex') ||
+        category.includes('dependency')) {
+      return 'dependency';
+    }
+
+    // Performance tools
+    if (tool.includes('performance') || category.includes('performance')) {
+      return 'performance';
+    }
+
+    // Architecture tools
+    if (tool.includes('architecture') || category.includes('architecture')) {
+      return 'architecture';
+    }
+
+    // Default to code quality
+    return 'code_quality';
+  }
+
+  /**
+   * Get language from file extension
+   */
+  private getLanguageFromExtension(extension: string): string {
+    const extMap: Record<string, string> = {
+      'java': 'java',
+      'kt': 'kotlin',
+      'js': 'javascript',
+      'jsx': 'javascript',
+      'ts': 'typescript',
+      'tsx': 'typescript',
+      'py': 'python',
+      'rb': 'ruby',
+      'go': 'go',
+      'rs': 'rust',
+      'cs': 'csharp',
+      'php': 'php',
+      'swift': 'swift',
+      'c': 'c',
+      'cpp': 'cpp',
+      'h': 'c',
+      'hpp': 'cpp'
+    };
+
+    return extMap[extension.toLowerCase()] || 'unknown';
+  }
+
+  /**
+   * Generate AI prompt for IDE's AI to use if they want to generate their own fix
+   */
+  private generateAIPrompt(issue: EnrichedIssue, language: string): string {
+    const rule = issue.rule;
+    const message = issue.message;
+    const explanation = issue.fixSuggestion?.issueDescription;
+
+    let prompt = `You are a code quality expert. Fix the following ${language} code issue:\n\n`;
+    prompt += `Rule: ${rule}\n`;
+    prompt += `Issue: ${message}\n\n`;
+
+    if (explanation) {
+      prompt += `Context:\n`;
+      prompt += `- What: ${explanation.what}\n`;
+      prompt += `- Why: ${explanation.why}\n`;
+      prompt += `- Impact: ${explanation.impact}\n\n`;
+    }
+
+    prompt += `Original code:\n${issue.codeSnippet || '(no snippet available)'}\n\n`;
+    prompt += `Please provide a fixed version of this code that resolves the issue while:\n`;
+    prompt += `1. Maintaining the original functionality\n`;
+    prompt += `2. Following ${language} best practices\n`;
+    prompt += `3. Keeping the code style consistent\n`;
+    prompt += `4. Avoiding any breaking changes\n\n`;
+    prompt += `Return ONLY the corrected code without explanations.`;
+
+    return prompt;
   }
 }
 
