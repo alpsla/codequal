@@ -20,6 +20,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { AppScoreManager } from './v9-app-score-manager';
 import { SkillScoreManager } from './v9-skill-score-manager';
 import { LSPSARIFConverter } from './lsp-sarif-converter';
+import { GitLabCodeQualityConverter } from './gitlab-codequality-converter';
 
 // Load environment variables
 dotenv.config();
@@ -676,12 +677,13 @@ export class V9GroupedReportFormatter {
       const totalWithUrls = ideFixFiles.filter(f => (f as any).publicUrl).length;
       console.log(`[Manifest] ✅ Created manifest with ${totalWithUrls}/${ideFixFiles.length} files having Supabase URLs`);
 
-      // SESSION 25: Generate LSP and SARIF formats for IDE integration
-      const { lspUrl, sarifUrl } = await this.generateLSPAndSARIFFormats(enrichedIssues, updatedGroups, metadata);
+      // SESSION 25-27: Generate LSP, SARIF, and GitLab formats
+      const { lspUrl, sarifUrl, gitlabUrl } = await this.generateLSPAndSARIFFormats(enrichedIssues, updatedGroups, metadata);
 
-      // SESSION 26: Store URLs for metadata footer (type assertion needed for dynamic properties)
+      // SESSION 26-27: Store URLs for metadata footer (type assertion needed for dynamic properties)
       if (lspUrl) (metadata as any).lspUrl = lspUrl;
       if (sarifUrl) (metadata as any).sarifUrl = sarifUrl;
+      if (gitlabUrl) (metadata as any).gitlabUrl = gitlabUrl;
     }
     
     // SESSION 24: Now generate markdown with public URLs
@@ -3086,14 +3088,17 @@ mvn spotless:check  # Verify (use in CI)
   }
   
   /**
-   * SESSION 25: Generate LSP and SARIF formats for IDE integration
-   * These formats enable Cursor and other IDEs to apply fixes automatically
+   * SESSION 25-27: Generate LSP, SARIF, and GitLab Code Quality formats
+   * These formats enable:
+   * - LSP: Cursor/VSCode IDE integration (one-click fixes)
+   * - SARIF: Industry standard (GitHub, Azure DevOps, etc.)
+   * - GitLab: Code Quality widget in merge requests
    */
   private async generateLSPAndSARIFFormats(
     enrichedIssues: EnrichedIssue[],
     groups: IssueGroup[],
     metadata: any
-  ): Promise<{ lspUrl?: string; sarifUrl?: string }> {
+  ): Promise<{ lspUrl?: string; sarifUrl?: string; gitlabUrl?: string }> {
     try {
       const converter = new LSPSARIFConverter();
       const workspaceRoot = this.repoPath || process.cwd();
@@ -3118,6 +3123,7 @@ mvn spotless:check  # Verify (use in CI)
       // Initialize URLs
       let lspUrl: string | undefined;
       let sarifUrl: string | undefined;
+      let gitlabUrl: string | undefined;
 
       // Upload to Supabase if available
       if (this.supabase) {
@@ -3219,9 +3225,59 @@ mvn spotless:check  # Verify (use in CI)
           console.error(`[LSP/SARIF] Error type:`, (sarifUploadError as any)?.constructor?.name);
           console.error(`[LSP/SARIF] Error message:`, (sarifUploadError as Error)?.message);
         }
+
+        // Upload GitLab Code Quality file (SESSION 27)
+        try {
+          const gitlabConverter = new GitLabCodeQualityConverter();
+
+          // Generate GitLab Code Quality report
+          console.log('[GitLab] Generating Code Quality report...');
+          const gitlabReport = gitlabConverter.generateGitLabCodeQualityReport(
+            enrichedIssues,
+            this.repoPath
+          );
+
+          // Validate report
+          gitlabConverter.validateReport(gitlabReport);
+
+          // Log statistics
+          const stats = gitlabConverter.getReportStatistics(gitlabReport);
+          console.log(`[GitLab] Generated report with ${stats.totalIssues} issues`);
+          console.log(`[GitLab] By severity:`, stats.bySeverity);
+
+          // Upload GitLab file
+          const gitlabFilename = 'codequal-gitlab-codequality.json';
+          const gitlabContent = JSON.stringify(gitlabReport, null, 2);
+          console.log(`[GitLab] Uploading to: ${analysisId}/${gitlabFilename}`);
+          console.log(`[GitLab] Content size: ${gitlabContent.length} bytes`);
+
+          const { data: gitlabData, error: gitlabError } = await this.supabase.storage
+            .from('v9-attachments')
+            .upload(`${analysisId}/${gitlabFilename}`, gitlabContent, {
+              contentType: 'application/json',
+              cacheControl: '3600',
+              upsert: true
+            });
+
+          if (gitlabError) {
+            console.error(`[GitLab] ❌ Upload failed:`, gitlabError);
+          } else if (gitlabData) {
+            console.log(`[GitLab] ✅ Upload successful, path: ${gitlabData.path}`);
+            const { data: gitlabUrlData } = this.supabase.storage
+              .from('v9-attachments')
+              .getPublicUrl(`${analysisId}/${gitlabFilename}`);
+            gitlabUrl = gitlabUrlData.publicUrl;
+            console.log(`[GitLab] ✅ GitLab Code Quality uploaded: ${gitlabUrl}`);
+          } else {
+            console.error(`[GitLab] ❌ Upload: No data and no error (unexpected state)`);
+          }
+        } catch (gitlabError) {
+          console.error(`[GitLab] ❌ Processing failed:`, gitlabError);
+          console.error(`[GitLab] Error message:`, (gitlabError as Error)?.message);
+        }
       }
 
-      return { lspUrl, sarifUrl };
+      return { lspUrl, sarifUrl, gitlabUrl };
 
     } catch (error) {
       console.error('[LSP/SARIF] Error generating formats:', error);

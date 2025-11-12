@@ -514,8 +514,50 @@ export function generateFooter(groups: IssueGroup[], ideFixFiles: IDEFixFile[], 
     footer += `6. Apply fixes individually or in batches\n\n`;
 
     footer += `> 🏆 **Best for**: CI/CD integration, GitHub Code Scanning, permanent diagnostic records\n\n`;
-    
-    footer += `### 🤖 AI Assistant Method (Legacy)\n`;
+
+    footer += `---\n\n`;
+    footer += `### 🦊 Method 3: GitLab Code Quality (CI/CD Integration)\n\n`;
+    footer += `**Download**: \`codequal-gitlab-codequality.json\`\n`;
+    // SESSION 27: Use actual GitLab URL from metadata
+    if (metadata?.gitlabUrl) {
+      footer += `- URL: [Download GitLab Code Quality file](${metadata.gitlabUrl})\n`;
+    } else if (manifestUrl) {
+      // Fallback to string replacement if gitlabUrl not in metadata
+      const gitlabUrl = manifestUrl.replace('all-issues-manifest.json', 'codequal-gitlab-codequality.json');
+      footer += `- URL: [Download GitLab Code Quality file](${gitlabUrl})\n`;
+    }
+    footer += `- Works with: GitLab CI/CD, Merge Request widgets\n`;
+    footer += `- Format: Code Climate (GitLab standard)\n\n`;
+
+    footer += `**GitLab CI/CD Integration**:\n\n`;
+    footer += `\`\`\`yaml\n`;
+    footer += `# .gitlab-ci.yml\n`;
+    footer += `codequal_analysis:\n`;
+    footer += `  stage: test\n`;
+    footer += `  script:\n`;
+    footer += `    # Run CodeQual analysis (example - adjust to your setup)\n`;
+    footer += `    - codequal analyze --output codequal-gitlab-codequality.json\n`;
+    footer += `  artifacts:\n`;
+    footer += `    reports:\n`;
+    footer += `      codequality: codequal-gitlab-codequality.json\n`;
+    footer += `\`\`\`\n\n`;
+
+    footer += `**What you get**:\n`;
+    footer += `- 📊 Code Quality widget in merge requests\n`;
+    footer += `- 📈 Quality degradation/improvement metrics\n`;
+    footer += `- 🚫 Optional quality gates (block merge on critical issues)\n`;
+    footer += `- 📋 Issue list directly in GitLab UI\n\n`;
+
+    footer += `**Features**:\n`;
+    footer += `- All ${totalFixable.toLocaleString()} issues visible in GitLab\n`;
+    footer += `- Severity mapping: Critical→Blocker, High→Critical, Medium→Major, Low→Minor\n`;
+    footer += `- File paths, line numbers, and fix suggestions included\n`;
+    footer += `- Automatic issue tracking across commits (fingerprints)\n\n`;
+
+    footer += `> 🦊 **Perfect for**: GitLab teams, CI/CD automation, quality gate enforcement\n\n`;
+
+    footer += `---\n\n`;
+    footer += `### 🤖 Method 4: AI Assistant (Legacy)\n`;
     if (manifestUrl) {
       footer += `**Download**: [all-issues-manifest.json](${manifestUrl})\n\n`;
     } else {
