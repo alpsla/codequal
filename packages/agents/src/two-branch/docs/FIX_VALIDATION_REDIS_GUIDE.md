@@ -417,6 +417,33 @@ Redis memory: Minimal! (well within free tier)
 - ✅ Clear fix quality insights
 - ✅ Data-driven fix improvement roadmap
 
+## 📊 Future Roadmap: Analytics Dashboard
+
+**Status**: Planned for future development
+
+**Purpose**: Visualize fix adoption metrics and provide actionable insights
+
+**Planned Features**:
+- Real-time fix adoption rate tracking
+- Language-specific performance comparisons
+- Repository performance leaderboards
+- Trend analysis over time (daily, weekly, monthly)
+- Fix quality scoring
+- Model performance comparison
+- Export reports for stakeholders
+
+**Data Source**: `fix_telemetry` table (already collecting data)
+
+**Implementation Timeline**: TBD based on user demand and data volume
+
+**Why Later?**
+- Currently collecting baseline data
+- Need sufficient data for meaningful insights (3-6 months minimum)
+- Focus on core analysis features first
+- Dashboard can be built once data patterns emerge
+
+**Note**: All analytics queries are already available in the migration file (`004_create_fix_telemetry_table.sql`). The dashboard will simply provide a UI for these queries.
+
 ---
 
 ## 🔧 Troubleshooting

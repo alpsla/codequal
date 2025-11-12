@@ -9,6 +9,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { execSync } from 'child_process';
 import type { EnrichedIssue } from '../analyzers/v9-grouped-report-formatter';
 
 interface PatchChange {
@@ -144,7 +145,7 @@ export class GitPatchGenerator {
     }
 
     // Generate hunks for each issue
-    let currentLine = 0;
+    const currentLine = 0;
 
     for (const issue of sortedIssues) {
       const hunk = this.generateHunk(issue, originalLines);
@@ -229,7 +230,6 @@ export class GitPatchGenerator {
     fs.writeFileSync(tempPatchPath, patchContent);
 
     // Run git apply --check
-    const { execSync } = require('child_process');
 
     try {
       execSync(`git apply --check ${tempPatchPath}`, {
