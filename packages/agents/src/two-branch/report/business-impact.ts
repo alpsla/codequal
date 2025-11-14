@@ -211,10 +211,11 @@ export function generateBusinessImpact(issues: EnrichedIssue[], groups: IssueGro
 
   const immediateRisk = blocking.length > 0 ? '🔴 High' : '🟢 Low';
 
-  // SESSION 13 FIX #3 + TYPESCRIPT FIX: Count only blocking issues that are auto-fixable
-  // Don't count entire group - only count the blocking issues within auto-fixable groups
+  // SESSION 13 FIX #3 + TYPESCRIPT FIX: Count auto-fixable issues (both blocking and total)
+  // Don't count entire group - only count the actual issues within auto-fixable groups
+
+  // Count blocking issues that are auto-fixable
   const autoFixableBlockingCount = blocking.filter(issue => {
-    // Check if there's an auto-fixable group for this issue
     return autoFixableGroups.some(g =>
       g.rule === issue.rule &&
       g.tool === issue.tool &&
@@ -223,6 +224,16 @@ export function generateBusinessImpact(issues: EnrichedIssue[], groups: IssueGro
   }).length;
   const autoFixPercentage = blocking.length > 0 ? (autoFixableBlockingCount / blocking.length) * 100 : 0;
   const mostlyAutoFixable = autoFixPercentage >= 70; // 70%+ of blocking issues are auto-fixable
+
+  // Count ALL auto-fixable issues (not just blocking) - gives full cleanup potential
+  const autoFixableTotalCount = issues.filter(issue => {
+    return autoFixableGroups.some(g =>
+      g.rule === issue.rule &&
+      g.tool === issue.tool &&
+      g.severity === issue.severity
+    );
+  }).length;
+  const totalAutoFixPercentage = issues.length > 0 ? (autoFixableTotalCount / issues.length) * 100 : 0;
 
   return `## 💼 Business Impact Analysis
 
@@ -244,24 +255,30 @@ ${autoFixableBlockingCount} of ${blocking.length} blocking issues (${autoFixPerc
 |--------|-------|
 | **Auto-Fix Time** | **${Math.ceil(autoFixableBlockingCount / 100)} minutes** (run formatters + linters) |
 | **Review Time** | **${baseFixHours.toFixed(1)} hours** (${baseFixHours.toFixed(1)}h × $${developerRate}/h = $${totalFixCost.toLocaleString()}) |
-| **Auto-Fix Coverage** | **${autoFixPercentage.toFixed(0)}%** of blocking issues |
+| **Auto-Fix Coverage (Blocking)** | **${autoFixPercentage.toFixed(0)}%** (${autoFixableBlockingCount}/${blocking.length} issues) |
+| **Auto-Fix Coverage (All Issues)** | **${totalAutoFixPercentage.toFixed(0)}%** (${autoFixableTotalCount}/${issues.length} issues) 🎁 |
 | **Recommendation** | Run IDE auto-fix + code formatter, then code review changes |
 
-**Note:** Auto-fix takes minutes to run. Review time ($${totalFixCost.toLocaleString()}) covers code review of auto-generated changes, NOT manual coding.`
+**Note:** Auto-fix takes minutes to run. Review time ($${totalFixCost.toLocaleString()}) covers code review of auto-generated changes, NOT manual coding.
+
+**💡 Bonus Opportunity:** Beyond the ${autoFixableBlockingCount} blocking issues, you can auto-fix ${autoFixableTotalCount - autoFixableBlockingCount} additional issues for massive code quality improvement in ~${Math.ceil(autoFixableTotalCount / 60)} minutes total.`
     : `| Metric | Value |
 |--------|-------|
 | **Total Fix Cost** | **$${totalFixCost.toLocaleString()}** (${baseFixHours.toFixed(1)} hours, ~${fixDays} developer-days at $${developerRate}/hour) |
 ${autoFixableBlockingCount > 0 ? `| **Cost Breakdown** | ${autoFixableBlockingCount} auto-fixable (${autoFixPercentage.toFixed(0)}%, ~${(autoFixableBlockingCount * 0.1).toFixed(1)}h) + ${blocking.length - autoFixableBlockingCount} manual (~${((blocking.length - autoFixableBlockingCount) * 1.75).toFixed(1)}h) |` : ''}
+${autoFixableTotalCount > 0 ? `| **Auto-Fix Coverage (All Issues)** | **${totalAutoFixPercentage.toFixed(0)}%** (${autoFixableTotalCount}/${issues.length} issues) 🎁 |` : ''}
 | **Potential Exploit Cost** | **$${minExploitCost.toLocaleString()} - $${maxExploitCost.toLocaleString()}** |
 | **Security Risk** | ${exploitDesc} |
 | **Return on Investment** | **${roi}x minimum return** by preventing issues now vs. fixing in production |
-| **Risk-Adjusted Savings** | $${(minExploitCost - totalFixCost).toLocaleString()} minimum (prevention vs. remediation) |${autoFixableBlockingCount > 0 ? `\n\n**💡 Tip:** ${autoFixableBlockingCount} issue${autoFixableBlockingCount > 1 ? 's' : ''} can be auto-fixed with IDE tools (Checkstyle, Spotless, ESLint) in ~${Math.ceil(autoFixableBlockingCount / 60)} minute${Math.ceil(autoFixableBlockingCount / 60) > 1 ? 's' : ''}` : ''}`
+| **Risk-Adjusted Savings** | $${(minExploitCost - totalFixCost).toLocaleString()} minimum (prevention vs. remediation) |${autoFixableBlockingCount > 0 ? `\n\n**💡 Tip:** ${autoFixableBlockingCount} blocking issue${autoFixableBlockingCount > 1 ? 's' : ''} can be auto-fixed with IDE tools.` : ''}${autoFixableTotalCount > autoFixableBlockingCount ? `\n\n**🎁 Bonus:** ${autoFixableTotalCount - autoFixableBlockingCount} additional issues can be auto-fixed for major code quality improvement in ~${Math.ceil(autoFixableTotalCount / 60)} minutes total.` : ''}`
   : `**💚 Low Financial Risk**
 No critical or high-severity issues detected. All identified issues are related to code quality and maintainability (tabs, formatting, documentation).
 
 **Cost to fix:** Minimal - most issues are auto-fixable via IDE tools or linters.
 **Impact if not fixed:** Gradual technical debt accumulation, slower code reviews, minor maintainability concerns.
-**Recommendation:** Address during regular refactoring cycles or enable pre-commit hooks (CheckStyle, Spotless).`
+**Recommendation:** Address during regular refactoring cycles or enable pre-commit hooks (CheckStyle, Spotless).
+
+${autoFixableTotalCount > 0 ? `**🎁 Quick Win:** ${autoFixableTotalCount} of ${issues.length} issues (${totalAutoFixPercentage.toFixed(0)}%) can be auto-fixed in ~${Math.ceil(autoFixableTotalCount / 60)} minutes with IDE tools.` : ''}`
 }
 
 ### Risk Assessment
