@@ -211,11 +211,16 @@ export function generateBusinessImpact(issues: EnrichedIssue[], groups: IssueGro
 
   const immediateRisk = blocking.length > 0 ? '🔴 High' : '🟢 Low';
 
-  // SESSION 13 FIX #3: Detect if most/all blocking issues are auto-fixable
-  const blockingAutoFixableGroups = autoFixableGroups.filter(g =>
-    blocking.some(i => i.rule === g.rule && i.tool === g.tool && i.severity === g.severity)
-  );
-  const autoFixableBlockingCount = blockingAutoFixableGroups.reduce((sum, g) => sum + g.count, 0);
+  // SESSION 13 FIX #3 + TYPESCRIPT FIX: Count only blocking issues that are auto-fixable
+  // Don't count entire group - only count the blocking issues within auto-fixable groups
+  const autoFixableBlockingCount = blocking.filter(issue => {
+    // Check if there's an auto-fixable group for this issue
+    return autoFixableGroups.some(g =>
+      g.rule === issue.rule &&
+      g.tool === issue.tool &&
+      g.severity === issue.severity
+    );
+  }).length;
   const autoFixPercentage = blocking.length > 0 ? (autoFixableBlockingCount / blocking.length) * 100 : 0;
   const mostlyAutoFixable = autoFixPercentage >= 70; // 70%+ of blocking issues are auto-fixable
 
