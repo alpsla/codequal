@@ -263,6 +263,7 @@ export class V9GroupedReportFormatter {
   private modelConfigResolver: any = null;
   private detectedLanguage = 'java';
   private detectedRepoSize: 'small' | 'medium' | 'large' | 'enterprise' = 'medium';
+  private serviceHealthTracker: any = null;  // ServiceHealthTracker for monitoring
   // Feature toggles for optional sections
   private readonly SHOW_FIX_COVERAGE: boolean = false;
   private readonly SHOW_QUICK_WINS: boolean = false;
@@ -289,6 +290,8 @@ export class V9GroupedReportFormatter {
         this.supabase = createClient(supabaseUrl, supabaseKey);
         this.appScoreManager = new AppScoreManager(this.supabase);
         this.skillScoreManager = new SkillScoreManager(this.supabase);
+        // Initialize service health tracker for monitoring (lazy-loaded)
+        this.initializeServiceHealthTracker();
         // Supabase scoring managers initialized successfully
       } else {
         // Supabase credentials not found - will use simplified scoring
@@ -299,11 +302,85 @@ export class V9GroupedReportFormatter {
   }
 
   /**
+   * Initialize service health tracker (lazy-loaded to avoid constructor async issues)
+   */
+  private async initializeServiceHealthTracker(): Promise<void> {
+    if (!this.serviceHealthTracker && this.supabase) {
+      try {
+        const { ServiceHealthTracker } = await import('../monitoring/service-health-tracker');
+        this.serviceHealthTracker = new ServiceHealthTracker(this.supabase);
+      } catch (error) {
+        console.warn('[V9GroupedReportFormatter] Failed to initialize ServiceHealthTracker:', error);
+      }
+    }
+  }
+
+  /**
    * SESSION 24: Upload attachments to Supabase Storage and get public URLs
    * @param ideFixFiles Array of IDE fix files to upload
    * @param metadata Report metadata for generating unique analysis ID
    * @returns Updated ideFixFiles with public URLs
    */
+  /**
+   * Upload with retry logic and rate limiting protection
+   */
+  private async uploadWithRetry(
+    filePath: string,
+    content: string | Blob,
+    options: { contentType: string; cacheControl: string; upsert: boolean },
+    maxRetries = 3,
+    retryDelay = 1000
+  ): Promise<{ data: any; error: any }> {
+    let lastError: any = null;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const uploadResult = await this.supabase!.storage
+          .from('v9-attachments')
+          .upload(filePath, content, options);
+        
+        // Check if error is HTML response (authentication/permission issue)
+        if (uploadResult.error) {
+          const errorMessage = uploadResult.error.message || String(uploadResult.error);
+          if (errorMessage.includes('<!DOCTYPE') || errorMessage.includes('<html')) {
+            console.error(`[Supabase Upload] ❌ HTML response detected (likely auth/permission issue):`, errorMessage.substring(0, 200));
+            // Don't retry HTML errors - they indicate a configuration issue
+            return uploadResult;
+          }
+          
+          // Retry on transient errors
+          if (attempt < maxRetries) {
+            const delay = retryDelay * Math.pow(2, attempt - 1); // Exponential backoff
+            console.warn(`[Supabase Upload] ⚠️  Upload failed (attempt ${attempt}/${maxRetries}), retrying in ${delay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            lastError = uploadResult.error;
+            continue;
+          }
+        }
+        
+        return uploadResult;
+      } catch (error: any) {
+        const errorMessage = error?.message || String(error);
+        if (errorMessage.includes('<!DOCTYPE') || errorMessage.includes('<html')) {
+          console.error(`[Supabase Upload] ❌ HTML response in catch (likely auth/permission issue):`, errorMessage.substring(0, 200));
+          return { data: null, error };
+        }
+        
+        if (attempt < maxRetries) {
+          const delay = retryDelay * Math.pow(2, attempt - 1);
+          console.warn(`[Supabase Upload] ⚠️  Upload exception (attempt ${attempt}/${maxRetries}), retrying in ${delay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          lastError = error;
+          continue;
+        }
+        
+        return { data: null, error };
+      }
+    }
+    
+    return { data: null, error: lastError };
+  }
+
   private async uploadAttachmentsToSupabase(
     ideFixFiles: IDEFixFile[],
     metadata: any
@@ -320,9 +397,17 @@ export class V9GroupedReportFormatter {
     
     console.log(`[Supabase Upload] Starting upload for ${ideFixFiles.length} files to analysis: ${analysisId}`);
 
-    // Upload each file
-    const uploadPromises = ideFixFiles.map(async (file) => {
+    // Upload files sequentially to avoid rate limiting (with small delay between uploads)
+    const updatedFiles: IDEFixFile[] = [];
+    
+    for (let i = 0; i < ideFixFiles.length; i++) {
+      const file = ideFixFiles[i];
       try {
+        // Add delay between uploads to avoid rate limiting (except for first file)
+        if (i > 0) {
+          await new Promise(resolve => setTimeout(resolve, 200)); // 200ms delay between uploads
+        }
+        
         const filePath = `${analysisId}/${file.filename}`;
         const fileContent = JSON.stringify(file.content, null, 2);
         const fileSizeKB = Math.round(fileContent.length / 1024);
@@ -332,20 +417,39 @@ export class V9GroupedReportFormatter {
           console.warn(`[Supabase Upload] Large file: ${file.filename} (${fileSizeKB}KB)`);
         }
         
-        // Upload to Supabase Storage
-        // SESSION 25 FIX: Use upsert: true to overwrite existing files from previous test runs
-        const { data, error } = await this.supabase!.storage
-          .from('v9-attachments')
-          .upload(filePath, fileContent, {
+        // Upload to Supabase Storage with retry logic
+        const { data, error } = await this.uploadWithRetry(
+          filePath,
+          fileContent,
+          {
             contentType: 'application/json',
             cacheControl: '3600',
             upsert: true  // Allow overwriting existing files
-          });
+          }
+        );
 
         if (error) {
           console.error(`[Supabase Upload] Failed to upload ${file.filename}:`, error.message || error);
           console.error(`[Supabase Upload] Error details:`, JSON.stringify(error, null, 2));
-          return file; // Return original file on error
+          
+          // Track upload failure
+          if (this.serviceHealthTracker) {
+            await this.serviceHealthTracker.trackUploadFailure({
+              service: 'manifest',
+              filename: file.filename,
+              error: error,
+              repositoryUrl: metadata.repository,
+              prNumber: metadata.prNumber,
+              analysisId,
+              errorDetails: {
+                statusCode: (error as any).statusCode,
+                error: (error as any).error
+              }
+            });
+          }
+          
+          updatedFiles.push(file); // Return original file on error
+          continue;
         }
 
         // Get public URL
@@ -358,15 +462,41 @@ export class V9GroupedReportFormatter {
         (updatedFile as any).publicUrl = urlData.publicUrl;
         console.log(`[Supabase Upload] ✅ Uploaded ${file.filename} → ${urlData.publicUrl}`);
         
-        return updatedFile;
+        // Track upload success
+        if (this.serviceHealthTracker) {
+          await this.serviceHealthTracker.trackUploadSuccess({
+            service: 'manifest',
+            filename: file.filename,
+            url: urlData.publicUrl,
+            fileSize: fileContent.length,
+            repositoryUrl: metadata.repository,
+            prNumber: metadata.prNumber,
+            analysisId
+          });
+        }
+        
+        updatedFiles.push(updatedFile);
       } catch (error) {
         console.error(`[Supabase Upload] Error uploading ${file.filename}:`, error);
-        return file; // Return original file on error
+        
+        // Track upload failure
+        if (this.serviceHealthTracker) {
+          await this.serviceHealthTracker.trackUploadFailure({
+            service: 'manifest',
+            filename: file.filename,
+            error: error as Error,
+            repositoryUrl: metadata.repository,
+            prNumber: metadata.prNumber,
+            analysisId,
+            errorDetails: {
+              error: (error as any)?.message || String(error)
+            }
+          });
+        }
+        
+        updatedFiles.push(file); // Return original file on error
       }
-    });
-
-    // Wait for all uploads
-    const updatedFiles = await Promise.all(uploadPromises);
+    }
     
     const successCount = updatedFiles.filter(f => (f as any).publicUrl).length;
     console.log(`[Supabase Upload] Completed: ${successCount}/${ideFixFiles.length} files uploaded successfully`);
@@ -417,12 +547,12 @@ export class V9GroupedReportFormatter {
       prTitle?: string;
       branch?: string;
       baseBranch?: string;
-      
+
       // Author Information
       prAuthor?: string;
       prAuthorEmail?: string;
       organizationName?: string;
-      
+
       // Code Statistics
       totalFiles: number;
       totalLinesOfCode?: number;
@@ -430,17 +560,17 @@ export class V9GroupedReportFormatter {
       linesAdded?: number;
       linesDeleted?: number;
       languageBreakdown?: Record<string, number>;
-      
+
       // Decision & Analysis
       decision: string;
       blockingCount: number;
-      
+
       // Performance Metrics
       totalDuration?: number;
       cloneTime?: number;
       analysisTime?: number;
       reportGenerationTime?: number;
-      
+
       // Timestamp
       analyzedAt?: string;
       analyzerVersion?: string;
@@ -451,7 +581,7 @@ export class V9GroupedReportFormatter {
       modelsUsed?: Array<any> | Record<string, any>;
     }
   ): Promise<GroupedReportOutput> {
-    
+
     const markdown: string[] = [];
     let ideFixFiles: IDEFixFile[] = [];  // BUG FIX #33: Removed separate location attachments
 
@@ -459,6 +589,24 @@ export class V9GroupedReportFormatter {
     console.log(`[DEBUG-PR#] metadata.prNumber: ${metadata.prNumber} (type: ${typeof metadata.prNumber})`);
     console.log(`[DEBUG-PR#] metadata.repository: ${metadata.repository}`);
     console.log(`[DEBUG-PR#] ==========================================\n`);
+
+    // BUG #89 DEBUG: Check what issues we receive
+    console.log(`\n[BUG #89] ====== ISSUE COUNT AT ENTRY ======`);
+    console.log(`[BUG #89] Total issues received: ${issues.length}`);
+    const categoryCounts = {
+      NEW: issues.filter(i => i.category === 'NEW').length,
+      EXISTING_MODIFIED: issues.filter(i => i.category === 'EXISTING_MODIFIED').length,
+      RESOLVED: issues.filter(i => i.category === 'RESOLVED').length,
+      EXISTING_REST: issues.filter(i => i.category === 'EXISTING_REST').length,
+      UNKNOWN: issues.filter(i => !i.category || !['NEW', 'EXISTING_MODIFIED', 'RESOLVED', 'EXISTING_REST'].includes(i.category)).length
+    };
+    console.log(`[BUG #89] Category breakdown:`);
+    console.log(`[BUG #89]   - NEW: ${categoryCounts.NEW}`);
+    console.log(`[BUG #89]   - EXISTING_MODIFIED: ${categoryCounts.EXISTING_MODIFIED}`);
+    console.log(`[BUG #89]   - RESOLVED: ${categoryCounts.RESOLVED}`);
+    console.log(`[BUG #89]   - EXISTING_REST: ${categoryCounts.EXISTING_REST}`);
+    console.log(`[BUG #89]   - UNKNOWN/MISSING: ${categoryCounts.UNKNOWN}`);
+    console.log(`[BUG #89] ====================================\n`);
 
     // Store repoPath for snippet extraction
     this.repoPath = metadata.repoPath || null;
@@ -520,23 +668,51 @@ export class V9GroupedReportFormatter {
     // Update group severities based on AI-classified issues
     // After AI classification updates individual issue severities, we need to update
     // each group's severity to reflect the AI-classified issues (not original severities)
+    // BUG FIX: Match by rule + tool + ORIGINAL severity to preserve separate groups
+    // (e.g., npm-audit issues with same rule but different severities should stay separate)
     const updatedGroups = groups.map(group => {
-      // Find all issues in this group (match by rule + tool, not severity, since it changed)
+      // Find all issues in this group (match by rule + tool + ORIGINAL severity)
+      // This preserves separate groups for different severities (critical vs medium vs low)
       const groupIssues = enrichedIssues.filter(issue =>
-        issue.rule === group.rule && issue.tool === group.tool
+        issue.rule === group.rule && 
+        issue.tool === group.tool &&
+        // Use original group severity to match, not AI-classified severity
+        // This ensures groups with different original severities stay separate
+        issue.severity === group.severity
       );
 
       if (groupIssues.length === 0) {
-        return group; // No issues, keep original
+        // Fallback: if no exact match, try without severity (for backwards compatibility)
+        const fallbackIssues = enrichedIssues.filter(issue =>
+          issue.rule === group.rule && issue.tool === group.tool
+        );
+        if (fallbackIssues.length === 0) {
+          return group; // No issues, keep original
+        }
+        
+        // Use fallback issues but preserve original group severity
+        const severities = fallbackIssues.map(issue => issue.severity);
+        const hasCritical = severities.includes('critical');
+        const hasHigh = severities.includes('high');
+        const hasMedium = severities.includes('medium');
+        
+        const aiSeverity = hasCritical ? 'critical' :
+                           hasHigh ? 'high' :
+                           hasMedium ? 'medium' : 'low';
+        
+        return {
+          ...group,
+          severity: aiSeverity as 'critical' | 'high' | 'medium' | 'low'
+        };
       }
 
-      // Determine the highest severity among AI-classified issues
+      // Determine the highest severity among AI-classified issues in this group
       const severities = groupIssues.map(issue => issue.severity);
       const hasCritical = severities.includes('critical');
       const hasHigh = severities.includes('high');
       const hasMedium = severities.includes('medium');
 
-      // Update group severity to highest severity found
+      // Update group severity to highest severity found (but preserve group separation)
       const aiSeverity = hasCritical ? 'critical' :
                          hasHigh ? 'high' :
                          hasMedium ? 'medium' : 'low';
@@ -748,7 +924,7 @@ export class V9GroupedReportFormatter {
     markdown.push('');
     
     // Footer (BUG FIX #33: Only IDE fix files now, no separate location attachments)
-    markdown.push(this.generateFooter(groups, ideFixFiles, metadata));
+    markdown.push(this.generateFooter(groups, ideFixFiles, metadata, enrichedIssues));
     
     // Generate mapping index (BUG FIX #33: Only IDE fix files)
     const mapping = this.generateMapping(enrichedIssues, groups, metadata, ideFixFiles);
@@ -795,7 +971,7 @@ export class V9GroupedReportFormatter {
   private async extractSnippetsForLocations(issues: EnrichedIssue[]): Promise<IssueLocation[]> {
     if (!this.repoPath) {
       // BUG FIX #41: Even without repoPath, normalize paths for consistency
-      return issues.map(issue => {
+      const locations = issues.map(issue => {
         let normalizedPath = issue.file;
         if (normalizedPath.startsWith('/workspace/')) {
           normalizedPath = normalizedPath.replace('/workspace/', '');
@@ -811,6 +987,9 @@ export class V9GroupedReportFormatter {
           category: issue.category
         };
       });
+      
+      // Deduplicate identical locations (e.g., npm-audit issues all point to package.json:1)
+      return this.deduplicateLocations(locations);
     }
 
     const { CodeSnippetExtractor } = await import('../utils/code-snippet-extractor');
@@ -837,8 +1016,23 @@ export class V9GroupedReportFormatter {
       // Extract snippet if missing and within limit
       if (i < SNIPPET_LIMIT && (!snippet || snippet === 'N/A' || snippet.trim().length === 0) && issue.file && issue.line) {
         try {
-          const fullPath = path.join(this.repoPath!, normalizedPath);
-          snippet = await CodeSnippetExtractor.extractSnippet(fullPath, issue.line, 3) || '';
+          // BUG FIX: For npm-audit issues, always use root package.json
+          // npm-audit issues are assigned to 'package.json' but might resolve to subdirectory
+          let fileToExtract = normalizedPath;
+          if (issue.tool === 'npm-audit' && (normalizedPath === 'package.json' || normalizedPath.endsWith('/package.json'))) {
+            // Try root package.json first
+            const rootPackageJson = path.join(this.repoPath!, 'package.json');
+            if (fs.existsSync(rootPackageJson)) {
+              fileToExtract = 'package.json';
+            }
+          }
+          
+          const fullPath = path.join(this.repoPath!, fileToExtract);
+          if (fs.existsSync(fullPath)) {
+            snippet = await CodeSnippetExtractor.extractSnippet(fullPath, issue.line, 3) || '';
+          } else {
+            snippet = '';
+          }
         } catch (error) {
           // Extraction failed - use empty snippet
           snippet = '';
@@ -855,7 +1049,49 @@ export class V9GroupedReportFormatter {
       });
     }
     
-    return locations;
+    // Deduplicate identical locations (e.g., npm-audit issues all point to package.json:1)
+    return this.deduplicateLocations(locations);
+  }
+  
+  /**
+   * Deduplicate locations that are identical (same file, line, column)
+   * For npm-audit issues, all locations point to package.json:1, so we only keep one
+   * BUG FIX: For npm-audit, prefer root package.json over subdirectory package.json files
+   */
+  private deduplicateLocations(locations: IssueLocation[]): IssueLocation[] {
+    const seen = new Map<string, IssueLocation>();
+    
+    // BUG FIX: For npm-audit issues, prefer root package.json
+    // If we have multiple package.json files, prioritize the root one
+    const packageJsonLocations = locations.filter(loc => loc.file === 'package.json' || loc.file.endsWith('/package.json'));
+    if (packageJsonLocations.length > 1) {
+      // Find root package.json (shortest path)
+      const rootPackageJson = packageJsonLocations.reduce((root, loc) => {
+        const rootDepth = root.file.split('/').length;
+        const locDepth = loc.file.split('/').length;
+        return locDepth < rootDepth ? loc : root;
+      });
+      
+      // Replace all package.json locations with root one
+      locations = locations.map(loc => {
+        if (loc.file === 'package.json' || loc.file.endsWith('/package.json')) {
+          return { ...rootPackageJson, file: 'package.json' };
+        }
+        return loc;
+      });
+    }
+    
+    for (const location of locations) {
+      // Create a unique key: file:line:column
+      const key = `${location.file}:${location.line}:${location.column || 0}`;
+      
+      // Keep the first occurrence (or one with a longer snippet if available)
+      if (!seen.has(key) || (location.snippet && location.snippet.length > (seen.get(key)?.snippet?.length || 0))) {
+        seen.set(key, location);
+      }
+    }
+    
+    return Array.from(seen.values());
   }
   
   /**
@@ -1679,6 +1915,8 @@ ${this.generateQuickWins(groups, autoFixableGroups)}
 
 ### 📈 Trends & Recommendations
 
+<!-- NOTE: This section will be enhanced later when API service and CI/CD integration is complete -->
+<!-- For now, keeping minimal recommendations only -->
 ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
   }
   
@@ -1888,10 +2126,14 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
     }
     
     // Leadership recommendations
-    content += `**Recommendations for Leadership:**\n\n`;
+    // NOTE: This section will be enhanced later when API service and CI/CD integration is complete
+    // For now, we'll keep it minimal or remove it based on user preference
     
     const newIssues = issues.filter(i => i.category === 'NEW');
-    const criticalCount = issues.filter(i => i.severity === 'critical').length;
+    // BUG FIX: Only count NEW and EXISTING_MODIFIED critical issues (not EXISTING_REST)
+    const blockingCriticalCount = issues.filter(i => 
+      i.severity === 'critical' && (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED')
+    ).length;
     const securityIssues = issues.filter(i => i.detectedCategory === 'Security');
     
     // Enhancement #1: Auto-fix mention in recommendations
@@ -1904,10 +2146,10 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
       content += `🚀 **Quick Win**: Use the attached manifest file to automatically fix ${autoFixableIssues.length.toLocaleString()} issues (${autoFixPercent}%) - saving significant development time!\n\n`;
     }
     
-    if (criticalCount > 0) {
-      content += `1. **Immediate Action**: ${criticalCount} critical issues require senior developer review before deployment\n`;
+    if (blockingCriticalCount > 0) {
+      content += `1. **Immediate Action**: ${blockingCriticalCount} critical issues require senior developer review before deployment\n`;
     } else {
-      content += `1. **Quality Status**: No critical issues - PR meets baseline quality standards\n`;
+      content += `1. **Quality Status**: No blocking critical issues - PR meets baseline quality standards\n`;
     }
     
     if (securityIssues.length > 5) {
@@ -3140,16 +3382,37 @@ mvn spotless:check  # Verify (use in CI)
         console.log(`[LSP/SARIF] Uploading LSP to: ${analysisId}/${lspFilename}`);
         console.log(`[LSP/SARIF] LSP content size: ${lspContent.length} bytes`);
 
-        const { data: lspData, error: lspError } = await this.supabase.storage
-          .from('v9-attachments')
-          .upload(`${analysisId}/${lspFilename}`, lspContent, {
+        // Upload LSP file with retry logic
+        const { data: lspData, error: lspError } = await this.uploadWithRetry(
+          `${analysisId}/${lspFilename}`,
+          lspContent,
+          {
             contentType: 'application/json',
             cacheControl: '3600',
             upsert: true
-          });
+          }
+        );
+
+        // Ensure service health tracker is initialized
+        await this.initializeServiceHealthTracker();
 
         if (lspError) {
           console.error(`[LSP/SARIF] ❌ LSP upload failed:`, lspError);
+          // Track upload failure
+          if (this.serviceHealthTracker) {
+            await this.serviceHealthTracker.trackUploadFailure({
+              service: 'lsp',
+              filename: lspFilename,
+              error: lspError,
+              repositoryUrl: metadata.repository,
+              prNumber: metadata.prNumber,
+              analysisId,
+              errorDetails: {
+                statusCode: (lspError as any).statusCode,
+                error: (lspError as any).error
+              }
+            });
+          }
         } else if (lspData) {
           console.log(`[LSP/SARIF] ✅ LSP upload successful, path: ${lspData.path}`);
           const { data: lspUrlData } = this.supabase.storage
@@ -3157,8 +3420,30 @@ mvn spotless:check  # Verify (use in CI)
             .getPublicUrl(`${analysisId}/${lspFilename}`);
           lspUrl = lspUrlData.publicUrl;
           console.log(`[LSP/SARIF] ✅ LSP uploaded: ${lspUrl}`);
+          // Track upload success
+          if (this.serviceHealthTracker) {
+            await this.serviceHealthTracker.trackUploadSuccess({
+              service: 'lsp',
+              filename: lspFilename,
+              url: lspUrl,
+              fileSize: lspContent.length,
+              repositoryUrl: metadata.repository,
+              prNumber: metadata.prNumber,
+              analysisId
+            });
+          }
         } else {
           console.error(`[LSP/SARIF] ❌ LSP upload: No data and no error (unexpected state)`);
+          // Track unexpected state
+          if (this.serviceHealthTracker) {
+            await this.serviceHealthTracker.trackServiceError({
+              service: 'lsp',
+              error: 'LSP upload: No data and no error (unexpected state)',
+              repositoryUrl: metadata.repository,
+              prNumber: metadata.prNumber,
+              analysisId
+            });
+          }
         }
 
         // Upload SARIF file
@@ -3182,22 +3467,26 @@ mvn spotless:check  # Verify (use in CI)
             // Use resumable upload for files > 6MB (Supabase recommendation)
             if (sarifContent.length > 6 * 1024 * 1024) {
               console.log(`[LSP/SARIF] Using resumable upload (file > 6MB)`);
-              uploadResult = await this.supabase.storage
-                .from('v9-attachments')
-                .upload(`${analysisId}/${sarifFilename}`, sarifBlob, {
+              uploadResult = await this.uploadWithRetry(
+                `${analysisId}/${sarifFilename}`,
+                sarifBlob,
+                {
                   contentType: 'application/json',
                   cacheControl: '3600',
                   upsert: true
-                });
+                }
+              );
             } else {
               console.log(`[LSP/SARIF] Using standard upload (file ≤ 6MB)`);
-              uploadResult = await this.supabase.storage
-                .from('v9-attachments')
-                .upload(`${analysisId}/${sarifFilename}`, sarifContent, {
+              uploadResult = await this.uploadWithRetry(
+                `${analysisId}/${sarifFilename}`,
+                sarifContent,
+                {
                   contentType: 'application/json',
                   cacheControl: '3600',
                   upsert: true
-                });
+                }
+              );
             }
 
             const { data: sarifData, error: sarifError } = uploadResult;
@@ -3209,6 +3498,21 @@ mvn spotless:check  # Verify (use in CI)
                 statusCode: (sarifError as any).statusCode,
                 error: (sarifError as any).error
               });
+              // Track upload failure
+              if (this.serviceHealthTracker) {
+                await this.serviceHealthTracker.trackUploadFailure({
+                  service: 'sarif',
+                  filename: sarifFilename,
+                  error: sarifError,
+                  repositoryUrl: metadata.repository,
+                  prNumber: metadata.prNumber,
+                  analysisId,
+                  errorDetails: {
+                    statusCode: (sarifError as any).statusCode,
+                    error: (sarifError as any).error
+                  }
+                });
+              }
             } else if (sarifData) {
               console.log(`[LSP/SARIF] ✅ SARIF upload successful, path: ${sarifData.path}`);
               const { data: sarifUrlData } = this.supabase.storage
@@ -3216,8 +3520,30 @@ mvn spotless:check  # Verify (use in CI)
                 .getPublicUrl(`${analysisId}/${sarifFilename}`);
               sarifUrl = sarifUrlData.publicUrl;
               console.log(`[LSP/SARIF] ✅ SARIF uploaded: ${sarifUrl}`);
+              // Track upload success
+              if (this.serviceHealthTracker) {
+                await this.serviceHealthTracker.trackUploadSuccess({
+                  service: 'sarif',
+                  filename: sarifFilename,
+                  url: sarifUrl,
+                  fileSize: sarifContent.length,
+                  repositoryUrl: metadata.repository,
+                  prNumber: metadata.prNumber,
+                  analysisId
+                });
+              }
             } else {
               console.error(`[LSP/SARIF] ❌ SARIF upload: No data and no error (unexpected state)`);
+              // Track unexpected state
+              if (this.serviceHealthTracker) {
+                await this.serviceHealthTracker.trackServiceError({
+                  service: 'sarif',
+                  error: 'SARIF upload: No data and no error (unexpected state)',
+                  repositoryUrl: metadata.repository,
+                  prNumber: metadata.prNumber,
+                  analysisId
+                });
+              }
             }
           }
         } catch (sarifUploadError) {
@@ -3251,13 +3577,16 @@ mvn spotless:check  # Verify (use in CI)
           console.log(`[GitLab] Uploading to: ${analysisId}/${gitlabFilename}`);
           console.log(`[GitLab] Content size: ${gitlabContent.length} bytes`);
 
-          const { data: gitlabData, error: gitlabError } = await this.supabase.storage
-            .from('v9-attachments')
-            .upload(`${analysisId}/${gitlabFilename}`, gitlabContent, {
+          // Upload GitLab file with retry logic
+          const { data: gitlabData, error: gitlabError } = await this.uploadWithRetry(
+            `${analysisId}/${gitlabFilename}`,
+            gitlabContent,
+            {
               contentType: 'application/json',
               cacheControl: '3600',
               upsert: true
-            });
+            }
+          );
 
           if (gitlabError) {
             console.error(`[GitLab] ❌ Upload failed:`, gitlabError);
@@ -3673,20 +4002,44 @@ ${blocking.length > 0
 - **Risk Level:** Overall impact assessment based on severity distribution
 
 ### Recommendations
-${blocking.length > 0 ? `
-1. **Immediate Action:** Resolve ${blocking.length} blocking issues before deployment
-2. **Priority:** Address remaining blockers first
+${(() => {
+  // Check if blocking issues are auto-fixable
+  const blockingAutoFixable = blocking.filter(i => 
+    this.canAutoFix({ rule: i.rule, tool: i.tool, severity: i.severity } as IssueGroup)
+  ).length;
+  const allBlockingAutoFixable = blockingAutoFixable === blocking.length && blocking.length > 0;
+  
+  if (blocking.length > 0) {
+    if (allBlockingAutoFixable) {
+      return `
+1. **Immediate Action:** Apply fixes for ${blocking.length} blocking issues using 1-click autofix (see IDE Integration section above)
+2. **Quick Fix:** All blocking issues are auto-fixable - use LSP batch actions to fix in < 1 second
 3. **Planning:** Schedule time for ${backlogMedium.length} medium-severity issues in upcoming sprints
 4. **Continuous Improvement:** Track and reduce ${backlogLow.length} low-severity issues over time
-` : blockingCritical.length + blockingHigh.length > 0 ? `
+`;
+    } else {
+      return `
+1. **Immediate Action:** Resolve ${blocking.length} blocking issues before deployment (${blockingAutoFixable} auto-fixable, ${blocking.length - blockingAutoFixable} require manual review)
+2. **Quick Fix:** Apply ${blockingAutoFixable} auto-fixable issues using 1-click autofix (see IDE Integration section)
+3. **Priority:** Address remaining ${blocking.length - blockingAutoFixable} blockers manually
+4. **Planning:** Schedule time for ${backlogMedium.length} medium-severity issues in upcoming sprints
+5. **Continuous Improvement:** Track and reduce ${backlogLow.length} low-severity issues over time
+`;
+    }
+  } else if (blockingCritical.length + blockingHigh.length > 0) {
+    return `
 1. **Priority:** Address ${blockingCritical.length} critical issues in current sprint
 2. **Planning:** Schedule ${blockingHigh.length} high-severity issues for upcoming work
 3. **Continuous Improvement:** Integrate static analysis into CI/CD to prevent new issues
-` : `
+`;
+  } else {
+    return `
 1. **Maintain Quality:** Continue current development practices
 2. **Address Backlog:** Systematically reduce ${backlogMedium.length + backlogLow.length} identified issues
 3. **Prevention:** Integrate static analysis into CI/CD pipeline
-`}
+`;
+  }
+})()}
 
 **Note:** Each issue group section above includes detailed business impact analysis specific to that issue type.`;
   }
@@ -3859,11 +4212,26 @@ Continue following best practices and consider integrating static analysis into 
       const lines = out.split('\n').filter(Boolean);
       const map = new Map<string, { email: string; name?: string; totalPRs: number }>();
       
+      // BUG FIX: Filter out test users from Git history
+      const testEmails = ['test@codequal.local', 'test@example.com', 'test-user@example.com'];
+      const testNames = ['codequal test', 'test user', 'test developer'];
+      
       for (const line of lines) {
         const [email, name] = line.split(':::');
         if (!email) continue;
         
-        const key = email.trim().toLowerCase();
+        const emailLower = email.trim().toLowerCase();
+        const nameLower = (name || '').trim().toLowerCase();
+        
+        // Skip test users
+        if (testEmails.some(testEmail => emailLower === testEmail || emailLower.includes('test'))) {
+          continue;
+        }
+        if (testNames.some(testName => nameLower.includes(testName))) {
+          continue;
+        }
+        
+        const key = emailLower;
         if (!map.has(key)) {
           map.set(key, { email: key, name: (name || '').trim(), totalPRs: 1 });
         } else {
@@ -3933,6 +4301,16 @@ Continue following best practices and consider integrating static analysis into 
          categoryScores.dependencies + categoryScores.codeQuality) / 5
       );
       
+      // BUG FIX: Use normalized email comparison to prevent duplicates
+      const normalizeEmailForDedup = (email: string) => {
+        if (!email) return '';
+        const noreplyMatch = email.match(/(?:\d+\+)?([^@]+)@users\.noreply\.github\.com/i);
+        if (noreplyMatch) {
+          return noreplyMatch[1].toLowerCase();
+        }
+        return email.toLowerCase();
+      };
+      
       // BUG FIX #32: Fetch Git teammates first, then merge with Supabase data
       let gitTeammates: Array<{ email: string; name?: string; totalPRs?: number }> = [];
       if (this.repoPath) {
@@ -3944,26 +4322,40 @@ Continue following best practices and consider integrating static analysis into 
       // Build team leaderboard from Supabase (only actual teammates from this repository)
       let supabaseLeaderboard = await this.skillScoreManager.getLeaderboard(100, metadata.repository); // Repository-specific
       
+      // BUG FIX: Filter out users not from this repository
+      // Only include users who have commits in this repository's Git history
+      const gitEmails = new Set(gitTeammates.map(t => normalizeEmailForDedup(t.email)));
+      
       // Filter out obviously fake test data (names like "unknown", "Test Developer", etc.)
-      const fakeNames = ['unknown', 'test developer', 'alice developer', 'bob developer', 'test'];
+      const fakeNames = ['unknown', 'test developer', 'alice developer', 'bob developer', 'test', 'codequal test'];
+      const testEmails = ['test@codequal.local', 'test@example.com', 'test-user@example.com'];
       supabaseLeaderboard = supabaseLeaderboard.filter((dev: any) => {
         const nameLower = (dev.name || '').toLowerCase();
-        return !fakeNames.some(fake => nameLower.includes(fake));
+        const emailLower = (dev.email || '').toLowerCase();
+        
+        // Filter out fake names
+        if (fakeNames.some(fake => nameLower.includes(fake))) {
+          return false;
+        }
+        
+        // Filter out test emails
+        if (testEmails.some(testEmail => emailLower === testEmail || emailLower.includes('test@'))) {
+          return false;
+        }
+        
+        // BUG FIX: Only include users who have commits in this repository
+        // If we have Git teammates, only show users from Git history
+        if (gitEmails.size > 0) {
+          return gitEmails.has(normalizeEmailForDedup(dev.email));
+        }
+        
+        // If no Git history available, include all Supabase users for this repo
+        return true;
       });
       
       // BUG FIX #32: Merge Git teammates with Supabase teammates
       // For Git teammates not in Supabase, add them with baseline 50/100 score
       const teamLeaderboard = [...supabaseLeaderboard];
-      
-      // BUG FIX: Use normalized email comparison to prevent duplicates
-      const normalizeEmailForDedup = (email: string) => {
-        if (!email) return '';
-        const noreplyMatch = email.match(/(?:\d+\+)?([^@]+)@users\.noreply\.github\.com/i);
-        if (noreplyMatch) {
-          return noreplyMatch[1].toLowerCase();
-        }
-        return email.toLowerCase();
-      };
       
       for (const gitDev of gitTeammates) {
         const normalizedGitEmail = normalizeEmailForDedup(gitDev.email);
@@ -3978,7 +4370,7 @@ Continue following best practices and consider integrating static analysis into 
             email: gitDev.email,
             score: 50,  // Baseline: neutral score
             avgScore: 50,
-            totalPRs: 0  // No analyzed PRs yet (from Supabase)
+            totalPRs: gitDev.totalPRs || 0  // Use Git commit count if available
           });
         }
       }
@@ -4467,9 +4859,10 @@ ${blocking.length > 5 ? `\n... and ${blocking.length - 5} more` : ''}` : '### �
   private generateFooter(
     groups: IssueGroup[],
     ideFixFiles: IDEFixFile[],
-    metadata: any
+    metadata: any,
+    enrichedIssues?: EnrichedIssue[]
   ): string {
-    return generateFooter(groups, ideFixFiles, metadata);
+    return generateFooter(groups, ideFixFiles, metadata, enrichedIssues);
   }
 
   private _REMOVED_generateFooter_LEGACY(
