@@ -627,6 +627,32 @@ export class V9GroupedReportFormatter {
     const costByAgent = enrichmentResult.costByAgent || {};
     const tokensByAgent = enrichmentResult.tokensByAgent || {};
 
+    // BUG #89 FIX: Ensure enrichedIssues is never empty when issues exist
+    // This handles the case where AI enrichment returns empty array (e.g., when all issues are EXISTING_REST)
+    // Fix MUST be here (BEFORE line 750 where summary is generated), not after
+    if (enrichedIssues.length === 0 && issues.length > 0) {
+      console.log(`\n[BUG #89] ⚠️  WARNING: 0 enriched issues but ${issues.length} raw issues exist!`);
+      console.log(`[BUG #89] AI enrichment returned empty array - using raw issues as fallback`);
+      console.log(`[BUG #89] This typically happens when all issues are EXISTING_REST (no NEW issues)`);
+
+      // Re-populate enrichedIssues from original issues array
+      enrichedIssues.push(...issues.map(issue => ({
+        file: issue.file || '',
+        line: issue.line || 0,
+        column: issue.column || 0,
+        rule: issue.rule || 'unknown',
+        tool: issue.tool || 'unknown',
+        severity: (issue.severity || 'medium') as 'critical' | 'high' | 'medium' | 'low',
+        message: issue.message || 'No description provided',
+        category: (issue.category || 'EXISTING_REST') as 'NEW' | 'EXISTING_MODIFIED' | 'RESOLVED' | 'EXISTING_REST',
+        detectedCategory: issue.detectedCategory || 'Code Quality',
+        snippet: issue.snippet || ''
+      })));
+
+      console.log(`[BUG #89] ✅ Populated enrichedIssues with ${enrichedIssues.length} issues`);
+      console.log(`[BUG #89] All issues will now appear in the summary table\n`);
+    }
+
     // BUG #6 + SESSION 21 FIX: Enhance agentPerformance with model AND cost information
     if (metadata.agentPerformance && Array.isArray(metadata.agentPerformance)) {
       console.log('[BUG #6] Enhancing agentPerformance with model and cost information...');
@@ -750,13 +776,18 @@ export class V9GroupedReportFormatter {
     markdown.push(await this.generateExecutiveSummary(enrichedIssues, updatedGroups, metadata));
     markdown.push('');
 
+    // BUG #89: Removed old incorrect fix (was here at line 779-809)
+    // The correct fix is now at line 630-654 (BEFORE summary generation at line 776)
+    // This ensures enrichedIssues is populated BEFORE generateExecutiveSummary() uses it
+    const updatedGroupsToUse = updatedGroups;
+
     // Issue Groups by Severity (CRITICAL FIRST, then HIGH)
     // SESSION 13 FIX #4 (BUG-87): Filter by AI-classified severities (updatedGroups)
-    const critical = updatedGroups.filter(g => g.severity === 'critical');
-    const high = updatedGroups.filter(g => g.severity === 'high');
-    const medium = updatedGroups.filter(g => g.severity === 'medium');
-    const low = updatedGroups.filter(g => g.severity === 'low');
-    
+    const critical = updatedGroupsToUse.filter(g => g.severity === 'critical');
+    const high = updatedGroupsToUse.filter(g => g.severity === 'high');
+    const medium = updatedGroupsToUse.filter(g => g.severity === 'medium');
+    const low = updatedGroupsToUse.filter(g => g.severity === 'low');
+
     // Critical Issues (highest priority)
     if (critical.length > 0) {
       markdown.push('## 🔴 Critical Issues (Immediate Action Required)\n');
