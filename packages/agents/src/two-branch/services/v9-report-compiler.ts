@@ -151,7 +151,10 @@ export async function compileV9Report(
       suggestedCodeSnippet: undefined as string | undefined,
 
       // BUG #91 FIX: Calculate correctly instead of hardcoding to false
-      inModifiedFile
+      inModifiedFile,
+
+      // BUG FIX: Preserve rule field for proper grouping (npm-audit duplication fix)
+      rule: issue.rule || issue.category || issue.code || 'unknown'
     };
 
     // Generate code snippet and fix suggestion
@@ -491,7 +494,56 @@ export async function compileV9Report(
 
   if (useGroupedReport) {
     const allProcessedIssues = [...formattedNewIssues, ...formattedExistingIssues, ...formattedResolvedIssues];
-    const groupingResult = groupIssues(allProcessedIssues);
+
+    // BUG #89 DEBUG: Check categories in allProcessedIssues
+    console.log(`\n[BUG #89] ====== BEFORE ENRICHMENT ======`);
+    console.log(`[BUG #89] allProcessedIssues.length: ${allProcessedIssues.length}`);
+    const categoriesBeforeEnrichment = {
+      NEW: allProcessedIssues.filter(i => i.category === 'NEW').length,
+      EXISTING_MODIFIED: allProcessedIssues.filter(i => i.category === 'EXISTING_MODIFIED').length,
+      RESOLVED: allProcessedIssues.filter(i => i.category === 'RESOLVED').length,
+      EXISTING_REST: allProcessedIssues.filter(i => i.category === 'EXISTING_REST').length,
+      UNKNOWN: allProcessedIssues.filter(i => !i.category || !['NEW', 'EXISTING_MODIFIED', 'RESOLVED', 'EXISTING_REST'].includes(i.category)).length
+    };
+    console.log(`[BUG #89] Category breakdown:`);
+    console.log(`[BUG #89]   - NEW: ${categoriesBeforeEnrichment.NEW}`);
+    console.log(`[BUG #89]   - EXISTING_MODIFIED: ${categoriesBeforeEnrichment.EXISTING_MODIFIED}`);
+    console.log(`[BUG #89]   - RESOLVED: ${categoriesBeforeEnrichment.RESOLVED}`);
+    console.log(`[BUG #89]   - EXISTING_REST: ${categoriesBeforeEnrichment.EXISTING_REST}`);
+    console.log(`[BUG #89]   - UNKNOWN/MISSING: ${categoriesBeforeEnrichment.UNKNOWN}`);
+    console.log(`[BUG #89] ====================================\n`);
+
+    // BUG FIX: Convert formatted issues to EnrichedIssue format (preserve rule field for grouping)
+    // IMPORTANT: The rule field MUST be preserved from the original RawIssue to ensure proper grouping
+    // For npm-audit issues, all should have rule='dependency-vulnerability' to group together
+    const enrichedIssuesForReport: any[] = allProcessedIssues.map(issue => {
+      // Debug: Log npm-audit issues to verify rule field
+      if (issue.tool === 'npm-audit') {
+        console.log(`[DEBUG npm-audit] Issue rule: ${issue.rule}, category: ${issue.category}, message: ${(issue.title || issue.description || '').substring(0, 50)}`);
+      }
+      
+      return {
+        file: issue.file,
+        line: issue.line,
+        column: undefined,
+        // CRITICAL: Use rule field directly (should be set in formatIssue)
+        // Fallback to 'dependency-vulnerability' for npm-audit if rule is missing
+        rule: issue.rule || (issue.tool === 'npm-audit' ? 'dependency-vulnerability' : issue.category || 'unknown'),
+        tool: issue.tool,
+        severity: issue.severity,
+        message: issue.title || issue.description || '',
+        category: issue.category,  // NEW, EXISTING_MODIFIED, EXISTING_REST, RESOLVED
+        detectedCategory: issue.detectedCategory,
+        snippet: issue.codeSnippet,
+        fixSuggestion: issue.suggestedFix ? {
+          fix: issue.suggestedFix,
+          correctedCode: issue.suggestedCodeSnippet || '',
+          explanation: issue.suggestedFix
+        } : undefined
+      };
+    });
+    
+    const groupingResult = groupIssues(enrichedIssuesForReport);
 
     const groupedFormatter = new V9GroupedReportFormatter(
       modelConfigResolver,
@@ -506,7 +558,7 @@ export async function compileV9Report(
     console.log(`[DEBUG-PR#] groupedMetadata.repository: ${groupedMetadata.repository}`);
     console.log(`[DEBUG-PR#] ============================================\n`);
 
-    const result = await groupedFormatter.generateGroupedReport(allProcessedIssues, groupingResult.groups, groupedMetadata);
+    const result = await groupedFormatter.generateGroupedReport(enrichedIssuesForReport, groupingResult.groups, groupedMetadata);
     
     markdown = result.markdown;
     reportAttachments = {
