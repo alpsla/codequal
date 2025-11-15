@@ -70,6 +70,11 @@ function canAutoFix(group: IssueGroup | { rule: string; tool: string; severity: 
     return true;  // Many bug patterns have clear fixes
   }
 
+  // npm-audit: IDEs can update npm dependencies automatically
+  if (group.tool === 'npm-audit') {
+    return true;  // npm audit fix can resolve most vulnerabilities
+  }
+
   return false;
 }
 
@@ -220,16 +225,11 @@ export function generateAnalysisMetadata(
         };
       })
       .sort((a: any, b: any) => b.efficiency - a.efficiency);
-    
-    content += `\n**Tool Performance Ranking:**\n\n`;
-    toolEfficiency.forEach((tool: any, idx: number) => {
-      const rank = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}.`;
-      const speed = tool.issuesPerSec > 10 ? '⚡ Fast' : 
-                   tool.issuesPerSec > 1 ? '✅ Good' : 
-                   tool.issuesPerSec > 0.1 ? '⚠️ Slow' : '🐌 Very Slow';
-      content += `${rank} **${tool.name}**: ${tool.issues} issues in ${(tool.time / 1000).toFixed(1)}s (${tool.issuesPerSec.toFixed(2)}/s) ${speed}\n`;
-    });
-    
+
+    // BUG FIX #19: Removed duplicate "Tool Performance Ranking" section
+    // This information is already displayed in "### Tool Performance" section above
+    // The ranking was showing hardcoded Java tools (checkstyle, pmd, spotbugs) regardless of language
+
     // BUG FIX #18: Removed "Performance Concerns" section
     // Can't compare tools with different purposes (CheckStyle finds 498K style issues, Semgrep finds 11 security issues)
     // Each tool has its own nature - execution time varies by codebase size and tool purpose
@@ -347,45 +347,29 @@ ${blocking.length > 5 ? `\n... and ${blocking.length - 5} more` : ''}` : '### �
 
 /**
  * Generate footer with IDE integration instructions
- * Includes lazy loading architecture explanation
+ * Includes PR comment template and file attachments
  */
-export function generateFooter(groups: IssueGroup[], ideFixFiles: IDEFixFile[], metadata?: any): string {
+export function generateFooter(
+  groups: IssueGroup[],
+  ideFixFiles: IDEFixFile[],
+  metadata?: any,
+  enrichedIssues?: EnrichedIssue[]
+): string {
   // BUG FIX #48, #49, #70: Updated footer for Bug #34 lazy loading architecture
   // ENHANCEMENT #3: Removed Issue Groups Mapping (not useful for end users)
   // BUG FIX #70: Don't show empty "Attachments" header - combine with IDE Fix Files section
   let footer = '';
   
   if (ideFixFiles.length > 0) {
-    footer += `## 🔗 Attachments\n\n`;
-    footer += `### 🛠️ IDE Fix Files (Lazy Loading)\n\n`;
-    
-    // BUG FIX #48: Explain Bug #34 lazy loading architecture
-    footer += `**🚀 Instant-start IDE integration** with lazy loading:\n\n`;
-    
     // SESSION 24: Extract manifest public URL
     const manifestFile = ideFixFiles.find(f => f.filename === 'all-issues-manifest.json');
     const manifestUrl = manifestFile ? (manifestFile as any).publicUrl : null;
-    
-    footer += `📦 **Manifest file** (contains all fix data):\n`;
-    if (manifestUrl) {
-      footer += `- Download: [all-issues-manifest.json](${manifestUrl})\n`;
-      footer += `- Contains: All ${ideFixFiles.length - 1} auto-fixable issues with fix patterns\n\n`;
-    } else {
-      footer += `- File: \`all-issues-manifest.json\`\n`;
-      footer += `- Location: Available in your CI/CD artifacts or analysis output\n\n`;
-    }
-    footer += `**What you get**:\n`;
-    footer += `- ✅ **Critical issues** embedded (instant access, zero wait time)\n`;
-    footer += `- ⬇️  **High/Medium/Low issues** lazy loaded in background\n`;
-    footer += `- 🎯 **Priority-based download** (critical → high → medium → low)\n`;
-    footer += `- 📊 **Progress tracking** while you fix issues\n\n`;
     
     // BUG FIX: Filter out manifest file (groupId='all-issues') and use optional chaining
     const issueFiles = ideFixFiles.filter(f => f.groupId !== 'all-issues');
     const totalFixable = issueFiles.reduce((sum, f) => sum + (f.content.metadata?.total_occurrences || 0), 0);
 
     // BUG #6 FIX: Calculate actual auto-fixable count from manifest data
-    // Note: manifestFile already declared above
     let autoFixableCount = totalFixable;
     if (manifestFile && (manifestFile.content as any).files) {
       const filesObj = (manifestFile.content as any).files;
@@ -394,43 +378,56 @@ export function generateFooter(groups: IssueGroup[], ideFixFiles: IDEFixFile[], 
       ) as number);
     }
     const totalCount = totalFixable; // Total count remains all fixable issues
-    const criticalCount = issueFiles.filter(f => f.content.severity === 'critical').reduce((sum, f) => sum + (f.content.metadata?.total_occurrences || 0), 0);
-    const highCount = issueFiles.filter(f => f.content.severity === 'high').reduce((sum, f) => sum + (f.content.metadata?.total_occurrences || 0), 0);
-    const mediumCount = issueFiles.filter(f => f.content.severity === 'medium').reduce((sum, f) => sum + (f.content.metadata?.total_occurrences || 0), 0);
-    const lowCount = issueFiles.filter(f => f.content.severity === 'low').reduce((sum, f) => sum + (f.content.metadata?.total_occurrences || 0), 0);
     
-    footer += `**Total auto-fixable issues**: ${totalFixable.toLocaleString()}\n`;
-    footer += `- 🔴 Critical: ${criticalCount} (embedded, instant access)\n`;
-    if (highCount > 0) footer += `- 🟠 High: ${highCount} (lazy loaded after critical)\n`;
-    if (mediumCount > 0) footer += `- 🟡 Medium: ${mediumCount} (lazy loaded after high)\n`;
-    if (lowCount > 0) footer += `- 🟢 Low: ${lowCount} (lazy loaded after medium)\n`;
+    // BUG FIX: Calculate LSP batch action counts from individual issues (not manifest groups)
+    // LSP groups by individual issues, not by manifest groups, so counts must match LSP file
+    let criticalCount = 0;
+    let highCount = 0;
+    let mediumCount = 0;
+    let lowCount = 0;
     
-    // Add manual review disclaimer for critical/high severity issues
-    if (criticalCount > 0 || highCount > 0) {
-      footer += `\n> ⚠️ **Important**: Critical and high-severity auto-fixes require manual code review before applying. Auto-generated fixes are suggestions that should be validated by a developer to ensure they don't introduce regressions or break business logic.\n`;
+    if (enrichedIssues && enrichedIssues.length > 0) {
+      // Count individual issues with fixes (matches LSP structure)
+      const fixableIssues = enrichedIssues.filter(issue => issue.fixSuggestion?.correctedCode);
+      criticalCount = fixableIssues.filter(i => i.severity === 'critical').length;
+      highCount = fixableIssues.filter(i => i.severity === 'high').length;
+      mediumCount = fixableIssues.filter(i => i.severity === 'medium').length;
+      lowCount = fixableIssues.filter(i => i.severity === 'low').length;
+    } else {
+      // Fallback to manifest counts if enrichedIssues not available
+      criticalCount = issueFiles.filter(f => f.content.severity === 'critical').reduce((sum, f) => sum + (f.content.metadata?.total_occurrences || 0), 0);
+      highCount = issueFiles.filter(f => f.content.severity === 'high').reduce((sum, f) => sum + (f.content.metadata?.total_occurrences || 0), 0);
+      mediumCount = issueFiles.filter(f => f.content.severity === 'medium').reduce((sum, f) => sum + (f.content.metadata?.total_occurrences || 0), 0);
+      lowCount = issueFiles.filter(f => f.content.severity === 'low').reduce((sum, f) => sum + (f.content.metadata?.total_occurrences || 0), 0);
     }
     
-    // SESSION 26: Updated IDE instructions with LSP/SARIF batch actions
-    footer += `\n## 🛠️ How to Apply Fixes\n\n`;
+    footer += `## 🛠️ How to Apply Fixes\n\n`;
 
     // Add disclaimer about recommendations
     footer += `> ⚠️ **RECOMMENDATIONS ONLY**: CodeQual provides fix suggestions based on AI analysis. `;
     footer += `You control whether to apply them. Review all changes before applying to production code.\n\n`;
 
-    footer += `**Choose your preferred method**:\n\n`;
+    footer += `**Quick Decision Guide**:\n`;
+    footer += `- 🎯 **Using an IDE (Cursor, VSCode, IntelliJ)?** → Use **Method 1: LSP** (fastest, 1-click fixes)\n`;
+    footer += `- 🏆 **Using GitHub Code Scanning or CI/CD?** → Use **Method 2: SARIF** (industry standard)\n`;
+    footer += `- 🦊 **Using GitLab?** → Use **Method 3: GitLab** (native integration)\n\n`;
 
-    footer += `### 🎯 Method 1: LSP Batch Actions (Recommended) ⚡\n\n`;
-    footer += `**✨ New**: Apply ALL ${totalFixable.toLocaleString()} fixes with 1 click!\n\n`;
+    footer += `### 🎯 Method 1: LSP Batch Actions (Best for IDEs) ⚡\n\n`;
+    footer += `**✨ Best for IDEs**: Apply ALL ${totalFixable.toLocaleString()} fixes with 1 click!\n\n`;
     footer += `**Download**: \`codequal-lsp-actions.json\`\n`;
-    // SESSION 26: Use actual LSP URL from metadata (uploaded separately with different timestamp)
+    // BUG FIX: Only show URL if file was actually uploaded (prevents 404)
     if (metadata?.lspUrl) {
       footer += `- URL: [Download LSP file](${metadata.lspUrl})\n`;
-    } else if (manifestUrl) {
-      // Fallback to string replacement if lspUrl not in metadata
-      const lspUrl = manifestUrl.replace('all-issues-manifest.json', 'codequal-lsp-actions.json');
-      footer += `- URL: [Download LSP file](${lspUrl})\n`;
+    } else {
+      footer += `- ⚠️ File will be available after analysis completes\n`;
     }
     footer += `- Works with: Cursor, VSCode, IntelliJ, any LSP-compatible IDE\n\n`;
+
+    footer += `**How LSP Works**:\n`;
+    footer += `- 📦 **Single file**: All ${totalFixable.toLocaleString()} fixes in one JSON file (no lazy loading)\n`;
+    footer += `- ⚡ **Parallel editing**: Batch actions apply fixes to multiple files simultaneously\n`;
+    footer += `- 🎯 **Grouped by severity**: Batch actions organized by severity for easy filtering\n`;
+    footer += `- 🔄 **IDE-native**: Uses LSP protocol for instant, reliable fixes\n\n`;
 
     footer += `**Steps**:\n`;
     footer += `1. Download \`codequal-lsp-actions.json\`\n`;
@@ -438,10 +435,10 @@ export function generateFooter(groups: IssueGroup[], ideFixFiles: IDEFixFile[], 
     footer += `3. Open any file with issues\n`;
     footer += `4. Press \`Cmd+.\` (or \`Ctrl+.\`) to open Quick Fix menu\n`;
     footer += `5. Select **"Apply All Fixes (${totalFixable} issues)"** at top of menu\n`;
-    footer += `6. All fixes applied in < 1 second! ✅\n\n`;
+    footer += `6. All fixes applied across all files in < 1 second! ✅\n\n`;
 
     footer += `**Batch Actions Available**:\n`;
-    footer += `- 🔥 **"Apply All Fixes"** - All ${totalFixable.toLocaleString()} issues in one click\n`;
+    footer += `- 🔥 **"Apply All Fixes"** - All ${totalFixable.toLocaleString()} issues across all files in one click\n`;
     if (criticalCount > 0) footer += `- 🔴 **"Apply Critical Severity Fixes"** - ${criticalCount} issues\n`;
     if (highCount > 0) footer += `- 🟠 **"Apply High Severity Fixes"** - ${highCount} issues\n`;
     if (mediumCount > 0) footer += `- 🟡 **"Apply Medium Severity Fixes"** - ${mediumCount} issues\n`;
@@ -449,7 +446,8 @@ export function generateFooter(groups: IssueGroup[], ideFixFiles: IDEFixFile[], 
     footer += `- 📝 Individual fixes available for granular control\n\n`;
 
     footer += `> 💡 **How it works**: LSP batch actions group all fixes into a single IDE operation. `;
-    footer += `When you click "Apply All", your IDE applies all ${totalFixable.toLocaleString()} fixes simultaneously!\n\n`;
+    footer += `When you click "Apply All", your IDE applies all ${totalFixable.toLocaleString()} fixes across multiple files simultaneously (parallel editing)! `;
+    footer += `All fixes are in one file - no lazy loading needed.\n\n`;
 
     // SESSION 27: Hybrid fix approach explanation
     footer += `**Three Ways to Use Batch Actions**:\n\n`;
@@ -493,148 +491,98 @@ export function generateFooter(groups: IssueGroup[], ideFixFiles: IDEFixFile[], 
     footer += `> 💡 **Pro Tip**: For instant fixes, apply soon after analysis. For flexibility with ongoing edits, AI adapts automatically!\n\n`;
     footer += `---\n\n`;
 
-    footer += `### 📋 Method 2: SARIF Report (Industry Standard)\n\n`;
+    footer += `### 📋 Method 2: SARIF Report (Best for GitHub Code Scanning)\n\n`;
     footer += `**Download**: \`codequal-sarif-report.json\`\n`;
-    // SESSION 26: Use actual SARIF URL from metadata (uploaded separately with different timestamp)
+    // BUG FIX: Only show URL if file was actually uploaded (prevents 404)
     if (metadata?.sarifUrl) {
       footer += `- URL: [Download SARIF file](${metadata.sarifUrl})\n`;
-    } else if (manifestUrl) {
-      // Fallback to string replacement if sarifUrl not in metadata
-      const sarifUrl = manifestUrl.replace('all-issues-manifest.json', 'codequal-sarif-report.json');
-      footer += `- URL: [Download SARIF file](${sarifUrl})\n`;
+    } else {
+      footer += `- ⚠️ File will be available after analysis completes\n`;
     }
-    footer += `- Works with: VSCode, GitHub Code Scanning, CI/CD pipelines\n\n`;
+    footer += `- Works with: GitHub Code Scanning, CI/CD pipelines, VSCode/Cursor (with extension)\n\n`;
 
-    footer += `**Steps**:\n`;
-    footer += `1. Install SARIF Viewer extension (VSCode/Cursor)\n`;
+    footer += `**For GitHub Code Scanning**:\n`;
+    footer += `1. Upload \`codequal-sarif-report.json\` to GitHub Actions\n`;
+    footer += `2. GitHub automatically displays issues in Security tab\n`;
+    footer += `3. Issues appear in PR checks and can block merges\n\n`;
+
+    footer += `**For VSCode/Cursor (Alternative to LSP)**:\n`;
+    footer += `1. Install SARIF Viewer extension from marketplace\n`;
     footer += `2. Open Command Palette (\`Cmd+Shift+P\`)\n`;
     footer += `3. Run: "SARIF: Open SARIF File"\n`;
     footer += `4. Select \`codequal-sarif-report.json\`\n`;
-    footer += `5. View all issues in Problems panel\n`;
-    footer += `6. Apply fixes individually or in batches\n\n`;
+    footer += `5. View all issues in Problems panel\n\n`;
 
-    footer += `> 🏆 **Best for**: CI/CD integration, GitHub Code Scanning, permanent diagnostic records\n\n`;
+    footer += `> 🏆 **Best for**: GitHub Code Scanning, CI/CD pipelines, permanent diagnostic records\n\n`;
 
-    footer += `---\n\n`;
-    footer += `### 🦊 Method 3: GitLab Code Quality (CI/CD Integration)\n\n`;
-    footer += `**Download**: \`codequal-gitlab-codequality.json\`\n`;
-    // SESSION 27: Use actual GitLab URL from metadata
-    if (metadata?.gitlabUrl) {
+    // BUG FIX: Only show GitLab method for GitLab repositories AND if file was actually uploaded
+    const repoUrl = metadata?.repositoryUrl || metadata?.repository || '';
+    const isGitLabRepo = repoUrl.includes('gitlab.com') || repoUrl.includes('gitlab.');
+    
+    // Only show GitLab method if:
+    // 1. It's a GitLab repo AND
+    // 2. gitlabUrl exists in metadata (file was successfully uploaded)
+    // This prevents 404 errors from showing broken links
+    if (isGitLabRepo && metadata?.gitlabUrl) {
+      footer += `---\n\n`;
+      footer += `### 🦊 Method 3: GitLab Code Quality (CI/CD Integration)\n\n`;
+      footer += `**Download**: \`codequal-gitlab-codequality.json\`\n`;
       footer += `- URL: [Download GitLab Code Quality file](${metadata.gitlabUrl})\n`;
-    } else if (manifestUrl) {
-      // Fallback to string replacement if gitlabUrl not in metadata
-      const gitlabUrl = manifestUrl.replace('all-issues-manifest.json', 'codequal-gitlab-codequality.json');
-      footer += `- URL: [Download GitLab Code Quality file](${gitlabUrl})\n`;
+      footer += `- Works with: GitLab CI/CD, Merge Request widgets\n`;
+      footer += `- Format: Code Climate (GitLab standard)\n\n`;
+
+      footer += `**GitLab CI/CD Integration**:\n\n`;
+      footer += `\`\`\`yaml\n`;
+      footer += `# .gitlab-ci.yml\n`;
+      footer += `codequal_analysis:\n`;
+      footer += `  stage: test\n`;
+      footer += `  script:\n`;
+      footer += `    # Run CodeQual analysis (example - adjust to your setup)\n`;
+      footer += `    - codequal analyze --output codequal-gitlab-codequality.json\n`;
+      footer += `  artifacts:\n`;
+      footer += `    reports:\n`;
+      footer += `      codequality: codequal-gitlab-codequality.json\n`;
+      footer += `\`\`\`\n\n`;
+
+      footer += `**What you get**:\n`;
+      footer += `- 📊 Code Quality widget in merge requests\n`;
+      footer += `- 📈 Quality degradation/improvement metrics\n`;
+      footer += `- 🚫 Optional quality gates (block merge on critical issues)\n`;
+      footer += `- 📋 Issue list directly in GitLab UI\n\n`;
+
+      footer += `**Features**:\n`;
+      footer += `- All ${totalFixable.toLocaleString()} issues visible in GitLab\n`;
+      footer += `- Severity mapping: Critical→Blocker, High→Critical, Medium→Major, Low→Minor\n`;
+      footer += `- File paths, line numbers, and fix suggestions included\n`;
+      footer += `- Automatic issue tracking across commits (fingerprints)\n\n`;
+
+      footer += `> 🦊 **Perfect for**: GitLab teams, CI/CD automation, quality gate enforcement\n\n`;
     }
-    footer += `- Works with: GitLab CI/CD, Merge Request widgets\n`;
-    footer += `- Format: Code Climate (GitLab standard)\n\n`;
 
-    footer += `**GitLab CI/CD Integration**:\n\n`;
-    footer += `\`\`\`yaml\n`;
-    footer += `# .gitlab-ci.yml\n`;
-    footer += `codequal_analysis:\n`;
-    footer += `  stage: test\n`;
-    footer += `  script:\n`;
-    footer += `    # Run CodeQual analysis (example - adjust to your setup)\n`;
-    footer += `    - codequal analyze --output codequal-gitlab-codequality.json\n`;
-    footer += `  artifacts:\n`;
-    footer += `    reports:\n`;
-    footer += `      codequality: codequal-gitlab-codequality.json\n`;
-    footer += `\`\`\`\n\n`;
-
-    footer += `**What you get**:\n`;
-    footer += `- 📊 Code Quality widget in merge requests\n`;
-    footer += `- 📈 Quality degradation/improvement metrics\n`;
-    footer += `- 🚫 Optional quality gates (block merge on critical issues)\n`;
-    footer += `- 📋 Issue list directly in GitLab UI\n\n`;
-
-    footer += `**Features**:\n`;
-    footer += `- All ${totalFixable.toLocaleString()} issues visible in GitLab\n`;
-    footer += `- Severity mapping: Critical→Blocker, High→Critical, Medium→Major, Low→Minor\n`;
-    footer += `- File paths, line numbers, and fix suggestions included\n`;
-    footer += `- Automatic issue tracking across commits (fingerprints)\n\n`;
-
-    footer += `> 🦊 **Perfect for**: GitLab teams, CI/CD automation, quality gate enforcement\n\n`;
-
+    // BUG FIX #20: Add PR Comment Template section with actual markdown
     footer += `---\n\n`;
-    footer += `### 🤖 Method 4: AI Assistant (Legacy)\n`;
+
+    // Generate PR comment template if we have the necessary data
+    if (enrichedIssues && enrichedIssues.length > 0) {
+      footer += generatePRComment(enrichedIssues, groups, metadata || {});
+      footer += `\n\n`;
+    }
+
+    // Add attachments section at the end (manifest file for reference)
+    footer += `---\n\n`;
+    footer += `## 🔗 Additional Files\n\n`;
     if (manifestUrl) {
-      footer += `**Download**: [all-issues-manifest.json](${manifestUrl})\n\n`;
-    } else {
-      footer += `**Download**: \`all-issues-manifest.json\` from analysis output\n\n`;
+      footer += `📦 **Manifest file** (for AI assistants with lazy loading): [all-issues-manifest.json](${manifestUrl})\n`;
+      footer += `- Contains: All ${totalFixable.toLocaleString()} auto-fixable issues with fix patterns\n`;
+      footer += `- **Lazy loading**: Critical issues embedded (instant), high/medium/low lazy loaded in background\n`;
+      footer += `- **Use with**: AI assistants (Cursor Chat, GitHub Copilot) if LSP doesn't work in your IDE\n`;
+      footer += `- **Difference from LSP**: Manifest uses lazy loading by severity; LSP has all fixes in one file\n\n`;
     }
-    footer += `**Steps**:\n`;
-    footer += `1. Open your IDE's AI assistant (Cursor Chat, GitHub Copilot, etc.)\n`;
-    footer += `2. Attach the manifest file\n`;
-    footer += `3. Use the prompt below\n\n`;
     
-    footer += `**Step 2: Fix Issues with Single Command**\n\n`;
-    footer += `**Simple prompt** (one command does everything):\n`;
-    footer += `\`\`\`\n`;
-    footer += `👤 You: "Create a todo list and fix all issues divided by severity groups,\n`;
-    footer += `        starting from critical and ending with low, with constant progress updates"\n\n`;
-    footer += `🤖 IDE: [Creates structured todo list]\n`;
-    footer += `        ✅ Critical issues (${criticalCount}) - Starting...\n`;
-    if (highCount > 0) {
-      footer += `        ⏳ High issues (${highCount}) - Waiting...\n`;
+    // Add manual review disclaimer for critical/high severity issues
+    if (criticalCount > 0 || highCount > 0) {
+      footer += `> ⚠️ **Important**: Critical and high-severity auto-fixes require manual code review before applying. Auto-generated fixes are suggestions that should be validated by a developer to ensure they don't introduce regressions or break business logic.\n\n`;
     }
-    if (mediumCount > 0) {
-      footer += `        ⏳ Medium issues (${mediumCount.toLocaleString()}) - Waiting...\n`;
-    }
-    if (lowCount > 0) {
-      footer += `        ⏳ Low issues (${lowCount.toLocaleString()}) - Waiting...\n`;
-    }
-    footer += `\n`;
-    footer += `        [Applies fixes with real-time progress]\n`;
-    footer += `        ✅ Critical: 2/2 fixed (100%)\n`;
-    if (highCount > 0) {
-      footer += `        🔄 High: 5/${highCount} fixed (${Math.round((5/highCount)*100)}%)...\n`;
-    }
-    footer += `        ⏳ Medium: Waiting for high to complete...\n`;
-    footer += `\`\`\`\n\n`;
-    footer += `**That's it!** The IDE handles everything:\n`;
-    footer += `- Loads the manifest automatically\n`;
-    footer += `- Creates a prioritized todo list\n`;
-    footer += `- Fixes issues in severity order (critical → high → medium → low)\n`;
-    footer += `- Shows live progress updates\n`;
-    footer += `- Downloads next priority issues in background\n\n`;
-    
-    // BUG FIX #64: Updated validation workflow (CodeQual re-scan, not IDE)
-    footer += `**Step 3: Validate Your Fixes with CodeQual**\n\n`;
-    footer += `After committing your fixes, CodeQual will automatically re-analyze your PR to confirm the issues are resolved:\n\n`;
-    footer += `\`\`\`bash\n`;
-    footer += `# Commit your fixes\n`;
-    footer += `git add .\n`;
-    footer += `git commit -m "fix: resolve ${criticalCount + highCount} security issues"\n\n`;
-    footer += `# Push to PR branch\n`;
-    footer += `git push origin your-branch\n\n`;
-    footer += `# CodeQual automatically triggers:\n`;
-    footer += `🤖 CodeQual: [Running analysis on new commit...]\n`;
-    footer += `             ✅ Before: ${criticalCount} critical, ${highCount} high\n`;
-    // BUG #6 FIX: Show realistic scenario - auto-fix handles most but not necessarily all issues
-    if (autoFixableCount === totalCount) {
-      footer += `             ✅ After:  0 critical, 0 high\n`;
-      footer += `             🎉 All blockers resolved! PR approved.\n`;
-    } else {
-      const remainingPercent = Math.round(((totalCount - autoFixableCount) / totalCount) * 100);
-      footer += `             ✅ After:  ${Math.ceil((criticalCount + highCount) * remainingPercent / 100)} issues remaining (${remainingPercent}% require manual review)\n`;
-      footer += `             🎯 Significant progress! Review remaining issues.\n`;
-    }
-    footer += `\`\`\`\n\n`;
-    footer += `**Why CodeQual re-scan?**\n`;
-    footer += `- ✅ Automated validation on every commit\n`;
-    footer += `- 📊 Compare before/after results objectively\n`;
-    footer += `- 🎯 Catch any regressions or incomplete fixes\n`;
-    footer += `- 🏆 Earn "First Clean PR" achievement\n\n`;
-    footer += `> **Note:** Auto-fix tools can resolve most style and formatting issues (${Math.round((autoFixableCount / totalCount) * 100)}% in this PR), but complex security or logic issues may require manual review.\n\n`;
-    
-    footer += `**Why this works**:\n`;
-    footer += `- ⚡ **Zero wait time** - critical issues embedded for instant access\n`;
-    footer += `- 🎯 **Priority-first** - most important issues available immediately\n`;
-    footer += `- 📦 **Efficient** - high/medium/low issues lazy-loaded in background\n`;
-    footer += `- 🤖 **Universal format** - works with any AI-powered IDE\n`;
-    footer += `- 🛡️  **Human-in-the-loop** - you review before applying for safety\n`;
-    footer += `- 🔄 **Validation workflow** - automated before/after comparison\n`;
   }
   
   footer += `\n---\n\n`;

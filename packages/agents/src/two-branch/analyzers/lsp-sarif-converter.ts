@@ -303,31 +303,60 @@ export class LSPSARIFConverter {
     workspaceRoot: string
   ): LSPCodeAction | null {
     if (issues.length === 0) return null;
-    
+
     // Group issues by file URI
     const changesByFile: Record<string, LSPTextEdit[]> = {};
     const diagnostics: LSPDiagnostic[] = [];
-    
+
     for (const issue of issues) {
       if (!issue.fixSuggestion?.correctedCode || !issue.file) continue;
-      
+
       const fileUri = this.toFileUri(issue.file, workspaceRoot);
       const line = (issue.line || 1) - 1; // Convert to 0-based
       const endLine = line + this.countLines(issue.fixSuggestion.correctedCode);
-      
-      // Add text edit for this issue
-      if (!changesByFile[fileUri]) {
-        changesByFile[fileUri] = [];
-      }
-      
-      changesByFile[fileUri].push({
+
+      const newEdit: LSPTextEdit = {
         range: {
           start: { line, character: 0 },
           end: { line: endLine, character: 0 }
         },
         newText: issue.fixSuggestion.correctedCode
+      };
+
+      // BUG FIX: Check for overlapping ranges (not just same start line)
+      // Example: Lines 15-22, 16-23, 17-24 all overlap and conflict
+      if (!changesByFile[fileUri]) {
+        changesByFile[fileUri] = [];
+      }
+
+      const hasOverlap = changesByFile[fileUri].some(existingEdit => {
+        const existingStart = existingEdit.range.start.line;
+        const existingEnd = existingEdit.range.end.line;
+        const newStart = newEdit.range.start.line;
+        const newEnd = newEdit.range.end.line;
+
+        // Check if ranges overlap
+        return !(newEnd <= existingStart || newStart >= existingEnd);
       });
-      
+
+      if (hasOverlap) {
+        // Skip duplicate/overlapping edit, but still add diagnostic for this issue
+        diagnostics.push({
+          range: {
+            start: { line, character: 0 },
+            end: { line: line + 1, character: 0 }
+          },
+          severity: this.mapSeverityToLSP(issue.severity),
+          code: issue.rule,
+          source: `codequal-${issue.tool}`,
+          message: issue.message
+        });
+        continue;
+      }
+
+      // Add non-overlapping edit
+      changesByFile[fileUri].push(newEdit);
+
       // Add diagnostic for this issue
       diagnostics.push({
         range: {
@@ -340,9 +369,9 @@ export class LSPSARIFConverter {
         message: issue.message
       });
     }
-    
+
     if (Object.keys(changesByFile).length === 0) return null;
-    
+
     return {
       title,
       kind: 'quickfix',
