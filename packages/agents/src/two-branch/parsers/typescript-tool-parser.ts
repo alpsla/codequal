@@ -77,7 +77,12 @@ export class TypeScriptToolParser {
         : '"src/**/*.{ts,tsx,js,jsx}" "lib/**/*.{ts,tsx,js,jsx}" "app/**/*.{ts,tsx,js,jsx}" "packages/**/src/**/*.{ts,tsx,js,jsx}" "packages/**/lib/**/*.{ts,tsx,js,jsx}" "apps/**/src/**/*.{ts,tsx,js,jsx}" "*.{ts,tsx,js,jsx}"';
 
       const command = `cd ${repoPath} && npx eslint ${fileArgs} --format json 2>&1`;
-      
+
+      // DEBUG: Log the exact command being executed
+      console.log('[DEBUG ESLint] Repository path:', repoPath);
+      console.log('[DEBUG ESLint] File args:', fileArgs);
+      console.log('[DEBUG ESLint] Full command:', command);
+
       const { stdout, stderr } = await exec(command, {
         maxBuffer: 10 * 1024 * 1024,  // 10MB buffer
         timeout: 120000  // 2 minute timeout - should complete in seconds, this catches hangs
@@ -88,10 +93,15 @@ export class TypeScriptToolParser {
       // Parse JSON output
       try {
         const eslintOutput = JSON.parse(stdout);
+        // DEBUG: Log ESLint results
+        console.log('[DEBUG ESLint] Files scanned:', Array.isArray(eslintOutput) ? eslintOutput.length : 0);
         if (Array.isArray(eslintOutput)) {
+          const totalMessages = eslintOutput.reduce((sum, f) => sum + (f.messages?.length || 0), 0);
+          console.log('[DEBUG ESLint] Total messages:', totalMessages);
           const result = this.parseESLintResults(eslintOutput);
           issues = result.issues;
           fixableCount = result.fixableCount;
+          console.log('[DEBUG ESLint] Parsed issues:', issues.length);
         }
       } catch (e) {
         // Fallback to text parsing
