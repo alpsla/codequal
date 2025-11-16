@@ -106,15 +106,19 @@ async function runTypeScriptLiteE2ETest(scenario: TestScenario): Promise<void> {
     
     // Checkout PR branch for comparison
     console.log(`   🔀 Checking out PR #${scenario.prNumber}...`);
+    let prCheckoutSuccess = false;
     try {
       execSync(`git -C ${repoPath} fetch origin pull/${scenario.prNumber}/head:pr-${scenario.prNumber}`, { stdio: 'pipe' });
       execSync(`git -C ${repoPath} checkout pr-${scenario.prNumber}`, { stdio: 'pipe' });
       console.log(`   ✅ Checked out PR branch`);
+      prCheckoutSuccess = true;
     } catch (error) {
-      console.log(`   ⚠️  Could not checkout PR #${scenario.prNumber}, using main branch`);
+      console.log(`   ⚠️  Could not checkout PR #${scenario.prNumber}`);
+      console.log(`   ℹ️  This test requires a valid PR number`);
+      throw new Error(`PR checkout failed for ${scenario.repoUrl}/pull/${scenario.prNumber}`);
     }
     
-    // Run tools on PR branch
+    // Run tools on PR branch (only if checkout succeeded)
     console.log('   📊 Analyzing PR branch...');
     const prResult = await orchestrator.orchestrate(repoPath, 'pr', { analysisMode: 'complete' });
     
@@ -134,6 +138,21 @@ async function runTypeScriptLiteE2ETest(scenario: TestScenario): Promise<void> {
     // STEP 3: Issue Categorization
     // ========================================================================
     console.log('\n📂 Step 3: Categorizing issues...');
+
+    // NEW-BUG DEBUG: Check prResults structure
+    console.log(`\n[NEW-BUG] ====== prResults DEBUG ======`);
+    console.log(`[NEW-BUG] prResults.length: ${prResults.length}`);
+    prResults.forEach((result, index) => {
+      console.log(`[NEW-BUG] prResults[${index}]:`);
+      console.log(`[NEW-BUG]   - tool: ${result.tool}`);
+      console.log(`[NEW-BUG]   - issues property exists: ${result.issues !== undefined}`);
+      console.log(`[NEW-BUG]   - issues length: ${result.issues?.length || 0}`);
+      console.log(`[NEW-BUG]   - parsedIssues property exists: ${(result as any).parsedIssues !== undefined}`);
+      console.log(`[NEW-BUG]   - parsedIssues length: ${(result as any).parsedIssues?.length || 0}`);
+      console.log(`[NEW-BUG]   - All properties: ${Object.keys(result).join(', ')}`);
+    });
+    console.log(`[NEW-BUG] ===============================\n`);
+
     const allPrIssues = prResults.flatMap(r => r.issues || []);
     const newIssues = allPrIssues.filter(issue => 
       !mainResults.some(m => 
@@ -351,4 +370,6 @@ main().catch(error => {
   console.error('Fatal error:', error);
   process.exit(1);
 });
+
+
 
