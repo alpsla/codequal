@@ -26,7 +26,7 @@ export interface ServiceHealthEvent {
 
 export class ServiceHealthTracker {
   private supabase: SupabaseClient | null = null;
-  private enabled = true;
+  private enabled: boolean = true;
 
   constructor(supabase: SupabaseClient | null) {
     this.supabase = supabase;
