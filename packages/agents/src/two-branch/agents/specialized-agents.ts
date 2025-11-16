@@ -949,7 +949,7 @@ Output ONLY this JSON (nothing else):
     "impact": "CONCRETE security/business impact for THIS vulnerability (2-3 sentences). Include CVE details if applicable"
   },
   "fix": "Exact version update steps with package name and version numbers (focus on HOW to update with migration notes)",
-  "correctedCode": "Standardized format: Only the dependency update (e.g., \"@babel/traverse\": \"^7.23.2\") - NOT full package.json structure",
+  "correctedCode": "Standardized format: Only the dependency update (e.g., "@babel/traverse": "^7.23.2") - NOT full package.json structure",
   "bestPractices": ["Best practice 1", "Best practice 2", "Best practice 3"]
 }
 
