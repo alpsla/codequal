@@ -51,15 +51,17 @@ interface SemgrepOutput {
 }
 
 export class UniversalSemgrepRunner extends UniversalToolBase {
+  private jobs: number = 2;  // Default: 2 CPUs (optimal when running with other tools)
   
-  constructor(workspacePath: string, language: string) {
+  constructor(workspacePath: string, language: string, jobs: number = 2) {
     super({
       name: 'semgrep',
       language,
       workspacePath,
       outputFile: path.join(workspacePath, '.semgrep-output.json'),
-      timeout: 120000 // 2 minutes
+      timeout: 600000 // 10 minutes (increased for large repositories)
     });
+    this.jobs = jobs;
   }
   
   /**
@@ -98,6 +100,10 @@ export class UniversalSemgrepRunner extends UniversalToolBase {
   
   /**
    * Build Semgrep command
+   * 
+   * Uses --jobs parameter (default: 2) to utilize multiple CPU cores.
+   * - jobs=2: Optimal when running alongside other tools (shares 4 CPUs)
+   * - jobs=4: Use all 4 CPUs when Semgrep runs alone (maximum performance)
    */
   protected buildCommand(): string {
     const { outputFile, workspacePath } = this.config;
@@ -106,6 +112,7 @@ export class UniversalSemgrepRunner extends UniversalToolBase {
     // (can't use --config=auto with --metrics=off)
     // p/security-audit: General security rules
     // p/owasp-top-ten: OWASP Top 10 vulnerabilities
+    // --jobs=2: Use 2 CPU cores for parallel execution (optimal for 4-CPU systems)
     // --json for structured output
     // --quiet to suppress progress bars
     // --no-git-ignore to scan all files
@@ -114,6 +121,7 @@ export class UniversalSemgrepRunner extends UniversalToolBase {
     return `semgrep \
       --config=p/security-audit \
       --config=p/owasp-top-ten \
+      --jobs=${this.jobs} \
       --json \
       --quiet \
       --no-git-ignore \
@@ -245,9 +253,10 @@ export class UniversalSemgrepRunner extends UniversalToolBase {
  */
 export async function runSemgrep(
   workspacePath: string,
-  language: string
+  language: string,
+  jobs: number = 2
 ): Promise<Issue[]> {
-  const runner = new UniversalSemgrepRunner(workspacePath, language);
+  const runner = new UniversalSemgrepRunner(workspacePath, language, jobs);
   return runner.execute();
 }
 

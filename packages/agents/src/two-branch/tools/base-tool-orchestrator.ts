@@ -124,6 +124,7 @@ export interface OrchestrationOptions {
   includeAllSeverities?: boolean;
   analysisMode?: AnalysisMode;
   changedFiles?: string[];
+  semgrepJobs?: number;  // Override Semgrep --jobs flag (default: 2, can be 4 for full CPU usage)
 }
 
 // ============================================================
@@ -291,8 +292,9 @@ export abstract class BaseToolOrchestrator {
       const toolsToRun = this.getToolsToRun(analysisMode, branch);
       logger.info(`🔧 Tools to run: ${toolsToRun.join(', ')}`);
 
-      // Step 3: Execute tools in parallel (Universal pattern)
-      const rawToolResults = await this.executeToolsInParallel(
+      // Step 3: Execute tools with CPU-aware strategy
+      // Strategy: Run Semgrep (bottleneck) with all 4 CPUs first, then other tools in parallel
+      const rawToolResults = await this.executeToolsWithCPUPriority(
         toolsToRun,
         repoPath,
         branch,
@@ -459,7 +461,8 @@ export abstract class BaseToolOrchestrator {
       // Route to appropriate universal runner
       switch (toolName.toLowerCase()) {
         case 'semgrep': {
-          const semgrepRunner = new UniversalSemgrepRunner(repoPath, language);
+          const semgrepJobs = options.semgrepJobs || 2;  // Default: 2, can be 4 for full CPU usage
+          const semgrepRunner = new UniversalSemgrepRunner(repoPath, language, semgrepJobs);
           issues = await semgrepRunner.execute();
           break;
         }
@@ -517,29 +520,127 @@ export abstract class BaseToolOrchestrator {
    * Execute multiple tools in parallel
    * Universal pattern - works for any language
    */
+  /**
+   * Execute tools with CPU-aware priority strategy
+   * 
+   * Strategy:
+   * 1. If Semgrep is present (bottleneck), run it first with all 4 CPUs (--jobs=4)
+   * 2. Then run other tools in parallel (max 4 concurrent)
+   * 
+   * This maximizes Semgrep performance while still parallelizing other tools.
+   */
+  protected async executeToolsWithCPUPriority(
+    tools: string[],
+    repoPath: string,
+    branch: 'base' | 'pr',
+    options: OrchestrationOptions
+  ): Promise<ToolResult[]> {
+    const semgrepIndex = tools.indexOf('semgrep');
+    const hasSemgrep = semgrepIndex !== -1;
+    
+    // Strategy: Run Semgrep first with all 4 CPUs if it's the bottleneck
+    if (hasSemgrep && tools.length > 1) {
+      logger.info(`\n🚀 CPU-Aware Strategy: Running Semgrep first with all 4 CPUs, then other tools in parallel...`);
+      
+      // Step 1: Run Semgrep with all 4 CPUs (temporarily set jobs=4)
+      const semgrepTool = tools[semgrepIndex];
+      const otherTools = tools.filter(t => t !== semgrepTool);
+      
+      logger.info(`   📊 Step 1: Running Semgrep with --jobs=4 (all 4 CPUs)...`);
+      const semgrepResult = await this.executeTool(semgrepTool, repoPath, branch, {
+        ...options,
+        semgrepJobs: 4  // Use all 4 CPUs for Semgrep
+      });
+      
+      // Step 2: Run other tools in parallel (max 4 concurrent)
+      logger.info(`   📊 Step 2: Running ${otherTools.length} other tools in parallel...`);
+      const otherResults = await this.executeToolsInParallel(
+        otherTools,
+        repoPath,
+        branch,
+        options
+      );
+      
+      // Combine results (Semgrep first, then others)
+      const allResults = [semgrepResult, ...otherResults];
+      
+      // Ensure results are in original tool order
+      const orderedResults = tools.map(toolName => 
+        allResults.find(r => r.tool === toolName) || this.createFailedResult(toolName, 'Tool execution not found')
+      );
+      
+      const successful = orderedResults.filter(r => r.success).length;
+      const failed = orderedResults.filter(r => !r.success).length;
+      logger.info(`✅ All tools complete: ${successful} succeeded, ${failed} failed`);
+      
+      return orderedResults;
+    }
+    
+    // Fallback: No Semgrep or only Semgrep - use standard parallel execution
+    return this.executeToolsInParallel(tools, repoPath, branch, options);
+  }
+
+  /**
+   * Execute tools in parallel with CPU-aware concurrency limiting
+   * 
+   * Uses 4 CPU cores optimally:
+   * - Runs up to 4 tools simultaneously
+   * - For languages with >4 tools (e.g., Python with 5), batches them
+   * - Automatically starts next tool when one completes
+   * 
+   * This ensures optimal CPU utilization without oversubscription.
+   */
   protected async executeToolsInParallel(
     tools: string[],
     repoPath: string,
     branch: 'base' | 'pr',
     options: OrchestrationOptions
   ): Promise<ToolResult[]> {
-    logger.info(`\n🚀 Executing ${tools.length} tools in parallel...`);
+    const MAX_CONCURRENT_TOOLS = 4; // Match Oracle A1.Flex 4 OCPUs
+    logger.info(`\n🚀 Executing ${tools.length} tools in parallel (max ${MAX_CONCURRENT_TOOLS} concurrent)...`);
 
-    const promises = tools.map(toolName =>
-      this.executeTool(toolName, repoPath, branch, options).catch(error => {
-        logger.error(`❌ Tool ${toolName} failed: ${error.message}`);
-        return this.createFailedResult(toolName, error.message);
-      })
+    const results: ToolResult[] = [];
+    const executing: Set<Promise<void>> = new Set();
+    const toolQueue = [...tools];
+
+    // Process tools with concurrency limit
+    while (toolQueue.length > 0 || executing.size > 0) {
+      // Start new executions up to concurrency limit
+      while (executing.size < MAX_CONCURRENT_TOOLS && toolQueue.length > 0) {
+        const toolName = toolQueue.shift()!;
+        
+        const executionPromise = this.executeTool(toolName, repoPath, branch, options)
+          .then(result => {
+            results.push(result);
+            executing.delete(executionPromise);
+          })
+          .catch(error => {
+            logger.error(`❌ Tool ${toolName} failed: ${error.message}`);
+            const failedResult = this.createFailedResult(toolName, error.message);
+            results.push(failedResult);
+            executing.delete(executionPromise);
+          });
+
+        executing.add(executionPromise);
+      }
+
+      // Wait for at least one tool to complete before starting more
+      if (executing.size > 0) {
+        await Promise.race(executing);
+      }
+    }
+
+    // Ensure results are in the same order as input tools
+    const orderedResults = tools.map(toolName => 
+      results.find(r => r.tool === toolName) || this.createFailedResult(toolName, 'Tool execution not found')
     );
 
-    const results = await Promise.all(promises);
-
     // Log summary
-    const successful = results.filter(r => r.success).length;
-    const failed = results.filter(r => !r.success).length;
+    const successful = orderedResults.filter(r => r.success).length;
+    const failed = orderedResults.filter(r => !r.success).length;
     logger.info(`✅ Tools complete: ${successful} succeeded, ${failed} failed`);
 
-    return results;
+    return orderedResults;
   }
 
   // ============================================================

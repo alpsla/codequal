@@ -74,7 +74,17 @@ export interface TypeScriptToolConfig {
     enabled: boolean;
     config: string;
   };
-  
+  dependencyCheck?: {
+    enabled: boolean;
+    failOnCVSS: number;
+    suppressionFile?: string;
+    formats: string[];  // e.g., ['JSON', 'HTML']
+    caching: {
+      enabled: boolean;
+      location: string;
+    };
+  };
+
   // DOCKER CONFIG
   docker: {
     mountPath: string;
@@ -104,6 +114,15 @@ export const DEFAULT_TYPESCRIPT_CONFIG: TypeScriptToolConfig = {
     enabled: true,
     config: 'auto'
   },
+  dependencyCheck: {
+    enabled: true,
+    failOnCVSS: 0,  // Report all CVEs, don't fail build
+    formats: ['JSON'],
+    caching: {
+      enabled: true,
+      location: '/var/lib/dependency-check/data'  // Shared NVD cache
+    }
+  },
   docker: {
     mountPath: '/workspace',
     nodeVersion: '20',
@@ -118,6 +137,7 @@ const TYPESCRIPT_TOOL_CATEGORIES = {
   eslint: ToolCategory.CODE_QUALITY,
   typescript: ToolCategory.CODE_QUALITY,
   'npm-audit': ToolCategory.DEPENDENCY_SCAN,
+  'dependency-check': ToolCategory.DEPENDENCY_SCAN,
   semgrep: ToolCategory.SECURITY
 };
 
@@ -206,12 +226,17 @@ export class TypeScriptToolOrchestrator extends BaseToolOrchestrator {
     if (this.config.npmAudit?.enabled && shouldTypeScriptToolRun('npm-audit', mode)) {
       tools.push('npm-audit');
     }
-    
+
+    // Dependency-Check - CVE scanning (standard and above)
+    if (this.config.dependencyCheck?.enabled && shouldTypeScriptToolRun('dependency-check', mode)) {
+      tools.push('dependency-check');
+    }
+
     // Semgrep - Security analysis (standard and above)
     if (this.config.semgrep?.enabled && shouldTypeScriptToolRun('semgrep', mode)) {
       tools.push('semgrep');
     }
-    
+
     return tools;
   }
 
@@ -220,10 +245,10 @@ export class TypeScriptToolOrchestrator extends BaseToolOrchestrator {
    */
   protected getAgentToolCategories(): Record<string, string[]> {
     return {
-      'Security': ['semgrep', 'npm-audit'],
+      'Security': ['semgrep', 'npm-audit', 'dependency-check'],
       'Code Quality': ['eslint', 'typescript'],
       'Performance': ['eslint'],  // ESLint has performance rules
-      'Dependencies': ['npm-audit']
+      'Dependencies': ['npm-audit', 'dependency-check']
     };
   }
 
@@ -253,13 +278,16 @@ export class TypeScriptToolOrchestrator extends BaseToolOrchestrator {
     switch (toolName) {
       case 'eslint':
         return this.runESLint(repoPath, branch, options.changedFiles);
-      
+
       case 'typescript':
         return this.runTypeScriptCompiler(repoPath, branch);
-      
+
       case 'npm-audit':
         return this.runNpmAudit(repoPath, branch);
-      
+
+      case 'dependency-check':
+        return this.runDependencyCheck(repoPath, branch);
+
       default:
         throw new Error(`Unknown TypeScript tool: ${toolName}`);
     }
@@ -429,6 +457,110 @@ export class TypeScriptToolOrchestrator extends BaseToolOrchestrator {
   // runSemgrep() removed - Semgrep now handled by base class executeUniversalTool()
   // See executeTool() method which routes universal tools to the base class
 
+  /**
+   * Run OWASP Dependency-Check for CVE scanning
+   * Uses shared PostgreSQL/NVD database infrastructure (updated daily at 2am)
+   * Same fast performance as Java (<10s) via shared cache
+   */
+  private async runDependencyCheck(
+    repoPath: string,
+    branch: 'base' | 'pr'
+  ): Promise<ToolResult> {
+    const startTime = Date.now();
+    const outputFileName = `dependency-check-${branch}.json`;
+    const outputFile = path.join(repoPath, outputFileName);
+
+    try {
+      logger.info(`🔐 Running Dependency-Check CVE scanning on ${branch} branch...`);
+
+      // Dependency-Check: Use entrypoint bash -c and output to directory
+      // Same infrastructure as Java - shared PostgreSQL/NVD cache
+      const dockerCommand = `docker run --rm \
+        -v "${repoPath}:${this.workspaceDir}" \
+        -v "${this.config.dependencyCheck!.caching.location}:/cache" \
+        ${this.dockerImage} \
+        -c '/opt/dependency-check/bin/dependency-check.sh --scan ${this.workspaceDir} --format JSON --out ${this.workspaceDir} --data /cache --failOnCVSS ${this.config.dependencyCheck!.failOnCVSS} || true'`;
+
+      await execAsync(dockerCommand, { maxBuffer: 50 * 1024 * 1024 });
+
+      // Dependency-Check always outputs to dependency-check-report.json
+      const defaultOutputFile = path.join(repoPath, 'dependency-check-report.json');
+
+      // Read from default location
+      const resultContent = await fs.readFile(defaultOutputFile, 'utf-8');
+      const depCheckResult = JSON.parse(resultContent);
+
+      // Rename to our expected filename for consistency
+      await fs.rename(defaultOutputFile, outputFile);
+
+      const issues: RawIssue[] = [];
+
+      if (depCheckResult.dependencies) {
+        for (const dep of depCheckResult.dependencies) {
+          if (dep.vulnerabilities) {
+            for (const vuln of dep.vulnerabilities) {
+              issues.push({
+                tool: 'dependency-check',
+                file: dep.fileName || 'dependencies',
+                line: 1,
+                severity: this.mapCVSSSeverity(vuln.cvssv3?.baseScore || vuln.cvssv2?.score || 0),
+                message: vuln.description || `CVE: ${vuln.name}`,
+                rule: vuln.name,
+                category: 'Dependency',
+                cwe: vuln.cwes?.join(', '),
+                autoFixable: false
+              });
+            }
+          }
+        }
+      }
+
+      const duration = Date.now() - startTime;
+      logger.info(`✅ Dependency-Check complete: ${issues.length} CVEs found in ${(duration / 1000).toFixed(1)}s`);
+
+      // Count actual dependencies scanned, not just files with issues
+      const filesScanned = depCheckResult.dependencies?.length || 0;
+
+      const severity = {
+        critical: issues.filter(i => i.severity === 'critical').length,
+        high: issues.filter(i => i.severity === 'high').length,
+        medium: issues.filter(i => i.severity === 'medium').length,
+        low: issues.filter(i => i.severity === 'low').length
+      };
+
+      return {
+        tool: 'dependency-check',
+        success: true,
+        duration,
+        issues,
+        metadata: {
+          filesScanned,
+          issuesFound: issues.length,
+          severity
+        }
+      };
+
+    } catch (error: any) {
+      const duration = Date.now() - startTime;
+      logger.error(`❌ Dependency-Check failed: ${error.message}`);
+
+      return {
+        tool: 'dependency-check',
+        success: false,
+        duration,
+        issues: [],
+        error: error.message,
+        metadata: {
+          filesScanned: 0,
+          issuesFound: 0,
+          severity: { critical: 0, high: 0, medium: 0, low: 0 },
+          skipped: true,
+          skipReason: `Failed: ${error.message}`
+        }
+      };
+    }
+  }
+
   // ============================================================
   // HELPER METHODS
   // ============================================================
@@ -445,7 +577,8 @@ export class TypeScriptToolOrchestrator extends BaseToolOrchestrator {
       column: tsIssue.column,
       severity: tsIssue.severity,
       message: tsIssue.message,
-      rule: tsIssue.category || tsIssue.code || 'unknown',
+      // Use code field (ESLint rule ID) if available, otherwise category
+      rule: tsIssue.code || tsIssue.category || 'unknown',
       category: this.mapTypeScriptTypeToCategory(tsIssue.type),
       autoFixable: tsIssue.fixable
     };
@@ -495,6 +628,17 @@ export class TypeScriptToolOrchestrator extends BaseToolOrchestrator {
     }
 
     // Style and quality
+    return 'low';
+  }
+
+  /**
+   * Map CVSS score to CodeQual severity
+   * Same mapping as Java for consistency
+   */
+  private mapCVSSSeverity(score: number): 'critical' | 'high' | 'medium' | 'low' {
+    if (score >= 9.0) return 'critical';
+    if (score >= 7.0) return 'high';
+    if (score >= 4.0) return 'medium';
     return 'low';
   }
 }

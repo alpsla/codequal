@@ -69,15 +69,17 @@ export class TypeScriptToolParser {
 
     try {
       // Run ESLint with JSON output for better parsing
-      const fileArgs = files && files.length > 0 
+      // CRITICAL: Don't use '.' (scans everything including node_modules traversal)
+      // Instead, explicitly scan common source directories (skips irrelevant directories entirely)
+      const fileArgs = files && files.length > 0
         ? files.filter(f => f.endsWith('.ts') || f.endsWith('.tsx') || f.endsWith('.js') || f.endsWith('.jsx')).join(' ')
-        : '.';
-      
+        : '"src/**/*.{ts,tsx,js,jsx}" "lib/**/*.{ts,tsx,js,jsx}" "app/**/*.{ts,tsx,js,jsx}" "*.{ts,tsx,js,jsx}"';
+
       const command = `cd ${repoPath} && npx eslint ${fileArgs} --format json 2>&1`;
       
-      const { stdout, stderr } = await exec(command, { 
+      const { stdout, stderr } = await exec(command, {
         maxBuffer: 10 * 1024 * 1024,  // 10MB buffer
-        timeout: 120000  // 2 minute timeout
+        timeout: 120000  // 2 minute timeout - should complete in seconds, this catches hangs
       });
       
       rawOutput = stdout + stderr;

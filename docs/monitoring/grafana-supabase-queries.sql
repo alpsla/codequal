@@ -103,3 +103,73 @@ FROM deepwiki_metrics
 WHERE created_at >= NOW() - INTERVAL '5 minutes'
 ORDER BY created_at DESC
 LIMIT 1;
+
+-- ============================================================
+-- SERVICE HEALTH TRACKING QUERIES
+-- ============================================================
+-- See service-health-tracking.md for detailed documentation
+
+-- 10. Service Availability (Success Rate)
+-- Use this in a Stat or Gauge panel
+SELECT 
+  service_name,
+  ROUND(
+    (COUNT(CASE WHEN event_type LIKE '%success%' THEN 1 END)::numeric / 
+     NULLIF(COUNT(*), 0)::numeric) * 100, 
+    2
+  ) as success_rate_percent
+FROM service_health_events
+WHERE created_at >= NOW() - INTERVAL '7 days'
+GROUP BY service_name;
+
+-- 11. Recent Failures (Last 24 Hours)
+-- Use this in a Table panel
+SELECT 
+  created_at as time,
+  service_name,
+  event_type,
+  status_code,
+  error_message,
+  url
+FROM service_health_events
+WHERE 
+  (event_type LIKE '%failure%' OR event_type LIKE '%error%')
+  AND created_at >= NOW() - INTERVAL '24 hours'
+ORDER BY created_at DESC
+LIMIT 50;
+
+-- 12. 404 Errors by Service
+-- Use this in a Bar chart
+SELECT
+  service_name,
+  COUNT(*) as error_count
+FROM service_health_events
+WHERE 
+  status_code = 404
+  AND created_at >= NOW() - INTERVAL '24 hours'
+GROUP BY service_name
+ORDER BY error_count DESC;
+
+-- 13. Upload Success Rate Over Time
+-- Use this in a Time Series panel
+SELECT
+  DATE_TRUNC('hour', created_at) as time,
+  service_name,
+  COUNT(CASE WHEN event_type = 'upload_success' THEN 1 END) as uploads_success,
+  COUNT(CASE WHEN event_type = 'upload_failure' THEN 1 END) as uploads_failed
+FROM service_health_events
+WHERE 
+  event_type IN ('upload_success', 'upload_failure')
+  AND created_at >= NOW() - INTERVAL '7 days'
+GROUP BY 1, 2
+ORDER BY 1, 2;
+
+-- 14. Service Availability Dashboard (Using View)
+-- Use this in Stat panels
+SELECT * FROM service_availability
+ORDER BY failure_rate_percent DESC;
+
+-- 15. Recent Service Failures (Using View)
+-- Use this in a Table panel
+SELECT * FROM recent_service_failures
+LIMIT 50;

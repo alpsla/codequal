@@ -55,6 +55,11 @@ function canAutoFix(group: IssueGroup): boolean {
     return true;
   }
   
+  // npm-audit: IDEs can update npm dependencies
+  if (group.tool === 'npm-audit') {
+    return true;
+  }
+  
   // SpotBugs: Many rules have clear fixes
   if (group.tool === 'spotbugs') {
     return true;

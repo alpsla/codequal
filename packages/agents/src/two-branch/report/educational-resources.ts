@@ -14,7 +14,10 @@ import { getCuratedResourcesForRule } from './ai-enrichment';
  * CVE format: CVE-YYYY-NNNNN (e.g., CVE-2021-44228)
  *
  * CVE EDUCATION LINK BUG FIX (2025-10-30):
- * Detects CVE IDs to generate proper NVD/MITRE links instead of generic YouTube searches
+ * Detects CVE IDs to generate proper NVD/MITRE links instead of generic search
+ *
+ * TYPESCRIPT FIX (2025-11-14):
+ * Changed to Google Search for non-CVE issues (aggregates YouTube, Stack Overflow, docs, blogs)
  */
 function extractCVEId(ruleId: string, title: string, description?: string): string | null {
   const cvePattern = /CVE-\d{4}-\d{4,}/i;
@@ -230,9 +233,9 @@ export async function generateEducationalResourcesBrave(issues: EnrichedIssue[])
         content += `- [📋 MITRE CVE](https://cve.mitre.org/cgi-bin/cvename.cgi?name=${cveId}) - Official CVE details\n`;
         content += `- [🛡️ CISA Known Exploited Vulnerabilities](https://www.cisa.gov/known-exploited-vulnerabilities-catalog) - Check if actively exploited\n`;
       } else {
-        // For non-CVE issues: Use YouTube tutorial search
-        const youtubeQuery = `${language} ${title.toLowerCase()}`.replace(/[^\w\s]/g, ' ').trim();
-        content += `- [🎥 YouTube Tutorial](https://www.youtube.com/results?search_query=${encodeURIComponent(youtubeQuery + ' tutorial')})\n`;
+        // For non-CVE issues: Use Google search (aggregates YouTube, Stack Overflow, docs, blogs, etc.)
+        const searchQuery = `${language} ${title.toLowerCase()} tutorial fix`.replace(/[^\w\s]/g, ' ').trim();
+        content += `- [🔍 Google Search](https://www.google.com/search?q=${encodeURIComponent(searchQuery)})\n`;
       }
 
       // Add curated documentation
@@ -277,9 +280,9 @@ export async function generateEducationalResourcesBrave(issues: EnrichedIssue[])
         content += `- [📋 MITRE CVE](https://cve.mitre.org/cgi-bin/cvename.cgi?name=${cveId}) - Official CVE details\n`;
         content += `- [🛡️ CISA Known Exploited Vulnerabilities](https://www.cisa.gov/known-exploited-vulnerabilities-catalog) - Check if actively exploited\n`;
       } else {
-        // For non-CVE issues: Use YouTube tutorial search
-        const youtubeQuery = `${language} ${title.toLowerCase()}`.replace(/[^\w\s]/g, ' ').trim();
-        content += `- [🎥 YouTube Tutorial](https://www.youtube.com/results?search_query=${encodeURIComponent(youtubeQuery + ' tutorial')})\n`;
+        // For non-CVE issues: Use Google search (aggregates YouTube, Stack Overflow, docs, blogs, etc.)
+        const searchQuery = `${language} ${title.toLowerCase()} tutorial fix`.replace(/[^\w\s]/g, ' ').trim();
+        content += `- [🔍 Google Search](https://www.google.com/search?q=${encodeURIComponent(searchQuery)})\n`;
       }
 
       // Add curated documentation

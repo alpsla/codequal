@@ -197,7 +197,14 @@ export async function enrichIssuesWithAI(
     });
     
     await Promise.all(enrichmentPromises);
-
+    
+    // BUG FIX: Normalize dependency fix versions for same package
+    // If multiple groups reference the same package (e.g., @babel/traverse with different severities),
+    // use the highest version suggested across all groups
+    if (groups.some(g => g.tool === 'npm-audit')) {
+      normalizeDependencyVersions(issues, groups);
+    }
+    
     const duration = Date.now() - startTime;
     const enrichedCount = issues.filter(i => i.fixSuggestion).length;
     const totalCost = Object.values(costByAgent).reduce((sum, cost) => sum + cost, 0);
@@ -215,6 +222,138 @@ export async function enrichIssuesWithAI(
     console.error('[AI Enrichment] Fatal error:', error.message);
     // Return un-enriched issues (generic fallback will be used)
     return { enrichedIssues: issues, modelsByAgent: {}, costByAgent: {}, tokensByAgent: {} };
+  }
+}
+
+/**
+ * Normalize dependency fix versions for same package
+ * 
+ * Problem: Same package (e.g., @babel/traverse) can have multiple CVEs with different severities.
+ * Each CVE gets grouped separately, and AI may suggest different versions.
+ * 
+ * Solution: Extract package names, find highest version suggested, use it for all groups.
+ */
+function normalizeDependencyVersions(issues: EnrichedIssue[], groups: IssueGroup[]): void {
+  // Extract package name from npm-audit messages (format: "Vulnerability title in package-name")
+  // Also check issue.code field (stores package name during parsing) - cast to any to access code
+  const extractPackageName = (issue: EnrichedIssue): string | null => {
+    // First try: use code field if available (stored during parsing)
+    const issueAny = issue as any;
+    if (issueAny.code && typeof issueAny.code === 'string' && (issueAny.code.startsWith('@') || issueAny.code.includes('/'))) {
+      return issueAny.code;
+    }
+    
+    // Fallback: extract from message (format: "Vulnerability title in package-name")
+    const match = issue.message.match(/\s+in\s+([@\w\/\-\.]+)/i);
+    return match ? match[1] : null;
+  };
+
+  // Extract version from correctedCode (format: "package-name": "version" or just "version")
+  const extractVersion = (correctedCode: string): string | null => {
+    if (!correctedCode) return null;
+    
+    // Try to match: "package": "version" or "package": "^version" or "package": "~version"
+    const quotedMatch = correctedCode.match(/"([^"]+)":\s*"([^"]+)"/);
+    if (quotedMatch) {
+      return quotedMatch[2]; // Return the version part (e.g., "^7.23.2")
+    }
+    
+    // Try to match just version number with prefix: "^7.23.2" or "~7.23.2" or "7.23.2"
+    const versionMatch = correctedCode.match(/([\^~]?[\d\.]+)/);
+    if (versionMatch) {
+      return versionMatch[1];
+    }
+    
+    // Try to match version in text format: "Update to version 7.23.2"
+    const textVersionMatch = correctedCode.match(/version\s+([\^~]?[\d\.]+)/i);
+    if (textVersionMatch) {
+      return textVersionMatch[1];
+    }
+    
+    return null;
+  };
+
+  // Group issues by package name
+  const packageGroups = new Map<string, {
+    issues: EnrichedIssue[];
+    versions: string[];
+  }>();
+
+  for (const issue of issues) {
+    if (issue.tool !== 'npm-audit' || !issue.fixSuggestion?.correctedCode) continue;
+    
+    const packageName = extractPackageName(issue);
+    if (!packageName) continue;
+
+    if (!packageGroups.has(packageName)) {
+      packageGroups.set(packageName, { issues: [], versions: [] });
+    }
+
+    const pkgGroup = packageGroups.get(packageName)!;
+    pkgGroup.issues.push(issue);
+    
+    const version = extractVersion(issue.fixSuggestion.correctedCode);
+    if (version) {
+      pkgGroup.versions.push(version);
+    }
+  }
+
+  // For each package with multiple versions, use the highest
+  for (const [packageName, pkgGroup] of packageGroups.entries()) {
+    if (pkgGroup.versions.length <= 1) continue;
+
+    // Find highest version (simple comparison - assumes semantic versioning)
+    const highestVersion = pkgGroup.versions.reduce((highest, current) => {
+      // Remove ^ prefix for comparison
+      const highestClean = highest.replace(/^[\^~]/, '');
+      const currentClean = current.replace(/^[\^~]/, '');
+      
+      // Simple version comparison (major.minor.patch)
+      const highestParts = highestClean.split('.').map(Number);
+      const currentParts = currentClean.split('.').map(Number);
+      
+      for (let i = 0; i < Math.max(highestParts.length, currentParts.length); i++) {
+        const highestPart = highestParts[i] || 0;
+        const currentPart = currentParts[i] || 0;
+        
+        if (currentPart > highestPart) return current;
+        if (currentPart < highestPart) return highest;
+      }
+      
+      return highest;
+    });
+
+    // Preserve prefix (^ or ~) from one of the versions
+    const prefix = pkgGroup.versions.find(v => v.startsWith('^'))?.charAt(0) || 
+                   pkgGroup.versions.find(v => v.startsWith('~'))?.charAt(0) || '';
+    const normalizedVersion = prefix + highestVersion.replace(/^[\^~]/, '');
+
+    // Update all issues for this package to use the highest version
+    for (const issue of pkgGroup.issues) {
+      if (issue.fixSuggestion?.correctedCode) {
+        const oldCode = issue.fixSuggestion.correctedCode;
+        // Replace version in correctedCode
+        const updatedCode = oldCode.replace(
+          /"([^"]+)":\s*"([^"]+)"/,
+          (match, pkg, version) => {
+            if (pkg === packageName || extractPackageName(issue) === packageName) {
+              return `"${packageName}": "${normalizedVersion}"`;
+            }
+            return match;
+          }
+        );
+        
+        // If no replacement happened, try to add/update the dependency
+        if (updatedCode === oldCode && !oldCode.includes(packageName)) {
+          // Add the dependency if not present
+          issue.fixSuggestion.correctedCode = `"${packageName}": "${normalizedVersion}"`;
+        } else {
+          issue.fixSuggestion.correctedCode = updatedCode;
+        }
+      }
+    }
+
+    console.log(`[Dependency Normalization] ✅ ${packageName}: Normalized to ${normalizedVersion} (was: ${pkgGroup.versions.join(', ')})`);
   }
 }
 
