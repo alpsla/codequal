@@ -71,9 +71,10 @@ export class TypeScriptToolParser {
       // Run ESLint with JSON output for better parsing
       // CRITICAL: Don't use '.' (scans everything including node_modules traversal)
       // Instead, explicitly scan common source directories (skips irrelevant directories entirely)
+      // MONOREPO FIX: Added patterns for packages/**/src and apps/**/src to support monorepo structures
       const fileArgs = files && files.length > 0
         ? files.filter(f => f.endsWith('.ts') || f.endsWith('.tsx') || f.endsWith('.js') || f.endsWith('.jsx')).join(' ')
-        : '"src/**/*.{ts,tsx,js,jsx}" "lib/**/*.{ts,tsx,js,jsx}" "app/**/*.{ts,tsx,js,jsx}" "*.{ts,tsx,js,jsx}"';
+        : '"src/**/*.{ts,tsx,js,jsx}" "lib/**/*.{ts,tsx,js,jsx}" "app/**/*.{ts,tsx,js,jsx}" "packages/**/src/**/*.{ts,tsx,js,jsx}" "packages/**/lib/**/*.{ts,tsx,js,jsx}" "apps/**/src/**/*.{ts,tsx,js,jsx}" "*.{ts,tsx,js,jsx}"';
 
       const command = `cd ${repoPath} && npx eslint ${fileArgs} --format json 2>&1`;
       
