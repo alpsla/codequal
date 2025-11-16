@@ -12,6 +12,7 @@ import { exec as execCallback } from 'child_process';
 import { promisify } from 'util';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { glob } from 'glob';
 
 const exec = promisify(execCallback);
 
@@ -70,18 +71,56 @@ export class TypeScriptToolParser {
     try {
       // Run ESLint with JSON output for better parsing
       // CRITICAL: Don't use '.' (scans everything including node_modules traversal)
-      // Instead, explicitly scan common source directories (skips irrelevant directories entirely)
-      // MONOREPO FIX: Added patterns for packages/**/src and apps/**/src to support monorepo structures
-      const fileArgs = files && files.length > 0
-        ? files.filter(f => f.endsWith('.ts') || f.endsWith('.tsx') || f.endsWith('.js') || f.endsWith('.jsx')).join(' ')
-        : '"src/**/*.{ts,tsx,js,jsx}" "lib/**/*.{ts,tsx,js,jsx}" "app/**/*.{ts,tsx,js,jsx}" "packages/**/src/**/*.{ts,tsx,js,jsx}" "packages/**/lib/**/*.{ts,tsx,js,jsx}" "apps/**/src/**/*.{ts,tsx,js,jsx}" "*.{ts,tsx,js,jsx}"';
+      // GLOB FIX: Use glob library to discover files first, then pass explicit file list to ESLint
+      // This fixes the issue where ESLint's glob patterns work differently from different directory contexts
+      let fileArgs: string;
+
+      if (files && files.length > 0) {
+        fileArgs = files.filter(f => f.endsWith('.ts') || f.endsWith('.tsx') || f.endsWith('.js') || f.endsWith('.jsx')).join(' ');
+      } else {
+        // Use glob to find files matching our patterns
+        const patterns = [
+          'src/**/*.{ts,tsx,js,jsx}',
+          'lib/**/*.{ts,tsx,js,jsx}',
+          'app/**/*.{ts,tsx,js,jsx}',
+          'packages/**/src/**/*.{ts,tsx,js,jsx}',
+          'packages/**/lib/**/*.{ts,tsx,js,jsx}',
+          'apps/**/src/**/*.{ts,tsx,js,jsx}',
+          '*.{ts,tsx,js,jsx}'
+        ];
+
+        // Find all matching files
+        const matchedFiles: string[] = [];
+        for (const pattern of patterns) {
+          try {
+            const found = await glob(pattern, {
+              cwd: repoPath,
+              ignore: ['**/node_modules/**', '**/dist/**', '**/build/**', '**/*.d.ts'],
+              nodir: true
+            } as any);  // Type assertion to bypass TypeScript issues with glob versions
+
+            // Convert to array if it's an iterator or IGlob object
+            const filesArray = Array.isArray(found) ? found : Array.from(found as any);
+            matchedFiles.push(...filesArray);
+          } catch (err) {
+            // Ignore errors from individual patterns (e.g., if directory doesn't exist)
+            console.log(`[ESLint] Pattern ${pattern} matched no files`);
+          }
+        }
+
+        // Remove duplicates and convert to space-separated string
+        const uniqueFiles = Array.from(new Set(matchedFiles));
+        fileArgs = uniqueFiles.length > 0 ? uniqueFiles.join(' ') : '.';
+
+        console.log(`[ESLint] Discovered ${uniqueFiles.length} files to scan`);
+      }
 
       const command = `cd ${repoPath} && npx eslint ${fileArgs} --format json 2>&1`;
 
       // DEBUG: Log the exact command being executed
       console.log('[DEBUG ESLint] Repository path:', repoPath);
-      console.log('[DEBUG ESLint] File args:', fileArgs);
-      console.log('[DEBUG ESLint] Full command:', command);
+      console.log('[DEBUG ESLint] Files to scan:', fileArgs.split(' ').length);
+      console.log('[DEBUG ESLint] Full command (truncated):', command.substring(0, 200) + '...');
 
       const { stdout, stderr } = await exec(command, {
         maxBuffer: 10 * 1024 * 1024,  // 10MB buffer
