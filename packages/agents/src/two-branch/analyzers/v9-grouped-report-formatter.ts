@@ -1169,7 +1169,7 @@ export class V9GroupedReportFormatter {
    * Generate error report when tool orchestration fails
    * (FALSE POSITIVE BUG FIX)
    */
-  private generateAnalysisFailureReport(metadata: any): string {
+  private generateAnalysisFailureReport(metadata: any, errorMessage?: string): string {
     const analysisDate = formatDate(metadata.analyzedAt);
 
     return `# ❌ Code Quality Analysis Failed
@@ -1185,54 +1185,24 @@ export class V9GroupedReportFormatter {
 **Status:** ANALYSIS FAILED
 **Reason:** No analysis tools were executed successfully
 
-### Possible Causes
+### Error Details
 
-1. **Repository Path Issues**
-   - Path contains spaces or special characters
-   - Git repository not accessible
-   - Permission problems
+\`\`\`
+${errorMessage || 'Unknown error - check tool orchestrator logs for details'}
+\`\`\`
 
-2. **Git Command Failures**
-   - Unable to checkout branches
-   - Git configuration issues
-   - Network connectivity problems
+### Recommended Action
 
-3. **Tool Configuration Issues**
-   - Analysis tools not properly installed
-   - Tool dependencies missing
-   - Configuration errors
-
-4. **Environment Problems**
-   - Insufficient permissions
-   - Missing dependencies
-   - System resource constraints
-
-### Recommended Actions
-
-1. **Check Repository Path**
-   - Verify the repository path does not contain spaces
-   - Ensure the path is accessible
-   - Check file system permissions
-
-2. **Verify Git Configuration**
-   - Ensure git is properly configured
-   - Check branch access permissions
-   - Verify network connectivity if using remote repositories
-
-3. **Review Tool Orchestrator Logs**
-   - Check console output for specific error messages
-   - Look for tool execution failures
-   - Identify which tool failed first
-
-4. **Ensure Dependencies**
-   - Verify all analysis tools are installed
-   - Check that all dependencies are available
-   - Confirm tool versions are compatible
+**Review the error above and check the tool orchestrator logs** for additional context. Common issues include:
+- Repository paths with spaces or special characters
+- Git configuration problems
+- Missing tool dependencies
+- Permission issues
 
 ---
 
 *This is an error report - code quality analysis could not be completed.*
-*Please resolve the issues above and retry the analysis.*
+*Please resolve the error above and retry the analysis.*
 `;
   }
 
