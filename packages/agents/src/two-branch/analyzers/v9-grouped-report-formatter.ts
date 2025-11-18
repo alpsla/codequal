@@ -2235,10 +2235,15 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
     // For now, we'll keep it minimal or remove it based on user preference
     
     const newIssues = issues.filter(i => i.category === 'NEW');
-    // BUG FIX: Only count NEW and EXISTING_MODIFIED critical issues (not EXISTING_REST)
-    const blockingCriticalCount = issues.filter(i => 
-      i.severity === 'critical' && (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED')
-    ).length;
+    // BUG-080 FIX: Count both CRITICAL and HIGH severity NEW/EXISTING_MODIFIED issues as blocking
+    // HIGH severity issues are also blockers, not just critical
+    const blockingIssues = issues.filter(i =>
+      (i.severity === 'critical' || i.severity === 'high') &&
+      (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED')
+    );
+    const blockingCount = blockingIssues.length;
+    const criticalCount = blockingIssues.filter(i => i.severity === 'critical').length;
+    const highCount = blockingIssues.filter(i => i.severity === 'high').length;
     const securityIssues = issues.filter(i => i.detectedCategory === 'Security');
     
     // Enhancement #1: Auto-fix mention in recommendations
@@ -2251,10 +2256,14 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
       content += `🚀 **Quick Win**: Use the attached manifest file to automatically fix ${autoFixableIssues.length.toLocaleString()} issues (${autoFixPercent}%) - saving significant development time!\n\n`;
     }
     
-    if (blockingCriticalCount > 0) {
-      content += `1. **Immediate Action**: ${blockingCriticalCount} critical issues require senior developer review before deployment\n`;
+    if (blockingCount > 0) {
+      // BUG-080 FIX: Show breakdown of critical vs high severity blocking issues
+      const criticalMsg = criticalCount > 0 ? `${criticalCount} critical` : '';
+      const highMsg = highCount > 0 ? `${highCount} high` : '';
+      const severityBreakdown = [criticalMsg, highMsg].filter(m => m).join(' and ');
+      content += `1. **Immediate Action**: ${blockingCount} blocking issues (${severityBreakdown}) require review before deployment\n`;
     } else {
-      content += `1. **Quality Status**: No blocking critical issues - PR meets baseline quality standards\n`;
+      content += `1. **Quality Status**: No blocking issues - PR meets baseline quality standards\n`;
     }
     
     if (securityIssues.length > 5) {
