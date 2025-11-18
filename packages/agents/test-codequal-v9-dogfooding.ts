@@ -157,8 +157,9 @@ async function runCodeQualDogfoodingTest(): Promise<void> {
     // Count specific errors
     const eslintResult = prResults.find(r => r.tool === 'eslint');
     if (eslintResult && eslintResult.issues) {
-      const noUselessEscape = eslintResult.issues.filter(i => i.rule === 'no-useless-escape');
-      const noInferrableTypes = eslintResult.issues.filter(i => i.rule === '@typescript-eslint/no-inferrable-types');
+      // BUG-086 FIX: Use 'category' instead of 'rule' - TypeScriptIssue stores rule ID in category field
+      const noUselessEscape = eslintResult.issues.filter(i => i.category === 'no-useless-escape');
+      const noInferrableTypes = eslintResult.issues.filter(i => i.category === '@typescript-eslint/no-inferrable-types');
 
       console.log('\n   🔍 ESLint Error Breakdown:');
       console.log(`      - no-useless-escape: ${noUselessEscape.length} (expected: 8)`);
@@ -188,9 +189,10 @@ async function runCodeQualDogfoodingTest(): Promise<void> {
 
       return {
         id: `${issue.tool}-${issue.file}-${issue.line}`,
-        rule: issue.rule ? String(issue.rule) : 'unknown-rule',
+        // BUG-086 FIX: TypeScriptIssue stores rule ID in 'category' field, not 'rule'
+        rule: issue.category ? String(issue.category) : 'unknown-rule',
         category: isNew ? 'NEW' : 'EXISTING_REST',
-        detectedCategory: detectIssueCategory(issue.tool, issue.rule ? String(issue.rule) : ''),
+        detectedCategory: detectIssueCategory(issue.tool, issue.category ? String(issue.category) : ''),
         severity: issue.severity || 'medium',
         title: issue.message || 'Code quality issue',
         file: issue.file || 'unknown',
