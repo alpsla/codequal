@@ -4638,11 +4638,32 @@ Continue following best practices and consider integrating static analysis into 
 
         const humanPerformers = teamLeaderboard.filter((dev: any) => !isAIAgent(dev));
 
-        // BUG-075 FIX: Deduplicate users by email (aggregate scores)
-        // Same user may appear multiple times with different scores
+        // BUG-083 FIX: Deduplicate users by BOTH email AND name
+        // Same user may appear with different emails but same name (e.g., alpsla with 3 different emails)
         const deduplicatedPerformers = humanPerformers.reduce((acc: any[], dev: any) => {
           const normalizedEmail = (dev.email || '').toLowerCase().trim();
-          const existing = acc.find((d: any) => (d.email || '').toLowerCase().trim() === normalizedEmail);
+          const normalizedName = (dev.name || '').toLowerCase().trim();
+
+          // Find existing by email OR by name (if name is meaningful)
+          const existing = acc.find((d: any) => {
+            const existingEmail = (d.email || '').toLowerCase().trim();
+            const existingName = (d.name || '').toLowerCase().trim();
+
+            // Match by email
+            if (existingEmail && normalizedEmail && existingEmail === normalizedEmail) {
+              return true;
+            }
+
+            // Match by name (if both have meaningful names, not just emails)
+            if (existingName && normalizedName &&
+                existingName.length > 2 && normalizedName.length > 2 &&
+                !existingName.includes('@') && !normalizedName.includes('@') &&
+                existingName === normalizedName) {
+              return true;
+            }
+
+            return false;
+          });
 
           if (existing) {
             // Merge: weighted average score, sum PRs
@@ -4653,8 +4674,12 @@ Continue following best practices and consider integrating static analysis into 
             ) / totalPRs;
             existing.score = Math.round(weightedScore);
             existing.totalPRs = totalPRs;
-            // Keep the most descriptive name
+            // Keep the most descriptive name and primary email
             if (!existing.name && dev.name) existing.name = dev.name;
+            // Prefer non-noreply email
+            if (existing.email && existing.email.includes('noreply') && dev.email && !dev.email.includes('noreply')) {
+              existing.email = dev.email;
+            }
           } else {
             acc.push({ ...dev });
           }

@@ -405,7 +405,20 @@ export class LSPSARIFConverter {
         return !(newEnd <= existingStart || newStart >= existingEnd);
       });
 
-      if (hasOverlap) {
+      // BUG-085 FIX: Also check for duplicate/adjacent fixes with identical newText
+      // This prevents generating multiple identical imports on consecutive lines
+      const hasDuplicateFix = changesByFile[fileUri].some(existingEdit => {
+        // Same fix text
+        if (existingEdit.newText !== newEdit.newText) return false;
+
+        const existingStart = existingEdit.range.start.line;
+        const newStart = newEdit.range.start.line;
+
+        // Within 10 lines of each other (likely same issue group)
+        return Math.abs(existingStart - newStart) <= 10;
+      });
+
+      if (hasOverlap || hasDuplicateFix) {
         // Skip duplicate/overlapping edit, but still add diagnostic for this issue
         diagnostics.push({
           range: {
