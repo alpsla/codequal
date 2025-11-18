@@ -95,7 +95,16 @@ export class TypeScriptToolParser {
           try {
             const found = await glob(pattern, {
               cwd: repoPath,
-              ignore: ['**/node_modules/**', '**/dist/**', '**/build/**', '**/*.d.ts'],
+              ignore: [
+                '**/node_modules/**',
+                '**/dist/**',
+                '**/build/**',
+                '**/.next/**',
+                '**/.output/**',
+                '**/coverage/**',
+                '**/*.d.ts',
+                '**/vendor/**'
+              ],
               nodir: true
             } as any);  // Type assertion to bypass TypeScript issues with glob versions
 

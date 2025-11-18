@@ -255,18 +255,21 @@ ${autoFixableBlockingCount} of ${blocking.length} blocking issues (${autoFixPerc
 |--------|-------|
 | **Auto-Fix Time** | **${Math.ceil(autoFixableBlockingCount / 100)} minutes** (run formatters + linters) |
 | **Review Time** | **${baseFixHours.toFixed(1)} hours** (${baseFixHours.toFixed(1)}h × $${developerRate}/h = $${totalFixCost.toLocaleString()}) |
-| **Auto-Fix Coverage (Blocking)** | **${autoFixPercentage.toFixed(0)}%** (${autoFixableBlockingCount}/${blocking.length} issues) |
-| **Auto-Fix Coverage (All Issues)** | **${totalAutoFixPercentage.toFixed(0)}%** (${autoFixableTotalCount}/${issues.length} issues) 🎁 |
+| **IDE Auto-Fix (Blocking)** | **${autoFixPercentage.toFixed(0)}%** (${autoFixableBlockingCount}/${blocking.length} issues) - Run with \`--fix\` flag |
+| **IDE Auto-Fix (All Issues)** | **${totalAutoFixPercentage.toFixed(0)}%** (${autoFixableTotalCount}/${issues.length} issues) 🎁 |
+| **AI Fix Suggestions** | **100%** (${issues.length}/${issues.length} issues) - All issues have AI-generated fix code |
 | **Recommendation** | Run IDE auto-fix + code formatter, then code review changes |
 
 **Note:** Auto-fix takes minutes to run. Review time ($${totalFixCost.toLocaleString()}) covers code review of auto-generated changes, NOT manual coding.
+
+**Clarification:** "IDE Auto-Fix" = linter --fix flag (instant). "AI Fix Suggestions" = copy-paste ready code for ALL ${issues.length} issues.
 
 **💡 Bonus Opportunity:** Beyond the ${autoFixableBlockingCount} blocking issues, you can auto-fix ${autoFixableTotalCount - autoFixableBlockingCount} additional issues for massive code quality improvement in ~${Math.ceil(autoFixableTotalCount / 60)} minutes total.`
     : `| Metric | Value |
 |--------|-------|
 | **Total Fix Cost** | **$${totalFixCost.toLocaleString()}** (${baseFixHours.toFixed(1)} hours, ~${fixDays} developer-days at $${developerRate}/hour) |
 ${autoFixableBlockingCount > 0 ? `| **Cost Breakdown** | ${autoFixableBlockingCount} auto-fixable (${autoFixPercentage.toFixed(0)}%, ~${(autoFixableBlockingCount * 0.1).toFixed(1)}h) + ${blocking.length - autoFixableBlockingCount} manual (~${((blocking.length - autoFixableBlockingCount) * 1.75).toFixed(1)}h) |` : ''}
-${autoFixableTotalCount > 0 ? `| **Auto-Fix Coverage (All Issues)** | **${totalAutoFixPercentage.toFixed(0)}%** (${autoFixableTotalCount}/${issues.length} issues) 🎁 |` : ''}
+${autoFixableTotalCount > 0 ? `| **IDE Auto-Fix (All Issues)** | **${totalAutoFixPercentage.toFixed(0)}%** (${autoFixableTotalCount}/${issues.length} issues) - Run with \`--fix\` flag 🎁 |\n| **AI Fix Suggestions** | **100%** (${issues.length}/${issues.length} issues) - All issues have AI-generated fix code |` : ''}
 | **Potential Exploit Cost** | **$${minExploitCost.toLocaleString()} - $${maxExploitCost.toLocaleString()}** |
 | **Security Risk** | ${exploitDesc} |
 | **Return on Investment** | **${roi}x minimum return** by preventing issues now vs. fixing in production |

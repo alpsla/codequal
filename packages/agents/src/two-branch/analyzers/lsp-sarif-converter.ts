@@ -177,7 +177,73 @@ export interface SARIFReplacement {
 // ============================================================================
 
 export class LSPSARIFConverter {
-  
+
+  /**
+   * BUG-072 FIX: Clean correctedCode to remove problematic AI patterns
+   * Strips "// Should be changed to:" comments and before/after comparison text
+   */
+  private cleanCorrectedCode(code: string): string {
+    if (!code) return code;
+
+    let cleaned = code;
+
+    // Remove "// Should be changed to:" and similar comment patterns
+    cleaned = cleaned.replace(/\/\/\s*Should be changed to:?\s*\n?/gi, '');
+    cleaned = cleaned.replace(/\/\/\s*Change to:?\s*\n?/gi, '');
+    cleaned = cleaned.replace(/\/\/\s*Replace with:?\s*\n?/gi, '');
+    cleaned = cleaned.replace(/\/\/\s*Before:?\s*\n?/gi, '');
+    cleaned = cleaned.replace(/\/\/\s*After:?\s*\n?/gi, '');
+    cleaned = cleaned.replace(/\/\/\s*Original:?\s*\n?/gi, '');
+    cleaned = cleaned.replace(/\/\/\s*Fixed:?\s*\n?/gi, '');
+
+    // Remove "/* ... */" block comment versions
+    cleaned = cleaned.replace(/\/\*\s*Should be changed to:?\s*\*\/\s*\n?/gi, '');
+    cleaned = cleaned.replace(/\/\*\s*Before:?\s*\*\/\s*\n?/gi, '');
+    cleaned = cleaned.replace(/\/\*\s*After:?\s*\*\/\s*\n?/gi, '');
+
+    // If the code has duplicate blocks (before/after), keep only the last one
+    // Pattern: code block, then comment, then similar code block
+    const lines = cleaned.split('\n');
+    const halfPoint = Math.floor(lines.length / 2);
+
+    // Check if first half and second half are similar (indicating before/after)
+    if (lines.length >= 4) {
+      const firstHalf = lines.slice(0, halfPoint).join('\n').trim();
+      const secondHalf = lines.slice(halfPoint).join('\n').trim();
+
+      // If they're very similar (same structure), keep only the second half
+      if (this.areSimilarCodeBlocks(firstHalf, secondHalf)) {
+        cleaned = secondHalf;
+      }
+    }
+
+    return cleaned.trim();
+  }
+
+  /**
+   * Check if two code blocks are similar (likely before/after versions)
+   */
+  private areSimilarCodeBlocks(code1: string, code2: string): boolean {
+    // Simple heuristic: same number of lines and similar structure
+    const lines1 = code1.split('\n').filter(l => l.trim());
+    const lines2 = code2.split('\n').filter(l => l.trim());
+
+    if (Math.abs(lines1.length - lines2.length) > 2) return false;
+
+    // Check if structure is similar (same keywords at line starts)
+    let matchCount = 0;
+    const minLength = Math.min(lines1.length, lines2.length);
+
+    for (let i = 0; i < minLength; i++) {
+      const keyword1 = lines1[i].trim().split(/\s+/)[0];
+      const keyword2 = lines2[i].trim().split(/\s+/)[0];
+      if (keyword1 === keyword2) matchCount++;
+    }
+
+    // If >60% of keywords match, they're probably before/after versions
+    return matchCount / minLength > 0.6;
+  }
+
   /**
    * Convert CodeQual issues to LSP Code Actions
    * Cursor/VSCode will show these in Quick Fix menu (Ctrl+.)
@@ -320,7 +386,7 @@ export class LSPSARIFConverter {
           start: { line, character: 0 },
           end: { line: endLine, character: 0 }
         },
-        newText: issue.fixSuggestion.correctedCode
+        newText: this.cleanCorrectedCode(issue.fixSuggestion.correctedCode)
       };
 
       // BUG FIX: Check for overlapping ranges (not just same start line)
@@ -408,7 +474,7 @@ export class LSPSARIFConverter {
               start: { line, character: 0 },
               end: { line: endLine, character: 0 }
             },
-            newText: issue.fixSuggestion.correctedCode
+            newText: this.cleanCorrectedCode(issue.fixSuggestion.correctedCode)
           }]
         }
       },
@@ -544,7 +610,7 @@ export class LSPSARIFConverter {
               startColumn: issue.column,
               endLine: (issue.line || 1) + this.countLines(issue.fixSuggestion.correctedCode)
             },
-            insertedContent: { text: issue.fixSuggestion.correctedCode }
+            insertedContent: { text: this.cleanCorrectedCode(issue.fixSuggestion.correctedCode) }
           }]
         }]
       }];

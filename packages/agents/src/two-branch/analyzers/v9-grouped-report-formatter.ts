@@ -4610,14 +4610,58 @@ Continue following best practices and consider integrating static analysis into 
         content += `### 🏆 Top Performers\n\n`;
         content += `| Rank | Developer | Score | PRs Analyzed |\n`;
         content += `|------|-----------|-------|-------------|\n`;
-        
-        // Debug: Log the top 5 performers
-        console.log(`[Skills] Top 5 performers:`);
-        teamLeaderboard.slice(0, 5).forEach((dev: any, idx: number) => {
+
+        // BUG-074 FIX: Filter out AI agents from Top Performers
+        // AI agents should not appear in human performance metrics
+        const isAIAgent = (dev: any): boolean => {
+          const name = (dev.name || '').toLowerCase();
+          const email = (dev.email || '').toLowerCase();
+
+          // Known AI agent patterns
+          const aiNamePatterns = ['claude', 'gpt', 'copilot', 'bot', 'dependabot', 'renovate'];
+          const aiEmailPatterns = ['noreply@anthropic.com', 'noreply@openai.com', 'bot@', '[bot]', 'dependabot', 'renovate'];
+
+          const hasAIName = aiNamePatterns.some(pattern => name.includes(pattern));
+          const hasAIEmail = aiEmailPatterns.some(pattern => email.includes(pattern));
+
+          return hasAIName || hasAIEmail;
+        };
+
+        const humanPerformers = teamLeaderboard.filter((dev: any) => !isAIAgent(dev));
+
+        // BUG-075 FIX: Deduplicate users by email (aggregate scores)
+        // Same user may appear multiple times with different scores
+        const deduplicatedPerformers = humanPerformers.reduce((acc: any[], dev: any) => {
+          const normalizedEmail = (dev.email || '').toLowerCase().trim();
+          const existing = acc.find((d: any) => (d.email || '').toLowerCase().trim() === normalizedEmail);
+
+          if (existing) {
+            // Merge: weighted average score, sum PRs
+            const totalPRs = (existing.totalPRs || 1) + (dev.totalPRs || 1);
+            const weightedScore = (
+              (existing.score * (existing.totalPRs || 1)) +
+              (dev.score * (dev.totalPRs || 1))
+            ) / totalPRs;
+            existing.score = Math.round(weightedScore);
+            existing.totalPRs = totalPRs;
+            // Keep the most descriptive name
+            if (!existing.name && dev.name) existing.name = dev.name;
+          } else {
+            acc.push({ ...dev });
+          }
+          return acc;
+        }, []);
+
+        // Re-sort after deduplication
+        deduplicatedPerformers.sort((a: any, b: any) => (b.score || 0) - (a.score || 0));
+
+        // Debug: Log the top 5 performers (humans only, deduplicated)
+        console.log(`[Skills] Top 5 human performers (filtered ${teamLeaderboard.length - humanPerformers.length} AI agents, deduplicated ${humanPerformers.length - deduplicatedPerformers.length} duplicates):`);
+        deduplicatedPerformers.slice(0, 5).forEach((dev: any, idx: number) => {
           console.log(`[Skills] ${idx + 1}. ${dev.name} (${dev.email}): ${dev.score}/100`);
         });
-        
-        teamLeaderboard.slice(0, 5).forEach((dev: any, idx: number) => {
+
+        deduplicatedPerformers.slice(0, 5).forEach((dev: any, idx: number) => {
           const isCurrent = normalizeEmail(dev.email) === normalizeEmail(metadata.prAuthorEmail);
           const highlight = isCurrent ? '**' : '';
           content += `| ${idx + 1} | ${highlight}${dev.name || dev.email}${highlight} | ${highlight}${dev.score}/100${highlight} | ${highlight}${dev.totalPRs || 1}${highlight} |\n`;

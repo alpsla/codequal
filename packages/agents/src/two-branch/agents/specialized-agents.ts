@@ -446,7 +446,7 @@ Output ONLY this JSON (nothing else):
     "impact": "CONCRETE business/security impact for THIS vulnerability (2-3 sentences). Include compliance if relevant"
   },
   "fix": "Step-by-step solution with security references (focus on HOW to fix)",
-  "correctedCode": "Working code snippet showing before/after with security validations",
+  "correctedCode": "ONLY the corrected code that replaces the problematic code. NO comments like '// Should be changed to:', NO before/after comparison, NO original code. Just the replacement code.",
   "bestPractices": ["Best practice 1", "Best practice 2", "Best practice 3"]
 }
 
@@ -561,7 +561,7 @@ Output ONLY this JSON (nothing else):
     "impact": "CONCRETE business/performance impact for THIS issue (2-3 sentences). Include scalability concerns"
   },
   "fix": "Step-by-step optimization with Big-O complexity analysis (focus on HOW to optimize)",
-  "correctedCode": "Optimized code showing before/after with specific data structures and complexity gains",
+  "correctedCode": "ONLY the optimized code that replaces the problematic code. NO comments like '// Should be changed to:', NO before/after comparison, NO original code. Just the replacement code.",
   "bestPractices": ["Best practice 1", "Best practice 2", "Best practice 3"]
 }
 
@@ -605,7 +605,7 @@ Output ONLY this JSON (nothing else):
     "impact": "CONCRETE business/technical debt impact for THIS issue (2-3 sentences). Include maintainability concerns"
   },
   "fix": "Step-by-step refactoring with SOLID principles and specific class/interface names (focus on HOW to refactor)",
-  "correctedCode": "Refactored code showing before/after with new structure and design pattern application",
+  "correctedCode": "ONLY the refactored code that replaces the problematic code. NO comments like '// Should be changed to:', NO before/after comparison, NO original code. Just the replacement code.",
   "bestPractices": ["Best practice 1", "Best practice 2", "Best practice 3"]
 }
 
@@ -679,7 +679,7 @@ Output ONLY this JSON (nothing else):
     "impact": "CONCRETE team/maintainability impact for THIS issue (2-3 sentences). Include technical debt concerns"
   },
   "fix": "Step-by-step refactoring for clean code (focus on HOW to fix)",
-  "correctedCode": "Clean, readable code showing before/after following conventions and best practices",
+  "correctedCode": "ONLY the clean code that replaces the problematic code. NO comments like '// Should be changed to:', NO before/after comparison, NO original code. Just the replacement code.",
   "bestPractices": ["Best practice 1", "Best practice 2", "Best practice 3"]
 }
 
