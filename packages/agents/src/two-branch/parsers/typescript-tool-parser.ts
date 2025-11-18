@@ -124,7 +124,9 @@ export class TypeScriptToolParser {
         console.log(`[ESLint] Discovered ${uniqueFiles.length} files to scan`);
       }
 
-      const command = `cd ${repoPath} && npx eslint ${fileArgs} --format json 2>&1`;
+      // BUG-077 FIX: Add ignore patterns to ESLint command to exclude build artifacts
+      const ignorePatterns = '--ignore-pattern "**/dist/**" --ignore-pattern "**/build/**" --ignore-pattern "**/.next/**" --ignore-pattern "**/coverage/**" --ignore-pattern "**/.output/**"';
+      const command = `cd ${repoPath} && npx eslint ${fileArgs} ${ignorePatterns} --format json 2>&1`;
 
       // DEBUG: Log the exact command being executed
       console.log('[DEBUG ESLint] Repository path:', repoPath);
