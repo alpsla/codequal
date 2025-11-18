@@ -27,6 +27,37 @@ import { execSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 
+/**
+ * BUG-078 FIX: Calculate actual repository metrics instead of using placeholders
+ */
+function countRepositoryFiles(repoPath: string): number {
+  try {
+    // Count all source files (TypeScript, JavaScript, JSON, etc.)
+    const result = execSync(
+      `find "${repoPath}" -type f \\( -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" -o -name "*.json" -o -name "*.md" \\) ! -path "*/node_modules/*" ! -path "*/.git/*" ! -path "*/dist/*" ! -path "*/.next/*" | wc -l`,
+      { encoding: 'utf-8' }
+    ).trim();
+    return parseInt(result) || 0;
+  } catch (error) {
+    console.warn('Warning: Could not count repository files:', error);
+    return 0;
+  }
+}
+
+function countRepositoryLines(repoPath: string): number {
+  try {
+    // Count lines in TypeScript and JavaScript files
+    const result = execSync(
+      `find "${repoPath}" -type f \\( -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" \\) ! -path "*/node_modules/*" ! -path "*/.git/*" ! -path "*/dist/*" ! -path "*/.next/*" -exec cat {} + 2>/dev/null | wc -l`,
+      { encoding: 'utf-8' }
+    ).trim();
+    return parseInt(result) || 0;
+  } catch (error) {
+    console.warn('Warning: Could not count repository lines:', error);
+    return 0;
+  }
+}
+
 async function runCodeQualDogfoodingTest(): Promise<void> {
   console.log(`\n${'='.repeat(80)}`);
   console.log(`🎯 CodeQual V9 Dogfooding Test`);
@@ -201,8 +232,8 @@ async function runCodeQualDogfoodingTest(): Promise<void> {
       prAuthor: 'alpsla',
       prAuthorEmail: 'user@example.com',
       organizationName: 'alpsla',
-      totalFiles: 500,
-      totalLinesOfCode: 50000,
+      totalFiles: countRepositoryFiles(repoPath),
+      totalLinesOfCode: countRepositoryLines(repoPath),
       filesModified: new Set(allPrIssues.map(i => i.file)).size,
       linesAdded: 50,
       linesDeleted: 50,

@@ -108,10 +108,14 @@ export function getRiskImpactLevel(categoryIssues: EnrichedIssue[]): string {
 
 /**
  * Compute Skill Score from issues
- * Start at 50, deduct NEW/EXISTING_MODIFIED by severity weights, add resolved by same weights
+ * BUG-084 FIX: Use previousScore if available, otherwise default to 50
+ * Deduct NEW/EXISTING_MODIFIED by severity weights, add resolved by same weights
  * Clamp to 0..100
  */
-export function calculateIssueWeightedSkillScore(issues: EnrichedIssue[]): number {
+export function calculateIssueWeightedSkillScore(
+  issues: EnrichedIssue[],
+  previousScore?: number
+): number {
   const weight = (severity: string): number => ({
     critical: 5.0,
     high: 3.0,
@@ -126,7 +130,10 @@ export function calculateIssueWeightedSkillScore(issues: EnrichedIssue[]): numbe
     if (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED') deductions += w;
     if (i.category === 'RESOLVED') additions += w;
   }
-  const score = 50 - deductions + additions;
+
+  // BUG-084 FIX: Use previous score if provided (from Supabase), otherwise default to 50
+  const baseScore = previousScore !== undefined ? previousScore : 50;
+  const score = baseScore - deductions + additions;
   return Math.max(0, Math.min(100, Math.round(score)));
 }
 
@@ -255,25 +262,25 @@ ${autoFixableBlockingCount} of ${blocking.length} blocking issues (${autoFixPerc
 |--------|-------|
 | **Auto-Fix Time** | **${Math.ceil(autoFixableBlockingCount / 100)} minutes** (run formatters + linters) |
 | **Review Time** | **${baseFixHours.toFixed(1)} hours** (${baseFixHours.toFixed(1)}h × $${developerRate}/h = $${totalFixCost.toLocaleString()}) |
-| **IDE Auto-Fix (Blocking)** | **${autoFixPercentage.toFixed(0)}%** (${autoFixableBlockingCount}/${blocking.length} issues) - Run with \`--fix\` flag |
-| **IDE Auto-Fix (All Issues)** | **${totalAutoFixPercentage.toFixed(0)}%** (${autoFixableTotalCount}/${issues.length} issues) 🎁 |
-| **AI Fix Suggestions** | **100%** (${issues.length}/${issues.length} issues) - All issues have AI-generated fix code |
-| **Recommendation** | Run IDE auto-fix + code formatter, then code review changes |
+| **Linter Auto-Fix (Blocking)** | **${autoFixPercentage.toFixed(0)}%** (${autoFixableBlockingCount}/${blocking.length} issues) - Run with \`--fix\` flag |
+| **Linter Auto-Fix (All)** | **${totalAutoFixPercentage.toFixed(0)}%** (${autoFixableTotalCount}/${issues.length} issues) - Quick wins 🎁 |
+| **AI Code Suggestions** | **100%** (${issues.length}/${issues.length} issues) - Every issue has AI-generated fix code |
+| **Recommendation** | Run linter \`--fix\` + formatter first, then AI suggestions for remaining |
 
-**Note:** Auto-fix takes minutes to run. Review time ($${totalFixCost.toLocaleString()}) covers code review of auto-generated changes, NOT manual coding.
+**Understanding the metrics:**
+- **Linter Auto-Fix**: Instant fixes via \`eslint --fix\`, \`prettier\`, etc. (${autoFixPercentage.toFixed(0)}% of blocking issues)
+- **AI Code Suggestions**: AI has generated copy-paste ready fix code for ALL ${issues.length} issues (100%)
 
-**Clarification:** "IDE Auto-Fix" = linter --fix flag (instant). "AI Fix Suggestions" = copy-paste ready code for ALL ${issues.length} issues.
-
-**💡 Bonus Opportunity:** Beyond the ${autoFixableBlockingCount} blocking issues, you can auto-fix ${autoFixableTotalCount - autoFixableBlockingCount} additional issues for massive code quality improvement in ~${Math.ceil(autoFixableTotalCount / 60)} minutes total.`
+**💡 Bonus Opportunity:** Beyond the ${autoFixableBlockingCount} blocking issues, you can apply linter auto-fix to ${autoFixableTotalCount - autoFixableBlockingCount} additional issues (~${Math.ceil(autoFixableTotalCount / 60)} min). For issues not auto-fixable by linters, use the AI-generated code suggestions.`
     : `| Metric | Value |
 |--------|-------|
 | **Total Fix Cost** | **$${totalFixCost.toLocaleString()}** (${baseFixHours.toFixed(1)} hours, ~${fixDays} developer-days at $${developerRate}/hour) |
 ${autoFixableBlockingCount > 0 ? `| **Cost Breakdown** | ${autoFixableBlockingCount} auto-fixable (${autoFixPercentage.toFixed(0)}%, ~${(autoFixableBlockingCount * 0.1).toFixed(1)}h) + ${blocking.length - autoFixableBlockingCount} manual (~${((blocking.length - autoFixableBlockingCount) * 1.75).toFixed(1)}h) |` : ''}
-${autoFixableTotalCount > 0 ? `| **IDE Auto-Fix (All Issues)** | **${totalAutoFixPercentage.toFixed(0)}%** (${autoFixableTotalCount}/${issues.length} issues) - Run with \`--fix\` flag 🎁 |\n| **AI Fix Suggestions** | **100%** (${issues.length}/${issues.length} issues) - All issues have AI-generated fix code |` : ''}
+${autoFixableTotalCount > 0 ? `| **Linter Auto-Fix (All)** | **${totalAutoFixPercentage.toFixed(0)}%** (${autoFixableTotalCount}/${issues.length} issues) - Run with \`--fix\` flag 🎁 |\n| **AI Code Suggestions** | **100%** (${issues.length}/${issues.length} issues) - Every issue has AI-generated fix code |` : ''}
 | **Potential Exploit Cost** | **$${minExploitCost.toLocaleString()} - $${maxExploitCost.toLocaleString()}** |
 | **Security Risk** | ${exploitDesc} |
 | **Return on Investment** | **${roi}x minimum return** by preventing issues now vs. fixing in production |
-| **Risk-Adjusted Savings** | $${(minExploitCost - totalFixCost).toLocaleString()} minimum (prevention vs. remediation) |${autoFixableBlockingCount > 0 ? `\n\n**💡 Tip:** ${autoFixableBlockingCount} blocking issue${autoFixableBlockingCount > 1 ? 's' : ''} can be auto-fixed with IDE tools.` : ''}${autoFixableTotalCount > autoFixableBlockingCount ? `\n\n**🎁 Bonus:** ${autoFixableTotalCount - autoFixableBlockingCount} additional issues can be auto-fixed for major code quality improvement in ~${Math.ceil(autoFixableTotalCount / 60)} minutes total.` : ''}`
+| **Risk-Adjusted Savings** | $${(minExploitCost - totalFixCost).toLocaleString()} minimum (prevention vs. remediation) |${autoFixableBlockingCount > 0 ? `\n\n**💡 Tip:** ${autoFixableBlockingCount} blocking issue${autoFixableBlockingCount > 1 ? 's' : ''} can be auto-fixed with linter \`--fix\` flag.` : ''}${autoFixableTotalCount > autoFixableBlockingCount ? `\n\n**🎁 Bonus:** Apply linter auto-fix to ${autoFixableTotalCount - autoFixableBlockingCount} additional issues (~${Math.ceil(autoFixableTotalCount / 60)} min). For non-linter-fixable issues, use AI suggestions.` : ''}`
   : `**💚 Low Financial Risk**
 No critical or high-severity issues detected. All identified issues are related to code quality and maintainability (tabs, formatting, documentation).
 
@@ -281,7 +288,7 @@ No critical or high-severity issues detected. All identified issues are related 
 **Impact if not fixed:** Gradual technical debt accumulation, slower code reviews, minor maintainability concerns.
 **Recommendation:** Address during regular refactoring cycles or enable pre-commit hooks (CheckStyle, Spotless).
 
-${autoFixableTotalCount > 0 ? `**🎁 Quick Win:** ${autoFixableTotalCount} of ${issues.length} issues (${totalAutoFixPercentage.toFixed(0)}%) can be auto-fixed in ~${Math.ceil(autoFixableTotalCount / 60)} minutes with IDE tools.` : ''}`
+${autoFixableTotalCount > 0 ? `**🎁 Quick Win:** ${autoFixableTotalCount} of ${issues.length} issues (${totalAutoFixPercentage.toFixed(0)}%) can be auto-fixed in ~${Math.ceil(autoFixableTotalCount / 60)} minutes with linter \`--fix\` commands.` : ''}`
 }
 
 ### Risk Assessment

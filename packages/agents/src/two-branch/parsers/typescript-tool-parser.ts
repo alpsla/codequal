@@ -388,7 +388,7 @@ export class TypeScriptToolParser {
         const issue: TypeScriptIssue = {
           id: `eslint-${msg.ruleId}-${file.filePath}-${msg.line}-${msg.column}`,
           type: this.mapESLintType(msg.ruleId, msg.severity),
-          severity: this.mapESLintSeverity(msg.severity),
+          severity: this.mapESLintSeverity(msg.severity, msg.ruleId),
           file: file.filePath,
           line: msg.line || 0,
           column: msg.column,
@@ -428,7 +428,7 @@ export class TypeScriptToolParser {
         issues.push({
           id: `eslint-${match[6]}-${match[1]}-${match[2]}-${match[3]}`,
           type: this.mapESLintType(match[6], match[4] === 'error' ? 2 : 1),
-          severity: match[4] === 'error' ? 'high' : 'medium',
+          severity: this.mapESLintSeverity(match[4] === 'error' ? 2 : 1, match[6]),
           file: match[1],
           line: parseInt(match[2]),
           column: parseInt(match[3]),
@@ -730,17 +730,76 @@ export class TypeScriptToolParser {
   }
 
   /**
-   * Map ESLint severity
+   * Map ESLint severity based on rule ID and severity level
+   * BUG-081 FIX: Not all ESLint errors deserve HIGH severity
+   * - TRUE runtime errors (no-undef, no-unreachable) → HIGH
+   * - Style/preference errors (no-var-requires, prefer-const) → MEDIUM
    */
-  private mapESLintSeverity(severity: number): TypeScriptIssue['severity'] {
-    switch (severity) {
-      case 2: // Error
-        return 'high';
-      case 1: // Warning
+  private mapESLintSeverity(severity: number, ruleId?: string): TypeScriptIssue['severity'] {
+    // Warnings are always medium
+    if (severity === 1) return 'medium';
+
+    // For errors, check if the rule truly deserves HIGH severity
+    if (severity === 2) {
+      // Rules that ARE true runtime errors or critical bugs - keep HIGH
+      const highSeverityRules = [
+        'no-undef',           // Undefined variable - will crash at runtime
+        'no-unreachable',     // Dead code after return/throw - logic bug
+        'no-redeclare',       // Variable already declared
+        'no-dupe-keys',       // Duplicate object keys
+        'no-func-assign',     // Reassigning function
+        'constructor-super',  // Must call super() in constructor
+        'no-class-assign',    // Reassigning class
+        'no-const-assign',    // Assigning to const
+        'no-dupe-args',       // Duplicate function arguments
+        'no-import-assign',   // Assigning to imports
+        'no-new-symbol',      // new Symbol() instead of Symbol()
+        'no-this-before-super', // Using this before super()
+        'getter-return',      // Getter must return
+        'no-setter-return',   // Setter should not return
+      ];
+
+      // Rules that are style/preference - downgrade to MEDIUM
+      const mediumSeverityRules = [
+        'no-var-requires',    // Style: use import instead of require
+        '@typescript-eslint/no-var-requires',
+        'no-unused-vars',     // Dead code but won't crash
+        '@typescript-eslint/no-unused-vars',
+        'no-inferrable-types', // Redundant type annotations
+        '@typescript-eslint/no-inferrable-types',
+        'prefer-const',       // Style: use const instead of let
+        'no-extra-semi',      // Extra semicolons
+        'no-empty',           // Empty blocks
+        'no-useless-escape',  // Unnecessary escape chars
+        'no-useless-constructor', // Empty constructor
+        'no-useless-return',  // Unnecessary return
+        'prefer-arrow-callback', // Style preference
+        'prefer-template',    // Style preference
+        'object-shorthand',   // Style preference
+      ];
+
+      // Check rule ID for downgrade to MEDIUM
+      if (ruleId) {
+        // If explicitly in medium list, downgrade
+        if (mediumSeverityRules.some(rule => ruleId.includes(rule))) {
+          return 'medium';
+        }
+
+        // If explicitly in high list, keep high
+        if (highSeverityRules.some(rule => ruleId.includes(rule))) {
+          return 'high';
+        }
+
+        // Default: if it's an error but not in high list, use medium
+        // This is safer than marking everything as high
         return 'medium';
-      default:
-        return 'low';
+      }
+
+      // No rule ID, default to high for errors
+      return 'high';
     }
+
+    return 'low';
   }
 
   /**
