@@ -4319,8 +4319,9 @@ Continue following best practices and consider integrating static analysis into 
       }
       
       // Get last 200 commits (email::name format)
-      const out = execSync(`git -C ${repoPath} log --format=%ae:::%an -n 200`, { 
-        stdio: ['ignore', 'pipe', 'ignore'] 
+      // SECURITY FIX: Quote repoPath to prevent command injection
+      const out = execSync(`git -C "${repoPath}" log --format=%ae:::%an -n 200`, {
+        stdio: ['ignore', 'pipe', 'ignore']
       }).toString();
       
       const lines = out.split('\n').filter(Boolean);

@@ -125,8 +125,9 @@ export class TypeScriptToolParser {
       }
 
       // BUG-077 FIX: Add ignore patterns to ESLint command to exclude build artifacts
+      // SECURITY FIX: Quote repoPath to prevent command injection
       const ignorePatterns = '--ignore-pattern "**/dist/**" --ignore-pattern "**/build/**" --ignore-pattern "**/.next/**" --ignore-pattern "**/coverage/**" --ignore-pattern "**/.output/**"';
-      const command = `cd ${repoPath} && npx eslint ${fileArgs} ${ignorePatterns} --format json 2>&1`;
+      const command = `cd "${repoPath}" && npx eslint ${fileArgs} ${ignorePatterns} --format json 2>&1`;
 
       // DEBUG: Log the exact command being executed
       console.log('[DEBUG ESLint] Repository path:', repoPath);

@@ -516,8 +516,16 @@ export function generateFooter(
     footer += `> 🏆 **Best for**: GitHub Code Scanning, CI/CD pipelines, permanent diagnostic records\n\n`;
 
     // BUG FIX: Only show GitLab method for GitLab repositories AND if file was actually uploaded
+    // SECURITY FIX: Use URL parsing instead of substring check to prevent URL spoofing
     const repoUrl = metadata?.repositoryUrl || metadata?.repository || '';
-    const isGitLabRepo = repoUrl.includes('gitlab.com') || repoUrl.includes('gitlab.');
+    let isGitLabRepo = false;
+    try {
+      const parsedUrl = new URL(repoUrl);
+      isGitLabRepo = parsedUrl.hostname === 'gitlab.com' || parsedUrl.hostname.endsWith('.gitlab.com');
+    } catch {
+      // Invalid URL, not a GitLab repo
+      isGitLabRepo = false;
+    }
     
     // Only show GitLab method if:
     // 1. It's a GitLab repo AND

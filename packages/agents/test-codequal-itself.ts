@@ -130,9 +130,10 @@ async function testCodeQualItself() {
     console.log('   Checking for:');
 
     // Check for Google Search
+    // SECURITY FIX: Use regex to match actual domains, not just substring
     if (report.markdown.includes('google.com/search')) {
       console.log('   ✅ Google Search links (not YouTube)');
-    } else if (report.markdown.includes('youtube.com')) {
+    } else if (/https?:\/\/(www\.)?youtube\.com/.test(report.markdown)) {
       console.log('   ❌ Still using YouTube links!');
     } else {
       console.log('   ⚠️  No educational resources found');
