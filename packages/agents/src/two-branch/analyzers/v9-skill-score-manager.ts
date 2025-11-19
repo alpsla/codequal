@@ -95,10 +95,11 @@ export class SkillScoreManager {
     limit = 5
   ): Promise<number[]> {
     try {
-      // Fetch more records than needed to account for potential duplicates
+      // BUG-089 FIX: Remove commit_hash from select (column doesn't exist in schema)
+      // Fetch records ordered by timestamp
       const { data, error } = await this.supabase
         .from('skill_scores')
-        .select('overall_score, commit_hash')
+        .select('overall_score, pr_number, analyzed_at')
         .eq('developer_email', developerEmail)
         .eq('repo_name', repository)  // Fixed: use 'repo_name' column
         .order('analyzed_at', { ascending: true })
@@ -113,14 +114,15 @@ export class SkillScoreManager {
         return [];
       }
 
-      // BUG #4 FIX: Remove duplicate commits, keep only latest analysis per commit
-      const seenCommits = new Set<string>();
+      // BUG #4 FIX: Remove duplicate PRs, keep only latest analysis per PR
+      // BUG-089 FIX: Use pr_number instead of commit_hash (column doesn't exist)
+      const seenPRs = new Set<number>();
       const uniqueScores: number[] = [];
 
       for (const record of data) {
-        const commitHash = record.commit_hash || `pr-${Math.random()}`; // Fallback for legacy data
-        if (!seenCommits.has(commitHash)) {
-          seenCommits.add(commitHash);
+        const prNumber = record.pr_number || 0;
+        if (!seenPRs.has(prNumber)) {
+          seenPRs.add(prNumber);
           uniqueScores.push(record.overall_score);
           if (uniqueScores.length >= limit) break;
         }
@@ -143,13 +145,13 @@ export class SkillScoreManager {
     try {
       console.log(`[SkillScoreManager] Saving skill score for ${scoreData.developerEmail} (PR #${scoreData.prNumber}): ${scoreData.overallScore}/100`);
 
+      // BUG-089 FIX: Removed commit_hash (column doesn't exist in schema)
       const { error } = await this.supabase.from('skill_scores').insert({
         developer_email: scoreData.developerEmail,
         developer_name: scoreData.developerName,
         repo_name: scoreData.repository,  // Fixed: use 'repo_name' column
         pr_number: scoreData.prNumber,
         branch: scoreData.branch,
-        commit_hash: scoreData.commitHash,  // BUG #4 FIX: Store commit hash to prevent duplicate trends
         overall_score: scoreData.overallScore,
         quality_score: scoreData.qualityScore,
         security_score: scoreData.categoryScores.security,

@@ -124,8 +124,12 @@ export async function enrichIssuesWithAI(
         );
 
         // BUG #89 DEBUG: Log AI response structure
+        // BUG-088 FIX: Handle fix being either string or object
+        const fixPreview = typeof fixSuggestion.fix === 'string'
+          ? fixSuggestion.fix.substring(0, 40)
+          : (fixSuggestion.fix ? JSON.stringify(fixSuggestion.fix).substring(0, 40) : 'null');
         console.log(`[BUG #89 DEBUG] AI returned for ${group.rule}:`);
-        console.log(`[BUG #89 DEBUG]   - fix: ${fixSuggestion.fix ? 'YES' : 'NO'} (${fixSuggestion.fix?.substring(0, 40)}...)`);
+        console.log(`[BUG #89 DEBUG]   - fix: ${fixSuggestion.fix ? 'YES' : 'NO'} (${fixPreview}...)`);
         console.log(`[BUG #89 DEBUG]   - correctedCode: ${fixSuggestion.correctedCode ? 'YES' : 'NO'}`);
         console.log(`[BUG #89 DEBUG]   - explanation: ${fixSuggestion.explanation ? 'YES' : 'NO'}`);
         console.log(`[BUG #89 DEBUG]   - issueDescription: ${fixSuggestion.issueDescription ? 'YES' : 'NO'}`);
@@ -163,7 +167,11 @@ export async function enrichIssuesWithAI(
           };
         }
 
-        console.log(`[AI Enrichment] ✅ ${group.rule}: ${fixSuggestion.fix.substring(0, 60)}...`);
+        // BUG-088 FIX: Handle fix being either string or object
+        const fixLogPreview = typeof fixSuggestion.fix === 'string'
+          ? fixSuggestion.fix.substring(0, 60)
+          : (fixSuggestion.fix ? JSON.stringify(fixSuggestion.fix).substring(0, 60) : 'null');
+        console.log(`[AI Enrichment] ✅ ${group.rule}: ${fixLogPreview}...`);
         if (fixSuggestion.issueDescription) {
           console.log(`[BUG #89] ✅ AI-enriched description included for ${group.rule}`);
         } else {
