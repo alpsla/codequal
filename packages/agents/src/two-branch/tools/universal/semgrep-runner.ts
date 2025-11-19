@@ -51,9 +51,9 @@ interface SemgrepOutput {
 }
 
 export class UniversalSemgrepRunner extends UniversalToolBase {
-  private jobs: number = 2;  // Default: 2 CPUs (optimal when running with other tools)
-  
-  constructor(workspacePath: string, language: string, jobs: number = 2) {
+  private jobs = 2;  // Default: 2 CPUs (optimal when running with other tools)
+
+  constructor(workspacePath: string, language: string, jobs = 2) {
     super({
       name: 'semgrep',
       language,
@@ -254,7 +254,7 @@ export class UniversalSemgrepRunner extends UniversalToolBase {
 export async function runSemgrep(
   workspacePath: string,
   language: string,
-  jobs: number = 2
+  jobs = 2
 ): Promise<Issue[]> {
   const runner = new UniversalSemgrepRunner(workspacePath, language, jobs);
   return runner.execute();

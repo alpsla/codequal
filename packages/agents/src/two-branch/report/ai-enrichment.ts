@@ -252,7 +252,7 @@ function normalizeDependencyVersions(issues: EnrichedIssue[], groups: IssueGroup
     }
     
     // Fallback: extract from message (format: "Vulnerability title in package-name")
-    const match = issue.message.match(/\s+in\s+([@\w\/\-\.]+)/i);
+    const match = issue.message.match(/\s+in\s+([@\w/.-]+)/i);
     return match ? match[1] : null;
   };
 
@@ -267,13 +267,13 @@ function normalizeDependencyVersions(issues: EnrichedIssue[], groups: IssueGroup
     }
     
     // Try to match just version number with prefix: "^7.23.2" or "~7.23.2" or "7.23.2"
-    const versionMatch = correctedCode.match(/([\^~]?[\d\.]+)/);
+    const versionMatch = correctedCode.match(/([\^~]?[\d.]+)/);
     if (versionMatch) {
       return versionMatch[1];
     }
-    
+
     // Try to match version in text format: "Update to version 7.23.2"
-    const textVersionMatch = correctedCode.match(/version\s+([\^~]?[\d\.]+)/i);
+    const textVersionMatch = correctedCode.match(/version\s+([\^~]?[\d.]+)/i);
     if (textVersionMatch) {
       return textVersionMatch[1];
     }
