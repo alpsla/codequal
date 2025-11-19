@@ -73,26 +73,26 @@ const TEST_SCENARIOS: TestScenario[] = [
   // ========================================================================
   
   // React (create-react-app) - Local Branch Autofix Test
-  {
-    name: 'React (create-react-app) - Local Branch Autofix Test',
-    repoUrl: 'https://github.com/facebook/create-react-app',
-    testMode: 'pr-review',
-    // No prNumber = creates local test branch automatically
-    language: 'typescript',
-    expectedFramework: 'react',
-    expectedToolCount: 3  // eslint, semgrep, npm-audit
-  },
-  
-  // CodeQual: Full testing (PR mode - we own it, can test autofix)
   // {
-  //   name: 'CodeQual PR #1 (Next.js) - Full Autofix Testing',
-  //   repoUrl: 'https://github.com/alpsla/codequal',
+  //   name: 'React (create-react-app) - Local Branch Autofix Test',
+  //   repoUrl: 'https://github.com/facebook/create-react-app',
   //   testMode: 'pr-review',
-  //   prNumber: 1,
+  //   // No prNumber = creates local test branch automatically
   //   language: 'typescript',
-  //   expectedFramework: 'next',
+  //   expectedFramework: 'react',
   //   expectedToolCount: 3  // eslint, semgrep, npm-audit
   // },
+
+  // CodeQual: Full testing (PR mode - we own it, can test autofix)
+  {
+    name: 'CodeQual PR #69 - V9 Footer Fixes',
+    repoUrl: 'https://github.com/alpsla/codequal',
+    testMode: 'pr-review',
+    prNumber: 69,
+    language: 'typescript',
+    expectedFramework: 'next',
+    expectedToolCount: 3  // eslint, semgrep, npm-audit
+  },
   
   // Other TypeScript frameworks: Local branch testing (full autofix validation)
   // SESSION 27: Can test autofix on ANY public repo by creating local branches!
