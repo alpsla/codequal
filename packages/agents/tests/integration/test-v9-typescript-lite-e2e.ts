@@ -223,19 +223,30 @@ async function runTypeScriptLiteE2ETest(scenario: TestScenario): Promise<void> {
 
     // Fetch real PR data from GitHub API
     console.log(`\n📡 Fetching real PR data from GitHub API...`);
-    const { GitHubAPIClient } = await import('../../src/two-branch/utils/github-api-client.js');
-    const githubClient = new GitHubAPIClient();
 
     let prData;
     let repoStats;
+
     try {
+      console.log('[Test] Importing GitHub API client...');
+      const { GitHubAPIClient } = await import('../../src/two-branch/utils/github-api-client');
+      console.log('[Test] ✅ GitHub API client imported successfully');
+
+      const githubClient = new GitHubAPIClient();
+      console.log('[Test] ✅ GitHub API client instantiated');
+
+      console.log('[Test] Fetching PR data...');
       prData = await githubClient.fetchPRData(scenario.repoUrl, scenario.prNumber);
+      console.log('[Test] Fetching repo stats...');
       repoStats = await githubClient.fetchRepoStats(scenario.repoUrl);
+
       console.log(`   ✅ PR Author: ${prData.author.login}`);
       console.log(`   ✅ File Changes: +${prData.stats.additions} -${prData.stats.deletions}`);
     } catch (error: any) {
-      console.warn(`   ⚠️  GitHub API failed: ${error.message}`);
+      console.error(`   ❌ GitHub API error: ${error.message}`);
+      console.error(`   ❌ Error stack: ${error.stack}`);
       console.warn(`   ⚠️  Using fallback data`);
+
       // Fallback to defaults
       prData = {
         author: { login: 'unknown', email: 'unknown@example.com' },
