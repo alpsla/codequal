@@ -131,14 +131,16 @@ export const DEFAULT_TYPESCRIPT_CONFIG: TypeScriptToolConfig = {
 };
 
 /**
- * TypeScript tool category mapping
+ * Map TypeScript tools to universal tool categories
  */
 const TYPESCRIPT_TOOL_CATEGORIES = {
   eslint: ToolCategory.CODE_QUALITY,
   typescript: ToolCategory.CODE_QUALITY,
   'npm-audit': ToolCategory.DEPENDENCY_SCAN,
   'dependency-check': ToolCategory.DEPENDENCY_SCAN,
-  semgrep: ToolCategory.SECURITY
+  semgrep: ToolCategory.SECURITY,
+  performance: ToolCategory.ADVANCED,  // Performance analysis tools
+  architecture: ToolCategory.ADVANCED   // Architecture analysis tools
 };
 
 /**
