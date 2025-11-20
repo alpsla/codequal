@@ -856,7 +856,8 @@ export class LSPSARIFConverter {
    */
   private determineFixSource(issue: EnrichedIssue): 'ai_generated' | 'rule_based' | 'template' {
     // Check if fixSuggestion has explicit source
-    if (issue.fixSuggestion?.source) return issue.fixSuggestion.source;
+    const fixSuggestion = issue.fixSuggestion as any;
+    if (fixSuggestion?.source) return fixSuggestion.source;
 
     // Infer from tool type
     const tool = issue.tool?.toLowerCase() || '';
