@@ -36,6 +36,7 @@
     "@types/cron": "^2.4.3",
     "@types/node": "^20.0.0",
     "@types/xml2js": "^0.4.14",
+    "lodash": "^4.17.19",
     "typescript": "^5.0.0"
   }
 }
