@@ -316,7 +316,7 @@ export abstract class BaseToolOrchestrator {
           return true;
         })
       }));
-      
+
       // Count filtered issues
       const totalRaw = rawToolResults.reduce((sum, r) => sum + r.issues.length, 0);
       const totalValid = toolResults.reduce((sum, r) => sum + r.issues.length, 0);
@@ -513,6 +513,135 @@ export abstract class BaseToolOrchestrator {
   }
 
   // ============================================================
+  // PERFORMANCE & ARCHITECTURE TOOLS (Universal)
+  // ============================================================
+
+  /**
+   * Execute performance analysis tools
+   * 
+   * Runs Lighthouse, Bundle Analyzer, and ESLint Performance plugin
+   * Uses existing PerformanceAgent for AI enrichment
+   */
+  protected async executePerformanceTools(
+    repoPath: string,
+    branch: 'base' | 'pr',
+    files: string[]
+  ): Promise<ToolResult> {
+    const startTime = Date.now();
+
+    try {
+      logger.info(`🚀 Executing Performance tools...`);
+
+      // Import runners and agent
+      const { PerformanceRunner } = await import('./universal/performance-runner');
+      const { PerformanceAgent } = await import('../agents/specialized-agents');
+
+      const runner = new PerformanceRunner();
+      const agent = new PerformanceAgent();
+      const allIssues: any[] = [];
+
+      // Run all performance tools
+      const lighthouseIssues = await runner.runLighthouse(repoPath);
+      const bundleIssues = await runner.runBundleAnalyzer(repoPath);
+      const eslintPerfIssues = await runner.runESLintPerf(repoPath, files);
+
+      allIssues.push(...lighthouseIssues, ...bundleIssues, ...eslintPerfIssues);
+
+      // Convert to RawIssue format
+      const rawIssues: RawIssue[] = allIssues.map(issue => ({
+        tool: issue.tool,
+        file: issue.file || 'performance-metrics',
+        line: issue.line || 1,
+        severity: issue.severity,
+        message: issue.message,
+        rule: issue.rule,
+        category: 'performance',
+        autoFixable: false
+      }));
+
+      const duration = Date.now() - startTime;
+      const metadata = this.calculateMetadata(rawIssues);
+
+      logger.info(`✅ Performance tools completed: ${rawIssues.length} issues in ${(duration / 1000).toFixed(1)}s`);
+
+      return {
+        tool: 'performance',
+        success: true,
+        duration,
+        issues: rawIssues,
+        metadata
+      };
+
+    } catch (error: any) {
+      const duration = Date.now() - startTime;
+      logger.error(`❌ Performance tools failed: ${error.message}`);
+      return this.createFailedResult('performance', error.message);
+    }
+  }
+
+  /**
+   * Execute architecture analysis tools
+   * 
+   * Runs Madge, Dependency Cruiser, and ts-unused-exports
+   * Uses existing ArchitectureAgent for AI enrichment
+   */
+  protected async executeArchitectureTools(
+    repoPath: string,
+    branch: 'base' | 'pr'
+  ): Promise<ToolResult> {
+    const startTime = Date.now();
+
+    try {
+      logger.info(`🏗️  Executing Architecture tools...`);
+
+      // Import runners and agent
+      const { ArchitectureRunner } = await import('./universal/architecture-runner');
+      const { ArchitectureAgent } = await import('../agents/specialized-agents');
+
+      const runner = new ArchitectureRunner();
+      const agent = new ArchitectureAgent();
+      const allIssues: any[] = [];
+
+      // Run all architecture tools
+      const madgeIssues = await runner.runMadge(repoPath);
+      const depCruiserIssues = await runner.runDependencyCruiser(repoPath);
+      const unusedExportsIssues = await runner.runUnusedExports(repoPath);
+
+      allIssues.push(...madgeIssues, ...depCruiserIssues, ...unusedExportsIssues);
+
+      // Convert to RawIssue format
+      const rawIssues: RawIssue[] = allIssues.map(issue => ({
+        tool: issue.tool,
+        file: issue.file || 'architecture-analysis',
+        line: issue.line || 1,
+        severity: issue.severity,
+        message: issue.message,
+        rule: issue.rule,
+        category: 'architecture',
+        autoFixable: false
+      }));
+
+      const duration = Date.now() - startTime;
+      const metadata = this.calculateMetadata(rawIssues);
+
+      logger.info(`✅ Architecture tools completed: ${rawIssues.length} issues in ${(duration / 1000).toFixed(1)}s`);
+
+      return {
+        tool: 'architecture',
+        success: true,
+        duration,
+        issues: rawIssues,
+        metadata
+      };
+
+    } catch (error: any) {
+      const duration = Date.now() - startTime;
+      logger.error(`❌ Architecture tools failed: ${error.message}`);
+      return this.createFailedResult('architecture', error.message);
+    }
+  }
+
+  // ============================================================
   // PARALLEL EXECUTION (Universal pattern)
   // ============================================================
 
@@ -537,21 +666,21 @@ export abstract class BaseToolOrchestrator {
   ): Promise<ToolResult[]> {
     const semgrepIndex = tools.indexOf('semgrep');
     const hasSemgrep = semgrepIndex !== -1;
-    
+
     // Strategy: Run Semgrep first with all 4 CPUs if it's the bottleneck
     if (hasSemgrep && tools.length > 1) {
       logger.info(`\n🚀 CPU-Aware Strategy: Running Semgrep first with all 4 CPUs, then other tools in parallel...`);
-      
+
       // Step 1: Run Semgrep with all 4 CPUs (temporarily set jobs=4)
       const semgrepTool = tools[semgrepIndex];
       const otherTools = tools.filter(t => t !== semgrepTool);
-      
+
       logger.info(`   📊 Step 1: Running Semgrep with --jobs=4 (all 4 CPUs)...`);
       const semgrepResult = await this.executeTool(semgrepTool, repoPath, branch, {
         ...options,
         semgrepJobs: 4  // Use all 4 CPUs for Semgrep
       });
-      
+
       // Step 2: Run other tools in parallel (max 4 concurrent)
       logger.info(`   📊 Step 2: Running ${otherTools.length} other tools in parallel...`);
       const otherResults = await this.executeToolsInParallel(
@@ -560,22 +689,22 @@ export abstract class BaseToolOrchestrator {
         branch,
         options
       );
-      
+
       // Combine results (Semgrep first, then others)
       const allResults = [semgrepResult, ...otherResults];
-      
+
       // Ensure results are in original tool order
-      const orderedResults = tools.map(toolName => 
+      const orderedResults = tools.map(toolName =>
         allResults.find(r => r.tool === toolName) || this.createFailedResult(toolName, 'Tool execution not found')
       );
-      
+
       const successful = orderedResults.filter(r => r.success).length;
       const failed = orderedResults.filter(r => !r.success).length;
       logger.info(`✅ All tools complete: ${successful} succeeded, ${failed} failed`);
-      
+
       return orderedResults;
     }
-    
+
     // Fallback: No Semgrep or only Semgrep - use standard parallel execution
     return this.executeToolsInParallel(tools, repoPath, branch, options);
   }
@@ -608,7 +737,7 @@ export abstract class BaseToolOrchestrator {
       // Start new executions up to concurrency limit
       while (executing.size < MAX_CONCURRENT_TOOLS && toolQueue.length > 0) {
         const toolName = toolQueue.shift()!;
-        
+
         const executionPromise = this.executeTool(toolName, repoPath, branch, options)
           .then(result => {
             results.push(result);
@@ -631,7 +760,7 @@ export abstract class BaseToolOrchestrator {
     }
 
     // Ensure results are in the same order as input tools
-    const orderedResults = tools.map(toolName => 
+    const orderedResults = tools.map(toolName =>
       results.find(r => r.tool === toolName) || this.createFailedResult(toolName, 'Tool execution not found')
     );
 

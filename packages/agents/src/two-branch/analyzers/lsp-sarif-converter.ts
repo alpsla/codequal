@@ -257,14 +257,14 @@ export class LSPSARIFConverter {
     workspaceRoot: string
   ): LSPCodeAction[] {
     const codeActions: LSPCodeAction[] = [];
-    
+
     // Filter issues with fixes
     const fixableIssues = issues.filter(issue => issue.fixSuggestion?.correctedCode);
-    
+
     // ========================================================================
     // BATCH ACTIONS (One-click fixes) - ADDED FIRST so they appear at top
     // ========================================================================
-    
+
     // 1. Apply All Fixes (377 issues)
     if (fixableIssues.length > 0) {
       const allFixesAction = this.createBatchCodeAction(
@@ -274,10 +274,10 @@ export class LSPSARIFConverter {
       );
       if (allFixesAction) codeActions.push(allFixesAction);
     }
-    
+
     // 2. Apply by Severity Groups
     const issuesBySeverity = this.groupIssuesBySeverity(fixableIssues);
-    
+
     if (issuesBySeverity.critical.length > 0) {
       const criticalAction = this.createBatchCodeAction(
         `Apply Critical Fixes (${issuesBySeverity.critical.length} issues)`,
@@ -286,7 +286,7 @@ export class LSPSARIFConverter {
       );
       if (criticalAction) codeActions.push(criticalAction);
     }
-    
+
     if (issuesBySeverity.high.length > 0) {
       const highAction = this.createBatchCodeAction(
         `Apply High Severity Fixes (${issuesBySeverity.high.length} issues)`,
@@ -295,7 +295,7 @@ export class LSPSARIFConverter {
       );
       if (highAction) codeActions.push(highAction);
     }
-    
+
     if (issuesBySeverity.medium.length > 0) {
       const mediumAction = this.createBatchCodeAction(
         `Apply Medium Severity Fixes (${issuesBySeverity.medium.length} issues)`,
@@ -304,7 +304,7 @@ export class LSPSARIFConverter {
       );
       if (mediumAction) codeActions.push(mediumAction);
     }
-    
+
     if (issuesBySeverity.low.length > 0) {
       const lowAction = this.createBatchCodeAction(
         `Apply Low Severity Fixes (${issuesBySeverity.low.length} issues)`,
@@ -313,14 +313,14 @@ export class LSPSARIFConverter {
       );
       if (lowAction) codeActions.push(lowAction);
     }
-    
+
     // ========================================================================
     // INDIVIDUAL ACTIONS (Per-issue fixes) - For granular control
     // ========================================================================
-    
+
     // Group issues by file for efficient processing
     const issuesByFile = this.groupIssuesByFile(fixableIssues);
-    
+
     for (const [file, fileIssues] of Object.entries(issuesByFile)) {
       for (const issue of fileIssues) {
         const fileUri = this.toFileUri(file, workspaceRoot);
@@ -328,10 +328,10 @@ export class LSPSARIFConverter {
         if (codeAction) codeActions.push(codeAction);
       }
     }
-    
+
     return codeActions;
   }
-  
+
   /**
    * Convert CodeQual issues to SARIF 2.1.0 format
    * Industry standard format supported by all major IDEs
@@ -354,11 +354,11 @@ export class LSPSARIFConverter {
       }]
     };
   }
-  
+
   // ==========================================================================
   // Private Helper Methods - LSP
   // ==========================================================================
-  
+
   /**
    * Create a batch code action that applies multiple fixes across multiple files
    * This enables "Apply All Fixes" and "Apply by Severity" one-click actions
@@ -460,7 +460,7 @@ export class LSPSARIFConverter {
       diagnostics
     };
   }
-  
+
   private createLSPCodeAction(
     issue: EnrichedIssue,
     fileUri: string
@@ -476,6 +476,17 @@ export class LSPSARIFConverter {
     // Extract file extension for language detection
     const fileExtension = fileUri.split('.').pop() || '';
     const language = this.getLanguageFromExtension(fileExtension);
+
+    // ENHANCEMENT: Ensure all explanation fields are populated with meaningful content
+    const explanation = {
+      what: issue.fixSuggestion?.issueDescription?.what ||
+        issue.message ||
+        this.generateDefaultWhat(issue),
+      why: issue.fixSuggestion?.issueDescription?.why ||
+        this.generateDefaultWhy(issue),
+      impact: issue.fixSuggestion?.issueDescription?.impact ||
+        this.generateDefaultImpact(issue.severity, issue.category)
+    };
 
     return {
       title: `Fix: ${this.getTitleFromRule(issue.rule)}`,
@@ -509,25 +520,21 @@ export class LSPSARIFConverter {
           rule: issue.rule,
           severity: issue.severity,
           category: issue.category || 'code_quality',
-          description: issue.message,
-          explanation: {
-            what: issue.fixSuggestion?.issueDescription?.what || issue.message,
-            why: issue.fixSuggestion?.issueDescription?.why ||
-                 `This violates the ${issue.rule} rule`,
-            impact: issue.fixSuggestion?.issueDescription?.impact ||
-                   `${issue.severity} severity: affects code quality`
-          }
+          description: issue.message || this.generateDefaultWhat(issue),  // ENSURE NOT EMPTY
+          explanation                                                       // ENSURE ALL FIELDS
         },
         context: {
           originalCode: issue.snippet || '',
+          surroundingLines: this.getSurroundingLines(issue),              // NEW
           fileType: fileExtension,
+          framework: this.detectFramework(issue.file),                     // NEW
           language
         },
         aiPrompt: this.generateAIPrompt(issue, language),
         codequalFix: {
           confidence: (issue.fixSuggestion as any)?.confidence || 0.8,
-          source: (issue.fixSuggestion as any)?.source || 'ai_generated',
-          verified: false // Will be updated based on user feedback
+          source: this.determineFixSource(issue),                          // NEW
+          verified: false
         },
         telemetry: {
           ruleId: issue.rule,
@@ -537,7 +544,7 @@ export class LSPSARIFConverter {
       }
     };
   }
-  
+
   private mapSeverityToLSP(severity: string): 1 | 2 | 3 | 4 {
     switch (severity) {
       case 'critical': return 1; // Error
@@ -547,11 +554,11 @@ export class LSPSARIFConverter {
       default: return 4;         // Hint
     }
   }
-  
+
   // ==========================================================================
   // Private Helper Methods - SARIF
   // ==========================================================================
-  
+
   private createSARIFTool(
     groups: IssueGroup[],
     metadata: { repository: string; version: string }
@@ -565,13 +572,13 @@ export class LSPSARIFConverter {
       }
     };
   }
-  
+
   private createSARIFRule(group: IssueGroup): SARIFRule {
     // Extract fix suggestion text (handle both string and object formats)
-    const fixText = typeof group.fixSuggestion === 'string' 
-      ? group.fixSuggestion 
+    const fixText = typeof group.fixSuggestion === 'string'
+      ? group.fixSuggestion
       : group.fixSuggestion?.explanation || 'No fix suggestion available';
-    
+
     return {
       id: group.rule,
       shortDescription: { text: group.rule },
@@ -585,13 +592,13 @@ export class LSPSARIFConverter {
       }
     };
   }
-  
+
   private createSARIFResults(issues: EnrichedIssue[]): SARIFResult[] {
     return issues
       .filter(issue => issue.file && issue.line)
       .map(issue => this.createSARIFResult(issue));
   }
-  
+
   private createSARIFResult(issue: EnrichedIssue): SARIFResult {
     const result: SARIFResult = {
       ruleId: issue.rule,
@@ -608,12 +615,12 @@ export class LSPSARIFConverter {
         }
       }]
     };
-    
+
     // Add fix if available
     if (issue.fixSuggestion?.correctedCode) {
       result.fixes = [{
-        description: { 
-          text: issue.fixSuggestion.explanation || 'Apply suggested fix' 
+        description: {
+          text: issue.fixSuggestion.explanation || 'Apply suggested fix'
         },
         artifactChanges: [{
           artifactLocation: { uri: issue.file },
@@ -628,10 +635,10 @@ export class LSPSARIFConverter {
         }]
       }];
     }
-    
+
     return result;
   }
-  
+
   private mapSeverityToSARIF(severity: string): 'error' | 'warning' | 'note' | 'none' {
     switch (severity) {
       case 'critical': return 'error';
@@ -641,11 +648,11 @@ export class LSPSARIFConverter {
       default: return 'none';
     }
   }
-  
+
   // ==========================================================================
   // Utility Methods
   // ==========================================================================
-  
+
   private groupIssuesByFile(issues: EnrichedIssue[]): Record<string, EnrichedIssue[]> {
     const grouped: Record<string, EnrichedIssue[]> = {};
     for (const issue of issues) {
@@ -655,7 +662,7 @@ export class LSPSARIFConverter {
     }
     return grouped;
   }
-  
+
   private groupIssuesBySeverity(issues: EnrichedIssue[]): {
     critical: EnrichedIssue[];
     high: EnrichedIssue[];
@@ -668,7 +675,7 @@ export class LSPSARIFConverter {
       medium: [] as EnrichedIssue[],
       low: [] as EnrichedIssue[]
     };
-    
+
     for (const issue of issues) {
       const severity = (issue.severity || 'low').toLowerCase();
       if (severity === 'critical') {
@@ -681,29 +688,29 @@ export class LSPSARIFConverter {
         grouped.low.push(issue);
       }
     }
-    
+
     return grouped;
   }
-  
+
   private toFileUri(file: string, workspaceRoot: string): string {
     // Normalize path separators
     const normalizedFile = file.replace(/\\/g, '/');
     const normalizedRoot = workspaceRoot.replace(/\\/g, '/');
-    
+
     // Remove workspace root if present
     let relativePath = normalizedFile;
     if (normalizedFile.startsWith(normalizedRoot)) {
       relativePath = normalizedFile.substring(normalizedRoot.length);
     }
-    
+
     // Ensure leading slash
     if (!relativePath.startsWith('/')) {
       relativePath = '/' + relativePath;
     }
-    
+
     return `file://${normalizedRoot}${relativePath}`;
   }
-  
+
   private getTitleFromRule(rule: string): string {
     // Convert rule ID to human-readable title
     // e.g., "javascript.lang.security.detect-child-process" -> "Detect Child Process"
@@ -714,7 +721,7 @@ export class LSPSARIFConverter {
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
   }
-  
+
   private countLines(text: string): number {
     return (text.match(/\n/g) || []).length + 1;
   }
@@ -728,13 +735,13 @@ export class LSPSARIFConverter {
 
     // Security tools
     if (tool.includes('semgrep') || tool.includes('snyk') || tool.includes('dependency-check') ||
-        category.includes('security') || category.includes('vulnerability')) {
+      category.includes('security') || category.includes('vulnerability')) {
       return 'security';
     }
 
     // Dependency tools
     if (tool.includes('dependency') || tool.includes('ossindex') ||
-        category.includes('dependency')) {
+      category.includes('dependency')) {
       return 'dependency';
     }
 
@@ -780,8 +787,88 @@ export class LSPSARIFConverter {
   }
 
   /**
-   * Generate AI prompt for IDE's AI to use if they want to generate their own fix
+   /**
+   * ENHANCEMENT: Generate default "what" description if not provided by AI
    */
+  private generateDefaultWhat(issue: EnrichedIssue): string {
+    return `Issue detected by ${issue.tool}: ${issue.rule}`;
+  }
+
+  /**
+   * ENHANCEMENT: Generate default "why" explanation if not provided by AI
+   */
+  private generateDefaultWhy(issue: EnrichedIssue): string {
+    const categoryExplanations: Record<string, string> = {
+      security: 'This pattern can lead to security vulnerabilities and potential exploits',
+      performance: 'This pattern can cause performance degradation and slow response times',
+      architecture: 'This pattern violates architectural best practices and increases technical debt',
+      dependency: 'This dependency has known vulnerabilities or compatibility issues',
+      code_quality: 'This pattern reduces code maintainability and readability'
+    };
+
+    const category = issue.category?.toLowerCase() || 'code_quality';
+    return categoryExplanations[category] || `This violates the ${issue.rule} rule`;
+  }
+
+  /**
+   * ENHANCEMENT: Generate default impact description based on severity
+   */
+  private generateDefaultImpact(severity: string, category?: string): string {
+    const impacts: Record<string, string> = {
+      critical: 'Could lead to security breaches, data loss, or system compromise. Requires immediate attention.',
+      high: 'May cause significant problems in production, security vulnerabilities, or system instability.',
+      medium: 'Should be addressed to maintain code quality, prevent future issues, and ensure system reliability.',
+      low: 'Minor issue that should be fixed for code consistency and best practices.'
+    };
+
+    return impacts[severity] || 'Should be addressed to improve code quality';
+  }
+
+  /**
+   * ENHANCEMENT: Extract surrounding lines from snippet for better context
+   */
+  private getSurroundingLines(issue: EnrichedIssue): string[] | undefined {
+    if (!issue.snippet) return undefined;
+
+    const lines = issue.snippet.split('\n');
+    // Return up to 10 lines of context
+    return lines.slice(0, Math.min(10, lines.length));
+  }
+
+  /**
+   * ENHANCEMENT: Detect framework from file path for better context
+   */
+  private detectFramework(filePath: string): string | undefined {
+    const path = filePath.toLowerCase();
+
+    if (path.includes('react') || path.includes('.jsx') || path.includes('.tsx')) return 'React';
+    if (path.includes('vue')) return 'Vue';
+    if (path.includes('angular')) return 'Angular';
+    if (path.includes('next')) return 'Next.js';
+    if (path.includes('express')) return 'Express';
+    if (path.includes('nest')) return 'NestJS';
+
+    return undefined;
+  }
+
+  /**
+   * ENHANCEMENT: Determine fix source more accurately
+   */
+  private determineFixSource(issue: EnrichedIssue): 'ai_generated' | 'rule_based' | 'template' {
+    // Check if fixSuggestion has explicit source
+    if (issue.fixSuggestion?.source) return issue.fixSuggestion.source;
+
+    // Infer from tool type
+    const tool = issue.tool?.toLowerCase() || '';
+
+    if (tool === 'eslint' || tool === 'typescript') return 'rule_based';
+    if (tool === 'semgrep') return 'template';
+
+    // Default to AI-generated for other tools
+    return 'ai_generated';
+  }
+
+  // Generate AI prompt for IDE's AI to use if they want to generate their own fix
   private generateAIPrompt(issue: EnrichedIssue, language: string): string {
     const rule = issue.rule;
     const message = issue.message;

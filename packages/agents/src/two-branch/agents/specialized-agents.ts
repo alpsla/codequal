@@ -40,6 +40,8 @@ interface FixSuggestion {
   bestPractices?: string[];
   // BUG #6 FIX: Track which model was used for generating this fix
   model?: string;
+  source?: 'ai_generated' | 'rule_based' | 'template';  // NEW: Fix source type
+  confidence?: number;                                    // NEW: Confidence score
   // SESSION 21 FIX: Track actual cost from OpenRouter
   cost?: number;
   usage?: {
@@ -126,11 +128,11 @@ abstract class BaseSpecializedAgent {
 
       // BUG #6 FIX: Add model information to fix suggestion
       result.model = modelToUse;
-      
+
       // SESSION 21 FIX: Add cost and usage from OpenRouter response
       result.cost = response.cost || 0;
       result.usage = response.usage;
-      
+
       return result;
 
     } catch (error: any) {
@@ -156,7 +158,7 @@ abstract class BaseSpecializedAgent {
   protected buildPromptWithExamples(issue: IssueContext): string {
     // Get 2 examples for this category
     const examples = getExamplesForCategory(this.category, 2);
-    
+
     return `EXAMPLES (${this.category} fixes):
 ${JSON.stringify(examples, null, 2)}
 
@@ -180,31 +182,31 @@ Provide JSON response following system prompt structure.`;
    */
   protected cleanAIContent(content: string): string {
     if (!content) return content;
-    
+
     let cleaned = content;
-    
+
     // PRIORITY 1: Remove <think> tags (MOST CRITICAL - causes 50% failure rate)
     cleaned = cleaned.replace(/<think>[\s\S]*?<\/think>/gi, '');    // <think>...</think>
     cleaned = cleaned.replace(/<think>[\s\S]*?(?=\n\n|$)/gi, '');   // <think>... (no closing tag)
-    
+
     // PRIORITY 2: Remove AI reasoning patterns at start of response
     cleaned = cleaned.replace(/^(First,|Okay,|Alright,|So,|Let me|I need to|I'll|What's)\s+[\s\S]*?\n\n/i, '');
-    
+
     // PRIORITY 3: Remove generic AI preambles
     cleaned = cleaned.replace(/^(Of course\.|Certainly\.|Sure\.|I'll help|As a[\s\S]*?engineer,?)\s*/i, '');
-    
+
     // PRIORITY 4: Remove "Here's the fix:" type intros
     cleaned = cleaned.replace(/^[\s\S]*?(\*\*Fix:\*\*|\*\*Solution:\*\*|Here's the fix:|The fix is:)\s*/i, '');
-    
+
     // Remove empty lines at start/end
     cleaned = cleaned.trim();
-    
+
     return cleaned;
   }
 
   protected parseAIResponse(response: string, issue: IssueContext): FixSuggestion {
     // BUG-76 FIX: Try JSON extraction FIRST (highest priority)
-    
+
     // PATTERN 0: Brace-counting JSON extraction (most robust - handles newlines in strings)
     const jsonStart = response.indexOf('{');
     if (jsonStart !== -1 && response.includes('"fix"') && response.includes('"correctedCode"')) {
@@ -212,25 +214,25 @@ Provide JSON response following system prompt structure.`;
         let braceCount = 0;
         let inString = false;
         let escaped = false;
-        
+
         for (let i = jsonStart; i < response.length; i++) {
           const char = response[i];
-          
+
           if (escaped) {
             escaped = false;
             continue;
           }
-          
+
           if (char === '\\') {
             escaped = true;
             continue;
           }
-          
+
           if (char === '"') {
             inString = !inString;
             continue;
           }
-          
+
           if (!inString) {
             if (char === '{') braceCount++;
             if (char === '}') {
@@ -267,7 +269,7 @@ Provide JSON response following system prompt structure.`;
         // Brace-counting or JSON parsing failed, continue with other methods
       }
     }
-    
+
     // Pattern 1: JSON in markdown block
     const jsonBlockMatch = response.match(/```json\s*\n([\s\S]*?)\n```/);
     if (jsonBlockMatch) {
@@ -287,7 +289,7 @@ Provide JSON response following system prompt structure.`;
         // JSON parsing failed, continue with other methods
       }
     }
-    
+
     // Pattern 2: JSON in generic code block
     const codeBlockJsonMatch = response.match(/```\s*\n(\{[\s\S]*?"fix"[\s\S]*?\})\s*\n```/);
     if (codeBlockJsonMatch) {
@@ -307,14 +309,14 @@ Provide JSON response following system prompt structure.`;
         // JSON parsing failed, continue with other methods
       }
     }
-    
+
     // Fallback: Extract text and code separately
     const fix = response;
-    
+
     // Extract first meaningful paragraph as fix description
     const paragraphs = fix.split(/\n\n+/);
     const fixDescription = paragraphs[0] || fix;
-    
+
     // Try to extract code from response - be lenient with different formats
     // Try multiple patterns:
     // 1. Standard markdown: ```lang\ncode```
@@ -322,9 +324,9 @@ Provide JSON response following system prompt structure.`;
     // 3. Multiple blocks: take the largest one
     const codeBlockPattern = /```[\w]*\n([\s\S]*?)```/g;
     const matches = Array.from(response.matchAll(codeBlockPattern));
-    
+
     let correctedCode = '';
-    
+
     if (matches.length > 0) {
       // Take the longest code block (likely the actual fix, not example)
       correctedCode = matches
@@ -332,11 +334,11 @@ Provide JSON response following system prompt structure.`;
         .filter(code => code.length > 10) // Filter out tiny snippets
         .sort((a, b) => b.length - a.length)[0] || '';
     }
-    
+
     // If still no code, try to extract code-like content without markdown
     if (!correctedCode && response.includes(issue.file.split('/').pop() || '')) {
       // Look for indented code blocks (likely code even without markdown)
-      const linesWithCode = response.split('\n').filter(line => 
+      const linesWithCode = response.split('\n').filter(line =>
         /^\s{2,}/.test(line) && // Indented
         /[{};()=]/.test(line)    // Has code-like syntax
       );
@@ -344,7 +346,7 @@ Provide JSON response following system prompt structure.`;
         correctedCode = linesWithCode.join('\n').trim();
       }
     }
-    
+
     // Last resort: check if there's meaningful content that looks like guidance
     if (!correctedCode) {
       // If the response has specific method/class names from the issue, use it as guidance
@@ -355,14 +357,14 @@ Provide JSON response following system prompt structure.`;
         correctedCode = this.generateMeaningfulCode(issue);
       }
     }
-    
+
     // Extract best practices if present
     const practicesMatch = response.match(/(?:best practices?|guidelines?|recommendations?)[\s\S]*?([•\-*][\s\S]*?)(?:\n\n|$)/i);
     const bestPractices = practicesMatch
       ? practicesMatch[1].split('\n')
-          .filter(p => p.trim().match(/^[•\-*]/))
-          .map(p => p.replace(/^[•\-*]\s*/, '').trim())
-          .slice(0, 3) // Limit to 3 best practices
+        .filter(p => p.trim().match(/^[•\-*]/))
+        .map(p => p.replace(/^[•\-*]\s*/, '').trim())
+        .slice(0, 3) // Limit to 3 best practices
       : [];
 
     return {
@@ -372,14 +374,14 @@ Provide JSON response following system prompt structure.`;
       bestPractices
     };
   }
-  
+
   protected generateMeaningfulCode(issue: IssueContext): string {
     const lineNum = issue.line || 1;
     const fileName = issue.file.split('/').pop() || 'File';
-    
+
     // FALLBACK: AI failed to generate code - warn user
     console.warn(`[${this.agentRole}] AI failed to generate code block for ${issue.type} in ${fileName}:${lineNum}`);
-    
+
     // Return a clear "manual review required" message instead of generic placeholders
     return `${lineNum}: // ⚠️ AI-generated fix not available - Manual review required
 ${lineNum + 1}: // Issue: ${issue.description}
@@ -404,7 +406,7 @@ ${lineNum + 3}: // Context: ${fileName} line ${lineNum}`;
 
     return {
       fix: roleSpecificFix[this.agentRole as keyof typeof roleSpecificFix] ||
-           `Address this ${issue.severity} ${issue.type} issue according to ${this.agentRole.toLowerCase()} best practices`,
+        `Address this ${issue.severity} ${issue.type} issue according to ${this.agentRole.toLowerCase()} best practices`,
       correctedCode: this.generateMeaningfulCode(issue),
       bestPractices: [
         `Review ${this.agentRole.toLowerCase()} best practices documentation`,
@@ -463,7 +465,7 @@ CRITICAL: Be RULE-SPECIFIC. NO generic boilerplate. Reference the EXACT vulnerab
    */
   private getSecurityGuidance(issue: IssueContext): string {
     const type = issue.type.toLowerCase();
-    
+
     // Command Injection
     if (type.includes('command') || type.includes('injection') || type.includes('processbuilder')) {
       return `🚨 CRITICAL: Command Injection Vulnerability
@@ -496,7 +498,7 @@ ProcessBuilder pb = new ProcessBuilder("/usr/bin/gzip", "-9", sanitizedFile);
 
 OWASP: A03:2021 - Injection`;
     }
-    
+
     // Unsafe Reflection
     if (type.includes('reflection') || type.includes('forname')) {
       return `⚠️ HIGH: Unsafe Reflection/Arbitrary Class Loading
@@ -525,7 +527,7 @@ Note: For Kafka plugins, validate against Serializer/Deserializer interfaces.
 
 OWASP: A08:2021 - Software Integrity Failures`;
     }
-    
+
     return ''; // No specific guidance, use AI's general security knowledge
   }
 }
@@ -695,10 +697,10 @@ CRITICAL: Be RULE-SPECIFIC. NO generic boilerplate. Reference the EXACT code qua
   private _oldBuildPrompt(issue: IssueContext): string {
     const fileName = issue.file.split('/').pop() || '';
     const className = fileName.replace(/\.\w+$/, '');
-    
+
     // Add issue-specific guidance with examples
     const guidance = this.getIssueSpecificGuidance(issue);
-    
+
     return `Code quality issue: ${issue.type}
 File: ${issue.file} (line ${issue.line})
 Description: ${issue.description}
@@ -744,7 +746,7 @@ If no code snippet: Generate realistic template for ${className} based on issue 
    */
   private getIssueSpecificGuidance(issue: IssueContext): string {
     const type = issue.type.toLowerCase();
-    
+
     // AvoidThrowingRawExceptionTypes (5,065 occurrences)
     if (type.includes('avoidthrowingrawexceptiontypes') || type.includes('exception')) {
       return `Common Pattern for This Issue:
@@ -765,7 +767,7 @@ public void process() throws DataProcessingException {
 
 Create a specific exception class or use existing domain-specific exceptions.`;
     }
-    
+
     // GuardLogStatement (1,292 occurrences)
     if (type.includes('guardlogstatement') || type.includes('log')) {
       return `Standard Pattern for This Issue:
@@ -784,7 +786,7 @@ if (log.isDebugEnabled()) {
 
 Guard debug/trace logs to prevent unnecessary computation.`;
     }
-    
+
     // SystemPrintln (335 occurrences)
     if (type.includes('systemprintln') || type.includes('print')) {
       return `Standard Pattern for This Issue:
@@ -803,7 +805,7 @@ log.info("Config: {}", config);
 
 Use proper logging framework (SLF4J) with appropriate log level.`;
     }
-    
+
     // AvoidUsingVolatile (217 occurrences)
     if (type.includes('volatile')) {
       return `Modern Pattern for This Issue:
@@ -821,7 +823,7 @@ private final AtomicBoolean stopped = new AtomicBoolean(false);
 
 Use java.util.concurrent.atomic classes for thread-safe operations.`;
     }
-    
+
     // ClassWithOnlyPrivateConstructorsShouldBeFinal (131 occurrences)
     if (type.includes('privateconstructor') || type.includes('final')) {
       return `Simple Pattern for This Issue:
@@ -842,7 +844,7 @@ public final class Utilities {
 
 Add 'final' keyword to prevent subclassing.`;
     }
-    
+
     // ReturnEmptyCollectionRatherThanNull (87 occurrences)
     if (type.includes('emptycollection') || type.includes('null')) {
       return `Null-Safe Pattern for This Issue:
@@ -863,7 +865,7 @@ public List<String> getItems() {
 
 Return empty collections instead of null to prevent NullPointerException.`;
     }
-    
+
     // AvoidReassigningParameters (111 occurrences)
     if (type.includes('parameter') || type.includes('reassign')) {
       return `Clean Code Pattern for This Issue:
@@ -886,7 +888,7 @@ public void process(String input) {
 
 Use local variables instead of reassigning parameters.`;
     }
-    
+
     // ConstructorCallsOverridableMethod (29 occurrences)
     if (type.includes('constructor') || type.includes('overridable')) {
       return `Safe Initialization Pattern for This Issue:
@@ -913,7 +915,7 @@ public class Base {
 
 Make initialization methods private or final to prevent issues in subclasses.`;
     }
-    
+
     return ''; // No specific guidance, rely on AI's general knowledge
   }
 }

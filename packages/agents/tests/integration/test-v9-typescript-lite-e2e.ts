@@ -36,10 +36,10 @@ interface TestScenario {
 
 const TEST_SCENARIOS: TestScenario[] = [
   {
-    name: 'Express.js',
-    repoUrl: 'https://github.com/expressjs/express',
-    prNumber: 5000, // Using a real PR
-    expectedToolCount: 4
+    name: 'CodeQual PR #69 - V9 Footer Fixes',
+    repoUrl: 'https://github.com/alpsla/codequal',
+    prNumber: 69,
+    expectedToolCount: 3  // eslint, semgrep, npm-audit
   }
 ];
 
@@ -48,18 +48,18 @@ const TEST_SCENARIOS: TestScenario[] = [
  */
 function cloneRepository(repoUrl: string, targetPath: string): void {
   console.log(`   🔄 Cloning ${repoUrl}...`);
-  
+
   // Remove if exists
   if (fs.existsSync(targetPath)) {
     execSync(`rm -rf ${targetPath}`);
   }
-  
+
   // Clone with depth 10 (as specified in requirements)
-  execSync(`git clone --depth 10 ${repoUrl} ${targetPath}`, { 
+  execSync(`git clone --depth 10 ${repoUrl} ${targetPath}`, {
     stdio: 'pipe',
     encoding: 'utf-8'
   });
-  
+
   console.log(`   ✅ Repository cloned to ${targetPath}`);
 }
 
@@ -84,7 +84,7 @@ async function runTypeScriptLiteE2ETest(scenario: TestScenario): Promise<void> {
     console.log('\n🔧 Step 1: Configuring tools...');
     const toolResolver = createToolConfigResolver();
     const tools = toolResolver.getToolsForLanguage('typescript');
-    
+
     console.log(`   ✅ Configured ${tools.length} tools`);
     tools.forEach(tool => {
       console.log(`      - ${tool.name} (${tool.category})`);
@@ -99,11 +99,11 @@ async function runTypeScriptLiteE2ETest(scenario: TestScenario): Promise<void> {
     // ========================================================================
     console.log('\n🚀 Step 2: Running tool orchestration (parallel execution)...');
     const orchestrator = new TypeScriptToolOrchestrator();
-    
+
     // Run tools on main/base branch
     console.log('   📊 Analyzing main branch...');
     const mainResult = await orchestrator.orchestrate(repoPath, 'base', { analysisMode: 'complete' });
-    
+
     // Checkout PR branch for comparison
     console.log(`   🔀 Checking out PR #${scenario.prNumber}...`);
     let prCheckoutSuccess = false;
@@ -117,20 +117,20 @@ async function runTypeScriptLiteE2ETest(scenario: TestScenario): Promise<void> {
       console.log(`   ℹ️  This test requires a valid PR number`);
       throw new Error(`PR checkout failed for ${scenario.repoUrl}/pull/${scenario.prNumber}`);
     }
-    
+
     // Run tools on PR branch (only if checkout succeeded)
     console.log('   📊 Analyzing PR branch...');
     const prResult = await orchestrator.orchestrate(repoPath, 'pr', { analysisMode: 'complete' });
-    
+
     const mainResults = mainResult.toolResults;
     const prResults = prResult.toolResults;
-    
+
     console.log(`   ✅ Main branch: ${mainResults.length} tools executed`);
     console.log(`   ✅ PR branch: ${prResults.length} tools executed`);
 
     const totalIssuesMain = mainResults.reduce((sum, r) => sum + (r.issues?.length || 0), 0);
     const totalIssuesPr = prResults.reduce((sum, r) => sum + (r.issues?.length || 0), 0);
-    
+
     console.log(`   📊 Main branch issues: ${totalIssuesMain}`);
     console.log(`   📊 PR branch issues: ${totalIssuesPr}`);
 
@@ -154,10 +154,10 @@ async function runTypeScriptLiteE2ETest(scenario: TestScenario): Promise<void> {
     console.log(`[NEW-BUG] ===============================\n`);
 
     const allPrIssues = prResults.flatMap(r => r.issues || []);
-    const newIssues = allPrIssues.filter(issue => 
-      !mainResults.some(m => 
-        (m.issues || []).some(mainIssue => 
-          mainIssue.file === issue.file && 
+    const newIssues = allPrIssues.filter(issue =>
+      !mainResults.some(m =>
+        (m.issues || []).some(mainIssue =>
+          mainIssue.file === issue.file &&
           mainIssue.line === issue.line
         )
       )
@@ -211,32 +211,57 @@ async function runTypeScriptLiteE2ETest(scenario: TestScenario): Promise<void> {
     // STEP 5: Report Generation (Grouped Formatter)
     // ========================================================================
     console.log('\n📝 Step 5: Generating report...');
-    
+
     const modelConfigResolver = new ModelConfigResolver();
     console.log('   ✅ Using Supabase model configuration');
-    
+
     const formatter = new V9GroupedReportFormatter(
       modelConfigResolver,
       'typescript',
       'medium'
     );
 
+    // Fetch real PR data from GitHub API
+    console.log(`\n📡 Fetching real PR data from GitHub API...`);
+    const { GitHubAPIClient } = await import('../../src/two-branch/utils/github-api-client.js');
+    const githubClient = new GitHubAPIClient();
+
+    let prData;
+    let repoStats;
+    try {
+      prData = await githubClient.fetchPRData(scenario.repoUrl, scenario.prNumber);
+      repoStats = await githubClient.fetchRepoStats(scenario.repoUrl);
+      console.log(`   ✅ PR Author: ${prData.author.login}`);
+      console.log(`   ✅ File Changes: +${prData.stats.additions} -${prData.stats.deletions}`);
+    } catch (error: any) {
+      console.warn(`   ⚠️  GitHub API failed: ${error.message}`);
+      console.warn(`   ⚠️  Using fallback data`);
+      // Fallback to defaults
+      prData = {
+        author: { login: 'unknown', email: 'unknown@example.com' },
+        stats: { additions: 0, deletions: 0, changedFiles: 0 },
+        repository: { fullName: scenario.repoUrl.split('/').slice(-2).join('/'), owner: '', name: '' },
+        pr: { number: scenario.prNumber, title: `PR #${scenario.prNumber}`, baseBranch: 'main', headBranch: `pr-${scenario.prNumber}` }
+      };
+      repoStats = { totalFiles: 0, totalLinesOfCode: 0 };
+    }
+
     const metadata = {
-      repository: scenario.repoUrl.split('/').slice(-2).join('/'),
+      repository: prData.repository.fullName,
       repoUrl: scenario.repoUrl,
       repoPath: repoPath,
       prNumber: scenario.prNumber,
-      prTitle: `PR #${scenario.prNumber}`,
-      branch: `pr-${scenario.prNumber}`,
-      baseBranch: 'main',
-      prAuthor: 'test-user',
-      prAuthorEmail: 'test@example.com',
-      organizationName: scenario.repoUrl.split('/')[3],
-      totalFiles: 100,
-      totalLinesOfCode: 10000,
+      prTitle: prData.pr.title,
+      branch: prData.pr.headBranch,
+      baseBranch: prData.pr.baseBranch,
+      prAuthor: prData.author.login,
+      prAuthorEmail: prData.author.email,
+      organizationName: prData.repository.owner,
+      totalFiles: repoStats.totalFiles || new Set(allPrIssues.map(i => i.file)).size,
+      totalLinesOfCode: repoStats.totalLinesOfCode || allPrIssues.length * 50, // Rough estimate
       filesModified: new Set(allPrIssues.map(i => i.file)).size,
-      linesAdded: 500,
-      linesDeleted: 200,
+      linesAdded: prData.stats.additions || 500,
+      linesDeleted: prData.stats.deletions || 200,
       decision: newIssues.filter(i => i.severity === 'critical' || i.severity === 'high').length > 0 ? 'DECLINED' : 'APPROVED',
       blockingCount: newIssues.filter(i => i.severity === 'critical' || i.severity === 'high').length,
       totalDuration: Date.now() - startTime,

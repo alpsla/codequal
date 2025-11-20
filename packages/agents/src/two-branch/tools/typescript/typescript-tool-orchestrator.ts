@@ -24,11 +24,11 @@ import { logger } from '../../utils/logger';
 import { determineCodeQualSeverity } from '../../utils/severity-mapper';
 
 // Import base orchestrator
-import { 
-  BaseToolOrchestrator, 
-  ToolResult, 
+import {
+  BaseToolOrchestrator,
+  ToolResult,
   RawIssue,
-  OrchestrationOptions 
+  OrchestrationOptions
 } from '../base-tool-orchestrator';
 
 // Import existing TypeScript parser
@@ -36,10 +36,10 @@ import { TypeScriptToolParser, TypeScriptIssue } from '../../parsers/typescript-
 
 // Import universal analysis modes
 import type { AnalysisMode } from '../../config/analysis-modes';
-import { 
-  UNIVERSAL_ANALYSIS_MODES, 
+import {
+  UNIVERSAL_ANALYSIS_MODES,
   ToolCategory,
-  getToolsForMode 
+  getToolsForMode
 } from '../../config/analysis-modes';
 
 const execAsync = promisify(exec);
@@ -63,7 +63,7 @@ export interface TypeScriptToolConfig {
     strict: boolean;
     configFile?: string;
   };
-  
+
   // OPTIONAL TOOLS
   npmAudit?: {
     enabled: boolean;
@@ -149,7 +149,7 @@ function shouldTypeScriptToolRun(toolName: string, mode: AnalysisMode): boolean 
   if (!category) return false;
 
   const modeConfig = UNIVERSAL_ANALYSIS_MODES[mode];
-  
+
   // Check based on tool category
   switch (category) {
     case ToolCategory.CODE_QUALITY:
@@ -187,10 +187,10 @@ export class TypeScriptToolOrchestrator extends BaseToolOrchestrator {
   ) {
     // Call base constructor
     super(dockerImage, '/workspace');
-    
+
     // Merge with defaults
     this.config = { ...DEFAULT_TYPESCRIPT_CONFIG, ...config };
-    
+
     // Initialize parser
     this.parser = new TypeScriptToolParser();
   }
@@ -211,17 +211,17 @@ export class TypeScriptToolOrchestrator extends BaseToolOrchestrator {
    */
   protected getToolsToRun(mode: AnalysisMode, branch: 'base' | 'pr'): string[] {
     const tools: string[] = [];
-    
+
     // ESLint - Always included (code quality + security)
     if (this.config.eslint.enabled && shouldTypeScriptToolRun('eslint', mode)) {
       tools.push('eslint');
     }
-    
+
     // TypeScript Compiler - Always included (type checking)
     if (this.config.typescript.enabled && shouldTypeScriptToolRun('typescript', mode)) {
       tools.push('typescript');
     }
-    
+
     // npm audit - Standard and above (dependency vulnerabilities)
     if (this.config.npmAudit?.enabled && shouldTypeScriptToolRun('npm-audit', mode)) {
       tools.push('npm-audit');
@@ -257,7 +257,7 @@ export class TypeScriptToolOrchestrator extends BaseToolOrchestrator {
    * Dispatches to appropriate tool-specific method
    * 
    * UPDATED: Now routes universal tools (Semgrep) to shared runners
-   * This should FIX the Semgrep output issue from Test #1
+   * UPDATED: Added Performance and Architecture tools
    */
   protected async executeTool(
     toolName: string,
@@ -265,17 +265,13 @@ export class TypeScriptToolOrchestrator extends BaseToolOrchestrator {
     branch: 'base' | 'pr',
     options: OrchestrationOptions
   ): Promise<ToolResult> {
-    logger.info(`📦 Executing TypeScript tool: ${toolName}`);
-    
-    // UNIVERSAL TOOLS: Route to shared runners
-    // This ensures same Semgrep behavior across Java, TypeScript, Python, etc.
+    // Route universal tools to shared runners (Semgrep, Dependency-Check)
     if (this.isUniversalTool(toolName)) {
-      logger.info(`🌐 Routing ${toolName} to universal runner`);
       return this.executeUniversalTool(toolName, repoPath, branch, options);
     }
-    
-    // LANGUAGE-SPECIFIC TOOLS: Use TypeScript-specific implementations
-    switch (toolName) {
+
+    // Route to TypeScript-specific tool methods
+    switch (toolName.toLowerCase()) {
       case 'eslint':
         return this.runESLint(repoPath, branch, options.changedFiles);
 
@@ -287,6 +283,18 @@ export class TypeScriptToolOrchestrator extends BaseToolOrchestrator {
 
       case 'dependency-check':
         return this.runDependencyCheck(repoPath, branch);
+
+      case 'performance':
+        // Get all TypeScript/JavaScript files for performance analysis
+        const { stdout: filesOutput } = await execAsync(
+          `find ${repoPath} -type f \\( -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" \\) | grep -v node_modules | head -100`,
+          { maxBuffer: 10 * 1024 * 1024 }
+        );
+        const files = filesOutput.trim().split('\n').filter(f => f);
+        return this.executePerformanceTools(repoPath, branch, files);
+
+      case 'architecture':
+        return this.executeArchitectureTools(repoPath, branch);
 
       default:
         throw new Error(`Unknown TypeScript tool: ${toolName}`);
