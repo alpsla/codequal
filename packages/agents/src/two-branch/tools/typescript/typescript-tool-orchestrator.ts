@@ -284,7 +284,7 @@ export class TypeScriptToolOrchestrator extends BaseToolOrchestrator {
       case 'dependency-check':
         return this.runDependencyCheck(repoPath, branch);
 
-      case 'performance':
+      case 'performance': {
         // Get all TypeScript/JavaScript files for performance analysis
         const { stdout: filesOutput } = await execAsync(
           `find ${repoPath} -type f \\( -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" \\) | grep -v node_modules | head -100`,
@@ -292,9 +292,11 @@ export class TypeScriptToolOrchestrator extends BaseToolOrchestrator {
         );
         const files = filesOutput.trim().split('\n').filter(f => f);
         return this.executePerformanceTools(repoPath, branch, files);
+      }
 
-      case 'architecture':
+      case 'architecture': {
         return this.executeArchitectureTools(repoPath, branch);
+      }
 
       default:
         throw new Error(`Unknown TypeScript tool: ${toolName}`);
