@@ -237,6 +237,16 @@ export class TypeScriptToolOrchestrator extends BaseToolOrchestrator {
       tools.push('semgrep');
     }
 
+    // Performance Tools - Standard and above (Lighthouse, Bundle Analyzer, ESLint-Perf)
+    if (shouldTypeScriptToolRun('performance', mode)) {
+      tools.push('performance');
+    }
+
+    // Architecture Tools - Standard and above (Madge, Dependency Cruiser, ts-unused-exports)
+    if (shouldTypeScriptToolRun('architecture', mode)) {
+      tools.push('architecture');
+    }
+
     return tools;
   }
 
@@ -247,7 +257,8 @@ export class TypeScriptToolOrchestrator extends BaseToolOrchestrator {
     return {
       'Security': ['semgrep', 'npm-audit', 'dependency-check'],
       'Code Quality': ['eslint', 'typescript'],
-      'Performance': ['eslint'],  // ESLint has performance rules
+      'Performance': ['performance'],  // Lighthouse, Bundle Analyzer, ESLint-Perf
+      'Architecture': ['architecture'],  // Madge, Dependency Cruiser, ts-unused-exports
       'Dependencies': ['npm-audit', 'dependency-check']
     };
   }
