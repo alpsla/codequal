@@ -36,6 +36,10 @@ export class GitHubAPIClient {
 
     constructor(token?: string) {
         this.token = token || process.env.GITHUB_TOKEN;
+        console.log('[GitHub API] Initializing client...');
+        console.log(`[GitHub API] Token provided via constructor: ${token ? 'YES' : 'NO'}`);
+        console.log(`[GitHub API] Token from env (GITHUB_TOKEN): ${process.env.GITHUB_TOKEN ? 'YES (length: ' + process.env.GITHUB_TOKEN.length + ')' : 'NO'}`);
+        console.log(`[GitHub API] Final token available: ${this.token ? 'YES (length: ' + this.token.length + ')' : 'NO'}`);
     }
 
     /**
@@ -44,17 +48,30 @@ export class GitHubAPIClient {
     async fetchPRData(repoUrl: string, prNumber: number): Promise<GitHubPRData> {
         const { owner, repo } = this.parseRepoUrl(repoUrl);
 
+        console.log(`[GitHub API] Fetching PR data for ${owner}/${repo}#${prNumber}...`);
+        console.log(`[GitHub API] Using token: ${this.token ? 'YES' : 'NO'}`);
+
         try {
             // Fetch PR data
-            const prResponse = await this.fetchWithAuth(
-                `${this.baseUrl}/repos/${owner}/${repo}/pulls/${prNumber}`
-            );
+            const url = `${this.baseUrl}/repos/${owner}/${repo}/pulls/${prNumber}`;
+            console.log(`[GitHub API] Request URL: ${url}`);
+
+            const prResponse = await this.fetchWithAuth(url);
+
+            console.log(`[GitHub API] Response status: ${prResponse.status} ${prResponse.statusText}`);
 
             if (!prResponse.ok) {
+                const errorBody = await prResponse.text();
+                console.error(`[GitHub API] Error response body: ${errorBody.substring(0, 200)}`);
                 throw new Error(`GitHub API error: ${prResponse.status} ${prResponse.statusText}`);
             }
 
             const prData = await prResponse.json() as any; // GitHub PR API response
+
+            console.log(`[GitHub API] ✅ Successfully fetched PR data`);
+            console.log(`[GitHub API]    Author: ${prData.user.login}`);
+            console.log(`[GitHub API]    Title: ${prData.title}`);
+            console.log(`[GitHub API]    Changes: +${prData.additions} -${prData.deletions}`);
 
             // Extract author email (may not be available without auth)
             const authorEmail = prData.user.email ||
@@ -83,7 +100,8 @@ export class GitHubAPIClient {
                 }
             };
         } catch (error: any) {
-            console.warn(`[GitHub API] Failed to fetch PR data: ${error.message}`);
+            console.error(`[GitHub API] ❌ Failed to fetch PR data: ${error.message}`);
+            console.error(`[GitHub API] Error stack: ${error.stack}`);
             console.warn('[GitHub API] Falling back to defaults');
 
             // Return defaults if API fails
@@ -172,7 +190,12 @@ export class GitHubAPIClient {
 
         if (this.token) {
             headers['Authorization'] = `token ${this.token}`;
+            console.log(`[GitHub API] Using authenticated request (token length: ${this.token.length})`);
+        } else {
+            console.log(`[GitHub API] ⚠️  Using unauthenticated request (no token available)`);
         }
+
+        console.log(`[GitHub API] Request headers: ${JSON.stringify(Object.keys(headers))}`);
 
         return fetch(url, { headers });
     }
