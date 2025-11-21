@@ -57,7 +57,7 @@ export interface TypeScriptToolResult {
 }
 
 export class TypeScriptToolParser {
-  
+
   /**
    * Run ESLint and parse its output
    */
@@ -127,7 +127,11 @@ export class TypeScriptToolParser {
       // BUG-077 FIX: Add ignore patterns to ESLint command to exclude build artifacts
       // SECURITY FIX: Quote repoPath to prevent command injection
       const ignorePatterns = '--ignore-pattern "**/dist/**" --ignore-pattern "**/build/**" --ignore-pattern "**/.next/**" --ignore-pattern "**/coverage/**" --ignore-pattern "**/.output/**"';
-      const command = `cd "${repoPath}" && npx eslint ${fileArgs} ${ignorePatterns} --format json 2>&1`;
+
+      // FIX: Add extensions if scanning directory (fallback when glob finds nothing)
+      const extArgs = fileArgs === '.' ? '--ext .ts,.tsx,.js,.jsx' : '';
+
+      const command = `cd "${repoPath}" && npx eslint ${fileArgs} ${extArgs} ${ignorePatterns} --format json 2>&1`;
 
       // DEBUG: Log the exact command being executed
       console.log('[DEBUG ESLint] Repository path:', repoPath);
@@ -138,9 +142,9 @@ export class TypeScriptToolParser {
         maxBuffer: 10 * 1024 * 1024,  // 10MB buffer
         timeout: 120000  // 2 minute timeout - should complete in seconds, this catches hangs
       });
-      
+
       rawOutput = stdout + stderr;
-      
+
       // Parse JSON output
       try {
         const eslintOutput = JSON.parse(stdout);
@@ -162,7 +166,7 @@ export class TypeScriptToolParser {
     } catch (error: any) {
       exitCode = error.code || 1;
       rawOutput = error.stdout || error.message;
-      
+
       // Even if ESLint fails with exit code 1 (has lint errors), parse output
       try {
         // Try to extract JSON from output
@@ -182,7 +186,7 @@ export class TypeScriptToolParser {
 
     const executionTime = (Date.now() - startTime) / 1000;
     const summary = this.generateSummary(issues);
-    
+
     return {
       tool: 'eslint',
       executionTime,
@@ -209,23 +213,23 @@ export class TypeScriptToolParser {
       // Check if tsconfig.json exists
       const tsconfigPath = path.join(repoPath, 'tsconfig.json');
       const hasTsConfig = await fs.access(tsconfigPath).then(() => true).catch(() => false);
-      
+
       // Run tsc with appropriate options
-      const fileArgs = files && files.length > 0 
+      const fileArgs = files && files.length > 0
         ? files.filter(f => f.endsWith('.ts') || f.endsWith('.tsx')).join(' ')
         : '';
-      
+
       const command = hasTsConfig
         ? `cd ${repoPath} && npx tsc --noEmit --pretty false ${fileArgs} 2>&1`
         : `cd ${repoPath} && npx tsc --noEmit --allowJs --checkJs --strict --pretty false ${fileArgs || '**/*.ts'} 2>&1`;
-      
-      const { stdout, stderr } = await exec(command, { 
+
+      const { stdout, stderr } = await exec(command, {
         maxBuffer: 10 * 1024 * 1024,
         timeout: 120000
       });
-      
+
       rawOutput = stdout + stderr;
-      
+
       // Parse TypeScript compiler output
       issues = this.parseTscOutput(rawOutput);
 
@@ -237,7 +241,7 @@ export class TypeScriptToolParser {
     }
 
     const executionTime = (Date.now() - startTime) / 1000;
-    
+
     return {
       tool: 'typescript',
       executionTime,
@@ -260,14 +264,14 @@ export class TypeScriptToolParser {
     try {
       // Run npm audit with JSON output
       const command = `cd ${repoPath} && npm audit --json 2>&1`;
-      
-      const { stdout, stderr } = await exec(command, { 
+
+      const { stdout, stderr } = await exec(command, {
         maxBuffer: 5 * 1024 * 1024,
         timeout: 60000
       });
-      
+
       rawOutput = stdout;
-      
+
       // Parse JSON output
       try {
         const auditResult = JSON.parse(stdout);
@@ -298,7 +302,7 @@ export class TypeScriptToolParser {
     }
 
     const executionTime = (Date.now() - startTime) / 1000;
-    
+
     return {
       tool: 'npm-audit',
       executionTime,
@@ -327,26 +331,26 @@ export class TypeScriptToolParser {
     try {
       // Run jest with coverage and JSON output
       const command = `cd ${repoPath} && npx jest --coverage --json --outputFile=coverage-report.json 2>&1`;
-      
-      const { stdout, stderr } = await exec(command, { 
+
+      const { stdout, stderr } = await exec(command, {
         maxBuffer: 10 * 1024 * 1024,
         timeout: 300000 // 5 minutes for tests
       });
-      
+
       rawOutput = stdout + stderr;
-      
+
       // Try to read the coverage report
       try {
         const reportPath = path.join(repoPath, 'coverage-report.json');
         const reportContent = await fs.readFile(reportPath, 'utf-8');
         const report = JSON.parse(reportContent);
-        
+
         if (report.coverageMap) {
           const result = this.parseJestCoverage(report.coverageMap);
           issues = result.issues;
           coverage = result.coverage;
         }
-        
+
         // Clean up the report file
         await fs.unlink(reportPath).catch(() => {
           // Ignore cleanup errors
@@ -363,7 +367,7 @@ export class TypeScriptToolParser {
     }
 
     const executionTime = (Date.now() - startTime) / 1000;
-    
+
     return {
       tool: 'jest',
       executionTime,
@@ -381,10 +385,10 @@ export class TypeScriptToolParser {
   private parseESLintResults(results: any[]): { issues: TypeScriptIssue[], fixableCount: number } {
     const issues: TypeScriptIssue[] = [];
     let fixableCount = 0;
-    
+
     for (const file of results) {
       if (!file.messages || file.messages.length === 0) continue;
-      
+
       for (const msg of file.messages) {
         const issue: TypeScriptIssue = {
           id: `eslint-${msg.ruleId}-${file.filePath}-${msg.line}-${msg.column}`,
@@ -400,16 +404,16 @@ export class TypeScriptToolParser {
           category: msg.ruleId,
           fixable: !!msg.fix
         };
-        
+
         if (msg.fix) {
           fixableCount++;
           issue.suggestion = 'Auto-fixable with --fix';
         }
-        
+
         issues.push(issue);
       }
     }
-    
+
     return { issues, fixableCount };
   }
 
@@ -419,10 +423,10 @@ export class TypeScriptToolParser {
   private parseESLintTextOutput(output: string): TypeScriptIssue[] {
     const issues: TypeScriptIssue[] = [];
     const lines = output.split('\n');
-    
+
     // Pattern: /path/to/file.ts:line:column severity message rule-id
     const eslintRegex = /^(.+?):(\d+):(\d+)\s+(error|warning)\s+(.+?)\s+(.+)$/;
-    
+
     for (const line of lines) {
       const match = line.match(eslintRegex);
       if (match) {
@@ -439,7 +443,7 @@ export class TypeScriptToolParser {
         });
       }
     }
-    
+
     return issues;
   }
 
@@ -449,10 +453,10 @@ export class TypeScriptToolParser {
   private parseTscOutput(output: string): TypeScriptIssue[] {
     const issues: TypeScriptIssue[] = [];
     const lines = output.split('\n');
-    
+
     // Pattern: file.ts(line,column): error TS2345: message
     const tscRegex = /^(.+?)\((\d+),(\d+)\):\s+(error|warning)\s+TS(\d+):\s+(.+)$/;
-    
+
     for (const line of lines) {
       const match = line.match(tscRegex);
       if (match) {
@@ -470,7 +474,7 @@ export class TypeScriptToolParser {
         });
       }
     }
-    
+
     return issues;
   }
 
@@ -479,7 +483,7 @@ export class TypeScriptToolParser {
    */
   private parseNpmAuditVulnerabilities(vulnerabilities: any): TypeScriptIssue[] {
     const issues: TypeScriptIssue[] = [];
-    
+
     Object.entries(vulnerabilities).forEach(([pkg, vuln]: [string, any]) => {
       if (vuln.via && Array.isArray(vuln.via)) {
         vuln.via.forEach((advisory: any) => {
@@ -500,7 +504,7 @@ export class TypeScriptToolParser {
         });
       }
     });
-    
+
     return issues;
   }
 
@@ -509,7 +513,7 @@ export class TypeScriptToolParser {
    */
   private parseNpmAuditAdvisories(advisories: any): TypeScriptIssue[] {
     const issues: TypeScriptIssue[] = [];
-    
+
     Object.values(advisories).forEach((advisory: any) => {
       issues.push({
         id: `npm-audit-${advisory.id}`,
@@ -524,7 +528,7 @@ export class TypeScriptToolParser {
         help: advisory.url || advisory.references
       });
     });
-    
+
     return issues;
   }
 
@@ -534,19 +538,19 @@ export class TypeScriptToolParser {
   private parseNpmAuditTextOutput(output: string): TypeScriptIssue[] {
     const issues: TypeScriptIssue[] = [];
     const lines = output.split('\n');
-    
+
     // Look for severity patterns
     const severityRegex = /(\d+)\s+(critical|high|moderate|low)\s+severity vulnerabilit/i;
     const packageRegex = /^(.+?)\s+<(.+?)>\s+(.+)$/;
-    
+
     let currentSeverity = 'medium';
-    
+
     for (const line of lines) {
       const severityMatch = line.match(severityRegex);
       if (severityMatch) {
         currentSeverity = this.mapNpmAuditSeverity(severityMatch[2]);
       }
-      
+
       const packageMatch = line.match(packageRegex);
       if (packageMatch) {
         issues.push({
@@ -560,7 +564,7 @@ export class TypeScriptToolParser {
         });
       }
     }
-    
+
     return issues;
   }
 
@@ -577,15 +581,15 @@ export class TypeScriptToolParser {
     let coveredFunctions = 0;
     let totalStatements = 0;
     let coveredStatements = 0;
-    
+
     Object.entries(coverageMap).forEach(([file, data]: [string, any]) => {
       const summary = data.s || data;
-      
+
       // Aggregate coverage data
       if (summary.lines) {
         totalLines += summary.lines.total || 0;
         coveredLines += summary.lines.covered || 0;
-        
+
         // Create issue for low coverage files
         const linesCoverage = (summary.lines.covered / summary.lines.total) * 100;
         if (linesCoverage < 80) {
@@ -602,30 +606,30 @@ export class TypeScriptToolParser {
           });
         }
       }
-      
+
       if (summary.branches) {
         totalBranches += summary.branches.total || 0;
         coveredBranches += summary.branches.covered || 0;
       }
-      
+
       if (summary.functions) {
         totalFunctions += summary.functions.total || 0;
         coveredFunctions += summary.functions.covered || 0;
       }
-      
+
       if (summary.statements) {
         totalStatements += summary.statements.total || 0;
         coveredStatements += summary.statements.covered || 0;
       }
     });
-    
+
     const coverage = {
       lines: totalLines > 0 ? (coveredLines / totalLines) * 100 : 0,
       branches: totalBranches > 0 ? (coveredBranches / totalBranches) * 100 : 0,
       functions: totalFunctions > 0 ? (coveredFunctions / totalFunctions) * 100 : 0,
       statements: totalStatements > 0 ? (coveredStatements / totalStatements) * 100 : 0
     };
-    
+
     return { issues, coverage };
   }
 
@@ -635,19 +639,19 @@ export class TypeScriptToolParser {
   private parseJestTextOutput(output: string): TypeScriptIssue[] {
     const issues: TypeScriptIssue[] = [];
     const lines = output.split('\n');
-    
+
     // Look for failed tests
     const failRegex = /^\s*✕\s+(.+?)\s+\((\d+)\s+ms\)$/;
     const fileRegex = /^\s*●\s+(.+?)$/;
-    
+
     let currentFile = '';
-    
+
     for (const line of lines) {
       const fileMatch = line.match(fileRegex);
       if (fileMatch) {
         currentFile = fileMatch[1];
       }
-      
+
       const failMatch = line.match(failRegex);
       if (failMatch && currentFile) {
         issues.push({
@@ -662,19 +666,19 @@ export class TypeScriptToolParser {
         });
       }
     }
-    
+
     // Look for coverage warnings
     const coverageRegex = /^File\s+\|\s+%\s+Stmts\s+\|\s+%\s+Branch/;
     const fileCoverageRegex = /^(.+?)\s+\|\s+([\d.]+)\s+\|\s+([\d.]+)/;
-    
+
     let inCoverageSection = false;
-    
+
     for (const line of lines) {
       if (line.match(coverageRegex)) {
         inCoverageSection = true;
         continue;
       }
-      
+
       if (inCoverageSection) {
         const match = line.match(fileCoverageRegex);
         if (match) {
@@ -695,7 +699,7 @@ export class TypeScriptToolParser {
         }
       }
     }
-    
+
     return issues;
   }
 
@@ -704,29 +708,29 @@ export class TypeScriptToolParser {
    */
   private mapESLintType(ruleId: string, severity: number): TypeScriptIssue['type'] {
     if (!ruleId) return 'quality';
-    
+
     // Security-related rules
     if (ruleId.includes('security') || ruleId.includes('xss') || ruleId.includes('injection')) {
       return 'security';
     }
-    
+
     // Performance rules
     if (ruleId.includes('performance') || ruleId.includes('prefer-') || ruleId.includes('no-unnecessary')) {
       return 'performance';
     }
-    
+
     // Style rules
-    if (ruleId.includes('style') || ruleId.includes('indent') || ruleId.includes('space') || 
-        ruleId.includes('quote') || ruleId.includes('semi')) {
+    if (ruleId.includes('style') || ruleId.includes('indent') || ruleId.includes('space') ||
+      ruleId.includes('quote') || ruleId.includes('semi')) {
       return 'style';
     }
-    
+
     // Bug-related rules
-    if (severity === 2 || ruleId.includes('no-undef') || ruleId.includes('no-unused') || 
-        ruleId.includes('no-unreachable')) {
+    if (severity === 2 || ruleId.includes('no-undef') || ruleId.includes('no-unused') ||
+      ruleId.includes('no-unreachable')) {
       return 'bug';
     }
-    
+
     return 'quality';
   }
 

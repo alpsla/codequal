@@ -9,7 +9,6 @@
   "scripts": {
     "dev": "npx turbo run dev",
     "build": "bash scripts/build-packages.sh",
-    "build:database": "bash scripts/build-database.sh",
     "clean-build": "bash scripts/clean-build.sh",
     "lint": "npx turbo run lint",
     "test": "npx turbo run test",
@@ -73,6 +72,7 @@
     "@typescript-eslint/parser": "^5.54.1",
     "eslint": "^8.36.0",
     "eslint-config-prettier": "^8.8.0",
+    "eslint-plugin-perf-standard": "^1.0.3",
     "prettier": "^2.8.4",
     "ts-jest": "^29.3.2",
     "turbo": "^2.0.0",
