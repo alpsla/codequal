@@ -72,64 +72,76 @@ export class TypeScriptToolParser {
       // Run ESLint with JSON output for better parsing
       // CRITICAL: Don't use '.' (scans everything including node_modules traversal)
       // GLOB FIX: Use glob library to discover files first, then pass explicit file list to ESLint
-      // This fixes the issue where ESLint's glob patterns work differently from different directory contexts
       let fileArgs: string;
 
       if (files && files.length > 0) {
         fileArgs = files.filter(f => f.endsWith('.ts') || f.endsWith('.tsx') || f.endsWith('.js') || f.endsWith('.jsx')).join(' ');
       } else {
-        // Use glob to find files matching our patterns
-        const patterns = [
-          'src/**/*.{ts,tsx,js,jsx}',
-          'lib/**/*.{ts,tsx,js,jsx}',
-          'app/**/*.{ts,tsx,js,jsx}',
-          'packages/**/src/**/*.{ts,tsx,js,jsx}',
-          'packages/**/lib/**/*.{ts,tsx,js,jsx}',
-          'apps/**/src/**/*.{ts,tsx,js,jsx}',
-          '*.{ts,tsx,js,jsx}'
+        // STRATEGY: Discover source directories and scan them individually
+        // This avoids command-line length limits and respects nested .eslintrc files
+
+        // Step 1: Find all potential source directories (2-3 levels deep)
+        const dirPatterns = [
+          'src',
+          'lib',
+          'app',
+          'packages/*/src',
+          'packages/*/lib',
+          'apps/*/src',
+          'apps/*/lib'
         ];
 
-        // Find all matching files
-        const matchedFiles: string[] = [];
-        for (const pattern of patterns) {
-          try {
-            const found = await glob(pattern, {
-              cwd: repoPath,
-              ignore: [
-                '**/node_modules/**',
-                '**/dist/**',
-                '**/build/**',
-                '**/.next/**',
-                '**/.output/**',
-                '**/coverage/**',
-                '**/*.d.ts',
-                '**/vendor/**'
-              ],
-              nodir: true
-            } as any);  // Type assertion to bypass TypeScript issues with glob versions
+        const dirsToScan: string[] = [];
 
-            // Convert to array if it's an iterator or IGlob object
-            const filesArray = Array.isArray(found) ? found : Array.from(found as any);
-            matchedFiles.push(...filesArray);
+        for (const pattern of dirPatterns) {
+          try {
+            const fs = await import('fs');
+            const path = await import('path');
+
+            // Check if directory exists
+            const fullPath = path.join(repoPath, pattern.replace('*', ''));
+
+            if (pattern.includes('*')) {
+              // Handle wildcard patterns like packages/*/src
+              const basePath = pattern.split('/*')[0];
+              const suffix = pattern.split('/*/')[1];
+              const baseFullPath = path.join(repoPath, basePath);
+
+              if (fs.existsSync(baseFullPath)) {
+                const subdirs = fs.readdirSync(baseFullPath, { withFileTypes: true })
+                  .filter(d => d.isDirectory())
+                  .map(d => path.join(basePath, d.name, suffix));
+
+                // Check which subdirs actually exist
+                for (const subdir of subdirs) {
+                  const subdirPath = path.join(repoPath, subdir);
+                  if (fs.existsSync(subdirPath)) {
+                    dirsToScan.push(subdir);
+                  }
+                }
+              }
+            } else {
+              // Simple pattern like src or lib
+              if (fs.existsSync(fullPath)) {
+                dirsToScan.push(pattern);
+              }
+            }
           } catch (err) {
-            // Ignore errors from individual patterns (e.g., if directory doesn't exist)
-            console.log(`[ESLint] Pattern ${pattern} matched no files`);
+            console.log(`[ESLint] Could not check pattern ${pattern}:`, err);
           }
         }
 
-        // Remove duplicates and convert to space-separated string
-        const uniqueFiles = Array.from(new Set(matchedFiles));
-        fileArgs = uniqueFiles.length > 0 ? uniqueFiles.join(' ') : '.';
+        // If no directories found, fall back to scanning root
+        fileArgs = dirsToScan.length > 0 ? dirsToScan.join(' ') : '.';
 
-        console.log(`[ESLint] Discovered ${uniqueFiles.length} files to scan`);
+        console.log(`[ESLint] Discovered ${dirsToScan.length} source directories to scan:`, dirsToScan);
       }
 
       // BUG-077 FIX: Add ignore patterns to ESLint command to exclude build artifacts
-      // SECURITY FIX: Quote repoPath to prevent command injection
       const ignorePatterns = '--ignore-pattern "**/dist/**" --ignore-pattern "**/build/**" --ignore-pattern "**/.next/**" --ignore-pattern "**/coverage/**" --ignore-pattern "**/.output/**"';
 
-      // FIX: Add extensions if scanning directory (fallback when glob finds nothing)
-      const extArgs = fileArgs === '.' ? '--ext .ts,.tsx,.js,.jsx' : '';
+      // Always add extensions to ensure TypeScript files are scanned
+      const extArgs = '--ext .ts,.tsx,.js,.jsx';
 
       const command = `cd "${repoPath}" && npx eslint ${fileArgs} ${extArgs} ${ignorePatterns} --format json 2>&1`;
 
