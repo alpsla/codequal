@@ -227,6 +227,22 @@ function performanceIssue(items: string[]) {
   }
 }
 
+// 2. no-self-in-constructor (perf-standard)
+class PerformanceViolation {
+  constructor() {
+    const self = this; // perf-standard/no-self-in-constructor
+    console.log(self);
+  }
+}
+
+// 3. no-instanceof-guard (perf-standard)
+function isArray(obj: any) {
+  if (obj instanceof Array) { // perf-standard/no-instanceof-guard
+    return true;
+  }
+  return false;
+}
+
 // ==========================================
 // EXPORT (to avoid "no exports" error)
 // ==========================================

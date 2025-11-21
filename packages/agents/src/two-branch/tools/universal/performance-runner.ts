@@ -97,8 +97,14 @@ export class PerformanceRunner {
             }
 
             const fileArgs = files.slice(0, 100).join(' '); // Limit to 100 files
+            const perfRules = [
+                '--rule "perf-standard/no-instanceof-guard: error"',
+                '--rule "perf-standard/no-self-in-constructor: error"',
+                '--rule "perf-standard/check-function-inline: warn"'
+            ].join(' ');
+
             const { stdout } = await execAsync(
-                `npx eslint ${fileArgs} --plugin perf-standard --format json --no-eslintrc`,
+                `npx eslint ${fileArgs} --plugin perf-standard ${perfRules} --format json --no-eslintrc`,
                 { cwd: repoPath, timeout: 30000 }
             );
 
