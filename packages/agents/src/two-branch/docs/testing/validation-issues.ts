@@ -152,6 +152,7 @@ function processUserCode(code: string) {
 
 // 6. XSS vulnerability - innerHTML with user input
 function renderUserContent(userInput: string) {
+  // @ts-ignore
   document.body.innerHTML = userInput;
 }
 
