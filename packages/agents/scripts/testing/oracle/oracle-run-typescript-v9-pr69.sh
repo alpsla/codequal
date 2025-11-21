@@ -110,6 +110,13 @@ ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "${ORACLE_USER}@${ORACLE_IP}" << '
   export POSTGRES_DB="nvd"
   export POSTGRES_PASSWORD="postgres123"
   export DATABASE_URL="postgresql://nvd_user:postgres123@129.213.49.128:5432/nvd"
+
+  # Dependency-Check Environment Variables
+  export DEPCHECK_DB_HOST="129.213.49.128"
+  export DEPCHECK_DB_PORT="5432"
+  export DEPCHECK_DB_USER="nvd_user"
+  export DEPCHECK_DB_PASSWORD="postgres123"
+  export DEPCHECK_DB_NAME="nvd"
   
   export REDIS_HOST="10.116.0.7"
   export REDIS_PORT="6379"
