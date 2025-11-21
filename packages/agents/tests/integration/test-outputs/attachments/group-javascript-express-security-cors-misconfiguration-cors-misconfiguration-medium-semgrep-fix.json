@@ -1,0 +1,30 @@
+{
+  "version": "1.0",
+  "group_id": "javascript-express-security-cors-misconfiguration-cors-misconfiguration-medium-semgrep",
+  "rule": "javascript.express.security.cors-misconfiguration.cors-misconfiguration",
+  "tool": "semgrep",
+  "severity": "medium",
+  "description": "Replace dynamic CORS configuration with hardcoded, trusted origins. Validate and sanitize all user inputs that could affect CORS headers. Implement a whitelist of allowed origins and only set the Access-Control-Allow-Origin header to literal values from this whitelist.",
+  "fix_pattern": {
+    "type": "template",
+    "example": {
+      "before": "",
+      "after": "const allowedOrigins = ['https://trusted-domain.com', 'https://another-trusted-domain.com'];\n\napp.use((req, res, next) => {\n  const origin = req.headers.origin;\n  if (allowedOrigins.includes(origin)) {\n    res.setHeader('Access-Control-Allow-Origin', origin);\n  }\n  // ... other CORS headers\n  next();\n});"
+    },
+    "instructions": "Replace dynamic CORS configuration with hardcoded, trusted origins. Validate and sanitize all user inputs that could affect CORS headers. Implement a whitelist of allowed origins and only set the Access-Control-Allow-Origin header to literal values from this whitelist."
+  },
+  "locations": [
+    {
+      "file": "apps/api/src/routes/auth.ts",
+      "line": 18,
+      "snippet": "",
+      "category": "RESOLVED"
+    }
+  ],
+  "metadata": {
+    "total_occurrences": 1,
+    "confidence": "low",
+    "safe_auto_apply": false,
+    "estimated_time_seconds": 1
+  }
+}

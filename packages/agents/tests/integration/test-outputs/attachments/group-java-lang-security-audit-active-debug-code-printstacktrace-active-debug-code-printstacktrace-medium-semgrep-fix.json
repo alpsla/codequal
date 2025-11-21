@@ -1,0 +1,30 @@
+{
+  "version": "1.0",
+  "group_id": "java-lang-security-audit-active-debug-code-printstacktrace-active-debug-code-printstacktrace-medium-semgrep",
+  "rule": "java.lang.security.audit.active-debug-code-printstacktrace.active-debug-code-printstacktrace",
+  "tool": "semgrep",
+  "severity": "medium",
+  "description": "Remove or conditionally disable debug print statements in production builds. Use a proper logging framework with appropriate log levels and ensure debug-level logging is disabled in production environments. Consider using build profiles or environment variables to control debug output.",
+  "fix_pattern": {
+    "type": "template",
+    "example": {
+      "before": "",
+      "after": "public class MavenWrapperDownloader {\n    // ... other code\n    public static void main(String[] args) {\n        // Remove or comment out debug logging\n        // System.out.println(\"Downloading from: \" + MAVEN_WRAPPER_URL);\n        // ... rest of the method\n    }\n}"
+    },
+    "instructions": "Remove or conditionally disable debug print statements in production builds. Use a proper logging framework with appropriate log levels and ensure debug-level logging is disabled in production environments. Consider using build profiles or environment variables to control debug output."
+  },
+  "locations": [
+    {
+      "file": ".mvn/wrapper/MavenWrapperDownloader.java",
+      "line": 92,
+      "snippet": "    89 |             System.exit(0);\n    90 |         } catch (Throwable e) {\n    91 |             System.out.println(\"- Error downloading\");\n>   92 |             e.printStackTrace();\n    93 |             System.exit(1);\n    94 |         }\n    95 |     }",
+      "category": "NEW"
+    }
+  ],
+  "metadata": {
+    "total_occurrences": 1,
+    "confidence": "low",
+    "safe_auto_apply": false,
+    "estimated_time_seconds": 1
+  }
+}

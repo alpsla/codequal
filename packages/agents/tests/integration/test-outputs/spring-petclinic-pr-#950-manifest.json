@@ -1,0 +1,45 @@
+{
+  "version": "2.0",
+  "metadata": {
+    "repository": "spring-projects/spring-petclinic",
+    "total_issues": 2,
+    "total_fix_files": 2,
+    "generated_at": "2025-11-11T02:10:31.284Z"
+  },
+  "files": {
+    "critical": [],
+    "high": [
+      {
+        "filename": "group-java-spring-security-audit-spring-actuator-fully-enabled-spring-actuator-fully-enabled-high-semgrep-fix.json",
+        "url": "https://ftjhmbbcuqjqmmbaymqb.supabase.co/storage/v1/object/public/v9-attachments/spring-petclinic-pr950-1762827031285/group-java-spring-security-audit-spring-actuator-fully-enabled-spring-actuator-fully-enabled-high-semgrep-fix.json",
+        "fallback_path": "attachments/group-java-spring-security-audit-spring-actuator-fully-enabled-spring-actuator-fully-enabled-high-semgrep-fix.json",
+        "severity": "high",
+        "category": "Security",
+        "rule": "java.spring.security.audit.spring-actuator-fully-enabled.spring-actuator-fully-enabled",
+        "title": "Spring Actuator Fully Enabled",
+        "description": "This issue was detected by semgrep as a high severity problem. Rule: java.spring.security.audit.spring-actuator-fully-enabled.spring-actuator-fully-en...",
+        "impact": "This issue was detected by semgrep as a high severity problem....",
+        "priority": 2,
+        "occurrences": 1,
+        "autoFixable": true
+      }
+    ],
+    "medium": [
+      {
+        "filename": "group-java-lang-security-audit-active-debug-code-printstacktrace-active-debug-code-printstacktrace-medium-semgrep-fix.json",
+        "url": "https://ftjhmbbcuqjqmmbaymqb.supabase.co/storage/v1/object/public/v9-attachments/spring-petclinic-pr950-1762827031285/group-java-lang-security-audit-active-debug-code-printstacktrace-active-debug-code-printstacktrace-medium-semgrep-fix.json",
+        "fallback_path": "attachments/group-java-lang-security-audit-active-debug-code-printstacktrace-active-debug-code-printstacktrace-medium-semgrep-fix.json",
+        "severity": "medium",
+        "category": "Security",
+        "rule": "java.lang.security.audit.active-debug-code-printstacktrace.active-debug-code-printstacktrace",
+        "title": "Active Debug Code Printstacktrace",
+        "description": "This issue was detected by semgrep as a medium severity problem. Rule: java.lang.security.audit.active-debug-code-printstacktrace.active-debug-code-pr...",
+        "impact": "This issue was detected by semgrep as a medium severity problem....",
+        "priority": 3,
+        "occurrences": 1,
+        "autoFixable": true
+      }
+    ],
+    "low": []
+  }
+}

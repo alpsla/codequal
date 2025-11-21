@@ -59,7 +59,7 @@ export interface AppScoreData {
 }
 
 export class AppScoreManager {
-  constructor(private supabase: SupabaseClient) {}
+  constructor(private supabase: SupabaseClient) { }
 
   /**
    * Get baseline APP score for a repository
@@ -303,8 +303,8 @@ export class AppScoreManager {
         codeQuality: current.app_code_quality_score || 100
       };
       const weakestCategory = Object.entries(categories).reduce((min, [cat, score]) =>
-        score < categories[min] ? cat : min
-      , 'security');
+        score < categories[min as keyof typeof categories] ? cat : min
+        , 'security');
 
       // Determine trend (last 5 vs previous 5)
       let trend: 'improving' | 'declining' | 'stable' = 'stable';

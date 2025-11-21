@@ -1,0 +1,42 @@
+{
+  "version": "1.0",
+  "group_id": "javascript-express-direct-response-write-with-header-direct-response-write-with-header-medium-semgrep",
+  "rule": "javascript.express.direct-response-write-with-header.direct-response-write-with-header",
+  "tool": "semgrep",
+  "severity": "medium",
+  "description": "1. Implement input validation to ensure user data conforms to expected formats. 2. Use a secure rendering library that automatically escapes output (e.g., Express.js with EJS or Handlebars). 3. Apply contextual output encoding based on the rendering context (HTML, JavaScript, CSS, URL). 4. Consider using DOMPurify for additional sanitization of HTML content before rendering.",
+  "fix_pattern": {
+    "type": "template",
+    "example": {
+      "before": "",
+      "after": "Before: res.render('report', { data: userInput });\n\nAfter: const sanitizedData = DOMPurify.sanitize(userInput, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });\nres.render('report', { data: sanitizedData });"
+    },
+    "instructions": "1. Implement input validation to ensure user data conforms to expected formats. 2. Use a secure rendering library that automatically escapes output (e.g., Express.js with EJS or Handlebars). 3. Apply contextual output encoding based on the rendering context (HTML, JavaScript, CSS, URL). 4. Consider using DOMPurify for additional sanitization of HTML content before rendering."
+  },
+  "locations": [
+    {
+      "file": "apps/api/src/routes/analysis-reports.ts",
+      "line": 452,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "apps/api/src/routes/analysis-reports.ts",
+      "line": 516,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "apps/api/src/routes/analysis-reports.ts",
+      "line": 522,
+      "snippet": "",
+      "category": "RESOLVED"
+    }
+  ],
+  "metadata": {
+    "total_occurrences": 3,
+    "confidence": "low",
+    "safe_auto_apply": false,
+    "estimated_time_seconds": 2
+  }
+}

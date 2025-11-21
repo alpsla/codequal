@@ -1,0 +1,86 @@
+{
+  "version": "1.0",
+  "group_id": "-typescript-eslint-no-unused-vars-medium-eslint",
+  "rule": "@typescript-eslint/no-unused-vars",
+  "tool": "eslint",
+  "severity": "medium",
+  "description": [
+    "Identify the declaration of 'frames' in the code",
+    "Remove the unused variable declaration",
+    "Verify no dependent logic relies on 'frames' (e.g., via tests or code analysis)"
+  ],
+  "fix_pattern": {
+    "type": "template",
+    "example": {
+      "before": "",
+      "after": "const frames = getFrames(); // Example line with unused variable\n// Remove the line above or use the variable appropriately"
+    },
+    "instructions": [
+      "Identify the declaration of 'frames' in the code",
+      "Remove the unused variable declaration",
+      "Verify no dependent logic relies on 'frames' (e.g., via tests or code analysis)"
+    ]
+  },
+  "locations": [
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/effects/proxyConsole.js",
+      "line": 31,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/utils/getStackFrames.js",
+      "line": 16,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/initDOM.js",
+      "line": 29,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/App.js",
+      "line": 32,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/syntax/ObjectDestructuring.js",
+      "line": 45,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/webpack-message-formatting/src/AppLintError.js",
+      "line": 3,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/webpack-message-formatting/src/AppLintError.js",
+      "line": 4,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/webpack-message-formatting/src/AppLintWarning.js",
+      "line": 3,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/webpack-message-formatting/src/AppUnknownFile.js",
+      "line": 2,
+      "snippet": "",
+      "category": "NEW"
+    }
+  ],
+  "metadata": {
+    "total_occurrences": 9,
+    "confidence": "low",
+    "safe_auto_apply": false,
+    "estimated_time_seconds": 5
+  }
+}

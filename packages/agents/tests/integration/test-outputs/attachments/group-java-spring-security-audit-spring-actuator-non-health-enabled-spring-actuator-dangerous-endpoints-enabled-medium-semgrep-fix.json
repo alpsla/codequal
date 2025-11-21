@@ -1,0 +1,66 @@
+{
+  "version": "1.0",
+  "group_id": "java-spring-security-audit-spring-actuator-non-health-enabled-spring-actuator-dangerous-endpoints-enabled-medium-semgrep",
+  "rule": "java.spring.security.audit.spring-actuator-non-health-enabled.spring-actuator-dangerous-endpoints-enabled",
+  "tool": "semgrep",
+  "severity": "medium",
+  "description": "1. Disable unnecessary actuator endpoints by setting management.endpoints.web.exposure.exclude=health,info in application.properties\n2. If endpoints are required, implement proper authentication using Spring Security\n3. Restrict access to actuator endpoints to trusted IP addresses or networks only",
+  "fix_pattern": {
+    "type": "template",
+    "example": {
+      "before": "",
+      "after": "management.endpoints.web.exposure.exclude=health,info\n# OR if needed, secure with authentication:\nmanagement.endpoints.web.exposure.include=health,info\nmanagement.endpoint.health.show-details=when-authorized"
+    },
+    "instructions": "1. Disable unnecessary actuator endpoints by setting management.endpoints.web.exposure.exclude=health,info in application.properties\n2. If endpoints are required, implement proper authentication using Spring Security\n3. Restrict access to actuator endpoints to trusted IP addresses or networks only"
+  },
+  "locations": [
+    {
+      "file": "docs/logs.txt",
+      "line": 223,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "packages/agents/GIT_PATCH_EXPLAINED.md",
+      "line": 31,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "packages/agents/GIT_PATCH_EXPLAINED.md",
+      "line": 77,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "packages/agents/GIT_PATCH_EXPLAINED.md",
+      "line": 79,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "packages/agents/GIT_PATCH_EXPLAINED.md",
+      "line": 181,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "packages/agents/GIT_PATCH_EXPLAINED.md",
+      "line": 189,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "packages/agents/spring-petclinic-tsx-test.md",
+      "line": 210,
+      "snippet": "",
+      "category": "RESOLVED"
+    }
+  ],
+  "metadata": {
+    "total_occurrences": 7,
+    "confidence": "low",
+    "safe_auto_apply": false,
+    "estimated_time_seconds": 4
+  }
+}

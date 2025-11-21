@@ -1,0 +1,36 @@
+{
+  "version": "1.0",
+  "group_id": "javascript-express-session-fixation-session-fixation-medium-semgrep",
+  "rule": "javascript.express.session-fixation.session-fixation",
+  "tool": "semgrep",
+  "severity": "medium",
+  "description": "1. Avoid using user-controlled input directly in `res.cookie()`.\n2. Use a secure session management library (e.g., express-session with secure options).\n3. If cookie values must be user-controlled, implement an allow-list of valid values.\n4. Ensure cookies are set with secure flags (HttpOnly, Secure, SameSite).",
+  "fix_pattern": {
+    "type": "template",
+    "example": {
+      "before": "",
+      "after": "// Before (vulnerable)\n// res.cookie('sessionId', req.body.sessionId);\n\n// After (secure)\nconst sessionId = generateSecureSessionId(); // Use secure session ID generation\nres.cookie('sessionId', sessionId, {\n  httpOnly: true,\n  secure: true,\n  sameSite: 'strict'\n});"
+    },
+    "instructions": "1. Avoid using user-controlled input directly in `res.cookie()`.\n2. Use a secure session management library (e.g., express-session with secure options).\n3. If cookie values must be user-controlled, implement an allow-list of valid values.\n4. Ensure cookies are set with secure flags (HttpOnly, Secure, SameSite)."
+  },
+  "locations": [
+    {
+      "file": "apps/api/src/routes/auth.ts",
+      "line": 490,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "apps/api/src/routes/auth.ts",
+      "line": 491,
+      "snippet": "",
+      "category": "RESOLVED"
+    }
+  ],
+  "metadata": {
+    "total_occurrences": 2,
+    "confidence": "low",
+    "safe_auto_apply": false,
+    "estimated_time_seconds": 1
+  }
+}

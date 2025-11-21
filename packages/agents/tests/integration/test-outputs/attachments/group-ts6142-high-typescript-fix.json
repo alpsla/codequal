@@ -1,0 +1,64 @@
+{
+  "version": "1.0",
+  "group_id": "ts6142-high-typescript",
+  "rule": "TS6142",
+  "tool": "typescript",
+  "severity": "high",
+  "description": [
+    "Open tsconfig.json in project root",
+    "Add or update the 'compilerOptions' section",
+    "Set \"jsx\": \"react\" (or \"react-jsx\" for newer React versions)",
+    "Ensure this configuration applies to all relevant files"
+  ],
+  "fix_pattern": {
+    "type": "template",
+    "example": {
+      "before": "",
+      "after": "{\n  \"compilerOptions\": {\n    \"jsx\": \"react\",\n    \"module\": \"ESNext\",\n    \"target\": \"ES6\",\n    \"strict\": true,\n    \"esModuleInterop\": true,\n    \"skipLibCheck\": true,\n    \"outDir\": \"./dist\",\n    \"rootDir\": \"./src\"\n  },\n  \"include\": [\"src/**/*\"]\n}"
+    },
+    "instructions": [
+      "Open tsconfig.json in project root",
+      "Add or update the 'compilerOptions' section",
+      "Set \"jsx\": \"react\" (or \"react-jsx\" for newer React versions)",
+      "Ensure this configuration applies to all relevant files"
+    ]
+  },
+  "locations": [
+    {
+      "file": "packages/cra-template-typescript/template/src/App.test.tsx",
+      "line": 3,
+      "snippet": "     1 | import React from 'react';\n     2 | import { render, screen } from '@testing-library/react';\n>    3 | import App from './App';\n     4 | \n     5 | test('renders learn react link', () => {\n     6 |   render(<App />);",
+      "category": "NEW"
+    },
+    {
+      "file": "packages/cra-template-typescript/template/src/index.tsx",
+      "line": 4,
+      "snippet": "     1 | import React from 'react';\n     2 | import ReactDOM from 'react-dom/client';\n     3 | import './index.css';\n>    4 | import App from './App';\n     5 | import reportWebVitals from './reportWebVitals';\n     6 | \n     7 | const root = ReactDOM.createRoot(",
+      "category": "NEW"
+    },
+    {
+      "file": "test/fixtures/typescript-advanced/src/App.test.ts",
+      "line": 1,
+      "snippet": ">    1 | import App from './App';\n     2 | \n     3 | it('reads a typescript file with no syntax error', () => {\n     4 |   const app = new App({});",
+      "category": "NEW"
+    },
+    {
+      "file": "test/fixtures/typescript-advanced/src/index.tsx",
+      "line": 3,
+      "snippet": "     1 | import * as React from 'react';\n     2 | import * as ReactDOM from 'react-dom';\n>    3 | import App from './App';\n     4 | \n     5 | ReactDOM.render(<App />, document.getElementById('root'));\n     6 | ",
+      "category": "NEW"
+    },
+    {
+      "file": "test/fixtures/typescript-typecheck/src/index.tsx",
+      "line": 3,
+      "snippet": "     1 | import * as React from 'react';\n     2 | import * as ReactDOM from 'react-dom';\n>    3 | import App from './App';\n     4 | \n     5 | ReactDOM.render(<App />, document.getElementById('root'));\n     6 | ",
+      "category": "NEW"
+    }
+  ],
+  "metadata": {
+    "total_occurrences": 5,
+    "confidence": "low",
+    "safe_auto_apply": false,
+    "estimated_time_seconds": 3
+  }
+}

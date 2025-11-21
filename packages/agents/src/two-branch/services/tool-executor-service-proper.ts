@@ -280,17 +280,17 @@ spec:
     // All methods failed - throw comprehensive error
     throw this.createError('ALL_EXECUTION_METHODS_FAILED',
       `Failed to execute ${tool.name} via any method`, {
-        tool: tool.name,
-        attempts: errors,
-        workspace,
-        suggestions: [
-          `1. Verify container image ${this.registry}/${tool.image} exists`,
-          `2. Check if tool pod is running: kubectl get pods -n ${this.kubeNamespace}`,
-          `3. Ensure Docker is running locally: docker ps`,
-          `4. Check network connectivity to ${this.toolServiceUrl}`,
-          `5. Verify workspace ${workspace} exists and contains Java files`
-        ]
-      }
+      tool: tool.name,
+      attempts: errors,
+      workspace,
+      suggestions: [
+        `1. Verify container image ${this.registry}/${tool.image} exists`,
+        `2. Check if tool pod is running: kubectl get pods -n ${this.kubeNamespace}`,
+        `3. Ensure Docker is running locally: docker ps`,
+        `4. Check network connectivity to ${this.toolServiceUrl}`,
+        `5. Verify workspace ${workspace} exists and contains Java files`
+      ]
+    }
     );
   }
 
@@ -385,8 +385,7 @@ spec:
           image: tool.image
         },
         {
-          timeout: 60000,
-          maxBodyLength: 10 * 1024 * 1024
+          timeout: 60000
         }
       );
 
@@ -577,8 +576,8 @@ spec:
 
     for (const line of lines) {
       if (line.toLowerCase().includes('error') ||
-          line.toLowerCase().includes('warning') ||
-          line.toLowerCase().includes('issue')) {
+        line.toLowerCase().includes('warning') ||
+        line.toLowerCase().includes('issue')) {
         issues.push({
           id: `${toolName}-${Date.now()}-${issues.length}`,
           tool: toolName,

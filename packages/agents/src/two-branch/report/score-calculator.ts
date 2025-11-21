@@ -51,10 +51,10 @@ export async function calculateQualityScore(
         return cached;
       }
     }
-    
+
     return await calculateFullV9Score(issues, metadata, appScoreManager, skillScoreManager);
   }
-  
+
   // Fall back to simplified scoring
   return calculateSimplifiedScore(issues);
 }
@@ -73,10 +73,10 @@ export async function checkCachedScoresForCommit(
   if (!appScoreManager || !skillScoreManager || !metadata.commitSHA) {
     return null;
   }
-  
+
   try {
     const supabase = (appScoreManager as any).supabase;
-    
+
     // Query both scores in parallel
     const [appResult, skillResult] = await Promise.all([
       supabase
@@ -99,14 +99,14 @@ export async function checkCachedScoresForCommit(
         .limit(1)
         .single()
     ]);
-    
+
     const appScore = appResult.data;
     const skillScore = skillResult.data;
-    
+
     // Only use cache if BOTH scores exist
     if (appScore && skillScore) {
       console.log(`[ScoreCalculator] ✅ Found cached scores - APP: ${appScore.overall_score}, Skill: ${skillScore.overall_score}`);
-      
+
       // BUG FIX #10, #50, SESSION_13_FIX#1: Reconstruct categoryScores from individual columns
       // Use nullish coalescing to allow 0 scores (not falsy fallback)
       // SESSION 13 FIX: Categories without issues should show 100/100 (perfect score), not 50/100
@@ -117,7 +117,7 @@ export async function checkCachedScoresForCommit(
         dependency: appScore.dependency_score ?? 100,
         codeQuality: appScore.code_quality_score ?? 100
       };
-      
+
       // Determine grade
       const score = appScore.overall_score;
       let grade: string;
@@ -126,7 +126,7 @@ export async function checkCachedScoresForCommit(
       else if (score >= 70) grade = 'C';
       else if (score >= 60) grade = 'D';
       else grade = 'F';
-      
+
       return {
         score: appScore.overall_score,
         grade,
@@ -143,7 +143,7 @@ export async function checkCachedScoresForCommit(
         }
       };
     }
-    
+
     return null;
   } catch (error: any) {
     // No cached scores found or error - will calculate fresh
@@ -174,7 +174,7 @@ export async function calculateFullV9Score(
     const existingModified = issues.filter(i => i.category === 'EXISTING_MODIFIED');
     const existingRest = issues.filter(i => i.category === 'EXISTING_REST');
     const resolvedIssues = issues.filter(i => i.category === 'RESOLVED');
-    
+
     // Group issues by detected category (Security, Performance, etc.)
     // APP Score: Uses ALL issues (repository health)
     const issuesByCategory = {
@@ -184,7 +184,7 @@ export async function calculateFullV9Score(
       dependency: issues.filter(i => i.detectedCategory === 'Dependencies'),
       codeQuality: issues.filter(i => i.detectedCategory === 'Code Quality')
     };
-    
+
     // SKILL Score: Only issues developer is responsible for (fair scoring)
     const developerIssues = issues.filter(i => i.category === 'NEW' || i.category === 'EXISTING_MODIFIED');
     const developerIssuesByCategory = {
@@ -194,7 +194,7 @@ export async function calculateFullV9Score(
       dependency: developerIssues.filter(i => i.detectedCategory === 'Dependencies'),
       codeQuality: developerIssues.filter(i => i.detectedCategory === 'Code Quality')
     };
-    
+
     // SESSION 13 FIX: Calculate category scores for APP (base=100)
     const appCategoryScores = {
       security: calculateCategoryScore(issuesByCategory.security, 100),
@@ -226,8 +226,8 @@ export async function calculateFullV9Score(
     // SESSION 13 FIX: Calculate Skill score with base=50 categories
     const skillScore = Math.round(
       (skillCategoryScores.security + skillCategoryScores.performance +
-       skillCategoryScores.architecture + skillCategoryScores.dependency +
-       skillCategoryScores.codeQuality) / 5
+        skillCategoryScores.architecture + skillCategoryScores.dependency +
+        skillCategoryScores.codeQuality) / 5
     );
 
     // Use appCategoryScores for saving to database (repository health)
@@ -247,7 +247,7 @@ export async function calculateFullV9Score(
       const { error } = await supabase.from('app_scores').insert({
         repo_name: metadata.repository,
         pr_number: metadata.prNumber || 0,
-        commit_sha: metadata.commitSHA || null,
+        commit_sha: metadata.commitSHA || undefined,
         overall_score: appScore,
         // BUG FIX #10: Map categoryScores to individual columns (not JSONB)
         security_score: categoryScores.security,
@@ -265,24 +265,24 @@ export async function calculateFullV9Score(
         // FIX BUG #2: Use correct blocking issues count
         blocking_issues_count: blockingIssuesCount
       });
-      
+
       if (error) {
         console.error('[ScoreCalculator] ❌ Failed to save APP score:', error.message);
       } else {
         console.log('[ScoreCalculator] ✅ APP score saved successfully');
       }
     }
-    
+
     if (skillScoreManager && metadata.prAuthorEmail && metadata.repository) {
       console.log(`[ScoreCalculator] 💾 Saving Skill score: ${skillScore}/100 for ${metadata.prAuthorEmail} PR #${metadata.prNumber || 0} (commit: ${metadata.commitSHA?.slice(0, 7) || 'unknown'})`);
-      
+
       const supabase = (skillScoreManager as any).supabase;
       const { error } = await supabase.from('skill_scores').insert({
         developer_email: metadata.prAuthorEmail,
         developer_name: metadata.prAuthor || metadata.prAuthorEmail,
         repo_name: metadata.repository,
         pr_number: metadata.prNumber || 0,
-        commit_sha: metadata.commitSHA || null,
+        commit_sha: metadata.commitSHA || undefined,
         overall_score: skillScore,
         // BUG FIX #90: Use skillCategoryScores (base=50) for skill_scores table
         security_score: skillCategoryScores.security,
@@ -298,14 +298,14 @@ export async function calculateFullV9Score(
         medium_issues_count: issues.filter(i => i.severity === 'medium').length,
         low_issues_count: issues.filter(i => i.severity === 'low').length
       });
-      
+
       if (error) {
         console.error('[ScoreCalculator] ❌ Failed to save Skill score:', error.message);
       } else {
         console.log('[ScoreCalculator] ✅ Skill score saved successfully');
       }
     }
-    
+
     // Determine grade based on appScore
     let grade: string;
     if (appScore >= 90) grade = 'A';
@@ -313,7 +313,7 @@ export async function calculateFullV9Score(
     else if (appScore >= 70) grade = 'C';
     else if (appScore >= 60) grade = 'D';
     else grade = 'F';
-    
+
     return {
       score: appScore,
       grade,
@@ -347,7 +347,7 @@ export async function calculateFullV9Score(
 export function calculateCategoryScore(categoryIssues: EnrichedIssue[], baseScore = 100): number {
   // SESSION 13 FIX: Use provided baseScore (100 for APP, 50 for Skill)
   let score = baseScore;
-  
+
   categoryIssues.forEach(issue => {
     // User-specified deduction values
     const deduction = {
@@ -356,7 +356,7 @@ export function calculateCategoryScore(categoryIssues: EnrichedIssue[], baseScor
       medium: 1.0,      // -1 point
       low: 0.5          // -0.5 points
     }[issue.severity] || 1.0;
-    
+
     // Handle RESOLVED issues (bonus) vs other issues (penalty)
     if (issue.category === 'RESOLVED') {
       score += deduction;  // Bonus for fixes
@@ -365,7 +365,7 @@ export function calculateCategoryScore(categoryIssues: EnrichedIssue[], baseScor
       score -= deduction;
     }
   });
-  
+
   // Ensure score stays within 0-100 range
   return Math.max(0, Math.min(100, Math.round(score)));
 }
@@ -376,19 +376,19 @@ export function calculateCategoryScore(categoryIssues: EnrichedIssue[], baseScor
 export function calculateSimplifiedScore(issues: EnrichedIssue[]): any {
   const baseScore = 100.0;
   let deduction = 0;
-  
+
   // Separate issues by category for breakdown
   const newIssues = issues.filter(i => i.category === 'NEW');
   const existingModified = issues.filter(i => i.category === 'EXISTING_MODIFIED');
   const existingRest = issues.filter(i => i.category === 'EXISTING_REST');
   const resolvedIssues = issues.filter(i => i.category === 'RESOLVED');
-  
+
   // Count blocking issues (critical or high severity NEW/EXISTING_MODIFIED)
-  const blockingIssues = issues.filter(i => 
-    (i.severity === 'critical' || i.severity === 'high') && 
+  const blockingIssues = issues.filter(i =>
+    (i.severity === 'critical' || i.severity === 'high') &&
     (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED')
   );
-  
+
   // Apply severity weights to calculate deduction
   // All categories have equal weight (100%) - only blocking decision differs
   issues.forEach(issue => {
@@ -404,23 +404,23 @@ export function calculateSimplifiedScore(issues: EnrichedIssue[]): any {
     // Only difference: NEW and EXISTING_MODIFIED can block PR (decision logic)
     deduction += severityWeight;
   });
-  
+
   // Extra penalty for blocking issues
   const blockingPenalty = blockingIssues.length * 2.5;
   deduction += blockingPenalty;
-  
+
   // Bonus for resolved issues (encourage fixing existing problems)
   const bonus = resolvedIssues.reduce((sum, issue) => {
     const weight = { critical: 5, high: 3, medium: 1, low: 0.5 }[issue.severity] || 1;
     return sum + weight;
   }, 0);
-  
+
   // Calculate final score
   let finalScore = baseScore - deduction + bonus;
-  
+
   // Clamp score between 0 and 100
   finalScore = Math.max(0, Math.min(100, finalScore));
-  
+
   // Determine grade
   let grade: string;
   if (finalScore >= 90) grade = 'A';
@@ -428,7 +428,7 @@ export function calculateSimplifiedScore(issues: EnrichedIssue[]): any {
   else if (finalScore >= 70) grade = 'C';
   else if (finalScore >= 60) grade = 'D';
   else grade = 'F';
-  
+
   // Calculate individual category deductions for breakdown
   // All categories use 100% weight (equal impact on score)
   const newIssuesDeduction = newIssues.reduce((sum, i) => {
@@ -445,7 +445,7 @@ export function calculateSimplifiedScore(issues: EnrichedIssue[]): any {
     const weight = { critical: 5, high: 3, medium: 1, low: 0.5 }[i.severity] || 1;
     return sum + weight;
   }, 0);
-  
+
   // P0 FIX: Calculate category scores even without Supabase
   // Group issues by detectedCategory (Security, Performance, etc.)
   const issuesByCategory: Record<string, EnrichedIssue[]> = {
@@ -455,7 +455,7 @@ export function calculateSimplifiedScore(issues: EnrichedIssue[]): any {
     dependency: issues.filter(i => i.detectedCategory === 'Dependency' || i.detectedCategory === 'Dependencies'),
     codeQuality: issues.filter(i => i.detectedCategory === 'Code Quality')
   };
-  
+
   // Calculate score for each category with base=100 (for APP Score)
   const categoryScores = {
     security: calculateCategoryScore(issuesByCategory.security, 100),
@@ -488,9 +488,9 @@ export function calculateSimplifiedScore(issues: EnrichedIssue[]): any {
   // Skill Score = AVG of skill category scores (base=50)
   const skillScore = Math.round(
     (skillCategoryScores.security + skillCategoryScores.performance + skillCategoryScores.architecture +
-     skillCategoryScores.dependency + skillCategoryScores.codeQuality) / 5
+      skillCategoryScores.dependency + skillCategoryScores.codeQuality) / 5
   );
-  
+
   return {
     score: Math.round(finalScore * 10) / 10,  // Round to 1 decimal
     grade,

@@ -1,0 +1,30 @@
+{
+  "version": "1.0",
+  "group_id": "javascript-lang-security-detect-child-process-detect-child-process-high-semgrep",
+  "rule": "javascript.lang.security.detect-child-process.detect-child-process",
+  "tool": "semgrep",
+  "severity": "high",
+  "description": "Replace child_process with a safe alternative like execa or sanitize command arguments. Use argument arrays instead of strings and validate input against a strict whitelist. Example: Use execa('ls', ['-l', ...]) with input validation.",
+  "fix_pattern": {
+    "type": "template",
+    "example": {
+      "before": "",
+      "after": "const { execa } = require('execa');\nconst validatedArgs = sanitizeInput(userArgs);\nawait execa('ls', validatedArgs);"
+    },
+    "instructions": "Replace child_process with a safe alternative like execa or sanitize command arguments. Use argument arrays instead of strings and validate input against a strict whitelist. Example: Use execa('ls', ['-l', ...]) with input validation."
+  },
+  "locations": [
+    {
+      "file": "test-autofix-issues.ts",
+      "line": 8,
+      "snippet": "     5 | \n     6 | // Issue 1: Security - child_process with user input (should be fixed)\n     7 | export function unsafeExec(command: string) {\n>    8 |   exec(command, (error, stdout, stderr) => {\n     9 |     console.log(stdout);\n    10 |   });\n    11 | }",
+      "category": "NEW"
+    }
+  ],
+  "metadata": {
+    "total_occurrences": 1,
+    "confidence": "low",
+    "safe_auto_apply": false,
+    "estimated_time_seconds": 1
+  }
+}

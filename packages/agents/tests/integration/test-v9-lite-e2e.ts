@@ -71,7 +71,7 @@ const TEST_SCENARIOS: TestScenario[] = [
   // ========================================================================
   // TYPESCRIPT TESTS - Report Generation Validation
   // ========================================================================
-  
+
   // React (create-react-app) - Local Branch Autofix Test
   // {
   //   name: 'React (create-react-app) - Local Branch Autofix Test',
@@ -93,7 +93,7 @@ const TEST_SCENARIOS: TestScenario[] = [
     expectedFramework: 'next',
     expectedToolCount: 3  // eslint, semgrep, npm-audit
   },
-  
+
   // Other TypeScript frameworks: Local branch testing (full autofix validation)
   // SESSION 27: Can test autofix on ANY public repo by creating local branches!
   // {
@@ -123,11 +123,11 @@ const TEST_SCENARIOS: TestScenario[] = [
   //   expectedFramework: 'express',
   //   expectedToolCount: 3
   // },
-  
+
   // ========================================================================
   // JAVA TESTS (Already Validated - Keep for reference)
   // ========================================================================
-  
+
   // {
   //   name: 'Spring PetClinic PR #950',
   //   repoUrl: 'https://github.com/spring-projects/spring-petclinic',
@@ -137,11 +137,11 @@ const TEST_SCENARIOS: TestScenario[] = [
   //   expectedFramework: 'spring',
   //   expectedToolCount: 5
   // },
-  
+
   // ========================================================================
   // OTHER LANGUAGES - Baseline Mode (Report Generation Validation)
   // ========================================================================
-  
+
   // Python tests will be added in baseline mode
   // Go, Rust, etc. will follow
 ];
@@ -151,18 +151,18 @@ const TEST_SCENARIOS: TestScenario[] = [
  */
 function cloneRepository(repoUrl: string, targetPath: string): void {
   console.log(`   🔄 Cloning ${repoUrl}...`);
-  
+
   // Remove if exists
   if (fs.existsSync(targetPath)) {
     execSync(`rm -rf ${targetPath}`);
   }
-  
+
   // Clone with depth 1 for speed
-  execSync(`git clone --depth 1 ${repoUrl} ${targetPath}`, { 
+  execSync(`git clone --depth 1 ${repoUrl} ${targetPath}`, {
     stdio: 'pipe',
     encoding: 'utf-8'
   });
-  
+
   console.log(`   ✅ Repository cloned to ${targetPath}`);
 }
 
@@ -182,17 +182,17 @@ function createLocalTestBranch(
   language: 'typescript' | 'java' | 'python'
 ): void {
   console.log(`   🔀 Creating local test branch: ${branchName}...`);
-  
+
   // SESSION 27 FIX: Ensure we're on default branch before creating test branch
   // This handles main/master/trunk dynamically
   // Note: Using sync require since this is a sync function
   const { detectDefaultBranch } = require('../../src/two-branch/utils/git-utils');
   const defaultBranch = detectDefaultBranch(repoPath);
   console.log(`   📍 Detected default branch: ${defaultBranch}`);
-  
+
   // Ensure we're on default branch (clone might have left us on a different branch)
   execSync(`git -C ${repoPath} checkout ${defaultBranch}`, { stdio: 'pipe' });
-  
+
   // Configure Git user (required for commits on cloud)
   try {
     execSync(`git -C ${repoPath} config user.email "test@codequal.local"`, { stdio: 'pipe' });
@@ -200,15 +200,15 @@ function createLocalTestBranch(
   } catch {
     // Git config might fail, but we'll try anyway
   }
-  
+
   // Create and checkout local branch from default branch
   execSync(`git -C ${repoPath} checkout -b ${branchName}`, { stdio: 'pipe' });
-  
+
   // Introduce known test issues based on language
   if (language === 'typescript') {
     // Place test file in root directory to ensure ESLint/TypeScript can find it
     const testFile = path.join(repoPath, 'test-autofix-issues.ts');
-    
+
     const testContent = `// SESSION 27: Test file for autofix validation
 // This file contains known issues that should be auto-fixable
 
@@ -237,17 +237,17 @@ const result = addNumbers('1', '2');  // Type error: string instead of number
 const anotherUnused = 'test2';
 `;
     fs.writeFileSync(testFile, testContent);
-    
+
     // OPTIMIZATION: Use shared tools instead of installing in each repo
     // Strategy: Link node_modules from shared location (faster than npm install)
     const sharedToolsPath = process.env.SHARED_TOOLS_PATH || '/tmp/codequal-shared-tools';
     const sharedNodeModules = path.join(sharedToolsPath, 'node_modules');
-    
+
     // Ensure shared tools are installed (only once, reused across all repos)
     if (!fs.existsSync(sharedNodeModules)) {
       console.log(`[Test] Installing shared ESLint/TypeScript tools (one-time setup)...`);
       fs.mkdirSync(sharedToolsPath, { recursive: true });
-      
+
       // Create package.json for shared tools
       const sharedPackageJson = {
         "name": "codequal-shared-tools",
@@ -260,10 +260,10 @@ const anotherUnused = 'test2';
         }
       };
       fs.writeFileSync(path.join(sharedToolsPath, 'package.json'), JSON.stringify(sharedPackageJson, null, 2));
-      
+
       // Install once (this takes time, but only happens once)
       try {
-        execSync(`cd ${sharedToolsPath} && npm install --no-save 2>&1`, { 
+        execSync(`cd ${sharedToolsPath} && npm install --no-save 2>&1`, {
           stdio: 'pipe',
           timeout: 120000  // 2 minute timeout for initial install
         });
@@ -275,11 +275,11 @@ const anotherUnused = 'test2';
     } else {
       console.log(`[Test] ✅ Using existing shared tools (no installation needed)`);
     }
-    
+
     // Check if package.json exists in repo
     const packageJsonPath = path.join(repoPath, 'package.json');
     let packageJson: any = {};
-    
+
     if (fs.existsSync(packageJsonPath)) {
       try {
         packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
@@ -287,7 +287,7 @@ const anotherUnused = 'test2';
         // Invalid JSON, create new one
       }
     }
-    
+
     // Create/update package.json to reference shared tools
     if (!packageJson.name) {
       packageJson.name = 'test-repo';
@@ -296,7 +296,7 @@ const anotherUnused = 'test2';
     if (!packageJson.devDependencies) {
       packageJson.devDependencies = {};
     }
-    
+
     // Link shared node_modules to repo (faster than npm install)
     const repoNodeModules = path.join(repoPath, 'node_modules');
     if (fs.existsSync(sharedNodeModules) && !fs.existsSync(repoNodeModules)) {
@@ -322,7 +322,7 @@ const anotherUnused = 'test2';
           };
           fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
           try {
-            execSync(`cd ${repoPath} && npm install --save-dev eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin typescript 2>&1`, { 
+            execSync(`cd ${repoPath} && npm install --save-dev eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin typescript 2>&1`, {
               stdio: 'pipe',
               timeout: 60000
             });
@@ -342,7 +342,7 @@ const anotherUnused = 'test2';
       };
       fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
       try {
-        execSync(`cd ${repoPath} && npm install --save-dev eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin typescript 2>&1`, { 
+        execSync(`cd ${repoPath} && npm install --save-dev eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin typescript 2>&1`, {
           stdio: 'pipe',
           timeout: 60000
         });
@@ -350,7 +350,7 @@ const anotherUnused = 'test2';
         console.warn(`[Test] ⚠️  Could not install ESLint: ${error.message}`);
       }
     }
-    
+
     // Create tsconfig.json if it doesn't exist (needed for TypeScript compiler and ESLint)
     const tsconfigPath = path.join(repoPath, 'tsconfig.json');
     if (!fs.existsSync(tsconfigPath)) {
@@ -377,7 +377,7 @@ const anotherUnused = 'test2';
       };
       fs.writeFileSync(tsconfigPath, JSON.stringify(tsconfig, null, 2));
     }
-    
+
     // Create CLEAN ESLint config (replace existing to avoid dependency issues)
     // CRITICAL: Don't merge with existing config - repos may reference external configs
     // like "react-app" that aren't in our shared tools, causing ESLint to fail
@@ -408,7 +408,7 @@ const anotherUnused = 'test2';
     // Write clean ESLint config (replaces any existing config)
     fs.writeFileSync(eslintConfigPath, JSON.stringify(eslintConfig, null, 2));
     console.log(`   ✅ ESLint config created: clean standalone config with unused-vars rules`);
-    
+
     // Ensure .eslintignore doesn't exclude our test file
     const eslintIgnorePath = path.join(repoPath, '.eslintignore');
     if (fs.existsSync(eslintIgnorePath)) {
@@ -422,7 +422,7 @@ const anotherUnused = 'test2';
         fs.writeFileSync(eslintIgnorePath, updatedIgnore);
       }
     }
-    
+
     // CRITICAL: Add ESLint issues to a PRODUCTION file (not test file)
     // Test file is excluded, so we need to add issues to existing production code
     // Find an existing TypeScript file in src/ or root
@@ -435,14 +435,14 @@ const anotherUnused = 'test2';
       path.join(repoPath, 'src', 'main.ts'),
       path.join(repoPath, 'main.ts')
     ];
-    
+
     for (const filePath of possiblePaths) {
       if (fs.existsSync(filePath)) {
         productionFile = filePath;
         break;
       }
     }
-    
+
     // If no existing file found, create a production file (not a test file)
     if (!productionFile) {
       productionFile = path.join(repoPath, 'src', 'codequal-validation.ts');
@@ -451,7 +451,7 @@ const anotherUnused = 'test2';
         fs.mkdirSync(srcDir, { recursive: true });
       }
     }
-    
+
     // Read existing file or create new one
     let productionContent = '';
     if (fs.existsSync(productionFile)) {
@@ -463,7 +463,7 @@ export function validateCodeQuality() {
 }
 `;
     }
-    
+
     // Add ESLint issues to production file (unused variables, etc.)
     const eslintIssues = `
 // ESLint Issue 1: Unused variable (should be detected by ESLint)
@@ -480,7 +480,7 @@ export function testFunction(unusedParam: string) {
 // ESLint Issue 4: Console.log (should be flagged if rule enabled)
 console.log('Debug message');
 `;
-    
+
     // Append ESLint issues to production file
     const updatedContent = productionContent + '\n' + eslintIssues;
     fs.writeFileSync(productionFile, updatedContent);
@@ -590,7 +590,7 @@ import json
     execSync(`git -C ${repoPath} add ${testFile}`, { stdio: 'pipe' });
     execSync(`git -C ${repoPath} commit -m "test: Add test issues for autofix validation"`, { stdio: 'pipe' });
   }
-  
+
   console.log(`   ✅ Local test branch created with test issues`);
 }
 
@@ -604,10 +604,10 @@ async function fetchPRAuthor(repoUrl: string, prNumber: number): Promise<{ autho
     if (!match) {
       return { author: 'test-user', authorEmail: 'test@example.com' };
     }
-    
+
     const [, owner, repo] = match;
     const apiUrl = `https://api.github.com/repos/${owner}/${repo}/pulls/${prNumber}`;
-    
+
     // Fetch PR metadata (no auth needed for public repos)
     const https = await import('https');
     const response = await new Promise<string>((resolve, reject) => {
@@ -622,7 +622,7 @@ async function fetchPRAuthor(repoUrl: string, prNumber: number): Promise<{ autho
         res.on('end', () => resolve(data));
       }).on('error', reject);
     });
-    
+
     const prData = JSON.parse(response);
     return {
       author: prData.user?.login || 'test-user',
@@ -655,12 +655,12 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
     console.log('\n📋 Step 1: Detecting framework...');
     const frameworkDetector = createFrameworkDetector();
     const frameworkInfo = await frameworkDetector.detectFrameworks(repoPath);
-    
+
     console.log(`   ✅ Detected Framework: ${frameworkInfo.primaryFramework}`);
     if (frameworkInfo.buildSystem) {
       console.log(`   ✅ Build System: ${frameworkInfo.buildSystem}`);
     }
-    
+
     if (scenario.expectedFramework && frameworkInfo.primaryFramework !== scenario.expectedFramework) {
       console.warn(`   ⚠️  Expected ${scenario.expectedFramework}, got ${frameworkInfo.primaryFramework}`);
     }
@@ -671,7 +671,7 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
     console.log('\n🔧 Step 2: Configuring tools...');
     const toolResolver = createToolConfigResolver();
     const tools = toolResolver.getToolsForLanguage(scenario.language);
-    
+
     console.log(`   ✅ Configured ${tools.length} tools for ${scenario.language}`);
     tools.forEach(tool => {
       console.log(`      - ${tool.name} (${tool.category})`);
@@ -685,46 +685,46 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
     // STEP 3: Tool Orchestration (SESSION 25: Multi-language support)
     // ========================================================================
     console.log('\n🚀 Step 3: Running tool orchestration...');
-    
+
     // Create language-specific orchestrator
     const orchestrator = scenario.language === 'java' ? new JavaToolOrchestrator() :
-                         scenario.language === 'typescript' ? new TypeScriptToolOrchestrator() :
-                         new PythonToolOrchestrator();
-    
+      scenario.language === 'typescript' ? new TypeScriptToolOrchestrator() :
+        new PythonToolOrchestrator();
+
     let allIssues: any[];
     let newIssues: any[];
     let orchestrationResult: any;  // Store for performance data
     let prBranchName: string | undefined;  // SESSION 27: Declare at higher scope for metadata
-    
+
     if (scenario.testMode === 'baseline') {
       // SESSION 20 FIX: Baseline mode - analyze default branch only
-      const { detectDefaultBranch } = await import('../../src/two-branch/utils/git-utils');
+      const { detectDefaultBranch } = await import('../../src/two-branch/utils/git-utils.js');
       const defaultBranch = detectDefaultBranch(repoPath);
       console.log(`   📊 Repository Baseline Analysis (default branch: ${defaultBranch})...`);
       orchestrationResult = await orchestrator.orchestrate(repoPath, 'base', { analysisMode: 'complete' });
-      
-      allIssues = orchestrationResult.toolResults.flatMap(r => r.issues || []);
+
+      allIssues = orchestrationResult.toolResults.flatMap((r: any) => r.issues || []);
       newIssues = [];  // No NEW issues in baseline mode
-      
+
       console.log(`   ✅ Tools executed: ${orchestrationResult.toolResults.length}`);
       console.log(`   📊 Total issues found: ${allIssues.length}`);
       console.log(`   ℹ️  All issues marked as EXISTING_REST (baseline)`);
-      
+
     } else {
       // SESSION 20 FIX: PR review mode - two-branch comparison
       console.log('   📊 PR Review Mode - Two-branch comparison...');
-      
+
       // SESSION 27 FIX: Use dynamic default branch detection (main/master/trunk)
-      const { detectDefaultBranch } = await import('../../src/two-branch/utils/git-utils');
+      const { detectDefaultBranch } = await import('../../src/two-branch/utils/git-utils.js');
       const defaultBranch = detectDefaultBranch(repoPath);
       console.log(`   📍 Detected default branch: ${defaultBranch}`);
-      
+
       // Run tools on default branch (main/master/trunk - detected dynamically)
       console.log(`   📊 Analyzing default branch (${defaultBranch})...`);
       const mainResult = await orchestrator.orchestrate(repoPath, 'base', { analysisMode: 'complete' });
-      
+
       // SESSION 27: Support both GitHub PRs and local test branches
-      
+
       if (scenario.prNumber) {
         // Use GitHub PR if prNumber is provided
         prBranchName = `pr-${scenario.prNumber}`;
@@ -733,6 +733,24 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
           execSync(`git -C ${repoPath} fetch origin pull/${scenario.prNumber}/head:${prBranchName}`, { stdio: 'pipe' });
           execSync(`git -C ${repoPath} checkout ${prBranchName}`, { stdio: 'pipe' });
           console.log(`   ✅ Checked out PR branch`);
+
+          // SESSION 27 FIX: Install dependencies for PR branch to ensure tools like ESLint work
+          // This was missing, causing "0 files scanned" errors because plugins couldn't load
+          if (scenario.language === 'typescript') {
+            console.log(`   📦 Installing dependencies for PR branch...`);
+            try {
+              // Try npm ci first (faster/cleaner), fall back to npm install
+              if (fs.existsSync(path.join(repoPath, 'package-lock.json'))) {
+                execSync(`cd ${repoPath} && npm ci --ignore-scripts`, { stdio: 'pipe' });
+              } else {
+                execSync(`cd ${repoPath} && npm install --ignore-scripts`, { stdio: 'pipe' });
+              }
+              console.log(`   ✅ Dependencies installed`);
+            } catch (error: any) {
+              console.warn(`   ⚠️  Dependency installation failed: ${error.message}`);
+              console.warn(`   ⚠️  ESLint may fail or report 0 files`);
+            }
+          }
         } catch (error) {
           console.log(`   ❌ Could not checkout PR #${scenario.prNumber} - skipping this scenario`);
           return;
@@ -744,36 +762,36 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
         prBranchName = `test-autofix-${Date.now()}`;
         createLocalTestBranch(repoPath, prBranchName, scenario.language);
       }
-      
+
       // Get modified files for categorization (NOT for tool execution)
       // CRITICAL: We scan ALL files on BOTH branches for accurate comparison
       // The categorization logic (EXISTING_REST, RESOLVED) requires comparing ALL issues
       // from both branches, not just changed files
-      const { getModifiedFilesBetweenBranches } = await import('../../src/two-branch/utils/git-utils');
+      const { getModifiedFilesBetweenBranches } = await import('../../src/two-branch/utils/git-utils.js');
       const modifiedFiles = getModifiedFilesBetweenBranches(repoPath, defaultBranch, prBranchName);
       console.log(`   📝 Modified files: ${modifiedFiles.length} (sample: ${modifiedFiles.slice(0, 3).join(', ')})`);
-      
+
       // Run tools on PR branch - scan ALL files (same as main branch)
       // This ensures accurate comparison: EXISTING_REST and RESOLVED require full scan
       console.log('   📊 Analyzing PR branch...');
-      orchestrationResult = await orchestrator.orchestrate(repoPath, 'pr', { 
+      orchestrationResult = await orchestrator.orchestrate(repoPath, 'pr', {
         analysisMode: 'complete'
         // ✅ CRITICAL: Do NOT pass changedFiles - we need ALL files for comparison
         // changedFiles is only used for categorization, not tool execution
       });
-      
+
       const mainResults = mainResult.toolResults;
       const prResults = orchestrationResult.toolResults;
-      
+
       console.log(`   ✅ Default branch (${defaultBranch}): ${mainResults.length} tools executed`);
       console.log(`   ✅ PR branch: ${prResults.length} tools executed`);
 
-      const totalIssuesMain = mainResults.reduce((sum, r) => sum + (r.issues?.length || 0), 0);
-      const totalIssuesPr = prResults.reduce((sum, r) => sum + (r.issues?.length || 0), 0);
-      
+      const totalIssuesMain = mainResults.reduce((sum: number, r: any) => sum + (r.issues?.length || 0), 0);
+      const totalIssuesPr = prResults.reduce((sum: number, r: any) => sum + (r.issues?.length || 0), 0);
+
       console.log(`   📊 Default branch (${defaultBranch}) issues: ${totalIssuesMain}`);
       console.log(`   📊 PR branch issues: ${totalIssuesPr}`);
-      
+
       // modifiedFiles already calculated above (used for orchestrator)
       const modifiedFilesSet = new Set(modifiedFiles);
 
@@ -791,8 +809,8 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
       const getSig = (i: any) => `${normalizePath(i.file)}:${i.line}:${i.rule || i.tool}`;
 
       // Get all issues from both branches
-      const allMainIssues = mainResults.flatMap(r => r.issues || []);
-      const allPrIssues = prResults.flatMap(r => r.issues || []);
+      const allMainIssues = mainResults.flatMap((r: any) => r.issues || []);
+      const allPrIssues = prResults.flatMap((r: any) => r.issues || []);
 
       // Create signature sets
       const mainSigs = new Set(allMainIssues.map(getSig));
@@ -802,45 +820,46 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
       const categorizedIssues: any[] = [];
 
       // NEW: In PR but not in default branch
-      const newIssuesList = allPrIssues.filter(i => !mainSigs.has(getSig(i)));
-      newIssuesList.forEach(issue => {
+      // NEW: In PR but not in default branch
+      const newIssuesList = allPrIssues.filter((i: any) => !mainSigs.has(getSig(i)));
+      newIssuesList.forEach((issue: any) => {
         issue.category = 'NEW';
         categorizedIssues.push(issue);
       });
 
       // EXISTING_MODIFIED: In both, but in modified files
       // Use exact match only (no includes check) - modified files should be exact paths
-      const existingModified = allPrIssues.filter(i => {
+      const existingModified = allPrIssues.filter((i: any) => {
         const normalizedFile = normalizePath(i.file);
         return mainSigs.has(getSig(i)) && modifiedFilesSet.has(normalizedFile);
       });
-      existingModified.forEach(issue => {
+      existingModified.forEach((issue: any) => {
         issue.category = 'EXISTING_MODIFIED';
         categorizedIssues.push(issue);
       });
 
       // Track files that exist in PR (for resolved issue filtering)
       // BUG FIX #26: Normalize paths for existence check (same as test-v9-e2e-complete.ts)
-      const prFileExists = new Set(allPrIssues.map(i => normalizePath(i.file)));
+      const prFileExists = new Set(allPrIssues.map((i: any) => normalizePath(i.file)));
 
       // EXISTING_REST: In both, but NOT in modified files (from PR side)
       // Use exact match only (no includes check)
-      const existingRestFromPr = allPrIssues.filter(i => {
+      const existingRestFromPr = allPrIssues.filter((i: any) => {
         const normalizedFile = normalizePath(i.file);
         return mainSigs.has(getSig(i)) && !modifiedFilesSet.has(normalizedFile);
       });
-      existingRestFromPr.forEach(issue => {
+      existingRestFromPr.forEach((issue: any) => {
         issue.category = 'EXISTING_REST';
         categorizedIssues.push(issue);
       });
 
       // EXISTING_REST: In default branch, not in PR, NOT in modified files (from default branch side)
       // Use exact match only - if file path exactly matches a modified file, it's not EXISTING_REST
-      const existingRestFromMain = allMainIssues.filter(i => {
+      const existingRestFromMain = allMainIssues.filter((i: any) => {
         const normalizedFile = normalizePath(i.file);
         return !prSigs.has(getSig(i)) && !modifiedFilesSet.has(normalizedFile);
       });
-      existingRestFromMain.forEach(issue => {
+      existingRestFromMain.forEach((issue: any) => {
         issue.category = 'EXISTING_REST';
         categorizedIssues.push(issue);
       });
@@ -848,7 +867,7 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
       // RESOLVED: In default branch but not in PR, AND file still exists and was modified
       // This ensures we only credit fixes in modified files, not deleted code
       // (same logic as test-v9-e2e-complete.ts)
-      const resolvedIssues = allMainIssues.filter(i => {
+      const resolvedIssues = allMainIssues.filter((i: any) => {
         const sig = getSig(i);
         const normalizedFile = normalizePath(i.file);
         return (
@@ -857,7 +876,7 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
           prFileExists.has(normalizedFile)          // File still exists in PR (not deleted)
         );
       });
-      resolvedIssues.forEach(issue => {
+      resolvedIssues.forEach((issue: any) => {
         issue.category = 'RESOLVED';
         categorizedIssues.push(issue);
       });
@@ -892,7 +911,7 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
       return 'Code Quality';
     };
 
-    const formattedIssues = allIssues.map(issue => {
+    const formattedIssues = allIssues.map((issue: any) => {
       // Use category already set by V9 categorization logic (NEW, EXISTING_MODIFIED, EXISTING_REST, RESOLVED)
       // If not set (baseline mode), default to EXISTING_REST
       const lifecycleCategory = issue.category || (scenario.testMode === 'baseline' ? 'EXISTING_REST' : 'NEW');
@@ -924,11 +943,11 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
     // STEP 6: Report Generation (Grouped Formatter)
     // ========================================================================
     console.log('\n📝 Step 6: Generating report...');
-    
+
     // Initialize ModelConfigResolver - let errors surface (no mock fallback)
     const modelConfigResolver = new ModelConfigResolver();
     console.log('   ✅ Using Supabase model configuration');
-    
+
     const formatter = new V9GroupedReportFormatter(
       modelConfigResolver,
       scenario.language,
@@ -944,30 +963,32 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
     const prAuthorInfo = scenario.testMode === 'pr-review' && scenario.prNumber
       ? await fetchPRAuthor(scenario.repoUrl, scenario.prNumber)
       : { author: 'test-user', authorEmail: 'test@example.com' };
-    
+
     console.log(`   👤 PR Author: ${prAuthorInfo.author}`);
 
     // SESSION 27 FIX: Use dynamic default branch detection (main/master/trunk)
-    const { detectDefaultBranch } = await import('../../src/two-branch/utils/git-utils');
+    const { detectDefaultBranch } = await import('../../src/two-branch/utils/git-utils.js');
     const defaultBranch = detectDefaultBranch(repoPath);
 
     const metadata = {
       repository: scenario.repoUrl.split('/').slice(-2).join('/'),
       repoUrl: scenario.repoUrl,
       repoPath: repoPath,  // Add repoPath for code snippet extraction
-      prNumber: scenario.prNumber,
+      prNumber: scenario.prNumber || 0,
       prTitle: scenario.prNumber ? `PR #${scenario.prNumber}` : 'Local Test Branch',
       branch: scenario.prNumber ? `pr-${scenario.prNumber}` : prBranchName || 'test-branch',
       baseBranch: defaultBranch,  // SESSION 27: Dynamic detection (main/master/trunk)
       prAuthor: prAuthorInfo.author,
       prAuthorEmail: prAuthorInfo.authorEmail,
       organizationName: scenario.repoUrl.split('/')[3],
-      totalFiles: 100,
-      totalLinesOfCode: 10000,
-      filesModified: new Set(allIssues.map(i => i.file)).size,
-      linesAdded: scenario.testMode === 'baseline' ? 0 : 500,
-      linesDeleted: scenario.testMode === 'baseline' ? 0 : 200,
-      decision: scenario.testMode === 'baseline' 
+      // SESSION 27 FIX: Dynamic stats calculation
+      totalFiles: parseInt(execSync(`git -C ${repoPath} ls-files | wc -l`, { encoding: 'utf-8' }).trim()) || 0,
+      totalLinesOfCode: parseInt(execSync(`git -C ${repoPath} ls-files | xargs cat | wc -l`, { encoding: 'utf-8' }).trim()) || 0,
+      filesModified: new Set(allIssues.map((i: any) => i.file)).size,
+      // SESSION 27 FIX: Dynamic lines added/deleted from git diff
+      linesAdded: scenario.testMode === 'baseline' ? 0 : parseInt(execSync(`git -C ${repoPath} diff --shortstat ${defaultBranch}...${prBranchName} | awk '{print $4}'`, { encoding: 'utf-8' }).trim()) || 0,
+      linesDeleted: scenario.testMode === 'baseline' ? 0 : parseInt(execSync(`git -C ${repoPath} diff --shortstat ${defaultBranch}...${prBranchName} | awk '{print $6}'`, { encoding: 'utf-8' }).trim()) || 0,
+      decision: scenario.testMode === 'baseline'
         ? 'INFORMATIONAL'  // Baseline - no approval decision
         : (newIssues.filter(i => i.severity === 'critical' || i.severity === 'high').length > 0 ? 'DECLINED' : 'APPROVED'),
       blockingCount: scenario.testMode === 'baseline' ? 0 : newIssues.filter(i => i.severity === 'critical' || i.severity === 'high').length,
@@ -999,9 +1020,9 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
     console.log('\n📋 Step 6.3: Validating V9 template compliance...');
     const templateValidator = new V9TemplateValidator();
     const validationResult = templateValidator.validateReport(result.markdown);
-    
+
     console.log(`   📊 Template compliance: ${validationResult.score}% (${validationResult.foundSections}/${validationResult.totalSections} required sections)`);
-    
+
     if (validationResult.isValid) {
       console.log(`   ✅ Report is V9 template compliant!`);
     } else {
@@ -1016,11 +1037,11 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
     // STEP 6.5: Validate LSP/SARIF Upload (SESSION 26)
     // ========================================================================
     console.log('\n🔍 Step 6.5: Validating LSP/SARIF uploads...');
-    
+
     // Extract LSP/SARIF URLs from metadata (stored by formatter)
     const lspUrl = (metadata as any).lspUrl;
     const sarifUrl = (metadata as any).sarifUrl;
-    
+
     if (lspUrl) {
       console.log(`   📄 LSP URL: ${lspUrl}`);
       try {
@@ -1050,10 +1071,10 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
             } catch (trackError) {
               // Silently fail tracking - don't break test
             }
-            
+
             // Check for batch actions
-            const batchActions = lspContent.filter((action: any) => 
-              action.title?.includes('Apply All') || 
+            const batchActions = lspContent.filter((action: any) =>
+              action.title?.includes('Apply All') ||
               action.title?.includes('Apply Critical') ||
               action.title?.includes('Apply High')
             );
@@ -1117,17 +1138,17 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
     } else {
       console.warn(`   ⚠️  LSP URL not found in metadata`);
     }
-    
+
     if (sarifUrl) {
       console.log(`   📄 SARIF URL: ${sarifUrl}`);
       try {
         const sarifResponse = await fetch(sarifUrl);
         if (sarifResponse.ok) {
           const sarifContent = await sarifResponse.json() as any;
-          if (sarifContent.version === '2.1.0' && 
-              sarifContent.$schema && 
-              sarifContent.runs && 
-              sarifContent.runs.length > 0) {
+          if (sarifContent.version === '2.1.0' &&
+            sarifContent.$schema &&
+            sarifContent.runs &&
+            sarifContent.runs.length > 0) {
             const run = sarifContent.runs[0];
             console.log(`   ✅ SARIF file valid: Version ${sarifContent.version}, ${run.results?.length || 0} results, HTTP ${sarifResponse.status}`);
           } else {
@@ -1206,25 +1227,25 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
     // SESSION 21 FIX: Save manifest separately with proper naming
     const manifestFile = result.ideFixFiles.find(f => f.groupId === 'all-issues');
     const otherFiles = result.ideFixFiles.filter(f => f.groupId !== 'all-issues');
-    
+
     // Save the all-issues-manifest.json separately for easy access
     if (manifestFile) {
       const manifestPath = path.join(outputDir, `${scenario.name.toLowerCase().replace(/\s+/g, '-')}-manifest.json`);
       fs.writeFileSync(manifestPath, JSON.stringify(manifestFile.content, null, 2));
       console.log(`   ✅ Manifest saved: ${manifestPath}`);
     }
-    
+
     // Save individual fix files to attachments directory
     const attachmentsDir = path.join(outputDir, 'attachments');
     if (!fs.existsSync(attachmentsDir)) {
       fs.mkdirSync(attachmentsDir, { recursive: true });
     }
-    
+
     otherFiles.forEach((file) => {
       const fixPath = path.join(attachmentsDir, file.filename);
       fs.writeFileSync(fixPath, JSON.stringify(file.content, null, 2));
     });
-    
+
     console.log(`   ✅ IDE fix files saved: ${otherFiles.length} files in attachments/`);
     console.log(`   ✅ Total: 1 manifest + ${otherFiles.length} fix files`);
 

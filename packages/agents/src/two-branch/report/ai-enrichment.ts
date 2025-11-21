@@ -38,12 +38,12 @@ export function getCuratedResourcesForRule(ruleId: string): Array<{ title: strin
       { title: 'Why use a logging framework instead of System.out.println', url: 'https://www.baeldung.com/java-system-out-println-vs-logger' }
     ]
   };
-  
+
   // Normalize known semgrep duplication suffix
   const normalized = ruleId.endsWith('.command-injection-process-builder')
     ? 'java.lang.security.audit.command-injection-process-builder'
     : ruleId;
-    
+
   return map[normalized] || [];
 }
 
@@ -68,8 +68,8 @@ export async function enrichIssuesWithAI(
   modelConfigResolver: any | null,
   detectedLanguage = 'java',
   detectedRepoSize: 'small' | 'medium' | 'large' | 'enterprise' = 'medium'
-): Promise<{ 
-  enrichedIssues: EnrichedIssue[]; 
+): Promise<{
+  enrichedIssues: EnrichedIssue[];
   modelsByAgent: Record<string, string>;
   costByAgent?: Record<string, number>;  // SESSION 21 FIX
   tokensByAgent?: Record<string, number>;  // SESSION 21 FIX
@@ -94,15 +94,15 @@ export async function enrichIssuesWithAI(
 
     // Process groups in parallel (10 groups × ~600 tokens = 6,000 tokens = $0.003)
     const enrichmentPromises = groups.map(async (group) => {
-      const groupIssues = issues.filter(i => 
+      const groupIssues = issues.filter(i =>
         i.rule === group.rule && i.tool === group.tool && i.severity === group.severity
       );
-      
+
       if (groupIssues.length === 0) return;
-      
+
       // Pick representative issue (first with code snippet)
       const representative = groupIssues.find(i => i.snippet) || groupIssues[0];
-      
+
       try {
         const issueContext = {
           title: representative.message || representative.rule,
@@ -114,7 +114,7 @@ export async function enrichIssuesWithAI(
           codeSnippet: representative.snippet,
           tool: representative.tool
         };
-        
+
         // Call AI agent (uses new two-prompt architecture with compact JSON examples)
         const fixSuggestion = await SpecializedAgentFactory.generateFixForIssue(
           issueContext,
@@ -146,7 +146,7 @@ export async function enrichIssuesWithAI(
         if (fixSuggestion.model) {
           modelsByAgent[agentRole] = fixSuggestion.model;
         }
-        
+
         // SESSION 21 FIX: Track cost by agent category
         if (fixSuggestion.cost) {
           costByAgent[agentRole] = (costByAgent[agentRole] || 0) + fixSuggestion.cost;
@@ -190,7 +190,7 @@ export async function enrichIssuesWithAI(
           for (const issue of groupIssues) {
             issue.fixSuggestion = {
               fix: ruleDesc.fix || `Review and address this ${ruleDesc.category.toLowerCase()} issue. ${ruleDesc.why}`,
-              correctedCode: undefined,
+              correctedCode: '',
               explanation: ruleDesc.description,
               bestPractices: []
             };
@@ -203,26 +203,26 @@ export async function enrichIssuesWithAI(
         }
       }
     });
-    
+
     await Promise.all(enrichmentPromises);
-    
+
     // BUG FIX: Normalize dependency fix versions for same package
     // If multiple groups reference the same package (e.g., @babel/traverse with different severities),
     // use the highest version suggested across all groups
     if (groups.some(g => g.tool === 'npm-audit')) {
       normalizeDependencyVersions(issues, groups);
     }
-    
+
     const duration = Date.now() - startTime;
     const enrichedCount = issues.filter(i => i.fixSuggestion).length;
     const totalCost = Object.values(costByAgent).reduce((sum, cost) => sum + cost, 0);
     const totalTokens = Object.values(tokensByAgent).reduce((sum, tokens) => sum + tokens, 0);
-    
+
     console.log(`[AI Enrichment] Completed: ${enrichedCount}/${issues.length} issues enriched in ${duration}ms`);
     console.log(`[AI Enrichment] Models used: ${JSON.stringify(modelsByAgent)}`);
     console.log(`[AI Enrichment] Total cost: $${totalCost.toFixed(4)}`);
     console.log(`[AI Enrichment] Total tokens: ${totalTokens.toLocaleString()}`);
-    console.log(`[AI Enrichment] Cost by agent: ${JSON.stringify(Object.fromEntries(Object.entries(costByAgent).map(([k,v]) => [k, `$${v.toFixed(4)}`])))}`);
+    console.log(`[AI Enrichment] Cost by agent: ${JSON.stringify(Object.fromEntries(Object.entries(costByAgent).map(([k, v]) => [k, `$${v.toFixed(4)}`])))}`);
 
     return { enrichedIssues: issues, modelsByAgent, costByAgent, tokensByAgent };
 
@@ -250,7 +250,7 @@ function normalizeDependencyVersions(issues: EnrichedIssue[], groups: IssueGroup
     if (issueAny.code && typeof issueAny.code === 'string' && (issueAny.code.startsWith('@') || issueAny.code.includes('/'))) {
       return issueAny.code;
     }
-    
+
     // Fallback: extract from message (format: "Vulnerability title in package-name")
     const match = issue.message.match(/\s+in\s+([@\w/.-]+)/i);
     return match ? match[1] : null;
@@ -259,13 +259,13 @@ function normalizeDependencyVersions(issues: EnrichedIssue[], groups: IssueGroup
   // Extract version from correctedCode (format: "package-name": "version" or just "version")
   const extractVersion = (correctedCode: string): string | null => {
     if (!correctedCode) return null;
-    
+
     // Try to match: "package": "version" or "package": "^version" or "package": "~version"
     const quotedMatch = correctedCode.match(/"([^"]+)":\s*"([^"]+)"/);
     if (quotedMatch) {
       return quotedMatch[2]; // Return the version part (e.g., "^7.23.2")
     }
-    
+
     // Try to match just version number with prefix: "^7.23.2" or "~7.23.2" or "7.23.2"
     const versionMatch = correctedCode.match(/([\^~]?[\d.]+)/);
     if (versionMatch) {
@@ -277,7 +277,7 @@ function normalizeDependencyVersions(issues: EnrichedIssue[], groups: IssueGroup
     if (textVersionMatch) {
       return textVersionMatch[1];
     }
-    
+
     return null;
   };
 
@@ -289,7 +289,7 @@ function normalizeDependencyVersions(issues: EnrichedIssue[], groups: IssueGroup
 
   for (const issue of issues) {
     if (issue.tool !== 'npm-audit' || !issue.fixSuggestion?.correctedCode) continue;
-    
+
     const packageName = extractPackageName(issue);
     if (!packageName) continue;
 
@@ -299,7 +299,7 @@ function normalizeDependencyVersions(issues: EnrichedIssue[], groups: IssueGroup
 
     const pkgGroup = packageGroups.get(packageName)!;
     pkgGroup.issues.push(issue);
-    
+
     const version = extractVersion(issue.fixSuggestion.correctedCode);
     if (version) {
       pkgGroup.versions.push(version);
@@ -315,25 +315,25 @@ function normalizeDependencyVersions(issues: EnrichedIssue[], groups: IssueGroup
       // Remove ^ prefix for comparison
       const highestClean = highest.replace(/^[\^~]/, '');
       const currentClean = current.replace(/^[\^~]/, '');
-      
+
       // Simple version comparison (major.minor.patch)
       const highestParts = highestClean.split('.').map(Number);
       const currentParts = currentClean.split('.').map(Number);
-      
+
       for (let i = 0; i < Math.max(highestParts.length, currentParts.length); i++) {
         const highestPart = highestParts[i] || 0;
         const currentPart = currentParts[i] || 0;
-        
+
         if (currentPart > highestPart) return current;
         if (currentPart < highestPart) return highest;
       }
-      
+
       return highest;
     });
 
     // Preserve prefix (^ or ~) from one of the versions
-    const prefix = pkgGroup.versions.find(v => v.startsWith('^'))?.charAt(0) || 
-                   pkgGroup.versions.find(v => v.startsWith('~'))?.charAt(0) || '';
+    const prefix = pkgGroup.versions.find(v => v.startsWith('^'))?.charAt(0) ||
+      pkgGroup.versions.find(v => v.startsWith('~'))?.charAt(0) || '';
     const normalizedVersion = prefix + highestVersion.replace(/^[\^~]/, '');
 
     // Update all issues for this package to use the highest version
@@ -350,7 +350,7 @@ function normalizeDependencyVersions(issues: EnrichedIssue[], groups: IssueGroup
             return match;
           }
         );
-        
+
         // If no replacement happened, try to add/update the dependency
         if (updatedCode === oldCode && !oldCode.includes(packageName)) {
           // Add the dependency if not present

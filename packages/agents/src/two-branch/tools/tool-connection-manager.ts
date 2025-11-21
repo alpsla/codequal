@@ -705,8 +705,7 @@ export class ToolConnectionManager {
           parser: tool.parser
         },
         {
-          timeout: 60000, // 60 second timeout for tool execution
-          maxBodyLength: 10 * 1024 * 1024 // 10MB max response
+          timeout: 60000 // 60 second timeout for tool execution
         }
       );
 
