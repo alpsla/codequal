@@ -28,7 +28,8 @@ import {
   BaseToolOrchestrator,
   ToolResult,
   RawIssue,
-  OrchestrationOptions
+  OrchestrationOptions,
+  OrchestrationResult
 } from '../base-tool-orchestrator';
 
 // Import existing TypeScript parser
@@ -202,6 +203,42 @@ export class TypeScriptToolOrchestrator extends BaseToolOrchestrator {
   // ============================================================
 
   /**
+   * Override orchestrate to filter ESLint for monorepos
+   */
+  async orchestrate(
+    repoPath: string,
+    branch: 'base' | 'pr',
+    options: OrchestrationOptions = {}
+  ): Promise<OrchestrationResult> {
+    // Detect monorepo structure before running tools
+    const fs = await import('fs');
+    const path = await import('path');
+
+    const isMonorepo = await (async () => {
+      try {
+        const packagesDir = path.join(repoPath, 'packages');
+        const appsDir = path.join(repoPath, 'apps');
+
+        const hasPackages = await fs.promises.access(packagesDir).then(() => true).catch(() => false);
+        const hasApps = await fs.promises.access(appsDir).then(() => true).catch(() => false);
+
+        return hasPackages || hasApps;
+      } catch {
+        return false;
+      }
+    })();
+
+    // If monorepo, disable ESLint to prevent it from appearing in tool list
+    if (isMonorepo) {
+      logger.info('⏭️  Monorepo detected - disabling ESLint (packages/ or apps/ directory found)');
+      this.config.eslint.enabled = false;
+    }
+
+    // Call parent orchestrate method
+    return super.orchestrate(repoPath, branch, options);
+  }
+
+  /**
    * Get language name (required by base)
    */
   protected getLanguageName(): string {
@@ -286,13 +323,54 @@ export class TypeScriptToolOrchestrator extends BaseToolOrchestrator {
     // Route to TypeScript-specific tool methods
     switch (toolName.toLowerCase()) {
       case 'eslint': {
-        // Try to run ESLint, but skip gracefully if it encounters monorepo limitations
+        // Detect monorepo structure before running ESLint to save time
+        // ESLint has issues with monorepos due to root .eslintrc.json with "root": true
+        const fs = await import('fs');
+        const path = await import('path');
+
+        const isMonorepo = await (async () => {
+          try {
+            const packagesDir = path.join(repoPath, 'packages');
+            const appsDir = path.join(repoPath, 'apps');
+
+            const hasPackages = await fs.promises.access(packagesDir).then(() => true).catch(() => false);
+            const hasApps = await fs.promises.access(appsDir).then(() => true).catch(() => false);
+
+            return hasPackages || hasApps;
+          } catch {
+            return false;
+          }
+        })();
+
+        // Skip ESLint immediately for monorepos to save ~2 seconds
+        if (isMonorepo) {
+          logger.info('⏭️  Skipping ESLint - monorepo detected (packages/ or apps/ directory found)');
+          return {
+            tool: 'eslint',
+            success: true,
+            duration: 0,
+            issues: [],
+            rawOutput: 'ESLint skipped - monorepo structure detected',
+            metadata: {
+              filesScanned: 0,
+              issuesFound: 0,
+              severity: { critical: 0, high: 0, medium: 0, low: 0 },
+              skipped: true,
+              skipReason: 'Monorepo detected (packages/ or apps/ directory) - ESLint has configuration conflicts with nested configs'
+            }
+          };
+        }
+
+        // Try to run ESLint for simple repos
         try {
           const result = await this.runESLint(repoPath, branch, options.changedFiles);
 
-          // If ESLint found 0 issues and scanned 0 files, it likely hit the monorepo limitation
-          // Skip it gracefully instead of reporting as success
-          if (result.issues.length === 0 && result.rawOutput.includes('0 files')) {
+          // If ESLint found 0 issues and scanned 0 files, mark as skipped
+          const scannedZeroFiles = result.rawOutput.includes('0 files') ||
+            result.rawOutput.includes('Discovered 0 files') ||
+            (result.issues.length === 0 && result.rawOutput.length < 100);
+
+          if (scannedZeroFiles) {
             return {
               tool: 'eslint',
               success: true,
@@ -304,7 +382,7 @@ export class TypeScriptToolOrchestrator extends BaseToolOrchestrator {
                 issuesFound: 0,
                 severity: { critical: 0, high: 0, medium: 0, low: 0 },
                 skipped: true,
-                skipReason: 'ESLint found 0 files - likely monorepo with nested configs'
+                skipReason: 'ESLint found 0 files to scan'
               }
             };
           }
@@ -313,7 +391,7 @@ export class TypeScriptToolOrchestrator extends BaseToolOrchestrator {
           return result;
         } catch (error: any) {
           // ESLint failed - skip gracefully
-          console.warn('[ESLint] Skipping due to error:', error.message);
+          logger.warn(`[ESLint] Skipping due to error: ${error.message}`);
           return {
             tool: 'eslint',
             success: true,
