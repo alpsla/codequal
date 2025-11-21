@@ -17,9 +17,6 @@
  * - Total: ~23 issues with auto-fix suggestions
  */
 
-/* eslint-disable */
-// @ts-nocheck
-
 // ==========================================
 // ESLINT VIOLATIONS
 // ==========================================
@@ -63,7 +60,7 @@ const name = "World";
 const message = "Hello " + name + "!";
 
 // 9. prefer-arrow-callback - Use arrow function
-setTimeout(function() {
+setTimeout(function () {
   console.log("Use arrow function");
 }, 1000);
 
@@ -216,6 +213,18 @@ function tooManyResponsibilities(data: any) {
 // Mock objects for compilation
 const database = { save: (d: any) => d };
 const notifications = { send: (d: any) => true };
+
+// ==========================================
+// PERFORMANCE VIOLATIONS
+// ==========================================
+
+// 1. RegExp in loop (performance)
+function performanceIssue(items: string[]) {
+  for (const item of items) {
+    const regex = new RegExp("test", "g"); // Should be outside loop
+    console.log(item.match(regex));
+  }
+}
 
 // ==========================================
 // EXPORT (to avoid "no exports" error)

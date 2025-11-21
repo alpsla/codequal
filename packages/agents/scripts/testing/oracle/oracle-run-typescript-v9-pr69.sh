@@ -194,15 +194,33 @@ if [ $EXIT_CODE -eq 0 ]; then
   echo ""
   echo "📥 Downloading reports from Oracle Cloud..."
   
-  # Download all TypeScript V9 reports
+  # Create local directory
+  mkdir -p /tmp/v9-typescript-reports
+  
+  # Try downloading from test-outputs/ first
   scp -i "$SSH_KEY" -o StrictHostKeyChecking=no \
     "${ORACLE_USER}@${ORACLE_IP}:${REMOTE_DIR}/test-outputs/v9-typescript-lite-*.md" \
     /tmp/v9-typescript-reports/ 2>&1 | grep -v "Permanently added" || {
-      echo "   ⚠️  No reports to download or download failed"
+      echo "   ⚠️  No reports in test-outputs/, trying dist/test-outputs/..."
+      
+      # Try dist/test-outputs/ directory
+      scp -i "$SSH_KEY" -o StrictHostKeyChecking=no \
+        "${ORACLE_USER}@${ORACLE_IP}:${REMOTE_DIR}/dist/test-outputs/v9-typescript-lite-*.md" \
+        /tmp/v9-typescript-reports/ 2>&1 | grep -v "Permanently added" || {
+          echo "   ⚠️  No reports found in either location"
+        }
     }
   
-  if [ -d "/tmp/v9-typescript-reports" ]; then
+  # Also download IDE fix files
+  scp -i "$SSH_KEY" -o StrictHostKeyChecking=no \
+    "${ORACLE_USER}@${ORACLE_IP}:${REMOTE_DIR}/dist/test-outputs/v9-typescript-lite-fix-*.json" \
+    /tmp/v9-typescript-reports/ 2>&1 | grep -v "Permanently added" || true
+  
+  if [ -d "/tmp/v9-typescript-reports" ] && [ "$(ls -A /tmp/v9-typescript-reports 2>/dev/null)" ]; then
     echo "   ✅ Reports downloaded to /tmp/v9-typescript-reports/"
+    ls -lh /tmp/v9-typescript-reports/
+  else
+    echo "   ⚠️  No reports downloaded"
   fi
   echo "════════════════════════════════════════════════════════════════"
 else
