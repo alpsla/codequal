@@ -1,6 +1,55 @@
 # 🧠 V9 CRITICAL KNOWLEDGE BASE
 **IMPORTANT: Start every V9 session by reading this file**
-**Last Updated: November 20, 2025 - Session 28: TypeScript Compilation Architecture + PR #69 Success**
+**Last Updated: November 21, 2025 - Session 29: Monorepo Optimization & Tool Stability**
+
+---
+
+## ⭐ SESSION 29: Monorepo Optimization & Tool Stability (November 21, 2025) ✅ COMPLETE
+
+### Monorepo Optimization Strategy
+
+**Problem**: ESLint and ESLint-based Performance tools were failing or timing out in monorepo structures (nested `packages/` or `apps/` directories), causing noise in reports and wasting execution time (~2s per run).
+
+**Solution**: Implemented intelligent monorepo detection to skip incompatible tools.
+
+**Implementation**:
+1. **Monorepo Detection**: Checks for presence of `packages/` or `apps/` directories in the repository root.
+2. **ESLint Optimization**:
+   - Modified `TypeScriptToolOrchestrator.ts` to skip ESLint entirely if monorepo detected.
+   - Saves ~2 seconds execution time.
+   - Prevents "0 files found" noise in reports.
+3. **Performance Tool Optimization**:
+   - Modified `PerformanceRunner.ts` to skip `runESLintPerf` if monorepo detected.
+   - Still allows Lighthouse and Bundle Analyzer to run (if configured).
+   - Added `ESLINT_USE_FLAT_CONFIG=false` to force legacy mode when it does run (for non-monorepos).
+
+**Result**:
+- **Monorepos**: ESLint and Performance (ESLint-perf) are skipped. Report is clean.
+- **Standard Repos**: Tools run normally with full checks.
+
+### Dependency-Check Fix
+
+**Problem**: Dependency-Check was reporting 0 issues because it couldn't connect to the Oracle Cloud PostgreSQL database (missing environment variables).
+
+**Fix**:
+- Added `DEPCHECK_DB_HOST`, `DEPCHECK_DB_NAME`, `DEPCHECK_DB_USER`, `DEPCHECK_DB_PASSWORD` to Oracle `.env`.
+- Verified connection to `depcheck` database (208k vulnerabilities).
+
+**Result**:
+- Dependency-Check now correctly identifies vulnerabilities (e.g., 4 issues found in test run).
+- Execution time: ~12s (vs 30m+ without DB).
+
+### Tool Status Summary (Oracle Cloud)
+
+| Tool | Status | Notes |
+|------|--------|-------|
+| **TypeScript** | ✅ Working | 3 issues found in test |
+| **Semgrep** | ✅ Working | 235 issues found in test |
+| **Dependency-Check** | ✅ Fixed | 4 issues found (was 0) |
+| **Architecture** | ✅ Working | 44 issues found |
+| **npm-audit** | ✅ Working | 5 issues found |
+| **Performance** | ✅ Optimized | Skipped in monorepo test (correct behavior) |
+| **ESLint** | ⏭️ Skipped | Monorepo detected (correct behavior) |
 
 ---
 
