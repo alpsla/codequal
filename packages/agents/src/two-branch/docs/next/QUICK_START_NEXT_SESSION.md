@@ -41,7 +41,22 @@
 - Check if they are configured for the test environment.
 - Verify if they need specific build artifacts (e.g., `dist/` or `build/`) to run.
 
-### 3. Final Polish & Report Verification
+### 3. Auto-fix Verification
+**Goal**: Validate the auto-fix utility works correctly.
+- Test the implemented autofix utility on the issues found.
+- Verify that fixes are applied correctly and code remains valid.
+- Check `BUG_FIX_MODEL_AND_AUTOFIX.md` or source code for usage instructions.
+
+### 4. Multi-Framework Testing
+**Goal**: Test V9 on diverse TypeScript frameworks (not just CodeQual monorepo).
+- **Target Frameworks**:
+  - **Express** (Standard backend)
+  - **NestJS** (Opinionated backend)
+  - **Next.js** (React framework)
+- **Action**: Clone representative open-source repos for each and run V9 analysis.
+- **Verify**: Tool execution, issue detection, and auto-fix generation across different project structures.
+
+### 5. Final Polish & Report Verification
 **Goal**: Ensure the final V9 report is perfect.
 - Review the report format one last time.
 - Ensure all sections are populated correctly.
