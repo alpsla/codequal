@@ -285,28 +285,51 @@ export class TypeScriptToolOrchestrator extends BaseToolOrchestrator {
 
     // Route to TypeScript-specific tool methods
     switch (toolName.toLowerCase()) {
-      case 'eslint':
-        // ESLint disabled - too complex for monorepo setups
-        // TypeScript compiler already provides type checking
-        return {
-          tool: 'eslint',
-          success: true,
-          duration: 0,
-          issues: [],
-          rawOutput: 'ESLint disabled - skipped',
-          metadata: {
-            filesScanned: 0,
-            issuesFound: 0,
-            severity: {
-              critical: 0,
-              high: 0,
-              medium: 0,
-              low: 0
-            },
-            skipped: true,
-            skipReason: 'ESLint disabled due to monorepo complexity - TypeScript compiler provides type checking'
+      case 'eslint': {
+        // Try to run ESLint, but skip gracefully if it encounters monorepo limitations
+        try {
+          const result = await this.runESLint(repoPath, branch, options.changedFiles);
+
+          // If ESLint found 0 issues and scanned 0 files, it likely hit the monorepo limitation
+          // Skip it gracefully instead of reporting as success
+          if (result.issues.length === 0 && result.rawOutput.includes('0 files')) {
+            return {
+              tool: 'eslint',
+              success: true,
+              duration: result.duration || 0,
+              issues: [],
+              rawOutput: result.rawOutput,
+              metadata: {
+                filesScanned: 0,
+                issuesFound: 0,
+                severity: { critical: 0, high: 0, medium: 0, low: 0 },
+                skipped: true,
+                skipReason: 'ESLint found 0 files - likely monorepo with nested configs'
+              }
+            };
           }
-        };
+
+          // ESLint ran successfully and found files/issues
+          return result;
+        } catch (error: any) {
+          // ESLint failed - skip gracefully
+          console.warn('[ESLint] Skipping due to error:', error.message);
+          return {
+            tool: 'eslint',
+            success: true,
+            duration: 0,
+            issues: [],
+            rawOutput: `ESLint skipped: ${error.message}`,
+            metadata: {
+              filesScanned: 0,
+              issuesFound: 0,
+              severity: { critical: 0, high: 0, medium: 0, low: 0 },
+              skipped: true,
+              skipReason: `ESLint execution failed: ${error.message}`
+            }
+          };
+        }
+      }
 
       case 'typescript':
         return this.runTypeScriptCompiler(repoPath, branch);
