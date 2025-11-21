@@ -91,21 +91,50 @@ export class PerformanceRunner {
         try {
             console.log('[ESLint Perf] Analyzing code performance patterns...');
 
+            // Check for monorepo structure and skip if detected
+            const fs = await import('fs');
+            const path = await import('path');
+
+            const isMonorepo = await (async () => {
+                try {
+                    const packagesDir = path.join(repoPath, 'packages');
+                    const appsDir = path.join(repoPath, 'apps');
+                    const hasPackages = await fs.promises.access(packagesDir).then(() => true).catch(() => false);
+                    const hasApps = await fs.promises.access(appsDir).then(() => true).catch(() => false);
+                    return hasPackages || hasApps;
+                } catch {
+                    return false;
+                }
+            })();
+
+            if (isMonorepo) {
+                console.log('[ESLint Perf] ⏭️  Skipping ESLint Perf - monorepo detected');
+                return [];
+            }
+
             if (!files || files.length === 0) {
                 console.warn('[ESLint Perf] No files provided, skipping');
                 return [];
             }
 
             const fileArgs = files.slice(0, 100).join(' '); // Limit to 100 files
+
+            // Explicitly enable performance rules
             const perfRules = [
                 '--rule "perf-standard/no-instanceof-guard: error"',
                 '--rule "perf-standard/no-self-in-constructor: error"',
                 '--rule "perf-standard/check-function-inline: warn"'
             ].join(' ');
 
+            // Use --no-eslintrc to avoid config conflicts, but pass rules explicitly
+            // Set ESLINT_USE_FLAT_CONFIG=false to ensure legacy mode works with --no-eslintrc
             const { stdout } = await execAsync(
                 `npx eslint ${fileArgs} --plugin perf-standard ${perfRules} --format json --no-eslintrc`,
-                { cwd: repoPath, timeout: 30000 }
+                {
+                    cwd: repoPath,
+                    timeout: 30000,
+                    env: { ...process.env, ESLINT_USE_FLAT_CONFIG: 'false' }
+                }
             );
 
             return this.parseESLintPerfResults(stdout);
