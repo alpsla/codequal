@@ -73,6 +73,7 @@ export class TypeScriptToolParser {
       // CRITICAL: Don't use '.' (scans everything including node_modules traversal)
       // GLOB FIX: Use glob library to discover files first, then pass explicit file list to ESLint
       let fileArgs: string;
+      let dirsToScan: string[] = [];
 
       if (files && files.length > 0) {
         fileArgs = files.filter(f => f.endsWith('.ts') || f.endsWith('.tsx') || f.endsWith('.js') || f.endsWith('.jsx')).join(' ');
@@ -90,8 +91,6 @@ export class TypeScriptToolParser {
           'apps/*/src',
           'apps/*/lib'
         ];
-
-        const dirsToScan: string[] = [];
 
         for (const pattern of dirPatterns) {
           try {
@@ -132,68 +131,123 @@ export class TypeScriptToolParser {
         }
 
         // If no directories found, fall back to scanning root
-        fileArgs = dirsToScan.length > 0 ? dirsToScan.join(' ') : '.';
+        if (dirsToScan.length === 0) {
+          dirsToScan.push('.');
+        }
 
         console.log(`[ESLint] Discovered ${dirsToScan.length} source directories to scan:`, dirsToScan);
       }
 
-      // BUG-077 FIX: Add ignore patterns to ESLint command to exclude build artifacts
-      const ignorePatterns = '--ignore-pattern "**/dist/**" --ignore-pattern "**/build/**" --ignore-pattern "**/.next/**" --ignore-pattern "**/coverage/**" --ignore-pattern "**/.output/**"';
+      // CRITICAL FIX: Root .eslintrc.json has "root": true which prevents nested configs
+      // Solution: Run ESLint from within each package directory
+      const fs = await import('fs');
+      const path = await import('path');
 
-      // Always add extensions to ensure TypeScript files are scanned
-      const extArgs = '--ext .ts,.tsx,.js,.jsx';
+      // Group directories by package
+      const packageGroups = new Map<string, string[]>();
+      const dirsArray = typeof fileArgs === 'string' ? fileArgs.split(' ') : dirsToScan; // Use dirsToScan if files not provided
 
-      const command = `cd "${repoPath}" && npx eslint ${fileArgs} ${extArgs} ${ignorePatterns} --format json 2>&1`;
+      for (const dir of dirsArray) {
+        const parts = dir.split('/');
 
-      // DEBUG: Log the exact command being executed
-      console.log('[DEBUG ESLint] Repository path:', repoPath);
-      console.log('[DEBUG ESLint] Files to scan:', fileArgs.split(' ').length);
-      console.log('[DEBUG ESLint] Full command (truncated):', command.substring(0, 200) + '...');
+        if (parts.length >= 2 && (parts[0] === 'packages' || parts[0] === 'apps')) {
+          // Monorepo package: packages/agents/src -> run from packages/agents
+          const packageDir = `${parts[0]}/${parts[1]}`;
+          const relativeDir = parts.slice(2).join('/') || '.';
 
-      const { stdout, stderr } = await exec(command, {
-        maxBuffer: 10 * 1024 * 1024,  // 10MB buffer
-        timeout: 120000  // 2 minute timeout - should complete in seconds, this catches hangs
-      });
-
-      rawOutput = stdout + stderr;
-
-      // Parse JSON output
-      try {
-        const eslintOutput = JSON.parse(stdout);
-        // DEBUG: Log ESLint results
-        console.log('[DEBUG ESLint] Files scanned:', Array.isArray(eslintOutput) ? eslintOutput.length : 0);
-        if (Array.isArray(eslintOutput)) {
-          const totalMessages = eslintOutput.reduce((sum, f) => sum + (f.messages?.length || 0), 0);
-          console.log('[DEBUG ESLint] Total messages:', totalMessages);
-          const result = this.parseESLintResults(eslintOutput);
-          issues = result.issues;
-          fixableCount = result.fixableCount;
-          console.log('[DEBUG ESLint] Parsed issues:', issues.length);
+          if (!packageGroups.has(packageDir)) {
+            packageGroups.set(packageDir, []);
+          }
+          packageGroups.get(packageDir)!.push(relativeDir);
+        } else {
+          // Root-level directory: run from root
+          if (!packageGroups.has('.')) {
+            packageGroups.set('.', []);
+          }
+          packageGroups.get('.')!.push(dir);
         }
-      } catch (e) {
-        // Fallback to text parsing
-        issues = this.parseESLintTextOutput(rawOutput);
       }
 
+      console.log(`[ESLint] Running from ${packageGroups.size} package location(s)`);
+
+      // Run ESLint for each package
+      const allIssues: TypeScriptIssue[] = [];
+      let totalFixableCount = 0;
+
+      for (const [packageDir, dirs] of packageGroups.entries()) {
+        try {
+          const dirsArg = dirs.join(' ');
+          const extArgs = '--ext .ts,.tsx,.js,.jsx';
+          const ignorePatterns = '--ignore-pattern "**/dist/**" --ignore-pattern "**/build/**" --ignore-pattern "**/.next/**" --ignore-pattern "**/coverage/**" --ignore-pattern "**/.output/**"';
+
+          // Run ESLint from within the package directory
+          const workingDir = packageDir === '.' ? repoPath : path.join(repoPath, packageDir);
+          const command = `cd "${workingDir}" && npx eslint ${dirsArg} ${extArgs} ${ignorePatterns} --format json 2>&1`;
+
+          console.log(`[ESLint] Scanning from ${packageDir}: ${dirsArg}`);
+
+          const { stdout } = await exec(command, {
+            maxBuffer: 10 * 1024 * 1024,
+            timeout: 120000
+          });
+
+          // Parse results
+          try {
+            const eslintOutput = JSON.parse(stdout);
+            if (Array.isArray(eslintOutput)) {
+              // Adjust file paths to be relative to repo root
+              for (const fileResult of eslintOutput) {
+                if (packageDir !== '.' && !fileResult.filePath.startsWith(packageDir)) {
+                  // Prepend package dir to make path relative to repo root
+                  const relativePath = path.relative(workingDir, fileResult.filePath);
+                  fileResult.filePath = path.join(packageDir, relativePath);
+                }
+              }
+
+              const result = this.parseESLintResults(eslintOutput);
+              allIssues.push(...result.issues);
+              totalFixableCount += result.fixableCount;
+            }
+          } catch (parseError) {
+            console.warn(`[ESLint] Failed to parse JSON for ${packageDir}:`, parseError);
+          }
+        } catch (error: any) {
+          // ESLint returns non-zero exit code when issues found
+          if (error.stdout) {
+            try {
+              const jsonMatch = error.stdout.match(/\[[\s\S]*\]/);
+              if (jsonMatch) {
+                const eslintOutput = JSON.parse(jsonMatch[0]);
+
+                // Adjust file paths
+                if (Array.isArray(eslintOutput)) {
+                  for (const fileResult of eslintOutput) {
+                    if (packageDir !== '.' && !fileResult.filePath.startsWith(packageDir)) {
+                      const workingDir = path.join(repoPath, packageDir);
+                      const relativePath = path.relative(workingDir, fileResult.filePath);
+                      fileResult.filePath = path.join(packageDir, relativePath);
+                    }
+                  }
+                }
+
+                const result = this.parseESLintResults(eslintOutput);
+                allIssues.push(...result.issues);
+                totalFixableCount += result.fixableCount;
+              }
+            } catch {
+              console.warn(`[ESLint] Could not parse error output for ${packageDir}`);
+            }
+          }
+        }
+      }
+
+      issues = allIssues;
+      fixableCount = totalFixableCount;
+      console.log(`[ESLint] Total issues found: ${issues.length}`);
     } catch (error: any) {
       exitCode = error.code || 1;
-      rawOutput = error.stdout || error.message;
-
-      // Even if ESLint fails with exit code 1 (has lint errors), parse output
-      try {
-        // Try to extract JSON from output
-        const jsonMatch = rawOutput.match(/\[[\s\S]*\]/);
-        if (jsonMatch) {
-          const eslintOutput = JSON.parse(jsonMatch[0]);
-          const result = this.parseESLintResults(eslintOutput);
-          issues = result.issues;
-          fixableCount = result.fixableCount;
-        } else {
-          issues = this.parseESLintTextOutput(rawOutput);
-        }
-      } catch {
-        issues = this.parseESLintTextOutput(rawOutput);
-      }
+      rawOutput = error.message || String(error);
+      console.error('[ESLint] Unexpected error:', error);
     }
 
     const executionTime = (Date.now() - startTime) / 1000;
