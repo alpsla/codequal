@@ -204,15 +204,35 @@ export async function calculateFullV9Score(
       codeQuality: calculateCategoryScore(issuesByCategory.codeQuality, 100)
     };
 
-    // SKILL SCORE FIX: Use developer-responsible issues only (NEW + EXISTING_MODIFIED)
-    // This ensures developers are only penalized for issues they can control
+    // BUG #5 FIX (Session 30): Fetch baseline score from Supabase for skill calculation
+    // Use developer's historical baseline instead of hardcoded 50
+    let baselineScore = 50; // Default for first-time developers
+    if (skillScoreManager && metadata.prAuthorEmail && metadata.repository) {
+      try {
+        baselineScore = await skillScoreManager.getBaselineScore(metadata.prAuthorEmail, metadata.repository);
+        console.log(`[ScoreCalculator] Using baseline ${baselineScore} for skill category scores (from Supabase)`);
+      } catch (error) {
+        console.log('[ScoreCalculator] Could not fetch baseline, using default 50');
+      }
+    }
+
+    // SKILL SCORE FIX: Use baseline from Supabase for each category
+    // This ensures developers are scored relative to their historical performance
     const skillCategoryScores = {
-      security: calculateCategoryScore(developerIssuesByCategory.security, 50),
-      performance: calculateCategoryScore(developerIssuesByCategory.performance, 50),
-      architecture: calculateCategoryScore(developerIssuesByCategory.architecture, 50),
-      dependency: calculateCategoryScore(developerIssuesByCategory.dependency, 50),
-      codeQuality: calculateCategoryScore(developerIssuesByCategory.codeQuality, 50)
+      security: calculateCategoryScore(developerIssuesByCategory.security, baselineScore),
+      performance: calculateCategoryScore(developerIssuesByCategory.performance, baselineScore),
+      architecture: calculateCategoryScore(developerIssuesByCategory.architecture, baselineScore),
+      dependency: calculateCategoryScore(developerIssuesByCategory.dependency, baselineScore),
+      codeQuality: calculateCategoryScore(developerIssuesByCategory.codeQuality, baselineScore)
     };
+
+    // Debug logging for skill category scores
+    console.log(`[ScoreCalculator] Skill Category Scores (baseline=${baselineScore}):`);
+    console.log(`  Security: ${skillCategoryScores.security} (${developerIssuesByCategory.security.length} issues)`);
+    console.log(`  Performance: ${skillCategoryScores.performance} (${developerIssuesByCategory.performance.length} issues)`);
+    console.log(`  Architecture: ${skillCategoryScores.architecture} (${developerIssuesByCategory.architecture.length} issues)`);
+    console.log(`  Dependencies: ${skillCategoryScores.dependency} (${developerIssuesByCategory.dependency.length} issues)`);
+    console.log(`  Code Quality: ${skillCategoryScores.codeQuality} (${developerIssuesByCategory.codeQuality.length} issues)`);
 
     // BUG FIX #44: Calculate APP score (minimum of categories - weakest link)
     const appScore = Math.min(

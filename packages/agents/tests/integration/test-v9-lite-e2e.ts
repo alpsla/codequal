@@ -715,7 +715,7 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
       console.log('   📊 PR Review Mode - Two-branch comparison...');
 
       // SESSION 27 FIX: Use dynamic default branch detection (main/master/trunk)
-      const { detectDefaultBranch } = await import('../../src/two-branch/utils/git-utils.js');
+      const { detectDefaultBranch } = await import('../../src/two-branch/utils/git-utils');
       const defaultBranch = detectDefaultBranch(repoPath);
       console.log(`   📍 Detected default branch: ${defaultBranch}`);
 
