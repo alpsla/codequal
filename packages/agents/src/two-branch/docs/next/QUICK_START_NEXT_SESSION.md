@@ -1,174 +1,454 @@
 # 🎯 QUICK START: NEXT SESSION
 
-**Last Updated**: November 23, 2025 (Session 30 - Bug Fixes Complete)
-**Current Phase**: V9 Production Ready - All Skill Score Bugs Fixed
-**Status**: ✅ **ALL 4 SKILL SCORE BUGS FIXED** - Production Framework Updated
+**Last Updated**: November 23, 2025 (Session 30 - Bug #5 Fixed + Comprehensive Testing Guide Added)
+**Current Phase**: V9 Production - 5 Skill Score Bugs Fixed, 5 Report Accuracy Bugs Identified
+**Status**: ✅ **5/5 SKILL SCORE BUGS FIXED** | ⚠️ **5 REPORT ACCURACY BUGS OPEN**
 
 ---
 
 ## 🎉 SESSION 30 ACHIEVEMENTS (November 23, 2025)
 
-**Session Focus:** Fix All 4 Skill Score Bugs in V9 Production Framework
+**Session Focus:** Fix Skill Score Calculation Bug (#5) + Comprehensive Report Quality Analysis
 
-### ✅ Skill Score Bug Fixes (All in Production V9 Framework)
+### ✅ Bug #5: Skill Category Scores Fixed
 
-**ALL 4 BUGS FIXED** - Working for all languages (Java, TypeScript, Python, Go)
+**Problem:** All 5 skill category scores used hardcoded `baselineScore = 50` instead of fetching developer's historical baseline from Supabase.
 
-1. **Bug #1: Security Score Baseline (Fetch from Supabase)** ✅
-   - **Fix Location**: `v9-skill-score-manager.ts:50-83`
-   - **Before**: Hardcoded 50 for all developers
-   - **After**: Fetches latest score from Supabase (e.g., 44)
-   - **Impact**: Accurate skill tracking based on historical performance
+**User Report:** "Base - 40 - 6 × 3 high issues - 11 × 1 medium issues = 11, not 21"
 
-2. **Bug #2: Overall Skills Score Debug Logging** ✅
-   - **Fix Location**: `v9-grouped-report-formatter.ts:4567-4572`
-   - **Before**: No debug output
-   - **After**: `[Skills] Overall Score: (15 + 44 + 44 + 44 + 44) / 5 = 38`
-   - **Impact**: Transparent score calculations for verification
+**Fix Applied:**
+- **File**: `score-calculator.ts:207-235`
+- **Before**: All categories used hardcoded 50
+- **After**: Fetches baseline from Supabase (e.g., 44) for each category
+- **Fallback**: Returns 50 only for first-time developers (no history)
 
-3. **Bug #3: Developer Trend Clarification** ✅
-   - **Fix Location**: `v9-grouped-report-formatter.ts:2290`
-   - **Before**: "Developer Trend" (ambiguous)
-   - **After**: "Your Performance Trend" (clear it's personal)
-   - **Impact**: Clarifies personal improvement vs team comparison
+**Verification:**
+```
+[ScoreCalculator] Using baseline 44 for skill category scores (from Supabase)
+[ScoreCalculator] Skill Category Scores (baseline=44):
+  Security: 15 (17 issues)    // 44 - (6×3) - (11×1) = 44 - 18 - 11 = 15 ✅
+  Performance: 44 (0 issues)   // 44 - 0 = 44 ✅
+  Architecture: 44 (0 issues)  // 44 - 0 = 44 ✅
+  Dependencies: 44 (0 issues)  // 44 - 0 = 44 ✅
+  Code Quality: 35 (5 issues)  // 44 - 9 = 35 ✅
 
-4. **Bug #4: Team Ranking Bot Filtering** ✅
-   - **Fix Location**: `v9-grouped-report-formatter.ts:4455-4495, 4782-4795`
-   - **Before**: Claude Code bot counted as "developer"
-   - **After**: Bot/AI commits filtered (claude, @anthropic.com, bot@, etc.)
-   - **Impact**: Accurate human-only team rankings
+Overall: (15 + 44 + 44 + 44 + 35) / 5 = 36/100 ✅
+```
 
-**Documentation**:
-- `BUG_FIXES_SESSION_30_VERIFICATION.md` - Complete verification guide
-- `SESSION_30_BUG_FIXES_COMPLETE.md` - Full session summary
+**Commits:**
+- `f218631f` - fix(v9): Fix skill score calculation - use Supabase baseline per category (Bug #5)
+- `398dd8a8` - fix(test): Remove .js extensions from all git-utils imports for ts-node compatibility
 
-**Commit**: `ec87bab1` - "fix(v9): Complete skill score bug fixes (Session 30)"
+**Impact:** Accurate skill tracking based on historical performance for ALL languages (Java, TypeScript, Python, Go)
 
-### ✅ Critical Discovery: Two-Tier Fix System
+### ✅ All 5 Skill Score Bugs Now Fixed
 
-**Issue**: Apparent discrepancy - "We provide 100% fix recommendations but only 51% are auto-fixable"
+1. ✅ **Bug #1**: Security Score Baseline (Supabase fetch) - `v9-skill-score-manager.ts:50-83`
+2. ✅ **Bug #2**: Overall Skills Score Debug Logging - `v9-grouped-report-formatter.ts:4567-4572`
+3. ✅ **Bug #3**: Developer Trend Clarification - `v9-grouped-report-formatter.ts:2290`
+4. ✅ **Bug #4**: Team Ranking Bot Filtering - `v9-grouped-report-formatter.ts:4455-4495, 4782-4795`
+5. ✅ **Bug #5**: Skill Category Scores Baseline - `score-calculator.ts:207-235`
 
-**Resolution**: This is **BY DESIGN** and a **COMPETITIVE ADVANTAGE**!
+### ⚠️ 5 New Report Accuracy Bugs Identified
 
-1. **Fix Recommendations (100% Coverage)** ✅
-   - AI generates code fixes for ALL 291 issues
-   - Educational guidance (WHAT/WHY/HOW)
-   - Better than SonarQube/Snyk (~20-30% coverage)
+During comprehensive report quality analysis, identified 5 issues affecting report accuracy:
 
-2. **Auto-Fixable (51% Coverage)** 🚀
-   - Subset marked `safe_auto_apply: true`
-   - High confidence + low risk only
-   - IDE integration for 1-click fixes
+#### BUG-079: Confidence Breakdown Mismatch (MEDIUM)
+- **Issue**: Says "100% low confidence" but then divides into "84% auto-fixable" and "16% manual review"
+- **Impact**: Contradictory messaging confuses users about fix reliability
+- **Fix**: Categorize as 84% Medium Confidence (auto-fixable) + 16% Low Confidence (manual review)
+- **File**: `v9-grouped-report-formatter.ts` - Confidence Breakdown section
 
-**Documentation**: See `TWO_TIER_FIX_SYSTEM.md` for complete explanation
+#### BUG-080: Performance Trend Numbers Backwards (MEDIUM)
+- **Issue**: Shows "improving" with "40 → 49" (score increased = worse performance)
+- **Impact**: Misleads users about their code quality trajectory
+- **Fix**: Either reverse numbers or reverse trend direction (lower score = better)
+- **File**: `business-impact.ts` - Performance Trend calculation
 
-### ✅ Dogfooding Fixes Completed
+#### BUG-081: Top Performers Score Incorrect (MEDIUM)
+- **Issue**: Shows 50/100 instead of calculated 36/100
+- **Impact**: Inaccurate leaderboard rankings
+- **Fix**: Use corrected baseline score calculation in Top Performers section
+- **File**: `business-impact.ts` - Top Performers Leaderboard
 
-1. **Manual Review Explanations** ✅
-   - Created `manual-review-reasons.ts` (10+ issue-specific explanations)
-   - Each explains WHY manual review, HOW to fix, estimated time
-   - Integrated into `specialized-agents.ts`
+#### BUG-082: Performance Tool Runs on Monorepo (LOW)
+- **Issue**: Performance tool wastes 3.9s on monorepos, finds 0 issues
+- **Impact**: Unnecessary execution time and API costs
+- **Fix**: Skip Performance tool for monorepos (like ESLint in Session 29)
+- **File**: `v9-tool-orchestrator.ts` - Performance tool orchestration
 
-2. **Timestamp Mismatch** ✅
-   - Fixed: All uploads now use single `analysisTimestamp`
-   - Verified: Manifest, LSP, fix files all use same ID
-
-3. **Individual Fix Files Upload** ✅
-   - 22/22 files uploaded successfully to Supabase
-   - All with proper metadata (confidence, safe_auto_apply, time)
-
-4. **Metadata Section in Report** ✅
-   - Added "🤖 AI Fix Recommendations & Auto-Fix Capability" section
-   - Explains two-tier system with confidence breakdown
-   - Highlights competitive advantage vs SonarQube/Snyk
-
-### ⚠️ Known Issues
-
-1. **SARIF Upload Failure**
-   - **Root Cause**: Supabase authentication/permission error
-   - **Impact**: Low (LSP file works fine)
-   - **Action Required**: Infrastructure team to check Supabase config
-
----
-
-## 🎉 SESSION 29 ACHIEVEMENTS (November 21, 2025)
-
-**Session Focus:** Tool Stability & Monorepo Optimization
-
-### ✅ Completed/Resolved
-
-1. **Dependency-Check Fixed** ✅
-   - **Status**: ✅ FIXED (Added DB credentials to Oracle .env)
-   - **Result**: 4 issues found (was 0), connection to PostgreSQL verified.
-
-2. **ESLint Monorepo Optimization** ✅
-   - **Status**: ✅ OPTIMIZED
-   - **Action**: ESLint now skipped entirely for monorepos (`packages/` or `apps/` detected).
-   - **Impact**: Saved ~2s execution time, removed noise from reports.
-
-3. **Performance Tool Optimization** ✅
-   - **Status**: ✅ OPTIMIZED
-   - **Action**: ESLint-based performance checks skipped for monorepos.
-   - **Fix**: Added `ESLINT_USE_FLAT_CONFIG=false` for legacy mode compatibility.
+#### BUG-083: Manual vs Auto-fix Confusion (MEDIUM)
+- **Issue**: Users can't identify which 47 issues need manual review vs 246 auto-fixable
+- **Impact**: Users waste time, miss high-priority manual reviews
+- **Fix**: Add visual indicators, separate sections, provide filtering
+- **File**: `v9-grouped-report-formatter.ts` - Issue presentation
 
 ---
 
 ## 📋 IMMEDIATE NEXT PRIORITIES
 
-### 1. Verify Performance Tool in Non-Monorepo
-**Goal**: Ensure the Performance tool (specifically `runESLintPerf`) works correctly in a standard (non-monorepo) project.
-- Create a simple test repo without `packages/` or `apps/`.
-- Run the tool and verify it detects the performance violations we added to `validation-issues.ts`.
-- Confirm `ESLINT_USE_FLAT_CONFIG=false` works as expected.
+### 1. Fix Report Accuracy Bugs (BUG-079 through BUG-083)
 
-### 2. Investigate Lighthouse & Bundle Analyzer
-**Goal**: Determine why these tools aren't reporting issues or if they are running effectively.
-- Check if they are configured for the test environment.
-- Verify if they need specific build artifacts (e.g., `dist/` or `build/`) to run.
+**Priority Order:**
+1. **BUG-083** (MEDIUM) - Manual vs Auto-fix confusion - Most user-facing
+2. **BUG-079** (MEDIUM) - Confidence breakdown mismatch - User trust issue
+3. **BUG-080** (MEDIUM) - Performance trend backwards - Accuracy critical
+4. **BUG-081** (MEDIUM) - Top performers score - Leaderboard accuracy
+5. **BUG-082** (LOW) - Performance tool on monorepo - Optimization only
 
-### 3. Auto-fix Verification
-**Goal**: Validate the auto-fix utility works correctly.
-- Test the implemented autofix utility on the issues found.
-- Verify that fixes are applied correctly and code remains valid.
-- Check `BUG_FIX_MODEL_AND_AUTOFIX.md` or source code for usage instructions.
+**Estimated Effort:** 2-3 hours (all 5 bugs)
 
-### 4. Multi-Framework Testing
-**Goal**: Test V9 on diverse TypeScript frameworks (not just CodeQual monorepo).
-- **Target Frameworks**:
-  - **Express** (Standard backend)
-  - **NestJS** (Opinionated backend)
-  - **Next.js** (React framework)
-- **Action**: Clone representative open-source repos for each and run V9 analysis.
-- **Verify**: Tool execution, issue detection, and auto-fix generation across different project structures.
+### 2. Multi-Framework TypeScript Testing
 
-### 5. Final Polish & Report Verification
-**Goal**: Ensure the final V9 report is perfect.
-- Review the report format one last time.
-- Ensure all sections are populated correctly.
-- Verify "Cost Savings" and "Time Saved" metrics are accurate.
+**Goal:** Verify V9 works correctly across different TypeScript frameworks (not just CodeQual monorepo)
+
+**Target Frameworks:**
+- ✅ **Next.js** (React framework) - Already tested on CodeQual monorepo
+- ⏳ **Express.js** (Standard backend) - Test with simple Express app
+- ⏳ **NestJS** (Opinionated backend) - Test with NestJS starter
+- ⏳ **Standalone TypeScript** (Non-framework) - Test pure TypeScript project
+
+**Action Plan:**
+```bash
+# Test Express.js
+cd /tmp
+git clone https://github.com/expressjs/express
+cd express
+# Run V9 analysis on a recent PR
+npx ts-node /path/to/test-v9-lite-e2e.ts
+
+# Test NestJS
+git clone https://github.com/nestjs/nest
+cd nest
+# Run V9 analysis on a recent PR
+
+# Test Standalone TypeScript
+git clone https://github.com/microsoft/TypeScript
+cd TypeScript
+# Run V9 analysis on a recent PR
+```
+
+**Verify:**
+- Tool execution (ESLint, npm-audit, Semgrep)
+- Issue detection quality
+- Auto-fix generation
+- Report completeness
+- Performance (execution time)
+
+### 3. Auto-fix Testing Scenarios
+
+**Goal:** Validate auto-fix works correctly for different use cases
+
+**Test Scenarios:**
+
+#### A. Single Issue Auto-fix
+```bash
+# Test fixing 1 specific issue via LSP
+# 1. Download LSP JSON with 1 issue
+# 2. Apply fix via IDE
+# 3. Verify code change is correct
+# 4. Run tests to ensure no breakage
+```
+
+#### B. Severity Group Auto-fix
+```bash
+# Test fixing all issues of one severity (e.g., all HIGH)
+# 1. Filter LSP JSON for high severity issues
+# 2. Apply all fixes via IDE
+# 3. Verify all changes
+# 4. Run full test suite
+```
+
+#### C. All LSP Issues Auto-fix
+```bash
+# Test fixing ALL auto-fixable issues via LSP
+# 1. Download complete LSP JSON (all 246 auto-fixable issues)
+# 2. Apply all fixes via IDE batch action
+# 3. Verify code still compiles
+# 4. Run full test suite
+# 5. Measure time saved vs manual fixing
+```
+
+#### D. SARIF Auto-fix (IDE Integration)
+```bash
+# Test SARIF version of auto-fix
+# 1. Download SARIF JSON
+# 2. Import into IDE with SARIF support
+# 3. Apply fixes via IDE's SARIF integration
+# 4. Compare with LSP results
+# 5. Verify both produce same fixes
+```
+
+**Success Criteria:**
+- ✅ All fixes apply without errors
+- ✅ Code compiles after fixes
+- ✅ Tests pass after fixes
+- ✅ No regressions introduced
+- ✅ Time saved: >80% vs manual fixing
+
+### 4. Performance Tool Verification (Non-Monorepo)
+
+**Goal:** Ensure Performance tool works correctly in standard (non-monorepo) projects
+
+**Action:**
+```bash
+# Create simple Express app (not monorepo)
+mkdir test-performance-tool
+cd test-performance-tool
+npm init -y
+npm install express
+
+# Add performance violations
+cat > index.js << 'EOF'
+// Intentional performance issues
+for (var i = 0; i < 1000000; i++) {
+  console.log(i); // Blocking synchronous operation
+}
+
+app.get('/', (req, res) => {
+  const data = JSON.parse(JSON.stringify(largeObject)); // Inefficient deep clone
+  res.json(data);
+});
+EOF
+
+# Run V9 analysis
+npx ts-node tests/integration/test-v9-lite-e2e.ts
+```
+
+**Verify:**
+- Performance tool runs (not skipped)
+- Detects the intentional violations
+- Provides fix recommendations
+- Execution time reasonable (<10s)
 
 ---
 
-## 📊 PREVIOUS SESSION SUMMARY (November 20, 2025)
+## 🔧 ORACLE CLOUD TESTING GUIDE
 
-**Session Focus:** TypeScript Compilation Architecture
+### Connection Setup
 
-### ✅ Key Achievements
-1. **Production Compilation Strategy**: Pre-compile for production, compile-on-demand for tests.
-2. **Test Infrastructure Fix**: Separate compilation for source and tests to handle `tsconfig.json` exclusions.
-3. **PR #69 Success**: Full V9 test passed on Oracle Cloud.
+**SSH Key Location:**
+```bash
+export SSH_KEY="/Users/alpinro/CodePrjects/codequal/keys/oracle/ssh-key-2025-10-07.key"
+export ORACLE_IP="129.213.49.128"
+export ORACLE_USER="opc"
+```
+
+**Connect to Oracle:**
+```bash
+ssh -i "$SSH_KEY" "$ORACLE_USER@$ORACLE_IP"
+```
+
+### PostgreSQL Setup (Dependency-Check)
+
+**Database Details:**
+- **Host**: localhost (on Oracle instance)
+- **Port**: 5432
+- **Database**: depcheck
+- **User**: postgres
+- **Password**: postgres
+
+**Verify PostgreSQL:**
+```bash
+# On Oracle instance
+psql -h localhost -U postgres -d depcheck -c "SELECT version();"
+```
+
+**Environment Variables:**
+```bash
+# In ~/codequal/packages/agents/.env
+NVD_DATABASE_URL=jdbc:postgresql://localhost:5432/depcheck
+NVD_DATABASE_USER=postgres
+NVD_DATABASE_PASSWORD=postgres
+```
+
+### Code Update Workflow
+
+**1. Push Changes from Local:**
+```bash
+# On local machine
+cd /Users/alpinro/CodePrjects/codequal
+git add .
+git commit -m "fix: Your commit message"
+git push origin feat/v9-footer-fixes-pr
+```
+
+**2. Pull Changes on Oracle:**
+```bash
+# SSH to Oracle
+ssh -i "$SSH_KEY" "$ORACLE_USER@$ORACLE_IP"
+
+# Navigate to repo
+cd ~/codequal
+
+# Pull latest changes
+git fetch origin
+git pull origin feat/v9-footer-fixes-pr
+
+# Verify latest commit
+git log -1 --oneline
+```
+
+**3. Sync Specific Files (Alternative):**
+```bash
+# From local machine - sync specific files
+scp -i "$SSH_KEY" \
+  packages/agents/src/two-branch/report/score-calculator.ts \
+  "$ORACLE_USER@$ORACLE_IP:~/codequal/packages/agents/src/two-branch/report/"
+
+# Or sync entire directory
+rsync -avz -e "ssh -i $SSH_KEY" \
+  packages/agents/src/ \
+  "$ORACLE_USER@$ORACLE_IP:~/codequal/packages/agents/src/"
+```
+
+### Running Tests on Oracle
+
+**Test File Location:**
+```bash
+cd ~/codequal/packages/agents
+```
+
+**Main Test Command:**
+```bash
+npx ts-node tests/integration/test-v9-lite-e2e.ts
+```
+
+**Test with Log Capture:**
+```bash
+npx ts-node tests/integration/test-v9-lite-e2e.ts 2>&1 | tee /tmp/v9-test.log
+```
+
+**Monitor Test Progress:**
+```bash
+# In another terminal
+ssh -i "$SSH_KEY" "$ORACLE_USER@$ORACLE_IP"
+tail -f /tmp/v9-test.log
+```
+
+### Download Test Results
+
+**Download Generated Report:**
+```bash
+# Find latest report
+ssh -i "$SSH_KEY" "$ORACLE_USER@$ORACLE_IP" 'ls -lt ~/codequal/packages/agents/tests/integration/test-outputs/*.md | head -1'
+
+# Download it
+scp -i "$SSH_KEY" \
+  "$ORACLE_USER@$ORACLE_IP:~/codequal/packages/agents/tests/integration/test-outputs/REPORT_NAME.md" \
+  /tmp/oracle-report.md
+```
+
+**Download Test Log:**
+```bash
+scp -i "$SSH_KEY" \
+  "$ORACLE_USER@$ORACLE_IP:/tmp/v9-test.log" \
+  /tmp/oracle-test-log.txt
+```
+
+### Environment Check Commands
+
+**Check Node.js & npm:**
+```bash
+node --version   # Should be v18+
+npm --version    # Should be 9+
+```
+
+**Check Redis (if needed):**
+```bash
+redis-cli ping   # Should return PONG
+```
+
+**Check Environment Variables:**
+```bash
+cd ~/codequal/packages/agents
+cat .env | grep -E "SUPABASE|NVD|OPENROUTER"
+```
+
+**Check Running Processes:**
+```bash
+ps aux | grep -E "ts-node|node" | grep -v grep
+```
+
+### Troubleshooting
+
+**Issue: Test fails with "Cannot find module"**
+```bash
+# Solution: Rebuild TypeScript
+cd ~/codequal/packages/agents
+npm run build
+```
+
+**Issue: PostgreSQL connection error**
+```bash
+# Check PostgreSQL is running
+sudo systemctl status postgresql
+# Or
+ps aux | grep postgres
+
+# Restart if needed
+sudo systemctl restart postgresql
+```
+
+**Issue: Out of memory**
+```bash
+# Check memory
+free -h
+
+# Kill hung processes
+pkill -f ts-node
+```
+
+**Issue: Stale ts-node cache**
+```bash
+# Clear ts-node cache
+rm -rf ~/.ts-node
+```
+
+---
+
+## 📊 PREVIOUS SESSION SUMMARIES
+
+### Session 30 (November 23, 2025)
+**Focus:** Bug #5 Fix + Report Quality Analysis
+- ✅ Fixed skill category scores to use Supabase baseline
+- ✅ Verified calculation accuracy (36/100 overall)
+- ✅ Identified 5 report accuracy bugs (BUG-079 through BUG-083)
+- ✅ Created comprehensive Oracle testing guide
+
+### Session 29 (November 21, 2025)
+**Focus:** Tool Stability & Monorepo Optimization
+- ✅ Fixed Dependency-Check (PostgreSQL connection)
+- ✅ Optimized ESLint for monorepos (skip entirely)
+- ✅ Optimized Performance tool for monorepos
+
+### Session 28 (November 20, 2025)
+**Focus:** TypeScript Compilation Architecture
+- ✅ Production compilation strategy finalized
+- ✅ Test infrastructure fix for tsconfig exclusions
+- ✅ PR #69 successful on Oracle Cloud
 
 ---
 
 ## 🔄 UPDATE HISTORY
 
-**2025-11-21** - Session 29: Dependency-Check fixed, Monorepo optimizations implemented.
-**2025-11-20** - Session 28: TypeScript compilation architecture finalized.
-**2025-11-19** - Session 27: Post-crash recovery and initial V9 testing.
+**2025-11-23** - Session 30: Bug #5 fixed, 5 report bugs identified, Oracle guide added
+**2025-11-21** - Session 29: Dependency-Check fixed, Monorepo optimizations implemented
+**2025-11-20** - Session 28: TypeScript compilation architecture finalized
+**2025-11-19** - Session 27: Post-crash recovery and initial V9 testing
 
 ---
 
-**Next Session:** Verify Performance tool in non-monorepo environment.
+## 🎯 NEXT SESSION PRIORITIES
+
+1. **Fix Report Accuracy Bugs** (BUG-079 through BUG-083) - 2-3 hours
+2. **Test Other TypeScript Frameworks** (Express, NestJS, Standalone) - 3-4 hours
+3. **Validate Auto-fix Scenarios** (Single, Severity Group, All LSP, SARIF) - 2-3 hours
+4. **Performance Tool Non-Monorepo Testing** - 1 hour
+5. **Create PR for All Bug Fixes** (Bugs #1-5) - 30 minutes
+
+**Estimated Total:** 8-11 hours
 
 **Session Owner:** alpsla
-**AI Assistant:** Antigravity
+**AI Assistant:** Claude Code (Sonnet 4.5)
+**Branch:** feat/v9-footer-fixes-pr
