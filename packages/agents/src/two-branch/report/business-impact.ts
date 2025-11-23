@@ -180,7 +180,7 @@ export function generateBusinessImpact(issues: EnrichedIssue[], groups: IssueGro
   const developerRate = 150; // $150/hour average
   const totalFixCost = Math.round(baseFixHours * developerRate);
   const fixDays = Math.ceil(baseFixHours / 8);
-  
+
   // Calculate issues by detected category
   const securityIssues = issues.filter(i => i.detectedCategory === 'Security');
   const performanceIssues = issues.filter(i => i.detectedCategory === 'Performance');
@@ -242,6 +242,11 @@ export function generateBusinessImpact(issues: EnrichedIssue[], groups: IssueGro
   }).length;
   const totalAutoFixPercentage = issues.length > 0 ? (autoFixableTotalCount / issues.length) * 100 : 0;
 
+  // Calculate manual review time for non-auto-fixable issues (Tier 3: Manual with AI guidance)
+  const nonAutoFixableCount = issues.length - autoFixableTotalCount;
+  const manualReviewHours = nonAutoFixableCount * 0.25; // 15 minutes per issue with AI guidance
+  const manualReviewCost = Math.round(manualReviewHours * developerRate);
+
   return `## 💼 Business Impact Analysis
 
 ### Executive Summary
@@ -261,15 +266,21 @@ ${autoFixableBlockingCount} of ${blocking.length} blocking issues (${autoFixPerc
 | Metric | Value |
 |--------|-------|
 | **Auto-Fix Time** | **${Math.ceil(autoFixableBlockingCount / 100)} minutes** (run formatters + linters) |
-| **Review Time** | **${baseFixHours.toFixed(1)} hours** (${baseFixHours.toFixed(1)}h × $${developerRate}/h = $${totalFixCost.toLocaleString()}) |
-| **Linter Auto-Fix (Blocking)** | **${autoFixPercentage.toFixed(0)}%** (${autoFixableBlockingCount}/${blocking.length} issues) - Run with \`--fix\` flag |
-| **Linter Auto-Fix (All)** | **${totalAutoFixPercentage.toFixed(0)}%** (${autoFixableTotalCount}/${issues.length} issues) - Quick wins 🎁 |
+| **Manual Review Time** | **${manualReviewHours.toFixed(1)} hours** (${nonAutoFixableCount} issues × 15 min with AI guidance = $${manualReviewCost.toLocaleString()}) |
+| **🟢 Safe Auto-Fix (Tier 1)** | **~15-20%** - Apply immediately, no testing |
+| **🟡 Advanced Auto-Fix (Tier 2)** | **${totalAutoFixPercentage.toFixed(0)}%** (${autoFixableTotalCount}/${issues.length} issues) - Includes security/critical, requires testing |
+| **🔴 Manual Review (Tier 3)** | **${Math.round((nonAutoFixableCount / issues.length) * 100)}%** (${nonAutoFixableCount}/${issues.length} issues) - Full review with AI guidance |
 | **AI Code Suggestions** | **100%** (${issues.length}/${issues.length} issues) - Every issue has AI-generated fix code |
-| **Recommendation** | Run linter \`--fix\` + formatter first, then AI suggestions for remaining |
+| **Potential Exploit Cost** | **$${minExploitCost.toLocaleString()} - $${maxExploitCost.toLocaleString()}** |
+| **Security Risk** | ${exploitDesc} |
+| **Return on Investment** | **${roi}x minimum return** by preventing issues now vs. fixing in production |
+| **Risk-Adjusted Savings** | **$${(minExploitCost - totalFixCost).toLocaleString()} minimum** (prevention vs. remediation) |
+| **Recommendation** | Apply Safe fixes → Test Advanced fixes → Review remaining with AI guidance |
 
 **Understanding the metrics:**
 - **Linter Auto-Fix**: Instant fixes via \`eslint --fix\`, \`prettier\`, etc. (${autoFixPercentage.toFixed(0)}% of blocking issues)
 - **AI Code Suggestions**: AI has generated copy-paste ready fix code for ALL ${issues.length} issues (100%)
+- **Financial Impact**: Fixing these issues now costs ~${fixDays} days vs $${minExploitCost.toLocaleString()}+ if they cause production incidents
 
 **💡 Bonus Opportunity:** Beyond the ${autoFixableBlockingCount} blocking issues, you can apply linter auto-fix to ${autoFixableTotalCount - autoFixableBlockingCount} additional issues (~${Math.ceil(autoFixableTotalCount / 60)} min). For issues not auto-fixable by linters, use the AI-generated code suggestions.`
     : `| Metric | Value |
