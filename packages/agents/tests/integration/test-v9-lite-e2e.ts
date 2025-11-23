@@ -698,7 +698,7 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
 
     if (scenario.testMode === 'baseline') {
       // SESSION 20 FIX: Baseline mode - analyze default branch only
-      const { detectDefaultBranch } = await import('../../src/two-branch/utils/git-utils.js');
+      const { detectDefaultBranch } = await import('../../src/two-branch/utils/git-utils');
       const defaultBranch = detectDefaultBranch(repoPath);
       console.log(`   📊 Repository Baseline Analysis (default branch: ${defaultBranch})...`);
       orchestrationResult = await orchestrator.orchestrate(repoPath, 'base', { analysisMode: 'complete' });
@@ -767,7 +767,7 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
       // CRITICAL: We scan ALL files on BOTH branches for accurate comparison
       // The categorization logic (EXISTING_REST, RESOLVED) requires comparing ALL issues
       // from both branches, not just changed files
-      const { getModifiedFilesBetweenBranches } = await import('../../src/two-branch/utils/git-utils.js');
+      const { getModifiedFilesBetweenBranches } = await import('../../src/two-branch/utils/git-utils');
       const modifiedFiles = getModifiedFilesBetweenBranches(repoPath, defaultBranch, prBranchName);
       console.log(`   📝 Modified files: ${modifiedFiles.length} (sample: ${modifiedFiles.slice(0, 3).join(', ')})`);
 
@@ -967,7 +967,7 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
     console.log(`   👤 PR Author: ${prAuthorInfo.author}`);
 
     // SESSION 27 FIX: Use dynamic default branch detection (main/master/trunk)
-    const { detectDefaultBranch } = await import('../../src/two-branch/utils/git-utils.js');
+    const { detectDefaultBranch } = await import('../../src/two-branch/utils/git-utils');
     const defaultBranch = detectDefaultBranch(repoPath);
 
     const metadata = {
