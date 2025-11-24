@@ -52,6 +52,13 @@ export interface LSPCodeActionData {
     };
   };
 
+  // Fix recommendation
+  fix: {
+    recommendation: string;      // How to fix the issue
+    bestPractices: string[];     // Best practices to follow
+    correctedCode: string;        // The actual fixed code
+  };
+
   // Code context for AI
   context: {
     originalCode: string;
@@ -522,6 +529,11 @@ export class LSPSARIFConverter {
           category: issue.category || 'code_quality',
           description: issue.message || this.generateDefaultWhat(issue),  // ENSURE NOT EMPTY
           explanation                                                       // ENSURE ALL FIELDS
+        },
+        fix: {
+          recommendation: issue.fixSuggestion?.fix || issue.fixSuggestion?.explanation || '',
+          bestPractices: issue.fixSuggestion?.bestPractices || [],
+          correctedCode: issue.fixSuggestion.correctedCode
         },
         context: {
           originalCode: issue.snippet || '',
