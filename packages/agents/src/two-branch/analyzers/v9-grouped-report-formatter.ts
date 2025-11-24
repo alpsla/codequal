@@ -1868,12 +1868,7 @@ ${scoreInterpretation.emoji} **${qualityResult.score.toFixed(1)}/100** (Grade: *
 **Score Breakdown**:
 ${qualityResult.categoryScores ? `
 **Category Scores** (Repository Health):
-- 🔒 Security: ${qualityResult.categoryScores.security}/100
-- ⚡ Performance: ${qualityResult.categoryScores.performance}/100
-- 🏗️  Architecture: ${qualityResult.categoryScores.architecture}/100
-- 📦 Dependencies: ${qualityResult.categoryScores.dependency}/100
-- ✨ Code Quality: ${qualityResult.categoryScores.codeQuality}/100
-
+${(byCategory['Security'] || 0) > 0 ? `- 🔒 Security: ${qualityResult.categoryScores.security}/100\n` : ''}${(byCategory['Performance'] || 0) > 0 ? `- ⚡ Performance: ${qualityResult.categoryScores.performance}/100\n` : ''}${(byCategory['Architecture'] || 0) > 0 ? `- 🏗️  Architecture: ${qualityResult.categoryScores.architecture}/100\n` : ''}${(byCategory['Dependencies'] || 0) > 0 ? `- 📦 Dependencies: ${qualityResult.categoryScores.dependency}/100\n` : ''}${(byCategory['Code Quality'] || 0) > 0 ? `- ✨ Code Quality: ${qualityResult.categoryScores.codeQuality}/100\n` : ''}
 **Overall Scores**:
 - 📱 **APP Score**: ${qualityResult.appScore}/100 (MIN of categories - "weakest link")
 - 👨‍💻 **Skill Score**: ${qualityResult.skillScore}/100 (AVG of categories)

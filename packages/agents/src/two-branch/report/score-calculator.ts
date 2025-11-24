@@ -164,7 +164,7 @@ export async function checkCachedScoresForCommit(
  */
 export async function calculateFullV9Score(
   issues: EnrichedIssue[],
-  metadata: { repository?: string; prNumber?: number; commitSHA?: string; prAuthor?: string; prAuthorEmail?: string },
+  metadata: { repository?: string; prNumber?: number; commitSHA?: string; prAuthor?: string; prAuthorEmail?: string; executedTools?: string[] },
   appScoreManager: any,
   skillScoreManager: any
 ): Promise<any> {
