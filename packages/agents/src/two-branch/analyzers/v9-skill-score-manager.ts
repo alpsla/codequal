@@ -41,7 +41,7 @@ export interface SkillScoreData {
 }
 
 export class SkillScoreManager {
-  constructor(private supabase: SupabaseClient) {}
+  constructor(private supabase: SupabaseClient) { }
 
   /**
    * Get baseline score (average of last 5 analyses)
@@ -52,7 +52,7 @@ export class SkillScoreManager {
     repository: string
   ): Promise<number> {
     try {
-      const { data, error} = await this.supabase
+      const { data, error } = await this.supabase
         .from('skill_scores')
         .select('overall_score')
         .eq('developer_email', developerEmail)
@@ -102,7 +102,7 @@ export class SkillScoreManager {
         .select('overall_score, pr_number, analyzed_at')
         .eq('developer_email', developerEmail)
         .eq('repo_name', repository)  // Fixed: use 'repo_name' column
-        .order('analyzed_at', { ascending: true })
+        .order('analyzed_at', { ascending: false }) // BUG-080 FIX: Get NEWEST records first
         .limit(limit * 2);  // Fetch 2x to handle duplicates
 
       if (error) {
@@ -128,7 +128,7 @@ export class SkillScoreManager {
         }
       }
 
-      const trend = uniqueScores.slice(0, limit);
+      const trend = uniqueScores.slice(0, limit).reverse(); // BUG-080 FIX: Reverse to show Oldest -> Newest
       console.log(`[SkillScoreManager] Trend for ${developerEmail}: [${trend.join(', ')}] (${data.length - trend.length} duplicates filtered)`);
       return trend;
     } catch (error) {

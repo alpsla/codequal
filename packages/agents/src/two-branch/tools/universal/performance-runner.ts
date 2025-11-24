@@ -36,6 +36,26 @@ export class PerformanceRunner {
         try {
             console.log('[Lighthouse] Running web performance analysis...');
 
+            // Check for monorepo structure and skip if detected
+            const fs = await import('fs');
+            const path = await import('path');
+            const isMonorepo = await (async () => {
+                try {
+                    const packagesDir = path.join(repoPath, 'packages');
+                    const appsDir = path.join(repoPath, 'apps');
+                    const hasPackages = await fs.promises.access(packagesDir).then(() => true).catch(() => false);
+                    const hasApps = await fs.promises.access(appsDir).then(() => true).catch(() => false);
+                    return hasPackages || hasApps;
+                } catch {
+                    return false;
+                }
+            })();
+
+            if (isMonorepo) {
+                console.log('[Lighthouse] ⏭️  Skipping Lighthouse - monorepo detected');
+                return [];
+            }
+
             const { stdout } = await execAsync(
                 'npx lhci autorun --collect.numberOfRuns=1 --collect.settings.chromeFlags="--no-sandbox" --upload.target=temporary-public-storage',
                 { cwd: repoPath, timeout: 120000 }
@@ -54,6 +74,26 @@ export class PerformanceRunner {
     async runBundleAnalyzer(repoPath: string): Promise<PerformanceIssue[]> {
         try {
             console.log('[Bundle Analyzer] Analyzing bundle size...');
+
+            // Check for monorepo structure and skip if detected
+            const fs = await import('fs');
+            const path = await import('path');
+            const isMonorepo = await (async () => {
+                try {
+                    const packagesDir = path.join(repoPath, 'packages');
+                    const appsDir = path.join(repoPath, 'apps');
+                    const hasPackages = await fs.promises.access(packagesDir).then(() => true).catch(() => false);
+                    const hasApps = await fs.promises.access(appsDir).then(() => true).catch(() => false);
+                    return hasPackages || hasApps;
+                } catch {
+                    return false;
+                }
+            })();
+
+            if (isMonorepo) {
+                console.log('[Bundle Analyzer] ⏭️  Skipping Bundle Analyzer - monorepo detected');
+                return [];
+            }
 
             // Check if webpack stats exist
             const statsPath = path.join(repoPath, 'stats.json');

@@ -1849,6 +1849,12 @@ ${errorMessage || 'Unknown error - check tool orchestrator logs for details'}
     const autoFixableIssues = issues.filter(i =>
       safeAutoApplyGroups.some(g => g.rule === i.rule && g.tool === i.tool && g.severity === i.severity)
     );
+
+    // BUG-083 FIX: Calculate ALL technically auto-fixable issues (Tier 1 + Tier 2)
+    // This includes both safe auto-apply and those requiring review
+    const technicallyAutoFixableIssues = issues.filter(i =>
+      autoFixableGroups.some(g => g.rule === i.rule && g.tool === i.tool && g.severity === i.severity)
+    );
     const fixCoverage = issues.length > 0 ? (autoFixableIssues.length / issues.length * 100) : 0;
 
     return `## 📊 Executive Summary
@@ -1940,6 +1946,49 @@ ${qualityResult.breakdown.resolutionBonus > 0 ? `
 ### Issue Summary
 
 **Total Issues**: ${issues.length.toLocaleString()} (${groups.length} unique types)
+
+${(() => {
+        // BUG-083 FIX: Clear distinction between Manual Review and Auto-Fixable
+        const autoFixCount = technicallyAutoFixableIssues.length;
+        const manualCount = issues.length - autoFixCount;
+        const autoFixPercent = issues.length > 0 ? ((autoFixCount / issues.length) * 100).toFixed(1) : '0.0';
+        const manualPercent = issues.length > 0 ? ((manualCount / issues.length) * 100).toFixed(1) : '0.0';
+
+        return `**Action Required**:
+- 🔴 **Manual Review**: ${manualCount.toLocaleString()} issues (${manualPercent}%) - Requires developer attention
+- 🚀 **Auto-Fixable**: ${autoFixCount.toLocaleString()} issues (${autoFixPercent}%) - Can be fixed automatically via IDE
+${(() => {
+            // BUG FIX: List specific manual review items so user knows what to focus on
+            if (manualCount === 0) return '';
+
+            const manualIssues = issues.filter(i =>
+              !autoFixableGroups.some(g => g.rule === i.rule && g.tool === i.tool && g.severity === i.severity)
+            );
+
+            // Group by file for cleaner reading
+            const byFile: Record<string, typeof manualIssues> = {};
+            manualIssues.forEach(i => {
+              if (!byFile[i.file]) byFile[i.file] = [];
+              byFile[i.file].push(i);
+            });
+
+            let checklist = `\n### 📋 Manual Review Checklist\n\nThese ${manualCount} issues cannot be auto-fixed and require your expertise:\n\n`;
+
+            Object.entries(byFile).slice(0, 10).forEach(([file, fileIssues]) => {
+              checklist += `**${file}**\n`;
+              fileIssues.forEach(i => {
+                checklist += `- [ ] Line ${i.line}: **${i.rule}** (${i.severity}) - ${i.message}\n`;
+              });
+              checklist += `\n`;
+            });
+
+            if (Object.keys(byFile).length > 10) {
+              checklist += `*(...and ${Object.keys(byFile).length - 10} more files)*\n`;
+            }
+
+            return checklist;
+          })()}`;
+      })()}
 
 **By Severity**:
 - 🔴 Critical: ${bySeverity.critical} (${((bySeverity.critical / issues.length) * 100).toFixed(1)}%)
@@ -2052,17 +2101,17 @@ Not all fixes are safe to apply blindly. We categorize based on:
 
 **Confidence Breakdown**:
 ${(() => {
-  const byConfidence: Record<string, number> = { high: 0, medium: 0, low: 0 };
-  // Count issues by their group's confidence level
-  groups.forEach(group => {
-    const conf = this.determineConfidence(group);
-    byConfidence[conf] = (byConfidence[conf] || 0) + group.count;
-  });
-  const total = issues.length || 1;
-  return `- 🟢 **High Confidence**: ${byConfidence.high} issues (${((byConfidence.high / total) * 100).toFixed(1)}%) - Safe to auto-apply
+        const byConfidence: Record<string, number> = { high: 0, medium: 0, low: 0 };
+        // Count issues by their group's confidence level
+        groups.forEach(group => {
+          const conf = this.determineConfidence(group);
+          byConfidence[conf] = (byConfidence[conf] || 0) + group.count;
+        });
+        const total = issues.length || 1;
+        return `- 🟢 **High Confidence**: ${byConfidence.high} issues (${((byConfidence.high / total) * 100).toFixed(1)}%) - Safe to auto-apply
 - 🟡 **Medium Confidence**: ${byConfidence.medium} issues (${((byConfidence.medium / total) * 100).toFixed(1)}%) - Review recommended
 - 🟠 **Low Confidence**: ${byConfidence.low} issues (${((byConfidence.low / total) * 100).toFixed(1)}%) - Requires careful review`;
-})()}
+      })()}
 
 > 💡 **This is better than competitors** (SonarQube, Snyk) who only provide fixes for ~20-30% of issues!
 >
@@ -3957,8 +4006,17 @@ mvn spotless:check  # Verify (use in CI)
    * Determine confidence level for auto-fix
    */
   private determineConfidence(group: IssueGroup): 'high' | 'medium' | 'low' {
-    if (group.rule === 'AvoidUsingVolatile') return 'high';
-    if (group.rule === 'GuardLogStatement') return 'medium';
+    // High Confidence: Safe to auto-apply without review
+    if (this.isSafeToAutoApply(group)) {
+      return 'high';
+    }
+
+    // Medium Confidence: Can be auto-fixed but requires review
+    if (this.canAutoFix(group)) {
+      return 'medium';
+    }
+
+    // Low Confidence: Manual fix required
     return 'low';
   }
 
@@ -4630,7 +4688,8 @@ Continue following best practices and consider integrating static analysis into 
       for (const gitDev of gitTeammates) {
         const normalizedGitEmail = normalizeEmailForDedup(gitDev.email);
         const existsInSupabase = teamLeaderboard.some((dev: any) =>
-          normalizeEmailForDedup(dev.email) === normalizedGitEmail
+          normalizeEmailForDedup(dev.email) === normalizedGitEmail ||
+          (dev.name && gitDev.name && dev.name.toLowerCase().trim() === gitDev.name.toLowerCase().trim())
         );
 
         if (!existsInSupabase) {
@@ -4665,7 +4724,8 @@ Continue following best practices and consider integrating static analysis into 
       console.log(`[Skills] DEBUG: Normalized email: ${normalizedAuthorEmail}`);
 
       const currentDevIndex = teamLeaderboard.findIndex((d: any) =>
-        normalizeEmail(d.email) === normalizedAuthorEmail
+        normalizeEmail(d.email) === normalizedAuthorEmail ||
+        (d.name && metadata.prAuthor && d.name.toLowerCase().trim() === metadata.prAuthor.toLowerCase().trim())
       );
       console.log(`[Skills] DEBUG: Found at index ${currentDevIndex}`);
 
@@ -5158,27 +5218,27 @@ ${blocking.length > 5 ? `\n... and ${blocking.length - 5} more` : ''}` : '### �
 
 **Fix Recommendations (100% Coverage):**
 ${(() => {
-  const safeCount = issues.filter(i => this.isSafeToAutoApply({ rule: i.rule, tool: i.tool, severity: i.severity } as any)).length;
-  const safePercent = Math.round(safeCount / issues.length * 100);
-  const advancedCount = issues.filter(i => this.canAutoFix({ rule: i.rule, tool: i.tool, severity: i.severity } as any)).length;
-  const advancedPercent = Math.round(advancedCount / issues.length * 100);
-  const manualCount = issues.length - advancedCount;
-  const manualPercent = Math.round(manualCount / issues.length * 100);
+        const safeCount = issues.filter(i => this.isSafeToAutoApply({ rule: i.rule, tool: i.tool, severity: i.severity } as any)).length;
+        const safePercent = Math.round(safeCount / issues.length * 100);
+        const advancedCount = issues.filter(i => this.canAutoFix({ rule: i.rule, tool: i.tool, severity: i.severity } as any)).length;
+        const advancedPercent = Math.round(advancedCount / issues.length * 100);
+        const manualCount = issues.length - advancedCount;
+        const manualPercent = Math.round(manualCount / issues.length * 100);
 
-  const tier1 = safeCount > 0
-    ? `${safeCount} issues (${safePercent}%) - Apply immediately`
-    : `0 issues - No simple fixes`;
-  const tier2 = advancedCount > 0
-    ? `${advancedCount} issues (${advancedPercent}%) - Requires testing`
-    : `0 issues - No advanced fixes`;
-  const tier3 = manualCount > 0
-    ? `${manualCount} issues (${manualPercent}%) - AI-guided manual review`
-    : `0 issues - All auto-fixable!`;
+        const tier1 = safeCount > 0
+          ? `${safeCount} issues (${safePercent}%) - Apply immediately`
+          : `0 issues - No simple fixes`;
+        const tier2 = advancedCount > 0
+          ? `${advancedCount} issues (${advancedPercent}%) - Requires testing`
+          : `0 issues - No advanced fixes`;
+        const tier3 = manualCount > 0
+          ? `${manualCount} issues (${manualPercent}%) - AI-guided manual review`
+          : `0 issues - All auto-fixable!`;
 
-  return `- 🟢 **Safe Auto-Fix (Tier 1)**: ${tier1}
+        return `- 🟢 **Safe Auto-Fix (Tier 1)**: ${tier1}
 - 🟡 **Advanced Auto-Fix (Tier 2)**: ${tier2}
 - 🔴 **Manual Review (Tier 3)**: ${tier3}`;
-})()}
+      })()}
 
 **By Severity:**
 - Critical: ${issues.filter(i => i.severity === 'critical').length}

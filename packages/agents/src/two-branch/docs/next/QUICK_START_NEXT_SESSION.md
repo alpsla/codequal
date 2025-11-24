@@ -66,47 +66,51 @@ During comprehensive report quality analysis, identified 5 issues affecting repo
 - **File**: `business-impact.ts` - Performance Trend calculation
 
 #### BUG-081: Top Performers Score Incorrect (MEDIUM)
-- **Issue**: Shows 50/100 instead of calculated 36/100
-- **Impact**: Inaccurate leaderboard rankings
-- **Fix**: Use corrected baseline score calculation in Top Performers section
-- **File**: `business-impact.ts` - Top Performers Leaderboard
+# Quick Start Guide: V9 Analyzer Framework (Next Session)
 
-#### BUG-082: Performance Tool Runs on Monorepo (LOW)
-- **Issue**: Performance tool wastes 3.9s on monorepos, finds 0 issues
-- **Impact**: Unnecessary execution time and API costs
-- **Fix**: Skip Performance tool for monorepos (like ESLint in Session 29)
-- **File**: `v9-tool-orchestrator.ts` - Performance tool orchestration
+## 🚀 Current Status (Updated: 2025-11-23)
+- **V9 Report Footer**: ✅ FIXED (4/4 bugs resolved)
+- **Skill Score Calculation**: ✅ FIXED (5/5 bugs resolved)
+- **Report Accuracy**: ✅ FIXED (5/5 bugs resolved - BUG-079 to BUG-083)
 
-#### BUG-083: Manual vs Auto-fix Confusion (MEDIUM)
-- **Issue**: Users can't identify which 47 issues need manual review vs 246 auto-fixable
-- **Impact**: Users waste time, miss high-priority manual reviews
-- **Fix**: Add visual indicators, separate sections, provide filtering
-- **File**: `v9-grouped-report-formatter.ts` - Issue presentation
+## 📋 Immediate Priorities
 
----
+### 1. Verify Fixes in Production
+- Monitor the next few PRs to ensure:
+  - "Action Required" section appears and is accurate.
+  - Confidence Breakdown aligns with auto-fixability.
+  - Performance Trend shows correct history (Newest records).
+  - Top Performers list shows correct current score.
+  - Performance tool skips execution on monorepos.
 
-## 📋 IMMEDIATE NEXT PRIORITIES
+### 2. Multi-Framework Testing (Next Major Task)
+- **Objective**: Ensure V9 works correctly on non-TypeScript projects.
+- **Targets**:
+  - **Python**: Flask/Django app (check Pylint/Bandit integration).
+  - **Java**: Spring Boot app (check PMD/SpotBugs integration).
+  - **Go**: Gin/Echo app (check GolangCI-Lint).
 
-### 1. Fix Report Accuracy Bugs (BUG-079 through BUG-083)
+### 3. Auto-Fix Testing
+- **Objective**: Validate the "Auto-Fix" workflow.
+- **Scenarios**:
+  - **Tier 1 (Safe)**: Verify `eslint --fix` style changes are applied automatically.
+  - **Tier 2 (Technically Auto-fixable)**: Verify Semgrep/PMD fixes are suggested correctly in the manifest.
+  - **Tier 3 (Manual)**: Verify AI guidance is helpful.
 
-**Priority Order:**
-1. **BUG-083** (MEDIUM) - Manual vs Auto-fix confusion - Most user-facing
-2. **BUG-079** (MEDIUM) - Confidence breakdown mismatch - User trust issue
-3. **BUG-080** (MEDIUM) - Performance trend backwards - Accuracy critical
-4. **BUG-081** (MEDIUM) - Top performers score - Leaderboard accuracy
-5. **BUG-082** (LOW) - Performance tool on monorepo - Optimization only
+## 🐛 Recent Bug Fixes (Session 2025-11-23)
 
-**Estimated Effort:** 2-3 hours (all 5 bugs)
+| Bug ID | Description | Status | Fix |
+|--------|-------------|--------|-----|
+| **BUG-079** | Confidence Breakdown Mismatch | ✅ Fixed | Aligned confidence levels with auto-fix tiers (High=Safe, Medium=Technical, Low=Manual). |
+| **BUG-080** | Performance Trend Numbers Backwards | ✅ Fixed | Updated `getScoreTrend` to fetch newest records and reverse for chronological display. |
+| **BUG-081** | Top Performers Score Incorrect | ✅ Fixed | Improved developer matching (Name+Email) to prevent duplicates and ensure current score is used. |
+| **BUG-082** | Performance Tool Runs on Monorepo | ✅ Fixed | Added monorepo detection to `runLighthouse` and `runBundleAnalyzer` in `performance-runner.ts`. |
+| **BUG-083** | Manual vs Auto-fix Confusion | ✅ Fixed | Added "Action Required" section and "Manual Review Checklist" to explicitly list non-autofixable issues. |
 
-### 2. Multi-Framework TypeScript Testing
-
-**Goal:** Verify V9 works correctly across different TypeScript frameworks (not just CodeQual monorepo)
-
-**Target Frameworks:**
-- ✅ **Next.js** (React framework) - Already tested on CodeQual monorepo
-- ⏳ **Express.js** (Standard backend) - Test with simple Express app
-- ⏳ **NestJS** (Opinionated backend) - Test with NestJS starter
-- ⏳ **Standalone TypeScript** (Non-framework) - Test pure TypeScript project
+## 📂 Key Files
+- `packages/agents/src/two-branch/analyzers/v9-grouped-report-formatter.ts`: Report generation logic.
+- `packages/agents/src/two-branch/analyzers/v9-skill-score-manager.ts`: Skill score and trend logic.
+- `packages/agents/src/two-branch/tools/universal/performance-runner.ts`: Performance tool execution.
 
 **Action Plan:**
 ```bash
