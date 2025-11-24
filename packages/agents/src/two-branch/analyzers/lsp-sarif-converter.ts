@@ -575,9 +575,23 @@ export class LSPSARIFConverter {
 
   private createSARIFRule(group: IssueGroup): SARIFRule {
     // Extract fix suggestion text (handle both string and object formats)
-    const fixText = typeof group.fixSuggestion === 'string'
-      ? group.fixSuggestion
-      : group.fixSuggestion?.explanation || 'No fix suggestion available';
+    // BUG FIX: Always provide meaningful help text, never show "No fix suggestion available"
+    let fixText: string;
+
+    if (typeof group.fixSuggestion === 'string') {
+      fixText = group.fixSuggestion;
+    } else if (group.fixSuggestion?.explanation) {
+      fixText = group.fixSuggestion.explanation;
+    } else if (group.fixSuggestion?.fix) {
+      // Use the 'fix' field if explanation is missing
+      fixText = group.fixSuggestion.fix;
+    } else if (group.description) {
+      // Fallback to group description
+      fixText = `${group.description}. Review the code and apply appropriate fixes based on the rule: ${group.rule}`;
+    } else {
+      // Last resort: Generate helpful text based on rule
+      fixText = `Fix ${group.rule} violations. This issue was detected by ${group.tool} and requires attention.`;
+    }
 
     return {
       id: group.rule,
@@ -585,7 +599,7 @@ export class LSPSARIFConverter {
       fullDescription: { text: group.description || group.rule },
       help: {
         text: fixText,
-        markdown: fixText !== 'No fix suggestion available' ? `## How to Fix\n\n${fixText}` : undefined
+        markdown: `## How to Fix\n\n${fixText}`
       },
       defaultConfiguration: {
         level: this.mapSeverityToSARIF(group.severity)

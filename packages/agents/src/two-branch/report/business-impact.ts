@@ -17,7 +17,7 @@ function canAutoFix(group: IssueGroup): boolean {
   if (group.tool === 'checkstyle') {
     return true;
   }
-  
+
   // PMD: Common auto-fixable rules
   const autoFixablePMDRules = [
     'SystemPrintln',
@@ -34,21 +34,21 @@ function canAutoFix(group: IssueGroup): boolean {
     'ClassWithOnlyPrivateConstructorsShouldBeFinal',
     'ReturnEmptyCollectionRatherThanNull'
   ];
-  
+
   if (autoFixablePMDRules.includes(group.rule)) {
     return true;
   }
-  
+
   // Semgrep: AI-generated fixes are IDE-applicable
   if (group.tool === 'semgrep') {
     return true;
   }
-  
+
   // Dependency-Check: IDEs have dependency management tools
   if (group.tool === 'dependency-check') {
     return true;
   }
-  
+
   return false;
 }
 
@@ -56,8 +56,8 @@ function canAutoFix(group: IssueGroup): boolean {
  * Get exploit cost explanation based on severity and type
  */
 export function getExploitCostExplanation(
-  criticalCount: number, 
-  highCount: number, 
+  criticalCount: number,
+  highCount: number,
   securityCount: number
 ): string {
   if (criticalCount > 0 && securityCount > 0) {
@@ -77,29 +77,29 @@ export function getExploitCostExplanation(
  */
 export function getRiskImpactLevel(categoryIssues: EnrichedIssue[]): string {
   if (categoryIssues.length === 0) return '⚪ None';
-  
+
   // Count blocking issues (NEW/EXISTING_MODIFIED + critical/high)
-  const blockingCritical = categoryIssues.filter(i => 
-    (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED') && 
+  const blockingCritical = categoryIssues.filter(i =>
+    (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED') &&
     i.severity === 'critical'
   ).length;
-  
-  const blockingHigh = categoryIssues.filter(i => 
-    (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED') && 
+
+  const blockingHigh = categoryIssues.filter(i =>
+    (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED') &&
     i.severity === 'high'
   ).length;
-  
+
   const totalBlocking = blockingCritical + blockingHigh;
-  
+
   // BUG FIX #75: Any blocking HIGH/CRITICAL issues = HIGH RISK (not Medium)
   if (blockingCritical > 0) return '🔴 Critical';
   if (blockingHigh > 0) return '🔴 High';
-  
+
   // No blocking issues - assess by backlog severity
   const critical = categoryIssues.filter(i => i.severity === 'critical').length;
   const high = categoryIssues.filter(i => i.severity === 'high').length;
   const medium = categoryIssues.filter(i => i.severity === 'medium').length;
-  
+
   if (critical >= 3) return '🟠 High';
   if (critical >= 1 || high >= 5) return '🟡 Medium';
   if (high >= 2 || medium >= 20) return '🟡 Medium';
@@ -176,7 +176,7 @@ export function generateBusinessImpact(issues: EnrichedIssue[], groups: IssueGro
     }
     baseFixHours = Math.max(0, baseFixHours - autoFixOriginalHours + autoFixAdjustedHours);
   }
-  
+
   const developerRate = 150; // $150/hour average
   const totalFixCost = Math.round(baseFixHours * developerRate);
   const fixDays = Math.ceil(baseFixHours / 8);
@@ -187,15 +187,15 @@ export function generateBusinessImpact(issues: EnrichedIssue[], groups: IssueGro
   const architectureIssues = issues.filter(i => i.detectedCategory === 'Architecture');
   const dependencyIssues = issues.filter(i => i.detectedCategory === 'Dependencies');
   const codeQualityIssues = issues.filter(i => i.detectedCategory === 'Code Quality');
-  
+
   // Calculate potential exploit costs
   const hasSecurityIssues = securityIssues.length > 0;
   const hasCriticalSecurity = securityIssues.filter(i => i.severity === 'critical').length > 0;
-  
+
   let minExploitCost: number;
   let maxExploitCost: number;
   let exploitDesc: string;
-  
+
   if (hasCriticalSecurity) {
     minExploitCost = 50000;
     maxExploitCost = 500000;
@@ -213,7 +213,7 @@ export function generateBusinessImpact(issues: EnrichedIssue[], groups: IssueGro
     maxExploitCost = 50000;
     exploitDesc = 'Technical debt accumulation, slower development velocity';
   }
-  
+
   const roi = Math.round(minExploitCost / Math.max(totalFixCost, 1));
 
   const immediateRisk = blocking.length > 0 ? '🔴 High' : '🟢 Low';
@@ -251,24 +251,24 @@ export function generateBusinessImpact(issues: EnrichedIssue[], groups: IssueGro
 
 ### Executive Summary
 ${blocking.length > 0
-  ? `⚠️ **Critical attention required:** ${blocking.length} blocking issue${blocking.length > 1 ? 's' : ''} must be resolved before deployment to avoid security vulnerabilities or system failures.`
-  : blockingCritical.length > 0
-    ? `🟡 **Action recommended:** ${blockingCritical.length} critical issue${blockingCritical.length > 1 ? 's' : ''} should be addressed to maintain code quality and prevent future problems.`
-    : `✅ **Acceptable quality:** Issues identified are manageable and can be addressed systematically through normal development cycles.`
-}
+      ? `⚠️ **Critical attention required:** ${blocking.length} blocking issue${blocking.length > 1 ? 's' : ''} must be resolved before deployment to avoid security vulnerabilities or system failures.`
+      : blockingCritical.length > 0
+        ? `🟡 **Action recommended:** ${blockingCritical.length} critical issue${blockingCritical.length > 1 ? 's' : ''} should be addressed to maintain code quality and prevent future problems.`
+        : `✅ **Acceptable quality:** Issues identified are manageable and can be addressed systematically through normal development cycles.`
+    }
 
 ### Financial Impact
 ${blocking.length > 0
-  ? mostlyAutoFixable
-    ? `**🟢 Auto-Fix Available**
+      ? mostlyAutoFixable
+        ? `**🟢 Auto-Fix Available**
 ${autoFixableBlockingCount} of ${blocking.length} blocking issues (${autoFixPercentage.toFixed(0)}%) can be automatically fixed using IDE tools or linters.
 
 | Metric | Value |
 |--------|-------|
 | **Auto-Fix Time** | **${Math.ceil(autoFixableBlockingCount / 100)} minutes** (run formatters + linters) |
 | **Manual Review Time** | **${manualReviewHours.toFixed(1)} hours** (${nonAutoFixableCount} issues × 15 min with AI guidance = $${manualReviewCost.toLocaleString()}) |
-| **🟢 Safe Auto-Fix (Tier 1)** | **~15-20%** - Apply immediately, no testing |
-| **🟡 Advanced Auto-Fix (Tier 2)** | **${totalAutoFixPercentage.toFixed(0)}%** (${autoFixableTotalCount}/${issues.length} issues) - Includes security/critical, requires testing |
+| **🟢 Safe Auto-Fix (Tier 1)** | **Subset of Tier 2** - Apply immediately, no testing needed |
+| **🟡 Advanced Auto-Fix (Tier 2)** | **${Math.round(totalAutoFixPercentage)}%** (${autoFixableTotalCount}/${issues.length} issues) - Includes security/critical, requires testing |
 | **🔴 Manual Review (Tier 3)** | **${Math.round((nonAutoFixableCount / issues.length) * 100)}%** (${nonAutoFixableCount}/${issues.length} issues) - Full review with AI guidance |
 | **AI Code Suggestions** | **100%** (${issues.length}/${issues.length} issues) - Every issue has AI-generated fix code |
 | **Potential Exploit Cost** | **$${minExploitCost.toLocaleString()} - $${maxExploitCost.toLocaleString()}** |
@@ -283,7 +283,7 @@ ${autoFixableBlockingCount} of ${blocking.length} blocking issues (${autoFixPerc
 - **Financial Impact**: Fixing these issues now costs ~${fixDays} days vs $${minExploitCost.toLocaleString()}+ if they cause production incidents
 
 **💡 Bonus Opportunity:** Beyond the ${autoFixableBlockingCount} blocking issues, you can apply linter auto-fix to ${autoFixableTotalCount - autoFixableBlockingCount} additional issues (~${Math.ceil(autoFixableTotalCount / 60)} min). For issues not auto-fixable by linters, use the AI-generated code suggestions.`
-    : `| Metric | Value |
+        : `| Metric | Value |
 |--------|-------|
 | **Total Fix Cost** | **$${totalFixCost.toLocaleString()}** (${baseFixHours.toFixed(1)} hours, ~${fixDays} developer-days at $${developerRate}/hour) |
 ${autoFixableBlockingCount > 0 ? `| **Cost Breakdown** | ${autoFixableBlockingCount} auto-fixable (${autoFixPercentage.toFixed(0)}%, ~${(autoFixableBlockingCount * 0.1).toFixed(1)}h) + ${blocking.length - autoFixableBlockingCount} manual (~${((blocking.length - autoFixableBlockingCount) * 1.75).toFixed(1)}h) |` : ''}
@@ -292,7 +292,7 @@ ${autoFixableTotalCount > 0 ? `| **Linter Auto-Fix (All)** | **${totalAutoFixPer
 | **Security Risk** | ${exploitDesc} |
 | **Return on Investment** | **${roi}x minimum return** by preventing issues now vs. fixing in production |
 | **Risk-Adjusted Savings** | $${(minExploitCost - totalFixCost).toLocaleString()} minimum (prevention vs. remediation) |${autoFixableBlockingCount > 0 ? `\n\n**💡 Tip:** ${autoFixableBlockingCount} blocking issue${autoFixableBlockingCount > 1 ? 's' : ''} can be auto-fixed with linter \`--fix\` flag.` : ''}${autoFixableTotalCount > autoFixableBlockingCount ? `\n\n**🎁 Bonus:** Apply linter auto-fix to ${autoFixableTotalCount - autoFixableBlockingCount} additional issues (~${Math.ceil(autoFixableTotalCount / 60)} min). For non-linter-fixable issues, use AI suggestions.` : ''}`
-  : `**💚 Low Financial Risk**
+      : `**💚 Low Financial Risk**
 No critical or high-severity issues detected. All identified issues are related to code quality and maintainability (tabs, formatting, documentation).
 
 **Cost to fix:** Minimal - most issues are auto-fixable via IDE tools or linters.
@@ -300,7 +300,7 @@ No critical or high-severity issues detected. All identified issues are related 
 **Recommendation:** Address during regular refactoring cycles or enable pre-commit hooks (CheckStyle, Spotless).
 
 ${autoFixableTotalCount > 0 ? `**🎁 Quick Win:** ${autoFixableTotalCount} of ${issues.length} issues (${totalAutoFixPercentage.toFixed(0)}%) can be auto-fixed in ~${Math.ceil(autoFixableTotalCount / 60)} minutes with linter \`--fix\` commands.` : ''}`
-}
+    }
 
 ### Risk Assessment
 - **Immediate Risk:** ${immediateRisk}
