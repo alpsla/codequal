@@ -230,17 +230,21 @@ export class GitPatchGenerator {
     fs.writeFileSync(tempPatchPath, patchContent);
 
     // Run git apply --check
-
     try {
-      execSync(`git apply --check ${tempPatchPath}`, {
+      execSync(`git apply --check "${tempPatchPath}"`, {
         cwd: repositoryPath,
-        stdio: 'pipe'
+        encoding: 'utf-8'
       });
 
       // Clean up
-      fs.unlinkSync(tempPatchPath);
+      if (fs.existsSync(tempPatchPath)) {
+        fs.unlinkSync(tempPatchPath);
+      }
 
-      return { valid: true, errors: [] };
+      return {
+        valid: true,
+        errors: []
+      };
     } catch (error: any) {
       // Clean up
       if (fs.existsSync(tempPatchPath)) {

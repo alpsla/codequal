@@ -348,7 +348,7 @@ class CodeQualSessionStarter {
    */
   private async checkServicePort(port: number): Promise<boolean> {
     try {
-      execSync(`curl -s http://localhost:${port}/health`, { stdio: 'pipe' });
+      execSync(`lsof -i :${port}`, { encoding: 'utf-8', stdio: 'pipe' });
       return true;
     } catch {
       return false;
@@ -356,11 +356,11 @@ class CodeQualSessionStarter {
   }
 
   /**
-   * Check Redis
+   * Check Redis connection
    */
   private async checkRedis(): Promise<boolean> {
     try {
-      const output = execSync('redis-cli ping', { 
+      const output = execSync('redis-cli ping', {
         encoding: 'utf-8',
         stdio: 'pipe'
       });

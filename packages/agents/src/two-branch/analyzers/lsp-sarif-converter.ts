@@ -10,6 +10,8 @@
 
 import { EnrichedIssue } from './v9-grouped-report-formatter';
 import { IssueGroup } from '../utils/issue-grouping';
+import { classifyIssue } from '../../fix-agent/issue-classifier';
+import { routeToFixer, getFixerConfig, EnrichedIssue as FixEnrichedIssue } from '../../fix-agent/fix-router';
 
 // ============================================================================
 // LSP Code Actions Types
@@ -76,6 +78,17 @@ export interface LSPCodeActionData {
     confidence: number;      // 0.0 - 1.0
     source: 'ai_generated' | 'rule_based' | 'template';
     verified: boolean;       // Has this type of fix been validated?
+  };
+
+  // Three-Tier Fix System (NEW)
+  fixTier?: {
+    tier: 1 | 2 | 3;                    // 1=Native tool, 2=Dedicated fixer, 3=AI
+    fixer: string;                       // Tool name (eslint, ruff, sorald, ai)
+    command?: string;                    // Command to execute (e.g., 'eslint --fix')
+    issueType: 'style' | 'quality' | 'security' | 'performance' | 'maintainability' | 'compatibility' | 'dependency' | 'unknown';
+    fixable: boolean;                    // Can be auto-fixed
+    estimatedTime?: number;              // Estimated fix time in ms
+    batchable?: boolean;                 // Can be batched with other fixes
   };
 
   // Telemetry (for tracking)
@@ -552,9 +565,60 @@ export class LSPSARIFConverter {
           ruleId: issue.rule,
           toolName: issue.tool,
           issueCount: 1
-        }
+        },
+        // Three-Tier Fix System - Add fix routing information
+        fixTier: this.getFixTierInfo(issue)
       }
     };
+  }
+
+  /**
+   * Get fix tier information for an issue using the Three-Tier Fix System
+   * Tier 1: Native tool fixes (eslint --fix, ruff --fix)
+   * Tier 2: Dedicated fixer tools (Sorald, autoflake, OpenRewrite)
+   * Tier 3: AI-generated fixes (fallback)
+   */
+  private getFixTierInfo(issue: EnrichedIssue): LSPCodeActionData['fixTier'] {
+    try {
+      // Classify the issue to get type and fixability
+      const classification = classifyIssue(issue.rule, issue.tool);
+
+      // Create enriched issue for routing
+      const enrichedForRouting: FixEnrichedIssue = {
+        id: `${issue.rule}-${issue.line}`,
+        ruleId: issue.rule,
+        tool: issue.tool,
+        message: issue.message,
+        file: issue.file,
+        line: issue.line || 1,
+        severity: issue.severity as 'critical' | 'high' | 'medium' | 'low',
+        category: issue.category
+      };
+
+      // Route the issue to get fixer information
+      const routed = routeToFixer(enrichedForRouting);
+      const fixerConfig = getFixerConfig(routed.route.fixer);
+
+      return {
+        tier: routed.route.tier,
+        fixer: routed.route.fixer,
+        command: routed.route.command || fixerConfig?.command,
+        issueType: classification.issueType,
+        fixable: classification.fixable,
+        estimatedTime: routed.route.estimatedTime || fixerConfig?.estimatedTime,
+        batchable: routed.route.batchable ?? fixerConfig?.batchable
+      };
+    } catch (error) {
+      // Fallback to AI tier if classification fails
+      return {
+        tier: 3,
+        fixer: 'ai',
+        issueType: 'unknown',
+        fixable: false,
+        estimatedTime: 3000,
+        batchable: true
+      };
+    }
   }
 
   private mapSeverityToLSP(severity: string): 1 | 2 | 3 | 4 {

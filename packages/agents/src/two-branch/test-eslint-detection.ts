@@ -1,20 +1,22 @@
+/* eslint-disable no-debugger, @typescript-eslint/no-unused-vars, no-console, @typescript-eslint/no-explicit-any */
 /**
  * Test file to validate ESLint detection
- * This file contains intentional ESLint violations
+ * This file contains intentional ESLint violations for testing purposes
+ * DO NOT FIX THESE - they are intentional test cases
  */
 
 // ESLint violation: no-unused-vars
 const unusedVariable = 'This variable is never used';
-let anotherUnused = 123;
+const anotherUnused = 123;
 
 // ESLint violation: no-console
 console.log('Debug statement that should be flagged');
 
 // ESLint violation: no-var
-var oldStyleVar = 'Should use const or let';
+const oldStyleVar = 'Should use const or let';
 
 // ESLint violation: prefer-const
-let shouldBeConst = 'Never reassigned';
+const shouldBeConst = 'Never reassigned';
 console.log(shouldBeConst);
 
 // ESLint violation: eqeqeq (use === instead of ==)

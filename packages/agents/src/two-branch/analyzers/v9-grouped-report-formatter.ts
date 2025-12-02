@@ -21,6 +21,8 @@ import { AppScoreManager } from './v9-app-score-manager';
 import { SkillScoreManager } from './v9-skill-score-manager';
 import { LSPSARIFConverter } from './lsp-sarif-converter';
 import { GitLabCodeQualityConverter } from './gitlab-codequality-converter';
+import { classifyIssue, getClassificationStats } from '../../fix-agent/issue-classifier';
+import { getRouteSummary, EnrichedIssue as FixEnrichedIssue } from '../../fix-agent/fix-router';
 
 // Load environment variables
 dotenv.config();
@@ -1018,16 +1020,16 @@ export class V9GroupedReportFormatter {
 
     try {
       const result = execSync(
-        `find "${this.repoPath}" -type f -name "${basename}" | grep -v "/\\.git/" | head -1`,
-        { encoding: 'utf-8' }
-      ).trim();
-
-      if (result) {
-        // Convert to relative path
-        return result.replace(this.repoPath + '/', '');
+        `find "${this.repoPath}" -name "${basename}" -type f 2>/dev/null | head -1`,
+        { encoding: 'utf-8', timeout: 5000 }
+      );
+      const fullPath = result.trim();
+      if (fullPath) {
+        // Return path relative to repo root
+        return fullPath.replace(this.repoPath + '/', '');
       }
-    } catch (error) {
-      // File not found or command failed
+    } catch {
+      // Ignore errors from find command
     }
 
     return null;
@@ -2091,17 +2093,24 @@ ${this.SHOW_FIX_COVERAGE ? `**Fix Coverage**:
    - Shows WHAT to change, WHY it matters, and HOW to fix it
    - Educational guidance for developers
 
-2. **Auto-Fixable Issues (${((autoFixableIssues.length / issues.length) * 100).toFixed(1)}% Coverage)** 🚀
-   - ${autoFixableIssues.length.toLocaleString()} issues can be applied automatically
-   - Marked with \`safe_auto_apply: true\` in manifest
-   - Safe, non-breaking changes that don't need review
+2. **Safe Auto-Apply (${((autoFixableIssues.length / issues.length) * 100).toFixed(1)}% Coverage)** 🚀
+   - ${autoFixableIssues.length.toLocaleString()} issues marked \`safe_auto_apply: true\`
+   - High-confidence fixes that can be applied without review
+   - Remaining ${(issues.length - autoFixableIssues.length).toLocaleString()} issues have fixes but need developer review
 
-**Why the Difference?**
+**Three-Tier Fix System** (see "Fix Recommendations" above):
 
-Not all fixes are safe to apply blindly. We categorize based on:
-- **Confidence Level**: How certain the AI is about the fix
-- **Risk Level**: Potential for breaking changes or side effects
-- **Issue Type**: Simple style fixes ✅ vs. Security/architectural changes ⚠️
+CodeQual uses a deterministic fix routing system to maximize automation while maintaining safety:
+
+${(() => {
+        const breakdown = this.calculateTierBreakdown(groups);
+        return `**Fix Tier Breakdown**:
+- 🟢 **Tier 1 (Native Tools)**: ${breakdown.tier1.issues.toLocaleString()} issues (${breakdown.tier1.percent.toFixed(1)}%) - \`eslint --fix\`, \`ruff --fix\`, etc. (95% confidence)
+- 🟡 **Tier 2 (Dedicated Fixers)**: ${breakdown.tier2.issues.toLocaleString()} issues (${breakdown.tier2.percent.toFixed(1)}%) - Sorald, autoflake, OpenRewrite (85% confidence)
+- 🟠 **Tier 3 (AI Fallback)**: ${breakdown.tier3.issues.toLocaleString()} issues (${breakdown.tier3.percent.toFixed(1)}%) - AI-generated fixes requiring review (60% confidence)
+
+**Auto-Fix Coverage**: ${breakdown.autoFixable.toLocaleString()} issues (${breakdown.autoFixPercent.toFixed(1)}%) can be automatically fixed (Tier 1 + Tier 2)`;
+      })()}
 
 **Confidence Breakdown**:
 ${(() => {
@@ -3885,30 +3894,27 @@ mvn spotless:check  # Verify (use in CI)
   }
 
   /**
-   * Determine if group can be auto-fixed
+   * Determine if group can be auto-fixed using Three-Tier Fix System
+   * Tier 1: Native tool fixes (eslint --fix, ruff --fix) - 95% confidence
+   * Tier 2: Dedicated fixer tools (Sorald, autoflake) - 85% confidence
+   * Tier 3: AI-generated fixes (fallback) - 60% confidence, needs review
+   *
    * BUG FIX #13: Include all CheckStyle rules (100% auto-fixable with IDE formatters)
    * SESSION 19 FIX: Include Semgrep, Dependency-Check, SpotBugs
+   * SESSION 34 FIX: Use Three-Tier Fix System classifier for accurate routing
    */
   private canAutoFix(group: IssueGroup): boolean {
-    // CheckStyle: All rules auto-fixable with IDE formatters
-    if (group.tool === 'checkstyle') {
+    // Use Three-Tier Fix System classifier
+    const classification = classifyIssue(group.rule, group.tool);
+
+    // Tier 1 and Tier 2 are auto-fixable (native tools and dedicated fixers)
+    if (classification.fixTier <= 2 && classification.fixable) {
       return true;
     }
 
-    // PMD: Common auto-fixable rules
-    const autoFixablePMDRules = [
-      'AvoidUsingVolatile',
-      'GuardLogStatement',
-      'SystemPrintln',
-      'ClassWithOnlyPrivateConstructorsShouldBeFinal',
-      'ReturnEmptyCollectionRatherThanNull',
-      'UnusedImports',
-      'AvoidStarImport',
-      'SimplifyBooleanReturns',
-      'SimplifyBooleanExpressions'
-    ];
-
-    if (autoFixablePMDRules.includes(group.rule)) {
+    // Fallback: Legacy tool-based checks for tools not in classifier
+    // CheckStyle: All rules auto-fixable with IDE formatters
+    if (group.tool === 'checkstyle') {
       return true;
     }
 
@@ -3933,6 +3939,69 @@ mvn spotless:check  # Verify (use in CI)
     }
 
     return false;
+  }
+
+  /**
+   * Get fix tier for a specific issue using Three-Tier Fix System
+   * Returns: 1 (native tool), 2 (dedicated fixer), or 3 (AI fallback)
+   */
+  private getFixTier(group: IssueGroup): 1 | 2 | 3 {
+    const classification = classifyIssue(group.rule, group.tool);
+    return classification.fixTier;
+  }
+
+  /**
+   * Calculate Three-Tier Fix System breakdown for issues
+   */
+  private calculateTierBreakdown(groups: IssueGroup[]): {
+    tier1: { count: number; issues: number; percent: number };
+    tier2: { count: number; issues: number; percent: number };
+    tier3: { count: number; issues: number; percent: number };
+    autoFixable: number;
+    autoFixPercent: number;
+  } {
+    let tier1Count = 0, tier1Issues = 0;
+    let tier2Count = 0, tier2Issues = 0;
+    let tier3Count = 0, tier3Issues = 0;
+    let totalIssues = 0;
+
+    for (const group of groups) {
+      const tier = this.getFixTier(group);
+      totalIssues += group.count;
+
+      if (tier === 1) {
+        tier1Count++;
+        tier1Issues += group.count;
+      } else if (tier === 2) {
+        tier2Count++;
+        tier2Issues += group.count;
+      } else {
+        tier3Count++;
+        tier3Issues += group.count;
+      }
+    }
+
+    const autoFixable = tier1Issues + tier2Issues;
+
+    return {
+      tier1: {
+        count: tier1Count,
+        issues: tier1Issues,
+        percent: totalIssues > 0 ? (tier1Issues / totalIssues) * 100 : 0
+      },
+      tier2: {
+        count: tier2Count,
+        issues: tier2Issues,
+        percent: totalIssues > 0 ? (tier2Issues / totalIssues) * 100 : 0
+      },
+      tier3: {
+        count: tier3Count,
+        issues: tier3Issues,
+        percent: totalIssues > 0 ? (tier3Issues / totalIssues) * 100 : 0
+      },
+      autoFixable,
+      autoFixPercent: totalIssues > 0 ? (autoFixable / totalIssues) * 100 : 0
+    };
   }
 
   /**
@@ -4503,16 +4572,21 @@ Continue following best practices and consider integrating static analysis into 
       // BUG #4 FIX: Get commits from last 6 months only (active developers)
       // This filters out historical developers who left the team
       // SECURITY FIX: Quote repoPath to prevent command injection
-      const out = execSync(`git -C "${repoPath}" log --format=%ae:::%an --since="6 months ago" -n 200`, {
-        stdio: ['ignore', 'pipe', 'ignore']
-      }).toString();
+      const sixMonthsAgo = new Date();
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+      const sinceDate = sixMonthsAgo.toISOString().split('T')[0];
 
-      const lines = out.split('\n').filter(Boolean);
-      const map = new Map<string, { email: string; name?: string; totalPRs: number }>();
+      const result = execSync(
+        `git log --since="${sinceDate}" --format="%ae:::%an" --no-merges`,
+        { cwd: repoPath, encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024 }
+      );
 
-      // BUG FIX: Filter out test users from Git history
-      const testEmails = ['test@codequal.local', 'test@example.com', 'test-user@example.com'];
-      const testNames = ['codequal test', 'test user', 'test developer'];
+      const lines = result.trim().split('\n').filter(line => line.trim());
+      const map = new Map<string, { email: string; name?: string; totalPRs?: number }>();
+
+      // Test data patterns to exclude
+      const testEmails = ['test@example.com', 'example@test.com', 'test@test.com'];
+      const testNames = ['test user', 'example user', 'john doe', 'jane doe'];
 
       // BUG #4 COMPLETE FIX (Session 30): Filter out bot/AI commits
       // Excludes Claude Code, Anthropic bots, and other automated commits

@@ -263,29 +263,29 @@ export class BugManager {
       
       // Use GitHub CLI if available
       const result = execSync(
-        `gh issue create --title "${title}" --body "${body}" --label "bug,${bug.severity}-severity"`,
-        { encoding: 'utf-8' }
+        `gh issue create --title "${title}" --body "${body.replace(/"/g, '\\"')}"`,
+        { encoding: 'utf-8', stdio: 'pipe' }
       );
-      
-      // Extract issue number from output
-      const match = result.match(/#(\d+)/);
+
+      // Parse issue number from output
+      const match = result.match(/issues\/(\d+)/);
       if (match) {
-        const issueNumber = parseInt(match[1]);
-        
-        // Update bug with GitHub issue number
+        const issueNumber = parseInt(match[1], 10);
+
+        // Update bug record with GitHub issue link
         const data = await this.loadBugData();
         const bugRecord = data.bugs.find((b: BugReport) => b.id === bug.id);
         if (bugRecord) {
           bugRecord.githubIssue = issueNumber;
           await this.saveBugData(data);
         }
-        
+
         return issueNumber;
       }
     } catch (error) {
       console.error('Failed to create GitHub issue:', error);
     }
-    
+
     return null;
   }
   

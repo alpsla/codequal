@@ -38,18 +38,28 @@ interface ContextRequest {
   specific_requirements?: string[];
 }
 
+interface BraveSearchResult {
+  title: string;
+  url: string;
+  description: string;
+}
+
 export class ModelResearcherService {
   private supabase: any;
+  private readonly braveApiKey?: string;
   private readonly RESEARCH_INTERVAL_DAYS = 90; // Quarterly
   private readonly QUALITY_WEIGHT = 0.70;
   private readonly SPEED_WEIGHT = 0.20;
   private readonly PRICE_WEIGHT = 0.10;
+  private readonly MAX_SEARCH_ITERATIONS = 3;
 
   constructor() {
     this.supabase = createClient(
       process.env.SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
+    // Use same BRAVE_API_KEY as EducationalSearchService and RuleBasedToolResearcher
+    this.braveApiKey = process.env.BRAVE_API_KEY;
   }
 
   /**
@@ -152,11 +162,18 @@ export class ModelResearcherService {
   }
 
   /**
-   * Search the web for latest AI models using web search
-   * This is Step 1 of the proper flow: Web Search → OpenRouter validation
+   * Search the web for latest AI models using Brave Search API
+   * Same pattern as EducationalSearchService and RuleBasedToolResearcher
+   *
+   * Flow: Brave Search → AI Compilation → OpenRouter Validation
    */
   private async searchWebForLatestModels(): Promise<any[]> {
-    console.log('🌐 Searching web for latest AI models using WebSearch tool...');
+    console.log('🌐 Searching web for latest AI models using Brave Search...');
+
+    if (!this.braveApiKey) {
+      console.warn('⚠️ BRAVE_API_KEY not set - falling back to OpenRouter catalog only');
+      return [];
+    }
 
     try {
       // Get current date for search
@@ -168,9 +185,6 @@ export class ModelResearcherService {
       const sixMonthsAgo = new Date();
       sixMonthsAgo.setMonth(currentDate.getMonth() - 6);
 
-      const threeMonthsAgo = new Date();
-      threeMonthsAgo.setMonth(currentDate.getMonth() - 3);
-
       // Get month names for search queries
       const lastThreeMonths = [];
       for (let i = 0; i < 3; i++) {
@@ -179,7 +193,7 @@ export class ModelResearcherService {
         lastThreeMonths.push(d.toLocaleString('default', { month: 'long' }));
       }
 
-      // Dynamic search queries using current date - NO hardcoded dates
+      // Dynamic search queries using current date
       const searchQueries = [
         `latest AI language models released ${currentYear} ${currentMonth}`,
         `newest LLM models ${currentYear} last 3 months release dates`,
@@ -188,83 +202,164 @@ export class ModelResearcherService {
         `state of the art language models ${currentYear} benchmark scores recent`,
         `LLM comparison ${currentYear} latest versions performance coding`,
         `newest AI models ${currentYear} last 6 months capabilities`,
-        `${currentYear} machine learning models recent launches dates`,
-        `artificial intelligence breakthroughs ${currentYear} new models`
       ];
 
-      const discoveredModels = [];
+      // Step 1: Brave Search - collect all search results
+      console.log('   🔍 Step 1: Running Brave searches...');
+      const allSearchResults: BraveSearchResult[] = [];
 
-      // Use the actual WebSearch tool if available
-      // Note: WebSearch would be injected from the MCP environment
-      const webSearchAvailable = false; // Disabled for now - would need proper WebSearch tool injection
-      if (webSearchAvailable) {
-        console.log('Using WebSearch tool for real web search...');
-
-        for (const query of searchQueries) {
-          try {
-            // const searchResults = await WebSearch({ query });
-
-            // Parse the search results to extract model information
-            // const modelsFromSearch = this.parseWebSearchResults(searchResults);
-            // discoveredModels.push(...modelsFromSearch);
-
-            // console.log(`Found ${modelsFromSearch.length} models from query: ${query}`);
-          } catch (error) {
-            console.log(`Error searching for: ${query}`, error);
-          }
-        }
-      } else {
-        // Fallback to AI-based search if WebSearch tool is not available
-        console.log('WebSearch tool not available, using AI-based search...');
-
-        const { searchWebForLatestModels } = await import('../researcher/web-search-researcher');
-        const { AIService } = await import('../../standard/services/ai-service');
-
-        const aiService = new AIService();
-        const aiDiscoveredModels = await searchWebForLatestModels(aiService);
-        discoveredModels.push(...aiDiscoveredModels);
+      for (const query of searchQueries.slice(0, 5)) { // Limit to 5 queries
+        const results = await this.searchBrave(query);
+        allSearchResults.push(...results);
+        console.log(`      Found ${results.length} results for: "${query.substring(0, 50)}..."`);
       }
 
-      console.log(`✅ Found ${discoveredModels.length} models from web search`);
+      console.log(`   ✅ Collected ${allSearchResults.length} search results`);
 
-      // Dynamic filtering based on current date - NO hardcoded dates
+      // Step 2: AI Compilation - let AI analyze results and recommend models
+      console.log('   🤖 Step 2: AI compilation of search results...');
+      const discoveredModels = await this.aiCompileModelSearchResults(allSearchResults, currentYear);
+
+      console.log(`   ✅ AI recommended ${discoveredModels.length} models`);
+
+      // Step 3: Filter by date (last 6 months)
       const recentModels = discoveredModels.filter(model => {
         if (model.releaseDate) {
           const releaseDate = new Date(model.releaseDate);
-
-          // Model must be within last 6 months
           if (releaseDate < sixMonthsAgo) {
-            console.log(`Filtering out ${model.model} - older than 6 months (${model.releaseDate})`);
+            console.log(`   Filtering out ${model.model} - older than 6 months`);
             return false;
           }
-
-          // Model shouldn't be from future (sanity check)
           if (releaseDate > currentDate) {
-            console.log(`Filtering out ${model.model} - future date (${model.releaseDate})`);
+            console.log(`   Filtering out ${model.model} - future date`);
             return false;
           }
-
           return true;
         }
-        // Keep if no date for further validation
-        return true;
+        return true; // Keep if no date for OpenRouter validation
       });
 
-      console.log(`Filtered to ${recentModels.length} recent models (last 6 months)`);
-
-      // If no models found, log warning but don't add fake data
-      if (recentModels.length === 0) {
-        console.log('⚠️ No recent models found from web search');
-        console.log('This might indicate:');
-        console.log('  1. Web search needs better queries');
-        console.log('  2. Models need to be validated in OpenRouter');
-        console.log('  3. Date parsing needs adjustment');
-      }
-
+      console.log(`✅ Found ${recentModels.length} recent models from web search`);
       return recentModels;
+
     } catch (error) {
       console.error('Error searching web for models:', error);
-      // Fallback to empty array if web search fails
+      return [];
+    }
+  }
+
+  /**
+   * Perform web search using Brave Search API (same pattern as EducationalSearchService)
+   */
+  private async searchBrave(query: string): Promise<BraveSearchResult[]> {
+    if (!this.braveApiKey) {
+      return [];
+    }
+
+    try {
+      const url = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=10&search_lang=en`;
+      const response = await fetch(url, {
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${this.braveApiKey}`,
+        },
+      });
+
+      if (!response.ok) {
+        console.log(`      ⚠️ Brave search failed for query`);
+        return [];
+      }
+
+      const data = await response.json() as any;
+      const results: BraveSearchResult[] = (data.web?.results || []).map((r: any) => ({
+        title: r.title || '',
+        url: r.url || '',
+        description: r.description || '',
+      }));
+
+      return results;
+    } catch (error) {
+      console.error(`      ❌ Search error:`, error);
+      return [];
+    }
+  }
+
+  /**
+   * AI compiles search results to recommend best models
+   * Can request additional searches if needed
+   */
+  private async aiCompileModelSearchResults(
+    searchResults: BraveSearchResult[],
+    currentYear: number
+  ): Promise<any[]> {
+    const searchContext = searchResults.length > 0
+      ? searchResults.slice(0, 30).map(r => `- ${r.title}: ${r.description} (${r.url})`).join('\n')
+      : '(No search results - use your training knowledge of current AI models)';
+
+    const prompt = `
+Analyze the following web search results to identify the BEST and NEWEST AI/LLM models for code analysis as of ${currentYear}.
+
+**SEARCH RESULTS:**
+${searchContext}
+
+**YOUR TASK:**
+1. Identify AI models mentioned that are suitable for code analysis
+2. Focus on models released in the last 6 months
+3. Consider: Anthropic (Claude), OpenAI (GPT), Google (Gemini), Meta (Llama), Mistral, DeepSeek, Qwen
+
+**RESPOND WITH JSON (no markdown):**
+{
+  "models": [
+    {
+      "provider": "anthropic",
+      "model": "claude-3-5-sonnet",
+      "version": "claude-3-5-sonnet-20241022",
+      "releaseDate": "2024-10-22",
+      "capabilities": ["coding", "analysis", "reasoning"],
+      "notes": "Latest Claude model with improved coding"
+    }
+  ],
+  "reasoning": "Brief explanation of why these models were selected"
+}
+
+Important:
+- Only include models you're confident exist
+- Use accurate release dates (YYYY-MM-DD format)
+- Focus on models good for code analysis
+- Include both flagship and cost-effective options
+`;
+
+    try {
+      const { AIService } = await import('../../standard/services/ai-service');
+      const aiService = new AIService({
+        openRouterApiKey: process.env.OPENROUTER_API_KEY || '',
+      });
+
+      const response = await aiService.call(
+        {
+          id: 'google/gemini-2.0-flash-001',
+          model: 'gemini-2.0-flash-001',
+          provider: 'google',
+        },
+        {
+          systemPrompt: 'You are an AI model researcher. Analyze search results to identify the latest AI models suitable for code analysis. Return structured JSON.',
+          prompt,
+          temperature: 0.1,
+          maxTokens: 2000,
+        }
+      );
+
+      // Parse AI response
+      const jsonMatch = response.content.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        return [];
+      }
+
+      const result = JSON.parse(jsonMatch[0]);
+      return result.models || [];
+
+    } catch (error) {
+      console.error('      ❌ AI compilation error:', error);
       return [];
     }
   }
@@ -1075,6 +1170,117 @@ export class ModelResearcherService {
     console.log(`   Models refreshed: Using latest available models from OpenRouter`);
     console.log(`\n✅ Meta role configurations updated successfully!`);
     console.log('   All 5 meta roles now use latest optimal models with preserved weights\n');
+  }
+
+
+  /**
+   * Update AI Fixer role configurations
+   *
+   * Populates model_configurations for role='ai_fixer' across all supported languages.
+   * AI Fixer uses quality-first weights since code fixing requires high accuracy.
+   */
+  async updateAIFixerRoleConfigurations(): Promise<void> {
+    console.log('\n🔄 Updating AI Fixer Role Configurations');
+    console.log('='.repeat(80));
+    console.log('✅ Policy-compliant: Using researcher service for updates');
+    console.log('🎯 Target: ai_fixer role for all supported languages');
+    console.log('🔧 Weights: Quality-first (quality=0.70, speed=0.15, cost=0.10, accuracy=0.05)\n');
+
+    // AI Fixer supported languages (from ai-fixer-researcher.ts)
+    const aiFixerLanguages = [
+      'typescript', 'javascript', 'python', 'java', 'go', 'rust',
+      'cpp', 'c', 'csharp', 'kotlin', 'swift', 'ruby', 'php'
+    ];
+
+    // AI Fixer uses quality-first weights
+    const aiFixerWeights = {
+      quality: 0.70,
+      speed: 0.15,
+      cost: 0.10,
+      freshness: 0.05
+    };
+
+    // Fetch fresh models from OpenRouter
+    console.log('📊 Fetching latest models from OpenRouter...');
+    const allModels = await this.fetchAvailableModels();
+    console.log(`✅ Found ${allModels.length} fresh models\n`);
+
+    // Score models for AI fixing task (quality-focused)
+    const scoredModels = allModels.map(model => ({
+      model,
+      score: this.calculateRoleSpecificScore(model, 'ai_fixer', aiFixerWeights)
+    })).sort((a, b) => b.score - a.score);
+
+    const primaryModel = scoredModels[0].model;
+    const fallbackModel = scoredModels[1]?.model || scoredModels[0].model;
+
+    console.log(`🥇 Best AI Fixer model: ${primaryModel.id} (score: ${scoredModels[0].score.toFixed(1)})`);
+    console.log(`🥈 Fallback: ${fallbackModel.id}\n`);
+
+    let updated = 0;
+
+    for (const language of aiFixerLanguages) {
+      console.log(`   📝 Setting up ai_fixer/${language}...`);
+
+      // Check if config exists
+      const { data: existing } = await this.supabase
+        .from('model_configurations')
+        .select('id')
+        .eq('role', 'ai_fixer')
+        .eq('language', language)
+        .maybeSingle();
+
+      const config = {
+        role: 'ai_fixer',
+        language,
+        size_category: 'any',
+        primary_provider: primaryModel.id.split('/')[0],
+        primary_model: primaryModel.id,
+        fallback_provider: fallbackModel.id.split('/')[0],
+        fallback_model: fallbackModel.id,
+        weights: {
+          quality: aiFixerWeights.quality,
+          speed: aiFixerWeights.speed,
+          cost: aiFixerWeights.cost,
+          freshness: aiFixerWeights.freshness,
+          contextWindow: 0.05
+        },
+        min_requirements: {},
+        reasoning: [
+          `🔬 AI Fixer research update on ${new Date().toISOString()}`,
+          `Role: ai_fixer (Tier 3 code fixing)`,
+          `Language: ${language}`,
+          `Primary: ${primaryModel.id} (quality-first selection)`,
+          `Fallback: ${fallbackModel.id}`,
+          `✅ Research-based selection for code fixing task`
+        ],
+        last_updated: new Date().toISOString(),
+        updated_by: 'ai-fixer-researcher-service'
+      };
+
+      if (existing) {
+        await this.supabase
+          .from('model_configurations')
+          .update(config)
+          .eq('id', existing.id);
+        console.log(`      ✅ Updated: ai_fixer/${language}`);
+      } else {
+        await this.supabase
+          .from('model_configurations')
+          .insert([config]);
+        console.log(`      ✅ Created: ai_fixer/${language}`);
+      }
+      updated++;
+    }
+
+    console.log('\n' + '='.repeat(80));
+    console.log(`\n📊 Summary:`);
+    console.log(`   Updated: ${updated} AI fixer configurations`);
+    console.log(`   Languages: ${aiFixerLanguages.join(', ')}`);
+    console.log(`   Primary model: ${primaryModel.id}`);
+    console.log(`   Fallback model: ${fallbackModel.id}`);
+    console.log(`\n✅ AI Fixer role configurations created successfully!`);
+    console.log('   AIFixerResearcherService can now evaluate weight configurations\n');
   }
 
 
