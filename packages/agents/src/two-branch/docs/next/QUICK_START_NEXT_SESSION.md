@@ -1,8 +1,224 @@
 # 🎯 QUICK START: NEXT SESSION
 
-**Last Updated**: November 23, 2025 (Session 30 - All Report Accuracy Bugs Fixed)
-**Current Phase**: V9 Production - All Critical Bugs Resolved
-**Status**: ✅ **8/8 REPORT ACCURACY BUGS FIXED**
+**Last Updated**: December 1, 2025 (Session 33 - Monthly Model Refresh AI Fixer Roles)
+**Current Phase**: Phase 1 - Code Refactoring & Bug Fixes
+**Status**: 🔧 **MONTHLY MODEL REFRESH ENHANCED**
+
+---
+
+## 🎉 SESSION 33 ACHIEVEMENTS (December 1, 2025)
+
+**Session Focus:** Monthly Model Refresh - AI Fixer Roles
+
+### ✅ AI Fixer Roles Added to Monthly Refresh
+- Added `ai_fixer` role: q=0.50, s=0.30, c=0.20 (polyglot for JS/TS/Java/Python/Go)
+- Added `ai_fixer_rust` role: q=0.60, s=0.20, c=0.20 (higher quality for Rust complexity)
+- Monthly refresh now discovers optimal models for 12 roles total (5 analysis + 5 meta + 2 AI fixer)
+- Uses OpenRouter API as single source of truth for model pricing
+
+### ✅ Files Modified
+- `monthly-model-refresh.ts`: Added `AI_FIXER_ROLE_WEIGHTS` constant
+- `monthly-model-refresh.ts`: Updated `runRefresh()` to include AI fixer role processing
+- `index.ts`: Exported new `AI_FIXER_ROLE_WEIGHTS` constant
+
+### ✅ Commit: b5d755b0
+```
+feat(research): add AI fixer roles to monthly model refresh
+
+Add ai_fixer and ai_fixer_rust roles to the MonthlyModelRefreshService
+for automatic model discovery using OpenRouter API.
+
+New role weights:
+- ai_fixer: q=0.50, s=0.30, c=0.20 (polyglot for JS/TS/Java/Python/Go)
+- ai_fixer_rust: q=0.60, s=0.20, c=0.20 (higher quality for Rust complexity)
+```
+
+### 📊 Role Weight Summary (All 12 Roles)
+
+| Category | Roles | Weight Focus |
+|----------|-------|--------------|
+| Analysis | security, performance, code_quality, architecture, dependency | Balanced (q:0.35, s:0.30, c:0.35) |
+| Meta | orchestrator, educator, comparator, decision, reporter | Balanced (q:0.35, s:0.30, c:0.35) |
+| AI Fixer | ai_fixer (polyglot) | Quality focus (q:0.50, s:0.30, c:0.20) |
+| AI Fixer | ai_fixer_rust | High quality (q:0.60, s:0.20, c:0.20) |
+
+---
+
+## 🗺️ PRODUCT ROADMAP (Corrected Priority Order)
+
+### PHASE 1: CODE REFACTORING & BUG FIXES ← **CURRENT**
+Fix bugs, implement new fix/tool architecture
+
+### PHASE 2: V9 FULL FLOW TESTING (All Languages)
+Test complete pipeline for Java, TypeScript, Python, Go, Rust, PHP
+
+### PHASE 3: API SERVICE DEVELOPMENT
+Production-ready REST API with rate limiting, webhooks, versioning
+
+### PHASE 4: DOCUMENTATION
+API docs, user guides, integration guides
+
+### PHASE 5: AUTH & BILLING INTEGRATION
+Connect existing Supabase Auth, Stripe, Subscriptions (already built)
+
+### PHASE 6: CI/CD PIPELINE
+GitHub Actions, automated testing, staging deployment
+
+### PHASE 7: FRONTEND & IDE INTEGRATION
+Web dashboard, VSCode Extension, GitHub App, GitLab
+
+### PHASE 8: PRODUCTION ENVIRONMENT
+Setup production infra, Kubernetes migration (future)
+
+### PHASE 9: BETA TESTING & DEPLOYMENT
+Go live!
+
+---
+
+## 🏗️ INFRASTRUCTURE (Current)
+
+```
+Oracle Cloud (129.213.49.128)
+├── Tools: Installed directly (no Docker currently)
+├── Redis: 10.116.0.7:6379
+├── PostgreSQL: localhost:5432/depcheck
+└── Future: Kubernetes for scaling
+```
+
+---
+
+## 📋 PHASE 1 TODO: BUG FIXES (Current Focus)
+
+### Open Bugs to Triage
+
+| Bug ID | Description | Status | Priority |
+|--------|-------------|--------|----------|
+| **BUG-089** | EXISTING_REST filtered out - 0 issues | INVESTIGATING | HIGH |
+| **BUG-072** | PMD tool failures | OPEN | MEDIUM |
+| **BUG-073** | Checkstyle config issues | OPEN | MEDIUM |
+| **BUG-074** | Semgrep rule conflicts | OPEN | MEDIUM |
+| **BUG-075** | ESLint extends parsing | OPEN | LOW |
+| **BUG-076** | SpotBugs timeout | OPEN | LOW |
+| **BUG-077** | Dependency-Check CVE mapping | OPEN | LOW |
+| **BUG-078** | Report section ordering | OPEN | LOW |
+
+### Architecture Implementation (After Bugs)
+
+| Task | Status |
+|------|--------|
+| ToolFixRegistry implementation | TODO |
+| Three-Tier Fix pipeline | Designed |
+| Tool Registry (70% overlap) | Designed |
+| Two-Stage AI Pipeline | Designed |
+
+---
+
+## 📋 PHASE 2: LANGUAGE TESTING STATUS
+
+| Language | Tools Installed on Oracle | Test Status |
+|----------|---------------------------|-------------|
+| Java | PMD, Checkstyle, SpotBugs, Semgrep, Dep-Check | ✅ Tested (PR #950) |
+| TypeScript | ESLint, typescript-eslint, Semgrep | 🔄 Testing (PR #69) |
+| Python | Ruff, Pylint, Bandit, Semgrep | ⏳ TODO |
+| Go | golangci-lint, gosec, Semgrep | ⏳ TODO |
+| Rust | clippy, cargo-audit | ⏳ TODO |
+| PHP | PHPStan, Psalm | ⏳ TODO |
+
+---
+
+## 🎉 SESSION 32 ACHIEVEMENTS (November 30, 2025)
+
+**Session Focus:** Two-Tier Product Architecture & Knowledge Base Reorganization
+
+### ✅ Two-Tier Product Model Designed
+- **BASIC (Free)**: Report only, 34-section markdown
+- **PRO ($8-10/mo)**: Auto-fix, patches, IDE integration
+
+### ✅ Knowledge Base Reorganized (93% reduction)
+- V9_CRITICAL_KNOWLEDGE_BASE.md: 2,900 → 203 lines
+- V9_SESSION_ARCHIVE.md: Full history preserved
+
+### ✅ Tool Registry System Defined
+- 70% overlap threshold for tool selection
+- Quarterly research scheduling
+- Tool capability scoring
+
+### ✅ Corrected Roadmap Created
+- 9 phases in proper dependency order
+- Infrastructure clarification (direct install, not Docker)
+
+---
+
+## 🎉 SESSION 31 ACHIEVEMENTS (November 28, 2025)
+
+**Session Focus:** Design Three-Tier Auto-Fix Architecture to solve 36% fix failure rate
+
+### ✅ Three-Tier Auto-Fix Architecture Designed
+
+**Root Cause Identified:** VSCode Extension testing showed 36% fix failure rate (104/288 failed). AI was generating fixes without seeing actual source code → hallucinated fixes.
+
+**Solution:** Tools provide fixes directly; AI agents organize/validate, not generate.
+
+#### Tier 1: Tool Native Fixes (Confidence: HIGH)
+- `eslint --fix` - JavaScript/TypeScript style + quality
+- `semgrep --autofix` - Security (rule-dependent)
+- `ruff check --fix` - Python style + quality + imports
+- `golangci-lint run --fix` - Go style + quality
+- `prettier --write` - Multi-language formatting
+
+#### Tier 2: Dedicated Fixer Tools (Confidence: HIGH)
+- **Python:** autoflake, pyupgrade, isort, Black
+- **Java:** Sorald (25+ SonarQube rules), OpenRewrite, Error Prone
+- **Multi-lang:** Renovate, Dependabot (dependency updates)
+
+#### Tier 3: AI Generation Fallback (Confidence: MEDIUM)
+- Only for issues without tool support
+- Uses existing dynamic model selection via Researcher
+- Requires code context to generate fixes
+
+### ✅ Tool Fix Capability Matrix Created
+
+**Tools WITH Native Fix Support:**
+| Language | Tool | Fix Command |
+|----------|------|-------------|
+| JavaScript/TypeScript | ESLint | `eslint --fix` |
+| Python | Ruff | `ruff check --fix` |
+| Java | Sorald | `sorald repair` |
+| Go | golangci-lint | `golangci-lint run --fix` |
+
+**Tools WITHOUT Fix Support (Need Tier 2/3):**
+- PMD, Checkstyle, SpotBugs → Sorald, OpenRewrite
+- Pylint, Flake8 → Ruff, autoflake
+- Bandit → Semgrep rules, AI Fallback
+- TypeScript (tsc) → ESLint + @typescript-eslint
+- OWASP dependency-check → Renovate/Dependabot
+
+### ✅ Issue Classification System Designed
+- **Deterministic:** Rule ID → Issue Type mapping (fast, no AI)
+- **Fallback:** AI classification for unknown rules
+- **Grouping:** Batch by issueType + fixer (reduces tool invocations)
+
+### ✅ Performance-Based Scheduling Designed
+- **Fast tools (high parallelism):** ruff, prettier, autoflake
+- **Medium tools (limited):** eslint, semgrep
+- **Slow tools (sequential):** openrewrite, sorald (JVM overhead)
+
+### ✅ Cost Strategy Confirmed
+- **FREE tools only** for startup phase
+- Snyk (~$10k/month) NOT recommended
+- Add enterprise tools only when customer ROI justifies
+
+### ✅ Dynamic Model Selection via Researcher
+- NO hardcoded models
+- Use existing Researcher agent infrastructure
+- New roles with configurable weights:
+
+| Role | Quality | Cost | Speed | Purpose |
+|------|---------|------|-------|---------|
+| `issue-classifier` | 40% | 40% | 20% | Classify unknown rules |
+| `fix-generator` | 60% | 25% | 15% | Generate Tier 3 fixes |
+
+**Testing Plan:** Experiment with different quality weights (40-70%) to find optimal cost/quality balance per language
 
 ---
 
@@ -59,22 +275,387 @@
 
 ---
 
-## 📋 Immediate Priorities
+## 🚀 THREE-TIER AUTO-FIX IMPLEMENTATION TODO
 
-### 1. Verify Fixes in Production
-- Monitor the next few PRs to ensure:
-  - ✅ "Action Required" section appears and is accurate
-  - ✅ "Manual Review Checklist" lists specific files/lines
-  - ✅ Confidence Breakdown aligns with auto-fixability
-  - ✅ Performance Trend shows correct history (Oldest → Newest)
-  - ✅ Top Performers list shows correct current score
-  - ✅ Performance tool skips execution on monorepos
-  - ✅ Category Scores only show analyzed categories
-  - ✅ Percentages are consistent throughout report
-  - ✅ SARIF contains meaningful fix suggestions
-  - ✅ LSP JSON includes full metadata (what, why, recommendation, bestPractices)
+### User Experience Vision
 
-### 2. Multi-Framework Testing (Next Major Task)
+**Goal:** User spends LESS time on analysis and fixing. Just provide PR, get back results.
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  USER FLOW                                                                   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  1. User submits PR URL (Web App / GitHub Action / CLI / API)               │
+│                           ↓                                                  │
+│  2. CodeQual scans + APPLIES FIXES during scan                              │
+│                           ↓                                                  │
+│  3. Returns report:                                                          │
+│     ✅ "42 issues auto-fixed" (patch/commit ready)                          │
+│     ⚠️  "8 issues need your attention" (manual review list)                 │
+│                           ↓                                                  │
+│  4. User reviews manual items only                                           │
+│                           ↓                                                  │
+│  5. Optional: 2nd scan to verify fixes (part of package flow)               │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Two Fix Delivery Modes
+
+**Key Difference:** One CHANGES code, the other RECOMMENDS changes.
+
+#### Mode 1: Fix During Scan (Server-Side) - PRIMARY
+**Actually CHANGES the code**
+
+- **Target Users:** ALL users via Web App, CI/CD, CLI, API
+- **How it works:** Run `eslint --fix`, `ruff --fix` etc. during analysis
+- **What happens:** Tools MODIFY source files directly
+- **Output:** Pre-fixed PR branch or patch file
+- **Advantages:**
+  - Code is already fixed when user sees report
+  - No IDE dependency
+  - Works with ANY editor (VSCode, IntelliJ, Vim, etc.)
+  - Instant results in PR comments or Web App dashboard
+  - Can auto-commit fixes to PR branch
+  - **Part of full analysis package flow**
+
+#### Mode 2: IDE-Assisted Fix (Client-Side) - SECONDARY
+**Only RECOMMENDS changes (doesn't modify code)**
+
+- **Target Users:** Users with CodeQual VSCode extension
+- **How it works:**
+  - Tools provide fix METADATA (what to change, where)
+  - AI fallback generates fix SUGGESTIONS for issues without tool support
+  - LSP/SARIF contains recommendations
+  - User manually applies via IDE lightbulb menu
+- **What happens:** Code is NOT changed until user clicks "Apply Fix"
+- **Output:** Quick fixes in IDE lightbulb menu
+- **Limitation:** Users with existing IDE subscriptions (JetBrains, etc.) won't use our extension
+
+#### Key Technical Difference
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  Mode                │  Tool Action        │  AI Action                 │
+├─────────────────────────────────────────────────────────────────────────┤
+│  Fix During Scan     │  `--fix` flag       │  N/A (tools do the work)   │
+│  (CHANGES code)      │  MODIFIES files     │                            │
+├─────────────────────────────────────────────────────────────────────────┤
+│  IDE-Assisted        │  Provide metadata   │  Generate suggestions      │
+│  (RECOMMENDS only)   │  (no modification)  │  (fallback ONLY for no-fix)│
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+#### Cost Optimization (Token Savings)
+
+**Key Insight:** Most fix recommendations come from TOOLS, not AI. This saves significant tokens!
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  Source              │  Token Cost    │  Coverage                       │
+├─────────────────────────────────────────────────────────────────────────┤
+│  Tool Native Fix     │  $0            │  ~60-70% of issues              │
+│  (eslint, ruff, etc) │  (FREE)        │  (style, formatting, imports)   │
+├─────────────────────────────────────────────────────────────────────────┤
+│  Tool Metadata       │  $0            │  ~15-20% of issues              │
+│  (PMD, Checkstyle)   │  (FREE)        │  (rule description as fix hint) │
+├─────────────────────────────────────────────────────────────────────────┤
+│  AI Fallback         │  $$            │  ~10-15% of issues              │
+│  (complex logic)     │  (tokens)      │  (no tool support)              │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+**Result:** Only ~10-15% of issues need AI for fix suggestions!
+
+**Token Savings Breakdown:**
+- Detection: Tools do 100% (FREE)
+- Classification: Rule ID mapping (FREE) + AI fallback for unknown (~5%)
+- Fix Generation: Tools provide ~85-90% (FREE) + AI fallback (~10-15%)
+
+**Estimated Cost Reduction:** ~85-90% vs pure AI approach
+
+#### Integration Points
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Integration Point          │  Fix Mode                     │
+├─────────────────────────────────────────────────────────────┤
+│  🌐 Web App Dashboard       │  Fix During Scan (primary)    │
+│  🔄 GitHub Action           │  Fix During Scan              │
+│  💻 CLI                     │  Fix During Scan              │
+│  🔌 API                     │  Fix During Scan              │
+│  📝 VSCode Extension        │  IDE-Assisted (optional)      │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### Business Implication
+```
+┌─────────────────────────────────────────────────────────────┐
+│  User Type                    │  Best Fix Mode              │
+├─────────────────────────────────────────────────────────────┤
+│  Web App user                 │  Fix During Scan ✓          │
+│  New user (no IDE preference) │  VSCode Extension OR Web    │
+│  Existing JetBrains user      │  Fix During Scan (Web/CLI)  │
+│  CI/CD only (no IDE)          │  Fix During Scan            │
+│  GitHub Codespaces            │  VSCode Extension           │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Implementation Priority:** Mode 1 (Fix During Scan) is MORE valuable because:
+- Works for ALL users regardless of IDE
+- No extension installation required
+- **Web App primary interface for most users**
+- Can offer as GitHub Action or CLI tool
+- Supports multi-round scan workflow
+
+---
+
+### Phase 0: Fix During Scan (Priority: P0 - HIGHEST VALUE)
+
+**Why Phase 0?** This works for ALL users, regardless of IDE choice.
+
+#### 0.1 Scan-Time Fix Executor
+**File:** `src/two-branch/fix-agent/scan-fix-executor.ts`
+- [ ] Create wrapper for tool native fixes during scan
+- [ ] Implement fix execution order (safe → risky)
+- [ ] Add rollback capability if tests fail after fixes
+- [ ] Generate git patch from applied fixes
+
+#### 0.2 Fix Modes Configuration
+**File:** `src/two-branch/fix-agent/fix-config.ts`
+```typescript
+interface FixConfig {
+  mode: 'scan-time' | 'ide-assist' | 'both';
+  autoApply: {
+    tier1: boolean;  // Safe fixes (style, formatting)
+    tier2: boolean;  // Technical fixes (unused code)
+    tier3: boolean;  // AI fixes (manual review)
+  };
+  outputFormat: 'patch' | 'commit' | 'branch';
+}
+```
+- [ ] Define default configs per integration type
+- [ ] Allow per-repo configuration override
+- [ ] Add CI/CD mode (auto-apply Tier 1 only)
+
+#### 0.3 Output Formats
+- [ ] Git unified patch (`codequal-fixes.patch`)
+- [ ] Direct commit to PR branch (requires write access)
+- [ ] New fix branch (`codequal/fixes-pr-123`)
+- [ ] PR comment with patch download link
+
+#### 0.4 Integration Points
+- [ ] GitHub Action for auto-fix
+- [ ] CLI command: `codequal fix --mode=scan-time`
+- [ ] API endpoint: `POST /api/v1/fix/apply`
+
+---
+
+### Phase 1: Foundation (Priority: P1 - Core Infrastructure)
+
+#### 1.1 Issue Classifier Module
+**File:** `src/two-branch/fix-agent/issue-classifier.ts`
+- [ ] Create Rule ID → Issue Type mapping table
+  - [ ] ESLint rules mapping (300+ rules)
+  - [ ] Ruff rules mapping (700+ rules)
+  - [ ] Semgrep rules mapping (security patterns)
+  - [ ] PMD rules mapping (Java patterns)
+- [ ] Implement deterministic classification function
+- [ ] Add AI fallback for unknown rules (use Researcher agent)
+- [ ] Create unit tests for all major rule categories
+- [ ] Export `classifyIssue(ruleId: string, tool: string): IssueType`
+
+#### 1.2 Fix Router Module
+**File:** `src/two-branch/fix-agent/fix-router.ts`
+- [ ] Define Tier routing logic:
+  ```typescript
+  interface FixRoute {
+    tier: 1 | 2 | 3;
+    fixer: string;        // 'eslint' | 'ruff' | 'sorald' | 'ai'
+    command?: string;     // e.g., 'eslint --fix'
+    confidence: number;   // 0-100
+  }
+  ```
+- [ ] Create tool capability matrix (tool → supported rules)
+- [ ] Implement `routeToFixer(issue: EnrichedIssue): FixRoute`
+- [ ] Add fallback chain logic (Tier 1 → 2 → 3)
+- [ ] Create unit tests for routing logic
+
+#### 1.3 Fix Scheduler Module
+**File:** `src/two-branch/fix-agent/fix-scheduler.ts`
+- [ ] Define performance tiers:
+  - Fast: ruff, prettier, autoflake (high parallelism)
+  - Medium: eslint, semgrep (limited parallelism)
+  - Slow: openrewrite, sorald (sequential, JVM)
+- [ ] Implement issue batching by (issueType + fixer)
+- [ ] Create execution queue with priority ordering
+- [ ] Add parallel execution manager
+- [ ] Create performance benchmarks
+
+---
+
+### Phase 2: Tool Fixers (Priority: P1 - Core Functionality)
+
+#### 2.1 TypeScript/JavaScript Fixers
+**File:** `src/two-branch/fix-agent/tool-fixers/eslint-fixer.ts`
+- [ ] Implement ESLint native fix executor
+- [ ] Handle multi-file fixes
+- [ ] Add dry-run mode for validation
+- [ ] Create success/failure tracking
+
+**File:** `src/two-branch/fix-agent/tool-fixers/prettier-fixer.ts`
+- [ ] Implement Prettier formatting fixer
+- [ ] Support multiple file types
+
+#### 2.2 Python Fixers
+**File:** `src/two-branch/fix-agent/tool-fixers/ruff-fixer.ts`
+- [ ] Implement Ruff native fix executor (`ruff check --fix`)
+- [ ] Handle Ruff format (`ruff format`)
+
+**File:** `src/two-branch/fix-agent/tool-fixers/autoflake-fixer.ts`
+- [ ] Implement autoflake for unused imports/variables
+- [ ] Add pyupgrade integration for Python version upgrades
+- [ ] Add isort integration for import sorting
+
+#### 2.3 Java Fixers
+**File:** `src/two-branch/fix-agent/tool-fixers/sorald-fixer.ts`
+- [ ] Implement Sorald repair executor
+- [ ] Map SonarQube rules to Sorald repair IDs
+- [ ] Handle JVM startup overhead (batch processing)
+
+**File:** `src/two-branch/fix-agent/tool-fixers/openrewrite-fixer.ts`
+- [ ] Implement OpenRewrite recipe executor
+- [ ] Create recipe mappings for common fixes
+
+#### 2.4 Go Fixers
+**File:** `src/two-branch/fix-agent/tool-fixers/golangci-fixer.ts`
+- [ ] Implement golangci-lint native fix (`--fix`)
+- [ ] Add gofmt/goimports integration
+
+---
+
+### Phase 3: AI Fallback System (Priority: P1.5)
+
+#### 3.1 Dynamic Model Selection
+**File:** `src/two-branch/fix-agent/ai-fix-generator.ts`
+- [ ] Integrate with Researcher agent for model selection
+- [ ] Configure `fix-generator` role:
+  ```typescript
+  {
+    role: 'fix-generator',
+    weights: { quality: 60, cost: 25, speed: 15 }
+  }
+  ```
+- [ ] Add language-specific model preferences
+- [ ] Implement context builder (include source code)
+- [ ] Create prompt templates per issue type
+
+#### 3.2 Weight Optimization Testing
+- [ ] Test A: Quality 40%, Cost 45%, Speed 15% (baseline)
+- [ ] Test B: Quality 50%, Cost 35%, Speed 15% (balanced)
+- [ ] Test C: Quality 60%, Cost 25%, Speed 15% (quality focus)
+- [ ] Test D: Quality 70%, Cost 15%, Speed 15% (premium)
+- [ ] Measure fix accuracy per configuration
+- [ ] Document optimal weights per language
+
+---
+
+### Phase 4: Integration & Testing (Priority: P2)
+
+#### 4.1 V9 Pipeline Integration
+- [ ] Update `v9-grouped-report-formatter.ts` to use new fix routing
+- [ ] Modify LSP/SARIF generation to include fix tier info
+- [ ] Update report to show fix confidence levels
+- [ ] Add fix execution time estimates to report
+
+#### 4.2 VSCode Extension Updates
+- [ ] Update extension to understand fix tiers
+- [ ] Add UI for tier selection (apply Tier 1 only, apply all)
+- [ ] Show fix confidence in issue decorations
+- [ ] Add batch fix progress indicator
+
+#### 4.3 End-to-End Tests
+- [ ] Create test-fix-tier-1.ts (tool native fixes)
+- [ ] Create test-fix-tier-2.ts (dedicated fixers)
+- [ ] Create test-fix-tier-3.ts (AI fallback)
+- [ ] Create test-fix-full-pipeline.ts (all tiers)
+- [ ] Measure fix success rate per tier
+- [ ] Target: >95% success rate for Tier 1, >85% for Tier 2
+
+---
+
+### Phase 5: Monitoring & Optimization (Priority: P3)
+
+#### 5.1 Metrics Collection
+- [ ] Track fix success/failure by tier
+- [ ] Track fix execution time by tool
+- [ ] Track AI cost per language
+- [ ] Create dashboard for fix analytics
+
+#### 5.2 Continuous Improvement
+- [ ] Add rule ID to issueType mapping updates (weekly)
+- [ ] Tune AI prompts based on failure analysis
+- [ ] Expand Tier 2 tool coverage
+- [ ] Document edge cases and workarounds
+
+---
+
+## 📊 Implementation Metrics
+
+| Metric | Current | Target |
+|--------|---------|--------|
+| Fix Success Rate (Overall) | 64% | 95% |
+| Tier 1 Success Rate | N/A | 98% |
+| Tier 2 Success Rate | N/A | 90% |
+| Tier 3 Success Rate | 64% | 75% |
+| AI Hallucination Rate | 36% | <5% |
+| Average Fix Time | N/A | <2s |
+
+---
+
+## 📋 Quick Reference: File Structure
+
+```
+src/two-branch/fix-agent/
+├── scan-fix-executor.ts     # [P0] Fix During Scan - apply fixes server-side
+├── fix-config.ts            # [P0] Configuration for fix modes
+├── issue-classifier.ts      # [P1] Rule ID → Issue Type mapping
+├── fix-router.ts            # [P1] Tier 1/2/3 routing logic
+├── fix-scheduler.ts         # [P1] Performance-based scheduling
+├── ai-fix-generator.ts      # [P1.5] Tier 3 AI fallback
+└── tool-fixers/
+    ├── eslint-fixer.ts      # TypeScript/JavaScript
+    ├── prettier-fixer.ts    # Multi-language formatting
+    ├── ruff-fixer.ts        # Python
+    ├── autoflake-fixer.ts   # Python (unused code)
+    ├── sorald-fixer.ts      # Java (SonarQube rules)
+    ├── openrewrite-fixer.ts # Java (recipes)
+    └── golangci-fixer.ts    # Go
+```
+
+### Integration Points (Phase 0)
+```
+apps/web/src/pages/pr-analysis.tsx      # Web App Dashboard (PRIMARY)
+apps/api/src/routes/fix.ts              # API endpoint
+.github/workflows/codequal-autofix.yml  # GitHub Action
+packages/cli/src/commands/fix.ts        # CLI command
+```
+
+### Web App Dashboard Features (Phase 0.5)
+- [ ] PR submission form (URL input)
+- [ ] Real-time scan progress indicator
+- [ ] Results dashboard:
+  - "X issues auto-fixed" summary card
+  - "Y issues need attention" summary card
+  - Downloadable patch file
+  - "Apply to PR" button (auto-commit)
+- [ ] Re-scan button for 2nd round verification
+- [ ] History of past scans
+
+---
+
+## 📋 Other Priorities
+
+### 1. Multi-Framework Testing (Next Major Task)
 - **Objective**: Ensure V9 works correctly on non-TypeScript projects.
 - **Targets**:
   - **Python**: Flask/Django app (check Pylint/Bandit integration).
@@ -440,14 +1021,68 @@ rm -rf ~/.ts-node
 
 ## 🎯 NEXT SESSION PRIORITIES
 
-1. **Fix Report Accuracy Bugs** (BUG-079 through BUG-083) - 2-3 hours
-2. **Test Other TypeScript Frameworks** (Express, NestJS, Standalone) - 3-4 hours
-3. **Validate Auto-fix Scenarios** (Single, Severity Group, All LSP, SARIF) - 2-3 hours
-4. **Performance Tool Non-Monorepo Testing** - 1 hour
-5. **Create PR for All Bug Fixes** (Bugs #1-5) - 30 minutes
+### P0: Implement Three-Tier Fix System
+1. **Create Issue Classifier** (`issue-classifier.ts`)
+   - Rule ID → Issue Type mapping (deterministic)
+   - AI fallback for unknown rules (use Researcher infrastructure)
+   - Batch grouping by issueType + fixer
 
-**Estimated Total:** 8-11 hours
+2. **Create Fix Router** (`fix-router.ts`)
+   - Route issues to appropriate tier (1/2/3)
+   - Issue-to-fixer matrix lookup
+   - Language-aware routing
+
+3. **Create Fix Scheduler** (`fix-scheduler.ts`)
+   - Performance-based parallel scheduling
+   - Fast/Medium/Slow tool categories
+   - Job queue with concurrency limits
+
+4. **Integrate with V9 Pipeline**
+   - Add fix execution as post-analysis step
+   - Output fixes to LSP/SARIF/GitLab formats
+   - Track fix confidence levels
+
+### P1: Test Fix System
+1. **Test Tier 1 Tools** - ESLint, Ruff, Semgrep autofix
+2. **Test Tier 2 Tools** - autoflake, pyupgrade, Sorald
+3. **Test Tier 3 Fallback** - AI generation for unsupported issues
+4. **Measure Fix Success Rate** - Target: <5% failure (vs current 36%)
+
+### P1.5: Optimize fix-generator Weights
+Test different quality weights to find optimal cost/quality balance:
+
+| Test | Quality | Cost | Speed | Goal |
+|------|---------|------|-------|------|
+| A | 40% | 45% | 15% | Baseline (budget) |
+| B | 50% | 35% | 15% | Balanced |
+| C | 60% | 25% | 15% | Quality focus |
+| D | 70% | 15% | 15% | Premium |
+
+**Methodology:**
+1. Select 100 Tier 3 issues across languages
+2. Run each weight configuration
+3. Measure: success rate, cost per fix
+4. Find: Minimum quality weight for <5% failure
+
+### P2: Multi-Framework Testing
+- Express.js, NestJS, Standalone TypeScript
+- Flask/Django (Python)
+- Spring Boot (Java)
+- Gin/Echo (Go)
+
+### P3: Documentation
+- Create user guide for fix tiers
+- Document confidence levels
+- Add troubleshooting for failed fixes
+
+**Estimated Total:** 10-15 hours
+
+**Key Files to Create:**
+- `src/two-branch/fix-agent/issue-classifier.ts`
+- `src/two-branch/fix-agent/fix-router.ts`
+- `src/two-branch/fix-agent/fix-scheduler.ts`
+- `src/two-branch/docs/TWO_TIER_FIX_SYSTEM.md`
 
 **Session Owner:** alpsla
-**AI Assistant:** Claude Code (Sonnet 4.5)
-**Branch:** feat/v9-footer-fixes-pr
+**AI Assistant:** Claude Code (Opus 4.5)
+**Branch:** test/autofix-baseline
