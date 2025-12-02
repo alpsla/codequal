@@ -889,7 +889,7 @@ export class V9GroupedReportFormatter {
           impact: this.getImpactSummary(f.content.rule, f.content.tool, f.content.severity),
           priority: this.getPriority(f.content.severity),
           occurrences: f.content.metadata?.total_occurrences || f.content.locations?.length || 0,
-          autoFixable: this.canAutoFix({ tool: f.content.tool } as IssueGroup)
+          autoFixable: this.canAutoFix({ rule: f.content.rule, tool: f.content.tool, severity: f.content.severity } as IssueGroup)
         };
       };
 

@@ -579,7 +579,19 @@ const RULE_MAPPINGS: Record<string, Record<string, { type: IssueType; fixable: b
  * 2. Legacy inline rules (Ruff, PMD, Checkstyle, Semgrep)
  * 3. AI fallback for unknown rules
  */
-export function classifyIssue(ruleId: string, tool: string): ClassifiedIssue {
+export function classifyIssue(ruleId: string | undefined | null, tool: string): ClassifiedIssue {
+  // Handle undefined/null ruleId - return unknown type for AI fallback
+  if (!ruleId) {
+    return {
+      ruleId: 'unknown',
+      tool,
+      issueType: 'unknown',
+      confidence: 0,
+      fixable: false,
+      fixTier: 3,  // AI fallback tier
+    };
+  }
+
   const normalizedTool = tool.toLowerCase();
 
   // Priority 1: Check comprehensive ESLint/TypeScript-ESLint rules
