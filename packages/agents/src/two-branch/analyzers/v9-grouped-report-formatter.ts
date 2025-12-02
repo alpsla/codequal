@@ -23,6 +23,14 @@ import { LSPSARIFConverter } from './lsp-sarif-converter';
 import { GitLabCodeQualityConverter } from './gitlab-codequality-converter';
 import { classifyIssue, getClassificationStats } from '../../fix-agent/issue-classifier';
 import { getRouteSummary, EnrichedIssue as FixEnrichedIssue } from '../../fix-agent/fix-router';
+import { getAIFixPrompt, buildAIFixRequest, AIFixPrompt } from '../../fix-agent/ai-fix-prompts';
+import {
+  getManualReviewInfo,
+  generateManualReviewMessage,
+  canAIHelp,
+  getAIPromptHint,
+  ManualReviewInfo
+} from '../../fix-agent/manual-review-reasons';
 
 // Load environment variables
 dotenv.config();
@@ -220,7 +228,7 @@ export interface CursorFixData {
 }
 
 export interface FixPattern {
-  type: 'regex' | 'ast' | 'template';
+  type: 'regex' | 'ast' | 'template' | 'ai-generated' | 'manual-review';
 
   // For regex-based fixes
   find_regex?: string;
@@ -240,6 +248,33 @@ export interface FixPattern {
 
   // Human-readable instructions
   instructions: string;
+
+  // Three-Tier Fix System integration (Session 35)
+  fixTier?: 1 | 2 | 3;
+  fixerTool?: string;           // Tool name (eslint, ruff, sorald, ai)
+  fixerCommand?: string;        // Command to execute (eslint --fix, ruff check --fix)
+  confidence?: number;          // 0-100, confidence in the fix
+
+  // For Tier 3 (AI-generated fixes)
+  aiPrompt?: {
+    systemPrompt: string;
+    userPromptTemplate: string;
+    outputFormat: 'diff' | 'full-file' | 'code-block';
+    maxTokens: number;
+    temperature: number;
+    requiredContext: ('file' | 'function' | 'class' | 'imports' | 'related-files')[];
+  };
+
+  // For manual review (when auto-fix is not possible)
+  manualReview?: {
+    reason: string;              // CONTEXT_REQUIRED, SECURITY_DECISION, etc.
+    explanation: string;         // User-friendly explanation
+    userAction: string;          // What the user should do
+    aiCanHelp: boolean;          // Can AI generate a suggestion?
+    aiPromptHint?: string;       // Hint for AI if it can help
+    exampleFix?: string;         // Example of what a fix might look like
+    riskLevel: 'low' | 'medium' | 'high';
+  };
 }
 
 export interface FixLocation {
@@ -3863,34 +3898,202 @@ mvn spotless:check  # Verify (use in CI)
   }
 
   /**
-   * Extract fix pattern for IDE automation
+   * Extract fix pattern for IDE automation using Three-Tier Fix System
+   *
+   * Session 35: Enhanced with hybrid fix strategy
+   * - Tier 1: Native tool fixes (eslint --fix, ruff --fix) - 95% confidence
+   * - Tier 2: Dedicated fixer tools (Sorald, autoflake) - 85% confidence
+   * - Tier 3: AI-generated fixes with specific prompts - 90% confidence (specific) / 60% (generic)
+   * - Manual Review: When AI can't help, provide user-friendly guidance
    */
   private extractFixPattern(group: IssueGroup, representative: EnrichedIssue): FixPattern {
-    // Extract pattern based on rule type
     const fix = representative.fixSuggestion;
+    const classification = classifyIssue(group.rule, group.tool);
 
-    if (group.rule === 'AvoidUsingVolatile') {
+    // Determine issue category for AI prompts
+    const issueCategory = this.determineIssueCategory(classification.issueType);
+
+    // Tier 1 & 2: Native tools and dedicated fixers
+    if (classification.fixTier <= 2 && classification.fixable) {
+      // Special case: AvoidUsingVolatile with regex pattern
+      if (group.rule === 'AvoidUsingVolatile') {
+        return {
+          type: 'regex',
+          fixTier: classification.fixTier,
+          fixerTool: 'sorald',
+          fixerCommand: 'sorald repair --source',
+          confidence: 85,
+          find_regex: 'private volatile (\\w+) (\\w+)( = .+)?;',
+          replace_template: 'private final Atomic$1 $2 = new Atomic$1($3);',
+          example: {
+            before: 'private volatile boolean running = true;',
+            after: 'private final AtomicBoolean running = new AtomicBoolean(true);'
+          },
+          instructions: 'Replace volatile primitive types with AtomicXXX equivalents'
+        };
+      }
+
+      // Standard Tier 1/2 fix
       return {
-        type: 'regex',
-        find_regex: 'private volatile (\\w+) (\\w+)( = .+)?;',
-        replace_template: 'private final Atomic$1 $2 = new Atomic$1($3);',
+        type: 'template',
+        fixTier: classification.fixTier,
+        fixerTool: this.getFixerToolForRule(group.tool, classification.issueType),
+        fixerCommand: this.getFixerCommand(group.tool, classification.issueType),
+        confidence: classification.fixTier === 1 ? 95 : 85,
         example: {
-          before: 'private volatile boolean running = true;',
-          after: 'private final AtomicBoolean running = new AtomicBoolean(true);'
+          before: representative.snippet || '',
+          after: fix?.correctedCode || ''
         },
-        instructions: 'Replace volatile primitive types with AtomicXXX equivalents'
+        instructions: fix?.fix || 'Apply the suggested fix'
       };
     }
 
-    // Generic pattern
+    // Tier 3: AI-generated fixes with specific prompts
+    const aiPrompt = getAIFixPrompt(group.rule, issueCategory);
+    if (aiPrompt) {
+      // Specific AI prompt available - higher confidence, lower cost
+      return {
+        type: 'ai-generated',
+        fixTier: 3,
+        fixerTool: 'ai',
+        confidence: 90,  // Specific prompts = 90%+ success rate
+        example: {
+          before: representative.snippet || '',
+          after: fix?.correctedCode || ''
+        },
+        instructions: fix?.fix || 'AI-generated fix available with specific prompt',
+        aiPrompt: {
+          systemPrompt: aiPrompt.systemPrompt,
+          userPromptTemplate: aiPrompt.userPromptTemplate,
+          outputFormat: aiPrompt.outputFormat,
+          maxTokens: aiPrompt.maxTokens,
+          temperature: aiPrompt.temperature,
+          requiredContext: aiPrompt.requiredContext
+        }
+      };
+    }
+
+    // Check if AI can help with generic prompt
+    const manualReviewInfo = getManualReviewInfo(group.rule, issueCategory);
+    if (manualReviewInfo?.aiCanHelp) {
+      return {
+        type: 'ai-generated',
+        fixTier: 3,
+        fixerTool: 'ai',
+        confidence: 60,  // Generic AI - lower confidence
+        example: {
+          before: representative.snippet || '',
+          after: fix?.correctedCode || ''
+        },
+        instructions: fix?.fix || 'AI can assist with this fix',
+        manualReview: {
+          reason: manualReviewInfo.reason,
+          explanation: manualReviewInfo.explanation,
+          userAction: manualReviewInfo.userAction,
+          aiCanHelp: true,
+          aiPromptHint: manualReviewInfo.aiPromptHint,
+          exampleFix: manualReviewInfo.exampleFix,
+          riskLevel: manualReviewInfo.riskLevel
+        }
+      };
+    }
+
+    // Manual review required - provide user-friendly guidance
+    if (manualReviewInfo) {
+      return {
+        type: 'manual-review',
+        fixTier: 3,
+        confidence: 0,  // No auto-fix available
+        example: {
+          before: representative.snippet || '',
+          after: manualReviewInfo.exampleFix || ''
+        },
+        instructions: manualReviewInfo.userAction,
+        manualReview: {
+          reason: manualReviewInfo.reason,
+          explanation: manualReviewInfo.explanation,
+          userAction: manualReviewInfo.userAction,
+          aiCanHelp: false,
+          exampleFix: manualReviewInfo.exampleFix,
+          riskLevel: manualReviewInfo.riskLevel
+        }
+      };
+    }
+
+    // Fallback: Generic template
     return {
       type: 'template',
+      fixTier: 3,
+      fixerTool: 'ai',
+      confidence: 60,
       example: {
         before: representative.snippet || '',
         after: fix?.correctedCode || ''
       },
       instructions: fix?.fix || 'Apply the suggested fix'
     };
+  }
+
+  /**
+   * Determine issue category for AI prompt lookup
+   */
+  private determineIssueCategory(issueType: string): 'security' | 'quality' | 'performance' {
+    switch (issueType) {
+      case 'security':
+        return 'security';
+      case 'performance':
+        return 'performance';
+      default:
+        return 'quality';  // style, maintainability, compatibility, etc. → quality
+    }
+  }
+
+  /**
+   * Get fixer tool for a rule based on tool and issue type
+   */
+  private getFixerToolForRule(tool: string, issueType: string): string {
+    const normalizedTool = tool.toLowerCase();
+
+    // TypeScript/JavaScript
+    if (['eslint', 'typescript-eslint'].includes(normalizedTool)) return 'eslint';
+    if (normalizedTool === 'prettier') return 'prettier';
+
+    // Python
+    if (normalizedTool === 'ruff') return 'ruff';
+    if (issueType === 'quality') return 'autoflake';
+    if (issueType === 'compatibility') return 'pyupgrade';
+
+    // Java
+    if (['pmd', 'checkstyle', 'spotbugs'].includes(normalizedTool)) return 'sorald';
+
+    // Go
+    if (normalizedTool === 'golangci-lint') return 'golangci-lint';
+
+    return 'ai';
+  }
+
+  /**
+   * Get fixer command for a tool and issue type
+   */
+  private getFixerCommand(tool: string, issueType: string): string {
+    const normalizedTool = tool.toLowerCase();
+
+    // TypeScript/JavaScript
+    if (['eslint', 'typescript-eslint'].includes(normalizedTool)) return 'eslint --fix';
+    if (normalizedTool === 'prettier') return 'prettier --write';
+
+    // Python
+    if (normalizedTool === 'ruff') return 'ruff check --fix';
+    if (issueType === 'quality') return 'autoflake --in-place --remove-all-unused-imports';
+    if (issueType === 'compatibility') return 'pyupgrade --py38-plus';
+
+    // Java
+    if (['pmd', 'checkstyle', 'spotbugs'].includes(normalizedTool)) return 'sorald repair --source';
+
+    // Go
+    if (normalizedTool === 'golangci-lint') return 'golangci-lint run --fix';
+
+    return 'ai';
   }
 
   /**

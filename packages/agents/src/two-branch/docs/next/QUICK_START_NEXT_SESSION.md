@@ -1,14 +1,14 @@
 # 🎯 QUICK START: NEXT SESSION
 
-**Last Updated**: December 2, 2025 (Session 35 - Hybrid Fix Strategy Designed)
+**Last Updated**: December 2, 2025 (Session 35 - V9 Integration Complete)
 **Current Phase**: Phase 1 - Code Refactoring & Bug Fixes
-**Status**: ✅ **HYBRID FIX STRATEGY COMPLETE**
+**Status**: ✅ **V9 HYBRID FIX INTEGRATION COMPLETE**
 
 ---
 
 ## 🎉 SESSION 35 ACHIEVEMENTS (December 2, 2025)
 
-**Session Focus:** Per-Language Fix Pipeline + Hybrid Fix Strategy Design
+**Session Focus:** Per-Language Fix Pipeline + V9 Pipeline Integration
 
 ### ✅ Hybrid Fix Strategy Designed (All 3 Options Combined)
 
@@ -47,6 +47,36 @@ ISSUE DETECTED
    - Low temperature (0.2-0.3) for deterministic output
    - Context requirements specified per prompt
    - `buildAIFixRequest()` function
+
+### ✅ V9 Pipeline Integration Complete
+
+**Modified:** `src/two-branch/analyzers/v9-grouped-report-formatter.ts`
+
+**Changes:**
+1. Added imports for hybrid fix strategy modules:
+   ```typescript
+   import { getAIFixPrompt, buildAIFixRequest } from '../../fix-agent/ai-fix-prompts';
+   import { getManualReviewInfo, generateManualReviewMessage, canAIHelp } from '../../fix-agent/manual-review-reasons';
+   ```
+
+2. Extended `FixPattern` interface with Three-Tier fields:
+   - `fixTier?: 1 | 2 | 3` - Which tier handles this issue
+   - `fixerTool?: string` - Tool name (eslint, ruff, sorald, ai)
+   - `fixerCommand?: string` - Command to execute
+   - `confidence?: number` - 0-100 confidence in the fix
+   - `aiPrompt?: {...}` - For Tier 3 specific prompts
+   - `manualReview?: {...}` - For issues needing user decision
+
+3. Enhanced `extractFixPattern()` method:
+   - Uses Three-Tier classification for routing
+   - Returns specific AI prompts for Security/Quality/Performance issues
+   - Includes manual review info when auto-fix not possible
+   - Sets confidence levels: Tier 1 (95%), Tier 2 (85%), Tier 3 specific (90%), Tier 3 generic (60%)
+
+4. Added helper methods:
+   - `determineIssueCategory()` - Maps issue types to AI prompt categories
+   - `getFixerToolForRule()` - Maps tools to appropriate fixers
+   - `getFixerCommand()` - Returns CLI command for each fixer
 
 ### 📊 Auto-Fix Capability by Category
 
