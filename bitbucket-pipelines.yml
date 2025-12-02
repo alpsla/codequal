@@ -1,0 +1,157 @@
+# Bitbucket Pipelines configuration for CodeQual Analysis
+
+image: node:20
+
+definitions:
+  steps:
+    - step: &codequal-analysis
+        name: CodeQual Analysis
+        script:
+          - echo "Running CodeQual Analysis for PR #${BITBUCKET_PR_ID}"
+
+          # Install required tools
+          - apt-get update && apt-get install -y curl jq
+
+          # Call CodeQual API
+          - |
+            HTTP_CODE=$(curl -w "%{http_code}" -X POST https://api.codequal.dev/v1/analyze \
+              -H "Authorization: Bearer $CODEQUAL_API_KEY" \
+              -H "Content-Type: application/json" \
+              -d "{
+                \"repository\": \"$BITBUCKET_REPO_FULL_NAME\",
+                \"pr_id\": \"$BITBUCKET_PR_ID\",
+                \"base_sha\": \"$BITBUCKET_PR_DESTINATION_COMMIT\",
+                \"head_sha\": \"$BITBUCKET_COMMIT\",
+                \"source\": \"bitbucket_pipelines\"
+              }" -o analysis.json)
+
+          # Check HTTP status
+          - |
+            if [ "$HTTP_CODE" -ne 200 ] && [ "$HTTP_CODE" -ne 201 ]; then
+              echo "Error: CodeQual API returned status code $HTTP_CODE"
+              cat analysis.json
+              exit 1
+            fi
+
+          - echo "Analysis completed successfully"
+          - cat analysis.json | jq '.'
+
+          # Download SARIF report (if available)
+          - |
+            SARIF_URL=$(jq -r '.sarif_url // empty' analysis.json)
+            if [ -n "$SARIF_URL" ]; then
+              echo "Downloading SARIF report..."
+              curl -f -o codequal-results.sarif "$SARIF_URL"
+            fi
+
+          # Download LSP actions (if available)
+          - |
+            LSP_URL=$(jq -r '.lsp_actions_url // empty' analysis.json)
+            if [ -n "$LSP_URL" ]; then
+              echo "Downloading LSP actions..."
+              curl -f -o codequal-lsp-actions.json "$LSP_URL"
+            fi
+
+          # Post comment on PR (requires BB_AUTH_TOKEN with PR write permissions)
+          - |
+            if [ -n "$BB_AUTH_TOKEN" ]; then
+              REPORT_URL=$(jq -r '.report_url // empty' analysis.json)
+              DECISION=$(jq -r '.decision // "PENDING"' analysis.json)
+              SUMMARY=$(jq -r '.summary // "Analysis completed"' analysis.json)
+              CRITICAL=$(jq -r '.issues.critical // 0' analysis.json)
+              HIGH=$(jq -r '.issues.high // 0' analysis.json)
+              MEDIUM=$(jq -r '.issues.medium // 0' analysis.json)
+              LOW=$(jq -r '.issues.low // 0' analysis.json)
+              TOTAL=$((CRITICAL + HIGH + MEDIUM + LOW))
+
+              # Determine status icon
+              if [ "$DECISION" = "APPROVED" ]; then
+                STATUS_ICON="✅"
+              elif [ "$DECISION" = "DECLINED" ]; then
+                STATUS_ICON="❌"
+              else
+                STATUS_ICON="⏳"
+              fi
+
+              # Build comment body
+              COMMENT_BODY="## ${STATUS_ICON} CodeQual Analysis\n\n"
+              COMMENT_BODY="${COMMENT_BODY}**Decision:** ${DECISION}\n\n"
+
+              if [ "$TOTAL" -gt 0 ]; then
+                COMMENT_BODY="${COMMENT_BODY}### Issues Found: ${TOTAL}\n\n"
+                COMMENT_BODY="${COMMENT_BODY}| Severity | Count |\n"
+                COMMENT_BODY="${COMMENT_BODY}|----------|-------|\n"
+                [ "$CRITICAL" -gt 0 ] && COMMENT_BODY="${COMMENT_BODY}| 🔴 Critical | ${CRITICAL} |\n"
+                [ "$HIGH" -gt 0 ] && COMMENT_BODY="${COMMENT_BODY}| 🟠 High | ${HIGH} |\n"
+                [ "$MEDIUM" -gt 0 ] && COMMENT_BODY="${COMMENT_BODY}| 🟡 Medium | ${MEDIUM} |\n"
+                [ "$LOW" -gt 0 ] && COMMENT_BODY="${COMMENT_BODY}| 🔵 Low | ${LOW} |\n"
+                COMMENT_BODY="${COMMENT_BODY}\n"
+              else
+                COMMENT_BODY="${COMMENT_BODY}✨ No issues found!\n\n"
+              fi
+
+              if [ -n "$SUMMARY" ]; then
+                COMMENT_BODY="${COMMENT_BODY}### Summary\n\n${SUMMARY}\n\n"
+              fi
+
+              if [ -n "$REPORT_URL" ]; then
+                COMMENT_BODY="${COMMENT_BODY}📊 [View Full Report](${REPORT_URL})\n\n"
+              fi
+
+              COMMENT_BODY="${COMMENT_BODY}---\n*Powered by [CodeQual](https://codequal.dev)*"
+
+              # Create JSON payload
+              COMMENT_JSON=$(jq -n \
+                --arg content "$COMMENT_BODY" \
+                '{content: {raw: $content}}')
+
+              # Post comment using Bitbucket API
+              curl -X POST \
+                "https://api.bitbucket.org/2.0/repositories/$BITBUCKET_REPO_FULL_NAME/pullrequests/$BITBUCKET_PR_ID/comments" \
+                -H "Authorization: Bearer $BB_AUTH_TOKEN" \
+                -H "Content-Type: application/json" \
+                -d "$COMMENT_JSON"
+
+              echo "Comment posted to PR #${BITBUCKET_PR_ID}"
+            else
+              echo "Skipping PR comment (BB_AUTH_TOKEN not set)"
+            fi
+
+          # Check decision and exit accordingly
+          - |
+            DECISION=$(jq -r '.decision // "PENDING"' analysis.json)
+            if [ "$DECISION" = "DECLINED" ]; then
+              echo "❌ CodeQual analysis declined this PR"
+              exit 1
+            elif [ "$DECISION" = "APPROVED" ]; then
+              echo "✅ CodeQual analysis approved this PR"
+            else
+              echo "⏳ CodeQual analysis is pending"
+            fi
+
+        artifacts:
+          - analysis.json
+          - codequal-results.sarif
+          - codequal-lsp-actions.json
+
+pipelines:
+  pull-requests:
+    '**':
+      - step: *codequal-analysis
+
+  # Optional: Run on specific branches
+  branches:
+    develop:
+      - step:
+          <<: *codequal-analysis
+          name: CodeQual Analysis (Develop Branch)
+
+    main:
+      - step:
+          <<: *codequal-analysis
+          name: CodeQual Analysis (Main Branch)
+
+# Optional: Custom pipeline for manual runs
+  custom:
+    codequal-manual:
+      - step: *codequal-analysis

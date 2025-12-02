@@ -1,0 +1,176 @@
+# GitLab CI/CD Pipeline for CodeQual Analysis
+
+stages:
+  - test
+  - report
+
+variables:
+  CODEQUAL_API_URL: "https://api.codequal.dev/v1/analyze"
+
+codequal:
+  stage: test
+  image: node:20-alpine
+
+  # Only run on merge requests
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+  before_script:
+    # Install required tools
+    - apk add --no-cache curl jq
+
+  script:
+    - echo "Running CodeQual Analysis for MR !${CI_MERGE_REQUEST_IID}"
+
+    # Call CodeQual API
+    - |
+      HTTP_CODE=$(curl -w "%{http_code}" -X POST $CODEQUAL_API_URL \
+        -H "Authorization: Bearer $CODEQUAL_API_KEY" \
+        -H "Content-Type: application/json" \
+        -d "{
+          \"repository\": \"$CI_PROJECT_PATH\",
+          \"mr_iid\": \"$CI_MERGE_REQUEST_IID\",
+          \"base_sha\": \"$CI_MERGE_REQUEST_DIFF_BASE_SHA\",
+          \"head_sha\": \"$CI_COMMIT_SHA\",
+          \"source\": \"gitlab_ci\"
+        }" -o analysis.json)
+
+    # Check HTTP status
+    - |
+      if [ "$HTTP_CODE" -ne 200 ] && [ "$HTTP_CODE" -ne 201 ]; then
+        echo "Error: CodeQual API returned status code $HTTP_CODE"
+        cat analysis.json
+        exit 1
+      fi
+
+    - echo "Analysis completed successfully"
+    - cat analysis.json | jq '.'
+
+    # Download SARIF report (if available)
+    - |
+      SARIF_URL=$(jq -r '.sarif_url // empty' analysis.json)
+      if [ -n "$SARIF_URL" ]; then
+        echo "Downloading SARIF report..."
+        curl -f -o codequal-sarif.json "$SARIF_URL"
+      fi
+
+    # Download GitLab Code Quality report
+    - |
+      GL_REPORT_URL=$(jq -r '.gitlab_codequality_url // empty' analysis.json)
+      if [ -n "$GL_REPORT_URL" ]; then
+        echo "Downloading GitLab Code Quality report..."
+        curl -f -o gl-code-quality-report.json "$GL_REPORT_URL"
+      else
+        # Generate Code Quality report from analysis
+        echo "Generating Code Quality report from analysis..."
+        jq '[.issues[] | {
+          description: .message,
+          severity: (.severity | ascii_downcase),
+          fingerprint: .id,
+          location: {
+            path: .file,
+            lines: {
+              begin: .line
+            }
+          }
+        }]' analysis.json > gl-code-quality-report.json
+      fi
+
+    # Validate Code Quality report
+    - |
+      if jq empty gl-code-quality-report.json 2>/dev/null; then
+        echo "Code Quality report is valid"
+      else
+        echo "Warning: Invalid Code Quality report JSON"
+      fi
+
+    # Post comment on MR (requires GITLAB_TOKEN with api scope)
+    - |
+      if [ -n "$GITLAB_TOKEN" ]; then
+        REPORT_URL=$(jq -r '.report_url // empty' analysis.json)
+        DECISION=$(jq -r '.decision // "PENDING"' analysis.json)
+        SUMMARY=$(jq -r '.summary // "Analysis completed"' analysis.json)
+
+        # Determine status icon
+        if [ "$DECISION" = "APPROVED" ]; then
+          STATUS_ICON="✅"
+        elif [ "$DECISION" = "DECLINED" ]; then
+          STATUS_ICON="❌"
+        else
+          STATUS_ICON="⏳"
+        fi
+
+        # Build comment
+        COMMENT="## ${STATUS_ICON} CodeQual Analysis\n\n"
+        COMMENT="${COMMENT}**Decision:** ${DECISION}\n\n"
+        COMMENT="${COMMENT}${SUMMARY}\n\n"
+
+        if [ -n "$REPORT_URL" ]; then
+          COMMENT="${COMMENT}📊 [View Full Report](${REPORT_URL})\n\n"
+        fi
+
+        COMMENT="${COMMENT}---\n*Powered by [CodeQual](https://codequal.dev)*"
+
+        # Post comment using GitLab API
+        curl -X POST \
+          "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/merge_requests/${CI_MERGE_REQUEST_IID}/notes" \
+          -H "PRIVATE-TOKEN: $GITLAB_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d "{\"body\": \"${COMMENT}\"}"
+      else
+        echo "Skipping MR comment (GITLAB_TOKEN not set)"
+      fi
+
+    # Check decision and exit accordingly
+    - |
+      DECISION=$(jq -r '.decision // "PENDING"' analysis.json)
+      if [ "$DECISION" = "DECLINED" ]; then
+        echo "❌ CodeQual analysis declined this MR"
+        exit 1
+      elif [ "$DECISION" = "APPROVED" ]; then
+        echo "✅ CodeQual analysis approved this MR"
+      else
+        echo "⏳ CodeQual analysis is pending"
+      fi
+
+  artifacts:
+    reports:
+      codequality: gl-code-quality-report.json
+    paths:
+      - analysis.json
+      - codequal-sarif.json
+      - gl-code-quality-report.json
+    expire_in: 30 days
+    when: always
+
+  allow_failure: false
+
+# Optional: Generate summary report
+codequal:summary:
+  stage: report
+  image: node:20-alpine
+
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+  needs:
+    - codequal
+
+  before_script:
+    - apk add --no-cache jq
+
+  script:
+    - echo "=== CodeQual Analysis Summary ==="
+    - |
+      if [ -f analysis.json ]; then
+        echo "Decision: $(jq -r '.decision' analysis.json)"
+        echo "Total Issues: $(jq -r '.issues.total // 0' analysis.json)"
+        echo "Critical: $(jq -r '.issues.critical // 0' analysis.json)"
+        echo "High: $(jq -r '.issues.high // 0' analysis.json)"
+        echo "Medium: $(jq -r '.issues.medium // 0' analysis.json)"
+        echo "Low: $(jq -r '.issues.low // 0' analysis.json)"
+      else
+        echo "No analysis results found"
+      fi
+
+  allow_failure: true
