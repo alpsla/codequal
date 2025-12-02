@@ -42,11 +42,15 @@ ISSUE DETECTED
    - Risk levels and example fixes
    - `generateManualReviewMessage()` function
 
-2. **`src/fix-agent/ai-fix-prompts.ts`** (Option 2)
-   - Dedicated prompts for 12 issue types across Security/Quality/Performance
-   - Low temperature (0.2-0.3) for deterministic output
-   - Context requirements specified per prompt
-   - `buildAIFixRequest()` function
+2. **`src/fix-agent/ai-fix-prompts.ts`** (Option 2 - DYNAMIC)
+   - **Dynamic prompt generation for ANY rule** (not just 12 hardcoded)
+   - Builds prompts from: ruleId, tool, message, severity, file, line, code context
+   - `generateDynamicPrompt(context)` - Main entry point for all rules
+   - `getOptimizedPrompt(context)` - Uses known patterns when available
+   - `KNOWN_PATTERNS` array - Still optimizes ~10 common issue types
+   - Category-specific system prompts (security, quality, performance, style, etc.)
+   - Severity-based token limits (critical: 800, high: 600, medium: 500, low: 400)
+   - Category-based temperature (security: 0.1, style: 0.1, quality: 0.2)
 
 ### ✅ V9 Pipeline Integration Complete
 
@@ -55,7 +59,7 @@ ISSUE DETECTED
 **Changes:**
 1. Added imports for hybrid fix strategy modules:
    ```typescript
-   import { getAIFixPrompt, buildAIFixRequest } from '../../fix-agent/ai-fix-prompts';
+   import { getOptimizedPrompt, generateDynamicPrompt, IssueContext } from '../../fix-agent/ai-fix-prompts';
    import { getManualReviewInfo, generateManualReviewMessage, canAIHelp } from '../../fix-agent/manual-review-reasons';
    ```
 
@@ -69,9 +73,9 @@ ISSUE DETECTED
 
 3. Enhanced `extractFixPattern()` method:
    - Uses Three-Tier classification for routing
-   - Returns specific AI prompts for Security/Quality/Performance issues
-   - Includes manual review info when auto-fix not possible
-   - Sets confidence levels: Tier 1 (95%), Tier 2 (85%), Tier 3 specific (90%), Tier 3 generic (60%)
+   - **Builds IssueContext from group/representative data**
+   - **Calls getOptimizedPrompt() for dynamic AI prompts**
+   - Sets confidence: Tier 1 (95%), Tier 2 (85%), Tier 3 (75-90% based on temperature)
 
 4. Added helper methods:
    - `determineIssueCategory()` - Maps issue types to AI prompt categories
