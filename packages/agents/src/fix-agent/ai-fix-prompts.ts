@@ -1,11 +1,8 @@
 /**
- * AI Fix Prompts
+ * Dynamic AI Fix Prompt Builder
  *
- * Dedicated prompts for Tier 3 AI-generated fixes.
- * Each prompt is tailored to the specific issue type and includes:
- * - Context requirements
- * - Safety constraints
- * - Output format specifications
+ * Generates specific prompts dynamically for ANY rule, not just hardcoded ones.
+ * Uses rule metadata, issue description, and context to build targeted prompts.
  *
  * KEY INSIGHT: More specific prompts = LOWER cost + HIGHER accuracy
  *
@@ -17,16 +14,11 @@
  * | 60% success    | 90%+ success    |
  * | Often retry    | Usually 1-shot  |
  *
- * Specific prompts:
- * - Eliminate explanation tokens (AI knows what to do)
- * - Reduce hallucination (exact fix pattern provided)
- * - Lower temperature = deterministic output
- * - Fewer retries = lower total cost
- *
- * These prompts are used when:
- * 1. No Tier 1 (native --fix) support exists
- * 2. No Tier 2 (dedicated fixer) tool exists
- * 3. The issue type allows AI assistance (aiCanHelp: true)
+ * Why dynamic prompts work:
+ * - Include the EXACT issue message (AI knows what to fix)
+ * - Include the EXACT rule ID (AI can look up best practices)
+ * - Include the EXACT code context (AI sees the problem)
+ * - Constrain output format (less rambling = fewer tokens)
  */
 
 export interface AIFixPrompt {
@@ -38,479 +30,444 @@ export interface AIFixPrompt {
   requiredContext: ('file' | 'function' | 'class' | 'imports' | 'related-files')[];
 }
 
+export interface IssueContext {
+  ruleId: string;
+  tool: string;
+  message: string;
+  category: 'security' | 'quality' | 'performance' | 'style' | 'maintainability' | 'compatibility' | 'dependency';
+  severity: 'critical' | 'high' | 'medium' | 'low';
+  filePath: string;
+  lineNumber: number;
+  language: string;
+  codeContext: string;
+  snippet?: string;
+  // Optional extracted metadata
+  variableName?: string;
+  functionName?: string;
+  className?: string;
+  value?: string;
+  framework?: string;
+}
+
 /**
- * Security Fix Prompts
+ * Category-specific system prompt templates
+ * These provide the "role" and general constraints for each category
  */
-export const SECURITY_FIX_PROMPTS: Record<string, AIFixPrompt> = {
-  'hardcoded-password': {
-    systemPrompt: `You are a security engineer fixing hardcoded secrets.
+const CATEGORY_SYSTEM_PROMPTS: Record<string, string> = {
+  security: `You are a security engineer generating a precise code fix.
 
-RULES:
-1. Replace hardcoded secrets with environment variable lookups
-2. Use the appropriate method for the language:
-   - Python: os.environ.get('VAR_NAME', '') or os.getenv('VAR_NAME')
-   - JavaScript/TypeScript: process.env.VAR_NAME || ''
-   - Java: System.getenv("VAR_NAME")
-   - Go: os.Getenv("VAR_NAME")
-3. Add a comment noting the environment variable name
-4. NEVER include actual secret values in your response
-5. Suggest appropriate environment variable names based on context`,
+OUTPUT RULES:
+1. Output ONLY the fixed code block - no explanations
+2. Preserve all existing functionality
+3. Use language-appropriate security patterns
+4. Never introduce new vulnerabilities
+5. If the fix requires architectural changes, output a comment explaining what's needed
 
-    userPromptTemplate: `Fix this hardcoded secret vulnerability:
+SECURITY PRINCIPLES:
+- Defense in depth (multiple layers of protection)
+- Principle of least privilege
+- Fail securely (deny by default)
+- Don't trust user input`,
 
-FILE: {{filePath}}
-LINE: {{lineNumber}}
-CODE:
-\`\`\`{{language}}
-{{codeContext}}
-\`\`\`
+  quality: `You are a code quality engineer generating a precise code fix.
 
-ISSUE: {{issueDescription}}
+OUTPUT RULES:
+1. Output ONLY the fixed code block - no explanations
+2. Preserve all existing functionality
+3. Follow language idioms and best practices
+4. Maintain consistency with surrounding code style
+5. If the fix requires context you don't have, output a comment explaining what's needed
 
-Generate ONLY the fixed code. Use environment variable with name based on context.`,
+QUALITY PRINCIPLES:
+- Single responsibility
+- Clear naming that reveals intent
+- Minimize side effects
+- Handle edge cases`,
 
-    outputFormat: 'code-block',
-    maxTokens: 500,
-    temperature: 0.2,
-    requiredContext: ['file', 'imports'],
-  },
+  performance: `You are a performance engineer generating a precise code fix.
 
-  'sql-injection': {
-    systemPrompt: `You are a security engineer fixing SQL injection vulnerabilities.
+OUTPUT RULES:
+1. Output ONLY the fixed code block - no explanations
+2. Preserve all existing functionality and output
+3. Use language-appropriate optimization patterns
+4. Don't micro-optimize at the expense of readability
+5. If optimization depends on runtime data you don't have, explain in a comment
 
-RULES:
-1. Convert string concatenation/formatting to parameterized queries
-2. Detect the database library being used and use appropriate syntax:
-   - Python psycopg2: cursor.execute("SELECT * FROM t WHERE id = %s", (id,))
-   - Python SQLAlchemy: session.query(User).filter(User.id == id)
-   - Node.js pg: client.query('SELECT * FROM t WHERE id = $1', [id])
-   - Java JDBC: PreparedStatement with setString/setInt
-3. NEVER use string formatting with user input
-4. If ORM is available, prefer ORM methods over raw SQL
-5. Add input validation as defense-in-depth`,
+PERFORMANCE PRINCIPLES:
+- Avoid unnecessary allocations
+- Prefer batch operations over loops
+- Cache expensive computations
+- Use appropriate data structures`,
 
-    userPromptTemplate: `Fix this SQL injection vulnerability:
+  style: `You are a code style engineer generating a precise code fix.
 
-FILE: {{filePath}}
-LINE: {{lineNumber}}
-CODE:
-\`\`\`{{language}}
-{{codeContext}}
-\`\`\`
+OUTPUT RULES:
+1. Output ONLY the fixed code block - no explanations
+2. Follow the language's standard style guide
+3. Maintain consistency with surrounding code
+4. Preserve all functionality exactly
 
-ISSUE: {{issueDescription}}
+STYLE PRINCIPLES:
+- Consistent formatting
+- Idiomatic patterns for the language
+- Clear and readable code`,
 
-Identify the database library and generate parameterized query fix.`,
+  maintainability: `You are a software engineer improving code maintainability.
 
-    outputFormat: 'code-block',
-    maxTokens: 800,
-    temperature: 0.2,
-    requiredContext: ['file', 'function', 'imports'],
-  },
+OUTPUT RULES:
+1. Output ONLY the fixed code block - no explanations
+2. Improve clarity without changing behavior
+3. Add documentation if needed
+4. Refactor for better structure
 
-  'command-injection': {
-    systemPrompt: `You are a security engineer fixing command injection vulnerabilities.
+MAINTAINABILITY PRINCIPLES:
+- Self-documenting code
+- Modular design
+- Clear abstractions`,
 
-RULES:
-1. Remove shell=True when possible, use command as list
-2. If shell features are needed (pipes, wildcards), use shlex.quote() to escape
-3. Validate/sanitize input before using in commands
-4. Prefer subprocess.run() over subprocess.call()
-5. Use check=True to catch errors
-6. If command must accept user input, whitelist allowed values
+  compatibility: `You are a software engineer fixing compatibility issues.
 
-LANGUAGE-SPECIFIC:
-- Python: subprocess.run(['cmd', arg], shell=False, check=True)
-- JavaScript: child_process.execFile() instead of exec()
-- Go: exec.Command() with explicit arguments`,
+OUTPUT RULES:
+1. Output ONLY the fixed code block - no explanations
+2. Update deprecated APIs to modern equivalents
+3. Maintain backward compatibility if possible
+4. Follow migration guides for the language/framework`,
 
-    userPromptTemplate: `Fix this command injection vulnerability:
+  dependency: `You are a software engineer fixing dependency issues.
 
-FILE: {{filePath}}
-LINE: {{lineNumber}}
-CODE:
-\`\`\`{{language}}
-{{codeContext}}
-\`\`\`
-
-ISSUE: {{issueDescription}}
-
-Determine if shell features are needed. Generate safe subprocess call.`,
-
-    outputFormat: 'code-block',
-    maxTokens: 600,
-    temperature: 0.2,
-    requiredContext: ['file', 'function'],
-  },
-
-  'weak-cryptography': {
-    systemPrompt: `You are a security engineer fixing weak cryptography usage.
-
-RULES:
-1. Replace weak hashes with strong alternatives:
-   - MD5/SHA1 for integrity → SHA-256 or SHA-3
-   - MD5/SHA1 for passwords → bcrypt, scrypt, or Argon2
-2. Replace weak ciphers:
-   - DES → AES-256
-   - ECB mode → GCM or CBC with HMAC
-3. Use secure random number generators
-4. Maintain API compatibility where possible
-5. Add migration notes if existing hashes need rehashing`,
-
-    userPromptTemplate: `Fix this weak cryptography vulnerability:
-
-FILE: {{filePath}}
-LINE: {{lineNumber}}
-CODE:
-\`\`\`{{language}}
-{{codeContext}}
-\`\`\`
-
-ISSUE: {{issueDescription}}
-
-Determine if this is for passwords or data integrity. Choose appropriate replacement.`,
-
-    outputFormat: 'code-block',
-    maxTokens: 600,
-    temperature: 0.2,
-    requiredContext: ['file', 'function', 'imports'],
-  },
-
-  'path-traversal': {
-    systemPrompt: `You are a security engineer fixing path traversal vulnerabilities.
-
-RULES:
-1. Resolve the real path and validate it stays within allowed directory
-2. Use language-appropriate path functions:
-   - Python: os.path.realpath() + startswith check
-   - JavaScript: path.resolve() + startswith check
-   - Java: Paths.get().normalize().startsWith()
-   - Go: filepath.Clean() + strings.HasPrefix()
-3. Reject paths containing ".." after validation
-4. Use allowlist of permitted paths/patterns when possible
-5. Log rejected path traversal attempts for security monitoring`,
-
-    userPromptTemplate: `Fix this path traversal vulnerability:
-
-FILE: {{filePath}}
-LINE: {{lineNumber}}
-CODE:
-\`\`\`{{language}}
-{{codeContext}}
-\`\`\`
-
-ISSUE: {{issueDescription}}
-
-Add path validation that ensures resolved path stays within base directory.`,
-
-    outputFormat: 'code-block',
-    maxTokens: 600,
-    temperature: 0.2,
-    requiredContext: ['file', 'function'],
-  },
+OUTPUT RULES:
+1. Output ONLY the updated configuration - no explanations
+2. Use the latest secure versions
+3. Maintain compatibility with other dependencies
+4. Follow semantic versioning principles`,
 };
 
 /**
- * Quality Fix Prompts
+ * Build a dynamic user prompt based on issue context
  */
-export const QUALITY_FIX_PROMPTS: Record<string, AIFixPrompt> = {
-  'unused-variable': {
-    systemPrompt: `You are a code quality engineer fixing unused variables.
+function buildDynamicUserPrompt(context: IssueContext): string {
+  const parts: string[] = [];
 
-RULES:
-1. Analyze the context to determine the intent:
-   - If variable was meant to be used, find where it should be used
-   - If variable is a debugging leftover, remove it
-   - If variable is intentionally unused (e.g., loop counter), prefix with _
-2. For destructuring, use rest operator to indicate unused: const { used, ..._ } = obj;
-3. For function parameters that must stay (interface compliance), prefix with _
-4. Check if removing the variable would cause side effects`,
+  // Header with rule identification
+  parts.push(`FIX THIS ${context.category.toUpperCase()} ISSUE:`);
+  parts.push('');
+  parts.push(`RULE: ${context.ruleId} (${context.tool})`);
+  parts.push(`SEVERITY: ${context.severity}`);
+  parts.push(`MESSAGE: ${context.message}`);
+  parts.push('');
 
-    userPromptTemplate: `Fix this unused variable:
+  // Location
+  parts.push(`FILE: ${context.filePath}`);
+  parts.push(`LINE: ${context.lineNumber}`);
+  parts.push('');
 
-FILE: {{filePath}}
-LINE: {{lineNumber}}
-CODE:
-\`\`\`{{language}}
-{{codeContext}}
-\`\`\`
+  // Code context
+  parts.push('CODE:');
+  parts.push('```' + context.language);
+  parts.push(context.codeContext || context.snippet || '// No code context available');
+  parts.push('```');
+  parts.push('');
 
-VARIABLE: {{variableName}}
-ISSUE: {{issueDescription}}
+  // Additional metadata if available
+  const metadata: string[] = [];
+  if (context.variableName) metadata.push(`Variable: ${context.variableName}`);
+  if (context.functionName) metadata.push(`Function: ${context.functionName}`);
+  if (context.className) metadata.push(`Class: ${context.className}`);
+  if (context.value) metadata.push(`Value: ${context.value}`);
+  if (context.framework) metadata.push(`Framework: ${context.framework}`);
 
-Analyze context and determine: remove, use, or prefix with underscore.`,
-
-    outputFormat: 'code-block',
-    maxTokens: 400,
-    temperature: 0.3,
-    requiredContext: ['function', 'class'],
-  },
-
-  'empty-catch-block': {
-    systemPrompt: `You are a code quality engineer fixing empty catch blocks.
-
-RULES:
-1. At minimum, add logging to track the error
-2. For expected errors: catch specific exception type, log at warning level
-3. For unexpected errors: re-raise after logging
-4. Consider if the error should propagate or be handled
-5. Use language-appropriate logging:
-   - Python: logging.exception() or logger.error()
-   - JavaScript: console.error() or logger.error()
-   - Java: logger.error("message", e)`,
-
-    userPromptTemplate: `Fix this empty catch block:
-
-FILE: {{filePath}}
-LINE: {{lineNumber}}
-CODE:
-\`\`\`{{language}}
-{{codeContext}}
-\`\`\`
-
-ISSUE: {{issueDescription}}
-
-Add appropriate error handling. Determine if error should be logged, re-raised, or handled.`,
-
-    outputFormat: 'code-block',
-    maxTokens: 500,
-    temperature: 0.3,
-    requiredContext: ['function', 'imports'],
-  },
-
-  'magic-number': {
-    systemPrompt: `You are a code quality engineer extracting magic numbers to constants.
-
-RULES:
-1. Create a descriptively named constant that explains the value's purpose
-2. Use UPPER_SNAKE_CASE for constants
-3. Place constant at appropriate scope:
-   - Class-level if used in class
-   - Module/file level if used across functions
-   - Near usage if only used once
-4. Add brief comment if name isn't self-explanatory
-5. Common patterns:
-   - 86400 → SECONDS_PER_DAY
-   - 1000 → commonly MAX_ITEMS or MILLISECONDS_PER_SECOND
-   - HTTP codes → HTTP_OK, HTTP_NOT_FOUND`,
-
-    userPromptTemplate: `Fix this magic number:
-
-FILE: {{filePath}}
-LINE: {{lineNumber}}
-CODE:
-\`\`\`{{language}}
-{{codeContext}}
-\`\`\`
-
-MAGIC NUMBER: {{value}}
-ISSUE: {{issueDescription}}
-
-Create descriptive constant name based on context. Show constant definition and usage.`,
-
-    outputFormat: 'code-block',
-    maxTokens: 400,
-    temperature: 0.3,
-    requiredContext: ['function', 'class'],
-  },
-};
-
-/**
- * Performance Fix Prompts
- */
-export const PERFORMANCE_FIX_PROMPTS: Record<string, AIFixPrompt> = {
-  'string-concat-in-loop': {
-    systemPrompt: `You are a performance engineer fixing string concatenation in loops.
-
-RULES:
-1. Replace += with appropriate pattern:
-   - Python: list.append() then ''.join()
-   - JavaScript: array.push() then join(), or template literals
-   - Java: StringBuilder
-   - Go: strings.Builder
-2. Preserve the original logic and output format
-3. Handle separator between items if needed
-4. Consider f-strings/template literals for complex formatting`,
-
-    userPromptTemplate: `Fix this string concatenation in loop:
-
-FILE: {{filePath}}
-LINE: {{lineNumber}}
-CODE:
-\`\`\`{{language}}
-{{codeContext}}
-\`\`\`
-
-ISSUE: {{issueDescription}}
-
-Convert to efficient string building pattern for {{language}}.`,
-
-    outputFormat: 'code-block',
-    maxTokens: 500,
-    temperature: 0.2,
-    requiredContext: ['function'],
-  },
-
-  'object-creation-in-loop': {
-    systemPrompt: `You are a performance engineer optimizing object creation.
-
-RULES:
-1. If object doesn't depend on loop variable, hoist outside loop
-2. Common patterns to hoist:
-   - Compiled regex patterns
-   - Date formatters
-   - Database connections
-   - Configuration objects
-3. If object DOES depend on loop variable, leave it (it's correct)
-4. Consider object pooling for expensive objects`,
-
-    userPromptTemplate: `Fix this object creation in loop:
-
-FILE: {{filePath}}
-LINE: {{lineNumber}}
-CODE:
-\`\`\`{{language}}
-{{codeContext}}
-\`\`\`
-
-OBJECT TYPE: {{objectType}}
-ISSUE: {{issueDescription}}
-
-Analyze if object depends on loop variable. If not, hoist outside loop.`,
-
-    outputFormat: 'code-block',
-    maxTokens: 500,
-    temperature: 0.2,
-    requiredContext: ['function'],
-  },
-
-  'n-plus-one-query': {
-    systemPrompt: `You are a performance engineer fixing N+1 query problems.
-
-RULES:
-1. Detect ORM/framework and use appropriate eager loading:
-   - Django: select_related() for FK, prefetch_related() for M2M
-   - SQLAlchemy: joinedload() or subqueryload()
-   - ActiveRecord: includes() or eager_load()
-   - Prisma: include: { relation: true }
-   - TypeORM: relations: ['relation'] or leftJoinAndSelect
-2. Consider if all related data is actually needed
-3. For complex cases, suggest batch loading pattern`,
-
-    userPromptTemplate: `Fix this N+1 query issue:
-
-FILE: {{filePath}}
-LINE: {{lineNumber}}
-CODE:
-\`\`\`{{language}}
-{{codeContext}}
-\`\`\`
-
-ISSUE: {{issueDescription}}
-ORM/FRAMEWORK: {{framework}}
-
-Add appropriate eager loading to eliminate N+1 queries.`,
-
-    outputFormat: 'code-block',
-    maxTokens: 600,
-    temperature: 0.2,
-    requiredContext: ['function', 'imports', 'related-files'],
-  },
-};
-
-/**
- * Get the appropriate AI prompt for an issue
- */
-export function getAIFixPrompt(
-  ruleId: string,
-  category: 'security' | 'quality' | 'performance'
-): AIFixPrompt | null {
-  const prompts = {
-    security: SECURITY_FIX_PROMPTS,
-    quality: QUALITY_FIX_PROMPTS,
-    performance: PERFORMANCE_FIX_PROMPTS,
-  };
-
-  const categoryPrompts = prompts[category];
-
-  // Direct match
-  if (categoryPrompts[ruleId]) {
-    return categoryPrompts[ruleId];
+  if (metadata.length > 0) {
+    parts.push('CONTEXT:');
+    metadata.forEach(m => parts.push(`- ${m}`));
+    parts.push('');
   }
 
-  // Pattern matching
-  const patterns: Record<string, string> = {
-    // Security
-    'S105|S106|S107|hardcoded': 'hardcoded-password',
-    'S608|sql.*injection': 'sql-injection',
-    'S602|subprocess|shell.*true': 'command-injection',
-    'S303|S304|S324|md5|sha1|weak': 'weak-cryptography',
-    'path.*traversal': 'path-traversal',
+  // Clear instruction
+  parts.push('OUTPUT: Generate ONLY the corrected code. No explanations.');
 
-    // Quality
-    'F841|unused.*var': 'unused-variable',
-    'empty.*catch': 'empty-catch-block',
-    'magic.*number': 'magic-number',
+  return parts.join('\n');
+}
 
-    // Performance
-    'string.*concat|InefficientString': 'string-concat-in-loop',
-    'object.*loop|Instantiating.*Loop': 'object-creation-in-loop',
-    'n\\+1|N\\+1': 'n-plus-one-query',
-  };
+/**
+ * Determine required context based on issue type
+ */
+function determineRequiredContext(context: IssueContext): ('file' | 'function' | 'class' | 'imports' | 'related-files')[] {
+  const required: ('file' | 'function' | 'class' | 'imports' | 'related-files')[] = ['file'];
 
-  for (const [pattern, key] of Object.entries(patterns)) {
-    if (new RegExp(pattern, 'i').test(ruleId)) {
-      return categoryPrompts[key] || null;
-    }
+  // Security issues often need imports context
+  if (context.category === 'security') {
+    required.push('function', 'imports');
   }
 
-  return null;
+  // Quality issues about unused variables need function/class context
+  if (context.message.toLowerCase().includes('unused') ||
+      context.message.toLowerCase().includes('undefined')) {
+    required.push('function', 'class');
+  }
+
+  // Performance issues need function context
+  if (context.category === 'performance') {
+    required.push('function');
+  }
+
+  // N+1 queries need related files for ORM patterns
+  if (context.message.toLowerCase().includes('n+1') ||
+      context.message.toLowerCase().includes('query')) {
+    required.push('imports', 'related-files');
+  }
+
+  return Array.from(new Set(required));  // Deduplicate
+}
+
+/**
+ * Calculate appropriate max tokens based on issue complexity
+ */
+function calculateMaxTokens(context: IssueContext): number {
+  // Base tokens by category
+  const baseBySeverity: Record<string, number> = {
+    critical: 800,
+    high: 600,
+    medium: 500,
+    low: 400,
+  };
+
+  let tokens = baseBySeverity[context.severity] || 500;
+
+  // Adjust for code context length
+  const contextLength = (context.codeContext || '').length;
+  if (contextLength > 500) tokens += 200;  // Longer context may need longer fix
+
+  // Security fixes may need more tokens for proper patterns
+  if (context.category === 'security') tokens += 100;
+
+  return Math.min(tokens, 1000);  // Cap at 1000
+}
+
+/**
+ * Calculate appropriate temperature based on issue type
+ */
+function calculateTemperature(context: IssueContext): number {
+  // Security and style fixes should be very deterministic
+  if (context.category === 'security') return 0.1;
+  if (context.category === 'style') return 0.1;
+
+  // Quality and performance can have slight variation
+  if (context.category === 'quality') return 0.2;
+  if (context.category === 'performance') return 0.2;
+
+  // Maintainability may need more creativity
+  if (context.category === 'maintainability') return 0.3;
+
+  return 0.2;  // Default
+}
+
+/**
+ * Generate a dynamic AI prompt for any issue
+ * This is the main entry point - works for ANY rule, not just known ones
+ */
+export function generateDynamicPrompt(context: IssueContext): AIFixPrompt {
+  // Get category-specific system prompt
+  const systemPrompt = CATEGORY_SYSTEM_PROMPTS[context.category] || CATEGORY_SYSTEM_PROMPTS.quality;
+
+  // Enhance system prompt with rule-specific information
+  const enhancedSystemPrompt = `${systemPrompt}
+
+SPECIFIC ISSUE: ${context.ruleId}
+This is a ${context.severity} ${context.category} issue detected by ${context.tool}.
+The issue is: "${context.message}"
+
+Fix this specific problem. Output only the corrected code.`;
+
+  return {
+    systemPrompt: enhancedSystemPrompt,
+    userPromptTemplate: buildDynamicUserPrompt(context),
+    outputFormat: 'code-block',
+    maxTokens: calculateMaxTokens(context),
+    temperature: calculateTemperature(context),
+    requiredContext: determineRequiredContext(context),
+  };
 }
 
 /**
  * Build the complete prompt for AI fix generation
+ * Returns ready-to-use prompt for the AI model
  */
 export function buildAIFixRequest(
-  prompt: AIFixPrompt,
-  context: {
-    filePath: string;
-    lineNumber: number;
-    language: string;
-    codeContext: string;
-    issueDescription: string;
-    variableName?: string;
-    value?: string;
-    objectType?: string;
-    framework?: string;
-  }
+  context: IssueContext
 ): { system: string; user: string; maxTokens: number; temperature: number } {
-  let userPrompt = prompt.userPromptTemplate;
-
-  // Replace template variables
-  userPrompt = userPrompt.replace(/\{\{filePath\}\}/g, context.filePath);
-  userPrompt = userPrompt.replace(/\{\{lineNumber\}\}/g, String(context.lineNumber));
-  userPrompt = userPrompt.replace(/\{\{language\}\}/g, context.language);
-  userPrompt = userPrompt.replace(/\{\{codeContext\}\}/g, context.codeContext);
-  userPrompt = userPrompt.replace(/\{\{issueDescription\}\}/g, context.issueDescription);
-
-  // Optional replacements
-  if (context.variableName) {
-    userPrompt = userPrompt.replace(/\{\{variableName\}\}/g, context.variableName);
-  }
-  if (context.value) {
-    userPrompt = userPrompt.replace(/\{\{value\}\}/g, context.value);
-  }
-  if (context.objectType) {
-    userPrompt = userPrompt.replace(/\{\{objectType\}\}/g, context.objectType);
-  }
-  if (context.framework) {
-    userPrompt = userPrompt.replace(/\{\{framework\}\}/g, context.framework);
-  }
+  const prompt = generateDynamicPrompt(context);
 
   return {
     system: prompt.systemPrompt,
-    user: userPrompt,
+    user: prompt.userPromptTemplate,
     maxTokens: prompt.maxTokens,
     temperature: prompt.temperature,
   };
 }
+
+// =============================================================================
+// KNOWN PATTERNS - Optimized prompts for common issue types
+// These override dynamic prompts when we have high-confidence patterns
+// =============================================================================
+
+/**
+ * Known patterns that get special handling
+ * Maps rule ID patterns to optimized prompt customizations
+ */
+const KNOWN_PATTERNS: {
+  pattern: RegExp;
+  category: string;
+  systemAddendum: string;
+  outputHint: string;
+}[] = [
+  // Hardcoded secrets
+  {
+    pattern: /S105|S106|S107|hardcoded.*secret|hardcoded.*password|hardcoded.*key/i,
+    category: 'security',
+    systemAddendum: `
+SPECIFIC FIX PATTERN:
+- Replace hardcoded secrets with environment variable lookups
+- Python: os.environ.get('VAR_NAME', '') or os.getenv('VAR_NAME')
+- JavaScript/TypeScript: process.env.VAR_NAME || ''
+- Java: System.getenv("VAR_NAME")
+- Go: os.Getenv("VAR_NAME")
+- NEVER include actual secret values in output`,
+    outputHint: 'Use environment variable with name based on context.',
+  },
+
+  // SQL Injection
+  {
+    pattern: /S608|sql.*injection|sqli/i,
+    category: 'security',
+    systemAddendum: `
+SPECIFIC FIX PATTERN:
+- Convert string concatenation to parameterized queries
+- Python psycopg2: cursor.execute("SELECT * FROM t WHERE id = %s", (id,))
+- Python SQLAlchemy: session.query(User).filter(User.id == id)
+- Node.js pg: client.query('SELECT * FROM t WHERE id = $1', [id])
+- Java JDBC: PreparedStatement with setString/setInt
+- NEVER use string formatting with user input`,
+    outputHint: 'Identify the database library and generate parameterized query.',
+  },
+
+  // Command Injection
+  {
+    pattern: /S602|S603|subprocess|shell.*true|command.*injection/i,
+    category: 'security',
+    systemAddendum: `
+SPECIFIC FIX PATTERN:
+- Remove shell=True when possible, use command as list
+- Python: subprocess.run(['cmd', arg], shell=False, check=True)
+- JavaScript: child_process.execFile() instead of exec()
+- If shell features needed, use shlex.quote() to escape`,
+    outputHint: 'Determine if shell features are needed. Generate safe subprocess call.',
+  },
+
+  // Unused variables
+  {
+    pattern: /F841|unused.*var|no-unused-vars/i,
+    category: 'quality',
+    systemAddendum: `
+SPECIFIC FIX PATTERN:
+- Analyze if variable was meant to be used somewhere
+- If debugging leftover: remove it
+- If intentionally unused (interface compliance): prefix with _
+- For destructuring: const { used, ..._ } = obj;`,
+    outputHint: 'Analyze context and determine: remove, use, or prefix with underscore.',
+  },
+
+  // Empty catch blocks
+  {
+    pattern: /empty.*catch|bare.*except|EmptyCatchBlock/i,
+    category: 'quality',
+    systemAddendum: `
+SPECIFIC FIX PATTERN:
+- At minimum, add logging to track the error
+- For expected errors: catch specific exception, log at warning level
+- For unexpected errors: re-raise after logging
+- Use language-appropriate logging patterns`,
+    outputHint: 'Add appropriate error handling. Determine if error should be logged, re-raised, or handled.',
+  },
+
+  // N+1 queries
+  {
+    pattern: /n\+1|N\+1|eager.*load/i,
+    category: 'performance',
+    systemAddendum: `
+SPECIFIC FIX PATTERN:
+- Django: select_related() for FK, prefetch_related() for M2M
+- SQLAlchemy: joinedload() or subqueryload()
+- ActiveRecord: includes() or eager_load()
+- Prisma: include: { relation: true }
+- TypeORM: relations: ['relation'] or leftJoinAndSelect`,
+    outputHint: 'Add appropriate eager loading to eliminate N+1 queries.',
+  },
+
+  // String concatenation in loop
+  {
+    pattern: /string.*concat|InefficientString|StringBuffer/i,
+    category: 'performance',
+    systemAddendum: `
+SPECIFIC FIX PATTERN:
+- Python: list.append() then ''.join()
+- JavaScript: array.push() then join(), or template literals
+- Java: StringBuilder
+- Go: strings.Builder`,
+    outputHint: 'Convert to efficient string building pattern.',
+  },
+];
+
+/**
+ * Get optimized prompt for known patterns
+ * Falls back to dynamic prompt if pattern not recognized
+ */
+export function getOptimizedPrompt(context: IssueContext): AIFixPrompt {
+  // Check if this matches a known pattern
+  for (const known of KNOWN_PATTERNS) {
+    if (known.pattern.test(context.ruleId) || known.pattern.test(context.message)) {
+      // Generate base dynamic prompt
+      const basePrompt = generateDynamicPrompt(context);
+
+      // Enhance with known pattern specifics
+      return {
+        ...basePrompt,
+        systemPrompt: basePrompt.systemPrompt + known.systemAddendum,
+        userPromptTemplate: basePrompt.userPromptTemplate + `\n\nHINT: ${known.outputHint}`,
+        temperature: 0.1,  // More deterministic for known patterns
+      };
+    }
+  }
+
+  // No known pattern - use fully dynamic prompt
+  return generateDynamicPrompt(context);
+}
+
+// =============================================================================
+// LEGACY EXPORTS - For backward compatibility with existing code
+// =============================================================================
+
+// Legacy interface - kept for compatibility
+export function getAIFixPrompt(
+  ruleId: string,
+  category: 'security' | 'quality' | 'performance'
+): AIFixPrompt | null {
+  // Create minimal context for legacy calls
+  const context: IssueContext = {
+    ruleId,
+    tool: 'unknown',
+    message: ruleId,  // Use ruleId as message fallback
+    category,
+    severity: 'medium',
+    filePath: '',
+    lineNumber: 0,
+    language: '',
+    codeContext: '',
+  };
+
+  return getOptimizedPrompt(context);
+}
+
+// Legacy hardcoded prompts - kept for reference but not used
+export const SECURITY_FIX_PROMPTS: Record<string, AIFixPrompt> = {};
+export const QUALITY_FIX_PROMPTS: Record<string, AIFixPrompt> = {};
+export const PERFORMANCE_FIX_PROMPTS: Record<string, AIFixPrompt> = {};

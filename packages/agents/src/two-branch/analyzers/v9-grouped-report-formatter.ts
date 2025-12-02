@@ -23,7 +23,13 @@ import { LSPSARIFConverter } from './lsp-sarif-converter';
 import { GitLabCodeQualityConverter } from './gitlab-codequality-converter';
 import { classifyIssue, getClassificationStats } from '../../fix-agent/issue-classifier';
 import { getRouteSummary, EnrichedIssue as FixEnrichedIssue } from '../../fix-agent/fix-router';
-import { getAIFixPrompt, buildAIFixRequest, AIFixPrompt } from '../../fix-agent/ai-fix-prompts';
+import {
+  getOptimizedPrompt,
+  generateDynamicPrompt,
+  buildAIFixRequest,
+  AIFixPrompt,
+  IssueContext
+} from '../../fix-agent/ai-fix-prompts';
 import {
   getManualReviewInfo,
   generateManualReviewMessage,
@@ -3948,90 +3954,45 @@ mvn spotless:check  # Verify (use in CI)
       };
     }
 
-    // Tier 3: AI-generated fixes with specific prompts
-    const aiPrompt = getAIFixPrompt(group.rule, issueCategory);
-    if (aiPrompt) {
-      // Specific AI prompt available - higher confidence, lower cost
-      return {
-        type: 'ai-generated',
-        fixTier: 3,
-        fixerTool: 'ai',
-        confidence: 90,  // Specific prompts = 90%+ success rate
-        example: {
-          before: representative.snippet || '',
-          after: fix?.correctedCode || ''
-        },
-        instructions: fix?.fix || 'AI-generated fix available with specific prompt',
-        aiPrompt: {
-          systemPrompt: aiPrompt.systemPrompt,
-          userPromptTemplate: aiPrompt.userPromptTemplate,
-          outputFormat: aiPrompt.outputFormat,
-          maxTokens: aiPrompt.maxTokens,
-          temperature: aiPrompt.temperature,
-          requiredContext: aiPrompt.requiredContext
-        }
-      };
-    }
+    // Tier 3: Generate DYNAMIC AI prompt for ANY issue
+    // This works for ALL rules, not just hardcoded ones
+    const issueContext: IssueContext = {
+      ruleId: group.rule,
+      tool: group.tool,
+      message: representative.message || group.rule,
+      category: issueCategory,
+      severity: (group.severity || 'medium') as 'critical' | 'high' | 'medium' | 'low',
+      filePath: representative.file || '',
+      lineNumber: representative.line || 0,
+      language: this.detectedLanguage || 'typescript',
+      codeContext: representative.snippet || '',
+      snippet: representative.snippet,
+    };
 
-    // Check if AI can help with generic prompt
-    const manualReviewInfo = getManualReviewInfo(group.rule, issueCategory);
-    if (manualReviewInfo?.aiCanHelp) {
-      return {
-        type: 'ai-generated',
-        fixTier: 3,
-        fixerTool: 'ai',
-        confidence: 60,  // Generic AI - lower confidence
-        example: {
-          before: representative.snippet || '',
-          after: fix?.correctedCode || ''
-        },
-        instructions: fix?.fix || 'AI can assist with this fix',
-        manualReview: {
-          reason: manualReviewInfo.reason,
-          explanation: manualReviewInfo.explanation,
-          userAction: manualReviewInfo.userAction,
-          aiCanHelp: true,
-          aiPromptHint: manualReviewInfo.aiPromptHint,
-          exampleFix: manualReviewInfo.exampleFix,
-          riskLevel: manualReviewInfo.riskLevel
-        }
-      };
-    }
+    // Get optimized prompt (uses known patterns when available, dynamic otherwise)
+    const aiPrompt = getOptimizedPrompt(issueContext);
 
-    // Manual review required - provide user-friendly guidance
-    if (manualReviewInfo) {
-      return {
-        type: 'manual-review',
-        fixTier: 3,
-        confidence: 0,  // No auto-fix available
-        example: {
-          before: representative.snippet || '',
-          after: manualReviewInfo.exampleFix || ''
-        },
-        instructions: manualReviewInfo.userAction,
-        manualReview: {
-          reason: manualReviewInfo.reason,
-          explanation: manualReviewInfo.explanation,
-          userAction: manualReviewInfo.userAction,
-          aiCanHelp: false,
-          exampleFix: manualReviewInfo.exampleFix,
-          riskLevel: manualReviewInfo.riskLevel
-        }
-      };
-    }
-
-    // Fallback: Generic template
+    // All Tier 3 issues get AI-generated fixes with dynamic prompts
     return {
-      type: 'template',
+      type: 'ai-generated',
       fixTier: 3,
       fixerTool: 'ai',
-      confidence: 60,
+      confidence: aiPrompt.temperature <= 0.1 ? 90 : 75,  // Lower temp = higher confidence
       example: {
         before: representative.snippet || '',
         after: fix?.correctedCode || ''
       },
-      instructions: fix?.fix || 'Apply the suggested fix'
+      instructions: fix?.fix || `AI-generated fix for ${group.rule}`,
+      aiPrompt: {
+        systemPrompt: aiPrompt.systemPrompt,
+        userPromptTemplate: aiPrompt.userPromptTemplate,
+        outputFormat: aiPrompt.outputFormat,
+        maxTokens: aiPrompt.maxTokens,
+        temperature: aiPrompt.temperature,
+        requiredContext: aiPrompt.requiredContext
+      }
     };
+
   }
 
   /**
