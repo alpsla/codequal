@@ -1,14 +1,94 @@
 # 🎯 QUICK START: NEXT SESSION
 
-**Last Updated**: December 2, 2025 (Session 35 - V9 Integration Complete)
+**Last Updated**: December 2, 2025 (Session 36 - Scan-Time Fix Executor)
 **Current Phase**: Phase 1 - Code Refactoring & Bug Fixes
-**Status**: ✅ **V9 HYBRID FIX INTEGRATION COMPLETE**
+**Status**: 🔄 **SCAN-TIME FIX EXECUTOR IMPLEMENTED**
+
+---
+
+## 🎉 SESSION 36 ACHIEVEMENTS (December 2, 2025)
+
+**Session Focus:** Scan-Time Fix Executor - Apply Fixes During Analysis
+
+### ✅ Scan-Time Fix Executor Created
+
+**New File:** `src/fix-agent/scan-fix-executor.ts`
+
+The PRIMARY fix delivery mechanism is now implemented:
+- **Fix During Scan Mode**: Actually CHANGES code (tools run with --fix flags)
+- **IDE-Assisted Mode**: Only RECOMMENDS changes (already existed)
+
+**Key Components:**
+```typescript
+// Main class
+export class ScanFixExecutor {
+  // Execute fixes on detected issues
+  async executeFixes(issues: DetectedIssue[]): Promise<ScanFixResult>
+}
+
+// Convenience functions
+executeScanFixes(issues, workingDir, language)        // In-place fixes
+executeScanFixesWithPatch(issues, workingDir, lang)   // Generate patch file
+```
+
+**Fix Execution Flow:**
+```
+ISSUES DETECTED
+     ↓
+┌─────────────────────┐
+│ Classify Issues     │  ← issue-classifier.ts
+└─────────┬───────────┘
+          ↓
+┌─────────────────────┐
+│ Route to Fixers     │  ← Tier 1 (ESLint), Tier 2 (Sorald), Tier 3 (AI)
+└─────────┬───────────┘
+          ↓
+┌─────────────────────┐
+│ Execute Fixes       │  ← FixOrchestrator with parallel scheduling
+└─────────┬───────────┘
+          ↓
+┌─────────────────────┐
+│ Generate Output     │  ← 'patch' | 'commit' | 'branch' | 'in-place'
+└─────────────────────┘
+```
+
+**Configuration Options:**
+```typescript
+interface ScanFixConfig {
+  workingDir: string;
+  language: 'java' | 'typescript' | 'python' | 'go' | 'rust' | 'ruby' | 'php';
+  outputMode: 'patch' | 'commit' | 'branch' | 'in-place';
+  autoApplyTiers: {
+    tier1: boolean;  // Safe fixes (formatting, style)
+    tier2: boolean;  // Technical fixes (unused code, imports)
+    tier3: boolean;  // AI fixes (manual review recommended)
+  };
+  dryRun?: boolean;
+}
+```
+
+### ✅ Test File Created
+
+**New File:** `tests/integration/test-scan-fix-executor.ts`
+
+Tests:
+1. TypeScript Tier 1 Fixes (ESLint + Prettier)
+2. Python Tier 1 & Tier 2 Fixes (Ruff + autoflake + black)
+3. Patch Generation
+
+### ✅ Index Exports Updated
+
+`src/fix-agent/index.ts` now exports:
+- `ScanFixExecutor`
+- `executeScanFixes()`
+- `executeScanFixesWithPatch()`
+- `ScanFixConfig`, `ScanFixProgress`, `ScanFixResult`, `DetectedIssue`
 
 ---
 
 ## 🎉 SESSION 35 ACHIEVEMENTS (December 2, 2025)
 
-**Session Focus:** Per-Language Fix Pipeline + V9 Pipeline Integration
+**Session Focus:** Per-Language Fix Pipeline + V9 Pipeline Integration + Dynamic Prompts
 
 ### ✅ Hybrid Fix Strategy Designed (All 3 Options Combined)
 

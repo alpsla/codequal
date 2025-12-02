@@ -349,3 +349,18 @@ export {
   type OutputInfo,
   type APIResponse,
 } from './api';
+
+// ================================================================================
+// SCAN-TIME FIX EXECUTOR (Fix During Scan Mode)
+// ================================================================================
+
+// Scan-Time Fix Executor - Applies fixes during analysis scan
+export {
+  ScanFixExecutor,
+  executeScanFixes,
+  executeScanFixesWithPatch,
+  type ScanFixConfig,
+  type ScanFixProgress,
+  type ScanFixResult,
+  type DetectedIssue,
+} from './scan-fix-executor';
