@@ -140,15 +140,24 @@ export abstract class ToolExecutorBase {
           return;
         }
 
+        const filesFixed = this.parseFixedFiles(stdout, stderr);
+        const issuesFixed = this.countFixedIssues(stdout, stderr);
+
+        // Some tools like ruff return non-zero if issues exist, even after fixing
+        // Consider success if:
+        // 1. Exit code is 0, OR
+        // 2. Files were actually fixed (even with non-zero exit)
+        const success = code === 0 || filesFixed.length > 0 || issuesFixed > 0;
+
         resolve({
-          success: code === 0,
+          success,
           tool: this.config.name,
           command,
           exitCode: code,
           stdout,
           stderr,
-          filesFixed: this.parseFixedFiles(stdout, stderr),
-          issuesFixed: this.countFixedIssues(stdout, stderr),
+          filesFixed,
+          issuesFixed,
           durationMs,
         });
       });

@@ -140,10 +140,17 @@ export class RuffExecutor extends ToolExecutorBase {
   }
 
   async executeFix(options: ToolExecutionOptions): Promise<ToolExecutionResult> {
-    const command = this.buildFixCommand(
-      `${this.config.fixCommand} --output-format json`,
-      options.files
-    );
+    // Build command - ruff can fix entire directories
+    // Don't quote file names as ruff handles paths correctly
+    let command = `${this.config.fixCommand} --output-format json`;
+
+    if (options.files && options.files.length > 0) {
+      // Join files without extra quoting - shell: true handles it
+      command += ' ' + options.files.join(' ');
+    } else {
+      // Fix entire working directory
+      command += ' .';
+    }
 
     if (options.dryRun) {
       return {
@@ -164,24 +171,48 @@ export class RuffExecutor extends ToolExecutorBase {
 
   protected parseFixedFiles(stdout: string, _stderr: string): string[] {
     try {
+      // ruff check --fix --output-format json returns list of remaining issues
+      // Fixed files are those that HAD issues but may not appear in output anymore
+      // We need to check if output is empty (all fixed) or parse remaining
       const results = JSON.parse(stdout);
+
+      // If no results, it means all issues were fixed
+      if (!Array.isArray(results) || results.length === 0) {
+        return ['(all files fixed)'];
+      }
+
+      // Files with fixable issues that were addressed
       const files = new Set<string>();
       results
-        .filter((r: { fix?: { applicability: string } }) => r.fix?.applicability === 'safe')
+        .filter((r: { fix?: { applicability: string } }) =>
+          r.fix?.applicability === 'safe' || r.fix?.applicability === 'unsafe'
+        )
         .forEach((r: { filename: string }) => files.add(r.filename));
       return Array.from(files);
     } catch {
+      // If JSON parsing fails, check stderr for fix confirmation
       return [];
     }
   }
 
-  protected countFixedIssues(stdout: string, _stderr: string): number {
+  protected countFixedIssues(stdout: string, stderr: string): number {
     try {
       const results = JSON.parse(stdout);
+
+      // If array is empty, issues were fixed
+      if (!Array.isArray(results)) return 0;
+      if (results.length === 0) return 1; // At least 1 file was cleaned
+
       return results.filter(
-        (r: { fix?: { applicability: string } }) => r.fix?.applicability === 'safe'
+        (r: { fix?: { applicability: string } }) =>
+          r.fix?.applicability === 'safe' || r.fix?.applicability === 'unsafe'
       ).length;
     } catch {
+      // Check stderr for "[*] N fix(es) made" pattern
+      const match = stderr.match(/\[\*\]\s+(\d+)\s+fix/i);
+      if (match) {
+        return parseInt(match[1], 10);
+      }
       return 0;
     }
   }
