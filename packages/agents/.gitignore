@@ -47,4 +47,5 @@ user-reports-validation/
 # Test artifacts and logs
 user-reports/
 test-results/
+test-outputs/
 *.log
