@@ -127,6 +127,121 @@ https://ftjhmbbcuqjqmmbaymqb.supabase.co/storage/v1/object/public/v9-attachments
 
 ---
 
+## 🔄 IDE TESTING WORKFLOW: Keep Repo Fresh with Unfixed Bugs
+
+### Strategy Overview
+
+The testing workflow is designed to **preserve the original "dirty" branch** with unfixed bugs while testing fixes on separate branches. This allows repeated testing without re-running analysis.
+
+### Available Testing Tools
+
+| Tool | Purpose | Location |
+|------|---------|----------|
+| `apply-fixes-and-test.js` | Apply fixes to NEW branch, run build/lint | `tests/integration/` |
+| `apply-lsp-fixes-dry-run.js` | Preview fixes WITHOUT modifying files | `tests/integration/` |
+| `run-v9-on-local-repo.js` | Run V9 analysis on local repository | `tests/integration/` |
+
+### Workflow: Test Fixes While Preserving Original Branch
+
+```bash
+cd /Users/alpinro/CodePrjects/codequal/packages/agents/tests/integration
+
+# Step 1: Download LSP file (or use local copy)
+curl -o test-lsp-actions.json "https://ftjhmbbcuqjqmmbaymqb.supabase.co/storage/v1/object/public/v9-attachments/codequal-pr69-1764721363156/codequal-lsp-actions.json"
+
+# Step 2: Preview fixes (DRY RUN - no changes)
+node apply-lsp-fixes-dry-run.js test-lsp-actions.json 0    # Preview "Apply All"
+node apply-lsp-fixes-dry-run.js test-lsp-actions.json 1    # Preview "Apply High Severity"
+node apply-lsp-fixes-dry-run.js test-lsp-actions.json 10   # Preview specific fix
+
+# Step 3: Apply fixes to NEW branch (preserves original)
+node apply-fixes-and-test.js \
+  test-lsp-actions.json \
+  /Users/alpinro/CodePrjects/codequal \
+  test/autofix-applied-v1
+
+# This creates branch: test/autofix-applied-v1
+# Original branch: test/autofix-baseline (unchanged, still has bugs)
+```
+
+### What apply-fixes-and-test.js Does
+
+1. **Validates inputs** - Checks LSP file and repo exist
+2. **Creates new branch** - Preserves original "dirty" branch
+3. **Applies LSP fixes** - Edits files according to code actions
+4. **Runs build** - `npm run build` to verify no syntax errors
+5. **Runs lint** - `npm run lint` to check for remaining issues
+6. **Commits changes** - Creates commit with applied fixes
+
+### Reset to Original State (After Testing)
+
+```bash
+cd /Users/alpinro/CodePrjects/codequal
+
+# Go back to original branch with unfixed bugs
+git checkout test/autofix-baseline
+
+# Delete test branch if no longer needed
+git branch -D test/autofix-applied-v1
+
+# Now you can run another test cycle
+```
+
+### IDE Manual Testing (VS Code / Cursor)
+
+For testing the Quick Actions (lightbulb) menu:
+
+1. **Copy LSP file to local extension data**:
+   ```bash
+   # Create CodeQual extension data directory
+   mkdir -p ~/.codequal/lsp-actions
+   cp test-lsp-actions.json ~/.codequal/lsp-actions/
+   ```
+
+2. **Open repo in VS Code/Cursor**:
+   ```bash
+   code /Users/alpinro/CodePrjects/codequal
+   ```
+
+3. **Test Quick Actions**:
+   - Open a file with issues (e.g., `apps/api/src/routes/index.ts`)
+   - Click lightbulb icon or press `Cmd+.`
+   - Select a fix from the menu
+   - Verify the fix is correct
+
+4. **Reset after testing**:
+   ```bash
+   git checkout -- .
+   git clean -fd
+   ```
+
+### Comparison Testing Flow
+
+```bash
+# 1. Run V9 on original (unfixed) branch
+cd /Users/alpinro/CodePrjects/codequal/packages/agents
+git checkout test/autofix-baseline
+export USER_TIER=basic
+npx ts-node tests/integration/test-v9-lite-e2e.ts
+# Save: baseline-results.md (301 issues)
+
+# 2. Apply fixes to new branch
+cd tests/integration
+node apply-fixes-and-test.js test-lsp-actions.json /Users/alpinro/CodePrjects/codequal test/autofix-applied
+
+# 3. Run V9 on fixed branch
+cd /Users/alpinro/CodePrjects/codequal/packages/agents
+git checkout test/autofix-applied
+export USER_TIER=basic
+npx ts-node tests/integration/test-v9-lite-e2e.ts
+# Save: fixed-results.md (should have fewer issues)
+
+# 4. Compare results
+# Expected: fixed-results.md has fewer issues than baseline-results.md
+```
+
+---
+
 ## 📂 SESSION 37 TEST ARTIFACTS (Oracle Cloud)
 
 ### Reports (On Oracle: ~/codequal/packages/agents/tests/integration/test-outputs/)
