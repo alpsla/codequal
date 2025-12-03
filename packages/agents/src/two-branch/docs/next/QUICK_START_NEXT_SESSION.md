@@ -240,6 +240,33 @@ npx ts-node tests/integration/test-v9-lite-e2e.ts
 # Expected: fixed-results.md has fewer issues than baseline-results.md
 ```
 
+### Final Validation: Run CodeQual V9 Analysis
+
+After applying fixes, run a full V9 analysis to confirm:
+- ✅ All targeted issues are fixed
+- ✅ No new issues were introduced
+- ✅ Build and lint pass
+
+```bash
+# Run full V9 analysis on the fixed branch
+cd /Users/alpinro/CodePrjects/codequal/packages/agents
+git checkout test/autofix-applied
+
+# Run V9 E2E test (validates fix quality)
+export USER_TIER=basic
+npx ts-node tests/integration/test-v9-lite-e2e.ts 2>&1 | tee /tmp/v9-fix-validation.log
+
+# Check results
+echo ""
+echo "=== FIX VALIDATION SUMMARY ==="
+grep -E "Total issues|NEW issues|FIXED issues|Score" /tmp/v9-fix-validation.log | tail -10
+
+# Success criteria:
+# - Fewer total issues than baseline (301)
+# - Zero or minimal NEW issues introduced
+# - Higher overall score
+```
+
 ---
 
 ## 📂 SESSION 37 TEST ARTIFACTS (Oracle Cloud)
