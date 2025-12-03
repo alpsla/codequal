@@ -247,8 +247,16 @@ export class TypeScriptToolOrchestrator extends BaseToolOrchestrator {
 
   /**
    * Get tools to run based on analysis mode (required by base)
+   *
+   * SESSION 34 OPTIMIZATION: userTier parameter for Semgrep skip logic
+   * - BASIC tier: Run Semgrep here (Step 3), Lite Security Agent groups issues
+   * - PRO tier: Skip Semgrep here, run scan+fix combined in Step 5.5
    */
-  protected getToolsToRun(mode: AnalysisMode, branch: 'base' | 'pr'): string[] {
+  protected getToolsToRun(
+    mode: AnalysisMode,
+    branch: 'base' | 'pr',
+    userTier?: 'basic' | 'pro'
+  ): string[] {
     const tools: string[] = [];
 
     // ESLint - Always included (code quality + security)
@@ -271,9 +279,16 @@ export class TypeScriptToolOrchestrator extends BaseToolOrchestrator {
       tools.push('dependency-check');
     }
 
-    // Semgrep - Security analysis (standard and above)
+    // Semgrep - Security analysis
+    // SESSION 34 OPTIMIZATION:
+    // - BASIC tier (default): Run Semgrep here (Step 3), skip Step 5.5
+    //   Lite Security Agent groups issues + enhances metadata
+    // - PRO tier: Skip Semgrep here, run scan+fix combined in Step 5.5
+    //   This saves ~45s by avoiding duplicate Semgrep execution
     if (this.config.semgrep?.enabled && shouldTypeScriptToolRun('semgrep', mode)) {
-      tools.push('semgrep');
+      if (userTier !== 'pro') {
+        tools.push('semgrep');
+      }
     }
 
     // Performance Tools - Standard and above (Lighthouse, Bundle Analyzer, ESLint-Perf)

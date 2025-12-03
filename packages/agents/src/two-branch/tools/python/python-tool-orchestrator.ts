@@ -135,29 +135,46 @@ export class PythonToolOrchestrator extends BaseToolOrchestrator {
     return 'python';
   }
 
-  protected getToolsToRun(mode: AnalysisMode, branch: 'base' | 'pr'): string[] {
+  /**
+   * Get tools to run based on analysis mode (required by base)
+   *
+   * SESSION 34 OPTIMIZATION: userTier parameter for Semgrep skip logic
+   * - BASIC tier: Run Semgrep here (Step 3), Lite Security Agent groups issues
+   * - PRO tier: Skip Semgrep here, run scan+fix combined in Step 5.5
+   */
+  protected getToolsToRun(
+    mode: AnalysisMode,
+    branch: 'base' | 'pr',
+    userTier?: 'basic' | 'pro'
+  ): string[] {
     const tools: string[] = [];
-    
+
     if (this.config.pylint.enabled && shouldPythonToolRun('pylint', mode)) {
       tools.push('pylint');
     }
-    
+
     if (this.config.bandit.enabled && shouldPythonToolRun('bandit', mode)) {
       tools.push('bandit');
     }
-    
+
     if (this.config.mypy.enabled && shouldPythonToolRun('mypy', mode)) {
       tools.push('mypy');
     }
-    
+
     if (this.config.safety.enabled && shouldPythonToolRun('safety', mode)) {
       tools.push('safety');
     }
-    
+
+    // Semgrep - Security analysis
+    // SESSION 34 OPTIMIZATION:
+    // - BASIC tier (default): Run Semgrep here (Step 3), skip Step 5.5
+    // - PRO tier: Skip Semgrep here, run scan+fix combined in Step 5.5
     if (this.config.semgrep.enabled && shouldPythonToolRun('semgrep', mode)) {
-      tools.push('semgrep');
+      if (userTier !== 'pro') {
+        tools.push('semgrep');
+      }
     }
-    
+
     return tools;
   }
 

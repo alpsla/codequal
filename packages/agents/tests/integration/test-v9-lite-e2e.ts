@@ -47,6 +47,7 @@ interface TestScenario {
   expectedFramework?: string;
   expectedToolCount?: number;
   useLocalBranch?: boolean;  // SESSION 27: If true, create local branch instead of using GitHub PR
+  userTier?: 'basic' | 'pro';  // SESSION 34: User subscription tier for fix execution
 }
 
 // ========================================================================
@@ -84,6 +85,9 @@ const TEST_SCENARIOS: TestScenario[] = [
   // },
 
   // CodeQual: Full testing (PR mode - we own it, can test autofix)
+  // SESSION 34: Use USER_TIER env var to test BASIC vs PRO tier
+  // BASIC tier: Classify issues only (no fixes executed) - generates LSP/SARIF for IDE
+  // PRO tier: Execute fixes automatically (default)
   {
     name: 'CodeQual PR #69 - V9 Footer Fixes',
     repoUrl: 'https://github.com/alpsla/codequal',
@@ -91,7 +95,8 @@ const TEST_SCENARIOS: TestScenario[] = [
     prNumber: 69,
     language: 'typescript',
     expectedFramework: 'next',
-    expectedToolCount: 3  // eslint, semgrep, npm-audit
+    expectedToolCount: 3,  // eslint, semgrep, npm-audit
+    userTier: (process.env.USER_TIER as 'basic' | 'pro') || 'pro',  // Default to PRO
   },
 
   // Other TypeScript frameworks: Local branch testing (full autofix validation)
@@ -696,12 +701,16 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
     let orchestrationResult: any;  // Store for performance data
     let prBranchName: string | undefined;  // SESSION 27: Declare at higher scope for metadata
 
+    // SESSION 34: Get userTier for Semgrep skip logic
+    const userTier = scenario.userTier || 'pro';
+
     if (scenario.testMode === 'baseline') {
       // SESSION 20 FIX: Baseline mode - analyze default branch only
       const { detectDefaultBranch } = await import('../../src/two-branch/utils/git-utils');
       const defaultBranch = detectDefaultBranch(repoPath);
       console.log(`   📊 Repository Baseline Analysis (default branch: ${defaultBranch})...`);
-      orchestrationResult = await orchestrator.orchestrate(repoPath, 'base', { analysisMode: 'complete' });
+      // SESSION 34: Pass userTier for Semgrep skip logic (PRO skips Semgrep in Step 3)
+      orchestrationResult = await orchestrator.orchestrate(repoPath, 'base', { analysisMode: 'complete', userTier });
 
       allIssues = orchestrationResult.toolResults.flatMap((r: any) => r.issues || []);
       newIssues = [];  // No NEW issues in baseline mode
@@ -721,7 +730,8 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
 
       // Run tools on default branch (main/master/trunk - detected dynamically)
       console.log(`   📊 Analyzing default branch (${defaultBranch})...`);
-      const mainResult = await orchestrator.orchestrate(repoPath, 'base', { analysisMode: 'complete' });
+      // SESSION 34: Pass userTier for Semgrep skip logic (PRO skips Semgrep in Step 3)
+      const mainResult = await orchestrator.orchestrate(repoPath, 'base', { analysisMode: 'complete', userTier });
 
       // SESSION 27: Support both GitHub PRs and local test branches
 
@@ -774,8 +784,10 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
       // Run tools on PR branch - scan ALL files (same as main branch)
       // This ensures accurate comparison: EXISTING_REST and RESOLVED require full scan
       console.log('   📊 Analyzing PR branch...');
+      // SESSION 34: Pass userTier for Semgrep skip logic (PRO skips Semgrep in Step 3)
       orchestrationResult = await orchestrator.orchestrate(repoPath, 'pr', {
-        analysisMode: 'complete'
+        analysisMode: 'complete',
+        userTier  // SESSION 34: PRO tier skips Semgrep here, runs in Step 5.5
         // ✅ CRITICAL: Do NOT pass changedFiles - we need ALL files for comparison
         // changedFiles is only used for categorization, not tool execution
       });
@@ -940,6 +952,115 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
     console.log(`   ✅ AI calls: ${groupingResult.groups.length} (instead of ${formattedIssues.length})`);
 
     // ========================================================================
+    // STEP 5.5: FIX EXECUTION (Scan-Time Fix Executor)
+    // ========================================================================
+    console.log('\n🔧 Step 5.5: Executing Tier 1/2 fixes...');
+
+    // Import ScanFixExecutor
+    const { executeScanFixes } = await import('../../src/fix-agent/scan-fix-executor');
+
+    // Convert issues to DetectedIssue format for fix executor
+    const issuesToFix = formattedIssues.map((issue: any) => ({
+      file: issue.file,
+      line: issue.line,
+      column: 0,
+      rule: issue.rule,
+      tool: issue.tool,
+      message: issue.message || issue.title,
+      severity: issue.severity,
+      category: issue.detectedCategory
+    }));
+
+    // Execute fixes based on user tier (SESSION 34: userTier already declared earlier for orchestrator)
+    // BASIC tier: Classify issues only (no fixes executed) - user applies via IDE
+    // PRO tier: Execute fixes automatically
+    console.log(`   📊 User Tier: ${userTier.toUpperCase()}`);
+
+    let scanFixResult: any = null;
+    try {
+      scanFixResult = await executeScanFixes(issuesToFix as any, repoPath, scenario.language, {
+        userTier: userTier,  // Use scenario's tier setting
+        dryRun: false,  // Actually apply fixes (if PRO tier)
+        verbose: true,
+        autoApplyTiers: {
+          tier1: true,   // Safe fixes (formatting, style)
+          tier2: true,   // Technical fixes (unused imports)
+          tier3: false,  // Don't auto-approve Tier 3 (but fixWithReview will still apply them)
+        },
+        fixWithReview: true,  // Apply Tier 3 fixes but flag for owner review (PRO only)
+        onProgress: (update: any) => {
+          console.log(`   [${update.phase}] ${update.message}`);
+        },
+      });
+
+      console.log(`\n   📊 Fix Execution Results (${userTier.toUpperCase()} Tier):`);
+      console.log(`   ✅ Fixes Executed: ${scanFixResult.fixesExecuted ? 'YES' : 'NO (classification only)'}`);
+      console.log(`   ✅ Total issues: ${scanFixResult.summary.totalIssues}`);
+
+      if (scanFixResult.fixesExecuted) {
+        // PRO tier - show fix results
+        console.log(`   ✅ Fixed: ${scanFixResult.summary.fixedIssues}`);
+        console.log(`   ✅ Failed: ${scanFixResult.summary.failedIssues}`);
+        console.log(`   ✅ Skipped: ${scanFixResult.summary.skippedIssues}`);
+        console.log(`   ✅ Tier 1 fixed: ${scanFixResult.summary.tier1Fixed}`);
+        console.log(`   ✅ Tier 2 fixed: ${scanFixResult.summary.tier2Fixed}`);
+        console.log(`   ✅ Tier 3 fixed (needs review): ${scanFixResult.summary.tier3Fixed}`);
+        console.log(`   ✅ Available for IDE fix: ${scanFixResult.summary.availableForIdeFix}`);
+
+        if (scanFixResult.modifiedFiles.length > 0) {
+          console.log(`   📁 Modified files: ${scanFixResult.modifiedFiles.slice(0, 5).join(', ')}${scanFixResult.modifiedFiles.length > 5 ? '...' : ''}`);
+        }
+
+        // Show issues that were fixed but need review
+        if (scanFixResult.fixedButNeedsReview && scanFixResult.fixedButNeedsReview.length > 0) {
+          console.log(`   ⚠️  Fixed but needs owner review: ${scanFixResult.fixedButNeedsReview.length} issues`);
+          scanFixResult.fixedButNeedsReview.slice(0, 3).forEach((issue: any) => {
+            console.log(`      - ${issue.file}:${issue.line} - ${issue.rule} (${issue.category})`);
+          });
+          if (scanFixResult.fixedButNeedsReview.length > 3) {
+            console.log(`      ... and ${scanFixResult.fixedButNeedsReview.length - 3} more`);
+          }
+        }
+
+        if (scanFixResult.manualReviewRequired.length > 0) {
+          console.log(`   ⚠️  Manual review needed: ${scanFixResult.manualReviewRequired.length} issues`);
+        }
+      } else {
+        // BASIC tier - show classification results
+        console.log(`   📋 Classification Only (BASIC tier - no fixes applied)`);
+        console.log(`   📋 Available for IDE fix: ${scanFixResult.summary.availableForIdeFix} issues`);
+        if (scanFixResult.tierBreakdown) {
+          console.log(`   📋 Tier Breakdown:`);
+          console.log(`      - Tier 1 (native tool --fix): ${scanFixResult.tierBreakdown.tier1} issues`);
+          console.log(`      - Tier 2 (dedicated fixers): ${scanFixResult.tierBreakdown.tier2} issues`);
+          console.log(`      - Tier 3 (AI/manual review): ${scanFixResult.tierBreakdown.tier3} issues`);
+        }
+        console.log(`   💡 Use LSP/SARIF/GitLab converter to apply fixes in your IDE`);
+      }
+
+      console.log(`   ✅ Duration: ${scanFixResult.durationMs}ms`);
+
+    } catch (fixError) {
+      console.warn(`   ⚠️  Fix execution failed: ${(fixError as Error).message}`);
+      scanFixResult = {
+        success: false,
+        summary: {
+          totalIssues: issuesToFix.length,
+          fixedIssues: 0,
+          failedIssues: 0,
+          skippedIssues: issuesToFix.length,
+          tier1Fixed: 0,
+          tier2Fixed: 0,
+          tier3Fixed: 0,
+        },
+        modifiedFiles: [],
+        manualReviewRequired: [],
+        durationMs: 0,
+        details: [],
+      };
+    }
+
+    // ========================================================================
     // STEP 6: Report Generation (Grouped Formatter)
     // ========================================================================
     console.log('\n📝 Step 6: Generating report...');
@@ -1001,7 +1122,24 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
 
       // ⭐ PERFORMANCE DATA FROM ORCHESTRATOR (BUG #8, #9, #10 FIX)
       toolPerformance: orchestrationResult.toolPerformance || [],
-      agentPerformance: orchestrationResult.agentPerformance || []
+      agentPerformance: orchestrationResult.agentPerformance || [],
+
+      // ⭐ FIX EXECUTION DATA (SESSION 36: Scan-Time Fix Executor with fixWithReview)
+      fixExecution: scanFixResult ? {
+        totalIssues: scanFixResult.summary.totalIssues,
+        fixedIssues: scanFixResult.summary.fixedIssues,
+        failedIssues: scanFixResult.summary.failedIssues,
+        skippedIssues: scanFixResult.summary.skippedIssues,
+        tier1Fixed: scanFixResult.summary.tier1Fixed,
+        tier2Fixed: scanFixResult.summary.tier2Fixed,
+        tier3Fixed: scanFixResult.summary.tier3Fixed,
+        modifiedFiles: scanFixResult.modifiedFiles,
+        manualReviewRequired: scanFixResult.manualReviewRequired.length,
+        // NEW: Issues that were fixed but flagged for owner review
+        fixedButNeedsReview: scanFixResult.fixedButNeedsReview?.length || 0,
+        durationMs: scanFixResult.durationMs,
+        success: scanFixResult.success,
+      } : null
     };
 
     const result = await formatter.generateGroupedReport(
@@ -1266,6 +1404,20 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
     console.log(`📊 Report size: ${(result.markdown.length / 1024).toFixed(1)} KB`);
     console.log(`📊 V9 Template compliance: ${validationResult.score}% (${validationResult.foundSections}/${validationResult.totalSections} sections)`);
     console.log(`📊 LSP/SARIF autofix: ${lspUrl && sarifUrl ? '✅ Generated' : '⚠️  Missing'}`);
+    // SESSION 34: Add tier-aware fix execution summary
+    if (scanFixResult) {
+      const tierLabel = scanFixResult.fixesExecuted ? 'PRO' : 'BASIC';
+      if (scanFixResult.fixesExecuted) {
+        // PRO tier - show fix results
+        const fixRate = scanFixResult.summary.totalIssues > 0
+          ? ((scanFixResult.summary.fixedIssues / scanFixResult.summary.totalIssues) * 100).toFixed(1)
+          : '0';
+        console.log(`📊 Auto-fix (${tierLabel}): ${scanFixResult.summary.fixedIssues}/${scanFixResult.summary.totalIssues} issues (${fixRate}% fixed, ${scanFixResult.summary.availableForIdeFix || 0} for IDE fix)`);
+      } else {
+        // BASIC tier - show classification only
+        console.log(`📊 Fix Mode (${tierLabel}): Classification only - ${scanFixResult.summary.availableForIdeFix} issues available for IDE fix`);
+      }
+    }
     console.log(`${'='.repeat(80)}\n`);
 
   } catch (error) {
@@ -1293,11 +1445,12 @@ async function main(): Promise<void> {
 ║                                                                           ║
 ║  Components Tested:                                                       ║
 ║  ✓ BaseToolOrchestrator                                                   ║
-║  ✓ JavaToolOrchestrator                                                   ║
+║  ✓ JavaToolOrchestrator / TypeScriptToolOrchestrator                      ║
 ║  ✓ Framework Detection                                                    ║
 ║  ✓ Universal Tool Configuration                                           ║
 ║  ✓ Issue Grouping & Cost Optimization                                     ║
 ║  ✓ Grouped Report Generation                                              ║
+║  ✓ Scan-Time Fix Executor (Tier 1/2 Auto-Fix)                             ║
 ║                                                                           ║
 ╚═══════════════════════════════════════════════════════════════════════════╝
 `);

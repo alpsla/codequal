@@ -125,6 +125,13 @@ export interface OrchestrationOptions {
   analysisMode?: AnalysisMode;
   changedFiles?: string[];
   semgrepJobs?: number;  // Override Semgrep --jobs flag (default: 2, can be 4 for full CPU usage)
+  /**
+   * SESSION 34 OPTIMIZATION: User subscription tier
+   *
+   * BASIC tier: Run Semgrep in Step 3, skip Step 5.5 (use cached data + AI for descriptions)
+   * PRO tier: Skip Semgrep in Step 3, run scan+fix combined in Step 5.5
+   */
+  userTier?: 'basic' | 'pro';
 }
 
 // ============================================================
@@ -167,10 +174,15 @@ export abstract class BaseToolOrchestrator {
   /**
    * Get list of tools to run based on analysis mode
    * Language-specific orchestrators use this to map mode to their tools
+   *
+   * SESSION 34 OPTIMIZATION: userTier parameter for Semgrep skip logic
+   * - BASIC tier: Run Semgrep here (Step 3), skip in Step 5.5
+   * - PRO tier: Skip Semgrep here, run scan+fix combined in Step 5.5
    */
   protected abstract getToolsToRun(
     mode: AnalysisMode,
-    branch: 'base' | 'pr'
+    branch: 'base' | 'pr',
+    userTier?: 'basic' | 'pro'
   ): string[];
 
   /**
@@ -289,8 +301,9 @@ export abstract class BaseToolOrchestrator {
       await this.ensureCorrectBranch(repoPath, branch);
 
       // Step 2: Get tools to run (Language-specific)
-      const toolsToRun = this.getToolsToRun(analysisMode, branch);
-      logger.info(`🔧 Tools to run: ${toolsToRun.join(', ')}`);
+      // SESSION 34: Pass userTier for Semgrep skip logic (PRO skips Semgrep here)
+      const toolsToRun = this.getToolsToRun(analysisMode, branch, options.userTier);
+      logger.info(`🔧 Tools to run: ${toolsToRun.join(', ')} (tier: ${options.userTier || 'basic'})`);
 
       // Step 3: Execute tools with CPU-aware strategy
       // Strategy: Run Semgrep (bottleneck) with all 4 CPUs first, then other tools in parallel
