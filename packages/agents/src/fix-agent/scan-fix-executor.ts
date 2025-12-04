@@ -65,6 +65,12 @@ export interface ScanFixConfig {
 
   /** Verbose logging */
   verbose?: boolean;
+
+  /** User tier: basic (classify only) or pro (auto-fix) */
+  userTier?: 'basic' | 'pro';
+
+  /** Apply Tier 3 fixes but flag for owner review (PRO only) */
+  fixWithReview?: boolean;
 }
 
 export interface ScanFixProgress {
