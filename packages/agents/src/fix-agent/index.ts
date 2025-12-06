@@ -364,3 +364,43 @@ export {
   type ScanFixResult,
   type DetectedIssue,
 } from './scan-fix-executor';
+
+// ================================================================================
+// FIX REPORT SYSTEM (User Selection & Commit Generation)
+// ================================================================================
+
+// Fix Report Types - User selections, commit generation, multi-provider support
+export * from './types';
+
+// Fix Report Service - Manages fix reports, user selections, commit generation
+export {
+  FixReportService,
+  fixReportService,
+} from './services';
+
+// Unified Commit Generator - Multi-provider commit messages (GitHub, GitLab, etc.)
+export {
+  UnifiedCommitGenerator,
+  PROVIDER_TEMPLATES,
+  createCommitGenerator,
+} from './commit';
+
+// ================================================================================
+// PARALLEL AI FIXER (High-Performance Parallel Execution)
+// ================================================================================
+
+// Parallel AI Fixer - High-performance parallel fix execution with indexing
+export {
+  IssueIndex,
+  FileCache,
+  TemplateFixEngine,
+  ParallelAIFixerExecutor,
+  executeParallelAIFixes,
+  quickParallelFix,
+  quickTemplateFix,
+  type ParallelFixConfig,
+  type ParallelFixResult,
+  type TemplateFixResult,
+  type TemplateFixEngineConfig,
+  type TemplateFixStats,
+} from './parallel-ai-fixer';
